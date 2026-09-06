@@ -1165,6 +1165,12 @@ function init(){
   renderAll();
 
   if("serviceWorker" in navigator){
+    // When an updated service worker takes control, reload once so the
+    // page picks up the fresh HTML/CSS/JS instead of the previous cache.
+    var hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener("controllerchange", function(){
+      if(hadController){ hadController = false; window.location.reload(); }
+    });
     navigator.serviceWorker.register("sw.js").catch(function(){ /* offline-first, fine if this fails */ });
   }
 }

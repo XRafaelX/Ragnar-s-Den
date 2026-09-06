@@ -1,4 +1,4 @@
-var CACHE_NAME = "vault-and-vellum-v2";
+var CACHE_NAME = "vault-and-vellum-v3";
 var ASSETS = [
   "./",
   "./index.html",
@@ -30,16 +30,38 @@ self.addEventListener("activate", function(event){
   );
 });
 
+/* Network-first for same-origin requests so edits to the HTML/CSS/JS show
+   up on the next load; fall back to the cache only when offline. Other
+   origins (CDNs, etc.) stay cache-first. */
 self.addEventListener("fetch", function(event){
-  event.respondWith(
-    caches.match(event.request).then(function(cached){
-      if(cached) return cached;
-      return fetch(event.request).then(function(response){
+  var req = event.request;
+  if(req.method !== "GET") return;
+
+  var sameOrigin = new URL(req.url).origin === self.location.origin;
+
+  if(sameOrigin){
+    event.respondWith(
+      fetch(req).then(function(response){
         var copy = response.clone();
-        caches.open(CACHE_NAME).then(function(cache){ cache.put(event.request, copy); });
+        caches.open(CACHE_NAME).then(function(cache){ cache.put(req, copy); });
         return response;
       }).catch(function(){
-        if(event.request.mode === "navigate") return caches.match("./index.html");
+        return caches.match(req).then(function(cached){
+          if(cached) return cached;
+          if(req.mode === "navigate") return caches.match("./index.html");
+        });
+      })
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(req).then(function(cached){
+      if(cached) return cached;
+      return fetch(req).then(function(response){
+        var copy = response.clone();
+        caches.open(CACHE_NAME).then(function(cache){ cache.put(req, copy); });
+        return response;
       });
     })
   );
