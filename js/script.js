@@ -17,6 +17,41 @@ var HIT_DICE_BY_CLASS = {
 };
 var CLASS_LIST = Object.keys(HIT_DICE_BY_CLASS);
 
+var RACES = {
+  "Standard (SRD)": [
+    "Human","Hill Dwarf","Mountain Dwarf","High Elf","Wood Elf","Dark Elf (Drow)",
+    "Lightfoot Halfling","Stout Halfling","Dragonborn","Rock Gnome","Forest Gnome",
+    "Half-Elf","Half-Orc","Tiefling"
+  ],
+  "Expanded": [
+    "Aarakocra","Aasimar","Bugbear","Centaur","Changeling","Deep Gnome (Svirfneblin)",
+    "Duergar","Eladrin","Fairy","Firbolg","Genasi (Air)","Genasi (Earth)","Genasi (Fire)",
+    "Genasi (Water)","Gith (Githyanki)","Gith (Githzerai)","Goblin","Goliath","Harengon",
+    "Hobgoblin","Kenku","Kobold","Lizardfolk","Loxodon","Minotaur","Orc","Satyr",
+    "Sea Elf","Shadar-kai","Shifter","Simic Hybrid","Tabaxi","Thri-kreen","Tortle",
+    "Triton","Vedalken","Verdan","Warforged","Yuan-ti Pureblood"
+  ]
+};
+
+var BACKGROUNDS = {
+  "Standard (SRD)": ["Acolyte"],
+  "Expanded": [
+    "Charlatan","Criminal","Entertainer","Folk Hero","Guild Artisan","Guild Merchant",
+    "Hermit","Noble","Outlander","Sage","Sailor","Soldier","Urchin","Anthropologist",
+    "Archaeologist","City Watch","Clan Crafter","Cloistered Scholar","Courtier",
+    "Faction Agent","Far Traveler","Inheritor","Knight of the Order","Mercenary Veteran",
+    "Urban Bounty Hunter","Uthgardt Tribe Member","Waterdhavian Noble"
+  ]
+};
+
+var ALIGNMENTS = {
+  "Alignment": [
+    "Lawful Good","Neutral Good","Chaotic Good",
+    "Lawful Neutral","True Neutral","Chaotic Neutral",
+    "Lawful Evil","Neutral Evil","Chaotic Evil"
+  ]
+};
+
 var state = {
   characters: [],
   activeId: null,
@@ -174,6 +209,7 @@ function renderAll(){
   if(!c){
     empty.style.display = "flex";
     sheet.style.display = "none";
+    renderRollLog();
     return;
   }
   empty.style.display = "none";
@@ -204,9 +240,80 @@ function renderAll(){
     panel.className = "panel" + (state.activeTab===t[0] ? " active" : "");
     sheet.appendChild(panel);
   });
+
+  renderRollLog();
 }
 
 function field(el, tag, cls, txt){}
+
+/* Generic dropdown field with grouped standard/expanded options plus a
+   "Custom / homebrew" fallback that reveals a free-text input. Used for
+   race, background, alignment — anywhere we want guided choices without
+   ever blocking something not on the list. */
+function dropdownField(labelTxt, key, groups, c, onChangeExtra){
+  var f = document.createElement("div");
+  f.className = "field";
+  var l = document.createElement("label"); l.textContent = labelTxt;
+  f.appendChild(l);
+
+  var allValues = [];
+  Object.keys(groups).forEach(function(g){ allValues = allValues.concat(groups[g]); });
+
+  var select = document.createElement("select");
+  var blankOpt = document.createElement("option");
+  blankOpt.value = ""; blankOpt.textContent = "— choose —";
+  select.appendChild(blankOpt);
+  Object.keys(groups).forEach(function(groupLabel){
+    var og = document.createElement("optgroup");
+    og.label = groupLabel;
+    groups[groupLabel].forEach(function(opt){
+      var o = document.createElement("option");
+      o.value = opt; o.textContent = opt;
+      og.appendChild(o);
+    });
+    select.appendChild(og);
+  });
+  var customOpt = document.createElement("option");
+  customOpt.value = "__custom__"; customOpt.textContent = "Custom / homebrew…";
+  select.appendChild(customOpt);
+
+  var customInput = document.createElement("input");
+  customInput.type = "text";
+  customInput.placeholder = "Enter custom "+labelTxt.toLowerCase();
+  customInput.style.display = "none";
+  customInput.style.marginTop = "3px";
+
+  var currentVal = c[key]||"";
+  if(currentVal && allValues.indexOf(currentVal)===-1){
+    select.value = "__custom__";
+    customInput.value = currentVal;
+    customInput.style.display = "block";
+  } else {
+    select.value = currentVal;
+  }
+
+  select.addEventListener("change", function(){
+    if(select.value==="__custom__"){
+      customInput.style.display = "block";
+      customInput.focus();
+      c[key] = customInput.value;
+    } else {
+      customInput.style.display = "none";
+      c[key] = select.value;
+    }
+    save();
+    if(onChangeExtra) onChangeExtra();
+  });
+  customInput.addEventListener("input", function(){
+    c[key] = customInput.value;
+    save();
+    if(onChangeExtra) onChangeExtra();
+  });
+
+  f.appendChild(select);
+  f.appendChild(customInput);
+  return f;
+}
 
 function renderIdentity(c){
   var wrap = document.createElement("div");
@@ -224,18 +331,10 @@ function renderIdentity(c){
 
   var subRow = document.createElement("div");
   subRow.className = "sub-row";
-  function simpleField(labelTxt, key, placeholder){
-    var f = document.createElement("div");
-    f.className = "field";
-    var l = document.createElement("label"); l.textContent = labelTxt;
-    var i = document.createElement("input"); i.value = c[key]||""; i.placeholder = placeholder||"";
-    i.addEventListener("input", function(){ c[key]=i.value; save(); if(key==="race") renderSidebar(); });
-    f.appendChild(l); f.appendChild(i);
-    return f;
-  }
-  subRow.appendChild(simpleField("Race","race","e.g. Half-Elf"));
-  subRow.appendChild(simpleField("Background","background","e.g. Sage"));
-  subRow.appendChild(simpleField("Alignment","alignment","e.g. Neutral Good"));
+
+  subRow.appendChild(dropdownField("Race", "race", RACES, c, function(){ renderSidebar(); }));
+  subRow.appendChild(dropdownField("Background", "background", BACKGROUNDS, c));
+  subRow.appendChild(dropdownField("Alignment", "alignment", ALIGNMENTS, c));
 
   var pbField = document.createElement("div");
   pbField.className = "field";
@@ -304,6 +403,11 @@ function renderIdentity(c){
   totalSpan.className = "total-level";
   totalSpan.textContent = "Total level "+totalLevel(c);
   classesRow.appendChild(totalSpan);
+
+  var deleteBtn = makeDeleteButton(c);
+  deleteBtn.style.marginLeft = "auto";
+  classesRow.appendChild(deleteBtn);
+
   wrap.appendChild(classesRow);
 
   return wrap;
@@ -1030,43 +1134,23 @@ function setupTopLevel(){
   });
 }
 
-/* ---------------- Delete character (long-press-ish via dblclick on mobile is unreliable; use a button in sheet) ---------------- */
-/* Adds a small delete affordance inside the identity card area via a persistent corner button */
-function addDeleteAffordance(){
-  var wrap = document.createElement("div");
-  wrap.style.position = "absolute";
-  wrap.style.top = "12px";
-  wrap.style.right = "14px";
+/* ---------------- Delete character ---------------- */
+/* Rendered inline at the end of the identity block's classes row. */
+function makeDeleteButton(c){
   var btn = document.createElement("button");
   btn.className = "btn small danger";
   btn.textContent = "Delete character";
   btn.addEventListener("click", function(){
-    var c = getActive();
-    if(!c) return;
-    confirmDialog("Delete "+c.name+"?", "This cannot be undone. Consider exporting a backup first.", function(){
+    confirmDialog("Delete "+(c.name||"this character")+"?", "This cannot be undone. Consider exporting a backup first.", function(){
       state.characters = state.characters.filter(function(x){ return x.id!==c.id; });
       state.activeId = state.characters.length ? state.characters[0].id : null;
+      if(state.activeId) state.activeTab = "vitals";
       save();
       renderAll();
     });
   });
-  wrap.appendChild(btn);
-  return wrap;
+  return btn;
 }
-
-var _origRenderAll = renderAll;
-renderAll = function(){
-  _origRenderAll();
-  var c = getActive();
-  if(c){
-    var identity = document.querySelector(".identity");
-    if(identity){
-      identity.style.position = "relative";
-      identity.appendChild(addDeleteAffordance());
-    }
-  }
-  renderRollLog();
-};
 
 /* ---------------- Init ---------------- */
 function init(){
