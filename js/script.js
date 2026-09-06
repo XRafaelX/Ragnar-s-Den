@@ -636,7 +636,7 @@ function renderSpellsPanel(c){
     if(c.spellcasting.ability===a) o.selected = true;
     sel.appendChild(o);
   });
-  sel.style.padding="4px"; sel.style.border="1px solid var(--rule)"; sel.style.borderRadius="4px"; sel.style.background="#fff8ea";
+  sel.style.padding="4px"; sel.style.border="1px solid var(--rule)"; sel.style.borderRadius="4px"; sel.style.background="var(--field-bg)"; sel.style.color="var(--text-on-parch)";
   sel.addEventListener("change", function(){ c.spellcasting.ability = sel.value; save(); renderAll(); });
   abField.appendChild(sel);
   row.appendChild(abField);

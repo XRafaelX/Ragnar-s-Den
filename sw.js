@@ -1,8 +1,12 @@
-var CACHE_NAME = "vault-and-vellum-v1";
+var CACHE_NAME = "vault-and-vellum-v2";
 var ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./css/bootstrap.min.css",
+  "./css/style.css",
+  "./js/bootstrap.bundle.min.js",
+  "./js/script.js",
   "./images/icon-192.png",
   "./images/icon-512.png"
 ];
