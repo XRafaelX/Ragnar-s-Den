@@ -1,18 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ragnar's Den</title>
-    <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#182420">
+<title>Ragnar's Den — Character Creator</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="images/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ragnar's Den">
+<link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
-    <h1>Welcome to Ragnar's Den!</h1>
-    <p>Your local repository and VS Code setup are working correctly.</p>
+<div id="app">
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h1>Ragnar's Den</h1>
+      <p>Your characters, kept offline.</p>
+    </div>
+    <ul id="char-list"></ul>
+    <div id="sidebar-footer">
+      <button class="btn primary" id="new-char-btn">+ New Character</button>
+      <button class="btn small ghost" id="export-btn">Export all (backup)</button>
+      <button class="btn small ghost" id="import-btn">Import backup</button>
+      <input type="file" id="import-file" accept="application/json" style="display:none;">
+    </div>
+  </div>
+  <div class="overlay-scrim" id="scrim"></div>
 
-    <script src="js/script.js"></script>
+  <div id="main">
+    <div id="topbar">
+      <button id="hamburger">☰</button>
+      <div class="tb-title" id="tb-title">Ragnar's Den</div>
+    </div>
+    <div id="empty-state">
+      <h2>No character selected</h2>
+      <p>Create a new character, or pick one from the list, to open their sheet.</p>
+    </div>
+    <div id="sheet" style="display:none;"></div>
+  </div>
+</div>
+
+<button id="dice-fab" title="Dice tray">⚄</button>
+<div id="dice-tray">
+  <h4>Roll dice</h4>
+  <div class="die-row">
+    <button class="die-btn" data-die="4">d4</button>
+    <button class="die-btn" data-die="6">d6</button>
+    <button class="die-btn" data-die="8">d8</button>
+    <button class="die-btn" data-die="10">d10</button>
+    <button class="die-btn" data-die="12">d12</button>
+    <button class="die-btn" data-die="20">d20</button>
+    <button class="die-btn" data-die="100">d100</button>
+  </div>
+  <div class="tray-controls">
+    <label>Qty <input type="number" id="dice-qty" value="1" min="1" max="20"></label>
+    <label>Mod <input type="number" id="dice-mod" value="0"></label>
+  </div>
+  <div class="tray-controls">
+    <span style="font-size:11.5px;color:var(--text-on-ink-dim);">d20 only:</span>
+    <div class="adv-toggle">
+      <button id="adv-normal" class="on">Normal</button>
+      <button id="adv-adv">Adv</button>
+      <button id="adv-dis">Dis</button>
+    </div>
+  </div>
+  <div id="roll-result">—</div>
+  <div id="roll-detail"></div>
+  <div id="roll-log"></div>
+</div>
+
+<div class="modal-backdrop" id="confirm-modal">
+  <div class="modal">
+    <h4 id="confirm-title">Are you sure?</h4>
+    <p id="confirm-body"></p>
+    <div class="actions">
+      <button class="btn ghost" id="confirm-cancel">Cancel</button>
+      <button class="btn danger" id="confirm-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/script.js"></script>
 </body>
-
 </html>
