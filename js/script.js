@@ -52,6 +52,98 @@ var ALIGNMENTS = {
   ]
 };
 
+/* ---------------- Character Creation Wizard data ----------------
+   Only Barbarian has a fully guided creation experience right now.
+   The other classes appear (with a one-line blurb) so the class list
+   reads as complete, but are marked unavailable until they're built
+   out the same way. */
+var CLASS_BLURBS = {
+  "Artificer":"Half-caster inventor who infuses magic into gadgets and tools.",
+  "Barbarian":"A fierce melee fighter who channels primal rage for huge damage and toughness.",
+  "Bard":"A versatile spellcaster and skill-monkey who inspires allies with music and magic.",
+  "Cleric":"A divine spellcaster channeling a deity's power to heal and smite.",
+  "Druid":"A nature spellcaster who can shapeshift into animals and command the elements.",
+  "Fighter":"A master of weapons and armor with the most versatile combat options.",
+  "Monk":"A martial artist who fights unarmed with supernatural speed and ki.",
+  "Paladin":"A holy warrior blending heavy armor combat with divine spells and oaths.",
+  "Ranger":"A wilderness warrior blending archery or melee with nature magic.",
+  "Rogue":"A stealthy skill expert who deals massive damage with Sneak Attack.",
+  "Sorcerer":"An innate spellcaster whose magic comes from a magical bloodline.",
+  "Warlock":"A spellcaster who's struck a bargain with a powerful otherworldly patron.",
+  "Wizard":"A studious spellcaster with the largest spell list, learned from a spellbook."
+};
+
+var CLASSES_INFO = {};
+CLASS_LIST.forEach(function(name){
+  CLASSES_INFO[name] = { available:false, blurb: CLASS_BLURBS[name] || "" };
+});
+
+CLASSES_INFO["Barbarian"] = {
+  available:true,
+  blurb: CLASS_BLURBS["Barbarian"],
+  primaryAbility:"str",
+  savingThrows:["str","con"],
+  spellcaster:false,
+  skillChoices:{count:2, options:["Animal Handling","Athletics","Intimidation","Nature","Perception","Survival"]},
+  features:[
+    {name:"Rage", text:"Bonus action to enter a rage for 1 minute: +2 damage on Strength melee attacks, resistance to bludgeoning/piercing/slashing damage, advantage on Strength checks and saves. You have 2 rages at level 1, regained on a long rest."},
+    {name:"Unarmored Defense", text:"While wearing no armor, your AC equals 10 + your Dexterity modifier + your Constitution modifier. You can still use a shield and gain this benefit."}
+  ],
+  equipment:{
+    choiceGroups:[
+      {options:[
+        {key:"greataxe", label:"Greataxe", detail:"1d12 slashing damage, heavy, two-handed", items:[{name:"Greataxe",qty:1,weight:7,notes:"1d12 slashing, heavy, two-handed"}]},
+        {key:"martial", label:"Any other martial melee weapon", detail:"Pick the specific weapon once you're on the sheet", items:[{name:"Martial melee weapon",qty:1,weight:6,notes:"choose specific weapon"}]}
+      ]},
+      {options:[
+        {key:"handaxes", label:"Two handaxes", detail:"1d6 slashing, light, thrown (range 20/60 ft)", items:[{name:"Handaxe",qty:2,weight:2,notes:"1d6 slashing, light, thrown 20/60"}]},
+        {key:"simple", label:"Any simple weapon", detail:"Pick the specific weapon once you're on the sheet", items:[{name:"Simple weapon",qty:1,weight:4,notes:"choose specific weapon"}]}
+      ]}
+    ],
+    fixed:[
+      {name:"Explorer's Pack", qty:1, weight:59, notes:"backpack, bedroll, mess kit, tinderbox, 10 torches, 10 days rations, waterskin, 50ft rope"},
+      {name:"Javelin", qty:4, weight:2}
+    ]
+  }
+};
+
+var RACE_TRAITS = {
+  "Human": "+1 to every ability score. No other special traits — flexible and simple to play.",
+  "Hill Dwarf": "+2 CON, +1 WIS. Darkvision 60ft, resistance to poison damage, advantage on saves vs. poison, +1 HP per level.",
+  "Mountain Dwarf": "+2 CON, +2 STR. Darkvision 60ft, poison resistance, proficiency with light and medium armor.",
+  "High Elf": "+2 DEX, +1 INT. Darkvision 60ft, advantage vs. being charmed, can't be magically put to sleep, know one wizard cantrip.",
+  "Wood Elf": "+2 DEX, +1 WIS. Darkvision, fey ancestry, +5ft speed, can try to hide even when only lightly obscured.",
+  "Dark Elf (Drow)": "+2 DEX, +1 CHA. Superior darkvision 120ft, sunlight sensitivity (disadvantage in bright sunlight), a few innate spells at higher levels.",
+  "Lightfoot Halfling": "+2 DEX, +1 CHA. Lucky (reroll 1s on d20), brave (advantage vs. frightened), can hide behind bigger creatures.",
+  "Stout Halfling": "+2 DEX, +1 CON. Lucky, brave, resistance to poison damage and advantage vs. poison.",
+  "Dragonborn": "+2 STR, +1 CHA. Breath weapon (elemental damage in a line or cone) and resistance to your draconic ancestry's damage type.",
+  "Rock Gnome": "+2 INT, +1 CON. Darkvision, advantage on INT/WIS/CHA saves vs. magic, can tinker with tiny clockwork devices.",
+  "Forest Gnome": "+2 INT, +1 DEX. Darkvision, advantage vs. magic saves, know the minor illusion cantrip, can speak with small animals.",
+  "Half-Elf": "+2 CHA, +1 to two other abilities of your choice. Darkvision, advantage vs. charm, two extra skill proficiencies.",
+  "Half-Orc": "+2 STR, +1 CON. Darkvision, menacing (Intimidation proficiency), relentless endurance (drop to 1 HP instead of 0, once per long rest).",
+  "Tiefling": "+2 CHA, +1 INT. Darkvision, resistance to fire damage, know the thaumaturgy cantrip and more spells at higher levels."
+};
+var RACE_TRAIT_FALLBACK = "This is an expanded (non-SRD) race — check your table's sourcebook for its exact ability score bonuses and traits. Everything else here still works fine once you've picked it.";
+
+var BACKGROUND_INFO = {
+  "Acolyte": {skills:["Insight","Religion"], blurb:"Grants Insight and Religion, plus a holy symbol and prayer book. You served in a temple."},
+  "Charlatan": {skills:["Deception","Sleight of Hand"], blurb:"Grants Deception and Sleight of Hand. You're a practiced con artist and forger."},
+  "Criminal": {skills:["Deception","Stealth"], blurb:"Grants Deception and Stealth, plus a criminal contact. You have a history of breaking the law."},
+  "Entertainer": {skills:["Acrobatics","Performance"], blurb:"Grants Acrobatics and Performance, plus a musical instrument. You lived to entertain audiences."},
+  "Folk Hero": {skills:["Animal Handling","Survival"], blurb:"Grants Animal Handling and Survival. You're a champion of the common people back home."},
+  "Guild Artisan": {skills:["Insight","Persuasion"], blurb:"Grants Insight and Persuasion, plus membership in a trade guild and its tools."},
+  "Hermit": {skills:["Medicine","Religion"], blurb:"Grants Medicine and Religion. You lived in seclusion, seeking spiritual insight."},
+  "Noble": {skills:["History","Persuasion"], blurb:"Grants History and Persuasion, plus a signet ring and standing in society."},
+  "Outlander": {skills:["Athletics","Survival"], blurb:"Grants Athletics and Survival. You grew up in the wilds, far from civilization — a natural fit for a Barbarian."},
+  "Sage": {skills:["Arcana","History"], blurb:"Grants Arcana and History. You spent years learning the lore of the multiverse."},
+  "Sailor": {skills:["Athletics","Perception"], blurb:"Grants Athletics and Perception, plus rope and a vehicle proficiency. You sailed the seas."},
+  "Soldier": {skills:["Athletics","Intimidation"], blurb:"Grants Athletics and Intimidation, plus rank and military gear. You served in an army."},
+  "Urchin": {skills:["Sleight of Hand","Stealth"], blurb:"Grants Sleight of Hand and Stealth. You grew up on the streets, alone and poor."}
+};
+var BACKGROUND_INFO_FALLBACK = "Grants two skill proficiencies of your choice (and usually a tool or language) — pick whatever fits your character's story; you can add them on the sheet's Skills tab afterward.";
+
+var POINT_BUY_COSTS = {8:0,9:1,10:2,11:3,12:4,13:5,14:7,15:9};
+
 var state = {
   characters: [],
   activeId: null,
@@ -89,6 +181,7 @@ function primaryHitDie(c){
   return HIT_DICE_BY_CLASS[cl.name] || 8;
 }
 function clamp(n,lo,hi){ return Math.max(lo,Math.min(hi,n)); }
+function ce(tag, cls){ var e = document.createElement(tag); if(cls) e.className = cls; return e; }
 function escapeHtml(s){
   return String(s==null?"":s).replace(/[&<>"']/g,function(c){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
@@ -958,6 +1051,565 @@ function renderJournalPanel(c){
   return panel;
 }
 
+/* ---------------- Character Creation Wizard ---------------- */
+var WIZARD_STEP_IDS = ["class","race","background","abilities","skills","equipment","spells","review"];
+var wizardState = null;
+
+function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardState.classId]; }
+
+function isStepApplicable(id){
+  if(id==="spells"){
+    var info = currentClassInfo();
+    return !!(info && info.spellcaster);
+  }
+  return true;
+}
+
+function wizardStepTitle(id){
+  return {
+    class:"Choose a Class", race:"Choose a Race", background:"Choose a Background",
+    abilities:"Ability Scores", skills:"Skills & Proficiencies", equipment:"Starting Equipment",
+    spells:"Spells", review:"Review & Finish"
+  }[id];
+}
+
+function abilityFullName(key){
+  var found = ABILITIES.find(function(a){ return a[0]===key; });
+  return found ? found[1] : key;
+}
+
+function wizardStepIndex(){ return WIZARD_STEP_IDS.indexOf(wizardState.step); }
+
+function goStep(delta){
+  var idx = wizardStepIndex();
+  var next = idx;
+  do{
+    next += delta;
+  } while(next>=0 && next<WIZARD_STEP_IDS.length && !isStepApplicable(WIZARD_STEP_IDS[next]));
+  if(next<0 || next>=WIZARD_STEP_IDS.length) return;
+  wizardState.step = WIZARD_STEP_IDS[next];
+  renderWizard();
+}
+
+function validateStep(id){
+  var info = currentClassInfo();
+  if(id==="class") return (wizardState.classId && info && info.available) ? null : "Pick an available class to continue.";
+  if(id==="race") return wizardState.race ? null : "Pick a race to continue.";
+  if(id==="background") return wizardState.background ? null : "Pick a background to continue.";
+  if(id==="abilities"){
+    if(!wizardState.abilityMethod) return "Pick a method for generating ability scores.";
+    if(wizardState.abilityMethod!=="pointbuy"){
+      var allAssigned = ABILITIES.every(function(a){ return wizardState.assignIdx[a[0]]!=null; });
+      if(!allAssigned) return "Assign a score to every ability.";
+    }
+    return null;
+  }
+  if(id==="skills"){
+    return wizardState.skillChoices.length===info.skillChoices.count ? null : "Choose "+info.skillChoices.count+" skills.";
+  }
+  if(id==="equipment"){
+    var ok = info.equipment.choiceGroups.every(function(g,gi){ return wizardState.equipment[gi]!=null; });
+    return ok ? null : "Make a choice for each equipment option.";
+  }
+  return null;
+}
+
+function openWizard(){
+  wizardState = {
+    step:"class", name:"", classId:null, race:"", background:"",
+    abilityMethod:null,
+    abilities:{str:10,dex:10,con:10,int:10,wis:10,cha:10},
+    assignIdx:{str:null,dex:null,con:null,int:null,wis:null,cha:null},
+    pointBuy:{str:8,dex:8,con:8,int:8,wis:8,cha:8},
+    rolledPool:null,
+    skillChoices:[],
+    equipment:{}
+  };
+  closeSidebarMobile();
+  document.getElementById("wizard-overlay").classList.add("open");
+  renderWizard();
+}
+
+function requestCloseWizard(){
+  if(!wizardState || !wizardState.classId){
+    document.getElementById("wizard-overlay").classList.remove("open");
+    return;
+  }
+  confirmDialog("Discard this character?", "Your in-progress choices will be lost.", function(){
+    document.getElementById("wizard-overlay").classList.remove("open");
+  });
+}
+
+function setAbilityMethod(method){
+  wizardState.abilityMethod = method;
+  wizardState.assignIdx = {str:null,dex:null,con:null,int:null,wis:null,cha:null};
+  wizardState.pointBuy = {str:8,dex:8,con:8,int:8,wis:8,cha:8};
+  wizardState.rolledPool = null;
+  wizardState.abilities = {str:10,dex:10,con:10,int:10,wis:10,cha:10};
+  renderWizard();
+}
+
+function rollAbilityScore(){
+  var rolls = [];
+  for(var i=0;i<4;i++) rolls.push(1+Math.floor(Math.random()*6));
+  rolls.sort(function(a,b){ return b-a; });
+  return rolls[0]+rolls[1]+rolls[2];
+}
+function rollSixAbilityScores(){
+  var arr = [];
+  for(var i=0;i<6;i++) arr.push(rollAbilityScore());
+  return arr;
+}
+
+function syncAbilitiesFromAssignment(pool){
+  ABILITIES.forEach(function(a){
+    var idx = wizardState.assignIdx[a[0]];
+    wizardState.abilities[a[0]] = idx!=null ? pool[idx] : 10;
+  });
+}
+
+function wizardAssignAbilities(container, pool){
+  var grid = ce("div","abilities-grid");
+  ABILITIES.forEach(function(a){
+    var key = a[0];
+    var usedIdx = wizardState.assignIdx[key];
+    var box = ce("div","ability-box");
+    box.style.cursor = "default";
+    box.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div>';
+    var sel = document.createElement("select");
+    sel.style.cssText = "border:1px solid var(--rule);border-radius:4px;background:var(--field-bg);color:var(--text-on-parch);padding:2px;font-size:12.5px;";
+    var blank = document.createElement("option"); blank.value=""; blank.textContent="—";
+    sel.appendChild(blank);
+    pool.forEach(function(val, pi){
+      var takenBy = Object.keys(wizardState.assignIdx).find(function(k2){ return wizardState.assignIdx[k2]===pi; });
+      if(takenBy && takenBy!==key) return;
+      var o = document.createElement("option");
+      o.value = pi; o.textContent = val;
+      if(usedIdx===pi) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener("change", function(){
+      wizardState.assignIdx[key] = sel.value==="" ? null : Number(sel.value);
+      syncAbilitiesFromAssignment(pool);
+      renderWizard();
+    });
+    box.appendChild(sel);
+    var modDiv = document.createElement("div"); modDiv.className="mod";
+    modDiv.textContent = usedIdx!=null ? fmtMod(mod(pool[usedIdx])) : "—";
+    box.appendChild(modDiv);
+    grid.appendChild(box);
+  });
+  container.appendChild(grid);
+}
+
+function wizardPointBuyUI(container){
+  var totalPoints = 27;
+  var spent = ABILITIES.reduce(function(sum,a){ return sum + POINT_BUY_COSTS[wizardState.pointBuy[a[0]]]; },0);
+  var remaining = totalPoints - spent;
+  var remainP = document.createElement("p");
+  remainP.style.cssText = "font-size:13px;margin-bottom:10px;color:var(--text-on-parch-dim);";
+  remainP.innerHTML = "Points remaining: <strong style='color:var(--text-on-parch)'>"+remaining+"</strong> / "+totalPoints;
+  container.appendChild(remainP);
+
+  var grid = ce("div","abilities-grid");
+  ABILITIES.forEach(function(a){
+    var key = a[0];
+    var score = wizardState.pointBuy[key];
+    var box = ce("div","ability-box");
+    box.style.cursor = "default";
+    box.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(mod(score))+'</div>';
+    var row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;";
+    var minus = document.createElement("button");
+    minus.type="button"; minus.className="btn small"; minus.textContent="−";
+    minus.disabled = score<=8;
+    minus.addEventListener("click", function(){
+      wizardState.pointBuy[key] = score-1;
+      wizardState.abilities[key] = score-1;
+      renderWizard();
+    });
+    var val = document.createElement("span");
+    val.textContent = score;
+    val.style.cssText = "min-width:20px;display:inline-block;font-family:var(--serif);font-size:16px;";
+    var plus = document.createElement("button");
+    plus.type="button"; plus.className="btn small"; plus.textContent="+";
+    var nextCost = POINT_BUY_COSTS[score+1];
+    plus.disabled = score>=15 || nextCost===undefined || (nextCost-POINT_BUY_COSTS[score]) > remaining;
+    plus.addEventListener("click", function(){
+      wizardState.pointBuy[key] = score+1;
+      wizardState.abilities[key] = score+1;
+      renderWizard();
+    });
+    row.appendChild(minus); row.appendChild(val); row.appendChild(plus);
+    box.appendChild(row);
+    grid.appendChild(box);
+  });
+  container.appendChild(grid);
+}
+
+function raceExplainHtml(name){
+  if(!name) return "<b>Why this matters:</b> Race affects your ability score bonuses and grants special traits like darkvision or resistances. Pick one to see what it does.";
+  return "<b>"+escapeHtml(name)+":</b> "+(RACE_TRAITS[name] || RACE_TRAIT_FALLBACK);
+}
+
+function backgroundExplainHtml(name){
+  if(!name) return "<b>Why this matters:</b> Your background grants two skill proficiencies (and usually a tool or language) that reflect your life before adventuring.";
+  var info = BACKGROUND_INFO[name];
+  return "<b>"+escapeHtml(name)+":</b> "+(info ? info.blurb : BACKGROUND_INFO_FALLBACK);
+}
+
+function wizardStepClass(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Choose a Class</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> Your class is the biggest driver of how your character plays — it sets your main ability score, hit points, and what you're good at in and out of combat.";
+  card.appendChild(explain);
+
+  var grid = ce("div","class-pick-grid");
+  CLASS_LIST.forEach(function(name){
+    var info = CLASSES_INFO[name];
+    var box = ce("div","class-pick-card"+(info.available?"":" disabled"));
+    if(wizardState.classId===name) box.classList.add("selected");
+    box.innerHTML = "<h4>"+escapeHtml(name)+"</h4><p>"+escapeHtml(info.blurb)+"</p>"+(info.available?"":"<span class='soon'>Coming soon</span>");
+    if(info.available){
+      box.addEventListener("click", function(){ wizardState.classId = name; renderWizard(); });
+    }
+    grid.appendChild(box);
+  });
+  card.appendChild(grid);
+  container.appendChild(card);
+}
+
+function wizardStepRace(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Choose a Race</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = raceExplainHtml(wizardState.race);
+  card.appendChild(explain);
+
+  var dd = dropdownField("Race", "race", RACES, wizardState, function(){
+    explain.innerHTML = raceExplainHtml(wizardState.race);
+  });
+  dd.style.maxWidth = "320px";
+  card.appendChild(dd);
+  container.appendChild(card);
+}
+
+function wizardStepBackground(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Choose a Background</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = backgroundExplainHtml(wizardState.background);
+  card.appendChild(explain);
+
+  var dd = dropdownField("Background", "background", BACKGROUNDS, wizardState, function(){
+    explain.innerHTML = backgroundExplainHtml(wizardState.background);
+  });
+  dd.style.maxWidth = "320px";
+  card.appendChild(dd);
+  container.appendChild(card);
+}
+
+function wizardStepAbilities(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Ability Scores</span></h3>";
+  var info = currentClassInfo();
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> These six scores drive almost everything you roll. As a "+escapeHtml(wizardState.classId)+", <b>"+abilityFullName(info.primaryAbility)+"</b> matters most — prioritize it if you can.";
+  card.appendChild(explain);
+
+  var methodRow = ce("div","wiz-method-row");
+  [
+    ["array","Standard Array","Fixed set: 15, 14, 13, 12, 10, 8 — simplest, balanced."],
+    ["pointbuy","Point Buy","Spend 27 points to customize scores from 8–15 — most flexible."],
+    ["roll","Roll","Roll 4d6 (drop lowest) six times — random, can be stronger or weaker."]
+  ].forEach(function(m){
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn wiz-method-btn"+(wizardState.abilityMethod===m[0]?" primary":"");
+    btn.innerHTML = "<strong>"+m[1]+"</strong><br><span style='font-size:11px;opacity:.8;'>"+m[2]+"</span>";
+    btn.addEventListener("click", function(){ setAbilityMethod(m[0]); });
+    methodRow.appendChild(btn);
+  });
+  card.appendChild(methodRow);
+
+  if(wizardState.abilityMethod==="array"){
+    wizardAssignAbilities(card, [15,14,13,12,10,8]);
+  } else if(wizardState.abilityMethod==="roll"){
+    if(!wizardState.rolledPool){
+      var rollBtn = document.createElement("button");
+      rollBtn.type="button"; rollBtn.className="btn primary small"; rollBtn.textContent="🎲 Roll 6 scores";
+      rollBtn.addEventListener("click", function(){
+        wizardState.rolledPool = rollSixAbilityScores();
+        wizardState.assignIdx = {str:null,dex:null,con:null,int:null,wis:null,cha:null};
+        renderWizard();
+      });
+      card.appendChild(rollBtn);
+    } else {
+      var poolP = document.createElement("p");
+      poolP.style.cssText = "font-size:13px;margin:10px 0;";
+      poolP.textContent = "Rolled: "+wizardState.rolledPool.join(", ");
+      card.appendChild(poolP);
+      wizardAssignAbilities(card, wizardState.rolledPool);
+      var reroll = document.createElement("button");
+      reroll.type="button"; reroll.className="btn small ghost"; reroll.style.marginTop="10px"; reroll.textContent="Reroll";
+      reroll.addEventListener("click", function(){
+        wizardState.rolledPool = rollSixAbilityScores();
+        wizardState.assignIdx = {str:null,dex:null,con:null,int:null,wis:null,cha:null};
+        renderWizard();
+      });
+      card.appendChild(reroll);
+    }
+  } else if(wizardState.abilityMethod==="pointbuy"){
+    wizardPointBuyUI(card);
+  }
+
+  container.appendChild(card);
+}
+
+function wizardStepSkills(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Skills & Proficiencies</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> Skills add your proficiency bonus to certain checks. Your class and background each grant some — you don't pick from all 18, just the ones you're allowed.";
+  card.appendChild(explain);
+
+  var bgInfo = BACKGROUND_INFO[wizardState.background];
+  if(bgInfo && bgInfo.skills && bgInfo.skills.length){
+    var bgP = document.createElement("p");
+    bgP.style.cssText = "font-size:13px;color:var(--text-on-parch-dim);margin-bottom:12px;";
+    bgP.innerHTML = "From your <b>"+escapeHtml(wizardState.background)+"</b> background: "+bgInfo.skills.join(", ")+" (automatic).";
+    card.appendChild(bgP);
+  }
+
+  var info = currentClassInfo();
+  var label = document.createElement("p");
+  label.style.cssText = "font-size:13px;margin-bottom:8px;";
+  label.textContent = "Choose "+info.skillChoices.count+" from your class list:";
+  card.appendChild(label);
+
+  var rows = ce("div","list-rows");
+  info.skillChoices.options.forEach(function(sk){
+    var row = ce("div","list-row");
+    var cb = document.createElement("input");
+    cb.type="checkbox"; cb.className="chk";
+    var checked = wizardState.skillChoices.indexOf(sk)!==-1;
+    cb.checked = checked;
+    cb.disabled = !checked && wizardState.skillChoices.length>=info.skillChoices.count;
+    cb.addEventListener("change", function(){
+      if(cb.checked){
+        if(wizardState.skillChoices.length>=info.skillChoices.count){ cb.checked=false; return; }
+        wizardState.skillChoices.push(sk);
+      } else {
+        wizardState.skillChoices = wizardState.skillChoices.filter(function(x){ return x!==sk; });
+      }
+      renderWizard();
+    });
+    var name = document.createElement("span"); name.className="row-name"; name.textContent = sk;
+    row.appendChild(cb); row.appendChild(name);
+    rows.appendChild(row);
+  });
+  card.appendChild(rows);
+  container.appendChild(card);
+}
+
+function wizardStepEquipment(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Starting Equipment</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> Your class gives you a choice of starting gear instead of buying everything piece by piece — pick what fits how you want to fight.";
+  card.appendChild(explain);
+
+  var info = currentClassInfo();
+  info.equipment.choiceGroups.forEach(function(group, gi){
+    var groupTitle = document.createElement("p");
+    groupTitle.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    groupTitle.textContent = "Choice "+String.fromCharCode(65+gi);
+    card.appendChild(groupTitle);
+    group.options.forEach(function(opt){
+      var row = ce("div","wiz-equip-option");
+      if(wizardState.equipment[gi]===opt.key) row.classList.add("selected");
+      row.innerHTML = "<div><strong>"+escapeHtml(opt.label)+"</strong><br><span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(opt.detail||"")+"</span></div>";
+      row.addEventListener("click", function(){
+        wizardState.equipment[gi] = opt.key;
+        renderWizard();
+      });
+      card.appendChild(row);
+    });
+  });
+
+  if(info.equipment.fixed.length){
+    var fixedTitle = document.createElement("p");
+    fixedTitle.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    fixedTitle.textContent = "Always included";
+    card.appendChild(fixedTitle);
+    var fixedP = document.createElement("p");
+    fixedP.style.fontSize = "13px";
+    fixedP.textContent = info.equipment.fixed.map(function(i){ return i.qty>1 ? i.qty+"× "+i.name : i.name; }).join(", ");
+    card.appendChild(fixedP);
+  }
+
+  container.appendChild(card);
+}
+
+function wizardStepSpells(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Spells</span></h3><p style='font-size:13px;color:var(--text-on-parch-dim);'>Spellcasting setup for this class hasn't been built yet.</p>";
+  container.appendChild(card);
+}
+
+function wizardStepReview(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Review & Finish</span></h3>";
+
+  var nameWrap = document.createElement("div");
+  nameWrap.style.cssText = "margin-bottom:16px;";
+  nameWrap.innerHTML = "<label style='font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);display:block;margin-bottom:3px;'>Character name</label>";
+  var nameInput = document.createElement("input");
+  nameInput.value = wizardState.name; nameInput.placeholder = "New Character";
+  nameInput.style.cssText = "width:100%;max-width:320px;background:transparent;border:none;border-bottom:1px solid var(--rule);color:var(--text-on-parch);font-family:var(--serif);font-size:20px;padding:4px 0;";
+  nameInput.addEventListener("input", function(){ wizardState.name = nameInput.value; });
+  nameWrap.appendChild(nameInput);
+  card.appendChild(nameWrap);
+
+  var info = currentClassInfo();
+  var conMod = mod(wizardState.abilities.con), dexMod = mod(wizardState.abilities.dex);
+  var hp = HIT_DICE_BY_CLASS[wizardState.classId] + conMod;
+  var ac = 10 + dexMod + conMod;
+
+  var rows = ce("div","list-rows");
+  function row(label, val){
+    var r = ce("div","list-row");
+    var l = document.createElement("span"); l.className="row-name"; l.textContent = label;
+    var v = document.createElement("span"); v.style.fontWeight="600"; v.textContent = val;
+    r.appendChild(l); r.appendChild(v);
+    rows.appendChild(r);
+  }
+  row("Class", wizardState.classId+" (level 1)");
+  row("Race", wizardState.race);
+  row("Background", wizardState.background);
+  row("Ability scores", ABILITIES.map(function(a){ return a[1].slice(0,3).toUpperCase()+" "+wizardState.abilities[a[0]]; }).join("  "));
+  row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+")");
+  row("Armor Class", ac+" (Unarmored Defense: 10 + DEX + CON)");
+  row("Saving throws", info.savingThrows.map(function(k){ return k.toUpperCase(); }).join(", "));
+  row("Skills", wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]).join(", ") || "—");
+  card.appendChild(rows);
+
+  var featTitle = document.createElement("p");
+  featTitle.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+  featTitle.textContent = "Level 1 features";
+  card.appendChild(featTitle);
+  info.features.forEach(function(f){
+    var p = document.createElement("p");
+    p.style.cssText = "font-size:13px;margin:0 0 8px;";
+    p.innerHTML = "<strong>"+escapeHtml(f.name)+":</strong> "+escapeHtml(f.text);
+    card.appendChild(p);
+  });
+
+  container.appendChild(card);
+}
+
+function buildEquipmentList(info, chosenKeys){
+  var items = [];
+  info.equipment.choiceGroups.forEach(function(group, gi){
+    var opt = group.options.find(function(o){ return o.key===chosenKeys[gi]; });
+    if(opt){
+      opt.items.forEach(function(it){
+        items.push({name:it.name, qty:it.qty, weight:it.weight, equipped:true, notes:it.notes||""});
+      });
+    }
+  });
+  info.equipment.fixed.forEach(function(it){
+    items.push({name:it.name, qty:it.qty, weight:it.weight, equipped:false, notes:it.notes||""});
+  });
+  return items;
+}
+
+function finishWizard(){
+  var w = wizardState;
+  var info = CLASSES_INFO[w.classId];
+  var c = newCharacter(w.name || "New Character");
+  c.race = w.race;
+  c.background = w.background;
+  c.classes = [{name:w.classId, subclass:"", level:1}];
+  c.abilities = {str:w.abilities.str, dex:w.abilities.dex, con:w.abilities.con, int:w.abilities.int, wis:w.abilities.wis, cha:w.abilities.cha};
+  info.savingThrows.forEach(function(k){ c.saveProfs[k] = true; });
+  w.skillChoices.forEach(function(sk){ c.skillProfs[sk] = {prof:true, expertise:false}; });
+  var bgInfo = BACKGROUND_INFO[w.background];
+  if(bgInfo && bgInfo.skills){
+    bgInfo.skills.forEach(function(sk){
+      var entry = c.skillProfs[sk] || {prof:false, expertise:false};
+      entry.prof = true;
+      c.skillProfs[sk] = entry;
+    });
+  }
+  c.features = info.features.map(function(f){ return f.name+": "+f.text; });
+  var conMod = mod(c.abilities.con), dexMod = mod(c.abilities.dex);
+  c.hp.max = HIT_DICE_BY_CLASS[w.classId] + conMod;
+  c.hp.current = c.hp.max;
+  c.ac = 10 + dexMod + conMod;
+  c.inventory = buildEquipmentList(info, w.equipment);
+
+  state.characters.push(c);
+  state.activeId = c.id;
+  state.activeTab = "vitals";
+  save();
+  document.getElementById("wizard-overlay").classList.remove("open");
+  renderAll();
+}
+
+function renderWizard(){
+  var overlay = document.getElementById("wizard-overlay");
+  overlay.innerHTML = "";
+
+  var header = ce("div"); header.id = "wizard-header";
+  var h2 = document.createElement("h2"); h2.textContent = "New Character — "+wizardStepTitle(wizardState.step);
+  var closeBtn = document.createElement("button"); closeBtn.className = "btn small ghost"; closeBtn.textContent = "✕ Cancel";
+  closeBtn.addEventListener("click", requestCloseWizard);
+  header.appendChild(h2); header.appendChild(closeBtn);
+  overlay.appendChild(header);
+
+  var progress = ce("div"); progress.id = "wizard-progress";
+  var applicableSteps = WIZARD_STEP_IDS.filter(isStepApplicable);
+  var curPos = applicableSteps.indexOf(wizardState.step);
+  applicableSteps.forEach(function(id, i){
+    var dot = ce("div","wiz-dot");
+    if(i<curPos) dot.classList.add("done");
+    if(i===curPos) dot.classList.add("current");
+    progress.appendChild(dot);
+  });
+  overlay.appendChild(progress);
+
+  var body = ce("div"); body.id = "wizard-body";
+  var inner = ce("div"); inner.id = "wizard-body-inner";
+  body.appendChild(inner);
+  overlay.appendChild(body);
+
+  var renderers = {
+    class: wizardStepClass, race: wizardStepRace, background: wizardStepBackground,
+    abilities: wizardStepAbilities, skills: wizardStepSkills, equipment: wizardStepEquipment,
+    spells: wizardStepSpells, review: wizardStepReview
+  };
+  renderers[wizardState.step](inner);
+
+  var footer = ce("div"); footer.id = "wizard-footer";
+  var backBtn = document.createElement("button");
+  backBtn.className = "btn ghost"; backBtn.textContent = "← Back";
+  backBtn.disabled = wizardStepIndex()===0;
+  backBtn.addEventListener("click", function(){ goStep(-1); });
+  var nextBtn = document.createElement("button");
+  nextBtn.className = "btn primary";
+  nextBtn.textContent = wizardState.step==="review" ? "Create Character" : "Next →";
+  nextBtn.addEventListener("click", function(){
+    var err = validateStep(wizardState.step);
+    if(err){ alert(err); return; }
+    if(wizardState.step==="review"){ finishWizard(); return; }
+    goStep(1);
+  });
+  footer.appendChild(backBtn); footer.appendChild(nextBtn);
+  overlay.appendChild(footer);
+}
+
 /* ---------------- Dice tray ---------------- */
 var advMode = "none"; // none | adv | dis
 
@@ -1079,15 +1731,7 @@ function confirmDialog(title, body, onConfirm){
 
 /* ---------------- Top-level actions ---------------- */
 function setupTopLevel(){
-  document.getElementById("new-char-btn").addEventListener("click", function(){
-    var c = newCharacter("New Character");
-    state.characters.push(c);
-    state.activeId = c.id;
-    state.activeTab = "vitals";
-    save();
-    renderAll();
-    closeSidebarMobile();
-  });
+  document.getElementById("new-char-btn").addEventListener("click", openWizard);
 
   document.getElementById("export-btn").addEventListener("click", function(){
     var blob = new Blob([JSON.stringify(state.characters, null, 2)], {type:"application/json"});

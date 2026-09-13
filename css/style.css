@@ -1,5 +1,6 @@
 :root{
   /* Dark + purple theme */
+  color-scheme: dark;
   --ink:#1a1625;            /* raised dark surface */
   --ink-deep:#120f1a;       /* deepest background */
   --parchment:#241d33;      /* card / panel surface */
@@ -56,6 +57,12 @@ body{
 }
 button, input, select, textarea { font-family: inherit; }
 button{cursor:pointer;}
+/* The closed <select> box is styled per-context elsewhere; this covers the
+   native dropdown popup and its options, which color-scheme alone doesn't
+   always theme consistently across browsers. */
+select{color-scheme: dark;}
+select option{background-color:var(--field-bg);color:var(--text-on-parch);}
+select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-style:normal;}
 ::-webkit-scrollbar{width:10px;height:10px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--brass);border-radius:6px;opacity:.5;}
@@ -242,7 +249,18 @@ button{cursor:pointer;}
   font-size:12.5px;
   color:var(--text-on-parch-dim);
 }
-.identity .sub-row .field{display:flex;flex-direction:column;gap:2px;}
+/* Generic .field fallback (lower specificity than .identity .sub-row .field
+   below, so this only applies where dropdownField()/similar fields are
+   reused outside the identity block, e.g. the creation wizard). */
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.field label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
+.field input, .field select{
+  border:none;border-bottom:1px solid var(--rule);background:transparent;color:var(--text-on-parch);
+  font-size:13px;padding:4px 0;
+}
+.field input:focus, .field select:focus{outline:none;border-bottom:1px solid var(--brass);}
+
+.identity .sub-row .field{display:flex;flex-direction:column;gap:2px;margin-bottom:0;}
 .identity .sub-row label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
 .identity .sub-row input, .identity .sub-row select{
   border:none;border-bottom:1px solid var(--rule);background:transparent;color:var(--text-on-parch);
@@ -449,6 +467,53 @@ textarea.freeform{
 .overlay-scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:35;display:none;}
 .overlay-scrim.show{display:block;}
 
+/* ---------------- Character Creation Wizard ---------------- */
+#wizard-overlay{
+  position:fixed;inset:0;background:var(--ink-deep);z-index:900;
+  display:none;flex-direction:column;
+}
+#wizard-overlay.open{display:flex;}
+#wizard-header{
+  padding:16px 20px;border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;
+}
+#wizard-header h2{font-family:var(--serif);color:var(--brass-bright);font-size:18px;margin:0;font-weight:normal;}
+#wizard-progress{display:flex;gap:6px;padding:0 20px 14px;flex:none;}
+.wiz-dot{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.08);}
+.wiz-dot.done{background:var(--brass);}
+.wiz-dot.current{background:var(--brass-bright);}
+#wizard-body{flex:1;overflow-y:auto;padding:20px;display:flex;justify-content:center;}
+#wizard-body-inner{max-width:720px;width:100%;}
+#wizard-footer{padding:14px 20px;border-top:1px solid var(--rule);display:flex;justify-content:space-between;gap:10px;flex:none;}
+
+.wiz-explain{
+  background:rgba(139,92,246,.10);border:1px solid var(--rule);border-radius:6px;
+  padding:12px 14px;font-size:13px;line-height:1.5;color:var(--text-on-parch);margin-bottom:16px;
+}
+
+.class-pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.class-pick-card{
+  border:1px solid var(--rule);border-radius:6px;padding:14px;cursor:pointer;
+  background:rgba(255,255,255,.04);transition:border-color .15s,background .15s;
+}
+.class-pick-card:hover{background:rgba(139,92,246,.10);}
+.class-pick-card.selected{border-color:var(--brass);background:rgba(139,92,246,.16);}
+.class-pick-card.disabled{opacity:.45;cursor:not-allowed;}
+.class-pick-card.disabled:hover{background:rgba(255,255,255,.04);}
+.class-pick-card h4{margin:0 0 4px;font-family:var(--serif);font-weight:normal;font-size:15px;color:var(--text-on-parch);}
+.class-pick-card p{margin:0;font-size:11.5px;color:var(--text-on-parch-dim);line-height:1.4;}
+.class-pick-card .soon{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--brass-bright);margin-top:6px;display:block;}
+
+.wiz-method-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.wiz-method-btn{flex:1;min-width:160px;line-height:1.4;}
+
+.wiz-equip-option{
+  border:1px solid var(--rule);border-radius:6px;padding:10px 12px;margin-bottom:8px;cursor:pointer;
+  background:rgba(255,255,255,.04);transition:border-color .15s,background .15s;
+}
+.wiz-equip-option:hover{background:rgba(139,92,246,.10);}
+.wiz-equip-option.selected{border-color:var(--brass);background:rgba(139,92,246,.16);}
+
 @media (max-width:800px){
   #topbar{display:flex;}
   #sidebar{
@@ -460,4 +525,6 @@ textarea.freeform{
   .identity{padding:16px;}
   #dice-tray{right:12px;left:12px;width:auto;max-width:none;bottom:84px;}
   #dice-fab{right:16px;bottom:16px;}
+  #wizard-header, #wizard-progress, #wizard-body, #wizard-footer{padding-left:14px;padding-right:14px;}
+  .class-pick-grid{grid-template-columns:1fr;}
 }
