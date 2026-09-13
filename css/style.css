@@ -485,6 +485,12 @@ textarea.freeform{
 #wizard-body{flex:1;overflow-y:auto;padding:20px;display:flex;justify-content:center;}
 #wizard-body-inner{max-width:720px;width:100%;}
 #wizard-footer{padding:14px 20px;border-top:1px solid var(--rule);display:flex;justify-content:space-between;gap:10px;flex:none;}
+.wiz-error{
+  display:none;flex:none;margin:0 20px;padding:10px 14px;
+  background:rgba(217,69,95,.14);border:1px solid var(--oxblood);border-radius:6px;
+  color:#f2a9b6;font-size:13px;line-height:1.4;
+}
+.wiz-error.show{display:block;}
 
 .wiz-explain{
   background:rgba(139,92,246,.10);border:1px solid var(--rule);border-radius:6px;

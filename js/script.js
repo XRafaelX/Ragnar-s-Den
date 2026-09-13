@@ -1500,6 +1500,8 @@ function wizardStepReview(container){
   nameInput.addEventListener("input", function(){
     wizardState.name = nameInput.value;
     nameInput.classList.remove("wiz-invalid");
+    var errBox = document.getElementById("wizard-error");
+    if(errBox) errBox.classList.remove("show");
   });
   nameWrap.appendChild(nameInput);
 
@@ -1518,6 +1520,8 @@ function wizardStepReview(container){
         wizardState.name = idea;
         nameInput.value = idea;
         nameInput.classList.remove("wiz-invalid");
+        var errBox = document.getElementById("wizard-error");
+        if(errBox) errBox.classList.remove("show");
       });
       ideaWrap.appendChild(chip);
     });
@@ -1653,6 +1657,9 @@ function renderWizard(){
   };
   renderers[wizardState.step](inner);
 
+  var errorBox = ce("div","wiz-error"); errorBox.id = "wizard-error";
+  overlay.appendChild(errorBox);
+
   var footer = ce("div"); footer.id = "wizard-footer";
   var backBtn = document.createElement("button");
   backBtn.className = "btn ghost"; backBtn.textContent = "← Back";
@@ -1664,13 +1671,15 @@ function renderWizard(){
   nextBtn.addEventListener("click", function(){
     var err = validateStep(wizardState.step);
     if(err){
-      alert(err);
+      errorBox.textContent = "⚠ "+err;
+      errorBox.classList.add("show");
       if(wizardState.step==="review"){
         var nameEl = document.getElementById("wiz-name-input");
         if(nameEl){ nameEl.classList.add("wiz-invalid"); nameEl.focus(); }
       }
       return;
     }
+    errorBox.classList.remove("show");
     if(wizardState.step==="review"){ finishWizard(); return; }
     goStep(1);
   });
