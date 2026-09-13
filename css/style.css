@@ -507,12 +507,30 @@ textarea.freeform{
 .wiz-method-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
 .wiz-method-btn{flex:1;min-width:160px;line-height:1.4;}
 
+#wiz-name-input.wiz-invalid{border-bottom-color:var(--oxblood);}
+.wiz-name-ideas{
+  margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+  font-size:11.5px;color:var(--text-on-parch-dim);
+}
+.wiz-name-chip{border-color:var(--rule);color:var(--text-on-parch-dim);}
+.wiz-name-chip:hover{color:var(--brass-bright);border-color:var(--brass);}
+
 .wiz-equip-option{
   border:1px solid var(--rule);border-radius:6px;padding:10px 12px;margin-bottom:8px;cursor:pointer;
   background:rgba(255,255,255,.04);transition:border-color .15s,background .15s;
 }
 .wiz-equip-option:hover{background:rgba(139,92,246,.10);}
 .wiz-equip-option.selected{border-color:var(--brass);background:rgba(139,92,246,.16);}
+
+/* Skill picker: the whole row is the tap target (not just the checkbox),
+   with enough padding for a comfortable touch target on phones. */
+.wiz-pick-row{cursor:pointer;padding:10px 8px;border-radius:4px;}
+.wiz-pick-row:hover{background:rgba(139,92,246,.10);}
+.wiz-pick-row .row-name{cursor:pointer;}
+.wiz-pick-row .row-name:hover{color:var(--brass-bright);}
+.wiz-pick-row.disabled{cursor:not-allowed;opacity:.45;}
+.wiz-pick-row.disabled:hover{background:none;}
+.wiz-pick-row .chk{width:18px;height:18px;}
 
 @media (max-width:800px){
   #topbar{display:flex;}

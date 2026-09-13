@@ -144,6 +144,22 @@ var BACKGROUND_INFO_FALLBACK = "Grants two skill proficiencies of your choice (a
 
 var POINT_BUY_COSTS = {8:0,9:1,10:2,11:3,12:4,13:5,14:7,15:9};
 
+/* A few Barbarian-flavored name ideas, shown as tappable suggestions on the
+   Review step so a blank name field isn't a dead end. */
+var NAME_IDEAS = [
+  "Ragnar", "Ulfgar Ironhide", "Korgath Bloodaxe", "Brenna Skullcrusher",
+  "Thrain Stonefist", "Vex Wildmane", "Dagna Frostborn", "Grom Ashfang",
+  "Sela Stormheart", "Kael Grimtusk", "Rurik Oakshoulder", "Yrsa Wolfsbane"
+];
+function pickNameIdeas(n){
+  var pool = NAME_IDEAS.slice();
+  var picks = [];
+  while(picks.length<n && pool.length){
+    picks.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  }
+  return picks;
+}
+
 var state = {
   characters: [],
   activeId: null,
@@ -1111,6 +1127,9 @@ function validateStep(id){
     var ok = info.equipment.choiceGroups.every(function(g,gi){ return wizardState.equipment[gi]!=null; });
     return ok ? null : "Make a choice for each equipment option.";
   }
+  if(id==="review"){
+    return (wizardState.name && wizardState.name.trim()) ? null : "Give your character a name before creating them.";
+  }
   return null;
 }
 
@@ -1390,13 +1409,25 @@ function wizardStepSkills(container){
 
   var rows = ce("div","list-rows");
   info.skillChoices.options.forEach(function(sk){
-    var row = ce("div","list-row");
+    var row = ce("div","list-row wiz-pick-row");
     var cb = document.createElement("input");
     cb.type="checkbox"; cb.className="chk";
     var checked = wizardState.skillChoices.indexOf(sk)!==-1;
     cb.checked = checked;
-    cb.disabled = !checked && wizardState.skillChoices.length>=info.skillChoices.count;
-    cb.addEventListener("change", function(){
+    var full = !checked && wizardState.skillChoices.length>=info.skillChoices.count;
+    cb.disabled = full;
+    if(full) row.classList.add("disabled");
+    var name = document.createElement("span"); name.className="row-name"; name.textContent = sk;
+    row.appendChild(cb); row.appendChild(name);
+    rows.appendChild(row);
+
+    // The whole row is the tap target, not just the small checkbox — matters
+    // most on touchscreens. Clicking the checkbox itself already toggles it
+    // (native behavior fires first), so only toggle manually when the click
+    // landed elsewhere on the row.
+    row.addEventListener("click", function(e){
+      if(cb.disabled) return;
+      if(e.target!==cb) cb.checked = !cb.checked;
       if(cb.checked){
         if(wizardState.skillChoices.length>=info.skillChoices.count){ cb.checked=false; return; }
         wizardState.skillChoices.push(sk);
@@ -1405,9 +1436,6 @@ function wizardStepSkills(container){
       }
       renderWizard();
     });
-    var name = document.createElement("span"); name.className="row-name"; name.textContent = sk;
-    row.appendChild(cb); row.appendChild(name);
-    rows.appendChild(row);
   });
   card.appendChild(rows);
   container.appendChild(card);
@@ -1464,12 +1492,45 @@ function wizardStepReview(container){
 
   var nameWrap = document.createElement("div");
   nameWrap.style.cssText = "margin-bottom:16px;";
-  nameWrap.innerHTML = "<label style='font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);display:block;margin-bottom:3px;'>Character name</label>";
+  nameWrap.innerHTML = "<label style='font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);display:block;margin-bottom:3px;'>Character name <span style='color:var(--oxblood);'>*</span> required</label>";
   var nameInput = document.createElement("input");
-  nameInput.value = wizardState.name; nameInput.placeholder = "New Character";
+  nameInput.id = "wiz-name-input";
+  nameInput.value = wizardState.name; nameInput.placeholder = "e.g. Ragnar";
   nameInput.style.cssText = "width:100%;max-width:320px;background:transparent;border:none;border-bottom:1px solid var(--rule);color:var(--text-on-parch);font-family:var(--serif);font-size:20px;padding:4px 0;";
-  nameInput.addEventListener("input", function(){ wizardState.name = nameInput.value; });
+  nameInput.addEventListener("input", function(){
+    wizardState.name = nameInput.value;
+    nameInput.classList.remove("wiz-invalid");
+  });
   nameWrap.appendChild(nameInput);
+
+  var ideaWrap = ce("div","wiz-name-ideas");
+  var ideaLabel = document.createElement("span");
+  ideaLabel.textContent = "Need ideas? ";
+  ideaWrap.appendChild(ideaLabel);
+  function renderIdeaChips(){
+    ideaWrap.querySelectorAll(".wiz-name-chip").forEach(function(el){ el.remove(); });
+    pickNameIdeas(4).forEach(function(idea){
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "btn small ghost wiz-name-chip";
+      chip.textContent = idea;
+      chip.addEventListener("click", function(){
+        wizardState.name = idea;
+        nameInput.value = idea;
+        nameInput.classList.remove("wiz-invalid");
+      });
+      ideaWrap.appendChild(chip);
+    });
+    var shuffleBtn = document.createElement("button");
+    shuffleBtn.type = "button";
+    shuffleBtn.className = "btn small ghost wiz-name-chip";
+    shuffleBtn.textContent = "🎲 More ideas";
+    shuffleBtn.addEventListener("click", renderIdeaChips);
+    ideaWrap.appendChild(shuffleBtn);
+  }
+  renderIdeaChips();
+  nameWrap.appendChild(ideaWrap);
+
   card.appendChild(nameWrap);
 
   var info = currentClassInfo();
@@ -1528,7 +1589,7 @@ function buildEquipmentList(info, chosenKeys){
 function finishWizard(){
   var w = wizardState;
   var info = CLASSES_INFO[w.classId];
-  var c = newCharacter(w.name || "New Character");
+  var c = newCharacter((w.name||"").trim());
   c.race = w.race;
   c.background = w.background;
   c.classes = [{name:w.classId, subclass:"", level:1}];
@@ -1602,7 +1663,14 @@ function renderWizard(){
   nextBtn.textContent = wizardState.step==="review" ? "Create Character" : "Next →";
   nextBtn.addEventListener("click", function(){
     var err = validateStep(wizardState.step);
-    if(err){ alert(err); return; }
+    if(err){
+      alert(err);
+      if(wizardState.step==="review"){
+        var nameEl = document.getElementById("wiz-name-input");
+        if(nameEl){ nameEl.classList.add("wiz-invalid"); nameEl.focus(); }
+      }
+      return;
+    }
     if(wizardState.step==="review"){ finishWizard(); return; }
     goStep(1);
   });
