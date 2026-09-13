@@ -395,7 +395,7 @@ function dropdownField(labelTxt, key, groups, c, onChangeExtra){
 
   var select = document.createElement("select");
   var blankOpt = document.createElement("option");
-  blankOpt.value = ""; blankOpt.textContent = "— choose —";
+  blankOpt.value = ""; blankOpt.textContent = "Select "+labelTxt.toLowerCase();
   select.appendChild(blankOpt);
   Object.keys(groups).forEach(function(groupLabel){
     var og = document.createElement("optgroup");
@@ -417,6 +417,10 @@ function dropdownField(labelTxt, key, groups, c, onChangeExtra){
   customInput.style.display = "none";
   customInput.style.marginTop = "3px";
 
+  function updatePlaceholderStyle(){
+    select.classList.toggle("placeholder", select.value==="");
+  }
+
   var currentVal = c[key]||"";
   if(currentVal && allValues.indexOf(currentVal)===-1){
     select.value = "__custom__";
@@ -425,6 +429,7 @@ function dropdownField(labelTxt, key, groups, c, onChangeExtra){
   } else {
     select.value = currentVal;
   }
+  updatePlaceholderStyle();
 
   select.addEventListener("change", function(){
     if(select.value==="__custom__"){
@@ -435,6 +440,7 @@ function dropdownField(labelTxt, key, groups, c, onChangeExtra){
       customInput.style.display = "none";
       c[key] = select.value;
     }
+    updatePlaceholderStyle();
     save();
     if(onChangeExtra) onChangeExtra();
   });

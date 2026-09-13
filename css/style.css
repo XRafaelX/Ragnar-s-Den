@@ -259,6 +259,8 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
   font-size:13px;padding:4px 0;
 }
 .field input:focus, .field select:focus{outline:none;border-bottom:1px solid var(--brass);}
+.field select.placeholder, .identity .sub-row select.placeholder{color:var(--text-on-parch-dim);}
+.field select.placeholder option, .identity .sub-row select.placeholder option{color:var(--text-on-parch);}
 
 .identity .sub-row .field{display:flex;flex-direction:column;gap:2px;margin-bottom:0;}
 .identity .sub-row label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
