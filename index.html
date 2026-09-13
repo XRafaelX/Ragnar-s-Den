@@ -45,7 +45,10 @@
 
 <button id="dice-fab" title="Dice tray">⚄</button>
 <div id="dice-tray">
-  <h4>Roll dice</h4>
+  <div id="dice-tray-header">
+    <h4>Dice</h4>
+    <button id="dice-tray-close" title="Close" aria-label="Close dice tray">✕</button>
+  </div>
   <div class="die-row">
     <button class="die-btn" data-die="4">d4</button>
     <button class="die-btn" data-die="6">d6</button>
@@ -60,7 +63,7 @@
     <label>Mod <input type="number" id="dice-mod" value="0"></label>
   </div>
   <div class="tray-controls">
-    <span style="font-size:11.5px;color:var(--text-on-ink-dim);">d20 only:</span>
+    <span style="font-size:11.5px;color:var(--text-on-ink-dim);">d20:</span>
     <div class="adv-toggle">
       <button id="adv-normal" class="on">Normal</button>
       <button id="adv-adv">Adv</button>

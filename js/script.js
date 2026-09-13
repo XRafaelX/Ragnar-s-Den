@@ -73,9 +73,11 @@ var CLASS_BLURBS = {
   "Wizard":"A studious spellcaster with the largest spell list, learned from a spellbook."
 };
 
+var SPELLCASTER_CLASSES = ["Artificer","Bard","Cleric","Druid","Paladin","Ranger","Sorcerer","Warlock","Wizard"];
+
 var CLASSES_INFO = {};
 CLASS_LIST.forEach(function(name){
-  CLASSES_INFO[name] = { available:false, blurb: CLASS_BLURBS[name] || "" };
+  CLASSES_INFO[name] = { available:false, blurb: CLASS_BLURBS[name] || "", spellcaster: SPELLCASTER_CLASSES.indexOf(name)!==-1 };
 });
 
 CLASSES_INFO["Barbarian"] = {
@@ -196,6 +198,23 @@ function primaryHitDie(c){
   if(!cl) return 8;
   return HIT_DICE_BY_CLASS[cl.name] || 8;
 }
+function characterIsCaster(c){
+  return (c.classes||[]).some(function(cl){
+    var info = CLASSES_INFO[cl.name];
+    return info ? !!info.spellcaster : true; // unknown class name: don't hide existing spell data
+  });
+}
+function barbarianClassEntry(c){
+  return (c.classes||[]).find(function(cl){ return cl.name==="Barbarian"; });
+}
+function barbarianRageMax(level){
+  if(level>=20) return Infinity;
+  if(level>=17) return 6;
+  if(level>=12) return 5;
+  if(level>=6) return 4;
+  if(level>=3) return 3;
+  return 2;
+}
 function clamp(n,lo,hi){ return Math.max(lo,Math.min(hi,n)); }
 function ce(tag, cls){ var e = document.createElement(tag); if(cls) e.className = cls; return e; }
 function escapeHtml(s){
@@ -232,6 +251,7 @@ function newCharacter(name){
     speed: 30,
     hitDiceUsed: 0,
     deathSaves: {success:0, fail:0},
+    rage: {active:false, used:0},
     spellcasting: {ability:"int", slots: slots},
     spells: [],
     feats: [],
@@ -258,6 +278,7 @@ function ensureShape(c){
   if(c.speed==null) c.speed = 30;
   if(c.hitDiceUsed==null) c.hitDiceUsed = 0;
   if(!c.deathSaves) c.deathSaves = {success:0, fail:0};
+  if(!c.rage) c.rage = {active:false, used:0};
   if(!c.spellcasting) c.spellcasting = {ability:"int", slots:{}};
   if(!c.spellcasting.slots) c.spellcasting.slots = {};
   for(var i=1;i<=9;i++){ if(!c.spellcasting.slots[i]) c.spellcasting.slots[i] = {max:0,used:0}; }
@@ -309,6 +330,9 @@ var TABS = [
   ["inventory","Inventory"],
   ["journal","Journal"]
 ];
+function visibleTabs(c){
+  return TABS.filter(function(t){ return t[0]!=="spells" || characterIsCaster(c); });
+}
 
 function renderAll(){
   renderSidebar();
@@ -321,6 +345,7 @@ function renderAll(){
     renderRollLog();
     return;
   }
+  if(state.activeTab==="spells" && !characterIsCaster(c)) state.activeTab = "vitals";
   empty.style.display = "none";
   sheet.style.display = "block";
   sheet.innerHTML = "";
@@ -328,7 +353,7 @@ function renderAll(){
 
   var tabsBar = document.createElement("div");
   tabsBar.id = "tabs";
-  TABS.forEach(function(t){
+  visibleTabs(c).forEach(function(t){
     var b = document.createElement("button");
     b.textContent = t[1];
     if(state.activeTab===t[0]) b.className = "active";
@@ -344,7 +369,7 @@ function renderAll(){
     inventory: renderInventoryPanel,
     journal: renderJournalPanel
   };
-  TABS.forEach(function(t){
+  visibleTabs(c).forEach(function(t){
     var panel = panelMap[t[0]](c);
     panel.className = "panel" + (state.activeTab===t[0] ? " active" : "");
     sheet.appendChild(panel);
@@ -572,9 +597,13 @@ function renderVitalsPanel(c){
   tempInput.addEventListener("input", function(){ c.hp.temp = Number(tempInput.value)||0; save(); });
   tempRow.appendChild(tempInput);
   hpBox.appendChild(tempRow);
+  var qbLabel = document.createElement("div");
+  qbLabel.style.marginTop="8px"; qbLabel.style.fontSize="10.5px"; qbLabel.style.color="var(--text-on-parch-dim)";
+  qbLabel.textContent = "Quick damage / heal";
+  hpBox.appendChild(qbLabel);
   var qb = document.createElement("div");
   qb.className = "quickbtns";
-  var dmgInput = document.createElement("input"); dmgInput.type="number"; dmgInput.placeholder="0"; dmgInput.value="";
+  var dmgInput = document.createElement("input"); dmgInput.type="number"; dmgInput.placeholder="Amount"; dmgInput.value="";
   var dmgBtn = document.createElement("button"); dmgBtn.className="btn small danger"; dmgBtn.textContent="Damage";
   dmgBtn.addEventListener("click", function(){
     var n = Number(dmgInput.value)||0;
@@ -623,7 +652,7 @@ function renderVitalsPanel(c){
   }
   grid.appendChild(hpBox);
 
-  function smallVital(label, key, isNested){
+  function smallVital(label, key, isNested, hint){
     var box = document.createElement("div");
     box.className = "vital-box";
     box.innerHTML = '<div class="lbl">'+label+'</div>';
@@ -636,15 +665,21 @@ function renderVitalsPanel(c){
       save();
     });
     box.appendChild(input);
+    if(hint){
+      var hintEl = document.createElement("div");
+      hintEl.className = "vital-hint";
+      hintEl.textContent = hint;
+      box.appendChild(hintEl);
+    }
     return box;
   }
-  grid.appendChild(smallVital("Armor Class","ac"));
+  grid.appendChild(smallVital("Armor Class","ac",null,"10 + armor + DEX mod (Unarmored Defense: 10 + DEX + CON)"));
 
   var initBox = document.createElement("div");
   initBox.className = "vital-box";
   var dexMod = mod(c.abilities.dex);
   var initTotal = dexMod + (Number(c.initiativeMisc)||0);
-  initBox.innerHTML = '<div class="lbl">Initiative</div><div style="font-family:var(--serif);font-size:22px;">'+fmtMod(initTotal)+'</div>';
+  initBox.innerHTML = '<div class="lbl">Initiative</div><div style="font-family:var(--serif);font-size:22px;">'+fmtMod(initTotal)+'</div><div class="vital-hint">DEX mod + misc</div>';
   var initMiscRow = document.createElement("div");
   initMiscRow.style.fontSize="10.5px"; initMiscRow.style.color="var(--text-on-parch-dim)"; initMiscRow.style.marginTop="4px";
   initMiscRow.appendChild(document.createTextNode("misc "));
@@ -714,6 +749,8 @@ function renderVitalsPanel(c){
     Object.keys(c.spellcasting.slots).forEach(function(lvl){
       c.spellcasting.slots[lvl].used = 0;
     });
+    c.rage.used = 0;
+    c.rage.active = false;
     logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered.");
     save(); renderAll();
   });
@@ -721,6 +758,49 @@ function renderVitalsPanel(c){
 
   restCard.appendChild(restRow);
   panel.appendChild(restCard);
+
+  var barbClass = barbarianClassEntry(c);
+  if(barbClass){
+    var rageCard = makeCard("Rage");
+    var rageMax = barbarianRageMax(barbClass.level||1);
+    var rageMaxLabel = rageMax===Infinity ? "∞" : rageMax;
+    var rageUsed = clamp(c.rage.used||0, 0, rageMax===Infinity ? c.rage.used||0 : rageMax);
+    var rageRemaining = rageMax===Infinity ? "∞" : Math.max(0, rageMax-rageUsed);
+
+    var rageP = document.createElement("p");
+    rageP.style.fontSize="13px"; rageP.style.margin="0 0 10px";
+    rageP.textContent = "Rages remaining: "+rageRemaining+" / "+rageMaxLabel;
+    rageCard.appendChild(rageP);
+
+    var rageBtn = document.createElement("button");
+    rageBtn.className = "btn small"+(c.rage.active ? "" : " primary");
+    rageBtn.textContent = c.rage.active ? "End Rage" : "Enter Rage";
+    var atCap = rageMax!==Infinity && rageUsed>=rageMax;
+    rageBtn.disabled = !c.rage.active && atCap;
+    rageBtn.addEventListener("click", function(){
+      if(c.rage.active){
+        c.rage.active = false;
+      } else {
+        if(rageMax!==Infinity && (c.rage.used||0)>=rageMax) return;
+        c.rage.active = true;
+        c.rage.used = (c.rage.used||0)+1;
+      }
+      save(); renderAll();
+    });
+    rageCard.appendChild(rageBtn);
+
+    if(c.rage.active) rageCard.classList.add("raging");
+
+    var rageFeature = CLASSES_INFO["Barbarian"].features.find(function(f){ return f.name==="Rage"; });
+    if(rageFeature){
+      var rageHint = document.createElement("p");
+      rageHint.style.cssText = "font-size:12px;color:var(--text-on-parch-dim);margin:10px 0 0;line-height:1.5;";
+      rageHint.textContent = rageFeature.text;
+      rageCard.appendChild(rageHint);
+    }
+
+    panel.appendChild(rageCard);
+  }
 
   return panel;
 }
@@ -1692,9 +1772,8 @@ var advMode = "none"; // none | adv | dis
 
 function performRoll(die, qty, modifier, adv, label){
   var results = [];
-  var rollCount = qty;
-  var detailParts = [];
   var finalTotal = 0;
+  var summary, showsTotal;
 
   if(die===20 && adv!=="none" && qty===1){
     var r1 = Math.floor(Math.random()*20)+1;
@@ -1702,21 +1781,24 @@ function performRoll(die, qty, modifier, adv, label){
     var chosen = adv==="adv" ? Math.max(r1,r2) : Math.min(r1,r2);
     results = [r1,r2];
     finalTotal = chosen + modifier;
-    detailParts.push("rolled ["+r1+", "+r2+"] ("+(adv==="adv"?"advantage":"disadvantage")+"), took "+chosen);
+    summary = "["+r1+", "+r2+"] "+(adv==="adv"?"adv":"dis")+" → "+chosen+(modifier?" "+fmtMod(modifier):"");
+    showsTotal = true; // the picked die is buried in the brackets, so spell out the total
   } else {
     var sum = 0;
-    for(var i=0;i<rollCount;i++){
+    for(var i=0;i<qty;i++){
       var r = Math.floor(Math.random()*die)+1;
       results.push(r);
       sum += r;
     }
     finalTotal = sum + modifier;
-    detailParts.push("rolled ["+results.join(", ")+"]"+(modifier?" "+fmtMod(modifier):""));
+    summary = "["+results.join(", ")+"]"+(modifier?" "+fmtMod(modifier):"");
+    showsTotal = results.length>1 || !!modifier; // a single plain die already equals its own total
   }
+  var full = showsTotal ? summary+" = "+finalTotal : summary;
 
   document.getElementById("roll-result").textContent = finalTotal;
-  document.getElementById("roll-detail").textContent = (label?label+" — ":"")+detailParts.join(" ");
-  logRoll(label || ("d"+die), detailParts.join(" ")+" = "+finalTotal);
+  document.getElementById("roll-detail").textContent = (label?label+": ":"")+summary;
+  logRoll(label || ("d"+die), full);
   openDiceTray();
 }
 
@@ -1747,12 +1829,29 @@ function renderRollLog(){
 function openDiceTray(){
   document.getElementById("dice-tray").classList.add("open");
 }
+function closeDiceTray(){
+  document.getElementById("dice-tray").classList.remove("open");
+}
 function toggleDiceTray(){
   document.getElementById("dice-tray").classList.toggle("open");
 }
 
 function setupDiceTray(){
   document.getElementById("dice-fab").addEventListener("click", toggleDiceTray);
+  document.getElementById("dice-tray-close").addEventListener("click", closeDiceTray);
+  // Capture phase, so this runs before whatever the clicked element itself
+  // does — e.g. clicking a skill/save to roll a check calls openDiceTray()
+  // on the way, and we don't want to immediately undo that.
+  document.addEventListener("click", function(e){
+    var tray = document.getElementById("dice-tray");
+    if(!tray.classList.contains("open")) return;
+    var fab = document.getElementById("dice-fab");
+    if(tray.contains(e.target) || fab.contains(e.target)) return;
+    closeDiceTray();
+  }, true);
+  document.addEventListener("keydown", function(e){
+    if(e.key==="Escape") closeDiceTray();
+  });
   document.querySelectorAll(".die-btn").forEach(function(btn){
     btn.addEventListener("click", function(){
       var die = Number(btn.getAttribute("data-die"));
