@@ -38,7 +38,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
 
 ## Tech Stack
 
-- **Language**: JavaScript (ES5 / ES6), HTML5, CSS3
+- **Language**: JavaScript (ES6+), organized as native ES modules (no bundler — `js/app.js` is loaded with `<script type="module">` and imports the rest of the `js/` tree directly), HTML5, CSS3
 - **Frameworks & Libraries**: Bootstrap 5 (bundled locally)
 - **Architecture**: Static Single-Page Application (SPA) / Progressive Web App (PWA)
 - **Storage**: Browser `localStorage` (`ragnarsDen.characters.v1`)
@@ -131,7 +131,33 @@ Currently, no automated testing framework is set up in the repository.
 │   └── icon-512.png              # Application icon (512x512) for PWA
 ├── js/
 │   ├── bootstrap.bundle.min.js   # Bootstrap 5 JavaScript bundle
-│   └── script.js                 # Core application logic, character models, dice tray & UI handlers
+│   ├── app.js                    # Entry module: top-level actions, delete character, init()
+│   ├── core/
+│   │   ├── state.js              # App state, localStorage persistence
+│   │   ├── helpers.js            # Ability/skill math, derived stats, small DOM/string helpers
+│   │   └── character.js          # newCharacter(), ensureShape() (older-save migration)
+│   ├── data/
+│   │   ├── abilities-skills.js   # Ability & skill lists, hit dice by class
+│   │   ├── classes.js            # Class blurbs, spellcaster list, per-class features & equipment
+│   │   ├── feats.js              # Feats catalog (Standard 5e SRD)
+│   │   ├── races.js              # Race lists & trait blurbs
+│   │   ├── backgrounds.js        # Background lists & skill/blurb info
+│   │   ├── alignments.js         # Alignment list & blurbs
+│   │   └── misc.js               # Point-buy costs, name idea generator
+│   ├── render/
+│   │   ├── sidebar.js            # Character list sidebar
+│   │   ├── sheet.js              # Tab bar, identity block, panel dispatch
+│   │   └── panels/                # One file per character sheet tab (vitals, abilities,
+│   │                              # features, feat/feature modals, spells, inventory, journal)
+│   ├── wizard/
+│   │   ├── wizard-core.js        # Wizard navigation/state & character creation
+│   │   └── wizard-steps.js       # Per-step wizard UI renderers
+│   ├── dice/
+│   │   └── dice.js               # Dice tray, roll animation, roll log
+│   └── ui/
+│       ├── svg-icons.js          # Small inline SVG helpers
+│       ├── confirm-modal.js      # Reusable confirm dialog
+│       └── mobile-nav.js         # Mobile sidebar toggle
 ├── index.html                    # Application entry point and layout markup
 ├── manifest.json                 # Web App Manifest for PWA installation
 ├── README.md                     # Project documentation
