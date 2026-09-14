@@ -1812,39 +1812,247 @@ function renderWizard(){
   overlay.appendChild(footer);
 }
 
-/* ---------------- Dice tray ---------------- */
+/* ---------------- Dice tray & Smooth Animations ---------------- */
 var advMode = "none"; // none | adv | dis
+var lastRollConfig = null;
+var rollAnimationTimers = [];
+var toastTimer = null;
+
+function getDieSvg(die, value){
+  var valStr = value != null ? String(value) : "?";
+  if(die === 4){
+    return '<svg viewBox="0 0 100 100"><polygon class="die-bg" points="50,10 92,84 8,84"/><line class="die-facet" x1="50" y1="10" x2="50" y2="58"/><line class="die-facet" x1="92" y1="84" x2="50" y2="58"/><line class="die-facet" x1="8" y1="84" x2="50" y2="58"/><text class="die-text" x="50" y="68">'+valStr+'</text></svg>';
+  }
+  if(die === 6){
+    return '<svg viewBox="0 0 100 100"><rect class="die-bg" x="12" y="12" width="76" height="76" rx="14"/><rect class="die-facet" x="22" y="22" width="56" height="56" rx="8"/><text class="die-text" x="50" y="52">'+valStr+'</text></svg>';
+  }
+  if(die === 8){
+    return '<svg viewBox="0 0 100 100"><polygon class="die-bg" points="50,8 90,50 50,92 10,50"/><line class="die-facet" x1="50" y1="8" x2="50" y2="92"/><line class="die-facet" x1="10" y1="50" x2="90" y2="50"/><polygon class="die-facet" points="50,26 74,50 50,74 26,50"/><text class="die-text" x="50" y="52">'+valStr+'</text></svg>';
+  }
+  if(die === 10 || die === 100){
+    return '<svg viewBox="0 0 100 100"><polygon class="die-bg" points="50,6 90,40 50,94 10,40"/><line class="die-facet" x1="50" y1="6" x2="50" y2="94"/><polyline class="die-facet" points="10,40 50,56 90,40"/><text class="die-text" x="50" y="47">'+valStr+'</text></svg>';
+  }
+  if(die === 12){
+    return '<svg viewBox="0 0 100 100"><polygon class="die-bg" points="50,8 88,22 95,64 64,94 36,94 5,64 12,22"/><polygon class="die-facet" points="50,30 74,48 65,76 35,76 26,48"/><text class="die-text" x="50" y="53">'+valStr+'</text></svg>';
+  }
+  // default / d20
+  return '<svg viewBox="0 0 100 100"><polygon class="die-bg" points="50,6 88,28 88,72 50,94 12,72 12,28"/><polygon class="die-facet" points="50,22 78,70 22,70"/><line class="die-facet" x1="50" y1="6" x2="50" y2="22"/><line class="die-facet" x1="88" y1="28" x2="78" y2="70"/><line class="die-facet" x1="88" y1="72" x2="50" y2="94"/><line class="die-facet" x1="12" y1="72" x2="50" y2="94"/><line class="die-facet" x1="12" y1="28" x2="22" y2="70"/><text class="die-text" x="50" y="52">'+valStr+'</text></svg>';
+}
+
+function clearRollTimers(){
+  rollAnimationTimers.forEach(function(t){
+    clearInterval(t);
+    clearTimeout(t);
+  });
+  rollAnimationTimers = [];
+}
+
+function animateNumberCount(el, targetVal, duration){
+  var start = 0;
+  var startTime = performance.now();
+  var animFrame = function(currentTime){
+    var progress = Math.min((currentTime - startTime) / duration, 1);
+    var ease = 1 - Math.pow(1 - progress, 3);
+    var current = Math.round(start + (targetVal - start) * ease);
+    el.textContent = current;
+    if(progress < 1){
+      requestAnimationFrame(animFrame);
+    } else {
+      el.textContent = targetVal;
+    }
+  };
+  requestAnimationFrame(animFrame);
+}
+
+function showFloatingToast(die, finalTotal, summary, label, isCrit, isFail){
+  var toast = document.getElementById("floating-roll-toast");
+  if(!toast) return;
+  if(toastTimer){ clearTimeout(toastTimer); toastTimer = null; }
+
+  var titleText = label || ("d" + die + " Roll");
+  var dieSvg = getDieSvg(die, finalTotal);
+
+  var badgeHtml = "";
+  if(isCrit) badgeHtml = '<span class="crit-badge crit-success" style="font-size:9.5px;padding:2px 6px;">NAT 20</span>';
+  else if(isFail) badgeHtml = '<span class="crit-badge crit-fail" style="font-size:9.5px;padding:2px 6px;">NAT 1</span>';
+
+  toast.innerHTML = '<div class="toast-die-mini">' + dieSvg + '</div>' +
+    '<div class="toast-info">' +
+      '<div class="toast-title">' + escapeHtml(titleText) + ' ' + badgeHtml + '</div>' +
+      '<div class="toast-total">' + finalTotal + '</div>' +
+      '<div class="toast-detail">' + escapeHtml(summary) + '</div>' +
+    '</div>';
+
+  toast.classList.add("show");
+  toast.onclick = function(){
+    toast.classList.remove("show");
+    openDiceTray();
+  };
+
+  toastTimer = setTimeout(function(){
+    toast.classList.remove("show");
+  }, 3200);
+}
 
 function performRoll(die, qty, modifier, adv, label){
-  var results = [];
-  var finalTotal = 0;
-  var summary, showsTotal;
+  lastRollConfig = { die: die, qty: qty, modifier: modifier, adv: adv, label: label };
+  clearRollTimers();
 
-  if(die===20 && adv!=="none" && qty===1){
-    var r1 = Math.floor(Math.random()*20)+1;
-    var r2 = Math.floor(Math.random()*20)+1;
-    var chosen = adv==="adv" ? Math.max(r1,r2) : Math.min(r1,r2);
-    results = [r1,r2];
-    finalTotal = chosen + modifier;
-    summary = "["+r1+", "+r2+"] "+(adv==="adv"?"adv":"dis")+" → "+chosen+(modifier?" "+fmtMod(modifier):"");
-    showsTotal = true; // the picked die is buried in the brackets, so spell out the total
+  var isAdvDis = (die === 20 && adv !== "none" && qty === 1);
+  var diceCount = isAdvDis ? 2 : qty;
+  var finalValues = [];
+  var chosenValue = 0;
+  var droppedIdx = -1;
+  var isCrit = false;
+  var isFail = false;
+  var finalTotal = 0;
+  var summary = "";
+  var showsTotal = false;
+
+  if(isAdvDis){
+    var r1 = Math.floor(Math.random() * 20) + 1;
+    var r2 = Math.floor(Math.random() * 20) + 1;
+    finalValues = [r1, r2];
+    var chosenIdx = (adv === "adv") ? (r1 >= r2 ? 0 : 1) : (r1 <= r2 ? 0 : 1);
+    droppedIdx = (chosenIdx === 0) ? 1 : 0;
+    chosenValue = finalValues[chosenIdx];
+    finalTotal = chosenValue + modifier;
+    if(chosenValue === 20) isCrit = true;
+    if(chosenValue === 1) isFail = true;
+    summary = "[" + r1 + ", " + r2 + "] " + (adv === "adv" ? "adv" : "dis") + " → " + chosenValue + (modifier ? " " + fmtMod(modifier) : "");
+    showsTotal = true;
   } else {
     var sum = 0;
-    for(var i=0;i<qty;i++){
-      var r = Math.floor(Math.random()*die)+1;
-      results.push(r);
+    for(var i = 0; i < qty; i++){
+      var r = Math.floor(Math.random() * die) + 1;
+      finalValues.push(r);
       sum += r;
     }
     finalTotal = sum + modifier;
-    summary = "["+results.join(", ")+"]"+(modifier?" "+fmtMod(modifier):"");
-    showsTotal = results.length>1 || !!modifier; // a single plain die already equals its own total
+    if(die === 20 && qty === 1){
+      if(finalValues[0] === 20) isCrit = true;
+      if(finalValues[0] === 1) isFail = true;
+    }
+    summary = "[" + finalValues.join(", ") + "]" + (modifier ? " " + fmtMod(modifier) : "");
+    showsTotal = finalValues.length > 1 || !!modifier;
   }
-  var full = showsTotal ? summary+" = "+finalTotal : summary;
 
-  document.getElementById("roll-result").textContent = finalTotal;
-  document.getElementById("roll-detail").textContent = (label?label+": ":"")+summary;
-  logRoll(label || ("d"+die), full);
-  openDiceTray();
+  var full = showsTotal ? summary + " = " + finalTotal : summary;
+
+  // Render dice tokens in the animation stage
+  var stage = document.getElementById("dice-stage");
+  stage.innerHTML = "";
+
+  var tokenElements = [];
+  for(var d = 0; d < diceCount; d++){
+    var wrapper = document.createElement("div");
+    wrapper.className = "dice-token-wrapper";
+    var token = document.createElement("div");
+    token.className = "dice-token rolling";
+    token.innerHTML = getDieSvg(die, Math.floor(Math.random() * die) + 1);
+    wrapper.appendChild(token);
+    stage.appendChild(wrapper);
+    tokenElements.push({ wrapper: wrapper, token: token, targetVal: finalValues[d], index: d });
+  }
+
+  var resultEl = document.getElementById("roll-result");
+  var badgeSlot = document.getElementById("roll-badge-slot");
+  var detailEl = document.getElementById("roll-detail");
+  var rollAgainBtn = document.getElementById("roll-again-btn");
+
+  resultEl.textContent = "…";
+  resultEl.classList.remove("result-pop");
+  badgeSlot.innerHTML = "";
+  detailEl.textContent = (label ? label + ": " : "") + "Rolling…";
+  rollAgainBtn.style.display = "none";
+
+  // Rapidly cycle random numbers during roll animation
+  var cycleInterval = setInterval(function(){
+    tokenElements.forEach(function(item){
+      if(item.token.classList.contains("rolling")){
+        var textNode = item.token.querySelector(".die-text");
+        if(textNode){
+          textNode.textContent = Math.floor(Math.random() * die) + 1;
+        }
+      }
+    });
+  }, 45);
+  rollAnimationTimers.push(cycleInterval);
+
+  // Settle dice with smooth staggered timing
+  var rollDuration = 480;
+  tokenElements.forEach(function(item, idx){
+    var settleDelay = rollDuration + (idx * 60);
+    var timer = setTimeout(function(){
+      item.token.classList.remove("rolling");
+      item.token.classList.add("settled");
+      item.token.title = "Tap to roll again";
+      item.token.onclick = function(){
+        if(lastRollConfig){
+          performRoll(lastRollConfig.die, lastRollConfig.qty, lastRollConfig.modifier, lastRollConfig.adv, lastRollConfig.label);
+        }
+      };
+      var textNode = item.token.querySelector(".die-text");
+      if(textNode){
+        textNode.textContent = item.targetVal;
+      }
+
+      // Check nat 20 / nat 1
+      if(die === 20){
+        if(item.targetVal === 20){
+          item.token.classList.add("nat-20");
+        } else if(item.targetVal === 1){
+          item.token.classList.add("nat-1");
+        }
+      }
+
+      // Advantage/Disadvantage dropped vs kept tags
+      if(isAdvDis){
+        var tag = document.createElement("span");
+        tag.className = "die-status-tag";
+        if(idx === droppedIdx){
+          item.token.classList.add("die-dropped");
+          tag.className += " tag-dropped";
+          tag.textContent = "Dropped";
+        } else {
+          tag.className += " tag-kept";
+          tag.textContent = "Kept";
+        }
+        item.wrapper.appendChild(tag);
+      }
+    }, settleDelay);
+    rollAnimationTimers.push(timer);
+  });
+
+  // Final settlement of total result & breakdown
+  var totalDelay = rollDuration + ((diceCount - 1) * 60) + 80;
+  var finalTimer = setTimeout(function(){
+    clearInterval(cycleInterval);
+
+    resultEl.classList.add("result-pop");
+    animateNumberCount(resultEl, finalTotal, 220);
+
+    // Critical Hit / Miss badge
+    if(isCrit){
+      badgeSlot.innerHTML = '<span class="crit-badge crit-success">✨ Natural 20 — Critical Hit! ✨</span>';
+    } else if(isFail){
+      badgeSlot.innerHTML = '<span class="crit-badge crit-fail">💀 Natural 1 — Critical Miss! 💀</span>';
+    }
+
+    detailEl.textContent = (label ? label + ": " : "") + summary;
+    rollAgainBtn.style.display = "inline-flex";
+
+    logRoll(label || ("d" + die), full);
+  }, totalDelay);
+  rollAnimationTimers.push(finalTimer);
+
+  var tray = document.getElementById("dice-tray");
+  if(tray.classList.contains("open")){
+    // already open, rolls inside tray seamlessly
+  } else {
+    // Show smooth floating toast on screen
+    showFloatingToast(die, finalTotal, summary, label, isCrit, isFail);
+  }
 }
 
 function logRoll(label, detail){
@@ -1853,7 +2061,7 @@ function logRoll(label, detail){
   if(c){
     c.rollLog = c.rollLog || [];
     c.rollLog.unshift(entry);
-    c.rollLog = c.rollLog.slice(0,20);
+    c.rollLog = c.rollLog.slice(0,25);
     save();
   }
   renderRollLog();
@@ -1862,8 +2070,13 @@ function logRoll(label, detail){
 function renderRollLog(){
   var c = getActive();
   var el = document.getElementById("roll-log");
+  if(!el) return;
   el.innerHTML = "";
   var logArr = c && c.rollLog ? c.rollLog : [];
+  if(logArr.length === 0){
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-on-ink-dim);font-style:italic;padding:4px 0;">No rolls yet</div>';
+    return;
+  }
   logArr.forEach(function(entry){
     var d = document.createElement("div");
     d.innerHTML = '<span class="rl-label">'+escapeHtml(entry.label)+'</span> — '+escapeHtml(entry.detail);
@@ -1872,49 +2085,131 @@ function renderRollLog(){
 }
 
 function openDiceTray(){
-  document.getElementById("dice-tray").classList.add("open");
+  var tray = document.getElementById("dice-tray");
+  tray.classList.add("open");
+  renderRollLog();
 }
 function closeDiceTray(){
   document.getElementById("dice-tray").classList.remove("open");
 }
 function toggleDiceTray(){
-  document.getElementById("dice-tray").classList.toggle("open");
+  var tray = document.getElementById("dice-tray");
+  if(tray.classList.contains("open")){
+    closeDiceTray();
+  } else {
+    openDiceTray();
+  }
 }
 
 function setupDiceTray(){
   document.getElementById("dice-fab").addEventListener("click", toggleDiceTray);
   document.getElementById("dice-tray-close").addEventListener("click", closeDiceTray);
-  // Capture phase, so this runs before whatever the clicked element itself
-  // does — e.g. clicking a skill/save to roll a check calls openDiceTray()
-  // on the way, and we don't want to immediately undo that.
+
+  // Capture phase so clicking rolls outside doesn't immediately dismiss
   document.addEventListener("click", function(e){
     var tray = document.getElementById("dice-tray");
     if(!tray.classList.contains("open")) return;
     var fab = document.getElementById("dice-fab");
-    if(tray.contains(e.target) || fab.contains(e.target)) return;
+    var toast = document.getElementById("floating-roll-toast");
+    if(tray.contains(e.target) || fab.contains(e.target) || (toast && toast.contains(e.target))) return;
+    // Don't close if clicked on a rollable sheet element
+    if(e.target.closest && (e.target.closest(".stat-box") || e.target.closest(".skill-row") || e.target.closest(".save-row") || e.target.closest(".feat-item"))) return;
     closeDiceTray();
   }, true);
+
   document.addEventListener("keydown", function(e){
     if(e.key==="Escape") closeDiceTray();
   });
+
+  // Die buttons
   document.querySelectorAll(".die-btn").forEach(function(btn){
     btn.addEventListener("click", function(){
       var die = Number(btn.getAttribute("data-die"));
-      var qty = clamp(Number(document.getElementById("dice-qty").value)||1,1,20);
+      var qty = clamp(Number(document.getElementById("dice-qty").value)||1, 1, 20);
       var modv = Number(document.getElementById("dice-mod").value)||0;
+      btn.classList.add("rolling-active");
+      setTimeout(function(){ btn.classList.remove("rolling-active"); }, 400);
       performRoll(die, qty, modv, die===20 ? advMode : "none", null);
     });
   });
+
+  // Steppers for Qty and Mod
+  var qtyInput = document.getElementById("dice-qty");
+  var modInput = document.getElementById("dice-mod");
+
+  document.getElementById("qty-inc").addEventListener("click", function(){
+    var v = clamp((Number(qtyInput.value) || 1) + 1, 1, 20);
+    qtyInput.value = v;
+  });
+  document.getElementById("qty-dec").addEventListener("click", function(){
+    var v = clamp((Number(qtyInput.value) || 1) - 1, 1, 20);
+    qtyInput.value = v;
+  });
+  document.getElementById("mod-inc").addEventListener("click", function(){
+    var v = clamp((Number(modInput.value) || 0) + 1, -50, 50);
+    modInput.value = v;
+  });
+  document.getElementById("mod-dec").addEventListener("click", function(){
+    var v = clamp((Number(modInput.value) || 0) - 1, -50, 50);
+    modInput.value = v;
+  });
+
+  // Reset button
+  var resetBtn = document.getElementById("dice-reset");
+  if(resetBtn){
+    resetBtn.addEventListener("click", function(){
+      qtyInput.value = 1;
+      modInput.value = 0;
+      advMode = "none";
+      var advBtns = {
+        none: document.getElementById("adv-normal"),
+        adv: document.getElementById("adv-adv"),
+        dis: document.getElementById("adv-dis")
+      };
+      Object.keys(advBtns).forEach(function(kk){
+        if(advBtns[kk]) advBtns[kk].classList.toggle("on", kk === "none");
+      });
+    });
+  }
+
+  // Roll again button
+  var rollAgainBtn = document.getElementById("roll-again-btn");
+  if(rollAgainBtn){
+    rollAgainBtn.addEventListener("click", function(){
+      if(lastRollConfig){
+        performRoll(lastRollConfig.die, lastRollConfig.qty, lastRollConfig.modifier, lastRollConfig.adv, lastRollConfig.label);
+      }
+    });
+  }
+
+  // Clear log button
+  var clearLogBtn = document.getElementById("clear-log-btn");
+  if(clearLogBtn){
+    clearLogBtn.addEventListener("click", function(){
+      var c = getActive();
+      if(c){
+        c.rollLog = [];
+        save();
+      }
+      renderRollLog();
+    });
+  }
+
+  // Advantage buttons
   var advBtns = {
     none: document.getElementById("adv-normal"),
     adv: document.getElementById("adv-adv"),
     dis: document.getElementById("adv-dis")
   };
   Object.keys(advBtns).forEach(function(k){
-    advBtns[k].addEventListener("click", function(){
-      advMode = k;
-      Object.keys(advBtns).forEach(function(kk){ advBtns[kk].classList.toggle("on", kk===k); });
-    });
+    if(advBtns[k]){
+      advBtns[k].addEventListener("click", function(){
+        advMode = k;
+        Object.keys(advBtns).forEach(function(kk){
+          if(advBtns[kk]) advBtns[kk].classList.toggle("on", kk === k);
+        });
+      });
+    }
   });
 }
 

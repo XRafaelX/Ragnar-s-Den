@@ -44,37 +44,98 @@
   </div>
 </div>
 
-<button id="dice-fab" title="Dice tray">⚄</button>
-<div id="dice-tray">
+<!-- SVG Gradients for Polyhedral Dice -->
+<svg width="0" height="0" style="position:absolute;visibility:hidden;" aria-hidden="true">
+  <defs>
+    <linearGradient id="dieGradPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b2b5a" />
+      <stop offset="50%" stop-color="#281e3f" />
+      <stop offset="100%" stop-color="#191328" />
+    </linearGradient>
+    <linearGradient id="dieGradGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="40%" stop-color="#eab308" />
+      <stop offset="100%" stop-color="#854d0e" />
+    </linearGradient>
+    <linearGradient id="dieGradCrimson" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f87171" />
+      <stop offset="50%" stop-color="#dc2626" />
+      <stop offset="100%" stop-color="#581c1c" />
+    </linearGradient>
+  </defs>
+</svg>
+
+<button id="dice-fab" title="Dice tray" aria-label="Open dice tray">⚄</button>
+<div id="dice-tray" role="dialog" aria-label="Dice Roller">
   <div id="dice-tray-header">
-    <h4>Dice</h4>
+    <div class="tray-title-group">
+      <span class="tray-icon">🎲</span>
+      <h4>Dice Roller</h4>
+    </div>
     <button id="dice-tray-close" title="Close" aria-label="Close dice tray">✕</button>
   </div>
   <div class="die-row">
-    <button class="die-btn" data-die="4">d4</button>
-    <button class="die-btn" data-die="6">d6</button>
-    <button class="die-btn" data-die="8">d8</button>
-    <button class="die-btn" data-die="10">d10</button>
-    <button class="die-btn" data-die="12">d12</button>
-    <button class="die-btn" data-die="20">d20</button>
-    <button class="die-btn" data-die="100">d100</button>
+    <button class="die-btn" data-die="4" title="Roll d4"><span class="die-name">d4</span></button>
+    <button class="die-btn" data-die="6" title="Roll d6"><span class="die-name">d6</span></button>
+    <button class="die-btn" data-die="8" title="Roll d8"><span class="die-name">d8</span></button>
+    <button class="die-btn" data-die="10" title="Roll d10"><span class="die-name">d10</span></button>
+    <button class="die-btn" data-die="12" title="Roll d12"><span class="die-name">d12</span></button>
+    <button class="die-btn" data-die="20" title="Roll d20"><span class="die-name">d20</span></button>
+    <button class="die-btn" data-die="100" title="Roll d100"><span class="die-name">d100</span></button>
   </div>
-  <div class="tray-controls">
-    <label>Qty <input type="number" id="dice-qty" value="1" min="1" max="20"></label>
-    <label>Mod <input type="number" id="dice-mod" value="0"></label>
-  </div>
-  <div class="tray-controls">
-    <span style="font-size:11.5px;color:var(--text-on-ink-dim);">d20:</span>
-    <div class="adv-toggle">
-      <button id="adv-normal" class="on">Normal</button>
-      <button id="adv-adv">Adv</button>
-      <button id="adv-dis">Dis</button>
+  <div class="tray-controls-grid">
+    <div class="tray-control-box">
+      <span class="control-label">Qty</span>
+      <div class="stepper">
+        <button type="button" class="step-btn" id="qty-dec" title="Decrease quantity">−</button>
+        <input type="number" id="dice-qty" value="1" min="1" max="20" aria-label="Dice Quantity">
+        <button type="button" class="step-btn" id="qty-inc" title="Increase quantity">+</button>
+      </div>
+    </div>
+    <div class="tray-control-box">
+      <span class="control-label">Mod</span>
+      <div class="stepper">
+        <button type="button" class="step-btn" id="mod-dec" title="Decrease modifier">−</button>
+        <input type="number" id="dice-mod" value="0" aria-label="Dice Modifier">
+        <button type="button" class="step-btn" id="mod-inc" title="Increase modifier">+</button>
+      </div>
     </div>
   </div>
-  <div id="roll-result">—</div>
-  <div id="roll-detail"></div>
-  <div id="roll-log"></div>
+  <div class="tray-subcontrols">
+    <div class="adv-container">
+      <span class="adv-label">d20:</span>
+      <div class="adv-toggle" role="group" aria-label="d20 Advantage/Disadvantage">
+        <button id="adv-normal" class="on" type="button" title="Normal roll">Normal</button>
+        <button id="adv-adv" type="button" title="Advantage (roll 2, take highest)">Adv</button>
+        <button id="adv-dis" type="button" title="Disadvantage (roll 2, take lowest)">Dis</button>
+      </div>
+    </div>
+    <button id="dice-reset" type="button" class="btn-ghost-small" title="Reset quantity & modifier">Reset</button>
+  </div>
+
+  <div id="dice-stage" aria-live="polite">
+    <div class="stage-placeholder">Tap any die or sheet stat to roll</div>
+  </div>
+
+  <div class="roll-result-area">
+    <div id="roll-result">—</div>
+    <div id="roll-badge-slot"></div>
+    <div id="roll-detail"></div>
+    <div class="roll-actions-row">
+      <button id="roll-again-btn" type="button" class="btn-roll-again" style="display:none;" title="Roll the same dice again">↺ Roll Again</button>
+    </div>
+  </div>
+
+  <div class="roll-log-wrapper">
+    <div class="roll-log-header">
+      <span>History</span>
+      <button id="clear-log-btn" type="button" class="clear-log-btn" title="Clear roll history">Clear</button>
+    </div>
+    <div id="roll-log"></div>
+  </div>
 </div>
+
+<div id="floating-roll-toast" class="floating-roll-toast" aria-live="polite"></div>
 
 <div class="rd-backdrop" id="confirm-modal">
   <div class="rd-modal">
