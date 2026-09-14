@@ -144,6 +144,19 @@ var BACKGROUND_INFO = {
 };
 var BACKGROUND_INFO_FALLBACK = "Grants two skill proficiencies of your choice (and usually a tool or language) — pick whatever fits your character's story; you can add them on the sheet's Skills tab afterward.";
 
+var ALIGNMENT_INFO = {
+  "Lawful Good": "Acts with compassion, honor, and a strict sense of duty. Believes order and rules protect everyone.",
+  "Neutral Good": "Devoted to helping others according to their needs, doing what is right without bias toward order or chaos.",
+  "Chaotic Good": "Follows their conscience and values personal freedom, acting with kindness regardless of laws or traditions.",
+  "Lawful Neutral": "Acts in accordance with law, tradition, or a personal code above all else. Reliable, orderly, and disciplined.",
+  "True Neutral": "Prefers balance over extremes, acting naturally without strong dedication to good, evil, order, or chaos.",
+  "Chaotic Neutral": "Values individual freedom above all else, following their own whims and avoiding restrictions or traditions.",
+  "Lawful Evil": "Methodically takes what they want within the limits of a code of tradition, loyalty, or order.",
+  "Neutral Evil": "Does whatever they can get away with for purely selfish gain, without compassion or remorse.",
+  "Chaotic Evil": "Acts with arbitrary violence, driven by greed, hatred, or a lust for destruction."
+};
+var ALIGNMENT_INFO_FALLBACK = "Pick an alignment that reflects your character's moral compass and personal philosophy.";
+
 var POINT_BUY_COSTS = {8:0,9:1,10:2,11:3,12:4,13:5,14:7,15:9};
 
 /* A few Barbarian-flavored name ideas, shown as tappable suggestions on the
@@ -1154,7 +1167,7 @@ function renderJournalPanel(c){
 }
 
 /* ---------------- Character Creation Wizard ---------------- */
-var WIZARD_STEP_IDS = ["class","race","background","abilities","skills","equipment","spells","review"];
+var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","equipment","spells","review"];
 var wizardState = null;
 
 function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardState.classId]; }
@@ -1170,6 +1183,7 @@ function isStepApplicable(id){
 function wizardStepTitle(id){
   return {
     class:"Choose a Class", race:"Choose a Race", background:"Choose a Background",
+    alignment:"Choose an Alignment",
     abilities:"Ability Scores", skills:"Skills & Proficiencies", equipment:"Starting Equipment",
     spells:"Spells", review:"Review & Finish"
   }[id];
@@ -1198,6 +1212,7 @@ function validateStep(id){
   if(id==="class") return (wizardState.classId && info && info.available) ? null : "Pick an available class to continue.";
   if(id==="race") return wizardState.race ? null : "Pick a race to continue.";
   if(id==="background") return wizardState.background ? null : "Pick a background to continue.";
+  if(id==="alignment") return wizardState.alignment ? null : "Pick an alignment to continue.";
   if(id==="abilities"){
     if(!wizardState.abilityMethod) return "Pick a method for generating ability scores.";
     if(wizardState.abilityMethod!=="pointbuy"){
@@ -1221,7 +1236,7 @@ function validateStep(id){
 
 function openWizard(){
   wizardState = {
-    step:"class", name:"", classId:null, race:"", background:"",
+    step:"class", name:"", classId:null, race:"", background:"", alignment:"",
     abilityMethod:null,
     abilities:{str:10,dex:10,con:10,int:10,wis:10,cha:10},
     assignIdx:{str:null,dex:null,con:null,int:null,wis:null,cha:null},
@@ -1363,6 +1378,12 @@ function backgroundExplainHtml(name){
   return "<b>"+escapeHtml(name)+":</b> "+(info ? info.blurb : BACKGROUND_INFO_FALLBACK);
 }
 
+function alignmentExplainHtml(name){
+  if(!name) return "<b>Why this matters:</b> Alignment describes your character's moral compass and attitude toward society, order, and other creatures.";
+  var info = ALIGNMENT_INFO[name];
+  return "<b>"+escapeHtml(name)+":</b> "+escapeHtml(info || ALIGNMENT_INFO_FALLBACK);
+}
+
 function wizardStepClass(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Choose a Class</span></h3>";
@@ -1409,6 +1430,21 @@ function wizardStepBackground(container){
 
   var dd = dropdownField("Background", "background", BACKGROUNDS, wizardState, function(){
     explain.innerHTML = backgroundExplainHtml(wizardState.background);
+  });
+  dd.style.maxWidth = "320px";
+  card.appendChild(dd);
+  container.appendChild(card);
+}
+
+function wizardStepAlignment(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Choose an Alignment</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = alignmentExplainHtml(wizardState.alignment);
+  card.appendChild(explain);
+
+  var dd = dropdownField("Alignment", "alignment", ALIGNMENTS, wizardState, function(){
+    explain.innerHTML = alignmentExplainHtml(wizardState.alignment);
   });
   dd.style.maxWidth = "320px";
   card.appendChild(dd);
@@ -1639,6 +1675,7 @@ function wizardStepReview(container){
   row("Class", wizardState.classId+" (level 1)");
   row("Race", wizardState.race);
   row("Background", wizardState.background);
+  row("Alignment", wizardState.alignment || "—");
   row("Ability scores", ABILITIES.map(function(a){ return a[1].slice(0,3).toUpperCase()+" "+wizardState.abilities[a[0]]; }).join("  "));
   row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+")");
   row("Armor Class", ac+" (Unarmored Defense: 10 + DEX + CON)");
@@ -1682,6 +1719,7 @@ function finishWizard(){
   var c = newCharacter((w.name||"").trim());
   c.race = w.race;
   c.background = w.background;
+  c.alignment = w.alignment;
   c.classes = [{name:w.classId, subclass:"", level:1}];
   c.abilities = {str:w.abilities.str, dex:w.abilities.dex, con:w.abilities.con, int:w.abilities.int, wis:w.abilities.wis, cha:w.abilities.cha};
   info.savingThrows.forEach(function(k){ c.saveProfs[k] = true; });
@@ -1738,6 +1776,7 @@ function renderWizard(){
 
   var renderers = {
     class: wizardStepClass, race: wizardStepRace, background: wizardStepBackground,
+    alignment: wizardStepAlignment,
     abilities: wizardStepAbilities, skills: wizardStepSkills, equipment: wizardStepEquipment,
     spells: wizardStepSpells, review: wizardStepReview
   };

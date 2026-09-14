@@ -37,7 +37,10 @@ self.addEventListener("fetch", function(event){
   var req = event.request;
   if(req.method !== "GET") return;
 
-  var sameOrigin = new URL(req.url).origin === self.location.origin;
+  var url = new URL(req.url);
+  if(url.protocol !== "http:" && url.protocol !== "https:") return;
+
+  var sameOrigin = url.origin === self.location.origin;
 
   if(sameOrigin){
     event.respondWith(
