@@ -708,9 +708,9 @@ function newCharacter(name){
   return {
     id: uid(),
     name: name || "New Character",
-    race: "",
-    background: "",
-    alignment: "",
+    race: "Human",
+    background: "Acolyte",
+    alignment: "Neutral Good",
     classes: [{name:"Fighter", subclass:"", level:1}],
     abilities: abilities,
     saveProfs: saveProfs,
@@ -736,6 +736,9 @@ function newCharacter(name){
 /* ---------------- Migration safety (older saves) ---------------- */
 function ensureShape(c){
   if(!c.classes) c.classes = [{name:"Fighter", subclass:"", level: c.level||1}];
+  if(!c.race) c.race = "Human";
+  if(!c.background) c.background = "Acolyte";
+  if(!c.alignment) c.alignment = "Neutral Good";
   if(!c.abilities) c.abilities = {str:10,dex:10,con:10,int:10,wis:10,cha:10};
   if(!c.skillProfs){
     c.skillProfs = {};
@@ -905,6 +908,8 @@ function dropdownField(labelTxt, key, groups, c, onChangeExtra){
   var select = document.createElement("select");
   var blankOpt = document.createElement("option");
   blankOpt.value = ""; blankOpt.textContent = "Select "+labelTxt.toLowerCase();
+  blankOpt.disabled = true;
+  blankOpt.hidden = true;
   select.appendChild(blankOpt);
   Object.keys(groups).forEach(function(groupLabel){
     var og = document.createElement("optgroup");
