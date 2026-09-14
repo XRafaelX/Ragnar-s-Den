@@ -77,7 +77,7 @@ var SPELLCASTER_CLASSES = ["Artificer","Bard","Cleric","Druid","Paladin","Ranger
 
 var CLASSES_INFO = {};
 CLASS_LIST.forEach(function(name){
-  CLASSES_INFO[name] = { available:false, blurb: CLASS_BLURBS[name] || "", spellcaster: SPELLCASTER_CLASSES.indexOf(name)!==-1 };
+  CLASSES_INFO[name] = { available:false, blurb: CLASS_BLURBS[name] || "", spellcaster: SPELLCASTER_CLASSES.indexOf(name)!==-1, features:[] };
 });
 
 CLASSES_INFO["Barbarian"] = {
@@ -88,7 +88,7 @@ CLASSES_INFO["Barbarian"] = {
   spellcaster:false,
   skillChoices:{count:2, options:["Animal Handling","Athletics","Intimidation","Nature","Perception","Survival"]},
   features:[
-    {name:"Rage", text:"Bonus action to enter a rage for 1 minute: +2 damage on Strength melee attacks, resistance to bludgeoning/piercing/slashing damage, advantage on Strength checks and saves. You have 2 rages at level 1, regained on a long rest."},
+    {name:"Rage", text:"Bonus action to enter a rage for 1 minute: +2 damage on Strength melee attacks, resistance to bludgeoning/piercing/slashing damage, advantage on Strength checks and saves. Regained on a long rest."},
     {name:"Unarmored Defense", text:"While wearing no armor, your AC equals 10 + your Dexterity modifier + your Constitution modifier. You can still use a shield and gain this benefit."}
   ],
   equipment:{
@@ -108,6 +108,365 @@ CLASSES_INFO["Barbarian"] = {
     ]
   }
 };
+
+CLASSES_INFO["Fighter"].features = [
+  {name:"Fighting Style", text:"Adopt a particular style of fighting as your specialty (e.g. Archery, Defense, Dueling, Great Weapon Fighting, Protection, Two-Weapon Fighting)."},
+  {name:"Second Wind", text:"Bonus action to regain hit points equal to 1d10 + your fighter level (once per short or long rest)."}
+];
+
+CLASSES_INFO["Rogue"].features = [
+  {name:"Expertise", text:"Double your proficiency bonus for two of your skill proficiencies (or one skill and thieves' tools)."},
+  {name:"Sneak Attack", text:"Deal extra 1d6 damage once per turn to a creature you hit if you have advantage or an ally is within 5 feet of the target."},
+  {name:"Thieves' Cant", text:"A secret mix of dialect, jargon, and code that allows you to hide messages in seemingly normal conversation."}
+];
+
+CLASSES_INFO["Wizard"].features = [
+  {name:"Spellcasting", text:"Prepare and cast spells from your spellbook using Intelligence. Can cast ritual spells from your spellbook."},
+  {name:"Arcane Recovery", text:"Once per day during a short rest, recover expended spell slots with combined level up to half your wizard level."}
+];
+
+CLASSES_INFO["Cleric"].features = [
+  {name:"Spellcasting", text:"Cast divine spells channeled from your deity using Wisdom as your spellcasting ability."},
+  {name:"Divine Domain", text:"Chosen religious domain granting domain spells and bonus domain features."}
+];
+
+CLASSES_INFO["Paladin"].features = [
+  {name:"Divine Sense", text:"Action to detect the location of any celestial, fiend, or undead within 60 feet, as well as consecrated/desecrated places."},
+  {name:"Lay on Hands", text:"Pool of healing power equal to Paladin level x 5. Touch a creature to restore HP or spend 5 HP to cure disease/poison."}
+];
+
+CLASSES_INFO["Bard"].features = [
+  {name:"Spellcasting", text:"Cast spells fueled by the music of creation using Charisma."},
+  {name:"Bardic Inspiration", text:"Bonus action to grant a d6 inspiration die to an ally within 60 feet for checks, attacks, or saves."}
+];
+
+CLASSES_INFO["Druid"].features = [
+  {name:"Druidic", text:"You know Druidic, the secret language of druids, and can leave hidden messages."},
+  {name:"Spellcasting", text:"Cast nature spells fueled by the primal power of nature using Wisdom."}
+];
+
+CLASSES_INFO["Monk"].features = [
+  {name:"Unarmored Defense", text:"While wearing no armor and no shield, AC equals 10 + DEX modifier + WIS modifier."},
+  {name:"Martial Arts", text:"Use DEX for unarmed strikes and monk weapons (1d4 damage). Bonus action unarmed strike after Attack action."}
+];
+
+CLASSES_INFO["Ranger"].features = [
+  {name:"Favored Enemy", text:"Advantage on Survival checks to track favored enemies, and Intelligence checks to recall information about them."},
+  {name:"Natural Explorer", text:"Benefits when traveling, tracking, and foraging in your chosen favored terrain."}
+];
+
+CLASSES_INFO["Sorcerer"].features = [
+  {name:"Spellcasting", text:"Cast innate magic using Charisma as your spellcasting ability."},
+  {name:"Sorcerous Origin", text:"Innate magical bloodline or source that shapes your powers and grants origin traits."}
+];
+
+CLASSES_INFO["Warlock"].features = [
+  {name:"Otherworldly Patron", text:"Pact struck with an otherworldly entity granting unique patron spells and features."},
+  {name:"Pact Magic", text:"Cast warlock spells using Charisma. All spell slots are of the highest available level and recharge on a short rest."}
+];
+
+CLASSES_INFO["Artificer"].features = [
+  {name:"Magical Tinkering", text:"Invest a spark of magic into mundane tiny objects (light, recorded sound, odor, or visual effect)."},
+  {name:"Spellcasting", text:"Cast spells by using tools as focuses, with Intelligence as your spellcasting ability."}
+];
+
+/* ---------------- Feats Catalog (Standard 5e SRD) ---------------- */
+var FEATS_CATALOG = [
+  {
+    name: "Alert",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "+5 initiative, cannot be surprised while conscious, enemies gain no advantage from being unseen.",
+    description: "Always on the lookout for danger, you gain the following benefits:\n• You gain a +5 bonus to initiative.\n• You can't be surprised while you are conscious.\n• Other creatures don’t gain advantage on attack rolls against you as a result of being unseen by you."
+  },
+  {
+    name: "Athlete",
+    prerequisite: "None",
+    category: "Physical",
+    summary: "+1 STR/DEX, stand up with 5ft movement, climbing uses no extra movement, running jumps need only 5ft.",
+    description: "You have undergone extensive physical training to gain the following benefits:\n• Increase your Strength or Dexterity score by 1, to a maximum of 20.\n• When you are prone, standing up uses only 5 feet of your movement.\n• Climbing doesn't cost you extra movement.\n• You can make a running long jump or a running high jump after moving only 5 feet on foot."
+  },
+  {
+    name: "Actor",
+    prerequisite: "None",
+    category: "Social",
+    summary: "+1 CHA, advantage on Deception/Performance when impersonating, mimic speech and sounds.",
+    description: "Skilled at mimicry and dramatics, you gain the following benefits:\n• Increase your Charisma score by 1, to a maximum of 20.\n• You have advantage on Charisma (Deception) and Charisma (Performance) checks when trying to pass yourself off as a different person.\n• You can mimic the speech of another person or the sounds made by other creatures that you have heard for at least 1 minute."
+  },
+  {
+    name: "Charger",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "Bonus action melee attack or shove after Dashing, with +5 damage or 10ft push.",
+    description: "When you use your action to Dash, you can use a bonus action to make one melee weapon attack or to shove a creature.\nIf you move at least 10 feet in a straight line immediately before taking this bonus action, you either gain a +5 bonus to the attack's damage roll (if you hit with a melee attack) or push the target up to 10 feet away from you (if you succeed on the shove)."
+  },
+  {
+    name: "Crossbow Expert",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "Ignore loading quality, no disadvantage on ranged attacks in close combat, bonus action hand crossbow attack.",
+    description: "Thanks to extensive practice with crossbows, you gain the following benefits:\n• You ignore the loading quality of crossbows with which you are proficient.\n• Being within 5 feet of a hostile creature doesn’t impose disadvantage on your ranged attack rolls.\n• When you use the Attack action and attack with a one-handed weapon, you can use a bonus action to attack with a hand crossbow you are holding."
+  },
+  {
+    name: "Defensive Duelist",
+    prerequisite: "Dexterity 13 or higher",
+    category: "Defense",
+    summary: "Use reaction to add proficiency bonus to AC against a melee attack while wielding a finesse weapon.",
+    description: "When you are wielding a finesse weapon with which you are proficient and another creature hits you with a melee attack, you can use your reaction to add your proficiency bonus to your AC for that attack, potentially causing the attack to miss you."
+  },
+  {
+    name: "Dual Wielder",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "+1 AC while dual wielding, use non-light weapons for two-weapon fighting, draw/stow two weapons.",
+    description: "You master fighting with two weapons, gaining the following benefits:\n• You gain a +1 bonus to AC while you are wielding a separate melee weapon in each hand.\n• You can use two-weapon fighting even when the one-handed melee weapons you are wielding aren’t light.\n• You can draw or stow two one-handed weapons when you would normally be able to draw or stow only one."
+  },
+  {
+    name: "Dungeon Delver",
+    prerequisite: "None",
+    category: "Utility",
+    summary: "Advantage to find secret doors, advantage vs traps, resistance to trap damage, search at normal pace.",
+    description: "Alert to the hidden traps and secret doors found in dungeons, you gain the following benefits:\n• You have advantage on Wisdom (Perception) and Intelligence (Investigation) checks made to detect the presence of secret doors.\n• You have advantage on saving throws made to avoid or resist traps.\n• You have resistance to the damage dealt by traps.\n• Traveling at a fast pace doesn't impose the normal -5 penalty on your passive Wisdom (Perception) score."
+  },
+  {
+    name: "Durable",
+    prerequisite: "None",
+    category: "Defense",
+    summary: "+1 CON, minimum HP regained from rolling a Hit Die is 2x your CON modifier (minimum 2).",
+    description: "Hardy and resilient, you gain the following benefits:\n• Increase your Constitution score by 1, to a maximum of 20.\n• When you roll a Hit Die to regain hit points, the minimum number of hit points you regain from the roll equals twice your Constitution modifier (minimum of 2)."
+  },
+  {
+    name: "Elemental Adept",
+    prerequisite: "Spellcasting feature",
+    category: "Magic",
+    summary: "Spells ignore resistance to a chosen element; treat 1s on damage dice as 2s.",
+    description: "When you gain this feat, choose one damage type: acid, cold, fire, lightning, or thunder.\n• Spells you cast ignore resistance to damage of the chosen type.\n• In addition, when you roll damage for a spell you cast that deals damage of that type, you can treat any 1 on a damage die as a 2."
+  },
+  {
+    name: "Grappler",
+    prerequisite: "Strength 13 or higher",
+    category: "Combat",
+    summary: "Advantage on attack rolls against creatures you grapple, can attempt to pin grappled creatures.",
+    description: "You’ve developed the skills necessary to hold your own in close-quarters grappling:\n• You have advantage on attack rolls against a creature you are grappling.\n• You can use your action to try to pin a creature grappled by you. To do so, make another grapple check. If you succeed, you and the creature are both restrained until the grapple ends."
+  },
+  {
+    name: "Great Weapon Master",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "Bonus action attack on crit/kill, take -5 to hit with heavy weapon for +10 damage.",
+    description: "You’ve learned to put the weight of a weapon to your advantage:\n• On your turn, when you score a critical hit with a melee weapon or reduce a creature to 0 hit points with one, you can make one melee weapon attack as a bonus action.\n• Before you make a melee attack with a heavy weapon that you are proficient with, you can choose to take a -5 penalty to the attack roll. If the attack hits, you add +10 to the attack’s damage."
+  },
+  {
+    name: "Healer",
+    prerequisite: "None",
+    category: "Support",
+    summary: "Use healer's kit to stabilize at 1 HP, or restore 1d6 + 4 + max Hit Dice HP once per rest per creature.",
+    description: "You are an able physician, allowing you to mend wounds quickly and get your allies back in the fight:\n• When you use a healer’s kit to stabilize a dying creature, that creature also regains 1 hit point.\n• As an action, you can spend one use of a healer’s kit to tend to a creature and restore 1d6 + 4 hit points to it, plus additional hit points equal to the creature’s maximum number of Hit Dice. The creature can’t regain hit points from this feat again until it finishes a short or long rest."
+  },
+  {
+    name: "Heavily Armored",
+    prerequisite: "Proficiency with medium armor",
+    category: "Defense",
+    summary: "+1 STR, gain proficiency with heavy armor.",
+    description: "You have trained to master the use of heavy armor, gaining the following benefits:\n• Increase your Strength score by 1, to a maximum of 20.\n• You gain proficiency with heavy armor."
+  },
+  {
+    name: "Heavy Armor Master",
+    prerequisite: "Proficiency with heavy armor",
+    category: "Defense",
+    summary: "+1 STR, reduce nonmagical bludgeoning, piercing, and slashing damage by 3 while wearing heavy armor.",
+    description: "You can use your armor to deflect strikes that would kill others:\n• Increase your Strength score by 1, to a maximum of 20.\n• While you are wearing heavy armor, bludgeoning, piercing, and slashing damage that you take from nonmagical attacks is reduced by 3."
+  },
+  {
+    name: "Inspiring Leader",
+    prerequisite: "Charisma 13 or higher",
+    category: "Support",
+    summary: "Spend 10 minutes inspiring up to 6 allies to grant temporary HP equal to level + CHA mod.",
+    description: "You can spend 10 minutes inspiring your companions, shoring up their resolve to fight. When you do so, choose up to six friendly creatures (which can include yourself) within 30 feet of you who can see or hear you and who can understand you. Each creature gains temporary hit points equal to your level + your Charisma modifier (once per rest per creature)."
+  },
+  {
+    name: "Keen Mind",
+    prerequisite: "None",
+    category: "Utility",
+    summary: "+1 INT, always know north and time until sunrise/sunset, perfectly recall past month.",
+    description: "You have a mind that can track time, direction, and detail with uncanny precision:\n• Increase your Intelligence score by 1, to a maximum of 20.\n• You always know which way is north.\n• You always know the number of hours left before the next sunrise or sunset.\n• You can accurately recall anything you have seen or heard within the past month."
+  },
+  {
+    name: "Lightly Armored",
+    prerequisite: "None",
+    category: "Defense",
+    summary: "+1 STR or DEX, gain proficiency with light armor.",
+    description: "You have trained to master the use of light armor, gaining the following benefits:\n• Increase your Strength or Dexterity score by 1, to a maximum of 20.\n• You gain proficiency with light armor."
+  },
+  {
+    name: "Lucky",
+    prerequisite: "None",
+    category: "General",
+    summary: "3 luck points per long rest to roll an extra d20 on attacks, checks, saves, or enemy attacks against you.",
+    description: "You have inexplicable luck that seems to kick in at just the right moment:\n• You have 3 luck points. Whenever you make an attack roll, an ability check, or a saving throw, you can spend one luck point to roll an additional d20 and choose which d20 to use.\n• You can also spend one luck point when an attack roll is made against you to roll a d20 and choose whether the attack uses the attacker’s roll or yours.\n• You regain your expended luck points when you finish a long rest."
+  },
+  {
+    name: "Mage Slayer",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "Reaction attack against adjacent spellcaster, disadvantage on enemy concentration saves, advantage vs nearby spells.",
+    description: "You have practiced techniques useful in melee combat against spellcasters:\n• When a creature within 5 feet of you casts a spell, you can use your reaction to make a melee weapon attack against that creature.\n• When you damage a creature that is concentrating on a spell, that creature has disadvantage on the saving throw it makes to maintain its concentration.\n• You have advantage on saving throws against spells cast by creatures within 5 feet of you."
+  },
+  {
+    name: "Magic Initiate",
+    prerequisite: "None",
+    category: "Magic",
+    summary: "Learn 2 cantrips and one 1st-level spell from a chosen spellcaster class; cast 1st-level spell 1/day.",
+    description: "Choose a class: bard, cleric, druid, sorcerer, warlock, or wizard.\n• You learn two cantrips of your choice from that class’s spell list.\n• In addition, choose one 1st-level spell to learn from that same list. You can cast this spell once at its lowest level without expending a spell slot, regaining the ability on a long rest."
+  },
+  {
+    name: "Martial Adept",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "Learn two Battle Master maneuvers and gain one superiority die (d6) per short or long rest.",
+    description: "You have martial training that allows you to perform special combat maneuvers:\n• You learn two maneuvers of your choice from among those available to the Battle Master archetype in the fighter class.\n• You gain one superiority die, which is a d6 (used to fuel your maneuvers). You regain your expended superiority die when you finish a short or long rest.\n• Saving throw DC equals 8 + proficiency bonus + STR or DEX modifier (your choice)."
+  },
+  {
+    name: "Medium Armor Master",
+    prerequisite: "Proficiency with medium armor",
+    category: "Defense",
+    summary: "Medium armor imposes no Stealth disadvantage, max DEX bonus to AC increases from +2 to +3.",
+    description: "You have practiced moving in medium armor to gain the following benefits:\n• Wearing medium armor doesn’t impose disadvantage on your Dexterity (Stealth) checks.\n• When you wear medium armor, you can add 3, rather than 2, to your AC if you have a Dexterity of 16 or higher."
+  },
+  {
+    name: "Mobile",
+    prerequisite: "None",
+    category: "Movement",
+    summary: "+10ft speed, Dash ignores difficult terrain, melee attacking a creature prevents opportunity attacks from it.",
+    description: "You are exceptionally speedy and agile:\n• Your speed increases by 10 feet.\n• When you use the Dash action, difficult terrain doesn’t cost you extra movement on that turn.\n• When you make a melee attack against a creature, you don’t provoke opportunity attacks from that creature for the rest of the turn, whether you hit or not."
+  },
+  {
+    name: "Moderately Armored",
+    prerequisite: "Proficiency with light armor",
+    category: "Defense",
+    summary: "+1 STR or DEX, gain proficiency with medium armor and shields.",
+    description: "You have trained to master the use of medium armor and shields, gaining the following benefits:\n• Increase your Strength or Dexterity score by 1, to a maximum of 20.\n• You gain proficiency with medium armor and shields."
+  },
+  {
+    name: "Mounted Combatant",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "Advantage on melee attacks vs smaller unmounted foes, redirect attacks to mount to yourself, mount DEX save evasion.",
+    description: "You are a dangerous foe to face while mounted:\n• You have advantage on melee attack rolls against any unmounted creature that is smaller than your mount.\n• You can force an attack targeted at your mount to target you instead.\n• If your mount is subjected to an effect that allows it to make a DEX saving throw to take only half damage, it takes no damage on success and half damage on failure."
+  },
+  {
+    name: "Observant",
+    prerequisite: "None",
+    category: "Utility",
+    summary: "+1 INT or WIS, read lips, +5 bonus to passive Perception and passive Investigation.",
+    description: "Quick to notice details of your environment, you gain the following benefits:\n• Increase your Intelligence or Wisdom score by 1, to a maximum of 20.\n• If you can see a creature’s mouth while it speaks a language you understand, you can interpret what it’s saying by reading its lips.\n• You have a +5 bonus to your passive Wisdom (Perception) and passive Intelligence (Investigation) scores."
+  },
+  {
+    name: "Polearm Master",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "Bonus action attack with opposite end of polearms (1d4), opportunity attack when enemies enter your reach.",
+    description: "You can keep your enemies at bay with reach weapons:\n• When you take the Attack action and attack with only a glaive, halberd, pike, quarterstaff, or spear, you can use a bonus action to make a melee attack with the opposite end of the weapon (deals 1d4 bludgeoning damage).\n• While you are wielding a glaive, halberd, pike, quarterstaff, or spear, other creatures provoke an opportunity attack from you when they enter the reach you have with that weapon."
+  },
+  {
+    name: "Resilient",
+    prerequisite: "None",
+    category: "Defense",
+    summary: "+1 to any ability score, gain saving throw proficiency in that chosen ability.",
+    description: "Choose one ability score. You gain the following benefits:\n• Increase the chosen ability score by 1, to a maximum of 20.\n• You gain proficiency in saving throws using the chosen ability."
+  },
+  {
+    name: "Ritual Caster",
+    prerequisite: "Intelligence or Wisdom 13 or higher",
+    category: "Magic",
+    summary: "Gain ritual book with two 1st-level ritual spells from a chosen class, scribe more ritual spells you find.",
+    description: "You have learned a number of spells that you can cast as rituals. Choose a class: bard, cleric, druid, sorcerer, warlock, or wizard.\n• You acquire a ritual book holding two 1st-level spells of your choice that have the ritual tag from that class’s spell list.\n• You can cast these spells as rituals. If you come across a spell in written form, you might be able to add it to your ritual book."
+  },
+  {
+    name: "Savage Attacker",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "Once per turn when rolling melee weapon damage, roll again and use either total.",
+    description: "Once per turn when you roll damage for a melee weapon attack, you can reroll the weapon’s damage dice and use either total."
+  },
+  {
+    name: "Sentinel",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "Opportunity attacks reduce enemy speed to 0, enemies provoke even when Disengaging, reaction attack when enemy attacks nearby ally.",
+    description: "You have mastered techniques to take advantage of every drop in any enemy's guard:\n• When you hit a creature with an opportunity attack, the creature’s speed becomes 0 for the rest of the turn.\n• Creatures provoke opportunity attacks from you even if they take the Disengage action before leaving your reach.\n• When a creature within 5 feet of you makes an attack against a target other than you (and that target doesn’t have this feat), you can use your reaction to make a melee weapon attack against the attacking creature."
+  },
+  {
+    name: "Sharpshooter",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "Attacking at long range has no disadvantage, ignore half and 3/4 cover, take -5 to hit for +10 damage with ranged weapon.",
+    description: "You have mastered ranged weapons and can make shots that others find impossible:\n• Attacking at long range doesn't impose disadvantage on your ranged weapon attack rolls.\n• Your ranged weapon attacks ignore half cover and three-quarters cover.\n• Before you make an attack with a ranged weapon that you are proficient with, you can choose to take a -5 penalty to the attack roll. If the attack hits, you add +10 to the attack’s damage."
+  },
+  {
+    name: "Shield Master",
+    prerequisite: "None",
+    category: "Defense",
+    summary: "Bonus action shield shove, add shield AC to DEX saves targeting only you, reaction to take 0 damage on successful DEX save.",
+    description: "You use shields not just for protection but also for offense:\n• If you take the Attack action on your turn, you can use a bonus action to try to shove a creature within 5 feet of you with your shield.\n• If you aren’t incapacitated, you can add your shield’s AC bonus to any Dexterity saving throw you make against a spell or other harmful effect that targets only you.\n• If you are subjected to an effect that allows you to make a DEX saving throw for half damage, you can use your reaction to take no damage on a success."
+  },
+  {
+    name: "Skill Expert",
+    prerequisite: "None",
+    category: "Utility",
+    summary: "+1 to any ability score, gain proficiency in one skill, and gain expertise in one proficient skill.",
+    description: "You have honed your proficiency with particular skills:\n• Increase one ability score of your choice by 1, to a maximum of 20.\n• You gain proficiency in one skill of your choice.\n• Choose one skill in which you have proficiency. You gain expertise with that skill (your proficiency bonus is doubled for checks made with it)."
+  },
+  {
+    name: "Skilled",
+    prerequisite: "None",
+    category: "Utility",
+    summary: "Gain proficiency in any combination of three skills or tools of your choice.",
+    description: "You have exceptionally broad training:\n• You gain proficiency in any combination of three skills or tools of your choice."
+  },
+  {
+    name: "Skulker",
+    prerequisite: "Dexterity 13 or higher",
+    category: "Utility",
+    summary: "Hide when lightly obscured, missing a ranged attack while hidden does not reveal you, dim light imposes no disadvantage.",
+    description: "You are expert at slinking through shadows:\n• You can try to hide when you are lightly obscured from the creature from which you are hiding.\n• When you are hidden from a creature and miss it with a ranged weapon attack, making the attack doesn't reveal your position.\n• Dim light doesn’t impose disadvantage on your Wisdom (Perception) checks relying on sight."
+  },
+  {
+    name: "Spell Sniper",
+    prerequisite: "Spellcasting feature",
+    category: "Magic",
+    summary: "Double range of attack spells, ignore half and 3/4 cover with spells, learn one attack cantrip.",
+    description: "You have mastered spells that require attack rolls:\n• When you cast a spell that requires you to make an attack roll, the spell’s range is doubled.\n• Your ranged spell attacks ignore half cover and three-quarters cover.\n• You learn one cantrip that requires an attack roll from the bard, cleric, druid, sorcerer, warlock, or wizard spell list (using that class's casting ability)."
+  },
+  {
+    name: "Tavern Brawler",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "+1 STR or CON, proficient with improvised weapons, 1d4 unarmed strikes, bonus action grapple on unarmed/improvised hit.",
+    description: "Accustomed to rough-and-tumble fighting using whatever is at hand:\n• Increase your Strength or Constitution score by 1, to a maximum of 20.\n• You are proficient with improvised weapons.\n• Your unarmed strike uses a d4 for damage.\n• When you hit a creature with an unarmed strike or an improvised weapon on your turn, you can use a bonus action to attempt to grapple the target."
+  },
+  {
+    name: "Tough",
+    prerequisite: "None",
+    category: "Defense",
+    summary: "HP maximum increases by 2 per level (current and future).",
+    description: "Your hit point maximum increases by an amount equal to twice your level when you gain this feat. Whenever you gain a level thereafter, your hit point maximum increases by an additional 2 hit points."
+  },
+  {
+    name: "War Caster",
+    prerequisite: "Spellcasting feature",
+    category: "Magic",
+    summary: "Advantage on concentration saves, perform somatic components with weapons/shield in hand, cast spell as opportunity attack.",
+    description: "You have practiced casting spells in the midst of combat:\n• You have advantage on Constitution saving throws that you make to maintain your concentration on a spell when you take damage.\n• You can perform the somatic components of spells even when you have weapons or a shield in one or both hands.\n• When a hostile creature’s movement provokes an opportunity attack from you, you can use your reaction to cast a spell at the creature, rather than making an opportunity attack."
+  },
+  {
+    name: "Weapon Master",
+    prerequisite: "None",
+    category: "Combat",
+    summary: "+1 STR or DEX, gain proficiency with four weapons of your choice.",
+    description: "You have practiced extensively with a variety of weapons, gaining the following benefits:\n• Increase your Strength or Dexterity score by 1, to a maximum of 20.\n• You gain proficiency with four weapons of your choice."
+  }
+];
 
 var RACE_TRAITS = {
   "Human": "+1 to every ability score. No other special traits — flexible and simple to play.",
@@ -228,6 +587,104 @@ function barbarianRageMax(level){
   if(level>=3) return 3;
   return 2;
 }
+function passivePerception(c){
+  var wisMod = mod(c.abilities && c.abilities.wis != null ? c.abilities.wis : 10);
+  var entry = c.skillProfs && c.skillProfs["Perception"];
+  var pb = profBonus(c);
+  var bonus = wisMod + (entry && entry.expertise ? pb*2 : (entry && entry.prof ? pb : 0));
+  var featBonus = (c.feats||[]).some(function(f){ return ((f.name||"") + "").toLowerCase()==="observant"; }) ? 5 : 0;
+  return 10 + bonus + featBonus;
+}
+function passiveInvestigation(c){
+  var intMod = mod(c.abilities && c.abilities.int != null ? c.abilities.int : 10);
+  var entry = c.skillProfs && c.skillProfs["Investigation"];
+  var pb = profBonus(c);
+  var bonus = intMod + (entry && entry.expertise ? pb*2 : (entry && entry.prof ? pb : 0));
+  var featBonus = (c.feats||[]).some(function(f){ return ((f.name||"") + "").toLowerCase()==="observant"; }) ? 5 : 0;
+  return 10 + bonus + featBonus;
+}
+function passiveInsight(c){
+  var wisMod = mod(c.abilities && c.abilities.wis != null ? c.abilities.wis : 10);
+  var entry = c.skillProfs && c.skillProfs["Insight"];
+  var pb = profBonus(c);
+  var bonus = wisMod + (entry && entry.expertise ? pb*2 : (entry && entry.prof ? pb : 0));
+  return 10 + bonus;
+}
+function getCharacterSenses(c){
+  var race = (c.race||"").toLowerCase();
+  if(race.indexOf("drow")!==-1) return "Superior Darkvision 120 ft";
+  if(race.indexOf("dwarf")!==-1 || race.indexOf("elf")!==-1 || race.indexOf("gnome")!==-1 ||
+     race.indexOf("half-elf")!==-1 || race.indexOf("half-orc")!==-1 || race.indexOf("tiefling")!==-1 ||
+     race.indexOf("orc")!==-1 || race.indexOf("goblin")!==-1 || race.indexOf("kobold")!==-1 ||
+     race.indexOf("bugbear")!==-1 || race.indexOf("aasimar")!==-1 || race.indexOf("tabaxi")!==-1) {
+    return "Darkvision 60 ft";
+  }
+  return "Normal (60 ft)";
+}
+function getAllCharacterFeatures(c){
+  var list = [];
+  (c.classes||[]).forEach(function(cl){
+    var info = CLASSES_INFO[cl.name];
+    if(info && info.features && info.features.length){
+      info.features.forEach(function(f){
+        list.push({
+          id: "class_"+cl.name+"_"+f.name,
+          name: f.name,
+          source: "Class · " + cl.name,
+          text: f.text,
+          category: "class",
+          isDerived: true
+        });
+      });
+    }
+  });
+  if(c.race){
+    var traitText = RACE_TRAITS[c.race] || RACE_TRAIT_FALLBACK;
+    list.push({
+      id: "race_"+c.race,
+      name: c.race + " Traits",
+      source: "Race · " + c.race,
+      text: traitText,
+      category: "race",
+      isDerived: true
+    });
+  }
+  if(c.background){
+    var bg = BACKGROUND_INFO[c.background];
+    list.push({
+      id: "bg_"+c.background,
+      name: c.background + " Lore & Features",
+      source: "Background · " + c.background,
+      text: bg ? bg.blurb : BACKGROUND_INFO_FALLBACK,
+      category: "background",
+      isDerived: true
+    });
+  }
+  (c.feats||[]).forEach(function(feat){
+    var descText = (feat.prerequisite && feat.prerequisite !== "None" ? "(Prerequisite: " + feat.prerequisite + ")\n" : "") + (feat.description || feat.summary || "");
+    list.push({
+      id: "feat_"+(feat.id || feat.name),
+      name: feat.name,
+      source: "Feat" + (feat.category ? " · " + feat.category : ""),
+      text: descText,
+      category: "feat",
+      isFeat: true,
+      featObj: feat
+    });
+  });
+  (c.features||[]).forEach(function(f){
+    list.push({
+      id: f.id || uid(),
+      name: f.name || "Custom Feature",
+      source: f.source || "Custom",
+      text: f.text || "",
+      category: (f.source || "custom").toLowerCase(),
+      isCustom: true,
+      featureObj: f
+    });
+  });
+  return list;
+}
 function clamp(n,lo,hi){ return Math.max(lo,Math.min(hi,n)); }
 function ce(tag, cls){ var e = document.createElement(tag); if(cls) e.className = cls; return e; }
 function escapeHtml(s){
@@ -297,7 +754,44 @@ function ensureShape(c){
   for(var i=1;i<=9;i++){ if(!c.spellcasting.slots[i]) c.spellcasting.slots[i] = {max:0,used:0}; }
   if(!c.spells) c.spells = [];
   if(!c.feats) c.feats = [];
+  else {
+    c.feats = c.feats.map(function(item){
+      if(typeof item === "string"){
+        var found = FEATS_CATALOG.find(function(f){ return f.name.toLowerCase()===item.toLowerCase(); });
+        return {
+          id: uid(),
+          name: item,
+          prerequisite: found ? found.prerequisite : "None",
+          category: found ? found.category : "General",
+          summary: found ? found.summary : "",
+          description: found ? found.description : item,
+          source: found ? "SRD" : "Custom"
+        };
+      }
+      if(!item.id) item.id = uid();
+      return item;
+    });
+  }
   if(!c.features) c.features = [];
+  else {
+    c.features = c.features.map(function(item){
+      if(typeof item === "string"){
+        var parts = item.split(":");
+        var name = parts[0].trim();
+        var text = parts.slice(1).join(":").trim();
+        if(!text){ text = name; name = "Custom Feature"; }
+        return {
+          id: uid(),
+          name: name,
+          source: "Custom",
+          text: text,
+          isPassive: true
+        };
+      }
+      if(!item.id) item.id = uid();
+      return item;
+    });
+  }
   if(!c.inventory) c.inventory = [];
   if(!c.currency) c.currency = {cp:0,sp:0,ep:0,gp:0,pp:0};
   if(!c.notes) c.notes = [];
@@ -339,6 +833,7 @@ function renderSidebar(){
 var TABS = [
   ["vitals","Vitals"],
   ["abilities","Abilities & Skills"],
+  ["features","Features & Feats"],
   ["spells","Spells"],
   ["inventory","Inventory"],
   ["journal","Journal"]
@@ -378,6 +873,7 @@ function renderAll(){
   var panelMap = {
     vitals: renderVitalsPanel,
     abilities: renderAbilitiesPanel,
+    features: renderFeaturesPanel,
     spells: renderSpellsPanel,
     inventory: renderInventoryPanel,
     journal: renderJournalPanel
@@ -916,19 +1412,812 @@ function renderAbilitiesPanel(c){
   skillCard.appendChild(skillRows);
   panel.appendChild(skillCard);
 
-  var featCard = makeCard("Feats & features");
-  var featTextarea = document.createElement("textarea");
-  featTextarea.className = "freeform";
-  featTextarea.placeholder = "List feats, class features, racial traits — one per line, however you like to organize them.";
-  featTextarea.value = (c.features||[]).join("\n");
-  featTextarea.addEventListener("input", function(){
-    c.features = featTextarea.value.split("\n");
-    save();
+  var passCard = makeCard("Passive senses");
+  var passGrid = document.createElement("div");
+  passGrid.className = "passives-grid";
+  var pPerc = passivePerception(c);
+  var pInv = passiveInvestigation(c);
+  var pIns = passiveInsight(c);
+  var senses = getCharacterSenses(c);
+
+  [
+    { label: "Passive Perception", val: pPerc, sub: "WIS ("+fmtMod(mod(c.abilities.wis))+")" },
+    { label: "Passive Investigation", val: pInv, sub: "INT ("+fmtMod(mod(c.abilities.int))+")" },
+    { label: "Passive Insight", val: pIns, sub: "WIS ("+fmtMod(mod(c.abilities.wis))+")" },
+    { label: "Senses", val: senses, sub: (c.race || "Base race") }
+  ].forEach(function(st){
+    var box = document.createElement("div");
+    box.className = "passive-box";
+    var valStyle = typeof st.val === "string" && st.val.length > 8 ? "font-size:15px;line-height:1.3;margin-top:2px;" : "";
+    box.innerHTML = '<div class="lbl">' + escapeHtml(st.label) + '</div>' +
+      '<div class="val" style="' + valStyle + '">' + escapeHtml(String(st.val)) + '</div>' +
+      '<div class="sub">' + escapeHtml(st.sub) + '</div>';
+    passGrid.appendChild(box);
   });
-  featCard.appendChild(featTextarea);
-  panel.appendChild(featCard);
+  passCard.appendChild(passGrid);
+  panel.appendChild(passCard);
+
+  var summaryCard = makeCard("Features & feats summary");
+  var allFeats = c.feats || [];
+  var allFeatsAndFeatures = getAllCharacterFeatures(c);
+  var sumP = document.createElement("p");
+  sumP.style.cssText = "font-size:13px;color:var(--text-on-parch);margin:0 0 10px;";
+  sumP.innerHTML = "<strong>" + allFeats.length + "</strong> feats and <strong>" + allFeatsAndFeatures.length + "</strong> total features & traits active on this character.";
+  summaryCard.appendChild(sumP);
+
+  var goBtn = document.createElement("button");
+  goBtn.className = "btn small primary";
+  goBtn.textContent = "Manage Feats & Features →";
+  goBtn.addEventListener("click", function(){
+    state.activeTab = "features";
+    renderAll();
+  });
+  summaryCard.appendChild(goBtn);
+  panel.appendChild(summaryCard);
 
   return panel;
+}
+
+/* ---- Features & Feats panel ---- */
+var featureCategoryFilter = "all";
+var featureSearchQuery = "";
+var featSearchQuery = "";
+
+function renderFeaturesPanel(c){
+  var panel = document.createElement("div");
+
+  // 1. Passive Senses & Core Defenses Card
+  var passCard = makeCard("Passive senses & core stats", "calculated automatically from abilities, proficiencies, and feats");
+  var passGrid = document.createElement("div");
+  passGrid.className = "passives-grid";
+
+  var pPerc = passivePerception(c);
+  var pInv = passiveInvestigation(c);
+  var pIns = passiveInsight(c);
+  var senses = getCharacterSenses(c);
+  var pb = profBonus(c);
+
+  var stats = [
+    { label: "Passive Perception", val: pPerc, sub: "10 + WIS (" + fmtMod(mod(c.abilities.wis)) + ") " + (c.skillProfs.Perception && c.skillProfs.Perception.prof ? "+ Prof" : "") },
+    { label: "Passive Investigation", val: pInv, sub: "10 + INT (" + fmtMod(mod(c.abilities.int)) + ") " + (c.skillProfs.Investigation && c.skillProfs.Investigation.prof ? "+ Prof" : "") },
+    { label: "Passive Insight", val: pIns, sub: "10 + WIS (" + fmtMod(mod(c.abilities.wis)) + ") " + (c.skillProfs.Insight && c.skillProfs.Insight.prof ? "+ Prof" : "") },
+    { label: "Senses", val: senses, sub: (c.race || "Base race") },
+    { label: "Proficiency Bonus", val: fmtMod(pb), sub: "Level " + totalLevel(c) },
+    { label: "Speed", val: (c.speed || 30) + " ft", sub: "Base walk speed" }
+  ];
+
+  stats.forEach(function(st){
+    var box = document.createElement("div");
+    box.className = "passive-box";
+    var valStyle = typeof st.val === "string" && st.val.length > 8 ? "font-size:15px;line-height:1.3;margin-top:2px;" : "";
+    box.innerHTML = '<div class="lbl">' + escapeHtml(st.label) + '</div>' +
+      '<div class="val" style="' + valStyle + '">' + escapeHtml(String(st.val)) + '</div>' +
+      '<div class="sub">' + escapeHtml(st.sub) + '</div>';
+    passGrid.appendChild(box);
+  });
+  passCard.appendChild(passGrid);
+  panel.appendChild(passCard);
+
+  // 2. Feats Card
+  var feats = c.feats || [];
+  var featCard = makeCard("Feats (" + feats.length + ")", "special perks and feats chosen for your character");
+  
+  var featHeader = document.createElement("div");
+  featHeader.className = "ff-section-header";
+  featHeader.innerHTML = '<span style="font-size:12px;color:var(--text-on-parch-dim);">' +
+    (feats.length === 1 ? '1 feat active' : feats.length + ' feats active') + '</span>';
+  
+  var addFeatBtn = document.createElement("button");
+  addFeatBtn.className = "btn small primary";
+  addFeatBtn.textContent = "+ Add Feat";
+  addFeatBtn.addEventListener("click", function(){
+    openFeatPickerModal(c);
+  });
+  featHeader.appendChild(addFeatBtn);
+  featCard.appendChild(featHeader);
+
+  if(feats.length === 0){
+    var emptyFeats = document.createElement("div");
+    emptyFeats.style.cssText = "text-align:center;padding:24px 12px;background:rgba(255,255,255,0.02);border:1px dashed var(--rule);border-radius:6px;";
+    emptyFeats.innerHTML = '<p style="margin:0 0 10px;font-size:13.5px;color:var(--text-on-parch-dim);">No feats added yet.</p>';
+    var addFirstFeatBtn = document.createElement("button");
+    addFirstFeatBtn.className = "btn small";
+    addFirstFeatBtn.textContent = "+ Browse & Add Feats";
+    addFirstFeatBtn.addEventListener("click", function(){ openFeatPickerModal(c); });
+    emptyFeats.appendChild(addFirstFirstBtnFallback(addFirstFeatBtn));
+    featCard.appendChild(emptyFeats);
+  } else {
+    var featList = document.createElement("div");
+    featList.className = "ff-items-list";
+    feats.forEach(function(feat, idx){
+      var itemCard = document.createElement("div");
+      itemCard.className = "ff-item-card";
+
+      var top = document.createElement("div");
+      top.className = "ff-item-top";
+
+      var titleGrp = document.createElement("div");
+      titleGrp.className = "ff-item-title-group";
+
+      var titleSpan = document.createElement("span");
+      titleSpan.className = "ff-item-title";
+      titleSpan.textContent = feat.name;
+      titleGrp.appendChild(titleSpan);
+
+      var tagSpan = document.createElement("span");
+      tagSpan.className = "ff-tag source-feat";
+      tagSpan.textContent = feat.source || "Feat";
+      titleGrp.appendChild(tagSpan);
+
+      if(feat.category){
+        var catSpan = document.createElement("span");
+        catSpan.className = "ff-tag";
+        catSpan.textContent = feat.category;
+        titleGrp.appendChild(catSpan);
+      }
+      top.appendChild(titleGrp);
+
+      var actions = document.createElement("div");
+      actions.className = "ff-actions";
+
+      var editBtn = document.createElement("button");
+      editBtn.className = "ff-action-btn";
+      editBtn.textContent = "Edit";
+      editBtn.title = "Edit feat details";
+      editBtn.addEventListener("click", function(){
+        openFeatPickerModal(c, feat, idx);
+      });
+      actions.appendChild(editBtn);
+
+      var delBtn = document.createElement("button");
+      delBtn.className = "ff-action-btn danger";
+      delBtn.textContent = "Remove";
+      delBtn.title = "Remove feat";
+      delBtn.addEventListener("click", function(){
+        confirmDialog("Remove feat " + feat.name + "?", "Are you sure you want to remove this feat from " + (c.name || "this character") + "?", function(){
+          c.feats.splice(idx, 1);
+          save();
+          renderAll();
+        });
+      });
+      actions.appendChild(delBtn);
+      top.appendChild(actions);
+      itemCard.appendChild(top);
+
+      if(feat.prerequisite && feat.prerequisite !== "None"){
+        var prereq = document.createElement("div");
+        prereq.className = "ff-prereq";
+        prereq.textContent = "Prerequisite: " + feat.prerequisite;
+        itemCard.appendChild(prereq);
+      }
+
+      if(feat.description){
+        var desc = document.createElement("div");
+        desc.className = "ff-desc";
+        desc.textContent = feat.description;
+        itemCard.appendChild(desc);
+      } else if(feat.summary){
+        var sum = document.createElement("div");
+        sum.className = "ff-desc";
+        sum.textContent = feat.summary;
+        itemCard.appendChild(sum);
+      }
+
+      featList.appendChild(itemCard);
+    });
+    featCard.appendChild(featList);
+  }
+  panel.appendChild(featCard);
+
+  // 3. All Features, Traits & Passives Directory Card
+  var allFeatures = getAllCharacterFeatures(c);
+  var featDirCard = makeCard("Features, traits & passives (" + allFeatures.length + ")", "comprehensive directory of all race, class, background, and custom abilities");
+
+  var dirHeader = document.createElement("div");
+  dirHeader.className = "ff-section-header";
+  dirHeader.innerHTML = '<span style="font-size:12px;color:var(--text-on-parch-dim);">All active powers & traits</span>';
+
+  var addCustomFeatureBtn = document.createElement("button");
+  addCustomFeatureBtn.className = "btn small ghost";
+  addCustomFeatureBtn.textContent = "+ Add Custom Feature";
+  addCustomFeatureBtn.addEventListener("click", function(){
+    openFeatureModal(c);
+  });
+  dirHeader.appendChild(addCustomFeatureBtn);
+  featDirCard.appendChild(dirHeader);
+
+  // Search & Filter controls
+  var searchBar = document.createElement("div");
+  searchBar.className = "ff-search-bar";
+  var searchInput = document.createElement("input");
+  searchInput.className = "ff-search-input";
+  searchInput.type = "text";
+  searchInput.placeholder = "Search all abilities, traits & passives…";
+  searchInput.value = featureSearchQuery;
+  searchInput.addEventListener("input", function(){
+    featureSearchQuery = searchInput.value;
+    updateFeatureList();
+  });
+  searchBar.appendChild(searchInput);
+  featDirCard.appendChild(searchBar);
+
+  // Filter pills
+  var pillRow = document.createElement("div");
+  pillRow.className = "ff-pill-row";
+  var categories = [
+    { key: "all", label: "All (" + allFeatures.length + ")" },
+    { key: "class", label: "Class (" + allFeatures.filter(function(f){ return f.category==="class"; }).length + ")" },
+    { key: "race", label: "Racial (" + allFeatures.filter(function(f){ return f.category==="race"; }).length + ")" },
+    { key: "background", label: "Background (" + allFeatures.filter(function(f){ return f.category==="background"; }).length + ")" },
+    { key: "feat", label: "Feats (" + allFeatures.filter(function(f){ return f.category==="feat"; }).length + ")" },
+    { key: "custom", label: "Custom / Passives (" + allFeatures.filter(function(f){ return f.category==="custom" || f.category==="passive"; }).length + ")" }
+  ];
+
+  categories.forEach(function(cat){
+    var pill = document.createElement("button");
+    pill.className = "ff-pill" + (featureCategoryFilter === cat.key ? " active" : "");
+    pill.textContent = cat.label;
+    pill.addEventListener("click", function(){
+      featureCategoryFilter = cat.key;
+      var pills = pillRow.querySelectorAll(".ff-pill");
+      pills.forEach(function(p){ p.classList.remove("active"); });
+      pill.classList.add("active");
+      updateFeatureList();
+    });
+    pillRow.appendChild(pill);
+  });
+  featDirCard.appendChild(pillRow);
+
+  var featListContainer = document.createElement("div");
+  featListContainer.className = "ff-items-list";
+  featDirCard.appendChild(featListContainer);
+
+  function updateFeatureList(){
+    featListContainer.innerHTML = "";
+    var q = (featureSearchQuery || "").toLowerCase().trim();
+    var filtered = allFeatures.filter(function(item){
+      // Category filter
+      if(featureCategoryFilter !== "all"){
+        if(featureCategoryFilter === "custom"){
+          if(item.category !== "custom" && item.category !== "passive") return false;
+        } else if(item.category !== featureCategoryFilter) {
+          return false;
+        }
+      }
+      // Search filter
+      if(q){
+        var matchName = (item.name || "").toLowerCase().indexOf(q) !== -1;
+        var matchText = (item.text || "").toLowerCase().indexOf(q) !== -1;
+        var matchSource = (item.source || "").toLowerCase().indexOf(q) !== -1;
+        if(!matchName && !matchText && !matchSource) return false;
+      }
+      return true;
+    });
+
+    if(filtered.length === 0){
+      var emptyDiv = document.createElement("div");
+      emptyDiv.style.cssText = "text-align:center;padding:20px;color:var(--text-on-parch-dim);font-size:13px;background:rgba(255,255,255,0.02);border-radius:6px;";
+      emptyDiv.textContent = q ? "No features or traits match \"" + q + "\"." : "No features found in this category.";
+      featListContainer.appendChild(emptyDiv);
+      return;
+    }
+
+    filtered.forEach(function(item){
+      var card = document.createElement("div");
+      card.className = "ff-item-card";
+
+      var top = document.createElement("div");
+      top.className = "ff-item-top";
+
+      var titleGrp = document.createElement("div");
+      titleGrp.className = "ff-item-title-group";
+
+      var titleSpan = document.createElement("span");
+      titleSpan.className = "ff-item-title";
+      titleSpan.textContent = item.name;
+      titleGrp.appendChild(titleSpan);
+
+      var tagSpan = document.createElement("span");
+      var sourceClass = "source-passive";
+      if(item.category === "class") sourceClass = "source-class";
+      else if(item.category === "race") sourceClass = "source-race";
+      else if(item.category === "background") sourceClass = "source-bg";
+      else if(item.category === "feat") sourceClass = "source-feat";
+
+      tagSpan.className = "ff-tag " + sourceClass;
+      tagSpan.textContent = item.source || "Feature";
+      titleGrp.appendChild(tagSpan);
+
+      top.appendChild(titleGrp);
+
+      if(item.isCustom && item.featureObj){
+        var actions = document.createElement("div");
+        actions.className = "ff-actions";
+
+        var editBtn = document.createElement("button");
+        editBtn.className = "ff-action-btn";
+        editBtn.textContent = "Edit";
+        editBtn.addEventListener("click", function(){
+          openFeatureModal(c, item.featureObj);
+        });
+        actions.appendChild(editBtn);
+
+        var delBtn = document.createElement("button");
+        delBtn.className = "ff-action-btn danger";
+        delBtn.textContent = "Delete";
+        delBtn.addEventListener("click", function(){
+          confirmDialog("Delete " + item.name + "?", "Delete this custom feature?", function(){
+            c.features = c.features.filter(function(f){ return f.id !== item.featureObj.id; });
+            save();
+            renderAll();
+          });
+        });
+        actions.appendChild(delBtn);
+        top.appendChild(actions);
+      } else if(item.isFeat && item.featObj){
+        var actions = document.createElement("div");
+        actions.className = "ff-actions";
+        var viewFeatBtn = document.createElement("button");
+        viewFeatBtn.className = "ff-action-btn";
+        viewFeatBtn.textContent = "Edit Feat";
+        viewFeatBtn.addEventListener("click", function(){
+          var idx = (c.feats||[]).indexOf(item.featObj);
+          openFeatPickerModal(c, item.featObj, idx);
+        });
+        actions.appendChild(viewFeatBtn);
+        top.appendChild(actions);
+      }
+
+      card.appendChild(top);
+
+      if(item.text){
+        var desc = document.createElement("div");
+        desc.className = "ff-desc";
+        desc.textContent = item.text;
+        card.appendChild(desc);
+      }
+
+      featListContainer.appendChild(card);
+    });
+  }
+
+  updateFeatureList();
+  panel.appendChild(featDirCard);
+
+  return panel;
+}
+
+function addFirstFirstBtnFallback(btn){
+  return btn;
+}
+
+function openFeatPickerModal(c, featToEdit, featIdx){
+  var modal = document.getElementById("feat-modal");
+  var body = document.getElementById("feat-modal-body");
+  var title = document.getElementById("feat-modal-title");
+  title.textContent = featToEdit ? "Edit Feat" : "Add Feat to " + (c.name || "Character");
+  body.innerHTML = "";
+
+  var activeModalTab = featToEdit ? "custom" : "browse";
+  var selectedCatalogFeat = FEATS_CATALOG[0];
+  var catalogSearch = "";
+
+  var tabsBar = document.createElement("div");
+  tabsBar.className = "feat-modal-tabs";
+
+  var browseTabBtn = document.createElement("button");
+  browseTabBtn.className = "feat-modal-tab-btn" + (activeModalTab === "browse" ? " active" : "");
+  browseTabBtn.textContent = "Browse Standard Feats";
+
+  var customTabBtn = document.createElement("button");
+  customTabBtn.className = "feat-modal-tab-btn" + (activeModalTab === "custom" ? " active" : "");
+  customTabBtn.textContent = featToEdit ? "Edit Feat Details" : "Create Custom Feat";
+
+  tabsBar.appendChild(browseTabBtn);
+  tabsBar.appendChild(customTabBtn);
+  body.appendChild(tabsBar);
+
+  var contentArea = document.createElement("div");
+  body.appendChild(contentArea);
+
+  browseTabBtn.addEventListener("click", function(){
+    activeModalTab = "browse";
+    browseTabBtn.classList.add("active");
+    customTabBtn.classList.remove("active");
+    renderBrowseTab();
+  });
+
+  customTabBtn.addEventListener("click", function(){
+    activeModalTab = "custom";
+    customTabBtn.classList.add("active");
+    browseTabBtn.classList.remove("active");
+    renderCustomTab();
+  });
+
+  function renderBrowseTab(){
+    contentArea.innerHTML = "";
+
+    var searchRow = document.createElement("div");
+    searchRow.className = "ff-search-bar";
+    var sInput = document.createElement("input");
+    sInput.className = "ff-search-input";
+    sInput.type = "text";
+    sInput.placeholder = "Filter standard feats by name, benefit, prerequisite…";
+    sInput.value = catalogSearch;
+    searchRow.appendChild(sInput);
+    contentArea.appendChild(searchRow);
+
+    var split = document.createElement("div");
+    split.className = "feat-catalog-split";
+
+    var listCol = document.createElement("div");
+    listCol.className = "feat-catalog-list";
+
+    var previewCol = document.createElement("div");
+    previewCol.className = "feat-catalog-preview";
+
+    split.appendChild(listCol);
+    split.appendChild(previewCol);
+    contentArea.appendChild(split);
+
+    function updatePreview(feat){
+      selectedCatalogFeat = feat;
+      previewCol.innerHTML = "";
+      if(!feat){
+        previewCol.innerHTML = '<div style="color:var(--text-on-parch-dim);font-size:13px;text-align:center;margin:auto;">Select a feat to view details.</div>';
+        return;
+      }
+      var isAdded = (c.feats || []).some(function(f){ return f.name.toLowerCase() === feat.name.toLowerCase(); });
+
+      var topPart = document.createElement("div");
+      var h5 = document.createElement("h4");
+      h5.style.cssText = "margin:0 0 6px;font-family:var(--serif);color:var(--brass-bright);font-size:18px;";
+      h5.textContent = feat.name;
+      topPart.appendChild(h5);
+
+      var metaDiv = document.createElement("div");
+      metaDiv.style.cssText = "display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;";
+      if(feat.category){
+        var catSpan = document.createElement("span");
+        catSpan.className = "ff-tag";
+        catSpan.textContent = feat.category;
+        metaDiv.appendChild(catSpan);
+      }
+      if(feat.prerequisite && feat.prerequisite !== "None"){
+        var prereqSpan = document.createElement("span");
+        prereqSpan.style.cssText = "font-size:11px;color:var(--text-on-parch-dim);font-style:italic;";
+        prereqSpan.textContent = "Requires: " + feat.prerequisite;
+        metaDiv.appendChild(prereqSpan);
+      }
+      topPart.appendChild(metaDiv);
+
+      var descP = document.createElement("div");
+      descP.style.cssText = "font-size:12.5px;line-height:1.45;color:var(--text-on-parch);white-space:pre-line;margin-bottom:12px;max-height:220px;overflow-y:auto;";
+      descP.textContent = feat.description || feat.summary;
+      topPart.appendChild(descP);
+      previewCol.appendChild(topPart);
+
+      var btnPart = document.createElement("div");
+      btnPart.style.cssText = "margin-top:10px;padding-top:10px;border-top:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;gap:8px;";
+      
+      var statusSpan = document.createElement("span");
+      statusSpan.style.cssText = "font-size:11.5px;color:var(--text-on-parch-dim);";
+      statusSpan.textContent = isAdded ? "✓ Currently on character" : "";
+      btnPart.appendChild(statusSpan);
+
+      var addBtn = document.createElement("button");
+      addBtn.className = "btn primary";
+      addBtn.textContent = isAdded ? "+ Add Again" : "+ Add Feat";
+      addBtn.addEventListener("click", function(){
+        if(!c.feats) c.feats = [];
+        c.feats.push({
+          id: uid(),
+          name: feat.name,
+          prerequisite: feat.prerequisite || "None",
+          category: feat.category || "General",
+          summary: feat.summary || "",
+          description: feat.description || "",
+          source: "SRD"
+        });
+        save();
+        renderAll();
+        modal.classList.remove("open");
+      });
+      btnPart.appendChild(addBtn);
+      previewCol.appendChild(btnPart);
+    }
+
+    function updateCatalogList(){
+      listCol.innerHTML = "";
+      var q = (catalogSearch || "").toLowerCase().trim();
+      var filtered = FEATS_CATALOG.filter(function(f){
+        if(q){
+          var mName = f.name.toLowerCase().indexOf(q) !== -1;
+          var mSumm = (f.summary || "").toLowerCase().indexOf(q) !== -1;
+          var mDesc = (f.description || "").toLowerCase().indexOf(q) !== -1;
+          var mPre = (f.prerequisite || "").toLowerCase().indexOf(q) !== -1;
+          var mCat = (f.category || "").toLowerCase().indexOf(q) !== -1;
+          if(!mName && !mSumm && !mDesc && !mPre && !mCat) return false;
+        }
+        return true;
+      });
+
+      if(filtered.length === 0){
+        listCol.innerHTML = '<div style="padding:16px;text-align:center;font-size:12.5px;color:var(--text-on-parch-dim);">No standard feats match.</div>';
+        updatePreview(null);
+        return;
+      }
+
+      filtered.forEach(function(feat){
+        var item = document.createElement("div");
+        item.className = "feat-catalog-item" + (selectedCatalogFeat && selectedCatalogFeat.name === feat.name ? " selected" : "");
+        
+        var isAdded = (c.feats || []).some(function(f){ return f.name.toLowerCase() === feat.name.toLowerCase(); });
+        
+        item.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;">' +
+          '<span class="feat-catalog-name">' + escapeHtml(feat.name) + '</span>' +
+          (isAdded ? '<span class="ff-tag" style="background:rgba(90,164,105,0.2);color:#86efac;border-color:rgba(90,164,105,0.4);">Added</span>' : '') +
+          '</div>' +
+          '<div class="feat-catalog-summary">' + escapeHtml(feat.summary || feat.prerequisite || "") + '</div>';
+        
+        item.addEventListener("click", function(){
+          var items = listCol.querySelectorAll(".feat-catalog-item");
+          items.forEach(function(it){ it.classList.remove("selected"); });
+          item.classList.add("selected");
+          updatePreview(feat);
+        });
+        listCol.appendChild(item);
+      });
+
+      if(selectedCatalogFeat && filtered.some(function(f){ return f.name === selectedCatalogFeat.name; })){
+        updatePreview(selectedCatalogFeat);
+      } else if(filtered.length > 0){
+        updatePreview(filtered[0]);
+      } else {
+        updatePreview(null);
+      }
+    }
+
+    sInput.addEventListener("input", function(){
+      catalogSearch = sInput.value;
+      updateCatalogList();
+    });
+
+    updateCatalogList();
+  }
+
+  function renderCustomTab(){
+    contentArea.innerHTML = "";
+    var form = document.createElement("div");
+    form.style.cssText = "display:flex;flex-direction:column;gap:12px;padding:4px 0;";
+
+    var nameField = document.createElement("div");
+    nameField.className = "field";
+    nameField.innerHTML = '<label>Feat Name *</label>';
+    var nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.placeholder = "e.g. Shield Slam, Fey-Touched, Shadow Walker…";
+    nameInput.value = featToEdit ? featToEdit.name : "";
+    nameField.appendChild(nameInput);
+    form.appendChild(nameField);
+
+    var row = document.createElement("div");
+    row.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
+
+    var prereqField = document.createElement("div");
+    prereqField.className = "field";
+    prereqField.innerHTML = '<label>Prerequisite (optional)</label>';
+    var prereqInput = document.createElement("input");
+    prereqInput.type = "text";
+    prereqInput.placeholder = "e.g. Strength 13+, Spellcasting, None";
+    prereqInput.value = featToEdit ? (featToEdit.prerequisite || "") : "";
+    prereqField.appendChild(prereqInput);
+    row.appendChild(prereqField);
+
+    var catField = document.createElement("div");
+    catField.className = "field";
+    catField.innerHTML = '<label>Category</label>';
+    var catSelect = document.createElement("select");
+    ["Combat","Defense","Magic","Utility","Support","Movement","Social","General"].forEach(function(cat){
+      var opt = document.createElement("option");
+      opt.value = cat;
+      opt.textContent = cat;
+      if(featToEdit && featToEdit.category === cat) opt.selected = true;
+      catSelect.appendChild(opt);
+    });
+    catField.appendChild(catSelect);
+    row.appendChild(catField);
+    form.appendChild(row);
+
+    var descField = document.createElement("div");
+    descField.className = "field";
+    descField.innerHTML = '<label>Description / Benefits *</label>';
+    var descTextarea = document.createElement("textarea");
+    descTextarea.className = "freeform";
+    descTextarea.style.minHeight = "120px";
+    descTextarea.placeholder = "Describe the perks, mechanics, stat bonuses, or actions granted by this feat…";
+    descTextarea.value = featToEdit ? (featToEdit.description || featToEdit.summary || "") : "";
+    descField.appendChild(descTextarea);
+    form.appendChild(descField);
+
+    var actionsRow = document.createElement("div");
+    actionsRow.className = "actions";
+    actionsRow.style.marginTop = "10px";
+
+    var cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn ghost";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", function(){ modal.classList.remove("open"); });
+
+    var saveBtn = document.createElement("button");
+    saveBtn.className = "btn primary";
+    saveBtn.textContent = featToEdit ? "Save Changes" : "Add Feat to Character";
+    saveBtn.addEventListener("click", function(){
+      var nameVal = (nameInput.value || "").trim();
+      if(!nameVal){
+        alert("Please enter a feat name.");
+        nameInput.focus();
+        return;
+      }
+      if(!c.feats) c.feats = [];
+      if(featToEdit && featIdx != null && c.feats[featIdx]){
+        c.feats[featIdx].name = nameVal;
+        c.feats[featIdx].prerequisite = (prereqInput.value || "").trim() || "None";
+        c.feats[featIdx].category = catSelect.value;
+        c.feats[featIdx].description = descTextarea.value;
+      } else {
+        c.feats.push({
+          id: uid(),
+          name: nameVal,
+          prerequisite: (prereqInput.value || "").trim() || "None",
+          category: catSelect.value,
+          description: descTextarea.value,
+          source: "Custom"
+        });
+      }
+      save();
+      renderAll();
+      modal.classList.remove("open");
+    });
+
+    actionsRow.appendChild(cancelBtn);
+    actionsRow.appendChild(saveBtn);
+    form.appendChild(actionsRow);
+    contentArea.appendChild(form);
+  }
+
+  if(activeModalTab === "browse") renderBrowseTab();
+  else renderCustomTab();
+
+  modal.classList.add("open");
+
+  var closeBtn = document.getElementById("feat-modal-close");
+  function onClose(){
+    modal.classList.remove("open");
+    closeBtn.removeEventListener("click", onClose);
+  }
+  closeBtn.addEventListener("click", onClose);
+}
+
+function openFeatureModal(c, featureToEdit){
+  var modal = document.getElementById("feature-modal");
+  var body = document.getElementById("feature-modal-body");
+  var title = document.getElementById("feature-modal-title");
+  title.textContent = featureToEdit ? "Edit Feature / Passive" : "Add Custom Feature / Passive";
+  body.innerHTML = "";
+
+  var form = document.createElement("div");
+  form.style.cssText = "display:flex;flex-direction:column;gap:12px;padding:4px 0;";
+
+  var nameField = document.createElement("div");
+  nameField.className = "field";
+  nameField.innerHTML = '<label>Feature Name *</label>';
+  var nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.placeholder = "e.g. Relentless Rage, Darkvision, Fey Gift, Shield of Faith passive…";
+  nameInput.value = featureToEdit ? featureToEdit.name : "";
+  nameField.appendChild(nameInput);
+  form.appendChild(nameField);
+
+  var row = document.createElement("div");
+  row.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
+
+  var srcField = document.createElement("div");
+  srcField.className = "field";
+  srcField.innerHTML = '<label>Source / Category</label>';
+  var srcSelect = document.createElement("select");
+  ["Class","Race","Background","Passive","Feat","Magic Item","Other"].forEach(function(src){
+    var opt = document.createElement("option");
+    opt.value = src;
+    opt.textContent = src;
+    if(featureToEdit && featureToEdit.source === src) opt.selected = true;
+    srcSelect.appendChild(opt);
+  });
+  srcField.appendChild(srcSelect);
+  row.appendChild(srcField);
+
+  var passField = document.createElement("div");
+  passField.className = "field";
+  passField.style.display = "flex";
+  passField.style.flexDirection = "column";
+  passField.style.justifyContent = "center";
+  passField.innerHTML = '<label>Type</label>';
+  var passLabel = document.createElement("label");
+  passLabel.style.cssText = "display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-top:4px;";
+  var passCb = document.createElement("input");
+  passCb.type = "checkbox";
+  passCb.className = "chk";
+  passCb.checked = featureToEdit ? !!featureToEdit.isPassive : true;
+  passLabel.appendChild(passCb);
+  passLabel.appendChild(document.createTextNode("Passive ability / constant trait"));
+  passField.appendChild(passLabel);
+  row.appendChild(passField);
+
+  form.appendChild(row);
+
+  var descField = document.createElement("div");
+  descField.className = "field";
+  descField.innerHTML = '<label>Description / Mechanics *</label>';
+  var descTextarea = document.createElement("textarea");
+  descTextarea.className = "freeform";
+  descTextarea.style.minHeight = "120px";
+  descTextarea.placeholder = "Describe the feature, rules, passive bonuses, or activation details…";
+  descTextarea.value = featureToEdit ? (featureToEdit.text || "") : "";
+  descField.appendChild(descTextarea);
+  form.appendChild(descField);
+
+  var actionsRow = document.createElement("div");
+  actionsRow.className = "actions";
+  actionsRow.style.marginTop = "10px";
+
+  var cancelBtn = document.createElement("button");
+  cancelBtn.className = "btn ghost";
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.addEventListener("click", function(){ modal.classList.remove("open"); });
+
+  var saveBtn = document.createElement("button");
+  saveBtn.className = "btn primary";
+  saveBtn.textContent = featureToEdit ? "Save Changes" : "Add Feature";
+  saveBtn.addEventListener("click", function(){
+    var nameVal = (nameInput.value || "").trim();
+    if(!nameVal){
+      alert("Please enter a feature name.");
+      nameInput.focus();
+      return;
+    }
+    if(!c.features) c.features = [];
+    if(featureToEdit){
+      featureToEdit.name = nameVal;
+      featureToEdit.source = srcSelect.value;
+      featureToEdit.isPassive = passCb.checked;
+      featureToEdit.text = descTextarea.value;
+    } else {
+      c.features.push({
+        id: uid(),
+        name: nameVal,
+        source: srcSelect.value,
+        isPassive: passCb.checked,
+        text: descTextarea.value
+      });
+    }
+    save();
+    renderAll();
+    modal.classList.remove("open");
+  });
+
+  actionsRow.appendChild(cancelBtn);
+  actionsRow.appendChild(saveBtn);
+  form.appendChild(actionsRow);
+
+  body.appendChild(form);
+  modal.classList.add("open");
+
+  var closeBtn = document.getElementById("feature-modal-close");
+  function onClose(){
+    modal.classList.remove("open");
+    closeBtn.removeEventListener("click", onClose);
+  }
+  closeBtn.addEventListener("click", onClose);
 }
 
 /* ---- Spells panel ---- */
@@ -1732,7 +3021,8 @@ function finishWizard(){
       c.skillProfs[sk] = entry;
     });
   }
-  c.features = info.features.map(function(f){ return f.name+": "+f.text; });
+  c.features = [];
+  c.feats = [];
   var conMod = mod(c.abilities.con), dexMod = mod(c.abilities.dex);
   c.hp.max = HIT_DICE_BY_CLASS[w.classId] + conMod;
   c.hp.current = c.hp.max;
