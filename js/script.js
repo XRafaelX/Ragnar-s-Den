@@ -1088,59 +1088,220 @@ function renderVitalsPanel(c){
 
   // HP box
   var hpBox = document.createElement("div");
-  hpBox.className = "vital-box";
+  hpBox.className = "vital-box hp-vital-box";
   hpBox.innerHTML = '<div class="lbl">Hit Points</div>';
-  var hpRow = document.createElement("div");
-  hpRow.className = "hp-row";
-  var curInput = document.createElement("input");
-  curInput.type="number"; curInput.value = c.hp.current;
-  curInput.addEventListener("input", function(){
-    c.hp.current = clamp(Number(curInput.value)||0, -999, c.hp.max+ (Number(c.hp.temp)||0) + 200);
-    save(); renderSidebar();
-  });
-  var slash = document.createElement("span"); slash.textContent="/";
-  var maxInput = document.createElement("input");
-  maxInput.type="number"; maxInput.value = c.hp.max;
-  maxInput.addEventListener("input", function(){ c.hp.max = Number(maxInput.value)||1; save(); renderSidebar(); });
-  hpRow.appendChild(curInput); hpRow.appendChild(slash); hpRow.appendChild(maxInput);
-  hpBox.appendChild(hpRow);
-  var tempRow = document.createElement("div");
-  tempRow.style.marginTop="4px"; tempRow.style.fontSize="11px"; tempRow.style.color="var(--text-on-parch-dim)";
-  tempRow.appendChild(document.createTextNode("Temp HP "));
-  var tempInput = document.createElement("input");
-  tempInput.type="number"; tempInput.value = c.hp.temp||0; tempInput.style.width="40px";
-  tempInput.addEventListener("input", function(){ c.hp.temp = Number(tempInput.value)||0; save(); });
-  tempRow.appendChild(tempInput);
-  hpBox.appendChild(tempRow);
-  var qbLabel = document.createElement("div");
-  qbLabel.style.marginTop="8px"; qbLabel.style.fontSize="10.5px"; qbLabel.style.color="var(--text-on-parch-dim)";
-  qbLabel.textContent = "Quick damage / heal";
-  hpBox.appendChild(qbLabel);
-  var qb = document.createElement("div");
-  qb.className = "quickbtns";
-  var dmgInput = document.createElement("input"); dmgInput.type="number"; dmgInput.placeholder="Amount"; dmgInput.value="";
-  var dmgBtn = document.createElement("button"); dmgBtn.className="btn small danger"; dmgBtn.textContent="Damage";
-  dmgBtn.addEventListener("click", function(){
-    var n = Number(dmgInput.value)||0;
-    if(n<=0) return;
-    var temp = Number(c.hp.temp)||0;
-    if(temp>0){
-      var absorbed = Math.min(temp,n);
-      c.hp.temp = temp-absorbed;
+
+  var heroDisplay = document.createElement("div");
+  heroDisplay.className = "hp-hero-display";
+
+  var curSpan = document.createElement("span");
+  curSpan.className = "hp-cur-num";
+  curSpan.textContent = c.hp.current;
+
+  var slashSpan = document.createElement("span");
+  slashSpan.className = "hp-slash";
+  slashSpan.textContent = "/";
+
+  var maxSpan = document.createElement("span");
+  maxSpan.className = "hp-max-num";
+  maxSpan.textContent = c.hp.max;
+
+  heroDisplay.appendChild(curSpan);
+  heroDisplay.appendChild(slashSpan);
+  heroDisplay.appendChild(maxSpan);
+
+  if((Number(c.hp.temp)||0) > 0){
+    var tempBadge = document.createElement("span");
+    tempBadge.className = "hp-temp-badge";
+    tempBadge.textContent = "+" + c.hp.temp + " temp";
+    heroDisplay.appendChild(tempBadge);
+  }
+  hpBox.appendChild(heroDisplay);
+
+  function applyQuickDamage(n){
+    if(n <= 0) return;
+    var temp = Number(c.hp.temp) || 0;
+    if(temp > 0){
+      var absorbed = Math.min(temp, n);
+      c.hp.temp = temp - absorbed;
       n -= absorbed;
     }
-    c.hp.current = Math.max(0, c.hp.current-n);
-    dmgInput.value=""; save(); renderAll();
+    c.hp.current = Math.max(0, (Number(c.hp.current)||0) - n);
+    save(); renderSidebar(); renderAll();
+  }
+
+  function applyQuickHeal(n){
+    if(n <= 0) return;
+    c.hp.current = clamp((Number(c.hp.current)||0) + n, 0, c.hp.max);
+    save(); renderSidebar(); renderAll();
+  }
+
+  // Quick HP controls
+  var hpControlsRow = document.createElement("div");
+  hpControlsRow.className = "hp-actions-row";
+
+  var dmg5Btn = document.createElement("button");
+  dmg5Btn.type = "button";
+  dmg5Btn.className = "btn small danger quick-adj-btn";
+  dmg5Btn.textContent = "-5";
+  dmg5Btn.title = "Take 5 damage";
+  dmg5Btn.addEventListener("click", function(e){
+    e.stopPropagation();
+    applyQuickDamage(5);
   });
-  var healBtn = document.createElement("button"); healBtn.className="btn small"; healBtn.style.color="var(--moss)"; healBtn.style.borderColor="var(--moss)"; healBtn.textContent="Heal";
-  healBtn.addEventListener("click", function(){
-    var n = Number(dmgInput.value)||0;
-    if(n<=0) return;
-    c.hp.current = clamp(c.hp.current+n, 0, c.hp.max);
-    dmgInput.value=""; save(); renderAll();
+  hpControlsRow.appendChild(dmg5Btn);
+
+  var dmg1Btn = document.createElement("button");
+  dmg1Btn.type = "button";
+  dmg1Btn.className = "btn small danger quick-adj-btn";
+  dmg1Btn.textContent = "-1";
+  dmg1Btn.title = "Take 1 damage";
+  dmg1Btn.addEventListener("click", function(e){
+    e.stopPropagation();
+    applyQuickDamage(1);
   });
-  qb.appendChild(dmgInput); qb.appendChild(dmgBtn); qb.appendChild(healBtn);
-  hpBox.appendChild(qb);
+  hpControlsRow.appendChild(dmg1Btn);
+
+  var heal1Btn = document.createElement("button");
+  heal1Btn.type = "button";
+  heal1Btn.className = "btn small quick-adj-btn quick-heal-btn";
+  heal1Btn.textContent = "+1";
+  heal1Btn.title = "Heal 1 HP";
+  heal1Btn.addEventListener("click", function(e){
+    e.stopPropagation();
+    applyQuickHeal(1);
+  });
+  hpControlsRow.appendChild(heal1Btn);
+
+  var heal5Btn = document.createElement("button");
+  heal5Btn.type = "button";
+  heal5Btn.className = "btn small quick-adj-btn quick-heal-btn";
+  heal5Btn.textContent = "+5";
+  heal5Btn.title = "Heal 5 HP";
+  heal5Btn.addEventListener("click", function(e){
+    e.stopPropagation();
+    applyQuickHeal(5);
+  });
+  hpControlsRow.appendChild(heal5Btn);
+
+  var fullBtn = document.createElement("button");
+  fullBtn.type = "button";
+  fullBtn.className = "btn small quick-adj-btn quick-heal-btn";
+  fullBtn.textContent = "Full";
+  fullBtn.title = "Restore to full HP";
+  fullBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    c.hp.current = c.hp.max;
+    save(); renderSidebar(); renderAll();
+  });
+  hpControlsRow.appendChild(fullBtn);
+
+  hpBox.appendChild(hpControlsRow);
+
+  // Sub row for Max & Temp HP
+  var subRow = document.createElement("div");
+  subRow.className = "hp-sub-row";
+
+  // Max HP
+  var maxGroup = document.createElement("div");
+  maxGroup.className = "hp-sub-group";
+  var maxLbl = document.createElement("span");
+  maxLbl.className = "hp-sub-lbl";
+  maxLbl.textContent = "Max:";
+  maxGroup.appendChild(maxLbl);
+
+  var maxStepper = document.createElement("div");
+  maxStepper.className = "stat-stepper hp-sub-stepper";
+
+  var maxDown = document.createElement("button");
+  maxDown.type = "button";
+  maxDown.className = "stat-arrow-btn stat-arrow-down";
+  maxDown.title = "Decrease max HP";
+  maxDown.setAttribute("aria-label", "Decrease max HP");
+  maxDown.innerHTML = makeStatArrowSvg("down");
+  maxDown.disabled = (Number(c.hp.max)||1) <= 1;
+  maxDown.addEventListener("click", function(e){
+    e.stopPropagation();
+    var curMax = Number(c.hp.max) || 1;
+    if(curMax > 1){
+      c.hp.max = curMax - 1;
+      if(c.hp.current > c.hp.max) c.hp.current = c.hp.max;
+      save(); renderSidebar(); renderAll();
+    }
+  });
+
+  var maxValSpan = document.createElement("span");
+  maxValSpan.className = "stat-score-val";
+  maxValSpan.textContent = c.hp.max;
+
+  var maxUp = document.createElement("button");
+  maxUp.type = "button";
+  maxUp.className = "stat-arrow-btn stat-arrow-up";
+  maxUp.title = "Increase max HP";
+  maxUp.setAttribute("aria-label", "Increase max HP");
+  maxUp.innerHTML = makeStatArrowSvg("up");
+  maxUp.addEventListener("click", function(e){
+    e.stopPropagation();
+    c.hp.max = (Number(c.hp.max)||1) + 1;
+    save(); renderSidebar(); renderAll();
+  });
+
+  maxStepper.appendChild(maxDown);
+  maxStepper.appendChild(maxValSpan);
+  maxStepper.appendChild(maxUp);
+  maxGroup.appendChild(maxStepper);
+  subRow.appendChild(maxGroup);
+
+  // Temp HP
+  var tempGroup = document.createElement("div");
+  tempGroup.className = "hp-sub-group";
+  var tempLbl = document.createElement("span");
+  tempLbl.className = "hp-sub-lbl";
+  tempLbl.textContent = "Temp:";
+  tempGroup.appendChild(tempLbl);
+
+  var tempStepper = document.createElement("div");
+  tempStepper.className = "stat-stepper hp-sub-stepper";
+
+  var tempDown = document.createElement("button");
+  tempDown.type = "button";
+  tempDown.className = "stat-arrow-btn stat-arrow-down";
+  tempDown.title = "Decrease temp HP";
+  tempDown.setAttribute("aria-label", "Decrease temp HP");
+  tempDown.innerHTML = makeStatArrowSvg("down");
+  tempDown.disabled = (Number(c.hp.temp)||0) <= 0;
+  tempDown.addEventListener("click", function(e){
+    e.stopPropagation();
+    var t = Number(c.hp.temp) || 0;
+    if(t > 0){
+      c.hp.temp = t - 1;
+      save(); renderAll();
+    }
+  });
+
+  var tempValSpan = document.createElement("span");
+  tempValSpan.className = "stat-score-val";
+  tempValSpan.textContent = c.hp.temp || 0;
+
+  var tempUp = document.createElement("button");
+  tempUp.type = "button";
+  tempUp.className = "stat-arrow-btn stat-arrow-up";
+  tempUp.title = "Increase temp HP";
+  tempUp.setAttribute("aria-label", "Increase temp HP");
+  tempUp.innerHTML = makeStatArrowSvg("up");
+  tempUp.addEventListener("click", function(e){
+    e.stopPropagation();
+    c.hp.temp = (Number(c.hp.temp)||0) + 1;
+    save(); renderAll();
+  });
+
+  tempStepper.appendChild(tempDown);
+  tempStepper.appendChild(tempValSpan);
+  tempStepper.appendChild(tempUp);
+  tempGroup.appendChild(tempStepper);
+  subRow.appendChild(tempGroup);
+
+  hpBox.appendChild(subRow);
 
   if(c.hp.current<=0){
     var ds = document.createElement("div");
@@ -1167,19 +1328,57 @@ function renderVitalsPanel(c){
   }
   grid.appendChild(hpBox);
 
-  function smallVital(label, key, isNested, hint){
+  function smallVital(label, key, isNested, hint, step, suffix){
+    step = step || 1;
+    suffix = suffix || "";
     var box = document.createElement("div");
     box.className = "vital-box";
     box.innerHTML = '<div class="lbl">'+label+'</div>';
-    var input = document.createElement("input");
-    input.type="number";
-    input.value = isNested ? c[isNested][key] : c[key];
-    input.addEventListener("input", function(){
-      var v = Number(input.value)||0;
-      if(isNested) c[isNested][key]=v; else c[key]=v;
-      save();
+
+    var val = isNested ? c[isNested][key] : c[key];
+    val = Number(val) || 0;
+
+    var stepper = document.createElement("div");
+    stepper.className = "stat-stepper vital-stepper";
+
+    var downBtn = document.createElement("button");
+    downBtn.type = "button";
+    downBtn.className = "stat-arrow-btn stat-arrow-down";
+    downBtn.title = "Decrease " + label;
+    downBtn.setAttribute("aria-label", "Decrease " + label);
+    downBtn.innerHTML = makeStatArrowSvg("down");
+    downBtn.disabled = val <= 0;
+    downBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var cur = isNested ? c[isNested][key] : c[key];
+      var nextVal = Math.max(0, (Number(cur) || 0) - step);
+      if(isNested) c[isNested][key] = nextVal; else c[key] = nextVal;
+      save(); renderAll();
     });
-    box.appendChild(input);
+
+    var valSpan = document.createElement("span");
+    valSpan.className = "stat-score-val vital-val";
+    valSpan.textContent = val + suffix;
+
+    var upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "stat-arrow-btn stat-arrow-up";
+    upBtn.title = "Increase " + label;
+    upBtn.setAttribute("aria-label", "Increase " + label);
+    upBtn.innerHTML = makeStatArrowSvg("up");
+    upBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var cur = isNested ? c[isNested][key] : c[key];
+      var nextVal = (Number(cur) || 0) + step;
+      if(isNested) c[isNested][key] = nextVal; else c[key] = nextVal;
+      save(); renderAll();
+    });
+
+    stepper.appendChild(downBtn);
+    stepper.appendChild(valSpan);
+    stepper.appendChild(upBtn);
+    box.appendChild(stepper);
+
     if(hint){
       var hintEl = document.createElement("div");
       hintEl.className = "vital-hint";
@@ -1188,30 +1387,82 @@ function renderVitalsPanel(c){
     }
     return box;
   }
-  grid.appendChild(smallVital("Armor Class","ac",null,"10 + armor + DEX mod (Unarmored Defense: 10 + DEX + CON)"));
+  grid.appendChild(smallVital("Armor Class","ac",null,"Base & armor"));
 
   var initBox = document.createElement("div");
-  initBox.className = "vital-box";
+  initBox.className = "vital-box init-vital-box";
   var dexMod = mod(c.abilities.dex);
   var initTotal = dexMod + (Number(c.initiativeMisc)||0);
-  initBox.innerHTML = '<div class="lbl">Initiative</div><div style="font-family:var(--serif);font-size:22px;">'+fmtMod(initTotal)+'</div><div class="vital-hint">DEX mod + misc</div>';
-  var initMiscRow = document.createElement("div");
-  initMiscRow.style.fontSize="10.5px"; initMiscRow.style.color="var(--text-on-parch-dim)"; initMiscRow.style.marginTop="4px";
-  initMiscRow.appendChild(document.createTextNode("misc "));
-  var initMiscInput = document.createElement("input");
-  initMiscInput.type="number"; initMiscInput.value=c.initiativeMisc||0; initMiscInput.style.width="34px";
-  initMiscInput.addEventListener("input", function(){ c.initiativeMisc = Number(initMiscInput.value)||0; save(); renderAll(); });
-  initMiscRow.appendChild(initMiscInput);
-  initBox.appendChild(initMiscRow);
+
+  var initHeader = document.createElement("div");
+  initHeader.className = "lbl";
+  initHeader.textContent = "Initiative";
+  initBox.appendChild(initHeader);
+
+  var initValDiv = document.createElement("div");
+  initValDiv.className = "init-hero-val";
+  initValDiv.textContent = fmtMod(initTotal);
+  initValDiv.title = "Click to roll initiative (1d20" + fmtMod(initTotal) + ")";
+  initBox.appendChild(initValDiv);
+
+  var initHint = document.createElement("div");
+  initHint.className = "vital-hint";
+  initHint.textContent = "DEX (" + fmtMod(dexMod) + ") + misc";
+  initBox.appendChild(initHint);
+
+  var miscStepperRow = document.createElement("div");
+  miscStepperRow.className = "init-misc-row";
+  var miscLbl = document.createElement("span");
+  miscLbl.textContent = "Misc:";
+  miscStepperRow.appendChild(miscLbl);
+
+  var miscStepper = document.createElement("div");
+  miscStepper.className = "stat-stepper";
+  miscStepper.style.maxWidth = "84px";
+
+  var miscDown = document.createElement("button");
+  miscDown.type = "button";
+  miscDown.className = "stat-arrow-btn stat-arrow-down";
+  miscDown.title = "Decrease misc modifier";
+  miscDown.setAttribute("aria-label", "Decrease misc modifier");
+  miscDown.innerHTML = makeStatArrowSvg("down");
+  miscDown.addEventListener("click", function(e){
+    e.stopPropagation();
+    c.initiativeMisc = (Number(c.initiativeMisc)||0) - 1;
+    save(); renderAll();
+  });
+
+  var miscVal = document.createElement("span");
+  miscVal.className = "stat-score-val";
+  miscVal.textContent = fmtMod(c.initiativeMisc||0);
+
+  var miscUp = document.createElement("button");
+  miscUp.type = "button";
+  miscUp.className = "stat-arrow-btn stat-arrow-up";
+  miscUp.title = "Increase misc modifier";
+  miscUp.setAttribute("aria-label", "Increase misc modifier");
+  miscUp.innerHTML = makeStatArrowSvg("up");
+  miscUp.addEventListener("click", function(e){
+    e.stopPropagation();
+    c.initiativeMisc = (Number(c.initiativeMisc)||0) + 1;
+    save(); renderAll();
+  });
+
+  miscStepper.appendChild(miscDown);
+  miscStepper.appendChild(miscVal);
+  miscStepper.appendChild(miscUp);
+  miscStepperRow.appendChild(miscStepper);
+  initBox.appendChild(miscStepperRow);
+
   initBox.style.cursor="pointer";
-  initBox.title = "Click to roll initiative";
+  initBox.title = "Click to roll initiative (1d20" + fmtMod(initTotal) + ")";
   initBox.addEventListener("click", function(e){
-    if(e.target.tagName==="INPUT") return;
+    if(e.target.closest(".stat-stepper") || e.target.closest("button")) return;
     performRoll(20,1,initTotal,"none","Initiative");
   });
   grid.appendChild(initBox);
 
-  grid.appendChild(smallVital("Speed (ft)","speed"));
+  grid.appendChild(smallVital("Speed","speed",null,"ft per turn",5," ft"));
 
   card.appendChild(grid);
   panel.appendChild(card);
@@ -1320,31 +1571,92 @@ function renderVitalsPanel(c){
   return panel;
 }
 
+/* SVG Helper for Stat Arrow Keys */
+function makeStatArrowSvg(dir){
+  var d = dir === "up" ? "M18 15l-6-6-6 6" : "M6 9l6 6 6-6";
+  return '<svg viewBox="0 0 24 24" class="stat-arrow-svg" aria-hidden="true"><path d="'+d+'" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
 /* ---- Abilities & Skills panel ---- */
 function renderAbilitiesPanel(c){
   var panel = document.createElement("div");
 
-  var abCard = makeCard("Ability scores", "tap a score to roll a check");
+  var abCard = makeCard("Ability scores", "tap score to roll check · arrows up/down to change stats");
   var grid = document.createElement("div");
   grid.className = "abilities-grid";
   ABILITIES.forEach(function(a){
     var key = a[0];
+    var score = Number(c.abilities[key]) || 10;
+    var m = mod(score);
     var box = document.createElement("div");
     box.className = "ability-box";
-    var m = mod(c.abilities[key]);
-    box.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(m)+'</div>';
-    var input = document.createElement("input");
-    input.type="number"; input.value = c.abilities[key];
-    input.addEventListener("input", function(e){
+
+    var rollArea = document.createElement("div");
+    rollArea.className = "ability-roll-area";
+    rollArea.title = "Roll " + a[1] + " check (1d20" + fmtMod(m) + ")";
+    rollArea.setAttribute("role", "button");
+    rollArea.setAttribute("tabindex", "0");
+    rollArea.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(m)+'</div>';
+    rollArea.addEventListener("click", function(e){
       e.stopPropagation();
-      c.abilities[key] = Number(input.value)||10;
-      save(); renderAll();
-    });
-    input.addEventListener("click", function(e){ e.stopPropagation(); });
-    box.appendChild(input);
-    box.addEventListener("click", function(){
       performRoll(20,1,mod(c.abilities[key]),"none", a[1]+" check");
     });
+    rollArea.addEventListener("keydown", function(e){
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        performRoll(20,1,mod(c.abilities[key]),"none", a[1]+" check");
+      }
+    });
+    box.appendChild(rollArea);
+
+    var stepper = document.createElement("div");
+    stepper.className = "stat-stepper";
+
+    var downBtn = document.createElement("button");
+    downBtn.type = "button";
+    downBtn.className = "stat-arrow-btn stat-arrow-down";
+    downBtn.title = "Decrease " + a[1] + " (Down arrow)";
+    downBtn.setAttribute("aria-label", "Decrease " + a[1]);
+    downBtn.innerHTML = makeStatArrowSvg("down");
+    downBtn.disabled = score <= 1;
+    downBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var cur = Number(c.abilities[key]) || 10;
+      if(cur > 1){
+        c.abilities[key] = cur - 1;
+        save();
+        renderAll();
+      }
+    });
+
+    var val = document.createElement("span");
+    val.className = "stat-score-val";
+    val.textContent = score;
+    val.setAttribute("aria-label", a[1] + " score");
+    val.title = a[1] + " score: " + score;
+
+    var upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "stat-arrow-btn stat-arrow-up";
+    upBtn.title = "Increase " + a[1] + " (Up arrow)";
+    upBtn.setAttribute("aria-label", "Increase " + a[1]);
+    upBtn.innerHTML = makeStatArrowSvg("up");
+    upBtn.disabled = score >= 30;
+    upBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var cur = Number(c.abilities[key]) || 10;
+      if(cur < 30){
+        c.abilities[key] = cur + 1;
+        save();
+        renderAll();
+      }
+    });
+
+    stepper.appendChild(downBtn);
+    stepper.appendChild(val);
+    stepper.appendChild(upBtn);
+    box.appendChild(stepper);
+
     grid.appendChild(box);
   });
   abCard.appendChild(grid);
@@ -2340,20 +2652,92 @@ function renderInventoryPanel(c){
   var panel = document.createElement("div");
 
   var curCard = makeCard("Currency");
-  var curRow = document.createElement("div");
-  curRow.className = "grid-row";
-  ["cp","sp","ep","gp","pp"].forEach(function(denom){
+  var curGrid = document.createElement("div");
+  curGrid.className = "currency-grid";
+
+  var coins = [
+    { key: "cp", name: "Copper", abbr: "CP" },
+    { key: "sp", name: "Silver", abbr: "SP" },
+    { key: "ep", name: "Electrum", abbr: "EP" },
+    { key: "gp", name: "Gold", abbr: "GP" },
+    { key: "pp", name: "Platinum", abbr: "PP" }
+  ];
+
+  if(!c.currency) c.currency = {cp:0, sp:0, ep:0, gp:0, pp:0};
+
+  coins.forEach(function(coin){
     var box = document.createElement("div");
-    box.className = "vital-box";
-    box.style.minWidth = "70px";
-    box.innerHTML = '<div class="lbl">'+denom.toUpperCase()+'</div>';
-    var input = document.createElement("input");
-    input.type="number"; input.value = c.currency[denom]||0;
-    input.addEventListener("input", function(){ c.currency[denom]=Number(input.value)||0; save(); });
-    box.appendChild(input);
-    curRow.appendChild(box);
+    box.className = "currency-box currency-" + coin.key;
+
+    var header = document.createElement("div");
+    header.className = "currency-header";
+    header.innerHTML = '<span class="currency-abbr">'+coin.abbr+'</span><span class="currency-name">'+coin.name+'</span>';
+    box.appendChild(header);
+
+    var curVal = Number(c.currency[coin.key]) || 0;
+
+    var stepper = document.createElement("div");
+    stepper.className = "stat-stepper currency-stepper";
+
+    var downBtn = document.createElement("button");
+    downBtn.type = "button";
+    downBtn.className = "stat-arrow-btn stat-arrow-down";
+    downBtn.title = "Decrease " + coin.name;
+    downBtn.setAttribute("aria-label", "Decrease " + coin.name);
+    downBtn.innerHTML = makeStatArrowSvg("down");
+    downBtn.disabled = curVal <= 0;
+    downBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var v = Number(c.currency[coin.key]) || 0;
+      c.currency[coin.key] = Math.max(0, v - 1);
+      save(); renderAll();
+    });
+
+    var valSpan = document.createElement("span");
+    valSpan.className = "stat-score-val currency-val";
+    valSpan.textContent = curVal;
+
+    var upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "stat-arrow-btn stat-arrow-up";
+    upBtn.title = "Increase " + coin.name;
+    upBtn.setAttribute("aria-label", "Increase " + coin.name);
+    upBtn.innerHTML = makeStatArrowSvg("up");
+    upBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var v = Number(c.currency[coin.key]) || 0;
+      c.currency[coin.key] = v + 1;
+      save(); renderAll();
+    });
+
+    stepper.appendChild(downBtn);
+    stepper.appendChild(valSpan);
+    stepper.appendChild(upBtn);
+    box.appendChild(stepper);
+
+    curGrid.appendChild(box);
   });
-  curCard.appendChild(curRow);
+  curCard.appendChild(curGrid);
+
+  var totalGold = ((Number(c.currency.cp)||0)*0.01) +
+                  ((Number(c.currency.sp)||0)*0.1) +
+                  ((Number(c.currency.ep)||0)*0.5) +
+                  ((Number(c.currency.gp)||0)*1.0) +
+                  ((Number(c.currency.pp)||0)*10.0);
+
+  var totalCoins = (Number(c.currency.cp)||0) +
+                   (Number(c.currency.sp)||0) +
+                   (Number(c.currency.ep)||0) +
+                   (Number(c.currency.gp)||0) +
+                   (Number(c.currency.pp)||0);
+  var coinWeight = (totalCoins / 50).toFixed(1);
+
+  var curSummary = document.createElement("div");
+  curSummary.className = "currency-summary";
+  curSummary.innerHTML = '<span>Total Wealth: <strong>' + totalGold.toFixed(2) + ' GP</strong></span>' +
+                         '<span class="currency-weight-hint">Purse weight: ~' + coinWeight + ' lb (' + totalCoins + ' coins)</span>';
+  curCard.appendChild(curSummary);
+
   panel.appendChild(curCard);
 
   var invCard = makeCard("Items & equipment");
@@ -2627,30 +3011,44 @@ function wizardPointBuyUI(container){
     var box = ce("div","ability-box");
     box.style.cursor = "default";
     box.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(mod(score))+'</div>';
-    var row = document.createElement("div");
-    row.style.cssText = "display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;";
-    var minus = document.createElement("button");
-    minus.type="button"; minus.className="btn small"; minus.textContent="−";
-    minus.disabled = score<=8;
-    minus.addEventListener("click", function(){
-      wizardState.pointBuy[key] = score-1;
-      wizardState.abilities[key] = score-1;
+
+    var stepper = ce("div", "stat-stepper");
+
+    var downBtn = ce("button", "stat-arrow-btn stat-arrow-down");
+    downBtn.type = "button";
+    downBtn.title = "Decrease " + a[1] + " (Down arrow)";
+    downBtn.setAttribute("aria-label", "Decrease " + a[1]);
+    downBtn.innerHTML = makeStatArrowSvg("down");
+    downBtn.disabled = score <= 8;
+    downBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      wizardState.pointBuy[key] = score - 1;
+      wizardState.abilities[key] = score - 1;
       renderWizard();
     });
-    var val = document.createElement("span");
+
+    var val = ce("span", "stat-score-val");
     val.textContent = score;
-    val.style.cssText = "min-width:20px;display:inline-block;font-family:var(--serif);font-size:16px;";
-    var plus = document.createElement("button");
-    plus.type="button"; plus.className="btn small"; plus.textContent="+";
-    var nextCost = POINT_BUY_COSTS[score+1];
-    plus.disabled = score>=15 || nextCost===undefined || (nextCost-POINT_BUY_COSTS[score]) > remaining;
-    plus.addEventListener("click", function(){
-      wizardState.pointBuy[key] = score+1;
-      wizardState.abilities[key] = score+1;
+
+    var upBtn = ce("button", "stat-arrow-btn stat-arrow-up");
+    upBtn.type = "button";
+    upBtn.title = "Increase " + a[1] + " (Up arrow)";
+    upBtn.setAttribute("aria-label", "Increase " + a[1]);
+    upBtn.innerHTML = makeStatArrowSvg("up");
+    var nextCost = POINT_BUY_COSTS[score + 1];
+    upBtn.disabled = score >= 15 || nextCost === undefined || (nextCost - POINT_BUY_COSTS[score]) > remaining;
+    upBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      wizardState.pointBuy[key] = score + 1;
+      wizardState.abilities[key] = score + 1;
       renderWizard();
     });
-    row.appendChild(minus); row.appendChild(val); row.appendChild(plus);
-    box.appendChild(row);
+
+    stepper.appendChild(downBtn);
+    stepper.appendChild(val);
+    stepper.appendChild(upBtn);
+    box.appendChild(stepper);
+
     grid.appendChild(box);
   });
   container.appendChild(grid);
