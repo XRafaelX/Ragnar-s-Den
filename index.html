@@ -38,8 +38,44 @@
       <div class="tb-title" id="tb-title">Ragnar's Den</div>
     </div>
     <div id="empty-state">
-      <h2>No character selected</h2>
-      <p>Create a new character, or pick one from the list, to open their sheet.</p>
+      <div id="home-hub">
+        <div id="home-ring">
+          <button class="home-node" id="home-node-new" data-pos="top" title="New Character">
+            <span class="home-node-circle">✦</span>
+            <span class="home-node-label">New</span>
+          </button>
+          <button class="home-node" id="home-node-armory" data-pos="lower-right" title="Grimtooth's Armory">
+            <span class="home-node-circle">⚔️</span>
+            <span class="home-node-label">Armory</span>
+          </button>
+          <button class="home-node" id="home-node-about" data-pos="lower-left" title="About Ragnar's Den">
+            <span class="home-node-circle">
+              <svg class="home-icon-svg" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.92)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 4.5A2.5 2.5 0 0 1 4.5 2H11a3 3 0 0 1 3 3v14.5a2.5 2.5 0 0 0-2.5-2.5H2z"/>
+                <path d="M22 4.5A2.5 2.5 0 0 0 19.5 2H13a3 3 0 0 0-3 3v14.5a2.5 2.5 0 0 1 2.5-2.5H22z"/>
+              </svg>
+            </span>
+            <span class="home-node-label">About</span>
+          </button>
+          <button id="home-center" title="Dice Roller">
+            <span id="home-center-ring"></span>
+            <span id="home-center-icon">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <polygon points="50,4 92,28 92,72 50,96 8,72 8,28" fill="url(#dieGradGold)" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+                <polygon points="50,24 76,70 24,70" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+                <line x1="50" y1="4" x2="50" y2="24" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+                <line x1="92" y1="28" x2="76" y2="70" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+                <line x1="92" y1="72" x2="50" y2="96" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+                <line x1="8" y1="72" x2="50" y2="96" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+                <line x1="8" y1="28" x2="24" y2="70" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+                <circle cx="50" cy="50" r="3.5" fill="#fff8e1"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+        <h2>Ragnar's Den</h2>
+        <p>Create a character, or roll up something quick from the menu above.</p>
+      </div>
     </div>
     <div id="sheet" style="display:none;"></div>
   </div>

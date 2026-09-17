@@ -7,6 +7,7 @@ import { openWizard } from "./wizard/wizard-core.js";
 import { renderAll } from "./render/sheet.js";
 import { setupDiceTray } from "./dice/dice.js";
 import { openArmory } from "./render/armory.js";
+import { setupHomeMenu } from "./render/home.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
@@ -86,6 +87,7 @@ export function init(){
   setupTopLevel();
   setupDiceTray();
   setupMobileNav();
+  setupHomeMenu();
   renderAll();
 
   if("serviceWorker" in navigator){
