@@ -460,18 +460,38 @@ export function wizardStepReview(container){
   container.appendChild(card);
 }
 
+/* Carries a starting-equipment entry into an inventory item, keeping the
+   structured weapon/armor fields (type, damage dice, category, etc.) when
+   the class data defines them so it's ready to roll/count toward AC right
+   away, instead of landing as generic untyped Gear. */
+function equipmentItemToInventoryItem(it, equipped){
+  var item = {name:it.name, qty:it.qty, equipped:equipped, notes:it.notes||"", type: it.type||"gear"};
+  if(it.type==="weapon"){
+    item.damageDice = it.damageDice||"";
+    item.damageType = it.damageType||"";
+    item.ability = it.ability||"str";
+    item.proficient = it.proficient!=null ? it.proficient : true;
+    item.magicBonus = it.magicBonus||0;
+  } else if(it.type==="armor"){
+    item.category = it.category||"light";
+    item.baseAC = it.baseAC!=null ? it.baseAC : 10;
+    item.magicBonus = it.magicBonus||0;
+  }
+  return item;
+}
+
 export function buildEquipmentList(info, chosenKeys){
   var items = [];
   info.equipment.choiceGroups.forEach(function(group, gi){
     var opt = group.options.find(function(o){ return o.key===chosenKeys[gi]; });
     if(opt){
       opt.items.forEach(function(it){
-        items.push({name:it.name, qty:it.qty, weight:it.weight, equipped:true, notes:it.notes||""});
+        items.push(equipmentItemToInventoryItem(it, true));
       });
     }
   });
   info.equipment.fixed.forEach(function(it){
-    items.push({name:it.name, qty:it.qty, weight:it.weight, equipped:false, notes:it.notes||""});
+    items.push(equipmentItemToInventoryItem(it, it.type==="weapon"));
   });
   return items;
 }

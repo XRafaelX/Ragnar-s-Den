@@ -42,17 +42,25 @@ CLASSES_INFO["Barbarian"] = {
   equipment:{
     choiceGroups:[
       {options:[
-        {key:"greataxe", label:"Greataxe", detail:"1d12 slashing damage, heavy, two-handed", items:[{name:"Greataxe",qty:1,weight:7,notes:"1d12 slashing, heavy, two-handed"}]},
-        {key:"martial", label:"Any other martial melee weapon", detail:"Pick the specific weapon once you're on the sheet", items:[{name:"Martial melee weapon",qty:1,weight:6,notes:"choose specific weapon"}]}
+        {key:"greataxe", label:"Greataxe", detail:"1d12 slashing damage, heavy, two-handed", items:[
+          {name:"Greataxe",qty:1,weight:7,notes:"heavy, two-handed",type:"weapon",damageDice:"1d12",damageType:"Slashing",ability:"str",proficient:true}
+        ]},
+        {key:"martial", label:"Any other martial melee weapon", detail:"Pick the specific weapon once you're on the sheet", items:[
+          {name:"Martial melee weapon",qty:1,weight:6,notes:"choose specific weapon, then fill in its damage dice",type:"weapon",ability:"str",proficient:true}
+        ]}
       ]},
       {options:[
-        {key:"handaxes", label:"Two handaxes", detail:"1d6 slashing, light, thrown (range 20/60 ft)", items:[{name:"Handaxe",qty:2,weight:2,notes:"1d6 slashing, light, thrown 20/60"}]},
-        {key:"simple", label:"Any simple weapon", detail:"Pick the specific weapon once you're on the sheet", items:[{name:"Simple weapon",qty:1,weight:4,notes:"choose specific weapon"}]}
+        {key:"handaxes", label:"Two handaxes", detail:"1d6 slashing, light, thrown (range 20/60 ft)", items:[
+          {name:"Handaxe",qty:2,weight:2,notes:"light, thrown 20/60",type:"weapon",damageDice:"1d6",damageType:"Slashing",ability:"str",proficient:true}
+        ]},
+        {key:"simple", label:"Any simple weapon", detail:"Pick the specific weapon once you're on the sheet", items:[
+          {name:"Simple weapon",qty:1,weight:4,notes:"choose specific weapon, then fill in its damage dice",type:"weapon",ability:"str",proficient:true}
+        ]}
       ]}
     ],
     fixed:[
       {name:"Explorer's Pack", qty:1, weight:59, notes:"backpack, bedroll, mess kit, tinderbox, 10 torches, 10 days rations, waterskin, 50ft rope"},
-      {name:"Javelin", qty:4, weight:2}
+      {name:"Javelin", qty:4, weight:2, notes:"thrown 30/120", type:"weapon", damageDice:"1d6", damageType:"Piercing", ability:"str", proficient:true}
     ]
   }
 };
@@ -117,3 +125,88 @@ CLASSES_INFO["Artificer"].features = [
   {name:"Magical Tinkering", text:"Invest a spark of magic into mundane tiny objects (light, recorded sound, odor, or visual effect)."},
   {name:"Spellcasting", text:"Cast spells by using tools as focuses, with Intelligence as your spellcasting ability."}
 ];
+
+/* ---------------- Standard SRD proficiencies by class ----------------
+   Used by the Information tab to show a quick, non-editable readout of
+   what each class grants. Kept separate from CLASSES_INFO so it can cover
+   every class without disturbing the wizard-only fields above. */
+export var CLASS_PROFICIENCIES = {
+  "Artificer": {
+    armor:["Light armor"],
+    weapons:["Simple weapons"],
+    tools:["Thieves' tools","Tinker's tools","One type of artisan's tools"],
+    savingThrows:["con","int"]
+  },
+  "Barbarian": {
+    armor:["Light armor","Medium armor","Shields"],
+    weapons:["Simple weapons","Martial weapons"],
+    tools:[],
+    savingThrows:["str","con"]
+  },
+  "Bard": {
+    armor:["Light armor"],
+    weapons:["Simple weapons","Hand crossbows","Longswords","Rapiers","Shortswords"],
+    tools:["Three musical instruments of your choice"],
+    savingThrows:["dex","cha"]
+  },
+  "Cleric": {
+    armor:["Light armor","Medium armor","Shields"],
+    weapons:["Simple weapons"],
+    tools:[],
+    savingThrows:["wis","cha"]
+  },
+  "Druid": {
+    armor:["Light armor","Medium armor","Shields (non-metal)"],
+    weapons:["Clubs","Daggers","Darts","Javelins","Maces","Quarterstaffs","Scimitars","Sickles","Slings","Spears"],
+    tools:["Herbalism kit"],
+    savingThrows:["int","wis"]
+  },
+  "Fighter": {
+    armor:["All armor","Shields"],
+    weapons:["Simple weapons","Martial weapons"],
+    tools:[],
+    savingThrows:["str","con"]
+  },
+  "Monk": {
+    armor:[],
+    weapons:["Simple weapons","Shortswords"],
+    tools:["One type of artisan's tools or musical instrument"],
+    savingThrows:["str","dex"]
+  },
+  "Paladin": {
+    armor:["All armor","Shields"],
+    weapons:["Simple weapons","Martial weapons"],
+    tools:[],
+    savingThrows:["wis","cha"]
+  },
+  "Ranger": {
+    armor:["Light armor","Medium armor","Shields"],
+    weapons:["Simple weapons","Martial weapons"],
+    tools:[],
+    savingThrows:["str","dex"]
+  },
+  "Rogue": {
+    armor:["Light armor"],
+    weapons:["Simple weapons","Hand crossbows","Longswords","Rapiers","Shortswords"],
+    tools:["Thieves' tools"],
+    savingThrows:["dex","int"]
+  },
+  "Sorcerer": {
+    armor:[],
+    weapons:["Daggers","Darts","Slings","Quarterstaffs","Light crossbows"],
+    tools:[],
+    savingThrows:["con","cha"]
+  },
+  "Warlock": {
+    armor:["Light armor"],
+    weapons:["Simple weapons"],
+    tools:[],
+    savingThrows:["wis","cha"]
+  },
+  "Wizard": {
+    armor:[],
+    weapons:["Daggers","Darts","Slings","Quarterstaffs","Light crossbows"],
+    tools:[],
+    savingThrows:["int","wis"]
+  }
+};

@@ -16,12 +16,14 @@ export function newCharacter(name){
     race: "Human",
     background: "Acolyte",
     alignment: "Neutral Good",
+    languages: ["Common"],
     classes: [{name:"Fighter", subclass:"", level:1}],
     abilities: abilities,
     saveProfs: saveProfs,
     skillProfs: skillProfs,
     hp: {max:10, current:10, temp:0},
     ac: 10,
+    acMisc: 0,
     initiativeMisc: 0,
     speed: 30,
     hitDiceUsed: 0,
@@ -44,6 +46,10 @@ export function ensureShape(c){
   if(!c.race) c.race = "Human";
   if(!c.background) c.background = "Acolyte";
   if(!c.alignment) c.alignment = "Neutral Good";
+  if(typeof c.languages === "string"){
+    c.languages = c.languages.split(",").map(function(s){ return s.trim(); }).filter(Boolean);
+  }
+  if(!Array.isArray(c.languages) || !c.languages.length) c.languages = ["Common"];
   if(!c.abilities) c.abilities = {str:10,dex:10,con:10,int:10,wis:10,cha:10};
   if(!c.skillProfs){
     c.skillProfs = {};
@@ -52,6 +58,7 @@ export function ensureShape(c){
   if(!c.saveProfs) c.saveProfs = {str:false,dex:false,con:false,int:false,wis:false,cha:false};
   if(!c.hp) c.hp = {max:10, current:10, temp:0};
   if(c.ac==null) c.ac = 10;
+  if(c.acMisc==null) c.acMisc = 0;
   if(c.initiativeMisc==null) c.initiativeMisc = 0;
   if(c.speed==null) c.speed = 30;
   if(c.hitDiceUsed==null) c.hitDiceUsed = 0;
@@ -101,6 +108,11 @@ export function ensureShape(c){
     });
   }
   if(!c.inventory) c.inventory = [];
+  else {
+    c.inventory.forEach(function(item){
+      if(!item.type) item.type = "gear";
+    });
+  }
   if(!c.currency) c.currency = {cp:0,sp:0,ep:0,gp:0,pp:0};
   if(!c.notes) c.notes = [];
   if(!c.rollLog) c.rollLog = [];

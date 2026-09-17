@@ -2,6 +2,14 @@ import { save } from "../../core/state.js";
 import { nowStamp } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 
+var ENTRY_MAX_HEIGHT = 320; // px — beyond this the box scrolls instead of growing
+var ENTRY_MAX_CHARS = 8000; // generous ceiling, mainly a guard against runaway paste/storage bloat
+
+function autoGrow(ta){
+  ta.style.height = "auto";
+  ta.style.height = Math.min(ta.scrollHeight, ENTRY_MAX_HEIGHT) + "px";
+}
+
 /* ---- Journal panel ---- */
 export function renderJournalPanel(c){
   var panel = document.createElement("div");
@@ -20,7 +28,7 @@ export function renderJournalPanel(c){
     var e = document.createElement("div");
     e.className = "journal-entry";
     var tsRow = document.createElement("div");
-    tsRow.style.display="flex"; tsRow.style.justifyContent="space-between"; tsRow.style.alignItems="center";
+    tsRow.className = "journal-entry-header";
     var ts = document.createElement("span"); ts.className="ts"; ts.textContent = entry.ts;
     var rmBtn = document.createElement("button"); rmBtn.className="rm-btn"; rmBtn.textContent="✕";
     rmBtn.addEventListener("click", function(){ c.notes.splice(idx,1); save(); renderAll(); });
@@ -29,9 +37,12 @@ export function renderJournalPanel(c){
     var ta = document.createElement("textarea");
     ta.value = entry.text||"";
     ta.placeholder = "Write here…";
-    ta.addEventListener("input", function(){ entry.text = ta.value; save(); });
+    ta.rows = 1;
+    ta.maxLength = ENTRY_MAX_CHARS;
+    ta.addEventListener("input", function(){ entry.text = ta.value; save(); autoGrow(ta); });
     e.appendChild(ta);
     card.appendChild(e);
+    requestAnimationFrame(function(){ autoGrow(ta); });
   });
   if((c.notes||[]).length===0){
     var p = document.createElement("p");

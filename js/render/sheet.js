@@ -1,11 +1,9 @@
 import { state, getActive, save } from "../core/state.js";
 import { characterIsCaster, fmtMod, profBonus, clamp, totalLevel } from "../core/helpers.js";
-import { RACES } from "../data/races.js";
-import { BACKGROUNDS } from "../data/backgrounds.js";
-import { ALIGNMENTS } from "../data/alignments.js";
 import { CLASS_LIST } from "../data/abilities-skills.js";
 import { renderSidebar } from "./sidebar.js";
 import { renderVitalsPanel } from "./panels/vitals.js";
+import { renderInformationPanel } from "./panels/information.js";
 import { renderAbilitiesPanel } from "./panels/abilities.js";
 import { renderFeaturesPanel } from "./panels/features.js";
 import { renderSpellsPanel } from "./panels/spells.js";
@@ -16,6 +14,7 @@ import { makeDeleteButton } from "../app.js";
 
 export var TABS = [
   ["vitals","Vitals"],
+  ["info","Information"],
   ["abilities","Abilities & Skills"],
   ["features","Features & Feats"],
   ["spells","Spells"],
@@ -56,6 +55,7 @@ export function renderAll(){
 
   var panelMap = {
     vitals: renderVitalsPanel,
+    info: renderInformationPanel,
     abilities: renderAbilitiesPanel,
     features: renderFeaturesPanel,
     spells: renderSpellsPanel,
@@ -148,6 +148,23 @@ export function dropdownField(labelTxt, key, groups, c, onChangeExtra){
   return f;
 }
 
+/* A fixed, non-editable field — used for choices locked in at character
+   creation (race, background, alignment) so they can't drift by accident
+   later on the sheet. */
+function lockedField(labelTxt, value){
+  var f = document.createElement("div");
+  f.className = "field";
+  var l = document.createElement("label"); l.textContent = labelTxt;
+  f.appendChild(l);
+  var val = document.createElement("input");
+  val.value = value || "—";
+  val.disabled = true;
+  val.style.color = "var(--text-on-parch-dim)";
+  val.title = labelTxt + " is set during character creation and can't be changed here.";
+  f.appendChild(val);
+  return f;
+}
+
 export function renderIdentity(c){
   var wrap = document.createElement("div");
   wrap.className = "identity";
@@ -165,9 +182,9 @@ export function renderIdentity(c){
   var subRow = document.createElement("div");
   subRow.className = "sub-row";
 
-  subRow.appendChild(dropdownField("Race", "race", RACES, c, function(){ renderSidebar(); }));
-  subRow.appendChild(dropdownField("Background", "background", BACKGROUNDS, c));
-  subRow.appendChild(dropdownField("Alignment", "alignment", ALIGNMENTS, c));
+  subRow.appendChild(lockedField("Race", c.race));
+  subRow.appendChild(lockedField("Background", c.background));
+  subRow.appendChild(lockedField("Alignment", c.alignment));
 
   var pbField = document.createElement("div");
   pbField.className = "field";

@@ -128,10 +128,11 @@ export function finishWizard(){
   }
   c.features = [];
   c.feats = [];
-  var conMod = mod(c.abilities.con), dexMod = mod(c.abilities.dex);
+  var conMod = mod(c.abilities.con);
   c.hp.max = HIT_DICE_BY_CLASS[w.classId] + conMod;
   c.hp.current = c.hp.max;
-  c.ac = 10 + dexMod + conMod;
+  // AC is derived on the sheet from equipped armor (see computeArmorClass) —
+  // no armor is equipped yet, so it starts from unarmored / class defense.
   c.inventory = buildEquipmentList(info, w.equipment);
 
   state.characters.push(c);

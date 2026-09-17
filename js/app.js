@@ -2,14 +2,26 @@ import { state, save, load } from "./core/state.js";
 import { uid } from "./core/helpers.js";
 import { ensureShape } from "./core/character.js";
 import { confirmDialog } from "./ui/confirm-modal.js";
-import { setupMobileNav } from "./ui/mobile-nav.js";
+import { setupMobileNav, closeSidebarMobile } from "./ui/mobile-nav.js";
 import { openWizard } from "./wizard/wizard-core.js";
 import { renderAll } from "./render/sheet.js";
 import { setupDiceTray } from "./dice/dice.js";
+import { openArmory } from "./render/armory.js";
+import { setupHomeMenu } from "./render/home.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
   document.getElementById("new-char-btn").addEventListener("click", openWizard);
+  document.getElementById("armory-btn").addEventListener("click", openArmory);
+
+  function goHome(){
+    if(!state.activeId) return;
+    state.activeId = null;
+    renderAll();
+    closeSidebarMobile();
+  }
+  document.getElementById("tb-title").addEventListener("click", goHome);
+  document.getElementById("sidebar-home-link").addEventListener("click", goHome);
 
   document.getElementById("export-btn").addEventListener("click", function(){
     var blob = new Blob([JSON.stringify(state.characters, null, 2)], {type:"application/json"});
@@ -84,6 +96,7 @@ export function init(){
   setupTopLevel();
   setupDiceTray();
   setupMobileNav();
+  setupHomeMenu();
   renderAll();
 
   if("serviceWorker" in navigator){
