@@ -117,3 +117,88 @@ CLASSES_INFO["Artificer"].features = [
   {name:"Magical Tinkering", text:"Invest a spark of magic into mundane tiny objects (light, recorded sound, odor, or visual effect)."},
   {name:"Spellcasting", text:"Cast spells by using tools as focuses, with Intelligence as your spellcasting ability."}
 ];
+
+/* ---------------- Standard SRD proficiencies by class ----------------
+   Used by the Information tab to show a quick, non-editable readout of
+   what each class grants. Kept separate from CLASSES_INFO so it can cover
+   every class without disturbing the wizard-only fields above. */
+export var CLASS_PROFICIENCIES = {
+  "Artificer": {
+    armor:["Light armor"],
+    weapons:["Simple weapons"],
+    tools:["Thieves' tools","Tinker's tools","One type of artisan's tools"],
+    savingThrows:["con","int"]
+  },
+  "Barbarian": {
+    armor:["Light armor","Medium armor","Shields"],
+    weapons:["Simple weapons","Martial weapons"],
+    tools:[],
+    savingThrows:["str","con"]
+  },
+  "Bard": {
+    armor:["Light armor"],
+    weapons:["Simple weapons","Hand crossbows","Longswords","Rapiers","Shortswords"],
+    tools:["Three musical instruments of your choice"],
+    savingThrows:["dex","cha"]
+  },
+  "Cleric": {
+    armor:["Light armor","Medium armor","Shields"],
+    weapons:["Simple weapons"],
+    tools:[],
+    savingThrows:["wis","cha"]
+  },
+  "Druid": {
+    armor:["Light armor","Medium armor","Shields (non-metal)"],
+    weapons:["Clubs","Daggers","Darts","Javelins","Maces","Quarterstaffs","Scimitars","Sickles","Slings","Spears"],
+    tools:["Herbalism kit"],
+    savingThrows:["int","wis"]
+  },
+  "Fighter": {
+    armor:["All armor","Shields"],
+    weapons:["Simple weapons","Martial weapons"],
+    tools:[],
+    savingThrows:["str","con"]
+  },
+  "Monk": {
+    armor:[],
+    weapons:["Simple weapons","Shortswords"],
+    tools:["One type of artisan's tools or musical instrument"],
+    savingThrows:["str","dex"]
+  },
+  "Paladin": {
+    armor:["All armor","Shields"],
+    weapons:["Simple weapons","Martial weapons"],
+    tools:[],
+    savingThrows:["wis","cha"]
+  },
+  "Ranger": {
+    armor:["Light armor","Medium armor","Shields"],
+    weapons:["Simple weapons","Martial weapons"],
+    tools:[],
+    savingThrows:["str","dex"]
+  },
+  "Rogue": {
+    armor:["Light armor"],
+    weapons:["Simple weapons","Hand crossbows","Longswords","Rapiers","Shortswords"],
+    tools:["Thieves' tools"],
+    savingThrows:["dex","int"]
+  },
+  "Sorcerer": {
+    armor:[],
+    weapons:["Daggers","Darts","Slings","Quarterstaffs","Light crossbows"],
+    tools:[],
+    savingThrows:["con","cha"]
+  },
+  "Warlock": {
+    armor:["Light armor"],
+    weapons:["Simple weapons"],
+    tools:[],
+    savingThrows:["wis","cha"]
+  },
+  "Wizard": {
+    armor:[],
+    weapons:["Daggers","Darts","Slings","Quarterstaffs","Light crossbows"],
+    tools:[],
+    savingThrows:["int","wis"]
+  }
+};

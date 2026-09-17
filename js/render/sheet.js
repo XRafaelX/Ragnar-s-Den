@@ -6,6 +6,7 @@ import { ALIGNMENTS } from "../data/alignments.js";
 import { CLASS_LIST } from "../data/abilities-skills.js";
 import { renderSidebar } from "./sidebar.js";
 import { renderVitalsPanel } from "./panels/vitals.js";
+import { renderInformationPanel } from "./panels/information.js";
 import { renderAbilitiesPanel } from "./panels/abilities.js";
 import { renderFeaturesPanel } from "./panels/features.js";
 import { renderSpellsPanel } from "./panels/spells.js";
@@ -16,6 +17,7 @@ import { makeDeleteButton } from "../app.js";
 
 export var TABS = [
   ["vitals","Vitals"],
+  ["info","Information"],
   ["abilities","Abilities & Skills"],
   ["features","Features & Feats"],
   ["spells","Spells"],
@@ -56,6 +58,7 @@ export function renderAll(){
 
   var panelMap = {
     vitals: renderVitalsPanel,
+    info: renderInformationPanel,
     abilities: renderAbilitiesPanel,
     features: renderFeaturesPanel,
     spells: renderSpellsPanel,

@@ -16,6 +16,7 @@ export function newCharacter(name){
     race: "Human",
     background: "Acolyte",
     alignment: "Neutral Good",
+    languages: ["Common"],
     classes: [{name:"Fighter", subclass:"", level:1}],
     abilities: abilities,
     saveProfs: saveProfs,
@@ -44,6 +45,10 @@ export function ensureShape(c){
   if(!c.race) c.race = "Human";
   if(!c.background) c.background = "Acolyte";
   if(!c.alignment) c.alignment = "Neutral Good";
+  if(typeof c.languages === "string"){
+    c.languages = c.languages.split(",").map(function(s){ return s.trim(); }).filter(Boolean);
+  }
+  if(!Array.isArray(c.languages) || !c.languages.length) c.languages = ["Common"];
   if(!c.abilities) c.abilities = {str:10,dex:10,con:10,int:10,wis:10,cha:10};
   if(!c.skillProfs){
     c.skillProfs = {};
