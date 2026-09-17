@@ -769,14 +769,17 @@ textarea.freeform{
   filter:drop-shadow(0 4px 8px rgba(0,0,0,0.45));
   overflow:visible;
 }
-.dice-token svg .die-bg{
+.dice-token svg .die-bg,
+.toast-die-mini svg .die-bg{
   fill:url(#dieGradPrimary);
   stroke:var(--brass);stroke-width:2.5;stroke-linejoin:round;
 }
-.dice-token svg .die-facet{
+.dice-token svg .die-facet,
+.toast-die-mini svg .die-facet{
   fill:none;stroke:rgba(196,167,247,0.35);stroke-width:1.5;stroke-linejoin:round;
 }
-.dice-token svg .die-text{
+.dice-token svg .die-text,
+.toast-die-mini svg .die-text{
   font-family:var(--serif);font-size:20px;font-weight:bold;
   fill:var(--text-on-ink);text-anchor:middle;dominant-baseline:central;
   user-select:none;
