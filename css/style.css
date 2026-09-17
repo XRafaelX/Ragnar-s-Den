@@ -242,9 +242,9 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 }
 .identity input.charname:focus{outline:none;border-bottom:1px solid var(--brass);}
 .identity .sub-row{
-  display:flex;
-  gap:18px;
-  flex-wrap:wrap;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+  gap:10px 18px;
   margin-top:10px;
   font-size:12.5px;
   color:var(--text-on-parch-dim);
@@ -287,6 +287,7 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 .class-chip input:focus{outline:none;}
 .class-chip .x{color:var(--oxblood);font-size:14px;line-height:1;padding:2px 4px;}
 .total-level{font-size:12px;color:var(--text-on-parch-dim);margin-left:6px;}
+.classes-row .delete-char-btn{margin-left:auto;}
 
 /* Tabs */
 #tabs{
@@ -295,7 +296,10 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
   margin:18px 0 0;
   border-bottom:1px solid var(--rule);
   overflow-x:auto;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
 }
+#tabs::-webkit-scrollbar{display:none;}
 #tabs button{
   background:none;border:none;color:var(--text-on-ink-dim);
   padding:10px 14px;font-size:13px;white-space:nowrap;
@@ -505,16 +509,13 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 .exp-chk{width:13px;height:13px;accent-color:var(--brass);}
 
 /* Vitals */
-.vitals-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
+.vitals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .vital-box{
   border:1px solid var(--rule);border-radius:8px;padding:12px 10px;text-align:center;
   background:rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;justify-content:space-between;
   min-height:105px;box-sizing:border-box;transition:border-color 0.15s, background 0.15s;
 }
-.vital-box.hp-vital-box{grid-column:span 2;min-height:auto;}
-@media (max-width: 640px){
-  .vital-box.hp-vital-box{grid-column:span 1;}
-}
+.vital-box.hp-vital-box{grid-column:1 / -1;min-height:auto;}
 .vital-box .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-on-parch-dim);font-weight:600;margin-bottom:4px;}
 .vital-box .stat-stepper{max-width:110px;margin:2px auto;}
 .vital-box .stat-score-val{font-size:16px;}
@@ -546,7 +547,7 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 .init-vital-box:hover{border-color:var(--brass);background:rgba(234,179,8,0.06);}
 .init-hero-val{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--brass-bright);line-height:1.1;margin:2px 0;transition:transform 0.12s ease;}
 .init-vital-box:hover .init-hero-val{transform:scale(1.08);}
-.init-misc-row{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px;font-size:11px;color:var(--text-on-parch-dim);}
+.init-misc-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 4px;margin-top:6px;font-size:11px;color:var(--text-on-parch-dim);}
 
 /* Currency Section */
 /* Currency Section - Clean & Minimal */
@@ -1170,4 +1171,5 @@ textarea.freeform{
   #dice-fab{right:16px;bottom:16px;}
   #wizard-header, #wizard-progress, #wizard-body, #wizard-footer{padding-left:14px;padding-right:14px;}
   .class-pick-grid{grid-template-columns:1fr;}
+  .classes-row .delete-char-btn{margin-left:0;flex:1 1 100%;margin-top:6px;}
 }
