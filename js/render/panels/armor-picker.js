@@ -7,7 +7,7 @@ var ARMOR_CATEGORY_LABEL = {light:"Light", medium:"Medium", heavy:"Heavy", shiel
 
 function addCatalogArmor(c, name, d){
   c.inventory.push({
-    name: name, type:"armor", qty:1, weight: d.weight||0, equipped:false,
+    name: name, type:"armor", qty:1, equipped:false,
     category: d.category||"light", baseAC: d.baseAC!=null?d.baseAC:10, magicBonus:0,
     notes: d.stealthDisadvantage ? "Disadvantage on Stealth checks" : ""
   });
@@ -50,24 +50,17 @@ function buildCustomArmorForm(c, container, closeCustom){
   row1.appendChild(acField);
   form.appendChild(row1);
 
-  var weightField = document.createElement("div"); weightField.className = "field";
-  weightField.innerHTML = "<label>Weight (lb)</label>";
-  var weightInput = document.createElement("input");
-  weightInput.type = "number"; weightInput.min = "0"; weightInput.step = "0.1"; weightInput.value = "0";
-  weightField.appendChild(weightInput);
-  form.appendChild(weightField);
-
   var addBtn = document.createElement("button");
   addBtn.className = "btn primary"; addBtn.textContent = "+ Add Armor";
   addBtn.addEventListener("click", function(){
     var nameVal = nameInput.value.trim();
     if(!nameVal){ alert("Please enter an armor name."); nameInput.focus(); return; }
     c.inventory.push({
-      name: nameVal, type:"armor", qty:1, weight: Number(weightInput.value)||0, equipped:false,
+      name: nameVal, type:"armor", qty:1, equipped:false,
       category: catSelect.value, baseAC: Number(acInput.value)||0, magicBonus:0, notes:""
     });
     save();
-    nameInput.value = ""; acInput.value = "10"; weightInput.value = "0"; catSelect.value = "light";
+    nameInput.value = ""; acInput.value = "10"; catSelect.value = "light";
     closeCustom();
     renderAll();
   });
@@ -83,7 +76,7 @@ export function buildArmorSection(c){
     searchPlaceholder: "Search all armor…",
     groups: ARMOR_GROUPS,
     data: ARMOR_DATA,
-    renderSub: function(name, d){ return d.stealthDisadvantage ? "Disadvantage on Stealth · " + (d.weight||0) + " lb" : (d.weight||0) + " lb"; },
+    renderSub: function(name, d){ return d.stealthDisadvantage ? "Disadvantage on Stealth checks" : ""; },
     renderRight: function(name, d){
       var acText = d.category==="shield" ? "+" + d.baseAC + " AC" : "AC " + d.baseAC;
       return [acText, ARMOR_CATEGORY_LABEL[d.category]||""];

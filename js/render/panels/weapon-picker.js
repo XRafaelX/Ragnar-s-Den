@@ -9,7 +9,7 @@ var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Fo
 function addCatalogWeapon(c, name, d){
   var ability = d.finesse ? "finesse" : (d.ranged ? "dex" : "str");
   c.inventory.push({
-    name: name, type:"weapon", qty:1, weight: d.weight||0, equipped:true, notes: d.properties||"",
+    name: name, type:"weapon", qty:1, equipped:true, notes: d.properties||"",
     damageDice: d.damageDice||"", damageType: d.damageType||"", ability: ability,
     proficient: isProficientWithWeapon(c, name, d.category), magicBonus: 0
   });
@@ -54,8 +54,6 @@ function buildCustomWeaponForm(c, container, closeCustom){
   row1.appendChild(typeField);
   form.appendChild(row1);
 
-  var row2 = document.createElement("div");
-  row2.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
   var abilityField = document.createElement("div"); abilityField.className = "field";
   abilityField.innerHTML = "<label>Ability</label>";
   var abilitySelect = document.createElement("select");
@@ -64,15 +62,7 @@ function buildCustomWeaponForm(c, container, closeCustom){
     abilitySelect.appendChild(o);
   });
   abilityField.appendChild(abilitySelect);
-  row2.appendChild(abilityField);
-
-  var weightField = document.createElement("div"); weightField.className = "field";
-  weightField.innerHTML = "<label>Weight (lb)</label>";
-  var weightInput = document.createElement("input");
-  weightInput.type = "number"; weightInput.min = "0"; weightInput.step = "0.1"; weightInput.value = "0";
-  weightField.appendChild(weightInput);
-  row2.appendChild(weightField);
-  form.appendChild(row2);
+  form.appendChild(abilityField);
 
   var profLabel = document.createElement("label");
   profLabel.style.cssText = "display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;";
@@ -88,12 +78,12 @@ function buildCustomWeaponForm(c, container, closeCustom){
     var nameVal = nameInput.value.trim();
     if(!nameVal){ alert("Please enter a weapon name."); nameInput.focus(); return; }
     c.inventory.push({
-      name: nameVal, type:"weapon", qty:1, weight: Number(weightInput.value)||0, equipped:true, notes:"",
+      name: nameVal, type:"weapon", qty:1, equipped:true, notes:"",
       damageDice: diceInput.value.trim(), damageType: typeSelect.value, ability: abilitySelect.value,
       proficient: profCb.checked, magicBonus: 0
     });
     save();
-    nameInput.value = ""; diceInput.value = ""; typeSelect.value = ""; weightInput.value = "0"; profCb.checked = true;
+    nameInput.value = ""; diceInput.value = ""; typeSelect.value = ""; profCb.checked = true;
     closeCustom();
     renderAll();
   });

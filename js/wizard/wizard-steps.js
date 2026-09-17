@@ -465,7 +465,7 @@ export function wizardStepReview(container){
    the class data defines them so it's ready to roll/count toward AC right
    away, instead of landing as generic untyped Gear. */
 function equipmentItemToInventoryItem(it, equipped){
-  var item = {name:it.name, qty:it.qty, weight:it.weight, equipped:equipped, notes:it.notes||"", type: it.type||"gear"};
+  var item = {name:it.name, qty:it.qty, equipped:equipped, notes:it.notes||"", type: it.type||"gear"};
   if(it.type==="weapon"){
     item.damageDice = it.damageDice||"";
     item.damageType = it.damageType||"";

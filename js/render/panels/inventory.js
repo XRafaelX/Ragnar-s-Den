@@ -76,13 +76,6 @@ function itemRow2(item){
   qtyLbl.appendChild(qtyInput);
   row2.appendChild(qtyLbl);
 
-  var wtLbl = document.createElement("label"); wtLbl.className = "inv-mini-field";
-  wtLbl.textContent = "Wt";
-  var wtInput = document.createElement("input"); wtInput.type="number"; wtInput.value = item.weight||0; wtInput.min="0"; wtInput.step="0.1";
-  wtInput.addEventListener("input", function(){ item.weight = Number(wtInput.value)||0; save(); renderAll(); });
-  wtLbl.appendChild(wtInput);
-  row2.appendChild(wtLbl);
-
   var eqLbl = document.createElement("label"); eqLbl.className = "inv-eq-label";
   var eqCb = document.createElement("input"); eqCb.type="checkbox"; eqCb.className="chk"; eqCb.checked = !!item.equipped;
   eqCb.addEventListener("change", function(){ item.equipped = eqCb.checked; save(); renderAll(); });
@@ -340,19 +333,12 @@ export function renderInventoryPanel(c){
   }
   gearCard.appendChild(gearList);
 
-  var totalWeight = (c.inventory||[]).reduce(function(a,i){ return a + (Number(i.weight)||0)*(Number(i.qty)||0); },0);
-  var capacity = (Number(c.abilities.str)||10) * 15;
-  var wtP = document.createElement("p");
-  wtP.style.fontSize="12px"; wtP.style.color="var(--text-on-parch-dim)"; wtP.style.marginTop="10px";
-  wtP.textContent = "Total weight (all items): "+totalWeight.toFixed(1)+" lb  ·  Carry capacity (STR×15): "+capacity+" lb";
-  gearCard.appendChild(wtP);
-
   var addItemBtn = document.createElement("button");
   addItemBtn.className = "btn small"; addItemBtn.style.marginTop="10px";
   addItemBtn.style.color="var(--text-on-parch)"; addItemBtn.style.borderColor="var(--rule)";
   addItemBtn.textContent = "+ Add item";
   addItemBtn.addEventListener("click", function(){
-    c.inventory.push({name:"", type:"gear", qty:1, weight:0, equipped:false, notes:""});
+    c.inventory.push({name:"", type:"gear", qty:1, equipped:false, notes:""});
     save(); renderAll();
   });
   gearCard.appendChild(addItemBtn);
@@ -433,17 +419,9 @@ export function renderInventoryPanel(c){
                   ((Number(c.currency.gp)||0)*1.0) +
                   ((Number(c.currency.pp)||0)*10.0);
 
-  var totalCoins = (Number(c.currency.cp)||0) +
-                   (Number(c.currency.sp)||0) +
-                   (Number(c.currency.ep)||0) +
-                   (Number(c.currency.gp)||0) +
-                   (Number(c.currency.pp)||0);
-  var coinWeight = (totalCoins / 50).toFixed(1);
-
   var curSummary = document.createElement("div");
   curSummary.className = "currency-summary";
-  curSummary.innerHTML = '<span>Total Wealth: <strong>' + totalGold.toFixed(2) + ' GP</strong></span>' +
-                         '<span class="currency-weight-hint">Purse weight: ~' + coinWeight + ' lb (' + totalCoins + ' coins)</span>';
+  curSummary.innerHTML = '<span>Total Wealth: <strong>' + totalGold.toFixed(2) + ' GP</strong></span>';
   curCard.appendChild(curSummary);
   panel.appendChild(curCard);
 
