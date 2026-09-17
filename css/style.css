@@ -381,6 +381,40 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
   color:var(--text-on-parch-dim);
   font-weight:600;
 }
+.ability-assign-select{
+  width:100%;
+  border:1px solid var(--rule);
+  border-radius:14px;
+  background-color:var(--field-bg);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a8fb5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 6px center;
+  background-size:11px;
+  color:var(--text-on-parch);
+  font-family:var(--serif);
+  font-size:13px;
+  font-weight:700;
+  text-align:center;
+  text-align-last:center;
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  padding:4px 20px;
+  cursor:pointer;
+  transition:border-color 0.15s ease, background-color 0.15s ease;
+}
+.ability-assign-select:hover{
+  border-color:rgba(139,92,246,0.45);
+  background-color:rgba(139,92,246,0.14);
+}
+.ability-assign-select:focus{
+  outline:none;
+  border-color:var(--brass);
+}
+.ability-assign-select.placeholder{
+  color:var(--text-on-parch-dim);
+  font-weight:400;
+}
 .ability-box .mod{
   font-family:var(--serif);
   font-size:24px;
