@@ -93,8 +93,6 @@ export function renderInventoryPanel(c){
                          '<span class="currency-weight-hint">Purse weight: ~' + coinWeight + ' lb (' + totalCoins + ' coins)</span>';
   curCard.appendChild(curSummary);
 
-  panel.appendChild(curCard);
-
   var invCard = makeCard("Items & equipment");
   var table = document.createElement("table");
   table.className = "data-table";
@@ -149,6 +147,7 @@ export function renderInventoryPanel(c){
   });
   invCard.appendChild(addItemBtn);
   panel.appendChild(invCard);
+  panel.appendChild(curCard);
 
   return panel;
 }

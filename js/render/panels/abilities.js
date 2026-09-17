@@ -1,5 +1,5 @@
-import { state, save } from "../../core/state.js";
-import { fmtMod, mod, profBonus, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, getAllCharacterFeatures, escapeHtml } from "../../core/helpers.js";
+import { save } from "../../core/state.js";
+import { fmtMod, mod, profBonus, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, escapeHtml } from "../../core/helpers.js";
 import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
@@ -9,7 +9,7 @@ import { performRoll } from "../../dice/dice.js";
 export function renderAbilitiesPanel(c){
   var panel = document.createElement("div");
 
-  var abCard = makeCard("Ability scores", "tap score to roll check · arrows up/down to change stats");
+  var abCard = makeCard("Ability scores", "tap score to roll check · arrows up/down to change stats · Proficiency bonus " + fmtMod(profBonus(c)));
   var grid = document.createElement("div");
   grid.className = "abilities-grid";
   ABILITIES.forEach(function(a){
@@ -176,24 +176,6 @@ export function renderAbilitiesPanel(c){
   });
   passCard.appendChild(passGrid);
   panel.appendChild(passCard);
-
-  var summaryCard = makeCard("Features & feats summary");
-  var allFeats = c.feats || [];
-  var allFeatsAndFeatures = getAllCharacterFeatures(c);
-  var sumP = document.createElement("p");
-  sumP.style.cssText = "font-size:13px;color:var(--text-on-parch);margin:0 0 10px;";
-  sumP.innerHTML = "<strong>" + allFeats.length + "</strong> feats and <strong>" + allFeatsAndFeatures.length + "</strong> total features & traits active on this character.";
-  summaryCard.appendChild(sumP);
-
-  var goBtn = document.createElement("button");
-  goBtn.className = "btn small primary";
-  goBtn.textContent = "Manage Feats & Features →";
-  goBtn.addEventListener("click", function(){
-    state.activeTab = "features";
-    renderAll();
-  });
-  summaryCard.appendChild(goBtn);
-  panel.appendChild(summaryCard);
 
   return panel;
 }

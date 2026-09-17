@@ -1,0 +1,8 @@
+.idea/
+.vscode/
+.claude/
+.junie/
+
+# OS files
+.DS_Store
+Thumbs.db
