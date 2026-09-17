@@ -6,10 +6,12 @@ import { setupMobileNav } from "./ui/mobile-nav.js";
 import { openWizard } from "./wizard/wizard-core.js";
 import { renderAll } from "./render/sheet.js";
 import { setupDiceTray } from "./dice/dice.js";
+import { openArmory } from "./render/armory.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
   document.getElementById("new-char-btn").addEventListener("click", openWizard);
+  document.getElementById("armory-btn").addEventListener("click", openArmory);
 
   document.getElementById("export-btn").addEventListener("click", function(){
     var blob = new Blob([JSON.stringify(state.characters, null, 2)], {type:"application/json"});

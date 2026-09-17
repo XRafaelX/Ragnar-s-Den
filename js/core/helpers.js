@@ -1,5 +1,5 @@
 import { HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
-import { CLASSES_INFO } from "../data/classes.js";
+import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 
@@ -30,6 +30,89 @@ export function barbarianRageMax(level){
   if(level>=6) return 4;
   if(level>=3) return 3;
   return 2;
+}
+
+/* ---------------- Armor Class ----------------
+   Computed from equipped armor/shield inventory items rather than a raw
+   manual number, with Barbarian/Monk Unarmored Defense honored when no
+   body armor is equipped. c.acMisc covers anything else (rings, feats). */
+export function computeArmorClass(c){
+  var dexMod = mod(c.abilities && c.abilities.dex);
+  var items = (c.inventory||[]).filter(function(i){ return i.type==="armor" && i.equipped; });
+  var bodyArmor = items.find(function(i){ return i.category!=="shield"; });
+  var shieldBonus = items.filter(function(i){ return i.category==="shield"; })
+    .reduce(function(a,i){ return a + (Number(i.baseAC)||0) + (Number(i.magicBonus)||0); }, 0);
+  var misc = Number(c.acMisc)||0;
+  var base, breakdown;
+
+  if(bodyArmor){
+    var dexContribution = 0;
+    if(bodyArmor.category==="light") dexContribution = dexMod;
+    else if(bodyArmor.category==="medium") dexContribution = Math.min(dexMod,2);
+    var armorAC = Number(bodyArmor.baseAC)||10;
+    var magic = Number(bodyArmor.magicBonus)||0;
+    base = armorAC + dexContribution + magic;
+    breakdown = (bodyArmor.name||"Armor") + " (" + armorAC + ")" +
+      (bodyArmor.category!=="heavy" ? " + DEX (" + fmtMod(dexContribution) + ")" : "") +
+      (magic ? " + magic (" + fmtMod(magic) + ")" : "");
+  } else {
+    var hasBarbarian = (c.classes||[]).some(function(cl){ return cl.name==="Barbarian"; });
+    var hasMonk = (c.classes||[]).some(function(cl){ return cl.name==="Monk"; });
+    if(hasBarbarian){
+      var conMod = mod(c.abilities && c.abilities.con);
+      base = 10 + dexMod + conMod;
+      breakdown = "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + CON (" + fmtMod(conMod) + ")";
+    } else if(hasMonk){
+      var wisMod = mod(c.abilities && c.abilities.wis);
+      base = 10 + dexMod + wisMod;
+      breakdown = "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + WIS (" + fmtMod(wisMod) + ")";
+    } else {
+      base = 10 + dexMod;
+      breakdown = "Unarmored: 10 + DEX (" + fmtMod(dexMod) + ")";
+    }
+  }
+
+  if(shieldBonus) breakdown += " + shield (" + fmtMod(shieldBonus) + ")";
+  if(misc) breakdown += " + misc (" + fmtMod(misc) + ")";
+
+  return { value: base + shieldBonus + misc, breakdown: breakdown };
+}
+
+/* ---------------- Weapon attack & damage bonuses ---------------- */
+export function weaponAbilityMod(c, item){
+  var strMod = mod(c.abilities && c.abilities.str);
+  var dexMod = mod(c.abilities && c.abilities.dex);
+  if(item.ability==="dex") return dexMod;
+  if(item.ability==="finesse") return Math.max(strMod, dexMod);
+  return strMod;
+}
+export function weaponAttackBonus(c, item){
+  var pb = item.proficient ? profBonus(c) : 0;
+  return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0);
+}
+export function weaponDamageBonus(c, item){
+  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0);
+}
+export function parseDiceNotation(str){
+  var m2 = /^(\d*)d(\d+)$/i.exec((str||"").trim());
+  if(!m2) return null;
+  return { qty: Number(m2[1])||1, die: Number(m2[2]) };
+}
+
+/* Best-effort default for a newly added weapon's Proficient checkbox:
+   true if any of the character's classes list the weapon's category
+   ("Simple weapons"/"Martial weapons") or name it specifically. */
+export function isProficientWithWeapon(c, weaponName, category){
+  return (c.classes||[]).some(function(cl){
+    var p = CLASS_PROFICIENCIES[cl.name];
+    if(!p || !p.weapons) return false;
+    return p.weapons.some(function(w){
+      var wl = w.toLowerCase();
+      if(category==="simple" && wl==="simple weapons") return true;
+      if(category==="martial" && wl==="martial weapons") return true;
+      return weaponName && wl.indexOf(weaponName.toLowerCase()) !== -1;
+    });
+  });
 }
 export function passivePerception(c){
   var wisMod = mod(c.abilities && c.abilities.wis != null ? c.abilities.wis : 10);

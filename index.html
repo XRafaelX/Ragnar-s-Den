@@ -24,6 +24,7 @@
     <ul id="char-list"></ul>
     <div id="sidebar-footer">
       <button class="btn primary" id="new-char-btn">+ New Character</button>
+      <button class="btn small ghost" id="armory-btn" title="Browse weapons & armor and add them to your active character">Grimtooth's Armory</button>
       <button class="btn small ghost" id="export-btn">Export all (backup)</button>
       <button class="btn small ghost" id="import-btn">Import backup</button>
       <input type="file" id="import-file" accept="application/json" style="display:none;">
@@ -176,6 +177,21 @@
     </div>
     <div id="feature-modal-body"></div>
   </div>
+</div>
+
+<div id="catalog-overlay">
+  <div id="catalog-header">
+    <button id="catalog-back" aria-label="Back">←</button>
+    <input id="catalog-search" type="text" placeholder="Search…">
+  </div>
+  <div id="catalog-tabs"></div>
+  <div id="catalog-pills" class="ff-pill-row"></div>
+  <div id="catalog-list"></div>
+  <div id="catalog-custom-view">
+    <button id="catalog-custom-back" class="btn small ghost">‹ Back to catalog</button>
+    <div id="catalog-custom-body"></div>
+  </div>
+  <button id="catalog-fab" title="Add custom" aria-label="Add custom">+</button>
 </div>
 
 <div id="wizard-overlay"></div>

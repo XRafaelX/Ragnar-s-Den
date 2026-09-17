@@ -23,6 +23,7 @@ export function newCharacter(name){
     skillProfs: skillProfs,
     hp: {max:10, current:10, temp:0},
     ac: 10,
+    acMisc: 0,
     initiativeMisc: 0,
     speed: 30,
     hitDiceUsed: 0,
@@ -57,6 +58,7 @@ export function ensureShape(c){
   if(!c.saveProfs) c.saveProfs = {str:false,dex:false,con:false,int:false,wis:false,cha:false};
   if(!c.hp) c.hp = {max:10, current:10, temp:0};
   if(c.ac==null) c.ac = 10;
+  if(c.acMisc==null) c.acMisc = 0;
   if(c.initiativeMisc==null) c.initiativeMisc = 0;
   if(c.speed==null) c.speed = 30;
   if(c.hitDiceUsed==null) c.hitDiceUsed = 0;
@@ -106,6 +108,11 @@ export function ensureShape(c){
     });
   }
   if(!c.inventory) c.inventory = [];
+  else {
+    c.inventory.forEach(function(item){
+      if(!item.type) item.type = "gear";
+    });
+  }
   if(!c.currency) c.currency = {cp:0,sp:0,ep:0,gp:0,pp:0};
   if(!c.notes) c.notes = [];
   if(!c.rollLog) c.rollLog = [];

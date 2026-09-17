@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, computeArmorClass } from "../../core/helpers.js";
 import { CLASSES_INFO } from "../../data/classes.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -315,7 +315,71 @@ export function renderVitalsPanel(c){
     }
     return box;
   }
-  grid.appendChild(smallVital("Armor Class","ac",null,"Base & armor"));
+  var acResult = computeArmorClass(c);
+  c.ac = acResult.value;
+
+  var acBox = document.createElement("div");
+  acBox.className = "vital-box ac-vital-box";
+  var acHeader = document.createElement("div");
+  acHeader.className = "lbl";
+  acHeader.textContent = "Armor Class";
+  acBox.appendChild(acHeader);
+
+  var acValDiv = document.createElement("div");
+  acValDiv.className = "init-hero-val";
+  acValDiv.textContent = acResult.value;
+  acBox.appendChild(acValDiv);
+
+  var acHint = document.createElement("div");
+  acHint.className = "vital-hint";
+  acHint.textContent = acResult.breakdown;
+  acBox.appendChild(acHint);
+
+  var acMiscRow = document.createElement("div");
+  acMiscRow.className = "init-misc-row";
+  var acMiscLbl = document.createElement("span");
+  acMiscLbl.textContent = "Misc:";
+  acMiscRow.appendChild(acMiscLbl);
+
+  var acMiscStepper = document.createElement("div");
+  acMiscStepper.className = "stat-stepper";
+  acMiscStepper.style.maxWidth = "84px";
+
+  var acMiscDown = document.createElement("button");
+  acMiscDown.type = "button";
+  acMiscDown.className = "stat-arrow-btn stat-arrow-down";
+  acMiscDown.title = "Decrease misc AC modifier";
+  acMiscDown.setAttribute("aria-label", "Decrease misc AC modifier");
+  acMiscDown.innerHTML = makeStatArrowSvg("down");
+  acMiscDown.addEventListener("click", function(e){
+    e.stopPropagation();
+    c.acMisc = (Number(c.acMisc)||0) - 1;
+    save(); renderAll();
+  });
+
+  var acMiscVal = document.createElement("span");
+  acMiscVal.className = "stat-score-val";
+  acMiscVal.textContent = fmtMod(c.acMisc||0);
+
+  var acMiscUp = document.createElement("button");
+  acMiscUp.type = "button";
+  acMiscUp.className = "stat-arrow-btn stat-arrow-up";
+  acMiscUp.title = "Increase misc AC modifier";
+  acMiscUp.setAttribute("aria-label", "Increase misc AC modifier");
+  acMiscUp.innerHTML = makeStatArrowSvg("up");
+  acMiscUp.addEventListener("click", function(e){
+    e.stopPropagation();
+    c.acMisc = (Number(c.acMisc)||0) + 1;
+    save(); renderAll();
+  });
+
+  acMiscStepper.appendChild(acMiscDown);
+  acMiscStepper.appendChild(acMiscVal);
+  acMiscStepper.appendChild(acMiscUp);
+  acMiscRow.appendChild(acMiscStepper);
+  acBox.appendChild(acMiscRow);
+
+  grid.appendChild(acBox);
 
   var initBox = document.createElement("div");
   initBox.className = "vital-box init-vital-box";

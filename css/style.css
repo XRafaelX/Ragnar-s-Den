@@ -596,6 +596,46 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 .slot-box .fraction{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:4px;}
 .slot-box input{width:28px;text-align:center;border:1px solid var(--rule);border-radius:3px;background:var(--field-bg);}
 
+/* Inventory item cards (weapon/armor/gear) */
+.inv-items-list{gap:10px;}
+.inv-item-card{display:flex;flex-direction:column;gap:8px;}
+.inv-item-row1{display:flex;align-items:center;gap:8px;}
+.inv-item-row1 .inv-name{
+  flex:1;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:6px 9px;font-size:13.5px;
+}
+.inv-item-row1 .inv-name:focus{outline:none;border-color:var(--brass);}
+.inv-item-row1 .inv-type{
+  background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:6px 8px;font-size:12.5px;color-scheme:dark;
+}
+.inv-item-row2{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.inv-mini-field{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-on-parch-dim);text-transform:uppercase;letter-spacing:.05em;}
+.inv-mini-field input{
+  width:56px;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:4px 6px;font-size:13px;text-align:center;
+}
+.inv-eq-label, .inv-prof-label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-on-parch);cursor:pointer;}
+
+.inv-type-fields{
+  display:flex;flex-wrap:wrap;gap:12px 16px;padding:10px;background:rgba(255,255,255,0.03);border:1px solid var(--rule);border-radius:6px;
+}
+.field-inline{display:flex;flex-direction:column;gap:3px;}
+.field-inline label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);}
+.field-inline input, .field-inline select{
+  background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:5px 8px;font-size:13px;color-scheme:dark;
+}
+.field-inline input:focus, .field-inline select:focus{outline:none;border-color:var(--brass);}
+.inv-dice-input{width:70px;}
+.inv-baseac-input{width:60px;text-align:center;}
+.inv-mini-stepper{max-width:84px;}
+
+.inv-roll-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.inv-roll-btn{color:var(--text-on-parch);border-color:var(--rule);}
+.inv-roll-btn:disabled{opacity:.4;cursor:not-allowed;}
+.inv-armor-note{font-size:11.5px;color:var(--text-on-parch-dim);font-style:italic;margin:0;}
+.inv-notes{
+  width:100%;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:6px 9px;font-size:13px;
+}
+.inv-notes:focus{outline:none;border-color:var(--brass);}
+
 table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
 table.data-table th{
   text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
@@ -1156,6 +1196,78 @@ textarea.freeform{
 .overlay-scrim.show{display:block;}
 
 /* ---------------- Character Creation Wizard ---------------- */
+/* Full-page catalog picker (Add Weapon / Add Armor) */
+#catalog-overlay{
+  position:fixed;inset:0;background:var(--ink-deep);z-index:950;
+  display:none;flex-direction:column;
+}
+#catalog-overlay.open{display:flex;}
+#catalog-header{
+  padding:14px 16px;border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;gap:10px;flex:none;
+}
+#catalog-back{
+  background:none;border:none;color:var(--text-on-parch);font-size:20px;padding:4px 8px;cursor:pointer;border-radius:4px;flex:none;
+}
+#catalog-back:hover{background:rgba(255,255,255,0.08);}
+#catalog-search{
+  flex:1;background:var(--field-bg);border:1px solid var(--rule);border-radius:20px;color:var(--text-on-parch);padding:8px 14px;font-size:14px;
+}
+#catalog-search:focus{outline:none;border-color:var(--brass);}
+#catalog-tabs{
+  display:flex;gap:4px;padding:0 16px;border-bottom:1px solid var(--rule);overflow-x:auto;flex:none;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+#catalog-tabs::-webkit-scrollbar{display:none;}
+.catalog-tab-btn{
+  background:none;border:none;color:var(--text-on-ink-dim);padding:12px 16px;font-size:13.5px;white-space:nowrap;
+  border-bottom:2px solid transparent;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;
+}
+.catalog-tab-btn.active{color:var(--brass-bright);border-bottom-color:var(--brass);}
+#catalog-pills{padding:12px 16px 0;flex:none;margin-bottom:0;}
+#catalog-list{flex:1;overflow-y:auto;padding:8px 16px 90px;}
+.catalog-group-label{
+  font-family:var(--serif);color:var(--brass-bright);font-size:15px;margin:18px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--rule);
+}
+.catalog-group-label:first-child{margin-top:4px;}
+.catalog-row{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:12px 4px;border-bottom:1px dashed var(--rule);cursor:pointer;transition:background .15s ease;
+}
+.catalog-row:hover{background:rgba(139,92,246,0.08);}
+.catalog-row:last-child{border-bottom:none;}
+.catalog-row.added{background:rgba(90,164,105,0.15);}
+.catalog-row-left{display:flex;flex-direction:column;gap:2px;}
+.catalog-row-name{font-size:14.5px;color:var(--text-on-parch);}
+.catalog-row-sub{font-size:11.5px;color:var(--text-on-parch-dim);font-style:italic;}
+.catalog-row-right{text-align:right;display:flex;flex-direction:column;gap:2px;flex:none;}
+.catalog-row-primary{font-size:14.5px;color:var(--text-on-parch);font-weight:600;}
+.catalog-row-secondary{font-size:11.5px;color:var(--text-on-parch-dim);}
+.catalog-empty{padding:24px;text-align:center;color:var(--text-on-parch-dim);font-size:13px;}
+
+#catalog-fab{
+  position:fixed;right:22px;bottom:22px;
+  width:54px;height:54px;border-radius:50%;
+  background:linear-gradient(135deg, var(--brass) 0%, #6d3fce 100%);
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:28px;box-shadow:0 8px 24px rgba(0,0,0,.45), 0 0 0 1px rgba(139,92,246,0.3);
+  border:none;z-index:10;cursor:pointer;
+  transition:transform .18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+#catalog-fab:hover{transform:scale(1.08);}
+#catalog-fab:active{transform:scale(0.92);}
+#catalog-fab.no-custom{display:none;}
+
+#catalog-custom-view{display:none;flex:1;overflow-y:auto;padding:16px;flex-direction:column;gap:14px;}
+#catalog-overlay.custom-mode #catalog-list,
+#catalog-overlay.custom-mode #catalog-pills,
+#catalog-overlay.custom-mode #catalog-fab{display:none;}
+#catalog-overlay.custom-mode #catalog-custom-view{display:flex;}
+
+@media (max-width:640px){
+  #catalog-header, #catalog-pills, #catalog-list, #catalog-custom-view{padding-left:14px;padding-right:14px;}
+}
+
 #wizard-overlay{
   position:fixed;inset:0;background:var(--ink-deep);z-index:900;
   display:none;flex-direction:column;
