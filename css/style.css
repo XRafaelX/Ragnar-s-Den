@@ -93,7 +93,9 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
   margin:0 0 2px;
   color:var(--brass-bright);
   letter-spacing:.02em;
+  cursor:pointer;display:inline-block;transition:color .15s ease;
 }
+#sidebar-header h1:hover{color:#fff;}
 #sidebar-header p{
   margin:0;
   font-size:11px;
@@ -334,7 +336,11 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 #hamburger{
   background:none;border:none;color:var(--brass-bright);font-size:20px;padding:4px 8px;
 }
-#topbar .tb-title{font-family:var(--serif);color:var(--text-on-ink);font-size:15px;}
+#topbar .tb-title{
+  font-family:var(--serif);color:var(--text-on-ink);font-size:15px;
+  cursor:pointer;padding:4px 8px;margin:-4px -8px;border-radius:5px;transition:background .15s ease,color .15s ease;
+}
+#topbar .tb-title:hover{background:rgba(139,92,246,0.14);color:var(--brass-bright);}
 
 /* Identity block */
 .identity{
