@@ -256,7 +256,7 @@ export function wizardStepAbilities(container){
       card.appendChild(poolP);
       wizardAssignAbilities(card, wizardState.rolledPool);
       var reroll = document.createElement("button");
-      reroll.type="button"; reroll.className="btn small ghost"; reroll.style.marginTop="10px"; reroll.textContent="Reroll";
+      reroll.type="button"; reroll.className="btn small ghost"; reroll.style.marginTop="10px"; reroll.textContent="Reroll (Don't tell the DM!)";
       reroll.addEventListener("click", function(){
         wizardState.rolledPool = rollSixAbilityScores();
         wizardState.assignIdx = {str:null,dex:null,con:null,int:null,wis:null,cha:null};
