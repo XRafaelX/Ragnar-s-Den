@@ -296,7 +296,10 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
   margin:18px 0 0;
   border-bottom:1px solid var(--rule);
   overflow-x:auto;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
 }
+#tabs::-webkit-scrollbar{display:none;}
 #tabs button{
   background:none;border:none;color:var(--text-on-ink-dim);
   padding:10px 14px;font-size:13px;white-space:nowrap;
