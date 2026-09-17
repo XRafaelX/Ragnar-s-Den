@@ -46,8 +46,8 @@ export function wizardAssignAbilities(container, pool){
     box.style.cursor = "default";
     box.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div>';
     var sel = document.createElement("select");
-    sel.style.cssText = "border:1px solid var(--rule);border-radius:4px;background:var(--field-bg);color:var(--text-on-parch);padding:2px;font-size:12.5px;";
-    var blank = document.createElement("option"); blank.value=""; blank.textContent="—";
+    sel.className = "ability-assign-select"+(usedIdx==null?" placeholder":"");
+    var blank = document.createElement("option"); blank.value=""; blank.textContent="Assign score";
     sel.appendChild(blank);
     pool.forEach(function(val, pi){
       var takenBy = Object.keys(wizardState.assignIdx).find(function(k2){ return wizardState.assignIdx[k2]===pi; });
@@ -256,7 +256,7 @@ export function wizardStepAbilities(container){
       card.appendChild(poolP);
       wizardAssignAbilities(card, wizardState.rolledPool);
       var reroll = document.createElement("button");
-      reroll.type="button"; reroll.className="btn small ghost"; reroll.style.marginTop="10px"; reroll.textContent="Reroll";
+      reroll.type="button"; reroll.className="btn small ghost"; reroll.style.marginTop="10px"; reroll.textContent="Reroll (Don't tell the DM!)";
       reroll.addEventListener("click", function(){
         wizardState.rolledPool = rollSixAbilityScores();
         wizardState.assignIdx = {str:null,dex:null,con:null,int:null,wis:null,cha:null};
