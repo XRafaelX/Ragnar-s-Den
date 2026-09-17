@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, profBonus, fmtMod, mod, totalLevel, escapeHtml, getAllCharacterFeatures } from "../../core/helpers.js";
+import { getAllCharacterFeatures } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { openFeatPickerModal } from "./feat-picker-modal.js";
 import { openFeatureModal } from "./feature-modal.js";
@@ -13,39 +13,7 @@ var featSearchQuery = "";
 export function renderFeaturesPanel(c){
   var panel = document.createElement("div");
 
-  // 1. Passive Senses & Core Defenses Card
-  var passCard = makeCard("Passive senses & core stats", "calculated automatically from abilities, proficiencies, and feats");
-  var passGrid = document.createElement("div");
-  passGrid.className = "passives-grid";
-
-  var pPerc = passivePerception(c);
-  var pInv = passiveInvestigation(c);
-  var pIns = passiveInsight(c);
-  var senses = getCharacterSenses(c);
-  var pb = profBonus(c);
-
-  var stats = [
-    { label: "Passive Perception", val: pPerc, sub: "10 + WIS (" + fmtMod(mod(c.abilities.wis)) + ") " + (c.skillProfs.Perception && c.skillProfs.Perception.prof ? "+ Prof" : "") },
-    { label: "Passive Investigation", val: pInv, sub: "10 + INT (" + fmtMod(mod(c.abilities.int)) + ") " + (c.skillProfs.Investigation && c.skillProfs.Investigation.prof ? "+ Prof" : "") },
-    { label: "Passive Insight", val: pIns, sub: "10 + WIS (" + fmtMod(mod(c.abilities.wis)) + ") " + (c.skillProfs.Insight && c.skillProfs.Insight.prof ? "+ Prof" : "") },
-    { label: "Senses", val: senses, sub: (c.race || "Base race") },
-    { label: "Proficiency Bonus", val: fmtMod(pb), sub: "Level " + totalLevel(c) },
-    { label: "Speed", val: (c.speed || 30) + " ft", sub: "Base walk speed" }
-  ];
-
-  stats.forEach(function(st){
-    var box = document.createElement("div");
-    box.className = "passive-box";
-    var valStyle = typeof st.val === "string" && st.val.length > 8 ? "font-size:15px;line-height:1.3;margin-top:2px;" : "";
-    box.innerHTML = '<div class="lbl">' + escapeHtml(st.label) + '</div>' +
-      '<div class="val" style="' + valStyle + '">' + escapeHtml(String(st.val)) + '</div>' +
-      '<div class="sub">' + escapeHtml(st.sub) + '</div>';
-    passGrid.appendChild(box);
-  });
-  passCard.appendChild(passGrid);
-  panel.appendChild(passCard);
-
-  // 2. Feats Card
+  // 1. Feats Card
   var feats = c.feats || [];
   var featCard = makeCard("Feats (" + feats.length + ")", "special perks and feats chosen for your character");
   
@@ -156,7 +124,7 @@ export function renderFeaturesPanel(c){
   }
   panel.appendChild(featCard);
 
-  // 3. All Features, Traits & Passives Directory Card
+  // 2. All Features, Traits & Passives Directory Card
   var allFeatures = getAllCharacterFeatures(c);
   var featDirCard = makeCard("Features, traits & passives (" + allFeatures.length + ")", "comprehensive directory of all race, class, background, and custom abilities");
 

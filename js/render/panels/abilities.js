@@ -9,7 +9,7 @@ import { performRoll } from "../../dice/dice.js";
 export function renderAbilitiesPanel(c){
   var panel = document.createElement("div");
 
-  var abCard = makeCard("Ability scores", "tap score to roll check · arrows up/down to change stats");
+  var abCard = makeCard("Ability scores", "tap score to roll check · arrows up/down to change stats · Proficiency bonus " + fmtMod(profBonus(c)));
   var grid = document.createElement("div");
   grid.className = "abilities-grid";
   ABILITIES.forEach(function(a){
