@@ -238,7 +238,7 @@ export function renderIdentity(c){
   classesRow.appendChild(totalSpan);
 
   var deleteBtn = makeDeleteButton(c);
-  deleteBtn.style.marginLeft = "auto";
+  deleteBtn.classList.add("delete-char-btn");
   classesRow.appendChild(deleteBtn);
 
   wrap.appendChild(classesRow);
