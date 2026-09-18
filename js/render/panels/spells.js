@@ -40,7 +40,7 @@ export function renderSpellsPanel(c){
   scCard.appendChild(row);
   panel.appendChild(scCard);
 
-  var slotCard = makeCard("Spell slots", "click a filled dot to mark used, an empty one to restore");
+  var slotCard = makeCard("Spell slots");
   var slotGrid = document.createElement("div");
   slotGrid.className = "slot-grid";
   for(var lvl=1;lvl<=9;lvl++){

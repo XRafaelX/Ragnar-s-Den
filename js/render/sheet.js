@@ -277,18 +277,13 @@ export function renderIdentity(c){
   return wrap;
 }
 
-export function makeCard(titleText, hint){
+export function makeCard(titleText){
   var card = document.createElement("div");
   card.className = "card";
   var h = document.createElement("h3");
   var span = document.createElement("span");
   span.textContent = titleText;
   h.appendChild(span);
-  if(hint){
-    var hh = document.createElement("span");
-    hh.className = "hint"; hh.textContent = hint;
-    h.appendChild(hh);
-  }
   card.appendChild(h);
   return card;
 }

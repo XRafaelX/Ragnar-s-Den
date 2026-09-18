@@ -416,7 +416,7 @@ export function renderInventoryPanel(c){
   var panel = document.createElement("div");
 
   // Weapons
-  var weaponCard = makeCard("Weapons", "attack & damage rolls use STR/DEX + proficiency automatically");
+  var weaponCard = makeCard("Weapons");
   var weaponList = document.createElement("div");
   weaponList.className = "ff-items-list inv-items-list";
   var anyWeapon = false;
@@ -440,7 +440,7 @@ export function renderInventoryPanel(c){
   panel.appendChild(weaponCard);
 
   // Armor
-  var armorCard = makeCard("Armor", "equip a piece to count it toward Armor Class");
+  var armorCard = makeCard("Armor");
   var armorList = document.createElement("div");
   armorList.className = "ff-items-list inv-items-list";
   var anyArmor = false;
