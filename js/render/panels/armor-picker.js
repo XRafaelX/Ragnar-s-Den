@@ -2,6 +2,7 @@ import { ARMOR_GROUPS, ARMOR_DATA } from "../../data/armor.js";
 import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { openCatalogPicker } from "../../ui/catalog-picker.js";
+import { playAdd } from "../../ui/sound.js";
 
 var ARMOR_CATEGORY_LABEL = {light:"Light", medium:"Medium", heavy:"Heavy", shield:"Shield"};
 
@@ -12,6 +13,7 @@ export function addCatalogArmor(c, name, d){
     notes: d.stealthDisadvantage ? "Disadvantage on Stealth checks" : ""
   });
   save();
+  playAdd();
 }
 
 export function addCustomArmor(c, fields){
@@ -20,6 +22,7 @@ export function addCustomArmor(c, fields){
     category: fields.category, baseAC: fields.baseAC, magicBonus:0, notes:""
   });
   save();
+  playAdd();
 }
 
 export function buildCustomArmorForm(container, closeCustom, onSubmit){

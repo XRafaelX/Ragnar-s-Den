@@ -11,6 +11,7 @@ import { renderInventoryPanel } from "./panels/inventory.js";
 import { renderJournalPanel } from "./panels/journal.js";
 import { renderRollLog } from "../dice/dice.js";
 import { makeDeleteButton } from "../app.js";
+import { playAdd, playDelete } from "../ui/sound.js";
 
 export var TABS = [
   ["vitals","Vitals"],
@@ -248,7 +249,7 @@ export function renderIdentity(c){
     if((c.classes||[]).length>1){
       var x = document.createElement("span");
       x.className = "x"; x.textContent = "×";
-      x.addEventListener("click", function(){ c.classes.splice(idx,1); save(); renderAll(); });
+      x.addEventListener("click", function(){ c.classes.splice(idx,1); save(); renderAll(); playDelete(); });
       chip.appendChild(x);
     }
     classesRow.appendChild(chip);
@@ -260,7 +261,7 @@ export function renderIdentity(c){
   addClassBtn.style.borderColor = "var(--rule)";
   addClassBtn.addEventListener("click", function(){
     c.classes.push({name:"Fighter", subclass:"", level:1});
-    save(); renderAll();
+    save(); renderAll(); playAdd();
   });
   classesRow.appendChild(addClassBtn);
   var totalSpan = document.createElement("span");

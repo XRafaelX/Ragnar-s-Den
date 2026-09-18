@@ -7,6 +7,7 @@ import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { closeSidebarMobile } from "../ui/mobile-nav.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
+import { playAdd } from "../ui/sound.js";
 import {
   buildEquipmentList,
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
@@ -141,6 +142,7 @@ export function finishWizard(){
   save();
   document.getElementById("wizard-overlay").classList.remove("open");
   renderAll();
+  playAdd();
 }
 
 export function renderWizard(){

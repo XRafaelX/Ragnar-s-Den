@@ -4,6 +4,7 @@ import { makeCard, renderAll } from "../sheet.js";
 import { openFeatPickerModal } from "./feat-picker-modal.js";
 import { openFeatureModal } from "./feature-modal.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
+import { playDelete } from "../../ui/sound.js";
 
 /* ---- Features & Feats panel ---- */
 var featureCategoryFilter = "all";
@@ -93,6 +94,7 @@ export function renderFeaturesPanel(c){
           c.feats.splice(idx, 1);
           save();
           renderAll();
+          playDelete();
         });
       });
       actions.appendChild(delBtn);
@@ -265,6 +267,7 @@ export function renderFeaturesPanel(c){
             c.features = c.features.filter(function(f){ return f.id !== item.featureObj.id; });
             save();
             renderAll();
+            playDelete();
           });
         });
         actions.appendChild(delBtn);
