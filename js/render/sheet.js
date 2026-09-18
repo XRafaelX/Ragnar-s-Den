@@ -52,6 +52,8 @@ export function renderAll(){
     tabsBar.appendChild(b);
   });
   sheet.appendChild(tabsBar);
+  var activeTabBtn = tabsBar.querySelector("button.active");
+  if(activeTabBtn) activeTabBtn.scrollIntoView({block:"nearest", inline:"nearest", behavior:"smooth"});
 
   var panelMap = {
     vitals: renderVitalsPanel,
