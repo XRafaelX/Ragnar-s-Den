@@ -5,6 +5,8 @@
    reads its accent color through. "purple" is the default and needs no
    attribute (it's what :root already defines), so it's left off the DOM
    and out of storage to keep the common case simple. */
+import { playThemeShift } from "./sound.js";
+
 export var THEME_STORAGE_KEY = "ragnarsDen.theme.v1";
 var DEFAULT_THEME = "purple";
 
@@ -91,6 +93,7 @@ export function openThemeModal(){
     var index = Number(slider.value);
     setTheme(THEMES[index].key);
     render(index);
+    playThemeShift(index, THEMES.length);
   });
 
   render(startIndex);

@@ -1,9 +1,10 @@
 /* ---------------- UI sound cues ----------------
    Short, quiet, synthesized tones (no audio files — stays fully offline)
    played only for meaningful moments: adding or removing something (a
-   weapon, a feat, a character…), and rolling a natural 20 or natural 1.
-   Never used for routine interaction like toggles, typing, or numeric
-   steppers, so it stays a subtle accent instead of noise. */
+   weapon, a feat, a character…), rolling a natural 20 or natural 1, and
+   dragging the theme slider. Never used for routine interaction like
+   toggles, typing, or numeric steppers, so it stays a subtle accent
+   instead of noise. */
 var audioCtx = null;
 
 function getCtx(){
@@ -60,4 +61,15 @@ export function playCrit(){
 /* A low descending dud — natural 1. */
 export function playFail(){
   try{ tone(300, 130, 0.28, "sawtooth", 0.1); }catch(e){}
+}
+
+/* A tiny bright chime for the theme slider — pitch rises with position
+   (index/total, both 0-based) so scrubbing through the palette feels
+   like running a finger across a xylophone. */
+export function playThemeShift(index, total){
+  try{
+    var t = total > 1 ? index / (total - 1) : 0;
+    var freq = 520 + t * 480;
+    tone(freq, freq * 1.12, 0.08, "sine", 0.08);
+  }catch(e){}
 }
