@@ -1,5 +1,6 @@
 import { getActive, save } from "../core/state.js";
 import { nowStamp, escapeHtml, fmtMod, clamp } from "../core/helpers.js";
+import { playCrit, playFail } from "../ui/sound.js";
 
 /* ---------------- Dice tray & Smooth Animations ---------------- */
 var advMode = "none"; // none | adv | dis
@@ -224,8 +225,10 @@ export function performRoll(die, qty, modifier, adv, label){
     // Critical Hit / Miss badge
     if(isCrit){
       badgeSlot.innerHTML = '<span class="crit-badge crit-success">✨ Natural 20 — Critical Hit! ✨</span>';
+      playCrit();
     } else if(isFail){
       badgeSlot.innerHTML = '<span class="crit-badge crit-fail">💀 Natural 1 — Critical Miss! 💀</span>';
+      playFail();
     }
 
     detailEl.textContent = (label ? label + ": " : "") + summary;
