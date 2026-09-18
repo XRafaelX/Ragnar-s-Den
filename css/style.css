@@ -740,6 +740,30 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 }
 .inv-eq-label, .inv-prof-label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-on-parch);cursor:pointer;}
 
+/* Collapsed-by-default weapon/armor cards: compact header + summary line,
+   with the full editable fields opening in a bottom sheet so the
+   inventory list stays scannable instead of a wall of always-open forms. */
+.inv-card-header{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;}
+.inv-card-title-group{display:flex;align-items:center;gap:8px;min-width:0;flex:1;}
+.inv-name-inline{
+  flex:1;min-width:0;color:var(--text-on-parch);font-size:15px;font-weight:600;padding:2px 0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.inv-qty-badge{
+  flex:none;font-size:11px;color:var(--brass-bright);background:rgba(139,92,246,0.15);
+  border-radius:10px;padding:2px 7px;
+}
+.inv-card-header-actions{display:flex;align-items:center;gap:10px;flex:none;}
+.inv-eq-pill{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-on-parch-dim);cursor:pointer;white-space:nowrap;}
+.inv-edit-btn{
+  background:none;border:none;color:var(--text-on-parch-dim);padding:4px 5px;cursor:pointer;
+  font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;transition:color .15s ease;
+}
+.inv-edit-btn:hover{color:var(--brass-bright);}
+.inv-card-subtitle{font-size:12px;color:var(--text-on-parch-dim);}
+.inv-equipped-note{color:var(--moss);}
+.inv-qty-input{width:56px;text-align:center;}
+
 .inv-type-fields{
   display:flex;flex-wrap:wrap;gap:12px 16px;padding:10px;background:rgba(255,255,255,0.03);border:1px solid var(--rule);border-radius:6px;
 }
@@ -1170,6 +1194,37 @@ textarea.freeform{
 }
 .action-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .action-toast.error{background:linear-gradient(135deg, #4a2a2a 0%, #331a1a 100%);border-color:#c0524f;}
+
+/* Bottom sheet — a mobile-style panel that slides up over a dimmed
+   backdrop, used for editing an item (e.g. a weapon) without leaving the
+   list behind it. Tapping the dimmed area or Escape dismisses it. */
+#bottom-sheet-scrim{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);
+  z-index:1150;opacity:0;pointer-events:none;transition:opacity .22s ease;
+}
+#bottom-sheet-scrim.open{opacity:1;pointer-events:auto;}
+#bottom-sheet{
+  position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:520px;
+  max-height:85vh;overflow-y:auto;
+  background:linear-gradient(180deg, #241d33 0%, var(--ink-deep) 100%);
+  border:1px solid var(--rule);border-bottom:none;border-radius:16px 16px 0 0;
+  box-shadow:0 -14px 40px rgba(0,0,0,.6);
+  z-index:1151;padding:10px 20px 26px;
+  transform:translateY(100%);pointer-events:none;
+  transition:transform .3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#bottom-sheet.open{transform:translateY(0);pointer-events:auto;}
+#bottom-sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--rule);margin:2px auto 14px;}
+.bs-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px;}
+.bs-title-input{
+  width:100%;font-family:var(--serif);font-size:19px;color:var(--brass-bright);
+  background:transparent;border:none;border-bottom:1px solid transparent;padding:2px 0;
+}
+.bs-title-input:focus{outline:none;border-bottom-color:var(--brass);}
+.bs-title-input::placeholder{color:var(--text-on-parch-dim);}
+.bs-subtitle{font-size:12px;color:var(--text-on-parch-dim);margin:2px 0 14px;}
+.bs-close{background:transparent;border:none;color:var(--text-on-parch-dim);font-size:16px;padding:4px 8px;border-radius:4px;flex:none;}
+.bs-close:hover{color:var(--text-on-parch);background:rgba(255,255,255,0.08);}
 
 /* ---------------- Feats & Features Panels ---------------- */
 .passives-grid{
