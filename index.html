@@ -11,6 +11,18 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ragnar's Den">
+<script>
+/* Applies the saved theme before first paint so there's no flash of the
+   default palette. Plain inline script (not a module) so it runs
+   synchronously ahead of the stylesheets below. Key must match
+   THEME_STORAGE_KEY in js/ui/theme.js. */
+(function(){
+  try{
+    var t = localStorage.getItem("ragnarsDen.theme.v1");
+    if(t && t !== "purple") document.documentElement.setAttribute("data-theme", t);
+  }catch(e){}
+})();
+</script>
 <link rel="stylesheet" href="css/bootstrap.min.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -24,10 +36,19 @@
     <ul id="char-list"></ul>
     <div id="sidebar-footer">
       <button class="btn primary" id="new-char-btn">+ New Character</button>
-      <button class="btn small ghost" id="armory-btn" title="Browse weapons & armor and add them to your active character">Grimtooth's Armory</button>
       <button class="btn small ghost" id="export-btn">Export all (backup)</button>
       <button class="btn small ghost" id="import-btn">Import backup</button>
       <input type="file" id="import-file" accept="application/json" style="display:none;">
+      <button class="btn small ghost" id="theme-btn">
+        <svg class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/>
+          <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+          <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+          <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+          <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+        </svg>
+        Theme
+      </button>
     </div>
   </div>
   <div class="overlay-scrim" id="scrim"></div>
@@ -238,6 +259,16 @@
       <button class="rd-modal-close" id="info-modal-close" aria-label="Close">✕</button>
     </div>
     <div id="info-modal-body"></div>
+  </div>
+</div>
+
+<div class="rd-backdrop" id="theme-modal">
+  <div class="rd-modal" role="dialog" aria-modal="true" aria-labelledby="theme-modal-title">
+    <div class="rd-modal-header">
+      <h4 id="theme-modal-title">Theme</h4>
+      <button class="rd-modal-close" id="theme-modal-close" aria-label="Close">✕</button>
+    </div>
+    <div id="theme-modal-body" class="theme-swatch-grid"></div>
   </div>
 </div>
 
