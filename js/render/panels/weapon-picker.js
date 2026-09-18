@@ -6,7 +6,7 @@ import { openCatalogPicker } from "../../ui/catalog-picker.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 
-function addCatalogWeapon(c, name, d){
+export function addCatalogWeapon(c, name, d){
   var ability = d.finesse ? "finesse" : (d.ranged ? "dex" : "str");
   c.inventory.push({
     name: name, type:"weapon", qty:1, equipped:true, notes: d.properties||"",
@@ -16,7 +16,16 @@ function addCatalogWeapon(c, name, d){
   save();
 }
 
-function buildCustomWeaponForm(c, container, closeCustom){
+export function addCustomWeapon(c, fields){
+  c.inventory.push({
+    name: fields.name, type:"weapon", qty:1, equipped:true, notes:"",
+    damageDice: fields.damageDice||"", damageType: fields.damageType||"", ability: fields.ability,
+    proficient: fields.proficient, magicBonus: 0
+  });
+  save();
+}
+
+export function buildCustomWeaponForm(container, closeCustom, onSubmit){
   var form = document.createElement("div");
   form.style.cssText = "display:flex;flex-direction:column;gap:12px;max-width:420px;";
 
@@ -77,15 +86,13 @@ function buildCustomWeaponForm(c, container, closeCustom){
   addBtn.addEventListener("click", function(){
     var nameVal = nameInput.value.trim();
     if(!nameVal){ alert("Please enter a weapon name."); nameInput.focus(); return; }
-    c.inventory.push({
-      name: nameVal, type:"weapon", qty:1, equipped:true, notes:"",
-      damageDice: diceInput.value.trim(), damageType: typeSelect.value, ability: abilitySelect.value,
-      proficient: profCb.checked, magicBonus: 0
-    });
-    save();
+    var fields = {
+      name: nameVal, damageDice: diceInput.value.trim(), damageType: typeSelect.value,
+      ability: abilitySelect.value, proficient: profCb.checked
+    };
     nameInput.value = ""; diceInput.value = ""; typeSelect.value = ""; profCb.checked = true;
     closeCustom();
-    renderAll();
+    onSubmit(fields);
   });
   form.appendChild(addBtn);
 
@@ -102,7 +109,12 @@ export function buildWeaponSection(c){
     renderSub: function(name, d){ return d.properties || ""; },
     renderRight: function(name, d){ return [d.damageDice||"—", d.damageType||""]; },
     onAdd: function(name, d){ addCatalogWeapon(c, name, d); renderAll(); },
-    renderCustomForm: function(container, closeCustom){ buildCustomWeaponForm(c, container, closeCustom); }
+    renderCustomForm: function(container, closeCustom){
+      buildCustomWeaponForm(container, closeCustom, function(fields){
+        addCustomWeapon(c, fields);
+        renderAll();
+      });
+    }
   };
 }
 
