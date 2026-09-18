@@ -8,6 +8,7 @@ import { renderAll } from "./render/sheet.js";
 import { setupDiceTray } from "./dice/dice.js";
 import { openArmory } from "./render/armory.js";
 import { setupHomeMenu } from "./render/home.js";
+import { playAdd, playDelete } from "./ui/sound.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
@@ -57,6 +58,7 @@ export function setupTopLevel(){
             });
             save();
             renderAll();
+            playAdd();
           }
         );
       }catch(err){
@@ -81,6 +83,7 @@ export function makeDeleteButton(c){
       if(state.activeId) state.activeTab = "vitals";
       save();
       renderAll();
+      playDelete();
     });
   });
   return btn;

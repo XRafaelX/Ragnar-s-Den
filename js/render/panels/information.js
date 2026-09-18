@@ -7,6 +7,7 @@ import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.j
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../../data/classes.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES } from "../../data/languages.js";
+import { playAdd, playDelete } from "../../ui/sound.js";
 
 /* ---- Information panel ----
    A calm "About the character" summary. Proficiencies & Languages are
@@ -200,6 +201,7 @@ export function renderInformationPanel(c){
       c.languages.splice(idx, 1);
       save();
       renderAll();
+      playDelete();
     });
     chip.appendChild(rm);
     chipsWrap.appendChild(chip);
@@ -256,6 +258,7 @@ export function renderInformationPanel(c){
       c.languages.push(val);
       save();
       renderAll();
+      playAdd();
     }
   }
   addBtn.addEventListener("click", addLanguage);

@@ -2,6 +2,7 @@ import { save } from "../../core/state.js";
 import { uid, escapeHtml } from "../../core/helpers.js";
 import { FEATS_CATALOG } from "../../data/feats.js";
 import { renderAll } from "../sheet.js";
+import { playAdd } from "../../ui/sound.js";
 
 export function openFeatPickerModal(c, featToEdit, featIdx){
   var modal = document.getElementById("feat-modal");
@@ -133,6 +134,7 @@ export function openFeatPickerModal(c, featToEdit, featIdx){
         });
         save();
         renderAll();
+        playAdd();
         modal.classList.remove("open");
       });
       btnPart.appendChild(addBtn);
@@ -286,6 +288,7 @@ export function openFeatPickerModal(c, featToEdit, featIdx){
           description: descTextarea.value,
           source: "Custom"
         });
+        playAdd();
       }
       save();
       renderAll();

@@ -3,6 +3,7 @@ import { isProficientWithWeapon } from "../../core/helpers.js";
 import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { openCatalogPicker } from "../../ui/catalog-picker.js";
+import { playAdd } from "../../ui/sound.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 
@@ -14,6 +15,7 @@ export function addCatalogWeapon(c, name, d){
     proficient: isProficientWithWeapon(c, name, d.category), magicBonus: 0
   });
   save();
+  playAdd();
 }
 
 export function addCustomWeapon(c, fields){
@@ -23,6 +25,7 @@ export function addCustomWeapon(c, fields){
     proficient: fields.proficient, magicBonus: 0
   });
   save();
+  playAdd();
 }
 
 export function buildCustomWeaponForm(container, closeCustom, onSubmit){

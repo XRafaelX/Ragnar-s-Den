@@ -6,6 +6,7 @@ import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation } from 
 import { openWeaponPicker } from "./weapon-picker.js";
 import { openArmorPicker } from "./armor-picker.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
+import { playAdd, playDelete } from "../../ui/sound.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 var ARMOR_CATEGORIES = [
@@ -64,7 +65,7 @@ function itemHeader(c, item, idx, onOpenDetails){
 
   var rmBtn = document.createElement("button");
   rmBtn.className = "rm-btn"; rmBtn.textContent = "✕"; rmBtn.title = "Remove item";
-  rmBtn.addEventListener("click", function(e){ e.stopPropagation(); c.inventory.splice(idx,1); save(); renderAll(); });
+  rmBtn.addEventListener("click", function(e){ e.stopPropagation(); c.inventory.splice(idx,1); save(); renderAll(); playDelete(); });
   actions.appendChild(rmBtn);
 
   header.appendChild(actions);
@@ -152,7 +153,7 @@ function itemRow1(c, item, idx){
 
   var rmBtn = document.createElement("button");
   rmBtn.className = "rm-btn"; rmBtn.textContent = "✕"; rmBtn.title = "Remove item";
-  rmBtn.addEventListener("click", function(){ c.inventory.splice(idx,1); save(); renderAll(); });
+  rmBtn.addEventListener("click", function(){ c.inventory.splice(idx,1); save(); renderAll(); playDelete(); });
   row1.appendChild(rmBtn);
 
   return row1;
@@ -487,7 +488,7 @@ export function renderInventoryPanel(c){
   addItemBtn.textContent = "+ Add item";
   addItemBtn.addEventListener("click", function(){
     c.inventory.push({name:"", type:"gear", qty:1, equipped:false, notes:""});
-    save(); renderAll();
+    save(); renderAll(); playAdd();
   });
   gearCard.appendChild(addItemBtn);
   panel.appendChild(gearCard);

@@ -1,6 +1,7 @@
 import { save } from "../../core/state.js";
 import { uid } from "../../core/helpers.js";
 import { renderAll } from "../sheet.js";
+import { playAdd } from "../../ui/sound.js";
 
 export function openFeatureModal(c, featureToEdit){
   var modal = document.getElementById("feature-modal");
@@ -102,6 +103,7 @@ export function openFeatureModal(c, featureToEdit){
         isPassive: passCb.checked,
         text: descTextarea.value
       });
+      playAdd();
     }
     save();
     renderAll();
