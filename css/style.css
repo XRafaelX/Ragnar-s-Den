@@ -1494,6 +1494,13 @@ textarea.freeform{
   #topbar{display:flex;}
   #main{scrollbar-width:none;-ms-overflow-style:none;}
   #main::-webkit-scrollbar{display:none;}
+  /* Tabs scroll horizontally when they overflow (e.g. Inventory/Journal
+     off-screen) but had no visible scrollbar or hint that more sections
+     were reachable — fade the trailing edge so it reads as scrollable. */
+  #tabs{
+    -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+    mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+  }
   #sidebar{
     position:fixed;top:0;bottom:0;left:0;z-index:36;
     margin-left:-230px;
