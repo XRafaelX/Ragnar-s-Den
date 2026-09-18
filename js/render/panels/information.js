@@ -118,7 +118,7 @@ export function renderInformationPanel(c){
   var bg = BACKGROUND_INFO[c.background];
 
   // 1. About — compact, tappable rows that open modals with the details
-  var aboutCard = makeCard("About", "tap a row for the full details");
+  var aboutCard = makeCard("About");
 
   aboutCard.appendChild(linkRow("Background", c.background, "Background · " + (c.background || ""), function(body){
     body.appendChild(blurb(bg ? bg.blurb : BACKGROUND_INFO_FALLBACK));
@@ -160,7 +160,7 @@ export function renderInformationPanel(c){
   panel.appendChild(aboutCard);
 
   // 2. Proficiencies (aggregated across all classes)
-  var profCard = makeCard("Proficiencies", "what you can wear, wield and use");
+  var profCard = makeCard("Proficiencies");
   var armor = [], weapons = [], tools = [], saves = [];
   (c.classes||[]).forEach(function(cl){
     var p = CLASS_PROFICIENCIES[cl.name];
@@ -180,7 +180,7 @@ export function renderInformationPanel(c){
   panel.appendChild(profCard);
 
   // 3. Languages — every character starts with Common; add more as needed
-  var langCard = makeCard("Languages", "what your character can speak, read and write");
+  var langCard = makeCard("Languages");
   if(!c.languages || !c.languages.length) c.languages = ["Common"];
 
   var chipsWrap = document.createElement("div");

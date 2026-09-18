@@ -90,9 +90,6 @@ export function makeDeleteButton(c){
 export function init(){
   load();
   state.characters.forEach(ensureShape);
-  if(state.characters.length && !state.activeId){
-    state.activeId = state.characters[0].id;
-  }
   setupTopLevel();
   setupDiceTray();
   setupMobileNav();

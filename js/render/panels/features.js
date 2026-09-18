@@ -15,7 +15,7 @@ export function renderFeaturesPanel(c){
 
   // 1. Feats Card
   var feats = c.feats || [];
-  var featCard = makeCard("Feats (" + feats.length + ")", "special perks and feats chosen for your character");
+  var featCard = makeCard("Feats (" + feats.length + ")");
   
   var featHeader = document.createElement("div");
   featHeader.className = "ff-section-header";
@@ -126,7 +126,7 @@ export function renderFeaturesPanel(c){
 
   // 2. All Features, Traits & Passives Directory Card
   var allFeatures = getAllCharacterFeatures(c);
-  var featDirCard = makeCard("Features, traits & passives (" + allFeatures.length + ")", "comprehensive directory of all race, class, background, and custom abilities");
+  var featDirCard = makeCard("Features, traits & passives (" + allFeatures.length + ")");
 
   var dirHeader = document.createElement("div");
   dirHeader.className = "ff-section-header";

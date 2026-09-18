@@ -52,6 +52,20 @@ export function renderAll(){
     tabsBar.appendChild(b);
   });
   sheet.appendChild(tabsBar);
+  var activeTabBtn = tabsBar.querySelector("button.active");
+  if(activeTabBtn){
+    // Scroll just enough to reveal the tab plus a little breathing room, so
+    // it doesn't end up flush against the edge-fade mask (unreadable there).
+    var edgeMargin = 24;
+    var btnLeft = activeTabBtn.offsetLeft;
+    var btnRight = btnLeft + activeTabBtn.offsetWidth;
+    var visibleLeft = tabsBar.scrollLeft;
+    var visibleRight = visibleLeft + tabsBar.clientWidth;
+    var target = null;
+    if(btnRight + edgeMargin > visibleRight) target = btnRight + edgeMargin - tabsBar.clientWidth;
+    else if(btnLeft - edgeMargin < visibleLeft) target = btnLeft - edgeMargin;
+    if(target!=null) tabsBar.scrollTo({left: Math.max(0, target), behavior:"smooth"});
+  }
 
   var panelMap = {
     vitals: renderVitalsPanel,
@@ -263,18 +277,13 @@ export function renderIdentity(c){
   return wrap;
 }
 
-export function makeCard(titleText, hint){
+export function makeCard(titleText){
   var card = document.createElement("div");
   card.className = "card";
   var h = document.createElement("h3");
   var span = document.createElement("span");
   span.textContent = titleText;
   h.appendChild(span);
-  if(hint){
-    var hh = document.createElement("span");
-    hh.className = "hint"; hh.textContent = hint;
-    h.appendChild(hh);
-  }
   card.appendChild(h);
   return card;
 }

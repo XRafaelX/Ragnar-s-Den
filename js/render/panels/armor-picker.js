@@ -5,7 +5,7 @@ import { openCatalogPicker } from "../../ui/catalog-picker.js";
 
 var ARMOR_CATEGORY_LABEL = {light:"Light", medium:"Medium", heavy:"Heavy", shield:"Shield"};
 
-function addCatalogArmor(c, name, d){
+export function addCatalogArmor(c, name, d){
   c.inventory.push({
     name: name, type:"armor", qty:1, equipped:false,
     category: d.category||"light", baseAC: d.baseAC!=null?d.baseAC:10, magicBonus:0,
@@ -14,7 +14,15 @@ function addCatalogArmor(c, name, d){
   save();
 }
 
-function buildCustomArmorForm(c, container, closeCustom){
+export function addCustomArmor(c, fields){
+  c.inventory.push({
+    name: fields.name, type:"armor", qty:1, equipped:false,
+    category: fields.category, baseAC: fields.baseAC, magicBonus:0, notes:""
+  });
+  save();
+}
+
+export function buildCustomArmorForm(container, closeCustom, onSubmit){
   var form = document.createElement("div");
   form.style.cssText = "display:flex;flex-direction:column;gap:12px;max-width:420px;";
 
@@ -55,14 +63,10 @@ function buildCustomArmorForm(c, container, closeCustom){
   addBtn.addEventListener("click", function(){
     var nameVal = nameInput.value.trim();
     if(!nameVal){ alert("Please enter an armor name."); nameInput.focus(); return; }
-    c.inventory.push({
-      name: nameVal, type:"armor", qty:1, equipped:false,
-      category: catSelect.value, baseAC: Number(acInput.value)||0, magicBonus:0, notes:""
-    });
-    save();
+    var fields = { name: nameVal, category: catSelect.value, baseAC: Number(acInput.value)||0 };
     nameInput.value = ""; acInput.value = "10"; catSelect.value = "light";
     closeCustom();
-    renderAll();
+    onSubmit(fields);
   });
   form.appendChild(addBtn);
 
@@ -82,7 +86,12 @@ export function buildArmorSection(c){
       return [acText, ARMOR_CATEGORY_LABEL[d.category]||""];
     },
     onAdd: function(name, d){ addCatalogArmor(c, name, d); renderAll(); },
-    renderCustomForm: function(container, closeCustom){ buildCustomArmorForm(c, container, closeCustom); }
+    renderCustomForm: function(container, closeCustom){
+      buildCustomArmorForm(container, closeCustom, function(fields){
+        addCustomArmor(c, fields);
+        renderAll();
+      });
+    }
   };
 }
 

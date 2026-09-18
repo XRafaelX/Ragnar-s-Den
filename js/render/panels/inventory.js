@@ -5,6 +5,7 @@ import { performRoll } from "../../dice/dice.js";
 import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation } from "../../core/helpers.js";
 import { openWeaponPicker } from "./weapon-picker.js";
 import { openArmorPicker } from "./armor-picker.js";
+import { openBottomSheet } from "../../ui/bottom-sheet.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 var ARMOR_CATEGORIES = [
@@ -14,7 +15,93 @@ var ARMOR_CATEGORIES = [
   {key:"shield", label:"Shield"}
 ];
 
-/* Small inline +/- stepper for a numeric item field (e.g. magic bonus). */
+/* Compact header shared by weapon/armor cards: a name (click anywhere on
+   the row, including the name itself, to open the edit sheet — renaming
+   happens there instead of inline, so the name text has no invisible
+   input hit-box left over to swallow clicks), a qty badge when stacked,
+   an Equipped toggle, and an edit control. */
+function itemHeader(c, item, idx, onOpenDetails){
+  var header = document.createElement("div");
+  header.className = "inv-card-header";
+  header.addEventListener("click", function(){ onOpenDetails(); });
+
+  var titleGroup = document.createElement("div");
+  titleGroup.className = "inv-card-title-group";
+
+  var nameSpan = document.createElement("span");
+  nameSpan.className = "inv-name-inline";
+  nameSpan.textContent = item.name || "Unnamed item";
+  titleGroup.appendChild(nameSpan);
+
+  if(item.qty!=null && item.qty!==1){
+    var qtyBadge = document.createElement("span");
+    qtyBadge.className = "inv-qty-badge";
+    qtyBadge.textContent = "×" + item.qty;
+    titleGroup.appendChild(qtyBadge);
+  }
+  header.appendChild(titleGroup);
+
+  var actions = document.createElement("div");
+  actions.className = "inv-card-header-actions";
+
+  var eqLbl = document.createElement("label"); eqLbl.className = "inv-eq-pill";
+  var eqCb = document.createElement("input"); eqCb.type="checkbox"; eqCb.className="chk";
+  eqCb.checked = !!item.equipped;
+  eqCb.addEventListener("click", function(e){ e.stopPropagation(); });
+  eqCb.addEventListener("change", function(){ item.equipped = eqCb.checked; save(); renderAll(); });
+  eqLbl.appendChild(eqCb);
+  eqLbl.appendChild(document.createTextNode("Equipped"));
+  actions.appendChild(eqLbl);
+
+  var editBtn = document.createElement("button");
+  editBtn.type = "button";
+  editBtn.className = "inv-edit-btn";
+  editBtn.textContent = "✎";
+  editBtn.title = "Edit details";
+  editBtn.setAttribute("aria-label", "Edit details");
+  editBtn.addEventListener("click", function(e){ e.stopPropagation(); onOpenDetails(); });
+  actions.appendChild(editBtn);
+
+  var rmBtn = document.createElement("button");
+  rmBtn.className = "rm-btn"; rmBtn.textContent = "✕"; rmBtn.title = "Remove item";
+  rmBtn.addEventListener("click", function(e){ e.stopPropagation(); c.inventory.splice(idx,1); save(); renderAll(); });
+  actions.appendChild(rmBtn);
+
+  header.appendChild(actions);
+  return header;
+}
+
+/* Shared bottom-sheet title bar: an editable name field (renaming lives
+   here now, not on the collapsed card), a short summary line, and a
+   close button (tapping the dimmed backdrop or Escape also closes it). */
+function sheetHeader(body, item, defaultName, subtitle, close){
+  var header = document.createElement("div");
+  header.className = "bs-header";
+  var titleWrap = document.createElement("div");
+  titleWrap.style.cssText = "flex:1;min-width:0;";
+  var nameInput = document.createElement("input");
+  nameInput.type = "text"; nameInput.className = "bs-title-input";
+  nameInput.value = item.name||""; nameInput.placeholder = defaultName;
+  nameInput.addEventListener("input", function(){ item.name = nameInput.value; save(); renderAll(); });
+  titleWrap.appendChild(nameInput);
+  header.appendChild(titleWrap);
+  var closeBtn = document.createElement("button");
+  closeBtn.className = "bs-close"; closeBtn.textContent = "✕"; closeBtn.title = "Close";
+  closeBtn.setAttribute("aria-label", "Close");
+  closeBtn.addEventListener("click", close);
+  header.appendChild(closeBtn);
+  body.appendChild(header);
+  if(subtitle){
+    var sub = document.createElement("p");
+    sub.className = "bs-subtitle"; sub.textContent = subtitle;
+    body.appendChild(sub);
+  }
+}
+
+/* Small inline +/- stepper for a numeric item field (e.g. magic bonus).
+   Updates its own displayed value directly rather than relying on a
+   re-render, since it can live inside the bottom sheet (a separate part
+   of the page that renderAll() never touches). */
 function fieldStepper(label, value, onChange){
   var wrap = document.createElement("div");
   wrap.className = "field-inline inv-stepper-field";
@@ -24,21 +111,27 @@ function fieldStepper(label, value, onChange){
   var stepper = document.createElement("div");
   stepper.className = "stat-stepper inv-mini-stepper";
 
+  var current = value;
+
+  var valSpan = document.createElement("span");
+  valSpan.className = "stat-score-val";
+  valSpan.textContent = fmtMod(current);
+
   var downBtn = document.createElement("button");
   downBtn.type = "button";
   downBtn.className = "stat-arrow-btn stat-arrow-down";
   downBtn.innerHTML = makeStatArrowSvg("down");
-  downBtn.addEventListener("click", function(e){ e.stopPropagation(); onChange(value-1); });
-
-  var valSpan = document.createElement("span");
-  valSpan.className = "stat-score-val";
-  valSpan.textContent = fmtMod(value);
+  downBtn.addEventListener("click", function(e){
+    e.stopPropagation(); current -= 1; valSpan.textContent = fmtMod(current); onChange(current);
+  });
 
   var upBtn = document.createElement("button");
   upBtn.type = "button";
   upBtn.className = "stat-arrow-btn stat-arrow-up";
   upBtn.innerHTML = makeStatArrowSvg("up");
-  upBtn.addEventListener("click", function(e){ e.stopPropagation(); onChange(value+1); });
+  upBtn.addEventListener("click", function(e){
+    e.stopPropagation(); current += 1; valSpan.textContent = fmtMod(current); onChange(current);
+  });
 
   stepper.appendChild(downBtn);
   stepper.appendChild(valSpan);
@@ -86,70 +179,105 @@ function itemRow2(item){
   return row2;
 }
 
-function renderWeaponCard(c, item, idx){
-  var card = document.createElement("div");
-  card.className = "ff-item-card inv-item-card";
-  card.appendChild(itemRow1(c, item, idx));
-  card.appendChild(itemRow2(item));
+/* Opens the weapon's editable fields (Qty, Damage dice/type, Ability,
+   Proficient, Magic bonus) in a bottom sheet instead of growing the card
+   in place. */
+function openWeaponSheet(c, item, idx){
+  openBottomSheet(function(body, refresh, close){
+    var abilityLabel = item.ability==="finesse" ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
+    var subtitleParts = [];
+    if(item.damageDice) subtitleParts.push(item.damageDice + (item.damageType ? " " + item.damageType : ""));
+    subtitleParts.push(abilityLabel);
+    subtitleParts.push(item.proficient ? "Proficient" : "Not proficient");
+    if(item.notes) subtitleParts.push(item.notes);
+    sheetHeader(body, item, "Weapon name", subtitleParts.join(" · "), close);
 
+    var details = document.createElement("div");
+    details.className = "inv-type-fields";
+
+    var qtyField = document.createElement("div");
+    qtyField.className = "field-inline";
+    qtyField.innerHTML = "<label>Qty</label>";
+    var qtyInput = document.createElement("input");
+    qtyInput.type = "number"; qtyInput.min = "0"; qtyInput.className = "inv-qty-input";
+    qtyInput.value = item.qty!=null?item.qty:1;
+    qtyInput.addEventListener("input", function(){ item.qty = Number(qtyInput.value)||0; save(); renderAll(); });
+    qtyField.appendChild(qtyInput);
+    details.appendChild(qtyField);
+
+    var diceField = document.createElement("div");
+    diceField.className = "field-inline";
+    diceField.innerHTML = "<label>Damage dice</label>";
+    var diceInput = document.createElement("input");
+    diceInput.type = "text"; diceInput.className = "inv-dice-input";
+    diceInput.placeholder = "e.g. 1d8"; diceInput.value = item.damageDice||"";
+    diceInput.addEventListener("input", function(){ item.damageDice = diceInput.value; save(); renderAll(); });
+    diceField.appendChild(diceInput);
+    details.appendChild(diceField);
+
+    var dmgTypeField = document.createElement("div");
+    dmgTypeField.className = "field-inline";
+    dmgTypeField.innerHTML = "<label>Damage type</label>";
+    var dmgTypeSelect = document.createElement("select");
+    var blankDmg = document.createElement("option"); blankDmg.value=""; blankDmg.textContent="—";
+    dmgTypeSelect.appendChild(blankDmg);
+    DAMAGE_TYPES.forEach(function(dt){
+      var o = document.createElement("option"); o.value = dt; o.textContent = dt;
+      if(item.damageType===dt) o.selected = true;
+      dmgTypeSelect.appendChild(o);
+    });
+    dmgTypeSelect.addEventListener("change", function(){ item.damageType = dmgTypeSelect.value; save(); renderAll(); });
+    dmgTypeField.appendChild(dmgTypeSelect);
+    details.appendChild(dmgTypeField);
+
+    var abilityField = document.createElement("div");
+    abilityField.className = "field-inline";
+    abilityField.innerHTML = "<label>Ability</label>";
+    var abilitySelect = document.createElement("select");
+    [["str","Strength"],["dex","Dexterity"],["finesse","Finesse (best)"]].forEach(function(a){
+      var o = document.createElement("option"); o.value=a[0]; o.textContent=a[1];
+      if(item.ability===a[0]) o.selected = true;
+      abilitySelect.appendChild(o);
+    });
+    abilitySelect.addEventListener("change", function(){ item.ability = abilitySelect.value; save(); renderAll(); });
+    abilityField.appendChild(abilitySelect);
+    details.appendChild(abilityField);
+
+    var profLbl = document.createElement("label");
+    profLbl.className = "inv-prof-label";
+    var profCb = document.createElement("input"); profCb.type="checkbox"; profCb.className="chk"; profCb.checked = !!item.proficient;
+    profCb.addEventListener("change", function(){ item.proficient = profCb.checked; save(); renderAll(); });
+    profLbl.appendChild(profCb);
+    profLbl.appendChild(document.createTextNode("Proficient"));
+    details.appendChild(profLbl);
+
+    details.appendChild(fieldStepper("Magic bonus", Number(item.magicBonus)||0, function(v){
+      item.magicBonus = v; save(); renderAll();
+    }));
+
+    body.appendChild(details);
+  });
+}
+
+function renderWeaponCard(c, item, idx){
   if(item.ability==null) item.ability = "str";
   if(item.proficient==null) item.proficient = true;
   if(item.magicBonus==null) item.magicBonus = 0;
 
-  var wFields = document.createElement("div");
-  wFields.className = "inv-type-fields";
+  var card = document.createElement("div");
+  card.className = "ff-item-card inv-item-card";
+  card.appendChild(itemHeader(c, item, idx, function(){ openWeaponSheet(c, item, idx); }));
 
-  var diceField = document.createElement("div");
-  diceField.className = "field-inline";
-  diceField.innerHTML = "<label>Damage dice</label>";
-  var diceInput = document.createElement("input");
-  diceInput.type = "text"; diceInput.className = "inv-dice-input";
-  diceInput.placeholder = "e.g. 1d8"; diceInput.value = item.damageDice||"";
-  diceInput.addEventListener("input", function(){ item.damageDice = diceInput.value; save(); renderAll(); });
-  diceField.appendChild(diceInput);
-  wFields.appendChild(diceField);
-
-  var dmgTypeField = document.createElement("div");
-  dmgTypeField.className = "field-inline";
-  dmgTypeField.innerHTML = "<label>Damage type</label>";
-  var dmgTypeSelect = document.createElement("select");
-  var blankDmg = document.createElement("option"); blankDmg.value=""; blankDmg.textContent="—";
-  dmgTypeSelect.appendChild(blankDmg);
-  DAMAGE_TYPES.forEach(function(dt){
-    var o = document.createElement("option"); o.value = dt; o.textContent = dt;
-    if(item.damageType===dt) o.selected = true;
-    dmgTypeSelect.appendChild(o);
-  });
-  dmgTypeSelect.addEventListener("change", function(){ item.damageType = dmgTypeSelect.value; save(); });
-  dmgTypeField.appendChild(dmgTypeSelect);
-  wFields.appendChild(dmgTypeField);
-
-  var abilityField = document.createElement("div");
-  abilityField.className = "field-inline";
-  abilityField.innerHTML = "<label>Ability</label>";
-  var abilitySelect = document.createElement("select");
-  [["str","Strength"],["dex","Dexterity"],["finesse","Finesse (best)"]].forEach(function(a){
-    var o = document.createElement("option"); o.value=a[0]; o.textContent=a[1];
-    if(item.ability===a[0]) o.selected = true;
-    abilitySelect.appendChild(o);
-  });
-  abilitySelect.addEventListener("change", function(){ item.ability = abilitySelect.value; save(); renderAll(); });
-  abilityField.appendChild(abilitySelect);
-  wFields.appendChild(abilityField);
-
-  var profLbl = document.createElement("label");
-  profLbl.className = "inv-prof-label";
-  var profCb = document.createElement("input"); profCb.type="checkbox"; profCb.className="chk"; profCb.checked = !!item.proficient;
-  profCb.addEventListener("change", function(){ item.proficient = profCb.checked; save(); renderAll(); });
-  profLbl.appendChild(profCb);
-  profLbl.appendChild(document.createTextNode("Proficient"));
-  wFields.appendChild(profLbl);
-
-  wFields.appendChild(fieldStepper("Magic bonus", Number(item.magicBonus)||0, function(v){
-    item.magicBonus = v; save(); renderAll();
-  }));
-
-  card.appendChild(wFields);
+  var abilityLabel = item.ability==="finesse" ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
+  var subtitleParts = [];
+  if(item.damageDice) subtitleParts.push(item.damageDice + (item.damageType ? " " + item.damageType : ""));
+  subtitleParts.push(abilityLabel);
+  subtitleParts.push(item.proficient ? "Proficient" : "Not proficient");
+  if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
+  var subtitle = document.createElement("div");
+  subtitle.className = "inv-card-subtitle";
+  subtitle.textContent = subtitleParts.join(" · ");
+  card.appendChild(subtitle);
 
   if(item.notes){
     var notesP = document.createElement("p");
@@ -185,51 +313,71 @@ function renderWeaponCard(c, item, idx){
     dmgBtn.title = "Enter damage dice like \"1d8\" to roll";
   }
   actions.appendChild(dmgBtn);
-
   card.appendChild(actions);
+
   return card;
 }
 
-function renderArmorCard(c, item, idx){
-  var card = document.createElement("div");
-  card.className = "ff-item-card inv-item-card";
-  card.appendChild(itemRow1(c, item, idx));
-  card.appendChild(itemRow2(item));
+/* Opens the armor's editable fields (Category, Base AC, Magic bonus) in a
+   bottom sheet instead of growing the card in place. */
+function openArmorSheet(c, item, idx){
+  openBottomSheet(function(body, refresh, close){
+    var catLabel = (ARMOR_CATEGORIES.find(function(cat){ return cat.key===item.category; })||{}).label || item.category;
+    var acText = item.category==="shield" ? "+" + item.baseAC + " AC" : "Base AC " + item.baseAC;
+    var subtitleParts = [acText, catLabel];
+    if(item.notes) subtitleParts.push(item.notes);
+    sheetHeader(body, item, "Armor name", subtitleParts.join(" · "), close);
 
+    var details = document.createElement("div");
+    details.className = "inv-type-fields";
+
+    var catField = document.createElement("div");
+    catField.className = "field-inline";
+    catField.innerHTML = "<label>Category</label>";
+    var catSelect = document.createElement("select");
+    ARMOR_CATEGORIES.forEach(function(cat){
+      var o = document.createElement("option"); o.value = cat.key; o.textContent = cat.label;
+      if(item.category===cat.key) o.selected = true;
+      catSelect.appendChild(o);
+    });
+    catSelect.addEventListener("change", function(){ item.category = catSelect.value; save(); renderAll(); });
+    catField.appendChild(catSelect);
+    details.appendChild(catField);
+
+    var baseField = document.createElement("div");
+    baseField.className = "field-inline";
+    baseField.innerHTML = "<label>Base AC</label>";
+    var baseInput = document.createElement("input");
+    baseInput.type = "number"; baseInput.className = "inv-baseac-input"; baseInput.value = item.baseAC;
+    baseInput.addEventListener("input", function(){ item.baseAC = Number(baseInput.value)||0; save(); renderAll(); });
+    baseField.appendChild(baseInput);
+    details.appendChild(baseField);
+
+    details.appendChild(fieldStepper("Magic bonus", Number(item.magicBonus)||0, function(v){
+      item.magicBonus = v; save(); renderAll();
+    }));
+
+    body.appendChild(details);
+  });
+}
+
+function renderArmorCard(c, item, idx){
   if(item.category==null) item.category = "light";
   if(item.baseAC==null) item.baseAC = 10;
   if(item.magicBonus==null) item.magicBonus = 0;
 
-  var aFields = document.createElement("div");
-  aFields.className = "inv-type-fields";
+  var card = document.createElement("div");
+  card.className = "ff-item-card inv-item-card";
+  card.appendChild(itemHeader(c, item, idx, function(){ openArmorSheet(c, item, idx); }));
 
-  var catField = document.createElement("div");
-  catField.className = "field-inline";
-  catField.innerHTML = "<label>Category</label>";
-  var catSelect = document.createElement("select");
-  ARMOR_CATEGORIES.forEach(function(cat){
-    var o = document.createElement("option"); o.value = cat.key; o.textContent = cat.label;
-    if(item.category===cat.key) o.selected = true;
-    catSelect.appendChild(o);
-  });
-  catSelect.addEventListener("change", function(){ item.category = catSelect.value; save(); renderAll(); });
-  catField.appendChild(catSelect);
-  aFields.appendChild(catField);
-
-  var baseField = document.createElement("div");
-  baseField.className = "field-inline";
-  baseField.innerHTML = "<label>Base AC</label>";
-  var baseInput = document.createElement("input");
-  baseInput.type = "number"; baseInput.className = "inv-baseac-input"; baseInput.value = item.baseAC;
-  baseInput.addEventListener("input", function(){ item.baseAC = Number(baseInput.value)||0; save(); renderAll(); });
-  baseField.appendChild(baseInput);
-  aFields.appendChild(baseField);
-
-  aFields.appendChild(fieldStepper("Magic bonus", Number(item.magicBonus)||0, function(v){
-    item.magicBonus = v; save(); renderAll();
-  }));
-
-  card.appendChild(aFields);
+  var catLabel = (ARMOR_CATEGORIES.find(function(cat){ return cat.key===item.category; })||{}).label || item.category;
+  var acText = item.category==="shield" ? "+" + item.baseAC + " AC" : "Base AC " + item.baseAC;
+  var subtitleParts = [acText, catLabel];
+  if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
+  var subtitle = document.createElement("div");
+  subtitle.className = "inv-card-subtitle";
+  subtitle.textContent = subtitleParts.join(" · ");
+  card.appendChild(subtitle);
 
   if(item.notes){
     var notesP = document.createElement("p");
@@ -240,7 +388,7 @@ function renderArmorCard(c, item, idx){
 
   if(item.equipped){
     var acNote = document.createElement("p");
-    acNote.className = "inv-armor-note";
+    acNote.className = "inv-armor-note inv-equipped-note";
     acNote.textContent = "Equipped — counted toward Armor Class on the Vitals tab.";
     card.appendChild(acNote);
   }
@@ -268,7 +416,7 @@ export function renderInventoryPanel(c){
   var panel = document.createElement("div");
 
   // Weapons
-  var weaponCard = makeCard("Weapons", "attack & damage rolls use STR/DEX + proficiency automatically");
+  var weaponCard = makeCard("Weapons");
   var weaponList = document.createElement("div");
   weaponList.className = "ff-items-list inv-items-list";
   var anyWeapon = false;
@@ -292,7 +440,7 @@ export function renderInventoryPanel(c){
   panel.appendChild(weaponCard);
 
   // Armor
-  var armorCard = makeCard("Armor", "equip a piece to count it toward Armor Class");
+  var armorCard = makeCard("Armor");
   var armorList = document.createElement("div");
   armorList.className = "ff-items-list inv-items-list";
   var anyArmor = false;

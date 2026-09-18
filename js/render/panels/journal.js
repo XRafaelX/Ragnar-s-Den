@@ -13,7 +13,7 @@ function autoGrow(ta){
 /* ---- Journal panel ---- */
 export function renderJournalPanel(c){
   var panel = document.createElement("div");
-  var card = makeCard("Journal", "notes, session recaps, plans — kept only on this device");
+  var card = makeCard("Journal");
 
   var addBtn = document.createElement("button");
   addBtn.className = "btn small primary"; addBtn.style.marginBottom="12px";
