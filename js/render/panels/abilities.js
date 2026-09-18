@@ -9,7 +9,7 @@ import { performRoll } from "../../dice/dice.js";
 export function renderAbilitiesPanel(c){
   var panel = document.createElement("div");
 
-  var abCard = makeCard("Ability scores", "tap score to roll check · arrows up/down to change stats · Proficiency bonus " + fmtMod(profBonus(c)));
+  var abCard = makeCard("Ability scores");
   var grid = document.createElement("div");
   grid.className = "abilities-grid";
   ABILITIES.forEach(function(a){
@@ -90,7 +90,7 @@ export function renderAbilitiesPanel(c){
   abCard.appendChild(grid);
   panel.appendChild(abCard);
 
-  var saveCard = makeCard("Saving throws", "tap a save to roll it");
+  var saveCard = makeCard("Saving throws");
   var saveRows = document.createElement("div");
   saveRows.className = "list-rows";
   ABILITIES.forEach(function(a){
@@ -113,7 +113,7 @@ export function renderAbilitiesPanel(c){
   saveCard.appendChild(saveRows);
   panel.appendChild(saveCard);
 
-  var skillCard = makeCard("Skills", "tap a skill to roll it · P = proficient, E = expertise");
+  var skillCard = makeCard("Skills");
   var skillRows = document.createElement("div");
   skillRows.className = "list-rows";
   var header = document.createElement("div");

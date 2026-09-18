@@ -455,8 +455,6 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
   color:var(--text-on-parch);
   display:flex;align-items:center;justify-content:space-between;
 }
-.card h3 .hint{font-size:11px;color:var(--text-on-parch-dim);font-weight:normal;}
-
 .grid-row{display:flex;flex-wrap:wrap;gap:14px;}
 
 /* Ability score blocks & responsive stat steppers */
