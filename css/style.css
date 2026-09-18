@@ -1492,6 +1492,8 @@ textarea.freeform{
 
 @media (max-width:800px){
   #topbar{display:flex;}
+  #main{scrollbar-width:none;-ms-overflow-style:none;}
+  #main::-webkit-scrollbar{display:none;}
   #sidebar{
     position:fixed;top:0;bottom:0;left:0;z-index:36;
     margin-left:-230px;
