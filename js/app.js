@@ -6,14 +6,12 @@ import { setupMobileNav, closeSidebarMobile } from "./ui/mobile-nav.js";
 import { openWizard } from "./wizard/wizard-core.js";
 import { renderAll } from "./render/sheet.js";
 import { setupDiceTray } from "./dice/dice.js";
-import { openArmory } from "./render/armory.js";
 import { setupHomeMenu } from "./render/home.js";
 import { playAdd, playDelete } from "./ui/sound.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
   document.getElementById("new-char-btn").addEventListener("click", openWizard);
-  document.getElementById("armory-btn").addEventListener("click", openArmory);
 
   function goHome(){
     if(!state.activeId) return;
