@@ -1498,6 +1498,7 @@ textarea.freeform{
      off-screen) but had no visible scrollbar or hint that more sections
      were reachable — fade the trailing edge so it reads as scrollable. */
   #tabs{
+    padding-right:28px;
     -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
     mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
   }

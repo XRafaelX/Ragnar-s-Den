@@ -53,7 +53,19 @@ export function renderAll(){
   });
   sheet.appendChild(tabsBar);
   var activeTabBtn = tabsBar.querySelector("button.active");
-  if(activeTabBtn) activeTabBtn.scrollIntoView({block:"nearest", inline:"nearest", behavior:"smooth"});
+  if(activeTabBtn){
+    // Scroll just enough to reveal the tab plus a little breathing room, so
+    // it doesn't end up flush against the edge-fade mask (unreadable there).
+    var edgeMargin = 24;
+    var btnLeft = activeTabBtn.offsetLeft;
+    var btnRight = btnLeft + activeTabBtn.offsetWidth;
+    var visibleLeft = tabsBar.scrollLeft;
+    var visibleRight = visibleLeft + tabsBar.clientWidth;
+    var target = null;
+    if(btnRight + edgeMargin > visibleRight) target = btnRight + edgeMargin - tabsBar.clientWidth;
+    else if(btnLeft - edgeMargin < visibleLeft) target = btnLeft - edgeMargin;
+    if(target!=null) tabsBar.scrollTo({left: Math.max(0, target), behavior:"smooth"});
+  }
 
   var panelMap = {
     vitals: renderVitalsPanel,
