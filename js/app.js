@@ -9,6 +9,8 @@ import { setupDiceTray } from "./dice/dice.js";
 import { setupHomeMenu } from "./render/home.js";
 import { playAdd, playDelete } from "./ui/sound.js";
 import { initTheme, openThemeModal } from "./ui/theme.js";
+import { setupAvatarUpload } from "./ui/avatar.js";
+import { setupAvatarCropper } from "./ui/avatar-crop.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
@@ -98,6 +100,8 @@ export function init(){
   setupDiceTray();
   setupMobileNav();
   setupHomeMenu();
+  setupAvatarUpload();
+  setupAvatarCropper();
   renderAll();
 
   if("serviceWorker" in navigator){

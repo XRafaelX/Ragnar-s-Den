@@ -12,6 +12,7 @@ import { renderJournalPanel } from "./panels/journal.js";
 import { renderRollLog } from "../dice/dice.js";
 import { makeDeleteButton } from "../app.js";
 import { playAdd, playDelete } from "../ui/sound.js";
+import { buildAvatar, refreshAvatarInitial } from "../ui/avatar.js";
 
 export var TABS = [
   ["vitals","Vitals"],
@@ -184,15 +185,28 @@ export function renderIdentity(c){
   var wrap = document.createElement("div");
   wrap.className = "identity";
 
+  var topRow = document.createElement("div");
+  topRow.className = "identity-top";
+  var avatarEl = buildAvatar(c, 76, true);
+  topRow.appendChild(avatarEl);
+
+  var main = document.createElement("div");
+  main.className = "identity-main";
+
   var nameRow = document.createElement("div");
   nameRow.className = "name-row";
   var nameInput = document.createElement("input");
   nameInput.className = "charname";
   nameInput.value = c.name;
   nameInput.placeholder = "Character name";
-  nameInput.addEventListener("input", function(){ c.name = nameInput.value; save(); renderSidebar(); });
+  nameInput.addEventListener("input", function(){
+    c.name = nameInput.value;
+    save();
+    refreshAvatarInitial(avatarEl, c.name);
+    renderSidebar();
+  });
   nameRow.appendChild(nameInput);
-  wrap.appendChild(nameRow);
+  main.appendChild(nameRow);
 
   var subRow = document.createElement("div");
   subRow.className = "sub-row";
@@ -211,7 +225,9 @@ export function renderIdentity(c){
   pbField.appendChild(pbVal);
   subRow.appendChild(pbField);
 
-  wrap.appendChild(subRow);
+  main.appendChild(subRow);
+  topRow.appendChild(main);
+  wrap.appendChild(topRow);
 
   var classesRow = document.createElement("div");
   classesRow.className = "classes-row";

@@ -13,6 +13,7 @@ export function newCharacter(name){
   return {
     id: uid(),
     name: name || "New Character",
+    avatar: null,
     race: "Human",
     background: "Acolyte",
     alignment: "Neutral Good",
@@ -42,6 +43,7 @@ export function newCharacter(name){
 
 /* ---------------- Migration safety (older saves) ---------------- */
 export function ensureShape(c){
+  if(c.avatar===undefined) c.avatar = null;
   if(!c.classes) c.classes = [{name:"Fighter", subclass:"", level: c.level||1}];
   if(!c.race) c.race = "Human";
   if(!c.background) c.background = "Acolyte";
