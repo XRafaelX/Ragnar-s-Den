@@ -40,7 +40,7 @@ export function renderFeaturesPanel(c){
     addFirstFeatBtn.className = "btn small";
     addFirstFeatBtn.textContent = "+ Browse & Add Feats";
     addFirstFeatBtn.addEventListener("click", function(){ openFeatPickerModal(c); });
-    emptyFeats.appendChild(addFirstFirstBtnFallback(addFirstFeatBtn));
+    emptyFeats.appendChild(addFirstFeatBtn);
     featCard.appendChild(emptyFeats);
   } else {
     var featList = document.createElement("div");
@@ -303,8 +303,4 @@ export function renderFeaturesPanel(c){
   panel.appendChild(featDirCard);
 
   return panel;
-}
-
-export function addFirstFirstBtnFallback(btn){
-  return btn;
 }

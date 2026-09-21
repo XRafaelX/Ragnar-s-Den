@@ -65,6 +65,7 @@ export function openThemeModal(){
   var slider = document.createElement("input");
   slider.type = "range";
   slider.id = "theme-slider";
+  slider.className = "styled-range";
   slider.min = "0";
   slider.max = String(THEMES.length - 1);
   slider.step = "1";

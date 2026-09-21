@@ -190,6 +190,8 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
   height:100%;
   background:var(--moss);
 }
+.char-row{display:flex;align-items:center;gap:10px;}
+.char-row-info{flex:1;min-width:0;}
 #sidebar-footer{
   padding:14px;
   border-top:1px solid var(--rule);
@@ -398,6 +400,12 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
   box-shadow:0 8px 24px rgba(0,0,0,.35);
   position:relative;
 }
+.identity-top{
+  display:flex;
+  align-items:flex-start;
+  gap:16px;
+}
+.identity-main{flex:1;min-width:0;}
 .identity .name-row{
   display:flex;
   align-items:baseline;
@@ -461,7 +469,74 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 .class-chip input:focus{outline:none;}
 .class-chip .x{color:var(--oxblood);font-size:14px;line-height:1;padding:2px 4px;}
 .total-level{font-size:12px;color:var(--text-on-parch-dim);margin-left:6px;}
-.classes-row .delete-char-btn{margin-left:auto;}
+.danger-row{
+  display:flex;justify-content:flex-end;
+  margin-top:14px;padding-top:12px;
+  border-top:1px solid var(--rule);
+}
+
+/* Character avatar — a photo if uploaded, otherwise the character's
+   initial on a tinted field. Used both large + editable in the identity
+   block and small + read-only in the sidebar list. */
+.avatar{
+  position:relative;
+  flex:none;
+  border-radius:50%;
+  overflow:visible;
+  background:var(--field-bg);
+  box-shadow:inset 0 0 0 1px var(--rule);
+}
+.avatar img{
+  width:100%;height:100%;border-radius:50%;
+  object-fit:cover;display:block;
+}
+.avatar-initial{
+  width:100%;height:100%;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);color:var(--brass-bright);
+  background:color-mix(in srgb, var(--brass) 16%, transparent);
+}
+.avatar-editable{cursor:pointer;transition:box-shadow .15s ease;}
+.avatar-editable:hover{box-shadow:inset 0 0 0 2px var(--brass);}
+.avatar-edit-badge{
+  position:absolute;right:-3px;bottom:-3px;width:24px;height:24px;border-radius:50%;
+  background:var(--brass);border:2px solid var(--parchment);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:none;
+}
+.avatar-edit-badge svg{width:12px;height:12px;color:#fff;}
+.avatar-remove{
+  position:absolute;top:-3px;right:-3px;width:20px;height:20px;border-radius:50%;
+  background:var(--oxblood);color:#fff;border:2px solid var(--parchment);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;line-height:1;padding:0;cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.avatar-remove:hover{background:#c23350;}
+
+/* Avatar crop modal — pan/zoom an uploaded photo before it becomes the
+   avatar, instead of blindly center-cropping it. */
+.avatar-crop-hint{margin-top:-4px;}
+#avatar-crop-stage{
+  position:relative;
+  width:280px;height:280px;max-width:100%;
+  margin:4px auto 12px;
+  overflow:hidden;border-radius:8px;
+  background:var(--field-bg);
+  cursor:grab;touch-action:none;
+}
+#avatar-crop-stage.dragging{cursor:grabbing;}
+#avatar-crop-img{
+  position:absolute;top:0;left:0;
+  max-width:none;
+  pointer-events:none;
+  -webkit-user-drag:none;user-select:none;
+}
+#avatar-crop-mask{
+  position:absolute;inset:0;border-radius:50%;
+  box-shadow:0 0 0 9999px rgba(0,0,0,.55);
+  pointer-events:none;
+}
 
 /* Tabs */
 #tabs{
@@ -770,20 +845,7 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 /* Inventory item cards (weapon/armor/gear) */
 .inv-items-list{gap:10px;}
 .inv-item-card{display:flex;flex-direction:column;gap:8px;}
-.inv-item-row1{display:flex;align-items:center;gap:8px;}
-.inv-item-row1 .inv-name{
-  flex:1;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:6px 9px;font-size:13.5px;
-}
-.inv-item-row1 .inv-name:focus{outline:none;border-color:var(--brass);}
-.inv-item-row1 .inv-type{
-  background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:6px 8px;font-size:12.5px;color-scheme:dark;
-}
-.inv-item-row2{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
-.inv-mini-field{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-on-parch-dim);text-transform:uppercase;letter-spacing:.05em;}
-.inv-mini-field input{
-  width:56px;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:4px 6px;font-size:13px;text-align:center;
-}
-.inv-eq-label, .inv-prof-label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-on-parch);cursor:pointer;}
+.inv-prof-label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-on-parch);cursor:pointer;}
 
 /* Collapsed-by-default weapon/armor cards: compact header + summary line,
    with the full editable fields opening in a bottom sheet so the
@@ -826,10 +888,6 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 .inv-roll-btn{color:var(--text-on-parch);border-color:var(--rule);}
 .inv-roll-btn:disabled{opacity:.4;cursor:not-allowed;}
 .inv-armor-note{font-size:11.5px;color:var(--text-on-parch-dim);font-style:italic;margin:0;}
-.inv-notes{
-  width:100%;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:6px 9px;font-size:13px;
-}
-.inv-notes:focus{outline:none;border-color:var(--brass);}
 
 table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
 table.data-table th{
@@ -1241,29 +1299,36 @@ textarea.freeform{
   transition:background .12s ease;
 }
 .theme-slider-name{font-family:var(--serif);font-size:17px;color:var(--text-on-parch);}
-#theme-slider{
+
+/* Shared range-input skin (theme slider, avatar crop zoom). Track
+   background is left to the specific #id so each use can hardcode its
+   own (a fixed spectrum for the theme slider, a plain track here). */
+.styled-range{
   -webkit-appearance:none;appearance:none;
   width:100%;height:6px;border-radius:3px;
+  outline:none;margin:6px 0 10px;
+}
+.styled-range::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--brass);border:2px solid var(--text-on-parch);
+  box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;
+  transition:background .12s ease;
+}
+.styled-range::-moz-range-thumb{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--brass);border:2px solid var(--text-on-parch);
+  box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;
+  transition:background .12s ease;
+}
+.styled-range::-moz-range-track{background:var(--field-bg);height:6px;border-radius:3px;}
+#theme-slider{
   /* Hardcoded to all 4 palette accents (not the current theme) so the
      track itself previews every option at a glance, spectrum-picker
      style, before the thumb even moves. */
   background:linear-gradient(90deg, #8b5cf6 0%, #dc4b63 33%, #5fb377 66%, #d9a441 100%);
-  outline:none;margin:6px 0 10px;
 }
-#theme-slider::-webkit-slider-thumb{
-  -webkit-appearance:none;appearance:none;
-  width:22px;height:22px;border-radius:50%;
-  background:var(--brass);border:2px solid var(--text-on-parch);
-  box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;
-  transition:background .12s ease;
-}
-#theme-slider::-moz-range-thumb{
-  width:22px;height:22px;border-radius:50%;
-  background:var(--brass);border:2px solid var(--text-on-parch);
-  box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;
-  transition:background .12s ease;
-}
-#theme-slider::-moz-range-track{background:var(--field-bg);height:6px;border-radius:3px;}
+#avatar-crop-zoom{background:var(--field-bg);}
 .theme-slider-ticks{display:flex;justify-content:space-between;}
 .theme-slider-ticks span{
   font-size:12px;color:var(--text-on-parch-dim);transition:color .12s ease,font-weight .12s ease;
@@ -1657,5 +1722,4 @@ textarea.freeform{
   #dice-fab{right:16px;bottom:16px;}
   #wizard-header, #wizard-progress, #wizard-body, #wizard-footer{padding-left:14px;padding-right:14px;}
   .class-pick-grid{grid-template-columns:1fr;}
-  .classes-row .delete-char-btn{margin-left:0;flex:1 1 100%;margin-top:6px;}
 }
