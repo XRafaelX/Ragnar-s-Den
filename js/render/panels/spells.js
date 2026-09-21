@@ -3,6 +3,7 @@ import { profBonus, mod, fmtMod, clamp } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { performRoll } from "../../dice/dice.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
+import { confirmDialog } from "../../ui/confirm-modal.js";
 
 /* ---- Spells panel ---- */
 export function renderSpellsPanel(c){
@@ -98,7 +99,11 @@ export function renderSpellsPanel(c){
     notesTd.appendChild(notesInput);
     var rmTd = document.createElement("td");
     var rmBtn = document.createElement("button"); rmBtn.className="rm-btn"; rmBtn.textContent="✕";
-    rmBtn.addEventListener("click", function(){ c.spells.splice(idx,1); save(); renderAll(); playDelete(); });
+    rmBtn.addEventListener("click", function(){
+      confirmDialog("Remove "+(sp.name||"this spell")+"?", "This cannot be undone.", function(){
+        c.spells.splice(idx,1); save(); renderAll(); playDelete();
+      });
+    });
     rmTd.appendChild(rmBtn);
     tr.appendChild(lvlTd); tr.appendChild(nameTd); tr.appendChild(prepTd); tr.appendChild(notesTd); tr.appendChild(rmTd);
     tbody.appendChild(tr);

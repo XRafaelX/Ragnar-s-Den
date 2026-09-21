@@ -5,6 +5,7 @@ import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
+import { confirmDialog } from "../../ui/confirm-modal.js";
 
 /* ---- Vitals panel ---- */
 export function renderVitalsPanel(c){
@@ -499,18 +500,24 @@ export function renderVitalsPanel(c){
   var longRestBtn = document.createElement("button");
   longRestBtn.className = "btn small primary"; longRestBtn.textContent = "Long rest";
   longRestBtn.addEventListener("click", function(){
-    c.hp.current = c.hp.max;
-    c.hp.temp = 0;
-    c.deathSaves = {success:0, fail:0};
-    var recovered = Math.max(1, Math.floor(hd/2));
-    c.hitDiceUsed = clamp(hdUsed-recovered, 0, hd);
-    Object.keys(c.spellcasting.slots).forEach(function(lvl){
-      c.spellcasting.slots[lvl].used = 0;
-    });
-    c.rage.used = 0;
-    c.rage.active = false;
-    logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered.");
-    save(); renderAll();
+    confirmDialog(
+      "Take a long rest?",
+      "This resets HP to full, clears temp HP and death saves, restores spell slots and rage, and recovers hit dice.",
+      function(){
+        c.hp.current = c.hp.max;
+        c.hp.temp = 0;
+        c.deathSaves = {success:0, fail:0};
+        var recovered = Math.max(1, Math.floor(hd/2));
+        c.hitDiceUsed = clamp(hdUsed-recovered, 0, hd);
+        Object.keys(c.spellcasting.slots).forEach(function(lvl){
+          c.spellcasting.slots[lvl].used = 0;
+        });
+        c.rage.used = 0;
+        c.rage.active = false;
+        logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered.");
+        save(); renderAll();
+      }
+    );
   });
   restRow.appendChild(longRestBtn);
 

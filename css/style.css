@@ -469,7 +469,11 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 .class-chip input:focus{outline:none;}
 .class-chip .x{color:var(--oxblood);font-size:14px;line-height:1;padding:2px 4px;}
 .total-level{font-size:12px;color:var(--text-on-parch-dim);margin-left:6px;}
-.classes-row .delete-char-btn{margin-left:auto;}
+.danger-row{
+  display:flex;justify-content:flex-end;
+  margin-top:14px;padding-top:12px;
+  border-top:1px solid var(--rule);
+}
 
 /* Character avatar — a photo if uploaded, otherwise the character's
    initial on a tinted field. Used both large + editable in the identity
@@ -841,20 +845,7 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 /* Inventory item cards (weapon/armor/gear) */
 .inv-items-list{gap:10px;}
 .inv-item-card{display:flex;flex-direction:column;gap:8px;}
-.inv-item-row1{display:flex;align-items:center;gap:8px;}
-.inv-item-row1 .inv-name{
-  flex:1;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:6px 9px;font-size:13.5px;
-}
-.inv-item-row1 .inv-name:focus{outline:none;border-color:var(--brass);}
-.inv-item-row1 .inv-type{
-  background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:6px 8px;font-size:12.5px;color-scheme:dark;
-}
-.inv-item-row2{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
-.inv-mini-field{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-on-parch-dim);text-transform:uppercase;letter-spacing:.05em;}
-.inv-mini-field input{
-  width:56px;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:4px 6px;font-size:13px;text-align:center;
-}
-.inv-eq-label, .inv-prof-label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-on-parch);cursor:pointer;}
+.inv-prof-label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-on-parch);cursor:pointer;}
 
 /* Collapsed-by-default weapon/armor cards: compact header + summary line,
    with the full editable fields opening in a bottom sheet so the
@@ -897,10 +888,6 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 .inv-roll-btn{color:var(--text-on-parch);border-color:var(--rule);}
 .inv-roll-btn:disabled{opacity:.4;cursor:not-allowed;}
 .inv-armor-note{font-size:11.5px;color:var(--text-on-parch-dim);font-style:italic;margin:0;}
-.inv-notes{
-  width:100%;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:6px 9px;font-size:13px;
-}
-.inv-notes:focus{outline:none;border-color:var(--brass);}
 
 table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
 table.data-table th{
@@ -1735,5 +1722,4 @@ textarea.freeform{
   #dice-fab{right:16px;bottom:16px;}
   #wizard-header, #wizard-progress, #wizard-body, #wizard-footer{padding-left:14px;padding-right:14px;}
   .class-pick-grid{grid-template-columns:1fr;}
-  .classes-row .delete-char-btn{margin-left:0;flex:1 1 100%;margin-top:6px;}
 }

@@ -7,6 +7,7 @@ import { openWeaponPicker } from "./weapon-picker.js";
 import { openArmorPicker } from "./armor-picker.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
+import { confirmDialog } from "../../ui/confirm-modal.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 var ARMOR_CATEGORIES = [
@@ -65,7 +66,12 @@ function itemHeader(c, item, idx, onOpenDetails){
 
   var rmBtn = document.createElement("button");
   rmBtn.className = "rm-btn"; rmBtn.textContent = "✕"; rmBtn.title = "Remove item";
-  rmBtn.addEventListener("click", function(e){ e.stopPropagation(); c.inventory.splice(idx,1); save(); renderAll(); playDelete(); });
+  rmBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    confirmDialog("Remove "+(item.name||"this item")+"?", "This cannot be undone.", function(){
+      c.inventory.splice(idx,1); save(); renderAll(); playDelete();
+    });
+  });
   actions.appendChild(rmBtn);
 
   header.appendChild(actions);
@@ -141,43 +147,39 @@ function fieldStepper(label, value, onChange){
   return wrap;
 }
 
-function itemRow1(c, item, idx){
-  var row1 = document.createElement("div");
-  row1.className = "inv-item-row1";
+/* Opens the gear item's editable fields (Qty, Notes) in a bottom sheet —
+   same treatment as weapons/armor. Equipped isn't duplicated in here
+   since itemHeader's pill already toggles it without opening the sheet. */
+function openGearSheet(c, item, idx){
+  openBottomSheet(function(body, refresh, close){
+    var subtitleParts = ["Qty " + (item.qty!=null?item.qty:1)];
+    if(item.notes) subtitleParts.push(item.notes);
+    sheetHeader(body, item, "Item name", subtitleParts.join(" · "), close);
 
-  var nameInput = document.createElement("input");
-  nameInput.type = "text"; nameInput.className = "inv-name";
-  nameInput.value = item.name||""; nameInput.placeholder = "Item name";
-  nameInput.addEventListener("input", function(){ item.name = nameInput.value; save(); });
-  row1.appendChild(nameInput);
+    var details = document.createElement("div");
+    details.className = "inv-type-fields";
 
-  var rmBtn = document.createElement("button");
-  rmBtn.className = "rm-btn"; rmBtn.textContent = "✕"; rmBtn.title = "Remove item";
-  rmBtn.addEventListener("click", function(){ c.inventory.splice(idx,1); save(); renderAll(); playDelete(); });
-  row1.appendChild(rmBtn);
+    var qtyField = document.createElement("div");
+    qtyField.className = "field-inline";
+    qtyField.innerHTML = "<label>Qty</label>";
+    var qtyInput = document.createElement("input");
+    qtyInput.type = "number"; qtyInput.min = "0"; qtyInput.className = "inv-qty-input";
+    qtyInput.value = item.qty!=null?item.qty:1;
+    qtyInput.addEventListener("input", function(){ item.qty = Number(qtyInput.value)||0; save(); renderAll(); });
+    qtyField.appendChild(qtyInput);
+    details.appendChild(qtyField);
 
-  return row1;
-}
+    var notesField = document.createElement("div");
+    notesField.className = "field-inline";
+    notesField.innerHTML = "<label>Notes</label>";
+    var notesInput = document.createElement("input");
+    notesInput.type = "text"; notesInput.value = item.notes||""; notesInput.placeholder = "e.g. material, quirks…";
+    notesInput.addEventListener("input", function(){ item.notes = notesInput.value; save(); renderAll(); });
+    notesField.appendChild(notesInput);
+    details.appendChild(notesField);
 
-function itemRow2(item){
-  var row2 = document.createElement("div");
-  row2.className = "inv-item-row2";
-
-  var qtyLbl = document.createElement("label"); qtyLbl.className = "inv-mini-field";
-  qtyLbl.textContent = "Qty";
-  var qtyInput = document.createElement("input"); qtyInput.type="number"; qtyInput.value = item.qty!=null?item.qty:1; qtyInput.min="0";
-  qtyInput.addEventListener("input", function(){ item.qty = Number(qtyInput.value)||0; save(); renderAll(); });
-  qtyLbl.appendChild(qtyInput);
-  row2.appendChild(qtyLbl);
-
-  var eqLbl = document.createElement("label"); eqLbl.className = "inv-eq-label";
-  var eqCb = document.createElement("input"); eqCb.type="checkbox"; eqCb.className="chk"; eqCb.checked = !!item.equipped;
-  eqCb.addEventListener("change", function(){ item.equipped = eqCb.checked; save(); renderAll(); });
-  eqLbl.appendChild(eqCb);
-  eqLbl.appendChild(document.createTextNode("Equipped"));
-  row2.appendChild(eqLbl);
-
-  return row2;
+    body.appendChild(details);
+  });
 }
 
 /* Opens the weapon's editable fields (Qty, Damage dice/type, Ability,
@@ -400,14 +402,14 @@ function renderArmorCard(c, item, idx){
 function renderGearCard(c, item, idx){
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card";
-  card.appendChild(itemRow1(c, item, idx));
-  card.appendChild(itemRow2(item));
+  card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }));
 
-  var notesInput = document.createElement("input");
-  notesInput.type = "text"; notesInput.className = "inv-notes";
-  notesInput.value = item.notes||""; notesInput.placeholder = "Notes";
-  notesInput.addEventListener("input", function(){ item.notes = notesInput.value; save(); });
-  card.appendChild(notesInput);
+  var subtitleParts = ["Qty " + (item.qty!=null?item.qty:1)];
+  if(item.notes) subtitleParts.push(item.notes);
+  var subtitle = document.createElement("div");
+  subtitle.className = "inv-card-subtitle";
+  subtitle.textContent = subtitleParts.join(" · ");
+  card.appendChild(subtitle);
 
   return card;
 }

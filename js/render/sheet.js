@@ -285,11 +285,17 @@ export function renderIdentity(c){
   totalSpan.textContent = "Total level "+totalLevel(c);
   classesRow.appendChild(totalSpan);
 
+  wrap.appendChild(classesRow);
+
+  // Kept out of classes-row and visually separated — it's the one
+  // irreversible action in the identity block, so it shouldn't share a
+  // row (or a tap radius) with routine multiclass editing.
+  var dangerRow = document.createElement("div");
+  dangerRow.className = "danger-row";
   var deleteBtn = makeDeleteButton(c);
   deleteBtn.classList.add("delete-char-btn");
-  classesRow.appendChild(deleteBtn);
-
-  wrap.appendChild(classesRow);
+  dangerRow.appendChild(deleteBtn);
+  wrap.appendChild(dangerRow);
 
   return wrap;
 }
