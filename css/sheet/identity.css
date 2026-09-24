@@ -67,11 +67,32 @@
 .class-chip input:focus{outline:none;}
 .class-chip .x{color:var(--oxblood);font-size:14px;line-height:1;padding:2px 4px;}
 .total-level{font-size:12px;color:var(--text-on-parch-dim);margin-left:6px;}
-.danger-row{
-  display:flex;justify-content:flex-end;
-  margin-top:14px;padding-top:12px;
-  border-top:1px solid var(--rule);
+/* ⋮ overflow menu, top-right of the card (see buildIdentityMenu) */
+.identity-menu{position:absolute;top:10px;right:10px;z-index:3;}
+.identity-menu-btn{
+  width:34px;height:34px;border-radius:50%;border:1px solid transparent;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  color:var(--text-on-parch-dim);background:color-mix(in srgb, var(--parchment) 70%, transparent);
+  transition:color .15s, border-color .15s, background .15s;
 }
+.identity-menu-btn:hover, .identity-menu.open .identity-menu-btn{
+  color:var(--text-on-parch);border-color:var(--rule);background:var(--parchment-dim);
+}
+.identity-menu-pop{
+  display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:180px;padding:6px;
+  background:var(--parchment-dim);border:1px solid var(--rule);border-radius:8px;
+  box-shadow:0 12px 30px rgba(0,0,0,.45);
+}
+.identity-menu.open .identity-menu-pop{display:block;}
+.identity-menu-item{
+  display:block;width:100%;text-align:left;padding:9px 12px;border-radius:6px;
+  background:none;border:none;font-size:13px;color:var(--text-on-parch);cursor:pointer;
+}
+.identity-menu-item:hover{background:color-mix(in srgb, var(--brass) 14%, transparent);}
+.identity-menu-item.danger{color:#f2a9b6;}
+.identity-menu-item.danger:hover{background:rgba(217,69,95,.18);}
+/* keep a long name clear of the ⋮ button */
+.identity:not(.has-banner) .name-row{padding-right:36px;}
 
 /* Banner strip across the top of the identity card (the character's
    background image), bleeding to the card edges with the avatar
@@ -88,6 +109,20 @@
 }
 .identity.has-banner .avatar{margin-top:-46px;border:3px solid var(--parchment);z-index:1;}
 
+/* Compact race · background · alignment line + proficiency pill, shown
+   instead of the sub-row on phones (see renderIdentity). */
+.identity-compact{display:none;}
+.identity-summary{font-size:13px;line-height:1.45;color:var(--text-on-parch-dim);}
+.identity-pb-pill{
+  align-self:flex-start;font-size:11.5px;font-weight:600;color:var(--brass-bright);
+  padding:2px 9px;border-radius:12px;border:1px solid var(--rule);
+  background:color-mix(in srgb, var(--brass) 12%, transparent);
+}
+
 @media (max-width:800px){
   .identity{--pad-y:16px;--pad-x:16px;}
+}
+@media (max-width:560px){
+  .identity .sub-row{display:none;}
+  .identity-compact{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
 }

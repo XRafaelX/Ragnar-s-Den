@@ -74,22 +74,16 @@ export function setupTopLevel(){
 }
 
 /* ---------------- Delete character ---------------- */
-/* Rendered inline at the end of the identity block's classes row. */
-export function makeDeleteButton(c){
-  var btn = document.createElement("button");
-  btn.className = "btn small danger";
-  btn.textContent = "Delete character";
-  btn.addEventListener("click", function(){
-    confirmDialog("Delete "+(c.name||"this character")+"?", "This cannot be undone. Consider exporting a backup first.", function(){
-      state.characters = state.characters.filter(function(x){ return x.id!==c.id; });
-      state.activeId = state.characters.length ? state.characters[0].id : null;
-      if(state.activeId) state.activeTab = "vitals";
-      save();
-      renderAll();
-      playDelete();
-    });
+/* Opened from the identity card's ⋮ menu. */
+export function confirmDeleteCharacter(c){
+  confirmDialog("Delete "+(c.name||"this character")+"?", "This cannot be undone. Consider exporting a backup first.", function(){
+    state.characters = state.characters.filter(function(x){ return x.id!==c.id; });
+    state.activeId = state.characters.length ? state.characters[0].id : null;
+    if(state.activeId) state.activeTab = "vitals";
+    save();
+    renderAll();
+    playDelete();
   });
-  return btn;
 }
 
 /* ---------------- Init ---------------- */

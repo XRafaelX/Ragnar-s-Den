@@ -9,7 +9,8 @@ import { renderSpellsPanel } from "./panels/spells.js";
 import { renderInventoryPanel } from "./panels/inventory.js";
 import { renderJournalPanel } from "./panels/journal.js";
 import { renderRollLog } from "../dice/dice.js";
-import { makeDeleteButton } from "../app.js";
+import { confirmDeleteCharacter } from "../app.js";
+import { makeKebabSvg } from "../ui/svg-icons.js";
 import { buildLevelRow, subclassEligible, openSubclassPicker } from "../levelup/level-row.js";
 import { buildAvatar, refreshAvatarInitial } from "../ui/avatar.js";
 import { applyBackdrop, buildBackdropRow, buildBanner } from "../ui/backdrop.js";
@@ -189,6 +190,51 @@ function lockedField(labelTxt, value){
   return f;
 }
 
+/* ⋮ overflow menu in the identity card's top-right corner. Holds rarely
+   used actions — just Delete character for now — so they don't take a
+   row of their own. Closes on an outside tap or Escape. */
+function buildIdentityMenu(c){
+  var menu = document.createElement("div");
+  menu.className = "identity-menu";
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "identity-menu-btn";
+  btn.innerHTML = makeKebabSvg();
+  btn.title = "More options";
+  btn.setAttribute("aria-label", "More options");
+  btn.setAttribute("aria-haspopup", "menu");
+  btn.setAttribute("aria-expanded", "false");
+  var pop = document.createElement("div");
+  pop.className = "identity-menu-pop";
+  pop.setAttribute("role", "menu");
+  var del = document.createElement("button");
+  del.type = "button";
+  del.className = "identity-menu-item danger";
+  del.setAttribute("role", "menuitem");
+  del.textContent = "Delete character";
+  del.addEventListener("click", function(){ close(); confirmDeleteCharacter(c); });
+  pop.appendChild(del);
+  menu.appendChild(btn);
+  menu.appendChild(pop);
+
+  function onDocClick(e){ if(!menu.contains(e.target)) close(); }
+  function onKey(e){ if(e.key==="Escape"){ close(); btn.focus(); } }
+  function open(){
+    menu.classList.add("open");
+    btn.setAttribute("aria-expanded", "true");
+    document.addEventListener("click", onDocClick, true);
+    document.addEventListener("keydown", onKey);
+  }
+  function close(){
+    menu.classList.remove("open");
+    btn.setAttribute("aria-expanded", "false");
+    document.removeEventListener("click", onDocClick, true);
+    document.removeEventListener("keydown", onKey);
+  }
+  btn.addEventListener("click", function(){ menu.classList.contains("open") ? close() : open(); });
+  return menu;
+}
+
 export function renderIdentity(c){
   var wrap = document.createElement("div");
   wrap.className = "identity";
@@ -240,6 +286,22 @@ export function renderIdentity(c){
   subRow.appendChild(pbField);
 
   main.appendChild(subRow);
+
+  // Phone-only stand-in for the sub-row: the four stacked fields made the
+  // card very tall there, and race/background/alignment are locked anyway
+  // (details live on the Information tab). CSS picks which one shows.
+  var compact = document.createElement("div");
+  compact.className = "identity-compact";
+  var summary = document.createElement("span");
+  summary.className = "identity-summary";
+  summary.textContent = [c.race, c.background, c.alignment].filter(Boolean).join(" · ");
+  compact.appendChild(summary);
+  var pbPill = document.createElement("span");
+  pbPill.className = "identity-pb-pill";
+  pbPill.textContent = "Prof " + fmtMod(profBonus(c));
+  pbPill.title = "Proficiency bonus";
+  compact.appendChild(pbPill);
+  main.appendChild(compact);
   topRow.appendChild(main);
   wrap.appendChild(topRow);
 
@@ -278,15 +340,7 @@ export function renderIdentity(c){
   wrap.appendChild(buildLevelRow(c));
   wrap.appendChild(buildBackdropRow(c));
 
-  // Kept out of classes-row and visually separated — it's the one
-  // irreversible action in the identity block, so it shouldn't share a
-  // row (or a tap radius) with routine levelling.
-  var dangerRow = document.createElement("div");
-  dangerRow.className = "danger-row";
-  var deleteBtn = makeDeleteButton(c);
-  deleteBtn.classList.add("delete-char-btn");
-  dangerRow.appendChild(deleteBtn);
-  wrap.appendChild(dangerRow);
+  wrap.appendChild(buildIdentityMenu(c));
 
   return wrap;
 }

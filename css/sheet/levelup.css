@@ -64,7 +64,7 @@ button.class-chip:hover{border-color:var(--brass);}
   .levelup-btn.ready{animation:none;box-shadow:0 0 0 2px var(--brass-bright);}
 }
 @media (max-width:560px){
-  .xp-block{flex-basis:calc(100% - 64px);}
+  .xp-block{flex-basis:calc(100% - 68px);} /* badge 56px + 12px gap */
   .xp-add{flex:1;}
   .xp-add input{flex:1;width:auto;min-width:0;}
 }
