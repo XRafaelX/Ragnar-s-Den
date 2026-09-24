@@ -92,7 +92,42 @@ export function showFloatingToast(die, finalTotal, summary, label, isCrit, isFai
 function rollFromTray(die){
   var qty = clamp(Number(document.getElementById("dice-qty").value)||1, 1, 20);
   var modv = Number(document.getElementById("dice-mod").value)||0;
-  performRoll(die, qty, modv, die===20 ? advMode : "none", null);
+  // Advantage/disadvantage is one roll of two d20s (Qty shows 2 for it),
+  // resolved by performRoll as a single d20 with an adv/dis mode.
+  if(die === 20 && advMode !== "none") performRoll(20, 1, modv, advMode, null);
+  else performRoll(die, qty, modv, "none", null);
+}
+
+function syncAdvButtons(){
+  [["none","adv-normal"],["adv","adv-adv"],["dis","adv-dis"]].forEach(function(pair){
+    var b = document.getElementById(pair[1]);
+    if(b) b.classList.toggle("on", advMode === pair[0]);
+  });
+}
+
+/* Qty and Adv/Dis have to agree: advantage means exactly two dice, so
+   choosing it sets Qty to 2, and moving Qty off 2 drops back to Normal. */
+function onQtyChanged(){
+  var qty = clamp(Number(document.getElementById("dice-qty").value)||1, 1, 20);
+  if(advMode !== "none" && qty !== 2){
+    advMode = "none";
+    syncAdvButtons();
+  }
+  renderDicePreview();
+}
+
+function setAdvMode(mode){
+  var wasAdv = advMode !== "none";
+  var qtyInput = document.getElementById("dice-qty");
+  advMode = mode;
+  syncAdvButtons();
+  if(mode !== "none"){
+    previewDie = 20;
+    qtyInput.value = 2;
+  } else if(wasAdv && Number(qtyInput.value) === 2){
+    qtyInput.value = 1;
+  }
+  renderDicePreview();
 }
 
 function markSelectedDie(){
@@ -117,14 +152,16 @@ function makeIdleToken(die, animateIn){
 /* Draws the un-rolled dice for the current Qty (and advantage, which puts
    two d20s on the table) so the stage always shows what a roll will
    throw. Existing preview dice are kept and only the difference is
-   added/removed; anything else on the stage (a previous roll, the
-   placeholder) is replaced. Deferred while a roll is animating. */
+   added/removed; anything else on the stage (a previous roll's dice, the
+   placeholder) is replaced. The last result below the stage (total,
+   detail, Roll Again) is deliberately left alone. Deferred while a roll
+   is animating. */
 export function renderDicePreview(){
   if(rolling){ previewPending = true; return; }
   previewPending = false;
 
   var qty = clamp(Number(document.getElementById("dice-qty").value)||1, 1, 20);
-  var count = (previewDie === 20 && advMode !== "none" && qty === 1) ? 2 : qty;
+  var count = qty;
   var stage = document.getElementById("dice-stage");
 
   var wrappers = Array.prototype.slice.call(stage.children);
@@ -143,11 +180,6 @@ export function renderDicePreview(){
     wrappers.push(w);
   }
 
-  document.getElementById("roll-result").textContent = "—";
-  document.getElementById("roll-result").classList.remove("result-pop");
-  document.getElementById("roll-badge-slot").innerHTML = "";
-  document.getElementById("roll-detail").textContent = "Ready: " + count + "d" + previewDie;
-  document.getElementById("roll-again-btn").style.display = "none";
   markSelectedDie();
 }
 
@@ -393,7 +425,10 @@ export function setupDiceTray(){
     btn.addEventListener("click", function(){
       btn.classList.add("rolling-active");
       setTimeout(function(){ btn.classList.remove("rolling-active"); }, 400);
-      rollFromTray(Number(btn.getAttribute("data-die")));
+      var die = Number(btn.getAttribute("data-die"));
+      // Adv/Dis only exists for d20; rolling anything else leaves it.
+      if(die !== 20 && advMode !== "none") setAdvMode("none");
+      rollFromTray(die);
     });
   });
 
@@ -404,14 +439,14 @@ export function setupDiceTray(){
   document.getElementById("qty-inc").addEventListener("click", function(){
     var v = clamp((Number(qtyInput.value) || 1) + 1, 1, 20);
     qtyInput.value = v;
-    renderDicePreview();
+    onQtyChanged();
   });
   document.getElementById("qty-dec").addEventListener("click", function(){
     var v = clamp((Number(qtyInput.value) || 1) - 1, 1, 20);
     qtyInput.value = v;
-    renderDicePreview();
+    onQtyChanged();
   });
-  qtyInput.addEventListener("input", renderDicePreview);
+  qtyInput.addEventListener("input", onQtyChanged);
   document.getElementById("mod-inc").addEventListener("click", function(){
     var v = clamp((Number(modInput.value) || 0) + 1, -50, 50);
     modInput.value = v;
@@ -428,14 +463,7 @@ export function setupDiceTray(){
       qtyInput.value = 1;
       modInput.value = 0;
       advMode = "none";
-      var advBtns = {
-        none: document.getElementById("adv-normal"),
-        adv: document.getElementById("adv-adv"),
-        dis: document.getElementById("adv-dis")
-      };
-      Object.keys(advBtns).forEach(function(kk){
-        if(advBtns[kk]) advBtns[kk].classList.toggle("on", kk === "none");
-      });
+      syncAdvButtons();
       renderDicePreview();
     });
   }
@@ -464,20 +492,8 @@ export function setupDiceTray(){
   }
 
   // Advantage buttons
-  var advBtns = {
-    none: document.getElementById("adv-normal"),
-    adv: document.getElementById("adv-adv"),
-    dis: document.getElementById("adv-dis")
-  };
-  Object.keys(advBtns).forEach(function(k){
-    if(advBtns[k]){
-      advBtns[k].addEventListener("click", function(){
-        advMode = k;
-        Object.keys(advBtns).forEach(function(kk){
-          if(advBtns[kk]) advBtns[kk].classList.toggle("on", kk === k);
-        });
-        if(previewDie === 20) renderDicePreview();
-      });
-    }
+  [["none","adv-normal"],["adv","adv-adv"],["dis","adv-dis"]].forEach(function(pair){
+    var btn = document.getElementById(pair[1]);
+    if(btn) btn.addEventListener("click", function(){ setAdvMode(pair[0]); });
   });
 }
