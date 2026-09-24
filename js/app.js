@@ -12,11 +12,20 @@ import { initTheme, openThemeModal } from "./ui/theme.js";
 import { setupAvatarUpload } from "./ui/avatar.js";
 import { setupAvatarCropper } from "./ui/avatar-crop.js";
 import { setupBackdropUpload } from "./ui/backdrop.js";
+import { maybeStartTutorial, startTutorial } from "./ui/tutorial.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
   document.getElementById("new-char-btn").addEventListener("click", openWizard);
   document.getElementById("theme-btn").addEventListener("click", openThemeModal);
+  document.getElementById("tutorial-btn").addEventListener("click", function(){
+    // The tour points at the home screen, so go there and close the
+    // mobile menu first, otherwise its targets would be hidden.
+    state.activeId = null;
+    renderAll();
+    closeSidebarMobile();
+    startTutorial();
+  });
 
   function goHome(){
     if(!state.activeId) return;
@@ -99,6 +108,7 @@ export function init(){
   setupAvatarCropper();
   setupBackdropUpload();
   renderAll();
+  maybeStartTutorial(state.characters.length > 0);
 
   if("serviceWorker" in navigator){
     // When an updated service worker takes control, reload once so the
