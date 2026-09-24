@@ -1,0 +1,68 @@
+/* Arrow stepper used by abilities, vitals, currency, inventory. */
+
+/* Stat arrow stepper controls - clean, subtle, minimalist */
+.stat-stepper{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  background:rgba(0,0,0,0.25);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px;
+  padding:2px 4px;
+  box-sizing:border-box;
+  touch-action:manipulation;
+}
+.stat-arrow-btn{
+  width:20px;
+  height:20px;
+  min-width:20px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:transparent;
+  border:none;
+  border-radius:50%;
+  color:var(--text-on-parch-dim);
+  cursor:pointer;
+  user-select:none;
+  touch-action:manipulation;
+  transition:all 0.12s ease;
+}
+.stat-arrow-btn:hover:not(:disabled){
+  background:rgba(255,255,255,0.12);
+  color:var(--brass-bright);
+}
+.stat-arrow-btn:active:not(:disabled){
+  transform:scale(0.85);
+  background:rgba(234,179,8,0.25);
+  color:var(--brass-bright);
+}
+.stat-arrow-btn:disabled{
+  opacity:0.2;
+  cursor:not-allowed;
+  pointer-events:none;
+}
+.stat-arrow-svg{
+  width:12px;
+  height:12px;
+  display:block;
+  pointer-events:none;
+}
+.stat-score-input,
+.stat-score-val{
+  flex:1;
+  min-width:20px;
+  max-width:32px;
+  height:20px;
+  text-align:center;
+  border:none;
+  background:transparent;
+  color:var(--text-on-parch);
+  font-family:var(--serif);
+  font-size:14px;
+  font-weight:700;
+  padding:0;
+  line-height:20px;
+}

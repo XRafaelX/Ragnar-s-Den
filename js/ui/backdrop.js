@@ -155,7 +155,7 @@ export function sheetThemedFromImage(c){
 
 /* ---- banner geometry ----
    The banner strip is BANNER_HEIGHT tall and shows the image cover-fit at
-   BANNER_FOCUS (its object-position, mirrored in style.css). How much of
+   BANNER_FOCUS (its object-position, mirrored in css/sheet/identity.css). How much of
    the picture that is depends on the card width, so the cropper's guide
    uses the widest card (the narrowest band) — everything inside the guide
    is visible on every screen. */

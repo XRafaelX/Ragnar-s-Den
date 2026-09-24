@@ -1,0 +1,21 @@
+/* Shared form field wrappers (.field, .field-inline). */
+
+/* Generic .field fallback (lower specificity than .identity .sub-row .field
+   below, so this only applies where dropdownField()/similar fields are
+   reused outside the identity block, e.g. the creation wizard). */
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.field label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
+.field input, .field select{
+  border:none;border-bottom:1px solid var(--rule);background:transparent;color:var(--text-on-parch);
+  font-size:13px;padding:4px 0;
+}
+.field input:focus, .field select:focus{outline:none;border-bottom:1px solid var(--brass);}
+.field select.placeholder, .identity .sub-row select.placeholder{color:var(--text-on-parch-dim);}
+.field select.placeholder option, .identity .sub-row select.placeholder option{color:var(--text-on-parch);}
+
+.field-inline{display:flex;flex-direction:column;gap:3px;}
+.field-inline label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);}
+.field-inline input, .field-inline select{
+  background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:5px 8px;font-size:13px;color-scheme:dark;
+}
+.field-inline input:focus, .field-inline select:focus{outline:none;border-color:var(--brass);}

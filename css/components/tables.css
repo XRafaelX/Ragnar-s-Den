@@ -1,0 +1,17 @@
+/* Generic data table. */
+
+table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.data-table th{
+  text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--text-on-parch-dim);border-bottom:1px solid var(--rule);padding:4px 6px;font-weight:normal;
+}
+table.data-table td{padding:5px 6px;border-bottom:1px dashed var(--rule);vertical-align:middle;}
+table.data-table tr:last-child td{border-bottom:none;}
+table.data-table input[type=text], table.data-table input[type=number], table.data-table select{
+  width:100%;border:none;background:transparent;color:var(--text-on-parch);font-size:13px;
+  border-bottom:1px solid transparent;
+}
+table.data-table input:focus, table.data-table select:focus{outline:none;border-bottom:1px solid var(--brass);}
+table.data-table input[type=number]{text-align:center;}
+.col-tight{width:44px;}
+.col-med{width:80px;}

@@ -1,0 +1,18 @@
+/* Journal panel and freeform textareas. */
+
+/* Journal */
+.journal-entry{border-bottom:1px dashed var(--rule);padding:18px 4px;}
+.journal-entry:first-child{padding-top:2px;}
+.journal-entry:last-child{border-bottom:none;padding-bottom:2px;}
+.journal-entry-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.journal-entry .ts{font-size:10.5px;color:var(--text-on-parch-dim);}
+.journal-entry textarea{
+  width:100%;border:none;background:transparent;color:var(--text-on-parch);font-size:13.5px;
+  resize:none;overflow-y:auto;overflow-x:hidden;min-height:40px;max-height:320px;line-height:1.5;
+}
+.journal-entry textarea:focus{outline:none;}
+
+textarea.freeform{
+  width:100%;min-height:80px;border:1px solid var(--rule);border-radius:5px;background:rgba(255,255,255,.04);
+  color:var(--text-on-parch);padding:8px;font-size:13.5px;line-height:1.5;resize:vertical;
+}

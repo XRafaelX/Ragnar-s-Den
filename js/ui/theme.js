@@ -1,7 +1,7 @@
 /* ---------------- Theme picker ----------------
    A handful of curated accent palettes, all built on the same dark
    layout — picking one swaps a data-theme attribute on <html>, which
-   re-points the --brass* custom properties that the rest of style.css
+   re-points the --brass* custom properties that the rest of the stylesheets
    reads its accent color through. "purple" is the default and needs no
    attribute (it's what :root already defines), so it's left off the DOM
    and out of storage to keep the common case simple. */

@@ -1,0 +1,97 @@
+/* Character creation wizard. */
+
+#wizard-overlay{
+  position:fixed;inset:0;background:var(--ink-deep);z-index:900;
+  display:none;flex-direction:column;
+}
+#wizard-overlay.open{display:flex;}
+#wizard-header{
+  padding:16px 20px;border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;
+}
+#wizard-header h2{font-family:var(--serif);color:var(--brass-bright);font-size:18px;margin:0;font-weight:normal;}
+#wizard-progress{display:flex;gap:6px;padding:0 20px 14px;flex:none;}
+.wiz-dot{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.08);}
+.wiz-dot.done{background:var(--brass);}
+.wiz-dot.current{background:var(--brass-bright);}
+#wizard-body{flex:1;overflow-y:auto;padding:20px;display:flex;justify-content:center;}
+#wizard-body-inner{max-width:720px;width:100%;}
+#wizard-footer{padding:14px 20px;border-top:1px solid var(--rule);display:flex;justify-content:space-between;gap:10px;flex:none;}
+.wiz-error{
+  display:none;flex:none;margin:0 20px;padding:10px 14px;
+  background:rgba(217,69,95,.14);border:1px solid var(--oxblood);border-radius:6px;
+  color:#f2a9b6;font-size:13px;line-height:1.4;
+}
+.wiz-error.show{display:block;}
+
+.wiz-explain{
+  background:color-mix(in srgb, var(--brass) 10%, transparent);border:1px solid var(--rule);border-radius:6px;
+  padding:12px 14px;font-size:13px;line-height:1.5;color:var(--text-on-parch);margin-bottom:16px;
+}
+
+.class-pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.class-pick-card{
+  border:1px solid var(--rule);border-radius:6px;padding:14px;cursor:pointer;
+  background:rgba(255,255,255,.04);transition:border-color .15s,background .15s;
+}
+.class-pick-card:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);}
+.class-pick-card.selected{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 16%, transparent);}
+.class-pick-card.disabled{opacity:.45;cursor:not-allowed;}
+.class-pick-card.disabled:hover{background:rgba(255,255,255,.04);}
+.class-pick-card h4{margin:0 0 4px;font-family:var(--serif);font-weight:normal;font-size:15px;color:var(--text-on-parch);}
+.class-pick-card p{margin:0;font-size:11.5px;color:var(--text-on-parch-dim);line-height:1.4;}
+.class-pick-card .soon{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--brass-bright);margin-top:6px;display:block;}
+
+.wiz-method-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.wiz-method-btn{flex:1;min-width:160px;line-height:1.4;}
+
+#wiz-name-input.wiz-invalid{border-bottom-color:var(--oxblood);}
+.wiz-name-ideas{
+  margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+  font-size:11.5px;color:var(--text-on-parch-dim);
+}
+.wiz-name-chip{border-color:var(--rule);color:var(--text-on-parch-dim);}
+.wiz-name-chip:hover{color:var(--brass-bright);border-color:var(--brass);}
+
+.wiz-equip-option{
+  border:1px solid var(--rule);border-radius:6px;padding:10px 12px;margin-bottom:8px;cursor:pointer;
+  background:rgba(255,255,255,.04);transition:border-color .15s,background .15s;
+}
+.wiz-equip-option:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);}
+.wiz-equip-option.selected{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 16%, transparent);}
+
+/* Skill picker: the whole row is the tap target (not just the checkbox),
+   with enough padding for a comfortable touch target on phones. */
+.wiz-pick-row{cursor:pointer;padding:10px 8px;border-radius:4px;}
+.wiz-pick-row:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);}
+.wiz-pick-row .row-name{cursor:pointer;}
+.wiz-pick-row .row-name:hover{color:var(--brass-bright);}
+.wiz-pick-row.disabled{cursor:not-allowed;opacity:.45;}
+.wiz-pick-row.disabled:hover{background:none;}
+.wiz-pick-row .chk{width:18px;height:18px;}
+
+/* Wizard spell-pick step */
+.wiz-spell-section{margin-top:18px;}
+.wiz-spell-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px;}
+.wiz-spell-head h4{margin:0;font-family:var(--serif);font-weight:normal;font-size:16px;color:var(--brass-bright);}
+.wiz-spell-counter{font-size:12px;color:var(--text-on-parch-dim);}
+.wiz-spell-counter.complete{color:var(--moss);}
+.wiz-spell-help{font-size:12.5px;line-height:1.5;color:var(--text-on-parch-dim);margin:0 0 8px;}
+.wiz-spell-search{
+  width:100%;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;
+  color:var(--text-on-parch);padding:7px 10px;font-size:13px;margin-bottom:8px;
+}
+.wiz-spell-search:focus{outline:none;border-color:var(--brass);}
+.wiz-spell-list{max-height:340px;overflow-y:auto;border:1px solid var(--rule);border-radius:6px;}
+.wiz-spell-row{display:flex;align-items:flex-start;gap:10px;border-bottom:1px dashed var(--rule);}
+.wiz-spell-row:last-child{border-bottom:none;}
+.wiz-spell-row.selected{background:color-mix(in srgb, var(--brass) 14%, transparent);}
+.wiz-spell-row .chk{margin-top:2px;flex:none;}
+.wiz-spell-text{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.wiz-spell-meta{font-size:11.5px;color:var(--text-on-parch-dim);font-style:italic;}
+.wiz-spell-desc{font-size:12px;color:var(--text-on-parch-dim);line-height:1.4;}
+
+@media (max-width:800px){
+  #wizard-header, #wizard-progress, #wizard-body, #wizard-footer{padding-left:14px;padding-right:14px;}
+  .class-pick-grid{grid-template-columns:1fr;}
+}

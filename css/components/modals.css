@@ -1,0 +1,96 @@
+/* Custom modals (rd- prefix), character picker, theme slider, range input. */
+
+/* Import/export + confirm modal (rd- prefix avoids clashing with Bootstrap's .modal) */
+.rd-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:1100;
+}
+.rd-backdrop.open{display:flex;}
+.rd-modal{
+  position:relative;
+  background:var(--parchment-dim);color:var(--text-on-parch);
+  border:1px solid var(--brass);border-radius:8px;
+  padding:22px;max-width:340px;width:88%;
+  box-shadow:0 18px 50px rgba(0,0,0,.6);
+}
+.rd-modal-wide{
+  max-width:680px;width:94%;max-height:88vh;display:flex;flex-direction:column;
+}
+.rd-modal-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--rule);
+}
+.rd-modal-header h4{
+  margin:0;font-family:var(--serif);color:var(--brass-bright);font-size:17px;
+}
+.rd-modal-close{
+  background:transparent;border:none;color:var(--text-on-parch-dim);font-size:16px;padding:4px 8px;border-radius:4px;cursor:pointer;
+}
+.rd-modal-close:hover{
+  color:var(--text-on-parch);background:rgba(255,255,255,0.08);
+}
+#feat-modal-body, #feature-modal-body{
+  overflow-y:auto;flex:1;
+}
+.rd-modal h4{font-family:var(--serif);margin:0 0 10px;font-weight:normal;}
+.rd-modal p{font-size:13.5px;line-height:1.5;color:var(--text-on-parch-dim);}
+.rd-modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
+
+/* Character picker modal (Armory: "add to which character?") */
+#char-picker-body{max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
+.char-picker-row{
+  padding:10px 12px;border-radius:var(--radius);cursor:pointer;
+  border:1px solid var(--rule);transition:background .15s ease, border-color .15s ease;
+}
+.char-picker-row:hover{background:color-mix(in srgb, var(--brass) 14%, transparent);border-color:var(--brass);}
+.char-picker-row .cpr-name{font-family:var(--serif);font-size:15px;color:var(--text-on-parch);display:block;}
+.char-picker-row .cpr-meta{font-size:11.5px;color:var(--text-on-parch-dim);display:block;margin-top:2px;}
+
+/* Theme picker modal — a slider so dragging through the options
+   re-themes the whole app live, instead of clicking swatches one at a
+   time to see each. --brass* update instantly on "input" as you drag,
+   so the preview dot, the slider thumb itself, and the rest of the app
+   behind the modal all reflect whichever option the thumb is over. */
+.theme-slider-preview{
+  display:flex;align-items:center;gap:10px;margin-bottom:18px;
+}
+.theme-slider-dot{
+  width:26px;height:26px;border-radius:50%;flex:none;
+  background:var(--brass);
+  box-shadow:0 0 0 1px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.25);
+  transition:background .12s ease;
+}
+.theme-slider-name{font-family:var(--serif);font-size:17px;color:var(--text-on-parch);}
+
+/* Shared range-input skin (theme slider, avatar crop zoom). Track
+   background is left to the specific #id so each use can hardcode its
+   own (a fixed spectrum for the theme slider, a plain track here). */
+.styled-range{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:6px;border-radius:3px;
+  outline:none;margin:6px 0 10px;
+}
+.styled-range::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--brass);border:2px solid var(--text-on-parch);
+  box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;
+  transition:background .12s ease;
+}
+.styled-range::-moz-range-thumb{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--brass);border:2px solid var(--text-on-parch);
+  box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;
+  transition:background .12s ease;
+}
+.styled-range::-moz-range-track{background:var(--field-bg);height:6px;border-radius:3px;}
+#theme-slider{
+  /* Hardcoded to all 4 palette accents (not the current theme) so the
+     track itself previews every option at a glance, spectrum-picker
+     style, before the thumb even moves. */
+  background:linear-gradient(90deg, #8b5cf6 0%, #dc4b63 33%, #5fb377 66%, #d9a441 100%);
+}
+#avatar-crop-zoom{background:var(--field-bg);}
+.theme-slider-ticks{display:flex;justify-content:space-between;}
+.theme-slider-ticks span{
+  font-size:12px;color:var(--text-on-parch-dim);transition:color .12s ease,font-weight .12s ease;
+}
+.theme-slider-ticks span.active{color:var(--brass-bright);font-weight:bold;}

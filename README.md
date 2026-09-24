@@ -125,7 +125,13 @@ Currently, no automated testing framework is set up in the repository.
 .
 ├── css/
 │   ├── bootstrap.min.css         # Bootstrap 5 framework stylesheet
-│   └── style.css                 # Custom dark theme and layout styling
+│   ├── base/                     # Design tokens / theme palettes, element defaults
+│   ├── layout/                   # App shell: sidebar, main area, topbar
+│   ├── components/               # Reusable UI: buttons, forms, steppers, modals, toast, bottom sheet, avatar
+│   ├── pages/                    # Home hub
+│   ├── sheet/                    # Character sheet: identity, tabs, one file per panel, backdrop
+│   ├── dice/                     # Dice tray, animated dice, roll toast
+│   └── overlays/                 # Full-screen catalog picker and creation wizard
 ├── images/
 │   ├── icon-192.png              # Application icon (192x192) for PWA
 │   └── icon-512.png              # Application icon (512x512) for PWA

@@ -1,0 +1,28 @@
+/* Element defaults, scrollbars and the root #app shell. */
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0;
+  background:var(--ink-deep);
+  color:var(--text-on-ink);
+  font-family:var(--sans);
+  overflow:hidden;
+}
+button, input, select, textarea { font-family: inherit; }
+button{cursor:pointer;}
+/* The closed <select> box is styled per-context elsewhere; this covers the
+   native dropdown popup and its options, which color-scheme alone doesn't
+   always theme consistently across browsers. */
+select{color-scheme: dark;}
+select option{background-color:var(--field-bg);color:var(--text-on-parch);}
+select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-style:normal;}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--brass);border-radius:6px;opacity:.5;}
+
+#app{
+  display:flex;
+  height:100vh;
+  height:100dvh;
+}
