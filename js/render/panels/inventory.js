@@ -1,6 +1,6 @@
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { makeStatArrowSvg } from "../../ui/svg-icons.js";
+import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
 import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation } from "../../core/helpers.js";
 import { openWeaponPicker } from "./weapon-picker.js";
@@ -295,7 +295,7 @@ function renderWeaponCard(c, item, idx){
   var atkBonus = weaponAttackBonus(c, item);
   var atkBtn = document.createElement("button");
   atkBtn.type = "button"; atkBtn.className = "btn small inv-roll-btn";
-  atkBtn.textContent = "🎲 Attack " + fmtMod(atkBonus);
+  atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(atkBonus);
   atkBtn.addEventListener("click", function(){
     performRoll(20, 1, atkBonus, "none", (item.name||"Weapon") + " — Attack");
   });
@@ -306,12 +306,12 @@ function renderWeaponCard(c, item, idx){
   var dmgBtn = document.createElement("button");
   dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
   if(parsed){
-    dmgBtn.textContent = "🎲 Damage " + parsed.qty + "d" + parsed.die + fmtMod(dmgBonus);
+    dmgBtn.innerHTML = makeDicesSvg() + "Damage " + parsed.qty + "d" + parsed.die + fmtMod(dmgBonus);
     dmgBtn.addEventListener("click", function(){
       performRoll(parsed.die, parsed.qty, dmgBonus, "none", (item.name||"Weapon") + " — Damage" + (item.damageType ? " (" + item.damageType + ")" : ""));
     });
   } else {
-    dmgBtn.textContent = "🎲 Damage";
+    dmgBtn.innerHTML = makeDicesSvg() + "Damage";
     dmgBtn.disabled = true;
     dmgBtn.title = "Enter damage dice like \"1d8\" to roll";
   }

@@ -14,7 +14,7 @@ var previewPending = false; // Qty/adv changed mid-roll; redraw once it settles
 export function getDieSvg(die, value){
   var valStr = value != null ? String(value) : "?";
   if(die === 4){
-    return '<svg viewBox="0 0 100 100"><polygon class="die-bg" points="50,10 92,84 8,84"/><line class="die-facet" x1="50" y1="10" x2="50" y2="58"/><line class="die-facet" x1="92" y1="84" x2="50" y2="58"/><line class="die-facet" x1="8" y1="84" x2="50" y2="58"/><text class="die-text" x="50" y="68">'+valStr+'</text></svg>';
+    return '<svg viewBox="0 0 100 100"><polygon class="die-bg" points="50,10 92,84 8,84"/><line class="die-facet" x1="50" y1="10" x2="50" y2="43"/><line class="die-facet" x1="92" y1="84" x2="67" y2="68"/><line class="die-facet" x1="8" y1="84" x2="33" y2="68"/><text class="die-text" x="50" y="61">'+valStr+'</text></svg>';
   }
   if(die === 6){
     return '<svg viewBox="0 0 100 100"><rect class="die-bg" x="12" y="12" width="76" height="76" rx="14"/><rect class="die-facet" x="22" y="22" width="56" height="56" rx="8"/><text class="die-text" x="50" y="52">'+valStr+'</text></svg>';

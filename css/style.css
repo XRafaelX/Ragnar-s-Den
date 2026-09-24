@@ -971,7 +971,8 @@ textarea.freeform{
   border-bottom:1px solid color-mix(in srgb, var(--brass) 20%, transparent);padding-bottom:8px;
 }
 .tray-title-group{display:flex;align-items:center;gap:6px;}
-.tray-icon{font-size:16px;}
+.tray-icon{display:flex;color:var(--brass-bright);}
+.tray-icon .btn-icon-svg{width:20px;height:20px;margin:0;vertical-align:baseline;}
 #dice-tray h4{margin:0;font-family:var(--serif);color:var(--brass-bright);font-weight:600;font-size:15px;letter-spacing:.02em;}
 #dice-tray-close{
   background:transparent;border:none;color:var(--text-on-ink-dim);font-size:16px;

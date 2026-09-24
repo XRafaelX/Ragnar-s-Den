@@ -6,7 +6,7 @@ import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/ali
 import { POINT_BUY_COSTS, pickNameIdeas } from "../data/misc.js";
 import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
-import { makeStatArrowSvg } from "../ui/svg-icons.js";
+import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../ui/svg-icons.js";
 import { dropdownField } from "../render/sheet.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName } from "./wizard-core.js";
 
@@ -243,7 +243,7 @@ export function wizardStepAbilities(container){
   } else if(wizardState.abilityMethod==="roll"){
     if(!wizardState.rolledPool){
       var rollBtn = document.createElement("button");
-      rollBtn.type="button"; rollBtn.className="btn primary small"; rollBtn.textContent="🎲 Roll 6 scores";
+      rollBtn.type="button"; rollBtn.className="btn primary small"; rollBtn.innerHTML=makeDicesSvg()+"Roll 6 scores";
       rollBtn.addEventListener("click", function(){
         wizardState.rolledPool = rollSixAbilityScores();
         wizardState.assignIdx = {str:null,dex:null,con:null,int:null,wis:null,cha:null};
@@ -506,7 +506,7 @@ export function wizardStepReview(container){
     var shuffleBtn = document.createElement("button");
     shuffleBtn.type = "button";
     shuffleBtn.className = "btn small ghost wiz-name-chip";
-    shuffleBtn.textContent = "🎲 More ideas";
+    shuffleBtn.innerHTML = makeDiceSvg() + "More ideas";
     shuffleBtn.addEventListener("click", renderIdeaChips);
     ideaWrap.appendChild(shuffleBtn);
   }
