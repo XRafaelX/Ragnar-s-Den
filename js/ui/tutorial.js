@@ -22,16 +22,19 @@ var STEPS = [
   },
   {
     target: byId("home-node-new"),
+    spot: function(el){ return el.querySelector(".home-node-circle"); },
     title: "Create a character",
     text: "Start here. The wizard walks you through race, class, background and ability scores step by step."
   },
   {
     target: byId("home-node-armory"),
+    spot: function(el){ return el.querySelector(".home-node-circle"); },
     title: "Grimtooth's Armory",
     text: "Browse weapons, armor and gear, then add them straight to any of your characters."
   },
   {
     target: byId("home-center"),
+    pad: 16,
     title: "Roll some dice",
     text: "Tap the die to open the dice roller. On a character sheet, tapping a stat or skill rolls it for you."
   },
@@ -150,16 +153,22 @@ function go(i){
 
 /* Places the spotlight over the target and the popup on whichever side
    has room (below, above, right, left), then slides the arrow along the
-   popup's edge so it still points at the target's center after clamping. */
+   popup's edge so it still points at the lit spot after clamping.
+   A step can light a smaller part of its target (`spot`, e.g. just a
+   home node's circle, not its label) and widen the halo (`pad`); the
+   popup still steers clear of the whole target. */
 function position(){
   if(!els) return;
-  var el = targetOf(steps[index]);
+  var step = steps[index];
+  var el = targetOf(step);
+  var hole = el && step.spot ? (step.spot(el) || el) : el;
   var vw = window.innerWidth, vh = window.innerHeight;
   var pw = els.pop.offsetWidth, ph = els.pop.offsetHeight;
 
   // Skip the layout writes when nothing moved since the last frame.
-  var rk = el ? el.getBoundingClientRect() : null;
-  var key = [vw, vh, pw, ph, rk ? [rk.left, rk.top, rk.width, rk.height].join() : "-"].join("|");
+  var r = el ? el.getBoundingClientRect() : null;
+  var h = hole ? hole.getBoundingClientRect() : null;
+  var key = [vw, vh, pw, ph, r ? [r.left, r.top, r.width, r.height, h.left, h.top, h.width, h.height].join() : "-"].join("|");
   if(key === lastKey) return;
   lastKey = key;
 
@@ -171,22 +180,33 @@ function position(){
     return;
   }
 
-  var r = rk;
-  var pad = 6;
-  var round = getComputedStyle(el).borderRadius === "50%" || Math.abs(r.width - r.height) < 4;
+  // Circles get a square, centered halo so the ring stays concentric
+  // with the element even if its box is a pixel or two off square.
+  var pad = step.pad || 6;
+  var round = getComputedStyle(hole).borderRadius === "50%";
+  var cx = h.left + h.width / 2, cy = h.top + h.height / 2;
+  var sw = h.width + pad * 2, sh = h.height + pad * 2;
+  if(round) sw = sh = Math.max(sw, sh);
+  var spot = { left: cx - sw / 2, top: cy - sh / 2, right: cx + sw / 2, bottom: cy + sh / 2 };
   els.spot.classList.remove("none");
-  els.spot.style.left = (r.left - pad) + "px";
-  els.spot.style.top = (r.top - pad) + "px";
-  els.spot.style.width = (r.width + pad * 2) + "px";
-  els.spot.style.height = (r.height + pad * 2) + "px";
+  els.spot.style.left = spot.left + "px";
+  els.spot.style.top = spot.top + "px";
+  els.spot.style.width = sw + "px";
+  els.spot.style.height = sh + "px";
   els.spot.style.borderRadius = round ? "50%" : "10px";
 
-  var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  // Keep-out box: the lit spot plus the rest of the target (labels etc).
+  var box = {
+    left: Math.min(spot.left, r.left),
+    top: Math.min(spot.top, r.top),
+    right: Math.max(spot.right, r.right),
+    bottom: Math.max(spot.bottom, r.bottom)
+  };
   var space = {
-    bottom: vh - r.bottom - pad,
-    top: r.top - pad,
-    right: vw - r.right - pad,
-    left: r.left - pad
+    bottom: vh - box.bottom,
+    top: box.top,
+    right: vw - box.right,
+    left: box.left
   };
   var side = ["bottom", "top", "right", "left"].find(function(s){
     var need = (s === "top" || s === "bottom") ? ph : pw;
@@ -196,10 +216,10 @@ function position(){
   var left, top;
   if(side === "bottom" || side === "top"){
     left = Math.min(Math.max(cx - pw / 2, EDGE), vw - pw - EDGE);
-    top = side === "bottom" ? r.bottom + pad + GAP : r.top - pad - GAP - ph;
+    top = side === "bottom" ? box.bottom + GAP : box.top - GAP - ph;
   }else{
     top = Math.min(Math.max(cy - ph / 2, EDGE), vh - ph - EDGE);
-    left = side === "right" ? r.right + pad + GAP : r.left - pad - GAP - pw;
+    left = side === "right" ? box.right + GAP : box.left - GAP - pw;
   }
   els.pop.style.left = left + "px";
   els.pop.style.top = top + "px";
