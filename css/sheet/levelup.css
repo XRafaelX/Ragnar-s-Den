@@ -17,19 +17,18 @@ button.class-chip:hover{border-color:var(--brass);}
   padding:10px 12px;border:1px solid var(--rule);border-radius:8px;
   background:color-mix(in srgb, var(--brass) 6%, transparent);
 }
-/* The number sits dead-centre in the circle; the "Level" label is pinned
-   above it rather than stacked with it (stacking pushes the number low). */
-.lvl-badge{
-  position:relative;flex:none;
+/* Level badge: just the number in the circle, "Level" as a caption
+   above it, so the number can be large and truly centred. */
+.lvl-badge{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.lvl-circle{
   display:flex;align-items:center;justify-content:center;
-  width:56px;height:56px;border-radius:50%;box-sizing:border-box;
+  width:48px;height:48px;border-radius:50%;box-sizing:border-box;
   border:2px solid var(--brass);background:color-mix(in srgb, var(--brass) 14%, transparent);
 }
-.lvl-badge span{
-  position:absolute;top:8px;left:0;right:0;text-align:center;
-  font-size:8.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-on-parch-dim);line-height:1;
+.lvl-circle b{font-family:var(--serif);font-size:26px;line-height:1;color:var(--brass-bright);}
+.lvl-caption{
+  font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;line-height:1;color:var(--text-on-parch-dim);
 }
-.lvl-badge b{font-family:var(--serif);font-size:24px;line-height:1;color:var(--brass-bright);}
 .xp-block{flex:1;min-width:160px;}
 .xp-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:5px;flex-wrap:wrap;}
 .xp-num{color:var(--text-on-parch);font-weight:600;}

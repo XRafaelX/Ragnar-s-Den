@@ -29,7 +29,8 @@ export function buildLevelRow(c){
   var ready = !atCap && full;
 
   var badge = ce("div","lvl-badge");
-  badge.innerHTML = "<span>Level</span><b>"+level+"</b>";
+  badge.setAttribute("aria-label", "Level "+level);
+  badge.innerHTML = "<span class='lvl-caption' aria-hidden='true'>Level</span><span class='lvl-circle' aria-hidden='true'><b>"+level+"</b></span>";
   row.appendChild(badge);
 
   var block = ce("div","xp-block");
