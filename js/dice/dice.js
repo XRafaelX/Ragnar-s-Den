@@ -87,11 +87,30 @@ export function showFloatingToast(die, finalTotal, summary, label, isCrit, isFai
   }, 3200);
 }
 
+/* The Mod box as a whole number within ±50. Typed values bypass the
+   stepper clamp, so this normalizes them and writes the result back so
+   the box shows what was actually rolled. */
+function readTrayMod(){
+  var input = document.getElementById("dice-mod");
+  var v = clamp(Math.round(Number(input.value)||0), -50, 50);
+  input.value = v;
+  return v;
+}
+
+/* Roll Again / tapping a rolled die. Tray rolls (no label) re-read the
+   tray, so Qty / Mod / advantage changed since the last roll apply;
+   sheet rolls (Stealth, an attack...) repeat with their own modifier. */
+function rollAgain(){
+  if(!lastRollConfig) return;
+  if(lastRollConfig.label === null) rollFromTray(lastRollConfig.die);
+  else performRoll(lastRollConfig.die, lastRollConfig.qty, lastRollConfig.modifier, lastRollConfig.adv, lastRollConfig.label);
+}
+
 /* Rolls the die with the tray's current Qty / Mod / advantage settings
    (used by the die buttons and by tapping a preview die). */
 function rollFromTray(die){
   var qty = clamp(Number(document.getElementById("dice-qty").value)||1, 1, 20);
-  var modv = Number(document.getElementById("dice-mod").value)||0;
+  var modv = readTrayMod();
   // Advantage/disadvantage is one roll of two d20s (Qty shows 2 for it),
   // resolved by performRoll as a single d20 with an adv/dis mode.
   if(die === 20 && advMode !== "none") performRoll(20, 1, modv, advMode, null);
@@ -279,11 +298,7 @@ export function performRoll(die, qty, modifier, adv, label){
       item.token.classList.remove("rolling");
       item.token.classList.add("settled");
       item.token.title = "Tap to roll again";
-      item.token.onclick = function(){
-        if(lastRollConfig){
-          performRoll(lastRollConfig.die, lastRollConfig.qty, lastRollConfig.modifier, lastRollConfig.adv, lastRollConfig.label);
-        }
-      };
+      item.token.onclick = rollAgain;
       var textNode = item.token.querySelector(".die-text");
       if(textNode){
         textNode.textContent = item.targetVal;
@@ -448,12 +463,10 @@ export function setupDiceTray(){
   });
   qtyInput.addEventListener("input", onQtyChanged);
   document.getElementById("mod-inc").addEventListener("click", function(){
-    var v = clamp((Number(modInput.value) || 0) + 1, -50, 50);
-    modInput.value = v;
+    modInput.value = clamp(readTrayMod() + 1, -50, 50);
   });
   document.getElementById("mod-dec").addEventListener("click", function(){
-    var v = clamp((Number(modInput.value) || 0) - 1, -50, 50);
-    modInput.value = v;
+    modInput.value = clamp(readTrayMod() - 1, -50, 50);
   });
 
   // Reset button
@@ -471,11 +484,7 @@ export function setupDiceTray(){
   // Roll again button
   var rollAgainBtn = document.getElementById("roll-again-btn");
   if(rollAgainBtn){
-    rollAgainBtn.addEventListener("click", function(){
-      if(lastRollConfig){
-        performRoll(lastRollConfig.die, lastRollConfig.qty, lastRollConfig.modifier, lastRollConfig.adv, lastRollConfig.label);
-      }
-    });
+    rollAgainBtn.addEventListener("click", rollAgain);
   }
 
   // Clear log button
