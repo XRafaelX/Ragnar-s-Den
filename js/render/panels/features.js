@@ -1,7 +1,7 @@
 import { save } from "../../core/state.js";
 import { getAllCharacterFeatures } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { openFeatPickerModal } from "./feat-picker-modal.js";
+import { openFeatPicker, openFeatEditor } from "./feat-picker.js";
 import { openFeatureModal } from "./feature-modal.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { playDelete } from "../../ui/sound.js";
@@ -27,7 +27,7 @@ export function renderFeaturesPanel(c){
   addFeatBtn.className = "btn small primary";
   addFeatBtn.textContent = "+ Add Feat";
   addFeatBtn.addEventListener("click", function(){
-    openFeatPickerModal(c);
+    openFeatPicker(c);
   });
   featHeader.appendChild(addFeatBtn);
   featCard.appendChild(featHeader);
@@ -39,7 +39,7 @@ export function renderFeaturesPanel(c){
     var addFirstFeatBtn = document.createElement("button");
     addFirstFeatBtn.className = "btn small";
     addFirstFeatBtn.textContent = "+ Browse & Add Feats";
-    addFirstFeatBtn.addEventListener("click", function(){ openFeatPickerModal(c); });
+    addFirstFeatBtn.addEventListener("click", function(){ openFeatPicker(c); });
     emptyFeats.appendChild(addFirstFeatBtn);
     featCard.appendChild(emptyFeats);
   } else {
@@ -81,7 +81,7 @@ export function renderFeaturesPanel(c){
       editBtn.textContent = "Edit";
       editBtn.title = "Edit feat details";
       editBtn.addEventListener("click", function(){
-        openFeatPickerModal(c, feat, idx);
+        openFeatEditor(c, feat, idx);
       });
       actions.appendChild(editBtn);
 
@@ -280,7 +280,7 @@ export function renderFeaturesPanel(c){
         viewFeatBtn.textContent = "Edit Feat";
         viewFeatBtn.addEventListener("click", function(){
           var idx = (c.feats||[]).indexOf(item.featObj);
-          openFeatPickerModal(c, item.featObj, idx);
+          openFeatEditor(c, item.featObj, idx);
         });
         actions.appendChild(viewFeatBtn);
         top.appendChild(actions);
