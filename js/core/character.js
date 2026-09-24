@@ -14,7 +14,7 @@ export function newCharacter(name){
     id: uid(),
     name: name || "New Character",
     avatar: null,
-    inspired: false,
+    inspiration: 0,
     backdrop: null,
     backdropPalette: null,
     backdropTheme: true,
@@ -48,7 +48,8 @@ export function newCharacter(name){
 /* ---------------- Migration safety (older saves) ---------------- */
 export function ensureShape(c){
   if(c.avatar===undefined) c.avatar = null;
-  if(c.inspired===undefined) c.inspired = false;
+  if(c.inspiration===undefined) c.inspiration = c.inspired ? 1 : 0;
+  delete c.inspired;
   if(c.backdrop===undefined) c.backdrop = null;
   if(c.backdropPalette===undefined) c.backdropPalette = null;
   if(c.backdropTheme===undefined) c.backdropTheme = true;

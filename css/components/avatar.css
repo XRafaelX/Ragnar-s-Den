@@ -56,13 +56,25 @@
   mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
   animation:inspire-halo-spin 6s linear infinite;
 }
-.avatar-editable.inspired::after{
-  content:"✦";position:absolute;top:-6px;left:-6px;width:22px;height:22px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  background:var(--inspire-gold);color:#4a3200;font-size:12px;line-height:1;
+/* Stacking Inspiration: a pill badge showing the count; tap it to spend one. */
+.inspire-badge{
+  position:absolute;top:-7px;left:-7px;height:22px;min-width:22px;padding:0 6px;border-radius:11px;
+  display:none;align-items:center;justify-content:center;gap:2px;
+  background:var(--inspire-gold);color:#4a3200;font-size:11.5px;font-weight:700;line-height:1;
   border:2px solid var(--parchment);box-shadow:0 2px 6px rgba(0,0,0,.4);
-  pointer-events:none;
+  cursor:pointer;z-index:3;
 }
+.avatar.inspired .inspire-badge{display:flex;}
+.inspire-badge:hover{background:#ffd966;}
+.inspire-badge.shake{animation:inspire-shake .4s ease;}
+@keyframes inspire-shake{
+  0%,100%{transform:translateX(0);}
+  20%,60%{transform:translateX(-3px);}
+  40%,80%{transform:translateX(3px);}
+}
+/* The halo glows a bit brighter with each stacked point. */
+.avatar[data-inspiration="2"]{--inspire-glow:rgba(245,197,66,.7);}
+.avatar[data-inspiration="3"]{--inspire-glow:rgba(255,210,80,.9);}
 @keyframes inspire-halo-spin{to{transform:rotate(360deg);}}
 @keyframes inspire-halo-breathe{
   0%,100%{box-shadow:0 0 10px 1px var(--inspire-glow);}

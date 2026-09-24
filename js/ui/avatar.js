@@ -11,6 +11,9 @@ import { openAvatarCropper } from "./avatar-crop.js";
 import { showActionToast } from "./toast.js";
 import { playInspire, playDelete } from "./sound.js";
 
+/* Table rule: Inspiration stacks, up to this many at once. */
+export var MAX_INSPIRATION = 3;
+
 var LONG_PRESS_MS = 550;
 var LONG_PRESS_SLOP = 10; /* px of finger drift allowed before it counts as a scroll */
 
@@ -47,22 +50,54 @@ export function refreshAvatarInitial(avatarEl, name){
   initialEl.textContent = (name || "?").trim().charAt(0).toUpperCase() || "?";
 }
 
-/* Toggles the character's Inspiration. Updates the avatar in place
-   rather than re-rendering the sheet so the burst animation isn't
-   thrown away mid-play; the sidebar thumbnail is rebuilt to match. */
-function toggleInspiration(c, wrap){
-  c.inspired = !c.inspired;
-  save();
-  wrap.classList.toggle("inspired", c.inspired);
-  if(c.inspired){
-    playInspire();
-    playInspireBurst(wrap);
-    showActionToast("✨ " + ((c.name || "").trim() || "Your character") + " is inspired!");
-  } else {
-    playDelete();
-    showActionToast("Inspiration spent.");
+/* Inspiration is gained by long-pressing the avatar and spent by
+   tapping its badge. Both update the avatar in place rather than
+   re-rendering the sheet so the burst animation isn't thrown away
+   mid-play; the sidebar thumbnail is rebuilt to match. */
+function characterLabel(c){
+  return (c.name || "").trim() || "Your character";
+}
+
+function gainInspiration(c, wrap){
+  if(c.inspiration >= MAX_INSPIRATION){
+    shake(wrap.querySelector(".inspire-badge"));
+    showActionToast(characterLabel(c) + " already has max Inspiration (" + MAX_INSPIRATION + "/" + MAX_INSPIRATION + ").");
+    return;
   }
+  c.inspiration++;
+  save();
+  syncInspiration(c, wrap);
+  playInspire();
+  playInspireBurst(wrap);
+  showActionToast("✨ " + characterLabel(c) + " is inspired! (" + c.inspiration + "/" + MAX_INSPIRATION + ")");
   renderSidebar();
+}
+
+function spendInspiration(c, wrap){
+  if(c.inspiration <= 0) return;
+  c.inspiration--;
+  save();
+  syncInspiration(c, wrap);
+  playDelete();
+  showActionToast(c.inspiration ? "Inspiration spent — " + c.inspiration + " left." : "Inspiration spent.");
+  renderSidebar();
+}
+
+function syncInspiration(c, wrap){
+  wrap.classList.toggle("inspired", c.inspiration > 0);
+  wrap.dataset.inspiration = c.inspiration;
+  var badge = wrap.querySelector(".inspire-badge");
+  if(badge){
+    badge.querySelector(".inspire-count").textContent = c.inspiration;
+    badge.title = "Inspiration " + c.inspiration + "/" + MAX_INSPIRATION + " — tap to spend one";
+  }
+}
+
+function shake(el){
+  if(!el) return;
+  el.classList.remove("shake");
+  void el.offsetWidth;
+  el.classList.add("shake");
 }
 
 /* One-shot golden flash + sparks flying out from the avatar. */
@@ -107,7 +142,7 @@ function attachLongPress(wrap, c){
   }
 
   wrap.addEventListener("pointerdown", function(e){
-    if(e.button !== 0 || e.target.closest(".avatar-remove")) return;
+    if(e.button !== 0 || e.target.closest(".avatar-remove, .inspire-badge")) return;
     fired = false;
     startX = e.clientX; startY = e.clientY;
     wrap.classList.add("pressing");
@@ -116,7 +151,7 @@ function attachLongPress(wrap, c){
       fired = true;
       wrap.classList.remove("pressing");
       if(navigator.vibrate) navigator.vibrate(30);
-      toggleInspiration(c, wrap);
+      gainInspiration(c, wrap);
     }, LONG_PRESS_MS);
   });
   wrap.addEventListener("pointermove", function(e){
@@ -143,7 +178,8 @@ function attachLongPress(wrap, c){
    thumbnail. */
 export function buildAvatar(c, size, editable){
   var wrap = document.createElement("div");
-  wrap.className = "avatar" + (editable ? " avatar-editable" : "") + (c.inspired ? " inspired" : "");
+  wrap.className = "avatar" + (editable ? " avatar-editable" : "") + (c.inspiration > 0 ? " inspired" : "");
+  wrap.dataset.inspiration = c.inspiration || 0;
   wrap.style.width = size + "px";
   wrap.style.height = size + "px";
 
@@ -162,7 +198,7 @@ export function buildAvatar(c, size, editable){
   }
 
   if(editable){
-    wrap.title = "Click to change photo · Long-press to toggle Inspiration";
+    wrap.title = "Click to change photo · Long-press to gain Inspiration";
     attachLongPress(wrap, c);
     wrap.addEventListener("click", function(){ triggerAvatarUpload(c.id); });
 
@@ -170,6 +206,19 @@ export function buildAvatar(c, size, editable){
     editBadge.className = "avatar-edit-badge";
     editBadge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4.5a2.121 2.121 0 0 1 3 3L7 18l-4 1 1-4Z"/></svg>';
     wrap.appendChild(editBadge);
+
+    /* Always built, hidden by CSS at 0, so syncInspiration can update it in place. */
+    var inspireBadge = document.createElement("button");
+    inspireBadge.type = "button";
+    inspireBadge.className = "inspire-badge";
+    inspireBadge.innerHTML = '<span aria-hidden="true">✦</span><span class="inspire-count"></span>';
+    inspireBadge.addEventListener("click", function(ev){
+      ev.stopPropagation();
+      spendInspiration(c, wrap);
+    });
+    inspireBadge.addEventListener("animationend", function(){ inspireBadge.classList.remove("shake"); });
+    wrap.appendChild(inspireBadge);
+    syncInspiration(c, wrap);
 
     if(c.avatar){
       var removeBtn = document.createElement("button");
