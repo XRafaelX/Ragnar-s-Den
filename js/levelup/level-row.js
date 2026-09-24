@@ -9,6 +9,7 @@ import { makeLevelUpSvg, makeUndoSvg } from "../ui/svg-icons.js";
 import { openLevelUp, undoLastLevelUp, applySpellSlots } from "./levelup.js";
 
 var QUICK_XP = [50, 100, 250, 500];
+var customXpOpen = false;
 
 /* ---------------- Experience strip ----------------
    Level badge, XP progress toward the next level, a quick "+XP" field and
@@ -60,35 +61,58 @@ export function buildLevelRow(c){
     if(!ready && !atCap && c.xp >= next) playAdd();
   }
 
-  // One-tap awards for the common round numbers; the field below covers
-  // exact amounts.
+  // One-tap awards for the common round numbers, plus "Custom" which
+  // swaps the buttons for a field: exact amounts, or a negative number to
+  // fix a mis-tap. Custom stays usable when XP is full, for corrections.
   var chips = ce("div","xp-chips");
-  QUICK_XP.forEach(function(n){
-    var chip = document.createElement("button");
-    chip.type = "button"; chip.className = "xp-chip";
-    chip.textContent = "+"+n;
-    chip.title = full ? (atCap ? "Max XP for now" : "Level up to earn more XP") : "Add "+n+" XP";
-    chip.disabled = full;
-    chip.addEventListener("click", function(){ setXp(xp + n); });
-    chips.appendChild(chip);
-  });
+  if(customXpOpen){
+    var input = document.createElement("input");
+    input.type = "number"; input.className = "xp-custom-input";
+    input.placeholder = "XP"; input.setAttribute("aria-label", "XP to add, negative to remove");
+    var addBtn = document.createElement("button");
+    addBtn.type = "button"; addBtn.className = "xp-chip xp-chip-primary"; addBtn.textContent = "Add";
+    var closeBtn = document.createElement("button");
+    closeBtn.type = "button"; closeBtn.className = "xp-chip xp-chip-close"; closeBtn.textContent = "✕";
+    closeBtn.title = "Close"; closeBtn.setAttribute("aria-label", "Close custom XP");
+    function closeCustom(){ customXpOpen = false; renderAll(); }
+    function submit(){
+      var n = Number(input.value)||0;
+      if(!n) return;
+      customXpOpen = false;
+      if(Math.min(maxXp, Math.max(0, xp + n))===xp) renderAll(); // nothing changed, still close
+      setXp(xp + n);
+    }
+    addBtn.addEventListener("click", submit);
+    closeBtn.addEventListener("click", closeCustom);
+    input.addEventListener("keydown", function(e){
+      if(e.key==="Enter") submit();
+      else if(e.key==="Escape") closeCustom();
+    });
+    chips.appendChild(input); chips.appendChild(addBtn); chips.appendChild(closeBtn);
+  } else {
+    QUICK_XP.forEach(function(n){
+      var chip = document.createElement("button");
+      chip.type = "button"; chip.className = "xp-chip";
+      chip.textContent = "+"+n;
+      chip.title = full ? (atCap ? "Max XP for now" : "Level up to earn more XP") : "Add "+n+" XP";
+      chip.disabled = full;
+      chip.addEventListener("click", function(){ setXp(xp + n); });
+      chips.appendChild(chip);
+    });
+    var customBtn = document.createElement("button");
+    customBtn.type = "button"; customBtn.className = "xp-chip xp-chip-custom";
+    customBtn.textContent = "Custom";
+    customBtn.title = "Add an exact amount, or remove XP";
+    customBtn.addEventListener("click", function(){
+      customXpOpen = true;
+      renderAll();
+      var field = document.querySelector(".xp-custom-input");
+      if(field) field.focus();
+    });
+    chips.appendChild(customBtn);
+  }
   block.appendChild(chips);
   row.appendChild(block);
-
-  var add = ce("div","xp-add");
-  var input = document.createElement("input");
-  input.type = "number"; input.placeholder = "+XP"; input.setAttribute("aria-label", "XP to add");
-  input.title = "XP to add (use a negative number to remove)";
-  var addBtn = document.createElement("button");
-  addBtn.className = "btn small"; addBtn.textContent = "Add";
-  function submit(){
-    var n = Number(input.value)||0;
-    if(n) setXp(xp + n);
-  }
-  addBtn.addEventListener("click", submit);
-  input.addEventListener("keydown", function(e){ if(e.key==="Enter") submit(); });
-  add.appendChild(input); add.appendChild(addBtn);
-  row.appendChild(add);
 
   var actions = ce("div","level-actions");
   var lvlBtn = document.createElement("button");
