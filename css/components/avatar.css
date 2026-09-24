@@ -39,6 +39,75 @@
 }
 .avatar-remove:hover{background:#c23350;}
 
+/* Inspiration — long-press the identity avatar to toggle. While held,
+   the avatar wears a slowly turning golden halo (sidebar thumbnail
+   too); gaining it plays a one-shot pop + spark burst. */
+.avatar{--inspire-gold:#f5c542;--inspire-glow:rgba(245,197,66,.55);}
+.avatar-editable{
+  -webkit-touch-callout:none;user-select:none;-webkit-user-select:none;
+  touch-action:manipulation;
+}
+.avatar-editable.pressing{transform:scale(.94);transition:transform .55s ease-out, box-shadow .15s ease;}
+.avatar.inspired{animation:inspire-halo-breathe 2.4s ease-in-out infinite;}
+.avatar.inspired::before{
+  content:"";position:absolute;inset:-4px;border-radius:50%;pointer-events:none;
+  background:conic-gradient(from 0deg, var(--inspire-gold), #fff3c4, #e0a526, #fff3c4, var(--inspire-gold));
+  -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  animation:inspire-halo-spin 6s linear infinite;
+}
+.avatar-editable.inspired::after{
+  content:"✦";position:absolute;top:-6px;left:-6px;width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--inspire-gold);color:#4a3200;font-size:12px;line-height:1;
+  border:2px solid var(--parchment);box-shadow:0 2px 6px rgba(0,0,0,.4);
+  pointer-events:none;
+}
+@keyframes inspire-halo-spin{to{transform:rotate(360deg);}}
+@keyframes inspire-halo-breathe{
+  0%,100%{box-shadow:0 0 10px 1px var(--inspire-glow);}
+  50%{box-shadow:0 0 22px 6px var(--inspire-glow);}
+}
+
+.avatar.inspire-pop{animation:inspire-pop .7s cubic-bezier(.3,1.6,.5,1), inspire-halo-breathe 2.4s ease-in-out infinite;}
+@keyframes inspire-pop{
+  0%{transform:scale(.9);}
+  35%{transform:scale(1.14);filter:brightness(1.5) saturate(1.3);}
+  100%{transform:scale(1);filter:none;}
+}
+.inspire-burst{position:absolute;inset:0;pointer-events:none;z-index:2;}
+.inspire-ring{
+  position:absolute;inset:0;border-radius:50%;
+  border:3px solid var(--inspire-gold);
+  box-shadow:0 0 18px var(--inspire-glow), inset 0 0 18px var(--inspire-glow);
+  animation:inspire-ring .9s ease-out forwards;
+}
+@keyframes inspire-ring{
+  0%{transform:scale(.8);opacity:1;}
+  100%{transform:scale(2.1);opacity:0;border-width:1px;}
+}
+.inspire-spark{
+  position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;
+  background:radial-gradient(circle, #fff 0%, var(--inspire-gold) 55%, transparent 75%);
+  box-shadow:0 0 8px 2px var(--inspire-glow);
+  opacity:0;
+  animation:inspire-spark 1s cubic-bezier(.15,.7,.35,1) forwards;
+}
+.inspire-spark.star{
+  width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:0;
+  clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);
+  background:#fff6d1;
+}
+@keyframes inspire-spark{
+  0%{opacity:1;transform:rotate(var(--a)) translateY(0) scale(.4);}
+  60%{opacity:1;}
+  100%{opacity:0;transform:rotate(var(--a)) translateY(calc(-1 * var(--d))) scale(1) rotate(180deg);}
+}
+@media (prefers-reduced-motion: reduce){
+  .avatar.inspired,.avatar.inspired::before{animation:none;box-shadow:0 0 12px 2px var(--inspire-glow);}
+  .avatar.inspire-pop,.inspire-ring,.inspire-spark{animation-duration:.01s;}
+}
+
 /* Avatar crop modal — pan/zoom an uploaded photo before it becomes the
    avatar, instead of blindly center-cropping it. */
 .avatar-crop-hint{margin-top:-4px;}

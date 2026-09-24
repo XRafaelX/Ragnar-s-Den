@@ -6,7 +6,13 @@
    the photo to keep rather than getting a blind center-crop. */
 import { save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
+import { renderSidebar } from "../render/sidebar.js";
 import { openAvatarCropper } from "./avatar-crop.js";
+import { showActionToast } from "./toast.js";
+import { playInspire, playDelete } from "./sound.js";
+
+var LONG_PRESS_MS = 550;
+var LONG_PRESS_SLOP = 10; /* px of finger drift allowed before it counts as a scroll */
 
 export function setupAvatarUpload(){
   var input = document.getElementById("avatar-file");
@@ -41,6 +47,95 @@ export function refreshAvatarInitial(avatarEl, name){
   initialEl.textContent = (name || "?").trim().charAt(0).toUpperCase() || "?";
 }
 
+/* Toggles the character's Inspiration. Updates the avatar in place
+   rather than re-rendering the sheet so the burst animation isn't
+   thrown away mid-play; the sidebar thumbnail is rebuilt to match. */
+function toggleInspiration(c, wrap){
+  c.inspired = !c.inspired;
+  save();
+  wrap.classList.toggle("inspired", c.inspired);
+  if(c.inspired){
+    playInspire();
+    playInspireBurst(wrap);
+    showActionToast("✨ " + ((c.name || "").trim() || "Your character") + " is inspired!");
+  } else {
+    playDelete();
+    showActionToast("Inspiration spent.");
+  }
+  renderSidebar();
+}
+
+/* One-shot golden flash + sparks flying out from the avatar. */
+function playInspireBurst(wrap){
+  var old = wrap.querySelector(".inspire-burst");
+  if(old) old.remove();
+  wrap.classList.remove("inspire-pop");
+  void wrap.offsetWidth; /* restart the pop animation if it's re-triggered */
+  wrap.classList.add("inspire-pop");
+
+  var burst = document.createElement("span");
+  burst.className = "inspire-burst";
+  burst.setAttribute("aria-hidden", "true");
+  var ring = document.createElement("span");
+  ring.className = "inspire-ring";
+  burst.appendChild(ring);
+  var count = 14;
+  for(var i=0;i<count;i++){
+    var spark = document.createElement("span");
+    spark.className = "inspire-spark" + (i % 2 ? " star" : "");
+    spark.style.setProperty("--a", (360 / count * i + Math.random() * 12) + "deg");
+    spark.style.setProperty("--d", (46 + Math.random() * 28) + "px");
+    spark.style.animationDelay = (Math.random() * 0.12) + "s";
+    burst.appendChild(spark);
+  }
+  wrap.appendChild(burst);
+  setTimeout(function(){
+    burst.remove();
+    wrap.classList.remove("inspire-pop");
+  }, 1300);
+}
+
+/* Long-press (touch or mouse) on the editable avatar toggles
+   Inspiration. A completed long press swallows the click that follows
+   it so it doesn't also open the photo picker. */
+function attachLongPress(wrap, c){
+  var timer = null, startX = 0, startY = 0, fired = false;
+
+  function cancel(){
+    if(timer){ clearTimeout(timer); timer = null; }
+    wrap.classList.remove("pressing");
+  }
+
+  wrap.addEventListener("pointerdown", function(e){
+    if(e.button !== 0 || e.target.closest(".avatar-remove")) return;
+    fired = false;
+    startX = e.clientX; startY = e.clientY;
+    wrap.classList.add("pressing");
+    timer = setTimeout(function(){
+      timer = null;
+      fired = true;
+      wrap.classList.remove("pressing");
+      if(navigator.vibrate) navigator.vibrate(30);
+      toggleInspiration(c, wrap);
+    }, LONG_PRESS_MS);
+  });
+  wrap.addEventListener("pointermove", function(e){
+    if(timer && Math.hypot(e.clientX - startX, e.clientY - startY) > LONG_PRESS_SLOP) cancel();
+  });
+  wrap.addEventListener("pointerup", cancel);
+  wrap.addEventListener("pointerleave", cancel);
+  wrap.addEventListener("pointercancel", cancel);
+  /* Stops the browser's own long-press menu ("Save image…") on mobile. */
+  wrap.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+  wrap.addEventListener("click", function(e){
+    if(fired){
+      fired = false;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }
+  }, true);
+}
+
 /* Builds a circular avatar element — the character's photo if they have
    one, otherwise their initial on a tinted field. `size` is the
    diameter in px. `editable` adds the click-to-upload and remove
@@ -48,7 +143,7 @@ export function refreshAvatarInitial(avatarEl, name){
    thumbnail. */
 export function buildAvatar(c, size, editable){
   var wrap = document.createElement("div");
-  wrap.className = "avatar" + (editable ? " avatar-editable" : "");
+  wrap.className = "avatar" + (editable ? " avatar-editable" : "") + (c.inspired ? " inspired" : "");
   wrap.style.width = size + "px";
   wrap.style.height = size + "px";
 
@@ -56,6 +151,7 @@ export function buildAvatar(c, size, editable){
     var img = document.createElement("img");
     img.src = c.avatar;
     img.alt = "";
+    img.draggable = false;
     wrap.appendChild(img);
   } else {
     var initial = document.createElement("span");
@@ -66,7 +162,8 @@ export function buildAvatar(c, size, editable){
   }
 
   if(editable){
-    wrap.title = "Click to change photo";
+    wrap.title = "Click to change photo · Long-press to toggle Inspiration";
+    attachLongPress(wrap, c);
     wrap.addEventListener("click", function(){ triggerAvatarUpload(c.id); });
 
     var editBadge = document.createElement("span");

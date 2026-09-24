@@ -58,6 +58,19 @@ export function playCrit(){
   }catch(e){}
 }
 
+/* A shimmering four-note arpeggio — the character gains Inspiration. */
+export function playInspire(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    scheduleTone(ctx, now, 784, 784, 0.14, "sine", 0.12);
+    scheduleTone(ctx, now + 0.07, 988, 988, 0.14, "sine", 0.12);
+    scheduleTone(ctx, now + 0.14, 1175, 1175, 0.16, "sine", 0.13);
+    scheduleTone(ctx, now + 0.21, 1568, 2093, 0.34, "sine", 0.12);
+  }catch(e){}
+}
+
 /* A low descending dud — natural 1. */
 export function playFail(){
   try{ tone(300, 130, 0.28, "sawtooth", 0.1); }catch(e){}
