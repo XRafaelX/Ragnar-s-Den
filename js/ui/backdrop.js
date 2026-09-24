@@ -205,7 +205,8 @@ function triggerBackdropUpload(charId){
 }
 
 /* Banner strip for the top of the identity card; null without an image.
-   Tapping it opens the picker, same as the row's Change button. */
+   Tapping it opens the picker, same as "Change background image" in the
+   identity card's ⋮ menu. */
 export function buildBanner(c){
   if(!c.backdrop) return null;
   var banner = document.createElement("div");
@@ -218,57 +219,22 @@ export function buildBanner(c){
   return banner;
 }
 
-/* The identity card's "Background" row: add / change / remove, plus the
-   match-colors switch once there's an image with a usable palette. */
-export function buildBackdropRow(c){
-  var row = document.createElement("div");
-  row.className = "backdrop-row";
-
-  var label = document.createElement("span");
-  label.className = "backdrop-label";
-  label.textContent = "Background";
-  row.appendChild(label);
-
+/* Background actions for the identity card's ⋮ menu: add, or change /
+   match-colors / remove once there's an image. Each item is
+   {label, run, checked?} — `checked` marks an on/off toggle. */
+export function backdropMenuItems(c){
   if(!c.backdrop){
-    var addBtn = document.createElement("button");
-    addBtn.type = "button"; addBtn.className = "btn small";
-    addBtn.style.color = "var(--text-on-parch)"; addBtn.style.borderColor = "var(--rule)";
-    addBtn.textContent = "+ Add image";
-    addBtn.addEventListener("click", function(){ triggerBackdropUpload(c.id); });
-    row.appendChild(addBtn);
-    return row;
+    return [{label:"Add background image", run:function(){ triggerBackdropUpload(c.id); }}];
   }
-
-  var thumb = document.createElement("img");
-  thumb.className = "backdrop-thumb"; thumb.src = c.backdrop; thumb.alt = "";
-  row.appendChild(thumb);
-
-  var changeBtn = document.createElement("button");
-  changeBtn.type = "button"; changeBtn.className = "btn small";
-  changeBtn.style.color = "var(--text-on-parch)"; changeBtn.style.borderColor = "var(--rule)";
-  changeBtn.textContent = "Change";
-  changeBtn.addEventListener("click", function(){ triggerBackdropUpload(c.id); });
-  row.appendChild(changeBtn);
-
-  var removeBtn = document.createElement("button");
-  removeBtn.type = "button"; removeBtn.className = "btn small ghost";
-  removeBtn.textContent = "Remove";
-  removeBtn.addEventListener("click", function(){
+  var items = [{label:"Change background image", run:function(){ triggerBackdropUpload(c.id); }}];
+  if(c.backdropPalette){
+    items.push({label:"Match colors to image", checked: c.backdropTheme !== false, run:function(){
+      c.backdropTheme = c.backdropTheme === false; save(); renderAll();
+    }});
+  }
+  items.push({label:"Remove background image", run:function(){
     c.backdrop = null; c.backdropPalette = null;
     save(); renderAll();
-  });
-  row.appendChild(removeBtn);
-
-  if(c.backdropPalette){
-    var match = document.createElement("label");
-    match.className = "backdrop-match";
-    match.title = "Tint this character's sheet colors from the image";
-    var cb = document.createElement("input");
-    cb.type = "checkbox"; cb.className = "chk"; cb.checked = c.backdropTheme !== false;
-    cb.addEventListener("change", function(){ c.backdropTheme = cb.checked; save(); renderAll(); });
-    match.appendChild(cb);
-    match.appendChild(document.createTextNode("Match colors to image"));
-    row.appendChild(match);
-  }
-  return row;
+  }});
+  return items;
 }

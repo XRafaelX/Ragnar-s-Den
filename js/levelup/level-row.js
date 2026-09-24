@@ -4,6 +4,8 @@ import { save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { openInfoModal } from "../ui/info-modal.js";
 import { playAdd } from "../ui/sound.js";
+import { showActionToast } from "../ui/toast.js";
+import { makeLevelUpSvg, makeUndoSvg } from "../ui/svg-icons.js";
 import { openLevelUp, undoLastLevelUp, applySpellSlots } from "./levelup.js";
 
 var QUICK_XP = [50, 100, 250, 500];
@@ -11,15 +13,19 @@ var QUICK_XP = [50, 100, 250, 500];
 /* ---------------- Experience strip ----------------
    Level badge, XP progress toward the next level, a quick "+XP" field and
    the Level up button. Level up is always allowed (milestone tables don't
-   track XP) but glows once the XP threshold is reached. */
+   track XP) but glows once the XP threshold is reached. XP can't go past
+   what the next level needs (at the level cap: what this level needed) —
+   you level up to keep earning. */
 export function buildLevelRow(c){
   var row = ce("div","level-row");
   var level = totalLevel(c);
-  var xp = Number(c.xp)||0;
   var atCap = level >= MAX_LEVEL;
   var floor = XP_THRESHOLDS[level] || 0;
   var next = XP_THRESHOLDS[level+1];
-  var ready = !atCap && xp >= next;
+  var maxXp = atCap ? floor : next;
+  var xp = Math.min(Number(c.xp)||0, maxXp); // older saves may hold more
+  var full = xp >= maxXp;
+  var ready = !atCap && full;
 
   var badge = ce("div","lvl-badge");
   badge.innerHTML = "<span>Level</span><b>"+level+"</b>";
@@ -42,8 +48,13 @@ export function buildLevelRow(c){
   block.appendChild(bar);
 
   function setXp(total){
-    total = Math.max(0, Math.round(total));
-    if(total===xp) return;
+    total = Math.round(total);
+    var capped = total > maxXp;
+    total = Math.max(0, Math.min(maxXp, total));
+    if(capped) showActionToast(atCap
+      ? "XP is capped at "+maxXp.toLocaleString()+" — level "+MAX_LEVEL+" is the highest for now."
+      : "XP capped at "+maxXp.toLocaleString()+" — level up to keep earning.");
+    if(total===xp && (Number(c.xp)||0)===xp) return;
     c.xp = total;
     save(); renderAll();
     if(!ready && !atCap && c.xp >= next) playAdd();
@@ -56,7 +67,8 @@ export function buildLevelRow(c){
     var chip = document.createElement("button");
     chip.type = "button"; chip.className = "xp-chip";
     chip.textContent = "+"+n;
-    chip.title = "Add "+n+" XP";
+    chip.title = full ? (atCap ? "Max XP for now" : "Level up to earn more XP") : "Add "+n+" XP";
+    chip.disabled = full;
     chip.addEventListener("click", function(){ setXp(xp + n); });
     chips.appendChild(chip);
   });
@@ -81,14 +93,15 @@ export function buildLevelRow(c){
   var actions = ce("div","level-actions");
   var lvlBtn = document.createElement("button");
   lvlBtn.className = "btn small primary levelup-btn"+(ready ? " ready" : "");
-  lvlBtn.textContent = atCap ? "Max level" : "Level up";
+  lvlBtn.innerHTML = atCap ? "Max level" : makeLevelUpSvg() + "Level up";
   lvlBtn.disabled = atCap;
   lvlBtn.addEventListener("click", function(){ openLevelUp(c); });
   actions.appendChild(lvlBtn);
   if(c.levelHistory && c.levelHistory.length){
     var undo = document.createElement("button");
     undo.className = "btn small ghost undo-level-btn";
-    undo.textContent = "Undo last level-up";
+    undo.innerHTML = makeUndoSvg() + "Undo level";
+    undo.title = "Undo the last level-up";
     undo.addEventListener("click", function(){ undoLastLevelUp(c); });
     actions.appendChild(undo);
   }

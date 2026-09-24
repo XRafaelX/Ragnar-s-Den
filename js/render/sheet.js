@@ -10,10 +10,10 @@ import { renderInventoryPanel } from "./panels/inventory.js";
 import { renderJournalPanel } from "./panels/journal.js";
 import { renderRollLog } from "../dice/dice.js";
 import { confirmDeleteCharacter } from "../app.js";
-import { makeKebabSvg } from "../ui/svg-icons.js";
+import { makeKebabSvg, makeCheckSvg } from "../ui/svg-icons.js";
 import { buildLevelRow, subclassEligible, openSubclassPicker } from "../levelup/level-row.js";
 import { buildAvatar, refreshAvatarInitial } from "../ui/avatar.js";
-import { applyBackdrop, buildBackdropRow, buildBanner } from "../ui/backdrop.js";
+import { applyBackdrop, backdropMenuItems, buildBanner } from "../ui/backdrop.js";
 
 export var TABS = [
   ["vitals","Vitals"],
@@ -190,9 +190,9 @@ function lockedField(labelTxt, value){
   return f;
 }
 
-/* ⋮ overflow menu in the identity card's top-right corner. Holds rarely
-   used actions — just Delete character for now — so they don't take a
-   row of their own. Closes on an outside tap or Escape. */
+/* ⋮ overflow menu in the identity card's top-right corner. Holds the
+   rarely used actions — background image and Delete character — so they
+   don't take rows of their own. Closes on an outside tap or Escape. */
 function buildIdentityMenu(c){
   var menu = document.createElement("div");
   menu.className = "identity-menu";
@@ -207,13 +207,32 @@ function buildIdentityMenu(c){
   var pop = document.createElement("div");
   pop.className = "identity-menu-pop";
   pop.setAttribute("role", "menu");
-  var del = document.createElement("button");
-  del.type = "button";
-  del.className = "identity-menu-item danger";
-  del.setAttribute("role", "menuitem");
-  del.textContent = "Delete character";
-  del.addEventListener("click", function(){ close(); confirmDeleteCharacter(c); });
-  pop.appendChild(del);
+
+  function addItem(label, run, extraClass, checked){
+    var item = document.createElement("button");
+    item.type = "button";
+    item.className = "identity-menu-item" + (extraClass ? " " + extraClass : "");
+    if(checked===undefined){
+      item.setAttribute("role", "menuitem");
+      item.textContent = label;
+    } else {
+      item.setAttribute("role", "menuitemcheckbox");
+      item.setAttribute("aria-checked", checked ? "true" : "false");
+      var mark = document.createElement("span");
+      mark.className = "identity-menu-check";
+      if(checked) mark.innerHTML = makeCheckSvg();
+      item.appendChild(mark);
+      item.appendChild(document.createTextNode(label));
+    }
+    item.addEventListener("click", function(){ close(); run(); });
+    pop.appendChild(item);
+  }
+  backdropMenuItems(c).forEach(function(it){ addItem(it.label, it.run, "", it.checked); });
+  var sep = document.createElement("div");
+  sep.className = "identity-menu-sep";
+  sep.setAttribute("role", "separator");
+  pop.appendChild(sep);
+  addItem("Delete character", function(){ confirmDeleteCharacter(c); }, "danger");
   menu.appendChild(btn);
   menu.appendChild(pop);
 
@@ -338,7 +357,6 @@ export function renderIdentity(c){
 
   wrap.appendChild(classesRow);
   wrap.appendChild(buildLevelRow(c));
-  wrap.appendChild(buildBackdropRow(c));
 
   wrap.appendChild(buildIdentityMenu(c));
 

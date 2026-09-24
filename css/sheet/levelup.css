@@ -45,6 +45,8 @@ button.class-chip:hover{border-color:var(--brass);}
 }
 .xp-chip:hover{background:color-mix(in srgb, var(--brass) 16%, transparent);border-color:var(--brass);}
 .xp-chip:active{transform:scale(.96);}
+.xp-chip:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.xp-chip:disabled:hover{background:rgba(255,255,255,.04);border-color:var(--rule);}
 .xp-add{display:flex;gap:4px;align-items:center;}
 .xp-add input{
   width:74px;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;
