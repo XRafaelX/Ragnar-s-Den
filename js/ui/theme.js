@@ -1,11 +1,14 @@
 /* ---------------- Theme picker ----------------
    A handful of curated accent palettes, all built on the same dark
    layout — picking one swaps a data-theme attribute on <html>, which
-   re-points the --brass* custom properties that the rest of style.css
+   re-points the --brass* custom properties that the rest of the stylesheets
    reads its accent color through. "purple" is the default and needs no
    attribute (it's what :root already defines), so it's left off the DOM
    and out of storage to keep the common case simple. */
 import { playThemeShift } from "./sound.js";
+import { getActive, save } from "../core/state.js";
+import { renderAll } from "../render/sheet.js";
+import { sheetThemedFromImage } from "./backdrop.js";
 
 export var THEME_STORAGE_KEY = "ragnarsDen.theme.v1";
 var DEFAULT_THEME = "purple";
@@ -52,6 +55,25 @@ export function openThemeModal(){
   var body = document.getElementById("theme-modal-body");
   var startIndex = Math.max(0, THEMES.findIndex(function(t){ return t.key === getTheme(); }));
   body.innerHTML = "";
+
+  // While a character's image is tinting the sheet, the app theme is
+  // overridden for that character — say so, and offer the way out.
+  var active = getActive();
+  if(sheetThemedFromImage(active)){
+    var note = document.createElement("div");
+    note.className = "theme-override-note";
+    note.textContent = "This character’s sheet is colored from its background image, so the app theme won’t show while it’s open.";
+    var useAppBtn = document.createElement("button");
+    useAppBtn.type = "button"; useAppBtn.className = "btn small";
+    useAppBtn.textContent = "Use the app theme instead";
+    useAppBtn.addEventListener("click", function(){
+      active.backdropTheme = false; save(); renderAll();
+      note.remove();
+    });
+    note.appendChild(document.createElement("br"));
+    note.appendChild(useAppBtn);
+    body.appendChild(note);
+  }
 
   var preview = document.createElement("div");
   preview.className = "theme-slider-preview";

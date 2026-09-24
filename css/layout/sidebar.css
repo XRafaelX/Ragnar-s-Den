@@ -1,0 +1,90 @@
+/* Character list sidebar (slides in as a drawer on mobile). */
+
+/* ---------- Sidebar ---------- */
+#sidebar{
+  width:230px;
+  min-width:230px;
+  background:linear-gradient(180deg, var(--ink) 0%, var(--ink-deep) 100%);
+  border-right:1px solid var(--rule);
+  display:flex;
+  flex-direction:column;
+  transition:margin-left .25s ease;
+}
+#sidebar-header{
+  padding:20px 18px 14px;
+  border-bottom:1px solid var(--rule);
+}
+#sidebar-header h1{
+  font-family:var(--serif);
+  font-size:19px;
+  margin:0 0 2px;
+  color:var(--brass-bright);
+  letter-spacing:.02em;
+  cursor:pointer;display:inline-block;transition:color .15s ease;
+}
+#sidebar-header h1:hover{color:#fff;}
+#sidebar-header p{
+  margin:0;
+  font-size:11px;
+  color:var(--text-on-ink-dim);
+}
+#char-list{
+  list-style:none;
+  margin:0;
+  padding:8px;
+  overflow-y:auto;
+  flex:1;
+}
+#char-list li{
+  padding:10px 12px;
+  margin-bottom:4px;
+  border-radius:var(--radius);
+  cursor:pointer;
+  border:1px solid transparent;
+  position:relative;
+}
+#char-list li:hover{background:color-mix(in srgb, var(--brass) 12%, transparent);}
+#char-list li.active{
+  background:color-mix(in srgb, var(--brass) 18%, transparent);
+  border-color:var(--rule);
+}
+#char-list li .cname{
+  font-family:var(--serif);
+  font-size:15px;
+  color:var(--text-on-ink);
+  display:block;
+}
+#char-list li .cmeta{
+  font-size:11px;
+  color:var(--text-on-ink-dim);
+  display:block;
+  margin-top:2px;
+}
+#char-list li .hp-bar{
+  height:3px;
+  background:rgba(255,255,255,0.08);
+  border-radius:2px;
+  margin-top:6px;
+  overflow:hidden;
+}
+#char-list li .hp-fill{
+  height:100%;
+  background:var(--moss);
+}
+.char-row{display:flex;align-items:center;gap:10px;}
+.char-row-info{flex:1;min-width:0;}
+#sidebar-footer{
+  padding:14px;
+  border-top:1px solid var(--rule);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+@media (max-width:800px){
+  #sidebar{
+    position:fixed;top:0;bottom:0;left:0;z-index:36;
+    margin-left:-230px;
+  }
+  #sidebar.open{margin-left:0;box-shadow:0 0 30px rgba(0,0,0,.5);}
+}

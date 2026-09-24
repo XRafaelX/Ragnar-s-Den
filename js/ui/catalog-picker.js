@@ -15,10 +15,15 @@ function makePill(label, active, onClick){
   return b;
 }
 
-function matchesQuery(name, d, q){
+/* A section can supply searchText(name, d) to control what its search box
+   matches against (spells search school/classes/summary, say); the default
+   covers weapon/armor fields. */
+function matchesQuery(section, name, d, q){
   if(!q) return true;
-  var hay = (name + " " + (d.properties||"") + " " + (d.damageType||"")).toLowerCase();
-  return hay.indexOf(q) !== -1;
+  var text = section.searchText
+    ? section.searchText(name, d)
+    : name + " " + (d.properties||"") + " " + (d.damageType||"");
+  return text.toLowerCase().indexOf(q) !== -1;
 }
 
 function renderSectionTabs(){
@@ -80,6 +85,13 @@ function renderRow(section, name, d){
     subEl.textContent = sub;
     left.appendChild(subEl);
   }
+  var detail = section.renderDetail ? section.renderDetail(name, d) : "";
+  if(detail){
+    var detailEl = document.createElement("div");
+    detailEl.className = "catalog-row-detail";
+    detailEl.textContent = detail;
+    left.appendChild(detailEl);
+  }
   row.appendChild(left);
 
   var right = document.createElement("div");
@@ -120,7 +132,7 @@ function renderList(){
   var any = false;
   groupNames.forEach(function(g){
     var names = section.groups[g].filter(function(name){
-      return matchesQuery(name, section.data[name]||{}, q);
+      return matchesQuery(section, name, section.data[name]||{}, q);
     });
     if(!names.length) return;
     any = true;

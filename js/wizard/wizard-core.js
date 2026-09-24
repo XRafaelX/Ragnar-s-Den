@@ -8,6 +8,8 @@ import { renderAll } from "../render/sheet.js";
 import { closeSidebarMobile } from "../ui/mobile-nav.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { playAdd } from "../ui/sound.js";
+import { SPELL_DATA } from "../data/spells.js";
+import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import {
   buildEquipmentList,
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
@@ -23,7 +25,7 @@ export function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardSta
 export function isStepApplicable(id){
   if(id==="spells"){
     var info = currentClassInfo();
-    return !!(info && info.spellcaster);
+    return !!(info && info.spellcasting);
   }
   return true;
 }
@@ -76,6 +78,14 @@ export function validateStep(id){
     var ok = info.equipment.choiceGroups.every(function(g,gi){ return wizardState.equipment[gi]!=null; });
     return ok ? null : "Make a choice for each equipment option.";
   }
+  if(id==="spells"){
+    var sc = info.spellcasting;
+    if(!sc) return null;
+    var picked = wizardState.spellChoices;
+    if(picked.cantrips.length!==sc.cantrips) return "Choose "+sc.cantrips+" cantrips.";
+    if(picked.spells.length!==sc.spells) return "Choose "+sc.spells+" 1st-level spells.";
+    return null;
+  }
   if(id==="review"){
     return (wizardState.name && wizardState.name.trim()) ? null : "Give your character a name before creating them.";
   }
@@ -91,7 +101,8 @@ export function openWizard(){
     pointBuy:{str:8,dex:8,con:8,int:8,wis:8,cha:8},
     rolledPool:null,
     skillChoices:[],
-    equipment:{}
+    equipment:{},
+    spellChoices:{cantrips:[], spells:[]}
   };
   closeSidebarMobile();
   document.getElementById("wizard-overlay").classList.add("open");
@@ -135,6 +146,23 @@ export function finishWizard(){
   // AC is derived on the sheet from equipped armor (see computeArmorClass) —
   // no armor is equipped yet, so it starts from unarmored / class defense.
   c.inventory = buildEquipmentList(info, w.equipment);
+
+  if(info.spellcasting){
+    var sc = info.spellcasting;
+    c.spellcasting.ability = sc.ability;
+    Object.keys(sc.slots).forEach(function(lvl){ c.spellcasting.slots[lvl] = {max:sc.slots[lvl], used:0}; });
+    // Preparing casters get a starting prepared list (ability mod + level,
+    // at least 1); everyone else knows — and so has prepared — all of theirs.
+    var prepareCount = sc.prepares ? Math.max(1, mod(c.abilities[sc.ability]) + 1) : Infinity;
+    w.spellChoices.cantrips.forEach(function(name){
+      c.spells.push(spellFromCatalog(name, SPELL_DATA[name]));
+    });
+    w.spellChoices.spells.forEach(function(name, i){
+      var sp = spellFromCatalog(name, SPELL_DATA[name]);
+      sp.prepared = i < prepareCount;
+      c.spells.push(sp);
+    });
+  }
 
   state.characters.push(c);
   state.activeId = c.id;
