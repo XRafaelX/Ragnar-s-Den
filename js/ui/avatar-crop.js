@@ -88,7 +88,7 @@ export function openImageCropper(file, options){
     applyTransform();
   };
   img.onerror = function(){
-    alert("Could not read that image — try a different file.");
+    alert("Could not read that image. Try a different file.");
   };
   img.src = objectUrl;
 }

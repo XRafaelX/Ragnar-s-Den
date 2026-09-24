@@ -44,7 +44,7 @@
 .char-picker-row .cpr-name{font-family:var(--serif);font-size:15px;color:var(--text-on-parch);display:block;}
 .char-picker-row .cpr-meta{font-size:11.5px;color:var(--text-on-parch-dim);display:block;margin-top:2px;}
 
-/* Theme picker modal — a slider so dragging through the options
+/* Theme picker modal; a slider so dragging through the options
    re-themes the whole app live, instead of clicking swatches one at a
    time to see each. --brass* update instantly on "input" as you drag,
    so the preview dot, the slider thumb itself, and the rest of the app

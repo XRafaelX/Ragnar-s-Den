@@ -1,5 +1,5 @@
 /* ---------------- UI sound cues ----------------
-   Short, quiet, synthesized tones (no audio files — stays fully offline)
+   Short, quiet, synthesized tones (no audio files; stays fully offline)
    played only for meaningful moments: adding or removing something (a
    weapon, a feat, a character…), rolling a natural 20 or natural 1, and
    dragging the theme slider. Never used for routine interaction like
@@ -36,17 +36,17 @@ function tone(freqStart, freqEnd, duration, type, peakGain){
   scheduleTone(ctx, ctx.currentTime, freqStart, freqEnd, duration, type, peakGain);
 }
 
-/* A soft rising blip — something was added. */
+/* A soft rising blip; something was added. */
 export function playAdd(){
   try{ tone(560, 880, 0.11, "sine", 0.16); }catch(e){}
 }
 
-/* A soft falling blip — something was removed. */
+/* A soft falling blip; something was removed. */
 export function playDelete(){
   try{ tone(420, 260, 0.13, "triangle", 0.13); }catch(e){}
 }
 
-/* A bright three-note rising fanfare — natural 20. */
+/* A bright three-note rising fanfare; natural 20. */
 export function playCrit(){
   try{
     var ctx = getCtx();
@@ -58,7 +58,7 @@ export function playCrit(){
   }catch(e){}
 }
 
-/* A shimmering four-note arpeggio — the character gains Inspiration. */
+/* A shimmering four-note arpeggio; the character gains Inspiration. */
 export function playInspire(){
   try{
     var ctx = getCtx();
@@ -71,12 +71,12 @@ export function playInspire(){
   }catch(e){}
 }
 
-/* A low descending dud — natural 1. */
+/* A low descending dud; natural 1. */
 export function playFail(){
   try{ tone(300, 130, 0.28, "sawtooth", 0.1); }catch(e){}
 }
 
-/* A tiny bright chime for the theme slider — pitch rises with position
+/* A tiny bright chime for the theme slider; pitch rises with position
    (index/total, both 0-based) so scrubbing through the palette feels
    like running a finger across a xylophone. */
 export function playThemeShift(index, total){

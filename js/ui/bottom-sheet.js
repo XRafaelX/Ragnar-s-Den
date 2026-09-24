@@ -2,7 +2,7 @@ var closeCurrent = null;
 
 /* A mobile-style sheet that slides up from the bottom of the screen,
    dimming everything behind it. Tapping the dimmed area (or Escape)
-   dismisses it — used for editing an item without leaving the list it
+   dismisses it; used for editing an item without leaving the list it
    came from.
    buildFn(body, refresh, close) fills in the content: call refresh() after
    a field changes to redraw the sheet's own content in place (e.g. a

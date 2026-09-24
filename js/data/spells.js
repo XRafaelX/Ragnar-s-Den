@@ -1,6 +1,6 @@
 /* ---------------- Spell catalog (5e core spell list) ----------------
    One entry per spell. Summaries are short paraphrases of the effect, not
-   the full rules text — enough to pick a spell and remember what it does;
+   the full rules text; enough to pick a spell and remember what it does;
    the sheet's spell sheet lets players add their own notes. */
 var SCHOOLS = {
   Abj:"Abjuration", Con:"Conjuration", Div:"Divination", Enc:"Enchantment",
@@ -414,7 +414,7 @@ export var SPELL_LEVEL_LABELS = ["Cantrip","1st Level","2nd Level","3rd Level","
 export function spellLevelLabel(level){ return SPELL_LEVEL_LABELS[level] || ("Level " + level); }
 
 /* Names grouped by level label (only levels that have spells), sorted
-   alphabetically — the shape the catalog picker expects. Pass a class
+   alphabetically; the shape the catalog picker expects. Pass a class
    name to limit the groups to that class's spell list. */
 export function buildSpellGroups(className){
   var groups = {};

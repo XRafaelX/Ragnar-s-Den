@@ -6,8 +6,8 @@ export var WEAPON_GROUPS = {
   "Martial Ranged": ["Blowgun","Hand Crossbow","Heavy Crossbow","Longbow","Net"]
 };
 
-/* category: simple|martial — used to auto-detect class weapon proficiency.
-   finesse/ranged — used to pick a sensible default attack ability. */
+/* category: simple|martial; used to auto-detect class weapon proficiency.
+   finesse/ranged; used to pick a sensible default attack ability. */
 export var WEAPON_DATA = {
   "Club":            {damageDice:"1d4",  damageType:"Bludgeoning", weight:2,  category:"simple",  finesse:false, ranged:false, properties:"Light"},
   "Dagger":          {damageDice:"1d4",  damageType:"Piercing",    weight:1,  category:"simple",  finesse:true,  ranged:false, properties:"Finesse, light, thrown (20/60)"},
@@ -48,7 +48,7 @@ export var WEAPON_DATA = {
   "Net":             {damageDice:"",     damageType:"",            weight:3,  category:"martial", finesse:false, ranged:true,  properties:"Thrown (5/15), special"}
 };
 
-/* Flat, searchable form of the catalog above — one entry per weapon,
+/* Flat, searchable form of the catalog above; one entry per weapon,
    tagged with the group it belongs to (for the picker's filter pills). */
 export var WEAPON_LIST = Object.keys(WEAPON_GROUPS).reduce(function(all, group){
   return all.concat(WEAPON_GROUPS[group].map(function(name){

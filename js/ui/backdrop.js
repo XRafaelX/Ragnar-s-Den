@@ -157,7 +157,7 @@ export function sheetThemedFromImage(c){
    The banner strip is BANNER_HEIGHT tall and shows the image cover-fit at
    BANNER_FOCUS (its object-position, mirrored in css/sheet/identity.css). How much of
    the picture that is depends on the card width, so the cropper's guide
-   uses the widest card (the narrowest band) — everything inside the guide
+   uses the widest card (the narrowest band); everything inside the guide
    is visible on every screen. */
 var BANNER_HEIGHT = 120;
 var BANNER_FOCUS = 0.4;
@@ -221,7 +221,7 @@ export function buildBanner(c){
 
 /* Background actions for the identity card's ⋮ menu: add, or change /
    match-colors / remove once there's an image. Each item is
-   {label, run, checked?} — `checked` marks an on/off toggle. */
+   {label, run, checked?}; `checked` marks an on/off toggle. */
 export function backdropMenuItems(c){
   if(!c.backdrop){
     return [{label:"Add background image", run:function(){ triggerBackdropUpload(c.id); }}];

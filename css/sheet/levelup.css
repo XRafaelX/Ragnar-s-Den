@@ -1,7 +1,7 @@
 /* Levelling: XP strip, read-only class chips, level-up flow bits,
    "you unlocked" popup, NEW badges, Pact Magic pips. */
 
-/* Class chips (identity) — read-only; tappable when a subclass can be picked */
+/* Class chips (identity); read-only; tappable when a subclass can be picked */
 .class-chip b{font-weight:600;}
 .class-chip{padding:4px 12px;}
 button.class-chip{color:var(--text-on-parch);cursor:pointer;font:inherit;font-size:12.5px;}
@@ -151,7 +151,7 @@ button.class-chip:hover{border-color:var(--brass);}
 
 /* "You unlocked" popup (info modal) */
 #info-modal-body{overflow-y:auto;flex:1;}
-.lu-hero{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.lu-hero{display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:5px 0 0 5px;} /* room for the circle's glow ring */
 .lu-hero-level{
   flex:none;width:58px;height:58px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -167,26 +167,56 @@ button.class-chip:hover{border-color:var(--brass);}
 .lu-stat .lbl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
 .lu-stat .val{display:block;font-size:13.5px;font-weight:600;color:var(--text-on-parch);margin-top:2px;}
 .lu-unlock{
-  border:1px solid color-mix(in srgb, var(--moss) 45%, transparent);border-radius:6px;
-  background:color-mix(in srgb, var(--moss) 8%, transparent);padding:10px 12px;margin-bottom:8px;
+  border:1px solid color-mix(in srgb, var(--new-gold) 50%, transparent);border-radius:6px;
+  background:color-mix(in srgb, var(--new-gold) 8%, transparent);padding:10px 12px;margin-bottom:8px;
+  animation:lu-unlock-in .45s cubic-bezier(.2,.8,.3,1.2) both; /* delay set per card in levelup.js */
 }
 .lu-unlock-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;}
 .lu-unlock-text{font-size:12.5px;line-height:1.5;color:var(--text-on-parch);margin-top:6px;}
 .lu-tips{margin:0;padding-left:18px;font-size:13px;line-height:1.6;color:var(--text-on-parch);}
 .lu-tips li{margin-bottom:4px;}
 
-/* NEW badge (popup + Features tab) */
+/* NEW badge (popup + Features tab): gold, pops in, then a light shine
+   sweeps across it now and then. New cards glow softly until tapped. */
+:root{--new-gold:#e2b34a;}
 .lu-new-badge{
-  font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
-  padding:1px 7px;border-radius:10px;background:var(--moss);color:#fff;
+  display:inline-block;position:relative;overflow:hidden;
+  font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
+  padding:1px 7px;border-radius:10px;color:#3a2604;
+  background:linear-gradient(135deg, #fbe39a, var(--new-gold) 55%, #c98f2a);
+  box-shadow:0 0 0 1px rgba(255,214,120,.35), 0 0 8px rgba(226,179,74,.45);
+  animation:lu-badge-pop .5s cubic-bezier(.2,.9,.3,1.4) both;
+}
+.lu-new-badge::after{
+  content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;
+  background:linear-gradient(100deg, transparent, rgba(255,255,255,.75), transparent);
+  transform:skewX(-20deg);
+  animation:lu-badge-shine 3s ease-in-out 0.6s infinite;
 }
 .ff-item-card.is-new{
-  cursor:pointer;border-color:color-mix(in srgb, var(--moss) 60%, transparent);
-  background:color-mix(in srgb, var(--moss) 8%, transparent);
+  cursor:pointer;border-color:color-mix(in srgb, var(--new-gold) 65%, transparent);
+  background:color-mix(in srgb, var(--new-gold) 8%, transparent);
+  animation:lu-card-glow 2.4s ease-in-out infinite;
 }
 #tabs button{position:relative;}
 .tab-new-dot{
-  position:absolute;top:8px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--moss);
+  position:absolute;top:8px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--new-gold);
+  animation:lu-dot-ping 1.8s ease-out infinite;
+}
+@keyframes lu-badge-pop{0%{transform:scale(.3);opacity:0;}60%{transform:scale(1.18);opacity:1;}100%{transform:scale(1);}}
+@keyframes lu-badge-shine{0%{left:-60%;}35%,100%{left:130%;}}
+@keyframes lu-card-glow{
+  0%,100%{box-shadow:0 0 0 0 rgba(226,179,74,0);}
+  50%{box-shadow:0 0 14px 1px rgba(226,179,74,.28);}
+}
+@keyframes lu-dot-ping{
+  0%{box-shadow:0 0 0 0 rgba(226,179,74,.7);}
+  100%{box-shadow:0 0 0 7px rgba(226,179,74,0);}
+}
+@keyframes lu-unlock-in{from{opacity:0;transform:translateY(10px) scale(.98);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion: reduce){
+  .lu-new-badge, .lu-new-badge::after, .ff-item-card.is-new, .tab-new-dot, .lu-unlock{animation:none;}
+  .lu-new-badge::after{display:none;}
 }
 
 /* Pact Magic (Spells tab) */

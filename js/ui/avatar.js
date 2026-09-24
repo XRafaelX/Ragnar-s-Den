@@ -1,6 +1,6 @@
 /* ---------------- Character avatar (profile photo) ----------------
    Photos are stored inline as compressed data URLs on the character,
-   same as everything else in this offline-first app — no server, no
+   same as everything else in this offline-first app; no server, no
    external storage. A selected file goes through the crop modal
    (avatar-crop.js) before it's saved, so the user picks which part of
    the photo to keep rather than getting a blind center-crop. */
@@ -41,7 +41,7 @@ export function clearAvatar(c){
 }
 
 /* Updates an already-built avatar's initial letter in place (a no-op if
-   it's showing a photo instead) — used when the name changes so the
+   it's showing a photo instead); used when the name changes so the
    identity block's avatar stays in sync without rebuilding the whole
    block and stealing focus from the name input mid-keystroke. */
 export function refreshAvatarInitial(avatarEl, name){
@@ -122,7 +122,7 @@ function syncInspiration(c, wrap){
   var badge = wrap.querySelector(".inspire-badge");
   if(badge){
     badge.querySelector(".inspire-count").textContent = c.inspiration;
-    badge.title = "Inspiration " + c.inspiration + "/" + MAX_INSPIRATION + " — tap to spend one";
+    badge.title = "Inspiration " + c.inspiration + "/" + MAX_INSPIRATION + ". Tap to spend one";
   }
 }
 
@@ -204,7 +204,7 @@ function attachLongPress(wrap, c){
   }, true);
 }
 
-/* Builds a circular avatar element — the character's photo if they have
+/* Builds a circular avatar element; the character's photo if they have
    one, otherwise their initial on a tinted field. `size` is the
    diameter in px. `editable` adds the click-to-upload and remove
    affordances (identity block); the sidebar list just shows the plain

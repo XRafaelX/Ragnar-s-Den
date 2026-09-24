@@ -1,6 +1,6 @@
 /* Character avatar and the avatar / background-image cropper. */
 
-/* Character avatar — a photo if uploaded, otherwise the character's
+/* Character avatar; a photo if uploaded, otherwise the character's
    initial on a tinted field. Used both large + editable in the identity
    block and small + read-only in the sidebar list. */
 .avatar{
@@ -39,7 +39,7 @@
 }
 .avatar-remove:hover{background:#c23350;}
 
-/* Inspiration — long-press the identity avatar to toggle. While held,
+/* Inspiration; long-press the identity avatar to toggle. While held,
    the avatar wears a slowly turning golden halo (sidebar thumbnail
    too); gaining it plays a one-shot pop + spark burst. */
 .avatar{--inspire-gold:#f5c542;--inspire-glow:rgba(245,197,66,.55);}
@@ -120,7 +120,7 @@
   .avatar.inspire-pop,.inspire-ring,.inspire-spark{animation-duration:.01s;}
 }
 
-/* Avatar crop modal — pan/zoom an uploaded photo before it becomes the
+/* Avatar crop modal; pan/zoom an uploaded photo before it becomes the
    avatar, instead of blindly center-cropping it. */
 .avatar-crop-hint{margin-top:-4px;}
 #avatar-crop-stage{

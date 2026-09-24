@@ -5,7 +5,7 @@
    feature of that name (e.g. Sneak Attack growing from 1d6 to 2d6), and
    `speed` is a flat walking-speed bonus applied when it's gained. */
 
-/* Levelling is capped here for now — raise it once the feature data
+/* Levelling is capped here for now; raise it once the feature data
    below is filled in for higher levels. */
 export var MAX_LEVEL = 5;
 
@@ -17,7 +17,7 @@ var STANDARD_ASI = [4, 8, 12, 16, 19];
 
 /* prereq: list of alternatives, each a list of abilities that must all be
    13+ (Fighter: STR or DEX; Monk: DEX and WIS).
-   casterType: "full" | "half" | "artificer" | "pact" | null — drives spell
+   casterType: "full" | "half" | "artificer" | "pact" | null. Drives spell
    slots. spellAbility: the class's spellcasting ability.
    multiclassProfs: what you gain when this is NOT your first class. */
 export var CLASS_PROGRESSION = {
@@ -49,7 +49,7 @@ export var CLASS_PROGRESSION = {
   "Bard": {
     subclassLevel: 3, subclassLabel: "Bard College",
     prereq: [["cha"]], casterType: "full", spellAbility: "cha", asiLevels: STANDARD_ASI,
-    multiclassProfs: {armor:["Light armor"], weapons:[], tools:["One musical instrument"], note:"Also gain proficiency in one skill of your choice — tick it on the Abilities & Skills tab."},
+    multiclassProfs: {armor:["Light armor"], weapons:[], tools:["One musical instrument"], note:"Also gain proficiency in one skill of your choice. Tick it on the Abilities & Skills tab."},
     features: {
       2: [
         {name:"Jack of All Trades", text:"Add half your proficiency bonus (rounded down) to any ability check that doesn't already include your proficiency bonus."},
@@ -85,7 +85,7 @@ export var CLASS_PROGRESSION = {
     prereq: [["str"], ["dex"]], casterType: null, asiLevels: [4, 6, 8, 12, 14, 16, 19],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:""},
     features: {
-      2: [{name:"Action Surge", text:"Once per short or long rest, take one additional action on your turn — e.g. attack again or cast a second spell with an action."}],
+      2: [{name:"Action Surge", text:"Once per short or long rest, take one additional action on your turn, e.g. to attack again or cast a second spell with an action."}],
       5: [{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}]
     }
   },
@@ -124,7 +124,7 @@ export var CLASS_PROGRESSION = {
   "Ranger": {
     subclassLevel: 3, subclassLabel: "Ranger Archetype",
     prereq: [["dex", "wis"]], casterType: "half", spellAbility: "wis", asiLevels: STANDARD_ASI,
-    multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:"Also gain proficiency in one skill from the ranger list — tick it on the Abilities & Skills tab."},
+    multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:"Also gain proficiency in one skill from the ranger list. Tick it on the Abilities & Skills tab."},
     features: {
       2: [
         {name:"Fighting Style", text:"Adopt a fighting style: Archery (+2 to ranged weapon attacks), Defense (+1 AC in armor), Dueling (+2 damage one-handed) or Two-Weapon Fighting (add your modifier to the off-hand attack's damage)."},
@@ -137,7 +137,7 @@ export var CLASS_PROGRESSION = {
   "Rogue": {
     subclassLevel: 3, subclassLabel: "Roguish Archetype",
     prereq: [["dex"]], casterType: null, asiLevels: [4, 8, 10, 12, 16, 19],
-    multiclassProfs: {armor:["Light armor"], weapons:[], tools:["Thieves' tools"], note:"Also gain proficiency in one skill from the rogue list — tick it on the Abilities & Skills tab."},
+    multiclassProfs: {armor:["Light armor"], weapons:[], tools:["Thieves' tools"], note:"Also gain proficiency in one skill from the rogue list. Tick it on the Abilities & Skills tab."},
     features: {
       2: [{name:"Cunning Action", text:"You can Dash, Disengage or Hide as a bonus action on each of your turns."}],
       3: [{name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 2d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage, or an ally is within 5 feet of it."}],
@@ -161,9 +161,9 @@ export var CLASS_PROGRESSION = {
     prereq: [["cha"]], casterType: "pact", spellAbility: "cha", asiLevels: STANDARD_ASI,
     multiclassProfs: {armor:["Light armor"], weapons:["Simple weapons"], tools:[], note:""},
     features: {
-      2: [{name:"Eldritch Invocations", text:"You learn two eldritch invocations — permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). Add them as custom features."}],
+      2: [{name:"Eldritch Invocations", text:"You learn two eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). Add them as custom features."}],
       3: [{name:"Pact Boon", text:"Your patron grants a gift: Pact of the Chain (a special familiar), Pact of the Blade (summon a magic weapon you're proficient with) or Pact of the Tome (a book with three extra cantrips from any class)."}],
-      5: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know three eldritch invocations — permanent magical upgrades such as Agonizing Blast or Devil's Sight. You can swap one each time you gain a warlock level."}]
+      5: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know three eldritch invocations: permanent magical upgrades such as Agonizing Blast or Devil's Sight. You can swap one each time you gain a warlock level."}]
     }
   },
   "Wizard": {
@@ -193,7 +193,7 @@ export var SUBCLASSES = {
     ]}},
     {name:"Armorer", blurb:"Turns a suit of armor into a powerful magical exosuit.", features:{3:[
       {name:"Arcane Armor", text:"Turn a suit of armor into Arcane Armor: no Strength requirement, it acts as your spellcasting focus, and it can't be removed against your will."},
-      {name:"Armor Model", text:"Choose Guardian (thunder gauntlets, temporary HP) or Infiltrator (lightning launcher, +5 ft speed, stealthy) — you can switch after a rest."}
+      {name:"Armor Model", text:"Choose Guardian (thunder gauntlets, temporary HP) or Infiltrator (lightning launcher, +5 ft speed, stealthy). You can switch after a rest."}
     ]}}
   ],
   "Barbarian": [
@@ -211,7 +211,7 @@ export var SUBCLASSES = {
   ],
   "Bard": [
     {name:"College of Lore", blurb:"Collects knowledge and uses words to undermine foes.", features:{3:[
-      {name:"Bonus Proficiencies", text:"Gain proficiency with three skills of your choice — tick them on the Abilities & Skills tab."},
+      {name:"Bonus Proficiencies", text:"Gain proficiency with three skills of your choice. Tick them on the Abilities & Skills tab."},
       {name:"Cutting Words", text:"Reaction: spend a Bardic Inspiration die to subtract it from an enemy's attack roll, ability check or damage roll."}
     ]}},
     {name:"College of Valor", blurb:"A battle-bard who inspires heroics on the front line.", features:{3:[
@@ -220,7 +220,7 @@ export var SUBCLASSES = {
     ]}}
   ],
   "Cleric": [
-    {name:"Life Domain", blurb:"The healer's domain — tougher armor and stronger heals.", features:{
+    {name:"Life Domain", blurb:"The healer's domain: tougher armor and stronger heals.", features:{
       1:[
         {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor."},
         {name:"Disciple of Life", text:"Your healing spells restore an extra 2 + the spell's level hit points."}
@@ -242,7 +242,7 @@ export var SUBCLASSES = {
       2:[{name:"Channel Divinity: Guided Strike", text:"When you make an attack roll, gain +10 to it (decide after seeing the roll, before knowing if it hits)."}]
     }},
     {name:"Knowledge Domain", blurb:"Seeks and guards secrets and lore.", features:{
-      1:[{name:"Blessings of Knowledge", text:"Learn two languages and gain expertise in two of Arcana, History, Nature or Religion — tick them on the Abilities & Skills tab."}],
+      1:[{name:"Blessings of Knowledge", text:"Learn two languages and gain expertise in two of Arcana, History, Nature or Religion. Tick them on the Abilities & Skills tab."}],
       2:[{name:"Channel Divinity: Knowledge of the Ages", text:"Action: gain proficiency with one skill or tool for 10 minutes."}]
     }},
     {name:"Tempest Domain", blurb:"Commands storms, thunder and lightning.", features:{
@@ -271,7 +271,7 @@ export var SUBCLASSES = {
     ]}}
   ],
   "Fighter": [
-    {name:"Champion", blurb:"Simple, reliable raw power — more critical hits.", features:{3:[
+    {name:"Champion", blurb:"Simple, reliable raw power with more critical hits.", features:{3:[
       {name:"Improved Critical", text:"Your weapon attacks score a critical hit on a roll of 19 or 20."}
     ]}},
     {name:"Battle Master", blurb:"A tactician with special combat maneuvers.", features:{3:[
@@ -340,7 +340,7 @@ export var SUBCLASSES = {
       {name:"Draconic Resilience", text:"Your max HP increases by 1 per sorcerer level, and without armor your AC is 13 + DEX modifier. (Adjust your max HP by hand.)"}
     ]}},
     {name:"Wild Magic", blurb:"Chaotic magic that surges unpredictably.", features:{1:[
-      {name:"Wild Magic Surge", text:"When you cast a leveled sorcerer spell, the DM can have you roll a d20 — on a 1, roll on the Wild Magic Surge table."},
+      {name:"Wild Magic Surge", text:"When you cast a leveled sorcerer spell, the DM can have you roll a d20. On a 1, roll on the Wild Magic Surge table."},
       {name:"Tides of Chaos", text:"Gain advantage on one attack roll, ability check or save. Regained on a long rest (or when a surge happens)."}
     ]}}
   ],
@@ -379,18 +379,18 @@ export var SUBCLASSES = {
   ]
 };
 
-/* What to do about spells after reaching a class level — shown in the
+/* What to do about spells after reaching a class level; shown in the
    "you unlocked" popup so new players know what to pick. */
 export var SPELL_TIPS = {
   "Artificer": {1:"Pick 2 artificer cantrips. You prepare INT modifier + half your artificer level (min 1) spells each day."},
-  "Bard": {1:"Pick 2 bard cantrips and 4 1st-level bard spells.", 2:"Learn 1 new bard spell.", 3:"Learn 1 new bard spell.", 4:"Learn 1 new bard spell and 1 new cantrip.", 5:"Learn 1 new bard spell — 3rd-level spells are now available."},
+  "Bard": {1:"Pick 2 bard cantrips and 4 1st-level bard spells.", 2:"Learn 1 new bard spell.", 3:"Learn 1 new bard spell.", 4:"Learn 1 new bard spell and 1 new cantrip.", 5:"Learn 1 new bard spell. 3rd-level spells are now available."},
   "Cleric": {1:"Pick 3 cleric cantrips. You prepare WIS modifier + cleric level spells from the whole cleric list each day.", 3:"2nd-level cleric spells are now available to prepare.", 4:"Learn 1 new cleric cantrip.", 5:"3rd-level cleric spells are now available to prepare."},
   "Druid": {1:"Pick 2 druid cantrips. You prepare WIS modifier + druid level spells from the druid list each day.", 3:"2nd-level druid spells are now available to prepare.", 4:"Learn 1 new druid cantrip.", 5:"3rd-level druid spells are now available to prepare."},
   "Paladin": {2:"You prepare CHA modifier + half your paladin level spells from the paladin list each day.", 5:"2nd-level paladin spells are now available to prepare."},
-  "Ranger": {2:"Learn 2 1st-level ranger spells.", 3:"Learn 1 new ranger spell.", 5:"Learn 1 new ranger spell — 2nd-level spells are now available."},
-  "Sorcerer": {1:"Pick 4 sorcerer cantrips and 2 1st-level sorcerer spells.", 2:"Learn 1 new sorcerer spell.", 3:"Learn 1 new sorcerer spell.", 4:"Learn 1 new sorcerer spell and 1 new cantrip.", 5:"Learn 1 new sorcerer spell — 3rd-level spells are now available."},
-  "Warlock": {1:"Pick 2 warlock cantrips and 2 1st-level warlock spells.", 2:"Learn 1 new warlock spell.", 3:"Learn 1 new warlock spell — your pact slots are now 2nd level.", 4:"Learn 1 new warlock spell and 1 new cantrip.", 5:"Learn 1 new warlock spell — your pact slots are now 3rd level."},
-  "Wizard": {1:"Pick 3 wizard cantrips and 6 1st-level spells for your spellbook.", 2:"Add 2 wizard spells to your spellbook.", 3:"Add 2 wizard spells to your spellbook — 2nd-level spells are now available.", 4:"Add 2 wizard spells to your spellbook and learn 1 new cantrip.", 5:"Add 2 wizard spells to your spellbook — 3rd-level spells are now available."}
+  "Ranger": {2:"Learn 2 1st-level ranger spells.", 3:"Learn 1 new ranger spell.", 5:"Learn 1 new ranger spell. 2nd-level spells are now available."},
+  "Sorcerer": {1:"Pick 4 sorcerer cantrips and 2 1st-level sorcerer spells.", 2:"Learn 1 new sorcerer spell.", 3:"Learn 1 new sorcerer spell.", 4:"Learn 1 new sorcerer spell and 1 new cantrip.", 5:"Learn 1 new sorcerer spell. 3rd-level spells are now available."},
+  "Warlock": {1:"Pick 2 warlock cantrips and 2 1st-level warlock spells.", 2:"Learn 1 new warlock spell.", 3:"Learn 1 new warlock spell. Your pact slots are now 2nd level.", 4:"Learn 1 new warlock spell and 1 new cantrip.", 5:"Learn 1 new warlock spell. Your pact slots are now 3rd level."},
+  "Wizard": {1:"Pick 3 wizard cantrips and 6 1st-level spells for your spellbook.", 2:"Add 2 wizard spells to your spellbook.", 3:"Add 2 wizard spells to your spellbook. 2nd-level spells are now available.", 4:"Add 2 wizard spells to your spellbook and learn 1 new cantrip.", 5:"Add 2 wizard spells to your spellbook. 3rd-level spells are now available."}
 };
 export var THIRD_CASTER_SPELL_TIPS = {
   3:"Learn 2 wizard cantrips and 3 1st-level wizard spells.",

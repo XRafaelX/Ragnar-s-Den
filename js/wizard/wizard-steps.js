@@ -65,7 +65,7 @@ export function wizardAssignAbilities(container, pool){
     });
     box.appendChild(sel);
     var modDiv = document.createElement("div"); modDiv.className="mod";
-    modDiv.textContent = usedIdx!=null ? fmtMod(mod(pool[usedIdx])) : "—";
+    modDiv.textContent = usedIdx!=null ? fmtMod(mod(pool[usedIdx])) : "";
     box.appendChild(modDiv);
     grid.appendChild(box);
   });
@@ -152,7 +152,7 @@ export function wizardStepClass(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Choose a Class</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>Why this matters:</b> Your class is the biggest driver of how your character plays — it sets your main ability score, hit points, and what you're good at in and out of combat.";
+  explain.innerHTML = "<b>Why this matters:</b> Your class is the biggest driver of how your character plays. It sets your main ability score, hit points, and what you're good at in and out of combat.";
   card.appendChild(explain);
 
   var grid = ce("div","class-pick-grid");
@@ -220,14 +220,14 @@ export function wizardStepAbilities(container){
   card.innerHTML = "<h3><span>Ability Scores</span></h3>";
   var info = currentClassInfo();
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>Why this matters:</b> These six scores drive almost everything you roll. As a "+escapeHtml(wizardState.classId)+", <b>"+abilityFullName(info.primaryAbility)+"</b> matters most — prioritize it if you can.";
+  explain.innerHTML = "<b>Why this matters:</b> These six scores drive almost everything you roll. As a "+escapeHtml(wizardState.classId)+", <b>"+abilityFullName(info.primaryAbility)+"</b> matters most, so prioritize it if you can.";
   card.appendChild(explain);
 
   var methodRow = ce("div","wiz-method-row");
   [
-    ["array","Standard Array","Fixed set: 15, 14, 13, 12, 10, 8 — simplest, balanced."],
-    ["pointbuy","Point Buy","Spend 27 points to customize scores from 8–15 — most flexible."],
-    ["roll","Roll","Roll 4d6 (drop lowest) six times — random, can be stronger or weaker."]
+    ["array","Standard Array","Fixed set: 15, 14, 13, 12, 10, 8. Simplest and balanced."],
+    ["pointbuy","Point Buy","Spend 27 points to customize scores from 8 to 15. Most flexible."],
+    ["roll","Roll","Roll 4d6 (drop lowest) six times. Random, can be stronger or weaker."]
   ].forEach(function(m){
     var btn = document.createElement("button");
     btn.type = "button";
@@ -276,7 +276,7 @@ export function wizardStepSkills(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Skills & Proficiencies</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>Why this matters:</b> Skills add your proficiency bonus to certain checks. Your class and background each grant some — you don't pick from all 18, just the ones you're allowed.";
+  explain.innerHTML = "<b>Why this matters:</b> Skills add your proficiency bonus to certain checks. Your class and background each grant some. You don't pick from all 18, just the ones you're allowed.";
   card.appendChild(explain);
 
   var bgInfo = BACKGROUND_INFO[wizardState.background];
@@ -307,7 +307,7 @@ export function wizardStepSkills(container){
     row.appendChild(cb); row.appendChild(name);
     rows.appendChild(row);
 
-    // The whole row is the tap target, not just the small checkbox — matters
+    // The whole row is the tap target, not just the small checkbox; matters
     // most on touchscreens. Clicking the checkbox itself already toggles it
     // (native behavior fires first), so only toggle manually when the click
     // landed elsewhere on the row.
@@ -331,7 +331,7 @@ export function wizardStepEquipment(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Starting Equipment</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>Why this matters:</b> Your class gives you a choice of starting gear instead of buying everything piece by piece — pick what fits how you want to fight.";
+  explain.innerHTML = "<b>Why this matters:</b> Your class gives you a choice of starting gear instead of buying everything piece by piece. Pick what fits how you want to fight.";
   card.appendChild(explain);
 
   var info = currentClassInfo();
@@ -532,15 +532,15 @@ export function wizardStepReview(container){
   row("Class", wizardState.classId+" (level 1)");
   row("Race", wizardState.race);
   row("Background", wizardState.background);
-  row("Alignment", wizardState.alignment || "—");
+  row("Alignment", wizardState.alignment || "None");
   row("Ability scores", ABILITIES.map(function(a){ return a[1].slice(0,3).toUpperCase()+" "+wizardState.abilities[a[0]]; }).join("  "));
   row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+")");
   row("Armor Class", ac + (isBarb ? " (Unarmored Defense: 10 + DEX + CON)" : " (unarmored: 10 + DEX)"));
   row("Saving throws", info.savingThrows.map(function(k){ return k.toUpperCase(); }).join(", "));
-  row("Skills", wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]).join(", ") || "—");
+  row("Skills", wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]).join(", ") || "None");
   if(info.spellcasting){
-    row("Cantrips", wizardState.spellChoices.cantrips.join(", ") || "—");
-    row(info.spellcasting.spellsLabel || "1st-level spells", wizardState.spellChoices.spells.join(", ") || "—");
+    row("Cantrips", wizardState.spellChoices.cantrips.join(", ") || "None");
+    row(info.spellcasting.spellsLabel || "1st-level spells", wizardState.spellChoices.spells.join(", ") || "None");
   }
   card.appendChild(rows);
 

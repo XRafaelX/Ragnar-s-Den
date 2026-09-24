@@ -18,7 +18,7 @@ export function chooseCharacter(onChoose){
     var clsText = (c.classes||[]).map(function(cl){ return (cl.name||"?")+" "+(cl.level||1); }).join(" / ");
     row.innerHTML =
       '<span class="cpr-name">'+escapeHtml(c.name||"Unnamed")+'</span>'+
-      '<span class="cpr-meta">'+escapeHtml(c.race||"—")+' · '+escapeHtml(clsText||"—")+'</span>';
+      '<span class="cpr-meta">'+escapeHtml([c.race, clsText].filter(Boolean).join(" · "))+'</span>';
     row.addEventListener("click", function(){ cleanup(); onChoose(c); });
     body.appendChild(row);
   });

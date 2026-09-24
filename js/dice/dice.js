@@ -346,10 +346,10 @@ export function performRoll(die, qty, modifier, adv, label){
 
     // Critical Hit / Miss badge
     if(isCrit){
-      badgeSlot.innerHTML = '<span class="crit-badge crit-success">✨ Natural 20 — Critical Hit! ✨</span>';
+      badgeSlot.innerHTML = '<span class="crit-badge crit-success">✨ Natural 20: Critical Hit! ✨</span>';
       playCrit();
     } else if(isFail){
-      badgeSlot.innerHTML = '<span class="crit-badge crit-fail">💀 Natural 1 — Critical Miss! 💀</span>';
+      badgeSlot.innerHTML = '<span class="crit-badge crit-fail">💀 Natural 1: Critical Miss! 💀</span>';
       playFail();
     }
 
@@ -393,7 +393,7 @@ export function renderRollLog(){
   }
   logArr.forEach(function(entry){
     var d = document.createElement("div");
-    d.innerHTML = '<span class="rl-label">'+escapeHtml(entry.label)+'</span> — '+escapeHtml(entry.detail);
+    d.innerHTML = '<span class="rl-label">'+escapeHtml(entry.label)+'</span>: '+escapeHtml(entry.detail);
     el.appendChild(d);
   });
 }

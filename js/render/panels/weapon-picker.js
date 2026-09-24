@@ -56,7 +56,7 @@ export function buildCustomWeaponForm(container, closeCustom, onSubmit){
   var typeField = document.createElement("div"); typeField.className = "field";
   typeField.innerHTML = "<label>Damage Type</label>";
   var typeSelect = document.createElement("select");
-  var blank = document.createElement("option"); blank.value = ""; blank.textContent = "—";
+  var blank = document.createElement("option"); blank.value = ""; blank.textContent = "None";
   typeSelect.appendChild(blank);
   DAMAGE_TYPES.forEach(function(dt){
     var o = document.createElement("option"); o.value = dt; o.textContent = dt;
@@ -110,7 +110,7 @@ export function buildWeaponSection(c){
     groups: WEAPON_GROUPS,
     data: WEAPON_DATA,
     renderSub: function(name, d){ return d.properties || ""; },
-    renderRight: function(name, d){ return [d.damageDice||"—", d.damageType||""]; },
+    renderRight: function(name, d){ return [d.damageDice||"", d.damageType||""]; },
     onAdd: function(name, d){ addCatalogWeapon(c, name, d); renderAll(); },
     renderCustomForm: function(container, closeCustom){
       buildCustomWeaponForm(container, closeCustom, function(fields){

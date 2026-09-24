@@ -18,7 +18,7 @@ var ARMOR_CATEGORIES = [
 ];
 
 /* Compact header shared by weapon/armor cards: a name (click anywhere on
-   the row, including the name itself, to open the edit sheet — renaming
+   the row, including the name itself, to open the edit sheet; renaming
    happens there instead of inline, so the name text has no invisible
    input hit-box left over to swallow clicks), a qty badge when stacked,
    an Equipped toggle, and an edit control. */
@@ -147,7 +147,7 @@ function fieldStepper(label, value, onChange){
   return wrap;
 }
 
-/* Opens the gear item's editable fields (Qty, Notes) in a bottom sheet —
+/* Opens the gear item's editable fields (Qty, Notes) in a bottom sheet;
    same treatment as weapons/armor. Equipped isn't duplicated in here
    since itemHeader's pill already toggles it without opening the sheet. */
 function openGearSheet(c, item, idx){
@@ -222,7 +222,7 @@ function openWeaponSheet(c, item, idx){
     dmgTypeField.className = "field-inline";
     dmgTypeField.innerHTML = "<label>Damage type</label>";
     var dmgTypeSelect = document.createElement("select");
-    var blankDmg = document.createElement("option"); blankDmg.value=""; blankDmg.textContent="—";
+    var blankDmg = document.createElement("option"); blankDmg.value=""; blankDmg.textContent="None";
     dmgTypeSelect.appendChild(blankDmg);
     DAMAGE_TYPES.forEach(function(dt){
       var o = document.createElement("option"); o.value = dt; o.textContent = dt;
@@ -297,7 +297,7 @@ function renderWeaponCard(c, item, idx){
   atkBtn.type = "button"; atkBtn.className = "btn small inv-roll-btn";
   atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(atkBonus);
   atkBtn.addEventListener("click", function(){
-    performRoll(20, 1, atkBonus, "none", (item.name||"Weapon") + " — Attack");
+    performRoll(20, 1, atkBonus, "none", (item.name||"Weapon") + ": Attack");
   });
   actions.appendChild(atkBtn);
 
@@ -308,7 +308,7 @@ function renderWeaponCard(c, item, idx){
   if(parsed){
     dmgBtn.innerHTML = makeDicesSvg() + "Damage " + parsed.qty + "d" + parsed.die + fmtMod(dmgBonus);
     dmgBtn.addEventListener("click", function(){
-      performRoll(parsed.die, parsed.qty, dmgBonus, "none", (item.name||"Weapon") + " — Damage" + (item.damageType ? " (" + item.damageType + ")" : ""));
+      performRoll(parsed.die, parsed.qty, dmgBonus, "none", (item.name||"Weapon") + ": Damage" + (item.damageType ? " (" + item.damageType + ")" : ""));
     });
   } else {
     dmgBtn.innerHTML = makeDicesSvg() + "Damage";
@@ -392,7 +392,7 @@ function renderArmorCard(c, item, idx){
   if(item.equipped){
     var acNote = document.createElement("p");
     acNote.className = "inv-armor-note inv-equipped-note";
-    acNote.textContent = "Equipped — counted toward Armor Class on the Vitals tab.";
+    acNote.textContent = "Equipped. Counted toward Armor Class on the Vitals tab.";
     card.appendChild(acNote);
   }
 

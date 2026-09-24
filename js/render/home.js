@@ -28,7 +28,7 @@ function selectNode(node, action){
 }
 
 /* ---- Home hub (the "no character selected" landing screen) ----
-   Kept to just New / Armory / About — the character list, export and
+   Kept to just New / Armory / About; the character list, export and
    import already live in the sidebar, so repeating them here would
    just be the same actions in two places. */
 export function setupHomeMenu(){
@@ -48,7 +48,7 @@ export function setupHomeMenu(){
 
         var p2 = document.createElement("p");
         p2.className = "info-blurb";
-        p2.textContent = "Everything you create — characters, notes, roll history — is stored only in this browser. Use Export to back it up or move it to another device.";
+        p2.textContent = "Everything you create (characters, notes, roll history) is stored only in this browser. Use Export to back it up or move it to another device.";
         body.appendChild(p2);
       });
     });

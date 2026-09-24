@@ -16,12 +16,12 @@ function announceAdd(name, c){
   showActionToast('Added "' + name + '" to ' + (c.name||"Unnamed") + "’s inventory.");
 }
 
-/* Grimtooth's Armory — the sidebar's standalone entry into the same
+/* Grimtooth's Armory; the sidebar's standalone entry into the same
    weapon/armor catalogue used by the Inventory tab's Add buttons, so
    players can browse without first digging into a character's sheet.
    Unlike the in-sheet pickers (bound to whichever character you're
    editing), every add here asks which character it should go to, then
-   confirms with a toast — since Armory can be reached with no "current"
+   confirms with a toast; since Armory can be reached with no "current"
    character in context. */
 function buildArmoryWeaponSection(){
   return {
@@ -31,7 +31,7 @@ function buildArmoryWeaponSection(){
     groups: WEAPON_GROUPS,
     data: WEAPON_DATA,
     renderSub: function(name, d){ return d.properties || ""; },
-    renderRight: function(name, d){ return [d.damageDice||"—", d.damageType||""]; },
+    renderRight: function(name, d){ return [d.damageDice||"", d.damageType||""]; },
     onAdd: function(name, d){
       chooseCharacter(function(c){
         addCatalogWeapon(c, name, d);

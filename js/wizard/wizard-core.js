@@ -144,7 +144,7 @@ export function finishWizard(){
   var conMod = mod(c.abilities.con);
   c.hp.max = HIT_DICE_BY_CLASS[w.classId] + conMod;
   c.hp.current = c.hp.max;
-  // AC is derived on the sheet from equipped armor (see computeArmorClass) —
+  // AC is derived on the sheet from equipped armor (see computeArmorClass);
   // no armor is equipped yet, so it starts from unarmored / class defense.
   c.inventory = buildEquipmentList(info, w.equipment);
 
@@ -153,7 +153,7 @@ export function finishWizard(){
     c.spellcasting.ability = sc.ability;
     Object.keys(sc.slots).forEach(function(lvl){ c.spellcasting.slots[lvl] = {max:sc.slots[lvl], used:0}; });
     // Preparing casters get a starting prepared list (ability mod + level,
-    // at least 1); everyone else knows — and so has prepared — all of theirs.
+    // at least 1); everyone else knows (and so has prepared) all of theirs.
     var prepareCount = sc.prepares ? Math.max(1, mod(c.abilities[sc.ability]) + 1) : Infinity;
     w.spellChoices.cantrips.forEach(function(name){
       c.spells.push(spellFromCatalog(name, SPELL_DATA[name]));

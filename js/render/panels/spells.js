@@ -103,7 +103,7 @@ function renderSpellCard(c, sp, idx){
   return card;
 }
 
-/* Editable spell details in a bottom sheet — same treatment as
+/* Editable spell details in a bottom sheet; same treatment as
    weapons/armor/gear. Everything is editable so custom and homebrew
    spells (and corrections to catalog ones) are first-class. */
 function openSpellSheet(c, sp){
@@ -141,7 +141,7 @@ function openSpellSheet(c, sp){
     schoolField.className = "field-inline spell-field";
     schoolField.innerHTML = "<label>School</label>";
     var schoolSel = document.createElement("select");
-    var blank = document.createElement("option"); blank.value = ""; blank.textContent = "—";
+    var blank = document.createElement("option"); blank.value = ""; blank.textContent = "None";
     schoolSel.appendChild(blank);
     SCHOOLS.forEach(function(name){
       var o = document.createElement("option"); o.value = name; o.textContent = name;
@@ -276,7 +276,7 @@ export function renderSpellsPanel(c){
         var pip = document.createElement("button");
         pip.type = "button";
         pip.className = "pact-pip" + (p < pact.used ? " used" : "");
-        pip.title = p < pact.used ? "Spent — tap to restore" : "Available — tap to spend";
+        pip.title = p < pact.used ? "Spent. Tap to restore" : "Available. Tap to spend";
         pip.setAttribute("aria-label", "Pact slot "+(p+1)+(p < pact.used ? " (spent)" : " (available)"));
         pip.addEventListener("click", function(){
           pact.used = p < pact.used ? p : p+1;

@@ -4,7 +4,7 @@
    plain custom properties) lets the browser interpolate them, so the
    `transition` on :root below crossfades the whole app between themes
    instead of snapping. Unsupported browsers (pre-2023 Safari) just fall
-   back to an instant switch — the theme itself still applies fine. */
+   back to an instant switch; the theme itself still applies fine. */
 @property --brass{ syntax:'<color>'; inherits:true; initial-value:#8b5cf6; }
 @property --brass-bright{ syntax:'<color>'; inherits:true; initial-value:#c4a7f7; }
 @property --brass-bright2{ syntax:'<color>'; inherits:true; initial-value:#d7c4fa; }
@@ -28,7 +28,7 @@
   --parchment:#241d33;      /* card / panel surface */
   --parchment-dim:#2e2542;  /* card inset / hover */
   --brass:#8b5cf6;          /* primary accent */
-  --brass-rgb:139,92,246;   /* accent as r,g,b — only bootstrap's own rgba() still needs this */
+  --brass-rgb:139,92,246;   /* accent as r,g,b; only bootstrap's own rgba() still needs this */
   --brass-bright:#c4a7f7;   /* bright accent text */
   --brass-bright2:#d7c4fa;  /* extra-bright accent text (links, code) */
   --brass-hover:#7c4ddb;    /* accent, hover shade */

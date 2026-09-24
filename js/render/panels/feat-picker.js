@@ -28,7 +28,7 @@ CATEGORIES.concat(Object.keys(FEAT_GROUPS)).forEach(function(cat){
 });
 
 /* Returns false (so the picker skips its "✓ Added" flash) when the feat is
-   already on the sheet — a second copy is what the custom form is for. */
+   already on the sheet; a second copy is what the custom form is for. */
 function addCatalogFeat(c, name, d){
   if(hasFeat(c, name)){
     showActionToast(name + " is already on " + (c.name||"this character") + "’s feat list.");

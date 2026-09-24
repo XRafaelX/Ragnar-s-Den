@@ -6,7 +6,7 @@ export var ARMOR_GROUPS = {
   "Shields": ["Shield"]
 };
 
-/* category: light|medium|heavy|shield — drives the DEX-to-AC formula in
+/* category: light|medium|heavy|shield; drives the DEX-to-AC formula in
    computeArmorClass(). baseAC for a shield is the flat AC bonus it grants. */
 export var ARMOR_DATA = {
   "Padded":         {category:"light",  baseAC:11, weight:8,  stealthDisadvantage:true},

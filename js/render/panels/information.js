@@ -36,7 +36,7 @@ function bulletList(items){
       strong.textContent = item.name;
       li.appendChild(strong);
       if(item.text){
-        li.appendChild(document.createTextNode(" — " + item.text));
+        li.appendChild(document.createTextNode(": " + item.text));
       }
     }
     ul.appendChild(li);
@@ -98,7 +98,7 @@ function linkRow(label, value, modalTitle, buildContent){
   l.textContent = label;
   var v = document.createElement("span");
   v.className = "info-link-value";
-  v.textContent = value || "—";
+  v.textContent = value || "Not set";
   left.appendChild(l);
   left.appendChild(v);
   row.appendChild(left);
@@ -118,7 +118,7 @@ export function renderInformationPanel(c){
   var panel = document.createElement("div");
   var bg = BACKGROUND_INFO[c.background];
 
-  // 1. About — compact, tappable rows that open modals with the details
+  // 1. About; compact, tappable rows that open modals with the details
   var aboutCard = makeCard("About");
 
   aboutCard.appendChild(linkRow("Background", c.background, "Background · " + (c.background || ""), function(body){
@@ -147,13 +147,13 @@ export function renderInformationPanel(c){
       }
       var head = document.createElement("h5");
       head.className = "info-modal-subhead";
-      head.textContent = cl.name + (cl.subclass ? " (" + cl.subclass + ")" : "") + " — Level " + (cl.level||1);
+      head.textContent = cl.name + (cl.subclass ? " (" + cl.subclass + ")" : "") + " · Level " + (cl.level||1);
       body.appendChild(head);
       var feats = classFeatureList(cl);
       if(feats.length){
         body.appendChild(bulletList(feats));
       } else {
-        body.appendChild(emptyNote("No feature data yet for " + cl.name + " — check your sourcebook for its class features."));
+        body.appendChild(emptyNote("No feature data yet for " + cl.name + ". Check your sourcebook for its class features."));
       }
     });
   }));
@@ -180,7 +180,7 @@ export function renderInformationPanel(c){
   profCard.appendChild(chipRow("Saving Throws", saves));
   panel.appendChild(profCard);
 
-  // 3. Languages — every character starts with Common; add more as needed
+  // 3. Languages; every character starts with Common; add more as needed
   var langCard = makeCard("Languages");
   if(!c.languages || !c.languages.length) c.languages = ["Common"];
 

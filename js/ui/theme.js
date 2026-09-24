@@ -1,6 +1,6 @@
 /* ---------------- Theme picker ----------------
    A handful of curated accent palettes, all built on the same dark
-   layout — picking one swaps a data-theme attribute on <html>, which
+   layout; picking one swaps a data-theme attribute on <html>, which
    re-points the --brass* custom properties that the rest of the stylesheets
    reads its accent color through. "purple" is the default and needs no
    attribute (it's what :root already defines), so it's left off the DOM
@@ -38,7 +38,7 @@ export function setTheme(key){
   try{
     localStorage.setItem(THEME_STORAGE_KEY, key);
   }catch(e){
-    // Storage may be full or restricted — the theme still applies for this session.
+    // Storage may be full or restricted; the theme still applies for this session.
   }
 }
 
@@ -57,7 +57,7 @@ export function openThemeModal(){
   body.innerHTML = "";
 
   // While a character's image is tinting the sheet, the app theme is
-  // overridden for that character — say so, and offer the way out.
+  // overridden for that character; say so, and offer the way out.
   var active = getActive();
   if(sheetThemedFromImage(active)){
     var note = document.createElement("div");
@@ -113,7 +113,7 @@ export function openThemeModal(){
   }
 
   // "input" fires continuously while dragging, so the app re-themes live
-  // as the thumb crosses each stop — no separate confirm step needed.
+  // as the thumb crosses each stop; no separate confirm step needed.
   slider.addEventListener("input", function(){
     var index = Number(slider.value);
     setTheme(THEMES[index].key);

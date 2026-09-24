@@ -15,7 +15,7 @@ var customXpOpen = false;
    Level badge, XP progress toward the next level, a quick "+XP" field and
    the Level up button. Level up is always allowed (milestone tables don't
    track XP) but glows once the XP threshold is reached. XP can't go past
-   what the next level needs (at the level cap: what this level needed) —
+   what the next level needs (at the level cap: what this level needed);
    you level up to keep earning. */
 export function buildLevelRow(c){
   var row = ce("div","level-row");
@@ -54,8 +54,8 @@ export function buildLevelRow(c){
     var capped = total > maxXp;
     total = Math.max(0, Math.min(maxXp, total));
     if(capped) showActionToast(atCap
-      ? "XP is capped at "+maxXp.toLocaleString()+" — level "+MAX_LEVEL+" is the highest for now."
-      : "XP capped at "+maxXp.toLocaleString()+" — level up to keep earning.");
+      ? "XP is capped at "+maxXp.toLocaleString()+". Level "+MAX_LEVEL+" is the highest for now."
+      : "XP capped at "+maxXp.toLocaleString()+". Level up to keep earning.");
     if(total===xp && (Number(c.xp)||0)===xp) return;
     c.xp = total;
     save(); renderAll();
@@ -135,7 +135,7 @@ export function buildLevelRow(c){
 }
 
 /* A class chip is tappable to pick (or change) its subclass once the
-   class has reached its subclass level — covers characters whose level
+   class has reached its subclass level; covers characters whose level
    was set before subclasses were chosen during level-up. */
 export function subclassEligible(cl){
   var prog = CLASS_PROGRESSION[cl.name];

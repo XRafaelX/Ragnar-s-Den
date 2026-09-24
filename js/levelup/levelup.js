@@ -220,7 +220,7 @@ function resetChoicesFor(name){
 function stepClass(container){
   var c = lu.c;
   var card = stepCard(container, "Advance a class",
-    "<b>How levelling works:</b> each level you gain goes into one class. Most players keep levelling the class they started with — that's how you unlock its strongest features.");
+    "<b>How levelling works:</b> each level you gain goes into one class. Most players keep levelling the class they started with. That's how you unlock its strongest features.");
   var grid = ce("div","class-pick-grid");
   c.classes.forEach(function(cl){
     var next = (Number(cl.level)||1)+1;
@@ -273,7 +273,7 @@ function stepSubclass(container){
     card.appendChild(opt);
   });
   var custom = ce("div","wiz-equip-option"+(lu.subclass==="__custom__"?" selected":""));
-  custom.innerHTML = "<b>Custom / homebrew…</b><div class='lu-sub-blurb'>Another sourcebook or your DM's own — add its features as custom features afterwards.</div>";
+  custom.innerHTML = "<b>Custom / homebrew…</b><div class='lu-sub-blurb'>Another sourcebook or your DM's own. Add its features as custom features afterwards.</div>";
   custom.addEventListener("click", function(){ if(lu.subclass!=="__custom__"){ lu.subclass = "__custom__"; render(); } });
   if(lu.subclass==="__custom__"){
     var input = document.createElement("input");
@@ -291,7 +291,7 @@ function stepSubclass(container){
 function stepAsi(container){
   var c = lu.c;
   var card = stepCard(container, "Ability Score Improvement",
-    "<b>Get stronger:</b> raise one ability score by 2, or two scores by 1 each (max 20). Or, instead, take a <b>feat</b> — a special talent. If you're unsure, raising your class's main ability is always a solid choice.");
+    "<b>Get stronger:</b> raise one ability score by 2, or two scores by 1 each (max 20). Or, instead, take a <b>feat</b> (a special talent). If you're unsure, raising your class's main ability is always a solid choice.");
   var row = ce("div","wiz-method-row");
   [["asi","Raise ability scores"],["feat","Take a feat instead"]].forEach(function(m){
     var b = document.createElement("button");
@@ -439,7 +439,7 @@ function hpGain(){
 function stepReview(container){
   var c = lu.c;
   var t = target();
-  var card = stepCard(container, "Review", "Here's what changes. Press <b>Level up!</b> to apply it — you can undo the last level-up from the sheet if you made a mistake.");
+  var card = stepCard(container, "Review", "Here's what changes. Press <b>Level up!</b> to apply it. You can undo the last level-up from the sheet if you made a mistake.");
   var items = [];
   var classLine = (t.existing ? lu.className+" Lvl "+t.newLevel : "Multiclass: "+lu.className+" Lvl 1")+
     " (character level "+(totalLevel(c)+1)+")";
@@ -473,6 +473,9 @@ function slotSnapshot(c){
 
 /* Recompute slot maximums from the class levels, keeping used counts. */
 export function applySpellSlots(c){
+  // A character with no spellcasting class keeps whatever slots were typed
+  // in by hand (magic items, homebrew); only casters get recalculated.
+  if(!c.classes.some(function(cl){ return classCasterType(cl); })) return;
   var res = computeSpellSlots(c.classes);
   for(var i=1;i<=9;i++){
     var s = c.spellcasting.slots[i];
@@ -592,7 +595,7 @@ export function undoLastLevelUp(c){
     c.newUnlocks = c.newUnlocks.filter(function(id){ return rec.unlockIds.indexOf(id)===-1; });
     c.hitDiceUsed = clamp(c.hitDiceUsed||0, 0, totalLevel(c));
     save(); renderAll(); playDelete();
-    showActionToast("Level-up undone — back to level "+totalLevel(c)+".");
+    showActionToast("Level-up undone. Back to level "+totalLevel(c)+".");
   });
 }
 
@@ -619,7 +622,7 @@ function showUnlocked(c, s){
     var slotChanges = [];
     for(var i=1;i<=9;i++){
       var now = c.spellcasting.slots[i].max;
-      if(now!==s.slotsBefore[i]) slotChanges.push(ordinal(i)+"-level ×"+now+(s.slotsBefore[i] ? " (was "+s.slotsBefore[i]+")" : " (new!)"));
+      if(now>s.slotsBefore[i]) slotChanges.push(ordinal(i)+"-level ×"+now+(s.slotsBefore[i] ? " (was "+s.slotsBefore[i]+")" : " (new!)"));
     }
     if(slotChanges.length) stat("Spell slots", slotChanges.join(", "));
     var pact = c.spellcasting.pact, pb = s.pactBefore;
@@ -637,8 +640,9 @@ function showUnlocked(c, s){
     if(unlocked.length){
       var h = ce("h5","info-modal-subhead"); h.textContent = "New things you unlocked";
       body.appendChild(h);
-      unlocked.forEach(function(u){
+      unlocked.forEach(function(u, i){
         var card = ce("div","lu-unlock");
+        card.style.animationDelay = (0.15 + i*0.12) + "s"; // cards slide in one after another
         card.innerHTML = "<div class='lu-unlock-top'><span class='lu-new-badge'>"+(u.upgraded ? "Upgraded" : "New")+"</span><b>"+escapeHtml(u.name)+"</b><span class='ff-tag source-class'>"+escapeHtml(u.tag)+"</span></div>"+
           "<div class='lu-unlock-text'>"+escapeHtml(u.text)+"</div>";
         body.appendChild(card);
@@ -656,10 +660,10 @@ function showUnlocked(c, s){
         if(m.note) tips.push(m.note);
       }
     }
-    if(s.feat && /increase your \w+/i.test(s.feat.description||"")) tips.push("Your feat raises an ability score — add it on the Abilities & Skills tab.");
-    if(unlocked.length) tips.push("These are marked NEW on the Features & Feats tab — tap one to clear its badge.");
+    if(s.feat && /increase your \w+/i.test(s.feat.description||"")) tips.push("Your feat raises an ability score. Add it on the Abilities & Skills tab.");
+    if(unlocked.length) tips.push("These are marked NEW on the Features & Feats tab. Tap one to clear its badge.");
     if(total < MAX_LEVEL) tips.push("Next level at "+XP_THRESHOLDS[total+1].toLocaleString()+" XP.");
-    else tips.push("That's the highest level supported for now — more levels are coming.");
+    else tips.push("That's the highest level supported for now. More levels are coming.");
     var th = ce("h5","info-modal-subhead"); th.textContent = "What to do next";
     body.appendChild(th);
     var ul = document.createElement("ul"); ul.className = "lu-tips";

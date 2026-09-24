@@ -5,7 +5,7 @@ export function makeStatArrowSvg(dir){
   return '<svg viewBox="0 0 24 24" class="stat-arrow-svg" aria-hidden="true"><path d="'+d+'" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
 
-/* Dice icons for buttons — replace the 🎲 emoji, which renders differently
+/* Dice icons for buttons; replace the 🎲 emoji, which renders differently
    per OS and ignores the theme. Stroke is currentColor, so they follow the
    text color. makeDiceSvg is a single die (one roll or pick); makeDicesSvg
    is a pair (rolling several dice, the dice tool itself). */

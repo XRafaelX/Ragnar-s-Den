@@ -1,4 +1,4 @@
-# Ragnar's Den — Character Creator
+# Ragnar's Den · Character Creator
 
 An offline-first, browser-based D&D 5e character creator and interactive character sheet. No accounts, no ads, and no internet connection required after initial load.
 
@@ -28,7 +28,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
 ## Features
 
 - **Character Creation Wizard**: Guided character creation workflow with SRD and expanded race, class, and background selections (detailed guided support currently implemented for Barbarian and Wizard, including cantrip and spellbook selection).
-- **Levelling, Subclasses & Multiclassing** (up to level 5 for now): XP tracker with a guided Level up flow — pick the class to advance or multiclass into (ability prerequisites enforced), choose a subclass when it's due, take an Ability Score Improvement or feat, and roll or average HP. Spell slots (including multiclass casters and Warlock Pact Magic) are recalculated automatically, a "you unlocked" popup explains each new feature, new features stay flagged NEW on the Features tab until tapped, and the last level-up can be undone.
+- **Levelling, Subclasses & Multiclassing** (up to level 5 for now): XP tracker with a guided Level up flow: pick the class to advance or multiclass into (ability prerequisites enforced), choose a subclass when it's due, take an Ability Score Improvement or feat, and roll or average HP. Spell slots (including multiclass casters and Warlock Pact Magic) are recalculated automatically, a "you unlocked" popup explains each new feature, new features stay flagged NEW on the Features tab until tapped, and the last level-up can be undone.
 - **Interactive Character Sheet**: Full management of ability scores, modifiers, saving throws, skill proficiencies, hit points, hit dice, death saving throws, spell slots, inventory weight tracking, and equipment.
 - **Built-in Dice Roller Tray**: Floating dice tray supporting d4, d6, d8, d10, d12, d20, and d100 with quantity multiplier, flat modifier, advantage/disadvantage toggles, and a roll history log.
 - **Offline & Local Storage**: Stores all character data in browser `localStorage`. No external database or login required.
@@ -39,7 +39,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
 
 ## Tech Stack
 
-- **Language**: JavaScript (ES6+), organized as native ES modules (no bundler — `js/app.js` is loaded with `<script type="module">` and imports the rest of the `js/` tree directly), HTML5, CSS3
+- **Language**: JavaScript (ES6+), organized as native ES modules (no bundler; `js/app.js` is loaded with `<script type="module">` and imports the rest of the `js/` tree directly), HTML5, CSS3
 - **Frameworks & Libraries**: Bootstrap 5 (bundled locally)
 - **Architecture**: Static Single-Page Application (SPA) / Progressive Web App (PWA)
 - **Storage**: Browser `localStorage` (`ragnarsDen.characters.v1`)
@@ -151,7 +151,7 @@ Currently, no automated testing framework is set up in the repository.
 │   │   ├── backgrounds.js        # Background lists & skill/blurb info
 │   │   ├── alignments.js         # Alignment list & blurbs
 │   │   ├── progression.js        # XP table, per-level class features, subclasses, multiclass rules, spell-slot tables
-│   │   ├── spells.js             # Spell catalog (cantrips–9th level): school, casting time, range, components, classes
+│   │   ├── spells.js             # Spell catalog (cantrips to 9th level): school, casting time, range, components, classes
 │   │   └── misc.js               # Point-buy costs, name idea generator
 │   ├── render/
 │   │   ├── sidebar.js            # Character list sidebar

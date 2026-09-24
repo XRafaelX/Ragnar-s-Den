@@ -16,7 +16,7 @@ export var RACES = {
 };
 
 export var RACE_TRAITS = {
-  "Human": "+1 to every ability score. No other special traits — flexible and simple to play.",
+  "Human": "+1 to every ability score. No other special traits, so it's flexible and simple to play.",
   "Hill Dwarf": "+2 CON, +1 WIS. Darkvision 60ft, resistance to poison damage, advantage on saves vs. poison, +1 HP per level.",
   "Mountain Dwarf": "+2 CON, +2 STR. Darkvision 60ft, poison resistance, proficiency with light and medium armor.",
   "High Elf": "+2 DEX, +1 INT. Darkvision 60ft, advantage vs. being charmed, can't be magically put to sleep, know one wizard cantrip.",
@@ -31,4 +31,4 @@ export var RACE_TRAITS = {
   "Half-Orc": "+2 STR, +1 CON. Darkvision, menacing (Intimidation proficiency), relentless endurance (drop to 1 HP instead of 0, once per long rest).",
   "Tiefling": "+2 CHA, +1 INT. Darkvision, resistance to fire damage, know the thaumaturgy cantrip and more spells at higher levels."
 };
-export var RACE_TRAIT_FALLBACK = "This is an expanded (non-SRD) race — check your table's sourcebook for its exact ability score bonuses and traits. Everything else here still works fine once you've picked it.";
+export var RACE_TRAIT_FALLBACK = "This is an expanded (non-SRD) race. Check your table's sourcebook for its exact ability score bonuses and traits. Everything else here still works fine once you've picked it.";

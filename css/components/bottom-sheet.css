@@ -1,6 +1,6 @@
 /* Slide-up bottom sheet for editing items. */
 
-/* Bottom sheet — a mobile-style panel that slides up over a dimmed
+/* Bottom sheet; a mobile-style panel that slides up over a dimmed
    backdrop, used for editing an item (e.g. a weapon) without leaving the
    list behind it. Tapping the dimmed area or Escape dismisses it. */
 #bottom-sheet-scrim{

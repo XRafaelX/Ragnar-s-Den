@@ -3,7 +3,7 @@ import { nowStamp } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 
-var ENTRY_MAX_HEIGHT = 320; // px — beyond this the box scrolls instead of growing
+var ENTRY_MAX_HEIGHT = 320; // px; beyond this the box scrolls instead of growing
 var ENTRY_MAX_CHARS = 8000; // generous ceiling, mainly a guard against runaway paste/storage bloat
 
 function autoGrow(ta){

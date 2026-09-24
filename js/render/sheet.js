@@ -98,7 +98,7 @@ export function renderAll(){
 
 /* Generic dropdown field with grouped standard/expanded options plus a
    "Custom / homebrew" fallback that reveals a free-text input. Used for
-   race, background, alignment — anywhere we want guided choices without
+   race, background, alignment; anywhere we want guided choices without
    ever blocking something not on the list. */
 export function dropdownField(labelTxt, key, groups, c, onChangeExtra){
   var f = document.createElement("div");
@@ -173,7 +173,7 @@ export function dropdownField(labelTxt, key, groups, c, onChangeExtra){
   return f;
 }
 
-/* A fixed, non-editable field — used for choices locked in at character
+/* A fixed, non-editable field; used for choices locked in at character
    creation (race, background, alignment) so they can't drift by accident
    later on the sheet. */
 function lockedField(labelTxt, value){
@@ -182,7 +182,7 @@ function lockedField(labelTxt, value){
   var l = document.createElement("label"); l.textContent = labelTxt;
   f.appendChild(l);
   var val = document.createElement("input");
-  val.value = value || "—";
+  val.value = value || "Not set";
   val.disabled = true;
   val.style.color = "var(--text-on-parch-dim)";
   val.title = labelTxt + " is set during character creation and can't be changed here.";
@@ -191,7 +191,7 @@ function lockedField(labelTxt, value){
 }
 
 /* ⋮ overflow menu in the identity card's top-right corner. Holds the
-   rarely used actions — background image and Delete character — so they
+   rarely used actions (background image and Delete character) so they
    don't take rows of their own. Closes on an outside tap or Escape. */
 function buildIdentityMenu(c){
   var menu = document.createElement("div");

@@ -20,7 +20,7 @@ export function renderSidebar(){
     info.className = "char-row-info";
     info.innerHTML =
       '<span class="cname">'+escapeHtml(c.name||"Unnamed")+'</span>'+
-      '<span class="cmeta">'+escapeHtml(c.race||"—")+' · '+escapeHtml(clsText)+'</span>'+
+      '<span class="cmeta">'+escapeHtml([c.race, clsText].filter(Boolean).join(" · "))+'</span>'+
       '<div class="hp-bar"><div class="hp-fill" style="width:'+pct+'%"></div></div>';
     row.appendChild(info);
     li.appendChild(row);

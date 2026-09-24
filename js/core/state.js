@@ -21,7 +21,7 @@ export function save(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.characters));
   }catch(e){
-    alert("Could not save — your browser storage may be full or restricted.");
+    alert("Could not save. Your browser storage may be full or restricted.");
     console.error(e);
   }
 }

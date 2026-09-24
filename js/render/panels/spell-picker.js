@@ -76,7 +76,7 @@ export function buildCustomSpellForm(container, closeCustom, onSubmit){
   });
   row1.appendChild(field("Level", levelSelect));
   var schoolSelect = document.createElement("select");
-  var blank = document.createElement("option"); blank.value = ""; blank.textContent = "—";
+  var blank = document.createElement("option"); blank.value = ""; blank.textContent = "None";
   schoolSelect.appendChild(blank);
   SCHOOLS.forEach(function(sc){
     var o = document.createElement("option"); o.value = sc; o.textContent = sc;
