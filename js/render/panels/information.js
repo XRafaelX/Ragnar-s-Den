@@ -4,7 +4,7 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
-import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../../data/classes.js";
+import { classFeatureList, classProficiencies } from "../../core/helpers.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -149,9 +149,9 @@ export function renderInformationPanel(c){
       head.className = "info-modal-subhead";
       head.textContent = cl.name + (cl.subclass ? " (" + cl.subclass + ")" : "") + " — Level " + (cl.level||1);
       body.appendChild(head);
-      var info = CLASSES_INFO[cl.name];
-      if(info && info.features && info.features.length){
-        body.appendChild(bulletList(info.features));
+      var feats = classFeatureList(cl);
+      if(feats.length){
+        body.appendChild(bulletList(feats));
       } else {
         body.appendChild(emptyNote("No feature data yet for " + cl.name + " — check your sourcebook for its class features."));
       }
@@ -163,8 +163,8 @@ export function renderInformationPanel(c){
   // 2. Proficiencies (aggregated across all classes)
   var profCard = makeCard("Proficiencies");
   var armor = [], weapons = [], tools = [], saves = [];
-  (c.classes||[]).forEach(function(cl){
-    var p = CLASS_PROFICIENCIES[cl.name];
+  (c.classes||[]).forEach(function(cl, idx){
+    var p = classProficiencies(c, idx);
     if(!p) return;
     (p.armor||[]).forEach(function(v){ if(armor.indexOf(v)===-1) armor.push(v); });
     (p.weapons||[]).forEach(function(v){ if(weapons.indexOf(v)===-1) weapons.push(v); });

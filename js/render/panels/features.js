@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { getAllCharacterFeatures } from "../../core/helpers.js";
+import { getAllCharacterFeatures, unseenUnlockCount } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { openFeatPicker, openFeatEditor } from "./feat-picker.js";
 import { openFeatureModal } from "./feature-modal.js";
@@ -13,6 +13,31 @@ var featSearchQuery = "";
 
 export function renderFeaturesPanel(c){
   var panel = document.createElement("div");
+
+  /* Features unlocked by a level-up carry a NEW badge until the card is
+     tapped once (ids live in c.newUnlocks). */
+  function markIfNew(card, titleGrp, id){
+    if((c.newUnlocks||[]).indexOf(id)===-1) return;
+    var badge = document.createElement("span");
+    badge.className = "lu-new-badge";
+    badge.textContent = "New";
+    titleGrp.insertBefore(badge, titleGrp.firstChild);
+    card.classList.add("is-new");
+    card.title = "Tap to mark as seen";
+    card.addEventListener("click", function(e){
+      if(e.target.closest("button")) return;
+      c.newUnlocks = c.newUnlocks.filter(function(x){ return x!==id; });
+      save();
+      badge.remove();
+      card.classList.remove("is-new");
+      card.removeAttribute("title");
+      refreshTabDot();
+    });
+  }
+  function refreshTabDot(){
+    var dot = document.querySelector('#tabs button[data-tab="features"] .tab-new-dot');
+    if(dot && !unseenUnlockCount(c)) dot.remove();
+  }
 
   // 1. Feats Card
   var feats = c.feats || [];
@@ -64,6 +89,7 @@ export function renderFeaturesPanel(c){
       tagSpan.className = "ff-tag source-feat";
       tagSpan.textContent = feat.source || "Feat";
       titleGrp.appendChild(tagSpan);
+      markIfNew(itemCard, titleGrp, "feat_"+feat.id);
 
       if(feat.category){
         var catSpan = document.createElement("span");
@@ -244,6 +270,8 @@ export function renderFeaturesPanel(c){
       tagSpan.className = "ff-tag " + sourceClass;
       tagSpan.textContent = item.source || "Feature";
       titleGrp.appendChild(tagSpan);
+
+      markIfNew(card, titleGrp, item.id);
 
       top.appendChild(titleGrp);
 

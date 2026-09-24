@@ -1,6 +1,5 @@
 import { state, getActive, save } from "../core/state.js";
-import { characterIsCaster, fmtMod, profBonus, clamp, totalLevel } from "../core/helpers.js";
-import { CLASS_LIST } from "../data/abilities-skills.js";
+import { characterIsCaster, fmtMod, profBonus, unseenUnlockCount } from "../core/helpers.js";
 import { renderSidebar } from "./sidebar.js";
 import { renderVitalsPanel } from "./panels/vitals.js";
 import { renderInformationPanel } from "./panels/information.js";
@@ -11,7 +10,7 @@ import { renderInventoryPanel } from "./panels/inventory.js";
 import { renderJournalPanel } from "./panels/journal.js";
 import { renderRollLog } from "../dice/dice.js";
 import { makeDeleteButton } from "../app.js";
-import { playAdd, playDelete } from "../ui/sound.js";
+import { buildLevelRow, subclassEligible, openSubclassPicker } from "../levelup/level-row.js";
 import { buildAvatar, refreshAvatarInitial } from "../ui/avatar.js";
 import { applyBackdrop, buildBackdropRow, buildBanner } from "../ui/backdrop.js";
 
@@ -51,6 +50,13 @@ export function renderAll(){
   visibleTabs(c).forEach(function(t){
     var b = document.createElement("button");
     b.textContent = t[1];
+    b.dataset.tab = t[0];
+    if(t[0]==="features" && unseenUnlockCount(c)){
+      var dot = document.createElement("span");
+      dot.className = "tab-new-dot";
+      dot.title = "New features unlocked";
+      b.appendChild(dot);
+    }
     if(state.activeTab===t[0]) b.className = "active";
     b.addEventListener("click", function(){ state.activeTab = t[0]; renderAll(); });
     tabsBar.appendChild(b);
@@ -237,68 +243,44 @@ export function renderIdentity(c){
   topRow.appendChild(main);
   wrap.appendChild(topRow);
 
+  // Classes are read-only here: levels (and multiclassing) go through the
+  // Level up flow so HP, features and spell slots stay in step. A chip is
+  // tappable to pick a subclass once its class has reached that level.
   var classesRow = document.createElement("div");
   classesRow.className = "classes-row";
-  (c.classes||[]).forEach(function(cl, idx){
-    var chip = document.createElement("div");
-    chip.className = "class-chip";
-    var sel = document.createElement("select");
-    sel.style.background = "transparent";
-    sel.style.border = "none";
-    sel.style.fontSize = "12.5px";
-    sel.style.color = "var(--text-on-parch)";
-    var freeOpt = document.createElement("option");
-    var opts = CLASS_LIST.slice();
-    if(cl.name && opts.indexOf(cl.name)===-1) opts.unshift(cl.name);
-    opts.forEach(function(name){
-      var o = document.createElement("option");
-      o.value = name; o.textContent = name;
-      if(cl.name===name) o.selected = true;
-      sel.appendChild(o);
-    });
-    sel.addEventListener("change", function(){ cl.name = sel.value; save(); renderAll(); });
-    var subInput = document.createElement("input");
-    subInput.placeholder = "subclass";
-    subInput.value = cl.subclass||"";
-    subInput.addEventListener("input", function(){ cl.subclass = subInput.value; save(); });
-    var lvlInput = document.createElement("input");
-    lvlInput.className = "lvl";
-    lvlInput.type = "number"; lvlInput.min="1"; lvlInput.max="20";
-    lvlInput.value = cl.level||1;
-    lvlInput.addEventListener("input", function(){ cl.level = clamp(Number(lvlInput.value)||1,1,20); save(); renderAll(); });
-    chip.appendChild(sel);
-    chip.appendChild(subInput);
-    chip.appendChild(document.createTextNode("Lv"));
-    chip.appendChild(lvlInput);
-    if((c.classes||[]).length>1){
-      var x = document.createElement("span");
-      x.className = "x"; x.textContent = "×";
-      x.addEventListener("click", function(){ c.classes.splice(idx,1); save(); renderAll(); playDelete(); });
-      chip.appendChild(x);
+  (c.classes||[]).forEach(function(cl){
+    var eligible = subclassEligible(cl);
+    var chip = document.createElement(eligible ? "button" : "div");
+    chip.className = "class-chip" + (eligible ? " clickable" : "");
+    var nameEl = document.createElement("b");
+    nameEl.textContent = (cl.name||"?") + " " + (cl.level||1);
+    chip.appendChild(nameEl);
+    if(cl.subclass){
+      var sub = document.createElement("span");
+      sub.className = "class-chip-sub";
+      sub.textContent = cl.subclass;
+      chip.appendChild(sub);
+    } else if(eligible){
+      var pick = document.createElement("span");
+      pick.className = "class-chip-pick";
+      pick.textContent = "Choose subclass";
+      chip.appendChild(pick);
+    }
+    if(eligible){
+      chip.type = "button";
+      chip.title = "Choose " + (cl.subclass ? "a different" : "a") + " subclass";
+      chip.addEventListener("click", function(){ openSubclassPicker(c, cl); });
     }
     classesRow.appendChild(chip);
   });
-  var addClassBtn = document.createElement("button");
-  addClassBtn.className = "btn small";
-  addClassBtn.textContent = "+ Multiclass";
-  addClassBtn.style.color = "var(--text-on-parch)";
-  addClassBtn.style.borderColor = "var(--rule)";
-  addClassBtn.addEventListener("click", function(){
-    c.classes.push({name:"Fighter", subclass:"", level:1});
-    save(); renderAll(); playAdd();
-  });
-  classesRow.appendChild(addClassBtn);
-  var totalSpan = document.createElement("span");
-  totalSpan.className = "total-level";
-  totalSpan.textContent = "Total level "+totalLevel(c);
-  classesRow.appendChild(totalSpan);
 
   wrap.appendChild(classesRow);
+  wrap.appendChild(buildLevelRow(c));
   wrap.appendChild(buildBackdropRow(c));
 
   // Kept out of classes-row and visually separated — it's the one
   // irreversible action in the identity block, so it shouldn't share a
-  // row (or a tap radius) with routine multiclass editing.
+  // row (or a tap radius) with routine levelling.
   var dangerRow = document.createElement("div");
   dangerRow.className = "danger-row";
   var deleteBtn = makeDeleteButton(c);

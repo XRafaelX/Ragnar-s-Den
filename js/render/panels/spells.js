@@ -12,6 +12,8 @@ import { sheetHeader } from "./inventory.js";
 
 var SCHOOLS = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"];
 
+function ordinal(n){ return n + (n===1 ? "st" : n===2 ? "nd" : n===3 ? "rd" : "th"); }
+
 function spellSubtitle(sp){
   return [sp.school, sp.castingTime, sp.range, sp.components, sp.duration].filter(Boolean).join(" · ");
 }
@@ -258,6 +260,34 @@ export function renderSpellsPanel(c){
   }
   slotCard.appendChild(slotGrid);
   panel.appendChild(slotCard);
+
+  // Warlock Pact Magic: its own slots, all of one level, back on a short rest.
+  var pact = c.spellcasting.pact;
+  if(pact && pact.max){
+    var pactCard = makeCard("Pact Magic");
+    var pactP = document.createElement("p");
+    pactP.className = "pact-help";
+    pactP.textContent = "Warlock slots are all "+ordinal(pact.slotLevel)+" level and come back on a short or long rest.";
+    pactCard.appendChild(pactP);
+    var pips = document.createElement("div");
+    pips.className = "pact-pips";
+    for(var p=0; p<pact.max; p++){
+      (function(p){
+        var pip = document.createElement("button");
+        pip.type = "button";
+        pip.className = "pact-pip" + (p < pact.used ? " used" : "");
+        pip.title = p < pact.used ? "Spent — tap to restore" : "Available — tap to spend";
+        pip.setAttribute("aria-label", "Pact slot "+(p+1)+(p < pact.used ? " (spent)" : " (available)"));
+        pip.addEventListener("click", function(){
+          pact.used = p < pact.used ? p : p+1;
+          save(); renderAll();
+        });
+        pips.appendChild(pip);
+      })(p);
+    }
+    pactCard.appendChild(pips);
+    panel.appendChild(pactCard);
+  }
 
   var spellCard = makeCard("Known / prepared spells");
   var spells = c.spells || [];

@@ -23,6 +23,9 @@ export function newCharacter(name){
     alignment: "Neutral Good",
     languages: ["Common"],
     classes: [{name:"Fighter", subclass:"", level:1}],
+    xp: 0,
+    levelHistory: [],
+    newUnlocks: [],
     abilities: abilities,
     saveProfs: saveProfs,
     skillProfs: skillProfs,
@@ -34,7 +37,7 @@ export function newCharacter(name){
     hitDiceUsed: 0,
     deathSaves: {success:0, fail:0},
     rage: {active:false, used:0},
-    spellcasting: {ability:"int", slots: slots},
+    spellcasting: {ability:"int", slots: slots, pact: null},
     spells: [],
     feats: [],
     features: [],
@@ -54,6 +57,9 @@ export function ensureShape(c){
   if(c.backdropPalette===undefined) c.backdropPalette = null;
   if(c.backdropTheme===undefined) c.backdropTheme = true;
   if(!c.classes) c.classes = [{name:"Fighter", subclass:"", level: c.level||1}];
+  if(c.xp==null) c.xp = 0;
+  if(!Array.isArray(c.levelHistory)) c.levelHistory = [];
+  if(!Array.isArray(c.newUnlocks)) c.newUnlocks = [];
   if(!c.race) c.race = "Human";
   if(!c.background) c.background = "Acolyte";
   if(!c.alignment) c.alignment = "Neutral Good";
@@ -77,6 +83,7 @@ export function ensureShape(c){
   if(!c.rage) c.rage = {active:false, used:0};
   if(!c.spellcasting) c.spellcasting = {ability:"int", slots:{}};
   if(!c.spellcasting.slots) c.spellcasting.slots = {};
+  if(c.spellcasting.pact===undefined) c.spellcasting.pact = null;
   for(var i=1;i<=9;i++){ if(!c.spellcasting.slots[i]) c.spellcasting.slots[i] = {max:0,used:0}; }
   if(!c.spells) c.spells = [];
   if(!c.feats) c.feats = [];

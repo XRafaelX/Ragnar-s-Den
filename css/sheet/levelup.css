@@ -1,0 +1,123 @@
+/* Levelling: XP strip, read-only class chips, level-up flow bits,
+   "you unlocked" popup, NEW badges, Pact Magic pips. */
+
+/* Class chips (identity) — read-only; tappable when a subclass can be picked */
+.class-chip b{font-weight:600;}
+.class-chip{padding:4px 12px;}
+button.class-chip{color:var(--text-on-parch);cursor:pointer;font:inherit;font-size:12.5px;}
+button.class-chip:hover{border-color:var(--brass);}
+.class-chip-sub{color:var(--text-on-parch-dim);font-style:italic;}
+.class-chip-pick{
+  color:var(--brass-bright);font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+}
+
+/* XP strip */
+.level-row{
+  margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:10px 12px;border:1px solid var(--rule);border-radius:8px;
+  background:color-mix(in srgb, var(--brass) 6%, transparent);
+}
+.lvl-badge{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;
+  width:52px;height:52px;border-radius:50%;
+  border:2px solid var(--brass);background:color-mix(in srgb, var(--brass) 14%, transparent);
+}
+.lvl-badge span{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-on-parch-dim);line-height:1;}
+.lvl-badge b{font-family:var(--serif);font-size:22px;line-height:1.05;color:var(--brass-bright);}
+.xp-block{flex:1;min-width:160px;}
+.xp-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:5px;flex-wrap:wrap;}
+.xp-num{color:var(--text-on-parch);font-weight:600;}
+.xp-hint{color:var(--text-on-parch-dim);}
+.xp-hint.ready{color:var(--moss);font-weight:600;}
+.xp-bar{height:8px;border-radius:4px;background:var(--field-bg);overflow:hidden;}
+.xp-fill{height:100%;background:linear-gradient(90deg, var(--brass), var(--brass-bright));border-radius:4px;transition:width .4s ease;}
+.xp-add{display:flex;gap:4px;align-items:center;}
+.xp-add input{
+  width:74px;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;
+  color:var(--text-on-parch);padding:4px 6px;font-size:12.5px;
+}
+.xp-add input:focus{outline:none;border-color:var(--brass);}
+.level-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.levelup-btn.ready{animation:lu-pulse 1.6s ease-in-out infinite;}
+.levelup-btn:disabled{opacity:.5;cursor:not-allowed;}
+.undo-level-btn{color:var(--text-on-parch-dim);}
+.undo-level-btn:hover{color:var(--text-on-parch);}
+@keyframes lu-pulse{
+  0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--brass) 55%, transparent);}
+  50%{box-shadow:0 0 0 6px color-mix(in srgb, var(--brass) 0%, transparent);}
+}
+@media (prefers-reduced-motion: reduce){
+  .levelup-btn.ready{animation:none;box-shadow:0 0 0 2px var(--brass-bright);}
+}
+@media (max-width:560px){
+  .xp-block{flex-basis:calc(100% - 64px);}
+  .xp-add{flex:1;}
+  .xp-add input{flex:1;width:auto;min-width:0;}
+}
+
+/* Level-up flow (inside the wizard overlay) */
+.lu-note{font-size:12.5px;line-height:1.5;color:var(--text-on-parch-dim);margin:8px 0;}
+.lu-sub-blurb{font-size:12px;color:var(--text-on-parch-dim);margin-top:2px;line-height:1.4;}
+.lu-sub-feats{font-size:11.5px;color:var(--brass-bright);margin-top:4px;}
+.lu-custom-input{margin:8px 0 0;}
+.lu-custom-row{display:flex;gap:6px;align-items:flex-start;margin-top:4px;}
+.lu-custom-row input{flex:1;margin:0;}
+.lu-points{font-size:13px;font-weight:600;color:var(--brass-bright);margin:0 0 8px;}
+.lu-asi-row{
+  display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px dashed var(--rule);
+}
+.lu-asi-row:last-child{border-bottom:none;}
+.lu-asi-name{flex:1;font-size:13.5px;}
+.lu-asi-val{min-width:110px;font-size:13px;color:var(--text-on-parch-dim);white-space:pre;}
+.lu-asi-val.up{color:var(--moss);font-weight:600;}
+.lu-asi-row .btn{min-width:34px;}
+.lu-review-list{margin:0;padding-left:18px;font-size:13.5px;line-height:1.7;}
+
+/* "You unlocked" popup (info modal) */
+#info-modal-body{overflow-y:auto;flex:1;}
+.lu-hero{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.lu-hero-level{
+  flex:none;width:58px;height:58px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:28px;color:#fff;background:var(--brass);
+  box-shadow:0 0 0 4px color-mix(in srgb, var(--brass) 30%, transparent);
+  animation:lu-pop .5s ease-out;
+}
+.lu-hero-text{font-size:14px;line-height:1.45;}
+@keyframes lu-pop{0%{transform:scale(.4);opacity:0;}70%{transform:scale(1.12);}100%{transform:scale(1);opacity:1;}}
+@media (prefers-reduced-motion: reduce){ .lu-hero-level{animation:none;} }
+.lu-stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:6px;}
+.lu-stat{border:1px solid var(--rule);border-radius:6px;padding:8px 10px;background:rgba(255,255,255,.03);}
+.lu-stat .lbl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
+.lu-stat .val{display:block;font-size:13.5px;font-weight:600;color:var(--text-on-parch);margin-top:2px;}
+.lu-unlock{
+  border:1px solid color-mix(in srgb, var(--moss) 45%, transparent);border-radius:6px;
+  background:color-mix(in srgb, var(--moss) 8%, transparent);padding:10px 12px;margin-bottom:8px;
+}
+.lu-unlock-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;}
+.lu-unlock-text{font-size:12.5px;line-height:1.5;color:var(--text-on-parch);margin-top:6px;}
+.lu-tips{margin:0;padding-left:18px;font-size:13px;line-height:1.6;color:var(--text-on-parch);}
+.lu-tips li{margin-bottom:4px;}
+
+/* NEW badge (popup + Features tab) */
+.lu-new-badge{
+  font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  padding:1px 7px;border-radius:10px;background:var(--moss);color:#fff;
+}
+.ff-item-card.is-new{
+  cursor:pointer;border-color:color-mix(in srgb, var(--moss) 60%, transparent);
+  background:color-mix(in srgb, var(--moss) 8%, transparent);
+}
+#tabs button{position:relative;}
+.tab-new-dot{
+  position:absolute;top:8px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--moss);
+}
+
+/* Pact Magic (Spells tab) */
+.pact-help{font-size:12.5px;color:var(--text-on-parch-dim);margin:0 0 10px;}
+.pact-pips{display:flex;gap:8px;flex-wrap:wrap;}
+.pact-pip{
+  width:30px;height:30px;border-radius:50%;cursor:pointer;
+  border:2px solid var(--brass);background:var(--brass);
+}
+.pact-pip.used{background:transparent;opacity:.6;}

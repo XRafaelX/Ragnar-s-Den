@@ -28,6 +28,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
 ## Features
 
 - **Character Creation Wizard**: Guided character creation workflow with SRD and expanded race, class, and background selections (detailed guided support currently implemented for Barbarian and Wizard, including cantrip and spellbook selection).
+- **Levelling, Subclasses & Multiclassing** (up to level 5 for now): XP tracker with a guided Level up flow — pick the class to advance or multiclass into (ability prerequisites enforced), choose a subclass when it's due, take an Ability Score Improvement or feat, and roll or average HP. Spell slots (including multiclass casters and Warlock Pact Magic) are recalculated automatically, a "you unlocked" popup explains each new feature, new features stay flagged NEW on the Features tab until tapped, and the last level-up can be undone.
 - **Interactive Character Sheet**: Full management of ability scores, modifiers, saving throws, skill proficiencies, hit points, hit dice, death saving throws, spell slots, inventory weight tracking, and equipment.
 - **Built-in Dice Roller Tray**: Floating dice tray supporting d4, d6, d8, d10, d12, d20, and d100 with quantity multiplier, flat modifier, advantage/disadvantage toggles, and a roll history log.
 - **Offline & Local Storage**: Stores all character data in browser `localStorage`. No external database or login required.
@@ -149,6 +150,7 @@ Currently, no automated testing framework is set up in the repository.
 │   │   ├── races.js              # Race lists & trait blurbs
 │   │   ├── backgrounds.js        # Background lists & skill/blurb info
 │   │   ├── alignments.js         # Alignment list & blurbs
+│   │   ├── progression.js        # XP table, per-level class features, subclasses, multiclass rules, spell-slot tables
 │   │   ├── spells.js             # Spell catalog (cantrips–9th level): school, casting time, range, components, classes
 │   │   └── misc.js               # Point-buy costs, name idea generator
 │   ├── render/
@@ -159,6 +161,9 @@ Currently, no automated testing framework is set up in the repository.
 │   ├── wizard/
 │   │   ├── wizard-core.js        # Wizard navigation/state & character creation
 │   │   └── wizard-steps.js       # Per-step wizard UI renderers
+│   ├── levelup/
+│   │   ├── levelup.js            # Level-up flow, apply/undo, "you unlocked" popup
+│   │   └── level-row.js          # XP strip on the identity card, subclass picker
 │   ├── dice/
 │   │   └── dice.js               # Dice tray, roll animation, roll log
 │   └── ui/

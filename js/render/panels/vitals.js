@@ -1,6 +1,7 @@
 import { save } from "../../core/state.js";
 import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, computeArmorClass } from "../../core/helpers.js";
 import { CLASSES_INFO } from "../../data/classes.js";
+import { HIT_DICE_BY_CLASS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
@@ -476,7 +477,10 @@ export function renderVitalsPanel(c){
   var hdRemaining = hd-hdUsed;
   var hdP = document.createElement("p");
   hdP.style.fontSize="13px"; hdP.style.margin="0 0 8px";
-  hdP.textContent = "Hit dice remaining: "+hdRemaining+" / "+hd+"  (d"+primaryHitDie(c)+")";
+  // Multiclassed characters have a mix of dice (e.g. 3d12 + 2d6); spending
+  // still rolls the first class's die.
+  var hdMix = (c.classes||[]).map(function(cl){ return (cl.level||1)+"d"+(HIT_DICE_BY_CLASS[cl.name]||8); }).join(" + ");
+  hdP.textContent = "Hit dice remaining: "+hdRemaining+" / "+hd+"  ("+hdMix+")";
   restCard.appendChild(hdP);
 
   var restRow = document.createElement("div");
@@ -501,7 +505,9 @@ export function renderVitalsPanel(c){
   shortRestBtn.className = "btn small"; shortRestBtn.textContent = "Short rest";
   shortRestBtn.title = "Reminder to spend hit dice; does not auto-heal";
   shortRestBtn.addEventListener("click", function(){
-    logRoll("Short rest taken", "Spend hit dice as needed to heal.");
+    var pactNote = "";
+    if(c.spellcasting.pact && c.spellcasting.pact.used){ c.spellcasting.pact.used = 0; pactNote = " Pact slots restored."; }
+    logRoll("Short rest taken", "Spend hit dice as needed to heal."+pactNote);
     save(); renderAll();
   });
   restRow.appendChild(shortRestBtn);
@@ -521,6 +527,7 @@ export function renderVitalsPanel(c){
         Object.keys(c.spellcasting.slots).forEach(function(lvl){
           c.spellcasting.slots[lvl].used = 0;
         });
+        if(c.spellcasting.pact) c.spellcasting.pact.used = 0;
         c.rage.used = 0;
         c.rage.active = false;
         logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered.");
