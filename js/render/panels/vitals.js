@@ -257,16 +257,30 @@ export function renderVitalsPanel(c){
   }
   grid.appendChild(hpBox);
 
+  // Same four-row shape as AC / Initiative (label, hero value, hint, controls)
+  // so the three boxes line up on the shared subgrid.
   function smallVital(label, key, isNested, hint, step, suffix){
     step = step || 1;
     suffix = suffix || "";
     var box = document.createElement("div");
-    box.className = "vital-box";
+    box.className = "vital-box vital-mini";
     box.innerHTML = '<div class="lbl">'+label+'</div>';
 
     var val = isNested ? c[isNested][key] : c[key];
     val = Number(val) || 0;
 
+    var valDiv = document.createElement("div");
+    valDiv.className = "init-hero-val vital-plain-val";
+    valDiv.textContent = val + suffix;
+    box.appendChild(valDiv);
+
+    var hintEl = document.createElement("div");
+    hintEl.className = "vital-hint";
+    hintEl.textContent = hint || "";
+    box.appendChild(hintEl);
+
+    var ctrlRow = document.createElement("div");
+    ctrlRow.className = "init-misc-row";
     var stepper = document.createElement("div");
     stepper.className = "stat-stepper vital-stepper";
 
@@ -285,9 +299,9 @@ export function renderVitalsPanel(c){
       save(); renderAll();
     });
 
-    var valSpan = document.createElement("span");
-    valSpan.className = "stat-score-val vital-val";
-    valSpan.textContent = val + suffix;
+    var stepSpan = document.createElement("span");
+    stepSpan.className = "stat-score-val vital-step-lbl";
+    stepSpan.textContent = "\u00b1" + step;
 
     var upBtn = document.createElement("button");
     upBtn.type = "button";
@@ -304,23 +318,17 @@ export function renderVitalsPanel(c){
     });
 
     stepper.appendChild(downBtn);
-    stepper.appendChild(valSpan);
+    stepper.appendChild(stepSpan);
     stepper.appendChild(upBtn);
-    box.appendChild(stepper);
-
-    if(hint){
-      var hintEl = document.createElement("div");
-      hintEl.className = "vital-hint";
-      hintEl.textContent = hint;
-      box.appendChild(hintEl);
-    }
+    ctrlRow.appendChild(stepper);
+    box.appendChild(ctrlRow);
     return box;
   }
   var acResult = computeArmorClass(c);
   c.ac = acResult.value;
 
   var acBox = document.createElement("div");
-  acBox.className = "vital-box ac-vital-box";
+  acBox.className = "vital-box vital-mini ac-vital-box";
   var acHeader = document.createElement("div");
   acHeader.className = "lbl";
   acHeader.textContent = "Armor Class";
@@ -333,7 +341,10 @@ export function renderVitalsPanel(c){
 
   var acHint = document.createElement("div");
   acHint.className = "vital-hint";
-  acHint.textContent = acResult.breakdown;
+  acHint.title = acResult.breakdown;
+  acHint.innerHTML = '<span class="hint-long"></span><span class="hint-short"></span>';
+  acHint.firstChild.textContent = acResult.breakdown;
+  acHint.lastChild.textContent = acResult.short;
   acBox.appendChild(acHint);
 
   var acMiscRow = document.createElement("div");
@@ -344,7 +355,6 @@ export function renderVitalsPanel(c){
 
   var acMiscStepper = document.createElement("div");
   acMiscStepper.className = "stat-stepper";
-  acMiscStepper.style.maxWidth = "84px";
 
   var acMiscDown = document.createElement("button");
   acMiscDown.type = "button";
@@ -383,7 +393,7 @@ export function renderVitalsPanel(c){
   grid.appendChild(acBox);
 
   var initBox = document.createElement("div");
-  initBox.className = "vital-box init-vital-box";
+  initBox.className = "vital-box vital-mini init-vital-box";
   var dexMod = mod(c.abilities.dex);
   var initTotal = dexMod + (Number(c.initiativeMisc)||0);
 
@@ -411,7 +421,6 @@ export function renderVitalsPanel(c){
 
   var miscStepper = document.createElement("div");
   miscStepper.className = "stat-stepper";
-  miscStepper.style.maxWidth = "84px";
 
   var miscDown = document.createElement("button");
   miscDown.type = "button";
@@ -455,7 +464,7 @@ export function renderVitalsPanel(c){
   });
   grid.appendChild(initBox);
 
-  grid.appendChild(smallVital("Speed","speed",null,"ft per turn",5," ft"));
+  grid.appendChild(smallVital("Speed","speed",null,"per turn",5," ft"));
 
   card.appendChild(grid);
   panel.appendChild(card);

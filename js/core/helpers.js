@@ -43,7 +43,7 @@ export function computeArmorClass(c){
   var shieldBonus = items.filter(function(i){ return i.category==="shield"; })
     .reduce(function(a,i){ return a + (Number(i.baseAC)||0) + (Number(i.magicBonus)||0); }, 0);
   var misc = Number(c.acMisc)||0;
-  var base, breakdown;
+  var base, breakdown, short;
 
   if(bodyArmor){
     var dexContribution = 0;
@@ -55,6 +55,7 @@ export function computeArmorClass(c){
     breakdown = (bodyArmor.name||"Armor") + " (" + armorAC + ")" +
       (bodyArmor.category!=="heavy" ? " + DEX (" + fmtMod(dexContribution) + ")" : "") +
       (magic ? " + magic (" + fmtMod(magic) + ")" : "");
+    short = "Armor " + armorAC + (bodyArmor.category!=="heavy" ? " + DEX" : "") + (magic ? " + magic" : "");
   } else {
     var hasBarbarian = (c.classes||[]).some(function(cl){ return cl.name==="Barbarian"; });
     var hasMonk = (c.classes||[]).some(function(cl){ return cl.name==="Monk"; });
@@ -62,20 +63,23 @@ export function computeArmorClass(c){
       var conMod = mod(c.abilities && c.abilities.con);
       base = 10 + dexMod + conMod;
       breakdown = "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + CON (" + fmtMod(conMod) + ")";
+      short = "10 + DEX + CON";
     } else if(hasMonk){
       var wisMod = mod(c.abilities && c.abilities.wis);
       base = 10 + dexMod + wisMod;
       breakdown = "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + WIS (" + fmtMod(wisMod) + ")";
+      short = "10 + DEX + WIS";
     } else {
       base = 10 + dexMod;
       breakdown = "Unarmored: 10 + DEX (" + fmtMod(dexMod) + ")";
+      short = "10 + DEX";
     }
   }
 
-  if(shieldBonus) breakdown += " + shield (" + fmtMod(shieldBonus) + ")";
-  if(misc) breakdown += " + misc (" + fmtMod(misc) + ")";
+  if(shieldBonus){ breakdown += " + shield (" + fmtMod(shieldBonus) + ")"; short += " + shield"; }
+  if(misc){ breakdown += " + misc (" + fmtMod(misc) + ")"; short += " + misc"; }
 
-  return { value: base + shieldBonus + misc, breakdown: breakdown };
+  return { value: base + shieldBonus + misc, breakdown: breakdown, short: short };
 }
 
 /* ---------------- Weapon attack & damage bonuses ---------------- */

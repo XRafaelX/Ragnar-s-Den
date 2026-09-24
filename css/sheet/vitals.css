@@ -40,6 +40,36 @@
 .init-hero-val{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--brass-bright);line-height:1.1;margin:2px 0;transition:transform 0.12s ease;}
 .init-vital-box:hover .init-hero-val{transform:scale(1.08);}
 .init-misc-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 4px;margin-top:6px;font-size:11px;color:var(--text-on-parch-dim);}
+.vital-step-lbl{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--text-on-parch-dim);}
+.vital-hint .hint-short{display:none;}
+
+/* AC / Initiative / Speed share the grid's rows via subgrid, so labels,
+   hero numbers, hints and controls line up across the three boxes no matter
+   how long any one hint is. */
+.vital-mini{justify-content:flex-start;}
+.vital-mini .lbl{white-space:nowrap;}
+.vital-mini .init-misc-row{margin-top:auto;padding-top:6px;}
+.vital-mini .init-hero-val,.vital-mini .stat-score-val{white-space:nowrap;}
+@supports (grid-template-rows:subgrid){
+  .vital-mini{display:grid;grid-row:span 4;grid-template-rows:subgrid;grid-template-columns:minmax(0,1fr);row-gap:2px;justify-items:center;min-height:0;}
+  .vital-mini .lbl{margin-bottom:0;align-self:start;}
+  .vital-mini .init-hero-val{margin:0;align-self:center;}
+  .vital-mini .vital-hint{margin-top:0;align-self:start;}
+  .vital-mini .init-misc-row{margin-top:0;align-self:end;}
+}
+
+@media (max-width:560px){
+  .vitals-grid{gap:8px;}
+  .vital-box{padding:10px 6px;}
+  .vital-box.hp-vital-box{padding:12px 10px;}
+  .vital-mini .lbl{font-size:10px;letter-spacing:.04em;}
+  .vital-mini .init-hero-val{font-size:26px;}
+  .vital-hint .hint-long{display:none;}
+  .vital-hint .hint-short{display:inline;}
+  .vital-mini .init-misc-row{flex-direction:column;gap:2px;font-size:10px;}
+  .vital-mini .stat-arrow-btn{width:26px;height:26px;min-width:26px;}
+  .vital-mini .stat-stepper{padding:1px 2px;}
+}
 
 .death-saves{display:flex;justify-content:center;gap:16px;margin-top:10px;font-size:12px;}
 .death-saves .grp{display:flex;flex-direction:column;align-items:center;gap:4px;}
