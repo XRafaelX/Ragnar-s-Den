@@ -58,10 +58,43 @@ function characterLabel(c){
   return (c.name || "").trim() || "Your character";
 }
 
+/* Toast lines, one picked at random each time. {name} is the character. */
+var GAIN_LINES = [
+  "✨ {name} is inspired! Somewhere, a bard just felt a disturbance.",
+  "✨ {name} is inspired! Main character energy: activated.",
+  "✨ {name} is inspired! The dice are nervous.",
+  "✨ {name} is inspired! Quick, before the DM changes their mind.",
+  "✨ {name} is inspired! Plot armor has been lightly buffed.",
+  "✨ {name} is inspired! Cue the dramatic music.",
+  "✨ {name} is inspired! Please use responsibly (you won't)."
+];
+var SPEND_LINES = [
+  "{name} spent Inspiration. Let's hope that d20 was worth it.",
+  "{name} spent Inspiration. The dice gods have been bribed.",
+  "{name} spent Inspiration. No refunds.",
+  "{name} spent Inspiration. It's a cool story now, whatever happens.",
+  "{name} spent Inspiration. Rolling with main character energy."
+];
+var EMPTY_LINES = [
+  "{name} is out of Inspiration. Back to being a regular adventurer.",
+  "{name} is out of Inspiration. Time to do something heroic (or stupid).",
+  "{name} is out of Inspiration. The bard is now judging you."
+];
+var MAX_LINES = [
+  "{name} is already maxed out on Inspiration. For more, please beg the DM (PANAIS).",
+  "{name} can't hold any more Inspiration. Any more and they'd ascend.",
+  "{name} is at max Inspiration. PANAIS says no. PANAIS always says no.",
+  "{name} is overflowing with Inspiration. Go spend some, show-off."
+];
+
+function pickLine(lines, c){
+  return lines[Math.floor(Math.random() * lines.length)].replace("{name}", characterLabel(c));
+}
+
 function gainInspiration(c, wrap){
   if(c.inspiration >= MAX_INSPIRATION){
     shake(wrap.querySelector(".inspire-badge"));
-    showActionToast(characterLabel(c) + " already has max Inspiration (" + MAX_INSPIRATION + "/" + MAX_INSPIRATION + ").");
+    showActionToast(pickLine(MAX_LINES, c) + " (" + MAX_INSPIRATION + "/" + MAX_INSPIRATION + ")");
     return;
   }
   c.inspiration++;
@@ -69,7 +102,7 @@ function gainInspiration(c, wrap){
   syncInspiration(c, wrap);
   playInspire();
   playInspireBurst(wrap);
-  showActionToast("✨ " + characterLabel(c) + " is inspired! (" + c.inspiration + "/" + MAX_INSPIRATION + ")");
+  showActionToast(pickLine(GAIN_LINES, c) + " (" + c.inspiration + "/" + MAX_INSPIRATION + ")");
   renderSidebar();
 }
 
@@ -79,7 +112,7 @@ function spendInspiration(c, wrap){
   save();
   syncInspiration(c, wrap);
   playDelete();
-  showActionToast(c.inspiration ? "Inspiration spent — " + c.inspiration + " left." : "Inspiration spent.");
+  showActionToast(c.inspiration ? pickLine(SPEND_LINES, c) + " (" + c.inspiration + " left)" : pickLine(EMPTY_LINES, c));
   renderSidebar();
 }
 
