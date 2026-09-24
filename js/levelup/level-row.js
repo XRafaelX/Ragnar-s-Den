@@ -6,6 +6,8 @@ import { openInfoModal } from "../ui/info-modal.js";
 import { playAdd } from "../ui/sound.js";
 import { openLevelUp, undoLastLevelUp, applySpellSlots } from "./levelup.js";
 
+var QUICK_XP = [50, 100, 250, 500];
+
 /* ---------------- Experience strip ----------------
    Level badge, XP progress toward the next level, a quick "+XP" field and
    the Level up button. Level up is always allowed (milestone tables don't
@@ -38,6 +40,27 @@ export function buildLevelRow(c){
   fill.style.width = pct+"%";
   bar.appendChild(fill);
   block.appendChild(bar);
+
+  function setXp(total){
+    total = Math.max(0, Math.round(total));
+    if(total===xp) return;
+    c.xp = total;
+    save(); renderAll();
+    if(!ready && !atCap && c.xp >= next) playAdd();
+  }
+
+  // One-tap awards for the common round numbers; the field below covers
+  // exact amounts.
+  var chips = ce("div","xp-chips");
+  QUICK_XP.forEach(function(n){
+    var chip = document.createElement("button");
+    chip.type = "button"; chip.className = "xp-chip";
+    chip.textContent = "+"+n;
+    chip.title = "Add "+n+" XP";
+    chip.addEventListener("click", function(){ setXp(xp + n); });
+    chips.appendChild(chip);
+  });
+  block.appendChild(chips);
   row.appendChild(block);
 
   var add = ce("div","xp-add");
@@ -46,16 +69,12 @@ export function buildLevelRow(c){
   input.title = "XP to add (use a negative number to remove)";
   var addBtn = document.createElement("button");
   addBtn.className = "btn small"; addBtn.textContent = "Add";
-  function addXp(){
-    var n = Math.round(Number(input.value)||0);
-    if(!n) return;
-    var wasReady = ready;
-    c.xp = Math.max(0, xp + n);
-    save(); renderAll();
-    if(!wasReady && !atCap && c.xp >= next) playAdd();
+  function submit(){
+    var n = Number(input.value)||0;
+    if(n) setXp(xp + n);
   }
-  addBtn.addEventListener("click", addXp);
-  input.addEventListener("keydown", function(e){ if(e.key==="Enter") addXp(); });
+  addBtn.addEventListener("click", submit);
+  input.addEventListener("keydown", function(e){ if(e.key==="Enter") submit(); });
   add.appendChild(input); add.appendChild(addBtn);
   row.appendChild(add);
 

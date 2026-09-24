@@ -17,13 +17,19 @@ button.class-chip:hover{border-color:var(--brass);}
   padding:10px 12px;border:1px solid var(--rule);border-radius:8px;
   background:color-mix(in srgb, var(--brass) 6%, transparent);
 }
+/* The number sits dead-centre in the circle; the "Level" label is pinned
+   above it rather than stacked with it (stacking pushes the number low). */
 .lvl-badge{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;
-  width:52px;height:52px;border-radius:50%;
+  position:relative;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  width:56px;height:56px;border-radius:50%;box-sizing:border-box;
   border:2px solid var(--brass);background:color-mix(in srgb, var(--brass) 14%, transparent);
 }
-.lvl-badge span{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-on-parch-dim);line-height:1;}
-.lvl-badge b{font-family:var(--serif);font-size:22px;line-height:1.05;color:var(--brass-bright);}
+.lvl-badge span{
+  position:absolute;top:8px;left:0;right:0;text-align:center;
+  font-size:8.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-on-parch-dim);line-height:1;
+}
+.lvl-badge b{font-family:var(--serif);font-size:24px;line-height:1;color:var(--brass-bright);}
 .xp-block{flex:1;min-width:160px;}
 .xp-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:5px;flex-wrap:wrap;}
 .xp-num{color:var(--text-on-parch);font-weight:600;}
@@ -31,6 +37,14 @@ button.class-chip:hover{border-color:var(--brass);}
 .xp-hint.ready{color:var(--moss);font-weight:600;}
 .xp-bar{height:8px;border-radius:4px;background:var(--field-bg);overflow:hidden;}
 .xp-fill{height:100%;background:linear-gradient(90deg, var(--brass), var(--brass-bright));border-radius:4px;transition:width .4s ease;}
+.xp-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.xp-chip{
+  background:rgba(255,255,255,.04);border:1px solid var(--rule);border-radius:14px;
+  color:var(--text-on-parch);font-size:12px;font-weight:600;padding:5px 12px;min-height:30px;cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+.xp-chip:hover{background:color-mix(in srgb, var(--brass) 16%, transparent);border-color:var(--brass);}
+.xp-chip:active{transform:scale(.96);}
 .xp-add{display:flex;gap:4px;align-items:center;}
 .xp-add input{
   width:74px;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;
