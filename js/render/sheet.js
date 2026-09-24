@@ -13,6 +13,7 @@ import { renderRollLog } from "../dice/dice.js";
 import { makeDeleteButton } from "../app.js";
 import { playAdd, playDelete } from "../ui/sound.js";
 import { buildAvatar, refreshAvatarInitial } from "../ui/avatar.js";
+import { applyBackdrop, buildBackdropRow, buildBanner } from "../ui/backdrop.js";
 
 export var TABS = [
   ["vitals","Vitals"],
@@ -30,6 +31,7 @@ export function visibleTabs(c){
 export function renderAll(){
   renderSidebar();
   var c = getActive();
+  applyBackdrop(c);
   var empty = document.getElementById("empty-state");
   var sheet = document.getElementById("sheet");
   if(!c){
@@ -185,6 +187,12 @@ export function renderIdentity(c){
   var wrap = document.createElement("div");
   wrap.className = "identity";
 
+  var banner = buildBanner(c);
+  if(banner){
+    wrap.classList.add("has-banner");
+    wrap.appendChild(banner);
+  }
+
   var topRow = document.createElement("div");
   topRow.className = "identity-top";
   var avatarEl = buildAvatar(c, 76, true);
@@ -286,6 +294,7 @@ export function renderIdentity(c){
   classesRow.appendChild(totalSpan);
 
   wrap.appendChild(classesRow);
+  wrap.appendChild(buildBackdropRow(c));
 
   // Kept out of classes-row and visually separated — it's the one
   // irreversible action in the identity block, so it shouldn't share a

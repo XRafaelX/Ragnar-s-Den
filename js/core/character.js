@@ -14,6 +14,9 @@ export function newCharacter(name){
     id: uid(),
     name: name || "New Character",
     avatar: null,
+    backdrop: null,
+    backdropPalette: null,
+    backdropTheme: true,
     race: "Human",
     background: "Acolyte",
     alignment: "Neutral Good",
@@ -44,6 +47,9 @@ export function newCharacter(name){
 /* ---------------- Migration safety (older saves) ---------------- */
 export function ensureShape(c){
   if(c.avatar===undefined) c.avatar = null;
+  if(c.backdrop===undefined) c.backdrop = null;
+  if(c.backdropPalette===undefined) c.backdropPalette = null;
+  if(c.backdropTheme===undefined) c.backdropTheme = true;
   if(!c.classes) c.classes = [{name:"Fighter", subclass:"", level: c.level||1}];
   if(!c.race) c.race = "Human";
   if(!c.background) c.background = "Acolyte";

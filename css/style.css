@@ -8,6 +8,15 @@
 @property --brass-bright2{ syntax:'<color>'; inherits:true; initial-value:#d7c4fa; }
 @property --brass-hover{ syntax:'<color>'; inherits:true; initial-value:#7c4ddb; }
 @property --brass-active{ syntax:'<color>'; inherits:true; initial-value:#6d3fce; }
+@property --ink{ syntax:'<color>'; inherits:true; initial-value:#1a1625; }
+@property --ink-deep{ syntax:'<color>'; inherits:true; initial-value:#120f1a; }
+@property --parchment{ syntax:'<color>'; inherits:true; initial-value:#241d33; }
+@property --parchment-dim{ syntax:'<color>'; inherits:true; initial-value:#2e2542; }
+@property --field-bg{ syntax:'<color>'; inherits:true; initial-value:#171225; }
+@property --text-on-ink{ syntax:'<color>'; inherits:true; initial-value:#e8e2f4; }
+@property --text-on-ink-dim{ syntax:'<color>'; inherits:true; initial-value:#9a8fb5; }
+@property --text-on-parch{ syntax:'<color>'; inherits:true; initial-value:#e8e2f4; }
+@property --text-on-parch-dim{ syntax:'<color>'; inherits:true; initial-value:#9a8fb5; }
 
 :root{
   /* Dark theme, purple accent (default) */
@@ -34,7 +43,11 @@
   --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, serif;
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   transition: --brass .45s ease, --brass-bright .45s ease, --brass-bright2 .45s ease,
-              --brass-hover .45s ease, --brass-active .45s ease;
+              --brass-hover .45s ease, --brass-active .45s ease,
+              --ink .45s ease, --ink-deep .45s ease, --parchment .45s ease,
+              --parchment-dim .45s ease, --field-bg .45s ease,
+              --text-on-ink .45s ease, --text-on-ink-dim .45s ease,
+              --text-on-parch .45s ease, --text-on-parch-dim .45s ease;
 }
 
 /* ---- Theme palettes ----
@@ -70,7 +83,7 @@
 [data-bs-theme="dark"]{
   --bs-primary:var(--brass);
   --bs-primary-rgb:var(--brass-rgb);
-  --bs-body-bg:#120f1a;
+  --bs-body-bg:var(--ink-deep);
   --bs-body-color:#e8e2f4;
   --bs-emphasis-color:#f4f0fc;
   --bs-secondary-color:rgba(232,226,244,0.75);
@@ -396,7 +409,8 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
   background:var(--parchment);
   color:var(--text-on-parch);
   border-radius:6px;
-  padding:18px 20px;
+  --pad-y:18px;--pad-x:20px;
+  padding:var(--pad-y) var(--pad-x);
   box-shadow:0 8px 24px rgba(0,0,0,.35);
   position:relative;
 }
@@ -519,7 +533,7 @@ select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-
 .avatar-crop-hint{margin-top:-4px;}
 #avatar-crop-stage{
   position:relative;
-  width:280px;height:280px;max-width:100%;
+  width:280px;height:auto;aspect-ratio:var(--crop-aspect, 1 / 1);max-width:100%;
   margin:4px auto 12px;
   overflow:hidden;border-radius:8px;
   background:var(--field-bg);
@@ -1220,7 +1234,7 @@ textarea.freeform{
 /* Floating Roll Toast Notification */
 .floating-roll-toast{
   position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(30px);
-  background:linear-gradient(135deg, #241d33 0%, #171322 100%);
+  background:linear-gradient(135deg, var(--parchment) 0%, var(--field-bg) 100%);
   border:1px solid var(--brass);border-radius:12px;
   padding:10px 18px;display:none;align-items:center;gap:12px;
   box-shadow:0 12px 36px rgba(0,0,0,0.65), 0 0 16px color-mix(in srgb, var(--brass) 30%, transparent);
@@ -1247,7 +1261,7 @@ textarea.freeform{
 .rd-backdrop.open{display:flex;}
 .rd-modal{
   position:relative;
-  background:#2e2542;color:var(--text-on-parch);
+  background:var(--parchment-dim);color:var(--text-on-parch);
   border:1px solid var(--brass);border-radius:8px;
   padding:22px;max-width:340px;width:88%;
   box-shadow:0 18px 50px rgba(0,0,0,.6);
@@ -1360,7 +1374,7 @@ textarea.freeform{
 #bottom-sheet{
   position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:520px;
   max-height:85vh;overflow-y:auto;
-  background:linear-gradient(180deg, #241d33 0%, var(--ink-deep) 100%);
+  background:linear-gradient(180deg, var(--parchment) 0%, var(--ink-deep) 100%);
   border:1px solid var(--rule);border-bottom:none;border-radius:16px 16px 0 0;
   box-shadow:0 -14px 40px rgba(0,0,0,.6);
   z-index:1151;padding:10px 20px 26px;
@@ -1689,7 +1703,7 @@ textarea.freeform{
   }
   #sidebar.open{margin-left:0;box-shadow:0 0 30px rgba(0,0,0,.5);}
   #sheet{padding:16px 14px 90px;}
-  .identity{padding:16px;}
+  .identity{--pad-y:16px;--pad-x:16px;}
   #dice-tray{right:12px;left:12px;width:auto;max-width:none;bottom:84px;}
   #dice-fab{right:16px;bottom:16px;}
   #wizard-header, #wizard-progress, #wizard-body, #wizard-footer{padding-left:14px;padding-right:14px;}
@@ -1731,3 +1745,61 @@ textarea.freeform{
 .wiz-spell-text{display:flex;flex-direction:column;gap:2px;min-width:0;}
 .wiz-spell-meta{font-size:11.5px;color:var(--text-on-parch-dim);font-style:italic;}
 .wiz-spell-desc{font-size:12px;color:var(--text-on-parch-dim);line-height:1.4;}
+
+/* Character background image. #main shows it dimmed behind the sheet and
+   the cards turn slightly translucent so it reads through; the
+   surface/accent colors themselves are re-tinted from the image by
+   backdrop.js (inline custom properties on :root). */
+#main.has-backdrop{
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--ink-deep) 62%, transparent), color-mix(in srgb, var(--ink-deep) 86%, transparent)),
+    var(--sheet-bg);
+  background-size:cover;background-position:center;background-attachment:fixed;
+}
+#main.has-backdrop .card, #main.has-backdrop .identity{
+  background:color-mix(in srgb, var(--parchment) 86%, transparent);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+}
+.backdrop-row{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--rule);
+}
+.backdrop-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
+.backdrop-thumb{width:64px;height:36px;border-radius:4px;object-fit:cover;box-shadow:inset 0 0 0 1px var(--rule), 0 2px 6px rgba(0,0,0,.35);}
+.backdrop-match{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-on-parch);cursor:pointer;margin-left:auto;}
+.theme-override-note{
+  margin:0 0 14px;padding:10px 12px;font-size:12.5px;line-height:1.45;
+  border:1px solid var(--rule);border-radius:6px;background:color-mix(in srgb, var(--brass) 10%, transparent);color:var(--text-on-parch);
+}
+.theme-override-note .btn{margin-top:8px;}
+
+/* Cropper: wide (background image) variant */
+#avatar-crop-modal.crop-wide .rd-modal{max-width:560px;width:94%;}
+#avatar-crop-modal.crop-wide #avatar-crop-stage{width:100%;}
+#avatar-crop-mask.rect{display:none;}
+
+/* Banner strip across the top of the identity card (the character's
+   background image), bleeding to the card edges with the avatar
+   overlapping its lower edge. */
+.identity-banner{
+  position:relative;height:120px;cursor:pointer;overflow:hidden;
+  margin:calc(var(--pad-y) * -1) calc(var(--pad-x) * -1) 14px;
+  border-radius:6px 6px 0 0;
+}
+.identity-banner img{width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;} /* 40% = BANNER_FOCUS in backdrop.js */
+.identity-banner::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(transparent 35%, color-mix(in srgb, var(--parchment) 92%, transparent));
+}
+.identity.has-banner .avatar{margin-top:-46px;border:3px solid var(--parchment);z-index:1;}
+
+/* Cropper guide: the band that always shows in the identity banner */
+#avatar-crop-guide{
+  display:none;position:absolute;left:0;right:0;pointer-events:none;
+  border-top:2px dashed rgba(255,255,255,.9);border-bottom:2px dashed rgba(255,255,255,.9);
+  box-shadow:0 0 0 1px rgba(0,0,0,.35);
+}
+#avatar-crop-guide span{
+  position:absolute;left:6px;bottom:3px;font-size:10.5px;letter-spacing:.03em;color:#fff;
+  background:rgba(0,0,0,.55);padding:1px 6px;border-radius:3px;
+}

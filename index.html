@@ -40,6 +40,7 @@
       <button class="btn small ghost" id="import-btn">Import backup</button>
       <input type="file" id="import-file" accept="application/json" style="display:none;">
       <input type="file" id="avatar-file" accept="image/*" style="display:none;">
+      <input type="file" id="backdrop-file" accept="image/*" style="display:none;">
       <button class="btn small ghost" id="theme-btn">
         <svg class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/>
@@ -283,6 +284,7 @@
     <div id="avatar-crop-stage">
       <img id="avatar-crop-img" alt="" draggable="false">
       <div id="avatar-crop-mask"></div>
+      <div id="avatar-crop-guide"><span></span></div>
     </div>
     <input type="range" id="avatar-crop-zoom" class="styled-range" min="1" max="3" step="0.01" value="1" aria-label="Zoom">
     <div class="actions">
