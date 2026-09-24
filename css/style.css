@@ -1803,3 +1803,9 @@ textarea.freeform{
   position:absolute;left:6px;bottom:3px;font-size:10.5px;letter-spacing:.03em;color:#fff;
   background:rgba(0,0,0,.55);padding:1px 6px;border-radius:3px;
 }
+
+/* Un-rolled preview dice on the tray stage */
+.dice-token.idle svg .die-text{fill:var(--text-on-ink-dim);}
+.dice-token.pop-in{animation:diceIn .22s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
+@keyframes diceIn{from{transform:scale(.4);opacity:0;}to{transform:scale(1);opacity:1;}}
+.die-btn.selected{border-color:var(--brass-bright);background:color-mix(in srgb, var(--brass) 22%, transparent);color:#fff;}

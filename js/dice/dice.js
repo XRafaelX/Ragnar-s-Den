@@ -7,6 +7,9 @@ var advMode = "none"; // none | adv | dis
 var lastRollConfig = null;
 var rollAnimationTimers = [];
 var toastTimer = null;
+var previewDie = 20;      // die shown in the un-rolled preview (the last one rolled)
+var rolling = false;      // a roll animation is in flight
+var previewPending = false; // Qty/adv changed mid-roll; redraw once it settles
 
 export function getDieSvg(die, value){
   var valStr = value != null ? String(value) : "?";
@@ -84,8 +87,75 @@ export function showFloatingToast(die, finalTotal, summary, label, isCrit, isFai
   }, 3200);
 }
 
+/* Rolls the die with the tray's current Qty / Mod / advantage settings
+   (used by the die buttons and by tapping a preview die). */
+function rollFromTray(die){
+  var qty = clamp(Number(document.getElementById("dice-qty").value)||1, 1, 20);
+  var modv = Number(document.getElementById("dice-mod").value)||0;
+  performRoll(die, qty, modv, die===20 ? advMode : "none", null);
+}
+
+function markSelectedDie(){
+  document.querySelectorAll(".die-btn").forEach(function(btn){
+    btn.classList.toggle("selected", Number(btn.getAttribute("data-die")) === previewDie);
+  });
+}
+
+function makeIdleToken(die, animateIn){
+  var wrapper = document.createElement("div");
+  wrapper.className = "dice-token-wrapper";
+  var token = document.createElement("div");
+  token.className = "dice-token idle" + (animateIn ? " pop-in" : "");
+  token.dataset.die = String(die);
+  token.title = "Tap to roll";
+  token.innerHTML = getDieSvg(die, null);
+  token.addEventListener("click", function(){ rollFromTray(die); });
+  wrapper.appendChild(token);
+  return wrapper;
+}
+
+/* Draws the un-rolled dice for the current Qty (and advantage, which puts
+   two d20s on the table) so the stage always shows what a roll will
+   throw. Existing preview dice are kept and only the difference is
+   added/removed; anything else on the stage (a previous roll, the
+   placeholder) is replaced. Deferred while a roll is animating. */
+export function renderDicePreview(){
+  if(rolling){ previewPending = true; return; }
+  previewPending = false;
+
+  var qty = clamp(Number(document.getElementById("dice-qty").value)||1, 1, 20);
+  var count = (previewDie === 20 && advMode !== "none" && qty === 1) ? 2 : qty;
+  var stage = document.getElementById("dice-stage");
+
+  var wrappers = Array.prototype.slice.call(stage.children);
+  var reusable = wrappers.length > 0 && wrappers.every(function(w){
+    var t = w.querySelector(".dice-token");
+    return t && t.classList.contains("idle") && t.dataset.die === String(previewDie);
+  });
+  if(!reusable){
+    stage.innerHTML = "";
+    wrappers = [];
+  }
+  while(wrappers.length > count) stage.removeChild(wrappers.pop());
+  while(wrappers.length < count){
+    var w = makeIdleToken(previewDie, reusable);
+    stage.appendChild(w);
+    wrappers.push(w);
+  }
+
+  document.getElementById("roll-result").textContent = "—";
+  document.getElementById("roll-result").classList.remove("result-pop");
+  document.getElementById("roll-badge-slot").innerHTML = "";
+  document.getElementById("roll-detail").textContent = "Ready: " + count + "d" + previewDie;
+  document.getElementById("roll-again-btn").style.display = "none";
+  markSelectedDie();
+}
+
 export function performRoll(die, qty, modifier, adv, label){
   lastRollConfig = { die: die, qty: qty, modifier: modifier, adv: adv, label: label };
+  previewDie = die;
+  rolling = true;
+  markSelectedDie();
   clearRollTimers();
 
   var isAdvDis = (die === 20 && adv !== "none" && qty === 1);
@@ -218,6 +288,11 @@ export function performRoll(die, qty, modifier, adv, label){
   var totalDelay = rollDuration + ((diceCount - 1) * 60) + 80;
   var finalTimer = setTimeout(function(){
     clearInterval(cycleInterval);
+    rolling = false;
+    if(previewPending){
+      // Let the result register for a moment before the stage is redrawn.
+      setTimeout(function(){ if(!rolling && previewPending) renderDicePreview(); }, 900);
+    }
 
     resultEl.classList.add("result-pop");
     animateNumberCount(resultEl, finalTotal, 220);
@@ -316,12 +391,9 @@ export function setupDiceTray(){
   // Die buttons
   document.querySelectorAll(".die-btn").forEach(function(btn){
     btn.addEventListener("click", function(){
-      var die = Number(btn.getAttribute("data-die"));
-      var qty = clamp(Number(document.getElementById("dice-qty").value)||1, 1, 20);
-      var modv = Number(document.getElementById("dice-mod").value)||0;
       btn.classList.add("rolling-active");
       setTimeout(function(){ btn.classList.remove("rolling-active"); }, 400);
-      performRoll(die, qty, modv, die===20 ? advMode : "none", null);
+      rollFromTray(Number(btn.getAttribute("data-die")));
     });
   });
 
@@ -332,11 +404,14 @@ export function setupDiceTray(){
   document.getElementById("qty-inc").addEventListener("click", function(){
     var v = clamp((Number(qtyInput.value) || 1) + 1, 1, 20);
     qtyInput.value = v;
+    renderDicePreview();
   });
   document.getElementById("qty-dec").addEventListener("click", function(){
     var v = clamp((Number(qtyInput.value) || 1) - 1, 1, 20);
     qtyInput.value = v;
+    renderDicePreview();
   });
+  qtyInput.addEventListener("input", renderDicePreview);
   document.getElementById("mod-inc").addEventListener("click", function(){
     var v = clamp((Number(modInput.value) || 0) + 1, -50, 50);
     modInput.value = v;
@@ -361,6 +436,7 @@ export function setupDiceTray(){
       Object.keys(advBtns).forEach(function(kk){
         if(advBtns[kk]) advBtns[kk].classList.toggle("on", kk === "none");
       });
+      renderDicePreview();
     });
   }
 
@@ -400,6 +476,7 @@ export function setupDiceTray(){
         Object.keys(advBtns).forEach(function(kk){
           if(advBtns[kk]) advBtns[kk].classList.toggle("on", kk === k);
         });
+        if(previewDie === 20) renderDicePreview();
       });
     }
   });
