@@ -1,0 +1,60 @@
+/* Main content area, empty state, sheet container, mobile topbar. */
+
+/* ---------- Main ---------- */
+#main{
+  flex:1;
+  overflow-y:auto;
+  background:var(--ink-deep);
+  position:relative;
+}
+#empty-state{
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  text-align:center;
+  color:var(--text-on-ink-dim);
+  padding:40px 20px;
+  overflow-y:auto;
+}
+#empty-state h2{
+  font-family:var(--serif);
+  color:var(--brass-bright);
+  font-weight:normal;
+  font-size:24px;
+  margin-bottom:8px;
+}
+
+#sheet{
+  max-width:960px;
+  margin:0 auto;
+  padding:22px 22px 80px;
+}
+
+#topbar{
+  display:none;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  background:var(--ink);
+  border-bottom:1px solid var(--rule);
+}
+#hamburger{
+  background:none;border:none;color:var(--brass-bright);font-size:20px;padding:4px 8px;
+}
+#topbar .tb-title{
+  font-family:var(--serif);color:var(--text-on-ink);font-size:15px;
+  cursor:pointer;padding:4px 8px;margin:-4px -8px;border-radius:5px;transition:background .15s ease,color .15s ease;
+}
+#topbar .tb-title:hover{background:color-mix(in srgb, var(--brass) 14%, transparent);color:var(--brass-bright);}
+
+.overlay-scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:35;display:none;}
+.overlay-scrim.show{display:block;}
+
+@media (max-width:800px){
+  #topbar{display:flex;}
+  #main{scrollbar-width:none;-ms-overflow-style:none;}
+  #main::-webkit-scrollbar{display:none;}
+  #sheet{padding:16px 14px 90px;}
+}

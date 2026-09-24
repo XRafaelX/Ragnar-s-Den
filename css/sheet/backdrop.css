@@ -1,0 +1,28 @@
+/* Character background image behind the sheet. */
+
+/* Character background image. #main shows it dimmed behind the sheet and
+   the cards turn slightly translucent so it reads through; the
+   surface/accent colors themselves are re-tinted from the image by
+   backdrop.js (inline custom properties on :root). */
+#main.has-backdrop{
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--ink-deep) 62%, transparent), color-mix(in srgb, var(--ink-deep) 86%, transparent)),
+    var(--sheet-bg);
+  background-size:cover;background-position:center;background-attachment:fixed;
+}
+#main.has-backdrop .card, #main.has-backdrop .identity{
+  background:color-mix(in srgb, var(--parchment) 86%, transparent);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+}
+.backdrop-row{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--rule);
+}
+.backdrop-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
+.backdrop-thumb{width:64px;height:36px;border-radius:4px;object-fit:cover;box-shadow:inset 0 0 0 1px var(--rule), 0 2px 6px rgba(0,0,0,.35);}
+.backdrop-match{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-on-parch);cursor:pointer;margin-left:auto;}
+.theme-override-note{
+  margin:0 0 14px;padding:10px 12px;font-size:12.5px;line-height:1.45;
+  border:1px solid var(--rule);border-radius:6px;background:color-mix(in srgb, var(--brass) 10%, transparent);color:var(--text-on-parch);
+}
+.theme-override-note .btn{margin-top:8px;}

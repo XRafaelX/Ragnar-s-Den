@@ -1,0 +1,109 @@
+/* Design tokens: typed color properties, theme palettes, Bootstrap variable overrides. */
+
+/* Registering the accent tokens as typed <color> properties (instead of
+   plain custom properties) lets the browser interpolate them, so the
+   `transition` on :root below crossfades the whole app between themes
+   instead of snapping. Unsupported browsers (pre-2023 Safari) just fall
+   back to an instant switch — the theme itself still applies fine. */
+@property --brass{ syntax:'<color>'; inherits:true; initial-value:#8b5cf6; }
+@property --brass-bright{ syntax:'<color>'; inherits:true; initial-value:#c4a7f7; }
+@property --brass-bright2{ syntax:'<color>'; inherits:true; initial-value:#d7c4fa; }
+@property --brass-hover{ syntax:'<color>'; inherits:true; initial-value:#7c4ddb; }
+@property --brass-active{ syntax:'<color>'; inherits:true; initial-value:#6d3fce; }
+@property --ink{ syntax:'<color>'; inherits:true; initial-value:#1a1625; }
+@property --ink-deep{ syntax:'<color>'; inherits:true; initial-value:#120f1a; }
+@property --parchment{ syntax:'<color>'; inherits:true; initial-value:#241d33; }
+@property --parchment-dim{ syntax:'<color>'; inherits:true; initial-value:#2e2542; }
+@property --field-bg{ syntax:'<color>'; inherits:true; initial-value:#171225; }
+@property --text-on-ink{ syntax:'<color>'; inherits:true; initial-value:#e8e2f4; }
+@property --text-on-ink-dim{ syntax:'<color>'; inherits:true; initial-value:#9a8fb5; }
+@property --text-on-parch{ syntax:'<color>'; inherits:true; initial-value:#e8e2f4; }
+@property --text-on-parch-dim{ syntax:'<color>'; inherits:true; initial-value:#9a8fb5; }
+
+:root{
+  /* Dark theme, purple accent (default) */
+  color-scheme: dark;
+  --ink:#1a1625;            /* raised dark surface */
+  --ink-deep:#120f1a;       /* deepest background */
+  --parchment:#241d33;      /* card / panel surface */
+  --parchment-dim:#2e2542;  /* card inset / hover */
+  --brass:#8b5cf6;          /* primary accent */
+  --brass-rgb:139,92,246;   /* accent as r,g,b — only bootstrap's own rgba() still needs this */
+  --brass-bright:#c4a7f7;   /* bright accent text */
+  --brass-bright2:#d7c4fa;  /* extra-bright accent text (links, code) */
+  --brass-hover:#7c4ddb;    /* accent, hover shade */
+  --brass-active:#6d3fce;   /* accent, active/pressed shade */
+  --oxblood:#d9455f;        /* danger */
+  --moss:#5aa469;           /* hp / positive */
+  --text-on-ink:#e8e2f4;
+  --text-on-ink-dim:#9a8fb5;
+  --text-on-parch:#e8e2f4;
+  --text-on-parch-dim:#9a8fb5;
+  --field-bg:#171225;       /* editable input wells */
+  --rule: color-mix(in srgb, var(--brass) 35%, transparent);
+  --radius: 3px;
+  --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  transition: --brass .45s ease, --brass-bright .45s ease, --brass-bright2 .45s ease,
+              --brass-hover .45s ease, --brass-active .45s ease,
+              --ink .45s ease, --ink-deep .45s ease, --parchment .45s ease,
+              --parchment-dim .45s ease, --field-bg .45s ease,
+              --text-on-ink .45s ease, --text-on-ink-dim .45s ease,
+              --text-on-parch .45s ease, --text-on-parch-dim .45s ease;
+}
+
+/* ---- Theme palettes ----
+   Swapping data-theme on <html> re-points these accent tokens; every
+   other rule in this file reads color through var(--brass*) / var(--rule)
+   instead of hardcoding hex, so the whole UI re-skins from here. */
+:root[data-theme="crimson"]{
+  --brass:#dc4b63;
+  --brass-rgb:220,75,99;
+  --brass-bright:#f5a3b3;
+  --brass-bright2:#fbd0d8;
+  --brass-hover:#c23350;
+  --brass-active:#a82843;
+}
+:root[data-theme="moss"]{
+  --brass:#5fb377;
+  --brass-rgb:95,179,119;
+  --brass-bright:#a8dab8;
+  --brass-bright2:#d3ecda;
+  --brass-hover:#4c9563;
+  --brass-active:#3d7a51;
+}
+:root[data-theme="gold"]{
+  --brass:#d9a441;
+  --brass-rgb:217,164,65;
+  --brass-bright:#f0cf8a;
+  --brass-bright2:#f8e6c0;
+  --brass-hover:#c08f34;
+  --brass-active:#a37528;
+}
+
+/* Bootstrap dark theme -> purple */
+[data-bs-theme="dark"]{
+  --bs-primary:var(--brass);
+  --bs-primary-rgb:var(--brass-rgb);
+  --bs-body-bg:var(--ink-deep);
+  --bs-body-color:#e8e2f4;
+  --bs-emphasis-color:#f4f0fc;
+  --bs-secondary-color:rgba(232,226,244,0.75);
+  --bs-border-color:var(--rule);
+  --bs-link-color:var(--brass-bright);
+  --bs-link-hover-color:var(--brass-bright2);
+  --bs-code-color:var(--brass-bright2);
+}
+[data-bs-theme="dark"] .btn-primary{
+  --bs-btn-bg:var(--brass);
+  --bs-btn-border-color:var(--brass);
+  --bs-btn-hover-bg:var(--brass-hover);
+  --bs-btn-hover-border-color:var(--brass-hover);
+  --bs-btn-active-bg:var(--brass-active);
+  --bs-btn-active-border-color:var(--brass-active);
+  --bs-btn-disabled-bg:var(--brass);
+  --bs-btn-disabled-border-color:var(--brass);
+  --bs-btn-color:#fff;
+  --bs-btn-hover-color:#fff;
+  --bs-btn-active-color:#fff;
+}
