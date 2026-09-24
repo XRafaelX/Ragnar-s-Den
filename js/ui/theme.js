@@ -62,15 +62,17 @@ export function openThemeModal(){
   if(sheetThemedFromImage(active)){
     var note = document.createElement("div");
     note.className = "theme-override-note";
-    note.textContent = "This character’s sheet is colored from its background image, so the app theme won’t show while it’s open.";
+    var noteText = document.createElement("span");
+    noteText.textContent = "Sheet colors come from its image.";
+    note.appendChild(noteText);
     var useAppBtn = document.createElement("button");
-    useAppBtn.type = "button"; useAppBtn.className = "btn small";
-    useAppBtn.textContent = "Use the app theme instead";
+    useAppBtn.type = "button"; useAppBtn.className = "btn";
+    useAppBtn.textContent = "Use app theme";
+    useAppBtn.title = "Stop coloring this character’s sheet from its image";
     useAppBtn.addEventListener("click", function(){
       active.backdropTheme = false; save(); renderAll();
       note.remove();
     });
-    note.appendChild(document.createElement("br"));
     note.appendChild(useAppBtn);
     body.appendChild(note);
   }

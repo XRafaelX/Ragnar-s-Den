@@ -15,7 +15,11 @@
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
 }
 .theme-override-note{
-  margin:0 0 14px;padding:10px 12px;font-size:12.5px;line-height:1.45;
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;
+  margin:0 0 14px;padding:12px 14px;font-size:12.5px;line-height:1.45;
   border:1px solid var(--rule);border-radius:6px;background:color-mix(in srgb, var(--brass) 10%, transparent);color:var(--text-on-parch);
 }
-.theme-override-note .btn{margin-top:8px;}
+/* Text and button share a line when there's room; on a narrow modal the
+   button wraps under the text, right-aligned like other modal actions. */
+.theme-override-note span{flex:1 1 100px;}
+.theme-override-note .btn{flex:none;margin-left:auto;white-space:nowrap;}

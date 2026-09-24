@@ -6,10 +6,13 @@ import { openFeatureModal } from "./feature-modal.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { playDelete } from "../../ui/sound.js";
 
-/* ---- Features & Feats panel ---- */
+/* ---- Features & Feats panel ----
+   One list for everything the character has: class, subclass, racial and
+   background features, feats and custom entries, with one search and
+   category filters. Feats used to have their own card as well, which
+   showed each feat twice. */
 var featureCategoryFilter = "all";
 var featureSearchQuery = "";
-var featSearchQuery = "";
 
 export function renderFeaturesPanel(c){
   var panel = document.createElement("div");
@@ -39,134 +42,25 @@ export function renderFeaturesPanel(c){
     if(dot && !unseenUnlockCount(c)) dot.remove();
   }
 
-  // 1. Feats Card
-  var feats = c.feats || [];
-  var featCard = makeCard("Feats (" + feats.length + ")");
-  
-  var featHeader = document.createElement("div");
-  featHeader.className = "ff-section-header";
-  featHeader.innerHTML = '<span style="font-size:12px;color:var(--text-on-parch-dim);">' +
-    (feats.length === 1 ? '1 feat active' : feats.length + ' feats active') + '</span>';
-  
-  var addFeatBtn = document.createElement("button");
-  addFeatBtn.className = "btn small primary";
-  addFeatBtn.textContent = "+ Add Feat";
-  addFeatBtn.addEventListener("click", function(){
-    openFeatPicker(c);
-  });
-  featHeader.appendChild(addFeatBtn);
-  featCard.appendChild(featHeader);
-
-  if(feats.length === 0){
-    var emptyFeats = document.createElement("div");
-    emptyFeats.style.cssText = "text-align:center;padding:24px 12px;background:rgba(255,255,255,0.02);border:1px dashed var(--rule);border-radius:6px;";
-    emptyFeats.innerHTML = '<p style="margin:0 0 10px;font-size:13.5px;color:var(--text-on-parch-dim);">No feats added yet.</p>';
-    var addFirstFeatBtn = document.createElement("button");
-    addFirstFeatBtn.className = "btn small";
-    addFirstFeatBtn.textContent = "+ Browse & Add Feats";
-    addFirstFeatBtn.addEventListener("click", function(){ openFeatPicker(c); });
-    emptyFeats.appendChild(addFirstFeatBtn);
-    featCard.appendChild(emptyFeats);
-  } else {
-    var featList = document.createElement("div");
-    featList.className = "ff-items-list";
-    feats.forEach(function(feat, idx){
-      var itemCard = document.createElement("div");
-      itemCard.className = "ff-item-card";
-
-      var top = document.createElement("div");
-      top.className = "ff-item-top";
-
-      var titleGrp = document.createElement("div");
-      titleGrp.className = "ff-item-title-group";
-
-      var titleSpan = document.createElement("span");
-      titleSpan.className = "ff-item-title";
-      titleSpan.textContent = feat.name;
-      titleGrp.appendChild(titleSpan);
-
-      var tagSpan = document.createElement("span");
-      tagSpan.className = "ff-tag source-feat";
-      tagSpan.textContent = feat.source || "Feat";
-      titleGrp.appendChild(tagSpan);
-      markIfNew(itemCard, titleGrp, "feat_"+feat.id);
-
-      if(feat.category){
-        var catSpan = document.createElement("span");
-        catSpan.className = "ff-tag";
-        catSpan.textContent = feat.category;
-        titleGrp.appendChild(catSpan);
-      }
-      top.appendChild(titleGrp);
-
-      var actions = document.createElement("div");
-      actions.className = "ff-actions";
-
-      var editBtn = document.createElement("button");
-      editBtn.className = "ff-action-btn";
-      editBtn.textContent = "Edit";
-      editBtn.title = "Edit feat details";
-      editBtn.addEventListener("click", function(){
-        openFeatEditor(c, feat, idx);
-      });
-      actions.appendChild(editBtn);
-
-      var delBtn = document.createElement("button");
-      delBtn.className = "ff-action-btn danger";
-      delBtn.textContent = "Remove";
-      delBtn.title = "Remove feat";
-      delBtn.addEventListener("click", function(){
-        confirmDialog("Remove feat " + feat.name + "?", "Are you sure you want to remove this feat from " + (c.name || "this character") + "?", function(){
-          c.feats.splice(idx, 1);
-          save();
-          renderAll();
-          playDelete();
-        });
-      });
-      actions.appendChild(delBtn);
-      top.appendChild(actions);
-      itemCard.appendChild(top);
-
-      if(feat.prerequisite && feat.prerequisite !== "None"){
-        var prereq = document.createElement("div");
-        prereq.className = "ff-prereq";
-        prereq.textContent = "Prerequisite: " + feat.prerequisite;
-        itemCard.appendChild(prereq);
-      }
-
-      if(feat.description){
-        var desc = document.createElement("div");
-        desc.className = "ff-desc";
-        desc.textContent = feat.description;
-        itemCard.appendChild(desc);
-      } else if(feat.summary){
-        var sum = document.createElement("div");
-        sum.className = "ff-desc";
-        sum.textContent = feat.summary;
-        itemCard.appendChild(sum);
-      }
-
-      featList.appendChild(itemCard);
-    });
-    featCard.appendChild(featList);
-  }
-  panel.appendChild(featCard);
-
-  // 2. All Features, Traits & Passives Directory Card
   var allFeatures = getAllCharacterFeatures(c);
-  var featDirCard = makeCard("Features, traits & passives (" + allFeatures.length + ")");
+  var featDirCard = makeCard("Features & feats (" + allFeatures.length + ")");
 
   var dirHeader = document.createElement("div");
   dirHeader.className = "ff-section-header";
-  dirHeader.innerHTML = '<span style="font-size:12px;color:var(--text-on-parch-dim);">All active powers & traits</span>';
-
+  dirHeader.innerHTML = '<span style="font-size:12px;color:var(--text-on-parch-dim);">Everything your character can do</span>';
+  var headerBtns = document.createElement("div");
+  headerBtns.className = "ff-header-btns";
+  var addFeatBtn = document.createElement("button");
+  addFeatBtn.className = "btn small primary";
+  addFeatBtn.textContent = "+ Add feat";
+  addFeatBtn.addEventListener("click", function(){ openFeatPicker(c); });
+  headerBtns.appendChild(addFeatBtn);
   var addCustomFeatureBtn = document.createElement("button");
-  addCustomFeatureBtn.className = "btn small ghost";
-  addCustomFeatureBtn.textContent = "+ Add Custom Feature";
-  addCustomFeatureBtn.addEventListener("click", function(){
-    openFeatureModal(c);
-  });
-  dirHeader.appendChild(addCustomFeatureBtn);
+  addCustomFeatureBtn.className = "btn small";
+  addCustomFeatureBtn.textContent = "+ Custom feature";
+  addCustomFeatureBtn.addEventListener("click", function(){ openFeatureModal(c); });
+  headerBtns.appendChild(addCustomFeatureBtn);
+  dirHeader.appendChild(headerBtns);
   featDirCard.appendChild(dirHeader);
 
   // Search & Filter controls
@@ -175,7 +69,7 @@ export function renderFeaturesPanel(c){
   var searchInput = document.createElement("input");
   searchInput.className = "ff-search-input";
   searchInput.type = "text";
-  searchInput.placeholder = "Search all abilities, traits & passives…";
+  searchInput.placeholder = "Search features & feats…";
   searchInput.value = featureSearchQuery;
   searchInput.addEventListener("input", function(){
     featureSearchQuery = searchInput.value;
@@ -240,7 +134,16 @@ export function renderFeaturesPanel(c){
     if(filtered.length === 0){
       var emptyDiv = document.createElement("div");
       emptyDiv.style.cssText = "text-align:center;padding:20px;color:var(--text-on-parch-dim);font-size:13px;background:rgba(255,255,255,0.02);border-radius:6px;";
-      emptyDiv.textContent = q ? "No features or traits match \"" + q + "\"." : "No features found in this category.";
+      if(q) emptyDiv.textContent = "Nothing matches \"" + q + "\".";
+      else if(featureCategoryFilter === "feat"){
+        emptyDiv.innerHTML = '<p style="margin:0 0 10px;">No feats yet. You can usually take one instead of an Ability Score Improvement.</p>';
+        var browseBtn = document.createElement("button");
+        browseBtn.className = "btn small";
+        browseBtn.textContent = "+ Browse feats";
+        browseBtn.addEventListener("click", function(){ openFeatPicker(c); });
+        emptyDiv.appendChild(browseBtn);
+      }
+      else emptyDiv.textContent = "Nothing in this category yet.";
       featListContainer.appendChild(emptyDiv);
       return;
     }
@@ -303,14 +206,27 @@ export function renderFeaturesPanel(c){
       } else if(item.isFeat && item.featObj){
         var actions = document.createElement("div");
         actions.className = "ff-actions";
-        var viewFeatBtn = document.createElement("button");
-        viewFeatBtn.className = "ff-action-btn";
-        viewFeatBtn.textContent = "Edit Feat";
-        viewFeatBtn.addEventListener("click", function(){
-          var idx = (c.feats||[]).indexOf(item.featObj);
-          openFeatEditor(c, item.featObj, idx);
+        var editFeatBtn = document.createElement("button");
+        editFeatBtn.className = "ff-action-btn";
+        editFeatBtn.textContent = "Edit";
+        editFeatBtn.title = "Edit feat details";
+        editFeatBtn.addEventListener("click", function(){
+          openFeatEditor(c, item.featObj, (c.feats||[]).indexOf(item.featObj));
         });
-        actions.appendChild(viewFeatBtn);
+        actions.appendChild(editFeatBtn);
+        var rmFeatBtn = document.createElement("button");
+        rmFeatBtn.className = "ff-action-btn danger";
+        rmFeatBtn.textContent = "Remove";
+        rmFeatBtn.title = "Remove feat";
+        rmFeatBtn.addEventListener("click", function(){
+          confirmDialog("Remove feat " + item.name + "?", "Are you sure you want to remove this feat from " + (c.name || "this character") + "?", function(){
+            c.feats = c.feats.filter(function(f){ return f !== item.featObj; });
+            save();
+            renderAll();
+            playDelete();
+          });
+        });
+        actions.appendChild(rmFeatBtn);
         top.appendChild(actions);
       }
 
