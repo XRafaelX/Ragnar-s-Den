@@ -143,7 +143,7 @@ export function subclassEligible(cl){
 
 export function openSubclassPicker(c, cl){
   var prog = CLASS_PROGRESSION[cl.name];
-  openInfoModal(cl.name+" — "+prog.subclassLabel, function(body){
+  openInfoModal(cl.name+": "+prog.subclassLabel, function(body){
     var p = ce("p","lu-note");
     p.textContent = "Your "+prog.subclassLabel+" is your "+cl.name+"'s specialisation, gained at level "+prog.subclassLevel+". Pick one to add its features to your sheet.";
     body.appendChild(p);

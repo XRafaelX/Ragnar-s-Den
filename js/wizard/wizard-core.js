@@ -15,6 +15,7 @@ import {
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
   wizardStepAbilities, wizardStepSkills, wizardStepEquipment, wizardStepSpells, wizardStepReview
 } from "./wizard-steps.js";
+import { makeMoveLeftSvg, makeMoveRightSvg } from "../ui/svg-icons.js";
 
 /* ---------------- Character Creation Wizard ---------------- */
 export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","equipment","spells","review"];
@@ -178,7 +179,7 @@ export function renderWizard(){
   overlay.innerHTML = "";
 
   var header = ce("div"); header.id = "wizard-header";
-  var h2 = document.createElement("h2"); h2.textContent = "New Character — "+wizardStepTitle(wizardState.step);
+  var h2 = document.createElement("h2"); h2.textContent = "New character: "+wizardStepTitle(wizardState.step);
   var closeBtn = document.createElement("button"); closeBtn.className = "btn small ghost"; closeBtn.textContent = "✕ Cancel";
   closeBtn.addEventListener("click", requestCloseWizard);
   header.appendChild(h2); header.appendChild(closeBtn);
@@ -213,12 +214,14 @@ export function renderWizard(){
 
   var footer = ce("div"); footer.id = "wizard-footer";
   var backBtn = document.createElement("button");
-  backBtn.className = "btn ghost"; backBtn.textContent = "← Back";
+  backBtn.className = "btn ghost btn-nav"; backBtn.innerHTML = makeMoveLeftSvg() + "Back";
   backBtn.disabled = wizardStepIndex()===0;
   backBtn.addEventListener("click", function(){ goStep(-1); });
   var nextBtn = document.createElement("button");
   nextBtn.className = "btn primary";
-  nextBtn.textContent = wizardState.step==="review" ? "Create Character" : "Next →";
+  nextBtn.classList.add("btn-nav");
+  if(wizardState.step==="review") nextBtn.textContent = "Create Character";
+  else nextBtn.innerHTML = "Next" + makeMoveRightSvg();
   nextBtn.addEventListener("click", function(){
     var err = validateStep(wizardState.step);
     if(err){

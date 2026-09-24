@@ -8,11 +8,12 @@ import {
 } from "../core/helpers.js";
 import { save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
-import { logRoll } from "../dice/dice.js";
+import { logRoll, getDieSvg } from "../dice/dice.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { openInfoModal } from "../ui/info-modal.js";
 import { playAdd, playDelete } from "../ui/sound.js";
 import { showActionToast } from "../ui/toast.js";
+import { makeMoveLeftSvg, makeMoveRightSvg } from "../ui/svg-icons.js";
 
 /* ---------------- Level-up flow ----------------
    A short guided flow in the same full-screen overlay as the creation
@@ -21,6 +22,7 @@ import { showActionToast } from "../ui/toast.js";
    at class level 4, then hit points. Applying it records what changed in
    c.levelHistory so the last level-up can be undone. */
 var STEP_IDS = ["class","subclass","asi","hp","review"];
+var STEP_LABELS = {class:"Class", subclass:"Subclass", asi:"Abilities", hp:"Hit points", review:"Review"};
 var lu = null;
 
 function abilityName(key){
@@ -89,7 +91,10 @@ function validate(id){
     if(lu.asiMode==="feat") return lu.featName ? null : "Pick a feat, or switch to raising ability scores.";
     return asiPointsUsed()===2 ? null : "Spend both ability points (you have "+(2-asiPointsUsed())+" left).";
   }
-  if(id==="hp") return (lu.hpMethod==="avg" || lu.hpRoll!=null) ? null : "Take the average or roll your hit die.";
+  if(id==="hp"){
+    if(lu.hpRolling) return "Wait for the die to land.";
+    return (lu.hpMethod==="avg" || lu.hpRoll!=null) ? null : "Take the average or roll your hit die.";
+  }
   return null;
 }
 
@@ -131,20 +136,26 @@ function render(){
 
   var header = ce("div"); header.id = "wizard-header";
   var h2 = document.createElement("h2");
-  h2.textContent = "Level Up — "+(c.name||"Character")+" (level "+totalLevel(c)+" → "+(totalLevel(c)+1)+")";
+  h2.textContent = "Level up: "+(c.name||"Character")+" to level "+(totalLevel(c)+1);
   var closeBtn = document.createElement("button"); closeBtn.className = "btn small ghost"; closeBtn.textContent = "✕ Cancel";
   closeBtn.addEventListener("click", close);
   header.appendChild(h2); header.appendChild(closeBtn);
   overlay.appendChild(header);
 
-  var progress = ce("div"); progress.id = "wizard-progress";
+  // Labelled steps so players can see what's left (steps that don't apply
+  // this level, e.g. Subclass, are left out).
+  var progress = ce("div","lu-progress"); progress.id = "wizard-progress";
   var steps = STEP_IDS.filter(stepApplicable);
   var cur = steps.indexOf(lu.step);
   steps.forEach(function(id, i){
+    var step = ce("div","lu-step");
     var dot = ce("div","wiz-dot");
-    if(i<cur) dot.classList.add("done");
-    if(i===cur) dot.classList.add("current");
-    progress.appendChild(dot);
+    if(i<cur){ dot.classList.add("done"); step.classList.add("done"); }
+    if(i===cur){ dot.classList.add("current"); step.classList.add("current"); step.setAttribute("aria-current", "step"); }
+    var label = ce("span","lu-step-label");
+    label.textContent = STEP_LABELS[id];
+    step.appendChild(dot); step.appendChild(label);
+    progress.appendChild(step);
   });
   overlay.appendChild(progress);
 
@@ -159,12 +170,14 @@ function render(){
 
   var footer = ce("div"); footer.id = "wizard-footer";
   var backBtn = document.createElement("button");
-  backBtn.className = "btn ghost"; backBtn.textContent = "← Back";
+  backBtn.className = "btn ghost btn-nav"; backBtn.innerHTML = makeMoveLeftSvg() + "Back";
   backBtn.disabled = lu.step==="class";
   backBtn.addEventListener("click", function(){ go(-1); });
   var nextBtn = document.createElement("button");
   nextBtn.className = "btn primary";
-  nextBtn.textContent = lu.step==="review" ? "Level up!" : "Next →";
+  nextBtn.classList.add("btn-nav");
+  if(lu.step==="review") nextBtn.textContent = "Level up!";
+  else nextBtn.innerHTML = "Next" + makeMoveRightSvg();
   nextBtn.addEventListener("click", function(){
     var err = validate(lu.step);
     if(err){ errorBox.textContent = "⚠ "+err; errorBox.classList.add("show"); return; }
@@ -213,7 +226,7 @@ function stepClass(container){
     var next = (Number(cl.level)||1)+1;
     var box = ce("div","class-pick-card"+(lu.className===cl.name?" selected":""));
     var gains = gainLabels(cl.name, cl.subclass, next);
-    box.innerHTML = "<h4>"+escapeHtml(cl.name)+" "+(cl.level||1)+" → "+next+"</h4>"+
+    box.innerHTML = "<h4>"+escapeHtml(cl.name)+" Lvl "+next+"</h4>"+
       (cl.subclass ? "<p><i>"+escapeHtml(cl.subclass)+"</i></p>" : "")+
       "<p>"+(gains.length ? "Gains: "+escapeHtml(gains.join(", ")) : "More hit points (no new class features this level)")+"</p>";
     box.addEventListener("click", function(){ resetChoicesFor(cl.name); render(); });
@@ -236,7 +249,7 @@ function stepClass(container){
     var ok = !blockers.length && meetsPrereq(c, name);
     var box = ce("div","class-pick-card"+(ok?"":" disabled")+(lu.className===name?" selected":""));
     var info = CLASSES_INFO[name];
-    box.innerHTML = "<h4>"+escapeHtml(name)+" 1</h4><p>"+escapeHtml(info ? info.blurb : "")+"</p>"+
+    box.innerHTML = "<h4>"+escapeHtml(name)+" Lvl 1</h4><p>"+escapeHtml(info ? info.blurb : "")+"</p>"+
       "<span class='soon'>Needs "+escapeHtml(prereqText(name))+"</span>";
     if(ok) box.addEventListener("click", function(){ resetChoicesFor(name); render(); });
     mcGrid.appendChild(box);
@@ -352,27 +365,65 @@ function stepHp(container){
   var avg = t.hitDie/2 + 1;
   var card = stepCard(container, "Hit points",
     "<b>More health:</b> each level adds your "+escapeHtml(lu.className)+" hit die (d"+t.hitDie+") plus your Constitution modifier ("+fmtMod(conMod)+") to your max HP. "+
-    "Taking the average is the safe choice; rolling can go higher or lower. Many tables just take the average.");
+    "Taking the average is the safe choice; rolling can go higher or lower.");
+  var grid = ce("div","lu-hp-grid");
 
-  var avgOpt = ce("div","wiz-equip-option"+(lu.hpMethod==="avg"?" selected":""));
-  avgOpt.innerHTML = "<b>Take the average: "+avg+" "+fmtMod(conMod)+" = "+Math.max(1, avg+conMod)+" HP</b>";
-  avgOpt.addEventListener("click", function(){ lu.hpMethod = "avg"; render(); });
-  card.appendChild(avgOpt);
-
-  var rollOpt = ce("div","wiz-equip-option"+(lu.hpMethod==="roll"?" selected":""));
-  if(lu.hpRoll==null){
-    rollOpt.innerHTML = "<b>Roll 1d"+t.hitDie+" "+fmtMod(conMod)+"</b><div class='lu-sub-blurb'>Tap to roll — the result is final.</div>";
-    rollOpt.addEventListener("click", function(){
-      lu.hpRoll = Math.floor(Math.random()*t.hitDie)+1;
-      lu.hpMethod = "roll";
-      logRoll("Level-up HP (d"+t.hitDie+fmtMod(conMod)+")", lu.hpRoll+" "+fmtMod(conMod)+" = "+Math.max(1, lu.hpRoll+conMod)+" HP");
-      render();
-    });
-  } else {
-    rollOpt.innerHTML = "<b>Rolled "+lu.hpRoll+" "+fmtMod(conMod)+" = "+Math.max(1, lu.hpRoll+conMod)+" HP</b>";
-    rollOpt.addEventListener("click", function(){ lu.hpMethod = "roll"; render(); });
+  function hpCard(method, title, badge){
+    var opt = ce("button","lu-hp-card"+(lu.hpMethod===method?" selected":""));
+    opt.type = "button";
+    opt.setAttribute("aria-pressed", lu.hpMethod===method ? "true" : "false");
+    opt.innerHTML = "<span class='lu-hp-title'>"+escapeHtml(title)+(badge ? " <span class='lu-hp-badge'>"+escapeHtml(badge)+"</span>" : "")+"</span>";
+    grid.appendChild(opt);
+    return opt;
   }
-  card.appendChild(rollOpt);
+  function hpLine(opt, base){
+    var total = Math.max(1, base + conMod);
+    var big = ce("span","lu-hp-big"); big.textContent = "+"+total+" HP";
+    var math = ce("span","lu-hp-math"); math.textContent = base+" "+fmtMod(conMod)+" CON";
+    opt.appendChild(big); opt.appendChild(math);
+  }
+
+  var avgOpt = hpCard("avg", "Take the average", "Safe");
+  var avgDie = ce("span","lu-hp-avg-icon"); avgDie.textContent = "≈";
+  avgOpt.insertBefore(avgDie, avgOpt.firstChild);
+  hpLine(avgOpt, avg);
+  avgOpt.addEventListener("click", function(){ if(!lu.hpRolling){ lu.hpMethod = "avg"; render(); } });
+
+  var rollOpt = hpCard("roll", lu.hpRoll==null ? "Roll the die" : "You rolled");
+  var die = ce("span","dice-token lu-hp-die"+(lu.hpJustRolled ? " settled" : ""));
+  die.innerHTML = getDieSvg(t.hitDie, lu.hpRoll);
+  rollOpt.insertBefore(die, rollOpt.firstChild);
+  lu.hpJustRolled = false;
+  if(lu.hpRoll==null){
+    var hint = ce("span","lu-hp-big lu-hp-tap"); hint.textContent = "Tap to roll d"+t.hitDie;
+    var fin = ce("span","lu-hp-math"); fin.textContent = "The result is final";
+    rollOpt.appendChild(hint); rollOpt.appendChild(fin);
+  } else {
+    hpLine(rollOpt, lu.hpRoll);
+  }
+  rollOpt.addEventListener("click", function(){
+    if(lu.hpRolling) return;
+    if(lu.hpRoll!=null){ lu.hpMethod = "roll"; render(); return; }
+    var result = Math.floor(Math.random()*t.hitDie)+1;
+    function done(){
+      lu.hpRolling = false;
+      lu.hpRoll = result;
+      lu.hpMethod = "roll";
+      lu.hpJustRolled = true;
+      logRoll("Level-up HP (d"+t.hitDie+fmtMod(conMod)+")", result+" "+fmtMod(conMod)+" = "+Math.max(1, result+conMod)+" HP");
+      render();
+    }
+    if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){ done(); return; }
+    // Tumble with random faces for a moment, then land on the result.
+    lu.hpRolling = true;
+    die.classList.add("rolling");
+    var spin = setInterval(function(){
+      die.innerHTML = getDieSvg(t.hitDie, Math.floor(Math.random()*t.hitDie)+1);
+    }, 80);
+    setTimeout(function(){ clearInterval(spin); if(lu) done(); }, 750);
+  });
+
+  card.appendChild(grid);
 }
 
 /* HP gained this level. Raising CON also raises HP retroactively by the
@@ -390,7 +441,8 @@ function stepReview(container){
   var t = target();
   var card = stepCard(container, "Review", "Here's what changes. Press <b>Level up!</b> to apply it — you can undo the last level-up from the sheet if you made a mistake.");
   var items = [];
-  items.push((t.existing ? lu.className+" "+(t.newLevel-1)+" → "+t.newLevel : "Multiclass: "+lu.className+" 1")+" (character level "+totalLevel(c)+" → "+(totalLevel(c)+1)+")");
+  var classLine = (t.existing ? lu.className+" Lvl "+t.newLevel : "Multiclass: "+lu.className+" Lvl 1")+
+    " (character level "+(totalLevel(c)+1)+")";
   if(t.needsSubclass) items.push(target().prog.subclassLabel+": "+chosenSubclass());
   if(t.asi){
     if(lu.asiMode==="feat") items.push("Feat: "+lu.featName);
@@ -400,6 +452,7 @@ function stepReview(container){
   var newPb = Math.floor(totalLevel(c)/4)+2;
   if(newPb!==profBonus(c)) items.push("Proficiency bonus "+fmtMod(profBonus(c))+" → "+fmtMod(newPb));
   var ul = document.createElement("ul"); ul.className = "lu-review-list";
+  var classLi = document.createElement("li"); classLi.textContent = classLine; ul.appendChild(classLi);
   items.forEach(function(txt){ var li = document.createElement("li"); li.textContent = txt; ul.appendChild(li); });
   card.appendChild(ul);
   var gains = gainLabels(lu.className, t.existing && t.existing.subclass || chosenSubclass(), t.newLevel)

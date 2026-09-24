@@ -10,13 +10,18 @@
   display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;
 }
 #wizard-header h2{font-family:var(--serif);color:var(--brass-bright);font-size:18px;margin:0;font-weight:normal;}
-#wizard-progress{display:flex;gap:6px;padding:0 20px 14px;flex:none;}
+#wizard-progress{display:flex;gap:6px;padding:0 max(20px, calc((100% - 720px) / 2)) 14px;flex:none;}
 .wiz-dot{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.08);}
 .wiz-dot.done{background:var(--brass);}
 .wiz-dot.current{background:var(--brass-bright);}
 #wizard-body{flex:1;overflow-y:auto;padding:20px;display:flex;justify-content:center;}
 #wizard-body-inner{max-width:720px;width:100%;}
-#wizard-footer{padding:14px 20px;border-top:1px solid var(--rule);display:flex;justify-content:space-between;gap:10px;flex:none;}
+/* Back/Next line up with the 720px content column instead of the
+   screen edges, so they stay near the card on wide screens. */
+#wizard-footer{
+  padding:14px max(20px, calc((100% - 720px) / 2));
+  border-top:1px solid var(--rule);display:flex;justify-content:space-between;gap:10px;flex:none;
+}
 .wiz-error{
   display:none;flex:none;margin:0 20px;padding:10px 14px;
   background:rgba(217,69,95,.14);border:1px solid var(--oxblood);border-radius:6px;
