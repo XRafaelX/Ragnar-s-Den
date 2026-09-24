@@ -4,6 +4,7 @@ import { RACES, RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/alignments.js";
 import { POINT_BUY_COSTS, pickNameIdeas } from "../data/misc.js";
+import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { makeStatArrowSvg } from "../ui/svg-icons.js";
 import { dropdownField } from "../render/sheet.js";
@@ -365,9 +366,101 @@ export function wizardStepEquipment(container){
   container.appendChild(card);
 }
 
+/* One pick-N-from-a-list block (cantrips or 1st-level spells). Toggling
+   updates the rows in place rather than re-rendering the whole wizard, so a
+   long list keeps its scroll position and the search box keeps focus. */
+function spellPickSection(title, help, count, level, chosen, listClass){
+  var wrap = ce("div","wiz-spell-section");
+
+  var head = ce("div","wiz-spell-head");
+  var h = document.createElement("h4"); h.textContent = title;
+  var counter = ce("span","wiz-spell-counter");
+  head.appendChild(h); head.appendChild(counter);
+  wrap.appendChild(head);
+
+  if(help){
+    var helpP = document.createElement("p");
+    helpP.className = "wiz-spell-help";
+    helpP.textContent = help;
+    wrap.appendChild(helpP);
+  }
+
+  var search = document.createElement("input");
+  search.type = "text"; search.className = "wiz-spell-search";
+  search.placeholder = "Search " + title.toLowerCase() + "…";
+  wrap.appendChild(search);
+
+  var list = ce("div","wiz-spell-list");
+  var data = spellDataForClass(listClass);
+  var entries = Object.keys(data).filter(function(name){ return data[name].level === level; }).sort().map(function(name){
+    var d = data[name];
+    var row = ce("div","wiz-pick-row wiz-spell-row");
+    var cb = document.createElement("input"); cb.type = "checkbox"; cb.className = "chk";
+    var text = ce("div","wiz-spell-text");
+    var meta = [d.school, d.castingTime, d.range].concat(d.concentration ? ["Concentration"] : [], d.ritual ? ["Ritual"] : []).join(" · ");
+    text.innerHTML =
+      '<span class="row-name">' + escapeHtml(name) + '</span>' +
+      '<span class="wiz-spell-meta">' + escapeHtml(meta) + '</span>' +
+      '<span class="wiz-spell-desc">' + escapeHtml(d.summary) + '</span>';
+    row.appendChild(cb); row.appendChild(text);
+    list.appendChild(row);
+    return {name:name, d:d, row:row, cb:cb};
+  });
+  wrap.appendChild(list);
+
+  function refresh(){
+    var full = chosen.length >= count;
+    counter.textContent = chosen.length + " of " + count + " chosen";
+    counter.classList.toggle("complete", chosen.length === count);
+    entries.forEach(function(e){
+      var on = chosen.indexOf(e.name) !== -1;
+      e.cb.checked = on;
+      e.cb.disabled = !on && full;
+      e.row.classList.toggle("selected", on);
+      e.row.classList.toggle("disabled", !on && full);
+    });
+  }
+
+  entries.forEach(function(e){
+    e.row.addEventListener("click", function(ev){
+      if(e.cb.disabled) return;
+      if(ev.target !== e.cb) e.cb.checked = !e.cb.checked;
+      var i = chosen.indexOf(e.name);
+      if(e.cb.checked && i === -1){
+        if(chosen.length >= count){ e.cb.checked = false; return; }
+        chosen.push(e.name);
+      } else if(!e.cb.checked && i !== -1){
+        chosen.splice(i, 1);
+      }
+      var errBox = document.getElementById("wizard-error");
+      if(errBox) errBox.classList.remove("show");
+      refresh();
+    });
+  });
+
+  search.addEventListener("input", function(){
+    var q = search.value.toLowerCase().trim();
+    entries.forEach(function(e){
+      var hay = (e.name + " " + e.d.school + " " + e.d.summary).toLowerCase();
+      e.row.style.display = (!q || hay.indexOf(q) !== -1) ? "" : "none";
+    });
+  });
+
+  refresh();
+  return wrap;
+}
+
 export function wizardStepSpells(container){
+  var info = currentClassInfo();
+  var sc = info.spellcasting;
   var card = ce("div","card");
-  card.innerHTML = "<h3><span>Spells</span></h3><p style='font-size:13px;color:var(--text-on-parch-dim);'>Spellcasting setup for this class hasn't been built yet.</p>";
+  card.innerHTML = "<h3><span>Spells</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> Cantrips are spells you can cast at will, and your starting spells are your first real tools. You can always change or add more from the Spells tab once your character exists.";
+  card.appendChild(explain);
+
+  card.appendChild(spellPickSection("Cantrips", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList));
+  card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", sc.spells, 1, wizardState.spellChoices.spells, sc.spellList));
   container.appendChild(card);
 }
 
@@ -425,7 +518,8 @@ export function wizardStepReview(container){
   var info = currentClassInfo();
   var conMod = mod(wizardState.abilities.con), dexMod = mod(wizardState.abilities.dex);
   var hp = HIT_DICE_BY_CLASS[wizardState.classId] + conMod;
-  var ac = 10 + dexMod + conMod;
+  var isBarb = wizardState.classId === "Barbarian";
+  var ac = 10 + dexMod + (isBarb ? conMod : 0);
 
   var rows = ce("div","list-rows");
   function row(label, val){
@@ -441,9 +535,13 @@ export function wizardStepReview(container){
   row("Alignment", wizardState.alignment || "—");
   row("Ability scores", ABILITIES.map(function(a){ return a[1].slice(0,3).toUpperCase()+" "+wizardState.abilities[a[0]]; }).join("  "));
   row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+")");
-  row("Armor Class", ac+" (Unarmored Defense: 10 + DEX + CON)");
+  row("Armor Class", ac + (isBarb ? " (Unarmored Defense: 10 + DEX + CON)" : " (unarmored: 10 + DEX)"));
   row("Saving throws", info.savingThrows.map(function(k){ return k.toUpperCase(); }).join(", "));
   row("Skills", wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]).join(", ") || "—");
+  if(info.spellcasting){
+    row("Cantrips", wizardState.spellChoices.cantrips.join(", ") || "—");
+    row(info.spellcasting.spellsLabel || "1st-level spells", wizardState.spellChoices.spells.join(", ") || "—");
+  }
   card.appendChild(rows);
 
   var featTitle = document.createElement("p");

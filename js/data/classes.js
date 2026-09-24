@@ -81,6 +81,54 @@ CLASSES_INFO["Wizard"].features = [
   {name:"Arcane Recovery", text:"Once per day during a short rest, recover expended spell slots with combined level up to half your wizard level."}
 ];
 
+/* Wizard is fully guided in the creation wizard (the first spellcaster to
+   be). `spellcasting` drives the wizard's Spells step: how many cantrips
+   and 1st-level spells to pick, which class list to pick from, and the
+   level-1 slots. `prepares` casters choose from a spellbook and prepare
+   a subset (ability modifier + level) rather than knowing them all. */
+Object.assign(CLASSES_INFO["Wizard"], {
+  available:true,
+  primaryAbility:"int",
+  savingThrows:["int","wis"],
+  skillChoices:{count:2, options:["Arcana","History","Insight","Investigation","Medicine","Religion"]},
+  spellcasting:{
+    ability:"int", spellList:"Wizard", cantrips:3, spells:6, prepares:true, slots:{1:2},
+    spellsLabel:"Spellbook spells",
+    spellsHelp:"Your spellbook starts with six 1st-level wizard spells. Each day you prepare a number equal to your Intelligence modifier + your wizard level; the rest stay in the book for later."
+  },
+  equipment:{
+    choiceGroups:[
+      {options:[
+        {key:"quarterstaff", label:"Quarterstaff", detail:"1d6 bludgeoning, versatile (1d8)", items:[
+          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true}
+        ]},
+        {key:"dagger", label:"Dagger", detail:"1d4 piercing, finesse, light, thrown (range 20/60 ft)", items:[
+          {name:"Dagger",qty:1,weight:1,notes:"finesse, light, thrown 20/60",type:"weapon",damageDice:"1d4",damageType:"Piercing",ability:"finesse",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"pouch", label:"Component pouch", detail:"Holds the material components your spells need", items:[
+          {name:"Component Pouch",qty:1,weight:2,notes:"spellcasting focus; holds material components"}
+        ]},
+        {key:"focus", label:"Arcane focus", detail:"A crystal, orb, rod, staff, or wand to channel your spells", items:[
+          {name:"Arcane Focus",qty:1,weight:1,notes:"spellcasting focus"}
+        ]}
+      ]},
+      {options:[
+        {key:"scholar", label:"Scholar's Pack", detail:"Backpack, book of lore, ink, quill, parchment, sand, small knife", items:[
+          {name:"Scholar's Pack",qty:1,weight:10,notes:"backpack, book of lore, ink, quill, 10 sheets of parchment, bag of sand, small knife"}
+        ]},
+        {key:"explorer", label:"Explorer's Pack", detail:"Backpack, bedroll, mess kit, tinderbox, torches, rations, waterskin, rope", items:[
+          {name:"Explorer's Pack",qty:1,weight:59,notes:"backpack, bedroll, mess kit, tinderbox, 10 torches, 10 days rations, waterskin, 50ft rope"}
+        ]}
+      ]}
+    ],
+    fixed:[
+      {name:"Spellbook", qty:1, weight:3, notes:"holds your wizard spells"}
+    ]
+  }
+});
+
 CLASSES_INFO["Cleric"].features = [
   {name:"Spellcasting", text:"Cast divine spells channeled from your deity using Wisdom as your spellcasting ability."},
   {name:"Divine Domain", text:"Chosen religious domain granting domain spells and bonus domain features."}

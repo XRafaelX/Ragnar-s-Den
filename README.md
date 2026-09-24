@@ -27,7 +27,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
 
 ## Features
 
-- **Character Creation Wizard**: Guided character creation workflow with SRD and expanded race, class, and background selections (detailed guided support currently implemented for Barbarian).
+- **Character Creation Wizard**: Guided character creation workflow with SRD and expanded race, class, and background selections (detailed guided support currently implemented for Barbarian and Wizard, including cantrip and spellbook selection).
 - **Interactive Character Sheet**: Full management of ability scores, modifiers, saving throws, skill proficiencies, hit points, hit dice, death saving throws, spell slots, inventory weight tracking, and equipment.
 - **Built-in Dice Roller Tray**: Floating dice tray supporting d4, d6, d8, d10, d12, d20, and d100 with quantity multiplier, flat modifier, advantage/disadvantage toggles, and a roll history log.
 - **Offline & Local Storage**: Stores all character data in browser `localStorage`. No external database or login required.
@@ -143,6 +143,7 @@ Currently, no automated testing framework is set up in the repository.
 │   │   ├── races.js              # Race lists & trait blurbs
 │   │   ├── backgrounds.js        # Background lists & skill/blurb info
 │   │   ├── alignments.js         # Alignment list & blurbs
+│   │   ├── spells.js             # Spell catalog (cantrips–9th level): school, casting time, range, components, classes
 │   │   └── misc.js               # Point-buy costs, name idea generator
 │   ├── render/
 │   │   ├── sidebar.js            # Character list sidebar

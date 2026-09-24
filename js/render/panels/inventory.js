@@ -81,7 +81,7 @@ function itemHeader(c, item, idx, onOpenDetails){
 /* Shared bottom-sheet title bar: an editable name field (renaming lives
    here now, not on the collapsed card), a short summary line, and a
    close button (tapping the dimmed backdrop or Escape also closes it). */
-function sheetHeader(body, item, defaultName, subtitle, close){
+export function sheetHeader(body, item, defaultName, subtitle, close){
   var header = document.createElement("div");
   header.className = "bs-header";
   var titleWrap = document.createElement("div");
