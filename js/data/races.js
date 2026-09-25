@@ -33,16 +33,20 @@ export var RACE_TRAITS = {
   "Half-Orc": "+2 STR, +1 CON. Darkvision, menacing (Intimidation proficiency), relentless endurance (drop to 1 HP instead of 0, once per long rest).",
   "Tiefling": "+2 CHA, +1 INT. Darkvision, resistance to fire damage, know the thaumaturgy cantrip and more spells at higher levels."
 };
-/* Expanded races get their one-line summary from RACE_DATA (the core
-   ones above keep their hand-written lines). */
-Object.keys(RACE_DATA).forEach(function(name){
-  if(RACE_TRAITS[name]) return;
-  var d = RACE_DATA[name];
+/* One-line summary built from a RACE_DATA entry: "+2 DEX, +1 CHA.
+   Darkvision 60ft. Speed 30 ft, climb 20 ft. Feline Agility, …". */
+export function raceSummary(d){
   var bits = [raceAsiText(d)];
   if(d.darkvision) bits.push((d.darkvision>=120 ? "Superior darkvision " : "Darkvision ")+d.darkvision+"ft");
   var sp = d.speed || {};
   if(sp.walk!==30 || sp.fly || sp.swim || sp.climb) bits.push("Speed "+raceSpeedText(d));
-  RACE_TRAITS[name] = bits.join(". ")+". "+d.traits.map(function(t){ return t.name; }).join(", ")+".";
+  var names = (d.traits||[]).map(function(t){ return t.name; }).filter(Boolean);
+  return bits.filter(Boolean).join(". ")+"."+(names.length ? " "+names.join(", ")+"." : "");
+}
+/* Expanded races get their one-line summary from RACE_DATA (the core
+   ones above keep their hand-written lines). */
+Object.keys(RACE_DATA).forEach(function(name){
+  if(!RACE_TRAITS[name]) RACE_TRAITS[name] = raceSummary(RACE_DATA[name]);
 });
 export var RACE_TRAIT_FALLBACK = "A custom or homebrew race. Check with your DM for its ability score bonuses and traits. Everything else here still works fine once you've picked it.";
 

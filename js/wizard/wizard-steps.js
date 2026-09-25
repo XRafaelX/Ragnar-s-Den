@@ -10,6 +10,8 @@ import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../ui/svg-icons.js"
 import { getDieSvg } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
+import { openCompendium } from "../render/compendium.js";
+import { makePlusSvg } from "../ui/svg-icons.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, finalAbilities, featPrereqReason } from "./wizard-core.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
@@ -290,8 +292,8 @@ export function wizardStepRace(container){
 
   var dd = wizardDropdown("Race", "race", RACES, wizardState, function(){
     explain.innerHTML = raceExplainHtml(wizardState.race);
-  });
-  dd.style.maxWidth = "320px";
+  }, "race");
+  dd.firstChild.style.maxWidth = "320px";
   card.appendChild(dd);
   container.appendChild(card);
 }
@@ -305,8 +307,8 @@ export function wizardStepBackground(container){
 
   var dd = wizardDropdown("Background", "background", BACKGROUNDS, wizardState, function(){
     explain.innerHTML = backgroundExplainHtml(wizardState.background);
-  });
-  dd.style.maxWidth = "320px";
+  }, "background");
+  dd.firstChild.style.maxWidth = "320px";
   card.appendChild(dd);
   container.appendChild(card);
 }
@@ -701,14 +703,19 @@ function homebrewSelect(opts){
 
 /* Race, background and alignment: a labelled themed dropdown with the
    homebrew option, writing straight into wizardState[key]. */
-function wizardDropdown(labelTxt, key, groups, obj, onChangeExtra){
+/* Race, background and alignment: a labelled themed dropdown writing
+   straight into wizardState[key]. Races and backgrounds pass
+   `createKind`: instead of a free-text homebrew option they get a note
+   and a button to make a proper one (traits, skills, …) in the
+   Compendium, which comes back selected. */
+function wizardDropdown(labelTxt, key, groups, obj, onChangeExtra, createKind){
   var f = ce("div","field");
   var l = document.createElement("label");
   l.textContent = labelTxt;
   f.appendChild(l);
   f.appendChild(themedPicker({
     key:"field:"+key, groups:groups, value:obj[key], placeholder:"Select "+labelTxt.toLowerCase(),
-    ariaLabel:labelTxt, homebrew:{noun:labelTxt.toLowerCase()},
+    ariaLabel:labelTxt, homebrew:createKind ? null : {noun:labelTxt.toLowerCase()},
     onPick:function(v){
       obj[key] = v;
       var errBox = document.getElementById("wizard-error");
@@ -716,7 +723,27 @@ function wizardDropdown(labelTxt, key, groups, obj, onChangeExtra){
       if(onChangeExtra) onChangeExtra();
     }
   }));
-  return f;
+  if(!createKind) return f;
+  var wrap = document.createElement("div");
+  wrap.appendChild(f);
+  var noun = labelTxt.toLowerCase();
+  var note = ce("div","lu-custom-note");
+  note.innerHTML = "<div><b>Playing a homebrew "+escapeHtml(noun)+"?</b> Create it in the Compendium with its "+(createKind==="race" ? "ability scores, speed and traits" : "skills, tools and feature")+". It'll appear in this list.</div>";
+  var make = document.createElement("button");
+  make.type = "button";
+  make.className = "btn small";
+  make.innerHTML = makePlusSvg()+"Create a custom "+escapeHtml(noun);
+  make.addEventListener("click", function(){
+    openCompendium({
+      create:createKind,
+      // Saved: pick it and come straight back here.
+      onSaved:function(entry){ obj[key] = entry.name; document.getElementById("catalog-back").click(); },
+      onClose:function(){ if(wizardState) renderWizard(); }
+    });
+  });
+  note.appendChild(make);
+  wrap.appendChild(note);
+  return wrap;
 }
 
 function choiceFightingStyle(card, ch){

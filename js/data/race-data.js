@@ -315,15 +315,16 @@ var ABILITY_SHORT = {str:"STR", dex:"DEX", con:"CON", int:"INT", wis:"WIS", cha:
 /* "+2 DEX, +1 WIS" (or the flexible text). */
 export function raceAsiText(d){
   if(d.asiText) return d.asiText;
-  var keys = Object.keys(d.asi||{});
+  var keys = Object.keys(d.asi||{}).filter(function(k){ return d.asi[k]; });
+  if(!keys.length) return "No ability score increase";
   if(keys.length===6 && keys.every(function(k){ return d.asi[k]===1; })) return "+1 to every ability score";
   return keys.map(function(k){ return (d.asi[k]>0 ? "+" : "−")+Math.abs(d.asi[k])+" "+ABILITY_SHORT[k]; }).join(", ");
 }
 /* Compact form for list rows: the fixed part, "+more" when there's a
    choice on top, or "Flexible" when it's all the player's choice. */
 export function raceAsiShort(d){
-  var keys = Object.keys(d.asi||{});
-  if(!keys.length) return "Flexible";
+  var keys = Object.keys(d.asi||{}).filter(function(k){ return d.asi[k]; });
+  if(!keys.length) return d.custom ? "No increase" : "Flexible";
   if(keys.length===6 && keys.every(function(k){ return d.asi[k]===1; })) return "+1 all";
   var fixed = keys.map(function(k){ return (d.asi[k]>0 ? "+" : "−")+Math.abs(d.asi[k])+" "+ABILITY_SHORT[k]; }).join(", ");
   return d.asiText ? fixed+", +more" : fixed;

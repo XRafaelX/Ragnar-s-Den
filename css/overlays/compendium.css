@@ -130,3 +130,25 @@
 @media (max-width:900px){ .cmp-preview{display:none;} }
 /* A custom subclass's (possibly very long) name as the detail title. */
 #info-modal-title{overflow-wrap:anywhere;min-width:0;}
+
+/* Homebrew race form: ability steppers and the four speed fields. */
+.cmp-asi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+@media (max-width:560px){ .cmp-asi-grid{grid-template-columns:repeat(3,1fr);} }
+.cmp-asi{
+  display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;border-radius:8px;
+  border:1px solid var(--rule);background:rgba(0,0,0,.12);transition:border-color .15s, background .15s;
+}
+.cmp-asi.on{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 16%, transparent);}
+.cmp-asi-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-on-parch-dim);}
+.cmp-asi.on .cmp-asi-lbl{color:var(--brass-bright);}
+.cmp-asi-ctl{display:flex;align-items:center;gap:4px;}
+.cmp-asi-val{min-width:24px;text-align:center;font-family:var(--serif);font-size:17px;}
+.cmp-asi-btn{
+  width:24px;height:24px;border-radius:50%;border:1px solid var(--rule);background:transparent;
+  color:var(--text-on-parch);cursor:pointer;line-height:1;font-size:14px;
+}
+.cmp-asi-btn:hover{border-color:var(--brass);color:var(--brass-bright);}
+.cmp-form-row-4{grid-template-columns:repeat(4,1fr);}
+@media (max-width:560px){ .cmp-form-row-4{grid-template-columns:1fr 1fr;} }
+/* The wizard's "create a homebrew race/background" note sits under the picker. */
+#wizard-body .lu-custom-note{margin-top:14px;}

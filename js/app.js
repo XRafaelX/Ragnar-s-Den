@@ -14,6 +14,7 @@ import { setupAvatarCropper } from "./ui/avatar-crop.js";
 import { setupBackdropUpload } from "./ui/backdrop.js";
 import { maybeStartTutorial, startTutorial } from "./ui/tutorial.js";
 import { loadCustomSubclasses, getCustomSubclasses, importCustomSubclasses } from "./core/custom-subclasses.js";
+import { loadHomebrew, getHomebrew, importHomebrew } from "./core/custom-homebrew.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
@@ -40,7 +41,8 @@ export function setupTopLevel(){
   document.getElementById("export-btn").addEventListener("click", function(){
     // Characters plus homebrew made in the Compendium. (Older backups were
     // just the characters array; import still accepts those.)
-    var backup = {version:2, characters:state.characters, customSubclasses:getCustomSubclasses()};
+    var backup = {version:2, characters:state.characters, customSubclasses:getCustomSubclasses(),
+      customRaces:getHomebrew("race"), customBackgrounds:getHomebrew("background")};
     var blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
@@ -64,13 +66,21 @@ export function setupTopLevel(){
         var parsed = JSON.parse(reader.result);
         var data = Array.isArray(parsed) ? parsed : parsed && parsed.characters;
         var homebrew = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customSubclasses) ? parsed.customSubclasses : [];
+        var races = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customRaces) ? parsed.customRaces : [];
+        var backgrounds = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customBackgrounds) ? parsed.customBackgrounds : [];
+        var extras = [];
+        if(homebrew.length) extras.push(homebrew.length+" custom subclass(es)");
+        if(races.length) extras.push(races.length+" custom race(s)");
+        if(backgrounds.length) extras.push(backgrounds.length+" custom background(s)");
         if(!Array.isArray(data)) throw new Error("Invalid format");
         confirmDialog(
           "Import backup?",
-          "This will add "+data.length+" character(s)"+(homebrew.length ? " and "+homebrew.length+" custom subclass(es)" : "")+" from the backup file to your current vault. Existing characters are kept.",
+          "This will add "+data.length+" character(s)"+(extras.length ? " and "+extras.join(", ") : "")+" from the backup file to your current vault. Existing characters are kept.",
           function(){
             // Subclasses first, so imported characters find theirs.
             importCustomSubclasses(homebrew);
+            importHomebrew("race", races);
+            importHomebrew("background", backgrounds);
             data.forEach(function(c){
               c.id = uid(); // avoid collisions
               ensureShape(c);
@@ -108,6 +118,7 @@ export function init(){
   initTheme();
   load();
   loadCustomSubclasses();
+  loadHomebrew();
   state.characters.forEach(ensureShape);
   setupTopLevel();
   setupDiceTray();
