@@ -175,6 +175,7 @@ Currently, no automated testing framework is set up in the repository.
 ├── js/
 │   ├── bootstrap.bundle.min.js   # Bootstrap 5 JavaScript bundle
 │   ├── app.js                    # Application entry point: event listeners, import/export, init()
+│   ├── version.js                # App release version (APP_VERSION): bump here for each release
 │   ├── core/
 │   │   ├── character.js          # Character factory and schema migration (ensureShape)
 │   │   ├── custom-homebrew.js    # Custom race and background creation, persistence, and merge logic

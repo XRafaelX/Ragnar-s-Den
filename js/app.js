@@ -17,9 +17,11 @@ import { loadCustomSubclasses, getCustomSubclasses, importCustomSubclasses } fro
 import { loadHomebrew, getHomebrew, importHomebrew } from "./core/custom-homebrew.js";
 import { loadCustomFeatures, getCustom, importCustom } from "./core/custom-features.js";
 import { loadCustomItems, getCustomItems, importCustomItems } from "./core/custom-items.js";
+import { APP_VERSION } from "./version.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
+  document.getElementById("app-version").textContent = " · v" + APP_VERSION;
   document.getElementById("new-char-btn").addEventListener("click", openWizard);
   document.getElementById("theme-btn").addEventListener("click", openThemeModal);
   document.getElementById("tutorial-btn").addEventListener("click", function(){
@@ -43,7 +45,7 @@ export function setupTopLevel(){
   document.getElementById("export-btn").addEventListener("click", function(){
     // Characters plus homebrew made in the Compendium. (Older backups were
     // just the characters array; import still accepts those.)
-    var backup = {version:2, characters:state.characters, customSubclasses:getCustomSubclasses(),
+    var backup = {version:2, appVersion:APP_VERSION, characters:state.characters, customSubclasses:getCustomSubclasses(),
       customRaces:getHomebrew("race"), customBackgrounds:getHomebrew("background"), customFeats:getCustom("feat"), customFeatures:getCustom("feature"),
       customWeapons:getCustomItems("weapon"), customArmor:getCustomItems("armor")};
     var blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});

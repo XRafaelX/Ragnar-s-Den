@@ -1,4 +1,4 @@
-var CACHE_NAME = "vault-and-vellum-v17";
+var CACHE_NAME = "vault-and-vellum-v18";
 var ASSETS = [
   "./",
   "./index.html",
@@ -36,6 +36,7 @@ var ASSETS = [
   "./css/components/tutorial.css",
   "./js/bootstrap.bundle.min.js",
   "./js/app.js",
+  "./js/version.js",
   "./js/core/character.js",
   "./js/core/custom-features.js",
   "./js/core/custom-homebrew.js",
