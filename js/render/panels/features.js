@@ -5,6 +5,7 @@ import { openFeatPicker, openFeatEditor } from "./feat-picker.js";
 import { openFeatureModal } from "./feature-modal.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { playDelete } from "../../ui/sound.js";
+import { renderInfusionsCard } from "./infusions.js";
 
 /* ---- Features & Feats panel ----
    One list for everything the character has: class, subclass, racial and
@@ -244,6 +245,8 @@ export function renderFeaturesPanel(c){
   }
 
   updateFeatureList();
+  var infusionsCard = renderInfusionsCard(c);
+  if(infusionsCard) panel.appendChild(infusionsCard);
   panel.appendChild(featDirCard);
 
   return panel;

@@ -1,4 +1,4 @@
-var CACHE_NAME = "vault-and-vellum-v9";
+var CACHE_NAME = "vault-and-vellum-v10";
 var ASSETS = [
   "./",
   "./index.html",
@@ -43,6 +43,7 @@ var ASSETS = [
   "./js/data/backgrounds.js",
   "./js/data/classes.js",
   "./js/data/feats.js",
+  "./js/data/infusions.js",
   "./js/data/languages.js",
   "./js/data/misc.js",
   "./js/data/progression.js",
@@ -60,6 +61,7 @@ var ASSETS = [
   "./js/render/panels/feat-picker.js",
   "./js/render/panels/feature-modal.js",
   "./js/render/panels/features.js",
+  "./js/render/panels/infusions.js",
   "./js/render/panels/information.js",
   "./js/render/panels/inventory.js",
   "./js/render/panels/journal.js",

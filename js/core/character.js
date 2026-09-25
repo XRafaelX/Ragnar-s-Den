@@ -38,6 +38,7 @@ export function newCharacter(name){
     deathSaves: {success:0, fail:0},
     rage: {active:false, used:0},
     resourcesUsed: {},
+    infusions: {known:[], active:[]},
     spellcasting: {ability:"int", slots: slots, pact: null},
     spells: [],
     feats: [],
@@ -83,6 +84,7 @@ export function ensureShape(c){
   if(!c.deathSaves) c.deathSaves = {success:0, fail:0};
   if(!c.rage) c.rage = {active:false, used:0};
   if(!c.resourcesUsed) c.resourcesUsed = {};
+  if(!c.infusions) c.infusions = {known:[], active:[]};
   if(!c.spellcasting) c.spellcasting = {ability:"int", slots:{}};
   if(!c.spellcasting.slots) c.spellcasting.slots = {};
   if(c.spellcasting.pact===undefined) c.spellcasting.pact = null;
@@ -131,6 +133,7 @@ export function ensureShape(c){
   else {
     c.inventory.forEach(function(item){
       if(!item.type) item.type = "gear";
+      if(!item.id) item.id = uid();
     });
   }
   if(!c.currency) c.currency = {cp:0,sp:0,ep:0,gp:0,pp:0};
