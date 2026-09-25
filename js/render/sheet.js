@@ -79,6 +79,12 @@ export function renderAll(){
   // one starts from the same spot instead of snapping back to the far left.
   var oldTabsBar = document.getElementById("tabs");
   var prevTabsScroll = oldTabsBar && lastTabsCharId===c.id ? oldTabsBar.scrollLeft : 0;
+  // Same for the page itself: clearing the sheet collapses #main, which
+  // resets its scroll to the top. Keep the spot when the rebuild is just an
+  // edit (same character and tab), e.g. a stepper far down the Vitals tab.
+  var mainEl = document.getElementById("main");
+  var sameView = lastTabsCharId===c.id && lastTabsActive===state.activeTab;
+  var prevMainScroll = mainEl && sameView ? mainEl.scrollTop : null;
   empty.style.display = "none";
   sheet.style.display = "block";
   sheet.innerHTML = "";
@@ -123,6 +129,7 @@ export function renderAll(){
     panel.className = "panel" + (state.activeTab===t[0] ? " active" : "");
     sheet.appendChild(panel);
   });
+  if(prevMainScroll!=null) mainEl.scrollTop = prevMainScroll;
 
   renderRollLog();
 }

@@ -37,6 +37,7 @@ export function newCharacter(name){
     hitDiceUsed: 0,
     deathSaves: {success:0, fail:0},
     rage: {active:false, used:0},
+    resourcesUsed: {},
     spellcasting: {ability:"int", slots: slots, pact: null},
     spells: [],
     feats: [],
@@ -81,6 +82,7 @@ export function ensureShape(c){
   if(c.hitDiceUsed==null) c.hitDiceUsed = 0;
   if(!c.deathSaves) c.deathSaves = {success:0, fail:0};
   if(!c.rage) c.rage = {active:false, used:0};
+  if(!c.resourcesUsed) c.resourcesUsed = {};
   if(!c.spellcasting) c.spellcasting = {ability:"int", slots:{}};
   if(!c.spellcasting.slots) c.spellcasting.slots = {};
   if(c.spellcasting.pact===undefined) c.spellcasting.pact = null;

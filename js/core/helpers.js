@@ -4,6 +4,7 @@ import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
 import { WEAPON_DATA } from "../data/weapons.js";
+import { CLASS_RESOURCES, SUBCLASS_RESOURCES } from "../data/resources.js";
 
 /* ---------------- Helpers ---------------- */
 export function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
@@ -123,6 +124,43 @@ export function classProficiencies(c, idx){
   if(!prog) return CLASS_PROFICIENCIES[cl.name] || null;
   var m = prog.multiclassProfs;
   return {armor:m.armor, weapons:m.weapons, tools:m.tools, savingThrows:[], note:m.note};
+}
+/* Limited-use resources this character has right now, from each class
+   and its subclass. `key` is unique per character (class + resource id)
+   and indexes c.resourcesUsed. */
+export function characterResources(c){
+  var m = {};
+  ["str","dex","con","int","wis","cha"].forEach(function(k){ m[k] = mod(c.abilities && c.abilities[k]); });
+  var list = [];
+  (c.classes||[]).forEach(function(cl){
+    var lv = Number(cl.level)||1;
+    var defs = (CLASS_RESOURCES[cl.name]||[]).map(function(r){ return {def:r, source:cl.name}; });
+    var subDefs = cl.subclass && SUBCLASS_RESOURCES[cl.name] && SUBCLASS_RESOURCES[cl.name][cl.subclass];
+    (subDefs||[]).forEach(function(r){ defs.push({def:r, source:cl.subclass}); });
+    defs.forEach(function(d){
+      var r = d.def;
+      if(lv < r.level) return;
+      var key = cl.name+":"+r.id;
+      var max = r.max(lv, m);
+      list.push({
+        key: key, name: r.name, source: d.source, hint: r.hint, pool: !!r.pool,
+        max: max, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
+        reset: r.reset(lv)
+      });
+    });
+  });
+  return list;
+}
+/* Restore resources on a rest. A long rest restores everything; a short
+   rest only what recharges on one. Returns the names restored. */
+export function restoreResources(c, restType){
+  var restored = [];
+  characterResources(c).forEach(function(r){
+    if(restType==="short" && r.reset!=="short") return;
+    if(r.used>0) restored.push(r.name);
+    delete c.resourcesUsed[r.key];
+  });
+  return restored;
 }
 export function barbarianClassEntry(c){
   return (c.classes||[]).find(function(cl){ return cl.name==="Barbarian"; });

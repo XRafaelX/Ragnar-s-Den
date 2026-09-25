@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, computeArmorClass } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, computeArmorClass, characterResources, restoreResources } from "../../core/helpers.js";
 import { CLASSES_INFO } from "../../data/classes.js";
 import { HIT_DICE_BY_CLASS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -503,11 +503,13 @@ export function renderVitalsPanel(c){
 
   var shortRestBtn = document.createElement("button");
   shortRestBtn.className = "btn small"; shortRestBtn.textContent = "Short rest";
-  shortRestBtn.title = "Reminder to spend hit dice; does not auto-heal";
+  shortRestBtn.title = "Restores short-rest resources; spend hit dice to heal";
   shortRestBtn.addEventListener("click", function(){
     var pactNote = "";
     if(c.spellcasting.pact && c.spellcasting.pact.used){ c.spellcasting.pact.used = 0; pactNote = " Pact slots restored."; }
-    logRoll("Short rest taken", "Spend hit dice as needed to heal."+pactNote);
+    var restored = restoreResources(c, "short");
+    var resNote = restored.length ? " Restored: "+restored.join(", ")+"." : "";
+    logRoll("Short rest taken", "Spend hit dice as needed to heal."+pactNote+resNote);
     save(); renderAll();
   });
   restRow.appendChild(shortRestBtn);
@@ -517,7 +519,7 @@ export function renderVitalsPanel(c){
   longRestBtn.addEventListener("click", function(){
     confirmDialog(
       "Take a long rest?",
-      "This resets HP to full, clears temp HP and death saves, restores spell slots and rage, and recovers hit dice.",
+      "This resets HP to full, clears temp HP and death saves, restores spell slots, rage and class resources, and recovers hit dice.",
       function(){
         c.hp.current = c.hp.max;
         c.hp.temp = 0;
@@ -530,6 +532,7 @@ export function renderVitalsPanel(c){
         if(c.spellcasting.pact) c.spellcasting.pact.used = 0;
         c.rage.used = 0;
         c.rage.active = false;
+        restoreResources(c, "long");
         logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered.");
         save(); renderAll();
       }
@@ -583,5 +586,91 @@ export function renderVitalsPanel(c){
     panel.appendChild(rageCard);
   }
 
+  var resources = characterResources(c);
+  if(resources.length) panel.appendChild(renderResourcesCard(c, resources));
+
   return panel;
+}
+
+/* ---- Class resources ----
+   One row per limited-use feature: pips for small counts, a number for
+   point pools (Ki, Lay on Hands), with use/regain buttons. */
+var RESOURCE_PIP_LIMIT = 10;
+
+function renderResourcesCard(c, resources){
+  var card = makeCard("Class resources");
+  var list = document.createElement("div");
+  list.className = "res-list";
+  resources.forEach(function(r){
+    var remaining = r.max - r.used;
+    var row = document.createElement("div");
+    row.className = "res-row" + (remaining===0 ? " spent" : "");
+
+    var info = document.createElement("div");
+    info.className = "res-info";
+    var name = document.createElement("div");
+    name.className = "res-name";
+    name.textContent = r.name;
+    var tag = document.createElement("span");
+    tag.className = "res-reset res-reset-"+r.reset;
+    tag.textContent = r.reset==="short" ? "Short rest" : "Long rest";
+    name.appendChild(tag);
+    info.appendChild(name);
+    var hint = document.createElement("div");
+    hint.className = "res-hint";
+    hint.textContent = r.hint + (r.source ? " ("+r.source+")" : "");
+    info.appendChild(hint);
+    row.appendChild(info);
+
+    var ctrl = document.createElement("div");
+    ctrl.className = "res-ctrl";
+    if(!r.pool && r.max <= RESOURCE_PIP_LIMIT){
+      var pips = document.createElement("div");
+      pips.className = "res-pips";
+      pips.setAttribute("aria-label", remaining+" of "+r.max+" left");
+      for(var i=0;i<r.max;i++){
+        var pip = document.createElement("span");
+        pip.className = "res-pip" + (i < remaining ? " full" : "");
+        pips.appendChild(pip);
+      }
+      ctrl.appendChild(pips);
+    } else {
+      var count = document.createElement("div");
+      count.className = "res-count";
+      count.innerHTML = "<b>"+remaining+"</b> / "+r.max;
+      ctrl.appendChild(count);
+    }
+
+    var stepper = document.createElement("div");
+    stepper.className = "stat-stepper";
+    var useBtn = document.createElement("button");
+    useBtn.type = "button";
+    useBtn.className = "stat-arrow-btn";
+    useBtn.title = "Use one";
+    useBtn.setAttribute("aria-label", "Use one "+r.name);
+    useBtn.innerHTML = makeStatArrowSvg("down");
+    useBtn.disabled = remaining<=0;
+    useBtn.addEventListener("click", function(){ setUsed(r.used+1); });
+    var regainBtn = document.createElement("button");
+    regainBtn.type = "button";
+    regainBtn.className = "stat-arrow-btn";
+    regainBtn.title = "Regain one";
+    regainBtn.setAttribute("aria-label", "Regain one "+r.name);
+    regainBtn.innerHTML = makeStatArrowSvg("up");
+    regainBtn.disabled = r.used<=0;
+    regainBtn.addEventListener("click", function(){ setUsed(r.used-1); });
+    stepper.appendChild(useBtn);
+    stepper.appendChild(regainBtn);
+    ctrl.appendChild(stepper);
+    row.appendChild(ctrl);
+
+    function setUsed(n){
+      n = clamp(n, 0, r.max);
+      if(n) c.resourcesUsed[r.key] = n; else delete c.resourcesUsed[r.key];
+      save(); renderAll();
+    }
+    list.appendChild(row);
+  });
+  card.appendChild(list);
+  return card;
 }

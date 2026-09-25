@@ -1,4 +1,4 @@
-var CACHE_NAME = "vault-and-vellum-v8";
+var CACHE_NAME = "vault-and-vellum-v9";
 var ASSETS = [
   "./",
   "./index.html",
@@ -47,6 +47,7 @@ var ASSETS = [
   "./js/data/misc.js",
   "./js/data/progression.js",
   "./js/data/races.js",
+  "./js/data/resources.js",
   "./js/data/spells.js",
   "./js/data/weapons.js",
   "./js/dice/dice.js",
