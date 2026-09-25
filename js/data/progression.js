@@ -179,22 +179,52 @@ export var CLASS_PROGRESSION = {
    Trickster style one-third casters. */
 export var SUBCLASSES = {
   "Artificer": [
-    {name:"Alchemist", blurb:"Brews magical elixirs and heals or harms with potions.", features:{3:[
-      {name:"Experimental Elixir", text:"After a long rest, create one magic elixir with a random effect (healing, swiftness, resilience, boldness, flight or transformation). Spend spell slots to make more."},
-      {name:"Alchemist Spells", text:"You always have Healing Word and Ray of Sickness prepared; they don't count against your prepared spells."}
-    ]}},
-    {name:"Artillerist", blurb:"Builds a magical cannon that blasts foes or shields allies.", features:{3:[
-      {name:"Eldritch Cannon", text:"Action to create a small magical cannon for 1 hour: Flamethrower (2d8 fire cone), Force Ballista (2d8 force, pushes) or Protector (temp HP to allies). Bonus action to fire it. Once per long rest, or spend a spell slot."},
-      {name:"Artillerist Spells", text:"You always have Shield and Thunderwave prepared."}
-    ]}},
-    {name:"Battle Smith", blurb:"A soldier-engineer fighting beside a loyal steel defender.", features:{3:[
-      {name:"Battle Ready", text:"Proficiency with martial weapons, and you can use Intelligence instead of Strength or Dexterity for attacks with magic weapons."},
-      {name:"Steel Defender", text:"You build a mechanical companion that fights beside you. It acts on your turn; use a bonus action to command it."}
-    ]}},
-    {name:"Armorer", blurb:"Turns a suit of armor into a powerful magical exosuit.", features:{3:[
-      {name:"Arcane Armor", text:"Turn a suit of armor into Arcane Armor: no Strength requirement, it acts as your spellcasting focus, and it can't be removed against your will."},
-      {name:"Armor Model", text:"Choose Guardian (thunder gauntlets, temporary HP) or Infiltrator (lightning launcher, +5 ft speed, stealthy). You can switch after a rest."}
-    ]}}
+    {name:"Alchemist", blurb:"Brews magical elixirs and heals or harms with potions.", features:{
+      3:[
+        {name:"Tool Proficiency", text:"You gain proficiency with alchemist's supplies (or another type of artisan's tools if you already have it)."},
+        {name:"Experimental Elixir", text:"After a long rest, create one magic elixir with a random effect (healing, swiftness, resilience, boldness, flight or transformation). Spend spell slots to make more."},
+        {name:"Alchemist Spells", text:"You always have Healing Word and Ray of Sickness prepared; they don't count against your prepared spells."}
+      ],
+      5:[
+        {name:"Alchemist Spells", replaces:"Alchemist Spells", text:"You always have Healing Word, Ray of Sickness, Flaming Sphere and Melf's Acid Arrow prepared; they don't count against your prepared spells."},
+        {name:"Alchemical Savant", text:"When you cast a spell using alchemist's supplies as your focus, add your INT modifier (min +1) to one roll of the spell that restores hit points or deals acid, fire, necrotic or poison damage."}
+      ]
+    }},
+    {name:"Artillerist", blurb:"Builds a magical cannon that blasts foes or shields allies.", features:{
+      3:[
+        {name:"Tool Proficiency", text:"You gain proficiency with woodcarver's tools (or another type of artisan's tools if you already have it)."},
+        {name:"Eldritch Cannon", text:"Action to create a small magical cannon for 1 hour: Flamethrower (2d8 fire cone), Force Ballista (2d8 force, pushes) or Protector (temp HP to allies). Bonus action to fire it. Once per long rest, or spend a spell slot."},
+        {name:"Artillerist Spells", text:"You always have Shield and Thunderwave prepared."}
+      ],
+      5:[
+        {name:"Artillerist Spells", replaces:"Artillerist Spells", text:"You always have Shield, Thunderwave, Scorching Ray and Shatter prepared."},
+        {name:"Arcane Firearm", text:"After a long rest, carve sigils into a wand, staff or rod to make it your arcane firearm. When you cast an artificer spell through it, roll a d8 and add it to one of the spell's damage rolls."}
+      ]
+    }},
+    {name:"Battle Smith", blurb:"A soldier-engineer fighting beside a loyal steel defender.", features:{
+      3:[
+        {name:"Tool Proficiency", text:"You gain proficiency with smith's tools (or another type of artisan's tools if you already have it)."},
+        {name:"Battle Ready", text:"Proficiency with martial weapons, and you can use Intelligence instead of Strength or Dexterity for attacks with magic weapons."},
+        {name:"Steel Defender", text:"You build a mechanical companion that fights beside you. It acts on your turn; use a bonus action to command it."},
+        {name:"Battle Smith Spells", text:"You always have Heroism and Shield prepared."}
+      ],
+      5:[
+        {name:"Battle Smith Spells", replaces:"Battle Smith Spells", text:"You always have Heroism, Shield, Branding Smite and Warding Bond prepared."},
+        {name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}
+      ]
+    }},
+    {name:"Armorer", blurb:"Turns a suit of armor into a powerful magical exosuit.", features:{
+      3:[
+        {name:"Tools of the Trade", text:"You gain proficiency with heavy armor and smith's tools."},
+        {name:"Arcane Armor", text:"Turn a suit of armor into Arcane Armor: no Strength requirement, it acts as your spellcasting focus, and it can't be removed against your will."},
+        {name:"Armor Model", text:"Choose Guardian (thunder gauntlets, temporary HP) or Infiltrator (lightning launcher, +5 ft speed, stealthy). You can switch after a rest."},
+        {name:"Armorer Spells", text:"You always have Magic Missile and Thunderwave prepared."}
+      ],
+      5:[
+        {name:"Armorer Spells", replaces:"Armorer Spells", text:"You always have Magic Missile, Thunderwave, Mirror Image and Shatter prepared."},
+        {name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}
+      ]
+    }}
   ],
   "Barbarian": [
     {name:"Path of the Berserker", blurb:"Rage turns into a violent frenzy for extra attacks.", features:{3:[
@@ -222,39 +252,61 @@ export var SUBCLASSES = {
   "Cleric": [
     {name:"Life Domain", blurb:"The healer's domain: tougher armor and stronger heals.", features:{
       1:[
+        {name:"Domain Spells", text:"You always have Bless and Cure Wounds prepared; they don't count against your prepared spells."},
         {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor."},
         {name:"Disciple of Life", text:"Your healing spells restore an extra 2 + the spell's level hit points."}
       ],
-      2:[{name:"Channel Divinity: Preserve Life", text:"Action: split healing equal to five times your cleric level among creatures within 30 feet (up to half their max HP)."}]
+      2:[{name:"Channel Divinity: Preserve Life", text:"Action: split healing equal to five times your cleric level among creatures within 30 feet (up to half their max HP)."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bless, Cure Wounds, Lesser Restoration and Spiritual Weapon prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bless, Cure Wounds, Lesser Restoration, Spiritual Weapon, Beacon of Hope and Revivify prepared; they don't count against your prepared spells."}]
     }},
     {name:"Light Domain", blurb:"Wields fire and radiance against darkness.", features:{
       1:[
+        {name:"Domain Spells", text:"You always have Burning Hands and Faerie Fire prepared; they don't count against your prepared spells."},
         {name:"Bonus Cantrip", text:"You learn the Light cantrip."},
         {name:"Warding Flare", text:"Reaction when attacked by a creature you can see within 30 feet: impose disadvantage on the attack. Uses equal to your Wisdom modifier per long rest."}
       ],
-      2:[{name:"Channel Divinity: Radiance of the Dawn", text:"Action: dispel magical darkness within 30 feet, and hostile creatures there take 2d10 + cleric level radiant damage (Constitution save for half)."}]
+      2:[{name:"Channel Divinity: Radiance of the Dawn", text:"Action: dispel magical darkness within 30 feet, and hostile creatures there take 2d10 + cleric level radiant damage (Constitution save for half)."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Burning Hands, Faerie Fire, Flaming Sphere and Scorching Ray prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Burning Hands, Faerie Fire, Flaming Sphere, Scorching Ray, Daylight and Fireball prepared; they don't count against your prepared spells."}]
     }},
     {name:"War Domain", blurb:"A warrior-priest who fights in heavy armor.", features:{
       1:[
+        {name:"Domain Spells", text:"You always have Divine Favor and Shield of Faith prepared; they don't count against your prepared spells."},
         {name:"Bonus Proficiencies", text:"Proficiency with martial weapons and heavy armor."},
         {name:"War Priest", text:"When you take the Attack action, make one weapon attack as a bonus action. Uses equal to your Wisdom modifier per long rest."}
       ],
-      2:[{name:"Channel Divinity: Guided Strike", text:"When you make an attack roll, gain +10 to it (decide after seeing the roll, before knowing if it hits)."}]
+      2:[{name:"Channel Divinity: Guided Strike", text:"When you make an attack roll, gain +10 to it (decide after seeing the roll, before knowing if it hits)."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Divine Favor, Shield of Faith, Magic Weapon and Spiritual Weapon prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Divine Favor, Shield of Faith, Magic Weapon, Spiritual Weapon, Crusader's Mantle and Spirit Guardians prepared; they don't count against your prepared spells."}]
     }},
     {name:"Knowledge Domain", blurb:"Seeks and guards secrets and lore.", features:{
-      1:[{name:"Blessings of Knowledge", text:"Learn two languages and gain expertise in two of Arcana, History, Nature or Religion. Tick them on the Abilities & Skills tab."}],
-      2:[{name:"Channel Divinity: Knowledge of the Ages", text:"Action: gain proficiency with one skill or tool for 10 minutes."}]
+      1:[
+        {name:"Domain Spells", text:"You always have Command and Identify prepared; they don't count against your prepared spells."},
+        {name:"Blessings of Knowledge", text:"Learn two languages and gain expertise in two of Arcana, History, Nature or Religion. Tick them on the Abilities & Skills tab."}
+      ],
+      2:[{name:"Channel Divinity: Knowledge of the Ages", text:"Action: gain proficiency with one skill or tool for 10 minutes."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Identify, Augury and Suggestion prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Identify, Augury, Suggestion, Nondetection and Speak with Dead prepared; they don't count against your prepared spells."}]
     }},
     {name:"Tempest Domain", blurb:"Commands storms, thunder and lightning.", features:{
       1:[
+        {name:"Domain Spells", text:"You always have Fog Cloud and Thunderwave prepared; they don't count against your prepared spells."},
         {name:"Bonus Proficiencies", text:"Proficiency with martial weapons and heavy armor."},
         {name:"Wrath of the Storm", text:"Reaction when a creature within 5 feet hits you: it takes 2d8 lightning or thunder damage (Dexterity save for half). Uses equal to your Wisdom modifier per long rest."}
       ],
-      2:[{name:"Channel Divinity: Destructive Wrath", text:"When you roll lightning or thunder damage, deal the maximum instead of rolling."}]
+      2:[{name:"Channel Divinity: Destructive Wrath", text:"When you roll lightning or thunder damage, deal the maximum instead of rolling."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Fog Cloud, Thunderwave, Gust of Wind and Shatter prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Fog Cloud, Thunderwave, Gust of Wind, Shatter, Call Lightning and Sleet Storm prepared; they don't count against your prepared spells."}]
     }},
     {name:"Trickery Domain", blurb:"Deception, stealth and mischief.", features:{
-      1:[{name:"Blessing of the Trickster", text:"Action: give another willing creature advantage on Stealth checks for 1 hour."}],
-      2:[{name:"Channel Divinity: Invoke Duplicity", text:"Create an illusory duplicate of yourself for 1 minute; cast spells from its space and gain advantage when you and it are both next to a target."}]
+      1:[
+        {name:"Domain Spells", text:"You always have Charm Person and Disguise Self prepared; they don't count against your prepared spells."},
+        {name:"Blessing of the Trickster", text:"Action: give another willing creature advantage on Stealth checks for 1 hour."}
+      ],
+      2:[{name:"Channel Divinity: Invoke Duplicity", text:"Create an illusory duplicate of yourself for 1 minute; cast spells from its space and gain advantage when you and it are both next to a target."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Charm Person, Disguise Self, Mirror Image and Pass without Trace prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Charm Person, Disguise Self, Mirror Image, Pass without Trace, Blink and Dispel Magic prepared; they don't count against your prepared spells."}]
     }}
   ],
   "Druid": [
@@ -295,18 +347,27 @@ export var SUBCLASSES = {
     ]}}
   ],
   "Paladin": [
-    {name:"Oath of Devotion", blurb:"The classic knight in shining armor.", features:{3:[
-      {name:"Oath Spells", text:"You always have Protection from Evil and Good and Sanctuary prepared."},
-      {name:"Channel Divinity", text:"Once per short or long rest: Sacred Weapon (add CHA to attack rolls for 1 minute) or Turn the Unholy (fiends and undead must flee)."}
-    ]}},
-    {name:"Oath of the Ancients", blurb:"Protects light and life in the world.", features:{3:[
-      {name:"Oath Spells", text:"You always have Ensnaring Strike and Speak with Animals prepared."},
-      {name:"Channel Divinity", text:"Once per short or long rest: Nature's Wrath (restrain a creature with vines) or Turn the Faithless (fey and fiends must flee)."}
-    ]}},
-    {name:"Oath of Vengeance", blurb:"Punishes wrongdoers at any cost.", features:{3:[
-      {name:"Oath Spells", text:"You always have Bane and Hunter's Mark prepared."},
-      {name:"Channel Divinity", text:"Once per short or long rest: Abjure Enemy (frighten one creature) or Vow of Enmity (advantage on attacks against one creature for 1 minute)."}
-    ]}}
+    {name:"Oath of Devotion", blurb:"The classic knight in shining armor.", features:{
+      3:[
+        {name:"Oath Spells", text:"You always have Protection from Evil and Good and Sanctuary prepared."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Sacred Weapon (add CHA to attack rolls for 1 minute) or Turn the Unholy (fiends and undead must flee)."}
+      ],
+      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Protection from Evil and Good, Sanctuary, Lesser Restoration and Zone of Truth prepared."}]
+    }},
+    {name:"Oath of the Ancients", blurb:"Protects light and life in the world.", features:{
+      3:[
+        {name:"Oath Spells", text:"You always have Ensnaring Strike and Speak with Animals prepared."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Nature's Wrath (restrain a creature with vines) or Turn the Faithless (fey and fiends must flee)."}
+      ],
+      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Ensnaring Strike, Speak with Animals, Moonbeam and Misty Step prepared."}]
+    }},
+    {name:"Oath of Vengeance", blurb:"Punishes wrongdoers at any cost.", features:{
+      3:[
+        {name:"Oath Spells", text:"You always have Bane and Hunter's Mark prepared."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Abjure Enemy (frighten one creature) or Vow of Enmity (advantage on attacks against one creature for 1 minute)."}
+      ],
+      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Bane, Hunter's Mark, Hold Person and Misty Step prepared."}]
+    }}
   ],
   "Ranger": [
     {name:"Hunter", blurb:"Specialist monster slayer.", features:{3:[
@@ -315,10 +376,14 @@ export var SUBCLASSES = {
     {name:"Beast Master", blurb:"Fights alongside an animal companion.", features:{3:[
       {name:"Ranger's Companion", text:"Gain a beast companion (CR 1/4 or lower). It obeys your commands; use your action to have it attack."}
     ]}},
-    {name:"Gloom Stalker", blurb:"An ambusher at home in the dark.", features:{3:[
-      {name:"Dread Ambusher", text:"Add WIS to initiative. On your first turn of combat, +10 ft speed and one extra attack that deals +1d8 damage."},
-      {name:"Umbral Sight", text:"Darkvision 60 ft (or +30 ft), and you're invisible to creatures relying on darkvision to see you in the dark."}
-    ]}}
+    {name:"Gloom Stalker", blurb:"An ambusher at home in the dark.", features:{
+      3:[
+        {name:"Dread Ambusher", text:"Add WIS to initiative. On your first turn of combat, +10 ft speed and one extra attack that deals +1d8 damage."},
+        {name:"Umbral Sight", text:"Darkvision 60 ft (or +30 ft), and you're invisible to creatures relying on darkvision to see you in the dark."},
+        {name:"Gloom Stalker Magic", text:"You always know Disguise Self; it doesn't count against your ranger spells known."}
+      ],
+      5:[{name:"Gloom Stalker Magic", replaces:"Gloom Stalker Magic", text:"You always know Disguise Self and Rope Trick; they don't count against your ranger spells known."}]
+    }}
   ],
   "Rogue": [
     {name:"Thief", blurb:"A burglar and treasure hunter.", features:{3:[
@@ -382,7 +447,7 @@ export var SUBCLASSES = {
 /* What to do about spells after reaching a class level; shown in the
    "you unlocked" popup so new players know what to pick. */
 export var SPELL_TIPS = {
-  "Artificer": {1:"Pick 2 artificer cantrips. You prepare INT modifier + half your artificer level (min 1) spells each day."},
+  "Artificer": {1:"Pick 2 artificer cantrips. You prepare INT modifier + half your artificer level (min 1) spells each day.", 5:"2nd-level artificer spells are now available to prepare."},
   "Bard": {1:"Pick 2 bard cantrips and 4 1st-level bard spells.", 2:"Learn 1 new bard spell.", 3:"Learn 1 new bard spell.", 4:"Learn 1 new bard spell and 1 new cantrip.", 5:"Learn 1 new bard spell. 3rd-level spells are now available."},
   "Cleric": {1:"Pick 3 cleric cantrips. You prepare WIS modifier + cleric level spells from the whole cleric list each day.", 3:"2nd-level cleric spells are now available to prepare.", 4:"Learn 1 new cleric cantrip.", 5:"3rd-level cleric spells are now available to prepare."},
   "Druid": {1:"Pick 2 druid cantrips. You prepare WIS modifier + druid level spells from the druid list each day.", 3:"2nd-level druid spells are now available to prepare.", 4:"Learn 1 new druid cantrip.", 5:"3rd-level druid spells are now available to prepare."},

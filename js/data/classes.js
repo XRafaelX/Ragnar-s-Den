@@ -72,7 +72,7 @@ CLASSES_INFO["Fighter"].features = [
 
 CLASSES_INFO["Rogue"].features = [
   {name:"Expertise", text:"Double your proficiency bonus for two of your skill proficiencies (or one skill and thieves' tools)."},
-  {name:"Sneak Attack", text:"Deal extra 1d6 damage once per turn to a creature you hit if you have advantage or an ally is within 5 feet of the target."},
+  {name:"Sneak Attack", text:"Once per turn, deal an extra 1d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage, or an ally is within 5 feet of it."},
   {name:"Thieves' Cant", text:"A secret mix of dialect, jargon, and code that allows you to hide messages in seemingly normal conversation."}
 ];
 
@@ -180,7 +180,7 @@ CLASSES_INFO["Artificer"].features = [
    every class without disturbing the wizard-only fields above. */
 export var CLASS_PROFICIENCIES = {
   "Artificer": {
-    armor:["Light armor"],
+    armor:["Light armor","Medium armor","Shields"],
     weapons:["Simple weapons"],
     tools:["Thieves' tools","Tinker's tools","One type of artisan's tools"],
     savingThrows:["con","int"]
