@@ -24,7 +24,7 @@ export function spellFromCatalog(name, d){
   };
 }
 
-/* Returns false (so the picker skips its "✓ Added" flash) when the spell
+/* Returns false (so the picker skips its "Added" badge) when the spell
    is already on the sheet. */
 export function addCatalogSpell(c, name, d){
   if(hasSpell(c, name)){

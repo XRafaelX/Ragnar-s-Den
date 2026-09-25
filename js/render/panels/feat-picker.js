@@ -27,7 +27,7 @@ CATEGORIES.concat(Object.keys(FEAT_GROUPS)).forEach(function(cat){
   if(FEAT_GROUPS[cat] && !ORDERED_GROUPS[cat]) ORDERED_GROUPS[cat] = FEAT_GROUPS[cat];
 });
 
-/* Returns false (so the picker skips its "✓ Added" flash) when the feat is
+/* Returns false (so the picker skips its "Added" badge) when the feat is
    already on the sheet; a second copy is what the custom form is for. */
 function addCatalogFeat(c, name, d){
   if(hasFeat(c, name)){

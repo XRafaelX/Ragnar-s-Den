@@ -3,6 +3,8 @@
    a custom-entry form behind the + FAB) used for Add Weapon / Add Armor,
    and for the standalone Armory reachable from the sidebar (which shows
    both as switchable sections/tabs). */
+import { makeCheckCheckSvg } from "./svg-icons.js";
+
 var state = null;
 
 function activeSection(){ return state.sections[state.activeSectionIndex]; }
@@ -109,12 +111,21 @@ function renderRow(section, name, d){
   row.addEventListener("click", function(){
     var ok = section.onAdd(name, d);
     if(ok===false) return;
-    var prevText = nameEl.textContent;
+    // Brief "Added" badge after the name. A separate element (rather
+    // than editing the name text) so quick repeat taps can't leave it
+    // stuck on the name.
+    var badge = nameEl.querySelector(".catalog-added-badge");
+    if(!badge){
+      badge = document.createElement("span");
+      badge.className = "catalog-added-badge";
+      badge.innerHTML = makeCheckCheckSvg() + "Added";
+      nameEl.appendChild(badge);
+    }
     row.classList.add("added");
-    nameEl.textContent = prevText + "  ✓ Added";
-    setTimeout(function(){
+    clearTimeout(row._addedTimer);
+    row._addedTimer = setTimeout(function(){
       row.classList.remove("added");
-      nameEl.textContent = prevText;
+      badge.remove();
     }, 900);
   });
 

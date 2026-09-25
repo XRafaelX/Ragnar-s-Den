@@ -41,6 +41,12 @@
 .catalog-row:hover{background:color-mix(in srgb, var(--brass) 8%, transparent);}
 .catalog-row:last-child{border-bottom:none;}
 .catalog-row.added{background:rgba(90,164,105,0.15);}
+.catalog-added-badge{
+  display:inline-flex;align-items:center;gap:4px;margin-left:8px;vertical-align:middle;
+  font-size:11.5px;font-weight:600;color:var(--moss);animation:catalogAddedIn .2s ease-out;
+}
+.catalog-added-badge svg{width:15px;height:15px;}
+@keyframes catalogAddedIn{from{opacity:0;transform:scale(.7);}to{opacity:1;transform:none;}}
 .catalog-row-left{display:flex;flex-direction:column;gap:2px;}
 .catalog-row-name{font-size:14.5px;color:var(--text-on-parch);}
 .catalog-row-sub{font-size:11.5px;color:var(--text-on-parch-dim);font-style:italic;}
