@@ -38,7 +38,7 @@ function openAbout(){
 
     var p2 = document.createElement("p");
     p2.className = "info-blurb";
-    p2.textContent = "Everything you create (characters, notes, roll history) is stored only in this browser. Use Export to back it up or move it to another device.";
+    p2.textContent = "Ragnar's Den follows the standard D&D 5th Edition rules, but it can also include any extra content, homebrew or house rules, basically whatever i want.";
     body.appendChild(p2);
   });
 }

@@ -16,6 +16,10 @@ button{cursor:pointer;}
    always theme consistently across browsers. */
 select{color-scheme: dark;}
 select option{background-color:var(--field-bg);color:var(--text-on-parch);}
+/* The rule above overrides the browser's own grey for options that can't
+   be picked (a language you already know, an instrument chosen in another
+   dropdown), so dim them explicitly. */
+select option:disabled{color:var(--text-on-parch-dim);opacity:.55;}
 select optgroup{background-color:var(--field-bg);color:var(--brass-bright);font-style:normal;}
 ::-webkit-scrollbar{width:10px;height:10px;}
 ::-webkit-scrollbar-track{background:transparent;}

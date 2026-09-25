@@ -15,7 +15,7 @@ import {
   buildEquipmentList,
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
   wizardStepAbilities, wizardStepSkills, wizardStepChoices, wizardStepLanguages, wizardStepEquipment, wizardStepSpells, wizardStepReview,
-  expertiseOptions
+  expertiseOptions, resetHomebrewPickers
 } from "./wizard-steps.js";
 import { makeMoveLeftSvg, makeMoveRightSvg } from "../ui/svg-icons.js";
 
@@ -131,7 +131,8 @@ export function validateStep(id){
     var missing = (info.choices||[]).find(function(ch){
       var v = wizardState.classChoices[ch.id];
       if(ch.kind==="listPick" && ch.count>1){
-        return !v || v.filter(Boolean).length!==ch.count || new Set(v).size!==ch.count;
+        var lower = (v||[]).map(function(x){ return (x||"").trim().toLowerCase(); }).filter(Boolean);
+        return lower.length!==ch.count || new Set(lower).size!==ch.count;
       }
       if(ch.kind==="expertise"){
         var allowed = expertiseOptions(ch);
@@ -152,7 +153,9 @@ export function validateStep(id){
   if(id==="languages"){
     var plan = languagePlan();
     var picks = wizardState.languageChoices.slice(0, plan.slots.length);
-    var filled = picks.filter(function(l){ return l && plan.fixed.indexOf(l)===-1; });
+    // Case-insensitive, since homebrew languages are typed in.
+    var fixedLower = plan.fixed.map(function(l){ return l.toLowerCase(); });
+    var filled = picks.map(function(l){ return (l||"").trim().toLowerCase(); }).filter(function(l){ return l && fixedLower.indexOf(l)===-1; });
     if(filled.length!==plan.slots.length || new Set(filled).size!==filled.length) return "Pick "+plan.slots.length+" different language"+(plan.slots.length>1?"s":"")+" you don't already know.";
     return null;
   }
@@ -196,6 +199,7 @@ export function openWizard(){
   };
   closeSidebarMobile();
   wizardScrollReset();
+  resetHomebrewPickers();
   document.getElementById("wizard-overlay").classList.add("open");
   renderWizard();
 }

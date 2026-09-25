@@ -455,48 +455,105 @@ function choiceSubclass(card, ch){
    per dropdown. */
 function choiceListPick(card, ch){
   var count = ch.count || 1;
-  if(count===1){ card.appendChild(toolSelect(ch, wizardState.classChoices[ch.id], function(v){ wizardState.classChoices[ch.id] = v; })); return; }
+  var noun = ch.label.toLowerCase().replace(/s$/, "");
+  if(count===1){
+    card.appendChild(homebrewSelect({
+      key:"pick:"+ch.id, groups:ch.groups, value:wizardState.classChoices[ch.id],
+      placeholder:"Select one", noun:noun,
+      onPick:function(v){ wizardState.classChoices[ch.id] = v; }
+    }));
+    return;
+  }
   var picks = wizardState.classChoices[ch.id] = (wizardState.classChoices[ch.id] || []).slice(0, count);
   for(var i=0;i<count;i++){
     (function(i){
-      card.appendChild(toolSelect(ch, picks[i], function(v){ picks[i] = v; }, picks));
+      card.appendChild(homebrewSelect({
+        key:"pick:"+ch.id+":"+i, groups:ch.groups, value:picks[i],
+        placeholder:"Select one", noun:noun,
+        // Keep multi-picks distinct: what another dropdown holds is greyed out.
+        takenReason:function(name){ return name!==picks[i] && picks.indexOf(name)!==-1 ? "picked" : ""; },
+        onPick:function(v){ picks[i] = v; }
+      }));
     })(i);
   }
 }
 
-function toolSelect(ch, value, onPick, siblings){
+/* A grouped dropdown that works like the race picker: a dimmed
+   placeholder until something is chosen, and a "Custom / homebrew…"
+   option at the end that reveals a text box for anything not on the list.
+   opts: key (stable id for this dropdown), groups, value, placeholder,
+   noun (for the text box hint), onPick(value), and optional
+   takenReason(name) returning "known"/"picked" to grey an option out.
+   Typing in the text box doesn't re-render (that would steal focus);
+   validation checks the typed value like any other pick. */
+var customPickerOpen = {};
+export function resetHomebrewPickers(){ customPickerOpen = {}; }
+
+function homebrewSelect(opts){
   var f = ce("div","field");
   f.style.maxWidth = "320px";
   f.style.marginBottom = "8px";
+  var listed = [];
   var select = document.createElement("select");
   var blank = document.createElement("option");
-  blank.value = ""; blank.textContent = "Select one"; blank.disabled = true; blank.hidden = true;
+  blank.value = ""; blank.textContent = opts.placeholder; blank.disabled = true; blank.hidden = true;
   select.appendChild(blank);
-  Object.keys(ch.groups).forEach(function(groupLabel){
+  Object.keys(opts.groups).forEach(function(groupLabel){
     var og = document.createElement("optgroup");
     og.label = groupLabel;
-    ch.groups[groupLabel].forEach(function(name){
+    opts.groups[groupLabel].forEach(function(name){
+      listed.push(name);
       var o = document.createElement("option");
       o.value = name; o.textContent = name;
+      var reason = opts.takenReason ? opts.takenReason(name) : "";
+      if(reason){ o.disabled = true; o.textContent = name+" ("+reason+")"; }
       og.appendChild(o);
     });
     select.appendChild(og);
   });
-  select.value = value || "";
-  select.addEventListener("change", function(){
-    onPick(select.value);
+  var customOpt = document.createElement("option");
+  customOpt.value = "__custom__"; customOpt.textContent = "Custom / homebrew…";
+  select.appendChild(customOpt);
+
+  var customInput = document.createElement("input");
+  customInput.type = "text";
+  customInput.placeholder = "Enter custom "+opts.noun;
+  customInput.style.marginTop = "3px";
+
+  var value = opts.value || "";
+  var isCustom = customPickerOpen[opts.key] || (value && listed.indexOf(value)===-1);
+  select.value = isCustom ? "__custom__" : value;
+  customInput.value = isCustom ? value : "";
+  customInput.style.display = isCustom ? "block" : "none";
+
+  function updatePlaceholderStyle(){ select.classList.toggle("placeholder", select.value===""); }
+  function clearError(){
     var errBox = document.getElementById("wizard-error");
     if(errBox) errBox.classList.remove("show");
-    // Keep multi-picks distinct: re-render so the other dropdowns grey out
-    // what's already taken.
-    if(siblings) renderWizard();
-  });
-  if(siblings){
-    Array.prototype.forEach.call(select.querySelectorAll("option"), function(o){
-      if(o.value && o.value!==value && siblings.indexOf(o.value)!==-1) o.disabled = true;
-    });
   }
+  updatePlaceholderStyle();
+
+  select.addEventListener("change", function(){
+    clearError();
+    if(select.value==="__custom__"){
+      customPickerOpen[opts.key] = true;
+      opts.onPick(customInput.value.trim());
+      customInput.style.display = "block";
+      customInput.focus();
+      updatePlaceholderStyle();
+      return;
+    }
+    customPickerOpen[opts.key] = false;
+    opts.onPick(select.value);
+    renderWizard();
+  });
+  customInput.addEventListener("input", function(){
+    clearError();
+    opts.onPick(customInput.value.trim());
+  });
+
   f.appendChild(select);
+  f.appendChild(customInput);
   return f;
 }
 
@@ -598,34 +655,16 @@ export function wizardStepLanguages(container){
         card.appendChild(help);
       }
     }
-    var f = ce("div","field");
-    f.style.maxWidth = "320px";
-    f.style.marginBottom = "8px";
-    var select = document.createElement("select");
-    var blank = document.createElement("option");
-    blank.value = ""; blank.textContent = "Select a language"; blank.disabled = true; blank.hidden = true;
-    select.appendChild(blank);
-    ["Standard","Exotic"].forEach(function(groupLabel){
-      var og = document.createElement("optgroup");
-      og.label = groupLabel;
-      LANGUAGES[groupLabel].forEach(function(name){
-        var o = document.createElement("option");
-        o.value = name; o.textContent = name;
-        var taken = plan.fixed.indexOf(name)!==-1 || (name!==picks[i] && picks.indexOf(name)!==-1);
-        if(taken) o.disabled = true;
-        og.appendChild(o);
-      });
-      select.appendChild(og);
-    });
-    select.value = picks[i] || "";
-    select.addEventListener("change", function(){
-      picks[i] = select.value;
-      var errBox = document.getElementById("wizard-error");
-      if(errBox) errBox.classList.remove("show");
-      renderWizard();
-    });
-    f.appendChild(select);
-    card.appendChild(f);
+    card.appendChild(homebrewSelect({
+      key:"lang:"+i, groups:{"Standard":LANGUAGES.Standard, "Exotic":LANGUAGES.Exotic}, value:picks[i],
+      placeholder:"Select a language", noun:"language",
+      // Greyed out and labelled so it's clear why it can't be picked.
+      takenReason:function(name){
+        if(plan.fixed.indexOf(name)!==-1) return "known";
+        return name!==picks[i] && picks.indexOf(name)!==-1 ? "picked" : "";
+      },
+      onPick:function(v){ picks[i] = v; }
+    }));
   });
   container.appendChild(card);
 }
