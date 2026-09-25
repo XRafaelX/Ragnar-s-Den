@@ -16,6 +16,7 @@ import { maybeStartTutorial, startTutorial } from "./ui/tutorial.js";
 import { loadCustomSubclasses, getCustomSubclasses, importCustomSubclasses } from "./core/custom-subclasses.js";
 import { loadHomebrew, getHomebrew, importHomebrew } from "./core/custom-homebrew.js";
 import { loadCustomFeatures, getCustom, importCustom } from "./core/custom-features.js";
+import { loadCustomItems, getCustomItems, importCustomItems } from "./core/custom-items.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
@@ -43,7 +44,8 @@ export function setupTopLevel(){
     // Characters plus homebrew made in the Compendium. (Older backups were
     // just the characters array; import still accepts those.)
     var backup = {version:2, characters:state.characters, customSubclasses:getCustomSubclasses(),
-      customRaces:getHomebrew("race"), customBackgrounds:getHomebrew("background"), customFeats:getCustom("feat"), customFeatures:getCustom("feature")};
+      customRaces:getHomebrew("race"), customBackgrounds:getHomebrew("background"), customFeats:getCustom("feat"), customFeatures:getCustom("feature"),
+      customWeapons:getCustomItems("weapon"), customArmor:getCustomItems("armor")};
     var blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
@@ -71,12 +73,16 @@ export function setupTopLevel(){
         var backgrounds = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customBackgrounds) ? parsed.customBackgrounds : [];
         var features = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customFeatures) ? parsed.customFeatures : [];
         var feats = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customFeats) ? parsed.customFeats : [];
+        var weapons = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customWeapons) ? parsed.customWeapons : [];
+        var armor = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customArmor) ? parsed.customArmor : [];
         var extras = [];
         if(homebrew.length) extras.push(homebrew.length+" custom subclass(es)");
         if(races.length) extras.push(races.length+" custom race(s)");
         if(backgrounds.length) extras.push(backgrounds.length+" custom background(s)");
         if(feats.length) extras.push(feats.length+" custom feat(s)");
         if(features.length) extras.push(features.length+" custom feature(s)");
+        if(weapons.length) extras.push(weapons.length+" custom weapon(s)");
+        if(armor.length) extras.push(armor.length+" custom armor");
         if(!Array.isArray(data)) throw new Error("Invalid format");
         confirmDialog(
           "Import backup?",
@@ -88,11 +94,15 @@ export function setupTopLevel(){
             importHomebrew("background", backgrounds);
             // Feats and features get new ids here: relink the characters' copies.
             var featIds = importCustom("feat", feats), featureIds = importCustom("feature", features);
+            var weaponIds = importCustomItems("weapon", weapons), armorIds = importCustomItems("armor", armor);
             data.forEach(function(c){
               c.id = uid(); // avoid collisions
               ensureShape(c);
               c.feats.forEach(function(f){ if(f.homebrewId) f.homebrewId = featIds[f.homebrewId] || null; });
               c.features.forEach(function(f){ if(f.homebrewId) f.homebrewId = featureIds[f.homebrewId] || null; });
+              c.inventory.forEach(function(i){
+                if(i.homebrewId) i.homebrewId = (i.type==="armor" ? armorIds : weaponIds)[i.homebrewId] || null;
+              });
               state.characters.push(c);
             });
             save();
@@ -129,6 +139,7 @@ export function init(){
   loadCustomSubclasses();
   loadHomebrew();
   loadCustomFeatures();
+  loadCustomItems();
   state.characters.forEach(ensureShape);
   setupTopLevel();
   setupDiceTray();

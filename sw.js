@@ -1,4 +1,4 @@
-var CACHE_NAME = "vault-and-vellum-v16";
+var CACHE_NAME = "vault-and-vellum-v17";
 var ASSETS = [
   "./",
   "./index.html",
@@ -39,6 +39,7 @@ var ASSETS = [
   "./js/core/character.js",
   "./js/core/custom-features.js",
   "./js/core/custom-homebrew.js",
+  "./js/core/custom-items.js",
   "./js/core/custom-subclasses.js",
   "./js/core/helpers.js",
   "./js/core/state.js",
@@ -64,7 +65,6 @@ var ASSETS = [
   "./js/render/compendium.js",
   "./js/render/home.js",
   "./js/render/panels/abilities.js",
-  "./js/render/panels/armor-picker.js",
   "./js/render/panels/feat-picker.js",
   "./js/render/panels/features.js",
   "./js/render/panels/infusions.js",
@@ -74,11 +74,11 @@ var ASSETS = [
   "./js/render/panels/spell-picker.js",
   "./js/render/panels/spells.js",
   "./js/render/panels/vitals.js",
-  "./js/render/panels/weapon-picker.js",
   "./js/render/sheet.js",
   "./js/render/spellbook.js",
   "./js/render/sidebar.js",
   "./js/ui/avatar-crop.js",
+  "./js/ui/homebrew-form.js",
   "./js/ui/avatar.js",
   "./js/ui/backdrop.js",
   "./js/ui/bottom-sheet.js",

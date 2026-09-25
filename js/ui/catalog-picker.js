@@ -106,6 +106,23 @@ function renderRow(section, name, d){
     el.textContent = text;
     right.appendChild(el);
   });
+  // A section can add small buttons to a row (Edit / Delete on custom
+  // items): [{label, title, danger, onClick}]. They don't trigger onAdd.
+  var actions = section.rowActions ? section.rowActions(name, d) : [];
+  if(actions.length){
+    var bar = document.createElement("div");
+    bar.className = "catalog-row-actions";
+    actions.forEach(function(a){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "ff-action-btn" + (a.danger ? " danger" : "");
+      b.textContent = a.label;
+      if(a.title) b.title = a.title;
+      b.addEventListener("click", function(e){ e.stopPropagation(); a.onClick(); });
+      bar.appendChild(b);
+    });
+    right.appendChild(bar);
+  }
   row.appendChild(right);
 
   row.addEventListener("click", function(){

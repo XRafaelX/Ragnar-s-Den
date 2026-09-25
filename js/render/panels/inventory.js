@@ -4,8 +4,7 @@ import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../../ui/svg-icons.
 import { performRoll } from "../../dice/dice.js";
 import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems } from "../../core/helpers.js";
 import { showActionToast } from "../../ui/toast.js";
-import { openWeaponPicker } from "./weapon-picker.js";
-import { openArmorPicker } from "./armor-picker.js";
+import { openWeaponPicker, openArmorPicker } from "../armory.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
@@ -22,8 +21,9 @@ var ARMOR_CATEGORIES = [
    the row, including the name itself, to open the edit sheet; renaming
    happens there instead of inline, so the name text has no invisible
    input hit-box left over to swallow clicks), a qty badge when stacked,
-   an Equipped toggle, and an edit control. */
-function itemHeader(c, item, idx, onOpenDetails){
+   an Equipped toggle (weapons and armor only: equipping other gear
+   changes nothing, so it would only be clutter), and an edit control. */
+function itemHeader(c, item, idx, onOpenDetails, noEquip){
   var header = document.createElement("div");
   header.className = "inv-card-header";
   header.addEventListener("click", function(){ onOpenDetails(); });
@@ -47,21 +47,23 @@ function itemHeader(c, item, idx, onOpenDetails){
   var actions = document.createElement("div");
   actions.className = "inv-card-header-actions";
 
-  var eqLbl = document.createElement("label"); eqLbl.className = "inv-eq-pill";
-  var eqCb = document.createElement("input"); eqCb.type="checkbox"; eqCb.className="chk";
-  eqCb.checked = !!item.equipped;
-  eqCb.addEventListener("click", function(e){ e.stopPropagation(); });
-  eqCb.addEventListener("change", function(){
-    if(!eqCb.checked){ item.equipped = false; save(); renderAll(); return; }
-    // One suit of armor, one shield, two hands (see tryEquip).
-    var res = tryEquip(c, item);
-    if(!res.ok){ eqCb.checked = false; showActionToast(res.message, true); return; }
-    if(res.message) showActionToast(res.message);
-    save(); renderAll();
-  });
-  eqLbl.appendChild(eqCb);
-  eqLbl.appendChild(document.createTextNode("Equipped"));
-  actions.appendChild(eqLbl);
+  if(!noEquip){
+    var eqLbl = document.createElement("label"); eqLbl.className = "inv-eq-pill";
+    var eqCb = document.createElement("input"); eqCb.type="checkbox"; eqCb.className="chk";
+    eqCb.checked = !!item.equipped;
+    eqCb.addEventListener("click", function(e){ e.stopPropagation(); });
+    eqCb.addEventListener("change", function(){
+      if(!eqCb.checked){ item.equipped = false; save(); renderAll(); return; }
+      // One suit of armor, one shield, two hands (see tryEquip).
+      var res = tryEquip(c, item);
+      if(!res.ok){ eqCb.checked = false; showActionToast(res.message, true); return; }
+      if(res.message) showActionToast(res.message);
+      save(); renderAll();
+    });
+    eqLbl.appendChild(eqCb);
+    eqLbl.appendChild(document.createTextNode("Equipped"));
+    actions.appendChild(eqLbl);
+  }
 
   var editBtn = document.createElement("button");
   editBtn.type = "button";
@@ -156,8 +158,7 @@ function fieldStepper(label, value, onChange){
 }
 
 /* Opens the gear item's editable fields (Qty, Notes) in a bottom sheet;
-   same treatment as weapons/armor. Equipped isn't duplicated in here
-   since itemHeader's pill already toggles it without opening the sheet. */
+   same treatment as weapons/armor. Gear has no Equipped toggle. */
 function openGearSheet(c, item, idx){
   openBottomSheet(function(body, refresh, close){
     var subtitleParts = ["Qty " + (item.qty!=null?item.qty:1)];
@@ -410,7 +411,7 @@ function renderArmorCard(c, item, idx){
 function renderGearCard(c, item, idx){
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card";
-  card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }));
+  card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }, true));
 
   var subtitleParts = ["Qty " + (item.qty!=null?item.qty:1)];
   if(item.notes) subtitleParts.push(item.notes);
