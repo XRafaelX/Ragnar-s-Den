@@ -521,8 +521,10 @@ function finish(){
     record.asi = {};
     ABILITIES.forEach(function(a){
       if(!lu.asi[a[0]]) return;
-      c.abilities[a[0]] = Math.min(20, (Number(c.abilities[a[0]])||10) + lu.asi[a[0]]);
-      record.asi[a[0]] = lu.asi[a[0]];
+      var was = Number(c.abilities[a[0]])||10;
+      c.abilities[a[0]] = Math.min(20, was + lu.asi[a[0]]);
+      // Record what was actually added (after the 20 cap) so undo is exact.
+      if(c.abilities[a[0]] !== was) record.asi[a[0]] = c.abilities[a[0]] - was;
     });
   }
 
@@ -587,7 +589,10 @@ export function undoLastLevelUp(c){
     if(rec.asi) Object.keys(rec.asi).forEach(function(k){ c.abilities[k] = (Number(c.abilities[k])||10) - rec.asi[k]; });
     if(rec.featId) c.feats = c.feats.filter(function(f){ return f.id!==rec.featId; });
     c.hp.max = Math.max(1, (Number(c.hp.max)||1) - rec.hpGain);
-    c.hp.current = Math.min(Number(c.hp.current)||0, c.hp.max);
+    // Level-up added the gain to current HP too, so take it back off, but
+    // never knock a conscious character down to 0 just by undoing.
+    var cur = Number(c.hp.current)||0;
+    c.hp.current = clamp(cur - rec.hpGain, Math.min(cur, 1), c.hp.max);
     c.speed = (Number(c.speed)||30) - (rec.speedGain||0);
     var prev = rec.prevSpellcasting;
     c.spellcasting.ability = prev.ability;
@@ -596,7 +601,10 @@ export function undoLastLevelUp(c){
       s.max = prev.slots[i]||0;
       s.used = clamp(s.used||0, 0, s.max);
     }
-    c.spellcasting.pact = prev.pact;
+    // Restore the old pact slot count but keep the slots spent since.
+    var pactNow = c.spellcasting.pact;
+    c.spellcasting.pact = prev.pact ? {max: prev.pact.max, slotLevel: prev.pact.slotLevel,
+      used: clamp(pactNow ? (pactNow.used||0) : (prev.pact.used||0), 0, prev.pact.max)} : null;
     c.newUnlocks = c.newUnlocks.filter(function(id){ return rec.unlockIds.indexOf(id)===-1; });
     c.hitDiceUsed = clamp(c.hitDiceUsed||0, 0, totalLevel(c));
     save(); renderAll(); playDelete();
