@@ -32,3 +32,25 @@ export var RACE_TRAITS = {
   "Tiefling": "+2 CHA, +1 INT. Darkvision, resistance to fire damage, know the thaumaturgy cantrip and more spells at higher levels."
 };
 export var RACE_TRAIT_FALLBACK = "This is an expanded (non-SRD) race. Check your table's sourcebook for its exact ability score bonuses and traits. Everything else here still works fine once you've picked it.";
+
+/* Languages each race knows (`fixed`) plus extra ones of the player's
+   choice (`choose`). Expanded races fall back to Common + one pick, which
+   covers most of them; the note tells players to check their book. */
+export var RACE_LANGUAGES = {
+  "Human":{fixed:["Common"], choose:1},
+  "Hill Dwarf":{fixed:["Common","Dwarvish"]},
+  "Mountain Dwarf":{fixed:["Common","Dwarvish"]},
+  "High Elf":{fixed:["Common","Elvish"], choose:1},
+  "Wood Elf":{fixed:["Common","Elvish"]},
+  "Dark Elf (Drow)":{fixed:["Common","Elvish"]},
+  "Lightfoot Halfling":{fixed:["Common","Halfling"]},
+  "Stout Halfling":{fixed:["Common","Halfling"]},
+  "Dragonborn":{fixed:["Common","Draconic"]},
+  "Rock Gnome":{fixed:["Common","Gnomish"]},
+  "Forest Gnome":{fixed:["Common","Gnomish"]},
+  "Half-Elf":{fixed:["Common","Elvish"], choose:1},
+  "Half-Orc":{fixed:["Common","Orc"]},
+  "Tiefling":{fixed:["Common","Infernal"]}
+};
+export var RACE_LANGUAGES_FALLBACK = {fixed:["Common"], choose:1,
+  note:"Expanded races usually speak Common plus one more language; check your sourcebook for the exact one."};

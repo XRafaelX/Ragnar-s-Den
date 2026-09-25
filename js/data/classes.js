@@ -152,8 +152,11 @@ CLASSES_INFO["Rogue"].features = [
   {name:"Thieves' Cant", text:"A secret mix of dialect, jargon, and code that allows you to hide messages in seemingly normal conversation."}
 ];
 
+/* `languages`: known automatically at creation; `languagePicks`: extra
+   languages of the player's choice (see the wizard's Languages step). */
 Object.assign(CLASSES_INFO["Rogue"], {
   available:true,
+  languages:["Thieves' Cant"],
   primaryAbility:"dex",
   savingThrows:["dex","int"],
   skillChoices:{count:4, options:["Acrobatics","Athletics","Deception","Insight","Intimidation","Investigation","Perception","Performance","Persuasion","Sleight of Hand","Stealth"]},
@@ -275,7 +278,8 @@ Object.assign(CLASSES_INFO["Cleric"], {
         "War Domain":{profs:["heavy","martial"], spells:["Divine Favor","Shield of Faith"]},
         "Knowledge Domain":{spells:["Command","Identify"],
           expertise:{id:"knowledgeSkills", label:"Blessings of Knowledge", count:2, options:["Arcana","History","Nature","Religion"],
-            help:"You become proficient in two of these skills, with your proficiency bonus doubled. You also learn two languages (add them on the Information tab)."}},
+            help:"You become proficient in two of these skills, with your proficiency bonus doubled. You also learn two languages (you'll pick them on the Languages step)."},
+          languagePicks:2},
         "Tempest Domain":{profs:["heavy","martial"], spells:["Fog Cloud","Thunderwave"]},
         "Trickery Domain":{spells:["Charm Person","Disguise Self"]}
       }}
@@ -643,6 +647,7 @@ Object.assign(CLASSES_INFO["Bard"], {
 
 Object.assign(CLASSES_INFO["Ranger"], {
   available:true,
+  languagePicks:{count:1, label:"Favored Enemy", help:"One language your favored enemy speaks."},
   primaryAbility:"dex",
   primaryAbilityLabel:"Dexterity and Wisdom",
   savingThrows:["str","dex"],
@@ -651,7 +656,7 @@ Object.assign(CLASSES_INFO["Ranger"], {
     {id:"favoredEnemy", kind:"listPick", label:"Favored Enemy",
       help:"The kind of creature you've studied and hunted. You get advantage on Survival checks to track them and Intelligence checks to recall lore about them, and you learn one language they speak.",
       groups:FAVORED_ENEMIES,
-      featureText:"Advantage on Wisdom (Survival) checks to track {v} and on Intelligence checks to recall information about them. You also learn one language they speak (add it on the Information tab)."},
+      featureText:"Advantage on Wisdom (Survival) checks to track {v} and on Intelligence checks to recall information about them. You also learn one language they speak."},
     {id:"favoredTerrain", kind:"listPick", label:"Favored Terrain",
       help:"The land you know best. Travelling there, your group can't get lost, you stay alert, and you forage and track twice as well.",
       groups:{"Terrain":FAVORED_TERRAINS},

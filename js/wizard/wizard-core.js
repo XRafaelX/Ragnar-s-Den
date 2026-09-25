@@ -1,6 +1,7 @@
 import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASSES_INFO, FIGHTING_STYLES } from "../data/classes.js";
-import { BACKGROUND_INFO } from "../data/backgrounds.js";
+import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
+import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK } from "../data/races.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset } from "../core/helpers.js";
 import { newCharacter } from "../core/character.js";
 import { state, save } from "../core/state.js";
@@ -13,13 +14,13 @@ import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import {
   buildEquipmentList,
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
-  wizardStepAbilities, wizardStepSkills, wizardStepChoices, wizardStepEquipment, wizardStepSpells, wizardStepReview,
+  wizardStepAbilities, wizardStepSkills, wizardStepChoices, wizardStepLanguages, wizardStepEquipment, wizardStepSpells, wizardStepReview,
   expertiseOptions
 } from "./wizard-steps.js";
 import { makeMoveLeftSvg, makeMoveRightSvg } from "../ui/svg-icons.js";
 
 /* ---------------- Character Creation Wizard ---------------- */
-export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","choices","equipment","spells","review"];
+export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","choices","languages","equipment","spells","review"];
 export var wizardState = null;
 
 export function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardState.classId]; }
@@ -41,6 +42,28 @@ export function equipmentOptionAvailable(opt){
   var grants = subclassGrants(currentClassInfo(), wizardState.classChoices);
   return (grants.profs||[]).indexOf(opt.requires)!==-1;
 }
+/* Languages the new character knows: `fixed` ones come automatically
+   (race, class, subclass); `slots` are free picks, each tagged with where
+   it comes from (race, background, Ranger's favored enemy, Knowledge
+   Domain). */
+export function languagePlan(){
+  var w = wizardState, info = currentClassInfo();
+  var race = RACE_LANGUAGES[w.race] || RACE_LANGUAGES_FALLBACK;
+  var grants = subclassGrants(info, w.classChoices);
+  var fixed = [];
+  function addFixed(l){ if(fixed.indexOf(l)===-1) fixed.push(l); }
+  race.fixed.forEach(addFixed);
+  ((info && info.languages)||[]).forEach(addFixed);
+  (grants.languages||[]).forEach(addFixed);
+  var slots = [];
+  function addSlots(n, source, help){ for(var i=0;i<(n||0);i++) slots.push({source:source, help:help||""}); }
+  addSlots(race.choose, w.race || "Race", race.note);
+  addSlots(BACKGROUND_LANGUAGES[w.background]!=null ? BACKGROUND_LANGUAGES[w.background] : 0, w.background);
+  if(info && info.languagePicks) addSlots(info.languagePicks.count, info.languagePicks.label, info.languagePicks.help);
+  addSlots(grants.languagePicks, w.classChoices.subclass);
+  return {fixed:fixed, slots:slots};
+}
+
 /* 1st-level spells to pick: a fixed number, or computed from the scores
    (a cleric prepares WIS modifier + 1). */
 export function spellPickCount(sc){
@@ -56,6 +79,7 @@ export function isStepApplicable(id){
     var ci = currentClassInfo();
     return !!(ci && ci.choices && ci.choices.length);
   }
+  if(id==="languages") return languagePlan().slots.length > 0;
   return true;
 }
 
@@ -63,7 +87,7 @@ export function wizardStepTitle(id){
   return {
     class:"Choose a Class", race:"Choose a Race", background:"Choose a Background",
     alignment:"Choose an Alignment",
-    abilities:"Ability Scores", skills:"Skills & Proficiencies", choices:"Class Features", equipment:"Starting Equipment",
+    abilities:"Ability Scores", skills:"Skills & Proficiencies", choices:"Class Features", languages:"Languages", equipment:"Starting Equipment",
     spells:"Spells", review:"Review & Finish"
   }[id];
 }
@@ -125,6 +149,13 @@ export function validateStep(id){
     if(g.pick && !wizardState.classChoices[g.pick.id]) return "Choose a "+g.pick.label+".";
     return null;
   }
+  if(id==="languages"){
+    var plan = languagePlan();
+    var picks = wizardState.languageChoices.slice(0, plan.slots.length);
+    var filled = picks.filter(function(l){ return l && plan.fixed.indexOf(l)===-1; });
+    if(filled.length!==plan.slots.length || new Set(filled).size!==filled.length) return "Pick "+plan.slots.length+" different language"+(plan.slots.length>1?"s":"")+" you don't already know.";
+    return null;
+  }
   if(id==="equipment"){
     var ok = info.equipment.choiceGroups.every(function(g,gi){ return wizardState.equipment[gi]!=null; });
     if(!ok) return "Make a choice for each equipment option.";
@@ -159,6 +190,7 @@ export function openWizard(){
     rolledPool:null,
     skillChoices:[],
     classChoices:{},
+    languageChoices:[],
     equipment:{},
     spellChoices:{cantrips:[], spells:[]}
   };
@@ -206,7 +238,10 @@ export function finishWizard(){
   // no armor is equipped yet, so it starts from unarmored / class defense.
   c.inventory = buildEquipmentList(info, w.equipment);
   applyClassChoices(c, info, w.classChoices);
-  (info.languages||[]).forEach(function(l){ if(c.languages.indexOf(l)===-1) c.languages.push(l); });
+  var plan = languagePlan();
+  c.languages = plan.fixed.concat(w.languageChoices.slice(0, plan.slots.length).filter(function(l, i, all){
+    return l && plan.fixed.indexOf(l)===-1 && all.indexOf(l)===i;
+  }));
 
   if(info.spellcasting){
     var sc = info.spellcasting;
@@ -257,7 +292,6 @@ export function applyClassChoices(c, info, picks){
       (g.expertise && picks[g.expertise.id] || []).forEach(function(sk){ c.skillProfs[sk] = {prof:true, expertise:true}; });
       var picked = g.pick && g.pick.options.find(function(o){ return o.name===picks[g.pick.id]; });
       if(picked) c.features.push({id:uid(), name:g.pick.label+": "+picked.name, source:"Class", text:picked.text, isPassive:true});
-      if(c.languages) (g.languages||[]).forEach(function(l){ if(c.languages.indexOf(l)===-1) c.languages.push(l); });
     } else if(ch.kind==="listPick"){
       // A pick from a list (tools, instruments, favored enemy): recorded as
       // a feature; `featureText` overrides the default proficiency wording.
@@ -314,7 +348,7 @@ export function renderWizard(){
   var renderers = {
     class: wizardStepClass, race: wizardStepRace, background: wizardStepBackground,
     alignment: wizardStepAlignment,
-    abilities: wizardStepAbilities, skills: wizardStepSkills, choices: wizardStepChoices, equipment: wizardStepEquipment,
+    abilities: wizardStepAbilities, skills: wizardStepSkills, choices: wizardStepChoices, languages: wizardStepLanguages, equipment: wizardStepEquipment,
     spells: wizardStepSpells, review: wizardStepReview
   };
   renderers[wizardState.step](inner);

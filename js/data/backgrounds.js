@@ -26,3 +26,15 @@ export var BACKGROUND_INFO = {
   "Urchin": {skills:["Sleight of Hand","Stealth"], blurb:"Grants Sleight of Hand and Stealth. You grew up on the streets, alone and poor."}
 };
 export var BACKGROUND_INFO_FALLBACK = "Grants two skill proficiencies of your choice (and usually a tool or language). Pick whatever fits your character's story; you can add them on the sheet's Skills tab afterward.";
+
+/* Languages of your choice each background grants (0 when it gives a
+   tool instead). Drives the Languages step of the creation wizard. */
+export var BACKGROUND_LANGUAGES = {
+  "Acolyte":2, "Charlatan":0, "Criminal":0, "Entertainer":0, "Folk Hero":0,
+  "Guild Artisan":1, "Guild Merchant":1, "Hermit":1, "Noble":1, "Outlander":1,
+  "Sage":2, "Sailor":0, "Soldier":0, "Urchin":0, "Anthropologist":2,
+  "Archaeologist":1, "City Watch":2, "Clan Crafter":1, "Cloistered Scholar":2,
+  "Courtier":2, "Faction Agent":2, "Far Traveler":1, "Inheritor":1,
+  "Knight of the Order":1, "Mercenary Veteran":0, "Urban Bounty Hunter":0,
+  "Uthgardt Tribe Member":1, "Waterdhavian Noble":1
+};

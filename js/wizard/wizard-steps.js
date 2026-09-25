@@ -8,7 +8,8 @@ import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../ui/svg-icons.js";
 import { dropdownField } from "../render/sheet.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan } from "./wizard-core.js";
+import { LANGUAGES } from "../data/languages.js";
 import { SUBCLASSES } from "../data/progression.js";
 
 export function setAbilityMethod(method){
@@ -560,6 +561,75 @@ function requiresHint(prof){
   return " ("+list+(names[0].indexOf(" Domain")!==-1 ? " Domain" : "")+")";
 }
 
+/* Languages: what the character already knows, then one dropdown per
+   free pick, grouped by where the pick comes from. Known languages and
+   ones picked in another dropdown are greyed out. Secret languages
+   (Druidic, Thieves' Cant) only come from classes, so they aren't offered. */
+export function wizardStepLanguages(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Languages</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> Languages let you talk to (and eavesdrop on) the people and creatures you meet. Your race gives you some automatically; your background and class can add more of your choice.";
+  card.appendChild(explain);
+
+  var plan = languagePlan();
+  var picks = wizardState.languageChoices = wizardState.languageChoices.slice(0, plan.slots.length);
+  // Drop picks you now know anyway (e.g. after changing race).
+  for(var k=0;k<picks.length;k++){ if(plan.fixed.indexOf(picks[k])!==-1) picks[k] = ""; }
+
+  var known = document.createElement("p");
+  known.style.cssText = "font-size:13px;margin:0 0 12px;";
+  known.innerHTML = "You already know: <b>"+escapeHtml(plan.fixed.join(", "))+"</b>.";
+  card.appendChild(known);
+
+  var lastSource = null;
+  plan.slots.forEach(function(slot, i){
+    if(slot.source!==lastSource){
+      lastSource = slot.source;
+      var count = plan.slots.filter(function(s){ return s.source===slot.source; }).length;
+      var title = document.createElement("p");
+      title.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+      title.textContent = "From "+slot.source+": "+count+" language"+(count>1?"s":"");
+      card.appendChild(title);
+      if(slot.help){
+        var help = document.createElement("p");
+        help.style.cssText = "font-size:13px;margin:0 0 8px;";
+        help.textContent = slot.help;
+        card.appendChild(help);
+      }
+    }
+    var f = ce("div","field");
+    f.style.maxWidth = "320px";
+    f.style.marginBottom = "8px";
+    var select = document.createElement("select");
+    var blank = document.createElement("option");
+    blank.value = ""; blank.textContent = "Select a language"; blank.disabled = true; blank.hidden = true;
+    select.appendChild(blank);
+    ["Standard","Exotic"].forEach(function(groupLabel){
+      var og = document.createElement("optgroup");
+      og.label = groupLabel;
+      LANGUAGES[groupLabel].forEach(function(name){
+        var o = document.createElement("option");
+        o.value = name; o.textContent = name;
+        var taken = plan.fixed.indexOf(name)!==-1 || (name!==picks[i] && picks.indexOf(name)!==-1);
+        if(taken) o.disabled = true;
+        og.appendChild(o);
+      });
+      select.appendChild(og);
+    });
+    select.value = picks[i] || "";
+    select.addEventListener("change", function(){
+      picks[i] = select.value;
+      var errBox = document.getElementById("wizard-error");
+      if(errBox) errBox.classList.remove("show");
+      renderWizard();
+    });
+    f.appendChild(select);
+    card.appendChild(f);
+  });
+  container.appendChild(card);
+}
+
 export function wizardStepEquipment(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Starting Equipment</span></h3>";
@@ -802,6 +872,8 @@ export function wizardStepReview(container){
   row("Race", wizardState.race);
   row("Background", wizardState.background);
   row("Alignment", wizardState.alignment || "None");
+  var langPlan = languagePlan();
+  row("Languages", langPlan.fixed.concat(wizardState.languageChoices.slice(0, langPlan.slots.length).filter(Boolean)).join(", "));
   row("Ability scores", ABILITIES.map(function(a){ return a[1].slice(0,3).toUpperCase()+" "+wizardState.abilities[a[0]]; }).join("  "));
   row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+(hpBonus ? " + "+hpBonus+" "+wizardState.classChoices.subclass : "")+")");
   row("Armor Class", ac.value + " (" + ac.breakdown + ")");
