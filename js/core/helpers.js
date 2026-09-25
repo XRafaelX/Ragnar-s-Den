@@ -199,23 +199,23 @@ export function computeArmorClass(c){
       (magic ? " + magic (" + fmtMod(magic) + ")" : "");
     short = "Armor " + armorAC + (bodyArmor.category!=="heavy" ? " + DEX" : "") + (magic ? " + magic" : "");
   } else {
-    var hasBarbarian = (c.classes||[]).some(function(cl){ return cl.name==="Barbarian"; });
-    var hasMonk = (c.classes||[]).some(function(cl){ return cl.name==="Monk"; });
-    if(hasBarbarian){
+    // Every unarmored formula the character qualifies for; the best wins
+    // (a Barbarian/Draconic Sorcerer multiclass gets whichever is higher).
+    var hasClass = function(name, sub){ return (c.classes||[]).some(function(cl){ return cl.name===name && (!sub || cl.subclass===sub); }); };
+    var options = [{value: 10 + dexMod, breakdown: "Unarmored: 10 + DEX (" + fmtMod(dexMod) + ")", short: "10 + DEX"}];
+    if(hasClass("Barbarian")){
       var conMod = mod(c.abilities && c.abilities.con);
-      base = 10 + dexMod + conMod;
-      breakdown = "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + CON (" + fmtMod(conMod) + ")";
-      short = "10 + DEX + CON";
-    } else if(hasMonk){
-      var wisMod = mod(c.abilities && c.abilities.wis);
-      base = 10 + dexMod + wisMod;
-      breakdown = "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + WIS (" + fmtMod(wisMod) + ")";
-      short = "10 + DEX + WIS";
-    } else {
-      base = 10 + dexMod;
-      breakdown = "Unarmored: 10 + DEX (" + fmtMod(dexMod) + ")";
-      short = "10 + DEX";
+      options.push({value: 10 + dexMod + conMod, breakdown: "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + CON (" + fmtMod(conMod) + ")", short: "10 + DEX + CON"});
     }
+    if(hasClass("Monk") && !shieldBonus){
+      var wisMod = mod(c.abilities && c.abilities.wis);
+      options.push({value: 10 + dexMod + wisMod, breakdown: "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + WIS (" + fmtMod(wisMod) + ")", short: "10 + DEX + WIS"});
+    }
+    if(hasClass("Sorcerer", "Draconic Bloodline")){
+      options.push({value: 13 + dexMod, breakdown: "Draconic Resilience: 13 + DEX (" + fmtMod(dexMod) + ")", short: "13 + DEX"});
+    }
+    var best = options.reduce(function(a, o){ return o.value > a.value ? o : a; });
+    base = best.value; breakdown = best.breakdown; short = best.short;
   }
 
   if(shieldBonus){ breakdown += " + shield (" + fmtMod(shieldBonus) + ")"; short += " + shield"; }

@@ -438,7 +438,11 @@ function hpGain(){
   var oldCon = mod(lu.c.abilities.con);
   var newCon = conModAfterAsi();
   var base = lu.hpMethod==="roll" && lu.hpRoll!=null ? lu.hpRoll : t.hitDie/2 + 1;
-  return Math.max(1, base + newCon) + (newCon - oldCon) * totalLevel(lu.c);
+  // Draconic Resilience: +1 HP per sorcerer level, including the level the
+  // bloodline is picked on.
+  var sub = t.existing && t.existing.subclass || (t.needsSubclass ? chosenSubclass() : "");
+  var draconic = lu.className==="Sorcerer" && sub==="Draconic Bloodline" ? 1 : 0;
+  return Math.max(1, base + newCon) + (newCon - oldCon) * totalLevel(lu.c) + draconic;
 }
 
 function stepReview(container){

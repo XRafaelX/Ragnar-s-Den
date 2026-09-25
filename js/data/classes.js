@@ -1,10 +1,10 @@
 import { CLASS_LIST } from "./abilities-skills.js";
 
 /* ---------------- Character Creation Wizard data ----------------
-   Barbarian, Cleric, Fighter, Rogue and Wizard have a fully guided creation
-   experience right now. The other classes appear (with a one-line blurb) so the class list
-   reads as complete, but are marked unavailable until they are built
-   out the same way. */
+   Barbarian, Cleric, Fighter, Rogue, Sorcerer, Warlock and Wizard have a
+   fully guided creation experience right now. The other classes appear
+   (with a one-line blurb) so the class list reads as complete, but are
+   marked unavailable until they are built out the same way. */
 var CLASS_BLURBS = {
   "Artificer":"Half-caster inventor who infuses magic into gadgets and tools.",
   "Barbarian":"A fierce melee fighter who channels primal rage for huge damage and toughness.",
@@ -354,6 +354,108 @@ CLASSES_INFO["Warlock"].features = [
   {name:"Otherworldly Patron", text:"Pact struck with an otherworldly entity granting unique patron spells and features."},
   {name:"Pact Magic", text:"Cast warlock spells using Charisma. All spell slots are of the highest available level and recharge on a short rest."}
 ];
+
+var ARCANE_FOCUS_CHOICE = {options:[
+  {key:"pouch", label:"Component pouch", detail:"Holds the material components your spells need", items:[
+    {name:"Component Pouch",qty:1,weight:2,notes:"spellcasting focus; holds material components"}
+  ]},
+  {key:"focus", label:"Arcane focus", detail:"A crystal, orb, rod, staff, or wand to channel your spells", items:[
+    {name:"Arcane Focus",qty:1,weight:1,notes:"spellcasting focus"}
+  ]}
+]};
+var CROSSBOW_OR_SIMPLE_CHOICE = {options:[
+  {key:"crossbow", label:"Light crossbow and 20 bolts", detail:"1d8 piercing, range 80/320 ft, loading", items:[
+    {name:"Light Crossbow",qty:1,weight:5,notes:"ammunition, loading, two-handed, range 80/320",type:"weapon",damageDice:"1d8",damageType:"Piercing",ability:"dex",proficient:true},
+    {name:"Crossbow Bolts",qty:20,weight:0.075,notes:"ammunition"}
+  ]},
+  {key:"simple", label:"Any simple weapon", detail:"Starts as a quarterstaff (1d6, versatile 1d8); swap it on the sheet", items:[
+    {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true}
+  ]}
+]};
+var TWO_DAGGERS = {name:"Dagger", qty:2, weight:1, notes:"finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true};
+var SCHOLARS_PACK = {name:"Scholar's Pack", qty:1, weight:10, notes:"backpack, book of lore, ink, quill, 10 sheets of parchment, bag of sand, small knife"};
+
+/* Dragon Ancestor options: the type sets your damage type for later
+   Draconic Bloodline features. */
+var DRAGON_ANCESTORS = [
+  ["Black","Acid"],["Blue","Lightning"],["Brass","Fire"],["Bronze","Lightning"],["Copper","Acid"],
+  ["Gold","Fire"],["Green","Poison"],["Red","Fire"],["Silver","Cold"],["White","Cold"]
+].map(function(d){ return {name:d[0]+" dragon", text:d[1]+" damage. Your Elemental Affinity (sorcerer level 6) boosts spells of this type."}; });
+
+/* Sorcerer: Sorcerous Origin at level 1. Draconic Bloodline's Resilience
+   (+1 HP per sorcerer level, unarmored AC 13 + DEX) is applied by the
+   sheet itself; `hpPerLevel` covers the level-1 HP here. */
+Object.assign(CLASSES_INFO["Sorcerer"], {
+  available:true,
+  primaryAbility:"cha",
+  savingThrows:["con","cha"],
+  skillChoices:{count:2, options:["Arcana","Deception","Insight","Intimidation","Persuasion","Religion"]},
+  choices:[
+    {id:"subclass", kind:"subclass", label:"Sorcerous Origin",
+      help:"Where your magic comes from. It shapes your extra features as you level.",
+      grants:{
+        "Draconic Bloodline":{hpPerLevel:1, languages:["Draconic"],
+          pick:{id:"dragonAncestor", label:"Dragon Ancestor", help:"Pick the kind of dragon in your bloodline. You also learn to speak, read and write Draconic.",
+            options:DRAGON_ANCESTORS}},
+        "Wild Magic":{}
+      }}
+  ],
+  spellcasting:{
+    ability:"cha", spellList:"Sorcerer", cantrips:4, spells:2, prepares:false, slots:{1:2},
+    spellsLabel:"1st-level spells known",
+    spellsHelp:"Sorcerers know a small set of spells and can cast any of them with a slot. You learn one more each level, and can swap one out when you level up."
+  },
+  equipment:{
+    choiceGroups:[
+      CROSSBOW_OR_SIMPLE_CHOICE,
+      ARCANE_FOCUS_CHOICE,
+      {options:[
+        {key:"dungeoneer", label:"Dungeoneer's Pack", detail:"Backpack, crowbar, hammer, pitons, torches, rations, waterskin, rope", items:[DUNGEONEERS_PACK]},
+        {key:"explorer", label:"Explorer's Pack", detail:"Backpack, bedroll, mess kit, tinderbox, torches, rations, waterskin, rope", items:[EXPLORERS_PACK]}
+      ]}
+    ],
+    fixed:[TWO_DAGGERS]
+  }
+});
+
+/* Warlock: Otherworldly Patron at level 1. `expandedSpells` join the list
+   the wizard's spell picker offers; Pact Magic uses `pact` slots (one
+   1st-level slot, back on a short rest) instead of regular ones. */
+Object.assign(CLASSES_INFO["Warlock"], {
+  available:true,
+  primaryAbility:"cha",
+  savingThrows:["wis","cha"],
+  skillChoices:{count:2, options:["Arcana","Deception","History","Intimidation","Investigation","Nature","Religion"]},
+  choices:[
+    {id:"subclass", kind:"subclass", label:"Otherworldly Patron",
+      help:"The being you made your pact with. It grants a feature now and adds a few spells to the list you can learn from.",
+      grants:{
+        "The Fiend":{expandedSpells:["Burning Hands","Command"]},
+        "The Archfey":{expandedSpells:["Faerie Fire","Sleep"]},
+        "The Great Old One":{expandedSpells:["Dissonant Whispers","Tasha's Hideous Laughter"]}
+      }}
+  ],
+  spellcasting:{
+    ability:"cha", spellList:"Warlock", cantrips:2, spells:2, prepares:false, slots:{}, pact:{max:1, slotLevel:1},
+    spellsLabel:"1st-level spells known",
+    spellsHelp:"You know two warlock spells. Pact Magic gives you one spell slot that comes back on a short rest, so you can cast often across a day."
+  },
+  equipment:{
+    choiceGroups:[
+      CROSSBOW_OR_SIMPLE_CHOICE,
+      ARCANE_FOCUS_CHOICE,
+      {options:[
+        {key:"scholar", label:"Scholar's Pack", detail:"Backpack, book of lore, ink, quill, parchment, sand, small knife", items:[SCHOLARS_PACK]},
+        {key:"dungeoneer", label:"Dungeoneer's Pack", detail:"Backpack, crowbar, hammer, pitons, torches, rations, waterskin, rope", items:[DUNGEONEERS_PACK]}
+      ]}
+    ],
+    fixed:[
+      {name:"Leather", qty:1, weight:10, notes:"light armor", type:"armor", category:"light", baseAC:11},
+      {name:"Spear", qty:1, weight:3, notes:"any simple weapon; swap it on the sheet. Thrown 20/60, versatile 1d8", type:"weapon", damageDice:"1d6", damageType:"Piercing", ability:"str", proficient:true},
+      TWO_DAGGERS
+    ]
+  }
+});
 
 CLASSES_INFO["Artificer"].features = [
   {name:"Magical Tinkering", text:"Invest a spark of magic into mundane tiny objects (light, recorded sound, odor, or visual effect)."},

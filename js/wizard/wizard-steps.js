@@ -397,6 +397,7 @@ function choiceSubclass(card, ch){
     var extras = [];
     if(grants.profs && grants.profs.length) extras.push("Proficient with "+grants.profs.map(function(p){ return PROF_LABELS[p]||p; }).join(" and "));
     if(grants.spells && grants.spells.length) extras.push("Always prepared: "+grants.spells.join(", "));
+    if(grants.expandedSpells && grants.expandedSpells.length) extras.push("Adds to your spell list: "+grants.expandedSpells.join(", "));
     var row = ce("div","wiz-equip-option");
     if(wizardState.classChoices[ch.id]===sub.name) row.classList.add("selected");
     row.innerHTML = "<div><strong>"+escapeHtml(sub.name)+"</strong><br>"+
@@ -409,8 +410,30 @@ function choiceSubclass(card, ch){
     card.appendChild(row);
   });
 
-  // Knowledge Domain's extra skill pick shows up once it's chosen.
-  var bonus = subclassGrants(currentClassInfo(), wizardState.classChoices).expertise;
+  // Follow-up picks some subclasses need once chosen: Knowledge Domain's
+  // skills, Draconic Bloodline's dragon ancestor.
+  var g = subclassGrants(currentClassInfo(), wizardState.classChoices);
+  if(g.pick){
+    var pickTitle = document.createElement("p");
+    pickTitle.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    pickTitle.textContent = g.pick.label;
+    card.appendChild(pickTitle);
+    var pickHelp = document.createElement("p");
+    pickHelp.style.cssText = "font-size:13px;margin:0 0 10px;";
+    pickHelp.textContent = g.pick.help;
+    card.appendChild(pickHelp);
+    g.pick.options.forEach(function(opt){
+      var row = ce("div","wiz-equip-option");
+      if(wizardState.classChoices[g.pick.id]===opt.name) row.classList.add("selected");
+      row.innerHTML = "<div><strong>"+escapeHtml(opt.name)+"</strong><br><span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(opt.text)+"</span></div>";
+      row.addEventListener("click", function(){
+        wizardState.classChoices[g.pick.id] = opt.name;
+        renderWizard();
+      });
+      card.appendChild(row);
+    });
+  }
+  var bonus = g.expertise;
   if(bonus){
     var title = document.createElement("p");
     title.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
@@ -532,7 +555,7 @@ export function wizardStepEquipment(container){
 /* One pick-N-from-a-list block (cantrips or 1st-level spells). Toggling
    updates the rows in place rather than re-rendering the whole wizard, so a
    long list keeps its scroll position and the search box keeps focus. */
-function spellPickSection(title, help, count, level, chosen, listClass, exclude){
+function spellPickSection(title, help, count, level, chosen, listClass, exclude, extra){
   var wrap = ce("div","wiz-spell-section");
 
   var head = ce("div","wiz-spell-head");
@@ -555,6 +578,8 @@ function spellPickSection(title, help, count, level, chosen, listClass, exclude)
 
   var list = ce("div","wiz-spell-list");
   var data = spellDataForClass(listClass);
+  // Extra spells a subclass adds to the class list (a warlock's patron).
+  (extra||[]).forEach(function(name){ if(SPELL_DATA[name]) data[name] = SPELL_DATA[name]; });
   // Spells the character gets for free (domain spells, bonus cantrips) are
   // left out so a pick isn't wasted on them.
   exclude = exclude || [];
@@ -564,7 +589,7 @@ function spellPickSection(title, help, count, level, chosen, listClass, exclude)
     var row = ce("div","wiz-pick-row wiz-spell-row");
     var cb = document.createElement("input"); cb.type = "checkbox"; cb.className = "chk";
     var text = ce("div","wiz-spell-text");
-    var meta = [d.school, d.castingTime, d.range].concat(d.concentration ? ["Concentration"] : [], d.ritual ? ["Ritual"] : []).join(" · ");
+    var meta = ((extra||[]).indexOf(name)!==-1 ? ["Patron spell"] : []).concat([d.school, d.castingTime, d.range], d.concentration ? ["Concentration"] : [], d.ritual ? ["Ritual"] : []).join(" · ");
     text.innerHTML =
       '<span class="row-name">' + escapeHtml(name) + '</span>' +
       '<span class="wiz-spell-meta">' + escapeHtml(meta) + '</span>' +
@@ -638,7 +663,13 @@ export function wizardStepSpells(container){
   var need = spellPickCount(sc);
   if(wizardState.spellChoices.spells.length > need) wizardState.spellChoices.spells.length = need;
   card.appendChild(spellPickSection("Cantrips", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList, grants.cantrips));
-  card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", need, 1, wizardState.spellChoices.spells, sc.spellList, grants.spells));
+  if(grants.expandedSpells){
+    var exp = document.createElement("p");
+    exp.style.cssText = "font-size:13px;margin:0 0 12px;";
+    exp.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> adds "+escapeHtml(grants.expandedSpells.join(" and "))+" to the spells you can learn (marked <i>Patron spell</i>).";
+    card.appendChild(exp);
+  }
+  card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", need, 1, wizardState.spellChoices.spells, sc.spellList, grants.spells, grants.expandedSpells));
   container.appendChild(card);
 }
 
@@ -695,7 +726,8 @@ export function wizardStepReview(container){
 
   var info = currentClassInfo();
   var conMod = mod(wizardState.abilities.con);
-  var hp = HIT_DICE_BY_CLASS[wizardState.classId] + conMod;
+  var hpBonus = subclassGrants(info, wizardState.classChoices).hpPerLevel||0;
+  var hp = HIT_DICE_BY_CLASS[wizardState.classId] + conMod + hpBonus;
   // Same AC math as the sheet, run on the gear and picks chosen so far.
   var preview = {
     abilities: wizardState.abilities,
@@ -719,7 +751,7 @@ export function wizardStepReview(container){
   row("Background", wizardState.background);
   row("Alignment", wizardState.alignment || "None");
   row("Ability scores", ABILITIES.map(function(a){ return a[1].slice(0,3).toUpperCase()+" "+wizardState.abilities[a[0]]; }).join("  "));
-  row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+")");
+  row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+(hpBonus ? " + "+hpBonus+" "+wizardState.classChoices.subclass : "")+")");
   row("Armor Class", ac.value + " (" + ac.breakdown + ")");
   row("Saving throws", info.savingThrows.map(function(k){ return k.toUpperCase(); }).join(", "));
   var allSkills = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]);
@@ -729,8 +761,10 @@ export function wizardStepReview(container){
     row(ch.label, Array.isArray(v) ? v.join(", ") : (v || "None"));
   });
   var grants = subclassGrants(info, wizardState.classChoices);
+  if(grants.pick) row(grants.pick.label, wizardState.classChoices[grants.pick.id] || "None");
   if(grants.expertise) row(grants.expertise.label, (wizardState.classChoices[grants.expertise.id]||[]).join(", ") || "None");
   if(grants.spells) row("Domain spells", grants.spells.join(", ")+" (always prepared)");
+  if(info.spellcasting && info.spellcasting.pact) row("Pact Magic", info.spellcasting.pact.max+" × "+info.spellcasting.pact.slotLevel+"st-level slot, back on a short rest");
   if(info.spellcasting){
     row("Cantrips", wizardState.spellChoices.cantrips.join(", ") || "None");
     row(info.spellcasting.spellsLabel || "1st-level spells", wizardState.spellChoices.spells.join(", ") || "None");

@@ -402,7 +402,7 @@ export var SUBCLASSES = {
   "Sorcerer": [
     {name:"Draconic Bloodline", blurb:"Dragon blood grants toughness and elemental power.", features:{1:[
       {name:"Dragon Ancestor", text:"Choose a dragon type (sets your damage type later). You speak Draconic and double your proficiency bonus on Charisma checks with dragons."},
-      {name:"Draconic Resilience", text:"Your max HP increases by 1 per sorcerer level, and without armor your AC is 13 + DEX modifier. (Adjust your max HP by hand.)"}
+      {name:"Draconic Resilience", text:"Your max HP increases by 1 per sorcerer level, and without armor your AC is 13 + DEX modifier. (Already added to your max HP and AC.)"}
     ]}},
     {name:"Wild Magic", blurb:"Chaotic magic that surges unpredictably.", features:{1:[
       {name:"Wild Magic Surge", text:"When you cast a leveled sorcerer spell, the DM can have you roll a d20. On a 1, roll on the Wild Magic Surge table."},
@@ -411,12 +411,15 @@ export var SUBCLASSES = {
   ],
   "Warlock": [
     {name:"The Fiend", blurb:"A pact with a devil or demon.", features:{1:[
+      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Burning Hands and Command (1st level), Blindness/Deafness and Scorching Ray (2nd, from warlock level 3), Fireball and Stinking Cloud (3rd, from warlock level 5)."},
       {name:"Dark One's Blessing", text:"When you drop a hostile creature to 0 HP, gain temporary HP equal to your CHA modifier + warlock level."}
     ]}},
     {name:"The Archfey", blurb:"A pact with a lord or lady of the fey.", features:{1:[
+      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Faerie Fire and Sleep (1st level), Calm Emotions and Phantasmal Force (2nd, from warlock level 3), Blink and Plant Growth (3rd, from warlock level 5)."},
       {name:"Fey Presence", text:"Action: each creature in a 10-foot cube around you must pass a Wisdom save or be charmed or frightened until the end of your next turn. Once per short or long rest."}
     ]}},
     {name:"The Great Old One", blurb:"A pact with an unknowable alien entity.", features:{1:[
+      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Dissonant Whispers and Tasha's Hideous Laughter (1st level), Detect Thoughts and Phantasmal Force (2nd, from warlock level 3), Clairvoyance and Sending (3rd, from warlock level 5)."},
       {name:"Awakened Mind", text:"Speak telepathically to any creature you can see within 30 feet."}
     ]}}
   ],

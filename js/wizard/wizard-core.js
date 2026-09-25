@@ -113,8 +113,10 @@ export function validateStep(id){
       return !v;
     });
     if(missing) return missing.kind==="expertise" ? "Choose "+missing.count+" for "+missing.label+"." : "Choose a "+missing.label+".";
-    var bonus = subclassGrants(info, wizardState.classChoices).expertise;
+    var g = subclassGrants(info, wizardState.classChoices);
+    var bonus = g.expertise;
     if(bonus && (wizardState.classChoices[bonus.id]||[]).length!==bonus.count) return "Choose "+bonus.count+" skills for "+bonus.label+".";
+    if(g.pick && !wizardState.classChoices[g.pick.id]) return "Choose a "+g.pick.label+".";
     return null;
   }
   if(id==="equipment"){
@@ -191,7 +193,7 @@ export function finishWizard(){
   c.features = [];
   c.feats = [];
   var conMod = mod(c.abilities.con);
-  c.hp.max = HIT_DICE_BY_CLASS[w.classId] + conMod;
+  c.hp.max = HIT_DICE_BY_CLASS[w.classId] + conMod + (subclassGrants(info, w.classChoices).hpPerLevel||0);
   c.hp.current = c.hp.max;
   // AC is derived on the sheet from equipped armor (see computeArmorClass);
   // no armor is equipped yet, so it starts from unarmored / class defense.
@@ -202,6 +204,7 @@ export function finishWizard(){
     var sc = info.spellcasting;
     c.spellcasting.ability = sc.ability;
     Object.keys(sc.slots).forEach(function(lvl){ c.spellcasting.slots[lvl] = {max:sc.slots[lvl], used:0}; });
+    if(sc.pact) c.spellcasting.pact = {max:sc.pact.max, slotLevel:sc.pact.slotLevel, used:0};
     // Preparing casters get a starting prepared list (ability mod + level,
     // at least 1); everyone else knows (and so has prepared) all of theirs.
     var prepareCount = sc.prepares ? Math.max(1, mod(c.abilities[sc.ability]) + 1) : Infinity;
@@ -242,8 +245,11 @@ export function applyClassChoices(c, info, picks){
     if(!v) return;
     if(ch.kind==="subclass"){
       c.classes[0].subclass = v;
-      var bonus = subclassGrants(info, picks).expertise;
-      (bonus && picks[bonus.id] || []).forEach(function(sk){ c.skillProfs[sk] = {prof:true, expertise:true}; });
+      var g = subclassGrants(info, picks);
+      (g.expertise && picks[g.expertise.id] || []).forEach(function(sk){ c.skillProfs[sk] = {prof:true, expertise:true}; });
+      var picked = g.pick && g.pick.options.find(function(o){ return o.name===picks[g.pick.id]; });
+      if(picked) c.features.push({id:uid(), name:g.pick.label+": "+picked.name, source:"Class", text:picked.text, isPassive:true});
+      if(c.languages) (g.languages||[]).forEach(function(l){ if(c.languages.indexOf(l)===-1) c.languages.push(l); });
     } else if(ch.kind==="fightingStyle"){
       var style = FIGHTING_STYLES[v];
       c.features.push({id:uid(), name:"Fighting Style: "+v, source:"Class", text:style ? style.text : "", isPassive:true, fightingStyle:v});
