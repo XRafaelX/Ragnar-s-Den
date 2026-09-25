@@ -1,8 +1,8 @@
 /* Shared form field wrappers (.field, .field-inline). */
 
 /* Generic .field fallback (lower specificity than .identity .sub-row .field
-   below, so this only applies where dropdownField()/similar fields are
-   reused outside the identity block, e.g. the creation wizard). */
+   below, so this only applies to labelled fields outside the identity
+   block, e.g. the creation wizard's themed pickers). */
 .field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
 .field label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
 .field input, .field select{

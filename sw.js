@@ -1,4 +1,4 @@
-var CACHE_NAME = "vault-and-vellum-v10";
+var CACHE_NAME = "vault-and-vellum-v11";
 var ASSETS = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ var ASSETS = [
   "./css/layout/sidebar.css",
   "./css/components/buttons.css",
   "./css/components/forms.css",
+  "./css/components/themed-picker.css",
   "./css/components/stat-stepper.css",
   "./css/components/tables.css",
   "./css/layout/main.css",
@@ -84,6 +85,7 @@ var ASSETS = [
   "./js/ui/sound.js",
   "./js/ui/svg-icons.js",
   "./js/ui/theme.js",
+  "./js/ui/themed-picker.js",
   "./js/ui/toast.js",
   "./js/ui/tutorial.js",
   "./js/wizard/wizard-core.js",

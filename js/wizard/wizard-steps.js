@@ -9,7 +9,7 @@ import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../ui/svg-icons.js";
 import { getDieSvg } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
-import { dropdownField } from "../render/sheet.js";
+import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan } from "./wizard-core.js";
 import { LANGUAGES } from "../data/languages.js";
 import { SUBCLASSES } from "../data/progression.js";
@@ -115,70 +115,15 @@ export function syncAbilitiesFromAssignment(pool){
   });
 }
 
-/* The pill that assigns a rolled score. A small custom menu rather than a
-   native <select>: the browser draws a <select>'s open list itself and
-   ignores most styling (it wouldn't center the numbers, and phones use
-   their own picker), so this keeps the list centered and on-theme
-   everywhere. Keyboard: Enter/Space/Down opens, Up/Down move, Enter picks,
-   Escape or a click outside closes. */
+/* The pill that assigns a rolled score: a themed picker in its pill
+   form, with centered numbers. "Pick" at the top clears the score. */
 function scorePicker(abilityName, usedIdx, choices, onPick){
-  var wrap = ce("div","score-picker");
-  var btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "ability-assign-select"+(usedIdx==null?" placeholder":"");
-  btn.textContent = usedIdx==null ? "Pick" : choices.find(function(c){ return c.idx===usedIdx; }).label;
-  btn.setAttribute("aria-haspopup", "listbox");
-  btn.setAttribute("aria-expanded", "false");
-  btn.setAttribute("aria-label", abilityName+" score: "+btn.textContent);
-  wrap.appendChild(btn);
-
-  var menu = null, active = 0;
-  function close(){
-    if(!menu) return;
-    menu.remove(); menu = null;
-    btn.setAttribute("aria-expanded", "false");
-    document.removeEventListener("pointerdown", onOutside, true);
-  }
-  function onOutside(e){ if(!wrap.contains(e.target)) close(); }
-  function highlight(i){
-    active = (i + choices.length) % choices.length;
-    Array.prototype.forEach.call(menu.children, function(li, j){ li.classList.toggle("active", j===active); });
-  }
-  function open(){
-    if(menu) return;
-    menu = ce("ul","score-picker-menu");
-    menu.setAttribute("role", "listbox");
-    choices.forEach(function(ch, i){
-      var li = ce("li", "score-picker-option"+(ch.idx===null ? " is-clear" : "")+(ch.idx===usedIdx ? " selected" : ""));
-      li.setAttribute("role", "option");
-      li.setAttribute("aria-selected", ch.idx===usedIdx ? "true" : "false");
-      li.textContent = ch.label;
-      li.addEventListener("pointerenter", function(){ highlight(i); });
-      li.addEventListener("click", function(){ close(); onPick(ch.idx); });
-      menu.appendChild(li);
-    });
-    wrap.appendChild(menu);
-    btn.setAttribute("aria-expanded", "true");
-    var current = choices.findIndex(function(c){ return c.idx===usedIdx; });
-    highlight(current===-1 ? 0 : current);
-    // On a phone the lower row's menu can open behind the footer; bring
-    // the whole list into view.
-    menu.scrollIntoView({block:"nearest", behavior:"smooth"});
-    document.addEventListener("pointerdown", onOutside, true);
-  }
-  btn.addEventListener("click", function(){ if(menu) close(); else open(); });
-  btn.addEventListener("keydown", function(e){
-    if(e.key==="Escape"){ close(); return; }
-    if(!menu){
-      if(e.key==="ArrowDown" || e.key==="ArrowUp"){ e.preventDefault(); open(); }
-      return;
-    }
-    if(e.key==="ArrowDown"){ e.preventDefault(); highlight(active+1); }
-    else if(e.key==="ArrowUp"){ e.preventDefault(); highlight(active-1); }
-    else if(e.key==="Enter" || e.key===" "){ e.preventDefault(); var ch = choices[active]; close(); onPick(ch.idx); }
-    else if(e.key==="Tab") close();
+  return themedPicker({
+    variant:"pill", triggerClass:"ability-assign-select"+(usedIdx==null?" placeholder":""),
+    groups:{"":choices.map(function(ch){ return {value:ch.idx==null ? "__clear__" : String(ch.idx), label:ch.label, muted:ch.idx==null}; })},
+    value:usedIdx==null ? "" : String(usedIdx), placeholder:"Pick", ariaLabel:abilityName+" score", search:false,
+    onPick:function(v){ onPick(v==="__clear__" ? null : Number(v)); }
   });
-  return wrap;
 }
 
 export function wizardAssignAbilities(container, pool){
@@ -342,7 +287,7 @@ export function wizardStepRace(container){
   explain.innerHTML = raceExplainHtml(wizardState.race);
   card.appendChild(explain);
 
-  var dd = dropdownField("Race", "race", RACES, wizardState, function(){
+  var dd = wizardDropdown("Race", "race", RACES, wizardState, function(){
     explain.innerHTML = raceExplainHtml(wizardState.race);
   });
   dd.style.maxWidth = "320px";
@@ -357,7 +302,7 @@ export function wizardStepBackground(container){
   explain.innerHTML = backgroundExplainHtml(wizardState.background);
   card.appendChild(explain);
 
-  var dd = dropdownField("Background", "background", BACKGROUNDS, wizardState, function(){
+  var dd = wizardDropdown("Background", "background", BACKGROUNDS, wizardState, function(){
     explain.innerHTML = backgroundExplainHtml(wizardState.background);
   });
   dd.style.maxWidth = "320px";
@@ -372,7 +317,7 @@ export function wizardStepAlignment(container){
   explain.innerHTML = alignmentExplainHtml(wizardState.alignment);
   card.appendChild(explain);
 
-  var dd = dropdownField("Alignment", "alignment", ALIGNMENTS, wizardState, function(){
+  var dd = wizardDropdown("Alignment", "alignment", ALIGNMENTS, wizardState, function(){
     explain.innerHTML = alignmentExplainHtml(wizardState.alignment);
   });
   dd.style.maxWidth = "320px";
@@ -613,82 +558,46 @@ function choiceListPick(card, ch){
   }
 }
 
-/* A grouped dropdown that works like the race picker: a dimmed
-   placeholder until something is chosen, and a "Custom / homebrew…"
-   option at the end that reveals a text box for anything not on the list.
-   opts: key (stable id for this dropdown), groups, value, placeholder,
-   noun (for the text box hint), onPick(value), and optional
-   takenReason(name) returning "known"/"picked" to grey an option out.
-   Typing in the text box doesn't re-render (that would steal focus);
-   validation checks the typed value like any other pick. */
-var customPickerOpen = {};
-export function resetHomebrewPickers(){ customPickerOpen = {}; }
-
+/* A grouped, themed dropdown with the race picker's "Custom / homebrew…"
+   option (see themedPicker). opts: key, groups, value, placeholder, noun,
+   onPick(value), and optional takenReason(name) -> "known"/"picked" to
+   grey an option out. Re-renders after a pick so sibling dropdowns grey
+   out what's taken; typing a homebrew value doesn't (it would steal
+   focus); validation checks the typed value like any other pick. */
 function homebrewSelect(opts){
   var f = ce("div","field");
   f.style.maxWidth = "320px";
   f.style.marginBottom = "8px";
-  var listed = [];
-  var select = document.createElement("select");
-  var blank = document.createElement("option");
-  blank.value = ""; blank.textContent = opts.placeholder; blank.disabled = true; blank.hidden = true;
-  select.appendChild(blank);
-  Object.keys(opts.groups).forEach(function(groupLabel){
-    var og = document.createElement("optgroup");
-    og.label = groupLabel;
-    opts.groups[groupLabel].forEach(function(name){
-      listed.push(name);
-      var o = document.createElement("option");
-      o.value = name; o.textContent = name;
-      var reason = opts.takenReason ? opts.takenReason(name) : "";
-      if(reason){ o.disabled = true; o.textContent = name+" ("+reason+")"; }
-      og.appendChild(o);
-    });
-    select.appendChild(og);
-  });
-  var customOpt = document.createElement("option");
-  customOpt.value = "__custom__"; customOpt.textContent = "Custom / homebrew…";
-  select.appendChild(customOpt);
-
-  var customInput = document.createElement("input");
-  customInput.type = "text";
-  customInput.placeholder = "Enter custom "+opts.noun;
-  customInput.style.marginTop = "3px";
-
-  var value = opts.value || "";
-  var isCustom = customPickerOpen[opts.key] || (value && listed.indexOf(value)===-1);
-  select.value = isCustom ? "__custom__" : value;
-  customInput.value = isCustom ? value : "";
-  customInput.style.display = isCustom ? "block" : "none";
-
-  function updatePlaceholderStyle(){ select.classList.toggle("placeholder", select.value===""); }
-  function clearError(){
-    var errBox = document.getElementById("wizard-error");
-    if(errBox) errBox.classList.remove("show");
-  }
-  updatePlaceholderStyle();
-
-  select.addEventListener("change", function(){
-    clearError();
-    if(select.value==="__custom__"){
-      customPickerOpen[opts.key] = true;
-      opts.onPick(customInput.value.trim());
-      customInput.style.display = "block";
-      customInput.focus();
-      updatePlaceholderStyle();
-      return;
+  f.appendChild(themedPicker({
+    key:opts.key, groups:opts.groups, value:opts.value, placeholder:opts.placeholder,
+    ariaLabel:opts.noun, homebrew:{noun:opts.noun}, reasonFor:opts.takenReason,
+    onPick:function(v, meta){
+      opts.onPick(v);
+      var errBox = document.getElementById("wizard-error");
+      if(errBox) errBox.classList.remove("show");
+      if(!meta.typing) renderWizard();
     }
-    customPickerOpen[opts.key] = false;
-    opts.onPick(select.value);
-    renderWizard();
-  });
-  customInput.addEventListener("input", function(){
-    clearError();
-    opts.onPick(customInput.value.trim());
-  });
+  }));
+  return f;
+}
 
-  f.appendChild(select);
-  f.appendChild(customInput);
+/* Race, background and alignment: a labelled themed dropdown with the
+   homebrew option, writing straight into wizardState[key]. */
+function wizardDropdown(labelTxt, key, groups, obj, onChangeExtra){
+  var f = ce("div","field");
+  var l = document.createElement("label");
+  l.textContent = labelTxt;
+  f.appendChild(l);
+  f.appendChild(themedPicker({
+    key:"field:"+key, groups:groups, value:obj[key], placeholder:"Select "+labelTxt.toLowerCase(),
+    ariaLabel:labelTxt, homebrew:{noun:labelTxt.toLowerCase()},
+    onPick:function(v){
+      obj[key] = v;
+      var errBox = document.getElementById("wizard-error");
+      if(errBox) errBox.classList.remove("show");
+      if(onChangeExtra) onChangeExtra();
+    }
+  }));
   return f;
 }
 
@@ -1120,3 +1029,6 @@ export function buildEquipmentList(info, chosenKeys){
   return items;
 }
 
+
+/* Forget open homebrew boxes when a new character is started. */
+export function resetHomebrewPickers(){ resetThemedPickers(); }

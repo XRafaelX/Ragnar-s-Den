@@ -1,0 +1,58 @@
+/* Themed picker (js/ui/themed-picker.js): a page-drawn dropdown so the
+   open list matches the theme in every browser. */
+.tp{position:relative;width:100%;}
+
+/* Field trigger: looks like the underlined form fields it replaces. */
+.tp-field .tp-trigger{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  border:none;border-bottom:1px solid var(--rule);background:transparent;
+  color:var(--text-on-parch);font-size:13px;padding:4px 0;text-align:left;cursor:pointer;
+}
+.tp-field .tp-trigger:focus-visible, .tp-field.open .tp-trigger{outline:none;border-bottom-color:var(--brass);}
+.tp-trigger.placeholder .tp-value{color:var(--text-on-parch-dim);}
+.tp-value{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tp-chevron{width:14px;height:14px;flex:none;fill:none;stroke:var(--text-on-parch-dim);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s;}
+.tp.open .tp-chevron{transform:rotate(180deg);}
+
+/* ".tp" prefix on the inputs: the picker usually sits in a .field, whose
+   generic input rule would otherwise strip the search box's padding. */
+.tp .tp-custom-input{
+  width:100%;margin-top:3px;border:none;border-bottom:1px solid var(--rule);background:transparent;
+  color:var(--text-on-parch);font-size:13px;padding:4px 0;
+}
+.tp .tp-custom-input:focus{outline:none;border-bottom-color:var(--brass);}
+
+/* The open menu. */
+.tp-menu{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:30;
+  background:var(--field-bg);border:1px solid var(--brass);border-radius:10px;
+  box-shadow:0 10px 24px rgba(0,0,0,.45);overflow:hidden;
+  scroll-margin:16px; /* scrolled into view clear of the wizard footer */
+  animation:tpIn .12s ease-out; /* opacity only, see scroll-margin above */
+}
+.tp-field .tp-menu{min-width:220px;}
+@keyframes tpIn{from{opacity:0;}to{opacity:1;}}
+.tp .tp-search{
+  display:block;width:100%;border:none;border-bottom:1px solid var(--rule);
+  background:rgba(255,255,255,.03);color:var(--text-on-parch);font-size:13px;padding:9px 12px;
+}
+.tp .tp-search:focus{outline:none;border-bottom-color:var(--brass);}
+.tp-list{list-style:none;margin:0;padding:4px;max-height:260px;overflow-y:auto;}
+.tp-group{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--brass-bright);
+  padding:8px 10px 4px;
+}
+.tp-option{
+  padding:7px 10px;border-radius:7px;cursor:pointer;font-size:13.5px;color:var(--text-on-parch);
+}
+.tp-option.active{background:color-mix(in srgb, var(--brass) 22%, transparent);color:var(--brass-bright);}
+.tp-option.selected{background:var(--brass);color:#fff;}
+.tp-option.disabled{color:var(--text-on-parch-dim);opacity:.5;cursor:not-allowed;}
+.tp-option.tp-muted{color:var(--text-on-parch-dim);font-weight:400;}
+.tp-option.tp-muted.selected, .tp-option.tp-muted.active{color:var(--brass-bright);}
+.tp-homebrew{font-style:italic;color:var(--text-on-parch-dim);border-top:1px solid var(--rule);border-radius:0 0 7px 7px;margin-top:4px;}
+.tp-empty{padding:10px;font-size:12.5px;color:var(--text-on-parch-dim);text-align:center;}
+
+/* Pill variant (ability-score pills): centered serif numbers. */
+.tp-pill .tp-trigger{width:100%;}
+.tp-pill .tp-option{text-align:center;font-family:var(--serif);font-size:14px;font-weight:700;padding:6px 4px;}
