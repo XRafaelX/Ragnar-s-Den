@@ -1,11 +1,11 @@
 import { ABILITIES, CLASS_LIST, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
-import { CLASSES_INFO } from "../data/classes.js";
+import { CLASSES_INFO, FIGHTING_STYLES } from "../data/classes.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL, XP_THRESHOLDS, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from "../data/progression.js";
 import {
   mod, fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus,
   classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots,
-  wizardScrollSave, wizardScrollRestore, wizardScrollReset
+  wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFightingStyle
 } from "../core/helpers.js";
 import { save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
@@ -19,11 +19,12 @@ import { makeMoveLeftSvg, makeMoveRightSvg } from "../ui/svg-icons.js";
 /* ---------------- Level-up flow ----------------
    A short guided flow in the same full-screen overlay as the creation
    wizard: pick which class gains the level (or multiclass into a new
-   one), a subclass when one is due, an Ability Score Improvement / feat
+   one), a subclass when one is due, a Fighting Style when one is due
+   (Fighter 1, Paladin 2, Ranger 2), an Ability Score Improvement / feat
    at class level 4, then hit points. Applying it records what changed in
    c.levelHistory so the last level-up can be undone. */
-var STEP_IDS = ["class","subclass","asi","hp","review"];
-var STEP_LABELS = {class:"Class", subclass:"Subclass", asi:"Abilities", hp:"Hit points", review:"Review"};
+var STEP_IDS = ["class","subclass","style","asi","hp","review"];
+var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Fighting style", asi:"Abilities", hp:"Hit points", review:"Review"};
 var lu = null;
 
 function abilityName(key){
@@ -65,6 +66,7 @@ function target(){
     newLevel: newLevel,
     needsSubclass: !!prog.subclassLevel && newLevel >= prog.subclassLevel && !hasSub,
     asi: prog.asiLevels.indexOf(newLevel) !== -1,
+    fightingStyle: prog.fightingStyle && prog.fightingStyle.level===newLevel ? prog.fightingStyle : null,
     hitDie: HIT_DICE_BY_CLASS[lu.className] || 8
   };
 }
@@ -73,6 +75,7 @@ function stepApplicable(id){
   if(!lu.className) return id==="class";
   var t = target();
   if(id==="subclass") return t.needsSubclass;
+  if(id==="style") return !!t.fightingStyle;
   if(id==="asi") return t.asi;
   return true;
 }
@@ -89,6 +92,11 @@ function asiPointsUsed(){
 function validate(id){
   if(id==="class") return lu.className ? null : "Pick a class to gain the level in.";
   if(id==="subclass") return chosenSubclass() ? null : "Pick a "+(target().prog.subclassLabel||"subclass").toLowerCase()+".";
+  if(id==="style"){
+    // Nothing left to pick if the character already has every style
+    // this class offers (possible with multiclassing).
+    return lu.style || !availableStyles().length ? null : "Pick a fighting style.";
+  }
   if(id==="asi"){
     if(lu.asiMode==="feat") return lu.featName ? null : "Pick a feat, or switch to raising ability scores.";
     return asiPointsUsed()===2 ? null : "Spend both ability points (you have "+(2-asiPointsUsed())+" left).";
@@ -113,7 +121,7 @@ export function openLevelUp(c){
   lu = {
     c: c, step:"class",
     className: c.classes.length===1 ? c.classes[0].name : null,
-    subclass:"", subclassCustom:"",
+    subclass:"", subclassCustom:"", style:"",
     asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"",
     hpMethod:"avg", hpRoll:null
   };
@@ -171,7 +179,7 @@ function render(){
   var inner = ce("div"); inner.id = "wizard-body-inner";
   body.appendChild(inner);
   overlay.appendChild(body);
-  ({class:stepClass, subclass:stepSubclass, asi:stepAsi, hp:stepHp, review:stepReview})[lu.step](inner);
+  ({class:stepClass, subclass:stepSubclass, style:stepStyle, asi:stepAsi, hp:stepHp, review:stepReview})[lu.step](inner);
 
   var errorBox = ce("div","wiz-error");
   overlay.appendChild(errorBox);
@@ -222,6 +230,7 @@ function resetChoicesFor(name){
   if(lu.className===name) return;
   lu.className = name;
   lu.subclass = ""; lu.subclassCustom = "";
+  lu.style = "";
   lu.asi = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; lu.featName = ""; lu.asiMode = "asi";
   lu.hpRoll = null; lu.hpMethod = "avg";
 }
@@ -264,6 +273,34 @@ function stepClass(container){
     mcGrid.appendChild(box);
   });
   mcCard.appendChild(mcGrid);
+}
+
+/* Styles this class may pick that the character doesn't already have
+   (e.g. a Fighter who multiclasses into Paladin keeps Defense and picks
+   another). */
+function availableStyles(){
+  var fs = target().fightingStyle;
+  return fs ? fs.options.filter(function(n){ return !hasFightingStyle(lu.c, n); }) : [];
+}
+
+function stepStyle(container){
+  var fs = target().fightingStyle;
+  var card = stepCard(container, "Choose a Fighting Style",
+    "<b>Your fighting style</b> is a combat specialty you keep for good. <b>Defense</b> and <b>Archery</b> are added to your AC and attacks automatically; the others are reminders on your Features tab.");
+  fs.options.forEach(function(name){
+    var owned = hasFightingStyle(lu.c, name);
+    var opt = ce("div","wiz-equip-option"+(lu.style===name?" selected":""));
+    opt.innerHTML = "<b>"+escapeHtml(name)+"</b><div class='lu-sub-blurb'>"+escapeHtml(FIGHTING_STYLES[name].text)+"</div>"+
+      (owned ? "<div class='lu-sub-feats'>You already have this style.</div>" : "");
+    if(owned){ opt.style.opacity = ".5"; opt.style.cursor = "not-allowed"; }
+    else opt.addEventListener("click", function(){ lu.style = name; render(); });
+    card.appendChild(opt);
+  });
+  if(!availableStyles().length){
+    var p = ce("p","lu-note");
+    p.textContent = "You already know every style this class can pick, so there's nothing to choose.";
+    card.appendChild(p);
+  }
 }
 
 function stepSubclass(container){
@@ -457,6 +494,7 @@ function stepReview(container){
   var classLine = (t.existing ? lu.className+" Lvl "+t.newLevel : "Multiclass: "+lu.className+" Lvl 1")+
     " (character level "+(totalLevel(c)+1)+")";
   if(t.needsSubclass) items.push(target().prog.subclassLabel+": "+chosenSubclass());
+  if(t.fightingStyle && lu.style) items.push("Fighting style: "+lu.style);
   if(t.asi){
     if(lu.asiMode==="feat") items.push("Feat: "+lu.featName);
     else items.push(ABILITIES.filter(function(a){ return lu.asi[a[0]]; }).map(function(a){ return a[1]+" +"+lu.asi[a[0]]; }).join(", "));
@@ -541,6 +579,15 @@ function finish(){
   else { entry = {name: lu.className, subclass: "", level: 1}; c.classes.push(entry); }
   if(subName) entry.subclass = subName;
 
+  // The picked style becomes a tagged feature (like a starting Fighter's),
+  // so Defense/Archery apply and undo can remove it.
+  var styleFeature = null;
+  if(t.fightingStyle && lu.style){
+    styleFeature = {id:uid(), name:"Fighting Style: "+lu.style, source:"Class", text:FIGHTING_STYLES[lu.style].text, isPassive:true, fightingStyle:lu.style};
+    c.features.push(styleFeature);
+    record.featureId = styleFeature.id;
+  }
+
   // New features: whatever this class level grants, plus every subclass
   // feature up to now when the subclass was picked on this level-up.
   var gained = classFeaturesGainedAt(entry, t.newLevel);
@@ -564,6 +611,10 @@ function finish(){
 
   var ids = gained.map(function(f){ return f.id; });
   if(feat) ids.push("feat_"+feat.id);
+  if(styleFeature){
+    ids.push(styleFeature.id);
+    gained.push({id:styleFeature.id, name:styleFeature.name, text:styleFeature.text, subclass:false});
+  }
   ids.forEach(function(id){
     if(c.newUnlocks.indexOf(id)===-1){ c.newUnlocks.push(id); record.unlockIds.push(id); }
   });
@@ -588,7 +639,7 @@ export function undoLastLevelUp(c){
   if(!rec) return;
   var entry = c.classes.find(function(cl){ return cl.name===rec.className; });
   var label = rec.className+" "+(entry ? entry.level : "");
-  confirmDialog("Undo last level-up?", "This removes "+label+" and reverts the HP, ability scores, feat and spell slots it gave.", function(){
+  confirmDialog("Undo last level-up?", "This removes "+label+" and reverts the HP, ability scores, feat, fighting style and spell slots it gave.", function(){
     c.levelHistory.pop();
     if(entry){
       if(rec.isNewClass) c.classes.splice(c.classes.indexOf(entry), 1);
@@ -596,6 +647,7 @@ export function undoLastLevelUp(c){
     }
     if(rec.asi) Object.keys(rec.asi).forEach(function(k){ c.abilities[k] = (Number(c.abilities[k])||10) - rec.asi[k]; });
     if(rec.featId) c.feats = c.feats.filter(function(f){ return f.id!==rec.featId; });
+    if(rec.featureId) c.features = c.features.filter(function(f){ return f.id!==rec.featureId; });
     c.hp.max = Math.max(1, (Number(c.hp.max)||1) - rec.hpGain);
     // Level-up added the gain to current HP too, so take it back off, but
     // never knock a conscious character down to 0 just by undoing.

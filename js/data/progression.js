@@ -19,7 +19,10 @@ var STANDARD_ASI = [4, 8, 12, 16, 19];
    13+ (Fighter: STR or DEX; Monk: DEX and WIS).
    casterType: "full" | "half" | "artificer" | "pact" | null. Drives spell
    slots. spellAbility: the class's spellcasting ability.
-   multiclassProfs: what you gain when this is NOT your first class. */
+   multiclassProfs: what you gain when this is NOT your first class.
+   fightingStyle: {level, options}: the class level that grants a
+   Fighting Style and which styles it may pick (see FIGHTING_STYLES in
+   classes.js). Level-up shows a picker for it. */
 export var CLASS_PROGRESSION = {
   "Artificer": {
     subclassLevel: 3, subclassLabel: "Artificer Specialist",
@@ -82,6 +85,7 @@ export var CLASS_PROGRESSION = {
   },
   "Fighter": {
     subclassLevel: 3, subclassLabel: "Martial Archetype",
+    fightingStyle: {level:1, options:["Archery","Defense","Dueling","Great Weapon Fighting","Protection","Two-Weapon Fighting"]},
     prereq: [["str"], ["dex"]], casterType: null, asiLevels: [4, 6, 8, 12, 14, 16, 19],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:""},
     features: {
@@ -109,6 +113,7 @@ export var CLASS_PROGRESSION = {
   },
   "Paladin": {
     subclassLevel: 3, subclassLabel: "Sacred Oath",
+    fightingStyle: {level:2, options:["Defense","Dueling","Great Weapon Fighting","Protection"]},
     prereq: [["str", "cha"]], casterType: "half", spellAbility: "cha", asiLevels: STANDARD_ASI,
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:""},
     features: {
@@ -123,6 +128,7 @@ export var CLASS_PROGRESSION = {
   },
   "Ranger": {
     subclassLevel: 3, subclassLabel: "Ranger Archetype",
+    fightingStyle: {level:2, options:["Archery","Defense","Dueling","Two-Weapon Fighting"]},
     prereq: [["dex", "wis"]], casterType: "half", spellAbility: "wis", asiLevels: STANDARD_ASI,
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:"Also gain proficiency in one skill from the ranger list. Tick it on the Abilities & Skills tab."},
     features: {
