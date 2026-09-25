@@ -106,6 +106,10 @@
 /* Compact and centered, so on a wide screen each row's dice sit next to
    their total instead of at opposite ends of the card. */
 .wiz-roll-stage{display:flex;flex-direction:column;gap:6px;margin:10px auto 0;width:100%;max-width:420px;}
+/* The current roll (scores, pills, Reroll) as one block, with the
+   Reroll button centered underneath. */
+.wiz-roll-results{display:flex;flex-direction:column;}
+.wiz-roll-results > .btn{align-self:center;}
 .wiz-roll-caption{font-size:12.5px;color:var(--text-on-parch-dim);text-align:center;margin:0 0 4px;}
 .wiz-roll-row{
   display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;
