@@ -120,6 +120,21 @@ function build(){
   els.next.addEventListener("click", function(){ go(index + 1); });
 }
 
+/* An element's rect grown to cover its children too, e.g. a home node's
+   label that hangs outside the button's own box. */
+function outerRect(el){
+  var r = el.getBoundingClientRect();
+  var box = {left:r.left, top:r.top, right:r.right, bottom:r.bottom};
+  Array.prototype.forEach.call(el.children, function(ch){
+    var cr = ch.getBoundingClientRect();
+    if(!cr.width || !cr.height) return;
+    box.left = Math.min(box.left, cr.left); box.top = Math.min(box.top, cr.top);
+    box.right = Math.max(box.right, cr.right); box.bottom = Math.max(box.bottom, cr.bottom);
+  });
+  box.width = box.right - box.left; box.height = box.bottom - box.top;
+  return box;
+}
+
 function targetOf(step){
   if(!step.target) return null;
   var el = step.target();
@@ -172,7 +187,7 @@ function position(){
   var pw = els.pop.offsetWidth, ph = els.pop.offsetHeight;
 
   // Skip the layout writes when nothing moved since the last frame.
-  var r = el ? el.getBoundingClientRect() : null;
+  var r = el ? outerRect(el) : null;
   var h = hole ? hole.getBoundingClientRect() : null;
   var key = [vw, vh, pw, ph, r ? [r.left, r.top, r.width, r.height, h.left, h.top, h.width, h.height].join() : "-"].join("|");
   if(key === lastKey) return;

@@ -15,8 +15,11 @@
   position:absolute;top:50%;left:50%;
   --tx:0px;--ty:0px;
   transform:translate(-50%,-50%) translate(var(--tx),var(--ty));
-  display:flex;flex-direction:column;align-items:center;gap:6px;
-  background:none;border:none;cursor:pointer;padding:0;width:76px;
+  /* The node's box is just the circle; the label hangs below it (see
+     .home-node-label), so the circle's center is what sits on the ring
+     and all four stay the same distance from the dice. */
+  display:flex;flex-direction:column;align-items:center;
+  background:none;border:none;cursor:pointer;padding:0;
   animation:home-node-pop .55s cubic-bezier(0.175,0.885,0.32,1.275) backwards;
 }
 /* Four nodes on the diagonals. --mx/--my is the midpoint of each node's
@@ -60,7 +63,10 @@
 }
 .home-node:hover .home-node-circle{transform:scale(1.1);box-shadow:0 8px 20px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.15);}
 .home-node:active .home-node-circle{transform:scale(.92);}
-.home-node-label{font-size:11px;color:var(--text-on-ink-dim);letter-spacing:.02em;}
+.home-node-label{
+  position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:6px;
+  font-size:11px;color:var(--text-on-ink-dim);letter-spacing:.02em;white-space:nowrap;
+}
 .home-icon-svg{width:26px;height:26px;}
 
 #home-node-new .home-node-circle{background:linear-gradient(135deg, var(--brass) 0%, var(--brass-active) 100%);}

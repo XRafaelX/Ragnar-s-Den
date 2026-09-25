@@ -28,9 +28,24 @@ function selectNode(node, action){
   }, SELECT_ANIM_MS);
 }
 
+/* About: what the app is and where the data lives. */
+function openAbout(){
+  openInfoModal("About Ragnar's Den", function(body){
+    var p1 = document.createElement("p");
+    p1.className = "info-blurb";
+    p1.textContent = "An offline-first D&D 5e character creator and interactive character sheet. No accounts, no ads, no internet connection required after the first load.";
+    body.appendChild(p1);
+
+    var p2 = document.createElement("p");
+    p2.className = "info-blurb";
+    p2.textContent = "Everything you create (characters, notes, roll history) is stored only in this browser. Use Export to back it up or move it to another device.";
+    body.appendChild(p2);
+  });
+}
+
 /* ---- Home hub (the "no character selected" landing screen) ----
-   Kept to New / Spellbook / Armory / About; the character list, export and
-   import already live in the sidebar, so repeating them here would
+   Kept to New / Spellbook / Armory / About; the character list, export
+   and import already live in the sidebar, so repeating them here would
    just be the same actions in two places. */
 export function setupHomeMenu(){
   var newBtn = document.getElementById("home-node-new");
@@ -41,21 +56,7 @@ export function setupHomeMenu(){
   newBtn.addEventListener("click", function(){ selectNode(newBtn, openWizard); });
   spellbookBtn.addEventListener("click", function(){ selectNode(spellbookBtn, openSpellbook); });
   armoryBtn.addEventListener("click", function(){ selectNode(armoryBtn, openArmory); });
-  aboutBtn.addEventListener("click", function(){
-    selectNode(aboutBtn, function(){
-      openInfoModal("About Ragnar's Den", function(body){
-        var p1 = document.createElement("p");
-        p1.className = "info-blurb";
-        p1.textContent = "An offline-first D&D 5e character creator and interactive character sheet. No accounts, no ads, no internet connection required after the first load.";
-        body.appendChild(p1);
-
-        var p2 = document.createElement("p");
-        p2.className = "info-blurb";
-        p2.textContent = "Everything you create (characters, notes, roll history) is stored only in this browser. Use Export to back it up or move it to another device.";
-        body.appendChild(p2);
-      });
-    });
-  });
+  aboutBtn.addEventListener("click", function(){ selectNode(aboutBtn, openAbout); });
 
   document.getElementById("home-center").addEventListener("click", toggleDiceTray);
 }
