@@ -1,5 +1,5 @@
 import { WEAPON_GROUPS, WEAPON_DATA } from "../../data/weapons.js";
-import { isProficientWithWeapon } from "../../core/helpers.js";
+import { isProficientWithWeapon, tryEquip } from "../../core/helpers.js";
 import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { openCatalogPicker } from "../../ui/catalog-picker.js";
@@ -10,20 +10,23 @@ var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Fo
 export function addCatalogWeapon(c, name, d){
   var ability = d.finesse ? "finesse" : (d.ranged ? "dex" : "str");
   c.inventory.push({
-    name: name, type:"weapon", qty:1, equipped:true, notes: d.properties||"",
+    name: name, type:"weapon", qty:1, equipped:false, notes: d.properties||"",
     damageDice: d.damageDice||"", damageType: d.damageType||"", ability: ability,
     proficient: isProficientWithWeapon(c, name, d.category), magicBonus: 0
   });
+  // Ready it if there's a free hand; otherwise it goes in the pack.
+  tryEquip(c, c.inventory[c.inventory.length-1]);
   save();
   playAdd();
 }
 
 export function addCustomWeapon(c, fields){
   c.inventory.push({
-    name: fields.name, type:"weapon", qty:1, equipped:true, notes:"",
+    name: fields.name, type:"weapon", qty:1, equipped:false, notes:"",
     damageDice: fields.damageDice||"", damageType: fields.damageType||"", ability: fields.ability,
     proficient: fields.proficient, magicBonus: 0
   });
+  tryEquip(c, c.inventory[c.inventory.length-1]);
   save();
   playAdd();
 }

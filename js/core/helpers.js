@@ -240,6 +240,80 @@ export function isRangedWeapon(item){
   return !!(d && d.ranged);
 }
 
+/* ---------------- Equipping: one armor, two hands ----------------
+   A character wears at most one suit of armor and carries at most one
+   shield, and has two hands: a shield takes one, a weapon takes one, a
+   two-handed weapon takes both (a stack like "Dagger ×2" counts as one
+   weapon in hand). */
+function isBodyArmor(i){ return i.type==="armor" && i.category!=="shield"; }
+function isShield(i){ return i.type==="armor" && i.category==="shield"; }
+function isTwoHanded(item){
+  var d = WEAPON_DATA[item.name];
+  return /two-handed/i.test(((d && d.properties) || "") + " " + (item.notes || ""));
+}
+export function itemHands(item){
+  if(isShield(item)) return 1;
+  if(item.type==="weapon") return isTwoHanded(item) ? 2 : 1;
+  return 0;
+}
+/* What's in the character's hands right now. */
+export function handsInUse(c, except){
+  var held = (c.inventory||[]).filter(function(i){ return i.equipped && i!==except && itemHands(i) > 0; });
+  return {used: held.reduce(function(n, i){ return n + itemHands(i); }, 0), items: held};
+}
+/* Equip an item, following the rules above. Another suit of armor (or
+   shield) comes off automatically; a weapon or shield that needs a hand
+   you don't have is refused. Returns {ok, message}; nothing changes when
+   ok is false. */
+export function tryEquip(c, item){
+  var swapped = [];
+  if(isBodyArmor(item) || isShield(item)){
+    var same = isBodyArmor(item) ? isBodyArmor : isShield;
+    (c.inventory||[]).forEach(function(i){ if(i!==item && i.equipped && same(i)) swapped.push(i); });
+  }
+  var need = itemHands(item);
+  if(need){
+    var held = handsInUse(c, item).items.filter(function(i){ return swapped.indexOf(i)===-1; });
+    var used = held.reduce(function(n, i){ return n + itemHands(i); }, 0);
+    if(used + need > 2){
+      var names = held.map(function(i){ return i.name; }).join(" and ");
+      return {ok:false, message: need===2
+        ? (item.name||"This weapon")+" needs both hands, but you're holding "+names+". Unequip "+(held.length>1 ? "them" : "it")+" first."
+        : "Your hands are full ("+names+"). Unequip something first."};
+    }
+  }
+  swapped.forEach(function(i){ i.equipped = false; });
+  item.equipped = true;
+  return {ok:true, message: swapped.length ? "Took off "+swapped.map(function(i){ return i.name; }).join(", ")+"." : ""};
+}
+/* Rule breaks in an existing inventory (older saves could equip freely);
+   shown as a warning so the player can fix them. kind: "armor" | "hands". */
+export function equipProblems(c){
+  var eq = (c.inventory||[]).filter(function(i){ return i.equipped; });
+  var out = [];
+  var armor = eq.filter(isBodyArmor), shields = eq.filter(isShield);
+  if(armor.length > 1) out.push({kind:"armor", text:"You can only wear one suit of armor. Unequip "+armor.slice(1).map(function(i){ return i.name; }).join(", ")+" (only "+armor[0].name+" counts toward AC)."});
+  if(shields.length > 1) out.push({kind:"armor", text:"You can only carry one shield. Unequip "+shields.slice(1).map(function(i){ return i.name; }).join(", ")+"."});
+  var hands = handsInUse(c);
+  if(hands.used > 2) out.push({kind:"hands", text:"That's "+hands.used+" hands' worth of gear ("+hands.items.map(function(i){ return i.name; }).join(", ")+"). You only have two."});
+  return out;
+}
+/* A legal starting loadout for a new character: the first suit of armor,
+   then shield and weapons in list order while hands are free; the rest
+   goes in the pack. */
+export function autoEquipLoadout(items){
+  var hands = 0, wearing = false, shield = false;
+  items.forEach(function(i){
+    if(i.type!=="weapon" && i.type!=="armor"){ i.equipped = false; return; }
+    if(isBodyArmor(i)){ i.equipped = !wearing; wearing = true; return; }
+    if(isShield(i) && shield){ i.equipped = false; return; }
+    var need = itemHands(i);
+    i.equipped = hands + need <= 2;
+    if(i.equipped){ hands += need; if(isShield(i)) shield = true; }
+  });
+  return items;
+}
+
 /* ---------------- Weapon attack & damage bonuses ---------------- */
 export function weaponAbilityMod(c, item){
   var strMod = mod(c.abilities && c.abilities.str);

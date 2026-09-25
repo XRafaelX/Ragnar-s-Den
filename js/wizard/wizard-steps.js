@@ -5,7 +5,7 @@ import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/
 import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/alignments.js";
 import { POINT_BUY_COSTS, pickNameIdeas } from "../data/misc.js";
 import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
-import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
+import { mod, fmtMod, escapeHtml, ce, computeArmorClass, autoEquipLoadout } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../ui/svg-icons.js";
 import { getDieSvg } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
@@ -1153,6 +1153,9 @@ export function buildEquipmentList(info, chosenKeys){
   info.equipment.fixed.forEach(function(it){
     items.push(equipmentItemToInventoryItem(it, it.type==="weapon" || it.type==="armor"));
   });
+  // Wear one suit of armor and fill the two hands (a shield takes one);
+  // everything else starts in the pack.
+  autoEquipLoadout(items);
   return items;
 }
 

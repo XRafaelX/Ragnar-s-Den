@@ -2,7 +2,8 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems } from "../../core/helpers.js";
+import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker } from "./weapon-picker.js";
 import { openArmorPicker } from "./armor-picker.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
@@ -50,7 +51,14 @@ function itemHeader(c, item, idx, onOpenDetails){
   var eqCb = document.createElement("input"); eqCb.type="checkbox"; eqCb.className="chk";
   eqCb.checked = !!item.equipped;
   eqCb.addEventListener("click", function(e){ e.stopPropagation(); });
-  eqCb.addEventListener("change", function(){ item.equipped = eqCb.checked; save(); renderAll(); });
+  eqCb.addEventListener("change", function(){
+    if(!eqCb.checked){ item.equipped = false; save(); renderAll(); return; }
+    // One suit of armor, one shield, two hands (see tryEquip).
+    var res = tryEquip(c, item);
+    if(!res.ok){ eqCb.checked = false; showActionToast(res.message, true); return; }
+    if(res.message) showActionToast(res.message);
+    save(); renderAll();
+  });
   eqLbl.appendChild(eqCb);
   eqLbl.appendChild(document.createTextNode("Equipped"));
   actions.appendChild(eqLbl);
@@ -415,11 +423,46 @@ function renderGearCard(c, item, idx){
 }
 
 /* ---- Inventory panel ---- */
+/* "Hands 2/2 · Longsword, Shield": what's held, as two hand pips. A
+   shield (listed under Armor) counts too. */
+function handsSummary(c){
+  var h = handsInUse(c);
+  var row = document.createElement("div");
+  row.className = "inv-hands"+(h.used>2 ? " over" : "");
+  var pips = document.createElement("span");
+  pips.className = "inv-hand-pips";
+  for(var i=0;i<2;i++){
+    var pip = document.createElement("span");
+    pip.className = "inv-hand-pip"+(i < h.used ? " full" : "");
+    pips.appendChild(pip);
+  }
+  row.appendChild(pips);
+  var txt = document.createElement("span");
+  txt.className = "inv-hands-text";
+  txt.textContent = "Hands "+Math.min(h.used, 9)+"/2" + (h.items.length ? " · "+h.items.map(function(i){
+    return i.name + (itemHands(i)===2 ? " (two-handed)" : "");
+  }).join(", ") : " · nothing in hand");
+  row.appendChild(txt);
+  return row;
+}
+
 export function renderInventoryPanel(c){
   var panel = document.createElement("div");
 
+  var problems = equipProblems(c);
+  function warnings(card, kind){
+    problems.filter(function(p){ return p.kind===kind; }).forEach(function(p){
+      var w = document.createElement("p");
+      w.className = "inv-equip-warn";
+      w.textContent = "⚠ "+p.text;
+      card.appendChild(w);
+    });
+  }
+
   // Weapons
   var weaponCard = makeCard("Weapons");
+  weaponCard.appendChild(handsSummary(c));
+  warnings(weaponCard, "hands");
   var weaponList = document.createElement("div");
   weaponList.className = "ff-items-list inv-items-list";
   var anyWeapon = false;
@@ -444,6 +487,7 @@ export function renderInventoryPanel(c){
 
   // Armor
   var armorCard = makeCard("Armor");
+  warnings(armorCard, "armor");
   var armorList = document.createElement("div");
   armorList.className = "ff-items-list inv-items-list";
   var anyArmor = false;
