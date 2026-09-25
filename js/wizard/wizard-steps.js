@@ -15,7 +15,9 @@ export function setAbilityMethod(method){
   wizardState.assignIdx = {str:null,dex:null,con:null,int:null,wis:null,cha:null};
   wizardState.pointBuy = {str:8,dex:8,con:8,int:8,wis:8,cha:8};
   wizardState.rolledPool = null;
-  wizardState.abilities = {str:10,dex:10,con:10,int:10,wis:10,cha:10};
+  // Point Buy starts every score at 8, so the character must too.
+  var start = method==="pointbuy" ? 8 : 10;
+  wizardState.abilities = {str:start,dex:start,con:start,int:start,wis:start,cha:start};
   renderWizard();
 }
 
@@ -72,19 +74,13 @@ export function wizardAssignAbilities(container, pool){
   container.appendChild(grid);
 }
 
-export function wizardPointBuyUI(container){
-  var totalPoints = 27;
-  var spent = ABILITIES.reduce(function(sum,a){ return sum + POINT_BUY_COSTS[wizardState.pointBuy[a[0]]]; },0);
-  var remaining = totalPoints - spent;
-  var remainP = document.createElement("p");
-  remainP.style.cssText = "font-size:13px;margin-bottom:10px;color:var(--text-on-parch-dim);";
-  remainP.innerHTML = "Points remaining: <strong style='color:var(--text-on-parch)'>"+remaining+"</strong> / "+totalPoints;
-  container.appendChild(remainP);
-
+/* Six ability boxes with up/down steppers. Shared by Manual and Point
+   Buy; `canUp` lets Point Buy stop at its budget. */
+function abilityStepperGrid(container, get, set, min, max, canUp){
   var grid = ce("div","abilities-grid");
   ABILITIES.forEach(function(a){
     var key = a[0];
-    var score = wizardState.pointBuy[key];
+    var score = get(key);
     var box = ce("div","ability-box");
     box.style.cursor = "default";
     box.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(mod(score))+'</div>';
@@ -96,11 +92,10 @@ export function wizardPointBuyUI(container){
     downBtn.title = "Decrease " + a[1] + " (Down arrow)";
     downBtn.setAttribute("aria-label", "Decrease " + a[1]);
     downBtn.innerHTML = makeStatArrowSvg("down");
-    downBtn.disabled = score <= 8;
+    downBtn.disabled = score <= min;
     downBtn.addEventListener("click", function(e){
       e.stopPropagation();
-      wizardState.pointBuy[key] = score - 1;
-      wizardState.abilities[key] = score - 1;
+      set(key, score - 1);
       renderWizard();
     });
 
@@ -112,12 +107,10 @@ export function wizardPointBuyUI(container){
     upBtn.title = "Increase " + a[1] + " (Up arrow)";
     upBtn.setAttribute("aria-label", "Increase " + a[1]);
     upBtn.innerHTML = makeStatArrowSvg("up");
-    var nextCost = POINT_BUY_COSTS[score + 1];
-    upBtn.disabled = score >= 15 || nextCost === undefined || (nextCost - POINT_BUY_COSTS[score]) > remaining;
+    upBtn.disabled = score >= max || (canUp && !canUp(score));
     upBtn.addEventListener("click", function(e){
       e.stopPropagation();
-      wizardState.pointBuy[key] = score + 1;
-      wizardState.abilities[key] = score + 1;
+      set(key, score + 1);
       renderWizard();
     });
 
@@ -129,6 +122,38 @@ export function wizardPointBuyUI(container){
     grid.appendChild(box);
   });
   container.appendChild(grid);
+}
+
+/* Manual: set each score to anything from 1 to 20, no budget. For
+   players copying an existing character or using their table's rules. */
+export function wizardManualUI(container){
+  var hint = document.createElement("p");
+  hint.style.cssText = "font-size:13px;margin-bottom:10px;color:var(--text-on-parch-dim);";
+  hint.textContent = "Set each score to whatever you like, from 1 to 20.";
+  container.appendChild(hint);
+  abilityStepperGrid(container,
+    function(key){ return wizardState.abilities[key]; },
+    function(key, v){ wizardState.abilities[key] = v; },
+    1, 20);
+}
+
+export function wizardPointBuyUI(container){
+  var totalPoints = 27;
+  var spent = ABILITIES.reduce(function(sum,a){ return sum + POINT_BUY_COSTS[wizardState.pointBuy[a[0]]]; },0);
+  var remaining = totalPoints - spent;
+  var remainP = document.createElement("p");
+  remainP.style.cssText = "font-size:13px;margin-bottom:10px;color:var(--text-on-parch-dim);";
+  remainP.innerHTML = "Points remaining: <strong style='color:var(--text-on-parch)'>"+remaining+"</strong> / "+totalPoints;
+  container.appendChild(remainP);
+
+  abilityStepperGrid(container,
+    function(key){ return wizardState.pointBuy[key]; },
+    function(key, v){ wizardState.pointBuy[key] = v; wizardState.abilities[key] = v; },
+    8, 15,
+    function(score){
+      var nextCost = POINT_BUY_COSTS[score + 1];
+      return nextCost !== undefined && (nextCost - POINT_BUY_COSTS[score]) <= remaining;
+    });
 }
 
 export function raceExplainHtml(name){
@@ -225,7 +250,7 @@ export function wizardStepAbilities(container){
 
   var methodRow = ce("div","wiz-method-row");
   [
-    ["array","Standard Array","Fixed set: 15, 14, 13, 12, 10, 8. Simplest and balanced."],
+    ["manual","Manual","Set each score to whatever you want. Good for copying an existing character."],
     ["pointbuy","Point Buy","Spend 27 points to customize scores from 8 to 15. Most flexible."],
     ["roll","Roll","Roll 4d6 (drop lowest) six times. Random, can be stronger or weaker."]
   ].forEach(function(m){
@@ -238,8 +263,8 @@ export function wizardStepAbilities(container){
   });
   card.appendChild(methodRow);
 
-  if(wizardState.abilityMethod==="array"){
-    wizardAssignAbilities(card, [15,14,13,12,10,8]);
+  if(wizardState.abilityMethod==="manual"){
+    wizardManualUI(card);
   } else if(wizardState.abilityMethod==="roll"){
     if(!wizardState.rolledPool){
       var rollBtn = document.createElement("button");

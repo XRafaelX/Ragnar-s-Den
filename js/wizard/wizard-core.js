@@ -66,7 +66,7 @@ export function validateStep(id){
   if(id==="alignment") return wizardState.alignment ? null : "Pick an alignment to continue.";
   if(id==="abilities"){
     if(!wizardState.abilityMethod) return "Pick a method for generating ability scores.";
-    if(wizardState.abilityMethod!=="pointbuy"){
+    if(wizardState.abilityMethod==="roll"){
       var allAssigned = ABILITIES.every(function(a){ return wizardState.assignIdx[a[0]]!=null; });
       if(!allAssigned) return "Assign a score to every ability.";
     }
