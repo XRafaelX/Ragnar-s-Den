@@ -1,4 +1,5 @@
 /* ---------------- Race data ---------------- */
+import { RACE_DATA, raceAsiText, raceSpeedText } from "./race-data.js";
 export var RACES = {
   "Standard (SRD)": [
     "Human","Variant Human","Hill Dwarf","Mountain Dwarf","High Elf","Wood Elf","Dark Elf (Drow)",
@@ -32,11 +33,21 @@ export var RACE_TRAITS = {
   "Half-Orc": "+2 STR, +1 CON. Darkvision, menacing (Intimidation proficiency), relentless endurance (drop to 1 HP instead of 0, once per long rest).",
   "Tiefling": "+2 CHA, +1 INT. Darkvision, resistance to fire damage, know the thaumaturgy cantrip and more spells at higher levels."
 };
-export var RACE_TRAIT_FALLBACK = "This is an expanded (non-SRD) race. Check your table's sourcebook for its exact ability score bonuses and traits. Everything else here still works fine once you've picked it.";
+/* Expanded races get their one-line summary from RACE_DATA (the core
+   ones above keep their hand-written lines). */
+Object.keys(RACE_DATA).forEach(function(name){
+  if(RACE_TRAITS[name]) return;
+  var d = RACE_DATA[name];
+  var bits = [raceAsiText(d)];
+  if(d.darkvision) bits.push((d.darkvision>=120 ? "Superior darkvision " : "Darkvision ")+d.darkvision+"ft");
+  var sp = d.speed || {};
+  if(sp.walk!==30 || sp.fly || sp.swim || sp.climb) bits.push("Speed "+raceSpeedText(d));
+  RACE_TRAITS[name] = bits.join(". ")+". "+d.traits.map(function(t){ return t.name; }).join(", ")+".";
+});
+export var RACE_TRAIT_FALLBACK = "A custom or homebrew race. Check with your DM for its ability score bonuses and traits. Everything else here still works fine once you've picked it.";
 
 /* Languages each race knows (`fixed`) plus extra ones of the player's
-   choice (`choose`). Expanded races fall back to Common + one pick, which
-   covers most of them; the note tells players to check their book. */
+   choice (`choose`). */
 export var RACE_LANGUAGES = {
   "Human":{fixed:["Common"], choose:1},
   "Variant Human":{fixed:["Common"], choose:1},
@@ -54,8 +65,13 @@ export var RACE_LANGUAGES = {
   "Half-Orc":{fixed:["Common","Orc"]},
   "Tiefling":{fixed:["Common","Infernal"]}
 };
+/* Everything else from RACE_DATA; the fallback below is only for
+   homebrew race names typed into the wizard. */
+Object.keys(RACE_DATA).forEach(function(name){
+  if(!RACE_LANGUAGES[name]) RACE_LANGUAGES[name] = RACE_DATA[name].languages;
+});
 export var RACE_LANGUAGES_FALLBACK = {fixed:["Common"], choose:1,
-  note:"Expanded races usually speak Common plus one more language; check your sourcebook for the exact one."};
+  note:"Homebrew races usually speak Common plus one more language; check with your DM."};
 
 /* Level-1 picks a race makes in the creation wizard's Race Traits step.
    abilityBonus: +amount to `count` different abilities of the player's

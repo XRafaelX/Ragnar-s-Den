@@ -10,12 +10,14 @@ import { openInfoModal } from "../ui/info-modal.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL } from "../data/progression.js";
 import { FEATS_CATALOG } from "../data/feats.js";
+import { RACES } from "../data/races.js";
+import { RACE_DATA, raceAsiText, raceAsiShort, raceSpeedText } from "../data/race-data.js";
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, BACKGROUND_LANGUAGES, BACKGROUND_TOOLS } from "../data/backgrounds.js";
 import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { classFeatureList, escapeHtml } from "../core/helpers.js";
 
 /* ---------------- Compendium ----------------
-   A read-only reference (home screen) for classes, subclasses,
+   A read-only reference (home screen) for classes, subclasses, races,
    backgrounds and feats,
    in the same browse page as the Armory and Spellbook. Tapping an entry
    opens its details instead of adding it to anyone. The Subclasses tab's
@@ -132,6 +134,22 @@ function showSubclass(className, sub){
     back.textContent = "← All about the "+className;
     back.addEventListener("click", function(){ showClass(className); });
     body.appendChild(back);
+  });
+}
+
+function showRace(name){
+  var d = RACE_DATA[name] || {};
+  var langs = (d.languages && d.languages.fixed || []).join(", ") + (d.languages && d.languages.choose ? ", plus "+d.languages.choose+" of your choice" : "");
+  openInfoModal(name, function(body){
+    block(body, "", facts([
+      ["Ability scores", raceAsiText(d)],
+      ["Size", d.size],
+      ["Speed", raceSpeedText(d)],
+      ["Darkvision", d.darkvision ? d.darkvision+" ft"+(d.darkvision>=120 ? " (superior)" : "") : "None"],
+      ["Languages", langs],
+      ["Source", d.source]
+    ]));
+    block(body, "Traits", featureList(d.traits || []));
   });
 }
 
@@ -452,6 +470,23 @@ function buildSubclassForm(container){
   container.appendChild(wrap);
 }
 
+function raceSection(){
+  return {
+    key:"races", label:"Races", searchPlaceholder:"Search races…",
+    groups:RACES, data:RACE_DATA,
+    renderSub:function(name, d){ return (d.traits||[]).map(function(t){ return t.name; }).join(", "); },
+    // Row: the ability score increase, with speed/darkvision underneath.
+    renderRight:function(name, d){
+      var bits = [];
+      if(d.darkvision) bits.push("Darkvision "+d.darkvision);
+      if((d.speed||{}).walk!==30 || d.speed.fly || d.speed.swim || d.speed.climb) bits.push(raceSpeedText(d));
+      return [raceAsiShort(d), bits.join(" · ")];
+    },
+    searchText:function(name, d){ return name+" "+raceAsiText(d)+" "+(d.source||"")+" "+(d.traits||[]).map(function(t){ return t.name+" "+t.text; }).join(" "); },
+    onAdd:function(name){ showRace(name); return false; }
+  };
+}
+
 function backgroundSection(){
   var data = {};
   Object.keys(BACKGROUNDS).forEach(function(g){ BACKGROUNDS[g].forEach(function(n){ data[n] = BACKGROUND_INFO[n] || {}; }); });
@@ -494,7 +529,7 @@ function featSection(){
 var presetClass = null, savedHook = null;
 export function openCompendium(opts){
   opts = opts || {};
-  var sections = [classSection(), subclassSection(), backgroundSection(), featSection()];
+  var sections = [classSection(), subclassSection(), raceSection(), backgroundSection(), featSection()];
   openCatalogPicker({
     sections:sections,
     initialSection: opts.newSubclassFor ? 1 : 0,
