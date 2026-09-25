@@ -49,6 +49,9 @@ function animateAbilityRoll(anchor){
   var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   var stage = ce("div","wiz-roll-stage");
+  var caption = ce("p","wiz-roll-caption");
+  caption.textContent = "Rolling 4d6 for each score, dropping the lowest die…";
+  stage.appendChild(caption);
   var rows = results.map(function(res){
     var row = ce("div","wiz-roll-row");
     var dice = res.dice.map(function(){
@@ -409,15 +412,20 @@ export function wizardStepAbilities(container){
       rollBtn.addEventListener("click", function(){ animateAbilityRoll(rollBtn); });
       card.appendChild(rollBtn);
     } else {
+      // Everything about the current roll lives in one block, so a reroll
+      // swaps all of it for the dice tray (not just the button, which left
+      // the old scores showing above the new roll).
+      var rollArea = ce("div","wiz-roll-results");
       var poolP = document.createElement("p");
       poolP.style.cssText = "font-size:13px;margin:10px 0;";
       poolP.textContent = "Rolled: "+wizardState.rolledPool.join(", ");
-      card.appendChild(poolP);
-      wizardAssignAbilities(card, wizardState.rolledPool);
+      rollArea.appendChild(poolP);
+      wizardAssignAbilities(rollArea, wizardState.rolledPool);
       var reroll = document.createElement("button");
       reroll.type="button"; reroll.className="btn small ghost"; reroll.style.marginTop="10px"; reroll.textContent="Reroll (Don't tell the DM!)";
-      reroll.addEventListener("click", function(){ animateAbilityRoll(reroll); });
-      card.appendChild(reroll);
+      reroll.addEventListener("click", function(){ animateAbilityRoll(rollArea); });
+      rollArea.appendChild(reroll);
+      card.appendChild(rollArea);
     }
   } else if(wizardState.abilityMethod==="pointbuy"){
     wizardPointBuyUI(card);
