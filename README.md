@@ -15,6 +15,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
 - [Environment Variables](#environment-variables)
 - [Testing](#testing)
 - [Project Structure](#project-structure)
+- [Team](#team)
 - [License](#license)
 
 ---
@@ -246,6 +247,13 @@ Currently, no automated testing framework is set up in the repository.
 ├── README.md                     # Project documentation
 └── sw.js                         # Service Worker for offline asset caching
 ```
+
+---
+
+## Team
+
+- **Hunter** ([@XRafaelX](https://github.com/XRafaelX)), Full-Stack Developer
+- **Kayn**, Lead QA
 
 ---
 
