@@ -28,6 +28,40 @@ export function visibleTabs(c){
   return TABS.filter(function(t){ return t[0]!=="spells" || characterIsCaster(c); });
 }
 
+var lastTabsActive = null;
+var lastTabsCharId = null;
+
+/* Glide the active tab to the middle of the bar, so the neighbouring
+   sections on both sides stay in view and the next tap is easy. */
+function centerActiveTab(tabsBar){
+  var btn = tabsBar.querySelector("button.active");
+  if(!btn) return;
+  var maxScroll = tabsBar.scrollWidth - tabsBar.clientWidth;
+  if(maxScroll<=0) return;
+  var barRect = tabsBar.getBoundingClientRect();
+  var btnRect = btn.getBoundingClientRect();
+  var btnCenter = btnRect.left - barRect.left + tabsBar.scrollLeft + btnRect.width/2;
+  var target = Math.min(maxScroll, Math.max(0, btnCenter - tabsBar.clientWidth/2));
+  if(Math.abs(target - tabsBar.scrollLeft) < 1) return;
+  tabsBar.scrollTo({left: target, behavior:"smooth"});
+}
+
+/* Fade whichever edge still has hidden tabs behind it (left, right or
+   both), so it's clear the bar scrolls in that direction. */
+function setupTabsEdgeFade(tabsBar){
+  var queued = false;
+  function update(){
+    queued = false;
+    var maxScroll = tabsBar.scrollWidth - tabsBar.clientWidth;
+    tabsBar.classList.toggle("fade-start", tabsBar.scrollLeft > 1);
+    tabsBar.classList.toggle("fade-end", tabsBar.scrollLeft < maxScroll - 1);
+  }
+  tabsBar.addEventListener("scroll", function(){
+    if(!queued){ queued = true; requestAnimationFrame(update); }
+  }, {passive:true});
+  update();
+}
+
 export function renderAll(){
   renderSidebar();
   var c = getActive();
@@ -41,6 +75,10 @@ export function renderAll(){
     return;
   }
   if(state.activeTab==="spells" && !characterIsCaster(c)) state.activeTab = "vitals";
+  // The tab bar is rebuilt below; remember where it was scrolled so the new
+  // one starts from the same spot instead of snapping back to the far left.
+  var oldTabsBar = document.getElementById("tabs");
+  var prevTabsScroll = oldTabsBar && lastTabsCharId===c.id ? oldTabsBar.scrollLeft : 0;
   empty.style.display = "none";
   sheet.style.display = "block";
   sheet.innerHTML = "";
@@ -63,20 +101,13 @@ export function renderAll(){
     tabsBar.appendChild(b);
   });
   sheet.appendChild(tabsBar);
-  var activeTabBtn = tabsBar.querySelector("button.active");
-  if(activeTabBtn){
-    // Scroll just enough to reveal the tab plus a little breathing room, so
-    // it doesn't end up flush against the edge-fade mask (unreadable there).
-    var edgeMargin = 24;
-    var btnLeft = activeTabBtn.offsetLeft;
-    var btnRight = btnLeft + activeTabBtn.offsetWidth;
-    var visibleLeft = tabsBar.scrollLeft;
-    var visibleRight = visibleLeft + tabsBar.clientWidth;
-    var target = null;
-    if(btnRight + edgeMargin > visibleRight) target = btnRight + edgeMargin - tabsBar.clientWidth;
-    else if(btnLeft - edgeMargin < visibleLeft) target = btnLeft - edgeMargin;
-    if(target!=null) tabsBar.scrollTo({left: Math.max(0, target), behavior:"smooth"});
-  }
+  tabsBar.scrollLeft = prevTabsScroll;
+  setupTabsEdgeFade(tabsBar);
+  // Only glide when the tab actually changed, so editing something on the
+  // current tab doesn't yank the bar back after a manual swipe.
+  if(lastTabsActive!==state.activeTab || lastTabsCharId!==c.id) centerActiveTab(tabsBar);
+  lastTabsActive = state.activeTab;
+  lastTabsCharId = c.id;
 
   var panelMap = {
     vitals: renderVitalsPanel,

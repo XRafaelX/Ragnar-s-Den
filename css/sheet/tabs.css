@@ -46,8 +46,15 @@
      off-screen) but had no visible scrollbar or hint that more sections
      were reachable; fade the trailing edge so it reads as scrollable. */
   #tabs{
+    --fade-l:0px;
+    --fade-r:0px;
     padding-right:28px;
-    -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
-    mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+    -webkit-mask-image:linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+    mask-image:linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
   }
+  /* Set from sheet.js depending on which side still has hidden tabs. */
+  #tabs.fade-start{--fade-l:28px;}
+  #tabs.fade-end{--fade-r:28px;}
 }
