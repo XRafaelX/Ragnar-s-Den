@@ -219,11 +219,3 @@ button.class-chip:hover{border-color:var(--brass);}
   .lu-new-badge::after{display:none;}
 }
 
-/* Pact Magic (Spells tab) */
-.pact-help{font-size:12.5px;color:var(--text-on-parch-dim);margin:0 0 10px;}
-.pact-pips{display:flex;gap:8px;flex-wrap:wrap;}
-.pact-pip{
-  width:30px;height:30px;border-radius:50%;cursor:pointer;
-  border:2px solid var(--brass);background:var(--brass);
-}
-.pact-pip.used{background:transparent;opacity:.6;}

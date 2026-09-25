@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { profBonus, mod, fmtMod, clamp } from "../../core/helpers.js";
+import { profBonus, mod, fmtMod, clamp, ce } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { performRoll } from "../../dice/dice.js";
 import { playDelete } from "../../ui/sound.js";
@@ -8,6 +8,8 @@ import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { SPELL_LEVEL_LABELS, spellLevelLabel } from "../../data/spells.js";
 import { openSpellPicker } from "./spell-picker.js";
 import { sheetHeader } from "./inventory.js";
+import { makeStatArrowSvg } from "../../ui/svg-icons.js";
+import { showActionToast } from "../../ui/toast.js";
 
 
 var SCHOOLS = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"];
@@ -192,102 +194,176 @@ function openSpellSheet(c, sp){
   });
 }
 
+/* ---- Spellcasting stats ----
+   Same tile look as the Vitals tab: ability (a select styled as the big
+   value), save DC, and spell attack (tap to roll). */
+function statTile(label, hint){
+  var box = ce("div","vital-box vital-mini sc-tile");
+  var lbl = ce("div","lbl"); lbl.textContent = label;
+  box.appendChild(lbl);
+  var val = ce("div","init-hero-val");
+  box.appendChild(val);
+  var h = ce("div","vital-hint"); h.textContent = hint;
+  box.appendChild(h);
+  return {box:box, val:val};
+}
+
+function renderSpellcastingCard(c){
+  var card = makeCard("Spellcasting");
+  var pb = profBonus(c);
+  var scMod = mod(c.abilities[c.spellcasting.ability]);
+  var grid = ce("div","vitals-grid");
+
+  var ab = statTile("Ability", fmtMod(scMod)+" modifier");
+  var sel = ce("select","sc-ability-select");
+  sel.setAttribute("aria-label", "Spellcasting ability");
+  [["int","INT"],["wis","WIS"],["cha","CHA"]].forEach(function(a){
+    var o = document.createElement("option"); o.value = a[0]; o.textContent = a[1];
+    if(c.spellcasting.ability===a[0]) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener("change", function(){ c.spellcasting.ability = sel.value; save(); renderAll(); });
+  ab.val.appendChild(sel);
+  grid.appendChild(ab.box);
+
+  var dc = statTile("Save DC", "8 + prof + mod");
+  dc.val.textContent = 8+pb+scMod;
+  grid.appendChild(dc.box);
+
+  var atk = statTile("Spell attack", "Tap to roll");
+  atk.val.textContent = fmtMod(pb+scMod);
+  atk.box.classList.add("sc-roll");
+  atk.box.setAttribute("role","button"); atk.box.tabIndex = 0;
+  atk.box.title = "Roll a spell attack";
+  function roll(){ performRoll(20,1,pb+scMod,"none","Spell attack"); }
+  atk.box.addEventListener("click", roll);
+  atk.box.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); roll(); } });
+  grid.appendChild(atk.box);
+
+  card.appendChild(grid);
+  return card;
+}
+
+/* ---- Spell slots ----
+   One row per slot level the character actually has, as pips: filled =
+   available, hollow = spent. Tap a filled pip to spend one, a hollow one
+   to get it back. Pact Magic sits in the same card as its own row.
+   Edit reveals all nine levels with steppers for items / homebrew. */
+var slotEditOpen = false;
+
+function slotPips(total, used, label, onChange){
+  var wrap = ce("div","slot-pips");
+  var left = total - used;
+  for(var p=0; p<total; p++){
+    var avail = p < left;
+    var pip = document.createElement("button");
+    pip.type = "button";
+    pip.className = "slot-pip" + (avail ? "" : " used");
+    pip.title = avail ? "Available. Tap to spend" : "Spent. Tap to restore";
+    pip.setAttribute("aria-label", label+" slot "+(p+1)+(avail ? " (available)" : " (spent)"));
+    pip.addEventListener("click", (function(avail){
+      return function(){ onChange(clamp(used + (avail ? 1 : -1), 0, total)); };
+    })(avail));
+    wrap.appendChild(pip);
+  }
+  return wrap;
+}
+
+function slotRow(levelText, subText, pipsEl, rightEl){
+  var row = ce("div","slot-row");
+  var name = ce("div","slot-row-name");
+  name.innerHTML = "<b></b><span></span>";
+  name.firstChild.textContent = levelText;
+  name.lastChild.textContent = subText;
+  row.appendChild(name);
+  row.appendChild(pipsEl);
+  row.appendChild(rightEl);
+  return row;
+}
+
+function maxStepper(s){
+  var st = ce("div","stat-stepper slot-stepper");
+  var down = ce("button","stat-arrow-btn stat-arrow-down");
+  down.type = "button"; down.innerHTML = makeStatArrowSvg("down");
+  down.setAttribute("aria-label","Fewer slots"); down.disabled = s.max <= 0;
+  down.addEventListener("click", function(){ s.max = Math.max(0, s.max-1); s.used = clamp(s.used,0,s.max); save(); renderAll(); });
+  var val = ce("span","stat-score-val"); val.textContent = s.max;
+  var up = ce("button","stat-arrow-btn stat-arrow-up");
+  up.type = "button"; up.innerHTML = makeStatArrowSvg("up");
+  up.setAttribute("aria-label","More slots"); up.disabled = s.max >= 9;
+  up.addEventListener("click", function(){ s.max = Math.min(9, s.max+1); save(); renderAll(); });
+  st.appendChild(down); st.appendChild(val); st.appendChild(up);
+  return st;
+}
+
+function renderSlotsCard(c){
+  var sc = c.spellcasting;
+  var pact = sc.pact && sc.pact.max ? sc.pact : null;
+  var card = makeCard("Spell slots");
+
+  var tools = ce("div","slot-tools");
+  var anySpent = pact && pact.used > 0;
+  for(var i=1;i<=9;i++) if(sc.slots[i].used > 0) anySpent = true;
+  var rest = ce("button","btn small ghost");
+  rest.type = "button"; rest.textContent = "Long rest";
+  rest.title = "Get all spent slots back";
+  rest.disabled = !anySpent;
+  rest.addEventListener("click", function(){
+    for(var i=1;i<=9;i++) sc.slots[i].used = 0;
+    if(sc.pact) sc.pact.used = 0;
+    save(); renderAll();
+    showActionToast("All spell slots restored.");
+  });
+  var edit = ce("button","btn small ghost"+(slotEditOpen ? " on" : ""));
+  edit.type = "button"; edit.textContent = slotEditOpen ? "Done" : "Edit";
+  edit.title = "Set slot maximums by hand (magic items, homebrew)";
+  edit.addEventListener("click", function(){ slotEditOpen = !slotEditOpen; renderAll(); });
+  tools.appendChild(rest); tools.appendChild(edit);
+  card.querySelector("h3").appendChild(tools);
+
+  var list = ce("div","slot-list");
+  for(var lvl=1;lvl<=9;lvl++){
+    (function(lvl){
+      var s = sc.slots[lvl];
+      if(!slotEditOpen && !s.max) return;
+      var right;
+      if(slotEditOpen) right = maxStepper(s);
+      else { right = ce("div","slot-left"+(s.used>=s.max ? " empty" : "")); right.textContent = (s.max-s.used)+" left"; }
+      list.appendChild(slotRow(ordinal(lvl), "level",
+        slotPips(s.max, s.used, ordinal(lvl)+" level", function(u){ s.used = u; save(); renderAll(); }), right));
+    })(lvl);
+  }
+  if(pact){
+    var pr = ce("div","slot-left"+(pact.used>=pact.max ? " empty" : ""));
+    pr.textContent = (pact.max-pact.used)+" left";
+    var restNote = ce("small"); restNote.textContent = "short rest";
+    pr.appendChild(restNote);
+    var row = slotRow("Pact", ordinal(pact.slotLevel)+" level",
+      slotPips(pact.max, pact.used, "Pact", function(u){ pact.used = u; save(); renderAll(); }), pr);
+    row.classList.add("pact-row");
+    list.appendChild(row);
+  }
+  if(!list.children.length){
+    var empty = ce("p","slot-empty");
+    empty.textContent = "No spell slots. Spellcasting classes get them automatically as they level; use Edit to add slots from items or homebrew.";
+    card.appendChild(empty);
+  }
+  card.appendChild(list);
+  return card;
+}
+
+/* "1 of 2 left" next to a level heading in the spell list. */
+function slotsLeftText(c, lvl){
+  var s = lvl > 0 && c.spellcasting.slots[lvl];
+  if(!s || !s.max) return "";
+  return (s.max - s.used)+" of "+s.max+" slots left";
+}
+
 /* ---- Spells panel ---- */
 export function renderSpellsPanel(c){
   var panel = document.createElement("div");
-
-  var scCard = makeCard("Spellcasting");
-  var row = document.createElement("div");
-  row.className = "grid-row";
-  var abField = document.createElement("div");
-  var pb = profBonus(c);
-  var scMod = mod(c.abilities[c.spellcasting.ability]);
-  abField.innerHTML = '<label style="font-size:10.5px;text-transform:uppercase;color:var(--text-on-parch-dim);">Spellcasting ability</label><br>';
-  var sel = document.createElement("select");
-  ["int","wis","cha"].forEach(function(a){
-    var o = document.createElement("option"); o.value=a; o.textContent = a.toUpperCase();
-    if(c.spellcasting.ability===a) o.selected = true;
-    sel.appendChild(o);
-  });
-  sel.style.padding="4px"; sel.style.border="1px solid var(--rule)"; sel.style.borderRadius="4px"; sel.style.background="var(--field-bg)"; sel.style.color="var(--text-on-parch)";
-  sel.addEventListener("change", function(){ c.spellcasting.ability = sel.value; save(); renderAll(); });
-  abField.appendChild(sel);
-  row.appendChild(abField);
-
-  var dcBox = document.createElement("div");
-  dcBox.innerHTML = '<label style="font-size:10.5px;text-transform:uppercase;color:var(--text-on-parch-dim);">Save DC</label><br>'+
-    '<span style="font-family:var(--serif);font-size:20px;">'+(8+pb+scMod)+'</span>';
-  row.appendChild(dcBox);
-
-  var atkBox = document.createElement("div");
-  atkBox.style.cursor="pointer";
-  atkBox.title = "Click to roll a spell attack";
-  atkBox.innerHTML = '<label style="font-size:10.5px;text-transform:uppercase;color:var(--text-on-parch-dim);">Attack bonus</label><br>'+
-    '<span style="font-family:var(--serif);font-size:20px;">'+fmtMod(pb+scMod)+'</span>';
-  atkBox.addEventListener("click", function(){ performRoll(20,1,pb+scMod,"none","Spell attack"); });
-  row.appendChild(atkBox);
-  scCard.appendChild(row);
-  panel.appendChild(scCard);
-
-  var slotCard = makeCard("Spell slots");
-  var slotGrid = document.createElement("div");
-  slotGrid.className = "slot-grid";
-  for(var lvl=1;lvl<=9;lvl++){
-    (function(lvl){
-      var s = c.spellcasting.slots[lvl];
-      var box = document.createElement("div");
-      box.className = "slot-box";
-      box.innerHTML = '<div class="lbl">Level '+lvl+'</div>';
-      var frac = document.createElement("div");
-      frac.className = "fraction";
-      var usedInput = document.createElement("input");
-      usedInput.type="number"; usedInput.value = s.used; usedInput.min="0";
-      usedInput.addEventListener("input", function(){ s.used = clamp(Number(usedInput.value)||0,0,s.max); save(); });
-      var slash = document.createElement("span"); slash.textContent="/";
-      var maxInput = document.createElement("input");
-      maxInput.type="number"; maxInput.value = s.max; maxInput.min="0";
-      maxInput.addEventListener("input", function(){ s.max = Math.max(0,Number(maxInput.value)||0); s.used = clamp(s.used,0,s.max); save(); renderAll(); });
-      frac.appendChild(usedInput); frac.appendChild(slash); frac.appendChild(maxInput);
-      box.appendChild(frac);
-      var useBtn = document.createElement("button");
-      useBtn.className = "btn small"; useBtn.style.marginTop="4px"; useBtn.style.width="100%";
-      useBtn.textContent = "Use slot";
-      useBtn.disabled = s.used>=s.max;
-      useBtn.addEventListener("click", function(){ if(s.used<s.max){ s.used++; save(); renderAll(); } });
-      box.appendChild(useBtn);
-      slotGrid.appendChild(box);
-    })(lvl);
-  }
-  slotCard.appendChild(slotGrid);
-  panel.appendChild(slotCard);
-
-  // Warlock Pact Magic: its own slots, all of one level, back on a short rest.
-  var pact = c.spellcasting.pact;
-  if(pact && pact.max){
-    var pactCard = makeCard("Pact Magic");
-    var pactP = document.createElement("p");
-    pactP.className = "pact-help";
-    pactP.textContent = "Warlock slots are all "+ordinal(pact.slotLevel)+" level and come back on a short or long rest.";
-    pactCard.appendChild(pactP);
-    var pips = document.createElement("div");
-    pips.className = "pact-pips";
-    for(var p=0; p<pact.max; p++){
-      (function(p){
-        var pip = document.createElement("button");
-        pip.type = "button";
-        pip.className = "pact-pip" + (p < pact.used ? " used" : "");
-        pip.title = p < pact.used ? "Spent. Tap to restore" : "Available. Tap to spend";
-        pip.setAttribute("aria-label", "Pact slot "+(p+1)+(p < pact.used ? " (spent)" : " (available)"));
-        pip.addEventListener("click", function(){
-          pact.used = p < pact.used ? p : p+1;
-          save(); renderAll();
-        });
-        pips.appendChild(pip);
-      })(p);
-    }
-    pactCard.appendChild(pips);
-    panel.appendChild(pactCard);
-  }
+  panel.appendChild(renderSpellcastingCard(c));
+  panel.appendChild(renderSlotsCard(c));
 
   var spellCard = makeCard("Known / prepared spells");
   var spells = c.spells || [];
@@ -312,6 +388,12 @@ export function renderSpellsPanel(c){
         var label = document.createElement("div");
         label.className = "spell-level-label";
         label.textContent = spellLevelLabel(lvl);
+        var leftTxt = slotsLeftText(c, lvl);
+        if(leftTxt){
+          var leftEl = ce("span","spell-level-slots");
+          leftEl.textContent = leftTxt;
+          label.appendChild(leftEl);
+        }
         spellCard.appendChild(label);
         list = document.createElement("div");
         list.className = "ff-items-list inv-items-list";

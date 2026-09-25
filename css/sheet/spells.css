@@ -1,17 +1,60 @@
 /* Spells panel. */
 
-/* Spells */
-.slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:10px;}
-.slot-box{border:1px solid var(--rule);border-radius:6px;padding:8px;text-align:center;background:rgba(255,255,255,.04);}
-.slot-box .lbl{font-size:10.5px;color:var(--text-on-parch-dim);}
-.slot-box .fraction{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:4px;}
-.slot-box input{width:28px;text-align:center;border:1px solid var(--rule);border-radius:3px;background:var(--field-bg);}
+/* Spellcasting tiles: reuse the Vitals tile look. The ability select
+   is dressed as the tile's big value. */
+.sc-ability-select{
+  font:inherit;color:inherit;background:transparent;border:none;
+  padding:0 16px 0 2px;cursor:pointer;text-align:center;appearance:none;-webkit-appearance:none;
+  background-image:linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:right 5px center, right 0 center;background-size:5px 5px;background-repeat:no-repeat;
+}
+.sc-ability-select:focus{outline:none;}
+.sc-ability-select option{background:var(--ink);color:var(--text-on-ink);font-size:14px;}
+.sc-roll{cursor:pointer;}
+.sc-roll:hover{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 8%, transparent);}
+.sc-roll:hover .init-hero-val{transform:scale(1.08);}
+.sc-roll:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+
+/* Spell slots: one row per level, pips filled = available. */
+.card h3 .slot-tools{display:flex;gap:4px;font-family:var(--sans);}
+.slot-tools .btn.on{color:var(--brass-bright);}
+.slot-list{display:flex;flex-direction:column;gap:6px;}
+.slot-row{
+  display:grid;grid-template-columns:78px 1fr auto;align-items:center;gap:12px;
+  padding:8px 12px;border:1px solid var(--rule);border-radius:8px;background:rgba(255,255,255,.04);
+}
+.slot-row-name{display:flex;flex-direction:column;line-height:1.15;}
+.slot-row-name b{font-family:var(--serif);font-weight:normal;font-size:16px;color:var(--text-on-parch);}
+.slot-row-name span{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
+.pact-row{border-color:color-mix(in srgb, var(--brass) 55%, transparent);}
+.slot-pips{display:flex;flex-wrap:wrap;gap:8px;min-height:22px;align-items:center;}
+.slot-pip{
+  width:22px;height:22px;border-radius:50%;padding:0;cursor:pointer;
+  border:2px solid var(--brass);background:var(--brass);
+  box-shadow:0 0 8px color-mix(in srgb, var(--brass) 45%, transparent);
+  transition:background .15s ease, box-shadow .15s ease, transform .12s ease;
+}
+.slot-pip:hover{transform:scale(1.12);}
+.slot-pip:active{transform:scale(.9);}
+.slot-pip.used{background:transparent;box-shadow:none;border-color:color-mix(in srgb, var(--brass) 45%, transparent);}
+.slot-left{font-size:12px;color:var(--brass-bright);white-space:nowrap;text-align:right;min-width:48px;}
+.slot-left.empty{color:var(--text-on-parch-dim);}
+.slot-left small{display:block;font-size:10px;color:var(--text-on-parch-dim);}
+.slot-stepper .stat-score-val{min-width:18px;text-align:center;}
+.slot-empty{font-size:13px;color:var(--text-on-parch-dim);margin:0 0 4px;}
+
+@media (max-width:560px){
+  .slot-row{grid-template-columns:58px 1fr auto;gap:8px;padding:8px 10px;}
+  .slot-pip{width:26px;height:26px;} /* bigger tap targets on phones */
+}
 
 /* Spells panel */
 .spell-level-label{
+  display:flex;justify-content:space-between;align-items:baseline;gap:8px;
   font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);
   margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--rule);
 }
+.spell-level-slots{text-transform:none;letter-spacing:0;color:var(--brass-bright);}
 .spell-level-label:first-of-type{margin-top:4px;}
 .spell-notes{font-size:12px;color:var(--text-on-parch);margin:0;white-space:pre-wrap;}
 .spell-field{flex:1 1 150px;}
