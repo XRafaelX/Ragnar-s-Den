@@ -250,6 +250,8 @@ export function applyClassChoices(c, info, picks){
       var picked = g.pick && g.pick.options.find(function(o){ return o.name===picks[g.pick.id]; });
       if(picked) c.features.push({id:uid(), name:g.pick.label+": "+picked.name, source:"Class", text:picked.text, isPassive:true});
       if(c.languages) (g.languages||[]).forEach(function(l){ if(c.languages.indexOf(l)===-1) c.languages.push(l); });
+    } else if(ch.kind==="tool"){
+      c.features.push({id:uid(), name:"Tool Proficiency: "+v, source:"Class", text:"You're proficient with "+v.toLowerCase()+": add your proficiency bonus to ability checks you make with them.", isPassive:true});
     } else if(ch.kind==="fightingStyle"){
       var style = FIGHTING_STYLES[v];
       c.features.push({id:uid(), name:"Fighting Style: "+v, source:"Class", text:style ? style.text : "", isPassive:true, fightingStyle:v});

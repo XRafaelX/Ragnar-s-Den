@@ -20,7 +20,10 @@ export function primaryHitDie(c){
 export function characterIsCaster(c){
   return (c.classes||[]).some(function(cl){
     var info = CLASSES_INFO[cl.name];
-    if(classCasterType(cl)==="third") return true;
+    var type = classCasterType(cl);
+    if(type==="third") return true;
+    // Paladins and Rangers only start casting at level 2.
+    if(type==="half" && (Number(cl.level)||1) < 2) return false;
     return info ? !!info.spellcaster : true; // unknown class name: don't hide existing spell data
   });
 }

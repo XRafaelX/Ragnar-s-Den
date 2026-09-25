@@ -1,8 +1,8 @@
 import { CLASS_LIST } from "./abilities-skills.js";
 
 /* ---------------- Character Creation Wizard data ----------------
-   Barbarian, Cleric, Fighter, Rogue, Sorcerer, Warlock and Wizard have a
-   fully guided creation experience right now. The other classes appear
+   Barbarian, Cleric, Fighter, Monk, Paladin, Rogue, Sorcerer, Warlock and
+   Wizard have a fully guided creation experience right now. The other classes appear
    (with a one-line blurb) so the class list reads as complete, but are
    marked unavailable until they are built out the same way. */
 var CLASS_BLURBS = {
@@ -68,7 +68,22 @@ CLASSES_INFO["Barbarian"] = {
 /* Packs shared by several classes' starting equipment. */
 var EXPLORERS_PACK = {name:"Explorer's Pack", qty:1, weight:59, notes:"backpack, bedroll, mess kit, tinderbox, 10 torches, 10 days rations, waterskin, 50ft rope"};
 var DUNGEONEERS_PACK = {name:"Dungeoneer's Pack", qty:1, weight:61.5, notes:"backpack, crowbar, hammer, 10 pitons, 10 torches, tinderbox, 10 days rations, waterskin, 50ft rope"};
+var PRIESTS_PACK = {name:"Priest's Pack", qty:1, weight:24, notes:"backpack, blanket, 10 candles, tinderbox, alms box, 2 blocks of incense, censer, vestments, 2 days rations, waterskin"};
 var BURGLARS_PACK = {name:"Burglar's Pack", qty:1, weight:44.5, notes:"backpack, 1,000 ball bearings, 10ft string, bell, 5 candles, crowbar, hammer, 10 pitons, hooded lantern, 2 flasks of oil, 5 days rations, tinderbox, waterskin, 50ft rope"};
+
+/* Fighter and Paladin: "a martial weapon and a shield, or two martial
+   weapons". Real weapons rather than placeholders so they can be rolled
+   right away; players swap them on the sheet. */
+var MARTIAL_WEAPON_CHOICE = {options:[
+  {key:"weapon_shield", label:"A martial weapon and a shield", detail:"Starts as a longsword (1d8, versatile 1d10); swap it on the sheet. Shield gives +2 AC", items:[
+    {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true},
+    {name:"Shield",qty:1,weight:6,notes:"+2 AC",type:"armor",category:"shield",baseAC:2}
+  ]},
+  {key:"two_martial", label:"Two martial weapons", detail:"Starts as a greatsword (2d6) and a longsword (1d8); swap them on the sheet", items:[
+    {name:"Greatsword",qty:1,weight:6,notes:"heavy, two-handed",type:"weapon",damageDice:"2d6",damageType:"Slashing",ability:"str",proficient:true},
+    {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true}
+  ]}
+]};
 
 /* Fighting styles a class can pick. `fightingStyle` on the chosen feature
    lets the sheet apply the ones with a flat bonus (Defense, Archery). */
@@ -111,16 +126,7 @@ Object.assign(CLASSES_INFO["Fighter"], {
           {name:"Arrows",qty:20,weight:0.05,notes:"ammunition"}
         ]}
       ]},
-      {options:[
-        {key:"weapon_shield", label:"A martial weapon and a shield", detail:"Starts as a longsword (1d8, versatile 1d10); swap it on the sheet. Shield gives +2 AC", items:[
-          {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true},
-          {name:"Shield",qty:1,weight:6,notes:"+2 AC",type:"armor",category:"shield",baseAC:2}
-        ]},
-        {key:"two_martial", label:"Two martial weapons", detail:"Starts as a greatsword (2d6) and a longsword (1d8); swap them on the sheet", items:[
-          {name:"Greatsword",qty:1,weight:6,notes:"heavy, two-handed",type:"weapon",damageDice:"2d6",damageType:"Slashing",ability:"str",proficient:true},
-          {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true}
-        ]}
-      ]},
+      MARTIAL_WEAPON_CHOICE,
       {options:[
         {key:"crossbow", label:"Light crossbow and 20 bolts", detail:"1d8 piercing, range 80/320 ft, loading", items:[
           {name:"Light Crossbow",qty:1,weight:5,notes:"ammunition, loading, two-handed, range 80/320",type:"weapon",damageDice:"1d8",damageType:"Piercing",ability:"dex",proficient:true},
@@ -307,9 +313,7 @@ Object.assign(CLASSES_INFO["Cleric"], {
         ]}
       ]},
       {options:[
-        {key:"priest", label:"Priest's Pack", detail:"Backpack, blanket, candles, tinderbox, alms box, incense, censer, vestments, rations, waterskin", items:[
-          {name:"Priest's Pack",qty:1,weight:24,notes:"backpack, blanket, 10 candles, tinderbox, alms box, 2 blocks of incense, censer, vestments, 2 days rations, waterskin"}
-        ]},
+        {key:"priest", label:"Priest's Pack", detail:"Backpack, blanket, candles, tinderbox, alms box, incense, censer, vestments, rations, waterskin", items:[PRIESTS_PACK]},
         {key:"explorer", label:"Explorer's Pack", detail:"Backpack, bedroll, mess kit, tinderbox, torches, rations, waterskin, rope", items:[EXPLORERS_PACK]}
       ]}
     ],
@@ -325,6 +329,37 @@ CLASSES_INFO["Paladin"].features = [
   {name:"Lay on Hands", text:"Pool of healing power equal to Paladin level x 5. Touch a creature to restore HP or spend 5 HP to cure disease/poison."}
 ];
 
+/* Paladin: no level-1 choices and no spells until level 2 (the level-up
+   turns on slots and Charisma casting then). */
+Object.assign(CLASSES_INFO["Paladin"], {
+  available:true,
+  primaryAbility:"str",
+  primaryAbilityLabel:"Strength and Charisma",
+  savingThrows:["wis","cha"],
+  skillChoices:{count:2, options:["Athletics","Insight","Intimidation","Medicine","Persuasion","Religion"]},
+  equipment:{
+    choiceGroups:[
+      MARTIAL_WEAPON_CHOICE,
+      {options:[
+        {key:"javelins", label:"Five javelins", detail:"1d6 piercing, thrown (range 30/120 ft)", items:[
+          {name:"Javelin",qty:5,weight:2,notes:"thrown 30/120",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"str",proficient:true}
+        ]},
+        {key:"simple_melee", label:"Any simple melee weapon", detail:"Starts as a mace (1d6 bludgeoning); swap it on the sheet", items:[
+          {name:"Mace",qty:1,weight:4,notes:"",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"priest", label:"Priest's Pack", detail:"Backpack, blanket, candles, tinderbox, alms box, incense, censer, vestments, rations, waterskin", items:[PRIESTS_PACK]},
+        {key:"explorer", label:"Explorer's Pack", detail:"Backpack, bedroll, mess kit, tinderbox, torches, rations, waterskin, rope", items:[EXPLORERS_PACK]}
+      ]}
+    ],
+    fixed:[
+      {name:"Chain Mail", qty:1, weight:55, notes:"heavy; Str 13; stealth disadvantage", type:"armor", category:"heavy", baseAC:16},
+      {name:"Holy Symbol", qty:1, weight:1, notes:"spellcasting focus (from level 2)"}
+    ]
+  }
+});
+
 CLASSES_INFO["Bard"].features = [
   {name:"Spellcasting", text:"Cast spells fueled by the music of creation using Charisma."},
   {name:"Bardic Inspiration", text:"Bonus action to grant a d6 inspiration die to an ally within 60 feet for checks, attacks, or saves."}
@@ -339,6 +374,44 @@ CLASSES_INFO["Monk"].features = [
   {name:"Unarmored Defense", text:"While wearing no armor and no shield, AC equals 10 + DEX modifier + WIS modifier."},
   {name:"Martial Arts", text:"Use DEX for unarmed strikes and monk weapons (1d4 damage). Bonus action unarmed strike after Attack action."}
 ];
+
+var ARTISAN_TOOLS = ["Alchemist's supplies","Brewer's supplies","Calligrapher's supplies","Carpenter's tools","Cartographer's tools","Cobbler's tools","Cook's utensils","Glassblower's tools","Jeweler's tools","Leatherworker's tools","Mason's tools","Painter's supplies","Potter's tools","Smith's tools","Tinker's tools","Weaver's tools","Woodcarver's tools"];
+var MUSICAL_INSTRUMENTS = ["Bagpipes","Drum","Dulcimer","Flute","Horn","Lute","Lyre","Pan flute","Shawm","Viol"];
+
+/* Monk: no armor, so Unarmored Defense (10 + DEX + WIS) is the AC. Monk
+   weapons (shortswords, simple melee) can use DEX thanks to Martial Arts,
+   hence ability "finesse" on the starting ones. */
+Object.assign(CLASSES_INFO["Monk"], {
+  available:true,
+  primaryAbility:"dex",
+  primaryAbilityLabel:"Dexterity and Wisdom",
+  savingThrows:["str","dex"],
+  skillChoices:{count:2, options:["Acrobatics","Athletics","History","Insight","Religion","Stealth"]},
+  choices:[
+    {id:"tool", kind:"tool", label:"Tool proficiency",
+      help:"Monks train in one craft or instrument. Pick one type of artisan's tools or a musical instrument.",
+      groups:{"Artisan's tools":ARTISAN_TOOLS, "Musical instruments":MUSICAL_INSTRUMENTS}}
+  ],
+  equipment:{
+    choiceGroups:[
+      {options:[
+        {key:"shortsword", label:"Shortsword", detail:"1d6 piercing, finesse, light", items:[
+          {name:"Shortsword",qty:1,weight:2,notes:"finesse, light; monk weapon",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"finesse",proficient:true}
+        ]},
+        {key:"simple", label:"Any simple weapon", detail:"Starts as a quarterstaff (1d6, versatile 1d8); swap it on the sheet", items:[
+          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8; monk weapon (DEX via Martial Arts)",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"finesse",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"dungeoneer", label:"Dungeoneer's Pack", detail:"Backpack, crowbar, hammer, pitons, torches, rations, waterskin, rope", items:[DUNGEONEERS_PACK]},
+        {key:"explorer", label:"Explorer's Pack", detail:"Backpack, bedroll, mess kit, tinderbox, torches, rations, waterskin, rope", items:[EXPLORERS_PACK]}
+      ]}
+    ],
+    fixed:[
+      {name:"Dart", qty:10, weight:0.25, notes:"finesse, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true}
+    ]
+  }
+});
 
 CLASSES_INFO["Ranger"].features = [
   {name:"Favored Enemy", text:"Advantage on Survival checks to track favored enemies, and Intelligence checks to recall information about them."},

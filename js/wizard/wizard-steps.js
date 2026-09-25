@@ -383,6 +383,7 @@ export function wizardStepChoices(container){
     }
     if(ch.kind==="subclass") choiceSubclass(card, ch);
     else if(ch.kind==="fightingStyle") choiceFightingStyle(card, ch);
+    else if(ch.kind==="tool") choiceTool(card, ch);
     else if(ch.kind==="expertise") choiceExpertise(card, ch);
   });
   container.appendChild(card);
@@ -445,6 +446,35 @@ function choiceSubclass(card, ch){
     card.appendChild(help);
     choiceExpertise(card, {id:bonus.id, count:bonus.count, fixedOptions:bonus.options});
   }
+}
+
+/* One pick from a long grouped list (a monk's tool or instrument): a
+   dropdown instead of a wall of option cards. */
+function choiceTool(card, ch){
+  var f = ce("div","field");
+  f.style.maxWidth = "320px";
+  var select = document.createElement("select");
+  var blank = document.createElement("option");
+  blank.value = ""; blank.textContent = "Select one"; blank.disabled = true; blank.hidden = true;
+  select.appendChild(blank);
+  Object.keys(ch.groups).forEach(function(groupLabel){
+    var og = document.createElement("optgroup");
+    og.label = groupLabel;
+    ch.groups[groupLabel].forEach(function(name){
+      var o = document.createElement("option");
+      o.value = name; o.textContent = name;
+      og.appendChild(o);
+    });
+    select.appendChild(og);
+  });
+  select.value = wizardState.classChoices[ch.id] || "";
+  select.addEventListener("change", function(){
+    wizardState.classChoices[ch.id] = select.value;
+    var errBox = document.getElementById("wizard-error");
+    if(errBox) errBox.classList.remove("show");
+  });
+  f.appendChild(select);
+  card.appendChild(f);
 }
 
 function choiceFightingStyle(card, ch){
