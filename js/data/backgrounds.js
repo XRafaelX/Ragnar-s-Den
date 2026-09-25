@@ -23,8 +23,41 @@ export var BACKGROUND_INFO = {
   "Sage": {skills:["Arcana","History"], blurb:"Grants Arcana and History. You spent years learning the lore of the multiverse."},
   "Sailor": {skills:["Athletics","Perception"], blurb:"Grants Athletics and Perception, plus rope and a vehicle proficiency. You sailed the seas."},
   "Soldier": {skills:["Athletics","Intimidation"], blurb:"Grants Athletics and Intimidation, plus rank and military gear. You served in an army."},
-  "Urchin": {skills:["Sleight of Hand","Stealth"], blurb:"Grants Sleight of Hand and Stealth. You grew up on the streets, alone and poor."}
+  "Urchin": {skills:["Sleight of Hand","Stealth"], blurb:"Grants Sleight of Hand and Stealth. You grew up on the streets, alone and poor."},
+  "Guild Merchant": {skills:["Insight","Persuasion"], blurb:"Grants Insight and Persuasion. A guild trader who knows markets, contracts and caravan routes."},
+  "Anthropologist": {skills:["Insight","Religion"], blurb:"Grants Insight and Religion, plus two languages. You study other cultures by living among them."},
+  "Archaeologist": {skills:["History","Survival"], blurb:"Grants History and Survival. You dig through ruins to uncover the secrets of lost civilizations."},
+  "City Watch": {skills:["Athletics","Insight"], blurb:"Grants Athletics and Insight, plus two languages. You kept the peace on a city's streets."},
+  "Clan Crafter": {skills:["History","Insight"], blurb:"Grants History and Insight, plus a set of artisan's tools. You learned a craft from a dwarven clan."},
+  "Cloistered Scholar": {skills:["History"], skillChoice:"plus one of Arcana, Nature or Religion", blurb:"Grants History plus one of Arcana, Nature or Religion, and two languages. You studied in a great library or monastery."},
+  "Courtier": {skills:["Insight","Persuasion"], blurb:"Grants Insight and Persuasion, plus two languages. You know the etiquette and intrigue of royal courts."},
+  "Faction Agent": {skills:["Insight"], skillChoice:"plus one Intelligence, Wisdom or Charisma skill", blurb:"Grants Insight plus one more social or mental skill, and two languages. You serve a faction and can call on its members."},
+  "Far Traveler": {skills:["Insight","Perception"], blurb:"Grants Insight and Perception. You come from a distant land, and people are curious about your ways."},
+  "Inheritor": {skills:["Survival"], skillChoice:"plus one of Arcana, History or Religion", blurb:"Grants Survival plus one of Arcana, History or Religion. You carry an heirloom others would kill for."},
+  "Knight of the Order": {skills:["Persuasion"], skillChoice:"plus one of Arcana, History, Nature or Religion", blurb:"Grants Persuasion plus one of Arcana, History, Nature or Religion. You're sworn to a knightly order and its ideals."},
+  "Mercenary Veteran": {skills:["Athletics","Persuasion"], blurb:"Grants Athletics and Persuasion. You fought for coin with a mercenary company."},
+  "Urban Bounty Hunter": {skills:[], skillChoice:"two of Deception, Insight, Persuasion or Stealth", blurb:"Grants two of Deception, Insight, Persuasion or Stealth. You hunt fugitives through a city's streets and underworld."},
+  "Uthgardt Tribe Member": {skills:["Athletics","Survival"], blurb:"Grants Athletics and Survival. You belong to one of the barbarian tribes of the North."},
+  "Waterdhavian Noble": {skills:["History","Persuasion"], blurb:"Grants History and Persuasion. You were born into a wealthy family of the City of Splendors."}
 };
+
+/* Tool (and vehicle) proficiencies each background grants, for the
+   Compendium. "Choose" entries are picked by the player. */
+export var BACKGROUND_TOOLS = {
+  "Acolyte":"None", "Charlatan":"Disguise kit, forgery kit", "Criminal":"One gaming set, thieves' tools",
+  "Entertainer":"Disguise kit, one musical instrument", "Folk Hero":"One type of artisan's tools, land vehicles",
+  "Guild Artisan":"One type of artisan's tools", "Guild Merchant":"Navigator's tools or one language",
+  "Hermit":"Herbalism kit", "Noble":"One gaming set", "Outlander":"One musical instrument", "Sage":"None",
+  "Sailor":"Navigator's tools, water vehicles", "Soldier":"One gaming set, land vehicles",
+  "Urchin":"Disguise kit, thieves' tools", "Anthropologist":"None", "Archaeologist":"Cartographer's or navigator's tools",
+  "City Watch":"None", "Clan Crafter":"One type of artisan's tools", "Cloistered Scholar":"None", "Courtier":"None",
+  "Faction Agent":"None", "Far Traveler":"One musical instrument or gaming set", "Inheritor":"One gaming set or musical instrument",
+  "Knight of the Order":"One gaming set or musical instrument", "Mercenary Veteran":"One gaming set, land vehicles",
+  "Urban Bounty Hunter":"Two of: one gaming set, one musical instrument, thieves' tools",
+  "Uthgardt Tribe Member":"One musical instrument or artisan's tools", "Waterdhavian Noble":"One gaming set or musical instrument"
+};
+/* Some backgrounds let the player pick a skill (`skillChoice`); the wizard
+   grants the fixed `skills` and the blurb says what else to tick. */
 export var BACKGROUND_INFO_FALLBACK = "Grants two skill proficiencies of your choice (and usually a tool or language). Pick whatever fits your character's story; you can add them on the sheet's Skills tab afterward.";
 
 /* Languages of your choice each background grants (0 when it gives a

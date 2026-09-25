@@ -3,11 +3,13 @@ import { openInfoModal } from "../ui/info-modal.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL } from "../data/progression.js";
 import { FEATS_CATALOG } from "../data/feats.js";
+import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, BACKGROUND_LANGUAGES, BACKGROUND_TOOLS } from "../data/backgrounds.js";
 import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { classFeatureList, escapeHtml } from "../core/helpers.js";
 
 /* ---------------- Compendium ----------------
-   A read-only reference (home screen) for classes, subclasses and feats,
+   A read-only reference (home screen) for classes, subclasses,
+   backgrounds and feats,
    in the same browse page as the Armory and Spellbook. Tapping an entry
    opens its details instead of adding it to anyone. */
 
@@ -109,6 +111,27 @@ function showSubclass(className, sub){
   });
 }
 
+function backgroundSkills(info){
+  var fixed = (info.skills||[]).join(", ");
+  if(info.skillChoice) return fixed ? fixed+", "+info.skillChoice : "Choose "+info.skillChoice;
+  return fixed || "Two of your choice";
+}
+function backgroundLanguages(name){
+  var n = BACKGROUND_LANGUAGES[name] || 0;
+  return n ? n+" of your choice" : "None";
+}
+
+function showBackground(name){
+  var info = BACKGROUND_INFO[name];
+  openInfoModal(name, function(body){
+    block(body, "", "<p class='cmp-lead'>"+escapeHtml(info ? info.blurb : BACKGROUND_INFO_FALLBACK)+"</p>"+facts([
+      ["Skills", info ? backgroundSkills(info) : "Two of your choice"],
+      ["Tools", BACKGROUND_TOOLS[name] || "Check your sourcebook"],
+      ["Languages", backgroundLanguages(name)]
+    ]));
+  });
+}
+
 function showFeat(feat){
   openInfoModal(feat.name, function(body){
     block(body, "", "<p class='cmp-lead'>"+escapeHtml(feat.summary||"")+"</p>"+facts([
@@ -156,6 +179,24 @@ function subclassSection(){
   };
 }
 
+function backgroundSection(){
+  var data = {};
+  Object.keys(BACKGROUNDS).forEach(function(g){ BACKGROUNDS[g].forEach(function(n){ data[n] = BACKGROUND_INFO[n] || {}; }); });
+  return {
+    key:"backgrounds", label:"Backgrounds", searchPlaceholder:"Search backgrounds…",
+    groups:BACKGROUNDS, data:data,
+    renderSub:function(name, d){ return d.blurb || BACKGROUND_INFO_FALLBACK; },
+    // Row: the fixed skills, with a short note when there's a pick to make.
+    renderRight:function(name, d){
+      var fixed = (d.skills||[]).join(", ");
+      var extra = d.skillChoice ? (fixed ? "+ a skill of choice" : "Skills of choice") : "";
+      return [fixed, extra];
+    },
+    searchText:function(name, d){ return name+" "+(d.blurb||"")+" "+(d.skills||[]).join(" "); },
+    onAdd:function(name){ showBackground(name); return false; }
+  };
+}
+
 function featSection(){
   var groups = {}, data = {};
   FEATS_CATALOG.slice().sort(function(a, b){ return a.name.localeCompare(b.name); }).forEach(function(f){
@@ -173,5 +214,5 @@ function featSection(){
 }
 
 export function openCompendium(){
-  openCatalogPicker({sections:[classSection(), subclassSection(), featSection()]});
+  openCatalogPicker({sections:[classSection(), subclassSection(), backgroundSection(), featSection()]});
 }
