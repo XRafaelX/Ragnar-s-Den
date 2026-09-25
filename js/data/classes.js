@@ -1,7 +1,7 @@
 import { CLASS_LIST } from "./abilities-skills.js";
 
 /* ---------------- Character Creation Wizard data ----------------
-   Barbarian, Fighter, Rogue and Wizard have a fully guided creation
+   Barbarian, Cleric, Fighter, Rogue and Wizard have a fully guided creation
    experience right now. The other classes appear (with a one-line blurb) so the class list
    reads as complete, but are marked unavailable until they are built
    out the same way. */
@@ -244,6 +244,81 @@ CLASSES_INFO["Cleric"].features = [
   {name:"Spellcasting", text:"Cast divine spells channeled from your deity using Wisdom as your spellcasting ability."},
   {name:"Divine Domain", text:"Chosen religious domain granting domain spells and bonus domain features."}
 ];
+
+/* Cleric picks its subclass (Divine Domain) at level 1, so the wizard's
+   Class Features step offers it. `grants` is what each domain adds at
+   creation: proficiencies that unlock gear (`requires` on an equipment
+   option), always-prepared domain spells, bonus cantrips, and Knowledge's
+   extra expertise pick. Clerics prepare from the whole cleric list, so the
+   "spells" count is how many to prepare today (WIS modifier + 1). */
+Object.assign(CLASSES_INFO["Cleric"], {
+  available:true,
+  primaryAbility:"wis",
+  savingThrows:["wis","cha"],
+  skillChoices:{count:2, options:["History","Insight","Medicine","Persuasion","Religion"]},
+  choices:[
+    {id:"subclass", kind:"subclass", label:"Divine Domain",
+      help:"Your domain is the part of your god's power you wield. It sets your bonus features and a few spells that are always prepared.",
+      grants:{
+        "Life Domain":{profs:["heavy"], spells:["Bless","Cure Wounds"]},
+        "Light Domain":{cantrips:["Light"], spells:["Burning Hands","Faerie Fire"]},
+        "War Domain":{profs:["heavy","martial"], spells:["Divine Favor","Shield of Faith"]},
+        "Knowledge Domain":{spells:["Command","Identify"],
+          expertise:{id:"knowledgeSkills", label:"Blessings of Knowledge", count:2, options:["Arcana","History","Nature","Religion"],
+            help:"You become proficient in two of these skills, with your proficiency bonus doubled. You also learn two languages (add them on the Information tab)."}},
+        "Tempest Domain":{profs:["heavy","martial"], spells:["Fog Cloud","Thunderwave"]},
+        "Trickery Domain":{spells:["Charm Person","Disguise Self"]}
+      }}
+  ],
+  spellcasting:{
+    ability:"wis", spellList:"Cleric", cantrips:3, prepares:true, slots:{1:2},
+    spells:function(w){ return Math.max(1, Math.floor((w.abilities.wis-10)/2) + 1); },
+    spellsLabel:"Prepared spells",
+    spellsHelp:"You know every cleric spell. Each day you prepare a number equal to your Wisdom modifier + your cleric level; pick today's here and swap them on the Spells tab after a long rest. Your domain spells are always prepared on top of these."
+  },
+  equipment:{
+    choiceGroups:[
+      {options:[
+        {key:"mace", label:"Mace", detail:"1d6 bludgeoning", items:[
+          {name:"Mace",qty:1,weight:4,notes:"",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true}
+        ]},
+        {key:"warhammer", label:"Warhammer", detail:"1d8 bludgeoning, versatile (1d10)", requires:"martial", items:[
+          {name:"Warhammer",qty:1,weight:2,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Bludgeoning",ability:"str",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2); disadvantage on Stealth", items:[
+          {name:"Scale Mail",qty:1,weight:45,notes:"medium; stealth disadvantage",type:"armor",category:"medium",baseAC:14}
+        ]},
+        {key:"leather", label:"Leather armor", detail:"Light armor, AC 11 + DEX", items:[
+          {name:"Leather",qty:1,weight:10,notes:"light armor",type:"armor",category:"light",baseAC:11}
+        ]},
+        {key:"chain", label:"Chain mail", detail:"Heavy armor, AC 16. Needs 13 Strength or your speed drops by 10 ft; disadvantage on Stealth", requires:"heavy", items:[
+          {name:"Chain Mail",qty:1,weight:55,notes:"heavy; Str 13; stealth disadvantage",type:"armor",category:"heavy",baseAC:16}
+        ]}
+      ]},
+      {options:[
+        {key:"crossbow", label:"Light crossbow and 20 bolts", detail:"1d8 piercing, range 80/320 ft, loading", items:[
+          {name:"Light Crossbow",qty:1,weight:5,notes:"ammunition, loading, two-handed, range 80/320",type:"weapon",damageDice:"1d8",damageType:"Piercing",ability:"dex",proficient:true},
+          {name:"Crossbow Bolts",qty:20,weight:0.075,notes:"ammunition"}
+        ]},
+        {key:"simple", label:"Any simple weapon", detail:"Starts as a spear (1d6, thrown 20/60, versatile 1d8); swap it on the sheet", items:[
+          {name:"Spear",qty:1,weight:3,notes:"thrown 20/60, versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"str",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"priest", label:"Priest's Pack", detail:"Backpack, blanket, candles, tinderbox, alms box, incense, censer, vestments, rations, waterskin", items:[
+          {name:"Priest's Pack",qty:1,weight:24,notes:"backpack, blanket, 10 candles, tinderbox, alms box, 2 blocks of incense, censer, vestments, 2 days rations, waterskin"}
+        ]},
+        {key:"explorer", label:"Explorer's Pack", detail:"Backpack, bedroll, mess kit, tinderbox, torches, rations, waterskin, rope", items:[EXPLORERS_PACK]}
+      ]}
+    ],
+    fixed:[
+      {name:"Shield", qty:1, weight:6, notes:"+2 AC", type:"armor", category:"shield", baseAC:2},
+      {name:"Holy Symbol", qty:1, weight:1, notes:"spellcasting focus"}
+    ]
+  }
+});
 
 CLASSES_INFO["Paladin"].features = [
   {name:"Divine Sense", text:"Action to detect the location of any celestial, fiend, or undead within 60 feet, as well as consecrated/desecrated places."},

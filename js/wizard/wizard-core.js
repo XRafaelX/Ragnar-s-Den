@@ -24,6 +24,29 @@ export var wizardState = null;
 
 export function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardState.classId]; }
 
+/* The class's level-1 subclass pick (Cleric's Divine Domain), if it has one. */
+export function subclassChoice(info){
+  return ((info && info.choices)||[]).find(function(ch){ return ch.kind==="subclass"; }) || null;
+}
+/* What the chosen subclass adds at creation (see `grants` in classes.js). */
+export function subclassGrants(info, picks){
+  var ch = subclassChoice(info);
+  var v = ch && picks[ch.id];
+  return (v && ch.grants && ch.grants[v]) || {};
+}
+/* Some gear needs a proficiency only certain subclasses give (a cleric's
+   chain mail needs a heavy-armor domain). */
+export function equipmentOptionAvailable(opt){
+  if(!opt.requires) return true;
+  var grants = subclassGrants(currentClassInfo(), wizardState.classChoices);
+  return (grants.profs||[]).indexOf(opt.requires)!==-1;
+}
+/* 1st-level spells to pick: a fixed number, or computed from the scores
+   (a cleric prepares WIS modifier + 1). */
+export function spellPickCount(sc){
+  return typeof sc.spells==="function" ? sc.spells(wizardState) : sc.spells;
+}
+
 export function isStepApplicable(id){
   if(id==="spells"){
     var info = currentClassInfo();
@@ -89,19 +112,27 @@ export function validateStep(id){
       }
       return !v;
     });
-    if(!missing) return null;
-    return missing.kind==="expertise" ? "Choose "+missing.count+" for "+missing.label+"." : "Choose a "+missing.label+".";
+    if(missing) return missing.kind==="expertise" ? "Choose "+missing.count+" for "+missing.label+"." : "Choose a "+missing.label+".";
+    var bonus = subclassGrants(info, wizardState.classChoices).expertise;
+    if(bonus && (wizardState.classChoices[bonus.id]||[]).length!==bonus.count) return "Choose "+bonus.count+" skills for "+bonus.label+".";
+    return null;
   }
   if(id==="equipment"){
     var ok = info.equipment.choiceGroups.every(function(g,gi){ return wizardState.equipment[gi]!=null; });
-    return ok ? null : "Make a choice for each equipment option.";
+    if(!ok) return "Make a choice for each equipment option.";
+    var locked = info.equipment.choiceGroups.some(function(g,gi){
+      var opt = g.options.find(function(o){ return o.key===wizardState.equipment[gi]; });
+      return opt && !equipmentOptionAvailable(opt);
+    });
+    return locked ? "Your class choices don't give proficiency with one of the picked items. Pick another option." : null;
   }
   if(id==="spells"){
     var sc = info.spellcasting;
     if(!sc) return null;
     var picked = wizardState.spellChoices;
     if(picked.cantrips.length!==sc.cantrips) return "Choose "+sc.cantrips+" cantrips.";
-    if(picked.spells.length!==sc.spells) return "Choose "+sc.spells+" 1st-level spells.";
+    var need = spellPickCount(sc);
+    if(picked.spells.length!==need) return "Choose "+need+" 1st-level spells.";
     return null;
   }
   if(id==="review"){
@@ -182,6 +213,15 @@ export function finishWizard(){
       sp.prepared = i < prepareCount;
       c.spells.push(sp);
     });
+    // Subclass freebies: bonus cantrips and always-prepared spells.
+    var grants = subclassGrants(info, w.classChoices);
+    (grants.cantrips||[]).concat(grants.spells||[]).forEach(function(name){
+      if(!SPELL_DATA[name] || c.spells.some(function(sp){ return sp.name===name; })) return;
+      var sp = spellFromCatalog(name, SPELL_DATA[name]);
+      sp.prepared = true;
+      sp.notes = (grants.spells||[]).indexOf(name)!==-1 ? "Domain spell: always prepared, doesn't count against your prepared spells." : "Bonus cantrip from your "+w.classChoices.subclass+".";
+      c.spells.push(sp);
+    });
   }
 
   state.characters.push(c);
@@ -200,7 +240,11 @@ export function applyClassChoices(c, info, picks){
   (info.choices||[]).forEach(function(ch){
     var v = picks[ch.id];
     if(!v) return;
-    if(ch.kind==="fightingStyle"){
+    if(ch.kind==="subclass"){
+      c.classes[0].subclass = v;
+      var bonus = subclassGrants(info, picks).expertise;
+      (bonus && picks[bonus.id] || []).forEach(function(sk){ c.skillProfs[sk] = {prof:true, expertise:true}; });
+    } else if(ch.kind==="fightingStyle"){
       var style = FIGHTING_STYLES[v];
       c.features.push({id:uid(), name:"Fighting Style: "+v, source:"Class", text:style ? style.text : "", isPassive:true, fightingStyle:v});
     } else if(ch.kind==="expertise"){

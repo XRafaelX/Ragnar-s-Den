@@ -8,7 +8,8 @@ import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../ui/svg-icons.js";
 import { dropdownField } from "../render/sheet.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount } from "./wizard-core.js";
+import { SUBCLASSES } from "../data/progression.js";
 
 export function setAbilityMethod(method){
   wizardState.abilityMethod = method;
@@ -380,10 +381,47 @@ export function wizardStepChoices(container){
       help.textContent = ch.help;
       card.appendChild(help);
     }
-    if(ch.kind==="fightingStyle") choiceFightingStyle(card, ch);
+    if(ch.kind==="subclass") choiceSubclass(card, ch);
+    else if(ch.kind==="fightingStyle") choiceFightingStyle(card, ch);
     else if(ch.kind==="expertise") choiceExpertise(card, ch);
   });
   container.appendChild(card);
+}
+
+var PROF_LABELS = {heavy:"heavy armor", martial:"martial weapons"};
+
+function choiceSubclass(card, ch){
+  (SUBCLASSES[wizardState.classId]||[]).forEach(function(sub){
+    var grants = ch.grants && ch.grants[sub.name] || {};
+    var lvl1 = ((sub.features||{})[1]||[]).map(function(f){ return f.name; });
+    var extras = [];
+    if(grants.profs && grants.profs.length) extras.push("Proficient with "+grants.profs.map(function(p){ return PROF_LABELS[p]||p; }).join(" and "));
+    if(grants.spells && grants.spells.length) extras.push("Always prepared: "+grants.spells.join(", "));
+    var row = ce("div","wiz-equip-option");
+    if(wizardState.classChoices[ch.id]===sub.name) row.classList.add("selected");
+    row.innerHTML = "<div><strong>"+escapeHtml(sub.name)+"</strong><br>"+
+      "<span style='font-size:12px'>"+escapeHtml(sub.blurb)+"</span><br>"+
+      "<span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(["Level 1: "+lvl1.join(", ")].concat(extras).join(" · "))+"</span></div>";
+    row.addEventListener("click", function(){
+      wizardState.classChoices[ch.id] = sub.name;
+      renderWizard();
+    });
+    card.appendChild(row);
+  });
+
+  // Knowledge Domain's extra skill pick shows up once it's chosen.
+  var bonus = subclassGrants(currentClassInfo(), wizardState.classChoices).expertise;
+  if(bonus){
+    var title = document.createElement("p");
+    title.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    title.textContent = bonus.label;
+    card.appendChild(title);
+    var help = document.createElement("p");
+    help.style.cssText = "font-size:13px;margin:0 0 10px;";
+    help.textContent = bonus.help;
+    card.appendChild(help);
+    choiceExpertise(card, {id:bonus.id, count:bonus.count, fixedOptions:bonus.options});
+  }
 }
 
 function choiceFightingStyle(card, ch){
@@ -400,7 +438,7 @@ function choiceFightingStyle(card, ch){
 }
 
 function choiceExpertise(card, ch){
-  var allowed = expertiseOptions(ch);
+  var allowed = ch.fixedOptions || expertiseOptions(ch);
   // Drop picks that are no longer valid (the player went back and
   // changed their skills or background).
   var picked = (wizardState.classChoices[ch.id]||[]).filter(function(x){ return allowed.indexOf(x)!==-1; });
@@ -435,6 +473,18 @@ function choiceExpertise(card, ch){
   card.appendChild(rows);
 }
 
+/* " (Life, Tempest or War Domain)": which subclass picks unlock it. */
+function requiresHint(prof){
+  var info = currentClassInfo();
+  var ch = (info.choices||[]).find(function(x){ return x.kind==="subclass"; });
+  if(!ch) return "";
+  var names = Object.keys(ch.grants||{}).filter(function(n){ return (ch.grants[n].profs||[]).indexOf(prof)!==-1; });
+  if(!names.length) return "";
+  var short = names.map(function(n){ return n.replace(/ Domain$/, ""); });
+  var list = short.length>1 ? short.slice(0,-1).join(", ")+" or "+short[short.length-1] : short[0];
+  return " ("+list+(names[0].indexOf(" Domain")!==-1 ? " Domain" : "")+")";
+}
+
 export function wizardStepEquipment(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Starting Equipment</span></h3>";
@@ -450,8 +500,13 @@ export function wizardStepEquipment(container){
     card.appendChild(groupTitle);
     group.options.forEach(function(opt){
       var row = ce("div","wiz-equip-option");
+      var available = equipmentOptionAvailable(opt);
+      // A pick that a changed subclass no longer allows is cleared.
+      if(!available && wizardState.equipment[gi]===opt.key) delete wizardState.equipment[gi];
       if(wizardState.equipment[gi]===opt.key) row.classList.add("selected");
-      row.innerHTML = "<div><strong>"+escapeHtml(opt.label)+"</strong><br><span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(opt.detail||"")+"</span></div>";
+      var lockNote = available ? "" : "<br><span style='font-size:11.5px;color:var(--oxblood)'>Needs "+escapeHtml(PROF_LABELS[opt.requires]||opt.requires)+" proficiency"+escapeHtml(requiresHint(opt.requires))+"</span>";
+      row.innerHTML = "<div><strong>"+escapeHtml(opt.label)+"</strong><br><span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(opt.detail||"")+"</span>"+lockNote+"</div>";
+      if(!available){ row.classList.add("disabled"); row.style.opacity = ".5"; row.style.cursor = "not-allowed"; card.appendChild(row); return; }
       row.addEventListener("click", function(){
         wizardState.equipment[gi] = opt.key;
         renderWizard();
@@ -477,7 +532,7 @@ export function wizardStepEquipment(container){
 /* One pick-N-from-a-list block (cantrips or 1st-level spells). Toggling
    updates the rows in place rather than re-rendering the whole wizard, so a
    long list keeps its scroll position and the search box keeps focus. */
-function spellPickSection(title, help, count, level, chosen, listClass){
+function spellPickSection(title, help, count, level, chosen, listClass, exclude){
   var wrap = ce("div","wiz-spell-section");
 
   var head = ce("div","wiz-spell-head");
@@ -500,7 +555,11 @@ function spellPickSection(title, help, count, level, chosen, listClass){
 
   var list = ce("div","wiz-spell-list");
   var data = spellDataForClass(listClass);
-  var entries = Object.keys(data).filter(function(name){ return data[name].level === level; }).sort().map(function(name){
+  // Spells the character gets for free (domain spells, bonus cantrips) are
+  // left out so a pick isn't wasted on them.
+  exclude = exclude || [];
+  for(var i=chosen.length-1;i>=0;i--){ if(exclude.indexOf(chosen[i])!==-1) chosen.splice(i,1); }
+  var entries = Object.keys(data).filter(function(name){ return data[name].level === level && exclude.indexOf(name)===-1; }).sort().map(function(name){
     var d = data[name];
     var row = ce("div","wiz-pick-row wiz-spell-row");
     var cb = document.createElement("input"); cb.type = "checkbox"; cb.className = "chk";
@@ -567,8 +626,19 @@ export function wizardStepSpells(container){
   explain.innerHTML = "<b>Why this matters:</b> Cantrips are spells you can cast at will, and your starting spells are your first real tools. You can always change or add more from the Spells tab once your character exists.";
   card.appendChild(explain);
 
-  card.appendChild(spellPickSection("Cantrips", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList));
-  card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", sc.spells, 1, wizardState.spellChoices.spells, sc.spellList));
+  var grants = subclassGrants(info, wizardState.classChoices);
+  var freebies = (grants.cantrips||[]).concat(grants.spells||[]);
+  if(freebies.length){
+    var free = document.createElement("p");
+    free.style.cssText = "font-size:13px;margin:0 0 12px;";
+    free.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> also gives you "+escapeHtml(freebies.join(", "))+" for free. They're added automatically and don't count toward the picks below.";
+    card.appendChild(free);
+  }
+  // A shrinking count (e.g. lower Wisdom after going back) trims extra picks.
+  var need = spellPickCount(sc);
+  if(wizardState.spellChoices.spells.length > need) wizardState.spellChoices.spells.length = need;
+  card.appendChild(spellPickSection("Cantrips", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList, grants.cantrips));
+  card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", need, 1, wizardState.spellChoices.spells, sc.spellList, grants.spells));
   container.appendChild(card);
 }
 
@@ -658,6 +728,9 @@ export function wizardStepReview(container){
     var v = wizardState.classChoices[ch.id];
     row(ch.label, Array.isArray(v) ? v.join(", ") : (v || "None"));
   });
+  var grants = subclassGrants(info, wizardState.classChoices);
+  if(grants.expertise) row(grants.expertise.label, (wizardState.classChoices[grants.expertise.id]||[]).join(", ") || "None");
+  if(grants.spells) row("Domain spells", grants.spells.join(", ")+" (always prepared)");
   if(info.spellcasting){
     row("Cantrips", wizardState.spellChoices.cantrips.join(", ") || "None");
     row(info.spellcasting.spellsLabel || "1st-level spells", wizardState.spellChoices.spells.join(", ") || "None");
@@ -668,7 +741,8 @@ export function wizardStepReview(container){
   featTitle.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
   featTitle.textContent = "Level 1 features";
   card.appendChild(featTitle);
-  info.features.forEach(function(f){
+  var sub = (SUBCLASSES[wizardState.classId]||[]).find(function(x){ return x.name===wizardState.classChoices.subclass; });
+  info.features.concat(sub && sub.features && sub.features[1] || []).forEach(function(f){
     var p = document.createElement("p");
     p.style.cssText = "font-size:13px;margin:0 0 8px;";
     p.innerHTML = "<strong>"+escapeHtml(f.name)+":</strong> "+escapeHtml(f.text);
