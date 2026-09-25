@@ -448,11 +448,24 @@ function choiceSubclass(card, ch){
   }
 }
 
-/* One pick from a long grouped list (a monk's tool or instrument): a
-   dropdown instead of a wall of option cards. */
+/* Picks from a long grouped list (a monk's tool, a bard's three
+   instruments): dropdowns instead of a wall of option cards. With a
+   `count` above 1 the value is an array, one entry per dropdown. */
 function choiceTool(card, ch){
+  var count = ch.count || 1;
+  if(count===1){ card.appendChild(toolSelect(ch, wizardState.classChoices[ch.id], function(v){ wizardState.classChoices[ch.id] = v; })); return; }
+  var picks = wizardState.classChoices[ch.id] = (wizardState.classChoices[ch.id] || []).slice(0, count);
+  for(var i=0;i<count;i++){
+    (function(i){
+      card.appendChild(toolSelect(ch, picks[i], function(v){ picks[i] = v; }, picks));
+    })(i);
+  }
+}
+
+function toolSelect(ch, value, onPick, siblings){
   var f = ce("div","field");
   f.style.maxWidth = "320px";
+  f.style.marginBottom = "8px";
   var select = document.createElement("select");
   var blank = document.createElement("option");
   blank.value = ""; blank.textContent = "Select one"; blank.disabled = true; blank.hidden = true;
@@ -467,14 +480,22 @@ function choiceTool(card, ch){
     });
     select.appendChild(og);
   });
-  select.value = wizardState.classChoices[ch.id] || "";
+  select.value = value || "";
   select.addEventListener("change", function(){
-    wizardState.classChoices[ch.id] = select.value;
+    onPick(select.value);
     var errBox = document.getElementById("wizard-error");
     if(errBox) errBox.classList.remove("show");
+    // Keep multi-picks distinct: re-render so the other dropdowns grey out
+    // what's already taken.
+    if(siblings) renderWizard();
   });
+  if(siblings){
+    Array.prototype.forEach.call(select.querySelectorAll("option"), function(o){
+      if(o.value && o.value!==value && siblings.indexOf(o.value)!==-1) o.disabled = true;
+    });
+  }
   f.appendChild(select);
-  card.appendChild(f);
+  return f;
 }
 
 function choiceFightingStyle(card, ch){

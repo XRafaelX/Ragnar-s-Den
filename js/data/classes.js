@@ -1,8 +1,8 @@
-import { CLASS_LIST } from "./abilities-skills.js";
+import { CLASS_LIST, SKILLS } from "./abilities-skills.js";
 
 /* ---------------- Character Creation Wizard data ----------------
-   Barbarian, Cleric, Fighter, Monk, Paladin, Rogue, Sorcerer, Warlock and
-   Wizard have a fully guided creation experience right now. The other classes appear
+   Every class except Artificer and Ranger has a fully guided creation
+   experience right now. The other classes appear
    (with a one-line blurb) so the class list reads as complete, but are
    marked unavailable until they are built out the same way. */
 var CLASS_BLURBS = {
@@ -69,6 +69,8 @@ CLASSES_INFO["Barbarian"] = {
 var EXPLORERS_PACK = {name:"Explorer's Pack", qty:1, weight:59, notes:"backpack, bedroll, mess kit, tinderbox, 10 torches, 10 days rations, waterskin, 50ft rope"};
 var DUNGEONEERS_PACK = {name:"Dungeoneer's Pack", qty:1, weight:61.5, notes:"backpack, crowbar, hammer, 10 pitons, 10 torches, tinderbox, 10 days rations, waterskin, 50ft rope"};
 var PRIESTS_PACK = {name:"Priest's Pack", qty:1, weight:24, notes:"backpack, blanket, 10 candles, tinderbox, alms box, 2 blocks of incense, censer, vestments, 2 days rations, waterskin"};
+var DIPLOMATS_PACK = {name:"Diplomat's Pack", qty:1, weight:36, notes:"chest, 2 map/scroll cases, fine clothes, ink, ink pen, lamp, 2 flasks of oil, 5 sheets of paper, vial of perfume, sealing wax, soap"};
+var ENTERTAINERS_PACK = {name:"Entertainer's Pack", qty:1, weight:38, notes:"backpack, bedroll, 2 costumes, 5 candles, 5 days rations, waterskin, disguise kit"};
 var BURGLARS_PACK = {name:"Burglar's Pack", qty:1, weight:44.5, notes:"backpack, 1,000 ball bearings, 10ft string, bell, 5 candles, crowbar, hammer, 10 pitons, hooded lantern, 2 flasks of oil, 5 days rations, tinderbox, waterskin, 50ft rope"};
 
 /* Fighter and Paladin: "a martial weapon and a shield, or two martial
@@ -251,6 +253,9 @@ CLASSES_INFO["Cleric"].features = [
   {name:"Divine Domain", text:"Chosen religious domain granting domain spells and bonus domain features."}
 ];
 
+/* Clerics and Druids prepare WIS modifier + level spells (min 1). */
+function wisModPlusOne(w){ return Math.max(1, Math.floor((w.abilities.wis-10)/2) + 1); }
+
 /* Cleric picks its subclass (Divine Domain) at level 1, so the wizard's
    Class Features step offers it. `grants` is what each domain adds at
    creation: proficiencies that unlock gear (`requires` on an equipment
@@ -278,7 +283,7 @@ Object.assign(CLASSES_INFO["Cleric"], {
   ],
   spellcasting:{
     ability:"wis", spellList:"Cleric", cantrips:3, prepares:true, slots:{1:2},
-    spells:function(w){ return Math.max(1, Math.floor((w.abilities.wis-10)/2) + 1); },
+    spells:wisModPlusOne,
     spellsLabel:"Prepared spells",
     spellsHelp:"You know every cleric spell. Each day you prepare a number equal to your Wisdom modifier + your cleric level; pick today's here and swap them on the Spells tab after a long rest. Your domain spells are always prepared on top of these."
   },
@@ -369,6 +374,49 @@ CLASSES_INFO["Druid"].features = [
   {name:"Druidic", text:"You know Druidic, the secret language of druids, and can leave hidden messages."},
   {name:"Spellcasting", text:"Cast nature spells fueled by the primal power of nature using Wisdom."}
 ];
+
+/* Druid: Druid Circle comes at level 2, so no level-1 choices. Like a
+   cleric it prepares from the whole class list. `languages` are added to
+   the sheet at creation. Druids won't wear metal, hence leather and a
+   wooden shield. */
+Object.assign(CLASSES_INFO["Druid"], {
+  available:true,
+  primaryAbility:"wis",
+  savingThrows:["int","wis"],
+  skillChoices:{count:2, options:["Arcana","Animal Handling","Insight","Medicine","Nature","Perception","Religion","Survival"]},
+  languages:["Druidic"],
+  spellcasting:{
+    ability:"wis", spellList:"Druid", cantrips:2, prepares:true, slots:{1:2},
+    spells:wisModPlusOne,
+    spellsLabel:"Prepared spells",
+    spellsHelp:"You know every druid spell. Each day you prepare a number equal to your Wisdom modifier + your druid level; pick today's here and swap them on the Spells tab after a long rest."
+  },
+  equipment:{
+    choiceGroups:[
+      {options:[
+        {key:"shield", label:"Wooden shield", detail:"+2 AC", items:[
+          {name:"Wooden Shield",qty:1,weight:6,notes:"+2 AC; no metal",type:"armor",category:"shield",baseAC:2}
+        ]},
+        {key:"simple", label:"Any simple weapon", detail:"Starts as a quarterstaff (1d6, versatile 1d8); swap it on the sheet", items:[
+          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"scimitar", label:"Scimitar", detail:"1d6 slashing, finesse, light", items:[
+          {name:"Scimitar",qty:1,weight:3,notes:"finesse, light",type:"weapon",damageDice:"1d6",damageType:"Slashing",ability:"finesse",proficient:true}
+        ]},
+        {key:"simple_melee", label:"Any simple melee weapon", detail:"Starts as a spear (1d6, thrown 20/60, versatile 1d8); swap it on the sheet", items:[
+          {name:"Spear",qty:1,weight:3,notes:"thrown 20/60, versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"str",proficient:true}
+        ]}
+      ]}
+    ],
+    fixed:[
+      {name:"Leather", qty:1, weight:10, notes:"light armor", type:"armor", category:"light", baseAC:11},
+      EXPLORERS_PACK,
+      {name:"Druidic Focus", qty:1, weight:1, notes:"spellcasting focus: sprig of mistletoe, totem, wooden staff or yew wand"}
+    ]
+  }
+});
 
 CLASSES_INFO["Monk"].features = [
   {name:"Unarmored Defense", text:"While wearing no armor and no shield, AC equals 10 + DEX modifier + WIS modifier."},
@@ -534,6 +582,56 @@ CLASSES_INFO["Artificer"].features = [
   {name:"Magical Tinkering", text:"Invest a spark of magic into mundane tiny objects (light, recorded sound, odor, or visual effect)."},
   {name:"Spellcasting", text:"Cast spells by using tools as focuses, with Intelligence as your spellcasting ability."}
 ];
+
+/* Bard: any three skills and three instruments; College comes at level 3.
+   Knows its spells (no preparing). */
+Object.assign(CLASSES_INFO["Bard"], {
+  available:true,
+  primaryAbility:"cha",
+  savingThrows:["dex","cha"],
+  skillChoices:{count:3, options:SKILLS.map(function(s){ return s[0]; })},
+  choices:[
+    {id:"instruments", kind:"tool", count:3, label:"Musical instruments",
+      help:"Pick three instruments you can play. Add your proficiency bonus when you perform with them.",
+      groups:{"Musical instruments":MUSICAL_INSTRUMENTS}}
+  ],
+  spellcasting:{
+    ability:"cha", spellList:"Bard", cantrips:2, spells:4, prepares:false, slots:{1:2},
+    spellsLabel:"1st-level spells known",
+    spellsHelp:"Bards know their spells and can cast any of them with a slot. You learn one more each level, and can swap one out when you level up."
+  },
+  equipment:{
+    choiceGroups:[
+      {options:[
+        {key:"rapier", label:"Rapier", detail:"1d8 piercing, finesse", items:[
+          {name:"Rapier",qty:1,weight:2,notes:"finesse",type:"weapon",damageDice:"1d8",damageType:"Piercing",ability:"finesse",proficient:true}
+        ]},
+        {key:"longsword", label:"Longsword", detail:"1d8 slashing, versatile (1d10)", items:[
+          {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true}
+        ]},
+        {key:"simple", label:"Any simple weapon", detail:"Starts as a quarterstaff (1d6, versatile 1d8); swap it on the sheet", items:[
+          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"diplomat", label:"Diplomat's Pack", detail:"Chest, scroll cases, fine clothes, ink, lamp, paper, perfume, sealing wax, soap", items:[DIPLOMATS_PACK]},
+        {key:"entertainer", label:"Entertainer's Pack", detail:"Backpack, bedroll, costumes, candles, rations, waterskin, disguise kit", items:[ENTERTAINERS_PACK]}
+      ]},
+      {options:[
+        {key:"lute", label:"Lute", detail:"The classic bard's instrument", items:[
+          {name:"Lute",qty:1,weight:2,notes:"musical instrument"}
+        ]},
+        {key:"other", label:"Another musical instrument", detail:"Rename it on the sheet to the one you play", items:[
+          {name:"Musical Instrument",qty:1,weight:2,notes:"rename to your instrument"}
+        ]}
+      ]}
+    ],
+    fixed:[
+      {name:"Leather", qty:1, weight:10, notes:"light armor", type:"armor", category:"light", baseAC:11},
+      {name:"Dagger", qty:1, weight:1, notes:"finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true}
+    ]
+  }
+});
 
 /* ---------------- Standard SRD proficiencies by class ----------------
    Used by the Information tab to show a quick, non-editable readout of

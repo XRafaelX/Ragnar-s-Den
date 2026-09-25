@@ -106,13 +106,19 @@ export function validateStep(id){
   if(id==="choices"){
     var missing = (info.choices||[]).find(function(ch){
       var v = wizardState.classChoices[ch.id];
+      if(ch.kind==="tool" && ch.count>1){
+        return !v || v.filter(Boolean).length!==ch.count || new Set(v).size!==ch.count;
+      }
       if(ch.kind==="expertise"){
         var allowed = expertiseOptions(ch);
         return !v || v.length!==ch.count || v.some(function(x){ return allowed.indexOf(x)===-1; });
       }
       return !v;
     });
-    if(missing) return missing.kind==="expertise" ? "Choose "+missing.count+" for "+missing.label+"." : "Choose a "+missing.label+".";
+    if(missing){
+      if(missing.kind==="tool" && missing.count>1) return "Choose "+missing.count+" different "+missing.label.toLowerCase()+".";
+      return missing.kind==="expertise" ? "Choose "+missing.count+" for "+missing.label+"." : "Choose a "+missing.label+".";
+    }
     var g = subclassGrants(info, wizardState.classChoices);
     var bonus = g.expertise;
     if(bonus && (wizardState.classChoices[bonus.id]||[]).length!==bonus.count) return "Choose "+bonus.count+" skills for "+bonus.label+".";
@@ -199,6 +205,7 @@ export function finishWizard(){
   // no armor is equipped yet, so it starts from unarmored / class defense.
   c.inventory = buildEquipmentList(info, w.equipment);
   applyClassChoices(c, info, w.classChoices);
+  (info.languages||[]).forEach(function(l){ if(c.languages.indexOf(l)===-1) c.languages.push(l); });
 
   if(info.spellcasting){
     var sc = info.spellcasting;
@@ -251,7 +258,8 @@ export function applyClassChoices(c, info, picks){
       if(picked) c.features.push({id:uid(), name:g.pick.label+": "+picked.name, source:"Class", text:picked.text, isPassive:true});
       if(c.languages) (g.languages||[]).forEach(function(l){ if(c.languages.indexOf(l)===-1) c.languages.push(l); });
     } else if(ch.kind==="tool"){
-      c.features.push({id:uid(), name:"Tool Proficiency: "+v, source:"Class", text:"You're proficient with "+v.toLowerCase()+": add your proficiency bonus to ability checks you make with them.", isPassive:true});
+      var tools = Array.isArray(v) ? v : [v];
+      c.features.push({id:uid(), name:ch.label+": "+tools.join(", "), source:"Class", text:"You're proficient with "+tools.join(", ").toLowerCase()+": add your proficiency bonus to ability checks you make with them.", isPassive:true});
     } else if(ch.kind==="fightingStyle"){
       var style = FIGHTING_STYLES[v];
       c.features.push({id:uid(), name:"Fighting Style: "+v, source:"Class", text:style ? style.text : "", isPassive:true, fightingStyle:v});
