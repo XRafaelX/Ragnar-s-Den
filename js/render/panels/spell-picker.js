@@ -34,6 +34,7 @@ export function addCatalogSpell(c, name, d){
   c.spells.push(spellFromCatalog(name, d));
   save();
   playAdd();
+  return true;
 }
 
 export function addCustomSpell(c, fields){
@@ -139,7 +140,10 @@ export function buildCustomSpellForm(container, closeCustom, onSubmit){
   container.appendChild(form);
 }
 
-function spellSection(key, label, groups, data, c){
+/* One catalog tab of spells. `onAdd(name, d)` and `onCustom(fields)` say
+   where a pick goes: the open sheet here, or a chosen character from the
+   home Spellbook. */
+export function spellSection(key, label, groups, data, onAdd, onCustom){
   return {
     key: key,
     label: label,
@@ -157,12 +161,9 @@ function spellSection(key, label, groups, data, c){
       if(d.ritual) tags.push("Ritual");
       return [d.components, tags.join(" · ")];
     },
-    onAdd: function(name, d){ return addCatalogSpell(c, name, d); },
+    onAdd: onAdd,
     renderCustomForm: function(container, closeCustom){
-      buildCustomSpellForm(container, closeCustom, function(fields){
-        addCustomSpell(c, fields);
-        renderAll();
-      });
+      buildCustomSpellForm(container, closeCustom, onCustom);
     }
   };
 }
@@ -170,6 +171,8 @@ function spellSection(key, label, groups, data, c){
 /* One tab per spellcasting class on the sheet (so a Wizard sees the
    Wizard list first), then everything. */
 export function buildSpellSections(c){
+  function onAdd(name, d){ return addCatalogSpell(c, name, d); }
+  function onCustom(fields){ addCustomSpell(c, fields); renderAll(); }
   var sections = [];
   var seen = {};
   (c.classes||[]).forEach(function(cl){
@@ -178,9 +181,9 @@ export function buildSpellSections(c){
     seen[name] = true;
     var data = spellDataForClass(name);
     if(!Object.keys(data).length) return;
-    sections.push(spellSection("class-" + name, name + " spells", buildSpellGroups(name), data, c));
+    sections.push(spellSection("class-" + name, name + " spells", buildSpellGroups(name), data, onAdd, onCustom));
   });
-  sections.push(spellSection("all", "All spells", buildSpellGroups(), SPELL_DATA, c));
+  sections.push(spellSection("all", "All spells", buildSpellGroups(), SPELL_DATA, onAdd, onCustom));
   return sections;
 }
 

@@ -1,4 +1,4 @@
-var CACHE_NAME = "vault-and-vellum-v7";
+var CACHE_NAME = "vault-and-vellum-v8";
 var ASSETS = [
   "./",
   "./index.html",
@@ -67,6 +67,7 @@ var ASSETS = [
   "./js/render/panels/vitals.js",
   "./js/render/panels/weapon-picker.js",
   "./js/render/sheet.js",
+  "./js/render/spellbook.js",
   "./js/render/sidebar.js",
   "./js/ui/avatar-crop.js",
   "./js/ui/avatar.js",

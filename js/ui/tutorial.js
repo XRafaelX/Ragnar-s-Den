@@ -27,6 +27,12 @@ var STEPS = [
     text: "Start here. The wizard walks you through race, class, background and ability scores step by step."
   },
   {
+    target: byId("home-node-spellbook"),
+    spot: function(el){ return el.querySelector(".home-node-circle"); },
+    title: "The Spellbook",
+    text: "Look up any spell, filter by class, and add it to one of your spellcasters."
+  },
+  {
     target: byId("home-node-armory"),
     spot: function(el){ return el.querySelector(".home-node-circle"); },
     title: "Grimtooth's Armory",

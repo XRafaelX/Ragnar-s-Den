@@ -1,10 +1,11 @@
 import { state } from "../core/state.js";
 import { escapeHtml } from "../core/helpers.js";
 
-/* Lets the Armory ask "which character?" before adding an item.
-   Skips the modal entirely when there's only one character to choose from. */
-export function chooseCharacter(onChoose){
-  var chars = state.characters;
+/* Lets the Armory / Spellbook ask "which character?" before adding
+   something. `list` narrows the choices (e.g. only spellcasters); the
+   modal is skipped entirely when there's only one to choose from. */
+export function chooseCharacter(onChoose, list){
+  var chars = list || state.characters;
   if(!chars.length) return;
   if(chars.length === 1){ onChoose(chars[0]); return; }
 

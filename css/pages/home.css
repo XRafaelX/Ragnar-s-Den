@@ -19,9 +19,12 @@
   background:none;border:none;cursor:pointer;padding:0;width:76px;
   animation:home-node-pop .55s cubic-bezier(0.175,0.885,0.32,1.275) backwards;
 }
-.home-node[data-pos="top"]{--tx:0px;--ty:calc(var(--hub-r) * -1);animation-delay:.05s;}
-.home-node[data-pos="lower-right"]{--tx:calc(var(--hub-r) * 0.866);--ty:calc(var(--hub-r) * 0.5);animation-delay:.15s;}
-.home-node[data-pos="lower-left"]{--tx:calc(var(--hub-r) * -0.866);--ty:calc(var(--hub-r) * 0.5);animation-delay:.25s;}
+/* Four nodes on the diagonals. --mx/--my is the midpoint of each node's
+   curved path into the dice when it's picked (see home-chosen). */
+.home-node[data-pos="upper-left"]{--tx:calc(var(--hub-r) * -0.707);--ty:calc(var(--hub-r) * -0.707);--mx:-0.15;--my:-0.85;--spin:-1;animation-delay:.05s;}
+.home-node[data-pos="upper-right"]{--tx:calc(var(--hub-r) * 0.707);--ty:calc(var(--hub-r) * -0.707);--mx:0.15;--my:-0.85;--spin:1;animation-delay:.15s;}
+.home-node[data-pos="lower-right"]{--tx:calc(var(--hub-r) * 0.707);--ty:calc(var(--hub-r) * 0.707);--mx:0.15;--my:0.85;--spin:1;animation-delay:.25s;}
+.home-node[data-pos="lower-left"]{--tx:calc(var(--hub-r) * -0.707);--ty:calc(var(--hub-r) * 0.707);--mx:-0.15;--my:0.85;--spin:-1;animation-delay:.35s;}
 
 @keyframes home-node-pop{
   from{opacity:0;transform:translate(-50%,-50%) translate(0,0) scale(.25);}
@@ -32,25 +35,13 @@
    away carousel-style, and the die itself flashes as it "catches" the
    choice. Each starting position gets its own curved path toward center. */
 .home-node.chosen{z-index:3;}
-.home-node[data-pos="top"].chosen{animation:home-chosen-top .6s cubic-bezier(.65,0,.35,1) forwards;}
-.home-node[data-pos="lower-right"].chosen{animation:home-chosen-lower-right .6s cubic-bezier(.65,0,.35,1) forwards;}
-.home-node[data-pos="lower-left"].chosen{animation:home-chosen-lower-left .6s cubic-bezier(.65,0,.35,1) forwards;}
+.home-node.chosen{animation:home-chosen .6s cubic-bezier(.65,0,.35,1) forwards;}
 .home-node.wiping{animation:home-wipe .45s ease-in forwards;}
 
-@keyframes home-chosen-top{
-  0%{opacity:1;transform:translate(-50%,-50%) translate(0,calc(var(--hub-r) * -1)) scale(1);}
-  45%{opacity:1;transform:translate(-50%,-50%) translate(calc(var(--hub-r) * 0.6),calc(var(--hub-r) * -0.55)) scale(1.2) rotate(30deg);}
-  100%{opacity:0;transform:translate(-50%,-50%) translate(0,0) scale(.1) rotate(80deg);}
-}
-@keyframes home-chosen-lower-right{
-  0%{opacity:1;transform:translate(-50%,-50%) translate(calc(var(--hub-r) * 0.866),calc(var(--hub-r) * 0.5)) scale(1);}
-  45%{opacity:1;transform:translate(-50%,-50%) translate(calc(var(--hub-r) * 0.15),calc(var(--hub-r) * 0.85)) scale(1.2) rotate(30deg);}
-  100%{opacity:0;transform:translate(-50%,-50%) translate(0,0) scale(.1) rotate(80deg);}
-}
-@keyframes home-chosen-lower-left{
-  0%{opacity:1;transform:translate(-50%,-50%) translate(calc(var(--hub-r) * -0.866),calc(var(--hub-r) * 0.5)) scale(1);}
-  45%{opacity:1;transform:translate(-50%,-50%) translate(calc(var(--hub-r) * -0.15),calc(var(--hub-r) * 0.85)) scale(1.2) rotate(-30deg);}
-  100%{opacity:0;transform:translate(-50%,-50%) translate(0,0) scale(.1) rotate(-80deg);}
+@keyframes home-chosen{
+  0%{opacity:1;transform:translate(-50%,-50%) translate(var(--tx),var(--ty)) scale(1);}
+  45%{opacity:1;transform:translate(-50%,-50%) translate(calc(var(--hub-r) * var(--mx)),calc(var(--hub-r) * var(--my))) scale(1.2) rotate(calc(var(--spin) * 30deg));}
+  100%{opacity:0;transform:translate(-50%,-50%) translate(0,0) scale(.1) rotate(calc(var(--spin) * 80deg));}
 }
 @keyframes home-wipe{
   0%{opacity:1;transform:translate(-50%,-50%) translate(var(--tx),var(--ty)) scale(1) rotate(0deg);}
@@ -75,6 +66,7 @@
 #home-node-new .home-node-circle{background:linear-gradient(135deg, var(--brass) 0%, var(--brass-active) 100%);}
 #home-node-armory .home-node-circle{background:linear-gradient(135deg, #fbbf24 0%, #b45309 100%);}
 #home-node-about .home-node-circle{background:linear-gradient(135deg, #f9a8d4 0%, #be185d 100%);}
+#home-node-spellbook .home-node-circle{background:linear-gradient(135deg, #67e8f9 0%, #0e7490 100%);}
 
 #home-center{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);

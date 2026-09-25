@@ -20,7 +20,7 @@ export var NAME_IDEAS = [
 
   // Destiny
   "Commander Zavala", "Ikora Rey", "Cayde-6", "Saint-14", "Osiris",
-  "Eris Morn", "Lord Shaxx", "Mara Sov", "Savathûn", "Crow"
+  "Eris Morn", "Lord Shaxx", "Mara Sov", "Savathun", "Crow"
 ];
 export function pickNameIdeas(n){
   var pool = NAME_IDEAS.slice();
