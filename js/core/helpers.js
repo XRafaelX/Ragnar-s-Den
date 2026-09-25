@@ -379,6 +379,27 @@ export function unseenUnlockCount(c){
   if(!ids.length) return 0;
   return getAllCharacterFeatures(c).filter(function(f){ return ids.indexOf(f.id)!==-1; }).length;
 }
+/* The creation wizard and level-up rebuild the whole overlay on every
+   tap, which snaps #wizard-body back to the top. Call before clearing the
+   overlay with a key for the current view (flow + step): if it's the same
+   view as last render, its scroll is returned so wizardScrollRestore can
+   put it back; a new step starts at the top. */
+export function wizardScrollSave(viewKey){
+  var overlay = document.getElementById("wizard-overlay");
+  var body = document.getElementById("wizard-body");
+  var keep = body && overlay.dataset.view===viewKey ? body.scrollTop : null;
+  overlay.dataset.view = viewKey;
+  return keep;
+}
+export function wizardScrollRestore(keep){
+  var body = document.getElementById("wizard-body");
+  if(body && keep!=null) body.scrollTop = keep;
+}
+/* Forget the last view when a flow opens, so it starts at the top even
+   on the same step the previous run ended on. */
+export function wizardScrollReset(){
+  document.getElementById("wizard-overlay").dataset.view = "";
+}
 export function clamp(n,lo,hi){ return Math.max(lo,Math.min(hi,n)); }
 export function ce(tag, cls){ var e = document.createElement(tag); if(cls) e.className = cls; return e; }
 export function escapeHtml(s){

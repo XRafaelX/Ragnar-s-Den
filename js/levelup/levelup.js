@@ -4,7 +4,8 @@ import { FEATS_CATALOG } from "../data/feats.js";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL, XP_THRESHOLDS, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from "../data/progression.js";
 import {
   mod, fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus,
-  classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots
+  classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots,
+  wizardScrollSave, wizardScrollRestore, wizardScrollReset
 } from "../core/helpers.js";
 import { save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
@@ -116,6 +117,7 @@ export function openLevelUp(c){
     asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"",
     hpMethod:"avg", hpRoll:null
   };
+  wizardScrollReset();
   document.getElementById("wizard-overlay").classList.add("open");
   render();
 }
@@ -136,6 +138,7 @@ function go(delta){
 
 function render(){
   var overlay = document.getElementById("wizard-overlay");
+  var keepScroll = wizardScrollSave("levelup:"+lu.step);
   overlay.innerHTML = "";
   var c = lu.c;
 
@@ -191,6 +194,7 @@ function render(){
   });
   footer.appendChild(backBtn); footer.appendChild(nextBtn);
   overlay.appendChild(footer);
+  wizardScrollRestore(keepScroll);
 }
 
 function stepCard(container, title, explainHtml){

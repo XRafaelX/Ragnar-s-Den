@@ -1,8 +1,7 @@
 import { CLASS_LIST, SKILLS } from "./abilities-skills.js";
 
 /* ---------------- Character Creation Wizard data ----------------
-   Every class except Artificer and Ranger has a fully guided creation
-   experience right now. The other classes appear
+   Every class has a fully guided creation experience. The other classes appear
    (with a one-line blurb) so the class list reads as complete, but are
    marked unavailable until they are built out the same way. */
 var CLASS_BLURBS = {
@@ -436,7 +435,7 @@ Object.assign(CLASSES_INFO["Monk"], {
   savingThrows:["str","dex"],
   skillChoices:{count:2, options:["Acrobatics","Athletics","History","Insight","Religion","Stealth"]},
   choices:[
-    {id:"tool", kind:"tool", label:"Tool proficiency",
+    {id:"tool", kind:"listPick", label:"Tool proficiency",
       help:"Monks train in one craft or instrument. Pick one type of artisan's tools or a musical instrument.",
       groups:{"Artisan's tools":ARTISAN_TOOLS, "Musical instruments":MUSICAL_INSTRUMENTS}}
   ],
@@ -460,6 +459,15 @@ Object.assign(CLASSES_INFO["Monk"], {
     ]
   }
 });
+
+/* Ranger: no spells until level 2. Favored Enemy and Natural Explorer
+   are level-1 picks; `featureText` is what lands on the Features tab
+   ({v} is the pick). */
+var FAVORED_ENEMIES = {
+  "Creature types":["Aberrations","Beasts","Celestials","Constructs","Dragons","Elementals","Fey","Fiends","Giants","Monstrosities","Oozes","Plants","Undead"],
+  "Humanoids (pick two races)":["Humanoids: gnolls and orcs","Humanoids: goblins and hobgoblins","Humanoids: humans and elves","Humanoids: dwarves and gnomes","Humanoids: kobolds and lizardfolk","Humanoids: bandits and cultists (humans and half-orcs)"]
+};
+var FAVORED_TERRAINS = ["Arctic","Coast","Desert","Forest","Grassland","Mountain","Swamp","Underdark"];
 
 CLASSES_INFO["Ranger"].features = [
   {name:"Favored Enemy", text:"Advantage on Survival checks to track favored enemies, and Intelligence checks to recall information about them."},
@@ -591,7 +599,7 @@ Object.assign(CLASSES_INFO["Bard"], {
   savingThrows:["dex","cha"],
   skillChoices:{count:3, options:SKILLS.map(function(s){ return s[0]; })},
   choices:[
-    {id:"instruments", kind:"tool", count:3, label:"Musical instruments",
+    {id:"instruments", kind:"listPick", count:3, label:"Musical instruments",
       help:"Pick three instruments you can play. Add your proficiency bonus when you perform with them.",
       groups:{"Musical instruments":MUSICAL_INSTRUMENTS}}
   ],
@@ -629,6 +637,94 @@ Object.assign(CLASSES_INFO["Bard"], {
     fixed:[
       {name:"Leather", qty:1, weight:10, notes:"light armor", type:"armor", category:"light", baseAC:11},
       {name:"Dagger", qty:1, weight:1, notes:"finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true}
+    ]
+  }
+});
+
+Object.assign(CLASSES_INFO["Ranger"], {
+  available:true,
+  primaryAbility:"dex",
+  primaryAbilityLabel:"Dexterity and Wisdom",
+  savingThrows:["str","dex"],
+  skillChoices:{count:3, options:["Animal Handling","Athletics","Insight","Investigation","Nature","Perception","Stealth","Survival"]},
+  choices:[
+    {id:"favoredEnemy", kind:"listPick", label:"Favored Enemy",
+      help:"The kind of creature you've studied and hunted. You get advantage on Survival checks to track them and Intelligence checks to recall lore about them, and you learn one language they speak.",
+      groups:FAVORED_ENEMIES,
+      featureText:"Advantage on Wisdom (Survival) checks to track {v} and on Intelligence checks to recall information about them. You also learn one language they speak (add it on the Information tab)."},
+    {id:"favoredTerrain", kind:"listPick", label:"Favored Terrain",
+      help:"The land you know best. Travelling there, your group can't get lost, you stay alert, and you forage and track twice as well.",
+      groups:{"Terrain":FAVORED_TERRAINS},
+      featureText:"In {v} terrain: double proficiency on related INT/WIS checks, difficult terrain doesn't slow your group, you can't get lost, you stay alert while doing other things, you move stealthily at normal pace, you find twice as much food, and you learn exact numbers and sizes of creatures you track."}
+  ],
+  equipment:{
+    choiceGroups:[
+      {options:[
+        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2); disadvantage on Stealth", items:[
+          {name:"Scale Mail",qty:1,weight:45,notes:"medium; stealth disadvantage",type:"armor",category:"medium",baseAC:14}
+        ]},
+        {key:"leather", label:"Leather armor", detail:"Light armor, AC 11 + DEX; quiet", items:[
+          {name:"Leather",qty:1,weight:10,notes:"light armor",type:"armor",category:"light",baseAC:11}
+        ]}
+      ]},
+      {options:[
+        {key:"shortswords", label:"Two shortswords", detail:"1d6 piercing each, finesse, light (fight with one in each hand)", items:[
+          {name:"Shortsword",qty:2,weight:2,notes:"finesse, light",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"finesse",proficient:true}
+        ]},
+        {key:"simple_melee", label:"Two simple melee weapons", detail:"Start as two handaxes (1d6, light, thrown 20/60); swap them on the sheet", items:[
+          {name:"Handaxe",qty:2,weight:2,notes:"light, thrown 20/60",type:"weapon",damageDice:"1d6",damageType:"Slashing",ability:"str",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"dungeoneer", label:"Dungeoneer's Pack", detail:"Backpack, crowbar, hammer, pitons, torches, rations, waterskin, rope", items:[DUNGEONEERS_PACK]},
+        {key:"explorer", label:"Explorer's Pack", detail:"Backpack, bedroll, mess kit, tinderbox, torches, rations, waterskin, rope", items:[EXPLORERS_PACK]}
+      ]}
+    ],
+    fixed:[
+      {name:"Longbow", qty:1, weight:2, notes:"ammunition, heavy, two-handed, range 150/600", type:"weapon", damageDice:"1d8", damageType:"Piercing", ability:"dex", proficient:true},
+      {name:"Arrows", qty:20, weight:0.05, notes:"ammunition, in a quiver"}
+    ]
+  }
+});
+
+/* Artificer (Tasha's): prepares INT modifier + half its level (rounded
+   down, min 1) from the artificer list, and gets two 1st-level slots at
+   level 1. Infusions start at level 2. */
+Object.assign(CLASSES_INFO["Artificer"], {
+  available:true,
+  primaryAbility:"int",
+  savingThrows:["con","int"],
+  skillChoices:{count:2, options:["Arcana","History","Investigation","Medicine","Nature","Perception","Sleight of Hand"]},
+  choices:[
+    {id:"artisanTool", kind:"listPick", label:"Artisan's tools",
+      help:"On top of thieves' tools and tinker's tools, you're proficient with one type of artisan's tools. Your spells can use any tools you're proficient with as their focus.",
+      groups:{"Artisan's tools":ARTISAN_TOOLS.filter(function(t){ return t!=="Tinker's tools"; })},
+      featureText:"You're proficient with thieves' tools, tinker's tools and {v}. You can use any of them as your spellcasting focus."}
+  ],
+  spellcasting:{
+    ability:"int", spellList:"Artificer", cantrips:2, prepares:true, slots:{1:2},
+    spells:function(w){ return Math.max(1, Math.floor((w.abilities.int-10)/2)); },
+    spellsLabel:"Prepared spells",
+    spellsHelp:"You know every artificer spell. Each day you prepare a number equal to your Intelligence modifier + half your artificer level (at least one); pick today's here and swap them on the Spells tab after a long rest."
+  },
+  equipment:{
+    choiceGroups:[
+      {options:[
+        {key:"studded", label:"Studded leather armor", detail:"Light armor, AC 12 + DEX", items:[
+          {name:"Studded Leather",qty:1,weight:13,notes:"light armor",type:"armor",category:"light",baseAC:12}
+        ]},
+        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2); disadvantage on Stealth", items:[
+          {name:"Scale Mail",qty:1,weight:45,notes:"medium; stealth disadvantage",type:"armor",category:"medium",baseAC:14}
+        ]}
+      ]}
+    ],
+    fixed:[
+      {name:"Light Hammer", qty:1, weight:2, notes:"simple weapon; light, thrown 20/60. Swap it on the sheet", type:"weapon", damageDice:"1d4", damageType:"Bludgeoning", ability:"str", proficient:true},
+      {name:"Dagger", qty:1, weight:1, notes:"simple weapon; finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true},
+      {name:"Light Crossbow", qty:1, weight:5, notes:"ammunition, loading, two-handed, range 80/320", type:"weapon", damageDice:"1d8", damageType:"Piercing", ability:"dex", proficient:true},
+      {name:"Crossbow Bolts", qty:20, weight:0.075, notes:"ammunition"},
+      {name:"Thieves' Tools", qty:1, weight:1, notes:"pick locks and disarm traps"},
+      DUNGEONEERS_PACK
     ]
   }
 });

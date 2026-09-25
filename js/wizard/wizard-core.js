@@ -1,7 +1,7 @@
 import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASSES_INFO, FIGHTING_STYLES } from "../data/classes.js";
 import { BACKGROUND_INFO } from "../data/backgrounds.js";
-import { mod, ce, uid } from "../core/helpers.js";
+import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset } from "../core/helpers.js";
 import { newCharacter } from "../core/character.js";
 import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
@@ -106,7 +106,7 @@ export function validateStep(id){
   if(id==="choices"){
     var missing = (info.choices||[]).find(function(ch){
       var v = wizardState.classChoices[ch.id];
-      if(ch.kind==="tool" && ch.count>1){
+      if(ch.kind==="listPick" && ch.count>1){
         return !v || v.filter(Boolean).length!==ch.count || new Set(v).size!==ch.count;
       }
       if(ch.kind==="expertise"){
@@ -116,7 +116,7 @@ export function validateStep(id){
       return !v;
     });
     if(missing){
-      if(missing.kind==="tool" && missing.count>1) return "Choose "+missing.count+" different "+missing.label.toLowerCase()+".";
+      if(missing.kind==="listPick" && missing.count>1) return "Choose "+missing.count+" different "+missing.label.toLowerCase()+".";
       return missing.kind==="expertise" ? "Choose "+missing.count+" for "+missing.label+"." : "Choose a "+missing.label+".";
     }
     var g = subclassGrants(info, wizardState.classChoices);
@@ -163,6 +163,7 @@ export function openWizard(){
     spellChoices:{cantrips:[], spells:[]}
   };
   closeSidebarMobile();
+  wizardScrollReset();
   document.getElementById("wizard-overlay").classList.add("open");
   renderWizard();
 }
@@ -257,9 +258,14 @@ export function applyClassChoices(c, info, picks){
       var picked = g.pick && g.pick.options.find(function(o){ return o.name===picks[g.pick.id]; });
       if(picked) c.features.push({id:uid(), name:g.pick.label+": "+picked.name, source:"Class", text:picked.text, isPassive:true});
       if(c.languages) (g.languages||[]).forEach(function(l){ if(c.languages.indexOf(l)===-1) c.languages.push(l); });
-    } else if(ch.kind==="tool"){
-      var tools = Array.isArray(v) ? v : [v];
-      c.features.push({id:uid(), name:ch.label+": "+tools.join(", "), source:"Class", text:"You're proficient with "+tools.join(", ").toLowerCase()+": add your proficiency bonus to ability checks you make with them.", isPassive:true});
+    } else if(ch.kind==="listPick"){
+      // A pick from a list (tools, instruments, favored enemy): recorded as
+      // a feature; `featureText` overrides the default proficiency wording.
+      var vals = Array.isArray(v) ? v : [v];
+      var joined = vals.join(", ");
+      var text = ch.featureText ? ch.featureText.replace(/\{v\}/g, joined.toLowerCase()) :
+        "You're proficient with "+joined.toLowerCase()+": add your proficiency bonus to ability checks you make with them.";
+      c.features.push({id:uid(), name:ch.label+": "+joined, source:"Class", text:text, isPassive:true});
     } else if(ch.kind==="fightingStyle"){
       var style = FIGHTING_STYLES[v];
       c.features.push({id:uid(), name:"Fighting Style: "+v, source:"Class", text:style ? style.text : "", isPassive:true, fightingStyle:v});
@@ -279,6 +285,7 @@ export function applyClassChoices(c, info, picks){
 
 export function renderWizard(){
   var overlay = document.getElementById("wizard-overlay");
+  var keepScroll = wizardScrollSave("create:"+wizardState.step);
   overlay.innerHTML = "";
 
   var header = ce("div"); header.id = "wizard-header";
@@ -342,4 +349,5 @@ export function renderWizard(){
   });
   footer.appendChild(backBtn); footer.appendChild(nextBtn);
   overlay.appendChild(footer);
+  wizardScrollRestore(keepScroll);
 }

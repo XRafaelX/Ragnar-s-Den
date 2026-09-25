@@ -383,7 +383,7 @@ export function wizardStepChoices(container){
     }
     if(ch.kind==="subclass") choiceSubclass(card, ch);
     else if(ch.kind==="fightingStyle") choiceFightingStyle(card, ch);
-    else if(ch.kind==="tool") choiceTool(card, ch);
+    else if(ch.kind==="listPick") choiceListPick(card, ch);
     else if(ch.kind==="expertise") choiceExpertise(card, ch);
   });
   container.appendChild(card);
@@ -449,9 +449,10 @@ function choiceSubclass(card, ch){
 }
 
 /* Picks from a long grouped list (a monk's tool, a bard's three
-   instruments): dropdowns instead of a wall of option cards. With a
-   `count` above 1 the value is an array, one entry per dropdown. */
-function choiceTool(card, ch){
+   instruments, a ranger's favored enemy): dropdowns instead of a wall of
+   option cards. With a `count` above 1 the value is an array, one entry
+   per dropdown. */
+function choiceListPick(card, ch){
   var count = ch.count || 1;
   if(count===1){ card.appendChild(toolSelect(ch, wizardState.classChoices[ch.id], function(v){ wizardState.classChoices[ch.id] = v; })); return; }
   var picks = wizardState.classChoices[ch.id] = (wizardState.classChoices[ch.id] || []).slice(0, count);
