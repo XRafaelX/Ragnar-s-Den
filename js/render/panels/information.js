@@ -16,6 +16,8 @@ import { playAdd, playDelete } from "../../ui/sound.js";
    dumped on screen, so the tab stays scannable for a new player. */
 
 var ABILITY_NAME = {};
+// Which character's Languages card has its add row open (null = closed).
+var langAddOpenFor = null;
 ABILITIES.forEach(function(a){ ABILITY_NAME[a[0]] = a[1]; });
 
 function splitIntoTraits(text){
@@ -206,70 +208,100 @@ export function renderInformationPanel(c){
     chip.appendChild(rm);
     chipsWrap.appendChild(chip);
   });
+  // Adding a language hides behind a "+ Add language" chip (like the XP
+  // row's Custom button), so the card is just the list until you need it.
+  var addOpen = langAddOpenFor===c.id;
+  if(!addOpen){
+    var openBtn = document.createElement("button");
+    openBtn.type = "button";
+    openBtn.className = "info-chip info-lang-add-chip";
+    openBtn.textContent = "+ Add language";
+    openBtn.addEventListener("click", function(){
+      langAddOpenFor = c.id;
+      renderAll();
+      var field = document.querySelector(".info-lang-select");
+      if(field) field.focus();
+    });
+    chipsWrap.appendChild(openBtn);
+  }
   langCard.appendChild(chipsWrap);
 
-  var knownLower = c.languages.map(function(l){ return l.toLowerCase(); });
+  if(addOpen){
+    var knownLower = c.languages.map(function(l){ return l.toLowerCase(); });
 
-  var addRow = document.createElement("div");
-  addRow.className = "info-lang-add-row";
+    var addRow = document.createElement("div");
+    addRow.className = "info-lang-add-row";
 
-  var select = document.createElement("select");
-  select.className = "info-lang-select";
-  var blankOpt = document.createElement("option");
-  blankOpt.value = ""; blankOpt.textContent = "Select a language…";
-  blankOpt.disabled = true; blankOpt.selected = true; blankOpt.hidden = true;
-  select.appendChild(blankOpt);
-  Object.keys(LANGUAGES).forEach(function(groupLabel){
-    var remaining = LANGUAGES[groupLabel].filter(function(l){ return knownLower.indexOf(l.toLowerCase())===-1; });
-    if(!remaining.length) return;
-    var og = document.createElement("optgroup");
-    og.label = groupLabel;
-    remaining.forEach(function(l){
-      var o = document.createElement("option");
-      o.value = l; o.textContent = l;
-      og.appendChild(o);
+    var select = document.createElement("select");
+    select.className = "info-lang-select";
+    var blankOpt = document.createElement("option");
+    blankOpt.value = ""; blankOpt.textContent = "Select a language…";
+    blankOpt.disabled = true; blankOpt.selected = true; blankOpt.hidden = true;
+    select.appendChild(blankOpt);
+    Object.keys(LANGUAGES).forEach(function(groupLabel){
+      var remaining = LANGUAGES[groupLabel].filter(function(l){ return knownLower.indexOf(l.toLowerCase())===-1; });
+      if(!remaining.length) return;
+      var og = document.createElement("optgroup");
+      og.label = groupLabel;
+      remaining.forEach(function(l){
+        var o = document.createElement("option");
+        o.value = l; o.textContent = l;
+        og.appendChild(o);
+      });
+      select.appendChild(og);
     });
-    select.appendChild(og);
-  });
-  var customOpt = document.createElement("option");
-  customOpt.value = "__custom__"; customOpt.textContent = "Custom / homebrew…";
-  select.appendChild(customOpt);
+    var customOpt = document.createElement("option");
+    customOpt.value = "__custom__"; customOpt.textContent = "Custom / homebrew…";
+    select.appendChild(customOpt);
 
-  var customInput = document.createElement("input");
-  customInput.type = "text";
-  customInput.className = "info-lang-input";
-  customInput.placeholder = "Enter custom language";
-  customInput.style.display = "none";
-  select.addEventListener("change", function(){
-    var isCustom = select.value === "__custom__";
-    customInput.style.display = isCustom ? "block" : "none";
-    if(isCustom) customInput.focus();
-  });
+    var customInput = document.createElement("input");
+    customInput.type = "text";
+    customInput.className = "info-lang-input";
+    customInput.placeholder = "Enter custom language";
+    customInput.style.display = "none";
+    select.addEventListener("change", function(){
+      var isCustom = select.value === "__custom__";
+      customInput.style.display = isCustom ? "block" : "none";
+      if(isCustom) customInput.focus();
+    });
 
-  var addBtn = document.createElement("button");
-  addBtn.type = "button";
-  addBtn.className = "btn small";
-  addBtn.textContent = "+ Add";
-  function addLanguage(){
-    var val = select.value === "__custom__" ? customInput.value.trim() : select.value;
-    if(!val) return;
-    var exists = c.languages.some(function(l){ return l.toLowerCase()===val.toLowerCase(); });
-    if(!exists){
-      c.languages.push(val);
-      save();
+    var addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "btn small primary";
+    addBtn.textContent = "Add";
+    var closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "btn small ghost";
+    closeBtn.textContent = "✕";
+    closeBtn.title = "Close";
+    closeBtn.setAttribute("aria-label", "Close add language");
+    function closeAdd(){ langAddOpenFor = null; renderAll(); }
+    function addLanguage(){
+      var val = select.value === "__custom__" ? customInput.value.trim() : select.value;
+      if(!val) return;
+      var exists = c.languages.some(function(l){ return l.toLowerCase()===val.toLowerCase(); });
+      langAddOpenFor = null;
+      if(!exists){
+        c.languages.push(val);
+        save();
+        playAdd();
+      }
       renderAll();
-      playAdd();
     }
-  }
-  addBtn.addEventListener("click", addLanguage);
-  customInput.addEventListener("keydown", function(e){
-    if(e.key==="Enter"){ e.preventDefault(); addLanguage(); }
-  });
+    addBtn.addEventListener("click", addLanguage);
+    closeBtn.addEventListener("click", closeAdd);
+    customInput.addEventListener("keydown", function(e){
+      if(e.key==="Enter"){ e.preventDefault(); addLanguage(); }
+      else if(e.key==="Escape") closeAdd();
+    });
+    select.addEventListener("keydown", function(e){ if(e.key==="Escape") closeAdd(); });
 
-  addRow.appendChild(select);
-  addRow.appendChild(customInput);
-  addRow.appendChild(addBtn);
-  langCard.appendChild(addRow);
+    addRow.appendChild(select);
+    addRow.appendChild(addBtn);
+    addRow.appendChild(closeBtn);
+    addRow.appendChild(customInput);
+    langCard.appendChild(addRow);
+  }
 
   panel.appendChild(langCard);
 
