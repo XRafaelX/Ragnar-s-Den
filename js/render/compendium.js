@@ -10,6 +10,7 @@ import { openInfoModal } from "../ui/info-modal.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL } from "../data/progression.js";
 import { FEATS_CATALOG } from "../data/feats.js";
+import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_DETAILS } from "../data/alignments.js";
 import { RACES } from "../data/races.js";
 import { RACE_DATA, raceAsiText, raceAsiShort, raceSpeedText } from "../data/race-data.js";
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, BACKGROUND_LANGUAGES, BACKGROUND_TOOLS } from "../data/backgrounds.js";
@@ -19,7 +20,7 @@ import { classFeatureList, escapeHtml } from "../core/helpers.js";
 
 /* ---------------- Compendium ----------------
    A read-only reference (home screen) for classes, subclasses, races,
-   backgrounds and feats,
+   backgrounds, feats and alignments,
    in the same browse page as the Armory and Spellbook. Tapping an entry
    opens its details instead of adding it to anyone. The Subclasses tab's
    + makes a custom (homebrew) subclass: pick the class, name it and list
@@ -175,6 +176,26 @@ function showBackground(name){
       ["Languages", backgroundLanguages(name)]
     ]));
     if(info && info.feature && info.feature.name) block(body, "Feature", featureList([info.feature]));
+  });
+}
+
+/* A 3×3 alignment grid with this one lit up. */
+function alignmentGrid(name){
+  var html = "<div class='cmp-align-grid' role='img' aria-label='"+escapeHtml(name)+" on the alignment grid'>";
+  ["Good","Neutral","Evil"].forEach(function(m){
+    ["Lawful","Neutral","Chaotic"].forEach(function(o){
+      var cell = o==="Neutral" && m==="Neutral" ? "True Neutral" : o+" "+m;
+      html += "<span class='cmp-align-cell"+(cell===name ? " on" : "")+"'>"+escapeHtml(cell.replace(" ", "\u00a0"))+"</span>";
+    });
+  });
+  return html+"</div>";
+}
+
+function showAlignment(name){
+  var d = ALIGNMENT_DETAILS[name] || {};
+  openInfoModal(name, function(body){
+    block(body, "", "<p class='cmp-lead'>"+escapeHtml(ALIGNMENT_INFO[name]||"")+"</p>"+alignmentGrid(name));
+    block(body, "", facts([["Typical of", d.examples], ["Playing it", d.tip]]));
   });
 }
 
@@ -520,6 +541,27 @@ function backgroundSection(){
   return section;
 }
 
+/* Grouped Good / Neutral / Evil (the data keeps them in one list). */
+function alignmentSection(){
+  var groups = {"Good":[], "Neutral":[], "Evil":[]}, data = {};
+  (ALIGNMENTS.Alignment||[]).forEach(function(n){
+    var d = ALIGNMENT_DETAILS[n] || {};
+    (groups[d.morality] || groups.Neutral).push(n);
+    data[n] = {text:ALIGNMENT_INFO[n]||"", d:d};
+  });
+  return {
+    key:"alignments", label:"Alignments", searchPlaceholder:"Search alignments…",
+    groups:groups, data:data,
+    renderSub:function(name, x){ return x.text; },
+    renderRight:function(name, x){
+      var axes = x.d.order===x.d.morality ? x.d.order : x.d.order+" · "+x.d.morality; // True Neutral: just "Neutral"
+      return [x.d.order ? axes : "", x.d.morality==="Evil" ? "Ask your DM" : ""];
+    },
+    searchText:function(name, x){ return name+" "+x.text+" "+(x.d.examples||""); },
+    onAdd:function(name){ showAlignment(name); return false; }
+  };
+}
+
 function featSection(){
   var groups = {}, data = {};
   FEATS_CATALOG.slice().sort(function(a, b){ return a.name.localeCompare(b.name); }).forEach(function(f){
@@ -549,7 +591,7 @@ var CREATE_TAB = {subclass:1, race:2, background:3};
 export function openCompendium(opts){
   opts = opts || {};
   var create = opts.create || (opts.newSubclassFor ? "subclass" : null);
-  var sections = [classSection(), subclassSection(), raceSection(), backgroundSection(), featSection()];
+  var sections = [classSection(), subclassSection(), raceSection(), backgroundSection(), featSection(), alignmentSection()];
   openCatalogPicker({
     sections:sections,
     initialSection: create ? CREATE_TAB[create] : 0,

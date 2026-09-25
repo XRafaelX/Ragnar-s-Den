@@ -152,3 +152,11 @@
 @media (max-width:560px){ .cmp-form-row-4{grid-template-columns:1fr 1fr;} }
 /* The wizard's "create a homebrew race/background" note sits under the picker. */
 #wizard-body .lu-custom-note{margin-top:14px;}
+
+/* Alignment details: the 3×3 grid with this alignment lit up. */
+.cmp-align-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;max-width:360px;margin-top:4px;}
+.cmp-align-cell{
+  text-align:center;font-size:11px;padding:8px 4px;border-radius:6px;line-height:1.2;
+  border:1px solid var(--rule);color:var(--text-on-parch-dim);background:rgba(0,0,0,.12);
+}
+.cmp-align-cell.on{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 28%, transparent);color:#fff;font-weight:700;}
