@@ -565,7 +565,8 @@ function finish(){
   var feat = null;
   if(t.asi && lu.asiMode==="feat"){
     var f = FEATS_CATALOG.find(function(x){ return x.name===lu.featName; });
-    feat = {id: uid(), name: f.name, prerequisite: f.prerequisite, category: f.category, summary: f.summary, description: f.description, source: "SRD"};
+    feat = {id: uid(), name: f.name, prerequisite: f.prerequisite, category: f.category, summary: f.summary, description: f.description, source: f.custom ? "Custom" : "SRD"};
+    if(f.custom) feat.homebrewId = f.id; // linked to the Compendium entry
     c.feats.push(feat);
     record.featId = feat.id;
   } else if(t.asi){

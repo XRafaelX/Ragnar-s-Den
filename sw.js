@@ -1,4 +1,4 @@
-var CACHE_NAME = "vault-and-vellum-v15";
+var CACHE_NAME = "vault-and-vellum-v16";
 var ASSETS = [
   "./",
   "./index.html",
@@ -37,6 +37,7 @@ var ASSETS = [
   "./js/bootstrap.bundle.min.js",
   "./js/app.js",
   "./js/core/character.js",
+  "./js/core/custom-features.js",
   "./js/core/custom-homebrew.js",
   "./js/core/custom-subclasses.js",
   "./js/core/helpers.js",
@@ -65,7 +66,6 @@ var ASSETS = [
   "./js/render/panels/abilities.js",
   "./js/render/panels/armor-picker.js",
   "./js/render/panels/feat-picker.js",
-  "./js/render/panels/feature-modal.js",
   "./js/render/panels/features.js",
   "./js/render/panels/infusions.js",
   "./js/render/panels/information.js",

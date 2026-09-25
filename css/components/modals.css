@@ -27,7 +27,7 @@
 .rd-modal-close:hover{
   color:var(--text-on-parch);background:rgba(255,255,255,0.08);
 }
-#feat-modal-body, #feature-modal-body{
+#feat-modal-body{
   overflow-y:auto;flex:1;
 }
 .rd-modal h4{font-family:var(--serif);margin:0 0 10px;font-weight:normal;}

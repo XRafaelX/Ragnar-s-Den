@@ -364,7 +364,8 @@ function applyRaceChoices(c){
   });
   if(def.feat){
     var f = FEATS_CATALOG.find(function(x){ return x.name===rc.feat; });
-    if(f) c.feats.push({id:uid(), name:f.name, prerequisite:f.prerequisite, category:f.category, summary:f.summary, description:f.description, source:"SRD"});
+    if(f) c.feats.push({id:uid(), name:f.name, prerequisite:f.prerequisite, category:f.category, summary:f.summary, description:f.description,
+      source:f.custom ? "Custom" : "SRD", homebrewId:f.custom ? f.id : undefined});
   }
 }
 

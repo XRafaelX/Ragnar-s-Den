@@ -30,6 +30,12 @@
 .cmp-sub-link span{font-size:12px;color:var(--text-on-parch-dim);}
 .cmp-desc{font-size:13px;line-height:1.6;white-space:pre-line;margin:0;}
 .cmp-back{margin-top:4px;}
+/* Feat or feature opened from a sheet: "Add to <character>". */
+.cmp-give-row{display:flex;justify-content:flex-end;margin-top:4px;}
+.cmp-give-row .btn{display:inline-flex;align-items:center;gap:6px;}
+.cmp-give-row .btn svg{width:14px;height:14px;}
+/* Feats tab +: feat or feature. */
+.cmp-kind-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
 
 /* Custom subclass: tag + Edit/Delete in its detail view. */
 .cmp-custom-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;}

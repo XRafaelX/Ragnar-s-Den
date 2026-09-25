@@ -1,8 +1,9 @@
 import { save } from "../../core/state.js";
 import { getAllCharacterFeatures, unseenUnlockCount } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { openFeatPicker, openFeatEditor } from "./feat-picker.js";
-import { openFeatureModal } from "./feature-modal.js";
+import { openFeatEditor } from "./feat-picker.js";
+import { openCompendium } from "../compendium.js";
+import { getCustomEntry } from "../../core/custom-features.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { playDelete } from "../../ui/sound.js";
 import { renderInfusionsCard } from "./infusions.js";
@@ -11,7 +12,9 @@ import { renderInfusionsCard } from "./infusions.js";
    One list for everything the character has: class, subclass, racial and
    background features, feats and custom entries, with one search and
    category filters. Feats used to have their own card as well, which
-   showed each feat twice. */
+   showed each feat twice. Custom feats and features are made in the
+   Compendium's Feats tab (so they can be reused); the character holds a
+   linked copy. */
 var featureCategoryFilter = "all";
 var featureSearchQuery = "";
 
@@ -51,16 +54,13 @@ export function renderFeaturesPanel(c){
   dirHeader.innerHTML = '<span style="font-size:12px;color:var(--text-on-parch-dim);">Everything your character can do</span>';
   var headerBtns = document.createElement("div");
   headerBtns.className = "ff-header-btns";
-  var addFeatBtn = document.createElement("button");
-  addFeatBtn.className = "btn small primary";
-  addFeatBtn.textContent = "+ Add feat";
-  addFeatBtn.addEventListener("click", function(){ openFeatPicker(c); });
-  headerBtns.appendChild(addFeatBtn);
-  var addCustomFeatureBtn = document.createElement("button");
-  addCustomFeatureBtn.className = "btn small";
-  addCustomFeatureBtn.textContent = "+ Custom feature";
-  addCustomFeatureBtn.addEventListener("click", function(){ openFeatureModal(c); });
-  headerBtns.appendChild(addCustomFeatureBtn);
+  // One way in: the Compendium's Feats tab lists feats (built-in and
+  // custom) and custom features to add, and its + makes new ones.
+  var addBtn = document.createElement("button");
+  addBtn.className = "btn small primary";
+  addBtn.textContent = "+ Add feat or feature";
+  addBtn.addEventListener("click", function(){ openCompendium({tab:"feat", forCharacter:c}); });
+  headerBtns.appendChild(addBtn);
   dirHeader.appendChild(headerBtns);
   featDirCard.appendChild(dirHeader);
 
@@ -141,7 +141,7 @@ export function renderFeaturesPanel(c){
         var browseBtn = document.createElement("button");
         browseBtn.className = "btn small";
         browseBtn.textContent = "+ Browse feats";
-        browseBtn.addEventListener("click", function(){ openFeatPicker(c); });
+        browseBtn.addEventListener("click", function(){ openCompendium({tab:"feat", forCharacter:c}); });
         emptyDiv.appendChild(browseBtn);
       }
       else emptyDiv.textContent = "Nothing in this category yet.";
@@ -180,22 +180,30 @@ export function renderFeaturesPanel(c){
       top.appendChild(titleGrp);
 
       if(item.isCustom && item.featureObj){
+        var libEntry = item.featureObj.homebrewId ? getCustomEntry("feature", item.featureObj.homebrewId) : null;
         var actions = document.createElement("div");
         actions.className = "ff-actions";
 
         var editBtn = document.createElement("button");
         editBtn.className = "ff-action-btn";
         editBtn.textContent = "Edit";
+        editBtn.title = libEntry ? "Edit in the Compendium (every character with it updates)" : "Edit and save it to the Compendium";
         editBtn.addEventListener("click", function(){
-          openFeatureModal(c, item.featureObj);
+          // Not in the Compendium (made before it kept them, or deleted
+          // there): the form starts from this copy and links it on save.
+          openCompendium(libEntry ? {edit:{kind:"feature", id:libEntry.id}, forCharacter:c}
+                                  : {create:"feature", forCharacter:c, from:item.featureObj});
         });
         actions.appendChild(editBtn);
 
         var delBtn = document.createElement("button");
         delBtn.className = "ff-action-btn danger";
-        delBtn.textContent = "Delete";
+        delBtn.textContent = "Remove";
+        delBtn.title = "Remove from " + (c.name || "this character");
         delBtn.addEventListener("click", function(){
-          confirmDialog("Delete " + item.name + "?", "Delete this custom feature?", function(){
+          confirmDialog("Remove " + item.name + "?",
+            libEntry ? "It's removed from " + (c.name || "this character") + " but stays in the Compendium."
+                     : "It isn't saved in the Compendium, so it will be gone for good.", function(){
             c.features = c.features.filter(function(f){ return f.id !== item.featureObj.id; });
             save();
             renderAll();
@@ -210,9 +218,17 @@ export function renderFeaturesPanel(c){
         var editFeatBtn = document.createElement("button");
         editFeatBtn.className = "ff-action-btn";
         editFeatBtn.textContent = "Edit";
-        editFeatBtn.title = "Edit feat details";
+        var featEntry = item.featObj.homebrewId ? getCustomEntry("feat", item.featObj.homebrewId) : null;
+        var customFeat = featEntry || item.featObj.source==="Custom";
+        editFeatBtn.title = featEntry ? "Edit in the Compendium (every character with it updates)"
+          : customFeat ? "Edit and save it to the Compendium" : "Edit feat details";
         editFeatBtn.addEventListener("click", function(){
-          openFeatEditor(c, item.featObj, (c.feats||[]).indexOf(item.featObj));
+          // Custom feats live in the Compendium (one made before it kept
+          // them starts the form from this copy and is linked on save);
+          // built-in feats are edited on this sheet only.
+          if(featEntry) openCompendium({edit:{kind:"feat", id:featEntry.id}, forCharacter:c});
+          else if(customFeat) openCompendium({create:"feat", forCharacter:c, from:item.featObj});
+          else openFeatEditor(c, item.featObj, (c.feats||[]).indexOf(item.featObj));
         });
         actions.appendChild(editFeatBtn);
         var rmFeatBtn = document.createElement("button");

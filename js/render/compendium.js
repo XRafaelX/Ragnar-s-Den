@@ -16,16 +16,21 @@ import { RACE_DATA, raceAsiText, raceAsiShort, raceSpeedText } from "../data/rac
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, BACKGROUND_LANGUAGES, BACKGROUND_TOOLS } from "../data/backgrounds.js";
 import { ABILITIES, SKILLS, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { getHomebrewEntry, saveHomebrew, deleteHomebrew, homebrewNameProblem, charactersUsingHomebrew } from "../core/custom-homebrew.js";
-import { classFeatureList, escapeHtml } from "../core/helpers.js";
+import { FEATURE_SOURCES, FEAT_CATEGORIES, getCustom, getCustomEntry, saveCustom, deleteCustom, customNameProblem,
+  charactersWithCustom, characterHasCustom, addCustomToCharacter, linkCharacterCopy } from "../core/custom-features.js";
+import { classFeatureList, escapeHtml, uid } from "../core/helpers.js";
+import { save } from "../core/state.js";
 
 /* ---------------- Compendium ----------------
    A read-only reference (home screen) for classes, subclasses, races,
-   backgrounds, feats and alignments,
+   backgrounds, feats, custom features and alignments,
    in the same browse page as the Armory and Spellbook. Tapping an entry
    opens its details instead of adding it to anyone. The Subclasses tab's
    + makes a custom (homebrew) subclass: pick the class, name it and list
    its features with the level each is gained; it then shows up for
-   characters in level-up and creation like any other. */
+   characters in level-up and creation like any other. The Feats tab's +
+   makes a custom feat or a custom feature, made here once and then given
+   to any character (the sheet's buttons open it for that character). */
 
 var ABILITY_NAME = {};
 ABILITIES.forEach(function(a){ ABILITY_NAME[a[0]] = a[1]; });
@@ -196,16 +201,6 @@ function showAlignment(name){
   openInfoModal(name, function(body){
     block(body, "", "<p class='cmp-lead'>"+escapeHtml(ALIGNMENT_INFO[name]||"")+"</p>"+alignmentGrid(name));
     block(body, "", facts([["Typical of", d.examples], ["Playing it", d.tip]]));
-  });
-}
-
-function showFeat(feat){
-  openInfoModal(feat.name, function(body){
-    block(body, "", "<p class='cmp-lead'>"+escapeHtml(feat.summary||"")+"</p>"+facts([
-      ["Category", feat.category],
-      ["Prerequisite", feat.prerequisite && feat.prerequisite!=="None" ? feat.prerequisite : "None"]
-    ]));
-    block(body, "Full description", "<p class='cmp-desc'>"+escapeHtml(feat.description||"")+"</p>");
   });
 }
 
@@ -562,51 +557,53 @@ function alignmentSection(){
   };
 }
 
-function featSection(){
-  var groups = {}, data = {};
-  FEATS_CATALOG.slice().sort(function(a, b){ return a.name.localeCompare(b.name); }).forEach(function(f){
-    (groups[f.category] = groups[f.category] || []).push(f.name);
-    data[f.name] = f;
-  });
-  return {
-    key:"feats", label:"Feats", searchPlaceholder:"Search feats…",
-    groups:groups, data:data,
-    renderSub:function(name, d){ return d.summary || ""; },
-    renderRight:function(name, d){ return [d.prerequisite && d.prerequisite!=="None" ? "Requires" : "", d.prerequisite && d.prerequisite!=="None" ? d.prerequisite : ""]; },
-    searchText:function(name, d){ return name+" "+(d.summary||"")+" "+(d.category||""); },
-    onAdd:function(name, d){ showFeat(d); return false; }
-  };
-}
-
 /* opts (all optional):
-     create          "subclass" | "race" | "background": open straight into
-                     that tab's custom form (from level-up or the wizard).
+     create          "subclass" | "race" | "background" | "feat" | "feature":
+                     open straight into that tab's custom form (from
+                     level-up, the wizard, the feat picker or the sheet).
+     tab             the same kinds: open on that tab's list instead.
      forClass        with create:"subclass", the class to pre-pick.
      onSaved         function(entry) called once after that form creates it.
      onClose         called when the Compendium is closed.
+     forCharacter    a character, from its sheet: feats and custom features
+                     offer "Add to <name>", and one created now is added to
+                     it (then the Compendium closes, back to the sheet).
+     edit            {kind:"feat"|"feature", id}: open that custom entry's
+                     edit form (closes after saving).
+     from            with create:"feat"/"feature", a copy already on
+                     forCharacter (made before the Compendium kept them) to
+                     pre-fill from; it's linked to the new entry.
    (newSubclassFor / onSubclassSaved are the older names for
     create:"subclass" + forClass / onSaved.) */
 var presetClass = null, savedHook = null, savedHookKind = null;
-var CREATE_TAB = {subclass:1, race:2, background:3};
+var CREATE_TAB = {subclass:1, race:2, background:3, feat:4, feature:4};
 export function openCompendium(opts){
   opts = opts || {};
-  var create = opts.create || (opts.newSubclassFor ? "subclass" : null);
+  var create = opts.create || (opts.newSubclassFor ? "subclass" : null) || (opts.edit ? opts.edit.kind : null);
+  giveTarget = opts.forCharacter || null;
   var sections = [classSection(), subclassSection(), raceSection(), backgroundSection(), featSection(), alignmentSection()];
   openCatalogPicker({
     sections:sections,
-    initialSection: create ? CREATE_TAB[create] : 0,
+    initialSection: CREATE_TAB[create || opts.tab] || 0,
     onClose:function(){
       presetClass = null; savedHook = null; savedHookKind = null;
+      giveTarget = null; formPreset = null;
       if(opts.onClose) opts.onClose();
     }
   });
   if(create){
+    // Set after the picker's first build of the form, which would
+    // otherwise use these up before the custom view is shown.
     presetClass = opts.forClass || opts.newSubclassFor || null;
     savedHook = opts.onSaved || opts.onSubclassSaved || null;
     savedHookKind = create;
+    if(create==="feat" || create==="feature")
+      formPreset = {kind:create, edit:opts.edit ? opts.edit.id : null, from:opts.from || null, direct:true};
     showCatalogCustomView();
   }
 }
+
+function closeCompendium(){ document.getElementById("catalog-back").click(); }
 
 /* ---- Homebrew races and backgrounds (the Races / Backgrounds tabs' +) ----
    Same layout as the custom subclass form: a form card with a live
@@ -955,4 +952,300 @@ function buildBackgroundForm(container){
       (d.feature.name && d.feature.name.trim() ? "<div class='cmp-preview-feat'><div><strong>"+escapeHtml(d.feature.name)+"</strong>"+(d.feature.text ? "<p>"+escapeHtml(d.feature.text)+"</p>" : "")+"</div></div>" : ""));
   }
   update();
+}
+
+/* ---- Feats tab: built-in feats, custom feats and custom features ----
+   The tab's + makes either a custom feat (a talent you choose, e.g.
+   instead of an Ability Score Improvement; it joins the feat lists in the
+   feat picker, level-up and the wizard) or a custom feature (something a
+   class, race, background or item gives you, given from a sheet). Both
+   are kept in this browser (core/custom-features.js). Opened from a
+   sheet, giveTarget is that character: entries offer "Add to <name>" and
+   a newly created one goes straight onto it. */
+var CUSTOM_FEATURES_GROUP = "Custom features";
+var giveTarget = null;     // character the Compendium was opened for
+var formPreset = null;     // {kind, edit, from, direct}: used by the next form build
+var featSectionRef = null;
+
+function targetName(){ return giveTarget && giveTarget.name || "this character"; }
+function hasFeatNamed(c, name){
+  var lower = name.toLowerCase();
+  return (c.feats||[]).some(function(f){ return (f.name||"").toLowerCase()===lower; });
+}
+function hasPrereq(f){ return f.prerequisite && f.prerequisite!=="None"; }
+
+function fillFeatSection(section){
+  var byCat = {}, data = {};
+  FEATS_CATALOG.slice().sort(function(a, b){ return a.name.localeCompare(b.name); }).forEach(function(f){
+    (byCat[f.category] = byCat[f.category] || []).push(f.name);
+    data[f.name] = {kind:"feat", entry:f};
+  });
+  var groups = {};
+  FEAT_CATEGORIES.concat(Object.keys(byCat)).forEach(function(cat){ if(byCat[cat] && !groups[cat]) groups[cat] = byCat[cat]; });
+  var features = getCustom("feature").sort(function(a, b){ return a.name.localeCompare(b.name); });
+  if(features.length){
+    groups[CUSTOM_FEATURES_GROUP] = features.map(function(e){
+      var key = data[e.name] ? e.name+" (feature)" : e.name; // may share a feat's name
+      data[key] = {kind:"feature", entry:e};
+      return key;
+    });
+  }
+  section.groups = groups;
+  section.data = data;
+}
+
+function featSection(){
+  var section = {
+    key:"feats", label:"Feats", searchPlaceholder:"Search feats and custom features…",
+    renderSub:function(name, d){ return d.kind==="feat" ? d.entry.summary||"" : d.entry.text||""; },
+    renderRight:function(name, d){
+      var e = d.entry;
+      if(d.kind==="feature"){
+        var onIt = giveTarget && characterHasCustom("feature", giveTarget, e);
+        return [e.isPassive ? "Passive" : "Active", onIt ? "On "+targetName() : e.source];
+      }
+      var owned = giveTarget && hasFeatNamed(giveTarget, e.name);
+      return [e.custom ? "Custom" : (hasPrereq(e) ? "Requires" : ""),
+              owned ? "On "+targetName() : (hasPrereq(e) ? (e.custom ? "Requires " : "")+e.prerequisite : "")];
+    },
+    searchText:function(name, d){
+      var e = d.entry;
+      return d.kind==="feat"
+        ? name+" "+(e.summary||"")+" "+(e.category||"")+" "+(e.prerequisite||"")+(e.custom ? " custom homebrew" : "")
+        : name+" "+e.source+" "+(e.text||"")+" custom feature homebrew "+(e.isPassive ? "passive" : "active");
+    },
+    onAdd:function(name, d){ if(d.kind==="feat") showFeat(d.entry); else showCustomFeature(d.entry); return false; },
+    renderCustomForm:function(container){ buildCustomForm(container); }
+  };
+  fillFeatSection(section);
+  featSectionRef = section;
+  return section;
+}
+
+function afterCustomChange(){
+  if(featSectionRef) fillFeatSection(featSectionRef);
+  refreshCatalog();
+  renderAll(); // sheets show the new or updated copies
+}
+
+function openCustomForm(preset){ formPreset = preset; showCatalogCustomView(); }
+
+function confirmDeleteCustom(kind, id){
+  var entry = getCustomEntry(kind, id);
+  if(!entry) return;
+  var users = charactersWithCustom(kind, entry);
+  confirmDialog("Delete "+entry.name+"?",
+    users.length ? users.map(function(c){ return c.name||"A character"; }).join(", ")+(users.length>1 ? " have" : " has")+" it and will keep their copy; it just won't be in the Compendium anymore."
+                 : "This custom "+kind+" will be removed from the Compendium.",
+    function(){
+      deleteCustom(kind, id);
+      afterCustomChange();
+      playDelete();
+      showActionToast("Deleted "+entry.name+".");
+    });
+}
+
+/* "Add to <character>" at the bottom of a detail view. */
+function giveRow(body, alreadyHas, onGive){
+  if(!giveTarget) return;
+  var row = document.createElement("div");
+  row.className = "cmp-give-row";
+  var give = document.createElement("button");
+  give.type = "button";
+  give.className = "btn primary";
+  if(alreadyHas){
+    give.disabled = true;
+    give.textContent = targetName()+" already has it";
+  } else {
+    give.innerHTML = makePlusSvg()+"Add to "+escapeHtml(targetName());
+    give.addEventListener("click", function(){ closeInfo(); onGive(); });
+  }
+  row.appendChild(give);
+  body.appendChild(row);
+}
+
+/* Stays open so several can be added in a row; the list marks what the
+   character already has. */
+function gave(name){
+  playAdd();
+  showActionToast("Added "+name+" to "+targetName()+".");
+  afterCustomChange();
+}
+
+function showFeat(feat){
+  openInfoModal(feat.name, function(body){
+    if(feat.custom) customBar(body, function(){ openCustomForm({kind:"feat", edit:feat.id}); }, function(){ confirmDeleteCustom("feat", feat.id); });
+    var rows = [["Category", feat.category], ["Prerequisite", hasPrereq(feat) ? feat.prerequisite : "None"]];
+    if(feat.custom){
+      var users = charactersWithCustom("feat", feat).map(function(c){ return c.name || "A character"; });
+      rows.push(["Characters", users.join(", ") || "None yet"]);
+    }
+    block(body, "", "<p class='cmp-lead'>"+escapeHtml(feat.summary||"")+"</p>"+facts(rows));
+    block(body, "Full description", "<p class='cmp-desc'>"+escapeHtml(feat.description||"")+"</p>");
+    giveRow(body, giveTarget && hasFeatNamed(giveTarget, feat.name), function(){
+      var entry = feat.custom && getCustomEntry("feat", feat.id);
+      if(entry) addCustomToCharacter("feat", giveTarget, entry);
+      else {
+        if(!giveTarget.feats) giveTarget.feats = [];
+        giveTarget.feats.push({id:uid(), name:feat.name, prerequisite:feat.prerequisite||"None", category:feat.category||"General",
+          summary:feat.summary||"", description:feat.description||"", source:"SRD"});
+        save();
+      }
+      gave(feat.name);
+    });
+  });
+}
+
+function showCustomFeature(entry){
+  openInfoModal(entry.name, function(body){
+    customBar(body, function(){ openCustomForm({kind:"feature", edit:entry.id}); }, function(){ confirmDeleteCustom("feature", entry.id); });
+    var users = charactersWithCustom("feature", entry).map(function(c){ return c.name || "A character"; });
+    block(body, "", (entry.text ? "<p class='cmp-desc'>"+escapeHtml(entry.text)+"</p>" : "<p class='cmp-muted'>No description.</p>"));
+    block(body, "", facts([
+      ["Kind", "Custom feature"],
+      ["Source", entry.source],
+      ["Type", entry.isPassive ? "Passive (always on)" : "Active (you use it)"],
+      ["Characters", users.join(", ") || "None yet"]
+    ]));
+    giveRow(body, giveTarget && characterHasCustom("feature", giveTarget, entry), function(){
+      addCustomToCharacter("feature", giveTarget, entry);
+      gave(entry.name);
+    });
+  });
+}
+
+var TYPE_ITEMS = [{value:"passive", label:"Passive (always on)"}, {value:"active", label:"Active (you use it)"}];
+var KIND_HINT = {
+  feat: "A talent a character chooses, usually instead of an Ability Score Improvement. It's offered with the other feats when adding a feat, levelling up or making a character.",
+  feature: "Something a class, race, background or item gives a character, like a trait or a passive bonus. Add it from their sheet's Features & Feats tab."
+};
+
+function buildCustomForm(container){
+  var p = formPreset || {};
+  formPreset = null; // used up: leaving the form resets it to "new"
+  var existing = p.edit ? getCustomEntry(p.kind, p.edit) : null;
+  var from = existing ? null : p.from || null;
+  var src = existing || from || {};
+  var d = {
+    kind: p.kind || "feat",
+    name: src.name || "",
+    text: (src.description!=null ? src.description : src.text) || "",
+    // feat
+    category: FEAT_CATEGORIES.indexOf(src.category)!==-1 ? src.category : "General",
+    prerequisite: src.prerequisite && src.prerequisite!=="None" ? src.prerequisite : "",
+    summary: existing ? existing.summary||"" : "",
+    // feature
+    source: FEATURE_SOURCES.indexOf(src.source)!==-1 ? src.source : "Passive",
+    isPassive: src.isPassive!=null ? !!src.isPassive : true
+  };
+  render();
+
+  function render(){
+    container.innerHTML = "";
+    var kind = d.kind;
+    var intro = existing ? "Changes apply to every character that has it."
+      : giveTarget ? "It's added to "+targetName()+" and kept in the Compendium, so other characters can take it too."
+      : "Saved in this browser, so any character can take it.";
+    var shell = homebrewShell(container, existing ? "Edit "+existing.name : "Create a "+kind, intro);
+
+    // Feat or feature (fixed once it exists, or when re-saving a copy).
+    var kindSec = shell.section(existing || from ? "Kind: "+kind : "What are you making?");
+    if(!existing && !from){
+      var pills = document.createElement("div");
+      pills.className = "cmp-kind-row";
+      [["feat","Feat"],["feature","Feature"]].forEach(function(k){
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "ff-pill"+(kind===k[0] ? " active" : "");
+        b.textContent = k[1];
+        b.setAttribute("aria-pressed", kind===k[0] ? "true" : "false");
+        b.addEventListener("click", function(){ if(d.kind!==k[0]){ d.kind = k[0]; render(); } });
+        pills.appendChild(b);
+      });
+      kindSec.appendChild(pills);
+    }
+    var hint = document.createElement("p");
+    hint.className = "cmp-form-hint";
+    hint.textContent = KIND_HINT[kind];
+    kindSec.appendChild(hint);
+
+    var basics = shell.section("Basics");
+    var nameF = textField((kind==="feat" ? "Feat" : "Feature")+" name *", d.name,
+      kind==="feat" ? "e.g. Shield Slam, Shadow Walker" : "e.g. Relentless Rage, Fey Gift, Cloak of Embers");
+    nameF.input.addEventListener("input", function(){ d.name = nameF.input.value; update(); });
+    basics.appendChild(nameF.field);
+    var row = document.createElement("div"); row.className = "cmp-form-row";
+    if(kind==="feat"){
+      row.appendChild(pickerField("Category", themedPicker({
+        key:"cmp:feat:category", search:false, groups:{"":FEAT_CATEGORIES}, value:d.category, placeholder:"Category", ariaLabel:"Category",
+        onPick:function(v){ d.category = v; update(); }
+      })));
+      var reqF = textField("Prerequisite (optional)", d.prerequisite, "e.g. Strength 13 or higher");
+      reqF.input.addEventListener("input", function(){ d.prerequisite = reqF.input.value; update(); });
+      row.appendChild(reqF.field);
+    } else {
+      row.appendChild(pickerField("Source", themedPicker({
+        key:"cmp:feature:source", search:false, groups:{"":FEATURE_SOURCES}, value:d.source, placeholder:"Source", ariaLabel:"Source",
+        onPick:function(v){ d.source = v; update(); }
+      })));
+      row.appendChild(pickerField("Type", themedPicker({
+        key:"cmp:feature:type", search:false, groups:{"":TYPE_ITEMS}, value:d.isPassive ? "passive" : "active", placeholder:"Type", ariaLabel:"Type",
+        onPick:function(v){ d.isPassive = v==="passive"; update(); }
+      })));
+    }
+    basics.appendChild(row);
+
+    var descSec = shell.section("Description");
+    if(kind==="feat"){
+      var sumF = textField("Summary (optional)", d.summary, "One line for the feat lists; the description's start is used if empty");
+      sumF.input.addEventListener("input", function(){ d.summary = sumF.input.value; update(); });
+      descSec.appendChild(sumF.field);
+    }
+    var textF = textField(kind==="feat" ? "Benefits *" : "What it does", d.text,
+      kind==="feat" ? "What the feat grants: ability increases, new actions, bonuses…" : "The rules: bonuses, how it's used, how often, when it recharges…", true);
+    textF.input.rows = 6;
+    textF.input.addEventListener("input", function(){ d.text = textF.input.value; update(); });
+    descSec.appendChild(textF.field);
+
+    shell.actions(existing ? "Save changes" : giveTarget ? "Create and add to "+targetName() : "Create "+kind, function(){
+      var name = (d.name||"").trim();
+      if(!name){ showActionToast("Give your "+kind+" a name.", true); nameF.input.focus(); return; }
+      var clash = customNameProblem(kind, name, existing && existing.id);
+      if(clash){ showActionToast(clash, true); nameF.input.focus(); return; }
+      if(kind==="feat" && !d.text.trim()){ showActionToast("Describe what the feat grants.", true); textF.input.focus(); return; }
+      var saved = saveCustom(kind, kind==="feat"
+        ? {id:existing && existing.id, name:name, category:d.category, prerequisite:d.prerequisite, summary:d.summary, description:d.text}
+        : {id:existing && existing.id, name:name, source:d.source, isPassive:d.isPassive, text:d.text});
+      playAdd();
+      if(!existing && giveTarget){
+        // From a sheet: onto that character (relinking the copy it was
+        // made from, if any), then back to the sheet.
+        var copies = giveTarget[kind==="feat" ? "feats" : "features"] || [];
+        if(from && copies.indexOf(from)!==-1) linkCharacterCopy(kind, from, saved);
+        else addCustomToCharacter(kind, giveTarget, saved);
+        showActionToast("Added "+saved.name+" to "+targetName()+". It's in the Compendium for other characters too.");
+        afterCustomChange();
+        closeCompendium();
+        return;
+      }
+      afterCustomChange();
+      showActionToast((existing ? "Saved " : "Created ")+saved.name+"."+(existing || kind!=="feat" ? "" : " It's now in the feat lists."));
+      if(p.direct) closeCompendium();
+    });
+
+    function update(){
+      var tags = kind==="feat"
+        ? "<span class='cmp-tag-class'>"+escapeHtml(d.category)+"</span><span class='cmp-custom-tag'>Custom</span>"+
+          ((d.prerequisite||"").trim() ? "<span class='cmp-tag-muted'>Requires "+escapeHtml(d.prerequisite.trim())+"</span>" : "")
+        : "<span class='cmp-tag-class'>"+escapeHtml(d.source)+"</span><span class='cmp-custom-tag'>Custom</span>"+
+          "<span class='cmp-tag-muted'>"+(d.isPassive ? "Passive" : "Active")+"</span>";
+      var summary = kind==="feat" && (d.summary||"").trim();
+      previewCard(shell.preview,
+        "<div class='cmp-preview-name'>"+escapeHtml((d.name||"").trim() || "Your "+kind)+"</div>"+
+        "<div class='cmp-preview-tags'>"+tags+"</div>"+
+        (summary ? "<p class='cmp-preview-blurb'><strong>"+escapeHtml(summary)+"</strong></p>" : "")+
+        "<p class='cmp-preview-blurb cmp-desc'>"+escapeHtml((d.text||"").trim() || "Its description will show here.")+"</p>");
+    }
+    update();
+  }
 }
