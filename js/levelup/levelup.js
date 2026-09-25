@@ -31,8 +31,9 @@ function abilityName(key){
 }
 function progFor(name){ return CLASS_PROGRESSION[name] || {prereq:[], asiLevels:[4,8,12,16,19], features:{}}; }
 
-export function canLevelUp(c){ return totalLevel(c) < MAX_LEVEL; }
 export function xpForNextLevel(c){ return XP_THRESHOLDS[totalLevel(c)+1]; }
+export function hasXpForNextLevel(c){ return (Number(c.xp)||0) >= xpForNextLevel(c); }
+export function canLevelUp(c){ return totalLevel(c) < MAX_LEVEL && hasXpForNextLevel(c); }
 
 /* Multiclass prerequisites: 13+ in the listed abilities (any one group). */
 export function meetsPrereq(c, className){
@@ -100,8 +101,12 @@ function validate(id){
 
 /* ---- Open / navigate ---- */
 export function openLevelUp(c){
-  if(!canLevelUp(c)){
+  if(totalLevel(c) >= MAX_LEVEL){
     showActionToast("Level "+MAX_LEVEL+" is the highest level supported for now.", true);
+    return;
+  }
+  if(!hasXpForNextLevel(c)){
+    showActionToast("You need "+xpForNextLevel(c).toLocaleString()+" XP to reach level "+(totalLevel(c)+1)+".", true);
     return;
   }
   lu = {

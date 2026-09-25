@@ -13,8 +13,8 @@ var customXpOpen = false;
 
 /* ---------------- Experience strip ----------------
    Level badge, XP progress toward the next level, a quick "+XP" field and
-   the Level up button. Level up is always allowed (milestone tables don't
-   track XP) but glows once the XP threshold is reached. XP can't go past
+   the Level up button. Level up unlocks (and glows) only once the XP
+   threshold for the next level is reached. XP can't go past
    what the next level needs (at the level cap: what this level needed);
    you level up to keep earning. */
 export function buildLevelRow(c){
@@ -119,7 +119,8 @@ export function buildLevelRow(c){
   var lvlBtn = document.createElement("button");
   lvlBtn.className = "btn small primary levelup-btn"+(ready ? " ready" : "");
   lvlBtn.innerHTML = atCap ? "Max level" : makeLevelUpSvg() + "Level up";
-  lvlBtn.disabled = atCap;
+  lvlBtn.disabled = !ready;
+  if(!atCap && !ready) lvlBtn.title = "Reach "+next.toLocaleString()+" XP to level up";
   lvlBtn.addEventListener("click", function(){ openLevelUp(c); });
   actions.appendChild(lvlBtn);
   if(c.levelHistory && c.levelHistory.length){
