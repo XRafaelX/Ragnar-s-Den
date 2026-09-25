@@ -1,4 +1,4 @@
-var CACHE_NAME = "vault-and-vellum-v11";
+var CACHE_NAME = "vault-and-vellum-v12";
 var ASSETS = [
   "./",
   "./index.html",
@@ -29,6 +29,7 @@ var ASSETS = [
   "./css/sheet/features.css",
   "./css/sheet/information.css",
   "./css/overlays/catalog.css",
+  "./css/overlays/compendium.css",
   "./css/overlays/wizard.css",
   "./css/sheet/backdrop.css",
   "./css/sheet/levelup.css",
@@ -56,6 +57,7 @@ var ASSETS = [
   "./js/levelup/levelup.js",
   "./js/levelup/level-row.js",
   "./js/render/armory.js",
+  "./js/render/compendium.js",
   "./js/render/home.js",
   "./js/render/panels/abilities.js",
   "./js/render/panels/armor-picker.js",

@@ -1,6 +1,7 @@
 import { openWizard } from "../wizard/wizard-core.js";
 import { openArmory } from "./armory.js";
 import { openSpellbook } from "./spellbook.js";
+import { openCompendium } from "./compendium.js";
 import { openInfoModal } from "../ui/info-modal.js";
 import { toggleDiceTray } from "../dice/dice.js";
 
@@ -44,7 +45,7 @@ function openAbout(){
 }
 
 /* ---- Home hub (the "no character selected" landing screen) ----
-   Kept to New / Spellbook / Armory / About; the character list, export
+   Kept to New / Spellbook / Armory / Compendium / About; the character list, export
    and import already live in the sidebar, so repeating them here would
    just be the same actions in two places. */
 export function setupHomeMenu(){
@@ -52,11 +53,13 @@ export function setupHomeMenu(){
   var spellbookBtn = document.getElementById("home-node-spellbook");
   var armoryBtn = document.getElementById("home-node-armory");
   var aboutBtn = document.getElementById("home-node-about");
+  var compendiumBtn = document.getElementById("home-node-compendium");
 
   newBtn.addEventListener("click", function(){ selectNode(newBtn, openWizard); });
   spellbookBtn.addEventListener("click", function(){ selectNode(spellbookBtn, openSpellbook); });
   armoryBtn.addEventListener("click", function(){ selectNode(armoryBtn, openArmory); });
   aboutBtn.addEventListener("click", function(){ selectNode(aboutBtn, openAbout); });
+  compendiumBtn.addEventListener("click", function(){ selectNode(compendiumBtn, openCompendium); });
 
   document.getElementById("home-center").addEventListener("click", toggleDiceTray);
 }

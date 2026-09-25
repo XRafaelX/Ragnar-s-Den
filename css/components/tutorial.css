@@ -17,7 +17,7 @@
 .tut-spotlight.none{left:50% !important;top:50% !important;width:0 !important;height:0 !important;box-shadow:0 0 0 9999px rgba(8,6,14,.72);}
 
 .tut-pop{
-  position:absolute;width:300px;max-width:calc(100vw - 24px);
+  position:absolute;width:340px;max-width:calc(100vw - 24px);
   background:linear-gradient(180deg, var(--parchment) 0%, var(--ink) 100%);
   border:1px solid var(--rule);border-radius:12px;
   box-shadow:0 16px 40px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
@@ -31,6 +31,9 @@
 .tut-pop p{font-size:13.5px;line-height:1.45;color:var(--text-on-ink-dim);margin:0 0 14px;}
 
 .tut-actions{display:flex;align-items:center;gap:6px;}
+/* Wide enough for Skip, 11 dots, Back and "Let's go" on one line; the
+   buttons never wrap their labels. */
+.tut-actions .btn{white-space:nowrap;flex:none;}
 .tut-skip{margin-right:auto;padding-left:0;}
 .tut-dots{display:flex;gap:4px;margin-right:6px;}
 .tut-dots span{width:6px;height:6px;border-radius:50%;background:color-mix(in srgb, var(--brass) 30%, transparent);transition:background .2s ease, transform .2s ease;}

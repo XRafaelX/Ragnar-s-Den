@@ -1,0 +1,31 @@
+/* Compendium detail views (in the info modal): classes, subclasses, feats. */
+.cmp-block{margin-bottom:16px;}
+.cmp-block:last-child{margin-bottom:0;}
+.cmp-block-title{
+  font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--brass-bright);
+  margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid var(--rule);font-weight:600;
+}
+.cmp-lead{font-size:14px;line-height:1.55;margin:0 0 12px;}
+.cmp-muted{font-size:13px;color:var(--text-on-parch-dim);margin:0;}
+.cmp-facts{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:0;font-size:13px;}
+.cmp-facts dt{color:var(--text-on-parch-dim);}
+.cmp-facts dd{margin:0;}
+.cmp-feature{padding:9px 11px;border-radius:7px;background:rgba(255,255,255,.03);border:1px solid var(--rule);margin-bottom:8px;}
+.cmp-feature-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.cmp-feature-head strong{font-size:13.5px;}
+.cmp-lv{
+  flex:none;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:1px 7px;border-radius:8px;
+  border:1px solid color-mix(in srgb, var(--brass) 60%, transparent);color:var(--brass-bright);
+}
+.cmp-feature p{font-size:12.5px;color:var(--text-on-parch-dim);margin:4px 0 0;line-height:1.5;}
+.cmp-sub-list{display:flex;flex-direction:column;gap:6px;}
+.cmp-sub-link{
+  display:flex;flex-direction:column;gap:2px;text-align:left;cursor:pointer;
+  padding:9px 11px;border-radius:7px;border:1px solid var(--rule);
+  background:rgba(255,255,255,.03);color:var(--text-on-parch);transition:border-color .15s, background .15s;
+}
+.cmp-sub-link:hover{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 10%, transparent);}
+.cmp-sub-link strong{font-size:13.5px;}
+.cmp-sub-link span{font-size:12px;color:var(--text-on-parch-dim);}
+.cmp-desc{font-size:13px;line-height:1.6;white-space:pre-line;margin:0;}
+.cmp-back{margin-top:4px;}

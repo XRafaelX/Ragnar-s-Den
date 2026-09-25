@@ -22,12 +22,14 @@
   background:none;border:none;cursor:pointer;padding:0;
   animation:home-node-pop .55s cubic-bezier(0.175,0.885,0.32,1.275) backwards;
 }
-/* Four nodes on the diagonals. --mx/--my is the midpoint of each node's
-   curved path into the dice when it's picked (see home-chosen). */
-.home-node[data-pos="upper-left"]{--tx:calc(var(--hub-r) * -0.707);--ty:calc(var(--hub-r) * -0.707);--mx:-0.15;--my:-0.85;--spin:-1;animation-delay:.05s;}
-.home-node[data-pos="upper-right"]{--tx:calc(var(--hub-r) * 0.707);--ty:calc(var(--hub-r) * -0.707);--mx:0.15;--my:-0.85;--spin:1;animation-delay:.15s;}
-.home-node[data-pos="lower-right"]{--tx:calc(var(--hub-r) * 0.707);--ty:calc(var(--hub-r) * 0.707);--mx:0.15;--my:0.85;--spin:1;animation-delay:.25s;}
-.home-node[data-pos="lower-left"]{--tx:calc(var(--hub-r) * -0.707);--ty:calc(var(--hub-r) * 0.707);--mx:-0.15;--my:0.85;--spin:-1;animation-delay:.35s;}
+/* Five nodes evenly spaced (72° apart, starting at the top) so every one
+   sits the same distance from the dice. --mx/--my is the midpoint of each
+   node's curved path into the dice when it's picked (see home-chosen). */
+.home-node[data-pos="top"]{--tx:0px;--ty:calc(var(--hub-r) * -1);--mx:0.35;--my:-0.6;--spin:1;animation-delay:.05s;}
+.home-node[data-pos="upper-right"]{--tx:calc(var(--hub-r) * 0.951);--ty:calc(var(--hub-r) * -0.309);--mx:0.75;--my:0.25;--spin:1;animation-delay:.12s;}
+.home-node[data-pos="lower-right"]{--tx:calc(var(--hub-r) * 0.588);--ty:calc(var(--hub-r) * 0.809);--mx:0.1;--my:0.8;--spin:1;animation-delay:.19s;}
+.home-node[data-pos="lower-left"]{--tx:calc(var(--hub-r) * -0.588);--ty:calc(var(--hub-r) * 0.809);--mx:-0.75;--my:0.25;--spin:-1;animation-delay:.26s;}
+.home-node[data-pos="upper-left"]{--tx:calc(var(--hub-r) * -0.951);--ty:calc(var(--hub-r) * -0.309);--mx:-0.35;--my:-0.6;--spin:-1;animation-delay:.33s;}
 
 @keyframes home-node-pop{
   from{opacity:0;transform:translate(-50%,-50%) translate(0,0) scale(.25);}
@@ -72,6 +74,7 @@
 #home-node-new .home-node-circle{background:linear-gradient(135deg, var(--brass) 0%, var(--brass-active) 100%);}
 #home-node-armory .home-node-circle{background:linear-gradient(135deg, #fbbf24 0%, #b45309 100%);}
 #home-node-about .home-node-circle{background:linear-gradient(135deg, #f9a8d4 0%, #be185d 100%);}
+#home-node-compendium .home-node-circle{background:linear-gradient(135deg, #86efac 0%, #15803d 100%);}
 #home-node-spellbook .home-node-circle{background:linear-gradient(135deg, #67e8f9 0%, #0e7490 100%);}
 
 #home-center{

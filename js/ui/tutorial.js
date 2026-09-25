@@ -24,7 +24,7 @@ var STEPS = [
     target: byId("home-node-new"),
     spot: function(el){ return el.querySelector(".home-node-circle"); },
     title: "Create a character",
-    text: "Start here. The wizard walks you through race, class, background and ability scores step by step."
+    text: "Start here. The wizard walks you through class, race, background, ability scores, skills, languages, starting gear and spells, explaining each choice as you go."
   },
   {
     target: byId("home-node-spellbook"),
@@ -36,7 +36,13 @@ var STEPS = [
     target: byId("home-node-armory"),
     spot: function(el){ return el.querySelector(".home-node-circle"); },
     title: "Grimtooth's Armory",
-    text: "Browse weapons, armor and gear, then add them straight to any of your characters."
+    text: "Browse weapons and armor, then add them straight to any of your characters."
+  },
+  {
+    target: byId("home-node-compendium"),
+    spot: function(el){ return el.querySelector(".home-node-circle"); },
+    title: "The Compendium",
+    text: "Read up on every class, subclass and feat: what they're good at, their proficiencies and the features they unlock level by level."
   },
   {
     target: byId("home-center"),
