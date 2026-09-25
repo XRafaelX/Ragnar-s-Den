@@ -1,4 +1,4 @@
-import { ABILITIES, CLASS_LIST, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
+import { ABILITIES, SKILLS, CLASS_LIST, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASSES_INFO, FIGHTING_STYLES } from "../data/classes.js";
 import { RACES, RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
@@ -10,8 +10,9 @@ import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../ui/svg-icons.js"
 import { getDieSvg } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan } from "./wizard-core.js";
-import { LANGUAGES } from "../data/languages.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, finalAbilities, featPrereqReason } from "./wizard-core.js";
+import { FEATS_CATALOG } from "../data/feats.js";
+import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
 import { SUBCLASSES } from "../data/progression.js";
 
 export function setAbilityMethod(method){
@@ -330,7 +331,8 @@ export function wizardStepAbilities(container){
   card.innerHTML = "<h3><span>Ability Scores</span></h3>";
   var info = currentClassInfo();
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>Why this matters:</b> These six scores drive almost everything you roll. As a "+escapeHtml(wizardState.classId)+", <b>"+escapeHtml(info.primaryAbilityLabel || abilityFullName(info.primaryAbility))+"</b> matters most, so prioritize it if you can.";
+  explain.innerHTML = "<b>Why this matters:</b> These six scores drive almost everything you roll. As a "+escapeHtml(wizardState.classId)+", <b>"+escapeHtml(info.primaryAbilityLabel || abilityFullName(info.primaryAbility))+"</b> matters most, so prioritize it if you can."+
+    (raceChoiceDef() && raceChoiceDef().abilityBonus ? " As a "+escapeHtml(wizardState.race)+" you'll add <b>+"+raceChoiceDef().abilityBonus.amount+" to "+raceChoiceDef().abilityBonus.count+" scores</b> of your choice on the Race Traits step." : "");
   card.appendChild(explain);
 
   var methodRow = ce("div","wiz-method-row");
@@ -434,12 +436,128 @@ export function wizardStepSkills(container){
   container.appendChild(card);
 }
 
+/* Race Traits (Variant Human): +1 to two abilities, a skill and a feat.
+   Each pick is a numbered section that shows a check once it's done. The
+   ability increase is a row of tappable score tiles (pick N); the skill
+   and feat use themed pickers, and the chosen feat gets a summary card
+   with its full text tucked into an expandable section. */
+var CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12.5 10 17.5 19 7"/></svg>';
+
+export function wizardStepRaceChoices(container){
+  var def = raceChoiceDef(), rc = wizardState.raceChoices;
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Race Traits</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> As a <b>"+escapeHtml(wizardState.race)+"</b> you choose some of your traits yourself instead of getting fixed ones. These picks let you shape exactly the character you want.";
+  card.appendChild(explain);
+
+  var known = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]);
+  var number = 0;
+  function section(titleText, helpText, done){
+    var sec = ce("div","rt-section"+(done ? " done" : ""));
+    var head = ce("div","rt-head");
+    head.innerHTML = "<span class='rt-num'>"+(++number)+"</span>"+
+      "<div class='rt-titles'><h4>"+escapeHtml(titleText)+"</h4><p>"+escapeHtml(helpText)+"</p></div>"+
+      "<span class='rt-check' title='"+(done ? "Done" : "Still to pick")+"'>"+CHECK_SVG+"</span>";
+    sec.appendChild(head);
+    card.appendChild(sec);
+    return sec;
+  }
+  function pickerField(picker){
+    var f = ce("div","field rt-field");
+    f.appendChild(picker);
+    return f;
+  }
+  function picked(){ var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show"); renderWizard(); }
+
+  if(def.abilityBonus){
+    var n = def.abilityBonus.count, amt = def.abilityBonus.amount;
+    var chosen = rc.abilities.slice(0, n).filter(Boolean);
+    var sec1 = section("Ability score increase", "Tap "+n+" different scores to raise by +"+amt+" (up to 20).", chosen.length===n);
+    var grid = ce("div","rt-ab-grid");
+    ABILITIES.forEach(function(a){
+      var key = a[0], base = Number(wizardState.abilities[key])||10;
+      var isOn = chosen.indexOf(key)!==-1, atMax = base>=20;
+      var full = !isOn && chosen.length>=n;
+      var tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "rt-ab"+(isOn ? " on" : "")+(full || atMax ? " off" : "");
+      tile.disabled = !isOn && (full || atMax);
+      tile.setAttribute("aria-pressed", isOn ? "true" : "false");
+      tile.setAttribute("aria-label", a[1]+" "+base+(isOn ? ", raised to "+Math.min(20, base+amt) : ""));
+      tile.innerHTML = "<span class='rt-ab-lbl'>"+a[1].slice(0,3).toUpperCase()+"</span>"+
+        "<span class='rt-ab-score'>"+(isOn ? "<s>"+base+"</s> "+Math.min(20, base+amt) : base)+"</span>"+
+        "<span class='rt-ab-mod'>"+(isOn ? "+"+amt : (atMax ? "max" : fmtMod(mod(base))))+"</span>";
+      tile.addEventListener("click", function(){
+        rc.abilities = isOn ? chosen.filter(function(k){ return k!==key; }) : chosen.concat([key]);
+        picked();
+      });
+      grid.appendChild(tile);
+    });
+    sec1.appendChild(grid);
+  }
+
+  if(def.skills){
+    var skillsPicked = rc.skills.slice(0, def.skills).filter(function(sk){ return sk && known.indexOf(sk)===-1; });
+    var sec2 = section("Skill proficiency", "Become proficient in "+(def.skills>1 ? def.skills+" skills" : "one skill")+" of your choice.", skillsPicked.length===def.skills);
+    for(var s=0;s<def.skills;s++){
+      (function(s){
+        sec2.appendChild(pickerField(themedPicker({
+          key:"race:skill:"+s, placeholder:"Choose a skill", ariaLabel:"Race skill",
+          groups:{"":SKILLS.map(function(x){ return x[0]; })},
+          value:rc.skills[s]||"",
+          reasonFor:function(sk){
+            if(known.indexOf(sk)!==-1) return "known";
+            return sk!==rc.skills[s] && rc.skills.indexOf(sk)!==-1 ? "picked" : "";
+          },
+          onPick:function(v){ rc.skills[s] = v; picked(); }
+        })));
+      })(s);
+    }
+  }
+
+  if(def.feat){
+    var chosenFeat = FEATS_CATALOG.find(function(f){ return f.name===rc.feat; });
+    var featOk = !!chosenFeat && !featPrereqReason(chosenFeat);
+    var sec3 = section("Feat", "A special talent most characters only get later. Greyed-out feats need something your character doesn't have yet.", featOk);
+    var byCategory = {};
+    FEATS_CATALOG.slice().sort(function(a, b){ return a.name.localeCompare(b.name); }).forEach(function(f){
+      (byCategory[f.category] = byCategory[f.category] || []).push(f.name);
+    });
+    sec3.appendChild(pickerField(themedPicker({
+      key:"race:feat", placeholder:"Choose a feat", ariaLabel:"Feat",
+      groups:byCategory, value:rc.feat||"",
+      reasonFor:function(name){ return featPrereqReason(FEATS_CATALOG.find(function(f){ return f.name===name; })); },
+      onPick:function(v){ rc.feat = v; picked(); }
+    })));
+    if(chosenFeat){
+      var why = featPrereqReason(chosenFeat);
+      var box = ce("div","rt-feat"+(why ? " blocked" : ""));
+      box.innerHTML =
+        "<div class='rt-feat-top'><strong>"+escapeHtml(chosenFeat.name)+"</strong><span class='rt-tag'>"+escapeHtml(chosenFeat.category)+"</span></div>"+
+        (chosenFeat.prerequisite && chosenFeat.prerequisite!=="None" ? "<div class='rt-feat-req'>Requires: "+escapeHtml(chosenFeat.prerequisite)+(why ? " ("+escapeHtml(why)+")" : "")+"</div>" : "")+
+        "<p class='rt-feat-sum'>"+escapeHtml(chosenFeat.summary || "")+"</p>";
+      if(chosenFeat.description){
+        var more = document.createElement("details");
+        more.className = "rt-feat-more";
+        more.innerHTML = "<summary>Full description</summary><p>"+escapeHtml(chosenFeat.description)+"</p>";
+        box.appendChild(more);
+      }
+      sec3.appendChild(box);
+    }
+  }
+  container.appendChild(card);
+}
+
 /* What a Rogue-style expertise pick can target: every skill the new
    character is proficient in (class picks + background) plus any tools
    the choice allows. */
 export function expertiseOptions(choice){
   var bgSkills = (BACKGROUND_INFO[wizardState.background]||{}).skills||[];
   var skills = wizardState.skillChoices.concat(bgSkills.filter(function(sk){ return wizardState.skillChoices.indexOf(sk)===-1; }));
+  // Plus a skill picked on Race Traits (Variant Human).
+  var def = raceChoiceDef();
+  if(def && def.skills) wizardState.raceChoices.skills.slice(0, def.skills).forEach(function(sk){ if(sk && skills.indexOf(sk)===-1) skills.push(sk); });
   return skills.concat(choice.tools||[]);
 }
 
@@ -700,7 +818,7 @@ export function wizardStepLanguages(container){
       }
     }
     card.appendChild(homebrewSelect({
-      key:"lang:"+i, groups:{"Standard":LANGUAGES.Standard, "Exotic":LANGUAGES.Exotic}, value:picks[i],
+      key:"lang:"+i, groups:(function(){ var g = {}; g[LANGUAGE_GROUP_LABELS.Standard] = LANGUAGES.Standard; g[LANGUAGE_GROUP_LABELS.Exotic] = LANGUAGES.Exotic; return g; })(), value:picks[i],
       placeholder:"Select a language", noun:"language",
       // Greyed out and labelled so it's clear why it can't be picked.
       takenReason:function(name){
@@ -930,12 +1048,13 @@ export function wizardStepReview(container){
   card.appendChild(nameWrap);
 
   var info = currentClassInfo();
-  var conMod = mod(wizardState.abilities.con);
+  var finalAb = finalAbilities();
+  var conMod = mod(finalAb.con);
   var hpBonus = subclassGrants(info, wizardState.classChoices).hpPerLevel||0;
   var hp = HIT_DICE_BY_CLASS[wizardState.classId] + conMod + hpBonus;
   // Same AC math as the sheet, run on the gear and picks chosen so far.
   var preview = {
-    abilities: wizardState.abilities,
+    abilities: finalAb,
     classes: [{name:wizardState.classId, level:1}],
     inventory: buildEquipmentList(info, wizardState.equipment),
     features: [], skillProfs: {}, acMisc: 0
@@ -957,11 +1076,19 @@ export function wizardStepReview(container){
   row("Alignment", wizardState.alignment || "None");
   var langPlan = languagePlan();
   row("Languages", langPlan.fixed.concat(wizardState.languageChoices.slice(0, langPlan.slots.length).filter(Boolean)).join(", "));
-  row("Ability scores", ABILITIES.map(function(a){ return a[1].slice(0,3).toUpperCase()+" "+wizardState.abilities[a[0]]; }).join("  "));
+  row("Ability scores", ABILITIES.map(function(a){ return a[1].slice(0,3).toUpperCase()+" "+finalAb[a[0]]; }).join("  "));
+  var raceDef = raceChoiceDef();
+  if(raceDef){
+    var rc = wizardState.raceChoices;
+    if(raceDef.abilityBonus) row("Race bonus", rc.abilities.slice(0, raceDef.abilityBonus.count).filter(Boolean).map(function(k){ return k.toUpperCase()+" +"+raceDef.abilityBonus.amount; }).join(", ") || "None");
+    if(raceDef.skills) row("Race skill", rc.skills.slice(0, raceDef.skills).filter(Boolean).join(", ") || "None");
+    if(raceDef.feat) row("Feat", rc.feat || "None");
+  }
   row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+(hpBonus ? " + "+hpBonus+" "+wizardState.classChoices.subclass : "")+")");
   row("Armor Class", ac.value + " (" + ac.breakdown + ")");
   row("Saving throws", info.savingThrows.map(function(k){ return k.toUpperCase(); }).join(", "));
-  var allSkills = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]);
+  var allSkills = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[],
+    raceDef && raceDef.skills ? wizardState.raceChoices.skills.slice(0, raceDef.skills).filter(Boolean) : []);
   row("Skills", allSkills.filter(function(sk, i){ return allSkills.indexOf(sk)===i; }).join(", ") || "None");
   (info.choices||[]).forEach(function(ch){
     var v = wizardState.classChoices[ch.id];

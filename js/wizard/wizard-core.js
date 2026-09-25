@@ -1,7 +1,8 @@
 import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
-import { CLASSES_INFO, FIGHTING_STYLES } from "../data/classes.js";
+import { CLASSES_INFO, FIGHTING_STYLES, CLASS_PROFICIENCIES } from "../data/classes.js";
+import { FEATS_CATALOG } from "../data/feats.js";
 import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
-import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK } from "../data/races.js";
+import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset } from "../core/helpers.js";
 import { newCharacter } from "../core/character.js";
 import { state, save } from "../core/state.js";
@@ -14,13 +15,13 @@ import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import {
   buildEquipmentList,
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
-  wizardStepAbilities, wizardStepSkills, wizardStepChoices, wizardStepLanguages, wizardStepEquipment, wizardStepSpells, wizardStepReview,
+  wizardStepAbilities, wizardStepSkills, wizardStepRaceChoices, wizardStepChoices, wizardStepLanguages, wizardStepEquipment, wizardStepSpells, wizardStepReview,
   expertiseOptions, resetHomebrewPickers
 } from "./wizard-steps.js";
 import { makeMoveLeftSvg, makeMoveRightSvg } from "../ui/svg-icons.js";
 
 /* ---------------- Character Creation Wizard ---------------- */
-export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","choices","languages","equipment","spells","review"];
+export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","raceChoices","choices","languages","equipment","spells","review"];
 export var wizardState = null;
 
 export function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardState.classId]; }
@@ -42,6 +43,49 @@ export function equipmentOptionAvailable(opt){
   var grants = subclassGrants(currentClassInfo(), wizardState.classChoices);
   return (grants.profs||[]).indexOf(opt.requires)!==-1;
 }
+/* Race picks (Variant Human): what the race lets you choose, if anything. */
+export function raceChoiceDef(){ return wizardState && RACE_CHOICES[wizardState.race] || null; }
+
+/* The scores the character will actually have: the base scores from the
+   Ability Scores step plus any racial increases picked on Race Traits
+   (capped at 20). Everything downstream (HP, AC, spell counts, feat
+   prerequisites, the finished sheet) reads these. */
+export function finalAbilities(){
+  var out = {};
+  Object.keys(wizardState.abilities).forEach(function(k){ out[k] = wizardState.abilities[k]; });
+  var def = raceChoiceDef();
+  if(def && def.abilityBonus){
+    var picks = wizardState.raceChoices.abilities.slice(0, def.abilityBonus.count);
+    picks.forEach(function(k, i){
+      if(k && picks.indexOf(k)===i) out[k] = Math.min(20, (Number(out[k])||10) + def.abilityBonus.amount);
+    });
+  }
+  return out;
+}
+
+/* Why the new character can't take a feat yet ("" if they can): ability
+   minimums, a Spellcasting feature, or armor proficiency. */
+var ABILITY_WORDS = {Strength:"str", Dexterity:"dex", Constitution:"con", Intelligence:"int", Wisdom:"wis", Charisma:"cha"};
+export function featPrereqReason(feat){
+  var req = feat.prerequisite || "None";
+  if(req==="None") return "";
+  var ab = finalAbilities(), info = currentClassInfo() || {};
+  var m = /^(.+?) 13 or higher$/.exec(req);
+  if(m){
+    var keys = m[1].split(" or ").map(function(w){ return ABILITY_WORDS[w.trim()]; });
+    return keys.some(function(k){ return (ab[k]||0) >= 13; }) ? "" : "needs "+keys.map(function(k){ return k.toUpperCase(); }).join(" or ")+" 13";
+  }
+  if(req==="Spellcasting feature") return info.spellcasting ? "" : "needs spellcasting";
+  m = /^Proficiency with (light|medium|heavy) armor$/.exec(req);
+  if(m){
+    var armor = ((CLASS_PROFICIENCIES[wizardState.classId]||{}).armor||[]).map(function(a){ return a.toLowerCase(); });
+    var has = armor.indexOf("all armor")!==-1 || armor.indexOf(m[1]+" armor")!==-1 ||
+      (m[1]==="heavy" && (subclassGrants(info, wizardState.classChoices).profs||[]).indexOf("heavy")!==-1);
+    return has ? "" : "needs "+m[1]+" armor";
+  }
+  return "";
+}
+
 /* Languages the new character knows: `fixed` ones come automatically
    (race, class, subclass); `slots` are free picks, each tagged with where
    it comes from (race, background, Ranger's favored enemy, Knowledge
@@ -67,7 +111,7 @@ export function languagePlan(){
 /* 1st-level spells to pick: a fixed number, or computed from the scores
    (a cleric prepares WIS modifier + 1). */
 export function spellPickCount(sc){
-  return typeof sc.spells==="function" ? sc.spells(wizardState) : sc.spells;
+  return typeof sc.spells==="function" ? sc.spells({abilities:finalAbilities()}) : sc.spells;
 }
 
 export function isStepApplicable(id){
@@ -80,6 +124,7 @@ export function isStepApplicable(id){
     return !!(ci && ci.choices && ci.choices.length);
   }
   if(id==="languages") return languagePlan().slots.length > 0;
+  if(id==="raceChoices") return !!raceChoiceDef();
   return true;
 }
 
@@ -87,7 +132,7 @@ export function wizardStepTitle(id){
   return {
     class:"Choose a Class", race:"Choose a Race", background:"Choose a Background",
     alignment:"Choose an Alignment",
-    abilities:"Ability Scores", skills:"Skills & Proficiencies", choices:"Class Features", languages:"Languages", equipment:"Starting Equipment",
+    abilities:"Ability Scores", skills:"Skills & Proficiencies", raceChoices:"Race Traits", choices:"Class Features", languages:"Languages", equipment:"Starting Equipment",
     spells:"Spells", review:"Review & Finish"
   }[id];
 }
@@ -126,6 +171,25 @@ export function validateStep(id){
   }
   if(id==="skills"){
     return wizardState.skillChoices.length===info.skillChoices.count ? null : "Choose "+info.skillChoices.count+" skills.";
+  }
+  if(id==="raceChoices"){
+    var def = raceChoiceDef(), rc = wizardState.raceChoices;
+    if(def.abilityBonus){
+      var ab = rc.abilities.slice(0, def.abilityBonus.count).filter(Boolean);
+      if(ab.length!==def.abilityBonus.count || new Set(ab).size!==ab.length) return "Pick "+def.abilityBonus.count+" different abilities to increase.";
+    }
+    if(def.skills){
+      var known = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]);
+      var sk = rc.skills.slice(0, def.skills).filter(Boolean);
+      if(sk.length!==def.skills || sk.some(function(x){ return known.indexOf(x)!==-1; })) return "Pick "+(def.skills>1 ? def.skills+" skills" : "a skill")+" you're not already proficient in.";
+    }
+    if(def.feat){
+      var feat = FEATS_CATALOG.find(function(f){ return f.name===rc.feat; });
+      if(!feat) return "Pick a feat.";
+      var why = featPrereqReason(feat);
+      if(why) return feat.name+" "+why+". Pick another feat or change your scores.";
+    }
+    return null;
   }
   if(id==="choices"){
     var missing = (info.choices||[]).find(function(ch){
@@ -193,6 +257,7 @@ export function openWizard(){
     rolledPool:null,
     skillChoices:[],
     classChoices:{},
+    raceChoices:{abilities:[], skills:[], feat:""},
     languageChoices:[],
     equipment:{},
     spellChoices:{cantrips:[], spells:[]}
@@ -222,7 +287,8 @@ export function finishWizard(){
   c.background = w.background;
   c.alignment = w.alignment;
   c.classes = [{name:w.classId, subclass:"", level:1}];
-  c.abilities = {str:w.abilities.str, dex:w.abilities.dex, con:w.abilities.con, int:w.abilities.int, wis:w.abilities.wis, cha:w.abilities.cha};
+  var fa = finalAbilities();
+  c.abilities = {str:fa.str, dex:fa.dex, con:fa.con, int:fa.int, wis:fa.wis, cha:fa.cha};
   info.savingThrows.forEach(function(k){ c.saveProfs[k] = true; });
   w.skillChoices.forEach(function(sk){ c.skillProfs[sk] = {prof:true, expertise:false}; });
   var bgInfo = BACKGROUND_INFO[w.background];
@@ -235,6 +301,7 @@ export function finishWizard(){
   }
   c.features = [];
   c.feats = [];
+  applyRaceChoices(c);
   var conMod = mod(c.abilities.con);
   c.hp.max = HIT_DICE_BY_CLASS[w.classId] + conMod + (subclassGrants(info, w.classChoices).hpPerLevel||0);
   c.hp.current = c.hp.max;
@@ -281,6 +348,24 @@ export function finishWizard(){
   document.getElementById("wizard-overlay").classList.remove("open");
   renderAll();
   playAdd();
+}
+
+/* Race Traits picks (Variant Human): the skill and the feat. The ability
+   increases are already in c.abilities via finalAbilities(). */
+function applyRaceChoices(c){
+  var def = raceChoiceDef();
+  if(!def) return;
+  var rc = wizardState.raceChoices;
+  if(def.skills) rc.skills.slice(0, def.skills).forEach(function(sk){
+    if(!sk) return;
+    var entry = c.skillProfs[sk] || {prof:false, expertise:false};
+    entry.prof = true;
+    c.skillProfs[sk] = entry;
+  });
+  if(def.feat){
+    var f = FEATS_CATALOG.find(function(x){ return x.name===rc.feat; });
+    if(f) c.feats.push({id:uid(), name:f.name, prerequisite:f.prerequisite, category:f.category, summary:f.summary, description:f.description, source:"SRD"});
+  }
 }
 
 /* Level-1 class picks from the Class Features step: a fighting style
@@ -352,7 +437,7 @@ export function renderWizard(){
   var renderers = {
     class: wizardStepClass, race: wizardStepRace, background: wizardStepBackground,
     alignment: wizardStepAlignment,
-    abilities: wizardStepAbilities, skills: wizardStepSkills, choices: wizardStepChoices, languages: wizardStepLanguages, equipment: wizardStepEquipment,
+    abilities: wizardStepAbilities, skills: wizardStepSkills, raceChoices: wizardStepRaceChoices, choices: wizardStepChoices, languages: wizardStepLanguages, equipment: wizardStepEquipment,
     spells: wizardStepSpells, review: wizardStepReview
   };
   renderers[wizardState.step](inner);

@@ -6,7 +6,7 @@ import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/background
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
 import { classFeatureList, classProficiencies } from "../../core/helpers.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
-import { LANGUAGES } from "../../data/languages.js";
+import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 
 /* ---- Information panel ----
@@ -242,7 +242,7 @@ export function renderInformationPanel(c){
       var remaining = LANGUAGES[groupLabel].filter(function(l){ return knownLower.indexOf(l.toLowerCase())===-1; });
       if(!remaining.length) return;
       var og = document.createElement("optgroup");
-      og.label = groupLabel;
+      og.label = LANGUAGE_GROUP_LABELS[groupLabel] || groupLabel;
       remaining.forEach(function(l){
         var o = document.createElement("option");
         o.value = l; o.textContent = l;

@@ -1,7 +1,7 @@
 /* ---------------- Race data ---------------- */
 export var RACES = {
   "Standard (SRD)": [
-    "Human","Hill Dwarf","Mountain Dwarf","High Elf","Wood Elf","Dark Elf (Drow)",
+    "Human","Variant Human","Hill Dwarf","Mountain Dwarf","High Elf","Wood Elf","Dark Elf (Drow)",
     "Lightfoot Halfling","Stout Halfling","Dragonborn","Rock Gnome","Forest Gnome",
     "Half-Elf","Half-Orc","Tiefling"
   ],
@@ -17,6 +17,7 @@ export var RACES = {
 
 export var RACE_TRAITS = {
   "Human": "+1 to every ability score. No other special traits, so it's flexible and simple to play.",
+  "Variant Human": "+1 to two ability scores of your choice, proficiency in one skill of your choice, and a feat at level 1. The most customisable race: build exactly the character you want.",
   "Hill Dwarf": "+2 CON, +1 WIS. Darkvision 60ft, resistance to poison damage, advantage on saves vs. poison, +1 HP per level.",
   "Mountain Dwarf": "+2 CON, +2 STR. Darkvision 60ft, poison resistance, proficiency with light and medium armor.",
   "High Elf": "+2 DEX, +1 INT. Darkvision 60ft, advantage vs. being charmed, can't be magically put to sleep, know one wizard cantrip.",
@@ -38,6 +39,7 @@ export var RACE_TRAIT_FALLBACK = "This is an expanded (non-SRD) race. Check your
    covers most of them; the note tells players to check their book. */
 export var RACE_LANGUAGES = {
   "Human":{fixed:["Common"], choose:1},
+  "Variant Human":{fixed:["Common"], choose:1},
   "Hill Dwarf":{fixed:["Common","Dwarvish"]},
   "Mountain Dwarf":{fixed:["Common","Dwarvish"]},
   "High Elf":{fixed:["Common","Elvish"], choose:1},
@@ -54,3 +56,10 @@ export var RACE_LANGUAGES = {
 };
 export var RACE_LANGUAGES_FALLBACK = {fixed:["Common"], choose:1,
   note:"Expanded races usually speak Common plus one more language; check your sourcebook for the exact one."};
+
+/* Level-1 picks a race makes in the creation wizard's Race Traits step.
+   abilityBonus: +amount to `count` different abilities of the player's
+   choice; skills: skill proficiencies of their choice; feat: a feat. */
+export var RACE_CHOICES = {
+  "Variant Human":{abilityBonus:{count:2, amount:1}, skills:1, feat:true}
+};
