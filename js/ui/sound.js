@@ -1,8 +1,8 @@
 /* ---------------- UI sound cues ----------------
    Short, quiet, synthesized tones (no audio files; stays fully offline)
    played only for meaningful moments: adding or removing something (a
-   weapon, a feat, a character…), rolling a natural 20 or natural 1, and
-   dragging the theme slider. Never used for routine interaction like
+   weapon, a feat, a character…), rolling a natural 20 or natural 1,
+   rolling ability scores, and dragging the theme slider. Never used for routine interaction like
    toggles, typing, or numeric steppers, so it stays a subtle accent
    instead of noise. */
 var audioCtx = null;
@@ -68,6 +68,30 @@ export function playInspire(){
     scheduleTone(ctx, now + 0.07, 988, 988, 0.14, "sine", 0.12);
     scheduleTone(ctx, now + 0.14, 1175, 1175, 0.16, "sine", 0.13);
     scheduleTone(ctx, now + 0.21, 1568, 2093, 0.34, "sine", 0.12);
+  }catch(e){}
+}
+
+/* Dice rattling in a cup: a quick scatter of short, woody clicks at
+   random pitches. Used when rolling ability scores. */
+export function playDiceRattle(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    for(var i=0;i<14;i++){
+      var t = now + i*0.045 + Math.random()*0.02;
+      var f = 900 + Math.random()*900;
+      scheduleTone(ctx, t, f, f*0.6, 0.035, "triangle", 0.05 + Math.random()*0.04);
+    }
+  }catch(e){}
+}
+
+/* One die group landing on the table: a short soft knock whose pitch
+   rises a little with `strength` (0..1, e.g. how good the roll was). */
+export function playDiceLand(strength){
+  try{
+    var s = Math.max(0, Math.min(1, strength||0));
+    tone(260 + s*260, 140 + s*120, 0.09, "triangle", 0.14);
   }catch(e){}
 }
 

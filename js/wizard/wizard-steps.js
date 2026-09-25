@@ -7,6 +7,8 @@ import { POINT_BUY_COSTS, pickNameIdeas } from "../data/misc.js";
 import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../ui/svg-icons.js";
+import { getDieSvg } from "../dice/dice.js";
+import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { dropdownField } from "../render/sheet.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan } from "./wizard-core.js";
 import { LANGUAGES } from "../data/languages.js";
@@ -23,16 +25,84 @@ export function setAbilityMethod(method){
   renderWizard();
 }
 
-export function rollAbilityScore(){
-  var rolls = [];
-  for(var i=0;i<4;i++) rolls.push(1+Math.floor(Math.random()*6));
-  rolls.sort(function(a,b){ return b-a; });
-  return rolls[0]+rolls[1]+rolls[2];
+/* One 4d6-drop-lowest roll with its dice, for the roll animation. */
+function rollAbilityScoreDetailed(){
+  var dice = [];
+  for(var i=0;i<4;i++) dice.push(1+Math.floor(Math.random()*6));
+  var lowest = dice.indexOf(Math.min.apply(null, dice));
+  var total = dice.reduce(function(a,b){ return a+b; }, 0) - dice[lowest];
+  return {dice:dice, dropped:lowest, total:total};
 }
-export function rollSixAbilityScores(){
-  var arr = [];
-  for(var i=0;i<6;i++) arr.push(rollAbilityScore());
-  return arr;
+
+/* Roll six scores with a little show: six rows of 4d6 tumble in place of
+   the button, land one after another (the lowest die dims and is struck
+   out, the total pops in), with a rattle, a knock per row and a chime at
+   the end. Only then are the scores saved and the step re-rendered.
+   Honors prefers-reduced-motion by landing everything at once. */
+var abilityRollRunning = false;
+function animateAbilityRoll(anchor){
+  if(abilityRollRunning) return;
+  abilityRollRunning = true;
+  var session = wizardState;
+  var results = [];
+  for(var r=0;r<6;r++) results.push(rollAbilityScoreDetailed());
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var stage = ce("div","wiz-roll-stage");
+  var rows = results.map(function(res){
+    var row = ce("div","wiz-roll-row");
+    var dice = res.dice.map(function(){
+      var tok = ce("div","dice-token wiz-roll-die"+(reduced ? "" : " rolling"));
+      tok.innerHTML = getDieSvg(6, 1+Math.floor(Math.random()*6));
+      row.appendChild(tok);
+      return tok;
+    });
+    var total = ce("div","wiz-roll-total");
+    total.textContent = "?";
+    row.appendChild(total);
+    stage.appendChild(row);
+    return {row:row, dice:dice, total:total, res:res, landed:false};
+  });
+  anchor.replaceWith(stage);
+  // On a phone the tray lands below the fold; bring it into view.
+  stage.scrollIntoView({block:"nearest", behavior: reduced ? "auto" : "smooth"});
+  playDiceRattle();
+
+  // Faces flicker while tumbling.
+  var flicker = setInterval(function(){
+    rows.forEach(function(r){
+      if(r.landed) return;
+      r.dice.forEach(function(tok){ tok.innerHTML = getDieSvg(6, 1+Math.floor(Math.random()*6)); });
+    });
+  }, 90);
+
+  function land(r){
+    r.landed = true;
+    r.dice.forEach(function(tok, i){
+      tok.classList.remove("rolling");
+      tok.classList.add("settled");
+      tok.innerHTML = getDieSvg(6, r.res.dice[i]);
+      if(i===r.res.dropped) tok.classList.add("dropped");
+    });
+    r.total.textContent = r.res.total;
+    r.total.classList.add("show");
+    if(r.res.total>=16) r.row.classList.add("high");
+    else if(r.res.total<=7) r.row.classList.add("low");
+    playDiceLand((r.res.total-3)/15);
+  }
+
+  var firstLand = reduced ? 0 : 650, gap = reduced ? 0 : 230;
+  rows.forEach(function(r, i){ setTimeout(function(){ land(r); }, firstLand + i*gap); });
+  setTimeout(function(){
+    clearInterval(flicker);
+    abilityRollRunning = false;
+    playAdd();
+    // Only apply if the player is still on this wizard's abilities step.
+    if(wizardState!==session || session.step!=="abilities" || session.abilityMethod!=="roll") return;
+    session.rolledPool = results.map(function(x){ return x.total; });
+    session.assignIdx = {str:null,dex:null,con:null,int:null,wis:null,cha:null};
+    renderWizard();
+  }, firstLand + 5*gap + (reduced ? 150 : 900));
 }
 
 export function syncAbilitiesFromAssignment(pool){
@@ -40,6 +110,72 @@ export function syncAbilitiesFromAssignment(pool){
     var idx = wizardState.assignIdx[a[0]];
     wizardState.abilities[a[0]] = idx!=null ? pool[idx] : 10;
   });
+}
+
+/* The pill that assigns a rolled score. A small custom menu rather than a
+   native <select>: the browser draws a <select>'s open list itself and
+   ignores most styling (it wouldn't center the numbers, and phones use
+   their own picker), so this keeps the list centered and on-theme
+   everywhere. Keyboard: Enter/Space/Down opens, Up/Down move, Enter picks,
+   Escape or a click outside closes. */
+function scorePicker(abilityName, usedIdx, choices, onPick){
+  var wrap = ce("div","score-picker");
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "ability-assign-select"+(usedIdx==null?" placeholder":"");
+  btn.textContent = usedIdx==null ? "Pick" : choices.find(function(c){ return c.idx===usedIdx; }).label;
+  btn.setAttribute("aria-haspopup", "listbox");
+  btn.setAttribute("aria-expanded", "false");
+  btn.setAttribute("aria-label", abilityName+" score: "+btn.textContent);
+  wrap.appendChild(btn);
+
+  var menu = null, active = 0;
+  function close(){
+    if(!menu) return;
+    menu.remove(); menu = null;
+    btn.setAttribute("aria-expanded", "false");
+    document.removeEventListener("pointerdown", onOutside, true);
+  }
+  function onOutside(e){ if(!wrap.contains(e.target)) close(); }
+  function highlight(i){
+    active = (i + choices.length) % choices.length;
+    Array.prototype.forEach.call(menu.children, function(li, j){ li.classList.toggle("active", j===active); });
+  }
+  function open(){
+    if(menu) return;
+    menu = ce("ul","score-picker-menu");
+    menu.setAttribute("role", "listbox");
+    choices.forEach(function(ch, i){
+      var li = ce("li", "score-picker-option"+(ch.idx===null ? " is-clear" : "")+(ch.idx===usedIdx ? " selected" : ""));
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", ch.idx===usedIdx ? "true" : "false");
+      li.textContent = ch.label;
+      li.addEventListener("pointerenter", function(){ highlight(i); });
+      li.addEventListener("click", function(){ close(); onPick(ch.idx); });
+      menu.appendChild(li);
+    });
+    wrap.appendChild(menu);
+    btn.setAttribute("aria-expanded", "true");
+    var current = choices.findIndex(function(c){ return c.idx===usedIdx; });
+    highlight(current===-1 ? 0 : current);
+    // On a phone the lower row's menu can open behind the footer; bring
+    // the whole list into view.
+    menu.scrollIntoView({block:"nearest", behavior:"smooth"});
+    document.addEventListener("pointerdown", onOutside, true);
+  }
+  btn.addEventListener("click", function(){ if(menu) close(); else open(); });
+  btn.addEventListener("keydown", function(e){
+    if(e.key==="Escape"){ close(); return; }
+    if(!menu){
+      if(e.key==="ArrowDown" || e.key==="ArrowUp"){ e.preventDefault(); open(); }
+      return;
+    }
+    if(e.key==="ArrowDown"){ e.preventDefault(); highlight(active+1); }
+    else if(e.key==="ArrowUp"){ e.preventDefault(); highlight(active-1); }
+    else if(e.key==="Enter" || e.key===" "){ e.preventDefault(); var ch = choices[active]; close(); onPick(ch.idx); }
+    else if(e.key==="Tab") close();
+  });
+  return wrap;
 }
 
 export function wizardAssignAbilities(container, pool){
@@ -50,26 +186,25 @@ export function wizardAssignAbilities(container, pool){
     var box = ce("div","ability-box");
     box.style.cursor = "default";
     box.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div>';
-    var sel = document.createElement("select");
-    sel.className = "ability-assign-select"+(usedIdx==null?" placeholder":"");
-    var blank = document.createElement("option"); blank.value=""; blank.textContent="Assign score";
-    sel.appendChild(blank);
-    pool.forEach(function(val, pi){
+    // Highest first so the list reads top-down instead of in roll order;
+    // scores another ability already took are left out.
+    var order = pool.map(function(val, pi){ return pi; }).sort(function(x, y){ return pool[y]-pool[x] || x-y; });
+    var choices = [{idx:null, label:"Pick"}];
+    order.forEach(function(pi){
       var takenBy = Object.keys(wizardState.assignIdx).find(function(k2){ return wizardState.assignIdx[k2]===pi; });
       if(takenBy && takenBy!==key) return;
-      var o = document.createElement("option");
-      o.value = pi; o.textContent = val;
-      if(usedIdx===pi) o.selected = true;
-      sel.appendChild(o);
+      choices.push({idx:pi, label:String(pool[pi])});
     });
-    sel.addEventListener("change", function(){
-      wizardState.assignIdx[key] = sel.value==="" ? null : Number(sel.value);
+    box.appendChild(scorePicker(a[1], usedIdx, choices, function(idx){
+      wizardState.assignIdx[key] = idx;
       syncAbilitiesFromAssignment(pool);
       renderWizard();
-    });
-    box.appendChild(sel);
+    }));
     var modDiv = document.createElement("div"); modDiv.className="mod";
-    modDiv.textContent = usedIdx!=null ? fmtMod(mod(pool[usedIdx])) : "";
+    // Unassigned boxes keep an invisible modifier line so their "Pick"
+    // pill lines up with the assigned ones instead of dropping lower.
+    modDiv.textContent = usedIdx!=null ? fmtMod(mod(pool[usedIdx])) : "+0";
+    if(usedIdx==null) modDiv.style.visibility = "hidden";
     box.appendChild(modDiv);
     grid.appendChild(box);
   });
@@ -271,11 +406,7 @@ export function wizardStepAbilities(container){
     if(!wizardState.rolledPool){
       var rollBtn = document.createElement("button");
       rollBtn.type="button"; rollBtn.className="btn primary small"; rollBtn.innerHTML=makeDicesSvg()+"Roll 6 scores";
-      rollBtn.addEventListener("click", function(){
-        wizardState.rolledPool = rollSixAbilityScores();
-        wizardState.assignIdx = {str:null,dex:null,con:null,int:null,wis:null,cha:null};
-        renderWizard();
-      });
+      rollBtn.addEventListener("click", function(){ animateAbilityRoll(rollBtn); });
       card.appendChild(rollBtn);
     } else {
       var poolP = document.createElement("p");
@@ -285,11 +416,7 @@ export function wizardStepAbilities(container){
       wizardAssignAbilities(card, wizardState.rolledPool);
       var reroll = document.createElement("button");
       reroll.type="button"; reroll.className="btn small ghost"; reroll.style.marginTop="10px"; reroll.textContent="Reroll (Don't tell the DM!)";
-      reroll.addEventListener("click", function(){
-        wizardState.rolledPool = rollSixAbilityScores();
-        wizardState.assignIdx = {str:null,dex:null,con:null,int:null,wis:null,cha:null};
-        renderWizard();
-      });
+      reroll.addEventListener("click", function(){ animateAbilityRoll(reroll); });
       card.appendChild(reroll);
     }
   } else if(wizardState.abilityMethod==="pointbuy"){

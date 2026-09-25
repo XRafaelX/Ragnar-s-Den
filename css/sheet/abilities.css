@@ -87,6 +87,29 @@
   color:var(--text-on-parch-dim);
   font-weight:400;
 }
+/* Score picker (creation wizard, Roll): the pill above is its button and
+   this is the menu it opens, so the list is centered and themed the same
+   in every browser. */
+.score-picker{position:relative;width:100%;}
+.score-picker-menu{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:20;
+  list-style:none;margin:0;padding:4px;
+  background:var(--field-bg);border:1px solid var(--brass);border-radius:10px;
+  box-shadow:0 10px 24px rgba(0,0,0,.45);
+  max-height:240px;overflow-y:auto;
+  scroll-margin:16px; /* scrolled into view clear of the wizard footer */
+  animation:scorePickerIn .12s ease-out;
+}
+.score-picker-option{
+  text-align:center;padding:6px 4px;border-radius:7px;cursor:pointer;
+  font-family:var(--serif);font-size:14px;font-weight:700;color:var(--text-on-parch);
+}
+.score-picker-option.is-clear{font-weight:400;font-size:12.5px;color:var(--text-on-parch-dim);}
+.score-picker-option.active{background:color-mix(in srgb, var(--brass) 22%, transparent);color:var(--brass-bright);}
+.score-picker-option.selected{background:var(--brass);color:#fff;}
+/* Opacity only: a slide would move the menu while it's being scrolled
+   into view, leaving it a few pixels short behind the footer. */
+@keyframes scorePickerIn{from{opacity:0;}to{opacity:1;}}
 .ability-box .mod{
   font-family:var(--serif);
   font-size:24px;

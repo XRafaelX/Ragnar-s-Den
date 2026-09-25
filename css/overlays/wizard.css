@@ -100,3 +100,28 @@
   #wizard-header, #wizard-progress, #wizard-body, #wizard-footer{padding-left:14px;padding-right:14px;}
   .class-pick-grid{grid-template-columns:1fr;}
 }
+
+/* Ability score roll animation: six rows of 4d6 that tumble, then land
+   one by one. Reuses the dice tray's tumble/settle keyframes. */
+.wiz-roll-stage{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+.wiz-roll-row{
+  display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;
+  background:rgba(0,0,0,.18);border:1px solid transparent;
+  transition:border-color .3s, box-shadow .3s, background .3s;
+}
+.wiz-roll-die.dice-token{width:34px;height:34px;cursor:default;}
+.wiz-roll-die.dice-token:hover{transform:none;}
+.wiz-roll-die svg .die-text{font-size:30px;}
+.wiz-roll-die.dropped{opacity:.3;}
+.wiz-roll-die.dropped::after{
+  content:"";position:absolute;left:6px;right:6px;top:50%;height:2px;
+  background:var(--oxblood);transform:rotate(-20deg);border-radius:1px;
+}
+.wiz-roll-total{
+  margin-left:auto;min-width:44px;text-align:center;
+  font-family:var(--serif);font-size:24px;color:var(--text-on-parch-dim);opacity:.35;
+}
+.wiz-roll-total.show{opacity:1;color:var(--text-on-parch);animation:resultPop .45s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
+.wiz-roll-row.high{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 14%, transparent);box-shadow:0 0 12px color-mix(in srgb, var(--brass) 35%, transparent);}
+.wiz-roll-row.high .wiz-roll-total{color:var(--brass-bright);}
+.wiz-roll-row.low .wiz-roll-total{color:var(--text-on-parch-dim);}
