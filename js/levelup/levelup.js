@@ -14,7 +14,8 @@ import { confirmDialog } from "../ui/confirm-modal.js";
 import { openInfoModal } from "../ui/info-modal.js";
 import { playAdd, playDelete } from "../ui/sound.js";
 import { showActionToast } from "../ui/toast.js";
-import { makeMoveLeftSvg, makeMoveRightSvg } from "../ui/svg-icons.js";
+import { makeMoveLeftSvg, makeMoveRightSvg, makePlusSvg } from "../ui/svg-icons.js";
+import { openCompendium } from "../render/compendium.js";
 
 /* ---------------- Level-up flow ----------------
    A short guided flow in the same full-screen overlay as the creation
@@ -80,10 +81,7 @@ function stepApplicable(id){
   return true;
 }
 
-function chosenSubclass(){
-  if(lu.subclass==="__custom__") return (lu.subclassCustom||"").trim();
-  return lu.subclass || "";
-}
+function chosenSubclass(){ return lu.subclass || ""; }
 
 function asiPointsUsed(){
   return Object.keys(lu.asi).reduce(function(a,k){ return a + lu.asi[k]; }, 0);
@@ -121,7 +119,7 @@ export function openLevelUp(c){
   lu = {
     c: c, step:"class",
     className: c.classes.length===1 ? c.classes[0].name : null,
-    subclass:"", subclassCustom:"", style:"",
+    subclass:"", style:"",
     asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"",
     hpMethod:"avg", hpRoll:null
   };
@@ -229,7 +227,7 @@ function gainLabels(className, subclass, level){
 function resetChoicesFor(name){
   if(lu.className===name) return;
   lu.className = name;
-  lu.subclass = ""; lu.subclassCustom = "";
+  lu.subclass = "";
   lu.style = "";
   lu.asi = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; lu.featName = ""; lu.asiMode = "asi";
   lu.hpRoll = null; lu.hpMethod = "avg";
@@ -313,25 +311,32 @@ function stepSubclass(container){
     var opt = ce("div","wiz-equip-option"+(lu.subclass===sub.name?" selected":""));
     var feats = [];
     for(var lv=1; lv<=t.newLevel; lv++) ((sub.features||{})[lv]||[]).forEach(function(f){ feats.push(f.name); });
-    opt.innerHTML = "<b>"+escapeHtml(sub.name)+"</b><div class='lu-sub-blurb'>"+escapeHtml(sub.blurb)+"</div>"+
+    opt.innerHTML = "<b>"+escapeHtml(sub.name)+"</b>"+(sub.custom ? "<span class='lu-custom-tag'>Custom</span>" : "")+"<div class='lu-sub-blurb'>"+escapeHtml(sub.blurb)+"</div>"+
       (feats.length ? "<div class='lu-sub-feats'>Unlocks: "+escapeHtml(feats.join(", "))+"</div>" : "");
     opt.addEventListener("click", function(){ lu.subclass = sub.name; render(); });
     card.appendChild(opt);
   });
-  var custom = ce("div","wiz-equip-option"+(lu.subclass==="__custom__"?" selected":""));
-  custom.innerHTML = "<b>Custom / homebrew…</b><div class='lu-sub-blurb'>Another sourcebook or your DM's own. Add its features as custom features afterwards.</div>";
-  custom.addEventListener("click", function(){ if(lu.subclass!=="__custom__"){ lu.subclass = "__custom__"; render(); } });
-  if(lu.subclass==="__custom__"){
-    var input = document.createElement("input");
-    input.type = "text"; input.className = "wiz-spell-search lu-custom-input";
-    input.placeholder = label+" name";
-    input.value = lu.subclassCustom;
-    input.addEventListener("click", function(e){ e.stopPropagation(); });
-    input.addEventListener("input", function(){ lu.subclassCustom = input.value; });
-    custom.appendChild(input);
-    setTimeout(function(){ input.focus(); }, 0);
-  }
-  card.appendChild(custom);
+  // Homebrew subclasses are made in the Compendium (with their features
+  // and levels), then show up in this list like the others.
+  var note = ce("div","lu-custom-note");
+  note.innerHTML = "<div><b>Want your own "+escapeHtml(label.toLowerCase())+"?</b> Create it in the Compendium with its features and the levels they unlock at. It'll appear in this list.</div>";
+  var make = document.createElement("button");
+  make.type = "button";
+  make.className = "btn small";
+  make.innerHTML = makePlusSvg()+"Create a custom "+escapeHtml(label.toLowerCase());
+  make.addEventListener("click", function(){
+    openCompendium({
+      newSubclassFor: lu.className,
+      // Saved: pick it and come straight back here.
+      onSubclassSaved: function(entry){
+        if(lu && entry.className===lu.className) lu.subclass = entry.name;
+        document.getElementById("catalog-back").click();
+      },
+      onClose: function(){ if(lu) render(); }
+    });
+  });
+  note.appendChild(make);
+  card.appendChild(note);
 }
 
 function stepAsi(container){

@@ -176,6 +176,22 @@ function renderCustomForm(){
   }
 }
 
+/* Open the current section's custom form from code (e.g. an Edit button
+   that pre-fills it); the form is rebuilt first so it picks up the data. */
+export function showCatalogCustomView(){
+  if(!state) return;
+  renderCustomForm();
+  document.getElementById("catalog-overlay").classList.add("custom-mode");
+}
+/* Rebuild the list, pills and custom form after the section's data
+   changed (something was added, edited or deleted). */
+export function refreshCatalog(){
+  if(!state) return;
+  renderCustomForm();
+  renderPills();
+  renderList();
+}
+
 export function openCatalogPicker(config){
   state = {
     sections: config.sections,
@@ -199,7 +215,9 @@ export function openCatalogPicker(config){
 
   function onSearchInput(){ state.query = searchInput.value; renderList(); }
   function onFab(){ overlay.classList.add("custom-mode"); }
-  function onCustomBack(){ overlay.classList.remove("custom-mode"); }
+  // Leaving the custom view resets its form, so an Edit that was opened
+  // (pre-filled) doesn't linger for the next "+".
+  function onCustomBack(){ renderCustomForm(); }
   function onBack(){
     overlay.classList.remove("open");
     overlay.classList.remove("custom-mode");

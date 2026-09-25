@@ -135,7 +135,6 @@ button.class-chip:hover{border-color:var(--brass);}
 .lu-note{font-size:12.5px;line-height:1.5;color:var(--text-on-parch-dim);margin:8px 0;}
 .lu-sub-blurb{font-size:12px;color:var(--text-on-parch-dim);margin-top:2px;line-height:1.4;}
 .lu-sub-feats{font-size:11.5px;color:var(--brass-bright);margin-top:4px;}
-.lu-custom-input{margin:8px 0 0;}
 .lu-custom-row{display:flex;gap:6px;align-items:flex-start;margin-top:4px;}
 .lu-custom-row input{flex:1;margin:0;}
 .lu-points{font-size:13px;font-weight:600;color:var(--brass-bright);margin:0 0 8px;}
@@ -219,3 +218,19 @@ button.class-chip:hover{border-color:var(--brass);}
   .lu-new-badge::after{display:none;}
 }
 
+
+/* Level-up subclass step: the tag on custom subclasses, and the note that
+   points to the Compendium for making one. */
+.lu-custom-tag{
+  margin-left:8px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:1px 7px;border-radius:8px;vertical-align:middle;
+  color:var(--moss);border:1px solid color-mix(in srgb, var(--moss) 60%, transparent);
+}
+.lu-custom-note{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-top:12px;padding:12px 14px;border-radius:8px;border:1.5px dashed var(--rule);
+  font-size:13px;color:var(--text-on-parch-dim);line-height:1.5;
+}
+.lu-custom-note > div{flex:1 1 240px;}
+.lu-custom-note b{color:var(--text-on-parch);}
+.lu-custom-note .btn{display:inline-flex;align-items:center;gap:6px;flex:none;}
+.lu-custom-note .btn svg{width:15px;height:15px;}

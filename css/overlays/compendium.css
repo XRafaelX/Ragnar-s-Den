@@ -1,5 +1,5 @@
 /* Compendium detail views (in the info modal): classes, subclasses, feats. */
-.cmp-block{margin-bottom:16px;}
+.cmp-block{margin-bottom:16px;overflow-wrap:anywhere;}
 .cmp-block:last-child{margin-bottom:0;}
 .cmp-block-title{
   font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--brass-bright);
@@ -12,6 +12,7 @@
 .cmp-facts dd{margin:0;}
 .cmp-feature{padding:9px 11px;border-radius:7px;background:rgba(255,255,255,.03);border:1px solid var(--rule);margin-bottom:8px;}
 .cmp-feature-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.cmp-feature-head strong{min-width:0;}
 .cmp-feature-head strong{font-size:13.5px;}
 .cmp-lv{
   flex:none;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:1px 7px;border-radius:8px;
@@ -29,3 +30,103 @@
 .cmp-sub-link span{font-size:12px;color:var(--text-on-parch-dim);}
 .cmp-desc{font-size:13px;line-height:1.6;white-space:pre-line;margin:0;}
 .cmp-back{margin-top:4px;}
+
+/* Custom subclass: tag + Edit/Delete in its detail view. */
+.cmp-custom-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.cmp-custom-tag{
+  margin-right:auto;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:8px;
+  color:var(--moss);border:1px solid color-mix(in srgb, var(--moss) 60%, transparent);
+}
+
+/* Custom subclass form (the Subclasses tab's +): a centered form card
+   with a live preview beside it on wide screens. */
+.cmp-form-wrap{
+  display:grid;grid-template-columns:minmax(0, 1fr) 320px;gap:20px;align-items:start;
+  width:100%;max-width:1040px;margin:0 auto;
+}
+@media (max-width:900px){ .cmp-form-wrap{grid-template-columns:1fr;} }
+.cmp-form{
+  display:flex;flex-direction:column;gap:16px;min-width:0;
+  background:var(--parchment);border:1px solid var(--rule);border-radius:12px;padding:20px 22px;
+  box-shadow:0 6px 20px rgba(0,0,0,.3);
+}
+.cmp-form-head{padding-bottom:14px;border-bottom:1px solid var(--rule);}
+.cmp-form-title{font-family:var(--serif);color:var(--brass-bright);margin:0 0 6px;font-weight:normal;font-size:21px;}
+.cmp-form-intro{font-size:13px;color:var(--text-on-parch-dim);line-height:1.55;margin:0;}
+.cmp-form-section{display:flex;flex-direction:column;gap:12px;}
+.cmp-form-section-head{display:flex;align-items:center;gap:8px;}
+.cmp-form-section-head h5{
+  margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--brass-bright);font-weight:600;
+}
+.cmp-count{
+  font-size:11px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb, var(--brass) 22%, transparent);color:var(--brass-bright);font-weight:700;
+}
+.cmp-form-hint{font-size:12px;color:var(--text-on-parch-dim);margin:-6px 0 0;}
+.cmp-form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media (max-width:560px){ .cmp-form-row{grid-template-columns:1fr;} }
+.cmp-form-field{margin-bottom:0;}
+.cmp-form textarea, .cmp-form .cmp-form-field input, .cmp-feat-edit input, .cmp-feat-edit textarea{
+  width:100%;border:none;border-bottom:1px solid var(--rule);background:transparent;color:var(--text-on-parch);
+  font:inherit;font-size:13.5px;padding:5px 0;resize:vertical;
+}
+.cmp-form textarea:focus, .cmp-form .cmp-form-field input:focus, .cmp-feat-edit input:focus, .cmp-feat-edit textarea:focus{outline:none;border-bottom-color:var(--brass);}
+
+/* Feature cards: a level pill, the name, remove, then the description. */
+.cmp-feat-edits{display:flex;flex-direction:column;gap:10px;}
+.cmp-feat-edit{
+  display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:10px;
+  border:1px solid var(--rule);background:rgba(0,0,0,.14);border-left:3px solid var(--brass);
+}
+.cmp-feat-edit-top{display:flex;align-items:center;gap:12px;}
+.cmp-feat-level{flex:none;width:104px;}
+.cmp-level-pill.tp-trigger{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:4px;cursor:pointer;
+  padding:5px 10px;border-radius:14px;border:1px solid color-mix(in srgb, var(--brass) 60%, transparent);
+  background:color-mix(in srgb, var(--brass) 16%, transparent);color:var(--brass-bright);font-size:12.5px;font-weight:700;
+}
+.cmp-level-pill.tp-trigger:hover{background:color-mix(in srgb, var(--brass) 26%, transparent);}
+.cmp-feat-name{flex:1;min-width:0;font-weight:600;font-size:14px !important;}
+.cmp-feat-remove{
+  flex:none;background:none;border:none;color:var(--text-on-parch-dim);font-size:14px;cursor:pointer;
+  width:28px;height:28px;border-radius:50%;
+}
+.cmp-feat-remove:hover:not(:disabled){color:#fca5a5;background:rgba(217,69,95,0.18);}
+.cmp-feat-remove:disabled{opacity:.3;cursor:not-allowed;}
+.cmp-add-feat{
+  display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;cursor:pointer;
+  border:1.5px dashed var(--rule);border-radius:10px;background:transparent;color:var(--brass-bright);font-size:13px;
+  transition:border-color .15s, background .15s;
+}
+.cmp-add-feat:hover{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 8%, transparent);}
+.cmp-add-feat svg{width:16px;height:16px;}
+.cmp-form-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:14px;border-top:1px solid var(--rule);}
+
+/* Live preview, styled like the Compendium's detail view. */
+.cmp-preview{position:sticky;top:0;min-width:0;}
+.cmp-preview-label{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-on-parch-dim);margin:0 0 8px 2px;}
+/* overflow-wrap: typed text with no spaces (a pasted word, a long name)
+   breaks inside the card instead of spilling out and widening the page. */
+.cmp-preview-card{
+  overflow-wrap:anywhere;min-width:0;
+  background:var(--parchment);border:1px solid var(--brass);border-radius:12px;padding:16px 18px;
+  box-shadow:0 6px 20px rgba(0,0,0,.3);
+}
+.cmp-preview-name{font-family:var(--serif);font-size:19px;color:var(--brass-bright);word-break:break-word;}
+.cmp-preview-tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px;}
+.cmp-tag-class, .cmp-tag-muted{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:8px;border:1px solid var(--rule);
+}
+.cmp-tag-class{color:var(--text-on-parch);}
+.cmp-tag-muted{color:var(--text-on-parch-dim);}
+.cmp-preview-blurb{font-size:13px;color:var(--text-on-parch-dim);line-height:1.5;margin:0 0 12px;}
+.cmp-preview-feat{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--rule);}
+.cmp-preview-feat > div{min-width:0;}
+.cmp-preview-feat .cmp-lv{margin-top:1px;}
+.cmp-preview-feat strong{font-size:13px;}
+.cmp-preview-feat p{font-size:12px;color:var(--text-on-parch-dim);margin:3px 0 0;line-height:1.45;}
+/* Narrow screens stack the layout, which would put the preview below the
+   Create button where it only repeats what was just typed: hide it. */
+@media (max-width:900px){ .cmp-preview{display:none;} }
+/* A custom subclass's (possibly very long) name as the detail title. */
+#info-modal-title{overflow-wrap:anywhere;min-width:0;}

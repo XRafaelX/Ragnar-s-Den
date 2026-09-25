@@ -13,6 +13,7 @@ import { setupAvatarUpload } from "./ui/avatar.js";
 import { setupAvatarCropper } from "./ui/avatar-crop.js";
 import { setupBackdropUpload } from "./ui/backdrop.js";
 import { maybeStartTutorial, startTutorial } from "./ui/tutorial.js";
+import { loadCustomSubclasses, getCustomSubclasses, importCustomSubclasses } from "./core/custom-subclasses.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
@@ -37,7 +38,10 @@ export function setupTopLevel(){
   document.getElementById("sidebar-home-link").addEventListener("click", goHome);
 
   document.getElementById("export-btn").addEventListener("click", function(){
-    var blob = new Blob([JSON.stringify(state.characters, null, 2)], {type:"application/json"});
+    // Characters plus homebrew made in the Compendium. (Older backups were
+    // just the characters array; import still accepts those.)
+    var backup = {version:2, characters:state.characters, customSubclasses:getCustomSubclasses()};
+    var blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url;
@@ -57,12 +61,16 @@ export function setupTopLevel(){
     var reader = new FileReader();
     reader.onload = function(){
       try{
-        var data = JSON.parse(reader.result);
+        var parsed = JSON.parse(reader.result);
+        var data = Array.isArray(parsed) ? parsed : parsed && parsed.characters;
+        var homebrew = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customSubclasses) ? parsed.customSubclasses : [];
         if(!Array.isArray(data)) throw new Error("Invalid format");
         confirmDialog(
           "Import backup?",
-          "This will add "+data.length+" character(s) from the backup file to your current vault. Existing characters are kept.",
+          "This will add "+data.length+" character(s)"+(homebrew.length ? " and "+homebrew.length+" custom subclass(es)" : "")+" from the backup file to your current vault. Existing characters are kept.",
           function(){
+            // Subclasses first, so imported characters find theirs.
+            importCustomSubclasses(homebrew);
             data.forEach(function(c){
               c.id = uid(); // avoid collisions
               ensureShape(c);
@@ -99,6 +107,7 @@ export function confirmDeleteCharacter(c){
 export function init(){
   initTheme();
   load();
+  loadCustomSubclasses();
   state.characters.forEach(ensureShape);
   setupTopLevel();
   setupDiceTray();
