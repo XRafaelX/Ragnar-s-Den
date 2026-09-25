@@ -1,7 +1,7 @@
 import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
-import { CLASSES_INFO } from "../data/classes.js";
+import { CLASSES_INFO, FIGHTING_STYLES } from "../data/classes.js";
 import { BACKGROUND_INFO } from "../data/backgrounds.js";
-import { mod, ce } from "../core/helpers.js";
+import { mod, ce, uid } from "../core/helpers.js";
 import { newCharacter } from "../core/character.js";
 import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
@@ -13,12 +13,13 @@ import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import {
   buildEquipmentList,
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
-  wizardStepAbilities, wizardStepSkills, wizardStepEquipment, wizardStepSpells, wizardStepReview
+  wizardStepAbilities, wizardStepSkills, wizardStepChoices, wizardStepEquipment, wizardStepSpells, wizardStepReview,
+  expertiseOptions
 } from "./wizard-steps.js";
 import { makeMoveLeftSvg, makeMoveRightSvg } from "../ui/svg-icons.js";
 
 /* ---------------- Character Creation Wizard ---------------- */
-export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","equipment","spells","review"];
+export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","choices","equipment","spells","review"];
 export var wizardState = null;
 
 export function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardState.classId]; }
@@ -28,6 +29,10 @@ export function isStepApplicable(id){
     var info = currentClassInfo();
     return !!(info && info.spellcasting);
   }
+  if(id==="choices"){
+    var ci = currentClassInfo();
+    return !!(ci && ci.choices && ci.choices.length);
+  }
   return true;
 }
 
@@ -35,7 +40,7 @@ export function wizardStepTitle(id){
   return {
     class:"Choose a Class", race:"Choose a Race", background:"Choose a Background",
     alignment:"Choose an Alignment",
-    abilities:"Ability Scores", skills:"Skills & Proficiencies", equipment:"Starting Equipment",
+    abilities:"Ability Scores", skills:"Skills & Proficiencies", choices:"Class Features", equipment:"Starting Equipment",
     spells:"Spells", review:"Review & Finish"
   }[id];
 }
@@ -75,6 +80,18 @@ export function validateStep(id){
   if(id==="skills"){
     return wizardState.skillChoices.length===info.skillChoices.count ? null : "Choose "+info.skillChoices.count+" skills.";
   }
+  if(id==="choices"){
+    var missing = (info.choices||[]).find(function(ch){
+      var v = wizardState.classChoices[ch.id];
+      if(ch.kind==="expertise"){
+        var allowed = expertiseOptions(ch);
+        return !v || v.length!==ch.count || v.some(function(x){ return allowed.indexOf(x)===-1; });
+      }
+      return !v;
+    });
+    if(!missing) return null;
+    return missing.kind==="expertise" ? "Choose "+missing.count+" for "+missing.label+"." : "Choose a "+missing.label+".";
+  }
   if(id==="equipment"){
     var ok = info.equipment.choiceGroups.every(function(g,gi){ return wizardState.equipment[gi]!=null; });
     return ok ? null : "Make a choice for each equipment option.";
@@ -102,6 +119,7 @@ export function openWizard(){
     pointBuy:{str:8,dex:8,con:8,int:8,wis:8,cha:8},
     rolledPool:null,
     skillChoices:[],
+    classChoices:{},
     equipment:{},
     spellChoices:{cantrips:[], spells:[]}
   };
@@ -147,6 +165,7 @@ export function finishWizard(){
   // AC is derived on the sheet from equipped armor (see computeArmorClass);
   // no armor is equipped yet, so it starts from unarmored / class defense.
   c.inventory = buildEquipmentList(info, w.equipment);
+  applyClassChoices(c, info, w.classChoices);
 
   if(info.spellcasting){
     var sc = info.spellcasting;
@@ -172,6 +191,30 @@ export function finishWizard(){
   document.getElementById("wizard-overlay").classList.remove("open");
   renderAll();
   playAdd();
+}
+
+/* Level-1 class picks from the Class Features step: a fighting style
+   becomes a feature on the sheet (its `fightingStyle` tag lets AC/attacks
+   apply Defense and Archery), expertise doubles proficiency on skills. */
+export function applyClassChoices(c, info, picks){
+  (info.choices||[]).forEach(function(ch){
+    var v = picks[ch.id];
+    if(!v) return;
+    if(ch.kind==="fightingStyle"){
+      var style = FIGHTING_STYLES[v];
+      c.features.push({id:uid(), name:"Fighting Style: "+v, source:"Class", text:style ? style.text : "", isPassive:true, fightingStyle:v});
+    } else if(ch.kind==="expertise"){
+      v.forEach(function(name){
+        if((ch.tools||[]).indexOf(name)!==-1){
+          var tools = c.inventory.find(function(i){ return i.name.toLowerCase()===name.toLowerCase(); });
+          if(tools) tools.notes = (tools.notes ? tools.notes+"; " : "")+"expertise: double proficiency bonus";
+          c.features.push({id:uid(), name:"Expertise: "+name, source:"Class", text:"Your proficiency bonus is doubled for ability checks you make with "+name.toLowerCase()+".", isPassive:true});
+          return;
+        }
+        c.skillProfs[name] = {prof:true, expertise:true};
+      });
+    }
+  });
 }
 
 export function renderWizard(){
@@ -204,7 +247,7 @@ export function renderWizard(){
   var renderers = {
     class: wizardStepClass, race: wizardStepRace, background: wizardStepBackground,
     alignment: wizardStepAlignment,
-    abilities: wizardStepAbilities, skills: wizardStepSkills, equipment: wizardStepEquipment,
+    abilities: wizardStepAbilities, skills: wizardStepSkills, choices: wizardStepChoices, equipment: wizardStepEquipment,
     spells: wizardStepSpells, review: wizardStepReview
   };
   renderers[wizardState.step](inner);

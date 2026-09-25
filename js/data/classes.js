@@ -1,8 +1,8 @@
 import { CLASS_LIST } from "./abilities-skills.js";
 
 /* ---------------- Character Creation Wizard data ----------------
-   Only Barbarian has a fully guided creation experience right now.
-   The other classes appear (with a one-line blurb) so the class list
+   Barbarian, Fighter, Rogue and Wizard have a fully guided creation
+   experience right now. The other classes appear (with a one-line blurb) so the class list
    reads as complete, but are marked unavailable until they are built
    out the same way. */
 var CLASS_BLURBS = {
@@ -65,16 +65,127 @@ CLASSES_INFO["Barbarian"] = {
   }
 };
 
+/* Packs shared by several classes' starting equipment. */
+var EXPLORERS_PACK = {name:"Explorer's Pack", qty:1, weight:59, notes:"backpack, bedroll, mess kit, tinderbox, 10 torches, 10 days rations, waterskin, 50ft rope"};
+var DUNGEONEERS_PACK = {name:"Dungeoneer's Pack", qty:1, weight:61.5, notes:"backpack, crowbar, hammer, 10 pitons, 10 torches, tinderbox, 10 days rations, waterskin, 50ft rope"};
+var BURGLARS_PACK = {name:"Burglar's Pack", qty:1, weight:44.5, notes:"backpack, 1,000 ball bearings, 10ft string, bell, 5 candles, crowbar, hammer, 10 pitons, hooded lantern, 2 flasks of oil, 5 days rations, tinderbox, waterskin, 50ft rope"};
+
+/* Fighting styles a class can pick. `fightingStyle` on the chosen feature
+   lets the sheet apply the ones with a flat bonus (Defense, Archery). */
+export var FIGHTING_STYLES = {
+  "Archery":{text:"You gain a +2 bonus to attack rolls you make with ranged weapons. (Already added to your ranged attacks.)"},
+  "Defense":{text:"While you are wearing armor, you gain a +1 bonus to AC. (Already added to your AC.)"},
+  "Dueling":{text:"When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon."},
+  "Great Weapon Fighting":{text:"When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll."},
+  "Protection":{text:"When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield."},
+  "Two-Weapon Fighting":{text:"When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack."}
+};
+
 CLASSES_INFO["Fighter"].features = [
   {name:"Fighting Style", text:"Adopt a particular style of fighting as your specialty (e.g. Archery, Defense, Dueling, Great Weapon Fighting, Protection, Two-Weapon Fighting)."},
   {name:"Second Wind", text:"Bonus action to regain hit points equal to 1d10 + your fighter level (once per short or long rest)."}
 ];
+
+/* `choices` drives the creation wizard's Class Features step: level-1
+   picks a class makes beyond skills (a fighting style, expertise, ...). */
+Object.assign(CLASSES_INFO["Fighter"], {
+  available:true,
+  primaryAbility:"str",
+  primaryAbilityLabel:"Strength (or Dexterity for an archer or finesse fighter)",
+  savingThrows:["str","con"],
+  skillChoices:{count:2, options:["Acrobatics","Animal Handling","Athletics","History","Insight","Intimidation","Perception","Survival"]},
+  choices:[
+    {id:"fightingStyle", kind:"fightingStyle", label:"Fighting Style",
+      help:"Pick the style that matches how you'll fight. Defense and Archery are added to your AC and attacks automatically; the others are reminders on your Features tab.",
+      options:["Archery","Defense","Dueling","Great Weapon Fighting","Protection","Two-Weapon Fighting"]}
+  ],
+  equipment:{
+    choiceGroups:[
+      {options:[
+        {key:"chain", label:"Chain mail", detail:"Heavy armor, AC 16. Needs 13 Strength or your speed drops by 10 ft; disadvantage on Stealth", items:[
+          {name:"Chain Mail",qty:1,weight:55,notes:"heavy; Str 13; stealth disadvantage",type:"armor",category:"heavy",baseAC:16}
+        ]},
+        {key:"leather_bow", label:"Leather armor, longbow and 20 arrows", detail:"Light armor, AC 11 + DEX, plus a 1d8 bow with range 150/600 ft", items:[
+          {name:"Leather",qty:1,weight:10,notes:"light armor",type:"armor",category:"light",baseAC:11},
+          {name:"Longbow",qty:1,weight:2,notes:"ammunition, heavy, two-handed, range 150/600",type:"weapon",damageDice:"1d8",damageType:"Piercing",ability:"dex",proficient:true},
+          {name:"Arrows",qty:20,weight:0.05,notes:"ammunition"}
+        ]}
+      ]},
+      {options:[
+        {key:"weapon_shield", label:"A martial weapon and a shield", detail:"Starts as a longsword (1d8, versatile 1d10); swap it on the sheet. Shield gives +2 AC", items:[
+          {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true},
+          {name:"Shield",qty:1,weight:6,notes:"+2 AC",type:"armor",category:"shield",baseAC:2}
+        ]},
+        {key:"two_martial", label:"Two martial weapons", detail:"Starts as a greatsword (2d6) and a longsword (1d8); swap them on the sheet", items:[
+          {name:"Greatsword",qty:1,weight:6,notes:"heavy, two-handed",type:"weapon",damageDice:"2d6",damageType:"Slashing",ability:"str",proficient:true},
+          {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"crossbow", label:"Light crossbow and 20 bolts", detail:"1d8 piercing, range 80/320 ft, loading", items:[
+          {name:"Light Crossbow",qty:1,weight:5,notes:"ammunition, loading, two-handed, range 80/320",type:"weapon",damageDice:"1d8",damageType:"Piercing",ability:"dex",proficient:true},
+          {name:"Crossbow Bolts",qty:20,weight:0.075,notes:"ammunition"}
+        ]},
+        {key:"handaxes", label:"Two handaxes", detail:"1d6 slashing, light, thrown (range 20/60 ft)", items:[
+          {name:"Handaxe",qty:2,weight:2,notes:"light, thrown 20/60",type:"weapon",damageDice:"1d6",damageType:"Slashing",ability:"str",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"dungeoneer", label:"Dungeoneer's Pack", detail:"Backpack, crowbar, hammer, pitons, torches, rations, waterskin, rope", items:[DUNGEONEERS_PACK]},
+        {key:"explorer", label:"Explorer's Pack", detail:"Backpack, bedroll, mess kit, tinderbox, torches, rations, waterskin, rope", items:[EXPLORERS_PACK]}
+      ]}
+    ],
+    fixed:[]
+  }
+});
 
 CLASSES_INFO["Rogue"].features = [
   {name:"Expertise", text:"Double your proficiency bonus for two of your skill proficiencies (or one skill and thieves' tools)."},
   {name:"Sneak Attack", text:"Once per turn, deal an extra 1d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage, or an ally is within 5 feet of it."},
   {name:"Thieves' Cant", text:"A secret mix of dialect, jargon, and code that allows you to hide messages in seemingly normal conversation."}
 ];
+
+Object.assign(CLASSES_INFO["Rogue"], {
+  available:true,
+  primaryAbility:"dex",
+  savingThrows:["dex","int"],
+  skillChoices:{count:4, options:["Acrobatics","Athletics","Deception","Insight","Intimidation","Investigation","Perception","Performance","Persuasion","Sleight of Hand","Stealth"]},
+  choices:[
+    {id:"expertise", kind:"expertise", label:"Expertise", count:2, tools:["Thieves' tools"],
+      help:"Pick two things you're proficient in to double your proficiency bonus for. Stealth, Perception and thieves' tools are popular picks."}
+  ],
+  equipment:{
+    choiceGroups:[
+      {options:[
+        {key:"rapier", label:"Rapier", detail:"1d8 piercing, finesse", items:[
+          {name:"Rapier",qty:1,weight:2,notes:"finesse",type:"weapon",damageDice:"1d8",damageType:"Piercing",ability:"finesse",proficient:true}
+        ]},
+        {key:"shortsword", label:"Shortsword", detail:"1d6 piercing, finesse, light (good for fighting with two weapons)", items:[
+          {name:"Shortsword",qty:1,weight:2,notes:"finesse, light",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"finesse",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"shortbow", label:"Shortbow and a quiver of 20 arrows", detail:"1d6 piercing, range 80/320 ft", items:[
+          {name:"Shortbow",qty:1,weight:2,notes:"ammunition, two-handed, range 80/320",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"dex",proficient:true},
+          {name:"Arrows",qty:20,weight:0.05,notes:"ammunition, in a quiver"}
+        ]},
+        {key:"shortsword2", label:"Shortsword", detail:"1d6 piercing, finesse, light", items:[
+          {name:"Shortsword",qty:1,weight:2,notes:"finesse, light",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"finesse",proficient:true}
+        ]}
+      ]},
+      {options:[
+        {key:"burglar", label:"Burglar's Pack", detail:"Backpack, ball bearings, string, bell, candles, crowbar, lantern, oil, rations, rope", items:[BURGLARS_PACK]},
+        {key:"dungeoneer", label:"Dungeoneer's Pack", detail:"Backpack, crowbar, hammer, pitons, torches, rations, waterskin, rope", items:[DUNGEONEERS_PACK]},
+        {key:"explorer", label:"Explorer's Pack", detail:"Backpack, bedroll, mess kit, tinderbox, torches, rations, waterskin, rope", items:[EXPLORERS_PACK]}
+      ]}
+    ],
+    fixed:[
+      {name:"Leather", qty:1, weight:10, notes:"light armor", type:"armor", category:"light", baseAC:11},
+      {name:"Dagger", qty:2, weight:1, notes:"finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true},
+      {name:"Thieves' Tools", qty:1, weight:1, notes:"pick locks and disarm traps"}
+    ]
+  }
+});
 
 CLASSES_INFO["Wizard"].features = [
   {name:"Spellcasting", text:"Prepare and cast spells from your spellbook using Intelligence. Can cast ritual spells from your spellbook."},

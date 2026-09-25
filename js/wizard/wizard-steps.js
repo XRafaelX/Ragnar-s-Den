@@ -1,14 +1,14 @@
 import { ABILITIES, CLASS_LIST, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
-import { CLASSES_INFO } from "../data/classes.js";
+import { CLASSES_INFO, FIGHTING_STYLES } from "../data/classes.js";
 import { RACES, RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/alignments.js";
 import { POINT_BUY_COSTS, pickNameIdeas } from "../data/misc.js";
 import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
-import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
+import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../ui/svg-icons.js";
 import { dropdownField } from "../render/sheet.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices } from "./wizard-core.js";
 
 export function setAbilityMethod(method){
   wizardState.abilityMethod = method;
@@ -245,7 +245,7 @@ export function wizardStepAbilities(container){
   card.innerHTML = "<h3><span>Ability Scores</span></h3>";
   var info = currentClassInfo();
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>Why this matters:</b> These six scores drive almost everything you roll. As a "+escapeHtml(wizardState.classId)+", <b>"+abilityFullName(info.primaryAbility)+"</b> matters most, so prioritize it if you can.";
+  explain.innerHTML = "<b>Why this matters:</b> These six scores drive almost everything you roll. As a "+escapeHtml(wizardState.classId)+", <b>"+escapeHtml(info.primaryAbilityLabel || abilityFullName(info.primaryAbility))+"</b> matters most, so prioritize it if you can.";
   card.appendChild(explain);
 
   var methodRow = ce("div","wiz-method-row");
@@ -350,6 +350,89 @@ export function wizardStepSkills(container){
   });
   card.appendChild(rows);
   container.appendChild(card);
+}
+
+/* What a Rogue-style expertise pick can target: every skill the new
+   character is proficient in (class picks + background) plus any tools
+   the choice allows. */
+export function expertiseOptions(choice){
+  var bgSkills = (BACKGROUND_INFO[wizardState.background]||{}).skills||[];
+  var skills = wizardState.skillChoices.concat(bgSkills.filter(function(sk){ return wizardState.skillChoices.indexOf(sk)===-1; }));
+  return skills.concat(choice.tools||[]);
+}
+
+export function wizardStepChoices(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Class Features</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> Some of your level 1 class features come with a choice. These shape what your "+escapeHtml(wizardState.classId)+" is best at.";
+  card.appendChild(explain);
+
+  var info = currentClassInfo();
+  (info.choices||[]).forEach(function(ch){
+    var title = document.createElement("p");
+    title.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    title.textContent = ch.label;
+    card.appendChild(title);
+    if(ch.help){
+      var help = document.createElement("p");
+      help.style.cssText = "font-size:13px;margin:0 0 10px;";
+      help.textContent = ch.help;
+      card.appendChild(help);
+    }
+    if(ch.kind==="fightingStyle") choiceFightingStyle(card, ch);
+    else if(ch.kind==="expertise") choiceExpertise(card, ch);
+  });
+  container.appendChild(card);
+}
+
+function choiceFightingStyle(card, ch){
+  ch.options.forEach(function(name){
+    var row = ce("div","wiz-equip-option");
+    if(wizardState.classChoices[ch.id]===name) row.classList.add("selected");
+    row.innerHTML = "<div><strong>"+escapeHtml(name)+"</strong><br><span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(FIGHTING_STYLES[name].text)+"</span></div>";
+    row.addEventListener("click", function(){
+      wizardState.classChoices[ch.id] = name;
+      renderWizard();
+    });
+    card.appendChild(row);
+  });
+}
+
+function choiceExpertise(card, ch){
+  var allowed = expertiseOptions(ch);
+  // Drop picks that are no longer valid (the player went back and
+  // changed their skills or background).
+  var picked = (wizardState.classChoices[ch.id]||[]).filter(function(x){ return allowed.indexOf(x)!==-1; });
+  wizardState.classChoices[ch.id] = picked;
+
+  var rows = ce("div","list-rows");
+  allowed.forEach(function(name){
+    var row = ce("div","list-row wiz-pick-row");
+    var cb = document.createElement("input");
+    cb.type="checkbox"; cb.className="chk";
+    var checked = picked.indexOf(name)!==-1;
+    cb.checked = checked;
+    var full = !checked && picked.length>=ch.count;
+    cb.disabled = full;
+    if(full) row.classList.add("disabled");
+    var label = document.createElement("span"); label.className="row-name"; label.textContent = name;
+    row.appendChild(cb); row.appendChild(label);
+    rows.appendChild(row);
+    row.addEventListener("click", function(e){
+      if(cb.disabled) return;
+      if(e.target!==cb) cb.checked = !cb.checked;
+      var cur = wizardState.classChoices[ch.id];
+      if(cb.checked){
+        if(cur.length>=ch.count){ cb.checked=false; return; }
+        cur.push(name);
+      } else {
+        wizardState.classChoices[ch.id] = cur.filter(function(x){ return x!==name; });
+      }
+      renderWizard();
+    });
+  });
+  card.appendChild(rows);
 }
 
 export function wizardStepEquipment(container){
@@ -541,10 +624,17 @@ export function wizardStepReview(container){
   card.appendChild(nameWrap);
 
   var info = currentClassInfo();
-  var conMod = mod(wizardState.abilities.con), dexMod = mod(wizardState.abilities.dex);
+  var conMod = mod(wizardState.abilities.con);
   var hp = HIT_DICE_BY_CLASS[wizardState.classId] + conMod;
-  var isBarb = wizardState.classId === "Barbarian";
-  var ac = 10 + dexMod + (isBarb ? conMod : 0);
+  // Same AC math as the sheet, run on the gear and picks chosen so far.
+  var preview = {
+    abilities: wizardState.abilities,
+    classes: [{name:wizardState.classId, level:1}],
+    inventory: buildEquipmentList(info, wizardState.equipment),
+    features: [], skillProfs: {}, acMisc: 0
+  };
+  applyClassChoices(preview, info, wizardState.classChoices);
+  var ac = computeArmorClass(preview);
 
   var rows = ce("div","list-rows");
   function row(label, val){
@@ -560,9 +650,14 @@ export function wizardStepReview(container){
   row("Alignment", wizardState.alignment || "None");
   row("Ability scores", ABILITIES.map(function(a){ return a[1].slice(0,3).toUpperCase()+" "+wizardState.abilities[a[0]]; }).join("  "));
   row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+")");
-  row("Armor Class", ac + (isBarb ? " (Unarmored Defense: 10 + DEX + CON)" : " (unarmored: 10 + DEX)"));
+  row("Armor Class", ac.value + " (" + ac.breakdown + ")");
   row("Saving throws", info.savingThrows.map(function(k){ return k.toUpperCase(); }).join(", "));
-  row("Skills", wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]).join(", ") || "None");
+  var allSkills = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]);
+  row("Skills", allSkills.filter(function(sk, i){ return allSkills.indexOf(sk)===i; }).join(", ") || "None");
+  (info.choices||[]).forEach(function(ch){
+    var v = wizardState.classChoices[ch.id];
+    row(ch.label, Array.isArray(v) ? v.join(", ") : (v || "None"));
+  });
   if(info.spellcasting){
     row("Cantrips", wizardState.spellChoices.cantrips.join(", ") || "None");
     row(info.spellcasting.spellsLabel || "1st-level spells", wizardState.spellChoices.spells.join(", ") || "None");
@@ -609,12 +704,12 @@ export function buildEquipmentList(info, chosenKeys){
     var opt = group.options.find(function(o){ return o.key===chosenKeys[gi]; });
     if(opt){
       opt.items.forEach(function(it){
-        items.push(equipmentItemToInventoryItem(it, true));
+        items.push(equipmentItemToInventoryItem(it, it.type==="weapon" || it.type==="armor"));
       });
     }
   });
   info.equipment.fixed.forEach(function(it){
-    items.push(equipmentItemToInventoryItem(it, it.type==="weapon"));
+    items.push(equipmentItemToInventoryItem(it, it.type==="weapon" || it.type==="armor"));
   });
   return items;
 }

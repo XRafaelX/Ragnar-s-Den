@@ -3,6 +3,7 @@ import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
+import { WEAPON_DATA } from "../data/weapons.js";
 
 /* ---------------- Helpers ---------------- */
 export function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
@@ -180,9 +181,22 @@ export function computeArmorClass(c){
   }
 
   if(shieldBonus){ breakdown += " + shield (" + fmtMod(shieldBonus) + ")"; short += " + shield"; }
+  var defense = bodyArmor && hasFightingStyle(c, "Defense") ? 1 : 0;
+  if(defense){ breakdown += " + Defense style (+1)"; short += " + Defense"; }
+  base += defense;
   if(misc){ breakdown += " + misc (" + fmtMod(misc) + ")"; short += " + misc"; }
 
   return { value: base + shieldBonus + misc, breakdown: breakdown, short: short };
+}
+
+/* Fighting styles live on the sheet as features tagged `fightingStyle`
+   (see applyClassChoices), so deleting the feature removes its bonus. */
+export function hasFightingStyle(c, style){
+  return (c.features||[]).some(function(f){ return f.fightingStyle===style; });
+}
+export function isRangedWeapon(item){
+  var d = WEAPON_DATA[item.name];
+  return !!(d && d.ranged);
 }
 
 /* ---------------- Weapon attack & damage bonuses ---------------- */
@@ -195,7 +209,8 @@ export function weaponAbilityMod(c, item){
 }
 export function weaponAttackBonus(c, item){
   var pb = item.proficient ? profBonus(c) : 0;
-  return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0);
+  var archery = isRangedWeapon(item) && hasFightingStyle(c, "Archery") ? 2 : 0;
+  return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0) + archery;
 }
 export function weaponDamageBonus(c, item){
   return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0);
