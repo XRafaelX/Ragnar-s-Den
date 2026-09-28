@@ -733,7 +733,43 @@ export var SUBCLASSES = {
     {name:"Wild Magic", blurb:"Chaotic magic that surges unpredictably.", features:{1:[
       {name:"Wild Magic Surge", text:"When you cast a leveled sorcerer spell, the DM can have you roll a d20. On a 1, roll on the Wild Magic Surge table."},
       {name:"Tides of Chaos", text:"Gain advantage on one attack roll, ability check or save. Regained on a long rest (or when a surge happens)."}
-    ]}}
+    ]}},
+    {name:"Clockwork Soul", blurb:"Draws power from Mechanus to impose order and nullify chaos.", features:{
+      1:[
+        {name:"Clockwork Magic", text:"You learn additional spells that don't count against your spells known: Alarm and Protect from Evil and Good (1st), Aid and Lesser Restoration (3rd), Dispel Magic and Protection from Energy (5th), Freedom of Movement and Summon Construct (7th), Greater Restoration and Wall of Force (9th)."},
+        {name:"Restore Balance", text:"When a creature within 60 feet is about to roll with advantage or disadvantage, use your reaction to prevent that roll from having either. Uses equal to your proficiency bonus per long rest."}
+      ],
+      6:[{name:"Bastion of Law", text:"As an action, expend 1–5 sorcery points to create a magical ward on a creature you touch, giving it a number of d8s equal to the points spent. When it takes damage, expend any number of those dice and reduce the damage by the total rolled. The ward lasts until you finish a long rest or use it again."}],
+      14:[{name:"Trance of Order", text:"As a bonus action, enter a state of clockwork consciousness for 1 minute: attacks against you can't benefit from advantage, and on each of your turns you can treat a d20 roll of 9 or lower as a 10. Once per long rest."}],
+      18:[{name:"Clockwork Cavalcade", text:"Briefly summon spirits of order to restore balance. In a 30-foot cube originating from you: repair up to 4 objects of your choice, end every spell of 6th level or lower on creatures and objects, remove all curses and disease and poisons from creatures. Once per long rest."}]
+    }},
+    {name:"Aberrant Mind", blurb:"Touched by a psionic entity, warping mind and body with alien power.", features:{
+      1:[
+        {name:"Psionic Spells", text:"You learn additional spells that don't count against your spells known: Arms of Hadar and Dissonant Whispers (1st), Calm Emotions and Detect Thoughts (3rd), Hunger of Hadar and Sending (5th), Evard's Black Tentacles and Summon Aberration (7th), Modify Memory and Rary's Telepathic Bond (9th)."},
+        {name:"Telepathic Speech", text:"As a bonus action, form a telepathic connection with a creature you can see within 30 feet for a number of minutes equal to your sorcerer level. The connection ends early if you are incapacitated, die or use this feature again."}
+      ],
+      6:[{name:"Psionic Sorcery", text:"When you cast any of your Psionic Spells, you can cast it by expending a spell slot as normal or by spending sorcery points equal to the spell's level. If you use sorcery points, the spell requires no verbal or somatic components."}],
+      14:[{name:"Revelation in Flesh", text:"As a bonus action, spend 1 or more sorcery points (up to 4) to gain one benefit per point spent for 10 minutes: see invisible creatures within 60 ft, resistance to psychic damage, fly at your walking speed (hover), and swim at your walking speed (breathe water). Once per long rest."}],
+      18:[{name:"Warping Implosion", text:"As an action, teleport to an unoccupied space you can see within 120 feet. Each creature within 30 feet of your origin must succeed on a Strength save or take 3d10 force damage and be pulled to the nearest unoccupied space to your destination. Once per long rest, or spend 5 sorcery points to use again."}]
+    }},
+    {name:"Divine Soul", blurb:"Bears a divine spark that grants access to cleric spells alongside sorcery.", features:{
+      1:[
+        {name:"Divine Magic", text:"Choose an affinity (Good, Evil, Law, Chaos or Neutrality). You learn a bonus spell from the cleric list based on your affinity (e.g. Cure Wounds for Good) and can pick cleric spells when you learn new sorcerer spells. Your bonus spells don't count against your spells known."},
+        {name:"Favored by the Gods", text:"When you fail a saving throw or miss with an attack roll, add 2d4 to the total (possibly turning the miss into a hit). Once per short or long rest."}
+      ],
+      6:[{name:"Empowered Healing", text:"Once per turn when you or an ally within 5 feet rolls dice to restore HP with a spell, you can spend 1 sorcery point to reroll any number of those dice (you must use the new rolls)."}],
+      14:[{name:"Otherworldly Wings", text:"As a bonus action, manifest spectral wings giving you a flying speed of 30 feet. The wings last until you dismiss them (no action) or become incapacitated."}],
+      18:[{name:"Unearthly Recovery", text:"As a bonus action when you have fewer than half your maximum HP remaining, regain HP equal to half your HP maximum. Once per long rest."}]
+    }},
+    {name:"Shadow Magic", blurb:"Born of shadow — draws on the Shadowfell for dark and terrifying power.", features:{
+      1:[
+        {name:"Eyes of the Dark", text:"Darkvision 120 feet. At level 3 you also learn Darkness and can cast it by spending 2 sorcery points without needing concentration (you can see through the darkness it creates)."},
+        {name:"Strength of the Grave", text:"When damage would drop you to 0 HP, make a Charisma save (DC 5 + the damage dealt). On a success, drop to 1 HP instead. Doesn't work against radiant damage or a critical hit. Once per long rest."}
+      ],
+      6:[{name:"Hound of Ill Omen", text:"As a bonus action, spend 3 sorcery points to summon a howling shadow hound targeting a creature within 120 feet you can see. It appears adjacent to the target, moves and attacks independently (uses your spell save DC), has half your max HP, and the target has disadvantage on saves against your spells while within 5 feet of the hound. The hound disappears after 5 minutes."}],
+      14:[{name:"Shadow Walk", text:"When you are in dim light or darkness, as a bonus action teleport up to 120 feet to an unoccupied space you can see that is also in dim light or darkness."}],
+      18:[{name:"Umbral Form", text:"As a bonus action, spend 6 sorcery points to transform for 1 minute: resistance to all damage except force and radiant, pass through other creatures and objects as difficult terrain (take 1d10 force damage if you end your turn inside an object), and become immune to the grappled and restrained conditions."}]
+    }}
   ],
   "Warlock": [
     {name:"The Fiend", blurb:"A pact with a devil or demon.", features:{1:[
