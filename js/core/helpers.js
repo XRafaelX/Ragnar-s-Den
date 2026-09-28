@@ -134,6 +134,7 @@ export function classProficiencies(c, idx){
 export function characterResources(c){
   var m = {};
   ["str","dex","con","int","wis","cha"].forEach(function(k){ m[k] = mod(c.abilities && c.abilities[k]); });
+  m.pb = profBonus(c); // proficiency bonus — available to max() as m.pb
   var list = [];
   (c.classes||[]).forEach(function(cl){
     var lv = Number(cl.level)||1;

@@ -104,18 +104,62 @@ export var SUBCLASS_RESOURCES = {
       {id:"superiority_dice", name:"Superiority Dice", level:3,
         max:function(lv){ return lv>=15 ? 6 : lv>=7 ? 5 : 4; }, reset:always("short"),
         hint:"d8s (d10 from level 10) that fuel your maneuvers."}
+    ],
+    "Echo Knight": [
+      {id:"unleash_incarnation", name:"Unleash Incarnation", level:3,
+        max:function(lv, m){ return atLeastOne(m.con); }, reset:always("long"),
+        hint:"When you take the Attack action, make one additional melee attack from your echo's position."}
+    ],
+    "Rune Knight": [
+      {id:"giants_might", name:"Giant's Might", level:3,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Bonus action: grow one size, deal +1d6 damage on weapon attacks, and gain advantage on STR checks and saves for 1 minute."}
+    ],
+    "Samurai": [
+      {id:"fighting_spirit", name:"Fighting Spirit", level:3,
+        max:always(3), reset:always("long"),
+        hint:"Bonus action: advantage on all weapon attacks until end of your turn, and gain 5 temporary HP (10 at level 10, 15 at level 15)."}
     ]
   },
   "Sorcerer": {
     "Wild Magic": [
       {id:"tides_of_chaos", name:"Tides of Chaos", level:1, max:always(1), reset:always("long"),
         hint:"Gain advantage on one attack roll, ability check or saving throw. Also comes back when you roll a Wild Magic Surge."}
+    ],
+    "Shadow Magic": [
+      {id:"strength_of_the_grave", name:"Strength of the Grave", level:1, max:always(1), reset:always("long"),
+        hint:"When damage would drop you to 0 HP, make a CHA save (DC 5 + damage dealt) to drop to 1 HP instead. Doesn't work vs radiant or crits."}
+    ],
+    "Clockwork Soul": [
+      {id:"restore_balance", name:"Restore Balance", level:1,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Reaction: when a creature within 60 ft rolls with advantage or disadvantage, cancel it."}
+    ],
+    "Aberrant Mind": [
+      {id:"telepathic_speech", name:"Telepathic Speech", level:1,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Bonus action: form a telepathic connection with a creature you can see within 30 ft for sorcerer-level minutes."}
     ]
   },
   "Warlock": {
     "The Archfey": [
       {id:"fey_presence", name:"Fey Presence", level:1, max:always(1), reset:always("short"),
         hint:"Action: creatures in a 10-ft cube around you must make a WIS save or be charmed or frightened."}
+    ],
+    "The Hexblade": [
+      {id:"hexblades_curse", name:"Hexblade's Curse", level:1,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Bonus action: curse a creature within 30 ft — add proficiency to damage, crit on 19–20, regain HP equal to warlock level + CHA when it dies."}
+    ],
+    "The Celestial": [
+      {id:"healing_light", name:"Healing Light", level:1, pool:true,
+        max:function(lv){ return 1 + lv; }, reset:always("long"),
+        hint:"Bonus action: spend d6s from this pool (max CHA mod per turn) to heal a creature within 60 ft."}
+    ],
+    "The Fathomless": [
+      {id:"tentacle_of_the_deeps", name:"Tentacle of the Deeps", level:1,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Bonus action: summon a spectral tentacle for 1 minute — lash out for 2d8 cold damage or deal 1d8 cold to attackers as a reaction."}
     ]
   },
   "Wizard": {
@@ -123,6 +167,61 @@ export var SUBCLASS_RESOURCES = {
       {id:"portent", name:"Portent Dice", level:2,
         max:function(lv){ return lv>=14 ? 3 : 2; }, reset:always("long"),
         hint:"Roll these d20s after a long rest and write them down. Replace any attack, save or check you can see with one of them."}
+    ],
+    "Bladesinging": [
+      {id:"bladesong", name:"Bladesong", level:2,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Bonus action: enter Bladesong for 1 minute — +INT to AC, +10 ft speed, advantage on Acrobatics, +INT to concentration saves."}
+    ]
+  },
+  "Cleric": {
+    "Light Domain": [
+      {id:"warding_flare", name:"Warding Flare", level:1,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Reaction: impose disadvantage on an attack against you from a creature within 30 ft."}
+    ],
+    "War Domain": [
+      {id:"war_priest", name:"War Priest", level:1,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"When you take the Attack action, make one weapon attack as a bonus action."}
+    ],
+    "Tempest Domain": [
+      {id:"wrath_of_the_storm", name:"Wrath of the Storm", level:1,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Reaction when hit by a creature within 5 ft: it takes 2d8 lightning or thunder damage (DEX save for half)."}
+    ],
+    "Twilight Domain": [
+      {id:"eyes_of_night", name:"Eyes of Night", level:1,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Action: grant up to WIS mod creatures darkvision 300 ft for 1 hour."}
+    ],
+    "Peace Domain": [
+      {id:"emboldening_bond", name:"Emboldening Bond", level:1,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Action: bond up to proficiency-bonus creatures — each adds 1d4 to attacks, checks and saves while a bonded ally is within 30 ft."}
+    ]
+  },
+  "Druid": {
+    "Circle of the Land": [
+      {id:"natural_recovery", name:"Natural Recovery", level:2, max:always(1), reset:always("long"),
+        hint:"During a short rest, recover spell slots with a combined level up to half your druid level (rounded up)."}
+    ],
+    "Circle of Stars": [
+      {id:"cosmic_omen", name:"Cosmic Omen", level:6,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Reaction: add or subtract 1d6 from a creature's attack roll, check or save (Weal adds, Woe subtracts). Determined each long rest."}
+    ]
+  },
+  "Rogue": {
+    "Phantom": [
+      {id:"wails_from_the_grave", name:"Wails from the Grave", level:3,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"When you deal Sneak Attack damage, choose a creature within 30 ft — it takes half your Sneak Attack as necrotic damage."}
+    ],
+    "Soulknife": [
+      {id:"psionic_energy_dice", name:"Psionic Energy Dice", level:3, pool:true,
+        max:function(lv, m){ return m.pb * 2; }, reset:always("long"),
+        hint:"Fuel Psychic Blades (off-hand), Soul Blades (Homing Strikes / Psychic Teleportation), Psychic Veil and Rend Mind. Regain 1 die on a short rest."}
     ]
   }
 };
