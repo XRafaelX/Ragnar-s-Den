@@ -382,6 +382,47 @@ export var SUBCLASSES = {
       2:[{name:"Channel Divinity: Invoke Duplicity", text:"Create an illusory duplicate of yourself for 1 minute; cast spells from its space and gain advantage when you and it are both next to a target."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Charm Person, Disguise Self, Mirror Image and Pass without Trace prepared; they don't count against your prepared spells."}],
       5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Charm Person, Disguise Self, Mirror Image, Pass without Trace, Blink and Dispel Magic prepared; they don't count against your prepared spells."}]
+    }},
+    {name:"Twilight Domain", blurb:"Guards against the terrors of night and eases the transition to death.", features:{
+      1:[
+        {name:"Domain Spells", text:"You always have Faerie Fire and Sleep prepared; they don't count against your prepared spells."},
+        {name:"Bonus Proficiencies", text:"You gain proficiency with martial weapons and heavy armor."},
+        {name:"Eyes of Night", text:"You gain darkvision out to 300 feet. As an action, grant up to a number of willing creatures equal to your Wisdom modifier (minimum 1) darkvision out to 300 feet for 1 hour. You can use this a number of times equal to your proficiency bonus, regained on a long rest."},
+        {name:"Vigilant Blessing", text:"As an action, give one creature you touch advantage on the next initiative roll it makes. This benefit ends immediately after the roll or when you use this feature again."}
+      ],
+      2:[{name:"Channel Divinity: Twilight Sanctuary", text:"Action: create a 30-foot-radius sphere of twilight centered on yourself that moves with you for 1 minute. At the start of each of your turns, each creature in the sphere chooses: gain temporary HP equal to 1d6 + your cleric level, or end one effect causing it to be charmed or frightened."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Faerie Fire, Sleep, Moonbeam and See Invisibility prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Faerie Fire, Sleep, Moonbeam, See Invisibility, Aura of Vitality and Leomund's Tiny Hut prepared; they don't count against your prepared spells."}]
+    }},
+    {name:"Forge Domain", blurb:"Masters the divine art of crafting and imbuing weapons and armor.", features:{
+      1:[
+        {name:"Domain Spells", text:"You always have Identify and Searing Smite prepared; they don't count against your prepared spells."},
+        {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor and smith's tools."},
+        {name:"Blessing of the Forge", text:"At the end of a long rest, touch one nonmagical weapon or piece of armor. Until your next long rest it becomes magical: weapon gains +1 to attack and damage, armor gains +1 AC."}
+      ],
+      2:[{name:"Channel Divinity: Artisan's Blessing", text:"Conduct a 1-hour ritual to create a nonmagical item worth up to 100 gp (metal only), or to add raw metal to reduce the cost of a more expensive item by 100 gp."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Identify, Searing Smite, Heat Metal and Magic Weapon prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Identify, Searing Smite, Heat Metal, Magic Weapon, Elemental Weapon and Protection from Energy prepared; they don't count against your prepared spells."}]
+    }},
+    {name:"Order Domain", blurb:"Enforces divine law and compels others to act through holy authority.", features:{
+      1:[
+        {name:"Domain Spells", text:"You always have Command and Heroism prepared; they don't count against your prepared spells."},
+        {name:"Bonus Proficiencies", text:"You gain proficiency with heavy armor and with the Persuasion and Intimidation skills."},
+        {name:"Voice of Authority", text:"When you cast a spell of 1st level or higher using a spell slot that targets an ally, that ally can use their reaction immediately after the spell to make one weapon attack against a creature of your choice that you can see."}
+      ],
+      2:[{name:"Channel Divinity: Order's Demand", text:"Action: each creature you choose within 30 feet must succeed on a Wisdom save or be charmed by you until the end of your next turn or until it takes damage. While charmed it must use its reaction to move to the nearest unoccupied space if you command it (no action required by you)."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Heroism, Hold Person and Zone of Truth prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Heroism, Hold Person, Zone of Truth, Mass Healing Word and Slow prepared; they don't count against your prepared spells."}]
+    }},
+    {name:"Peace Domain", blurb:"Spreads harmony, protection and unity among allies.", features:{
+      1:[
+        {name:"Domain Spells", text:"You always have Heroism and Sanctuary prepared; they don't count against your prepared spells."},
+        {name:"Implement of Peace", text:"You gain proficiency in Insight, Performance or Persuasion (your choice)."},
+        {name:"Emboldening Bond", text:"As an action, choose a number of willing creatures equal to your proficiency bonus within 30 feet (including yourself). For 10 minutes, each bonded creature adds 1d4 to attack rolls, ability checks and saving throws as long as at least one other bonded creature is within 30 feet of it. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
+      ],
+      2:[{name:"Channel Divinity: Balm of Peace", text:"Move up to your speed without provoking opportunity attacks. When you move within 5 feet of a creature, you can restore HP to it equal to 2d6 + your Wisdom modifier (only once per creature per use of this feature)."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Heroism, Sanctuary, Aid and Warding Bond prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Heroism, Sanctuary, Aid, Warding Bond, Beacon of Hope and Sending prepared; they don't count against your prepared spells."}]
     }}
   ],
   "Druid": [
@@ -395,7 +436,45 @@ export var SUBCLASSES = {
     {name:"Circle of the Moon", blurb:"A shapeshifter who fights in beast form.", features:{2:[
       {name:"Combat Wild Shape", text:"Wild Shape as a bonus action, and while transformed spend a spell slot as a bonus action to heal 1d8 per slot level."},
       {name:"Circle Forms", text:"You can Wild Shape into beasts up to CR 1 (instead of 1/4)."}
-    ]}}
+    ]}},
+    {name:"Circle of Stars", blurb:"Charts the stars to gain cosmic boons during Wild Shape and prayer.", features:{
+      2:[
+        {name:"Star Map", text:"You create a star map (a small object). While holding it you always have Guidance and Guiding Bolt prepared (free, don't count against your prepared spells), and can cast Guiding Bolt without a slot a number of times equal to your proficiency bonus per long rest."},
+        {name:"Starry Form", text:"When you use Wild Shape you can assume a starry form instead of a beast. Choose Archer (bonus action ranged spell attack, 1d8 + WIS radiant, on each turn), Chalice (when you cast a healing spell of 1st level or higher, you or a creature within 30 feet regains 1d8 + WIS HP), or Dragon (concentration checks automatically succeed, Guiding Bolt as a bonus action once per turn)."}
+      ],
+      6:[{name:"Cosmic Omen", text:"After each long rest, roll a d6. Odd: Weal — reaction when a creature within 30 feet makes an attack, check or save: +1d6 to the roll. Even: Woe — reaction: −1d6 to the roll. You can use this a number of times equal to your proficiency bonus per long rest."}],
+      10:[{name:"Twinkling Constellations", text:"While in Starry Form, the Archer and Chalice forms each deal an extra 1d8 radiant damage or healing. The Dragon form grants a flying speed of 20 feet and can hover."}],
+      14:[{name:"Full of Stars", text:"While in Starry Form, you become partially incorporeal: resistance to bludgeoning, piercing and slashing damage."}]
+    }},
+    {name:"Circle of Wildfire", blurb:"Bonds with a wildfire spirit to burn away the old and nurture the new.", features:{
+      2:[
+        {name:"Enhanced Bond", text:"When you cast a spell that deals fire damage or restores HP, add 1d8 to one fire damage or healing roll while your wildfire spirit is summoned."},
+        {name:"Summon Wildfire Spirit", text:"As an action, expend one Wild Shape use to summon a wildfire spirit in an unoccupied space within 30 feet. It lasts 1 hour or until reduced to 0 HP. It acts on your initiative. You can command it with a bonus action: it can move and use its Flame Seed (ranged spell attack, 1d6 + WIS fire) or Fiery Teleportation (teleport yourself and up to 3 willing creatures within 5 feet of it up to 15 feet; creatures near the origin take 1d6 + WIS fire on a failed DEX save)."},
+        {name:"Circle Spells", text:"You always have Burning Hands, Cure Wounds, Flaming Sphere, Scorching Ray, Plant Growth, Revivify, Aura of Life and Fire Shield prepared; they don't count against your prepared spells."}
+      ],
+      6:[{name:"Cauterizing Flames", text:"When a Small or larger creature dies within 30 feet of you or your wildfire spirit, a harmless spectral flame appears in its space for 1 minute. As a reaction when a creature you can see enters that space, extinguish the flame to heal or deal 2d10 + WIS fire damage (their choice). Uses equal to your WIS modifier per long rest."}],
+      10:[{name:"Blazing Revival", text:"When your wildfire spirit drops to 0 HP, you can expend one Wild Shape use as a reaction to have it drop to 1 HP instead."}],
+      14:[{name:"Firestorm", text:"When you cast a fire spell using a spell slot, choose any number of creatures you can see within 60 feet that are not the target. Each must succeed on a DEX save (DC = your spell save DC) or take 2d10 fire damage."}]
+    }},
+    {name:"Circle of Dreams", blurb:"Connected to the Feywild, weaving healing and travel magic.", features:{
+      2:[
+        {name:"Balm of the Summer Court", text:"You have a pool of healing equal to five times your druid level. As a bonus action, restore HP to a creature within 120 feet by spending dice from the pool (d6 each); it also gains temporary HP equal to the number of dice spent."},
+        {name:"Circle Spells", text:"You always have Sleep, Telekinesis, Mislead and Seeming prepared; they don't count against your prepared spells."}
+      ],
+      6:[{name:"Hearth of Moonlight and Shadow", text:"At the start of a short or long rest in the open, you can invoke a 30-foot-radius magical space. Until the rest ends, each creature you choose in the area has a +5 bonus to Perception checks and can't be surprised. Flames within are hidden from outside and the area is magically silenced."}],
+      10:[{name:"Hidden Paths", text:"You can teleport up to 60 feet to an unoccupied space you can see as a bonus action. As an action, teleport a willing creature you touch to an unoccupied space you can see within 30 feet of you. Uses equal to your WIS modifier (min 1) per long rest."}],
+      14:[{name:"Walker in Dreams", text:"When you finish a short rest, you can cast Dream (targeting yourself), Scrying or Teleportation Circle without expending a spell slot or using material components. You must finish a long rest to use this feature again."}]
+    }},
+    {name:"Circle of Spores", blurb:"Finds beauty in decay and animates the dead with fungal energy.", features:{
+      2:[
+        {name:"Halo of Spores", text:"When a creature you can see moves into a space within 10 feet of you, use your reaction to deal 1d4 necrotic damage (Constitution save negates). The damage increases as you level."},
+        {name:"Symbiotic Entity", text:"When you use Wild Shape you can expend one use to awaken your spores instead of transforming. Gain temporary HP equal to 4 × your druid level, Halo of Spores deals +1d4 extra damage, and your melee attacks deal an extra 1d6 poison damage. This lasts until the temp HP are lost."},
+        {name:"Circle Spells", text:"You always have Chill Touch, Blindness/Deafness, Gentle Repose, Animate Dead, Gaseous Form, Blight, Confusion and Cloudkill prepared; they don't count against your prepared spells."}
+      ],
+      6:[{name:"Fungal Infestation", text:"When a Small or Medium beast or humanoid dies within 10 feet of you, you can use your reaction to animate it as a zombie (it has 1 HP). It acts immediately after you each round and obeys your mental commands. It turns to dust after 1 hour or when it drops to 0 HP. Uses equal to your WIS modifier per long rest."}],
+      10:[{name:"Spreading Spores", text:"While Symbiotic Entity is active, use a bonus action to hurl spores up to 30 feet. Halo of Spores works in a 10-foot cube centered on that point instead of around you. Each turn you can move the cube up to 10 feet using your reaction."}],
+      14:[{name:"Fungal Body", text:"The fungal spores permeate your body: you are immune to blinded, deafened, frightened and poisoned conditions, and critical hits against you become normal hits."}]
+    }}
   ],
   "Fighter": [
     {name:"Champion", blurb:"Simple, reliable raw power with more critical hits.", features:{3:[
@@ -425,6 +504,38 @@ export var SUBCLASSES = {
       18:[
         {name:"Glorious Echo", text:"Your echo now has a number of hit points equal to half your fighter level instead of 1 HP. Whenever your echo is destroyed, you can immediately create a new echo as part of the same reaction or bonus action (no additional action cost), once per turn."}
       ]
+    }},
+    {name:"Rune Knight", blurb:"Channels giant magic through runes carved into weapons and armor.", features:{
+      3:[
+        {name:"Bonus Proficiencies", text:"You gain proficiency with smith's tools and learn to read, write and speak Giant."},
+        {name:"Rune Carving", text:"Learn two runes of your choice (Cloud, Stone, Fire, Frost, Hill or Storm). Each grants a passive benefit and an active ability. You can invoke a rune's active ability once per short or long rest, and you know one additional rune at levels 7, 10 and 15."},
+        {name:"Giant's Might", text:"As a bonus action, channel giant magic for 1 minute: grow one size category larger (and your equipment grows with you), deal +1d6 damage on weapon and unarmed attacks, and gain advantage on Strength checks and saves. Uses equal to your proficiency bonus per long rest."}
+      ],
+      7:[{name:"Runic Shield", text:"As a reaction when a creature you can see within 60 feet is hit by an attack roll, force the attacker to reroll and use the new result. Uses equal to your proficiency bonus per long rest."}],
+      10:[{name:"Great Stature", text:"Your runes permanently enlarge you: gain 3d4 inches of height, and Giant's Might deals +1d8 damage instead of +1d6."}],
+      15:[{name:"Master of Runes", text:"You can invoke each of your runes twice per short or long rest instead of once."}],
+      18:[{name:"Runic Juggernaut", text:"While Giant's Might is active you can grow to Huge size (10 ft space, 15 ft reach) and deal +1d10 damage instead of the earlier bonus."}]
+    }},
+    {name:"Cavalier", blurb:"A mounted warrior who excels at protecting allies and controlling enemies.", features:{
+      3:[
+        {name:"Bonus Proficiency", text:"Gain proficiency in one of Animal Handling, History, Insight, Performance or Persuasion."},
+        {name:"Born to the Saddle", text:"Mounting or dismounting costs only 5 feet of movement. Advantage on saving throws to avoid falling off a mount. If you fall off, land on your feet if not incapacitated."},
+        {name:"Unwavering Mark", text:"When you hit a creature with a melee attack, mark it until the end of your next turn. While marked: the target has disadvantage on attacks against anyone but you, and if it attacks someone else you can make one melee attack against it as a bonus action (with advantage). Uses equal to STR modifier (min 1) per long rest."}
+      ],
+      7:[{name:"Warding Maneuver", text:"As a reaction when you or a creature within 5 feet is hit, roll a d8 and add it to the target's AC for that attack; if it still hits the creature takes half damage. Uses equal to CON modifier (min 1) per long rest."}],
+      10:[{name:"Hold the Line", text:"Creatures provoke opportunity attacks from you when they move 5 feet or more within your reach, and if you hit the creature its speed drops to 0 for the rest of the turn."}],
+      15:[{name:"Ferocious Charger", text:"When you move at least 10 feet toward a creature and hit it with a melee attack, it must succeed on a Strength save (DC 8 + proficiency + STR) or be knocked prone. Use this once per turn."}],
+      18:[{name:"Vigilant Defender", text:"Whenever a creature makes an opportunity attack against you, make an opportunity attack against it as a reaction."}]
+    }},
+    {name:"Samurai", blurb:"A disciplined warrior whose unyielding will powers devastating strikes.", features:{
+      3:[
+        {name:"Bonus Proficiency", text:"Gain proficiency in History, Insight, Performance or Persuasion (your choice), or learn one language of your choice."},
+        {name:"Fighting Spirit", text:"As a bonus action, give yourself advantage on all weapon attack rolls until the end of the current turn, and gain 5 temporary HP (increasing to 10 at level 10 and 15 at level 15). Uses 3 per long rest."}
+      ],
+      7:[{name:"Elegant Courtier", text:"Add your Wisdom modifier to Persuasion checks. Advantage on saving throws against being frightened."}],
+      10:[{name:"Tireless Spirit", text:"At the start of combat if you have no uses of Fighting Spirit left, regain one use."}],
+      15:[{name:"Rapid Strike", text:"When you have advantage on a weapon attack, forgo it to make one additional weapon attack as a bonus action this turn (once per turn)."}],
+      18:[{name:"Strength Before Death", text:"When damage reduces you to 0 HP but doesn't kill you outright, you can delay falling unconscious until the end of your next turn. You immediately take a special turn (after the triggering creature's turn), though you can't regain HP until the start of that turn. If you drop to 0 HP during this turn you die. Once per long rest."}]
     }}
   ],
   "Monk": [
@@ -436,7 +547,32 @@ export var SUBCLASSES = {
     ]}},
     {name:"Way of the Four Elements", blurb:"Channels ki into elemental magic.", features:{3:[
       {name:"Disciple of the Elements", text:"Learn Elemental Attunement and one more elemental discipline (e.g. Fangs of the Fire Snake, Water Whip) fuelled by ki."}
-    ]}}
+    ]}},
+    {name:"Way of Mercy", blurb:"Heals allies and harvests life force from enemies with mysterious techniques.", features:{
+      3:[
+        {name:"Implements of Mercy", text:"Gain proficiency in Insight and Medicine, and gain a special mask you must wear to use this subclass's features."},
+        {name:"Hand of Harm", text:"Once per turn when you hit with an unarmed strike, spend 1 ki to deal extra necrotic damage equal to 1d6 + your Wisdom modifier and possibly poison the target (Constitution save or poisoned until the end of your next turn)."},
+        {name:"Hand of Healing", text:"As an action, spend 1 ki to restore HP to a creature you touch equal to a roll of your Martial Arts die + Wisdom modifier. You can also end one disease or one of: blinded, deafened, paralyzed, poisoned or stunned on the creature."}
+      ],
+      6:[{name:"Physician's Touch", text:"Hand of Healing can also end one effect from a broader list, and Hand of Harm can also impose the poisoned condition without an extra ki cost."}],
+      11:[{name:"Flurry of Healing and Harm", text:"With Flurry of Blows you can replace either unarmed strike with a Hand of Healing (no ki cost) or a Hand of Harm (still costs 1 ki and can only be used once per Flurry)."}],
+      17:[{name:"Hand of Ultimate Mercy", text:"Spend 5 ki to cast Raise Dead without material components, targeting a creature dead no longer than 24 hours. You can use this once per long rest."}]
+    }},
+    {name:"Way of the Kensei", blurb:"Treats weapons as an extension of the body, mastering them as art.", features:{
+      3:[
+        {name:"Path of the Kensei", text:"Choose two weapons (one melee, one ranged) as kensei weapons; you gain proficiency with them, they count as monk weapons, and you can use them with Martial Arts. Agile Parry: +2 AC if your kensei melee weapon is in hand and you use your unarmed strike bonus action that turn."},
+        {name:"Kensei's Shot", text:"Use a bonus action to make ranged kensei weapon attacks deal +1d4 damage on hit this turn."}
+      ],
+      6:[{name:"One with the Blade", text:"Your kensei attacks count as magical. Magic Kensei Weapons: when you hit with a kensei weapon, spend 1 ki to deal +1d6 damage of the weapon's type."}],
+      11:[{name:"Sharpen the Blade", text:"As a bonus action, spend up to 3 ki to give your kensei weapon a bonus to attack and damage rolls equal to the ki spent (+1 to +3) for 1 minute. Has no effect if the weapon already has a magical bonus."}],
+      17:[{name:"Unerring Accuracy", text:"Once on each of your turns, if you miss with a monk weapon attack, reroll the attack roll (you can use the result)."}]
+    }},
+    {name:"Way of the Astral Self", blurb:"Manifests a spectral astral form to amplify attacks and awareness.", features:{
+      3:[{name:"Arms of the Astral Self", text:"Spend 1 ki (bonus action) to summon spectral arms for 10 minutes. They let you use WIS instead of STR or DEX for unarmed strikes, deal 1d6 (1d8 at level 11) force damage, count as monk weapons, and have a reach of 5 feet. When summoned, deal 2 unarmed strikes to up to two creatures within 10 feet."}],
+      6:[{name:"Visage of the Astral Self", text:"Spend 1 ki (bonus action) to summon a spectral visage for 10 minutes. Gain darkvision 120 ft, advantage on WIS (Insight) and CHA (Intimidation) checks, and understand all spoken languages. You can speak and be understood in any language."}],
+      11:[{name:"Body of the Astral Self", text:"When arms and visage are both active, spectral body armor appears. Gain resistance to bludgeoning, piercing and slashing damage, and when a creature within 10 feet hits you with an attack you can use your reaction to deal force damage equal to 3d10."}],
+      17:[{name:"Awakened Astral Self", text:"Spend 5 ki (bonus action) to empower your astral form for 10 minutes: arms deal +2d6 force damage on each hit, you gain a flying speed equal to your walking speed, and you can cast Banishment (save DC = ki save DC) once per activation without expending a spell slot."}]
+    }}
   ],
   "Paladin": [
     {name:"Oath of Devotion", blurb:"The classic knight in shining armor.", features:{
@@ -459,6 +595,39 @@ export var SUBCLASSES = {
         {name:"Channel Divinity", text:"Once per short or long rest: Abjure Enemy (frighten one creature) or Vow of Enmity (advantage on attacks against one creature for 1 minute)."}
       ],
       5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Bane, Hunter's Mark, Hold Person and Misty Step prepared."}]
+    }},
+    {name:"Oath of Conquest", blurb:"Rules through fear and iron will — break the enemy's spirit.", features:{
+      3:[
+        {name:"Oath Spells", text:"You always have Armor of Agathys and Command prepared; they don't count against your prepared spells."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Conquering Presence (each creature you choose within 30 feet must succeed on a Wisdom save or be frightened of you for 1 minute) or Guided Strike (+10 to one attack roll, declared after seeing the roll but before knowing the result)."}
+      ],
+      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Armor of Agathys, Command, Hold Person and Spiritual Weapon prepared."}],
+      7:[{name:"Aura of Conquest", text:"While you're not incapacitated, frightened creatures within 10 feet of you can't move and take psychic damage equal to half your paladin level at the start of each of their turns. Extends to 30 feet at level 18."}],
+      9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Armor of Agathys, Command, Hold Person, Spiritual Weapon, Bestow Curse and Fear prepared."}],
+      15:[{name:"Scornful Rebuke", text:"Whenever a creature hits you with an attack while you are not incapacitated, it takes psychic damage equal to your Charisma modifier (minimum 1)."}],
+      20:[{name:"Invincible Conqueror", text:"For 1 minute (once per long rest): resistance to all damage, extra attack when you take the Attack action, and critical hits on 19–20."}]
+    }},
+    {name:"Oathbreaker", blurb:"A fallen paladin who abandoned their oath and turned to darkness.", features:{
+      3:[
+        {name:"Oathbreaker Spells", text:"You always have Hellish Rebuke and Inflict Wounds prepared; they don't count against your prepared spells."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Control Undead (a target undead within 30 feet makes a Wisdom save or obeys your commands for 24 hours) or Dreadful Aspect (each creature of your choice within 30 feet must succeed on a Wisdom save or be frightened of you for 1 minute)."}
+      ],
+      5:[{name:"Oathbreaker Spells", replaces:"Oathbreaker Spells", text:"You always have Hellish Rebuke, Inflict Wounds, Crown of Madness and Darkness prepared."}],
+      7:[{name:"Aura of Hate", text:"You and friendly fiends and undead within 10 feet add your Charisma modifier to melee weapon damage. Extends to 30 feet at level 18."}],
+      9:[{name:"Oathbreaker Spells", replaces:"Oathbreaker Spells", text:"You always have Hellish Rebuke, Inflict Wounds, Crown of Madness, Darkness, Animate Dead and Bestow Curse prepared."}],
+      15:[{name:"Supernatural Resistance", text:"Resistance to bludgeoning, piercing and slashing damage from nonmagical weapons."}],
+      20:[{name:"Dread Lord", text:"For 1 minute (once per long rest): create a 30-foot aura of gloom — dim light, disadvantage on saves against being frightened, shadowy duplicates attack frightened creatures (3d10 psychic), and melee attacks deal +3d10 psychic on a failed Wisdom save."}]
+    }},
+    {name:"Oath of Redemption", blurb:"Seeks to reform the wicked through peace, mercy and patience.", features:{
+      3:[
+        {name:"Oath Spells", text:"You always have Sanctuary and Sleep prepared; they don't count against your prepared spells."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Emissary of Peace (+5 to Persuasion checks for 10 minutes) or Rebuke the Violent (when a creature within 30 feet deals damage to a third party, the attacker must make a Wisdom save or take radiant damage equal to the damage dealt)."}
+      ],
+      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Sanctuary, Sleep, Calm Emotions and Hold Person prepared."}],
+      7:[{name:"Aura of the Guardian", text:"When another creature within 10 feet takes damage, use your reaction to take that damage yourself instead. Extends to 30 feet at level 18."}],
+      9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Sanctuary, Sleep, Calm Emotions, Hold Person, Counterspell and Hypnotic Pattern prepared."}],
+      15:[{name:"Protective Spirit", text:"At the end of your turn if you have fewer than half your max HP and are not incapacitated, regain HP equal to 1d6 + half your paladin level."}],
+      20:[{name:"Emissary of Redemption", text:"Resistance to all damage dealt by creatures. When a creature hits you with an attack, it takes radiant damage equal to half the damage it dealt. Both effects end for a creature if you attack it, deal damage to it or force it to make a saving throw."}]
     }}
   ],
   "Ranger": [
@@ -475,6 +644,35 @@ export var SUBCLASSES = {
         {name:"Gloom Stalker Magic", text:"You always know Disguise Self; it doesn't count against your ranger spells known."}
       ],
       5:[{name:"Gloom Stalker Magic", replaces:"Gloom Stalker Magic", text:"You always know Disguise Self and Rope Trick; they don't count against your ranger spells known."}]
+    }},
+    {name:"Fey Wanderer", blurb:"Channels the magic and mystique of the Feywild to charm and bewilder.", features:{
+      3:[
+        {name:"Dreadful Strikes", text:"When you hit a creature with a weapon attack, deal an extra 1d4 psychic damage (once per turn). Increases to 1d6 at level 11."},
+        {name:"Fey Wanderer Magic", text:"You always know Charm Person and it doesn't count against your ranger spells known. You learn additional spells at levels 5, 9, 13 and 17 (Misty Step, Dispel Magic, Dimension Door, Mislead)."},
+        {name:"Otherworldly Glamour", text:"Add your Wisdom modifier to Charisma checks. Gain proficiency in Deception, Performance or Persuasion (your choice)."}
+      ],
+      7:[{name:"Beguiling Twist", text:"Advantage on saves against being charmed or frightened. When a creature you can see within 120 feet succeeds on a save against being charmed or frightened, use your reaction to impose that condition on a different creature within 120 feet (Wisdom save negates, lasts 1 minute)."}],
+      11:[{name:"Fey Reinforcements", text:"Once per long rest, cast Summon Fey without a spell slot. You can also cast it with a spell slot, and it doesn't count against your spells known."}],
+      15:[{name:"Misty Wanderer", text:"Cast Misty Step without expending a spell slot a number of times equal to your Wisdom modifier per long rest. When you cast it, take up to 5 willing creatures with you."}]
+    }},
+    {name:"Horizon Walker", blurb:"Guards the boundaries between planes and hunts extraplanar threats.", features:{
+      3:[
+        {name:"Detect Portal", text:"As an action, sense the distance and direction to the nearest planar portal within 1 mile. Once per short or long rest."},
+        {name:"Horizon Walker Magic", text:"You always know Protection from Evil and Good; it doesn't count against your ranger spells known. You learn additional spells at levels 5, 9, 13 and 17 (Misty Step, Haste, Banishment, Teleportation Circle)."},
+        {name:"Planar Warrior", text:"As a bonus action before attacking, choose a target. The first hit that turn deals +1d8 force damage and the attack's normal damage becomes force. Increases to +2d8 at level 11."}
+      ],
+      7:[{name:"Ethereal Step", text:"At the start of your turn, bonus action to cast Etherealness (affects only you) until the end of that turn. Once per short or long rest."}],
+      11:[{name:"Distant Strike", text:"When you take the Attack action, teleport up to 10 feet before each attack. If you attack two different creatures on that turn, make one extra attack against a third creature."}],
+      15:[{name:"Spectral Defense", text:"When a creature hits you with an attack, use your reaction to give yourself resistance to all damage from that attack."}]
+    }},
+    {name:"Drakewarden", blurb:"Bonds with a drake companion that grows into a fearsome mount.", features:{
+      3:[
+        {name:"Draconic Gift", text:"You learn the Draconic language and the Thaumaturgy cantrip."},
+        {name:"Drake Companion", text:"As an action, summon your drake in an unoccupied space within 30 feet. It acts on your initiative with its own turn; use a bonus action to command it to Maul (melee attack) or move. It has AC 14 + proficiency, HP equal to five times your ranger level, and deals 1d6 piercing + proficiency bonus damage. If it dies, resummon it after a long rest (or expend a spell slot to do so after 1 hour)."}
+      ],
+      7:[{name:"Bond of Fang and Scale", text:"Your drake can now be ridden as a mount (your size or smaller). It gains resistance to one damage type linked to its color (acid, cold, fire, lightning or poison). When you cast a spell targeting only yourself while mounted on it, you can also affect the drake."}],
+      11:[{name:"Drake's Breath", text:"As an action, cause your drake (or yourself if it's not summoned) to exhale a 30-foot cone dealing 8d6 damage of the drake's chosen type (Dex save for half). Once per long rest, or expend a spell slot to use again."}],
+      15:[{name:"Perfected Bond", text:"Your drake grows to Large size, can fly at its walking speed, and when it hits with its Maul attack you can use your reaction to make one weapon attack."}]
     }}
   ],
   "Rogue": [
@@ -489,7 +687,43 @@ export var SUBCLASSES = {
     {name:"Arcane Trickster", blurb:"Enhances stealth and trickery with illusion and enchantment magic.", casterType:"third", spellAbility:"int", features:{3:[
       {name:"Spellcasting", text:"You learn Mage Hand plus two other wizard cantrips and three 1st-level wizard spells (mostly enchantment and illusion), cast with Intelligence."},
       {name:"Mage Hand Legerdemain", text:"Your Mage Hand is invisible and can stow or pick objects from others and use thieves' tools."}
-    ]}}
+    ]}},
+    {name:"Swashbuckler", blurb:"A daring duelist who fights with flair and wins with charm.", features:{
+      3:[
+        {name:"Fancy Footwork", text:"After making a melee attack against a creature during your turn, that creature can't make opportunity attacks against you for the rest of the turn."},
+        {name:"Rakish Audacity", text:"Add your Charisma modifier to your initiative. You can use Sneak Attack if no other creatures are within 5 feet of you (even without advantage), as long as you don't have disadvantage on the roll."}
+      ],
+      9:[{name:"Panache", text:"As an action, make a Persuasion check contested by a creature's Insight. On a success, a hostile creature is charmed (disadvantage on attacks against anyone but you, can't opportunity-attack you) for 1 minute, or a non-hostile creature is charmed for 1 hour."}],
+      13:[{name:"Elegant Maneuver", text:"On your turn, use a bonus action to gain advantage on the next Acrobatics or Athletics check you make before the end of your turn."}],
+      17:[{name:"Master Duelist", text:"Once per short or long rest, if you miss with an attack roll you can reroll it with advantage."}]
+    }},
+    {name:"Soulknife", blurb:"Focuses psionic energy into blades of psychic power.", features:{
+      3:[
+        {name:"Psionic Power", text:"You have a pool of Psionic Energy dice (d6, increasing to d8 at level 5 and d10 at level 11). Regain one die on a short rest; regain all on a long rest. Pool size equals twice your proficiency bonus."},
+        {name:"Psychic Blades", text:"As part of an attack you can manifest a psychic blade from your free hand (1d6 psychic, finesse, thrown 60 ft, vanishes after). Draw-and-throw as one object interaction. As a bonus action, manifest a second blade for an off-hand attack; add your ability modifier to the damage."}
+      ],
+      9:[{name:"Soul Blades", text:"Homing Strikes: spend 1 Psionic die after missing an attack to add the roll to the attack (may turn the miss into a hit). Psychic Teleportation: bonus action to spend 1 Psionic die and teleport up to 10 × the roll in feet to an unoccupied space you can see."}],
+      13:[{name:"Psychic Veil", text:"Cast Invisibility on yourself without a spell slot or components (lasts 1 hour or until you attack, deal damage or force a save). Regained after a long rest, or spend 1 Psionic die to use again."}],
+      17:[{name:"Rend Mind", text:"When you use Sneak Attack against a creature, spend 3 Psionic dice to force a Wisdom save (DC 8 + proficiency + DEX) or the creature is stunned until the end of your next turn."}]
+    }},
+    {name:"Phantom", blurb:"Flirts with death, drawing power from the boundary between life and undeath.", features:{
+      3:[
+        {name:"Whispers of the Dead", text:"After each short or long rest, gain proficiency in one skill or tool of your choice, chosen from a whisper of the dead."},
+        {name:"Wails from the Grave", text:"When you deal Sneak Attack damage to a creature, choose a second creature within 30 feet; it takes half as much necrotic damage as the Sneak Attack dealt (rounded down). Uses equal to your proficiency bonus per long rest."}
+      ],
+      9:[{name:"Tokens of the Departed", text:"When a creature you can see dies within 30 feet, capture its soul in a Tiny object (Soul Trinket, max proficiency bonus at once). While holding a trinket: advantage on death saves and Constitution checks, and ask one question of the soul (once per trinket). Can destroy a trinket to regain one Wails from the Grave use."}],
+      13:[{name:"Ghost Walk", text:"Spend one Soul Trinket to assume Ghost Walk (bonus action) for 10 minutes: fly 10 ft (hover), pass through creatures and objects (3d10 force damage if you end your turn inside one), and attacks against you have disadvantage."}],
+      17:[{name:"Death's Friend", text:"Wails from the Grave now also deals necrotic damage to the original target. Soul Trinkets replenish one per long rest if you have none."}]
+    }},
+    {name:"Scout", blurb:"An expert skirmisher and survivalist who strikes from range and keeps moving.", features:{
+      3:[
+        {name:"Skirmisher", text:"When a creature ends its turn within 5 feet of you, use your reaction to move up to half your speed without provoking opportunity attacks."},
+        {name:"Survivalist", text:"Gain proficiency in Nature and Survival, and double your proficiency bonus for checks with either skill."}
+      ],
+      9:[{name:"Superior Mobility", text:"Your walking speed increases by 10 feet. If you have a climbing or swimming speed, those also increase by 10 feet."}],
+      13:[{name:"Ambush Master", text:"You have advantage on initiative rolls. The first creature you hit on your first turn of combat becomes easier to hit: attack rolls against it have advantage until the start of your next turn."}],
+      17:[{name:"Sudden Strike", text:"On your turn you can make one additional attack as a bonus action; this attack can trigger Sneak Attack even if you've already used it this turn (but only once per turn regardless)."}]
+    }}
   ],
   "Sorcerer": [
     {name:"Draconic Bloodline", blurb:"Dragon blood grants toughness and elemental power.", features:{1:[
