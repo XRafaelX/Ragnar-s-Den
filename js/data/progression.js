@@ -339,7 +339,24 @@ export var SUBCLASSES = {
     {name:"Eldritch Knight", blurb:"Blends martial skill with wizard magic.", casterType:"third", spellAbility:"int", features:{3:[
       {name:"Spellcasting", text:"You learn two wizard cantrips and three 1st-level wizard spells (mostly abjuration and evocation), cast with Intelligence."},
       {name:"Weapon Bond", text:"Bond with up to two weapons: you can't be disarmed of them and can summon one to your hand as a bonus action."}
-    ]}}
+    ]}},
+    {name:"Echo Knight", blurb:"Conjures a duplicate from a parallel timeline to fight alongside you.", features:{
+      3:[
+        {name:"Manifest Echo", text:"As a bonus action, create an echo — a translucent, silvery image of yourself — within 15 feet of you. It shares your AC and saving throw bonuses, has 1 HP, immunity to all conditions, and vanishes if it takes any damage. You can use a bonus action to move it up to 30 feet. Once per turn when you take the Attack action you can make one of the attacks originating from the echo's position. As a reaction when a creature you can see within 5 feet of the echo moves at least 5 feet away from it, you can make an opportunity attack from the echo's position."},
+        {name:"Unleash Incarnation", text:"When you take the Attack action you can make one additional melee attack from your echo's position. You can use this a number of times equal to your Constitution modifier (minimum 1), and you regain all expended uses on a long rest."}
+      ],
+      7:[
+        {name:"Echo Avatar", text:"As an action, temporarily transfer your consciousness to your echo for up to 10 minutes. During this time you can see and hear through the echo, you are blinded and deafened in your own body, and you can move the echo up to 30 feet on each of your turns without using a bonus action. You can end this early as a bonus action."},
+        {name:"Shadow Martyr", text:"As a reaction when an ally you can see is hit by an attack and is within 5 feet of your echo, you can cause the echo to take the hit instead. It is then destroyed."}
+      ],
+      10:[
+        {name:"Reclaim Potential", text:"When your echo is destroyed (not when you choose to dismiss it), you can gain temporary hit points equal to 2d6 + your Constitution modifier. You can use this a number of times equal to your Constitution modifier (minimum 1), and you regain all uses on a long rest."},
+        {name:"Legion of One", text:"You can now have two echoes active at the same time. Each must be within 15 feet of you or within 15 feet of each other when created. Each functions identically to a single echo, but only one can be moved with your bonus action per turn. Unleash Incarnation attacks can originate from either echo."}
+      ],
+      18:[
+        {name:"Glorious Echo", text:"Your echo now has a number of hit points equal to half your fighter level instead of 1 HP. Whenever your echo is destroyed, you can immediately create a new echo as part of the same reaction or bonus action (no additional action cost), once per turn."}
+      ]
+    }}
   ],
   "Monk": [
     {name:"Way of the Open Hand", blurb:"Master of unarmed combat.", features:{3:[
