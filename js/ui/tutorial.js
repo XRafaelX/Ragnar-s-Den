@@ -4,6 +4,8 @@
    Shown once for brand-new users (no characters, never seen it) and
    replayable from the About modal. */
 
+import { switchHomeRing } from "../render/home.js";
+
 export var TUTORIAL_STORAGE_KEY = "ragnarsDen.tutorial.v1";
 
 var MOBILE_MAX = 800; // matches the sidebar's off-canvas breakpoint
@@ -292,6 +294,7 @@ function finish(){
 
 export function startTutorial(){
   if(els) return;
+  switchHomeRing(0);
   steps = STEPS.filter(function(s){ return !(s.desktopOnly && isMobile()); });
   build();
   document.addEventListener("keydown", onKey, true);

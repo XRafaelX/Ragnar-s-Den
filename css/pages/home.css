@@ -2,15 +2,81 @@
 
 /* ---------- Home hub (main menu) ---------- */
 #home-hub{
-  display:flex;flex-direction:column;align-items:center;gap:26px;
+  display:flex;flex-direction:column;align-items:center;gap:20px;
+  position:relative;
 }
+
+.home-ring-wrapper{
+  display:flex;align-items:center;justify-content:center;
+  position:relative;width:100%;max-width:440px;
+  overflow-x:clip;
+}
+
 #home-ring{
   --hub-r:132px;
   position:relative;
   width:calc(var(--hub-r) * 2 + 76px);
   height:calc(var(--hub-r) * 2 + 76px);
   flex:none;
+  outline:none;
+  /* Horizontal drags slide between rings; vertical still scrolls the page. */
+  touch-action:pan-y;
+  -webkit-user-select:none;
+  user-select:none;
 }
+#home-ring.dragging{cursor:grabbing;}
+#home-ring.dragging .home-ring-layer{transition:none !important;}
+
+/* Ring layers (for sliding & pagination between rings) */
+.home-ring-layer{
+  position:absolute;inset:0;
+  pointer-events:none;
+  opacity:0;
+  visibility:hidden;
+  transform:scale(0.85) rotate(-20deg);
+  transition:transform .45s cubic-bezier(0.2, 0.9, 0.3, 1),
+             opacity .4s cubic-bezier(0.2, 0.9, 0.3, 1),
+             filter .4s ease;
+  filter:blur(3px);
+  will-change:transform, opacity, filter;
+}
+.home-ring-layer.active{
+  pointer-events:auto;
+  opacity:1;
+  visibility:visible;
+  transform:scale(1) rotate(0deg);
+  filter:none;
+  z-index:1;
+}
+
+
+/* Pagination indicators */
+.home-ring-dots{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:-6px;
+  z-index:2;
+}
+.home-ring-dot{
+  width:8px;height:8px;border-radius:4px;
+  background:color-mix(in srgb, var(--text-on-ink-dim) 35%, transparent);
+  border:none;padding:0;cursor:pointer;
+  transition:width .25s cubic-bezier(0.175,0.885,0.32,1.275), background .25s ease, box-shadow .25s ease;
+}
+.home-ring-dot:hover{
+  background:var(--brass);
+  transform:scale(1.25);
+}
+.home-ring-dot.active{
+  width:22px;
+  background:linear-gradient(90deg, var(--brass) 0%, var(--brass-bright) 100%);
+  box-shadow:0 0 10px color-mix(in srgb, var(--brass) 65%, transparent);
+  cursor:default;
+}
+.home-ring-dot:focus-visible{
+  outline:2px solid var(--brass);
+  outline-offset:2px;
+}
+
 .home-node{
   position:absolute;top:50%;left:50%;
   --tx:0px;--ty:0px;
@@ -57,6 +123,7 @@
 #home-ring.selecting #home-center{filter:drop-shadow(0 0 20px color-mix(in srgb, var(--brass) 85%, transparent)) brightness(1.2);}
 
 .home-node-circle{
+  position:relative;
   width:58px;height:58px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   font-size:24px;line-height:1;
@@ -71,11 +138,34 @@
 }
 .home-icon-svg{width:26px;height:26px;}
 
+/* Ring 1 button themes */
 #home-node-new .home-node-circle{background:linear-gradient(135deg, var(--brass) 0%, var(--brass-active) 100%);}
 #home-node-armory .home-node-circle{background:linear-gradient(135deg, #fbbf24 0%, #b45309 100%);}
 #home-node-about .home-node-circle{background:linear-gradient(135deg, #f9a8d4 0%, #be185d 100%);}
 #home-node-compendium .home-node-circle{background:linear-gradient(135deg, #86efac 0%, #15803d 100%);}
 #home-node-spellbook .home-node-circle{background:linear-gradient(135deg, #67e8f9 0%, #0e7490 100%);}
+
+/* Ring 2 button themes (Placeholders) */
+#home-node-monsters .home-node-circle{background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%);}
+#home-node-monsters .home-icon-svg{
+  width:32px;height:32px;
+  filter:invert(1) drop-shadow(0 0 5px #f87171) drop-shadow(0 0 2px #f87171);
+  object-fit:contain;
+}
+
+/* Placeholder badges */
+.home-node-badge{
+  position:absolute;top:-3px;right:-3px;
+  background:var(--parchment-deep, #1e172a);
+  color:var(--brass-bright, #fef08a);
+  border:1px solid color-mix(in srgb, var(--brass) 60%, transparent);
+  font-size:9px;font-weight:700;line-height:1;
+  padding:2px 4px;border-radius:6px;
+  box-shadow:0 2px 6px rgba(0,0,0,.45);
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  pointer-events:none;
+}
 
 #home-center{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -111,7 +201,7 @@
 @keyframes home-ring-spin{to{transform:rotate(360deg);}}
 
 #home-hub h2{margin-top:4px;}
-#home-hub p{max-width:280px;font-size:13px;line-height:1.5;}
+#home-hub p{max-width:320px;font-size:13px;line-height:1.5;transition:opacity .2s ease;}
 
 @media (max-width:480px){
   #home-ring{--hub-r:104px;}
@@ -119,4 +209,11 @@
   .home-icon-svg{width:22px;height:22px;}
   #home-center{width:78px;height:78px;}
   #home-center-icon svg{width:38px;height:38px;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .home-ring-layer, .home-ring-dot, .home-node{
+    transition-duration:.01s !important;
+    animation-duration:.01s !important;
+  }
 }

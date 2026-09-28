@@ -1,4 +1,4 @@
-var CACHE_NAME = "vault-and-vellum-v18";
+var CACHE_NAME = "vault-and-vellum-v19";
 var ASSETS = [
   "./",
   "./index.html",
