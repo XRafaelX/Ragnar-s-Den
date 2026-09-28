@@ -296,7 +296,33 @@ export var SUBCLASSES = {
     {name:"College of Valor", blurb:"A battle-bard who inspires heroics on the front line.", features:{3:[
       {name:"Bonus Proficiencies", text:"Proficiency with medium armor, shields and martial weapons."},
       {name:"Combat Inspiration", text:"Allies can add your Bardic Inspiration die to a damage roll, or to their AC against one attack."}
-    ]}}
+    ]}},
+    {name:"College of Eloquence", blurb:"A master orator whose words never miss and always inspire.", features:{
+      3:[
+        {name:"Silver Tongue", text:"When you make a Persuasion or Deception check you can treat a roll of 9 or lower on the d20 as a 10."},
+        {name:"Unsettling Words", text:"As a bonus action, expend one Bardic Inspiration die and choose a creature you can see within 60 feet. Roll the die; until the end of your next turn the creature subtracts the result from its next saving throw."}
+      ],
+      6:[
+        {name:"Unfailing Inspiration", text:"When a creature adds your Bardic Inspiration die to a roll and fails, it keeps the die; it isn't expended."},
+        {name:"Universal Speech", text:"As an action, choose up to a number of creatures equal to your CHA modifier (minimum 1) within 60 feet. For 1 hour they magically understand you, regardless of language. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
+      ],
+      14:[
+        {name:"Infectious Inspiration", text:"When a creature uses your Bardic Inspiration die and succeeds on the roll, you can use your reaction to give a different creature within 60 feet a Bardic Inspiration die — without expending one of your uses. You can use this reaction a number of times equal to your CHA modifier (minimum 1), regained on a long rest."}
+      ]
+    }},
+    {name:"College of Swords", blurb:"A daring blade performer who weaves weapon tricks into combat.", features:{
+      3:[
+        {name:"Bonus Proficiencies", text:"You gain proficiency with medium armor and with the scimitar. If you are already proficient with a simple or martial melee weapon you can use it as a spellcasting focus."},
+        {name:"Fighting Style", text:"Choose one fighting style: Dueling (+2 damage with a one-handed melee weapon while your other hand is empty) or Two-Weapon Fighting (add your modifier to the off-hand attack's damage)."},
+        {name:"Blade Flourish", text:"When you take the Attack action, your walking speed increases by 10 feet until the end of the turn, and one attack you make this turn can be a Blade Flourish. Expend a Bardic Inspiration die to choose one: Defensive Flourish (add the die to the attack's damage and to your AC until the start of your next turn), Slashing Flourish (add the die to the damage and deal the same damage to any other creature within 5 feet of the target), or Mobile Flourish (add the die to the damage and push the target up to 5 + the die result feet away; you can then move up to your speed toward it as a reaction)."}
+      ],
+      6:[
+        {name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}
+      ],
+      14:[
+        {name:"Master's Flourish", text:"Whenever you use a Blade Flourish option you can roll a d6 and use it instead of expending a Bardic Inspiration die."}
+      ]
+    }}
   ],
   "Cleric": [
     {name:"Life Domain", blurb:"The healer's domain: tougher armor and stronger heals.", features:{
