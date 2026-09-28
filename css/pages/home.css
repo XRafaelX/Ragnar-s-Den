@@ -152,6 +152,7 @@
   filter:invert(1) drop-shadow(0 0 5px #f87171) drop-shadow(0 0 2px #f87171);
   object-fit:contain;
 }
+#home-node-encounters .home-node-circle{background:linear-gradient(135deg, #60a5fa 0%, #1e40af 50%, #1e1b4b 100%);}
 
 /* Placeholder badges */
 .home-node-badge{
