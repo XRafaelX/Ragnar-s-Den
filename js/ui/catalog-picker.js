@@ -106,22 +106,60 @@ function renderRow(section, name, d){
     el.textContent = text;
     right.appendChild(el);
   });
-  // A section can add small buttons to a row (Edit / Delete on custom
-  // items): [{label, title, danger, onClick}]. They don't trigger onAdd.
+  // A section can add small buttons to a row (Edit / Delete / Customize on
+  // custom items): [{label, title, danger, onClick}].
+  // They are hidden behind a ⋯ menu button to keep rows compact.
   var actions = section.rowActions ? section.rowActions(name, d) : [];
   if(actions.length){
-    var bar = document.createElement("div");
-    bar.className = "catalog-row-actions";
+    var menuWrap = document.createElement("div");
+    menuWrap.className = "catalog-row-menu";
+
+    var menuBtn = document.createElement("button");
+    menuBtn.type = "button";
+    menuBtn.className = "catalog-row-menu-btn";
+    menuBtn.title = "More options";
+    menuBtn.setAttribute("aria-label", "More options");
+    menuBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>';
+
+    var dropdown = document.createElement("div");
+    dropdown.className = "catalog-row-dropdown";
+    // Prevent clicks inside the dropdown from bubbling to the list
+    // (which would trigger the row below or close the menu prematurely)
+    dropdown.addEventListener("click", function(e){ e.stopPropagation(); });
+
     actions.forEach(function(a){
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "ff-action-btn" + (a.danger ? " danger" : "");
+      b.className = "catalog-dropdown-item" + (a.danger ? " danger" : "");
       b.textContent = a.label;
       if(a.title) b.title = a.title;
-      b.addEventListener("click", function(e){ e.stopPropagation(); a.onClick(); });
-      bar.appendChild(b);
+      b.addEventListener("click", function(e){
+        e.stopPropagation();
+        dropdown.classList.remove("open");
+        a.onClick();
+      });
+      dropdown.appendChild(b);
     });
-    right.appendChild(bar);
+
+    menuBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var isOpen = dropdown.classList.contains("open");
+      // Close any other open dropdowns
+      document.querySelectorAll(".catalog-row-dropdown.open").forEach(function(el){
+        el.classList.remove("open");
+      });
+      if(!isOpen) dropdown.classList.add("open");
+    });
+
+    // Close on outside click
+    document.addEventListener("click", function closeMenu(){
+      dropdown.classList.remove("open");
+    }, {once: false, capture: false});
+
+    menuWrap.appendChild(menuBtn);
+    menuWrap.appendChild(dropdown);
+    row.appendChild(menuWrap);
+    row.classList.add("has-menu");
   }
   row.appendChild(right);
 

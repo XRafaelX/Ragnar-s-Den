@@ -36,8 +36,10 @@ function crSort(a, b){
   return CR_ORDER.indexOf(a) - CR_ORDER.indexOf(b);
 }
 
-/* The id of the monster currently being edited (null = create new). */
+/* The id of the monster currently being edited (null = create new).
+   copyFrom holds a plain data snapshot to pre-fill the form as a new entry. */
 var editing = null;
+var copyFrom = null;
 
 /* ---- Info modal: full stat block ---- */
 function openMonsterDetail(name, d){
@@ -85,15 +87,46 @@ function openMonsterDetail(name, d){
   });
 }
 
-/* ---- Homebrew rows: Edit / Delete ---- */
-function customActions(name, d){
-  if(!d.custom) return [];
-  return [
-    {
+/* ---- Row actions ----
+   Custom rows → Edit / Delete.
+   All rows → Copy & Customize (pre-fills the form as a new entry). */
+function rowActions(name, d){
+  var actions = [];
+
+  // Every row gets "Copy & Customize"
+  actions.push({
+    label: "Customize",
+    title: "Copy " + name + " and save as custom",
+    onClick: function(){
+      editing = null;
+      copyFrom = {
+        name:      name + " (Custom)",
+        type:      d.type,
+        cr:        d.cr,
+        size:      d.size,
+        alignment: d.alignment,
+        hp:        d.hp,
+        ac:        d.ac,
+        speed:     d.speed,
+        str:       d.str,
+        dex:       d.dex,
+        con:       d.con,
+        int:       d.int,
+        wis:       d.wis,
+        cha:       d.cha,
+        notes:     d.notes || ""
+      };
+      showCatalogCustomView();
+    }
+  });
+
+  // Custom-only: Edit and Delete
+  if(d.custom){
+    actions.push({
       label: "Edit", title: "Edit " + name,
-      onClick: function(){ editing = d.id; showCatalogCustomView(); }
-    },
-    {
+      onClick: function(){ copyFrom = null; editing = d.id; showCatalogCustomView(); }
+    });
+    actions.push({
       label: "Delete", title: "Delete " + name, danger: true,
       onClick: function(){
         confirmDialog(
@@ -107,8 +140,10 @@ function customActions(name, d){
           }
         );
       }
-    }
-  ];
+    });
+  }
+
+  return actions;
 }
 
 /* ---- Monster section descriptor ---- */
@@ -133,7 +168,7 @@ function monsterSection(){
       openMonsterDetail(name, d);
       return false; // suppress "Added" badge — this is a reference, not a pickup
     },
-    rowActions: customActions,
+    rowActions: rowActions,
     renderCustomForm: buildMonsterForm
   };
 }
@@ -143,18 +178,26 @@ function buildMonsterForm(container){
   var existing = editing ? getCustomMonster(editing) : null;
   editing = null;
 
+  // copyFrom: pre-fill from a built-in monster but treat as a new entry
+  var prefill = copyFrom;
+  copyFrom = null;
+
   var d = existing
     ? JSON.parse(JSON.stringify(existing))
-    : { name:"", type:"Humanoid", cr:"1", size:"Medium", alignment:"Unaligned",
-        hp:10, ac:12, speed:30,
-        str:10, dex:10, con:10, int:10, wis:10, cha:10,
-        notes:"" };
+    : prefill
+      ? JSON.parse(JSON.stringify(prefill))
+      : { name:"", type:"Humanoid", cr:"1", size:"Medium", alignment:"Unaligned",
+          hp:10, ac:12, speed:30,
+          str:10, dex:10, con:10, int:10, wis:10, cha:10,
+          notes:"" };
 
   var introText = existing
     ? "Changes apply everywhere this monster appears."
-    : "Saved in this browser under Homebrew, so you can reference it any time.";
+    : prefill
+      ? "Copied from " + prefill.name.replace(" (Custom)", "") + ". Tweak the stats and save as your own version."
+      : "Saved in this browser under Homebrew, so you can reference it any time.";
 
-  var shell = homebrewShell(container, existing ? "Edit " + existing.name : "Create monster", introText);
+  var shell = homebrewShell(container, existing ? "Edit " + existing.name : prefill ? "Customize " + prefill.name.replace(" (Custom)","") : "Create monster", introText);
 
   /* ── Basics ── */
   var basics = shell.section("Basics");
@@ -283,6 +326,6 @@ function buildMonsterForm(container){
 export function openMonsters(){
   openCatalogPicker({
     sections: [monsterSection()],
-    onClose: function(){ editing = null; }
+    onClose: function(){ editing = null; copyFrom = null; }
   });
 }
