@@ -413,9 +413,14 @@ export var SPELL_LEVEL_LABELS = ["Cantrip","1st Level","2nd Level","3rd Level","
 
 export function spellLevelLabel(level){ return SPELL_LEVEL_LABELS[level] || ("Level " + level); }
 
+/* Mutable groups object — custom-spells.js merges its "Homebrew" group
+   into this so the catalog picker sees homebrew spells alongside built-ins. */
+export var SPELL_GROUPS = {};
+
 /* Names grouped by level label (only levels that have spells), sorted
    alphabetically; the shape the catalog picker expects. Pass a class
-   name to limit the groups to that class's spell list. */
+   name to limit the groups to that class's spell list.
+   Always includes any homebrew entries from SPELL_GROUPS["Homebrew"]. */
 export function buildSpellGroups(className){
   var groups = {};
   Object.keys(SPELL_DATA).sort().forEach(function(name){
@@ -424,8 +429,13 @@ export function buildSpellGroups(className){
     var label = spellLevelLabel(d.level);
     (groups[label] = groups[label] || []).push(name);
   });
+  // Append homebrew entries (they don't belong to any class list)
+  if(!className && SPELL_GROUPS["Homebrew"] && SPELL_GROUPS["Homebrew"].length){
+    groups["Homebrew"] = SPELL_GROUPS["Homebrew"].slice();
+  }
   var ordered = {};
   SPELL_LEVEL_LABELS.forEach(function(label){ if(groups[label]) ordered[label] = groups[label]; });
+  if(groups["Homebrew"]) ordered["Homebrew"] = groups["Homebrew"];
   return ordered;
 }
 

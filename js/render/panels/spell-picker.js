@@ -1,34 +1,47 @@
 import { SPELL_DATA, SPELL_LEVEL_LABELS, buildSpellGroups, spellDataForClass } from "../../data/spells.js";
 import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
-import { openCatalogPicker } from "../../ui/catalog-picker.js";
-import { playAdd } from "../../ui/sound.js";
+import { openCatalogPicker, showCatalogCustomView, refreshCatalog } from "../../ui/catalog-picker.js";
+import { playAdd, playDelete } from "../../ui/sound.js";
 import { showActionToast } from "../../ui/toast.js";
+import { confirmDialog } from "../../ui/confirm-modal.js";
+import { facts, textField, homebrewShell, pickerField, previewCard } from "../../ui/homebrew-form.js";
+import { themedPicker } from "../../ui/themed-picker.js";
+import { escapeHtml } from "../../core/helpers.js";
+import {
+  getCustomSpell, saveCustomSpell, deleteCustomSpell,
+  spellNameProblem, charactersWithSpell, SPELL_HOMEBREW_GROUP
+} from "../../core/custom-spells.js";
 
 var SCHOOLS = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"];
 
+/* id being edited in the custom form; null = create new */
+var editing = null;
+
 function hasSpell(c, name){
-  var n = (name||"").trim().toLowerCase();
-  return (c.spells||[]).some(function(sp){ return (sp.name||"").trim().toLowerCase() === n; });
+  var n = (name || "").trim().toLowerCase();
+  return (c.spells || []).some(function(sp){ return (sp.name || "").trim().toLowerCase() === n; });
 }
 
 /* The catalog fields a character's spell keeps (so the sheet can show
    casting time/range/etc. without looking anything up). `notes` stays the
    player's own free text. */
 export function spellFromCatalog(name, d){
-  return {
+  var entry = {
     name: name, level: d.level, prepared: d.level === 0, notes: "",
     school: d.school, castingTime: d.castingTime, range: d.range,
-    components: d.components, duration: d.duration,
+    components: d.components, material: d.material || "", duration: d.duration,
     concentration: !!d.concentration, ritual: !!d.ritual, summary: d.summary
   };
+  if(d.custom && d.id) entry.homebrewId = d.id;
+  return entry;
 }
 
 /* Returns false (so the picker skips its "Added" badge) when the spell
    is already on the sheet. */
 export function addCatalogSpell(c, name, d){
   if(hasSpell(c, name)){
-    showActionToast(name + " is already on " + (c.name||"this character") + "’s list.");
+    showActionToast(name + " is already on " + (c.name || "this character") + "'s list.");
     return false;
   }
   c.spells.push(spellFromCatalog(name, d));
@@ -37,113 +50,186 @@ export function addCatalogSpell(c, name, d){
   return true;
 }
 
-export function addCustomSpell(c, fields){
-  c.spells.push({
-    name: fields.name, level: fields.level, prepared: fields.level === 0, notes: "",
-    school: fields.school, castingTime: fields.castingTime, range: fields.range,
-    components: fields.components, duration: fields.duration,
-    concentration: fields.concentration, ritual: fields.ritual, summary: fields.summary
-  });
-  save();
-  playAdd();
+/* ---- Homebrew row actions: Edit / Delete ---- */
+function customRowActions(name, d){
+  if(!d.custom) return [];
+  return [
+    {
+      label: "Edit", title: "Edit " + name,
+      onClick: function(){ editing = d.id; showCatalogCustomView(); }
+    },
+    {
+      label: "Delete", title: "Delete " + name, danger: true,
+      onClick: function(){
+        var entry = getCustomSpell(d.id);
+        if(!entry) return;
+        var users = charactersWithSpell(entry);
+        confirmDialog(
+          "Delete " + name + "?",
+          users.length
+            ? users.map(function(c){ return c.name || "A character"; }).join(", ") +
+              (users.length > 1 ? " have" : " has") +
+              " it and will keep their copy; it just won't be in the Spellbook anymore."
+            : "This custom spell will be removed from the catalog.",
+          function(){
+            deleteCustomSpell(d.id);
+            refreshCatalog();
+            playDelete();
+            showActionToast("Deleted " + name + ".");
+          }
+        );
+      }
+    }
+  ];
 }
 
-function field(labelText, control){
-  var f = document.createElement("div"); f.className = "field";
-  f.innerHTML = "<label>" + labelText + "</label>";
-  f.appendChild(control);
-  return f;
-}
+/* ---- Custom spell form (homebrewShell style) ---- */
+export function buildCustomSpellForm(container, _closeCustom, onSubmit){
+  var existing = editing ? getCustomSpell(editing) : null;
+  editing = null;
 
-export function buildCustomSpellForm(container, closeCustom, onSubmit){
-  var form = document.createElement("div");
-  form.style.cssText = "display:flex;flex-direction:column;gap:12px;max-width:420px;";
+  var d = existing
+    ? JSON.parse(JSON.stringify(existing))
+    : { name:"", level:0, school:"", castingTime:"1 action", range:"",
+        components:"", material:"", duration:"Instantaneous",
+        concentration:false, ritual:false, classes:[], summary:"" };
 
-  var title = document.createElement("h4");
-  title.style.cssText = "font-family:var(--serif);color:var(--brass-bright);margin:0;font-weight:normal;font-size:17px;";
-  title.textContent = "Custom Spell";
-  form.appendChild(title);
+  var introText = existing
+    ? "Changes apply to every character that has this spell."
+    : "Saved in this browser under Homebrew, so any spellcaster can learn it.";
 
-  var nameInput = document.createElement("input");
-  nameInput.type = "text"; nameInput.placeholder = "e.g. Bigby's Fist";
-  form.appendChild(field("Spell Name *", nameInput));
+  var shell = homebrewShell(container, existing ? "Edit " + existing.name : "Custom Spell", introText);
 
-  var row1 = document.createElement("div");
-  row1.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
-  var levelSelect = document.createElement("select");
-  SPELL_LEVEL_LABELS.forEach(function(label, i){
-    var o = document.createElement("option"); o.value = i; o.textContent = label;
-    levelSelect.appendChild(o);
-  });
-  row1.appendChild(field("Level", levelSelect));
-  var schoolSelect = document.createElement("select");
-  var blank = document.createElement("option"); blank.value = ""; blank.textContent = "None";
-  schoolSelect.appendChild(blank);
-  SCHOOLS.forEach(function(sc){
-    var o = document.createElement("option"); o.value = sc; o.textContent = sc;
-    schoolSelect.appendChild(o);
-  });
-  row1.appendChild(field("School", schoolSelect));
-  form.appendChild(row1);
+  /* ── Basics ── */
+  var basics = shell.section("Basics");
+  var row1 = document.createElement("div"); row1.className = "cmp-form-row";
 
-  var row2 = document.createElement("div");
-  row2.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
-  var timeInput = document.createElement("input"); timeInput.type = "text"; timeInput.value = "1 action";
-  row2.appendChild(field("Casting Time", timeInput));
-  var rangeInput = document.createElement("input"); rangeInput.type = "text"; rangeInput.placeholder = "e.g. 60 feet";
-  row2.appendChild(field("Range", rangeInput));
-  var compInput = document.createElement("input"); compInput.type = "text"; compInput.placeholder = "V, S, M";
-  row2.appendChild(field("Components", compInput));
-  var durInput = document.createElement("input"); durInput.type = "text"; durInput.value = "Instantaneous";
-  row2.appendChild(field("Duration", durInput));
-  form.appendChild(row2);
+  var nameF = textField("Spell Name *", d.name, "e.g. Bigby's Fist");
+  nameF.input.addEventListener("input", function(){ d.name = nameF.input.value; update(); });
+  row1.appendChild(nameF.field);
 
-  var flags = document.createElement("div");
-  flags.style.cssText = "display:flex;gap:18px;";
-  function checkbox(labelText){
-    var l = document.createElement("label");
-    l.style.cssText = "display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;";
-    var cb = document.createElement("input"); cb.type = "checkbox"; cb.className = "chk";
-    l.appendChild(cb); l.appendChild(document.createTextNode(labelText));
-    flags.appendChild(l);
-    return cb;
+  row1.appendChild(pickerField("Level", themedPicker({
+    key: "sp:level", search: false, value: String(d.level), placeholder: "Level", ariaLabel: "Spell Level",
+    groups: { "": SPELL_LEVEL_LABELS.map(function(label, i){ return {value:String(i), label:label}; }) },
+    onPick: function(v){ d.level = Number(v); update(); }
+  })));
+
+  row1.appendChild(pickerField("School", themedPicker({
+    key: "sp:school", search: false, value: d.school, placeholder: "School", ariaLabel: "Spell School",
+    groups: { "": [{value:"", label:"None", muted:true}].concat(SCHOOLS.map(function(sc){ return {value:sc, label:sc}; })) },
+    onPick: function(v){ d.school = v; update(); }
+  })));
+  basics.appendChild(row1);
+
+  /* ── Casting ── */
+  var casting = shell.section("Casting");
+  var row2 = document.createElement("div"); row2.className = "cmp-form-row";
+
+  var timeF = textField("Casting Time", d.castingTime, "1 action");
+  timeF.input.addEventListener("input", function(){ d.castingTime = timeF.input.value; update(); });
+  row2.appendChild(timeF.field);
+
+  var rangeF = textField("Range", d.range, "e.g. 60 feet");
+  rangeF.input.addEventListener("input", function(){ d.range = rangeF.input.value; update(); });
+  row2.appendChild(rangeF.field);
+  casting.appendChild(row2);
+
+  var row3 = document.createElement("div"); row3.className = "cmp-form-row";
+  var compF = textField("Components", d.components, "V, S, M");
+  compF.input.addEventListener("input", function(){ d.components = compF.input.value; update(); });
+  row3.appendChild(compF.field);
+
+  var durF = textField("Duration", d.duration, "Instantaneous");
+  durF.input.addEventListener("input", function(){ d.duration = durF.input.value; update(); });
+  row3.appendChild(durF.field);
+  casting.appendChild(row3);
+
+  /* ── Flags ── */
+  var flagSec = shell.section("Properties");
+  var flagRow = document.createElement("div"); flagRow.className = "cmp-kind-row";
+
+  function flagPill(label, key){
+    var b = document.createElement("button");
+    b.type = "button";
+    function paint(){
+      b.className = "ff-pill" + (d[key] ? " active" : "");
+      b.setAttribute("aria-pressed", d[key] ? "true" : "false");
+    }
+    b.textContent = label;
+    b.addEventListener("click", function(){ d[key] = !d[key]; paint(); update(); });
+    paint();
+    flagRow.appendChild(b);
+    return b;
   }
-  var concCb = checkbox("Concentration");
-  var ritualCb = checkbox("Ritual");
-  form.appendChild(flags);
+  flagPill("Concentration", "concentration");
+  flagPill("Ritual", "ritual");
+  flagSec.appendChild(flagRow);
 
-  var summaryInput = document.createElement("textarea");
-  summaryInput.rows = 3; summaryInput.placeholder = "What the spell does…";
-  summaryInput.style.cssText = "width:100%;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:6px 9px;font-size:13px;resize:vertical;";
-  form.appendChild(field("Description", summaryInput));
+  /* ── Description ── */
+  var descSec = shell.section("Description");
+  var summaryF = textField("What the spell does", d.summary, "A brief description of the spell's effect…", true);
+  summaryF.input.addEventListener("input", function(){ d.summary = summaryF.input.value; update(); });
+  descSec.appendChild(summaryF.field);
 
-  var addBtn = document.createElement("button");
-  addBtn.className = "btn primary"; addBtn.textContent = "+ Add Spell";
-  addBtn.addEventListener("click", function(){
-    var nameVal = nameInput.value.trim();
-    if(!nameVal){ alert("Please enter a spell name."); nameInput.focus(); return; }
-    var fields = {
-      name: nameVal, level: Number(levelSelect.value) || 0, school: schoolSelect.value,
-      castingTime: timeInput.value.trim(), range: rangeInput.value.trim(),
-      components: compInput.value.trim(), duration: durInput.value.trim(),
-      concentration: concCb.checked, ritual: ritualCb.checked, summary: summaryInput.value.trim()
-    };
-    nameInput.value = ""; levelSelect.value = "0"; schoolSelect.value = "";
-    timeInput.value = "1 action"; rangeInput.value = ""; compInput.value = "";
-    durInput.value = "Instantaneous"; concCb.checked = false; ritualCb.checked = false;
-    summaryInput.value = "";
-    closeCustom();
-    onSubmit(fields);
+  /* ── Material component details (optional) ── */
+  var matF = textField("Material components (optional)", d.material, "e.g. a pinch of sulfur");
+  matF.input.addEventListener("input", function(){ d.material = matF.input.value; update(); });
+  descSec.appendChild(matF.field);
+
+  /* ── Actions ── */
+  shell.actions(existing ? "Save changes" : "Create spell", function(){
+    var name = (d.name || "").trim();
+    if(!name){
+      showActionToast("Give your spell a name.", true);
+      nameF.input.focus();
+      return;
+    }
+    var clash = spellNameProblem(name, existing && existing.id);
+    if(clash){
+      showActionToast(clash, true);
+      nameF.input.focus();
+      return;
+    }
+    var saved = saveCustomSpell(d);
+    playAdd();
+    showActionToast(
+      (existing ? "Saved " : "Created ") + saved.name + "." +
+      (existing ? "" : " It's under Homebrew for every spellcaster.")
+    );
+    // If called with a direct onSubmit callback (from sheet spell picker),
+    // hand the result back so the character copy is added immediately.
+    if(typeof onSubmit === "function") onSubmit(saved);
+    refreshCatalog();
   });
-  form.appendChild(addBtn);
 
-  container.appendChild(form);
+  /* ── Live preview ── */
+  function update(){
+    var name = (d.name || "").trim() || "Your spell";
+    var tags = [];
+    if(d.concentration) tags.push("Concentration");
+    if(d.ritual) tags.push("Ritual");
+    previewCard(shell.preview,
+      "<div class='cmp-preview-name'>" + escapeHtml(name) + "</div>" +
+      "<div class='cmp-preview-tags'>" +
+        (d.school ? "<span class='cmp-tag-class'>" + escapeHtml(d.school) + "</span>" : "") +
+        "<span class='cmp-tag-muted'>" + escapeHtml(SPELL_LEVEL_LABELS[d.level] || "Cantrip") + "</span>" +
+        "<span class='cmp-custom-tag'>Custom</span>" +
+        (tags.length ? "<span class='cmp-tag-muted'>" + escapeHtml(tags.join(" · ")) + "</span>" : "") +
+      "</div>" +
+      facts([
+        ["Casting Time", d.castingTime],
+        ["Range",        d.range],
+        ["Components",   d.components + (d.material ? " (" + d.material + ")" : "")],
+        ["Duration",     d.duration]
+      ]) +
+      (d.summary ? "<p class='cmp-preview-blurb'>" + escapeHtml(d.summary) + "</p>" : "")
+    );
+  }
+  update();
 }
 
-/* One catalog tab of spells. `onAdd(name, d)` and `onCustom(fields)` say
-   where a pick goes: the open sheet here, or a chosen character from the
-   home Spellbook. */
-export function spellSection(key, label, groups, data, onAdd, onCustom){
+/* ---- Section descriptor ---- */
+export function spellSection(key, label, groups, data, onAdd, onCustomSaved){
   return {
     key: key,
     label: label,
@@ -151,9 +237,10 @@ export function spellSection(key, label, groups, data, onAdd, onCustom){
     groups: groups,
     data: data,
     searchText: function(name, d){
-      return [name, d.school, d.classes.join(" "), d.summary, d.concentration ? "concentration" : "", d.ritual ? "ritual" : ""].join(" ");
+      return [name, d.school, (d.classes||[]).join(" "), d.summary,
+              d.concentration ? "concentration" : "", d.ritual ? "ritual" : ""].join(" ");
     },
-    renderSub: function(name, d){ return d.school + " · " + d.castingTime + " · " + d.range; },
+    renderSub: function(name, d){ return (d.school || "") + " · " + (d.castingTime || "") + " · " + (d.range || ""); },
     renderDetail: function(name, d){ return d.summary; },
     renderRight: function(name, d){
       var tags = [];
@@ -162,34 +249,43 @@ export function spellSection(key, label, groups, data, onAdd, onCustom){
       return [d.components, tags.join(" · ")];
     },
     onAdd: onAdd,
+    rowActions: customRowActions,
     renderCustomForm: function(container, closeCustom){
-      buildCustomSpellForm(container, closeCustom, onCustom);
+      buildCustomSpellForm(container, closeCustom, onCustomSaved);
     }
   };
 }
 
-/* One tab per spellcasting class on the sheet (so a Wizard sees the
-   Wizard list first), then everything. */
+/* ---- Sheet spell picker (opened from a character's Spells tab) ---- */
 export function buildSpellSections(c){
   function onAdd(name, d){ return addCatalogSpell(c, name, d); }
-  function onCustom(fields){ addCustomSpell(c, fields); renderAll(); }
+  function onCustomSaved(saved){
+    // saved is the registry entry — add a linked copy to this character
+    if(!hasSpell(c, saved.name)){
+      c.spells.push(spellFromCatalog(saved.name, SPELL_DATA[saved.name] || saved));
+      save();
+    }
+    renderAll();
+  }
   var sections = [];
   var seen = {};
-  (c.classes||[]).forEach(function(cl){
+  (c.classes || []).forEach(function(cl){
     var name = cl.name;
     if(seen[name]) return;
     seen[name] = true;
     var data = spellDataForClass(name);
     if(!Object.keys(data).length) return;
-    sections.push(spellSection("class-" + name, name + " spells", buildSpellGroups(name), data, onAdd, onCustom));
+    sections.push(spellSection("class-" + name, name + " spells", buildSpellGroups(name), data, onAdd, onCustomSaved));
   });
-  sections.push(spellSection("all", "All spells", buildSpellGroups(), SPELL_DATA, onAdd, onCustom));
+  // "All spells" tab always includes the homebrew group
+  sections.push(spellSection("all", "All spells", buildSpellGroups(), SPELL_DATA, onAdd, onCustomSaved));
   return sections;
 }
 
 export function openSpellPicker(c){
+  editing = null;
   openCatalogPicker({
     sections: buildSpellSections(c),
-    onClose: function(){ renderAll(); }
+    onClose: function(){ editing = null; renderAll(); }
   });
 }
