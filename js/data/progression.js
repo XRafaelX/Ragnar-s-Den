@@ -845,7 +845,34 @@ export var SUBCLASSES = {
     {name:"School of Necromancy", blurb:"Commands life, death and undeath.", features:{2:[
       {name:"Necromancy Savant", text:"Copying necromancy spells into your spellbook costs half the gold and time."},
       {name:"Grim Harvest", text:"When you kill a creature with a spell of 1st level or higher, regain HP equal to twice the spell's level (three times for necromancy)."}
-    ]}}
+    ]}},
+    {name:"Bladesinging", blurb:"An elven tradition blending arcane magic with fluid, lethal swordplay.", features:{
+      2:[
+        {name:"Training in War and Song", text:"Gain proficiency with light armor and one one-handed melee weapon of your choice."},
+        {name:"Bladesong", text:"As a bonus action, enter a Bladesong for 1 minute (ends early if you don medium or heavy armor, a shield or two-handed weapon, or are incapacitated). While active: +INT modifier to AC, walking speed +10 feet, advantage on Acrobatics checks, and +INT modifier to concentration saves. Uses equal to your proficiency bonus per long rest."}
+      ],
+      6:[{name:"Extra Attack", text:"When you take the Attack action, you can attack twice instead of once. Moreover, you can cast one of your cantrips in place of one of those attacks."}],
+      10:[{name:"Song of Defense", text:"While Bladesong is active, use your reaction when you take damage to expend a spell slot and reduce the damage by 5 times the slot's level."}],
+      14:[{name:"Song of Victory", text:"While Bladesong is active, add your Intelligence modifier to the damage of melee weapon attacks."}]
+    }},
+    {name:"War Magic", blurb:"Fuses offensive spellcasting with battlefield resilience and reactions.", features:{
+      2:[
+        {name:"Arcane Deflection", text:"When you are hit by an attack or fail a saving throw, use your reaction to gain +2 AC against the triggering attack, or +4 to the triggering save. You can't cast spells other than cantrips until the end of your next turn after using this."},
+        {name:"Tactical Wit", text:"Add your Intelligence modifier to your initiative rolls."}
+      ],
+      6:[{name:"Power Surge", text:"Store magical energy when you use Arcane Deflection or when you expend a spell slot to end a concentration spell. Maximum surges equal to your INT modifier (min 1). Once per turn when you deal damage with a wizard cantrip, expend a surge to deal extra force damage equal to half your wizard level."}],
+      10:[{name:"Durable Magic", text:"While you maintain concentration on a spell, gain +2 to AC and all saving throws."}],
+      14:[{name:"Deflecting Shroud", text:"When you use Arcane Deflection, you release magical energy that deals force damage equal to half your wizard level to up to three creatures of your choice within 60 feet."}]
+    }},
+    {name:"Order of Scribes", blurb:"Awakens the magic of the spellbook itself as a powerful arcane companion.", features:{
+      2:[
+        {name:"Awakened Spellbook", text:"Your spellbook becomes a magical arcane focus. When you cast a wizard spell as a ritual, you can use the spell's normal casting time (not 10 minutes extra). Once per long rest when you cast a wizard spell using a slot, you can replace its damage type with a type from another wizard spell in your book."},
+        {name:"Wizardly Quill", text:"Conjure a magical quill (bonus action). It creates ink from nothing, writes twice as fast as normal, and you can use it to copy spells for free (0 gp) and in half the normal time. The quill disappears after use."}
+      ],
+      6:[{name:"Manifest Mind", text:"As a bonus action, manifest your spellbook's mind as a spectral orb within 60 feet. It sheds dim light 10 feet, floats and can move 30 feet per turn (bonus action). While active: cast wizard spells as if you were in its space, and you have advantage on saving throws to maintain concentration. Lasts until dismissed or destroyed (AC 13, HP equal to your wizard level + INT modifier). Uses equal to proficiency bonus per long rest."}],
+      10:[{name:"Master Scrivener", text:"After a long rest, create a single-use magic scroll of a 1st or 2nd level spell from your spellbook using your Wizardly Quill (free, takes 1 minute). Casting from this scroll uses your spell save DC and attack bonus. The scroll crumbles after use or your next long rest."}],
+      14:[{name:"One with the Word", text:"While your Manifest Mind is active, you can cast a spell through it as a reaction if a creature damages it: the spell targets only that creature. You can use this once per long rest. Additionally, once per long rest, if you take fatal damage you can prevent death by destroying 1d6 spells of your choice from your spellbook; you instead drop to 1 HP (the destroyed spells can be recopied normally)."}]
+    }}
   ]
 };
 
