@@ -243,7 +243,50 @@ export var SUBCLASSES = {
     {name:"Path of the Zealot", blurb:"A divine warrior powered by a god's fury.", features:{3:[
       {name:"Divine Fury", text:"While raging, the first creature you hit each turn takes an extra 1d6 + half your barbarian level radiant or necrotic damage."},
       {name:"Warrior of the Gods", text:"Spells that would bring you back from the dead need no material components."}
-    ]}}
+    ]}},
+    {name:"Path of the Ancestral Guardian", blurb:"Calls on ancestral spirits to protect allies and hinder foes.", features:{
+      3:[
+        {name:"Ancestral Protectors", text:"While you're raging, the first creature you hit with an attack on your turn becomes the quarry of your ancestors. Until the start of your next turn it has disadvantage on attack rolls against targets other than you, and any creature other than you that it attacks has resistance to all damage from that attack."}
+      ],
+      6:[
+        {name:"Spirit Shield", text:"While you're raging, you can use your reaction when another creature you can see within 30 feet is damaged to reduce that damage by 2d6. This increases to 3d6 at level 10 and 4d6 at level 14."}
+      ],
+      10:[
+        {name:"Consult the Spirits", text:"You gain the ability to consult ancestral spirits. You cast Clairvoyance or Augury (no spell slot or material components) a number of times equal to your proficiency bonus, regained on a long rest."}
+      ],
+      14:[
+        {name:"Vengeful Ancestors", text:"Your ancestral spirits grow powerful enough to strike back. When you use Spirit Shield to reduce damage, the attacker takes force damage equal to the amount reduced."}
+      ]
+    }},
+    {name:"Path of Wild Magic", blurb:"Fuels rage with unstable magical energy from the raw weave.", features:{
+      3:[
+        {name:"Magic Awareness", text:"As an action, you can sense the presence of spells or magic items within 60 feet until the end of your next turn. You can use this a number of times equal to your proficiency bonus, regained on a long rest."},
+        {name:"Wild Surge", text:"Each time you enter a rage, roll on the Wild Magic table: one of eight random surges occurs (e.g. teleport up to 30 ft, summon a spectral warrior, deal necrotic damage to each creature within 30 ft, or gain +5 ft fly speed)."}
+      ],
+      6:[
+        {name:"Bolstering Magic", text:"As an action, touch a creature (including yourself) to give it one of: advantage on attack rolls and ability checks for 10 minutes, or expend one of your rage uses to restore a 1st- or 2nd-level spell slot to it. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
+      ],
+      10:[
+        {name:"Unstable Backlash", text:"When you take damage or fail a saving throw while raging, you can use your reaction to roll on the Wild Magic table and immediately apply the result. This replaces the current Wild Surge effect."}
+      ],
+      14:[
+        {name:"Controlled Surge", text:"Whenever you roll on the Wild Magic table, roll twice and choose which of the two effects to apply. If both results are the same you can ignore the table and pick any result."}
+      ]
+    }},
+    {name:"Path of the Beast", blurb:"Taps into a monstrous inner nature to sprout natural weapons.", features:{
+      3:[
+        {name:"Form of the Beast", text:"While raging, you manifest one natural weapon of your choice: Bite (1d8 piercing; if the target is Large or smaller, make a second bite as a bonus action for 1d8 + STR, regaining HP equal to half the damage), Claws (two attacks with 1d6 slashing; each hit lets you make another claw attack as a bonus action), or Tail (1d8 piercing with 10 ft reach; once per turn when a creature within reach hits you, add your proficiency bonus to AC against that attack as a reaction)."}
+      ],
+      6:[
+        {name:"Bestial Soul", text:"Your natural weapons count as magical for overcoming resistance. Additionally, choose one permanent buff: swim speed equal to your walking speed and water breathing, climb speed equal to walking speed, or jump triple the normal distance. You can change this choice on a long rest."}
+      ],
+      10:[
+        {name:"Infectious Fury", text:"When you hit a creature with your natural weapons while raging, the creature must succeed on a Wisdom save (DC 8 + proficiency + CON) or suffer one of two effects (your choice): it uses its reaction to attack a creature of your choice, or it takes 2d12 psychic damage. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
+      ],
+      14:[
+        {name:"Call the Hunt", text:"At the start of each of your rages, you can choose up to five willing creatures you can see within 30 feet. Until the rage ends, each target deals +1d6 damage on their first hit each turn with a weapon or unarmed strike. You also gain 5 temporary HP per creature that accepts this benefit. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
+      ]
+    }}
   ],
   "Bard": [
     {name:"College of Lore", blurb:"Collects knowledge and uses words to undermine foes.", features:{3:[
