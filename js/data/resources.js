@@ -172,6 +172,14 @@ export var SUBCLASS_RESOURCES = {
       {id:"bladesong", name:"Bladesong", level:2,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Bonus action: enter Bladesong for 1 minute — +INT to AC, +10 ft speed, advantage on Acrobatics, +INT to concentration saves."}
+    ],
+    "School of Enchantment": [
+      {id:"hypnotic_gaze", name:"Hypnotic Gaze", level:2, max:always(1), reset:always("short"),
+        hint:"Action: charm a creature within 5 ft — speed 0, incapacitated. Maintain with your action each turn. Ends if you move away or it saves."}
+    ],
+    "School of Transmutation": [
+      {id:"shapechanger", name:"Shapechanger (Polymorph Self)", level:10, max:always(1), reset:always("short"),
+        hint:"Cast Polymorph on yourself without expending a spell slot."}
     ]
   },
   "Cleric": {

@@ -884,6 +884,33 @@ export var SUBCLASSES = {
       6:[{name:"Manifest Mind", text:"As a bonus action, manifest your spellbook's mind as a spectral orb within 60 feet. It sheds dim light 10 feet, floats and can move 30 feet per turn (bonus action). While active: cast wizard spells as if you were in its space, and you have advantage on saving throws to maintain concentration. Lasts until dismissed or destroyed (AC 13, HP equal to your wizard level + INT modifier). Uses equal to proficiency bonus per long rest."}],
       10:[{name:"Master Scrivener", text:"After a long rest, create a single-use magic scroll of a 1st or 2nd level spell from your spellbook using your Wizardly Quill (free, takes 1 minute). Casting from this scroll uses your spell save DC and attack bonus. The scroll crumbles after use or your next long rest."}],
       14:[{name:"One with the Word", text:"While your Manifest Mind is active, you can cast a spell through it as a reaction if a creature damages it: the spell targets only that creature. You can use this once per long rest. Additionally, once per long rest, if you take fatal damage you can prevent death by destroying 1d6 spells of your choice from your spellbook; you instead drop to 1 HP (the destroyed spells can be recopied normally)."}]
+    }},
+    {name:"School of Conjuration", blurb:"Summons creatures and objects and teleports across the battlefield.", features:{
+      2:[
+        {name:"Conjuration Savant", text:"Copying conjuration spells into your spellbook costs half the gold and time."},
+        {name:"Minor Conjuration", text:"As an action, conjure a non-magical object no larger than 3 feet on a side and weighing no more than 10 pounds. It appears in your hand or on the ground within 10 feet, and disappears after 1 hour, when you use the feature again, or when it takes or deals damage."}
+      ],
+      6:[{name:"Benign Transposition", text:"As an action, teleport up to 30 feet to an unoccupied space you can see, or swap places with a willing Small or Medium creature within 30 feet. Once you use this feature, you must finish a long rest before using it again — unless you expend a spell slot of 1st level or higher to use it again."}],
+      10:[{name:"Focused Conjuration", text:"While you are concentrating on a conjuration spell, your concentration can't be broken by taking damage."}],
+      14:[{name:"Durable Summons", text:"Any creature you summon or create with a conjuration spell has 30 temporary hit points."}]
+    }},
+    {name:"School of Enchantment", blurb:"Bends minds, charms enemies and manipulates social interactions.", features:{
+      2:[
+        {name:"Enchantment Savant", text:"Copying enchantment spells into your spellbook costs half the gold and time."},
+        {name:"Hypnotic Gaze", text:"As an action, choose a creature within 5 feet. It must succeed on a Wisdom save or be charmed until the end of your next turn, its speed drops to 0 and it is incapacitated. On each of your turns you can use your action to maintain the effect for another turn. The effect ends if you move more than 5 feet away, if it can no longer see you, or if it succeeds on a Wisdom save at end of your turn. Once it ends the creature is immune for 24 hours. Once per short or long rest."}
+      ],
+      6:[{name:"Instinctive Charm", text:"Reaction when a creature within 30 feet makes an attack roll against you: it must make a Wisdom save or attack the nearest other creature instead. On a success, you are immune to this creature's Instinctive Charm for 24 hours. Once per long rest."}],
+      10:[{name:"Split Enchantment", text:"When you cast an enchantment spell of 1st level or higher targeting only one creature, you can target a second creature with the same spell at no extra cost."}],
+      14:[{name:"Alter Memories", text:"When you cast an enchantment spell that charms a creature, you can make it forget it was ever charmed by you. Before the charm ends, the creature makes an Intelligence save. On a failure it has no memory of being charmed."}]
+    }},
+    {name:"School of Transmutation", blurb:"Alters physical forms, mutates matter and crafts a powerful Transmuter's Stone.", features:{
+      2:[
+        {name:"Transmutation Savant", text:"Copying transmutation spells into your spellbook costs half the gold and time."},
+        {name:"Minor Alchemy", text:"As an action, transform a non-magical Small-or-smaller object of one material (wood, stone, iron, copper or silver) into another for up to 1 hour. The transformation ends if you use this feature again."}
+      ],
+      6:[{name:"Transmuter's Stone", text:"Over 8 hours, craft a stone that stores transmutation magic. Its bearer chooses one benefit: darkvision 60 ft, +10 ft speed, proficiency in CON saves, or resistance to one of acid/cold/fire/lightning/thunder. You can have only one stone; crafting a new one destroys the old one."}],
+      10:[{name:"Shapechanger", text:"Add Polymorph to your spellbook for free. Cast it on yourself without expending a spell slot once per short or long rest."}],
+      14:[{name:"Master Transmuter", text:"As an action, consume your Transmuter's Stone for one of four effects: Major Transformation (transmute an object up to 5-ft cube into another of equal or lesser value for 1 hour), Panacea (remove all curses/diseases/poisons and restore full HP to a touched creature), Restore Life (cast Raise Dead without material components on a creature dead no longer than 1 minute), or Restore Youth (reduce a touched creature's apparent age by 3d10 years, minimum 13)."}]
     }}
   ]
 };
