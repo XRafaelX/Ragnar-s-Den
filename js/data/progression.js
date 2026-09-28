@@ -783,7 +783,47 @@ export var SUBCLASSES = {
     {name:"The Great Old One", blurb:"A pact with an unknowable alien entity.", features:{1:[
       {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Dissonant Whispers and Tasha's Hideous Laughter (1st level), Detect Thoughts and Phantasmal Force (2nd, from warlock level 3), Clairvoyance and Sending (3rd, from warlock level 5)."},
       {name:"Awakened Mind", text:"Speak telepathically to any creature you can see within 30 feet."}
-    ]}}
+    ]}},
+    {name:"The Hexblade", blurb:"A pact forged with a sentient weapon from the Shadowfell.", features:{
+      1:[
+        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Shield and Wrathful Smite (1st level), Blur and Branding Smite (2nd, from warlock level 3), Blink and Elemental Weapon (3rd, from warlock level 5)."},
+        {name:"Hexblade's Curse", text:"As a bonus action, curse a creature within 30 feet for 1 minute. Against it: add your proficiency bonus to damage, score criticals on 19–20, and regain HP equal to your warlock level + CHA modifier when it dies. Uses equal to your proficiency bonus per long rest."},
+        {name:"Hex Warrior", text:"Proficiency with medium armor, shields and martial weapons. Choose one weapon you're holding after a long rest: use your Charisma modifier for its attack and damage rolls. If it's a pact weapon this applies to all pact weapons automatically."}
+      ],
+      6:[{name:"Accursed Specter", text:"When you slay a humanoid, you can curse its spirit to rise as a specter under your control for 24 hours or until you use this feature again. It adds your CHA modifier to its attack bonus and has temporary HP equal to half your warlock level. Once per long rest."}],
+      10:[{name:"Armor of Hexes", text:"When the target of your Hexblade's Curse hits you with an attack roll, roll a d6. On a 4 or higher the attack instead misses you regardless of the roll."}],
+      14:[{name:"Master of Hexes", text:"When the target of your Hexblade's Curse dies, you can move the curse to a new creature within 30 feet (no action required). You don't regain HP from the old target's death."}]
+    }},
+    {name:"The Celestial", blurb:"A pact with a powerful being of the Upper Planes.", features:{
+      1:[
+        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Cure Wounds and Guiding Bolt (1st level), Flaming Sphere and Lesser Restoration (2nd, from warlock level 3), Daylight and Revivify (3rd, from warlock level 5)."},
+        {name:"Bonus Cantrips", text:"You learn the Light and Sacred Flame cantrips; they don't count against your cantrips known."},
+        {name:"Healing Light", text:"A pool of d6s equal to 1 + your warlock level. As a bonus action, heal a creature within 60 feet by spending dice from the pool (max CHA modifier dice per turn). Replenish the pool on a long rest."}
+      ],
+      6:[{name:"Radiant Soul", text:"Resistance to radiant damage. When you cast a spell that deals radiant or fire damage, add your CHA modifier to one radiant or fire damage roll."}],
+      10:[{name:"Celestial Resilience", text:"Gain temporary HP equal to your warlock level + CHA modifier when you finish a short or long rest. Five creatures you can see also gain temporary HP equal to half that amount."}],
+      14:[{name:"Searing Vengeance", text:"When you or an ally within 60 feet would make a death saving throw, you can instead have them regain HP equal to half their max HP and stand up. Each creature of your choice within 30 feet takes 2d8 + CHA radiant damage and is blinded until the end of their next turn. Once per long rest."}]
+    }},
+    {name:"The Fathomless", blurb:"A pact with an unfathomable entity of the deep ocean.", features:{
+      1:[
+        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Create or Destroy Water and Thunderwave (1st level), Gust of Wind and Silence (2nd, from warlock level 3), Lightning Bolt and Sleet Storm (3rd, from warlock level 5)."},
+        {name:"Tentacle of the Deeps", text:"As a bonus action, summon a spectral tentacle in a space within 60 feet for 1 minute. When a creature within 10 feet of the tentacle hits you or another creature you can see, use your reaction to deal 1d8 cold damage to the attacker. On your turn (no action), move the tentacle up to 30 feet and have it lash out: melee spell attack, 2d8 cold damage + reduce speed by 10 feet until your next turn. Uses equal to your proficiency bonus per long rest."},
+        {name:"Gift of the Sea", text:"You gain a swimming speed of 40 feet and can breathe underwater."}
+      ],
+      6:[{name:"Oceanic Soul", text:"Resistance to cold damage. You can communicate telepathically with any creature that can breathe water, as long as you share a language and it is within 30 feet."}],
+      10:[{name:"Guardian Coil", text:"Your Tentacle of the Deeps can now protect. When you or a creature you can see within 10 feet of the tentacle takes damage, use your reaction to choose one of those creatures: reduce the damage it takes by 1d8."}],
+      14:[{name:"Fathomless Plunge", text:"As an action, you and up to five creatures within 30 feet that you choose are teleported to a location you can visualize within 1 mile that is on or in a body of water. Once per short or long rest."}]
+    }},
+    {name:"The Genie", blurb:"A pact with one of the noble genies of the four elements.", features:{
+      1:[
+        {name:"Genie's Vessel", text:"Your patron gives you a tiny vessel (a lamp, urn, ring or bottle). As a bonus action, vanish into the vessel for up to 10 minutes while remaining aware of your surroundings; other creatures can enter it (up to your proficiency bonus). The vessel has AC and HP equal to your warlock level + proficiency bonus. If destroyed, a new one appears after 7 days."},
+        {name:"Expanded Spell List", text:"Your genie type determines your bonus spells. Dao (earth): Sanctuary and Speak with Animals (1st), Spike Growth and Phantasmal Force (3rd). Djinni (air): Detect Evil and Good and Thunderwave (1st), Gust of Wind and Phantasmal Force (3rd). Efreeti (fire): Burning Hands and Detect Magic (1st), Scorching Ray and Suggestion (3rd). Marid (water): Detect Evil and Good and Fog Cloud (1st), Blur and Silence (3rd)."},
+        {name:"Elemental Gift", text:"At the end of a long rest, gain temporary HP equal to your warlock level + CHA modifier. Also gain a damage resistance based on genie type: bludgeoning (Dao), thunder (Djinni), fire (Efreeti) or cold (Marid)."}
+      ],
+      6:[{name:"Sanctuary Vessel", text:"When you enter your Genie's Vessel, choose up to 5 willing creatures within 30 feet to enter with you. Inside the vessel, creatures can use a short rest in only 10 minutes, and you can expend Hit Dice to heal a creature in the vessel as if it spent them during a short rest."}],
+      10:[{name:"Limited Wish", text:"Three times per long rest, speak a wish of up to 6th level to your patron: cast any spell of 6th level or lower from any class spell list (no spell slot, no material components). If it normally requires concentration you must concentrate."}],
+      14:[{name:"Genie's Wrath", text:"Once per turn when you hit with an attack roll, deal extra damage based on your genie type: 1d6 bludgeoning (Dao), 1d6 thunder (Djinni), 1d6 fire (Efreeti) or 1d6 cold (Marid)."}]
+    }}
   ],
   "Wizard": [
     {name:"School of Evocation", blurb:"Blasts with raw elemental energy.", features:{2:[
