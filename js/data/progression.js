@@ -383,6 +383,18 @@ export var SUBCLASSES = {
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Charm Person, Disguise Self, Mirror Image and Pass without Trace prepared; they don't count against your prepared spells."}],
       5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Charm Person, Disguise Self, Mirror Image, Pass without Trace, Blink and Dispel Magic prepared; they don't count against your prepared spells."}]
     }},
+    {name:"Nature Domain", blurb:"Channels the power of nature to command beasts and wield elemental fury.", features:{
+      1:[
+        {name:"Domain Spells", text:"You always have Animal Friendship and Speak with Animals prepared; they don't count against your prepared spells."},
+        {name:"Acolyte of Nature", text:"Learn one Druid cantrip. Gain proficiency in one of Animal Handling, Nature or Survival."},
+        {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor."}
+      ],
+      2:[{name:"Channel Divinity: Charm Animals and Plants", text:"Action: each beast and plant creature within 30 feet must succeed on a Wisdom save or be charmed by you for 1 minute."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Animal Friendship, Speak with Animals, Barkskin and Spike Growth prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Animal Friendship, Speak with Animals, Barkskin, Spike Growth, Plant Growth and Wind Wall prepared; they don't count against your prepared spells."}],
+      6:[{name:"Dampen Elements", text:"Reaction: when you or a creature within 30 feet takes acid, cold, fire, lightning or thunder damage, grant resistance to that damage for that instance."}],
+      8:[{name:"Divine Strike", text:"Once per turn when you hit with a weapon attack, deal an extra 1d8 cold, fire or lightning damage (your choice when you gain this feature). Increases to 2d8 at level 14."}]
+    }},
     {name:"Twilight Domain", blurb:"Guards against the terrors of night and eases the transition to death.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Faerie Fire and Sleep prepared; they don't count against your prepared spells."},
