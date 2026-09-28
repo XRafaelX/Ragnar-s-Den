@@ -2,6 +2,7 @@ import { openWizard } from "../wizard/wizard-core.js";
 import { openArmory } from "./armory.js";
 import { openSpellbook } from "./spellbook.js";
 import { openCompendium } from "./compendium.js";
+import { openMonsters } from "./monsters.js";
 import { openInfoModal } from "../ui/info-modal.js";
 import { toggleDiceTray } from "../dice/dice.js";
 import { showActionToast } from "../ui/toast.js";
@@ -32,7 +33,8 @@ export var RINGS = [
     name: "Upcoming Features",
     description: "Preview upcoming tools and features in development.",
     nodes: [
-      { id: "home-node-monsters", pos: "top", label: "Monsters", title: "Monsters (Coming Soon)", isPlaceholder: true, toast: "Monsters are coming in a future update!" }
+      { id: "home-node-monsters", pos: "top", label: "Monsters", title: "Monster Catalog", action: openMonsters },
+      { id: "home-node-encounters", pos: "upper-right", label: "Encounters", title: "Encounters (Coming Soon)", isPlaceholder: true, toast: "Encounters are coming in a future update!" }
     ]
   }
 ];
@@ -339,11 +341,15 @@ export function setupHomeMenu(){
   if(aboutBtn) aboutBtn.addEventListener("click", function(){ selectNode(aboutBtn, openAbout); });
   if(compendiumBtn) compendiumBtn.addEventListener("click", function(){ selectNode(compendiumBtn, openCompendium); });
 
-  // Ring 2 Placeholder Actions
+  // Ring 2 Actions
   var monstersBtn = document.getElementById("home-node-monsters");
+  var encountersBtn = document.getElementById("home-node-encounters");
 
   if(monstersBtn) monstersBtn.addEventListener("click", function(){
-    selectNode(monstersBtn, function(){ showActionToast("Monsters are coming in a future update!"); });
+    selectNode(monstersBtn, openMonsters);
+  });
+  if(encountersBtn) encountersBtn.addEventListener("click", function(){
+    selectNode(encountersBtn, function(){ showActionToast("Encounters are coming in a future update!"); });
   });
 
   var centerBtn = document.getElementById("home-center");
