@@ -20,6 +20,7 @@ import { loadCustomItems, getCustomItems, importCustomItems } from "./core/custo
 import { loadCustomMonsters, getCustomMonsters, importCustomMonsters } from "./core/custom-monsters.js";
 import { loadCustomSpells, getCustomSpells, importCustomSpells } from "./core/custom-spells.js";
 import { APP_VERSION } from "./version.js";
+import { setupUpdates } from "./ui/update-prompt.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
@@ -163,15 +164,7 @@ export function init(){
   renderAll();
   maybeStartTutorial(state.characters.length > 0);
 
-  if("serviceWorker" in navigator){
-    // When an updated service worker takes control, reload once so the
-    // page picks up the fresh HTML/CSS/JS instead of the previous cache.
-    var hadController = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.addEventListener("controllerchange", function(){
-      if(hadController){ hadController = false; window.location.reload(); }
-    });
-    navigator.serviceWorker.register("sw.js").catch(function(){ /* offline-first, fine if this fails */ });
-  }
+  setupUpdates();
 }
 
 document.addEventListener("DOMContentLoaded", init);

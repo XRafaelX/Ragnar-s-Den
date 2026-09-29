@@ -117,6 +117,16 @@ npx http-server . -p 8000
 php -S localhost:8000
 ```
 
+### Publishing Updates
+
+The live app is served by GitHub Pages from `main` at <https://xrafaelx.github.io/Ragnar-s-Den/>. Install it from that URL (browser menu, then "Install app" or "Add to Home Screen") and it updates itself: when a new release is pushed, the app shows a "new version is ready" banner, and tapping **Update** reloads onto it. If the banner is ignored, the update applies the next time the app is fully closed and reopened.
+
+Releases are detected through `sw.js`. A pre-commit hook in `.githooks/` stamps it with a new `BUILD` id and regenerates its offline file list on every commit that touches app files. Enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ---
 
 ## Available Scripts

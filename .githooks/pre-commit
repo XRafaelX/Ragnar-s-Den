@@ -1,0 +1,26 @@
+#!/bin/sh
+# Stamps sw.js with a new BUILD id and refreshes its ASSETS list whenever a
+# commit touches app files. Installed copies of the app notice the changed
+# service worker and offer to update. Enable once per clone with:
+#   git config core.hooksPath .githooks
+
+APP_FILES='^(index\.html|manifest\.json|css/|js/|images/)'
+
+git diff --cached --name-only | grep -qE "$APP_FILES" || exit 0
+
+build=$(date -u +%Y%m%d%H%M%S)
+list=$(mktemp) || exit 1
+{
+  echo '  "./",'
+  git ls-files | grep -E "$APP_FILES" | sed 's|^|  "./|; s|$|",|'
+} | sed '$ s/,$//' > "$list"
+
+awk -v build="$build" -v list="$list" '
+  /^var BUILD = / { print "var BUILD = \"" build "\";"; next }
+  /\/\* ASSETS:START \*\// { print; while ((getline line < list) > 0) print line; skip = 1; next }
+  /\/\* ASSETS:END \*\// { skip = 0 }
+  !skip { print }
+' sw.js > sw.js.tmp && mv sw.js.tmp sw.js
+rm -f "$list"
+
+git add sw.js

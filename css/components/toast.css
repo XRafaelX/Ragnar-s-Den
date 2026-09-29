@@ -13,3 +13,25 @@
 }
 .action-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .action-toast.error{background:linear-gradient(135deg, #4a2a2a 0%, #331a1a 100%);border-color:#c0524f;}
+
+/* "New version ready" banner from js/ui/update-prompt.js. Unlike the
+   action toast it stays up until the user picks Update or Later. Sits at
+   the top so it never covers the dice button in the bottom corner, and
+   above the first-run tutorial (1300) so it can always be tapped. */
+.update-banner{
+  position:fixed;left:50%;top:calc(18px + env(safe-area-inset-top));
+  transform:translateX(-50%) translateY(-16px);
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;
+  background:var(--parchment);border:1px solid var(--brass);border-radius:10px;
+  padding:10px 14px;font-size:13.5px;color:var(--text-on-ink);
+  box-shadow:0 12px 32px rgba(0,0,0,0.55);
+  z-index:1400;opacity:0;pointer-events:none;visibility:hidden;
+  transition:opacity .25s ease, transform .25s ease, visibility 0s linear .25s;
+  width:max-content;max-width:calc(100vw - 32px);text-align:center;
+}
+.update-banner.show{
+  opacity:1;pointer-events:auto;visibility:visible;
+  transform:translateX(-50%) translateY(0);
+  transition:opacity .25s ease, transform .25s ease;
+}
+.update-banner-actions{display:flex;gap:8px;}
