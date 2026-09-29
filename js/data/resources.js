@@ -218,6 +218,17 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Monk": {
+    "Way of the Open Hand": [
+      {id:"wholeness_of_body", name:"Wholeness of Body", level:6, max:always(1), reset:always("long"),
+        hint:"Action: regain hit points equal to three times your monk level."}
+    ],
+    "Way of Mercy": [
+      {id:"free_hand_of_harm", name:"Free Hand of Harm (Flurry)", level:11,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Use Hand of Harm on a Flurry of Blows strike without spending ki."},
+      {id:"hand_of_ultimate_mercy", name:"Hand of Ultimate Mercy", level:17, max:always(1), reset:always("long"),
+        hint:"Action, 5 ki: revive a creature dead under 24 hours with 4d10 + WIS mod HP."}
+    ],
     "Way of the Ascendant Dragon": [
       {id:"draconic_presence", name:"Draconic Presence", level:3, max:always(1), reset:always("long"),
         hint:"Reaction: reroll a failed CHA (Intimidation or Persuasion) check. Spent only when the reroll succeeds."},

@@ -880,39 +880,48 @@ export var SUBCLASSES = {
     }}
   ],
   "Monk": [
-    {name:"Way of the Open Hand", blurb:"Master of unarmed combat.", features:{3:[
-      {name:"Open Hand Technique", text:"When you hit with a Flurry of Blows attack you can knock the target prone, push it 15 feet, or stop it taking reactions."}
-    ]}},
-    {name:"Way of Shadow", blurb:"A ninja who uses darkness and stealth.", features:{3:[
-      {name:"Shadow Arts", text:"Spend 2 ki to cast Darkness, Darkvision, Pass without Trace or Silence. You also learn the Minor Illusion cantrip."}
-    ]}},
-    {name:"Way of the Four Elements", blurb:"Channels ki into elemental magic.", features:{3:[
-      {name:"Disciple of the Elements", text:"Learn Elemental Attunement and one more elemental discipline (e.g. Fangs of the Fire Snake, Water Whip) fuelled by ki."}
-    ]}},
+    {name:"Way of the Open Hand", blurb:"Master of unarmed combat.", features:{
+      3:[{name:"Open Hand Technique", text:"Whenever you hit a creature with one of the attacks from Flurry of Blows, you can impose one effect: it makes a DEX save or is knocked prone; it makes a STR save or you push it up to 15 feet away; or it can't take reactions until the end of your next turn."}],
+      6:[{name:"Wholeness of Body", text:"As an action, regain hit points equal to three times your monk level. Once per long rest."}],
+      11:[{name:"Tranquility", text:"At the end of a long rest, you gain the effect of Sanctuary (save DC 8 + WIS modifier + proficiency bonus) until the start of your next long rest. It can end early as normal."}],
+      17:[{name:"Quivering Palm", text:"When you hit a creature with an unarmed strike, you can spend 3 ki to set up lethal vibrations that last a number of days equal to your monk level. While on the same plane, you can use an action to end them: the creature makes a CON save, dropping to 0 hit points on a failure or taking 10d10 necrotic damage on a success. Only one creature can be affected at a time, and you can end the vibrations harmlessly with no action."}]
+    }},
+    {name:"Way of Shadow", blurb:"A ninja who uses darkness and stealth.", features:{
+      3:[{name:"Shadow Arts", text:"As an action, spend 2 ki to cast Darkness, Darkvision, Pass without Trace or Silence without material components. You also learn the Minor Illusion cantrip if you don't know it."}],
+      6:[{name:"Shadow Step", text:"While in dim light or darkness, as a bonus action you can teleport up to 60 feet to an unoccupied space you can see that is also in dim light or darkness. You then have advantage on the first melee attack you make before the end of the turn."}],
+      11:[{name:"Cloak of Shadows", text:"While in dim light or darkness, you can use your action to become invisible until you make an attack, cast a spell or are in bright light."}],
+      17:[{name:"Opportunist", text:"When a creature within 5 feet of you is hit by an attack made by someone other than you, you can use your reaction to make a melee attack against it."}]
+    }},
+    {name:"Way of the Four Elements", blurb:"Channels ki into elemental magic.", features:{
+      3:[{name:"Disciple of the Elements", text:"You know Elemental Attunement and one other elemental discipline, and learn one more at levels 6, 11 and 17 (swapping one you know each time if you like). From level 5 you can spend extra ki to cast a discipline's spell at a higher level; the most ki you can spend on one spell, including its cost, is 2 at levels 3 to 4, 3 at 5 to 8, 4 at 9 to 12, 5 at 13 to 16 and 6 at 17 or higher. Elemental disciplines (ki save DC; spells need no material components): Elemental Attunement (action: minor elemental effects such as lighting a candle, chilling a drink or shaping a small amount of earth or water). Fangs of the Fire Snake (1 ki when you take the Attack action: +10 feet reach for unarmed strikes this turn and they deal fire damage; spend 1 more ki on a hit for +1d10 fire). Fist of Four Thunders (2 ki: Thunderwave). Fist of Unbroken Air (action, 2 ki: a creature within 30 feet makes a STR save or takes 3d10 bludgeoning, +1d10 per extra ki, is pushed up to 20 feet and knocked prone; half damage only on a success). Rush of the Gale Spirits (2 ki: Gust of Wind). Shape the Flowing River (action, 1 ki: shape, freeze or melt water and ice in a 30-foot cube within 120 feet). Sweeping Cinder Strike (2 ki: Burning Hands). Water Whip (action, 2 ki: a creature within 30 feet makes a DEX save or takes 3d10 bludgeoning, +1d10 per extra ki, and is pulled up to 25 feet closer or knocked prone; half damage only on a success). From level 6: Clench of the North Wind (3 ki: Hold Person), Gong of the Summit (3 ki: Shatter). From level 11: Eternal Mountain Defense (5 ki: Stoneskin on yourself), Flames of the Phoenix (4 ki: Fireball), Mist Stance (4 ki: Gaseous Form on yourself), Ride the Wind (4 ki: Fly on yourself). From level 17: Breath of Winter (6 ki: Cone of Cold), River of Hungry Flame (5 ki: Wall of Fire), Wave of Rolling Earth (6 ki: Wall of Stone)."}],
+      6:[{name:"Extra Elemental Discipline", text:"You learn one more elemental discipline (level 6 options unlock)."}],
+      11:[{name:"Extra Elemental Discipline (11th)", text:"You learn one more elemental discipline (level 11 options unlock)."}],
+      17:[{name:"Extra Elemental Discipline (17th)", text:"You learn one more elemental discipline (level 17 options unlock)."}]
+    }},
     {name:"Way of Mercy", blurb:"Heals allies and harvests life force from enemies with mysterious techniques.", features:{
       3:[
-        {name:"Implements of Mercy", text:"Gain proficiency in Insight and Medicine, and gain a special mask you must wear to use this subclass's features."},
-        {name:"Hand of Harm", text:"Once per turn when you hit with an unarmed strike, spend 1 ki to deal extra necrotic damage equal to 1d6 + your Wisdom modifier and possibly poison the target (Constitution save or poisoned until the end of your next turn)."},
-        {name:"Hand of Healing", text:"As an action, spend 1 ki to restore HP to a creature you touch equal to a roll of your Martial Arts die + Wisdom modifier. You can also end one disease or one of: blinded, deafened, paralyzed, poisoned or stunned on the creature."}
+        {name:"Implements of Mercy", text:"You gain proficiency in Insight and Medicine (tick them on the Abilities & Skills tab) and with the herbalism kit, and you gain a special mask that you often wear when using this tradition's features.", grants:{tools:["Herbalism kit"]}},
+        {name:"Hand of Harm", text:"When you hit a creature with an unarmed strike, you can spend 1 ki to deal extra necrotic damage equal to one roll of your Martial Arts die + your WIS modifier. Once per turn."},
+        {name:"Hand of Healing", text:"As an action, spend 1 ki to touch a creature and restore hit points equal to one roll of your Martial Arts die + your WIS modifier. When you use Flurry of Blows, you can replace one of its unarmed strikes with this, without spending ki for the healing."}
       ],
-      6:[{name:"Physician's Touch", text:"Hand of Healing can also end one effect from a broader list, and Hand of Harm can also impose the poisoned condition without an extra ki cost."}],
-      11:[{name:"Flurry of Healing and Harm", text:"With Flurry of Blows you can replace either unarmed strike with a Hand of Healing (no ki cost) or a Hand of Harm (still costs 1 ki and can only be used once per Flurry)."}],
-      17:[{name:"Hand of Ultimate Mercy", text:"Spend 5 ki to cast Raise Dead without material components, targeting a creature dead no longer than 24 hours. You can use this once per long rest."}]
+      6:[{name:"Physician's Touch", text:"Hand of Healing can also end one disease or one of these conditions on the creature: blinded, deafened, paralyzed, poisoned or stunned. Hand of Harm can also make the target poisoned until the end of your next turn."}],
+      11:[{name:"Flurry of Healing and Harm", text:"With Flurry of Blows you can replace each unarmed strike with Hand of Healing, without spending ki for the healing. When you make an unarmed strike with Flurry of Blows, you can also use Hand of Harm with it without spending ki (still once per turn), a number of times equal to your WIS modifier (minimum 1) per long rest."}],
+      17:[{name:"Hand of Ultimate Mercy", text:"As an action, touch the corpse of a creature that died within the past 24 hours and spend 5 ki. It returns to life with 4d10 + your WIS modifier hit points, free of any of these conditions it died with: blinded, deafened, paralyzed, poisoned and stunned. Once per long rest."}]
     }},
     {name:"Way of the Kensei", blurb:"Treats weapons as an extension of the body, mastering them as art.", features:{
       3:[
-        {name:"Path of the Kensei", text:"Choose two weapons (one melee, one ranged) as kensei weapons; you gain proficiency with them, they count as monk weapons, and you can use them with Martial Arts. Agile Parry: +2 AC if your kensei melee weapon is in hand and you use your unarmed strike bonus action that turn."},
-        {name:"Kensei's Shot", text:"Use a bonus action to make ranged kensei weapon attacks deal +1d4 damage on hit this turn."}
+        {name:"Path of the Kensei", text:"Kensei Weapons: choose one melee and one ranged weapon type (simple or martial without the heavy or special property; longbows are allowed). You gain proficiency with them and they count as monk weapons; choose one more type at levels 6, 11 and 17. Agile Parry: if you make an unarmed strike as part of the Attack action while holding a melee kensei weapon, you gain +2 AC until the start of your next turn (while it's in your hand and you aren't incapacitated). Kensei's Shot: as a bonus action, your ranged kensei weapon attacks deal an extra 1d4 damage on a hit until the end of the turn."},
+        {name:"Way of the Brush", text:"You gain proficiency with calligrapher's supplies or painter's supplies (your choice).", grants:{tools:["Calligrapher's or painter's supplies"]}}
       ],
-      6:[{name:"One with the Blade", text:"Your kensei attacks count as magical. Magic Kensei Weapons: when you hit with a kensei weapon, spend 1 ki to deal +1d6 damage of the weapon's type."}],
-      11:[{name:"Sharpen the Blade", text:"As a bonus action, spend up to 3 ki to give your kensei weapon a bonus to attack and damage rolls equal to the ki spent (+1 to +3) for 1 minute. Has no effect if the weapon already has a magical bonus."}],
-      17:[{name:"Unerring Accuracy", text:"Once on each of your turns, if you miss with a monk weapon attack, reroll the attack roll (you can use the result)."}]
+      6:[{name:"One with the Blade", text:"Your kensei weapon attacks count as magical for overcoming resistance and immunity. Deft Strike: when you hit with a kensei weapon, you can spend 1 ki to deal extra damage of the weapon's type equal to your Martial Arts die, once per turn."}],
+      11:[{name:"Sharpen the Blade", text:"As a bonus action, spend up to 3 ki to give a kensei weapon you touch a bonus to attack and damage rolls equal to the ki spent, for 1 minute or until you use this again. It has no effect on a magic weapon that already has a bonus."}],
+      17:[{name:"Unerring Accuracy", text:"If you miss with an attack roll using a monk weapon, you can reroll it. Once on each of your turns."}]
     }},
     {name:"Way of the Astral Self", blurb:"Manifests a spectral astral form to amplify attacks and awareness.", features:{
-      3:[{name:"Arms of the Astral Self", text:"Spend 1 ki (bonus action) to summon spectral arms for 10 minutes. They let you use WIS instead of STR or DEX for unarmed strikes, deal 1d6 (1d8 at level 11) force damage, count as monk weapons, and have a reach of 5 feet. When summoned, deal 2 unarmed strikes to up to two creatures within 10 feet."}],
-      6:[{name:"Visage of the Astral Self", text:"Spend 1 ki (bonus action) to summon a spectral visage for 10 minutes. Gain darkvision 120 ft, advantage on WIS (Insight) and CHA (Intimidation) checks, and understand all spoken languages. You can speak and be understood in any language."}],
-      11:[{name:"Body of the Astral Self", text:"When arms and visage are both active, spectral body armor appears. Gain resistance to bludgeoning, piercing and slashing damage, and when a creature within 10 feet hits you with an attack you can use your reaction to deal force damage equal to 3d10."}],
-      17:[{name:"Awakened Astral Self", text:"Spend 5 ki (bonus action) to empower your astral form for 10 minutes: arms deal +2d6 force damage on each hit, you gain a flying speed equal to your walking speed, and you can cast Banishment (save DC = ki save DC) once per activation without expending a spell slot."}]
+      3:[{name:"Arms of the Astral Self", text:"As a bonus action, spend 1 ki to summon spectral arms for 10 minutes (ending early if you are incapacitated or die). When they appear, each creature of your choice you can see within 10 feet makes a DEX save or takes force damage equal to two rolls of your Martial Arts die. While they are present: you can use WIS instead of STR for Strength checks and saves; you can make unarmed strikes with them, with 5 feet more reach on your turn; and those strikes can use WIS instead of STR or DEX for attack and damage and deal force damage."}],
+      6:[{name:"Visage of the Astral Self", text:"As a bonus action (or as part of summoning your arms), spend 1 ki to summon a spectral visage for 10 minutes. Astral Sight: you see normally in darkness, magical or not, out to 120 feet. Wisdom of the Spirit: advantage on WIS (Insight) and CHA (Intimidation) checks. Word of the Spirit: you can make your words heard only by one creature you can see within 60 feet, or amplify your voice so everyone within 600 feet hears you."}],
+      11:[{name:"Body of the Astral Self", text:"While your arms and visage are both summoned, your astral body can appear (no action). Deflect Energy: when you take acid, cold, fire, force, lightning or thunder damage, you can use your reaction to reduce it by 1d10 + your WIS modifier (minimum 1). Empowered Arms: once on each of your turns when you hit with your astral arms, deal extra damage equal to your Martial Arts die."}],
+      17:[{name:"Awakened Astral Self", text:"While your arms, visage and body are all summoned, you can spend 5 ki as a bonus action to awaken them for 10 minutes. Armor of the Spirit: +2 AC. Astral Barrage: when you use Extra Attack, you can attack three times instead of twice if all the attacks use your astral arms."}]
     }},
     {name:"Way of the Ascendant Dragon", blurb:"Channels draconic power to breathe elemental energy and sprout spectral wings.", features:{
       3:[
@@ -925,7 +934,7 @@ export var SUBCLASSES = {
     }},
     {name:"Way of the Drunken Master", blurb:"Sways and staggers unpredictably, dodging blows and turning them on others.", features:{
       3:[
-        {name:"Bonus Proficiencies", text:"You gain proficiency in Performance (tick it on the Abilities & Skills tab) and with brewer's supplies."},
+        {name:"Bonus Proficiencies", text:"You gain proficiency in Performance (tick it on the Abilities & Skills tab) and with brewer's supplies.", grants:{tools:["Brewer's supplies"]}},
         {name:"Drunken Technique", text:"Whenever you use Flurry of Blows, you also gain the benefit of the Disengage action, and your walking speed increases by 10 feet until the end of the turn."}
       ],
       6:[{name:"Tipsy Sway", text:"Leap to Your Feet: when you're prone, you can stand up by spending only 5 feet of movement. Redirect Attack: when a creature misses you with a melee attack, you can spend 1 ki as a reaction to make that attack hit another creature of your choice (not the attacker) that you can see within 5 feet of you."}],
