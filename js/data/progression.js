@@ -842,7 +842,7 @@ export var SUBCLASSES = {
       ],
       5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Bane, Hunter's Mark, Hold Person and Misty Step prepared."}]
     }},
-    {name:"Oath of Conquest", blurb:"Rules through fear and iron will — break the enemy's spirit.", features:{
+    {name:"Oath of Conquest", blurb:"Rules through fear and iron will, breaking the enemy's spirit.", features:{
       3:[
         {name:"Oath Spells", text:"You always have Armor of Agathys and Command prepared; they don't count against your prepared spells."},
         {name:"Channel Divinity", text:"Once per short or long rest: Conquering Presence (each creature you choose within 30 feet must succeed on a Wisdom save or be frightened of you for 1 minute) or Guided Strike (+10 to one attack roll, declared after seeing the roll but before knowing the result)."}
@@ -1101,7 +1101,7 @@ export var SUBCLASSES = {
       14:[{name:"Otherworldly Wings", text:"As a bonus action, manifest spectral wings giving you a flying speed of 30 feet. The wings last until you dismiss them (no action) or become incapacitated."}],
       18:[{name:"Unearthly Recovery", text:"As a bonus action when you have fewer than half your maximum HP remaining, regain HP equal to half your HP maximum. Once per long rest."}]
     }},
-    {name:"Shadow Magic", blurb:"Born of shadow — draws on the Shadowfell for dark and terrifying power.", features:{
+    {name:"Shadow Magic", blurb:"Born of shadow, drawing on the Shadowfell for dark and terrifying power.", features:{
       1:[
         {name:"Eyes of the Dark", text:"Darkvision 120 feet. At level 3 you also learn Darkness and can cast it by spending 2 sorcery points without needing concentration (you can see through the darkness it creates)."},
         {name:"Strength of the Grave", text:"When damage would drop you to 0 HP, make a Charisma save (DC 5 + the damage dealt). On a success, drop to 1 HP instead. Doesn't work against radiant damage or a critical hit. Once per long rest."}
