@@ -140,7 +140,7 @@ export function deleteCustomMonster(id){
   merge();
 }
 
-/* Backup import — skips entries whose names are already taken. */
+/* Backup import: skips entries whose names are already taken. */
 export function importCustomMonsters(entries){
   var added = 0;
   (entries || []).forEach(function(e){

@@ -741,7 +741,7 @@ function buildRaceForm(container){
   var moveSec = shell.section("Speed and senses");
   var moveRow = document.createElement("div"); moveRow.className = "cmp-form-row cmp-form-row-4";
   [["walk","Walking speed"],["fly","Fly (optional)"],["swim","Swim (optional)"],["climb","Climb (optional)"]].forEach(function(p){
-    var f = numberField(p[1]+(p[0]==="walk" ? " *" : ""), d.speed[p[0]] || (p[0]==="walk" ? 30 : ""), p[0]==="walk" ? "30" : "—");
+    var f = numberField(p[1]+(p[0]==="walk" ? " *" : ""), d.speed[p[0]] || (p[0]==="walk" ? 30 : ""), p[0]==="walk" ? "30" : "None");
     f.input.addEventListener("input", function(){
       var n = parseInt(f.input.value, 10);
       if(n>0) d.speed[p[0]] = n; else if(p[0]==="walk") d.speed.walk = 30; else delete d.speed[p[0]];

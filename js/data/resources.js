@@ -233,7 +233,7 @@ export var SUBCLASS_RESOURCES = {
     "The Hexblade": [
       {id:"hexblades_curse", name:"Hexblade's Curse", level:1,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Bonus action: curse a creature within 30 ft — add proficiency to damage, crit on 19–20, regain HP equal to warlock level + CHA when it dies."}
+        hint:"Bonus action: curse a creature within 30 ft: add proficiency to damage, crit on a 19 or 20, regain HP equal to warlock level + CHA when it dies."}
     ],
     "The Celestial": [
       {id:"healing_light", name:"Healing Light", level:1, pool:true,
@@ -243,7 +243,7 @@ export var SUBCLASS_RESOURCES = {
     "The Fathomless": [
       {id:"tentacle_of_the_deeps", name:"Tentacle of the Deeps", level:1,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Bonus action: summon a spectral tentacle for 1 minute — lash out for 2d8 cold damage or deal 1d8 cold to attackers as a reaction."}
+        hint:"Bonus action: summon a spectral tentacle for 1 minute: lash out for 2d8 cold damage or deal 1d8 cold to attackers as a reaction."}
     ],
     "The Undead": [
       {id:"form_of_dread", name:"Form of Dread", level:1,
@@ -270,11 +270,11 @@ export var SUBCLASS_RESOURCES = {
     "Bladesinging": [
       {id:"bladesong", name:"Bladesong", level:2,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Bonus action: enter Bladesong for 1 minute — +INT to AC, +10 ft speed, advantage on Acrobatics, +INT to concentration saves."}
+        hint:"Bonus action: enter Bladesong for 1 minute: +INT to AC, +10 ft speed, advantage on Acrobatics, +INT to concentration saves."}
     ],
     "School of Enchantment": [
       {id:"hypnotic_gaze", name:"Hypnotic Gaze", level:2, max:always(1), reset:always("short"),
-        hint:"Action: charm a creature within 5 ft — speed 0, incapacitated. Maintain with your action each turn. Ends if you move away or it saves."}
+        hint:"Action: charm a creature within 5 ft: speed 0, incapacitated. Maintain with your action each turn. Ends if you move away or it saves."}
     ],
     "School of Transmutation": [
       {id:"shapechanger", name:"Shapechanger (Polymorph Self)", level:10, max:always(1), reset:always("short"),
@@ -321,7 +321,7 @@ export var SUBCLASS_RESOURCES = {
     "Peace Domain": [
       {id:"emboldening_bond", name:"Emboldening Bond", level:1,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Action: bond up to proficiency-bonus creatures — each adds 1d4 to attacks, checks and saves while a bonded ally is within 30 ft."}
+        hint:"Action: bond up to proficiency-bonus creatures; each adds 1d4 to attacks, checks and saves while a bonded ally is within 30 ft."}
     ],
     "Grave Domain": [
       {id:"eyes_of_the_grave", name:"Eyes of the Grave", level:1,
@@ -372,7 +372,7 @@ export var SUBCLASS_RESOURCES = {
     "Phantom": [
       {id:"wails_from_the_grave", name:"Wails from the Grave", level:3,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"When you deal Sneak Attack damage, choose a creature within 30 ft — it takes half your Sneak Attack as necrotic damage."}
+        hint:"When you deal Sneak Attack damage, choose a creature within 30 ft; it takes half your Sneak Attack as necrotic damage."}
     ],
     "Soulknife": [
       {id:"psionic_energy_dice", name:"Psionic Energy Dice", level:3, pool:true,

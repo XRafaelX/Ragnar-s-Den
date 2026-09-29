@@ -173,7 +173,7 @@ export function deleteCustomSpell(id){
   // Orphaned copies on characters keep their data; homebrewId becomes stale.
 }
 
-/* Backup import — skips entries whose names are already taken.
+/* Backup import: skips entries whose names are already taken.
    Returns number added. */
 export function importCustomSpells(entries){
   var added = 0;

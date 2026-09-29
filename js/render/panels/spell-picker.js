@@ -260,7 +260,7 @@ export function spellSection(key, label, groups, data, onAdd, onCustomSaved){
 export function buildSpellSections(c){
   function onAdd(name, d){ return addCatalogSpell(c, name, d); }
   function onCustomSaved(saved){
-    // saved is the registry entry — add a linked copy to this character
+    // saved is the registry entry; add a linked copy to this character
     if(!hasSpell(c, saved.name)){
       c.spells.push(spellFromCatalog(saved.name, SPELL_DATA[saved.name] || saved));
       save();

@@ -55,7 +55,7 @@
 .mon-ability-row--preview .mon-ab-score{ font-size:12px; }
 .mon-ability-row--preview .mon-ab-mod{ font-size:10px; }
 
-/* Ability score fields in the form — 6-wide grid */
+/* Ability score fields in the form: 6-wide grid */
 .mon-ab-form-row{
   display:grid;
   grid-template-columns:repeat(6, 1fr);

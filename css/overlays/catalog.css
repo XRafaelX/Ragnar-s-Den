@@ -59,7 +59,7 @@
 .catalog-row-secondary{font-size:11.5px;color:var(--text-on-parch-dim);}
 .catalog-row-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:6px;}
 
-/* ⋯ row menu — sits at the far right of the row, vertically centred */
+/* ⋯ row menu: sits at the far right of the row, vertically centred */
 .catalog-row-menu{
   position:absolute;right:0;top:50%;
   transform:translateY(-50%);

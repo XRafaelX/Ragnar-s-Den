@@ -413,7 +413,7 @@ export var SPELL_LEVEL_LABELS = ["Cantrip","1st Level","2nd Level","3rd Level","
 
 export function spellLevelLabel(level){ return SPELL_LEVEL_LABELS[level] || ("Level " + level); }
 
-/* Mutable groups object — custom-spells.js merges its "Homebrew" group
+/* Mutable groups object: custom-spells.js merges its "Homebrew" group
    into this so the catalog picker sees homebrew spells alongside built-ins. */
 export var SPELL_GROUPS = {};
 

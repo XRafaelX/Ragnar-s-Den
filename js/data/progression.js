@@ -350,7 +350,7 @@ export var SUBCLASSES = {
         {name:"Universal Speech", text:"As an action, choose up to a number of creatures equal to your CHA modifier (minimum 1) within 60 feet. For 1 hour they magically understand you, regardless of language. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
       ],
       14:[
-        {name:"Infectious Inspiration", text:"When a creature uses your Bardic Inspiration die and succeeds on the roll, you can use your reaction to give a different creature within 60 feet a Bardic Inspiration die — without expending one of your uses. You can use this reaction a number of times equal to your CHA modifier (minimum 1), regained on a long rest."}
+        {name:"Infectious Inspiration", text:"When a creature uses your Bardic Inspiration die and succeeds on the roll, you can use your reaction to give a different creature within 60 feet a Bardic Inspiration die without expending one of your uses. You can use this reaction a number of times equal to your CHA modifier (minimum 1), regained on a long rest."}
       ]
     }},
     {name:"College of Swords", blurb:"A daring blade performer who weaves weapon tricks into combat.", features:{
@@ -608,7 +608,7 @@ export var SUBCLASSES = {
         {name:"Star Map", text:"You create a star map (a small object). While holding it you always have Guidance and Guiding Bolt prepared (free, don't count against your prepared spells), and can cast Guiding Bolt without a slot a number of times equal to your proficiency bonus per long rest."},
         {name:"Starry Form", text:"When you use Wild Shape you can assume a starry form instead of a beast. Choose Archer (bonus action ranged spell attack, 1d8 + WIS radiant, on each turn), Chalice (when you cast a healing spell of 1st level or higher, you or a creature within 30 feet regains 1d8 + WIS HP), or Dragon (concentration checks automatically succeed, Guiding Bolt as a bonus action once per turn)."}
       ],
-      6:[{name:"Cosmic Omen", text:"After each long rest, roll a d6. Odd: Weal — reaction when a creature within 30 feet makes an attack, check or save: +1d6 to the roll. Even: Woe — reaction: −1d6 to the roll. You can use this a number of times equal to your proficiency bonus per long rest."}],
+      6:[{name:"Cosmic Omen", text:"After each long rest, roll a d6. Odd: Weal, a reaction when a creature within 30 feet makes an attack, check or save: +1d6 to the roll. Even: Woe, a reaction: −1d6 to the roll. You can use this a number of times equal to your proficiency bonus per long rest."}],
       10:[{name:"Twinkling Constellations", text:"While in Starry Form, the Archer and Chalice forms each deal an extra 1d8 radiant damage or healing. The Dragon form grants a flying speed of 20 feet and can hover."}],
       14:[{name:"Full of Stars", text:"While in Starry Form, you become partially incorporeal: resistance to bludgeoning, piercing and slashing damage."}]
     }},
@@ -680,7 +680,7 @@ export var SUBCLASSES = {
     ]}},
     {name:"Echo Knight", blurb:"Conjures a duplicate from a parallel timeline to fight alongside you.", features:{
       3:[
-        {name:"Manifest Echo", text:"As a bonus action, create an echo — a translucent, silvery image of yourself — within 15 feet of you. It shares your AC and saving throw bonuses, has 1 HP, immunity to all conditions, and vanishes if it takes any damage. You can use a bonus action to move it up to 30 feet. Once per turn when you take the Attack action you can make one of the attacks originating from the echo's position. As a reaction when a creature you can see within 5 feet of the echo moves at least 5 feet away from it, you can make an opportunity attack from the echo's position."},
+        {name:"Manifest Echo", text:"As a bonus action, create an echo (a translucent, silvery image of yourself) within 15 feet of you. It shares your AC and saving throw bonuses, has 1 HP, immunity to all conditions, and vanishes if it takes any damage. You can use a bonus action to move it up to 30 feet. Once per turn when you take the Attack action you can make one of the attacks originating from the echo's position. As a reaction when a creature you can see within 5 feet of the echo moves at least 5 feet away from it, you can make an opportunity attack from the echo's position."},
         {name:"Unleash Incarnation", text:"When you take the Attack action you can make one additional melee attack from your echo's position. You can use this a number of times equal to your Constitution modifier (minimum 1), and you regain all expended uses on a long rest."}
       ],
       7:[
@@ -851,7 +851,7 @@ export var SUBCLASSES = {
       7:[{name:"Aura of Conquest", text:"While you're not incapacitated, frightened creatures within 10 feet of you can't move and take psychic damage equal to half your paladin level at the start of each of their turns. Extends to 30 feet at level 18."}],
       9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Armor of Agathys, Command, Hold Person, Spiritual Weapon, Bestow Curse and Fear prepared."}],
       15:[{name:"Scornful Rebuke", text:"Whenever a creature hits you with an attack while you are not incapacitated, it takes psychic damage equal to your Charisma modifier (minimum 1)."}],
-      20:[{name:"Invincible Conqueror", text:"For 1 minute (once per long rest): resistance to all damage, extra attack when you take the Attack action, and critical hits on 19–20."}]
+      20:[{name:"Invincible Conqueror", text:"For 1 minute (once per long rest): resistance to all damage, extra attack when you take the Attack action, and critical hits on a 19 or 20."}]
     }},
     {name:"Oathbreaker", blurb:"A fallen paladin who abandoned their oath and turned to darkness.", features:{
       3:[
@@ -862,7 +862,7 @@ export var SUBCLASSES = {
       7:[{name:"Aura of Hate", text:"You and friendly fiends and undead within 10 feet add your Charisma modifier to melee weapon damage. Extends to 30 feet at level 18."}],
       9:[{name:"Oathbreaker Spells", replaces:"Oathbreaker Spells", text:"You always have Hellish Rebuke, Inflict Wounds, Crown of Madness, Darkness, Animate Dead and Bestow Curse prepared."}],
       15:[{name:"Supernatural Resistance", text:"Resistance to bludgeoning, piercing and slashing damage from nonmagical weapons."}],
-      20:[{name:"Dread Lord", text:"For 1 minute (once per long rest): create a 30-foot aura of gloom — dim light, disadvantage on saves against being frightened, shadowy duplicates attack frightened creatures (3d10 psychic), and melee attacks deal +3d10 psychic on a failed Wisdom save."}]
+      20:[{name:"Dread Lord", text:"For 1 minute (once per long rest): create a 30-foot aura of gloom: dim light, disadvantage on saves against being frightened, shadowy duplicates attack frightened creatures (3d10 psychic), and melee attacks deal +3d10 psychic on a failed Wisdom save."}]
     }},
     {name:"Oath of Redemption", blurb:"Seeks to reform the wicked through peace, mercy and patience.", features:{
       3:[
@@ -1079,7 +1079,7 @@ export var SUBCLASSES = {
         {name:"Clockwork Magic", text:"You learn additional spells that don't count against your spells known: Alarm and Protect from Evil and Good (1st), Aid and Lesser Restoration (3rd), Dispel Magic and Protection from Energy (5th), Freedom of Movement and Summon Construct (7th), Greater Restoration and Wall of Force (9th)."},
         {name:"Restore Balance", text:"When a creature within 60 feet is about to roll with advantage or disadvantage, use your reaction to prevent that roll from having either. Uses equal to your proficiency bonus per long rest."}
       ],
-      6:[{name:"Bastion of Law", text:"As an action, expend 1–5 sorcery points to create a magical ward on a creature you touch, giving it a number of d8s equal to the points spent. When it takes damage, expend any number of those dice and reduce the damage by the total rolled. The ward lasts until you finish a long rest or use it again."}],
+      6:[{name:"Bastion of Law", text:"As an action, expend 1 to 5 sorcery points to create a magical ward on a creature you touch, giving it a number of d8s equal to the points spent. When it takes damage, expend any number of those dice and reduce the damage by the total rolled. The ward lasts until you finish a long rest or use it again."}],
       14:[{name:"Trance of Order", text:"As a bonus action, enter a state of clockwork consciousness for 1 minute: attacks against you can't benefit from advantage, and on each of your turns you can treat a d20 roll of 9 or lower as a 10. Once per long rest."}],
       18:[{name:"Clockwork Cavalcade", text:"Briefly summon spirits of order to restore balance. In a 30-foot cube originating from you: repair up to 4 objects of your choice, end every spell of 6th level or lower on creatures and objects, remove all curses and disease and poisons from creatures. Once per long rest."}]
     }},
@@ -1151,7 +1151,7 @@ export var SUBCLASSES = {
     {name:"The Hexblade", blurb:"A pact forged with a sentient weapon from the Shadowfell.", features:{
       1:[
         {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Shield and Wrathful Smite (1st level), Blur and Branding Smite (2nd, from warlock level 3), Blink and Elemental Weapon (3rd, from warlock level 5)."},
-        {name:"Hexblade's Curse", text:"As a bonus action, curse a creature within 30 feet for 1 minute. Against it: add your proficiency bonus to damage, score criticals on 19–20, and regain HP equal to your warlock level + CHA modifier when it dies. Uses equal to your proficiency bonus per long rest."},
+        {name:"Hexblade's Curse", text:"As a bonus action, curse a creature within 30 feet for 1 minute. Against it: add your proficiency bonus to damage, score criticals on a 19 or 20, and regain HP equal to your warlock level + CHA modifier when it dies. Uses equal to your proficiency bonus per long rest."},
         {name:"Hex Warrior", text:"Proficiency with medium armor, shields and martial weapons. Choose one weapon you're holding after a long rest: use your Charisma modifier for its attack and damage rolls. If it's a pact weapon this applies to all pact weapons automatically."}
       ],
       6:[{name:"Accursed Specter", text:"When you slay a humanoid, you can curse its spirit to rise as a specter under your control for 24 hours or until you use this feature again. It adds your CHA modifier to its attack bonus and has temporary HP equal to half your warlock level. Once per long rest."}],
@@ -1260,7 +1260,7 @@ export var SUBCLASSES = {
         {name:"Conjuration Savant", text:"Copying conjuration spells into your spellbook costs half the gold and time."},
         {name:"Minor Conjuration", text:"As an action, conjure a non-magical object no larger than 3 feet on a side and weighing no more than 10 pounds. It appears in your hand or on the ground within 10 feet, and disappears after 1 hour, when you use the feature again, or when it takes or deals damage."}
       ],
-      6:[{name:"Benign Transposition", text:"As an action, teleport up to 30 feet to an unoccupied space you can see, or swap places with a willing Small or Medium creature within 30 feet. Once you use this feature, you must finish a long rest before using it again — unless you expend a spell slot of 1st level or higher to use it again."}],
+      6:[{name:"Benign Transposition", text:"As an action, teleport up to 30 feet to an unoccupied space you can see, or swap places with a willing Small or Medium creature within 30 feet. Once you use this feature, you must finish a long rest before using it again, unless you expend a spell slot of 1st level or higher to use it again."}],
       10:[{name:"Focused Conjuration", text:"While you are concentrating on a conjuration spell, your concentration can't be broken by taking damage."}],
       14:[{name:"Durable Summons", text:"Any creature you summon or create with a conjuration spell has 30 temporary hit points."}]
     }},

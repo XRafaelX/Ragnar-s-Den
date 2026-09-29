@@ -227,7 +227,7 @@ function buildWeaponForm(container){
       "<div class='cmp-preview-name'>"+escapeHtml((d.name||"").trim() || "Your weapon")+"</div>"+
       "<div class='cmp-preview-tags'><span class='cmp-tag-class'>"+(d.category==="martial" ? "Martial" : "Simple")+" "+(d.ranged ? "ranged" : "melee")+"</span>"+
         "<span class='cmp-custom-tag'>Custom</span></div>"+
-      "<p class='arm-preview-damage'>"+escapeHtml(d.damageDice.trim() || "—")+(d.damageType ? " <span>"+escapeHtml(d.damageType.toLowerCase())+"</span>" : "")+"</p>"+
+      "<p class='arm-preview-damage'>"+escapeHtml(d.damageDice.trim() || "None")+(d.damageType ? " <span>"+escapeHtml(d.damageType.toLowerCase())+"</span>" : "")+"</p>"+
       facts([
         ["Properties", p || "None"],
         ["Attacks with", ab==="finesse" ? "Strength or Dexterity" : ab==="dex" ? "Dexterity" : "Strength"],

@@ -166,7 +166,7 @@ function monsterSection(){
     },
     onAdd: function(name, d){
       openMonsterDetail(name, d);
-      return false; // suppress "Added" badge — this is a reference, not a pickup
+      return false; // suppress "Added" badge; this is a reference, not a pickup
     },
     rowActions: rowActions,
     renderCustomForm: buildMonsterForm
