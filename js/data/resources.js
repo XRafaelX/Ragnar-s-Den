@@ -417,12 +417,37 @@ export var SUBCLASS_RESOURCES = {
   "Druid": {
     "Circle of the Land": [
       {id:"natural_recovery", name:"Natural Recovery", level:2, max:always(1), reset:always("long"),
-        hint:"During a short rest, recover spell slots with a combined level up to half your druid level (rounded up)."}
+        hint:"During a short rest, recover spell slots with a combined level up to half your druid level (rounded up), none 6th level or higher."}
     ],
     "Circle of Stars": [
+      {id:"star_map_guiding_bolt", name:"Star Map: Free Guiding Bolt", level:2,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"While holding your star map, cast Guiding Bolt without a spell slot."},
       {id:"cosmic_omen", name:"Cosmic Omen", level:6,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Reaction: add or subtract 1d6 from a creature's attack roll, check or save (Weal adds, Woe subtracts). Determined each long rest."}
+        hint:"Reaction: add (Weal, even roll) or subtract (Woe, odd roll) 1d6 from a roll made within 30 ft. Rolled each long rest."}
+    ],
+    "Circle of Wildfire": [
+      {id:"cauterizing_flames", name:"Cauterizing Flames", level:10,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Reaction: extinguish a spectral flame to heal or burn the creature entering it for 2d10 + WIS mod."},
+      {id:"blazing_revival", name:"Blazing Revival", level:14, max:always(1), reset:always("long"),
+        hint:"When you drop to 0 HP with your spirit within 120 ft: it drops to 0 HP, and you regain half your HP and stand up."}
+    ],
+    "Circle of Dreams": [
+      {id:"balm_of_the_summer_court", name:"Balm of the Summer Court (d6s)", level:2, pool:true,
+        max:function(lv){ return lv; }, reset:always("long"),
+        hint:"Bonus action: spend up to half your druid level in d6s to heal a creature within 120 ft (+1 temp HP per die)."},
+      {id:"hidden_paths", name:"Hidden Paths", level:10,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Bonus action: teleport yourself up to 60 ft, or action: teleport a willing creature you touch up to 30 ft."},
+      {id:"walker_in_dreams", name:"Walker in Dreams", level:14, max:always(1), reset:always("long"),
+        hint:"After a short rest: cast Dream, Scrying or Teleportation Circle without a slot or material components."}
+    ],
+    "Circle of Spores": [
+      {id:"fungal_infestation", name:"Fungal Infestation", level:6,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Reaction: animate a Small or Medium beast or humanoid that dies within 10 ft as a 1-HP zombie for 1 hour."}
     ],
     "Circle of the Shepherd": [
       {id:"spirit_totem", name:"Spirit Totem", level:2, max:always(1), reset:always("short"),

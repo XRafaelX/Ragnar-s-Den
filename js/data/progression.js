@@ -383,7 +383,7 @@ export var SUBCLASSES = {
     }},
     {name:"College of Valor", blurb:"A battle-bard who inspires heroics on the front line.", features:{
       3:[
-        {name:"Bonus Proficiencies", text:"Proficiency with medium armor, shields and martial weapons."},
+        {name:"Bonus Proficiencies", text:"Proficiency with medium armor, shields and martial weapons.", grants:{armor:["Medium armor","Shields"], weapons:["Martial weapons"]}},
         {name:"Combat Inspiration", text:"A creature with one of your Bardic Inspiration dice can roll it and add the number to a weapon damage roll it just made. Or, when an attack roll is made against it, it can use its reaction to roll the die and add the number to its AC against that attack, after seeing the roll but before knowing whether it hits."}
       ],
       6:[{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}],
@@ -404,7 +404,7 @@ export var SUBCLASSES = {
     }},
     {name:"College of Swords", blurb:"A daring blade performer who weaves weapon tricks into combat.", features:{
       3:[
-        {name:"Bonus Proficiencies", text:"You gain proficiency with medium armor and with the scimitar. If you are already proficient with a simple or martial melee weapon you can use it as a spellcasting focus."},
+        {name:"Bonus Proficiencies", text:"You gain proficiency with medium armor and with the scimitar. If you are already proficient with a simple or martial melee weapon you can use it as a spellcasting focus.", grants:{armor:["Medium armor"], weapons:["Scimitars"]}},
         {name:"Fighting Style", text:"Choose one fighting style: Dueling (+2 damage with a one-handed melee weapon while your other hand is empty) or Two-Weapon Fighting (add your modifier to the off-hand attack's damage)."},
         {name:"Blade Flourish", text:"When you take the Attack action, your walking speed increases by 10 feet until the end of the turn, and one attack you make this turn can be a Blade Flourish. Expend a Bardic Inspiration die to choose one: Defensive Flourish (add the die to the attack's damage and to your AC until the start of your next turn), Slashing Flourish (add the die to the damage of the attack, and deal the same amount of damage to any other creature of your choice you can see within 5 feet of you), or Mobile Flourish (add the die to the damage and push the target up to 5 + the die result feet away; you can then move up to your speed toward it as a reaction)."}
       ],
@@ -469,7 +469,7 @@ export var SUBCLASSES = {
     {name:"Life Domain", blurb:"The healer's domain: tougher armor and stronger heals.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Bless and Cure Wounds prepared; they don't count against your prepared spells."},
-        {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor."},
+        {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor.", grants:{armor:["Heavy armor"]}},
         {name:"Disciple of Life", text:"Whenever you use a spell of 1st level or higher to restore hit points to a creature, it regains an extra 2 + the spell's level hit points."}
       ],
       2:[{name:"Channel Divinity: Preserve Life", text:"As an action, restore hit points equal to five times your cleric level, split as you choose among creatures within 30 feet. This can't raise a creature above half its hit point maximum, and has no effect on undead or constructs."}],
@@ -499,7 +499,7 @@ export var SUBCLASSES = {
     {name:"War Domain", blurb:"A warrior-priest who fights in heavy armor.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Divine Favor and Shield of Faith prepared; they don't count against your prepared spells."},
-        {name:"Bonus Proficiencies", text:"Proficiency with martial weapons and heavy armor."},
+        {name:"Bonus Proficiencies", text:"Proficiency with martial weapons and heavy armor.", grants:{armor:["Heavy armor"], weapons:["Martial weapons"]}},
         {name:"War Priest", text:"When you take the Attack action, you can make one weapon attack as a bonus action. Uses equal to your Wisdom modifier (minimum 1) per long rest."}
       ],
       2:[{name:"Channel Divinity: Guided Strike", text:"When you make an attack roll, you can add +10 to it, deciding after you see the roll but before the DM says whether it hits."}],
@@ -528,7 +528,7 @@ export var SUBCLASSES = {
     {name:"Tempest Domain", blurb:"Commands storms, thunder and lightning.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Fog Cloud and Thunderwave prepared; they don't count against your prepared spells."},
-        {name:"Bonus Proficiencies", text:"Proficiency with martial weapons and heavy armor."},
+        {name:"Bonus Proficiencies", text:"Proficiency with martial weapons and heavy armor.", grants:{armor:["Heavy armor"], weapons:["Martial weapons"]}},
         {name:"Wrath of the Storm", text:"When a creature within 5 feet that you can see hits you with an attack, you can use your reaction to make it take 2d8 lightning or thunder damage (your choice), DEX save for half. Uses equal to your Wisdom modifier (minimum 1) per long rest."}
       ],
       2:[{name:"Channel Divinity: Destructive Wrath", text:"When you roll lightning or thunder damage, you can use Channel Divinity to deal maximum damage instead of rolling."}],
@@ -558,7 +558,7 @@ export var SUBCLASSES = {
       1:[
         {name:"Domain Spells", text:"You always have Animal Friendship and Speak with Animals prepared; they don't count against your prepared spells."},
         {name:"Acolyte of Nature", text:"You learn one druid cantrip (it counts as a cleric cantrip for you) and gain proficiency in one of Animal Handling, Nature or Survival."},
-        {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor."}
+        {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor.", grants:{armor:["Heavy armor"]}}
       ],
       2:[{name:"Channel Divinity: Charm Animals and Plants", text:"As an action, each beast or plant creature within 30 feet that can see you makes a WIS save. On a failure, it is charmed by you for 1 minute or until it takes damage, and is friendly to you and creatures you designate."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Animal Friendship, Speak with Animals, Barkskin and Spike Growth prepared; they don't count against your prepared spells."}],
@@ -572,7 +572,7 @@ export var SUBCLASSES = {
     {name:"Twilight Domain", blurb:"Guards against the terrors of night and eases the transition to death.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Faerie Fire and Sleep prepared; they don't count against your prepared spells."},
-        {name:"Bonus Proficiencies", text:"You gain proficiency with martial weapons and heavy armor."},
+        {name:"Bonus Proficiencies", text:"You gain proficiency with martial weapons and heavy armor.", grants:{armor:["Heavy armor"], weapons:["Martial weapons"]}},
         {name:"Eyes of Night", text:"You have darkvision out to 300 feet. As an action, you can share it for 1 hour with willing creatures you can see within 10 feet, up to your Wisdom modifier (minimum 1). Once per long rest, or expend a spell slot of any level to share it again."},
         {name:"Vigilant Blessing", text:"As an action, give one creature you touch (including yourself) advantage on the next initiative roll it makes. The benefit ends right after that roll or when you use this feature again."}
       ],
@@ -588,7 +588,7 @@ export var SUBCLASSES = {
     {name:"Forge Domain", blurb:"Masters the divine art of crafting and imbuing weapons and armor.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Identify and Searing Smite prepared; they don't count against your prepared spells."},
-        {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor and smith's tools."},
+        {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor and smith's tools.", grants:{armor:["Heavy armor"], tools:["Smith's tools"]}},
         {name:"Blessing of the Forge", text:"At the end of a long rest, touch one nonmagical suit of armor or simple or martial weapon. Until the end of your next long rest or until you die, it becomes a magic item: +1 AC for armor, or +1 to attack and damage rolls for a weapon. Once per long rest."}
       ],
       2:[{name:"Channel Divinity: Artisan's Blessing", text:"In a 1-hour ritual, craft a nonmagical item that includes some metal and is worth no more than 100 gp: a simple or martial weapon, a suit of armor, ten pieces of ammunition, a set of tools or another metal object. You must lay out metal (coins count) worth as much as the item, which transforms into it. You can also duplicate a nonmagical item containing metal, such as a key, if you have the original during the ritual."}],
@@ -603,7 +603,7 @@ export var SUBCLASSES = {
     {name:"Order Domain", blurb:"Enforces divine law and compels others to act through holy authority.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Command and Heroism prepared; they don't count against your prepared spells."},
-        {name:"Bonus Proficiencies", text:"You gain proficiency with heavy armor, and in Intimidation or Persuasion (your choice; tick it on the Abilities & Skills tab)."},
+        {name:"Bonus Proficiencies", text:"You gain proficiency with heavy armor, and in Intimidation or Persuasion (your choice; tick it on the Abilities & Skills tab).", grants:{armor:["Heavy armor"]}},
         {name:"Voice of Authority", text:"When you cast a spell with a spell slot of 1st level or higher that targets an ally, that ally can use its reaction right after the spell to make one weapon attack against a creature of your choice that you can see. If the spell targets several allies, you choose which one can attack."}
       ],
       2:[{name:"Channel Divinity: Order's Demand", text:"As an action, each creature of your choice within 30 feet that can see or hear you makes a WIS save or is charmed by you until the end of your next turn or until it takes damage. You can also make any creature that fails drop what it is holding."}],
@@ -633,7 +633,7 @@ export var SUBCLASSES = {
     {name:"Death Domain", blurb:"Wields necrotic power to reap the living and command death itself.", features:{
       1:[
         {name:"Domain Spells", text:"You always have False Life and Ray of Sickness prepared; they don't count against your prepared spells."},
-        {name:"Bonus Proficiency", text:"You gain proficiency with martial weapons."},
+        {name:"Bonus Proficiency", text:"You gain proficiency with martial weapons.", grants:{weapons:["Martial weapons"]}},
         {name:"Reaper", text:"You learn one necromancy cantrip of your choice from any class's spell list (e.g. Chill Touch or Toll the Dead). When you cast a necromancy cantrip that normally targets only one creature, it can instead target two creatures within range and within 5 feet of each other."}
       ],
       2:[{name:"Channel Divinity: Touch of Death", text:"When you hit a creature with a melee attack, you can use Channel Divinity to deal extra necrotic damage equal to 5 + twice your cleric level."}],
@@ -697,51 +697,66 @@ export var SUBCLASSES = {
     {name:"Circle of the Land", blurb:"A mystic tied to a type of terrain, with extra spells.", features:{
       2:[
         {name:"Bonus Cantrip", text:"You learn one additional druid cantrip."},
-        {name:"Natural Recovery", text:"Once per day during a short rest, recover spell slots with combined level up to half your druid level (rounded up)."}
+        {name:"Natural Recovery", text:"During a short rest, you can recover expended spell slots with a combined level up to half your druid level (rounded up), none of them 6th level or higher. Once per long rest."}
       ],
-      3:[{name:"Circle Spells", text:"Choose a terrain (arctic, coast, desert, forest, grassland, mountain, swamp or Underdark). You always have its circle spells prepared."}]
+      3:[{name:"Circle Spells", text:"Choose a land when you join the circle. Its spells are always prepared once you reach the listed druid level and don't count against your prepared spells. Arctic: Hold Person, Spike Growth (3); Sleet Storm, Slow (5); Freedom of Movement, Ice Storm (7); Commune with Nature, Cone of Cold (9). Coast: Mirror Image, Misty Step (3); Water Breathing, Water Walk (5); Control Water, Freedom of Movement (7); Conjure Elemental, Scrying (9). Desert: Blur, Silence (3); Create Food and Water, Protection from Energy (5); Blight, Hallucinatory Terrain (7); Insect Plague, Wall of Stone (9). Forest: Barkskin, Spider Climb (3); Call Lightning, Plant Growth (5); Divination, Freedom of Movement (7); Commune with Nature, Tree Stride (9). Grassland: Invisibility, Pass without Trace (3); Daylight, Haste (5); Divination, Freedom of Movement (7); Dream, Insect Plague (9). Mountain: Spider Climb, Spike Growth (3); Lightning Bolt, Meld into Stone (5); Stone Shape, Stoneskin (7); Passwall, Wall of Stone (9). Swamp: Darkness, Melf's Acid Arrow (3); Water Walk, Stinking Cloud (5); Freedom of Movement, Locate Creature (7); Insect Plague, Scrying (9). Underdark: Spider Climb, Web (3); Gaseous Form, Stinking Cloud (5); Greater Invisibility, Stone Shape (7); Cloudkill, Insect Plague (9)."}],
+      6:[{name:"Land's Stride", text:"Moving through nonmagical difficult terrain costs you no extra movement, and you can pass through nonmagical plants without being slowed or harmed by thorns, spines or similar hazards. You have advantage on saving throws against plants that are magically created or manipulated to impede movement, such as those from Entangle."}],
+      10:[{name:"Nature's Ward", text:"You can't be charmed or frightened by elementals or fey, and you are immune to poison and disease."}],
+      14:[{name:"Nature's Sanctuary", text:"When a beast or plant creature attacks you, it must make a WIS save against your spell save DC. On a failure, it must choose a different target or the attack automatically misses. On a success, it is immune to this effect for 24 hours. The creature knows about this effect before it attacks."}]
     }},
-    {name:"Circle of the Moon", blurb:"A shapeshifter who fights in beast form.", features:{2:[
-      {name:"Combat Wild Shape", text:"Wild Shape as a bonus action, and while transformed spend a spell slot as a bonus action to heal 1d8 per slot level."},
-      {name:"Circle Forms", text:"You can Wild Shape into beasts up to CR 1 (instead of 1/4)."}
-    ]}},
+    {name:"Circle of the Moon", blurb:"A shapeshifter who fights in beast form.", features:{
+      2:[
+        {name:"Combat Wild Shape", text:"You can use Wild Shape as a bonus action instead of an action. While transformed, you can use a bonus action to expend a spell slot and regain 1d8 hit points per level of the slot."},
+        {name:"Circle Forms", text:"You can Wild Shape into a beast with a challenge rating as high as 1 (ignoring the Max CR column of the Beast Shapes table, but following its other limits)."}
+      ],
+      6:[
+        {name:"Circle Forms", replaces:"Circle Forms", text:"You can Wild Shape into a beast with a challenge rating as high as your druid level divided by 3, rounded down (ignoring the Max CR column of the Beast Shapes table, but following its other limits)."},
+        {name:"Primal Strike", text:"Your attacks in beast form count as magical for overcoming resistance and immunity to nonmagical attacks and damage."}
+      ],
+      10:[{name:"Elemental Wild Shape", text:"You can expend two uses of Wild Shape at the same time to transform into an air, earth, fire or water elemental."}],
+      14:[{name:"Thousand Forms", text:"You can cast Alter Self at will."}]
+    }},
     {name:"Circle of Stars", blurb:"Charts the stars to gain cosmic boons during Wild Shape and prayer.", features:{
       2:[
-        {name:"Star Map", text:"You create a star map (a small object). While holding it you always have Guidance and Guiding Bolt prepared (free, don't count against your prepared spells), and can cast Guiding Bolt without a slot a number of times equal to your proficiency bonus per long rest."},
-        {name:"Starry Form", text:"When you use Wild Shape you can assume a starry form instead of a beast. Choose Archer (bonus action ranged spell attack, 1d8 + WIS radiant, on each turn), Chalice (when you cast a healing spell of 1st level or higher, you or a creature within 30 feet regains 1d8 + WIS HP), or Dragon (concentration checks automatically succeed, Guiding Bolt as a bonus action once per turn)."}
+        {name:"Star Map", text:"You create a star chart, a Tiny object that can be your spellcasting focus for druid spells (a 1-hour ceremony replaces a lost one). While holding it, you know the Guidance cantrip and always have Guiding Bolt prepared (it doesn't count against your prepared spells), and you can cast Guiding Bolt without a spell slot a number of times equal to your proficiency bonus, regained on a long rest."},
+        {name:"Starry Form", text:"As a bonus action, expend a use of Wild Shape to take on a starry form instead of a beast. You keep your statistics and shed bright light in a 10-foot radius and dim light for another 10 feet. It lasts 10 minutes, ending early if you dismiss it, are incapacitated, die or use this feature again. Choose a constellation. Archer: when you activate the form, and as a bonus action on later turns, make a ranged spell attack against a creature within 60 feet for 1d8 + your WIS modifier radiant damage. Chalice: whenever you cast a spell with a spell slot that restores hit points, you or another creature within 30 feet regains 1d8 + your WIS modifier hit points. Dragon: when you make an INT or WIS check, or a CON save to maintain concentration, you can treat a d20 roll of 9 or lower as a 10."}
       ],
-      6:[{name:"Cosmic Omen", text:"After each long rest, roll a d6. Odd: Weal, a reaction when a creature within 30 feet makes an attack, check or save: +1d6 to the roll. Even: Woe, a reaction: −1d6 to the roll. You can use this a number of times equal to your proficiency bonus per long rest."}],
-      10:[{name:"Twinkling Constellations", text:"While in Starry Form, the Archer and Chalice forms each deal an extra 1d8 radiant damage or healing. The Dragon form grants a flying speed of 20 feet and can hover."}],
-      14:[{name:"Full of Stars", text:"While in Starry Form, you become partially incorporeal: resistance to bludgeoning, piercing and slashing damage."}]
+      6:[{name:"Cosmic Omen", text:"When you finish a long rest, roll a die; the result lasts until your next long rest. Even (Weal): when a creature you can see within 30 feet is about to make an attack roll, saving throw or ability check, you can use your reaction to roll a d6 and add it to the total. Odd (Woe): the same, but you subtract the d6. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}],
+      10:[{name:"Twinkling Constellations", text:"The Archer's and Chalice's 1d8 becomes 2d8, and while the Dragon is active you have a flying speed of 20 feet and can hover. At the start of each of your turns in Starry Form, you can change which constellation glimmers on your body."}],
+      14:[{name:"Full of Stars", text:"While in Starry Form, you become partially incorporeal, giving you resistance to bludgeoning, piercing and slashing damage."}]
     }},
     {name:"Circle of Wildfire", blurb:"Bonds with a wildfire spirit to burn away the old and nurture the new.", features:{
       2:[
-        {name:"Enhanced Bond", text:"When you cast a spell that deals fire damage or restores HP, add 1d8 to one fire damage or healing roll while your wildfire spirit is summoned."},
-        {name:"Summon Wildfire Spirit", text:"As an action, expend one Wild Shape use to summon a wildfire spirit in an unoccupied space within 30 feet. It lasts 1 hour or until reduced to 0 HP. It acts on your initiative. You can command it with a bonus action: it can move and use its Flame Seed (ranged spell attack, 1d6 + WIS fire) or Fiery Teleportation (teleport yourself and up to 3 willing creatures within 5 feet of it up to 15 feet; creatures near the origin take 1d6 + WIS fire on a failed DEX save)."},
-        {name:"Circle Spells", text:"You always have Burning Hands, Cure Wounds, Flaming Sphere, Scorching Ray, Plant Growth, Revivify, Aura of Life and Fire Shield prepared; they don't count against your prepared spells."}
+        {name:"Circle Spells", text:"You always have Burning Hands and Cure Wounds prepared; they don't count against your prepared spells."},
+        {name:"Summon Wildfire Spirit", text:"As an action, expend a use of Wild Shape to summon your wildfire spirit instead of transforming, in an unoccupied space you can see within 30 feet. Each creature (other than you) within 10 feet of it when it appears makes a DEX save against your spell save DC or takes 2d6 fire damage. It lasts 1 hour, until it drops to 0 HP, until you summon it again or until you die. It shares your initiative and takes its turn right after yours, taking only the Dodge action unless you use a bonus action to command it (or you are incapacitated). Wildfire Spirit: Small elemental, AC 13, HP 5 + five times your druid level, speed 30 ft and fly 30 ft (hover); STR 10, DEX 14, CON 14, INT 13, WIS 15, CHA 11; immune to fire damage and to being charmed, frightened, grappled, prone or restrained; darkvision 60 ft; understands your languages. Flame Seed: ranged spell attack using your spell attack modifier, range 60 ft, 1d6 + your proficiency bonus fire damage. Fiery Teleportation: it and each willing creature of your choice within 5 feet of it teleport up to 15 feet to unoccupied spaces you can see, then each creature within 5 feet of the space it left makes a DEX save or takes 1d6 + your proficiency bonus fire damage."}
       ],
-      6:[{name:"Cauterizing Flames", text:"When a Small or larger creature dies within 30 feet of you or your wildfire spirit, a harmless spectral flame appears in its space for 1 minute. As a reaction when a creature you can see enters that space, extinguish the flame to heal or deal 2d10 + WIS fire damage (their choice). Uses equal to your WIS modifier per long rest."}],
-      10:[{name:"Blazing Revival", text:"When your wildfire spirit drops to 0 HP, you can expend one Wild Shape use as a reaction to have it drop to 1 HP instead."}],
-      14:[{name:"Firestorm", text:"When you cast a fire spell using a spell slot, choose any number of creatures you can see within 60 feet that are not the target. Each must succeed on a DEX save (DC = your spell save DC) or take 2d10 fire damage."}]
+      3:[{name:"Circle Spells", replaces:"Circle Spells", text:"You always have Burning Hands, Cure Wounds, Flaming Sphere and Scorching Ray prepared; they don't count against your prepared spells."}],
+      5:[{name:"Circle Spells", replaces:"Circle Spells", text:"You always have Burning Hands, Cure Wounds, Flaming Sphere, Scorching Ray, Plant Growth and Revivify prepared; they don't count against your prepared spells."}],
+      6:[{name:"Enhanced Bond", text:"While your wildfire spirit is summoned, whenever you cast a spell that deals fire damage or restores hit points, roll a d8 and add it to one damage or healing roll of the spell. Also, a spell you cast with a range other than self can originate from you or from your spirit."}],
+      7:[{name:"Circle Spells", replaces:"Circle Spells", text:"You always have Burning Hands, Cure Wounds, Flaming Sphere, Scorching Ray, Plant Growth, Revivify, Aura of Life and Fire Shield prepared; they don't count against your prepared spells."}],
+      9:[{name:"Circle Spells", replaces:"Circle Spells", text:"You always have Burning Hands, Cure Wounds, Flaming Sphere, Scorching Ray, Plant Growth, Revivify, Aura of Life, Fire Shield, Flame Strike and Mass Cure Wounds prepared; they don't count against your prepared spells."}],
+      10:[{name:"Cauterizing Flames", text:"When a Small or larger creature dies within 30 feet of you or your wildfire spirit, a harmless spectral flame appears in its space for 1 minute. When a creature you can see enters that space, you can use your reaction to extinguish the flame and either heal the creature or deal fire damage to it, equal to 2d10 + your WIS modifier. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}],
+      14:[{name:"Blazing Revival", text:"If your wildfire spirit is within 120 feet of you when you drop to 0 hit points and fall unconscious, you can make the spirit drop to 0 hit points; you then regain half your hit points and immediately rise to your feet. Once per long rest."}]
     }},
     {name:"Circle of Dreams", blurb:"Connected to the Feywild, weaving healing and travel magic.", features:{
-      2:[
-        {name:"Balm of the Summer Court", text:"You have a pool of healing equal to five times your druid level. As a bonus action, restore HP to a creature within 120 feet by spending dice from the pool (d6 each); it also gains temporary HP equal to the number of dice spent."},
-        {name:"Circle Spells", text:"You always have Sleep, Telekinesis, Mislead and Seeming prepared; they don't count against your prepared spells."}
-      ],
-      6:[{name:"Hearth of Moonlight and Shadow", text:"At the start of a short or long rest in the open, you can invoke a 30-foot-radius magical space. Until the rest ends, each creature you choose in the area has a +5 bonus to Perception checks and can't be surprised. Flames within are hidden from outside and the area is magically silenced."}],
-      10:[{name:"Hidden Paths", text:"You can teleport up to 60 feet to an unoccupied space you can see as a bonus action. As an action, teleport a willing creature you touch to an unoccupied space you can see within 30 feet of you. Uses equal to your WIS modifier (min 1) per long rest."}],
-      14:[{name:"Walker in Dreams", text:"When you finish a short rest, you can cast Dream (targeting yourself), Scrying or Teleportation Circle without expending a spell slot or using material components. You must finish a long rest to use this feature again."}]
+      2:[{name:"Balm of the Summer Court", text:"You have a pool of d6s equal to your druid level, regained on a long rest. As a bonus action, choose a creature you can see within 120 feet and spend up to half your druid level in dice from the pool: it regains hit points equal to their total and gains 1 temporary hit point per die spent."}],
+      6:[{name:"Hearth of Moonlight and Shadow", text:"At the start of a short or long rest, touch a point to create an invisible 30-foot-radius sphere around it (blocked by total cover). While in it, you and your allies have a +5 bonus to DEX (Stealth) and WIS (Perception) checks, and light from open flames in it isn't visible outside. It ends when the rest ends or when you leave it."}],
+      10:[{name:"Hidden Paths", text:"As a bonus action, teleport up to 60 feet to an unoccupied space you can see. Or, as an action, teleport a willing creature you touch up to 30 feet to an unoccupied space you can see. Uses equal to your WIS modifier (minimum 1) per long rest."}],
+      14:[{name:"Walker in Dreams", text:"When you finish a short rest, you can cast Dream (with you as the messenger), Scrying or Teleportation Circle without a spell slot or material components. This Teleportation Circle opens a portal to the last place you finished a long rest on your current plane (it fails, without being wasted, if you haven't had one there). Once per long rest."}]
     }},
     {name:"Circle of Spores", blurb:"Finds beauty in decay and animates the dead with fungal energy.", features:{
       2:[
-        {name:"Halo of Spores", text:"When a creature you can see moves into a space within 10 feet of you, use your reaction to deal 1d4 necrotic damage (Constitution save negates). The damage increases as you level."},
-        {name:"Symbiotic Entity", text:"When you use Wild Shape you can expend one use to awaken your spores instead of transforming. Gain temporary HP equal to 4 × your druid level, Halo of Spores deals +1d4 extra damage, and your melee attacks deal an extra 1d6 poison damage. This lasts until the temp HP are lost."},
-        {name:"Circle Spells", text:"You always have Chill Touch, Blindness/Deafness, Gentle Repose, Animate Dead, Gaseous Form, Blight, Confusion and Cloudkill prepared; they don't count against your prepared spells."}
+        {name:"Circle Spells", text:"You learn the Chill Touch cantrip (it doesn't count against your cantrips known)."},
+        {name:"Halo of Spores", text:"When a creature you can see moves into a space within 10 feet of you or starts its turn there, you can use your reaction to deal 1d4 necrotic damage to it unless it succeeds on a CON save against your spell save DC. The damage becomes 1d6 at level 6, 1d8 at level 10 and 1d10 at level 14."},
+        {name:"Symbiotic Entity", text:"As an action, expend a use of Wild Shape to awaken your spores instead of transforming, gaining 4 temporary hit points per druid level. For 10 minutes, until those temporary hit points are gone or until you use Wild Shape again: roll your Halo of Spores damage die twice and add both, and your melee weapon attacks deal an extra 1d6 poison damage."}
       ],
-      6:[{name:"Fungal Infestation", text:"When a Small or Medium beast or humanoid dies within 10 feet of you, you can use your reaction to animate it as a zombie (it has 1 HP). It acts immediately after you each round and obeys your mental commands. It turns to dust after 1 hour or when it drops to 0 HP. Uses equal to your WIS modifier per long rest."}],
-      10:[{name:"Spreading Spores", text:"While Symbiotic Entity is active, use a bonus action to hurl spores up to 30 feet. Halo of Spores works in a 10-foot cube centered on that point instead of around you. Each turn you can move the cube up to 10 feet using your reaction."}],
-      14:[{name:"Fungal Body", text:"The fungal spores permeate your body: you are immune to blinded, deafened, frightened and poisoned conditions, and critical hits against you become normal hits."}]
+      3:[{name:"Circle Spells", replaces:"Circle Spells", text:"You know the Chill Touch cantrip. You always have Blindness/Deafness and Gentle Repose prepared; they don't count against your prepared spells."}],
+      5:[{name:"Circle Spells", replaces:"Circle Spells", text:"You know the Chill Touch cantrip. You always have Blindness/Deafness, Gentle Repose, Animate Dead and Gaseous Form prepared; they don't count against your prepared spells."}],
+      6:[{name:"Fungal Infestation", text:"When a Small or Medium beast or humanoid dies within 10 feet of you, you can use your reaction to animate it as a zombie (Monster Manual stats) with 1 hit point. It takes its turn right after yours, obeys your mental commands and can only take the Attack action (one melee attack). It collapses and dies after 1 hour. Uses equal to your WIS modifier (minimum 1) per long rest."}],
+      7:[{name:"Circle Spells", replaces:"Circle Spells", text:"You know the Chill Touch cantrip. You always have Blindness/Deafness, Gentle Repose, Animate Dead, Gaseous Form, Blight and Confusion prepared; they don't count against your prepared spells."}],
+      9:[{name:"Circle Spells", replaces:"Circle Spells", text:"You know the Chill Touch cantrip. You always have Blindness/Deafness, Gentle Repose, Animate Dead, Gaseous Form, Blight, Confusion, Cloudkill and Contagion prepared; they don't count against your prepared spells."}],
+      10:[{name:"Spreading Spores", text:"As a bonus action while Symbiotic Entity is active, hurl spores up to 30 feet, where they swirl in a 10-foot cube for 1 minute (ending early if you do this again, dismiss them as a bonus action, or Symbiotic Entity ends). A creature that moves into the cube or starts its turn there takes your Halo of Spores damage unless it succeeds on a CON save against your spell save DC, no more than once per turn. While the cube exists, you can't use your Halo of Spores reaction."}],
+      14:[{name:"Fungal Body", text:"You are immune to being blinded, deafened, frightened or poisoned, and any critical hit against you counts as a normal hit unless you are incapacitated."}]
     }},
     {name:"Circle of the Shepherd", blurb:"Speaks with beasts and fey, summons guardian spirits and empowers conjured allies.", features:{
       2:[
