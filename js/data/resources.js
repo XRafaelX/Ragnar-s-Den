@@ -64,11 +64,35 @@ export var CLASS_RESOURCES = {
   "Sorcerer": [
     {id:"sorcery_points", name:"Sorcery Points", level:2, pool:true,
       max:function(lv){ return lv; }, reset:always("long"),
-      hint:"Fuel Metamagic, or convert them to and from spell slots as a bonus action."}
+      hint:"Fuel Metamagic, or convert them to and from spell slots as a bonus action. From level 20, regain 4 on a short rest."}
+  ],
+  "Rogue": [
+    {id:"stroke_of_luck", name:"Stroke of Luck", level:20, max:always(1), reset:always("short"),
+      hint:"Turn a miss into a hit, or treat a failed ability check's d20 as a 20."}
+  ],
+  "Warlock": [
+    {id:"mystic_arcanum_6", name:"Mystic Arcanum (6th)", level:11, max:always(1), reset:always("long"),
+      hint:"Cast your 6th-level arcanum spell without a spell slot."},
+    {id:"mystic_arcanum_7", name:"Mystic Arcanum (7th)", level:13, max:always(1), reset:always("long"),
+      hint:"Cast your 7th-level arcanum spell without a spell slot."},
+    {id:"mystic_arcanum_8", name:"Mystic Arcanum (8th)", level:15, max:always(1), reset:always("long"),
+      hint:"Cast your 8th-level arcanum spell without a spell slot."},
+    {id:"mystic_arcanum_9", name:"Mystic Arcanum (9th)", level:17, max:always(1), reset:always("long"),
+      hint:"Cast your 9th-level arcanum spell without a spell slot."},
+    {id:"eldritch_master", name:"Eldritch Master", level:20, max:always(1), reset:always("long"),
+      hint:"Spend 1 minute to regain all your expended Pact Magic slots."}
   ],
   "Wizard": [
     {id:"arcane_recovery", name:"Arcane Recovery", level:1, max:always(1), reset:always("long"),
-      hint:"During a short rest, recover spell slots with a combined level up to half your wizard level (rounded up)."}
+      hint:"During a short rest, recover spell slots with a combined level up to half your wizard level (rounded up), none 6th level or higher."},
+    {id:"signature_spells", name:"Signature Spells", level:20, max:always(2), reset:always("short"),
+      hint:"Cast each of your two signature spells once at 3rd level without a spell slot."}
+  ],
+  "Artificer": [
+    {id:"flash_of_genius", name:"Flash of Genius", level:7, max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+      hint:"Reaction: add your INT modifier to an ability check or save by you or a creature within 30 ft."},
+    {id:"spell_storing_item", name:"Spell-Storing Item (Uses)", level:11, pool:true, max:function(lv, m){ return Math.max(2, m.int * 2); }, reset:always("long"),
+      hint:"Uses of the spell stored in your item; storing a new spell after a long rest resets them."}
   ]
 };
 

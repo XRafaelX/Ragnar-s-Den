@@ -1,0 +1,92 @@
+/* Warlock subclasses: the full feature list for each one, keyed by class
+   level. Assembled into SUBCLASSES in ../progression.js; see the comment
+   there for the feature fields and flags. */
+export var WARLOCK_SUBCLASSES = [
+  {name:"The Fiend", blurb:"A pact with a devil or demon.", features:{
+    1:[
+      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Burning Hands and Command (1st level), Blindness/Deafness and Scorching Ray (2nd, from warlock level 3), Fireball and Stinking Cloud (3rd, from warlock level 5), Fire Shield and Wall of Fire (4th, from warlock level 7), Flame Strike and Hallow (5th, from warlock level 9)."},
+      {name:"Dark One's Blessing", text:"When you reduce a hostile creature to 0 hit points, you gain temporary hit points equal to your CHA modifier + your warlock level (minimum 1)."}
+    ],
+    6:[{name:"Dark One's Own Luck", text:"When you make an ability check or saving throw, you can add a d10 to the roll, after seeing it but before its effects occur. Once per short or long rest."}],
+    10:[{name:"Fiendish Resilience", text:"When you finish a short or long rest, choose a damage type; you have resistance to it until you choose a different one. Damage from magical or silver weapons ignores this resistance."}],
+    14:[{name:"Hurl Through Hell", text:"When you hit a creature with an attack, you can send it hurtling through the lower planes. It vanishes and returns at the end of your next turn to its space or the nearest unoccupied one; if it isn't a fiend, it takes 10d10 psychic damage. Once per long rest."}]
+  }},
+  {name:"The Archfey", blurb:"A pact with a lord or lady of the fey.", features:{
+    1:[
+      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Faerie Fire and Sleep (1st level), Calm Emotions and Phantasmal Force (2nd, from warlock level 3), Blink and Plant Growth (3rd, from warlock level 5), Dominate Beast and Greater Invisibility (4th, from warlock level 7), Dominate Person and Seeming (5th, from warlock level 9)."},
+      {name:"Fey Presence", text:"As an action, each creature in a 10-foot cube originating from you makes a WIS save against your spell save DC or is charmed or frightened by you (your choice) until the end of your next turn. Once per short or long rest."}
+    ],
+    6:[{name:"Misty Escape", text:"When you take damage, you can use your reaction to turn invisible and teleport up to 60 feet to an unoccupied space you can see. You stay invisible until the start of your next turn or until you attack or cast a spell. Once per short or long rest."}],
+    10:[{name:"Beguiling Defenses", text:"You are immune to being charmed. When another creature tries to charm you, you can use your reaction to turn it back: it makes a WIS save against your spell save DC or is charmed by you for 1 minute or until it takes damage."}],
+    14:[{name:"Dark Delirium", text:"As an action, a creature you can see within 60 feet makes a WIS save against your spell save DC. On a failure, it is charmed or frightened by you (your choice) for 1 minute or until your concentration breaks (as if concentrating on a spell), ending early if it takes damage. Until then, it believes it is lost in a misty realm of your design and can see and hear only itself, you and the illusion. Once per short or long rest."}]
+  }},
+  {name:"The Great Old One", blurb:"A pact with an unknowable alien entity.", features:{
+    1:[
+      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Dissonant Whispers and Tasha's Hideous Laughter (1st level), Detect Thoughts and Phantasmal Force (2nd, from warlock level 3), Clairvoyance and Sending (3rd, from warlock level 5), Dominate Beast and Evard's Black Tentacles (4th, from warlock level 7), Dominate Person and Telekinesis (5th, from warlock level 9)."},
+      {name:"Awakened Mind", text:"You can speak telepathically to any creature you can see within 30 feet. You don't need to share a language, but it must understand at least one language."}
+    ],
+    6:[{name:"Entropic Ward", text:"When a creature makes an attack roll against you, you can use your reaction to impose disadvantage on it. If it misses, your next attack roll against that creature has advantage if you make it before the end of your next turn. Once per short or long rest."}],
+    10:[{name:"Thought Shield", text:"Your thoughts can't be read by telepathy or other means unless you allow it. You have resistance to psychic damage, and a creature that deals psychic damage to you takes the same amount of damage."}],
+    14:[{name:"Create Thrall", text:"As an action, touch an incapacitated humanoid: it is charmed by you until Remove Curse is cast on it, the charmed condition is removed, or you use this feature again. You can communicate telepathically with it while you're on the same plane."}]
+  }},
+  {name:"The Hexblade", blurb:"A pact forged with a sentient weapon from the Shadowfell.", features:{
+    1:[
+      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Shield and Wrathful Smite (1st level), Blur and Branding Smite (2nd, from warlock level 3), Blink and Elemental Weapon (3rd, from warlock level 5), Phantasmal Killer and Staggering Smite (4th, from warlock level 7), Banishing Smite and Cone of Cold (5th, from warlock level 9)."},
+      {name:"Hexblade's Curse", text:"As a bonus action, curse a creature you can see within 30 feet for 1 minute, ending early if it dies or you die or are incapacitated. Against it: add your proficiency bonus to damage rolls, your attack rolls score a critical hit on a 19 or 20, and when it dies you regain hit points equal to your warlock level + CHA modifier (minimum 1). Once per short or long rest."},
+      {name:"Hex Warrior", text:"You gain proficiency with medium armor, shields and martial weapons. When you finish a long rest, touch one weapon you're proficient with that lacks the two-handed property; until your next long rest you can use your CHA modifier instead of STR or DEX for its attack and damage rolls. If you gain Pact of the Blade, this applies to every pact weapon you conjure, whatever its type. (Tick Hex Warrior weapon on that weapon in your inventory and the sheet uses CHA when it's higher.)", chosenWeaponAbility:"cha", grants:{armor:["Medium armor","Shields"], weapons:["Martial weapons"]}}
+    ],
+    6:[{name:"Accursed Specter", text:"When you slay a humanoid, you can make its spirit rise as a specter in an unoccupied space within 30 feet. It has temporary hit points equal to half your warlock level, rolls its own initiative, obeys your verbal commands and adds your CHA modifier (minimum +0) to its attack rolls. It serves you until the end of your next long rest. Once per long rest."}],
+    10:[{name:"Armor of Hexes", text:"When the target of your Hexblade's Curse hits you with an attack roll, roll a d6. On a 4 or higher, the attack misses you instead, regardless of its roll."}],
+    14:[{name:"Master of Hexes", text:"When the creature cursed by your Hexblade's Curse dies, you can apply the curse to a different creature you can see within 30 feet, if you aren't incapacitated. You don't regain hit points from the previous creature's death when you do."}]
+  }},
+  {name:"The Celestial", blurb:"A pact with a powerful being of the Upper Planes.", features:{
+    1:[
+      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Cure Wounds and Guiding Bolt (1st level), Flaming Sphere and Lesser Restoration (2nd, from warlock level 3), Daylight and Revivify (3rd, from warlock level 5), Guardian of Faith and Wall of Fire (4th, from warlock level 7), Flame Strike and Greater Restoration (5th, from warlock level 9)."},
+      {name:"Bonus Cantrips", text:"You learn the Light and Sacred Flame cantrips; they don't count against your cantrips known."},
+      {name:"Healing Light", text:"You have a pool of d6s equal to 1 + your warlock level, regained on a long rest. As a bonus action, heal a creature you can see within 60 feet by spending dice from the pool, up to your CHA modifier (minimum 1) at once, restoring hit points equal to their total."}
+    ],
+    6:[{name:"Radiant Soul", text:"You have resistance to radiant damage. When you cast a spell that deals radiant or fire damage, add your CHA modifier to one radiant or fire damage roll of it against one target."}],
+    10:[{name:"Celestial Resilience", text:"When you finish a short or long rest, you gain temporary hit points equal to your warlock level + CHA modifier, and up to five creatures you can see gain temporary hit points equal to half your warlock level + your CHA modifier."}],
+    14:[{name:"Searing Vengeance", text:"When you have to make a death saving throw at the start of your turn, you can instead spring back up: regain half your hit point maximum and stand if you choose, and each creature of your choice within 30 feet takes 2d8 + your CHA modifier radiant damage and is blinded until the end of the current turn. Once per long rest."}]
+  }},
+  {name:"The Fathomless", blurb:"A pact with an unfathomable entity of the deep ocean.", features:{
+    1:[
+      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Create or Destroy Water and Thunderwave (1st level), Gust of Wind and Silence (2nd, from warlock level 3), Lightning Bolt and Sleet Storm (3rd, from warlock level 5), Control Water and Summon Elemental (water only) (4th, from warlock level 7), Bigby's Hand (a tentacle) and Cone of Cold (5th, from warlock level 9)."},
+      {name:"Tentacle of the Deeps", text:"As a bonus action, create a 10-foot spectral tentacle at a point you can see within 60 feet for 1 minute (or until you create another). When it appears, make a melee spell attack against a creature within 10 feet of it: 1d8 cold damage (2d8 from level 10), and its speed drops by 10 feet until the start of your next turn. As a bonus action on later turns, you can move it up to 30 feet and attack again. Uses equal to your proficiency bonus per long rest."},
+      {name:"Gift of the Sea", text:"You gain a swimming speed of 40 feet and can breathe underwater."}
+    ],
+    6:[
+      {name:"Oceanic Soul", text:"You have resistance to cold damage. While fully submerged, you and any other fully submerged creature can understand each other's speech."},
+      {name:"Guardian Coil", text:"When you or a creature you can see takes damage within 10 feet of your tentacle, you can use your reaction to reduce the damage to one of them by 1d8 (2d8 from level 10)."}
+    ],
+    10:[{name:"Grasping Tentacles", text:"You learn Evard's Black Tentacles (it doesn't count against your spells known) and can cast it once per long rest without a spell slot. Whenever you cast it, you gain temporary hit points equal to your warlock level, and damage can't break your concentration on it."}],
+    14:[{name:"Fathomless Plunge", text:"As an action, teleport yourself and up to five willing creatures you can see within 30 feet up to 1 mile away, to a body of water you've seen (pond-sized or larger) or within 30 feet of it, each appearing within 30 feet of the others. Once per short or long rest."}]
+  }},
+  {name:"The Genie", blurb:"A pact with one of the noble genies of the four elements.", features:{
+    1:[
+      {name:"Expanded Spell List", text:"Every genie patron adds Detect Evil and Good (1st), Phantasmal Force (2nd, from warlock level 3), Create Food and Water (3rd, from 5), Phantasmal Killer (4th, from 7), Creation (5th, from 9) and Wish (9th). Your genie kind adds one more per level. Dao: Sanctuary, Spike Growth, Meld into Stone, Stone Shape, Wall of Stone. Djinni: Thunderwave, Gust of Wind, Wind Wall, Greater Invisibility, Seeming. Efreeti: Burning Hands, Scorching Ray, Fireball, Fire Shield, Flame Strike. Marid: Fog Cloud, Blur, Sleet Storm, Control Water, Cone of Cold."},
+      {name:"Genie's Vessel", text:"Your patron gives you a Tiny vessel that can be your spellcasting focus (AC equal to your spell save DC, HP equal to your warlock level + proficiency bonus, immune to poison and psychic damage); a 1-hour ceremony replaces a lost one. Bottled Respite: as an action, vanish into the vessel, a comfortable 20-foot-radius, 20-foot-high cylinder, for up to twice your proficiency bonus in hours, hearing the area around it; you leave as a bonus action, or if you die or it is destroyed. Once per long rest. Genie's Wrath: once on each of your turns when you hit with an attack roll, deal extra damage equal to your proficiency bonus: bludgeoning (Dao), thunder (Djinni), fire (Efreeti) or cold (Marid)."}
+    ],
+    6:[{name:"Elemental Gift", text:"You have resistance to your genie's damage type: bludgeoning (Dao), thunder (Djinni), fire (Efreeti) or cold (Marid). As a bonus action, you can gain a 30-foot flying speed with hover for 10 minutes, a number of times equal to your proficiency bonus per long rest."}],
+    10:[{name:"Sanctuary Vessel", text:"When you use Bottled Respite, up to five willing creatures you can see within 30 feet can enter with you; you can eject them as a bonus action, and everyone leaves if you do. Anyone who stays inside for at least 10 minutes gains the benefit of a short rest, and adds your proficiency bonus to hit points regained from Hit Dice spent there."}],
+    14:[{name:"Limited Wish", text:"As an action, speak a desire to your vessel for the effect of one spell of 6th level or lower with a casting time of 1 action, from any class's list, ignoring its requirements and costly components. Once you do, you can't again until you finish 1d4 long rests."}]
+  }},
+  {name:"The Undead", blurb:"A pact with a deathless being such as a lich or vampire lord that grants a dreadful form.", features:{
+    1:[
+      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Bane and False Life (1st level), Blindness/Deafness and Phantasmal Force (2nd, from warlock level 3), Phantom Steed and Speak with Dead (3rd, from warlock level 5), Death Ward and Greater Invisibility (4th, from warlock level 7), Antilife Shell and Cloudkill (5th, from warlock level 9)."},
+      {name:"Form of Dread", text:"As a bonus action, transform for 1 minute. You gain 1d10 + your warlock level temporary HP, you are immune to being frightened, and once on each of your turns when you hit a creature with an attack roll, you can force it to make a WIS save against your spell save DC or be frightened of you until the end of your next turn. You can transform a number of times equal to your proficiency bonus, regained on a long rest."}
+    ],
+    6:[{name:"Grave Touched", text:"You no longer need to eat, drink or breathe. Once on each of your turns, when you hit a creature with an attack roll and roll damage, you can change the damage type to necrotic. While in Form of Dread, you roll one extra damage die for that necrotic damage."}],
+    10:[{name:"Necrotic Husk", text:"You have resistance to necrotic damage, or immunity while in Form of Dread. When you would be reduced to 0 hit points, you can use your reaction to drop to 1 HP instead; each creature of your choice within 30 feet takes 2d10 + your warlock level necrotic damage, and you gain one level of exhaustion. Once you use this reaction, you can't do so again until you finish 1d4 long rests."}],
+    14:[{name:"Spirit Projection", text:"As an action, project your spirit from your body for up to 1 hour (end it as a bonus action; your body then teleports to your spirit). Your body stays unconscious, and damage to either one affects the other. While projecting: you and your body resist bludgeoning, piercing and slashing damage; your conjuration and necromancy spells need no verbal, somatic or costless material components; you can fly at your walking speed and hover; you can move through creatures and objects as difficult terrain (taking 1d10 force damage if you end your turn inside a creature or object); and while in Form of Dread, once on each of your turns when you deal necrotic damage, you regain HP equal to half of it. Once per long rest."}]
+  }},
+  {name:"The Undying", blurb:"A pact with a being that has defied death, granting resilience and command over your own mortality.", features:{
+    1:[
+      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: False Life and Ray of Sickness (1st level), Blindness/Deafness and Silence (2nd, from warlock level 3), Feign Death and Speak with Dead (3rd, from warlock level 5), Aura of Life and Death Ward (4th, from warlock level 7), Contagion and Legend Lore (5th, from warlock level 9)."},
+      {name:"Among the Dead", text:"You learn the Spare the Dying cantrip (it doesn't count against your cantrips known) and have advantage on saves against disease. When an undead targets you directly with an attack or harmful spell, it must make a WIS save against your spell save DC or choose a new target (possibly wasting the attack or spell). On a success, or if you attack it or target it with a harmful spell, it is immune to this effect for 24 hours. Area effects that include you aren't affected."}
+    ],
+    6:[{name:"Defy Death", text:"When you succeed on a death saving throw, or stabilize a creature with Spare the Dying, you can regain 1d8 + your CON modifier (minimum 1) hit points. Once per long rest."}],
+    10:[{name:"Undying Nature", text:"You can hold your breath indefinitely, and you don't need food, water or sleep (though you still need rest to reduce exhaustion and still benefit from short and long rests). You age only 1 year for every 10 that pass, and you can't be magically aged."}],
+    14:[{name:"Indestructible Life", text:"As a bonus action, regain 1d8 + your warlock level hit points. If you hold a severed body part of yours in place when you do, it reattaches. Once per short or long rest."}]
+  }}
+];
