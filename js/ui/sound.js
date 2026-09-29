@@ -2,7 +2,8 @@
    Short, quiet, synthesized tones (no audio files; stays fully offline)
    played only for meaningful moments: adding or removing something (a
    weapon, a feat, a character…), rolling a natural 20 or natural 1,
-   rolling ability scores, and dragging the theme slider. Never used for routine interaction like
+   rolling ability scores, dragging the theme slider, and adding or
+   spending coin in the purse. Never used for routine interaction like
    toggles, typing, or numeric steppers, so it stays a subtle accent
    instead of noise. */
 var audioCtx = null;
@@ -108,5 +109,25 @@ export function playThemeShift(index, total){
     var t = total > 1 ? index / (total - 1) : 0;
     var freq = 520 + t * 480;
     tone(freq, freq * 1.12, 0.08, "sine", 0.08);
+  }catch(e){}
+}
+
+/* Coins clinking into (or out of) the purse: a few bright, slightly
+   detuned metallic pings. `count` (1..6) is how many coins you hear, so a
+   big haul sounds fuller than a single copper; `spend` makes them fall in
+   pitch instead of rising. */
+export function playCoins(count, spend){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    var n = Math.max(1, Math.min(6, count||1));
+    for(var i=0;i<n;i++){
+      var t = now + i*0.065 + Math.random()*0.02;
+      var step = spend ? -i : i;
+      var f = 2300 + step*140 + Math.random()*180;
+      scheduleTone(ctx, t, f, f*0.985, 0.16, "sine", 0.07);
+      scheduleTone(ctx, t, f*1.51, f*1.49, 0.09, "sine", 0.035);
+    }
   }catch(e){}
 }

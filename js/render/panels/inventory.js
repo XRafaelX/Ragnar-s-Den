@@ -8,6 +8,7 @@ import { openWeaponPicker, openArmorPicker } from "../armory.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
+import { renderCurrencyCard } from "./coin-purse.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 var ARMOR_CATEGORIES = [
@@ -559,86 +560,7 @@ export function renderInventoryPanel(c){
   gearCard.appendChild(addItemBtn);
   panel.appendChild(gearCard);
 
-  // Currency
-  var curCard = makeCard("Currency");
-  var curGrid = document.createElement("div");
-  curGrid.className = "currency-grid";
-
-  var coins = [
-    { key: "cp", name: "Copper", abbr: "CP" },
-    { key: "sp", name: "Silver", abbr: "SP" },
-    { key: "ep", name: "Electrum", abbr: "EP" },
-    { key: "gp", name: "Gold", abbr: "GP" },
-    { key: "pp", name: "Platinum", abbr: "PP" }
-  ];
-
-  if(!c.currency) c.currency = {cp:0, sp:0, ep:0, gp:0, pp:0};
-
-  coins.forEach(function(coin){
-    var box = document.createElement("div");
-    box.className = "currency-box currency-" + coin.key;
-
-    var header = document.createElement("div");
-    header.className = "currency-header";
-    header.innerHTML = '<span class="currency-abbr">'+coin.abbr+'</span><span class="currency-name">'+coin.name+'</span>';
-    box.appendChild(header);
-
-    var curVal = Number(c.currency[coin.key]) || 0;
-
-    var stepper = document.createElement("div");
-    stepper.className = "stat-stepper currency-stepper";
-
-    var downBtn = document.createElement("button");
-    downBtn.type = "button";
-    downBtn.className = "stat-arrow-btn stat-arrow-down";
-    downBtn.title = "Decrease " + coin.name;
-    downBtn.setAttribute("aria-label", "Decrease " + coin.name);
-    downBtn.innerHTML = makeStatArrowSvg("down");
-    downBtn.disabled = curVal <= 0;
-    downBtn.addEventListener("click", function(e){
-      e.stopPropagation();
-      var v = Number(c.currency[coin.key]) || 0;
-      c.currency[coin.key] = Math.max(0, v - 1);
-      save(); renderAll();
-    });
-
-    var valSpan = document.createElement("span");
-    valSpan.className = "stat-score-val currency-val";
-    valSpan.textContent = curVal;
-
-    var upBtn = document.createElement("button");
-    upBtn.type = "button";
-    upBtn.className = "stat-arrow-btn stat-arrow-up";
-    upBtn.title = "Increase " + coin.name;
-    upBtn.setAttribute("aria-label", "Increase " + coin.name);
-    upBtn.innerHTML = makeStatArrowSvg("up");
-    upBtn.addEventListener("click", function(e){
-      e.stopPropagation();
-      var v = Number(c.currency[coin.key]) || 0;
-      c.currency[coin.key] = v + 1;
-      save(); renderAll();
-    });
-
-    stepper.appendChild(downBtn);
-    stepper.appendChild(valSpan);
-    stepper.appendChild(upBtn);
-    box.appendChild(stepper);
-
-    curGrid.appendChild(box);
-  });
-  curCard.appendChild(curGrid);
-
-  var totalGold = ((Number(c.currency.cp)||0)*0.01) +
-                  ((Number(c.currency.sp)||0)*0.1) +
-                  ((Number(c.currency.ep)||0)*0.5) +
-                  ((Number(c.currency.gp)||0)*1.0) +
-                  ((Number(c.currency.pp)||0)*10.0);
-
-  var curSummary = document.createElement("div");
-  curSummary.className = "currency-summary";
-  curSummary.innerHTML = '<span>Total Wealth: <strong>' + totalGold.toFixed(2) + ' GP</strong></span>';
-  curCard.appendChild(curSummary);
-  panel.appendChild(curCard);
+  panel.appendChild(renderCurrencyCard(c));
 
   return panel;
 }

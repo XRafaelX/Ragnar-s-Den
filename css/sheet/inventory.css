@@ -29,6 +29,157 @@
   font-size:13px;color:var(--text-on-parch);margin-top:6px;
 }
 .currency-summary strong{color:var(--brass-bright);font-size:14px;}
+.currency-box{position:relative;}
+.currency-total{display:inline-block;transform-origin:left center;font-variant-numeric:tabular-nums;}
+.currency-val{font-variant-numeric:tabular-nums;}
+
+/* Coin boxes light up in their own color when coin lands or leaves. */
+.currency-box{--coin:#f59e0b;}
+.currency-cp{--coin:#d97745;}
+.currency-sp{--coin:#cbd5e1;}
+.currency-ep{--coin:#facc15;}
+.currency-pp{--coin:#38bdf8;}
+.currency-box.coin-gain{animation:coin-gain .75s ease-out;}
+.currency-box.coin-loss{animation:coin-loss .5s ease-out;}
+@keyframes coin-gain{
+  0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--coin) 0%, transparent);}
+  25%{transform:scale(1.06);box-shadow:0 0 22px 2px color-mix(in srgb, var(--coin) 55%, transparent);border-color:var(--coin);}
+  100%{transform:scale(1);box-shadow:0 0 0 0 transparent;}
+}
+@keyframes coin-loss{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-3px);border-color:var(--oxblood);}
+  40%{transform:translateX(3px);}
+  60%{transform:translateX(-2px);}
+  80%{transform:translateX(1px);}
+}
+.currency-total.total-up{animation:total-glow .9s ease-out;}
+.currency-total.total-down{animation:total-dim .6s ease-out;}
+@keyframes total-glow{
+  30%{transform:scale(1.12);text-shadow:0 0 12px rgba(245,158,11,.8);color:#fcd34d;}
+}
+@keyframes total-dim{
+  30%{transform:scale(.94);color:#f2a9b6;}
+}
+
+/* "+50 GP" rising out of a coin box. */
+.coin-float{
+  position:absolute;left:50%;top:-14px;transform:translate(-50%,0);z-index:2;
+  font-size:12px;font-weight:800;white-space:nowrap;pointer-events:none;
+  text-shadow:0 1px 3px rgba(0,0,0,.8);animation:coin-float 1.3s ease-out forwards;
+}
+.coin-float.gain{color:var(--coin);}
+.coin-float.loss{color:#f2a9b6;}
+@keyframes coin-float{
+  0%{opacity:0;transform:translate(-50%,6px) scale(.8);}
+  15%{opacity:1;transform:translate(-50%,-6px) scale(1.1);}
+  100%{opacity:0;transform:translate(-50%,-34px) scale(1);}
+}
+.coin-float.still{animation:coin-fade 1.3s ease-out forwards;}
+@keyframes coin-fade{0%,60%{opacity:1;}100%{opacity:0;}}
+
+/* Coin purse bar: amount, coin picker, one-tap amounts, Spend / Add. */
+.purse-bar{
+  display:flex;flex-direction:column;gap:8px;margin:4px 0 10px;padding:10px;
+  border:1px solid rgba(245,158,11,.22);border-radius:10px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(245,158,11,.10) 0%, transparent 55%),
+    rgba(0,0,0,.22);
+}
+.purse-bar.purse-nudge{animation:coin-loss .45s ease-out;}
+.purse-entry,.purse-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.purse-amount{
+  flex:1 1 160px;min-width:0;height:36px;padding:0 12px;
+  background:var(--field-bg);color:var(--text-on-parch);
+  border:1px solid var(--rule);border-radius:8px;font-size:15px;font-weight:700;
+  font-variant-numeric:tabular-nums;transition:border-color .15s ease, box-shadow .15s ease;
+}
+.purse-amount::placeholder{color:var(--text-on-parch-dim);font-weight:400;font-size:13px;}
+.purse-amount:focus{outline:none;border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.18);}
+
+.purse-coins{display:flex;gap:6px;}
+.purse-coin{
+  --c1:#fcd34d;--c2:#b45309;
+  width:34px;height:34px;border-radius:50%;padding:0;flex:none;
+  font-size:9.5px;font-weight:800;letter-spacing:.02em;color:rgba(20,12,0,.82);
+  background:radial-gradient(circle at 32% 28%, var(--c1) 0%, var(--c2) 78%);
+  border:2px solid color-mix(in srgb, var(--c2) 70%, #000);
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.25), inset 0 2px 0 rgba(255,255,255,.35);
+  opacity:.5;cursor:pointer;
+  transition:transform .15s ease, opacity .15s ease, box-shadow .15s ease;
+}
+.purse-coin:hover{opacity:.85;transform:translateY(-2px);}
+.purse-coin.selected{
+  opacity:1;transform:translateY(-2px) scale(1.08);
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.25), inset 0 2px 0 rgba(255,255,255,.35),
+             0 0 0 2px var(--parchment), 0 0 0 4px var(--c1), 0 4px 14px color-mix(in srgb, var(--c1) 45%, transparent);
+}
+.purse-coin:focus-visible{outline:2px solid var(--brass-bright);outline-offset:3px;}
+.purse-coin-cp{--c1:#f0a472;--c2:#8a3f16;}
+.purse-coin-sp{--c1:#f8fafc;--c2:#7c8799;}
+.purse-coin-ep{--c1:#fef08a;--c2:#8f8a4a;}
+.purse-coin-gp{--c1:#fde68a;--c2:#b45309;}
+.purse-coin-pp{--c1:#e0f2fe;--c2:#3b82a6;}
+
+.purse-quick{display:flex;gap:6px;flex:1 1 auto;flex-wrap:wrap;}
+.purse-chip{
+  height:30px;padding:0 10px;border-radius:15px;font-size:12px;font-weight:700;
+  background:rgba(245,158,11,.08);color:#fcd34d;border:1px solid rgba(245,158,11,.3);
+  cursor:pointer;transition:background .12s ease, transform .12s ease;
+}
+.purse-chip:hover{background:rgba(245,158,11,.18);}
+.purse-chip:active{transform:scale(.92);}
+.purse-chip-coin{font-size:10px;opacity:.75;}
+
+.purse-btn{
+  height:34px;padding:0 18px;border-radius:8px;font-size:13px;font-weight:800;
+  letter-spacing:.03em;cursor:pointer;position:relative;overflow:hidden;
+  transition:transform .12s ease, filter .12s ease, background .12s ease;
+}
+.purse-btn:active{transform:scale(.94);}
+.purse-spend{background:transparent;color:#f2a9b6;border:1px solid rgba(217,69,95,.55);}
+.purse-spend:hover{background:rgba(217,69,95,.16);}
+.purse-add{
+  color:#2a1500;border:1px solid #b45309;
+  background:linear-gradient(180deg, #fde68a 0%, #f59e0b 55%, #d97706 100%);
+  box-shadow:0 2px 10px rgba(245,158,11,.3), inset 0 1px 0 rgba(255,255,255,.5);
+}
+.purse-add:hover{filter:brightness(1.08);}
+/* A glint sweeping across the Add button. */
+.purse-add::after{
+  content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;
+  background:linear-gradient(100deg, transparent 0%, rgba(255,255,255,.65) 50%, transparent 100%);
+  transform:skewX(-20deg);animation:purse-glint 3.2s ease-in-out infinite;pointer-events:none;
+}
+@keyframes purse-glint{0%,70%{left:-60%;}100%{left:130%;}}
+.purse-hint{font-size:11px;color:var(--text-on-parch-dim);}
+
+/* Flying coins, drawn in a fixed layer above the sheet so the re-render
+   that follows every change doesn't cut them off. */
+#coin-fx-layer{position:fixed;inset:0;pointer-events:none;z-index:1200;overflow:hidden;perspective:400px;}
+.fx-coin{
+  --c1:#fde68a;--c2:#b45309;
+  position:absolute;left:0;top:0;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%, var(--c1) 0%, var(--c2) 80%);
+  border:1px solid color-mix(in srgb, var(--c2) 70%, #000);
+  box-shadow:0 0 8px color-mix(in srgb, var(--c1) 60%, transparent);
+  will-change:transform, opacity;
+}
+.fx-coin-cp{--c1:#f0a472;--c2:#8a3f16;}
+.fx-coin-sp{--c1:#f8fafc;--c2:#7c8799;}
+.fx-coin-ep{--c1:#fef08a;--c2:#8f8a4a;}
+.fx-coin-pp{--c1:#e0f2fe;--c2:#3b82a6;}
+
+@media (max-width:520px){
+  .purse-actions{justify-content:flex-end;}
+  .purse-quick{flex-basis:100%;}
+  .purse-btn{flex:1 1 0;}
+}
+@media (prefers-reduced-motion: reduce){
+  .currency-box.coin-gain,.currency-box.coin-loss,.purse-bar.purse-nudge,
+  .currency-total.total-up,.currency-total.total-down{animation:none;}
+  .purse-add::after{display:none;}
+}
 
 /* Inventory item cards (weapon/armor/gear) */
 .inv-items-list{gap:10px;}
