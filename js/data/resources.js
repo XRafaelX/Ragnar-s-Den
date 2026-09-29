@@ -157,6 +157,19 @@ export var SUBCLASS_RESOURCES = {
         hint:"Bonus action: 10-ft aura for 1 minute with Frightful Presence or elemental resistance. More uses cost 3 ki."}
     ]
   },
+  "Paladin": {
+    "Oath of Glory": [
+      {id:"glorious_defense", name:"Glorious Defense", level:15,
+        max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
+        hint:"Reaction when you or a creature within 10 ft is hit: add CHA mod to its AC; if the attack misses, make a weapon attack against the attacker."},
+      {id:"living_legend", name:"Living Legend", level:20, max:always(1), reset:always("long"),
+        hint:"Bonus action for 1 minute: advantage on CHA checks, turn one miss per turn into a hit, reroll failed saves. More uses cost a 5th-level slot."}
+    ],
+    "Oath of the Crown": [
+      {id:"exalted_champion", name:"Exalted Champion", level:20, max:always(1), reset:always("long"),
+        hint:"Action for 1 hour: resist nonmagical weapon damage; allies within 30 ft get advantage on death saves, and you all get advantage on WIS saves."}
+    ]
+  },
   "Sorcerer": {
     "Wild Magic": [
       {id:"tides_of_chaos", name:"Tides of Chaos", level:1, max:always(1), reset:always("long"),

@@ -844,6 +844,32 @@ export var SUBCLASSES = {
       9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Sanctuary, Sleep, Calm Emotions, Hold Person, Counterspell and Hypnotic Pattern prepared."}],
       15:[{name:"Protective Spirit", text:"At the end of your turn if you have fewer than half your max HP and are not incapacitated, regain HP equal to 1d6 + half your paladin level."}],
       20:[{name:"Emissary of Redemption", text:"Resistance to all damage dealt by creatures. When a creature hits you with an attack, it takes radiant damage equal to half the damage it dealt. Both effects end for a creature if you attack it, deal damage to it or force it to make a saving throw."}]
+    }},
+    {name:"Oath of Glory", blurb:"A heroic athlete destined for legend who inspires allies to greatness.", features:{
+      3:[
+        {name:"Oath Spells", text:"You always have Guiding Bolt and Heroism prepared; they don't count against your prepared spells."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Peerless Athlete (bonus action: for 10 minutes, advantage on STR (Athletics) and DEX (Acrobatics) checks, double your carrying, pushing, dragging and lifting capacity, and +10 feet to your long and high jumps) or Inspiring Smite (right after you deal damage with Divine Smite, use a bonus action to split 2d8 + your paladin level temporary HP among creatures of your choice within 30 feet, including you)."}
+      ],
+      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Guiding Bolt, Heroism, Enhance Ability and Magic Weapon prepared."}],
+      7:[{name:"Aura of Alacrity", text:"Your walking speed increases by 10 feet. (Already added to your speed.) In addition, if you aren't incapacitated, an ally who starts its turn within 5 feet of you gains +10 feet of walking speed until the end of that turn. The aura's range becomes 10 feet at level 18.", speed:10}],
+      9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Guiding Bolt, Heroism, Enhance Ability, Magic Weapon, Haste and Protection from Energy prepared."}],
+      13:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Guiding Bolt, Heroism, Enhance Ability, Magic Weapon, Haste, Protection from Energy, Compulsion and Freedom of Movement prepared."}],
+      15:[{name:"Glorious Defense", text:"When you or another creature you can see within 10 feet is hit by an attack roll, use your reaction to add your CHA modifier (minimum +1) to the target's AC against that attack, possibly making it miss. If it misses, you can make one weapon attack against the attacker as part of this reaction, if it's within range. You can use this a number of times equal to your CHA modifier (minimum 1), regained on a long rest."}],
+      17:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Guiding Bolt, Heroism, Enhance Ability, Magic Weapon, Haste, Protection from Energy, Compulsion, Freedom of Movement, Commune and Flame Strike prepared."}],
+      20:[{name:"Living Legend", text:"As a bonus action, for 1 minute: you have advantage on CHA checks; once on each of your turns when you miss with a weapon attack, you can make it hit instead; and when you fail a saving throw, you can use your reaction to reroll it (using the new roll). Once per long rest, or expend a 5th-level spell slot to use it again."}]
+    }},
+    {name:"Oath of the Crown", blurb:"Sworn to civilization and the rule of law, a guardian who shields others and holds the line.", features:{
+      3:[
+        {name:"Oath Spells", text:"You always have Command and Compelled Duel prepared; they don't count against your prepared spells."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Champion Challenge (bonus action: each creature of your choice you can see within 30 feet makes a WIS save or can't willingly move more than 30 feet away from you; it ends if you are incapacitated or die, or the creature is moved more than 30 feet away) or Turn the Tide (bonus action: each creature of your choice within 30 feet that can hear you and has no more than half its hit points regains 1d6 + your CHA modifier (minimum 1) hit points)."}
+      ],
+      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Command, Compelled Duel, Warding Bond and Zone of Truth prepared."}],
+      7:[{name:"Divine Allegiance", text:"When a creature within 5 feet of you takes damage, you can use your reaction to take that damage instead; the creature takes none. The damage you take can't be reduced or prevented in any way."}],
+      9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Command, Compelled Duel, Warding Bond, Zone of Truth, Aura of Vitality and Spirit Guardians prepared."}],
+      13:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Command, Compelled Duel, Warding Bond, Zone of Truth, Aura of Vitality, Spirit Guardians, Banishment and Guardian of Faith prepared."}],
+      15:[{name:"Unyielding Spirit", text:"You have advantage on saving throws to avoid becoming paralyzed or stunned."}],
+      17:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Command, Compelled Duel, Warding Bond, Zone of Truth, Aura of Vitality, Spirit Guardians, Banishment, Guardian of Faith, Circle of Power and Geas prepared."}],
+      20:[{name:"Exalted Champion", text:"As an action, for 1 hour (or until you are incapacitated or die): you have resistance to bludgeoning, piercing and slashing damage from nonmagical weapons, your allies within 30 feet have advantage on death saving throws, and you and those allies have advantage on WIS saving throws. Once per long rest."}]
     }}
   ],
   "Ranger": [

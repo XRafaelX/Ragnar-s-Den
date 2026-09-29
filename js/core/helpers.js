@@ -70,6 +70,7 @@ export function classFeatureList(cl, uptoLevel){
   }
   function addFeature(f, atLevel, isSub){
     var item = {id:(isSub ? "sub_" : "class_")+cl.name+"_"+f.name, name:f.name, text:f.text, level:atLevel, subclass:isSub};
+    if(f.speed) item.speed = f.speed;
     var at = f.replaces ? list.findIndex(function(x){ return x.name===f.replaces; }) : -1;
     if(at!==-1){ item.id = list[at].id; item.upgraded = true; list[at] = item; }
     else list.push(item);

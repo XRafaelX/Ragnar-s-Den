@@ -603,7 +603,9 @@ function finish(){
     });
   }
 
-  ((t.prog.features && t.prog.features[t.newLevel]) || []).forEach(function(f){
+  // Speed bonuses from class and subclass features (Fast Movement,
+  // Aura of Alacrity, ...) gained on this level-up.
+  gained.forEach(function(f){
     if(f.speed) record.speedGain += f.speed;
   });
   c.speed = (Number(c.speed)||30) + record.speedGain;
