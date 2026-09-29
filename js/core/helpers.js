@@ -72,6 +72,7 @@ export function classFeatureList(cl, uptoLevel){
     var item = {id:(isSub ? "sub_" : "class_")+cl.name+"_"+f.name, name:f.name, text:f.text, level:atLevel, subclass:isSub};
     if(f.speed) item.speed = f.speed;
     if(f.initiative) item.initiative = f.initiative;
+    if(f.acHeavyArmor) item.acHeavyArmor = f.acHeavyArmor;
     var at = f.replaces ? list.findIndex(function(x){ return x.name===f.replaces; }) : -1;
     if(at!==-1){ item.id = list[at].id; item.upgraded = true; list[at] = item; }
     else list.push(item);
@@ -229,6 +230,18 @@ export function computeArmorClass(c){
   var defense = bodyArmor && hasFightingStyle(c, "Defense") ? 1 : 0;
   if(defense){ breakdown += " + Defense style (+1)"; short += " + Defense"; }
   base += defense;
+  // Class or subclass features tagged `acHeavyArmor` (Soul of the Forge)
+  // add their bonus while the character wears heavy armor.
+  if(bodyArmor && bodyArmor.category==="heavy"){
+    (c.classes||[]).forEach(function(cl){
+      classFeatureList(cl).forEach(function(f){
+        if(!f.acHeavyArmor) return;
+        base += f.acHeavyArmor;
+        breakdown += " + " + f.name + " (" + fmtMod(f.acHeavyArmor) + ")";
+        short += " + " + f.name;
+      });
+    });
+  }
   if(misc){ breakdown += " + misc (" + fmtMod(misc) + ")"; short += " + misc"; }
 
   return { value: base + shieldBonus + misc, breakdown: breakdown, short: short };

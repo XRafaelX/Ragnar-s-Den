@@ -515,11 +515,16 @@ export var SUBCLASSES = {
     {name:"Trickery Domain", blurb:"Deception, stealth and mischief.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Charm Person and Disguise Self prepared; they don't count against your prepared spells."},
-        {name:"Blessing of the Trickster", text:"Action: give another willing creature advantage on Stealth checks for 1 hour."}
+        {name:"Blessing of the Trickster", text:"As an action, touch a willing creature other than yourself to give it advantage on DEX (Stealth) checks for 1 hour, or until you use this feature again."}
       ],
-      2:[{name:"Channel Divinity: Invoke Duplicity", text:"Create an illusory duplicate of yourself for 1 minute; cast spells from its space and gain advantage when you and it are both next to a target."}],
+      2:[{name:"Channel Divinity: Invoke Duplicity", text:"As an action, create a perfect illusion of yourself in an unoccupied space you can see within 30 feet, lasting 1 minute or until your concentration ends (as if concentrating on a spell). As a bonus action you can move it up to 30 feet, keeping it within 120 feet of you. You can cast spells as though you were in its space (using your own senses), and when you and the illusion are both within 5 feet of a creature that can see it, you have advantage on attack rolls against that creature."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Charm Person, Disguise Self, Mirror Image and Pass without Trace prepared; they don't count against your prepared spells."}],
-      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Charm Person, Disguise Self, Mirror Image, Pass without Trace, Blink and Dispel Magic prepared; they don't count against your prepared spells."}]
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Charm Person, Disguise Self, Mirror Image, Pass without Trace, Blink and Dispel Magic prepared; they don't count against your prepared spells."}],
+      6:[{name:"Channel Divinity: Cloak of Shadows", text:"As an action, you become invisible until the end of your next turn. You become visible if you attack or cast a spell."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Charm Person, Disguise Self, Mirror Image, Pass without Trace, Blink, Dispel Magic, Dimension Door and Polymorph prepared; they don't count against your prepared spells."}],
+      8:[{name:"Divine Strike", text:"Once on each of your turns when you hit a creature with a weapon attack, deal an extra 1d8 poison damage. Increases to 2d8 at level 14."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Charm Person, Disguise Self, Mirror Image, Pass without Trace, Blink, Dispel Magic, Dimension Door, Polymorph, Dominate Person and Modify Memory prepared; they don't count against your prepared spells."}],
+      17:[{name:"Improved Duplicity", text:"Invoke Duplicity creates up to four duplicates of you instead of one. As a bonus action, you can move any number of them up to 30 feet each, to a maximum range of 120 feet."}]
     }},
     {name:"Nature Domain", blurb:"Channels the power of nature to command beasts and wield elemental fury.", features:{
       1:[
@@ -540,42 +545,62 @@ export var SUBCLASSES = {
       1:[
         {name:"Domain Spells", text:"You always have Faerie Fire and Sleep prepared; they don't count against your prepared spells."},
         {name:"Bonus Proficiencies", text:"You gain proficiency with martial weapons and heavy armor."},
-        {name:"Eyes of Night", text:"You gain darkvision out to 300 feet. As an action, grant up to a number of willing creatures equal to your Wisdom modifier (minimum 1) darkvision out to 300 feet for 1 hour. You can use this a number of times equal to your proficiency bonus, regained on a long rest."},
-        {name:"Vigilant Blessing", text:"As an action, give one creature you touch advantage on the next initiative roll it makes. This benefit ends immediately after the roll or when you use this feature again."}
+        {name:"Eyes of Night", text:"You have darkvision out to 300 feet. As an action, you can share it for 1 hour with willing creatures you can see within 10 feet, up to your Wisdom modifier (minimum 1). Once per long rest, or expend a spell slot of any level to share it again."},
+        {name:"Vigilant Blessing", text:"As an action, give one creature you touch (including yourself) advantage on the next initiative roll it makes. The benefit ends right after that roll or when you use this feature again."}
       ],
-      2:[{name:"Channel Divinity: Twilight Sanctuary", text:"Action: create a 30-foot-radius sphere of twilight centered on yourself that moves with you for 1 minute. At the start of each of your turns, each creature in the sphere chooses: gain temporary HP equal to 1d6 + your cleric level, or end one effect causing it to be charmed or frightened."}],
+      2:[{name:"Channel Divinity: Twilight Sanctuary", text:"As an action, a 30-foot-radius sphere of dim twilight emanates from you and moves with you for 1 minute, or until you are incapacitated or die. Whenever a creature (including you) ends its turn in the sphere, you can grant it one of these benefits: temporary hit points equal to 1d6 + your cleric level, or end one effect on it that is causing it to be charmed or frightened."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Faerie Fire, Sleep, Moonbeam and See Invisibility prepared; they don't count against your prepared spells."}],
-      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Faerie Fire, Sleep, Moonbeam, See Invisibility, Aura of Vitality and Leomund's Tiny Hut prepared; they don't count against your prepared spells."}]
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Faerie Fire, Sleep, Moonbeam, See Invisibility, Aura of Vitality and Leomund's Tiny Hut prepared; they don't count against your prepared spells."}],
+      6:[{name:"Steps of Night", text:"As a bonus action while you are in dim light or darkness, you gain a flying speed equal to your walking speed for 1 minute. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Faerie Fire, Sleep, Moonbeam, See Invisibility, Aura of Vitality, Leomund's Tiny Hut, Aura of Life and Greater Invisibility prepared; they don't count against your prepared spells."}],
+      8:[{name:"Divine Strike", text:"Once on each of your turns when you hit a creature with a weapon attack, deal an extra 1d8 radiant damage. Increases to 2d8 at level 14."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Faerie Fire, Sleep, Moonbeam, See Invisibility, Aura of Vitality, Leomund's Tiny Hut, Aura of Life, Greater Invisibility, Circle of Power and Mislead prepared; they don't count against your prepared spells."}],
+      17:[{name:"Twilight Shroud", text:"You and your allies have half cover while in the sphere created by your Twilight Sanctuary."}]
     }},
     {name:"Forge Domain", blurb:"Masters the divine art of crafting and imbuing weapons and armor.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Identify and Searing Smite prepared; they don't count against your prepared spells."},
         {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor and smith's tools."},
-        {name:"Blessing of the Forge", text:"At the end of a long rest, touch one nonmagical weapon or piece of armor. Until your next long rest it becomes magical: weapon gains +1 to attack and damage, armor gains +1 AC."}
+        {name:"Blessing of the Forge", text:"At the end of a long rest, touch one nonmagical suit of armor or simple or martial weapon. Until the end of your next long rest or until you die, it becomes a magic item: +1 AC for armor, or +1 to attack and damage rolls for a weapon. Once per long rest."}
       ],
-      2:[{name:"Channel Divinity: Artisan's Blessing", text:"Conduct a 1-hour ritual to create a nonmagical item worth up to 100 gp (metal only), or to add raw metal to reduce the cost of a more expensive item by 100 gp."}],
+      2:[{name:"Channel Divinity: Artisan's Blessing", text:"In a 1-hour ritual, craft a nonmagical item that includes some metal and is worth no more than 100 gp: a simple or martial weapon, a suit of armor, ten pieces of ammunition, a set of tools or another metal object. You must lay out metal (coins count) worth as much as the item, which transforms into it. You can also duplicate a nonmagical item containing metal, such as a key, if you have the original during the ritual."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Identify, Searing Smite, Heat Metal and Magic Weapon prepared; they don't count against your prepared spells."}],
-      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Identify, Searing Smite, Heat Metal, Magic Weapon, Elemental Weapon and Protection from Energy prepared; they don't count against your prepared spells."}]
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Identify, Searing Smite, Heat Metal, Magic Weapon, Elemental Weapon and Protection from Energy prepared; they don't count against your prepared spells."}],
+      6:[{name:"Soul of the Forge", text:"You have resistance to fire damage, and while wearing heavy armor you gain a +1 bonus to AC (already added on the sheet).", acHeavyArmor:1}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Identify, Searing Smite, Heat Metal, Magic Weapon, Elemental Weapon, Protection from Energy, Fabricate and Wall of Fire prepared; they don't count against your prepared spells."}],
+      8:[{name:"Divine Strike", text:"Once on each of your turns when you hit a creature with a weapon attack, deal an extra 1d8 fire damage. Increases to 2d8 at level 14."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Identify, Searing Smite, Heat Metal, Magic Weapon, Elemental Weapon, Protection from Energy, Fabricate, Wall of Fire, Animate Objects and Creation prepared; they don't count against your prepared spells."}],
+      17:[{name:"Saint of Forge and Fire", text:"You are immune to fire damage, and while wearing heavy armor you have resistance to bludgeoning, piercing and slashing damage from nonmagical attacks."}]
     }},
     {name:"Order Domain", blurb:"Enforces divine law and compels others to act through holy authority.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Command and Heroism prepared; they don't count against your prepared spells."},
-        {name:"Bonus Proficiencies", text:"You gain proficiency with heavy armor and with the Persuasion and Intimidation skills."},
-        {name:"Voice of Authority", text:"When you cast a spell of 1st level or higher using a spell slot that targets an ally, that ally can use their reaction immediately after the spell to make one weapon attack against a creature of your choice that you can see."}
+        {name:"Bonus Proficiencies", text:"You gain proficiency with heavy armor, and in Intimidation or Persuasion (your choice; tick it on the Abilities & Skills tab)."},
+        {name:"Voice of Authority", text:"When you cast a spell with a spell slot of 1st level or higher that targets an ally, that ally can use its reaction right after the spell to make one weapon attack against a creature of your choice that you can see. If the spell targets several allies, you choose which one can attack."}
       ],
-      2:[{name:"Channel Divinity: Order's Demand", text:"Action: each creature you choose within 30 feet must succeed on a Wisdom save or be charmed by you until the end of your next turn or until it takes damage. While charmed it must use its reaction to move to the nearest unoccupied space if you command it (no action required by you)."}],
+      2:[{name:"Channel Divinity: Order's Demand", text:"As an action, each creature of your choice within 30 feet that can see or hear you makes a WIS save or is charmed by you until the end of your next turn or until it takes damage. You can also make any creature that fails drop what it is holding."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Heroism, Hold Person and Zone of Truth prepared; they don't count against your prepared spells."}],
-      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Heroism, Hold Person, Zone of Truth, Mass Healing Word and Slow prepared; they don't count against your prepared spells."}]
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Heroism, Hold Person, Zone of Truth, Mass Healing Word and Slow prepared; they don't count against your prepared spells."}],
+      6:[{name:"Embodiment of the Law", text:"When you cast an enchantment spell with a spell slot of 1st level or higher whose casting time is 1 action, you can cast it as a bonus action instead. Uses equal to your Wisdom modifier (minimum 1) per long rest."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Heroism, Hold Person, Zone of Truth, Mass Healing Word, Slow, Compulsion and Locate Creature prepared; they don't count against your prepared spells."}],
+      8:[{name:"Divine Strike", text:"Once on each of your turns when you hit a creature with a weapon attack, deal an extra 1d8 psychic damage. Increases to 2d8 at level 14."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Heroism, Hold Person, Zone of Truth, Mass Healing Word, Slow, Compulsion, Locate Creature, Commune and Dominate Person prepared; they don't count against your prepared spells."}],
+      17:[{name:"Order's Wrath", text:"When you deal Divine Strike damage to a creature on your turn, you can curse it until the start of your next turn. The next time one of your allies hits it with an attack, it takes an extra 2d8 psychic damage and the curse ends. Once per turn."}]
     }},
     {name:"Peace Domain", blurb:"Spreads harmony, protection and unity among allies.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Heroism and Sanctuary prepared; they don't count against your prepared spells."},
-        {name:"Implement of Peace", text:"You gain proficiency in Insight, Performance or Persuasion (your choice)."},
-        {name:"Emboldening Bond", text:"As an action, choose a number of willing creatures equal to your proficiency bonus within 30 feet (including yourself). For 10 minutes, each bonded creature adds 1d4 to attack rolls, ability checks and saving throws as long as at least one other bonded creature is within 30 feet of it. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
+        {name:"Implement of Peace", text:"You gain proficiency in Insight, Performance or Persuasion (your choice; tick it on the Abilities & Skills tab)."},
+        {name:"Emboldening Bond", text:"As an action, bond a number of willing creatures within 30 feet equal to your proficiency bonus (you can include yourself) for 10 minutes, or until you use this again. While a bonded creature is within 30 feet of another, it can roll a d4 and add it to an attack roll, ability check or saving throw it makes, no more than once per turn. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
       ],
-      2:[{name:"Channel Divinity: Balm of Peace", text:"Move up to your speed without provoking opportunity attacks. When you move within 5 feet of a creature, you can restore HP to it equal to 2d6 + your Wisdom modifier (only once per creature per use of this feature)."}],
+      2:[{name:"Channel Divinity: Balm of Peace", text:"As an action, move up to your speed without provoking opportunity attacks. When you move within 5 feet of another creature during this action, you can restore 2d6 + your Wisdom modifier (minimum 1) hit points to it; each creature can be healed only once per use."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Heroism, Sanctuary, Aid and Warding Bond prepared; they don't count against your prepared spells."}],
-      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Heroism, Sanctuary, Aid, Warding Bond, Beacon of Hope and Sending prepared; they don't count against your prepared spells."}]
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Heroism, Sanctuary, Aid, Warding Bond, Beacon of Hope and Sending prepared; they don't count against your prepared spells."}],
+      6:[{name:"Protective Bond", text:"When a creature under your Emboldening Bond is about to take damage, another bonded creature within 30 feet of it can use its reaction to teleport to an unoccupied space within 5 feet of it and take all the damage instead."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Heroism, Sanctuary, Aid, Warding Bond, Beacon of Hope, Sending, Aura of Purity and Otiluke's Resilient Sphere prepared; they don't count against your prepared spells."}],
+      8:[{name:"Potent Spellcasting", text:"Add your Wisdom modifier to the damage you deal with any cleric cantrip."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Heroism, Sanctuary, Aid, Warding Bond, Beacon of Hope, Sending, Aura of Purity, Otiluke's Resilient Sphere, Greater Restoration and Rary's Telepathic Bond prepared; they don't count against your prepared spells."}],
+      17:[{name:"Expansive Bond", text:"Emboldening Bond and Protective Bond now work when the creatures are within 60 feet of each other, and a creature that takes someone else's damage with Protective Bond has resistance to it."}]
     }},
     {name:"Death Domain", blurb:"Wields necrotic power to reap the living and command death itself.", features:{
       1:[

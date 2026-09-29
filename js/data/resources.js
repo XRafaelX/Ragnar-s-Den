@@ -347,9 +347,20 @@ export var SUBCLASS_RESOURCES = {
         hint:"Reaction when hit by a creature within 5 ft: it takes 2d8 lightning or thunder damage (DEX save for half)."}
     ],
     "Twilight Domain": [
-      {id:"eyes_of_night", name:"Eyes of Night", level:1,
+      {id:"eyes_of_night", name:"Eyes of Night (Share)", level:1, max:always(1), reset:always("long"),
+        hint:"Action: share your 300-ft darkvision for 1 hour with up to WIS mod willing creatures within 10 ft. More uses cost a spell slot."},
+      {id:"steps_of_night", name:"Steps of Night", level:6,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Action: grant up to WIS mod creatures darkvision 300 ft for 1 hour."}
+        hint:"Bonus action in dim light or darkness: flying speed equal to your walking speed for 1 minute."}
+    ],
+    "Forge Domain": [
+      {id:"blessing_of_the_forge", name:"Blessing of the Forge", level:1, max:always(1), reset:always("long"),
+        hint:"At the end of a long rest: make one nonmagical weapon (+1 attack and damage) or armor (+1 AC) magical until your next long rest."}
+    ],
+    "Order Domain": [
+      {id:"embodiment_of_the_law", name:"Embodiment of the Law", level:6,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Cast a 1-action enchantment spell (1st level or higher) as a bonus action."}
     ],
     "Peace Domain": [
       {id:"emboldening_bond", name:"Emboldening Bond", level:1,
