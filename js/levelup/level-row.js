@@ -36,7 +36,7 @@ export function buildLevelRow(c){
   var block = ce("div","xp-block");
   var top = ce("div","xp-top");
   var hint;
-  if(atCap) hint = "Max level ("+MAX_LEVEL+") for now";
+  if(atCap) hint = "Max level ("+MAX_LEVEL+")";
   else if(ready) hint = "Ready to level up!";
   else hint = (next - xp).toLocaleString()+" XP to level "+(level+1);
   top.innerHTML = "<span class='xp-num'>"+xp.toLocaleString()+(atCap ? "" : " / "+next.toLocaleString())+" XP</span>"+
@@ -54,7 +54,7 @@ export function buildLevelRow(c){
     var capped = total > maxXp;
     total = Math.max(0, Math.min(maxXp, total));
     if(capped) showActionToast(atCap
-      ? "XP is capped at "+maxXp.toLocaleString()+". Level "+MAX_LEVEL+" is the highest for now."
+      ? "XP is capped at "+maxXp.toLocaleString()+". Level "+MAX_LEVEL+" is the highest level."
       : "XP capped at "+maxXp.toLocaleString()+". Level up to keep earning.");
     if(total===xp && (Number(c.xp)||0)===xp) return;
     c.xp = total;
@@ -95,7 +95,7 @@ export function buildLevelRow(c){
       var chip = document.createElement("button");
       chip.type = "button"; chip.className = "xp-chip";
       chip.textContent = "+"+n;
-      chip.title = full ? (atCap ? "Max XP for now" : "Level up to earn more XP") : "Add "+n+" XP";
+      chip.title = full ? (atCap ? "Max XP" : "Level up to earn more XP") : "Add "+n+" XP";
       chip.disabled = full;
       chip.addEventListener("click", function(){ setXp(xp + n); });
       chips.appendChild(chip);

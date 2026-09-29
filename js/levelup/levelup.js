@@ -109,7 +109,7 @@ function validate(id){
 /* ---- Open / navigate ---- */
 export function openLevelUp(c){
   if(totalLevel(c) >= MAX_LEVEL){
-    showActionToast("Level "+MAX_LEVEL+" is the highest level supported for now.", true);
+    showActionToast("Level "+MAX_LEVEL+" is the highest level.", true);
     return;
   }
   if(!hasXpForNextLevel(c)){
@@ -776,7 +776,7 @@ function showUnlocked(c, s){
     if(s.feat && /increase your \w+/i.test(s.feat.description||"")) tips.push("Your feat raises an ability score. Add it on the Abilities & Skills tab.");
     if(unlocked.length) tips.push("These are marked NEW on the Features & Feats tab. Tap one to clear its badge.");
     if(total < MAX_LEVEL) tips.push("Next level at "+XP_THRESHOLDS[total+1].toLocaleString()+" XP.");
-    else tips.push("That's the highest level supported for now. More levels are coming.");
+    else tips.push("You've reached level "+MAX_LEVEL+", the highest level. Congratulations!");
     var th = ce("h5","info-modal-subhead"); th.textContent = "What to do next";
     body.appendChild(th);
     var ul = document.createElement("ul"); ul.className = "lu-tips";

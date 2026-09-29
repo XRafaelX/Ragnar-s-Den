@@ -129,8 +129,7 @@ function showSubclass(className, sub){
     Object.keys(sub.features||{}).map(Number).sort(function(a, b){ return a-b; }).forEach(function(lv){
       sub.features[lv].forEach(function(f){ features.push({name:f.name, text:f.text, level:lv}); });
     });
-    // Built-in data stops at MAX_LEVEL; custom subclasses can list later levels too.
-    block(body, "Features by level", featureList(features) || "<p class='cmp-muted'>No features before level "+(MAX_LEVEL+1)+".</p>");
+    block(body, "Features by level", featureList(features) || "<p class='cmp-muted'>No features listed.</p>");
     var back = document.createElement("button");
     back.type = "button";
     back.className = "btn small ghost cmp-back";
