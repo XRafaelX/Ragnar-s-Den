@@ -332,11 +332,16 @@ export var SUBCLASS_RESOURCES = {
         hint:"Reaction: turn a critical hit against you or a creature within 30 ft into a normal hit."}
     ],
     "Fate Domain": [
-      {id:"twist_of_fate", name:"Twist of Fate", level:1,
-        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
-        hint:"Reaction: add or subtract 1d4 (1d6 from level 6) from a creature's attack roll, check or save within 30 ft (60 ft from level 6)."},
-      {id:"weaver_of_destiny", name:"Weaver of Destiny", level:17, max:always(2), reset:always("long"),
-        hint:"Two d20s rolled after a long rest: replace an attack roll, check or save by you or a creature you can see with one (one per turn)."}
+      {id:"omens_and_portents", name:"Omens and Portents (Free Augury)", level:1, max:always(1), reset:always("long"),
+        hint:"Cast Augury without a spell slot or components."},
+      {id:"ties_that_bind", name:"Ties That Bind", level:1,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Action: bind a creature's fate for 1 hour; track it and add 1d6 to your spell damage or healing on it once per turn."},
+      {id:"insightful_striking", name:"Insightful Striking", level:6,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Bonus action: +1d6 to your next attack roll against a target within 30 ft, or -1d6 to its next save against your spell."},
+      {id:"visions_of_the_future", name:"Visions of the Future", level:17, max:always(1), reset:always("long"),
+        hint:"Action: cast Foresight without a spell slot; it lasts 1 minute."}
     ]
   },
   "Druid": {
@@ -356,9 +361,11 @@ export var SUBCLASS_RESOURCES = {
         hint:"When you drop to 0 HP or are incapacitated against your will, four CR 2 or lower beasts appear to protect you for 1 hour."}
     ],
     "Circle of the Blighted": [
-      {id:"blighted_flora", name:"Blighted Flora", level:6,
+      {id:"defile_ground", name:"Defile Ground", level:2, max:always(1), reset:always("short"),
+        hint:"Bonus action: 1-minute defiled area within 60 ft; difficult terrain for enemies and extra necrotic damage (1d4, 1d6 from level 10, 1d8 from 14)."},
+      {id:"call_of_the_shadowseeds", name:"Call of the Shadowseeds", level:6,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Action: 15-ft square of rotting vines within 60 ft for 1 minute; difficult terrain, STR save or restrained and 1d8 necrotic."}
+        hint:"Reaction when a creature takes damage in your Defile Ground: raise a Blighted Sapling next to it that attacks at once."}
     ]
   },
   "Rogue": {
@@ -378,11 +385,12 @@ export var SUBCLASS_RESOURCES = {
         hint:"Action: sense illusions, shapechangers and other deceptive magic within 30 ft."}
     ],
     "Misfortune Bringer": [
-      {id:"jinx", name:"Jinx", level:3,
-        max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Bonus action: jinx a creature within 30 ft for 1 minute; as a reaction, subtract 1d4 (1d6 from level 9) from its roll."},
-      {id:"doom_incarnate", name:"Doom Incarnate", level:17, max:always(1), reset:always("short"),
-        hint:"On a Sneak Attack against a jinxed creature: WIS save or disadvantage on attacks, checks and saves for 1 minute."}
+      {id:"jinx_points", name:"Jinx Points", level:3,
+        max:function(lv){ return lv>=13 ? 6 : 4; }, reset:always("short"),
+        hint:"Spend on the misfortunes you know against the creature marked by your Evil Eye. Curse Caster (level 13) costs 3."},
+      {id:"steal_luck", name:"Steal Luck", level:9,
+        max:function(lv){ return lv>=17 ? 3 : 1; }, reset:always("short"),
+        hint:"Reaction: remove advantage from a roll made within 30 ft and regain 1 Jinx Point."}
     ]
   }
 };
