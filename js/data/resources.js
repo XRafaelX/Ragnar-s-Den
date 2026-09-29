@@ -282,6 +282,26 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Ranger": {
+    "Fey Wanderer": [
+      {id:"fey_reinforcements", name:"Fey Reinforcements (Free Summon Fey)", level:11, max:always(1), reset:always("long"),
+        hint:"Cast Summon Fey without a spell slot; it can skip concentration and last 1 minute."},
+      {id:"misty_wanderer", name:"Misty Wanderer", level:15, max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Cast Misty Step without a spell slot, bringing one willing creature within 5 ft."}
+    ],
+    "Horizon Walker": [
+      {id:"detect_portal", name:"Detect Portal", level:3, max:always(1), reset:always("short"),
+        hint:"Action: sense the distance and direction to the closest planar portal within 1 mile."},
+      {id:"ethereal_step", name:"Ethereal Step", level:7, max:always(1), reset:always("short"),
+        hint:"Bonus action: cast Etherealness on yourself until the end of the turn."}
+    ],
+    "Drakewarden": [
+      {id:"summon_drake", name:"Drake Companion (Summon)", level:3, max:always(1), reset:always("long"),
+        hint:"Action: summon your drake. More summons cost a 1st-level or higher spell slot."},
+      {id:"drakes_breath", name:"Drake's Breath", level:11, max:always(1), reset:always("long"),
+        hint:"Action: 30-ft cone, DEX save, 8d6 (10d6 from level 15). More uses cost a 3rd-level or higher slot."},
+      {id:"reflexive_resistance", name:"Reflexive Resistance", level:15, max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Reaction: give yourself or your drake resistance to damage taken within 30 ft of each other."}
+    ],
     "Monster Slayer": [
       {id:"hunters_sense", name:"Hunter's Sense", level:3,
         max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),

@@ -1074,48 +1074,68 @@ export var SUBCLASSES = {
     }}
   ],
   "Ranger": [
-    {name:"Hunter", blurb:"Specialist monster slayer.", features:{3:[
-      {name:"Hunter's Prey", text:"Choose one: Colossus Slayer (+1d8 once per turn against a wounded target), Giant Killer (reaction attack against a Large foe that attacks you) or Horde Breaker (extra attack against a second adjacent enemy)."}
-    ]}},
-    {name:"Beast Master", blurb:"Fights alongside an animal companion.", features:{3:[
-      {name:"Ranger's Companion", text:"Gain a beast companion (CR 1/4 or lower). It obeys your commands; use your action to have it attack."}
-    ]}},
+    {name:"Hunter", blurb:"Specialist monster slayer.", features:{
+      3:[{name:"Hunter's Prey", text:"Choose one. Colossus Slayer: once per turn when you hit a creature with a weapon attack, it takes an extra 1d8 damage if it's below its hit point maximum. Giant Killer: when a Large or larger creature you can see within 5 feet hits or misses you with an attack, you can use your reaction to attack it right after. Horde Breaker: once on each of your turns when you make a weapon attack, you can make another attack with the same weapon against a different creature within 5 feet of the original target and within your weapon's range."}],
+      7:[{name:"Defensive Tactics", text:"Choose one. Escape the Horde: opportunity attacks against you have disadvantage. Multiattack Defense: when a creature hits you with an attack, you gain +4 AC against its later attacks for the rest of that turn. Steel Will: advantage on saves against being frightened."}],
+      11:[{name:"Multiattack", text:"Choose one. Volley: as an action, make a ranged attack against any number of creatures within 10 feet of a point you can see in range (with ammunition for each and a separate attack roll for each). Whirlwind Attack: as an action, make a melee attack against any number of creatures within 5 feet of you, with a separate attack roll for each."}],
+      15:[{name:"Superior Hunter's Defense", text:"Choose one. Evasion: on a DEX save for half damage, you take none on a success and half on a failure. Stand Against the Tide: when a hostile creature misses you with a melee attack, you can use your reaction to make it repeat the attack against another creature of your choice (not itself). Uncanny Dodge: when an attacker you can see hits you, you can use your reaction to halve the attack's damage."}]
+    }},
+    {name:"Beast Master", blurb:"Fights alongside an animal companion.", features:{
+      3:[{name:"Ranger's Companion", text:"Choose a beast no larger than Medium with a challenge rating of 1/4 or lower. Add your proficiency bonus to its AC, attack and damage rolls, and saves and skills it's proficient in; its hit point maximum is its normal maximum or four times your ranger level, whichever is higher. It takes its turn on your initiative but acts only when you command it: moving it needs no action, and you can use your action to have it take the Attack, Dash, Disengage, Dodge or Help action (from level 5, you can also make one weapon attack yourself when you command it to Attack). It uses its reaction on its own, and acts on its own if you are incapacitated or absent. If it dies, you can bond with another non-hostile beast over 8 hours. (Tasha's offers the optional Primal Companion as a replacement.)"}],
+      7:[{name:"Exceptional Training", text:"On any of your turns when your companion doesn't attack, you can use a bonus action to command it to take the Dash, Disengage, Dodge or Help action. Its attacks also count as magical for overcoming resistance and immunity."}],
+      11:[{name:"Bestial Fury", text:"Your companion can make two attacks when you command it to take the Attack action."}],
+      15:[{name:"Share Spells", text:"When you cast a spell targeting yourself, you can also affect your companion with it if it is within 30 feet of you."}]
+    }},
     {name:"Gloom Stalker", blurb:"An ambusher at home in the dark.", features:{
       3:[
-        {name:"Dread Ambusher", text:"Add WIS to initiative (already added on the sheet). On your first turn of combat, +10 ft speed and one extra attack that deals +1d8 damage.", initiative:"wis"},
-        {name:"Umbral Sight", text:"Darkvision 60 ft (or +30 ft), and you're invisible to creatures relying on darkvision to see you in the dark."},
-        {name:"Gloom Stalker Magic", text:"You always know Disguise Self; it doesn't count against your ranger spells known."}
+        {name:"Dread Ambusher", text:"Add your WIS modifier to initiative (already added on the sheet). At the start of your first turn of each combat, your walking speed increases by 10 feet until the end of that turn, and if you take the Attack action on that turn you can make one additional weapon attack as part of it, dealing an extra 1d8 damage of the weapon's type on a hit.", initiative:"wis"},
+        {name:"Gloom Stalker Magic", text:"You always know Disguise Self; it doesn't count against your ranger spells known."},
+        {name:"Umbral Sight", text:"You gain darkvision out to 60 feet (or +30 feet if you already have it). While in darkness, you are invisible to any creature that relies on darkvision to see you there."}
       ],
-      5:[{name:"Gloom Stalker Magic", replaces:"Gloom Stalker Magic", text:"You always know Disguise Self and Rope Trick; they don't count against your ranger spells known."}]
+      5:[{name:"Gloom Stalker Magic", replaces:"Gloom Stalker Magic", text:"You always know Disguise Self and Rope Trick; they don't count against your ranger spells known."}],
+      7:[{name:"Iron Mind", text:"You gain proficiency in Wisdom saving throws, or in Intelligence or Charisma saves (your choice) if you already have Wisdom."}],
+      9:[{name:"Gloom Stalker Magic", replaces:"Gloom Stalker Magic", text:"You always know Disguise Self, Rope Trick and Fear; they don't count against your ranger spells known."}],
+      11:[{name:"Stalker's Flurry", text:"Once on each of your turns when you miss with a weapon attack, you can make another weapon attack as part of the same action."}],
+      13:[{name:"Gloom Stalker Magic", replaces:"Gloom Stalker Magic", text:"You always know Disguise Self, Rope Trick, Fear and Greater Invisibility; they don't count against your ranger spells known."}],
+      15:[{name:"Shadowy Dodge", text:"When a creature makes an attack roll against you without advantage, you can use your reaction to impose disadvantage on it, before you know the outcome."}],
+      17:[{name:"Gloom Stalker Magic", replaces:"Gloom Stalker Magic", text:"You always know Disguise Self, Rope Trick, Fear, Greater Invisibility and Seeming; they don't count against your ranger spells known."}]
     }},
     {name:"Fey Wanderer", blurb:"Channels the magic and mystique of the Feywild to charm and bewilder.", features:{
       3:[
-        {name:"Dreadful Strikes", text:"When you hit a creature with a weapon attack, deal an extra 1d4 psychic damage (once per turn). Increases to 1d6 at level 11."},
-        {name:"Fey Wanderer Magic", text:"You always know Charm Person and it doesn't count against your ranger spells known. You learn additional spells at levels 5, 9, 13 and 17 (Misty Step, Dispel Magic, Dimension Door, Mislead)."},
-        {name:"Otherworldly Glamour", text:"Add your Wisdom modifier to Charisma checks. Gain proficiency in Deception, Performance or Persuasion (your choice)."}
+        {name:"Dreadful Strikes", text:"When you hit a creature with a weapon, you can deal an extra 1d4 psychic damage to it; each creature can take this damage only once per turn. It becomes 1d6 at level 11."},
+        {name:"Fey Wanderer Magic", text:"You always know Charm Person; it doesn't count against your ranger spells known."},
+        {name:"Otherworldly Glamour", text:"Add your WIS modifier (minimum +1) to your Charisma checks, and gain proficiency in Deception, Performance or Persuasion (your choice)."}
       ],
-      7:[{name:"Beguiling Twist", text:"Advantage on saves against being charmed or frightened. When a creature you can see within 120 feet succeeds on a save against being charmed or frightened, use your reaction to impose that condition on a different creature within 120 feet (Wisdom save negates, lasts 1 minute)."}],
-      11:[{name:"Fey Reinforcements", text:"Once per long rest, cast Summon Fey without a spell slot. You can also cast it with a spell slot, and it doesn't count against your spells known."}],
-      15:[{name:"Misty Wanderer", text:"Cast Misty Step without expending a spell slot a number of times equal to your Wisdom modifier per long rest. When you cast it, take up to 5 willing creatures with you."}]
+      5:[{name:"Fey Wanderer Magic", replaces:"Fey Wanderer Magic", text:"You always know Charm Person and Misty Step; they don't count against your ranger spells known."}],
+      7:[{name:"Beguiling Twist", text:"You have advantage on saves against being charmed or frightened. When you or a creature you can see within 120 feet succeeds on a save against being charmed or frightened, you can use your reaction to force a different creature you can see within 120 feet to make a WIS save against your spell save DC or be charmed or frightened by you (your choice) for 1 minute, repeating the save at the end of each of its turns."}],
+      9:[{name:"Fey Wanderer Magic", replaces:"Fey Wanderer Magic", text:"You always know Charm Person, Misty Step and Dispel Magic; they don't count against your ranger spells known."}],
+      11:[{name:"Fey Reinforcements", text:"You know Summon Fey (it doesn't count against your spells known) and cast it without a material component. You can cast it once without a spell slot per long rest. When you cast it, you can choose to not need concentration, making it last 1 minute."}],
+      13:[{name:"Fey Wanderer Magic", replaces:"Fey Wanderer Magic", text:"You always know Charm Person, Misty Step, Dispel Magic and Dimension Door; they don't count against your ranger spells known."}],
+      15:[{name:"Misty Wanderer", text:"You can cast Misty Step without a spell slot a number of times equal to your WIS modifier (minimum 1), regained on a long rest. When you cast Misty Step, you can bring along one willing creature you can see within 5 feet of you, which teleports to a space within 5 feet of your destination."}],
+      17:[{name:"Fey Wanderer Magic", replaces:"Fey Wanderer Magic", text:"You always know Charm Person, Misty Step, Dispel Magic, Dimension Door and Mislead; they don't count against your ranger spells known."}]
     }},
     {name:"Horizon Walker", blurb:"Guards the boundaries between planes and hunts extraplanar threats.", features:{
       3:[
-        {name:"Detect Portal", text:"As an action, sense the distance and direction to the nearest planar portal within 1 mile. Once per short or long rest."},
-        {name:"Horizon Walker Magic", text:"You always know Protection from Evil and Good; it doesn't count against your ranger spells known. You learn additional spells at levels 5, 9, 13 and 17 (Misty Step, Haste, Banishment, Teleportation Circle)."},
-        {name:"Planar Warrior", text:"As a bonus action before attacking, choose a target. The first hit that turn deals +1d8 force damage and the attack's normal damage becomes force. Increases to +2d8 at level 11."}
+        {name:"Detect Portal", text:"As an action, sense the distance and direction to the closest planar portal within 1 mile of you. Once per short or long rest."},
+        {name:"Horizon Walker Magic", text:"You always know Protection from Evil and Good; it doesn't count against your ranger spells known."},
+        {name:"Planar Warrior", text:"As a bonus action, choose a creature you can see within 30 feet. The next time you hit it with a weapon attack this turn, all the attack's damage becomes force damage and it takes an extra 1d8 force damage (2d8 from level 11)."}
       ],
-      7:[{name:"Ethereal Step", text:"At the start of your turn, bonus action to cast Etherealness (affects only you) until the end of that turn. Once per short or long rest."}],
-      11:[{name:"Distant Strike", text:"When you take the Attack action, teleport up to 10 feet before each attack. If you attack two different creatures on that turn, make one extra attack against a third creature."}],
-      15:[{name:"Spectral Defense", text:"When a creature hits you with an attack, use your reaction to give yourself resistance to all damage from that attack."}]
+      5:[{name:"Horizon Walker Magic", replaces:"Horizon Walker Magic", text:"You always know Protection from Evil and Good and Misty Step; they don't count against your ranger spells known."}],
+      7:[{name:"Ethereal Step", text:"As a bonus action, cast Etherealness without a spell slot; it ends at the end of the current turn. Once per short or long rest."}],
+      9:[{name:"Horizon Walker Magic", replaces:"Horizon Walker Magic", text:"You always know Protection from Evil and Good, Misty Step and Haste; they don't count against your ranger spells known."}],
+      11:[{name:"Distant Strike", text:"When you take the Attack action, you can teleport up to 10 feet to an unoccupied space you can see before each attack. If you attack at least two different creatures with the action, you can make one additional attack against a third creature."}],
+      13:[{name:"Horizon Walker Magic", replaces:"Horizon Walker Magic", text:"You always know Protection from Evil and Good, Misty Step, Haste and Banishment; they don't count against your ranger spells known."}],
+      15:[{name:"Spectral Defense", text:"When you take damage from an attack, you can use your reaction to give yourself resistance to all of that attack's damage on this turn."}],
+      17:[{name:"Horizon Walker Magic", replaces:"Horizon Walker Magic", text:"You always know Protection from Evil and Good, Misty Step, Haste, Banishment and Teleportation Circle; they don't count against your ranger spells known."}]
     }},
     {name:"Drakewarden", blurb:"Bonds with a drake companion that grows into a fearsome mount.", features:{
       3:[
-        {name:"Draconic Gift", text:"You learn the Draconic language and the Thaumaturgy cantrip."},
-        {name:"Drake Companion", text:"As an action, summon your drake in an unoccupied space within 30 feet. It acts on your initiative with its own turn; use a bonus action to command it to Maul (melee attack) or move. It has AC 14 + proficiency, HP equal to five times your ranger level, and deals 1d6 piercing + proficiency bonus damage. If it dies, resummon it after a long rest (or expend a spell slot to do so after 1 hour)."}
+        {name:"Draconic Gift", text:"You learn the Thaumaturgy cantrip and to speak, read and write Draconic (or another language if you know it)."},
+        {name:"Drake Companion", text:"As an action, summon your drake in an unoccupied space within 30 feet, choosing its Draconic Essence (acid, cold, fire, lightning or poison). Once per long rest, or expend a spell slot of 1st level or higher to summon it again. It lasts until it drops to 0 hit points, you summon it again or you die. It shares your initiative and takes its turn right after yours, moving and reacting on its own but taking only the Dodge action unless you use a bonus action to command it (or you are incapacitated). Drake: Small dragon, AC 14 + your proficiency bonus, HP 5 + five times your ranger level, speed 40 ft; STR 16, DEX 12, CON 15, INT 8, WIS 14, CHA 8; proficient in DEX and WIS saves; immune to its essence's damage type; darkvision 60 ft; understands Draconic. Bite: +3 + your proficiency bonus to hit, 1d6 + your proficiency bonus piercing damage. Infused Strikes (reaction): when another creature within 30 feet of it that it can see hits a target with a weapon attack, the target takes an extra 1d6 damage of the essence's type."}
       ],
-      7:[{name:"Bond of Fang and Scale", text:"Your drake can now be ridden as a mount (your size or smaller). It gains resistance to one damage type linked to its color (acid, cold, fire, lightning or poison). When you cast a spell targeting only yourself while mounted on it, you can also affect the drake."}],
-      11:[{name:"Drake's Breath", text:"As an action, cause your drake (or yourself if it's not summoned) to exhale a 30-foot cone dealing 8d6 damage of the drake's chosen type (Dex save for half). Once per long rest, or expend a spell slot to use again."}],
-      15:[{name:"Perfected Bond", text:"Your drake grows to Large size, can fly at its walking speed, and when it hits with its Maul attack you can use your reaction to make one weapon attack."}]
+      7:[{name:"Bond of Fang and Scale", text:"Your drake grows to Medium size, and you can ride it as a mount if you're Medium or smaller. It sprouts wings when summoned, gaining a flying speed equal to its walking speed, but it can't use that flying speed while you ride it. Its Bite deals an extra 1d6 damage of its essence's type, and you gain resistance to that damage type."}],
+      11:[{name:"Drake's Breath", text:"As an action, you or your drake exhale a 30-foot cone of acid, cold, fire, lightning or poison (your choice). Each creature in it makes a DEX save against your spell save DC, taking 8d6 damage on a failure or half on a success (10d6 from level 15). Once per long rest, or expend a spell slot of 3rd level or higher to use it again."}],
+      15:[{name:"Perfected Bond", text:"Your drake grows to Large size and can now fly while you ride it, and its Bite deals another extra 1d6 of its essence's type (2d6 in total). Reflexive Resistance: when you or your drake takes damage while you're within 30 feet of each other, you can use your reaction to give yourself or the drake resistance to that damage; uses equal to your proficiency bonus per long rest."}]
     }},
     {name:"Monster Slayer", blurb:"Hunts vampires, dragons and other dread creatures by learning and exploiting their weaknesses.", features:{
       3:[
