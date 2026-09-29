@@ -131,9 +131,9 @@ git config core.hooksPath .githooks
 
 ## Available Scripts
 
-There is currently no build system or package manager (such as `npm` or `yarn`) configured for this project.
+The app needs no build step. `package.json` exists only to run the tests, and has no dependencies.
 
-- `TODO`: Add optional `package.json` with scripts for linting (e.g., ESLint), formatting (Prettier), and automated testing if desired.
+- `npm test`: runs the automated test suite with Node's built-in test runner (Node 22 or newer).
 
 ---
 
@@ -147,7 +147,14 @@ No environment variables are required. Ragnar's Den runs entirely client-side.
 
 ## Testing
 
-Currently, no automated testing framework is set up in the repository.
+Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/` and takes well under a second:
+
+- `data.test.mjs`: the class, subclass and resource data is complete and well formed. Every subclass reaches its top level, `replaces` points at a real earlier feature, feature flags use known names and valid values, every Resources card entry belongs to a subclass that exists, counters stay sane at every level, and text has no long dashes.
+- `rules.test.mjs`: the sheet's calculations against hand-worked 2014 rules numbers: proficiency bonus, Sneak Attack and Martial Arts scaling, speed bonuses, rage, initiative, Armor Class, saving throws (Aura of Protection, Diamond Soul), Battle Ready and Hex Warrior attacks, proficiency grants, rests and spell slots.
+- `smoke.test.mjs`: every class and subclass at every level from 1 to 20, plus some multiclass builds, runs through every sheet calculation without errors.
+- `project.test.mjs`: every file in the service worker's offline list exists, every relative `import` resolves, and `index.html`'s local scripts and stylesheets exist.
+
+`tests/setup.mjs` gives the browser modules just enough of `window`, `document` and `localStorage` to load in Node. The tests check data and calculations, not rendering, so use the checklist below for the screens.
 
 ### Manual Verification Checklist
 
@@ -160,7 +167,6 @@ Currently, no automated testing framework is set up in the repository.
 7. **Data Backup**: Use **Export all (backup)** to download character data and homebrew as JSON, and **Import backup** to restore or load saved sheets.
 8. **Offline Support**: In browser DevTools (Network tab), toggle "Offline" mode and reload to verify that the Service Worker (`sw.js`) serves cached assets.
 
-- `TODO`: Implement automated testing (e.g., unit tests for stat calculators using Jest/Vitest, and end-to-end tests using Playwright/Cypress).
 
 ---
 

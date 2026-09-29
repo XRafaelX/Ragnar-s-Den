@@ -1,0 +1,9 @@
+{
+  "name": "ragnars-den",
+  "private": true,
+  "type": "module",
+  "description": "Offline D&D 5e character creator and sheet. The app itself needs no build step; this file only runs the tests.",
+  "scripts": {
+    "test": "node --import ./tests/setup.mjs --test \"tests/**/*.test.mjs\""
+  }
+}

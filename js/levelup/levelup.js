@@ -666,7 +666,7 @@ function finish(){
   playAdd();
 
   showUnlocked(c, {
-    className: entry.name, isNewClass: record.isNewClass, newClassLevel: t.newLevel, subclass: subName,
+    className: entry.name, isNewClass: record.isNewClass, newClassLevel: t.newLevel, subclass: subName, currentSubclass: entry.subclass,
     totalBefore: before.total, pbBefore: before.pb, hpGain: gain, speedGain: record.speedGain,
     features: gained, feat: feat, asi: record.asi,
     slotsBefore: before.slots, pactBefore: before.pact,
@@ -748,7 +748,7 @@ function showUnlocked(c, s){
       body.appendChild(subP);
     }
 
-    var unlocked = s.features.map(function(f){ return {name:f.name, text:f.text, tag: f.subclass ? s.subclass : s.className, upgraded: f.upgraded}; });
+    var unlocked = s.features.map(function(f){ return {name:f.name, text:f.text, tag: f.subclass ? (s.currentSubclass || s.subclass) : s.className, upgraded: f.upgraded}; });
     if(s.feat) unlocked.push({name:s.feat.name, text:s.feat.summary || s.feat.description, tag:"Feat"});
     if(unlocked.length){
       var h = ce("h5","info-modal-subhead"); h.textContent = "New things you unlocked";
