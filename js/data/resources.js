@@ -425,23 +425,51 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Wizard": {
+    "School of Evocation": [
+      {id:"overchannel_free", name:"Overchannel (Free Use)", level:14, max:always(1), reset:always("long"),
+        hint:"Maximize a 1st to 5th level damaging spell with no drawback. Later uses before a long rest deal you 2d12 necrotic per spell level (and more each time)."}
+    ],
+    "School of Abjuration": [
+      {id:"arcane_ward", name:"Arcane Ward HP", level:2, pool:true, max:function(lv, m){ return lv*2 + m.int; }, reset:always("long"),
+        hint:"Track damage your ward absorbs. Regains twice the spell's level whenever you cast an abjuration spell of 1st level or higher."}
+    ],
     "School of Divination": [
       {id:"portent", name:"Portent Dice", level:2,
         max:function(lv){ return lv>=14 ? 3 : 2; }, reset:always("long"),
-        hint:"Roll these d20s after a long rest and write them down. Replace any attack, save or check you can see with one of them."}
+        hint:"Roll these d20s after a long rest and write them down. Replace a roll by you or a creature you can see (before it's rolled), once per turn."},
+      {id:"third_eye", name:"The Third Eye", level:10, max:always(1), reset:always("short"),
+        hint:"Action: darkvision, ethereal sight, read any language, or see invisibility within 10 ft, until your next rest."}
+    ],
+    "School of Illusion": [
+      {id:"illusory_self", name:"Illusory Self", level:10, max:always(1), reset:always("short"),
+        hint:"Reaction: an attack against you automatically misses."}
     ],
     "Bladesinging": [
       {id:"bladesong", name:"Bladesong", level:2,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Bonus action: enter Bladesong for 1 minute: +INT to AC, +10 ft speed, advantage on Acrobatics, +INT to concentration saves."}
+        hint:"Bonus action for 1 minute: +INT to AC and concentration saves, +10 ft speed, advantage on Acrobatics."}
     ],
-    "School of Enchantment": [
-      {id:"hypnotic_gaze", name:"Hypnotic Gaze", level:2, max:always(1), reset:always("short"),
-        hint:"Action: charm a creature within 5 ft: speed 0, incapacitated. Maintain with your action each turn. Ends if you move away or it saves."}
+    "War Magic": [
+      {id:"power_surges", name:"Power Surges", level:6, pool:true, max:function(lv, m){ return atLeastOne(m.int); }, reset:always("manual"),
+        hint:"Spend one (once per turn) for + half your wizard level force damage with a wizard spell. Resets to 1 after a long rest; +1 from Dispel Magic, Counterspell or a short rest with none."}
+    ],
+    "Order of Scribes": [
+      {id:"fast_ritual", name:"Awakened Spellbook (Fast Ritual)", level:2, max:always(1), reset:always("long"),
+        hint:"Cast a wizard ritual in its normal casting time instead of adding 10 minutes."},
+      {id:"manifest_mind", name:"Manifest Mind", level:6, max:always(1), reset:always("long"),
+        hint:"Bonus action: manifest your spellbook's mind within 60 ft. More uses cost a spell slot."},
+      {id:"manifest_mind_casting", name:"Manifest Mind (Cast from It)", level:6, max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Cast a wizard spell on your turn as if you were in the mind's space."},
+      {id:"one_with_the_word", name:"One with the Word", level:14, max:always(1), reset:always("long"),
+        hint:"Reaction while the mind is manifested: dismiss it to prevent all damage you take; your book loses 3d6 levels of spells for 1d6 long rests."}
+    ],
+    "School of Conjuration": [
+      {id:"benign_transposition", name:"Benign Transposition", level:6, max:always(1), reset:always("long"),
+        hint:"Action: teleport 30 ft or swap with a willing creature. Also regained when you cast a conjuration spell of 1st level or higher."}
     ],
     "School of Transmutation": [
       {id:"shapechanger", name:"Shapechanger (Polymorph Self)", level:10, max:always(1), reset:always("short"),
-        hint:"Cast Polymorph on yourself without expending a spell slot."}
+        hint:"Cast Polymorph on yourself (beast of CR 1 or lower) without a spell slot."}
     ],
     "Chronurgy Magic": [
       {id:"chronal_shift", name:"Chronal Shift", level:2, max:always(2), reset:always("long"),

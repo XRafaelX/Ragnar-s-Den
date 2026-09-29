@@ -53,8 +53,10 @@ export function classSpellAbility(cl){
      initiative    ability ("wis", "int", ...) or "pb" added to initiative
      acHeavyArmor  AC bonus while wearing heavy armor (Soul of the Forge)
      grants        {armor, weapons, tools} proficiencies (Battle Ready)
-     magicWeaponAbility  ability usable for attacks with magic weapons */
-var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility"];
+     magicWeaponAbility  ability usable for attacks with magic weapons
+     chosenWeaponAbility  ability usable with one weapon the player marks
+                   as `chosenWeapon` in the inventory (Hex Warrior) */
+var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility"];
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -389,15 +391,25 @@ export function weaponAbilityMod(c, item){
   var dexMod = mod(c.abilities && c.abilities.dex);
   var best = item.ability==="dex" ? dexMod : item.ability==="finesse" ? Math.max(strMod, dexMod) : strMod;
   // A feature tagged `magicWeaponAbility` lets magic weapons (magic bonus
-  // above 0) use that ability instead, when it's higher.
-  if((Number(item.magicBonus)||0) > 0){
-    (c.classes||[]).forEach(function(cl){
-      classFeatureList(cl).forEach(function(f){
-        if(f.magicWeaponAbility) best = Math.max(best, mod(c.abilities && c.abilities[f.magicWeaponAbility]));
-      });
+  // above 0) use that ability instead, when it's higher; one tagged
+  // `chosenWeaponAbility` does the same for the weapon marked `chosenWeapon`.
+  var isMagic = (Number(item.magicBonus)||0) > 0;
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){
+      if(f.magicWeaponAbility && isMagic) best = Math.max(best, mod(c.abilities && c.abilities[f.magicWeaponAbility]));
+      if(f.chosenWeaponAbility && item.chosenWeapon) best = Math.max(best, mod(c.abilities && c.abilities[f.chosenWeaponAbility]));
     });
-  }
+  });
   return best;
+}
+/* The feature (if any) that lets this character mark one weapon to attack
+   with a different ability, e.g. Hex Warrior (CHA). */
+export function chosenWeaponFeature(c){
+  var found = null;
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){ if(!found && f.chosenWeaponAbility) found = f; });
+  });
+  return found;
 }
 export function weaponAttackBonus(c, item){
   var pb = item.proficient ? profBonus(c) : 0;

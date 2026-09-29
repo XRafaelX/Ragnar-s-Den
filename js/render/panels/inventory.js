@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature } from "../../core/helpers.js";
 import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker, openArmorPicker } from "../armory.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
@@ -263,6 +263,23 @@ function openWeaponSheet(c, item, idx){
     profLbl.appendChild(document.createTextNode("Proficient"));
     details.appendChild(profLbl);
 
+    // Hex Warrior and similar: mark one weapon to attack with another
+    // ability. Only one weapon can be marked, so ticking one clears the rest.
+    var chosenFeat = chosenWeaponFeature(c);
+    if(chosenFeat){
+      var chosenLbl = document.createElement("label");
+      chosenLbl.className = "inv-prof-label";
+      var chosenCb = document.createElement("input"); chosenCb.type="checkbox"; chosenCb.className="chk"; chosenCb.checked = !!item.chosenWeapon;
+      chosenCb.addEventListener("change", function(){
+        (c.inventory||[]).forEach(function(i){ if(i!==item) delete i.chosenWeapon; });
+        if(chosenCb.checked) item.chosenWeapon = true; else delete item.chosenWeapon;
+        save(); renderAll();
+      });
+      chosenLbl.appendChild(chosenCb);
+      chosenLbl.appendChild(document.createTextNode(chosenFeat.name + " weapon (uses " + chosenFeat.chosenWeaponAbility.toUpperCase() + ")"));
+      details.appendChild(chosenLbl);
+    }
+
     details.appendChild(fieldStepper("Magic bonus", Number(item.magicBonus)||0, function(v){
       item.magicBonus = v; save(); renderAll();
     }));
@@ -286,6 +303,8 @@ function renderWeaponCard(c, item, idx){
   subtitleParts.push(abilityLabel);
   subtitleParts.push(item.proficient ? "Proficient" : "Not proficient");
   if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
+  var chosenFeat = item.chosenWeapon && chosenWeaponFeature(c);
+  if(chosenFeat) subtitleParts.push(chosenFeat.name);
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");
