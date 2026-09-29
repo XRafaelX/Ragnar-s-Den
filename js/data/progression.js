@@ -957,57 +957,81 @@ export var SUBCLASSES = {
   "Paladin": [
     {name:"Oath of Devotion", blurb:"The classic knight in shining armor.", features:{
       3:[
-        {name:"Oath Spells", text:"You always have Protection from Evil and Good and Sanctuary prepared."},
-        {name:"Channel Divinity", text:"Once per short or long rest: Sacred Weapon (add CHA to attack rolls for 1 minute) or Turn the Unholy (fiends and undead must flee)."}
+        {name:"Oath Spells", text:"You always have Protection from Evil and Good and Sanctuary prepared; they don't count against your prepared spells."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Sacred Weapon (action: for 1 minute, add your CHA modifier (minimum +1) to attack rolls with a weapon you hold; it sheds bright light for 20 feet and dim light for 20 more, and becomes magical if it isn't. It ends if you drop the weapon or fall unconscious, or as part of another action on your turn) or Turn the Unholy (action: each fiend or undead within 30 feet that can see or hear you makes a WIS save or is turned for 1 minute or until it takes damage)."}
       ],
-      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Protection from Evil and Good, Sanctuary, Lesser Restoration and Zone of Truth prepared."}]
+      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Protection from Evil and Good, Sanctuary, Lesser Restoration and Zone of Truth prepared."}],
+      7:[{name:"Aura of Devotion", text:"While you're conscious, you and friendly creatures within 10 feet of you can't be charmed. The range becomes 30 feet at level 18."}],
+      9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Protection from Evil and Good, Sanctuary, Lesser Restoration, Zone of Truth, Beacon of Hope and Dispel Magic prepared."}],
+      13:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Protection from Evil and Good, Sanctuary, Lesser Restoration, Zone of Truth, Beacon of Hope, Dispel Magic, Freedom of Movement and Guardian of Faith prepared."}],
+      15:[{name:"Purity of Spirit", text:"You are always under the effects of Protection from Evil and Good."}],
+      17:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Protection from Evil and Good, Sanctuary, Lesser Restoration, Zone of Truth, Beacon of Hope, Dispel Magic, Freedom of Movement, Guardian of Faith, Commune and Flame Strike prepared."}],
+      20:[{name:"Holy Nimbus", text:"As an action, for 1 minute you shed bright light in a 30-foot radius and dim light for 30 more. An enemy that starts its turn in the bright light takes 10 radiant damage, and you have advantage on saves against spells cast by fiends or undead. Once per long rest."}]
     }},
     {name:"Oath of the Ancients", blurb:"Protects light and life in the world.", features:{
       3:[
-        {name:"Oath Spells", text:"You always have Ensnaring Strike and Speak with Animals prepared."},
-        {name:"Channel Divinity", text:"Once per short or long rest: Nature's Wrath (restrain a creature with vines) or Turn the Faithless (fey and fiends must flee)."}
+        {name:"Oath Spells", text:"You always have Ensnaring Strike and Speak with Animals prepared; they don't count against your prepared spells."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Nature's Wrath (action: spectral vines reach for a creature you can see within 10 feet, which makes a STR or DEX save (its choice) or is restrained, repeating the save at the end of each of its turns) or Turn the Faithless (action: each fey or fiend within 30 feet that can hear you makes a WIS save or is turned for 1 minute or until it takes damage; a turned creature's true form is revealed if an illusion or shapeshift hides it)."}
       ],
-      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Ensnaring Strike, Speak with Animals, Moonbeam and Misty Step prepared."}]
+      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Ensnaring Strike, Speak with Animals, Moonbeam and Misty Step prepared."}],
+      7:[{name:"Aura of Warding", text:"You and friendly creatures within 10 feet of you have resistance to damage from spells. The range becomes 30 feet at level 18."}],
+      9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Ensnaring Strike, Speak with Animals, Moonbeam, Misty Step, Plant Growth and Protection from Energy prepared."}],
+      13:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Ensnaring Strike, Speak with Animals, Moonbeam, Misty Step, Plant Growth, Protection from Energy, Ice Storm and Stoneskin prepared."}],
+      15:[{name:"Undying Sentinel", text:"When you are reduced to 0 hit points and not killed outright, you can drop to 1 hit point instead (once per long rest). You also suffer none of the drawbacks of old age and can't be aged magically."}],
+      17:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Ensnaring Strike, Speak with Animals, Moonbeam, Misty Step, Plant Growth, Protection from Energy, Ice Storm, Stoneskin, Commune with Nature and Tree Stride prepared."}],
+      20:[{name:"Elder Champion", text:"As an action, for 1 minute: you regain 10 hit points at the start of each of your turns, you can cast paladin spells with a casting time of 1 action as a bonus action, and enemies within 10 feet of you have disadvantage on saves against your paladin spells and Channel Divinity. Once per long rest."}]
     }},
     {name:"Oath of Vengeance", blurb:"Punishes wrongdoers at any cost.", features:{
       3:[
-        {name:"Oath Spells", text:"You always have Bane and Hunter's Mark prepared."},
-        {name:"Channel Divinity", text:"Once per short or long rest: Abjure Enemy (frighten one creature) or Vow of Enmity (advantage on attacks against one creature for 1 minute)."}
+        {name:"Oath Spells", text:"You always have Bane and Hunter's Mark prepared; they don't count against your prepared spells."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Abjure Enemy (action: a creature you can see within 60 feet makes a WIS save, with disadvantage if it's a fiend or undead, unless it can't be frightened. On a failure it is frightened for 1 minute or until it takes damage, and its speed is 0. On a success its speed is halved for 1 minute or until it takes damage) or Vow of Enmity (bonus action: advantage on attack rolls against a creature you can see within 10 feet for 1 minute, or until it drops to 0 hit points or falls unconscious)."}
       ],
-      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Bane, Hunter's Mark, Hold Person and Misty Step prepared."}]
+      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Bane, Hunter's Mark, Hold Person and Misty Step prepared."}],
+      7:[{name:"Relentless Avenger", text:"When you hit a creature with an opportunity attack, you can move up to half your speed right after the attack as part of the same reaction, without provoking opportunity attacks."}],
+      9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Bane, Hunter's Mark, Hold Person, Misty Step, Haste and Protection from Energy prepared."}],
+      13:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Bane, Hunter's Mark, Hold Person, Misty Step, Haste, Protection from Energy, Banishment and Dimension Door prepared."}],
+      15:[{name:"Soul of Vengeance", text:"When a creature under your Vow of Enmity makes an attack, you can use your reaction to make a melee weapon attack against it if it's within range."}],
+      17:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Bane, Hunter's Mark, Hold Person, Misty Step, Haste, Protection from Energy, Banishment, Dimension Door, Hold Monster and Scrying prepared."}],
+      20:[{name:"Avenging Angel", text:"As an action, for 1 hour: you sprout wings and gain a flying speed of 60 feet, and you emanate a 30-foot aura of menace. The first time an enemy enters the aura or starts its turn there during a battle, it makes a WIS save or is frightened of you for 1 minute or until it takes damage, and attack rolls against it have advantage. Once per long rest."}]
     }},
     {name:"Oath of Conquest", blurb:"Rules through fear and iron will, breaking the enemy's spirit.", features:{
       3:[
         {name:"Oath Spells", text:"You always have Armor of Agathys and Command prepared; they don't count against your prepared spells."},
-        {name:"Channel Divinity", text:"Once per short or long rest: Conquering Presence (each creature you choose within 30 feet must succeed on a Wisdom save or be frightened of you for 1 minute) or Guided Strike (+10 to one attack roll, declared after seeing the roll but before knowing the result)."}
+        {name:"Channel Divinity", text:"Once per short or long rest: Conquering Presence (action: each creature of your choice within 30 feet makes a WIS save or is frightened of you for 1 minute, repeating the save at the end of each of its turns) or Guided Strike (+10 to one attack roll, declared after seeing the roll but before knowing the result)."}
       ],
       5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Armor of Agathys, Command, Hold Person and Spiritual Weapon prepared."}],
-      7:[{name:"Aura of Conquest", text:"While you're not incapacitated, frightened creatures within 10 feet of you can't move and take psychic damage equal to half your paladin level at the start of each of their turns. Extends to 30 feet at level 18."}],
+      7:[{name:"Aura of Conquest", text:"While you're not incapacitated, a creature frightened of you has its speed reduced to 0 while within 10 feet of you, and takes psychic damage equal to half your paladin level if it starts its turn there. The range becomes 30 feet at level 18."}],
       9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Armor of Agathys, Command, Hold Person, Spiritual Weapon, Bestow Curse and Fear prepared."}],
-      15:[{name:"Scornful Rebuke", text:"Whenever a creature hits you with an attack while you are not incapacitated, it takes psychic damage equal to your Charisma modifier (minimum 1)."}],
-      20:[{name:"Invincible Conqueror", text:"For 1 minute (once per long rest): resistance to all damage, extra attack when you take the Attack action, and critical hits on a 19 or 20."}]
+      13:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Armor of Agathys, Command, Hold Person, Spiritual Weapon, Bestow Curse, Fear, Dominate Beast and Stoneskin prepared."}],
+      15:[{name:"Scornful Rebuke", text:"Whenever a creature hits you with an attack while you are not incapacitated, it takes psychic damage equal to your CHA modifier (minimum 1)."}],
+      17:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Armor of Agathys, Command, Hold Person, Spiritual Weapon, Bestow Curse, Fear, Dominate Beast, Stoneskin, Cloudkill and Dominate Person prepared."}],
+      20:[{name:"Invincible Conqueror", text:"As an action, for 1 minute: you have resistance to all damage, you can make one additional attack when you take the Attack action, and your melee weapon attacks score a critical hit on a roll of 19 or 20. Once per long rest."}]
     }},
     {name:"Oathbreaker", blurb:"A fallen paladin who abandoned their oath and turned to darkness.", features:{
       3:[
         {name:"Oathbreaker Spells", text:"You always have Hellish Rebuke and Inflict Wounds prepared; they don't count against your prepared spells."},
-        {name:"Channel Divinity", text:"Once per short or long rest: Control Undead (a target undead within 30 feet makes a Wisdom save or obeys your commands for 24 hours) or Dreadful Aspect (each creature of your choice within 30 feet must succeed on a Wisdom save or be frightened of you for 1 minute)."}
+        {name:"Channel Divinity", text:"Once per short or long rest: Control Undead (action: an undead you can see within 30 feet makes a WIS save or obeys your commands for 24 hours, or until you use this again; undead with a challenge rating equal to or higher than your paladin level are immune) or Dreadful Aspect (action: each creature of your choice within 30 feet that can see you makes a WIS save or is frightened of you for 1 minute; one that ends its turn more than 30 feet away from you can repeat the save)."}
       ],
       5:[{name:"Oathbreaker Spells", replaces:"Oathbreaker Spells", text:"You always have Hellish Rebuke, Inflict Wounds, Crown of Madness and Darkness prepared."}],
-      7:[{name:"Aura of Hate", text:"You and friendly fiends and undead within 10 feet add your Charisma modifier to melee weapon damage. Extends to 30 feet at level 18."}],
+      7:[{name:"Aura of Hate", text:"You, and any fiends and undead within 10 feet of you, gain a bonus to melee weapon damage rolls equal to your CHA modifier (minimum +1). A creature can benefit from only one paladin's aura at a time. The range becomes 30 feet at level 18."}],
       9:[{name:"Oathbreaker Spells", replaces:"Oathbreaker Spells", text:"You always have Hellish Rebuke, Inflict Wounds, Crown of Madness, Darkness, Animate Dead and Bestow Curse prepared."}],
-      15:[{name:"Supernatural Resistance", text:"Resistance to bludgeoning, piercing and slashing damage from nonmagical weapons."}],
-      20:[{name:"Dread Lord", text:"For 1 minute (once per long rest): create a 30-foot aura of gloom: dim light, disadvantage on saves against being frightened, shadowy duplicates attack frightened creatures (3d10 psychic), and melee attacks deal +3d10 psychic on a failed Wisdom save."}]
+      13:[{name:"Oathbreaker Spells", replaces:"Oathbreaker Spells", text:"You always have Hellish Rebuke, Inflict Wounds, Crown of Madness, Darkness, Animate Dead, Bestow Curse, Blight and Confusion prepared."}],
+      15:[{name:"Supernatural Resistance", text:"You have resistance to bludgeoning, piercing and slashing damage from nonmagical weapons."}],
+      17:[{name:"Oathbreaker Spells", replaces:"Oathbreaker Spells", text:"You always have Hellish Rebuke, Inflict Wounds, Crown of Madness, Darkness, Animate Dead, Bestow Curse, Blight, Confusion, Contagion and Dominate Person prepared."}],
+      20:[{name:"Dread Lord", text:"As an action, for 1 minute you surround yourself with a 30-foot aura of gloom that turns bright light in it to dim light. An enemy frightened of you that starts its turn in the aura takes 4d10 psychic damage. You and creatures you choose in the aura are draped in shadow, so creatures relying on sight have disadvantage on attacks against them. As a bonus action, the shadows can attack one creature: a melee spell attack dealing 3d10 + your CHA modifier necrotic damage. Once per long rest."}]
     }},
     {name:"Oath of Redemption", blurb:"Seeks to reform the wicked through peace, mercy and patience.", features:{
       3:[
         {name:"Oath Spells", text:"You always have Sanctuary and Sleep prepared; they don't count against your prepared spells."},
-        {name:"Channel Divinity", text:"Once per short or long rest: Emissary of Peace (+5 to Persuasion checks for 10 minutes) or Rebuke the Violent (when a creature within 30 feet deals damage to a third party, the attacker must make a Wisdom save or take radiant damage equal to the damage dealt)."}
+        {name:"Channel Divinity", text:"Once per short or long rest: Emissary of Peace (bonus action: +5 to CHA (Persuasion) checks for 10 minutes) or Rebuke the Violent (reaction, right after a creature within 30 feet deals damage with an attack to someone other than you: it makes a WIS save, taking radiant damage equal to the damage it dealt on a failure, or half on a success)."}
       ],
       5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Sanctuary, Sleep, Calm Emotions and Hold Person prepared."}],
-      7:[{name:"Aura of the Guardian", text:"When another creature within 10 feet takes damage, use your reaction to take that damage yourself instead. Extends to 30 feet at level 18."}],
+      7:[{name:"Aura of the Guardian", text:"When a creature within 10 feet of you takes damage, you can use your reaction to take that damage instead. No other effects of the damage transfer, and the damage can't be reduced in any way. The range becomes 30 feet at level 18."}],
       9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Sanctuary, Sleep, Calm Emotions, Hold Person, Counterspell and Hypnotic Pattern prepared."}],
-      15:[{name:"Protective Spirit", text:"At the end of your turn if you have fewer than half your max HP and are not incapacitated, regain HP equal to 1d6 + half your paladin level."}],
-      20:[{name:"Emissary of Redemption", text:"Resistance to all damage dealt by creatures. When a creature hits you with an attack, it takes radiant damage equal to half the damage it dealt. Both effects end for a creature if you attack it, deal damage to it or force it to make a saving throw."}]
+      13:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Sanctuary, Sleep, Calm Emotions, Hold Person, Counterspell, Hypnotic Pattern, Otiluke's Resilient Sphere and Stoneskin prepared."}],
+      15:[{name:"Protective Spirit", text:"If you end your turn in combat with fewer than half your hit points and aren't incapacitated, you regain 1d6 + half your paladin level hit points."}],
+      17:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Sanctuary, Sleep, Calm Emotions, Hold Person, Counterspell, Hypnotic Pattern, Otiluke's Resilient Sphere, Stoneskin, Hold Monster and Wall of Force prepared."}],
+      20:[{name:"Emissary of Redemption", text:"You have resistance to all damage dealt by other creatures, and when a creature hits you with an attack it takes radiant damage equal to half the damage you take from it. If you attack a creature, cast a spell on it or damage it (other than with this feature), neither benefit works against it until you finish a long rest."}]
     }},
     {name:"Oath of Glory", blurb:"A heroic athlete destined for legend who inspires allies to greatness.", features:{
       3:[

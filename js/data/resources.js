@@ -243,6 +243,28 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Paladin": {
+    "Oath of Devotion": [
+      {id:"holy_nimbus", name:"Holy Nimbus", level:20, max:always(1), reset:always("long"),
+        hint:"Action for 1 minute: 30-ft bright light that deals 10 radiant to enemies starting their turn in it."}
+    ],
+    "Oath of the Ancients": [
+      {id:"undying_sentinel", name:"Undying Sentinel", level:15, max:always(1), reset:always("long"),
+        hint:"When reduced to 0 HP and not killed outright, drop to 1 HP instead."},
+      {id:"elder_champion", name:"Elder Champion", level:20, max:always(1), reset:always("long"),
+        hint:"Action for 1 minute: regain 10 HP each turn, cast 1-action paladin spells as bonus actions, nearby enemies save at disadvantage."}
+    ],
+    "Oath of Vengeance": [
+      {id:"avenging_angel", name:"Avenging Angel", level:20, max:always(1), reset:always("long"),
+        hint:"Action for 1 hour: 60-ft flight and a 30-ft aura that frightens enemies (WIS save)."}
+    ],
+    "Oath of Conquest": [
+      {id:"invincible_conqueror", name:"Invincible Conqueror", level:20, max:always(1), reset:always("long"),
+        hint:"Action for 1 minute: resistance to all damage, an extra attack, and melee crits on 19 or 20."}
+    ],
+    "Oathbreaker": [
+      {id:"dread_lord", name:"Dread Lord", level:20, max:always(1), reset:always("long"),
+        hint:"Action for 1 minute: 30-ft aura of gloom; frightened enemies take 4d10 psychic, bonus action shadow attack for 3d10 + CHA."}
+    ],
     "Oath of Glory": [
       {id:"glorious_defense", name:"Glorious Defense", level:15,
         max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
