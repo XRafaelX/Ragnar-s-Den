@@ -76,27 +76,32 @@ export var SUBCLASS_RESOURCES = {
         hint:"Create a cannon without spending a spell slot. After that, each one costs a spell slot."}
     ]
   },
-  "Cleric": {
-    "Light Domain": [
-      {id:"warding_flare", name:"Warding Flare", level:1,
-        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
-        hint:"Reaction: impose disadvantage on an attack against you from a creature within 30 ft."}
+  "Bard": {
+    "College of Creation": [
+      {id:"performance_of_creation", name:"Performance of Creation", level:3, max:always(1), reset:always("long"),
+        hint:"Action: create a nonmagical item worth up to 20 x your bard level gp. More uses cost a 2nd-level or higher spell slot."},
+      {id:"animating_performance", name:"Animating Performance", level:6, max:always(1), reset:always("long"),
+        hint:"Action: animate a Large or smaller nonmagical item within 30 ft as your Dancing Item for 1 hour. More uses cost a 3rd-level or higher spell slot."}
     ],
-    "War Domain": [
-      {id:"war_priest", name:"War Priest", level:1,
-        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
-        hint:"When you take the Attack action, make one weapon attack as a bonus action."}
+    "College of Glamour": [
+      {id:"enthralling_performance", name:"Enthralling Performance", level:3, max:always(1), reset:always("short"),
+        hint:"After performing for 1 minute: up to CHA mod humanoids that watched make a WIS save or are charmed by you for 1 hour."},
+      {id:"mantle_of_majesty", name:"Mantle of Majesty", level:6, max:always(1), reset:always("long"),
+        hint:"Bonus action: cast Command without a slot, then again as a bonus action each turn for 1 minute (concentration)."},
+      {id:"unbreakable_majesty", name:"Unbreakable Majesty", level:14, max:always(1), reset:always("short"),
+        hint:"Bonus action for 1 minute: the first time a creature attacks you each turn, it makes a CHA save or must pick another target."}
     ],
-    "Tempest Domain": [
-      {id:"wrath_of_the_storm", name:"Wrath of the Storm", level:1,
-        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
-        hint:"Reaction when hit by a creature within 5 ft: it takes 2d8 lightning or thunder damage (DEX save for half)."}
-    ]
-  },
-  "Druid": {
-    "Circle of the Land": [
-      {id:"natural_recovery", name:"Natural Recovery", level:2, max:always(1), reset:always("long"),
-        hint:"During a short rest, recover spell slots with a combined level up to half your druid level (rounded up)."}
+    "College of Spirits": [
+      {id:"spirit_session", name:"Spirit Session", level:6, max:always(1), reset:always("long"),
+        hint:"1-hour ritual with up to 5 creatures: learn a divination or necromancy spell of level up to the number taking part."}
+    ],
+    "College of Whispers": [
+      {id:"words_of_terror", name:"Words of Terror", level:3, max:always(1), reset:always("short"),
+        hint:"After speaking alone with a humanoid for 1 minute: it makes a WIS save or is frightened of you (or someone you choose) for 1 hour."},
+      {id:"mantle_of_whispers", name:"Mantle of Whispers", level:6, max:always(1), reset:always("short"),
+        hint:"Reaction when a humanoid dies within 30 ft: capture its shadow, then use an action to take on its appearance for 1 hour."},
+      {id:"shadow_lore", name:"Shadow Lore", level:14, max:always(1), reset:always("long"),
+        hint:"Action: whisper to a creature within 30 ft. On a failed WIS save it is charmed for 8 hours, sure you know its darkest secret."}
     ]
   },
   "Fighter": {
