@@ -535,15 +535,31 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Rogue": {
+    "Arcane Trickster": [
+      {id:"spell_thief", name:"Spell Thief", level:17, max:always(1), reset:always("long"),
+        hint:"Reaction: negate a spell that targets you and steal it for 8 hours (save vs your DC)."}
+    ],
+    "Swashbuckler": [
+      {id:"master_duelist", name:"Master Duelist", level:17, max:always(1), reset:always("short"),
+        hint:"Reroll a missed attack roll with advantage."}
+    ],
     "Phantom": [
       {id:"wails_from_the_grave", name:"Wails from the Grave", level:3,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"When you deal Sneak Attack damage, choose a creature within 30 ft; it takes half your Sneak Attack as necrotic damage."}
+        hint:"After Sneak Attack: a second creature within 30 ft of the first takes necrotic damage from half your Sneak Attack dice."},
+      {id:"ghost_walk", name:"Ghost Walk", level:13, max:always(1), reset:always("long"),
+        hint:"Bonus action for 10 minutes: fly 10 ft, attacks against you have disadvantage, move through creatures and objects. Or destroy a soul trinket."}
     ],
     "Soulknife": [
       {id:"psionic_energy_dice", name:"Psionic Energy Dice", level:3, pool:true,
         max:function(lv, m){ return m.pb * 2; }, reset:always("long"),
-        hint:"Fuel Psychic Blades (off-hand), Soul Blades (Homing Strikes / Psychic Teleportation), Psychic Veil and Rend Mind. Regain 1 die on a short rest."}
+        hint:"Fuel Psi-Bolstered Knack, Psychic Whispers, Soul Blades, Psychic Veil and Rend Mind. Regain 1 die on a short rest."},
+      {id:"psychic_whispers_free", name:"Psychic Whispers (Free Use)", level:3, max:always(1), reset:always("long"),
+        hint:"Your first Psychic Whispers after a long rest doesn't spend a Psionic Energy die."},
+      {id:"psychic_veil", name:"Psychic Veil", level:13, max:always(1), reset:always("long"),
+        hint:"Action: invisible for 1 hour until you deal damage or force a save. More uses cost a Psionic Energy die."},
+      {id:"rend_mind", name:"Rend Mind", level:17, max:always(1), reset:always("long"),
+        hint:"On a Psychic Blades Sneak Attack: WIS save or stunned for 1 minute. More uses cost three Psionic Energy dice."}
     ],
     "Inquisitive": [
       {id:"unerring_eye", name:"Unerring Eye", level:13,
