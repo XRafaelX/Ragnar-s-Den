@@ -784,65 +784,73 @@ export var SUBCLASSES = {
     }}
   ],
   "Fighter": [
-    {name:"Champion", blurb:"Simple, reliable raw power with more critical hits.", features:{3:[
-      {name:"Improved Critical", text:"Your weapon attacks score a critical hit on a roll of 19 or 20."}
-    ]}},
-    {name:"Battle Master", blurb:"A tactician with special combat maneuvers.", features:{3:[
-      {name:"Combat Superiority", text:"You learn three maneuvers (e.g. Trip Attack, Riposte, Precision Attack) and have four d8 superiority dice to fuel them, regained on a short or long rest."},
-      {name:"Student of War", text:"Gain proficiency with one type of artisan's tools."}
-    ]}},
-    {name:"Eldritch Knight", blurb:"Blends martial skill with wizard magic.", casterType:"third", spellAbility:"int", features:{3:[
-      {name:"Spellcasting", text:"You learn two wizard cantrips and three 1st-level wizard spells (mostly abjuration and evocation), cast with Intelligence."},
-      {name:"Weapon Bond", text:"Bond with up to two weapons: you can't be disarmed of them and can summon one to your hand as a bonus action."}
-    ]}},
+    {name:"Champion", blurb:"Simple, reliable raw power with more critical hits.", features:{
+      3:[{name:"Improved Critical", text:"Your weapon attacks score a critical hit on a roll of 19 or 20."}],
+      7:[{name:"Remarkable Athlete", text:"Add half your proficiency bonus (rounded up) to any STR, DEX or CON check that doesn't already use your proficiency bonus. Your running long jump distance also increases by a number of feet equal to your STR modifier."}],
+      10:[{name:"Additional Fighting Style", text:"Choose a second Fighting Style option."}],
+      15:[{name:"Improved Critical", replaces:"Improved Critical", text:"Your weapon attacks score a critical hit on a roll of 18 to 20 (Superior Critical)."}],
+      18:[{name:"Survivor", text:"At the start of each of your turns, if you have no more than half your hit points left (but at least 1), you regain 5 + your CON modifier hit points."}]
+    }},
+    {name:"Battle Master", blurb:"A tactician with special combat maneuvers.", features:{
+      3:[
+        {name:"Combat Superiority", text:"You learn three maneuvers (two more at levels 7, 10 and 15; you can swap one when you gain a fighter level) and have four superiority dice, d8s, regained on a short or long rest (five at level 7, six at level 15). Maneuvers (one per attack; save DC 8 + proficiency bonus + STR or DEX modifier): Commander's Strike (forgo one attack of your Attack action and use a bonus action; an ally who can see or hear you uses its reaction to make a weapon attack, adding the die to its damage). Disarming Attack (on a hit, add the die to damage; STR save or it drops an item of your choice). Distracting Strike (on a hit, add the die to damage; the next attack against it by someone else before your next turn has advantage). Evasive Footwork (when you move, add the die to your AC until you stop). Feinting Attack (bonus action: advantage on your next attack this turn against a creature within 5 feet, adding the die to damage on a hit). Goading Attack (on a hit, add the die to damage; WIS save or disadvantage on attacks against anyone but you until the end of your next turn). Lunging Attack (+5 feet reach for one melee attack, adding the die to damage on a hit). Maneuvering Attack (on a hit, add the die to damage; an ally can use its reaction to move half its speed without provoking the target). Menacing Attack (on a hit, add the die to damage; WIS save or frightened until the end of your next turn). Parry (reaction when a melee attack damages you: reduce the damage by the die + your DEX modifier). Precision Attack (add the die to an attack roll, before or after rolling). Pushing Attack (on a hit, add the die to damage; a Large or smaller target makes a STR save or is pushed 15 feet). Rally (bonus action: an ally who can see or hear you gains the die + your CHA modifier temporary hit points). Riposte (reaction when a creature misses you with a melee attack: attack it, adding the die to damage on a hit). Sweeping Attack (on a melee hit, another creature within 5 feet of the target and in your reach takes the die in damage if your roll would hit it). Trip Attack (on a hit, add the die to damage; a Large or smaller target makes a STR save or falls prone). Tasha's adds: Ambush, Bait and Switch, Brace, Commanding Presence, Grappling Strike, Quick Toss and Tactical Assessment."},
+        {name:"Student of War", text:"Gain proficiency with one type of artisan's tools.", grants:{tools:["One type of artisan's tools"]}}
+      ],
+      7:[{name:"Know Your Enemy", text:"After at least 1 minute observing or talking with a creature outside combat, the DM tells you whether it is your equal, superior or inferior in two of: STR, DEX or CON score, AC, current hit points, total class levels, or fighter levels."}],
+      10:[{name:"Improved Combat Superiority", text:"Your superiority dice become d10s (d12s at level 18)."}],
+      15:[{name:"Relentless", text:"When you roll initiative and have no superiority dice left, you regain one."}]
+    }},
+    {name:"Eldritch Knight", blurb:"Blends martial skill with wizard magic.", casterType:"third", spellAbility:"int", features:{
+      3:[
+        {name:"Spellcasting", text:"You cast wizard spells with Intelligence, using a third of your fighter level for spell slots. You learn two wizard cantrips (a third at level 10) and three 1st-level wizard spells, two of which must be abjuration or evocation. You learn more as you level, and spells learned at levels 8, 14 and 20 can come from any school."},
+        {name:"Weapon Bond", text:"In a 1-hour ritual (it can be during a short rest), bond with a weapon within your reach. You can't be disarmed of it unless you are incapacitated, and if it's on the same plane you can summon it to your hand as a bonus action. You can have up to two bonded weapons but summon only one at a time; bonding a third breaks one of the other bonds."}
+      ],
+      7:[{name:"War Magic", text:"When you use your action to cast a cantrip, you can make one weapon attack as a bonus action."}],
+      10:[{name:"Eldritch Strike", text:"When you hit a creature with a weapon attack, it has disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn."}],
+      15:[{name:"Arcane Charge", text:"When you use Action Surge, you can teleport up to 30 feet to an unoccupied space you can see, before or after the extra action."}],
+      18:[{name:"War Magic", replaces:"War Magic", text:"When you use your action to cast a spell (Improved War Magic, any spell rather than only cantrips), you can make one weapon attack as a bonus action."}]
+    }},
     {name:"Echo Knight", blurb:"Conjures a duplicate from a parallel timeline to fight alongside you.", features:{
       3:[
-        {name:"Manifest Echo", text:"As a bonus action, create an echo (a translucent, silvery image of yourself) within 15 feet of you. It shares your AC and saving throw bonuses, has 1 HP, immunity to all conditions, and vanishes if it takes any damage. You can use a bonus action to move it up to 30 feet. Once per turn when you take the Attack action you can make one of the attacks originating from the echo's position. As a reaction when a creature you can see within 5 feet of the echo moves at least 5 feet away from it, you can make an opportunity attack from the echo's position."},
-        {name:"Unleash Incarnation", text:"When you take the Attack action you can make one additional melee attack from your echo's position. You can use this a number of times equal to your Constitution modifier (minimum 1), and you regain all expended uses on a long rest."}
+        {name:"Manifest Echo", text:"As a bonus action, manifest a translucent gray echo of yourself in an unoccupied space you can see within 15 feet. It lasts until destroyed, dismissed (bonus action), replaced by a new echo, or until you are incapacitated. It has AC 14 + your proficiency bonus, 1 hit point and immunity to all conditions, uses your saving throw bonuses, and is your size. On your turn you can mentally move it up to 30 feet (no action); it is destroyed if it ends your turn more than 30 feet from you. As a bonus action, you can swap places with it for 15 feet of movement. Any attack you make with the Attack action can come from your space or the echo's. When a creature you can see within 5 feet of the echo moves at least 5 feet away from it, you can use your reaction to make an opportunity attack as if you were in the echo's space."},
+        {name:"Unleash Incarnation", text:"Whenever you take the Attack action, you can make one additional melee attack from the echo's position. Uses equal to your CON modifier (minimum 1) per long rest."}
       ],
-      7:[
-        {name:"Echo Avatar", text:"As an action, temporarily transfer your consciousness to your echo for up to 10 minutes. During this time you can see and hear through the echo, you are blinded and deafened in your own body, and you can move the echo up to 30 feet on each of your turns without using a bonus action. You can end this early as a bonus action."},
-        {name:"Shadow Martyr", text:"As a reaction when an ally you can see is hit by an attack and is within 5 feet of your echo, you can cause the echo to take the hit instead. It is then destroyed."}
-      ],
-      10:[
-        {name:"Reclaim Potential", text:"When your echo is destroyed (not when you choose to dismiss it), you can gain temporary hit points equal to 2d6 + your Constitution modifier. You can use this a number of times equal to your Constitution modifier (minimum 1), and you regain all uses on a long rest."},
-        {name:"Legion of One", text:"You can now have two echoes active at the same time. Each must be within 15 feet of you or within 15 feet of each other when created. Each functions identically to a single echo, but only one can be moved with your bonus action per turn. Unleash Incarnation attacks can originate from either echo."}
-      ],
-      18:[
-        {name:"Glorious Echo", text:"Your echo now has a number of hit points equal to half your fighter level instead of 1 HP. Whenever your echo is destroyed, you can immediately create a new echo as part of the same reaction or bonus action (no additional action cost), once per turn."}
-      ]
+      7:[{name:"Echo Avatar", text:"As an action, transfer your consciousness to your echo for up to 10 minutes (end it at any time, no action required). You see and hear through its senses instead of your own, so you are blinded and deafened, and the echo can be up to 1,000 feet away from you without being destroyed."}],
+      10:[{name:"Shadow Martyr", text:"Before an attack roll is made against a creature you can see, you can use your reaction to teleport your echo to an unoccupied space within 5 feet of that creature; the attack is made against the echo instead. Once per short or long rest."}],
+      15:[{name:"Reclaim Potential", text:"When an echo of yours is destroyed by taking damage, you can gain 2d6 + your CON modifier temporary hit points, if you don't already have temporary hit points. Uses equal to your CON modifier (minimum 1) per long rest."}],
+      18:[{name:"Legion of One", text:"You can use a bonus action to create two echoes with Manifest Echo, and they can coexist (creating a third destroys both). Anything you can do from one echo's position can be done from the other's. When you roll initiative with no uses of Unleash Incarnation left, you regain one."}]
     }},
     {name:"Rune Knight", blurb:"Channels giant magic through runes carved into weapons and armor.", features:{
       3:[
-        {name:"Bonus Proficiencies", text:"You gain proficiency with smith's tools and learn to read, write and speak Giant."},
-        {name:"Rune Carving", text:"Learn two runes of your choice (Cloud, Stone, Fire, Frost, Hill or Storm). Each grants a passive benefit and an active ability. You can invoke a rune's active ability once per short or long rest, and you know one additional rune at levels 7, 10 and 15."},
-        {name:"Giant's Might", text:"As a bonus action, channel giant magic for 1 minute: grow one size category larger (and your equipment grows with you), deal +1d6 damage on weapon and unarmed attacks, and gain advantage on Strength checks and saves. Uses equal to your proficiency bonus per long rest."}
+        {name:"Bonus Proficiencies", text:"You gain proficiency with smith's tools and learn to read, write and speak Giant.", grants:{tools:["Smith's tools"]}},
+        {name:"Rune Carving", text:"You learn two runes (one more at levels 7, 10 and 15). After a long rest, inscribe each rune you know on a different weapon, armor, shield, jewelry or other object you wear or hold; while you wear or hold it, you gain the rune's passive benefit, and you can invoke each rune once per short or long rest. Save DC 8 + proficiency bonus + CON modifier. Cloud: advantage on DEX (Sleight of Hand) and CHA (Deception) checks; invoke with your reaction when you or a creature you can see within 30 feet is hit by an attack roll, to make a different creature within 30 feet (not the attacker) the target instead, using the same roll. Fire: your proficiency bonus is doubled for ability checks using a tool you're proficient with; invoke when you hit with a weapon attack: the target takes an extra 2d6 fire damage and makes a STR save or is restrained for 1 minute, taking 2d6 fire damage at the start of each of its turns (repeating the save at the end of each turn). Frost: advantage on WIS (Animal Handling) and CHA (Intimidation) checks; invoke as a bonus action for +2 to all STR- and CON-based ability checks and saves for 10 minutes. Stone: advantage on WIS (Insight) checks and darkvision out to 120 feet; invoke with your reaction when a creature you can see ends its turn within 30 feet: WIS save or charmed for 1 minute (incapacitated, speed 0), repeating the save at the end of each of its turns. Hill (level 7 or higher): advantage on saves against being poisoned and resistance to poison damage; invoke as a bonus action for resistance to bludgeoning, piercing and slashing damage for 1 minute. Storm (level 7 or higher): advantage on INT (Arcana) checks, and you can't be surprised unless incapacitated; invoke as a bonus action for 1 minute of foresight: when you or a creature you can see within 60 feet makes an attack roll, saving throw or ability check, you can use your reaction to give it advantage or disadvantage."},
+        {name:"Giant's Might", text:"As a bonus action, for 1 minute: if smaller than Large you become Large (if there's room), you have advantage on STR checks and saves, and once on each of your turns one weapon attack or unarmed strike deals an extra 1d6 damage on a hit. Uses equal to your proficiency bonus per long rest."}
       ],
-      7:[{name:"Runic Shield", text:"As a reaction when a creature you can see within 60 feet is hit by an attack roll, force the attacker to reroll and use the new result. Uses equal to your proficiency bonus per long rest."}],
-      10:[{name:"Great Stature", text:"Your runes permanently enlarge you: gain 3d4 inches of height, and Giant's Might deals +1d8 damage instead of +1d6."}],
-      15:[{name:"Master of Runes", text:"You can invoke each of your runes twice per short or long rest instead of once."}],
-      18:[{name:"Runic Juggernaut", text:"While Giant's Might is active you can grow to Huge size (10 ft space, 15 ft reach) and deal +1d10 damage instead of the earlier bonus."}]
+      7:[{name:"Runic Shield", text:"When another creature you can see within 60 feet is hit by an attack roll, you can use your reaction to force the attacker to reroll the d20 and use the new roll. Uses equal to your proficiency bonus per long rest."}],
+      10:[{name:"Great Stature", text:"You grow 3d4 inches taller, and Giant's Might's extra damage becomes 1d8."}],
+      15:[{name:"Master of Runes", text:"You can invoke each rune you know twice, rather than once, per short or long rest."}],
+      18:[{name:"Runic Juggernaut", text:"Giant's Might's extra damage becomes 1d10, and you can become Huge instead, with your reach increased by 5 feet while you are Huge."}]
     }},
     {name:"Cavalier", blurb:"A mounted warrior who excels at protecting allies and controlling enemies.", features:{
       3:[
-        {name:"Bonus Proficiency", text:"Gain proficiency in one of Animal Handling, History, Insight, Performance or Persuasion."},
-        {name:"Born to the Saddle", text:"Mounting or dismounting costs only 5 feet of movement. Advantage on saving throws to avoid falling off a mount. If you fall off, land on your feet if not incapacitated."},
-        {name:"Unwavering Mark", text:"When you hit a creature with a melee attack, mark it until the end of your next turn. While marked: the target has disadvantage on attacks against anyone but you, and if it attacks someone else you can make one melee attack against it as a bonus action (with advantage). Uses equal to STR modifier (min 1) per long rest."}
+        {name:"Bonus Proficiency", text:"Gain proficiency in one of Animal Handling, History, Insight, Performance or Persuasion, or learn one language of your choice."},
+        {name:"Born to the Saddle", text:"Mounting or dismounting costs you only 5 feet of movement, you have advantage on saves to avoid falling off your mount, and if you fall off and drop no more than 10 feet you can land on your feet (unless incapacitated)."},
+        {name:"Unwavering Mark", text:"When you hit a creature with a melee weapon attack, you mark it until the end of your next turn (ending early if you are incapacitated or die, or someone else marks it). While within 5 feet of you, a marked creature has disadvantage on attack rolls that don't target you. If it deals damage to anyone other than you, you can make a special melee weapon attack against it as a bonus action on your next turn, with advantage, dealing extra damage equal to half your fighter level on a hit. You can make that special attack a number of times equal to your STR modifier (minimum 1) per long rest."}
       ],
-      7:[{name:"Warding Maneuver", text:"As a reaction when you or a creature within 5 feet is hit, roll a d8 and add it to the target's AC for that attack; if it still hits the creature takes half damage. Uses equal to CON modifier (min 1) per long rest."}],
-      10:[{name:"Hold the Line", text:"Creatures provoke opportunity attacks from you when they move 5 feet or more within your reach, and if you hit the creature its speed drops to 0 for the rest of the turn."}],
-      15:[{name:"Ferocious Charger", text:"When you move at least 10 feet toward a creature and hit it with a melee attack, it must succeed on a Strength save (DC 8 + proficiency + STR) or be knocked prone. Use this once per turn."}],
-      18:[{name:"Vigilant Defender", text:"Whenever a creature makes an opportunity attack against you, make an opportunity attack against it as a reaction."}]
+      7:[{name:"Warding Maneuver", text:"When you or a creature you can see within 5 feet of you is hit by an attack while you wield a melee weapon or shield, you can use your reaction to roll a d8 and add it to the target's AC against that attack. If it still hits, the target has resistance to its damage. Uses equal to your CON modifier (minimum 1) per long rest."}],
+      10:[{name:"Hold the Line", text:"Creatures provoke an opportunity attack from you when they move 5 feet or more while within your reach, and a creature you hit with an opportunity attack has its speed reduced to 0 until the end of the current turn."}],
+      15:[{name:"Ferocious Charger", text:"If you move at least 10 feet in a straight line right before attacking a creature and hit it, it makes a STR save (DC 8 + proficiency bonus + STR modifier) or is knocked prone. Once on each of your turns."}],
+      18:[{name:"Vigilant Defender", text:"In combat you get a special reaction that you can take once on every creature's turn except yours. You can only use it to make an opportunity attack, and not on a turn where you use your normal reaction."}]
     }},
     {name:"Samurai", blurb:"A disciplined warrior whose unyielding will powers devastating strikes.", features:{
       3:[
         {name:"Bonus Proficiency", text:"Gain proficiency in History, Insight, Performance or Persuasion (your choice), or learn one language of your choice."},
-        {name:"Fighting Spirit", text:"As a bonus action, give yourself advantage on all weapon attack rolls until the end of the current turn, and gain 5 temporary HP (increasing to 10 at level 10 and 15 at level 15). Uses 3 per long rest."}
+        {name:"Fighting Spirit", text:"As a bonus action, give yourself advantage on weapon attack rolls until the end of the current turn and gain 5 temporary hit points (10 at level 10, 15 at level 15). Three uses per long rest."}
       ],
-      7:[{name:"Elegant Courtier", text:"Add your Wisdom modifier to Persuasion checks. Advantage on saving throws against being frightened."}],
-      10:[{name:"Tireless Spirit", text:"At the start of combat if you have no uses of Fighting Spirit left, regain one use."}],
-      15:[{name:"Rapid Strike", text:"When you have advantage on a weapon attack, forgo it to make one additional weapon attack as a bonus action this turn (once per turn)."}],
-      18:[{name:"Strength Before Death", text:"When damage reduces you to 0 HP but doesn't kill you outright, you can delay falling unconscious until the end of your next turn. You immediately take a special turn (after the triggering creature's turn), though you can't regain HP until the start of that turn. If you drop to 0 HP during this turn you die. Once per long rest."}]
+      7:[{name:"Elegant Courtier", text:"Add your WIS modifier to CHA (Persuasion) checks. You also gain proficiency in Wisdom saving throws, or in Intelligence or Charisma saves (your choice) if you already have Wisdom."}],
+      10:[{name:"Tireless Spirit", text:"When you roll initiative and have no uses of Fighting Spirit left, you regain one."}],
+      15:[{name:"Rapid Strike", text:"If you take the Attack action and have advantage on an attack roll against a target, you can forgo that advantage to make an additional weapon attack against the same target as part of the same action. Once per turn."}],
+      18:[{name:"Strength Before Death", text:"When damage reduces you to 0 hit points but doesn't kill you outright, you can use your reaction to delay falling unconscious and immediately take an extra turn, interrupting the current one. During it, taking damage still causes death saving throw failures and three failures still kill you. When the extra turn ends, you fall unconscious if you still have 0 hit points. Once per long rest."}]
     }},
     {name:"Arcane Archer", blurb:"Weaves elven magic into arrows for spectacular, magical trick shots.", features:{
       3:[

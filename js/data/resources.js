@@ -164,22 +164,40 @@ export var SUBCLASS_RESOURCES = {
     "Battle Master": [
       {id:"superiority_dice", name:"Superiority Dice", level:3,
         max:function(lv){ return lv>=15 ? 6 : lv>=7 ? 5 : 4; }, reset:always("short"),
-        hint:"d8s (d10 from level 10) that fuel your maneuvers."}
+        hint:"d8s (d10 from level 10, d12 from level 18) that fuel your maneuvers. Relentless (level 15) gives one back on initiative if you have none."}
     ],
     "Echo Knight": [
       {id:"unleash_incarnation", name:"Unleash Incarnation", level:3,
         max:function(lv, m){ return atLeastOne(m.con); }, reset:always("long"),
-        hint:"When you take the Attack action, make one additional melee attack from your echo's position."}
+        hint:"When you take the Attack action, make one additional melee attack from your echo's position."},
+      {id:"shadow_martyr", name:"Shadow Martyr", level:10, max:always(1), reset:always("short"),
+        hint:"Reaction: teleport your echo next to a creature about to be attacked; the attack targets the echo instead."},
+      {id:"reclaim_potential", name:"Reclaim Potential", level:15,
+        max:function(lv, m){ return atLeastOne(m.con); }, reset:always("long"),
+        hint:"When your echo is destroyed by damage: gain 2d6 + CON mod temporary HP (if you have none)."}
     ],
     "Rune Knight": [
       {id:"giants_might", name:"Giant's Might", level:3,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Bonus action: grow one size, deal +1d6 damage on weapon attacks, and gain advantage on STR checks and saves for 1 minute."}
+        hint:"Bonus action for 1 minute: become Large, advantage on STR checks and saves, +1d6 damage once per turn (1d8 at 10, 1d10 at 18)."},
+      {id:"runic_shield", name:"Runic Shield", level:7,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Reaction: force a reroll when another creature within 60 ft is hit by an attack roll."}
+    ],
+    "Cavalier": [
+      {id:"unwavering_mark", name:"Unwavering Mark (Special Attack)", level:3,
+        max:function(lv, m){ return atLeastOne(m.str); }, reset:always("long"),
+        hint:"Bonus action: attack a marked creature that damaged someone else, with advantage and + half your fighter level damage."},
+      {id:"warding_maneuver", name:"Warding Maneuver", level:7,
+        max:function(lv, m){ return atLeastOne(m.con); }, reset:always("long"),
+        hint:"Reaction: add 1d8 to the AC of you or an adjacent creature against a hit; resistance if it still hits."}
     ],
     "Samurai": [
       {id:"fighting_spirit", name:"Fighting Spirit", level:3,
         max:always(3), reset:always("long"),
-        hint:"Bonus action: advantage on all weapon attacks until end of your turn, and gain 5 temporary HP (10 at level 10, 15 at level 15)."}
+        hint:"Bonus action: advantage on weapon attacks until the end of your turn, and gain 5 temporary HP (10 at level 10, 15 at level 15)."},
+      {id:"strength_before_death", name:"Strength Before Death", level:18, max:always(1), reset:always("long"),
+        hint:"Reaction when dropped to 0 HP: take an extra turn immediately before falling unconscious."}
     ],
     "Arcane Archer": [
       {id:"arcane_shot", name:"Arcane Shot", level:3, max:always(2), reset:always("short"),
