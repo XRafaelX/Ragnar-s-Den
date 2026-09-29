@@ -94,7 +94,7 @@ export var SUBCLASS_RESOURCES = {
     ],
     "College of Spirits": [
       {id:"spirit_session", name:"Spirit Session", level:6, max:always(1), reset:always("long"),
-        hint:"1-hour ritual with up to 5 creatures: learn a divination or necromancy spell of level up to the number taking part."}
+        hint:"1-hour ritual with up to proficiency-bonus creatures: learn a divination or necromancy spell of level up to the number taking part."}
     ],
     "College of Whispers": [
       {id:"words_of_terror", name:"Words of Terror", level:3, max:always(1), reset:always("short"),
@@ -133,7 +133,7 @@ export var SUBCLASS_RESOURCES = {
     "Psi Warrior": [
       {id:"psionic_energy_dice", name:"Psionic Energy Dice", level:3, pool:true,
         max:function(lv, m){ return m.pb * 2; }, reset:always("long"),
-        hint:"Fuel Protective Field, Psionic Strike and extra uses of your other psionic features. Once per short rest, regain one as a bonus action."},
+        hint:"Fuel Protective Field, Psionic Strike and extra uses of your other psionic features. Bonus action: regain one (once per short or long rest)."},
       {id:"telekinetic_movement", name:"Telekinetic Movement", level:3, max:always(1), reset:always("short"),
         hint:"Action: move a Large or smaller object or a willing creature within 30 ft up to 30 ft. More uses cost a Psionic Energy die."},
       {id:"psi_powered_leap", name:"Psi-Powered Leap", level:7, max:always(1), reset:always("short"),
