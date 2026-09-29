@@ -1,12 +1,32 @@
 #!/bin/sh
-# Stamps sw.js with a new BUILD id and refreshes its ASSETS list whenever a
-# commit touches app files. Installed copies of the app notice the changed
-# service worker and offer to update. Enable once per clone with:
+# 1. Runs the test suite when a commit touches app files or tests, and
+#    blocks the commit if a test fails (skip with git commit --no-verify).
+# 2. Stamps sw.js with a new BUILD id and refreshes its ASSETS list whenever
+#    a commit touches app files. Installed copies of the app notice the
+#    changed service worker and offer to update.
+# Enable once per clone with:
 #   git config core.hooksPath .githooks
 
 APP_FILES='^(index\.html|manifest\.json|css/|js/|images/)'
+TESTED_FILES='^(index\.html|manifest\.json|css/|js/|images/|tests/|package\.json|sw\.js)'
 
-git diff --cached --name-only | grep -qE "$APP_FILES" || exit 0
+staged=$(git diff --cached --name-only)
+
+# Tests run against the working tree, so unstaged edits count too.
+if echo "$staged" | grep -qE "$TESTED_FILES"; then
+  if command -v node >/dev/null 2>&1; then
+    if ! npm test --silent >/tmp/ragnars-den-test.log 2>&1; then
+      grep -E '^✖|AssertionError|Error:' /tmp/ragnars-den-test.log | head -20
+      echo "pre-commit: tests failed, commit blocked. Full output: /tmp/ragnars-den-test.log"
+      echo "pre-commit: run 'npm test' to see details, or commit with --no-verify to skip."
+      exit 1
+    fi
+  else
+    echo "pre-commit: node not found, skipping tests."
+  fi
+fi
+
+echo "$staged" | grep -qE "$APP_FILES" || exit 0
 
 build=$(date -u +%Y%m%d%H%M%S)
 list=$(mktemp) || exit 1
