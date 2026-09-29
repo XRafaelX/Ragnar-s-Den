@@ -881,7 +881,7 @@ export var SUBCLASSES = {
     ]}},
     {name:"Gloom Stalker", blurb:"An ambusher at home in the dark.", features:{
       3:[
-        {name:"Dread Ambusher", text:"Add WIS to initiative. On your first turn of combat, +10 ft speed and one extra attack that deals +1d8 damage."},
+        {name:"Dread Ambusher", text:"Add WIS to initiative (already added on the sheet). On your first turn of combat, +10 ft speed and one extra attack that deals +1d8 damage.", initiative:"wis"},
         {name:"Umbral Sight", text:"Darkvision 60 ft (or +30 ft), and you're invisible to creatures relying on darkvision to see you in the dark."},
         {name:"Gloom Stalker Magic", text:"You always know Disguise Self; it doesn't count against your ranger spells known."}
       ],
@@ -915,6 +915,33 @@ export var SUBCLASSES = {
       7:[{name:"Bond of Fang and Scale", text:"Your drake can now be ridden as a mount (your size or smaller). It gains resistance to one damage type linked to its color (acid, cold, fire, lightning or poison). When you cast a spell targeting only yourself while mounted on it, you can also affect the drake."}],
       11:[{name:"Drake's Breath", text:"As an action, cause your drake (or yourself if it's not summoned) to exhale a 30-foot cone dealing 8d6 damage of the drake's chosen type (Dex save for half). Once per long rest, or expend a spell slot to use again."}],
       15:[{name:"Perfected Bond", text:"Your drake grows to Large size, can fly at its walking speed, and when it hits with its Maul attack you can use your reaction to make one weapon attack."}]
+    }},
+    {name:"Monster Slayer", blurb:"Hunts vampires, dragons and other dread creatures by learning and exploiting their weaknesses.", features:{
+      3:[
+        {name:"Monster Slayer Magic", text:"You always know Protection from Evil and Good; it doesn't count against your ranger spells known."},
+        {name:"Hunter's Sense", text:"As an action, choose one creature you can see within 60 feet. You learn whether it has any damage immunities, resistances or vulnerabilities, and what they are (a creature protected from divination magic seems to have none). You can use this a number of times equal to your WIS modifier (minimum 1), regained on a long rest."},
+        {name:"Slayer's Prey", text:"As a bonus action, designate one creature you can see within 60 feet as your prey. The first time each turn you hit it with a weapon attack, it takes an extra 1d6 damage. This lasts until you finish a short or long rest or designate a different creature."}
+      ],
+      5:[{name:"Monster Slayer Magic", replaces:"Monster Slayer Magic", text:"You always know Protection from Evil and Good and Zone of Truth; they don't count against your ranger spells known."}],
+      7:[{name:"Supernatural Defense", text:"Whenever the target of your Slayer's Prey forces you to make a saving throw, or you make an ability check to escape its grapple, add 1d6 to the roll."}],
+      9:[{name:"Monster Slayer Magic", replaces:"Monster Slayer Magic", text:"You always know Protection from Evil and Good, Zone of Truth and Magic Circle; they don't count against your ranger spells known."}],
+      11:[{name:"Magic-User's Nemesis", text:"When you see a creature within 60 feet casting a spell or teleporting, you can use your reaction to force it to make a WIS save against your spell save DC. On a failure, its spell or teleport fails and is wasted. Once per short or long rest."}],
+      13:[{name:"Monster Slayer Magic", replaces:"Monster Slayer Magic", text:"You always know Protection from Evil and Good, Zone of Truth, Magic Circle and Banishment; they don't count against your ranger spells known."}],
+      15:[{name:"Slayer's Counter", text:"When the target of your Slayer's Prey forces you to make a saving throw, you can use your reaction to make one weapon attack against it just before the save. If the attack hits, your save automatically succeeds, on top of the attack's normal effects."}],
+      17:[{name:"Monster Slayer Magic", replaces:"Monster Slayer Magic", text:"You always know Protection from Evil and Good, Zone of Truth, Magic Circle, Banishment and Hold Monster; they don't count against your ranger spells known."}]
+    }},
+    {name:"Swarmkeeper", blurb:"Bonds with a swarm of nature spirits that strike foes, shove them around and carry you aloft.", features:{
+      3:[
+        {name:"Gathered Swarm", text:"A swarm of intangible nature spirits (bees, pixies, birds or similar) surrounds you. Once on each of your turns, right after you hit a creature with an attack, choose one: the target takes an extra 1d6 piercing damage; the target makes a STR save against your spell save DC or is moved up to 15 feet horizontally in a direction you choose; or you are moved 5 feet horizontally in a direction you choose, without provoking opportunity attacks."},
+        {name:"Swarmkeeper Magic", text:"You learn the Mage Hand cantrip (the hand looks like your swarm) and always know Faerie Fire; they don't count against your ranger spells known."}
+      ],
+      5:[{name:"Swarmkeeper Magic", replaces:"Swarmkeeper Magic", text:"You know the Mage Hand cantrip and always know Faerie Fire and Web; they don't count against your ranger spells known."}],
+      7:[{name:"Writhing Tide", text:"As a bonus action, your swarm lifts you: you gain a flying speed of 10 feet and can hover for 1 minute or until you are incapacitated. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}],
+      9:[{name:"Swarmkeeper Magic", replaces:"Swarmkeeper Magic", text:"You know the Mage Hand cantrip and always know Faerie Fire, Web and Gaseous Form; they don't count against your ranger spells known."}],
+      11:[{name:"Mighty Swarm", text:"Your Gathered Swarm improves: the extra damage becomes 1d8; a creature that fails its save against being moved can also be knocked prone; and when the swarm moves you, you gain half cover until the start of your next turn."}],
+      13:[{name:"Swarmkeeper Magic", replaces:"Swarmkeeper Magic", text:"You know the Mage Hand cantrip and always know Faerie Fire, Web, Gaseous Form and Arcane Eye; they don't count against your ranger spells known."}],
+      15:[{name:"Swarming Dispersal", text:"When you take damage, you can use your reaction to gain resistance to that damage and dissolve into your swarm, teleporting to an unoccupied space you can see within 30 feet. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}],
+      17:[{name:"Swarmkeeper Magic", replaces:"Swarmkeeper Magic", text:"You know the Mage Hand cantrip and always know Faerie Fire, Web, Gaseous Form, Arcane Eye and Insect Plague; they don't count against your ranger spells known."}]
     }}
   ],
   "Rogue": [
@@ -933,7 +960,7 @@ export var SUBCLASSES = {
     {name:"Swashbuckler", blurb:"A daring duelist who fights with flair and wins with charm.", features:{
       3:[
         {name:"Fancy Footwork", text:"After making a melee attack against a creature during your turn, that creature can't make opportunity attacks against you for the rest of the turn."},
-        {name:"Rakish Audacity", text:"Add your Charisma modifier to your initiative. You can use Sneak Attack if no other creatures are within 5 feet of you (even without advantage), as long as you don't have disadvantage on the roll."}
+        {name:"Rakish Audacity", text:"Add your Charisma modifier to your initiative (already added on the sheet). You can use Sneak Attack if no other creatures are within 5 feet of you (even without advantage), as long as you don't have disadvantage on the roll.", initiative:"cha"}
       ],
       9:[{name:"Panache", text:"As an action, make a Persuasion check contested by a creature's Insight. On a success, a hostile creature is charmed (disadvantage on attacks against anyone but you, can't opportunity-attack you) for 1 minute, or a non-hostile creature is charmed for 1 hour."}],
       13:[{name:"Elegant Maneuver", text:"On your turn, use a bonus action to gain advantage on the next Acrobatics or Athletics check you make before the end of your turn."}],
@@ -962,9 +989,28 @@ export var SUBCLASSES = {
         {name:"Skirmisher", text:"When a creature ends its turn within 5 feet of you, use your reaction to move up to half your speed without provoking opportunity attacks."},
         {name:"Survivalist", text:"Gain proficiency in Nature and Survival, and double your proficiency bonus for checks with either skill."}
       ],
-      9:[{name:"Superior Mobility", text:"Your walking speed increases by 10 feet. If you have a climbing or swimming speed, those also increase by 10 feet."}],
+      9:[{name:"Superior Mobility", text:"Your walking speed increases by 10 feet. (Already added to your speed.) If you have a climbing or swimming speed, those also increase by 10 feet.", speed:10}],
       13:[{name:"Ambush Master", text:"You have advantage on initiative rolls. The first creature you hit on your first turn of combat becomes easier to hit: attack rolls against it have advantage until the start of your next turn."}],
       17:[{name:"Sudden Strike", text:"On your turn you can make one additional attack as a bonus action; this attack can trigger Sneak Attack even if you've already used it this turn (but only once per turn regardless)."}]
+    }},
+    {name:"Inquisitive", blurb:"A keen-eyed investigator who reads lies, spots clues and exploits a foe's weaknesses.", features:{
+      3:[
+        {name:"Ear for Deceit", text:"When you make a WIS (Insight) check to tell whether a creature is lying, treat a d20 roll of 7 or lower as an 8."},
+        {name:"Eye for Detail", text:"As a bonus action, make a WIS (Perception) check to spot a hidden creature or object, or an INT (Investigation) check to uncover or decipher clues."},
+        {name:"Insightful Fighting", text:"As a bonus action, make a WIS (Insight) check against a creature you can see that isn't incapacitated, contested by its CHA (Deception) check. If you win, you can use Sneak Attack against it even without advantage (but not with disadvantage) for 1 minute, or until you succeed with this feature against a different target."}
+      ],
+      9:[{name:"Steady Eye", text:"You have advantage on WIS (Perception) and INT (Investigation) checks if you move no more than half your speed on the same turn."}],
+      13:[{name:"Unerring Eye", text:"As an action, sense the presence of illusions, shapechangers not in their true form, and other magic meant to deceive the senses within 30 feet, as long as you aren't blinded or deafened. You know something is trying to trick you, but not what it hides or its true nature. You can use this a number of times equal to your WIS modifier (minimum 1), regained on a long rest."}],
+      17:[{name:"Eye for Weakness", text:"While your Insightful Fighting applies to a creature, your Sneak Attack damage against it increases by 3d6."}]
+    }},
+    {name:"Mastermind", blurb:"A schemer and spymaster who directs allies from the shadows and hides behind lies.", features:{
+      3:[
+        {name:"Master of Intrigue", text:"You gain proficiency with the disguise kit, the forgery kit and one gaming set, and learn two languages of your choice. You can also perfectly mimic the speech patterns and accent of a creature you've heard speak for at least 1 minute, passing yourself off as a native speaker of its land."},
+        {name:"Master of Tactics", text:"You can take the Help action as a bonus action. When you Help an ally attack a creature, that creature can be up to 30 feet away from you instead of 5, as long as it can see or hear you."}
+      ],
+      9:[{name:"Insightful Manipulator", text:"If you spend at least 1 minute observing or talking with a creature outside combat, the DM tells you whether it is your equal, superior or inferior in two of the following (your choice): INT score, WIS score, CHA score, or class levels. The DM may also reveal a piece of its history or one of its personality traits."}],
+      13:[{name:"Misdirection", text:"When a creature targets you with an attack while another creature within 5 feet of you is giving you cover against it, you can use your reaction to make the attack target that creature instead."}],
+      17:[{name:"Soul of Deceit", text:"Your thoughts can't be read by telepathy or other means unless you allow it. You can present false thoughts by winning a CHA (Deception) check against the reader's WIS (Insight). Magic that detects lies always shows you as truthful if you choose, and you can't be magically compelled to tell the truth."}]
     }}
   ],
   "Sorcerer": [
@@ -1011,6 +1057,30 @@ export var SUBCLASSES = {
       6:[{name:"Hound of Ill Omen", text:"As a bonus action, spend 3 sorcery points to summon a howling shadow hound targeting a creature within 120 feet you can see. It appears adjacent to the target, moves and attacks independently (uses your spell save DC), has half your max HP, and the target has disadvantage on saves against your spells while within 5 feet of the hound. The hound disappears after 5 minutes."}],
       14:[{name:"Shadow Walk", text:"When you are in dim light or darkness, as a bonus action teleport up to 120 feet to an unoccupied space you can see that is also in dim light or darkness."}],
       18:[{name:"Umbral Form", text:"As a bonus action, spend 6 sorcery points to transform for 1 minute: resistance to all damage except force and radiant, pass through other creatures and objects as difficult terrain (take 1d10 force damage if you end your turn inside an object), and become immune to the grappled and restrained conditions."}]
+    }},
+    {name:"Storm Sorcery", blurb:"Innate magic of elemental air that lets you ride the winds and call down lightning and thunder.", features:{
+      1:[
+        {name:"Wind Speaker", text:"You can speak, read and write Primordial, which lets you understand and be understood by speakers of its dialects: Aquan, Auran, Ignan and Terran."},
+        {name:"Tempestuous Magic", text:"Immediately before or after you cast a spell of 1st level or higher, you can use a bonus action to fly up to 10 feet without provoking opportunity attacks."}
+      ],
+      6:[
+        {name:"Heart of the Storm", text:"You have resistance to lightning and thunder damage. Whenever you start casting a spell of 1st level or higher that deals lightning or thunder damage, creatures of your choice that you can see within 10 feet of you take lightning or thunder damage (your choice) equal to half your sorcerer level."},
+        {name:"Storm Guide", text:"If it's raining, you can use an action to stop rain falling in a 20-foot-radius sphere centered on you (end it as a bonus action). If it's windy, you can use a bonus action each round to choose the wind's direction in a 100-foot-radius sphere centered on you, until the end of your next turn. Neither changes the wind's speed."}
+      ],
+      14:[{name:"Storm's Fury", text:"When a creature hits you with a melee attack, you can use your reaction to deal lightning damage to it equal to your sorcerer level. It must also make a STR save against your spell save DC or be pushed up to 20 feet straight away from you."}],
+      18:[{name:"Wind Soul", text:"You are immune to lightning and thunder damage, and you gain a magical flying speed of 60 feet. As an action, you can reduce your flying speed to 30 feet for 1 hour and choose up to 3 + your CHA modifier creatures within 30 feet; they gain a magical flying speed of 30 feet for 1 hour. Once you share your flight this way, you can't do so again until you finish a short or long rest."}]
+    }},
+    {name:"Lunar Sorcery", blurb:"Draws power from the moons, shifting between full, new and crescent phases.", features:{
+      1:[
+        {name:"Lunar Embodiment", text:"You learn additional spells that don't count against your spells known, grouped by lunar phase (Full / New / Crescent): Shield, Ray of Sickness, Color Spray (1st); Lesser Restoration, Blindness/Deafness, Alter Self (3rd); Dispel Magic, Vampiric Touch, Phantom Steed (5th); Death Ward, Confusion, Hallucinatory Terrain (7th); Rary's Telepathic Bond, Hold Monster, Mislead (9th). When you finish a long rest, choose your current phase: Full Moon, New Moon or Crescent Moon. Once per long rest, you can cast the 1st-level spell of your current phase without expending a spell slot."},
+        {name:"Moon Fire", text:"You learn the Sacred Flame cantrip, which doesn't count against your cantrips known. When you cast it, you can target one creature as normal, or two creatures within range that are within 5 feet of each other."}
+      ],
+      6:[
+        {name:"Lunar Boons", text:"Each phase is tied to two schools of magic: Full Moon (abjuration and divination), New Moon (enchantment and necromancy) and Crescent Moon (illusion and transmutation). When you cast a spell with a spell slot from a school tied to your current phase, you can reduce the sorcery points you spend on Metamagic for it by 1 (minimum 0). You can do this a number of times equal to your proficiency bonus, regained on a long rest."},
+        {name:"Waxing and Waning", text:"As a bonus action, spend 1 sorcery point to change your current lunar phase."}
+      ],
+      14:[{name:"Lunar Empowerment", text:"You gain a benefit from your current phase. Full Moon: you shed bright light in a 10-foot radius and dim light for another 10 feet, and you and your allies have advantage on INT (Investigation) and WIS (Perception) checks while in that bright light. New Moon: you have advantage on DEX (Stealth) checks, and while you are entirely in darkness, attack rolls against you have disadvantage. Crescent Moon: you have resistance to necrotic and radiant damage."}],
+      18:[{name:"Lunar Phenomenon", text:"As a bonus action (or as part of the bonus action to change phase with Waxing and Waning), unleash the power of your current phase. Full Moon: each creature of your choice within 30 feet makes a CON save or is blinded until the end of its next turn, and one creature of your choice there regains 3d8 hit points. New Moon: each creature of your choice within 30 feet makes a DEX save or takes 3d10 necrotic damage and has its speed reduced to 0 until the end of its next turn, and you become invisible until the end of your next turn. Crescent Moon: teleport up to 60 feet to an unoccupied space you can see, optionally bringing one willing creature within 5 feet of you; you both gain resistance to all damage until the start of your next turn. Once per long rest, or spend 5 sorcery points to use it again."}]
     }}
   ],
   "Warlock": [
@@ -1065,6 +1135,24 @@ export var SUBCLASSES = {
       6:[{name:"Sanctuary Vessel", text:"When you enter your Genie's Vessel, choose up to 5 willing creatures within 30 feet to enter with you. Inside the vessel, creatures can use a short rest in only 10 minutes, and you can expend Hit Dice to heal a creature in the vessel as if it spent them during a short rest."}],
       10:[{name:"Limited Wish", text:"Three times per long rest, speak a wish of up to 6th level to your patron: cast any spell of 6th level or lower from any class spell list (no spell slot, no material components). If it normally requires concentration you must concentrate."}],
       14:[{name:"Genie's Wrath", text:"Once per turn when you hit with an attack roll, deal extra damage based on your genie type: 1d6 bludgeoning (Dao), 1d6 thunder (Djinni), 1d6 fire (Efreeti) or 1d6 cold (Marid)."}]
+    }},
+    {name:"The Undead", blurb:"A pact with a deathless being such as a lich or vampire lord that grants a dreadful form.", features:{
+      1:[
+        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Bane and False Life (1st level), Blindness/Deafness and Phantasmal Force (2nd, from warlock level 3), Phantom Steed and Speak with Dead (3rd, from warlock level 5), Death Ward and Greater Invisibility (4th, from warlock level 7), Antilife Shell and Cloudkill (5th, from warlock level 9)."},
+        {name:"Form of Dread", text:"As a bonus action, transform for 1 minute. You gain 1d10 + your warlock level temporary HP, you are immune to being frightened, and once on each of your turns when you hit a creature with an attack roll, you can force it to make a WIS save against your spell save DC or be frightened of you until the end of your next turn. You can transform a number of times equal to your proficiency bonus, regained on a long rest."}
+      ],
+      6:[{name:"Grave Touched", text:"You no longer need to eat, drink or breathe. Once on each of your turns, when you hit a creature with an attack roll and roll damage, you can change the damage type to necrotic. While in Form of Dread, you roll one extra damage die for that necrotic damage."}],
+      10:[{name:"Necrotic Husk", text:"You have resistance to necrotic damage, or immunity while in Form of Dread. When you would be reduced to 0 hit points, you can use your reaction to drop to 1 HP instead; each creature of your choice within 30 feet takes 2d10 + your warlock level necrotic damage, and you gain one level of exhaustion. Once you use this reaction, you can't do so again until you finish 1d4 long rests."}],
+      14:[{name:"Spirit Projection", text:"As an action, project your spirit from your body for up to 1 hour (end it as a bonus action; your body then teleports to your spirit). Your body stays unconscious, and damage to either one affects the other. While projecting: you and your body resist bludgeoning, piercing and slashing damage; your conjuration and necromancy spells need no verbal, somatic or costless material components; you can fly at your walking speed and hover; you can move through creatures and objects as difficult terrain (taking 1d10 force damage if you end your turn inside an object); and while in Form of Dread, once on each of your turns when you deal necrotic damage, you regain HP equal to half of it. Once per long rest."}]
+    }},
+    {name:"The Undying", blurb:"A pact with a being that has defied death, granting resilience and command over your own mortality.", features:{
+      1:[
+        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: False Life and Ray of Sickness (1st level), Blindness/Deafness and Silence (2nd, from warlock level 3), Feign Death and Speak with Dead (3rd, from warlock level 5), Aura of Life and Death Ward (4th, from warlock level 7), Contagion and Legend Lore (5th, from warlock level 9)."},
+        {name:"Among the Dead", text:"You learn the Spare the Dying cantrip (it doesn't count against your cantrips known) and have advantage on saves against disease. When an undead targets you directly with an attack or harmful spell, it must make a WIS save against your spell save DC or choose a new target (possibly wasting the attack or spell). On a success, or if you attack it or target it with a harmful spell, it is immune to this effect for 24 hours. Area effects that include you aren't affected."}
+      ],
+      6:[{name:"Defy Death", text:"When you succeed on a death saving throw, or stabilize a creature with Spare the Dying, you can regain 1d8 + your CON modifier (minimum 1) hit points. Once per long rest."}],
+      10:[{name:"Undying Nature", text:"You can hold your breath indefinitely, and you don't need food, water or sleep (though you still need rest to reduce exhaustion and still benefit from short and long rests). You age only 1 year for every 10 that pass, and you can't be magically aged."}],
+      14:[{name:"Indestructible Life", text:"As a bonus action, regain 1d8 + your warlock level hit points. If you hold a severed body part of yours in place when you do, it reattaches. Once per short or long rest."}]
     }}
   ],
   "Wizard": [
@@ -1100,7 +1188,7 @@ export var SUBCLASSES = {
     {name:"War Magic", blurb:"Fuses offensive spellcasting with battlefield resilience and reactions.", features:{
       2:[
         {name:"Arcane Deflection", text:"When you are hit by an attack or fail a saving throw, use your reaction to gain +2 AC against the triggering attack, or +4 to the triggering save. You can't cast spells other than cantrips until the end of your next turn after using this."},
-        {name:"Tactical Wit", text:"Add your Intelligence modifier to your initiative rolls."}
+        {name:"Tactical Wit", text:"Add your Intelligence modifier to your initiative rolls. (Already added to your initiative.)", initiative:"int"}
       ],
       6:[{name:"Power Surge", text:"Store magical energy when you use Arcane Deflection or when you expend a spell slot to end a concentration spell. Maximum surges equal to your INT modifier (min 1). Once per turn when you deal damage with a wizard cantrip, expend a surge to deal extra force damage equal to half your wizard level."}],
       10:[{name:"Durable Magic", text:"While you maintain concentration on a spell, gain +2 to AC and all saving throws."}],
@@ -1141,6 +1229,21 @@ export var SUBCLASSES = {
       6:[{name:"Transmuter's Stone", text:"Over 8 hours, craft a stone that stores transmutation magic. Its bearer chooses one benefit: darkvision 60 ft, +10 ft speed, proficiency in CON saves, or resistance to one of acid/cold/fire/lightning/thunder. You can have only one stone; crafting a new one destroys the old one."}],
       10:[{name:"Shapechanger", text:"Add Polymorph to your spellbook for free. Cast it on yourself without expending a spell slot once per short or long rest."}],
       14:[{name:"Master Transmuter", text:"As an action, consume your Transmuter's Stone for one of four effects: Major Transformation (transmute an object up to 5-ft cube into another of equal or lesser value for 1 hour), Panacea (remove all curses/diseases/poisons and restore full HP to a touched creature), Restore Life (cast Raise Dead without material components on a creature dead no longer than 1 minute), or Restore Youth (reduce a touched creature's apparent age by 3d10 years, minimum 13)."}]
+    }},
+    {name:"Chronurgy Magic", blurb:"Manipulates the flow of time to reroll fate, freeze foes and store spells for later.", features:{
+      2:[
+        {name:"Chronal Shift", text:"After you or a creature you can see within 30 feet makes an attack roll, ability check or saving throw, you can use your reaction to force it to reroll, deciding after you see whether the roll succeeds or fails. The creature must use the second roll. You have two uses, regained on a long rest."},
+        {name:"Temporal Awareness", text:"Add your INT modifier to your initiative rolls. (Already added to your initiative.)", initiative:"int"}
+      ],
+      6:[{name:"Momentary Stasis", text:"As an action, force a Large or smaller creature you can see within 60 feet to make a CON save against your spell save DC. On a failure it is encased in magical energy until the end of your next turn or until it takes damage: it is incapacitated and its speed is 0. You can use this a number of times equal to your INT modifier (minimum 1), regained on a long rest."}],
+      10:[{name:"Arcane Abeyance", text:"When you cast a spell using a spell slot of 4th level or lower, you can freeze it in a Tiny gray bead for 1 hour (AC 15, 1 HP, immune to poison and psychic damage). A creature holding the bead can use its action to release the spell, which uses your spell attack bonus and save DC but treats that creature as the caster otherwise. If the hour passes or the bead is destroyed, the spell is lost. Once per short or long rest."}],
+      14:[{name:"Convergent Future", text:"When you or a creature you can see within 60 feet makes an attack roll, ability check or saving throw, you can use your reaction to ignore the die and decide that the number rolled is either the minimum needed to succeed or one less (your choice). You gain one level of exhaustion each time, which only a long rest removes."}]
+    }},
+    {name:"Graviturgy Magic", blurb:"Bends gravity to make things lighter or heavier, pull foes around and crush them in place.", features:{
+      2:[{name:"Adjust Density", text:"As an action, halve or double the weight of one Large or smaller creature or object you can see within 30 feet (Huge or smaller from level 10) for up to 1 minute, concentrating as if on a spell. Halved: +10 feet of speed, jumps twice as far, and disadvantage on STR checks and saves. Doubled: -10 feet of speed and advantage on STR checks and saves. An unwilling creature can make a CON save against your spell save DC to resist."}],
+      6:[{name:"Gravity Well", text:"Whenever you cast a spell on a creature, you can move it 5 feet to an unoccupied space of your choice if it is willing, the spell hits it with an attack, or it fails a save against the spell."}],
+      10:[{name:"Violent Attraction", text:"When a creature you can see within 60 feet hits with a weapon attack, you can use your reaction to add 1d10 damage of the weapon's type to the attack. Or, when a creature within 60 feet takes falling damage, use your reaction to add 2d10 to that damage. You can use this a number of times equal to your INT modifier (minimum 1), regained on a long rest."}],
+      14:[{name:"Event Horizon", text:"As an action, emit a field of gravity for 1 minute, concentrating as if on a spell. Whenever a hostile creature starts its turn within 30 feet of you, it makes a STR save against your spell save DC. On a failure it takes 2d10 force damage and its speed becomes 0 until the start of its next turn. On a success it takes half damage and every foot it moves this turn costs 2 extra feet. Once per long rest, or expend a 3rd-level or higher spell slot to use it again."}]
     }}
   ]
 };

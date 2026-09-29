@@ -71,6 +71,7 @@ export function classFeatureList(cl, uptoLevel){
   function addFeature(f, atLevel, isSub){
     var item = {id:(isSub ? "sub_" : "class_")+cl.name+"_"+f.name, name:f.name, text:f.text, level:atLevel, subclass:isSub};
     if(f.speed) item.speed = f.speed;
+    if(f.initiative) item.initiative = f.initiative;
     var at = f.replaces ? list.findIndex(function(x){ return x.name===f.replaces; }) : -1;
     if(at!==-1){ item.id = list[at].id; item.upgraded = true; list[at] = item; }
     else list.push(item);
@@ -156,11 +157,12 @@ export function characterResources(c){
   });
   return list;
 }
-/* Restore resources on a rest. A long rest restores everything; a short
-   rest only what recharges on one. Returns the names restored. */
+/* Restore resources on a rest. A long rest restores everything except
+   "manual" ones; a short rest only what recharges on one. Returns the names restored. */
 export function restoreResources(c, restType){
   var restored = [];
   characterResources(c).forEach(function(r){
+    if(r.reset==="manual") return;
     if(restType==="short" && r.reset!=="short") return;
     if(r.used>0) restored.push(r.name);
     delete c.resourcesUsed[r.key];
@@ -230,6 +232,37 @@ export function computeArmorClass(c){
   if(misc){ breakdown += " + misc (" + fmtMod(misc) + ")"; short += " + misc"; }
 
   return { value: base + shieldBonus + misc, breakdown: breakdown, short: short };
+}
+
+/* Initiative: DEX, plus the ability modifier of any class or subclass
+   feature tagged `initiative` (Dread Ambusher adds WIS, Tactical Wit INT,
+   ...), the Alert feat, a Harengon's Hare-Trigger and the misc modifier.
+   Same shape as computeArmorClass: `breakdown` for the tooltip, `short`
+   for the hint under the value. */
+export function computeInitiative(c){
+  var dexMod = mod(c.abilities && c.abilities.dex);
+  var value = dexMod;
+  var breakdown = "DEX (" + fmtMod(dexMod) + ")";
+  var short = "DEX";
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){
+      if(!f.initiative) return;
+      var bonus = mod(c.abilities && c.abilities[f.initiative]);
+      value += bonus;
+      breakdown += " + " + f.name + " (" + fmtMod(bonus) + ")";
+      short += " + " + f.initiative.toUpperCase();
+    });
+  });
+  if((c.feats||[]).some(function(f){ return f.name==="Alert"; })){
+    value += 5; breakdown += " + Alert (+5)"; short += " + Alert";
+  }
+  if(c.race==="Harengon"){
+    var pb = profBonus(c);
+    value += pb; breakdown += " + Hare-Trigger (" + fmtMod(pb) + ")"; short += " + PB";
+  }
+  var misc = Number(c.initiativeMisc)||0;
+  value += misc; breakdown += " + misc (" + fmtMod(misc) + ")"; short += " + misc";
+  return { value: value, breakdown: breakdown, short: short };
 }
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`

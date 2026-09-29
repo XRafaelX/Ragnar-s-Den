@@ -7,7 +7,8 @@
    max(lv, m): uses at class level `lv`; `m` holds the character's ability
      modifiers ({str, dex, con, int, wis, cha}).
    reset(lv): "short" or "long"; the rest that restores it (a short rest
-     also counts as covered by a long rest).
+     also counts as covered by a long rest). "manual" for the odd one no
+     rest restores on its own (Necrotic Husk); the player regains it.
    pool: true for point pools (Ki, Lay on Hands) shown as a number rather
      than pips. */
 
@@ -170,6 +171,23 @@ export var SUBCLASS_RESOURCES = {
         hint:"Action for 1 hour: resist nonmagical weapon damage; allies within 30 ft get advantage on death saves, and you all get advantage on WIS saves."}
     ]
   },
+  "Ranger": {
+    "Monster Slayer": [
+      {id:"hunters_sense", name:"Hunter's Sense", level:3,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Action: learn a creature's damage immunities, resistances and vulnerabilities (within 60 ft)."},
+      {id:"magic_users_nemesis", name:"Magic-User's Nemesis", level:11, max:always(1), reset:always("short"),
+        hint:"Reaction: a creature casting a spell or teleporting within 60 ft makes a WIS save or the spell or teleport fails."}
+    ],
+    "Swarmkeeper": [
+      {id:"writhing_tide", name:"Writhing Tide", level:7,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Bonus action: gain a 10-ft flying speed and hover for 1 minute."},
+      {id:"swarming_dispersal", name:"Swarming Dispersal", level:15,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Reaction when you take damage: resist it and teleport up to 30 ft to a space you can see."}
+    ]
+  },
   "Sorcerer": {
     "Wild Magic": [
       {id:"tides_of_chaos", name:"Tides of Chaos", level:1, max:always(1), reset:always("long"),
@@ -188,6 +206,19 @@ export var SUBCLASS_RESOURCES = {
       {id:"telepathic_speech", name:"Telepathic Speech", level:1,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Bonus action: form a telepathic connection with a creature you can see within 30 ft for sorcerer-level minutes."}
+    ],
+    "Storm Sorcery": [
+      {id:"wind_soul", name:"Wind Soul (Share Flight)", level:18, max:always(1), reset:always("short"),
+        hint:"Action: drop your flying speed to 30 ft for 1 hour and give up to 3 + CHA mod creatures within 30 ft a 30-ft flying speed."}
+    ],
+    "Lunar Sorcery": [
+      {id:"lunar_embodiment", name:"Lunar Embodiment (Free Spell)", level:1, max:always(1), reset:always("long"),
+        hint:"Cast your current phase's 1st-level spell without a slot: Shield (Full), Ray of Sickness (New) or Color Spray (Crescent)."},
+      {id:"lunar_boons", name:"Lunar Boons", level:6,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Spend 1 fewer sorcery point on Metamagic for a spell from a school tied to your current phase."},
+      {id:"lunar_phenomenon", name:"Lunar Phenomenon", level:18, max:always(1), reset:always("long"),
+        hint:"Bonus action: unleash your current phase's power (blind and heal, necrotic burst and invisibility, or teleport with resistance). More uses cost 5 sorcery points."}
     ]
   },
   "Warlock": {
@@ -209,6 +240,21 @@ export var SUBCLASS_RESOURCES = {
       {id:"tentacle_of_the_deeps", name:"Tentacle of the Deeps", level:1,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Bonus action: summon a spectral tentacle for 1 minute — lash out for 2d8 cold damage or deal 1d8 cold to attackers as a reaction."}
+    ],
+    "The Undead": [
+      {id:"form_of_dread", name:"Form of Dread", level:1,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Bonus action for 1 minute: 1d10 + warlock level temp HP, immune to fear, and frighten a creature you hit once per turn (WIS save)."},
+      {id:"necrotic_husk", name:"Necrotic Husk", level:10, max:always(1), reset:always("manual"),
+        hint:"Reaction at 0 HP: drop to 1 HP and deal 2d10 + warlock level necrotic around you, gaining 1 exhaustion. Returns after 1d4 long rests: roll when you use it and regain it yourself."},
+      {id:"spirit_projection", name:"Spirit Projection", level:14, max:always(1), reset:always("long"),
+        hint:"Action: project your spirit for up to 1 hour, with flight, weapon resistance and easier conjuration and necromancy spells."}
+    ],
+    "The Undying": [
+      {id:"defy_death", name:"Defy Death", level:6, max:always(1), reset:always("long"),
+        hint:"When you succeed on a death save or stabilize someone with Spare the Dying, regain 1d8 + CON mod HP."},
+      {id:"indestructible_life", name:"Indestructible Life", level:14, max:always(1), reset:always("short"),
+        hint:"Bonus action: regain 1d8 + warlock level HP, and reattach a severed body part held in place."}
     ]
   },
   "Wizard": {
@@ -229,6 +275,22 @@ export var SUBCLASS_RESOURCES = {
     "School of Transmutation": [
       {id:"shapechanger", name:"Shapechanger (Polymorph Self)", level:10, max:always(1), reset:always("short"),
         hint:"Cast Polymorph on yourself without expending a spell slot."}
+    ],
+    "Chronurgy Magic": [
+      {id:"chronal_shift", name:"Chronal Shift", level:2, max:always(2), reset:always("long"),
+        hint:"Reaction: force a creature within 30 ft to reroll an attack roll, ability check or save after seeing the result."},
+      {id:"momentary_stasis", name:"Momentary Stasis", level:6,
+        max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+        hint:"Action: a Large or smaller creature within 60 ft makes a CON save or is incapacitated with speed 0 until the end of your next turn."},
+      {id:"arcane_abeyance", name:"Arcane Abeyance", level:10, max:always(1), reset:always("short"),
+        hint:"Freeze a spell of 4th level or lower in a bead for 1 hour; whoever holds it can release the spell as an action."}
+    ],
+    "Graviturgy Magic": [
+      {id:"violent_attraction", name:"Violent Attraction", level:10,
+        max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+        hint:"Reaction: add 1d10 to a weapon hit within 60 ft, or 2d10 to falling damage."},
+      {id:"event_horizon", name:"Event Horizon", level:14, max:always(1), reset:always("long"),
+        hint:"Action: 1-minute gravity field; hostile creatures starting within 30 ft take 2d10 force and are stopped (STR save). More uses cost a 3rd-level slot."}
     ]
   },
   "Cleric": {
@@ -293,6 +355,11 @@ export var SUBCLASS_RESOURCES = {
       {id:"psionic_energy_dice", name:"Psionic Energy Dice", level:3, pool:true,
         max:function(lv, m){ return m.pb * 2; }, reset:always("long"),
         hint:"Fuel Psychic Blades (off-hand), Soul Blades (Homing Strikes / Psychic Teleportation), Psychic Veil and Rend Mind. Regain 1 die on a short rest."}
+    ],
+    "Inquisitive": [
+      {id:"unerring_eye", name:"Unerring Eye", level:13,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Action: sense illusions, shapechangers and other deceptive magic within 30 ft."}
     ]
   }
 };

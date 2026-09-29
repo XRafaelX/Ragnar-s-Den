@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, computeArmorClass, characterResources, restoreResources } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, computeArmorClass, computeInitiative, characterResources, restoreResources } from "../../core/helpers.js";
 import { CLASSES_INFO } from "../../data/classes.js";
 import { HIT_DICE_BY_CLASS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -395,8 +395,8 @@ export function renderVitalsPanel(c){
 
   var initBox = document.createElement("div");
   initBox.className = "vital-box vital-mini init-vital-box";
-  var dexMod = mod(c.abilities.dex);
-  var initTotal = dexMod + (Number(c.initiativeMisc)||0);
+  var initResult = computeInitiative(c);
+  var initTotal = initResult.value;
 
   var initHeader = document.createElement("div");
   initHeader.className = "lbl";
@@ -411,7 +411,8 @@ export function renderVitalsPanel(c){
 
   var initHint = document.createElement("div");
   initHint.className = "vital-hint";
-  initHint.textContent = "DEX (" + fmtMod(dexMod) + ") + misc";
+  initHint.textContent = initResult.short;
+  initHint.title = initResult.breakdown;
   initBox.appendChild(initHint);
 
   var miscStepperRow = document.createElement("div");
@@ -613,7 +614,7 @@ function renderResourcesCard(c, resources){
     name.textContent = r.name;
     var tag = document.createElement("span");
     tag.className = "res-reset res-reset-"+r.reset;
-    tag.textContent = r.reset==="short" ? "Short rest" : "Long rest";
+    tag.textContent = r.reset==="short" ? "Short rest" : r.reset==="manual" ? "Manual" : "Long rest";
     name.appendChild(tag);
     info.appendChild(name);
     var hint = document.createElement("div");
