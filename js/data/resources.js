@@ -356,6 +356,10 @@ export var SUBCLASS_RESOURCES = {
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Action: bond up to proficiency-bonus creatures; each adds 1d4 to attacks, checks and saves while a bonded ally is within 30 ft."}
     ],
+    "Knowledge Domain": [
+      {id:"visions_of_the_past", name:"Visions of the Past", level:17, max:always(1), reset:always("short"),
+        hint:"Meditate for 1+ minutes to see the history of an object you hold or of your surroundings."}
+    ],
     "Grave Domain": [
       {id:"eyes_of_the_grave", name:"Eyes of the Grave", level:1,
         max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),

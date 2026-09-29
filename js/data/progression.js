@@ -442,50 +442,75 @@ export var SUBCLASSES = {
       1:[
         {name:"Domain Spells", text:"You always have Bless and Cure Wounds prepared; they don't count against your prepared spells."},
         {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor."},
-        {name:"Disciple of Life", text:"Your healing spells restore an extra 2 + the spell's level hit points."}
+        {name:"Disciple of Life", text:"Whenever you use a spell of 1st level or higher to restore hit points to a creature, it regains an extra 2 + the spell's level hit points."}
       ],
-      2:[{name:"Channel Divinity: Preserve Life", text:"Action: split healing equal to five times your cleric level among creatures within 30 feet (up to half their max HP)."}],
+      2:[{name:"Channel Divinity: Preserve Life", text:"As an action, restore hit points equal to five times your cleric level, split as you choose among creatures within 30 feet. This can't raise a creature above half its hit point maximum, and has no effect on undead or constructs."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bless, Cure Wounds, Lesser Restoration and Spiritual Weapon prepared; they don't count against your prepared spells."}],
-      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bless, Cure Wounds, Lesser Restoration, Spiritual Weapon, Beacon of Hope and Revivify prepared; they don't count against your prepared spells."}]
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bless, Cure Wounds, Lesser Restoration, Spiritual Weapon, Beacon of Hope and Revivify prepared; they don't count against your prepared spells."}],
+      6:[{name:"Blessed Healer", text:"When you cast a spell of 1st level or higher that restores hit points to a creature other than you, you regain 2 + the spell's level hit points."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bless, Cure Wounds, Lesser Restoration, Spiritual Weapon, Beacon of Hope, Revivify, Death Ward and Guardian of Faith prepared; they don't count against your prepared spells."}],
+      8:[{name:"Divine Strike", text:"Once on each of your turns when you hit a creature with a weapon attack, deal an extra 1d8 radiant damage. Increases to 2d8 at level 14."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bless, Cure Wounds, Lesser Restoration, Spiritual Weapon, Beacon of Hope, Revivify, Death Ward, Guardian of Faith, Mass Cure Wounds and Raise Dead prepared; they don't count against your prepared spells."}],
+      17:[{name:"Supreme Healing", text:"When you would roll dice to restore hit points with a spell, you instead use the highest number possible for each die."}]
     }},
     {name:"Light Domain", blurb:"Wields fire and radiance against darkness.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Burning Hands and Faerie Fire prepared; they don't count against your prepared spells."},
-        {name:"Bonus Cantrip", text:"You learn the Light cantrip."},
-        {name:"Warding Flare", text:"Reaction when attacked by a creature you can see within 30 feet: impose disadvantage on the attack. Uses equal to your Wisdom modifier per long rest."}
+        {name:"Bonus Cantrip", text:"You learn the Light cantrip (it doesn't count against your cantrips known)."},
+        {name:"Warding Flare", text:"When a creature you can see within 30 feet attacks you, you can use your reaction to impose disadvantage on the attack roll before it hits or misses. Creatures that can't be blinded are immune. Uses equal to your Wisdom modifier (minimum 1) per long rest."}
       ],
-      2:[{name:"Channel Divinity: Radiance of the Dawn", text:"Action: dispel magical darkness within 30 feet, and hostile creatures there take 2d10 + cleric level radiant damage (Constitution save for half)."}],
+      2:[{name:"Channel Divinity: Radiance of the Dawn", text:"As an action, dispel any magical darkness within 30 feet. Each hostile creature within 30 feet makes a CON save, taking 2d10 + your cleric level radiant damage on a failure or half on a success. Creatures behind total cover aren't affected."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Burning Hands, Faerie Fire, Flaming Sphere and Scorching Ray prepared; they don't count against your prepared spells."}],
-      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Burning Hands, Faerie Fire, Flaming Sphere, Scorching Ray, Daylight and Fireball prepared; they don't count against your prepared spells."}]
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Burning Hands, Faerie Fire, Flaming Sphere, Scorching Ray, Daylight and Fireball prepared; they don't count against your prepared spells."}],
+      6:[{name:"Improved Flare", text:"You can also use Warding Flare when a creature you can see within 30 feet attacks a creature other than you."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Burning Hands, Faerie Fire, Flaming Sphere, Scorching Ray, Daylight, Fireball, Guardian of Faith and Wall of Fire prepared; they don't count against your prepared spells."}],
+      8:[{name:"Potent Spellcasting", text:"Add your Wisdom modifier to the damage you deal with any cleric cantrip."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Burning Hands, Faerie Fire, Flaming Sphere, Scorching Ray, Daylight, Fireball, Guardian of Faith, Wall of Fire, Flame Strike and Scrying prepared; they don't count against your prepared spells."}],
+      17:[{name:"Corona of Light", text:"As an action, surround yourself with an aura of sunlight for 1 minute (or until you dismiss it with another action): bright light in a 60-foot radius and dim light for 30 feet beyond. Your enemies in the bright light have disadvantage on saving throws against any spell that deals fire or radiant damage."}]
     }},
     {name:"War Domain", blurb:"A warrior-priest who fights in heavy armor.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Divine Favor and Shield of Faith prepared; they don't count against your prepared spells."},
         {name:"Bonus Proficiencies", text:"Proficiency with martial weapons and heavy armor."},
-        {name:"War Priest", text:"When you take the Attack action, make one weapon attack as a bonus action. Uses equal to your Wisdom modifier per long rest."}
+        {name:"War Priest", text:"When you take the Attack action, you can make one weapon attack as a bonus action. Uses equal to your Wisdom modifier (minimum 1) per long rest."}
       ],
-      2:[{name:"Channel Divinity: Guided Strike", text:"When you make an attack roll, gain +10 to it (decide after seeing the roll, before knowing if it hits)."}],
+      2:[{name:"Channel Divinity: Guided Strike", text:"When you make an attack roll, you can add +10 to it, deciding after you see the roll but before the DM says whether it hits."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Divine Favor, Shield of Faith, Magic Weapon and Spiritual Weapon prepared; they don't count against your prepared spells."}],
-      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Divine Favor, Shield of Faith, Magic Weapon, Spiritual Weapon, Crusader's Mantle and Spirit Guardians prepared; they don't count against your prepared spells."}]
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Divine Favor, Shield of Faith, Magic Weapon, Spiritual Weapon, Crusader's Mantle and Spirit Guardians prepared; they don't count against your prepared spells."}],
+      6:[{name:"Channel Divinity: War God's Blessing", text:"When a creature within 30 feet makes an attack roll, you can use your reaction and Channel Divinity to give it +10 to the roll, deciding after you see the roll but before the DM says whether it hits."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Divine Favor, Shield of Faith, Magic Weapon, Spiritual Weapon, Crusader's Mantle, Spirit Guardians, Freedom of Movement and Stoneskin prepared; they don't count against your prepared spells."}],
+      8:[{name:"Divine Strike", text:"Once on each of your turns when you hit a creature with a weapon attack, deal an extra 1d8 damage of the same type as the weapon. Increases to 2d8 at level 14."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Divine Favor, Shield of Faith, Magic Weapon, Spiritual Weapon, Crusader's Mantle, Spirit Guardians, Freedom of Movement, Stoneskin, Flame Strike and Hold Monster prepared; they don't count against your prepared spells."}],
+      17:[{name:"Avatar of Battle", text:"You have resistance to bludgeoning, piercing and slashing damage from nonmagical weapons."}]
     }},
     {name:"Knowledge Domain", blurb:"Seeks and guards secrets and lore.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Command and Identify prepared; they don't count against your prepared spells."},
-        {name:"Blessings of Knowledge", text:"Learn two languages and gain expertise in two of Arcana, History, Nature or Religion. Tick them on the Abilities & Skills tab."}
+        {name:"Blessings of Knowledge", text:"You learn two languages and gain proficiency in two of Arcana, History, Nature or Religion. Your proficiency bonus is doubled for checks with those two skills. Tick them on the Abilities & Skills tab."}
       ],
-      2:[{name:"Channel Divinity: Knowledge of the Ages", text:"Action: gain proficiency with one skill or tool for 10 minutes."}],
+      2:[{name:"Channel Divinity: Knowledge of the Ages", text:"As an action, choose one skill or tool. For 10 minutes, you are proficient with it."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Identify, Augury and Suggestion prepared; they don't count against your prepared spells."}],
-      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Identify, Augury, Suggestion, Nondetection and Speak with Dead prepared; they don't count against your prepared spells."}]
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Identify, Augury, Suggestion, Nondetection and Speak with Dead prepared; they don't count against your prepared spells."}],
+      6:[{name:"Channel Divinity: Read Thoughts", text:"As an action, choose a creature you can see within 60 feet. It makes a WIS save. On a failure, you read its surface thoughts for 1 minute while it stays within 60 feet, and during that time you can use an action to end the effect and cast Suggestion on it without a spell slot; it automatically fails the save. On a success, you can't use this on it again until you finish a long rest."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Identify, Augury, Suggestion, Nondetection, Speak with Dead, Arcane Eye and Confusion prepared; they don't count against your prepared spells."}],
+      8:[{name:"Potent Spellcasting", text:"Add your Wisdom modifier to the damage you deal with any cleric cantrip."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Identify, Augury, Suggestion, Nondetection, Speak with Dead, Arcane Eye, Confusion, Legend Lore and Scrying prepared; they don't count against your prepared spells."}],
+      17:[{name:"Visions of the Past", text:"After at least 1 minute of meditation and prayer, you receive glimpses of the past, meditating for up to a number of minutes equal to your WIS score (as if concentrating on a spell). Object Reading: holding an object, you see its previous owner, how they got and lost it, and the most recent significant event involving it. Area Reading: you see significant events in your immediate surroundings (a room, street, tunnel or clearing) going back a number of days equal to your WIS score. Once per short or long rest."}]
     }},
     {name:"Tempest Domain", blurb:"Commands storms, thunder and lightning.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Fog Cloud and Thunderwave prepared; they don't count against your prepared spells."},
         {name:"Bonus Proficiencies", text:"Proficiency with martial weapons and heavy armor."},
-        {name:"Wrath of the Storm", text:"Reaction when a creature within 5 feet hits you: it takes 2d8 lightning or thunder damage (Dexterity save for half). Uses equal to your Wisdom modifier per long rest."}
+        {name:"Wrath of the Storm", text:"When a creature within 5 feet that you can see hits you with an attack, you can use your reaction to make it take 2d8 lightning or thunder damage (your choice), DEX save for half. Uses equal to your Wisdom modifier (minimum 1) per long rest."}
       ],
-      2:[{name:"Channel Divinity: Destructive Wrath", text:"When you roll lightning or thunder damage, deal the maximum instead of rolling."}],
+      2:[{name:"Channel Divinity: Destructive Wrath", text:"When you roll lightning or thunder damage, you can use Channel Divinity to deal maximum damage instead of rolling."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Fog Cloud, Thunderwave, Gust of Wind and Shatter prepared; they don't count against your prepared spells."}],
-      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Fog Cloud, Thunderwave, Gust of Wind, Shatter, Call Lightning and Sleet Storm prepared; they don't count against your prepared spells."}]
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Fog Cloud, Thunderwave, Gust of Wind, Shatter, Call Lightning and Sleet Storm prepared; they don't count against your prepared spells."}],
+      6:[{name:"Thunderbolt Strike", text:"When you deal lightning damage to a Large or smaller creature, you can also push it up to 10 feet away from you."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Fog Cloud, Thunderwave, Gust of Wind, Shatter, Call Lightning, Sleet Storm, Control Water and Ice Storm prepared; they don't count against your prepared spells."}],
+      8:[{name:"Divine Strike", text:"Once on each of your turns when you hit a creature with a weapon attack, deal an extra 1d8 thunder damage. Increases to 2d8 at level 14."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Fog Cloud, Thunderwave, Gust of Wind, Shatter, Call Lightning, Sleet Storm, Control Water, Ice Storm, Destructive Wave and Insect Plague prepared; they don't count against your prepared spells."}],
+      17:[{name:"Stormborn", text:"You have a flying speed equal to your walking speed whenever you aren't underground or indoors."}]
     }},
     {name:"Trickery Domain", blurb:"Deception, stealth and mischief.", features:{
       1:[
@@ -499,14 +524,17 @@ export var SUBCLASSES = {
     {name:"Nature Domain", blurb:"Channels the power of nature to command beasts and wield elemental fury.", features:{
       1:[
         {name:"Domain Spells", text:"You always have Animal Friendship and Speak with Animals prepared; they don't count against your prepared spells."},
-        {name:"Acolyte of Nature", text:"Learn one Druid cantrip. Gain proficiency in one of Animal Handling, Nature or Survival."},
+        {name:"Acolyte of Nature", text:"You learn one druid cantrip (it counts as a cleric cantrip for you) and gain proficiency in one of Animal Handling, Nature or Survival."},
         {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor."}
       ],
-      2:[{name:"Channel Divinity: Charm Animals and Plants", text:"Action: each beast and plant creature within 30 feet must succeed on a Wisdom save or be charmed by you for 1 minute."}],
+      2:[{name:"Channel Divinity: Charm Animals and Plants", text:"As an action, each beast or plant creature within 30 feet that can see you makes a WIS save. On a failure, it is charmed by you for 1 minute or until it takes damage, and is friendly to you and creatures you designate."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Animal Friendship, Speak with Animals, Barkskin and Spike Growth prepared; they don't count against your prepared spells."}],
       5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Animal Friendship, Speak with Animals, Barkskin, Spike Growth, Plant Growth and Wind Wall prepared; they don't count against your prepared spells."}],
-      6:[{name:"Dampen Elements", text:"Reaction: when you or a creature within 30 feet takes acid, cold, fire, lightning or thunder damage, grant resistance to that damage for that instance."}],
-      8:[{name:"Divine Strike", text:"Once per turn when you hit with a weapon attack, deal an extra 1d8 cold, fire or lightning damage (your choice when you gain this feature). Increases to 2d8 at level 14."}]
+      6:[{name:"Dampen Elements", text:"When you or a creature within 30 feet takes acid, cold, fire, lightning or thunder damage, you can use your reaction to grant resistance against that instance of the damage."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Animal Friendship, Speak with Animals, Barkskin, Spike Growth, Plant Growth, Wind Wall, Dominate Beast and Grasping Vine prepared; they don't count against your prepared spells."}],
+      8:[{name:"Divine Strike", text:"Once on each of your turns when you hit a creature with a weapon attack, deal an extra 1d8 cold, fire or lightning damage (your choice each time). Increases to 2d8 at level 14."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Animal Friendship, Speak with Animals, Barkskin, Spike Growth, Plant Growth, Wind Wall, Dominate Beast, Grasping Vine, Insect Plague and Tree Stride prepared; they don't count against your prepared spells."}],
+      17:[{name:"Master of Nature", text:"While creatures are charmed by your Charm Animals and Plants, you can use a bonus action on your turn to verbally command what each of them will do on its next turn."}]
     }},
     {name:"Twilight Domain", blurb:"Guards against the terrors of night and eases the transition to death.", features:{
       1:[
