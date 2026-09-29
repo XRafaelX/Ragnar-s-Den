@@ -574,6 +574,21 @@ export var SUBCLASSES = {
       8:[{name:"Potent Spellcasting", text:"Add your Wisdom modifier to the damage you deal with any cleric cantrip."}],
       9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bane, False Life, Gentle Repose, Ray of Enfeeblement, Revivify, Vampiric Touch, Blight, Death Ward, Antilife Shell and Raise Dead prepared; they don't count against your prepared spells."}],
       17:[{name:"Keeper of Souls", text:"Once per turn, when an enemy you can see dies within 60 feet of you, you or one creature of your choice within 60 feet regains hit points equal to the enemy's number of Hit Dice. You can't use this while incapacitated."}]
+    }},
+    {name:"Fate Domain", blurb:"Wields the threads of destiny to foresee outcomes and tip the scales of luck.", features:{
+      1:[
+        {name:"Domain Spells", text:"You always have Bane and Bless prepared; they don't count against your prepared spells."},
+        {name:"Bonus Proficiency", text:"You gain proficiency in Insight (tick it on the Abilities & Skills tab)."},
+        {name:"Twist of Fate", text:"When a creature you can see within 30 feet makes an attack roll, ability check or saving throw, you can use your reaction after seeing the d20 roll (but before the outcome is known) to roll a d4 and add it to or subtract it from the total. You can use this a number of times equal to your WIS modifier (minimum 1), regained on a long rest."}
+      ],
+      2:[{name:"Channel Divinity: Read the Threads", text:"As an action, glimpse the fate of one creature you can see within 30 feet: roll a d20 and record the number. Until the end of your next turn, you can replace one attack roll, ability check or saving throw made by or against that creature with the recorded number. You must choose to do so before the roll."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bane, Bless, Augury and Enhance Ability prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bane, Bless, Augury, Enhance Ability, Beacon of Hope and Bestow Curse prepared; they don't count against your prepared spells."}],
+      6:[{name:"Unraveled Destiny", text:"Your Twist of Fate die becomes a d6 and its range increases to 60 feet. When you use it to help a creature, that creature also gains temporary hit points equal to the number rolled."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bane, Bless, Augury, Enhance Ability, Beacon of Hope, Bestow Curse, Death Ward and Divination prepared; they don't count against your prepared spells."}],
+      8:[{name:"Potent Spellcasting", text:"Add your Wisdom modifier to the damage you deal with any cleric cantrip."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bane, Bless, Augury, Enhance Ability, Beacon of Hope, Bestow Curse, Death Ward, Divination, Legend Lore and Scrying prepared; they don't count against your prepared spells."}],
+      17:[{name:"Weaver of Destiny", text:"When you finish a long rest, roll two d20s and record the numbers. You can replace any attack roll, ability check or saving throw made by you or a creature you can see with one of these rolls, choosing before the roll; each can be used once, and you can use only one per turn. Unused rolls are lost when you finish your next long rest."}]
     }}
   ],
   "Druid": [
@@ -634,6 +649,18 @@ export var SUBCLASSES = {
       6:[{name:"Mighty Summoner", text:"Beasts and fey you summon or create with a spell have 2 extra hit points per Hit Die, and their natural weapons count as magical for overcoming resistance and immunity to nonmagical attacks and damage."}],
       10:[{name:"Guardian Spirit", text:"When a beast or fey you summoned or created with a spell ends its turn in your Spirit Totem aura, it regains hit points equal to half your druid level."}],
       14:[{name:"Faithful Summons", text:"When you are reduced to 0 hit points or incapacitated against your will, you gain the benefits of Conjure Animals as if cast with a 9th-level slot: four beasts of your choice (CR 2 or lower) appear within 20 feet of you and protect you from harm. They last 1 hour and need no concentration. Once per long rest."}]
+    }},
+    {name:"Circle of the Blighted", blurb:"Corrupts nature to siphon life force, decay enemies, and manipulate blighted flora.", features:{
+      2:[
+        {name:"Circle Spells", text:"You learn the Chill Touch cantrip and always have these spells prepared once you can cast them; they don't count against your prepared spells: Ray of Sickness (level 2), Ray of Enfeeblement and Blindness/Deafness (level 3), Vampiric Touch and Stinking Cloud (level 5), Blight and Grasping Vine (level 7), Contagion and Insect Plague (level 9)."},
+        {name:"Siphoning Blight", text:"As a bonus action, expend one use of Wild Shape to surround yourself with a 10-foot aura of blight for 1 minute (or until you are incapacitated). When a creature of your choice starts its turn in the aura, it makes a CON save against your spell save DC or takes 1d6 necrotic damage (1d8 at level 6, 1d10 at 10, 1d12 at 14), and you gain temporary hit points equal to the damage dealt (they don't stack; keep the higher amount)."}
+      ],
+      6:[
+        {name:"Blighted Flora", text:"As an action, make thorny, rotting vines erupt from the ground in a 15-foot square within 60 feet for 1 minute. The area is difficult terrain. A creature that enters it or starts its turn there makes a STR save against your spell save DC or is restrained until the start of its next turn, and takes 1d8 necrotic damage on a failure. You can use this a number of times equal to your proficiency bonus, regained on a long rest."},
+        {name:"Rot-Touched", text:"You have resistance to necrotic damage and advantage on saving throws against disease."}
+      ],
+      10:[{name:"Accelerated Decay", text:"Necrotic damage from your druid spells, Siphoning Blight and Blighted Flora ignores resistance to necrotic damage. A creature that fails its save against Siphoning Blight also can't regain hit points until the start of its next turn."}],
+      14:[{name:"Heart of the Blight", text:"You are immune to necrotic and poison damage, the poisoned condition and disease. While Siphoning Blight is active, its aura extends to 20 feet."}]
     }}
   ],
   "Fighter": [
@@ -1024,6 +1051,16 @@ export var SUBCLASSES = {
       9:[{name:"Insightful Manipulator", text:"If you spend at least 1 minute observing or talking with a creature outside combat, the DM tells you whether it is your equal, superior or inferior in two of the following (your choice): INT score, WIS score, CHA score, or class levels. The DM may also reveal a piece of its history or one of its personality traits."}],
       13:[{name:"Misdirection", text:"When a creature targets you with an attack while another creature within 5 feet of you is giving you cover against it, you can use your reaction to make the attack target that creature instead."}],
       17:[{name:"Soul of Deceit", text:"Your thoughts can't be read by telepathy or other means unless you allow it. You can present false thoughts by winning a CHA (Deception) check against the reader's WIS (Insight). Magic that detects lies always shows you as truthful if you choose, and you can't be magically compelled to tell the truth."}]
+    }},
+    {name:"Misfortune Bringer", blurb:"Manipulates probability to curse foes with bad luck and capitalize on their failures.", features:{
+      3:[
+        {name:"Ill-Starred", text:"You gain proficiency in Intimidation, or in Deception if you already have it (tick it on the Abilities & Skills tab)."},
+        {name:"Jinx", text:"As a bonus action, jinx a creature you can see within 30 feet for 1 minute (or until you jinx another creature). When the jinxed creature makes an attack roll, ability check or saving throw, you can use your reaction after seeing the d20 roll (but before the outcome is known) to subtract 1d4 from the total. You can jinx a number of times equal to your proficiency bonus, regained on a long rest."},
+        {name:"Capitalize on Misfortune", text:"When a creature you have jinxed misses with an attack roll or fails a saving throw, your next attack against it before the end of your next turn can use Sneak Attack even without advantage, as long as you don't have disadvantage on it."}
+      ],
+      9:[{name:"Spreading Misfortune", text:"Your Jinx penalty becomes 1d6. When a jinxed creature drops to 0 hit points, you can move the jinx to another creature you can see within 30 feet (no action required), keeping its remaining duration."}],
+      13:[{name:"Stolen Luck", text:"When you use Jinx and the creature's roll fails as a result, you gain the number you subtracted as a bonus to your next attack roll, ability check or saving throw made before the end of your next turn."}],
+      17:[{name:"Doom Incarnate", text:"When you deal Sneak Attack damage to a jinxed creature, you can force it to make a WIS save (DC 8 + proficiency bonus + DEX modifier). On a failure, for 1 minute it has disadvantage on attack rolls, ability checks and saving throws; it repeats the save at the end of each of its turns, ending the effect on a success. Once per short or long rest."}]
     }}
   ],
   "Sorcerer": [

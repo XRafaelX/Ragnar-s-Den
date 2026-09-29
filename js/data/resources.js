@@ -330,6 +330,13 @@ export var SUBCLASS_RESOURCES = {
       {id:"sentinel_at_deaths_door", name:"Sentinel at Death's Door", level:6,
         max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
         hint:"Reaction: turn a critical hit against you or a creature within 30 ft into a normal hit."}
+    ],
+    "Fate Domain": [
+      {id:"twist_of_fate", name:"Twist of Fate", level:1,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Reaction: add or subtract 1d4 (1d6 from level 6) from a creature's attack roll, check or save within 30 ft (60 ft from level 6)."},
+      {id:"weaver_of_destiny", name:"Weaver of Destiny", level:17, max:always(2), reset:always("long"),
+        hint:"Two d20s rolled after a long rest: replace an attack roll, check or save by you or a creature you can see with one (one per turn)."}
     ]
   },
   "Druid": {
@@ -347,6 +354,11 @@ export var SUBCLASS_RESOURCES = {
         hint:"Bonus action: summon a Bear, Hawk or Unicorn spirit with a 30-ft aura for 1 minute."},
       {id:"faithful_summons", name:"Faithful Summons", level:14, max:always(1), reset:always("long"),
         hint:"When you drop to 0 HP or are incapacitated against your will, four CR 2 or lower beasts appear to protect you for 1 hour."}
+    ],
+    "Circle of the Blighted": [
+      {id:"blighted_flora", name:"Blighted Flora", level:6,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Action: 15-ft square of rotting vines within 60 ft for 1 minute; difficult terrain, STR save or restrained and 1d8 necrotic."}
     ]
   },
   "Rogue": {
@@ -364,6 +376,13 @@ export var SUBCLASS_RESOURCES = {
       {id:"unerring_eye", name:"Unerring Eye", level:13,
         max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
         hint:"Action: sense illusions, shapechangers and other deceptive magic within 30 ft."}
+    ],
+    "Misfortune Bringer": [
+      {id:"jinx", name:"Jinx", level:3,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Bonus action: jinx a creature within 30 ft for 1 minute; as a reaction, subtract 1d4 (1d6 from level 9) from its roll."},
+      {id:"doom_incarnate", name:"Doom Incarnate", level:17, max:always(1), reset:always("short"),
+        hint:"On a Sneak Attack against a jinxed creature: WIS save or disadvantage on attacks, checks and saves for 1 minute."}
     ]
   }
 };
