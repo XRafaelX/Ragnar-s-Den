@@ -527,6 +527,53 @@ export var SUBCLASSES = {
       2:[{name:"Channel Divinity: Balm of Peace", text:"Move up to your speed without provoking opportunity attacks. When you move within 5 feet of a creature, you can restore HP to it equal to 2d6 + your Wisdom modifier (only once per creature per use of this feature)."}],
       3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Heroism, Sanctuary, Aid and Warding Bond prepared; they don't count against your prepared spells."}],
       5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Heroism, Sanctuary, Aid, Warding Bond, Beacon of Hope and Sending prepared; they don't count against your prepared spells."}]
+    }},
+    {name:"Death Domain", blurb:"Wields necrotic power to reap the living and command death itself.", features:{
+      1:[
+        {name:"Domain Spells", text:"You always have False Life and Ray of Sickness prepared; they don't count against your prepared spells."},
+        {name:"Bonus Proficiency", text:"You gain proficiency with martial weapons."},
+        {name:"Reaper", text:"You learn one necromancy cantrip of your choice from any class's spell list (e.g. Chill Touch or Toll the Dead). When you cast a necromancy cantrip that normally targets only one creature, it can instead target two creatures within range and within 5 feet of each other."}
+      ],
+      2:[{name:"Channel Divinity: Touch of Death", text:"When you hit a creature with a melee attack, you can use Channel Divinity to deal extra necrotic damage equal to 5 + twice your cleric level."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have False Life, Ray of Sickness, Blindness/Deafness and Ray of Enfeeblement prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have False Life, Ray of Sickness, Blindness/Deafness, Ray of Enfeeblement, Animate Dead and Vampiric Touch prepared; they don't count against your prepared spells."}],
+      6:[{name:"Inescapable Destruction", text:"Necrotic damage dealt by your cleric spells and Channel Divinity options ignores resistance to necrotic damage."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have False Life, Ray of Sickness, Blindness/Deafness, Ray of Enfeeblement, Animate Dead, Vampiric Touch, Blight and Death Ward prepared; they don't count against your prepared spells."}],
+      8:[{name:"Divine Strike", text:"Once per turn when you hit with a weapon attack, deal an extra 1d8 necrotic damage. Increases to 2d8 at level 14."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have False Life, Ray of Sickness, Blindness/Deafness, Ray of Enfeeblement, Animate Dead, Vampiric Touch, Blight, Death Ward, Antilife Shell and Cloudkill prepared; they don't count against your prepared spells."}],
+      17:[{name:"Improved Reaper", text:"When you cast a necromancy spell of 1st through 5th level that targets only one creature, it can instead target two creatures within range and within 5 feet of each other. If the spell consumes its material components, you must provide them for each target."}]
+    }},
+    {name:"Arcana Domain", blurb:"A scholar-priest of magic who wields wizard spells and banishes otherworldly foes.", features:{
+      1:[
+        {name:"Domain Spells", text:"You always have Detect Magic and Magic Missile prepared; they don't count against your prepared spells."},
+        {name:"Arcane Initiate", text:"You gain proficiency in Arcana (tick it on the Abilities & Skills tab) and learn two wizard cantrips of your choice. They count as cleric cantrips for you."}
+      ],
+      2:[{name:"Channel Divinity: Arcane Abjuration", text:"Action: choose one celestial, elemental, fey or fiend within 30 feet that can see or hear you. It makes a Wisdom save or is turned for 1 minute or until it takes damage: it must spend its turns moving away from you, can't willingly come within 30 feet of you, can't take reactions, and can only Dash or try to escape."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Detect Magic, Magic Missile, Magic Weapon and Nystul's Magic Aura prepared; they don't count against your prepared spells."}],
+      5:[
+        {name:"Domain Spells", replaces:"Domain Spells", text:"You always have Detect Magic, Magic Missile, Magic Weapon, Nystul's Magic Aura, Dispel Magic and Magic Circle prepared; they don't count against your prepared spells."},
+        {name:"Channel Divinity: Arcane Abjuration", replaces:"Channel Divinity: Arcane Abjuration", text:"Action: choose one celestial, elemental, fey or fiend within 30 feet that can see or hear you. It makes a Wisdom save or is turned for 1 minute or until it takes damage. If it fails, isn't on its home plane and has a challenge rating at or below your threshold, it is instead banished to its home plane for 1 minute (as Banishment, no concentration). Threshold: CR 1/2 at level 5, CR 1 at 8, CR 2 at 11, CR 3 at 14, CR 4 at 17."}
+      ],
+      6:[{name:"Spell Breaker", text:"When you restore hit points to an ally with a spell of 1st level or higher, you can also end one spell of your choice on that creature. The ended spell's level must be no higher than the slot you used for the healing spell."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Detect Magic, Magic Missile, Magic Weapon, Nystul's Magic Aura, Dispel Magic, Magic Circle, Arcane Eye and Leomund's Secret Chest prepared; they don't count against your prepared spells."}],
+      8:[{name:"Potent Spellcasting", text:"Add your Wisdom modifier to the damage you deal with any cleric cantrip."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Detect Magic, Magic Missile, Magic Weapon, Nystul's Magic Aura, Dispel Magic, Magic Circle, Arcane Eye, Leomund's Secret Chest, Planar Binding and Teleportation Circle prepared; they don't count against your prepared spells."}],
+      17:[{name:"Arcane Mastery", text:"Choose four spells from the wizard spell list, one each of 6th, 7th, 8th and 9th level. They become domain spells for you: always prepared and not counted against your prepared spells."}]
+    }},
+    {name:"Grave Domain", blurb:"Watches over the line between life and death, sparing the dying and hastening the doomed.", features:{
+      1:[
+        {name:"Domain Spells", text:"You always have Bane and False Life prepared; they don't count against your prepared spells."},
+        {name:"Circle of Mortality", text:"When you restore hit points with a spell to a creature at 0 hit points, use the highest number possible for each die instead of rolling. You also learn the Spare the Dying cantrip (it doesn't count against your cantrips known), and you can cast it as a bonus action with a range of 30 feet."},
+        {name:"Eyes of the Grave", text:"As an action, you know the location of any undead within 60 feet that isn't behind total cover or protected from divination magic, until the end of your next turn. You can use this a number of times equal to your Wisdom modifier (minimum 1), regained on a long rest."}
+      ],
+      2:[{name:"Channel Divinity: Path to the Grave", text:"Action: curse one creature within 30 feet until the end of your next turn. The next time you or an ally hits it with an attack, it has vulnerability to all of that attack's damage, and the curse ends."}],
+      3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bane, False Life, Gentle Repose and Ray of Enfeeblement prepared; they don't count against your prepared spells."}],
+      5:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bane, False Life, Gentle Repose, Ray of Enfeeblement, Revivify and Vampiric Touch prepared; they don't count against your prepared spells."}],
+      6:[{name:"Sentinel at Death's Door", text:"Reaction when you or a creature you can see within 30 feet suffers a critical hit: turn it into a normal hit, cancelling any effects triggered by the critical hit. You can use this a number of times equal to your Wisdom modifier (minimum 1), regained on a long rest."}],
+      7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bane, False Life, Gentle Repose, Ray of Enfeeblement, Revivify, Vampiric Touch, Blight and Death Ward prepared; they don't count against your prepared spells."}],
+      8:[{name:"Potent Spellcasting", text:"Add your Wisdom modifier to the damage you deal with any cleric cantrip."}],
+      9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Bane, False Life, Gentle Repose, Ray of Enfeeblement, Revivify, Vampiric Touch, Blight, Death Ward, Antilife Shell and Raise Dead prepared; they don't count against your prepared spells."}],
+      17:[{name:"Keeper of Souls", text:"Once per turn, when an enemy you can see dies within 60 feet of you, you or one creature of your choice within 60 feet regains hit points equal to the enemy's number of Hit Dice. You can't use this while incapacitated."}]
     }}
   ],
   "Druid": [

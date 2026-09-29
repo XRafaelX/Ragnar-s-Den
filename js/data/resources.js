@@ -212,6 +212,14 @@ export var SUBCLASS_RESOURCES = {
       {id:"emboldening_bond", name:"Emboldening Bond", level:1,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Action: bond up to proficiency-bonus creatures — each adds 1d4 to attacks, checks and saves while a bonded ally is within 30 ft."}
+    ],
+    "Grave Domain": [
+      {id:"eyes_of_the_grave", name:"Eyes of the Grave", level:1,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Action: sense any undead within 60 ft (not behind total cover) until the end of your next turn."},
+      {id:"sentinel_at_deaths_door", name:"Sentinel at Death's Door", level:6,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Reaction: turn a critical hit against you or a creature within 30 ft into a normal hit."}
     ]
   },
   "Druid": {
