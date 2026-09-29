@@ -1259,49 +1259,62 @@ export var SUBCLASSES = {
     }}
   ],
   "Sorcerer": [
-    {name:"Draconic Bloodline", blurb:"Dragon blood grants toughness and elemental power.", features:{1:[
-      {name:"Dragon Ancestor", text:"Choose a dragon type (sets your damage type later). You speak Draconic and double your proficiency bonus on Charisma checks with dragons."},
-      {name:"Draconic Resilience", text:"Your max HP increases by 1 per sorcerer level, and without armor your AC is 13 + DEX modifier. (Already added to your max HP and AC.)"}
-    ]}},
-    {name:"Wild Magic", blurb:"Chaotic magic that surges unpredictably.", features:{1:[
-      {name:"Wild Magic Surge", text:"When you cast a leveled sorcerer spell, the DM can have you roll a d20. On a 1, roll on the Wild Magic Surge table."},
-      {name:"Tides of Chaos", text:"Gain advantage on one attack roll, ability check or save. Regained on a long rest (or when a surge happens)."}
-    ]}},
+    {name:"Draconic Bloodline", blurb:"Dragon blood grants toughness and elemental power.", features:{
+      1:[
+        {name:"Dragon Ancestor", text:"Choose a dragon type, which sets your damage type: Black or Copper (acid), Blue or Bronze (lightning), Brass, Gold or Red (fire), Green (poison), Silver or White (cold). You speak, read and write Draconic, and your proficiency bonus is doubled for CHA checks when interacting with dragons."},
+        {name:"Draconic Resilience", text:"Your hit point maximum increases by 1 per sorcerer level, and while you wear no armor your AC is 13 + your DEX modifier. (Already added to your max HP and AC.)"}
+      ],
+      6:[{name:"Elemental Affinity", text:"When you cast a spell that deals your ancestry's damage type, add your CHA modifier to one damage roll of it. At the same time, you can spend 1 sorcery point to gain resistance to that damage type for 1 hour."}],
+      14:[{name:"Dragon Wings", text:"As a bonus action, sprout dragon wings and gain a flying speed equal to your current speed, until you dismiss them as a bonus action. You can't manifest them while wearing armor unless it's made to accommodate them."}],
+      18:[{name:"Draconic Presence", text:"As an action, spend 5 sorcery points to exude a 60-foot aura of awe or fear (your choice) for 1 minute or until your concentration ends (as if concentrating on a spell). Each hostile creature that starts its turn in the aura makes a WIS save or is charmed (awe) or frightened (fear) until the aura ends; one that succeeds is immune to it for 24 hours."}]
+    }},
+    {name:"Wild Magic", blurb:"Chaotic magic that surges unpredictably.", features:{
+      1:[
+        {name:"Wild Magic Surge", text:"Immediately after you cast a sorcerer spell of 1st level or higher, the DM can have you roll a d20. On a 1, roll on the Wild Magic Surge table for a random magical effect."},
+        {name:"Tides of Chaos", text:"Gain advantage on one attack roll, ability check or saving throw. Once per long rest, but before then the DM can have you roll on the Wild Magic Surge table right after you cast a sorcerer spell of 1st level or higher, and you regain the use."}
+      ],
+      6:[{name:"Bend Luck", text:"When another creature you can see makes an attack roll, ability check or saving throw, you can use your reaction and spend 2 sorcery points to roll 1d4 and add it to or subtract it from the roll (your choice), after it rolls but before any effects occur."}],
+      14:[{name:"Controlled Chaos", text:"Whenever you roll on the Wild Magic Surge table, you can roll twice and use either number."}],
+      18:[{name:"Spell Bombardment", text:"When you roll damage for a spell and roll the highest number possible on any of the dice, choose one of them, roll it again and add that roll to the damage. Once per turn."}]
+    }},
     {name:"Clockwork Soul", blurb:"Draws power from Mechanus to impose order and nullify chaos.", features:{
       1:[
-        {name:"Clockwork Magic", text:"You learn additional spells that don't count against your spells known: Alarm and Protect from Evil and Good (1st), Aid and Lesser Restoration (3rd), Dispel Magic and Protection from Energy (5th), Freedom of Movement and Summon Construct (7th), Greater Restoration and Wall of Force (9th)."},
-        {name:"Restore Balance", text:"When a creature within 60 feet is about to roll with advantage or disadvantage, use your reaction to prevent that roll from having either. Uses equal to your proficiency bonus per long rest."}
+        {name:"Clockwork Magic", text:"You learn additional spells that don't count against your spells known: Alarm and Protection from Evil and Good (1st), Aid and Lesser Restoration (3rd), Dispel Magic and Protection from Energy (5th), Freedom of Movement and Summon Construct (7th), Greater Restoration and Wall of Force (9th). When you gain a sorcerer level, you can replace one with an abjuration or transmutation spell of the same level from the sorcerer, warlock or wizard list."},
+        {name:"Restore Balance", text:"When a creature you can see within 60 feet is about to roll a d20 with advantage or disadvantage, you can use your reaction to make the roll straight. Uses equal to your proficiency bonus per long rest."}
       ],
-      6:[{name:"Bastion of Law", text:"As an action, expend 1 to 5 sorcery points to create a magical ward on a creature you touch, giving it a number of d8s equal to the points spent. When it takes damage, expend any number of those dice and reduce the damage by the total rolled. The ward lasts until you finish a long rest or use it again."}],
-      14:[{name:"Trance of Order", text:"As a bonus action, enter a state of clockwork consciousness for 1 minute: attacks against you can't benefit from advantage, and on each of your turns you can treat a d20 roll of 9 or lower as a 10. Once per long rest."}],
-      18:[{name:"Clockwork Cavalcade", text:"Briefly summon spirits of order to restore balance. In a 30-foot cube originating from you: repair up to 4 objects of your choice, end every spell of 6th level or lower on creatures and objects, remove all curses and disease and poisons from creatures. Once per long rest."}]
+      6:[{name:"Bastion of Law", text:"As an action, spend 1 to 5 sorcery points to ward yourself or a creature you can see within 30 feet, with one d8 per point spent. When the warded creature takes damage, it can expend any number of those dice, roll them and reduce the damage by the total. The ward lasts until you finish a long rest or use this feature again."}],
+      14:[{name:"Trance of Order", text:"As a bonus action, for 1 minute attack rolls against you can't benefit from advantage, and you can treat a d20 roll of 9 or lower on your attack rolls, ability checks and saving throws as a 10. Once per long rest, or spend 5 sorcery points to use it again."}],
+      18:[{name:"Clockwork Cavalcade", text:"As an action, intangible spirits of order fill a 30-foot cube originating from you and then vanish: they restore up to 100 hit points, divided as you choose among creatures of your choice in the cube; repair every damaged object entirely in the cube; and end every spell of 6th level or lower on creatures and objects of your choice in it. Once per long rest, or spend 7 sorcery points to use it again."}]
     }},
     {name:"Aberrant Mind", blurb:"Touched by a psionic entity, warping mind and body with alien power.", features:{
       1:[
-        {name:"Psionic Spells", text:"You learn additional spells that don't count against your spells known: Arms of Hadar and Dissonant Whispers (1st), Calm Emotions and Detect Thoughts (3rd), Hunger of Hadar and Sending (5th), Evard's Black Tentacles and Summon Aberration (7th), Modify Memory and Rary's Telepathic Bond (9th)."},
-        {name:"Telepathic Speech", text:"As a bonus action, form a telepathic connection with a creature you can see within 30 feet for a number of minutes equal to your sorcerer level. The connection ends early if you are incapacitated, die or use this feature again."}
+        {name:"Psionic Spells", text:"You learn additional spells that don't count against your spells known: Arms of Hadar, Dissonant Whispers and the Mind Sliver cantrip (1st), Calm Emotions and Detect Thoughts (3rd), Hunger of Hadar and Sending (5th), Evard's Black Tentacles and Summon Aberration (7th), Rary's Telepathic Bond and Telekinesis (9th). When you gain a sorcerer level, you can replace one with a divination or enchantment spell of the same level from the sorcerer, warlock or wizard list."},
+        {name:"Telepathic Speech", text:"As a bonus action, choose a creature you can see within 30 feet. For a number of minutes equal to your sorcerer level, you and it can speak telepathically while within a number of miles of each other equal to your CHA modifier (minimum 1), if it understands a language. It ends early if you are incapacitated or die, or connect with a different creature."}
       ],
-      6:[{name:"Psionic Sorcery", text:"When you cast any of your Psionic Spells, you can cast it by expending a spell slot as normal or by spending sorcery points equal to the spell's level. If you use sorcery points, the spell requires no verbal or somatic components."}],
-      14:[{name:"Revelation in Flesh", text:"As a bonus action, spend 1 or more sorcery points (up to 4) to gain one benefit per point spent for 10 minutes: see invisible creatures within 60 ft, resistance to psychic damage, fly at your walking speed (hover), and swim at your walking speed (breathe water). Once per long rest."}],
-      18:[{name:"Warping Implosion", text:"As an action, teleport to an unoccupied space you can see within 120 feet. Each creature within 30 feet of your origin must succeed on a Strength save or take 3d10 force damage and be pulled to the nearest unoccupied space to your destination. Once per long rest, or spend 5 sorcery points to use again."}]
+      6:[
+        {name:"Psionic Sorcery", text:"You can cast a 1st-level or higher spell from Psionic Spells by spending sorcery points equal to its level instead of a spell slot. Cast this way, it needs no verbal or somatic components, and no material components unless they are consumed."},
+        {name:"Psychic Defenses", text:"You have resistance to psychic damage and advantage on saving throws against being charmed or frightened."}
+      ],
+      14:[{name:"Revelation in Flesh", text:"As a bonus action, spend 1 or more sorcery points to transform for 10 minutes, gaining one benefit per point: you see any invisible creature within 60 feet not behind total cover; a flying speed equal to your walking speed, with hover; a swimming speed equal to twice your walking speed, and you can breathe underwater; or your body becomes slimy and pliable, letting you move through spaces 1 inch wide without squeezing and spend 5 feet of movement to escape nonmagical restraints or a grapple."}],
+      18:[{name:"Warping Implosion", text:"As an action, teleport to an unoccupied space you can see within 120 feet. Each creature within 30 feet of the space you left makes a STR save, taking 3d10 force damage and being pulled toward that space on a failure, or half damage and no pull on a success. Once per long rest, or spend 5 sorcery points to use it again."}]
     }},
     {name:"Divine Soul", blurb:"Bears a divine spark that grants access to cleric spells alongside sorcery.", features:{
       1:[
-        {name:"Divine Magic", text:"Choose an affinity (Good, Evil, Law, Chaos or Neutrality). You learn a bonus spell from the cleric list based on your affinity (e.g. Cure Wounds for Good) and can pick cleric spells when you learn new sorcerer spells. Your bonus spells don't count against your spells known."},
-        {name:"Favored by the Gods", text:"When you fail a saving throw or miss with an attack roll, add 2d4 to the total (possibly turning the miss into a hit). Once per short or long rest."}
+        {name:"Divine Magic", text:"When you learn or replace a sorcerer cantrip or spell, you can choose it from the cleric list as well as the sorcerer list. Choose an affinity and learn its spell, which doesn't count against your spells known: Good (Cure Wounds), Evil (Inflict Wounds), Law (Bless), Chaos (Bane) or Neutrality (Protection from Evil and Good)."},
+        {name:"Favored by the Gods", text:"When you fail a saving throw or miss with an attack roll, you can roll 2d4 and add it to the total, possibly changing the outcome. Once per short or long rest."}
       ],
-      6:[{name:"Empowered Healing", text:"Once per turn when you or an ally within 5 feet rolls dice to restore HP with a spell, you can spend 1 sorcery point to reroll any number of those dice (you must use the new rolls)."}],
-      14:[{name:"Otherworldly Wings", text:"As a bonus action, manifest spectral wings giving you a flying speed of 30 feet. The wings last until you dismiss them (no action) or become incapacitated."}],
-      18:[{name:"Unearthly Recovery", text:"As a bonus action when you have fewer than half your maximum HP remaining, regain HP equal to half your HP maximum. Once per long rest."}]
+      6:[{name:"Empowered Healing", text:"When you or an ally within 5 feet rolls dice to determine the hit points a spell restores, you can spend 1 sorcery point to reroll any number of those dice once, if you aren't incapacitated. Once per turn."}],
+      14:[{name:"Otherworldly Wings", text:"As a bonus action, manifest spectral wings (their look depends on your affinity) and gain a flying speed of 30 feet until you are incapacitated, die or dismiss them as a bonus action."}],
+      18:[{name:"Unearthly Recovery", text:"As a bonus action when you have fewer than half your hit points remaining, regain hit points equal to half your hit point maximum. Once per long rest."}]
     }},
     {name:"Shadow Magic", blurb:"Born of shadow, drawing on the Shadowfell for dark and terrifying power.", features:{
       1:[
-        {name:"Eyes of the Dark", text:"Darkvision 120 feet. At level 3 you also learn Darkness and can cast it by spending 2 sorcery points without needing concentration (you can see through the darkness it creates)."},
-        {name:"Strength of the Grave", text:"When damage would drop you to 0 HP, make a Charisma save (DC 5 + the damage dealt). On a success, drop to 1 HP instead. Doesn't work against radiant damage or a critical hit. Once per long rest."}
+        {name:"Eyes of the Dark", text:"You have darkvision out to 120 feet. From level 3 you know Darkness (it doesn't count against your spells known) and can cast it with 2 sorcery points or a spell slot; cast with sorcery points, you can see through its darkness."},
+        {name:"Strength of the Grave", text:"When damage reduces you to 0 hit points, you can make a CHA save (DC 5 + the damage taken); on a success you drop to 1 hit point instead. It doesn't work against radiant damage or a critical hit. After a successful save, you can't use it again until you finish a long rest."}
       ],
-      6:[{name:"Hound of Ill Omen", text:"As a bonus action, spend 3 sorcery points to summon a howling shadow hound targeting a creature within 120 feet you can see. It appears adjacent to the target, moves and attacks independently (uses your spell save DC), has half your max HP, and the target has disadvantage on saves against your spells while within 5 feet of the hound. The hound disappears after 5 minutes."}],
-      14:[{name:"Shadow Walk", text:"When you are in dim light or darkness, as a bonus action teleport up to 120 feet to an unoccupied space you can see that is also in dim light or darkness."}],
-      18:[{name:"Umbral Form", text:"As a bonus action, spend 6 sorcery points to transform for 1 minute: resistance to all damage except force and radiant, pass through other creatures and objects as difficult terrain (take 1d10 force damage if you end your turn inside an object), and become immune to the grappled and restrained conditions."}]
+      6:[{name:"Hound of Ill Omen", text:"As a bonus action, spend 3 sorcery points to summon a hound of ill omen targeting a creature you can see within 120 feet. It uses dire wolf statistics, but is a Medium monstrosity with temporary hit points equal to half your sorcerer level. It appears within 30 feet of the target, rolls its own initiative, always knows where the target is, can move through creatures and objects as difficult terrain (5 force damage if it ends its turn inside an object), and can only move toward and attack its target (including opportunity attacks). While it is within 5 feet of the target, the target has disadvantage on saves against your spells. It vanishes at 0 hit points, when the target drops to 0, or after 5 minutes."}],
+      14:[{name:"Shadow Walk", text:"When you are in dim light or darkness, as a bonus action you can teleport up to 120 feet to an unoccupied space you can see that is also in dim light or darkness."}],
+      18:[{name:"Umbral Form", text:"As a bonus action, spend 6 sorcery points to become shadowy for 1 minute (until incapacitated or dead): you have resistance to all damage except force and radiant, and you can move through creatures and objects as difficult terrain, taking 5 force damage if you end your turn inside an object."}]
     }},
     {name:"Storm Sorcery", blurb:"Innate magic of elemental air that lets you ride the winds and call down lightning and thunder.", features:{
       1:[
@@ -1329,57 +1342,74 @@ export var SUBCLASSES = {
     }}
   ],
   "Warlock": [
-    {name:"The Fiend", blurb:"A pact with a devil or demon.", features:{1:[
-      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Burning Hands and Command (1st level), Blindness/Deafness and Scorching Ray (2nd, from warlock level 3), Fireball and Stinking Cloud (3rd, from warlock level 5)."},
-      {name:"Dark One's Blessing", text:"When you drop a hostile creature to 0 HP, gain temporary HP equal to your CHA modifier + warlock level."}
-    ]}},
-    {name:"The Archfey", blurb:"A pact with a lord or lady of the fey.", features:{1:[
-      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Faerie Fire and Sleep (1st level), Calm Emotions and Phantasmal Force (2nd, from warlock level 3), Blink and Plant Growth (3rd, from warlock level 5)."},
-      {name:"Fey Presence", text:"Action: each creature in a 10-foot cube around you must pass a Wisdom save or be charmed or frightened until the end of your next turn. Once per short or long rest."}
-    ]}},
-    {name:"The Great Old One", blurb:"A pact with an unknowable alien entity.", features:{1:[
-      {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Dissonant Whispers and Tasha's Hideous Laughter (1st level), Detect Thoughts and Phantasmal Force (2nd, from warlock level 3), Clairvoyance and Sending (3rd, from warlock level 5)."},
-      {name:"Awakened Mind", text:"Speak telepathically to any creature you can see within 30 feet."}
-    ]}},
+    {name:"The Fiend", blurb:"A pact with a devil or demon.", features:{
+      1:[
+        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Burning Hands and Command (1st level), Blindness/Deafness and Scorching Ray (2nd, from warlock level 3), Fireball and Stinking Cloud (3rd, from warlock level 5), Fire Shield and Wall of Fire (4th, from warlock level 7), Flame Strike and Hallow (5th, from warlock level 9)."},
+        {name:"Dark One's Blessing", text:"When you reduce a hostile creature to 0 hit points, you gain temporary hit points equal to your CHA modifier + your warlock level (minimum 1)."}
+      ],
+      6:[{name:"Dark One's Own Luck", text:"When you make an ability check or saving throw, you can add a d10 to the roll, after seeing it but before its effects occur. Once per short or long rest."}],
+      10:[{name:"Fiendish Resilience", text:"When you finish a short or long rest, choose a damage type; you have resistance to it until you choose a different one. Damage from magical or silver weapons ignores this resistance."}],
+      14:[{name:"Hurl Through Hell", text:"When you hit a creature with an attack, you can send it hurtling through the lower planes. It vanishes and returns at the end of your next turn to its space or the nearest unoccupied one; if it isn't a fiend, it takes 10d10 psychic damage. Once per long rest."}]
+    }},
+    {name:"The Archfey", blurb:"A pact with a lord or lady of the fey.", features:{
+      1:[
+        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Faerie Fire and Sleep (1st level), Calm Emotions and Phantasmal Force (2nd, from warlock level 3), Blink and Plant Growth (3rd, from warlock level 5), Dominate Beast and Greater Invisibility (4th, from warlock level 7), Dominate Person and Seeming (5th, from warlock level 9)."},
+        {name:"Fey Presence", text:"As an action, each creature in a 10-foot cube originating from you makes a WIS save against your spell save DC or is charmed or frightened by you (your choice) until the end of your next turn. Once per short or long rest."}
+      ],
+      6:[{name:"Misty Escape", text:"When you take damage, you can use your reaction to turn invisible and teleport up to 60 feet to an unoccupied space you can see. You stay invisible until the start of your next turn or until you attack or cast a spell. Once per short or long rest."}],
+      10:[{name:"Beguiling Defenses", text:"You are immune to being charmed. When another creature tries to charm you, you can use your reaction to turn it back: it makes a WIS save against your spell save DC or is charmed by you for 1 minute or until it takes damage."}],
+      14:[{name:"Dark Delirium", text:"As an action, a creature you can see within 60 feet makes a WIS save against your spell save DC. On a failure, it is charmed or frightened by you (your choice) for 1 minute or until your concentration breaks (as if concentrating on a spell), ending early if it takes damage. Until then, it believes it is lost in a misty realm of your design and can see and hear only itself, you and the illusion. Once per short or long rest."}]
+    }},
+    {name:"The Great Old One", blurb:"A pact with an unknowable alien entity.", features:{
+      1:[
+        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Dissonant Whispers and Tasha's Hideous Laughter (1st level), Detect Thoughts and Phantasmal Force (2nd, from warlock level 3), Clairvoyance and Sending (3rd, from warlock level 5), Dominate Beast and Evard's Black Tentacles (4th, from warlock level 7), Dominate Person and Telekinesis (5th, from warlock level 9)."},
+        {name:"Awakened Mind", text:"You can speak telepathically to any creature you can see within 30 feet. You don't need to share a language, but it must understand at least one language."}
+      ],
+      6:[{name:"Entropic Ward", text:"When a creature makes an attack roll against you, you can use your reaction to impose disadvantage on it. If it misses, your next attack roll against that creature has advantage if you make it before the end of your next turn. Once per short or long rest."}],
+      10:[{name:"Thought Shield", text:"Your thoughts can't be read by telepathy or other means unless you allow it. You have resistance to psychic damage, and a creature that deals psychic damage to you takes the same amount of damage."}],
+      14:[{name:"Create Thrall", text:"As an action, touch an incapacitated humanoid: it is charmed by you until Remove Curse is cast on it, the charmed condition is removed, or you use this feature again. You can communicate telepathically with it while you're on the same plane."}]
+    }},
     {name:"The Hexblade", blurb:"A pact forged with a sentient weapon from the Shadowfell.", features:{
       1:[
-        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Shield and Wrathful Smite (1st level), Blur and Branding Smite (2nd, from warlock level 3), Blink and Elemental Weapon (3rd, from warlock level 5)."},
-        {name:"Hexblade's Curse", text:"As a bonus action, curse a creature within 30 feet for 1 minute. Against it: add your proficiency bonus to damage, score criticals on a 19 or 20, and regain HP equal to your warlock level + CHA modifier when it dies. Uses equal to your proficiency bonus per long rest."},
-        {name:"Hex Warrior", text:"Proficiency with medium armor, shields and martial weapons. Choose one weapon you're holding after a long rest: use your Charisma modifier for its attack and damage rolls. If it's a pact weapon this applies to all pact weapons automatically."}
+        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Shield and Wrathful Smite (1st level), Blur and Branding Smite (2nd, from warlock level 3), Blink and Elemental Weapon (3rd, from warlock level 5), Phantasmal Killer and Staggering Smite (4th, from warlock level 7), Banishing Smite and Cone of Cold (5th, from warlock level 9)."},
+        {name:"Hexblade's Curse", text:"As a bonus action, curse a creature you can see within 30 feet for 1 minute, ending early if it dies or you die or are incapacitated. Against it: add your proficiency bonus to damage rolls, your attack rolls score a critical hit on a 19 or 20, and when it dies you regain hit points equal to your warlock level + CHA modifier (minimum 1). Once per short or long rest."},
+        {name:"Hex Warrior", text:"You gain proficiency with medium armor, shields and martial weapons. When you finish a long rest, touch one weapon you're proficient with that lacks the two-handed property; until your next long rest you can use your CHA modifier instead of STR or DEX for its attack and damage rolls. If you gain Pact of the Blade, this applies to every pact weapon you conjure, whatever its type.", grants:{armor:["Medium armor","Shields"], weapons:["Martial weapons"]}}
       ],
-      6:[{name:"Accursed Specter", text:"When you slay a humanoid, you can curse its spirit to rise as a specter under your control for 24 hours or until you use this feature again. It adds your CHA modifier to its attack bonus and has temporary HP equal to half your warlock level. Once per long rest."}],
-      10:[{name:"Armor of Hexes", text:"When the target of your Hexblade's Curse hits you with an attack roll, roll a d6. On a 4 or higher the attack instead misses you regardless of the roll."}],
-      14:[{name:"Master of Hexes", text:"When the target of your Hexblade's Curse dies, you can move the curse to a new creature within 30 feet (no action required). You don't regain HP from the old target's death."}]
+      6:[{name:"Accursed Specter", text:"When you slay a humanoid, you can make its spirit rise as a specter in an unoccupied space within 30 feet. It has temporary hit points equal to half your warlock level, rolls its own initiative, obeys your verbal commands and adds your CHA modifier (minimum +0) to its attack rolls. It serves you until the end of your next long rest. Once per long rest."}],
+      10:[{name:"Armor of Hexes", text:"When the target of your Hexblade's Curse hits you with an attack roll, roll a d6. On a 4 or higher, the attack misses you instead, regardless of its roll."}],
+      14:[{name:"Master of Hexes", text:"When the creature cursed by your Hexblade's Curse dies, you can apply the curse to a different creature you can see within 30 feet, if you aren't incapacitated. You don't regain hit points from the previous creature's death when you do."}]
     }},
     {name:"The Celestial", blurb:"A pact with a powerful being of the Upper Planes.", features:{
       1:[
-        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Cure Wounds and Guiding Bolt (1st level), Flaming Sphere and Lesser Restoration (2nd, from warlock level 3), Daylight and Revivify (3rd, from warlock level 5)."},
+        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Cure Wounds and Guiding Bolt (1st level), Flaming Sphere and Lesser Restoration (2nd, from warlock level 3), Daylight and Revivify (3rd, from warlock level 5), Guardian of Faith and Wall of Fire (4th, from warlock level 7), Flame Strike and Greater Restoration (5th, from warlock level 9)."},
         {name:"Bonus Cantrips", text:"You learn the Light and Sacred Flame cantrips; they don't count against your cantrips known."},
-        {name:"Healing Light", text:"A pool of d6s equal to 1 + your warlock level. As a bonus action, heal a creature within 60 feet by spending dice from the pool (max CHA modifier dice per turn). Replenish the pool on a long rest."}
+        {name:"Healing Light", text:"You have a pool of d6s equal to 1 + your warlock level, regained on a long rest. As a bonus action, heal a creature you can see within 60 feet by spending dice from the pool, up to your CHA modifier (minimum 1) at once, restoring hit points equal to their total."}
       ],
-      6:[{name:"Radiant Soul", text:"Resistance to radiant damage. When you cast a spell that deals radiant or fire damage, add your CHA modifier to one radiant or fire damage roll."}],
-      10:[{name:"Celestial Resilience", text:"Gain temporary HP equal to your warlock level + CHA modifier when you finish a short or long rest. Five creatures you can see also gain temporary HP equal to half that amount."}],
-      14:[{name:"Searing Vengeance", text:"When you or an ally within 60 feet would make a death saving throw, you can instead have them regain HP equal to half their max HP and stand up. Each creature of your choice within 30 feet takes 2d8 + CHA radiant damage and is blinded until the end of their next turn. Once per long rest."}]
+      6:[{name:"Radiant Soul", text:"You have resistance to radiant damage. When you cast a spell that deals radiant or fire damage, add your CHA modifier to one radiant or fire damage roll of it against one target."}],
+      10:[{name:"Celestial Resilience", text:"When you finish a short or long rest, you gain temporary hit points equal to your warlock level + CHA modifier, and up to five creatures you can see gain temporary hit points equal to half your warlock level + your CHA modifier."}],
+      14:[{name:"Searing Vengeance", text:"When you have to make a death saving throw at the start of your turn, you can instead spring back up: regain half your hit point maximum and stand if you choose, and each creature of your choice within 30 feet takes 2d8 + your CHA modifier radiant damage and is blinded until the end of the current turn. Once per long rest."}]
     }},
     {name:"The Fathomless", blurb:"A pact with an unfathomable entity of the deep ocean.", features:{
       1:[
-        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Create or Destroy Water and Thunderwave (1st level), Gust of Wind and Silence (2nd, from warlock level 3), Lightning Bolt and Sleet Storm (3rd, from warlock level 5)."},
-        {name:"Tentacle of the Deeps", text:"As a bonus action, summon a spectral tentacle in a space within 60 feet for 1 minute. When a creature within 10 feet of the tentacle hits you or another creature you can see, use your reaction to deal 1d8 cold damage to the attacker. On your turn (no action), move the tentacle up to 30 feet and have it lash out: melee spell attack, 2d8 cold damage + reduce speed by 10 feet until your next turn. Uses equal to your proficiency bonus per long rest."},
+        {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Create or Destroy Water and Thunderwave (1st level), Gust of Wind and Silence (2nd, from warlock level 3), Lightning Bolt and Sleet Storm (3rd, from warlock level 5), Control Water and Summon Elemental (water only) (4th, from warlock level 7), Bigby's Hand (a tentacle) and Cone of Cold (5th, from warlock level 9)."},
+        {name:"Tentacle of the Deeps", text:"As a bonus action, create a 10-foot spectral tentacle at a point you can see within 60 feet for 1 minute (or until you create another). When it appears, make a melee spell attack against a creature within 10 feet of it: 1d8 cold damage (2d8 from level 10), and its speed drops by 10 feet until the start of your next turn. As a bonus action on later turns, you can move it up to 30 feet and attack again. Uses equal to your proficiency bonus per long rest."},
         {name:"Gift of the Sea", text:"You gain a swimming speed of 40 feet and can breathe underwater."}
       ],
-      6:[{name:"Oceanic Soul", text:"Resistance to cold damage. You can communicate telepathically with any creature that can breathe water, as long as you share a language and it is within 30 feet."}],
-      10:[{name:"Guardian Coil", text:"Your Tentacle of the Deeps can now protect. When you or a creature you can see within 10 feet of the tentacle takes damage, use your reaction to choose one of those creatures: reduce the damage it takes by 1d8."}],
-      14:[{name:"Fathomless Plunge", text:"As an action, you and up to five creatures within 30 feet that you choose are teleported to a location you can visualize within 1 mile that is on or in a body of water. Once per short or long rest."}]
+      6:[
+        {name:"Oceanic Soul", text:"You have resistance to cold damage. While fully submerged, you and any other fully submerged creature can understand each other's speech."},
+        {name:"Guardian Coil", text:"When you or a creature you can see takes damage within 10 feet of your tentacle, you can use your reaction to reduce the damage to one of them by 1d8 (2d8 from level 10)."}
+      ],
+      10:[{name:"Grasping Tentacles", text:"You learn Evard's Black Tentacles (it doesn't count against your spells known) and can cast it once per long rest without a spell slot. Whenever you cast it, you gain temporary hit points equal to your warlock level, and damage can't break your concentration on it."}],
+      14:[{name:"Fathomless Plunge", text:"As an action, teleport yourself and up to five willing creatures you can see within 30 feet up to 1 mile away, to a body of water you've seen (pond-sized or larger) or within 30 feet of it, each appearing within 30 feet of the others. Once per short or long rest."}]
     }},
     {name:"The Genie", blurb:"A pact with one of the noble genies of the four elements.", features:{
       1:[
-        {name:"Genie's Vessel", text:"Your patron gives you a tiny vessel (a lamp, urn, ring or bottle). As a bonus action, vanish into the vessel for up to 10 minutes while remaining aware of your surroundings; other creatures can enter it (up to your proficiency bonus). The vessel has AC and HP equal to your warlock level + proficiency bonus. If destroyed, a new one appears after 7 days."},
-        {name:"Expanded Spell List", text:"Your genie type determines your bonus spells. Dao (earth): Sanctuary and Speak with Animals (1st), Spike Growth and Phantasmal Force (3rd). Djinni (air): Detect Evil and Good and Thunderwave (1st), Gust of Wind and Phantasmal Force (3rd). Efreeti (fire): Burning Hands and Detect Magic (1st), Scorching Ray and Suggestion (3rd). Marid (water): Detect Evil and Good and Fog Cloud (1st), Blur and Silence (3rd)."},
-        {name:"Elemental Gift", text:"At the end of a long rest, gain temporary HP equal to your warlock level + CHA modifier. Also gain a damage resistance based on genie type: bludgeoning (Dao), thunder (Djinni), fire (Efreeti) or cold (Marid)."}
+        {name:"Expanded Spell List", text:"Every genie patron adds Detect Evil and Good (1st), Phantasmal Force (2nd, from warlock level 3), Create Food and Water (3rd, from 5), Phantasmal Killer (4th, from 7), Creation (5th, from 9) and Wish (9th). Your genie kind adds one more per level. Dao: Sanctuary, Spike Growth, Meld into Stone, Stone Shape, Wall of Stone. Djinni: Thunderwave, Gust of Wind, Wind Wall, Greater Invisibility, Seeming. Efreeti: Burning Hands, Scorching Ray, Fireball, Fire Shield, Flame Strike. Marid: Fog Cloud, Blur, Sleet Storm, Control Water, Cone of Cold."},
+        {name:"Genie's Vessel", text:"Your patron gives you a Tiny vessel that can be your spellcasting focus (AC equal to your spell save DC, HP equal to your warlock level + proficiency bonus, immune to poison and psychic damage); a 1-hour ceremony replaces a lost one. Bottled Respite: as an action, vanish into the vessel, a comfortable 20-foot-radius, 20-foot-high cylinder, for up to twice your proficiency bonus in hours, hearing the area around it; you leave as a bonus action, or if you die or it is destroyed. Once per long rest. Genie's Wrath: once on each of your turns when you hit with an attack roll, deal extra damage equal to your proficiency bonus: bludgeoning (Dao), thunder (Djinni), fire (Efreeti) or cold (Marid)."}
       ],
-      6:[{name:"Sanctuary Vessel", text:"When you enter your Genie's Vessel, choose up to 5 willing creatures within 30 feet to enter with you. Inside the vessel, creatures can use a short rest in only 10 minutes, and you can expend Hit Dice to heal a creature in the vessel as if it spent them during a short rest."}],
-      10:[{name:"Limited Wish", text:"Three times per long rest, speak a wish of up to 6th level to your patron: cast any spell of 6th level or lower from any class spell list (no spell slot, no material components). If it normally requires concentration you must concentrate."}],
-      14:[{name:"Genie's Wrath", text:"Once per turn when you hit with an attack roll, deal extra damage based on your genie type: 1d6 bludgeoning (Dao), 1d6 thunder (Djinni), 1d6 fire (Efreeti) or 1d6 cold (Marid)."}]
+      6:[{name:"Elemental Gift", text:"You have resistance to your genie's damage type: bludgeoning (Dao), thunder (Djinni), fire (Efreeti) or cold (Marid). As a bonus action, you can gain a 30-foot flying speed with hover for 10 minutes, a number of times equal to your proficiency bonus per long rest."}],
+      10:[{name:"Sanctuary Vessel", text:"When you use Bottled Respite, up to five willing creatures you can see within 30 feet can enter with you; you can eject them as a bonus action, and everyone leaves if you do. Anyone who stays inside for at least 10 minutes gains the benefit of a short rest, and adds your proficiency bonus to hit points regained from Hit Dice spent there."}],
+      14:[{name:"Limited Wish", text:"As an action, speak a desire to your vessel for the effect of one spell of 6th level or lower with a casting time of 1 action, from any class's list, ignoring its requirements and costly components. Once you do, you can't again until you finish 1d4 long rests."}]
     }},
     {name:"The Undead", blurb:"A pact with a deathless being such as a lich or vampire lord that grants a dreadful form.", features:{
       1:[

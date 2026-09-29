@@ -330,12 +330,21 @@ export var SUBCLASS_RESOURCES = {
     "Clockwork Soul": [
       {id:"restore_balance", name:"Restore Balance", level:1,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Reaction: when a creature within 60 ft rolls with advantage or disadvantage, cancel it."}
+        hint:"Reaction: cancel advantage or disadvantage on a d20 roll by a creature within 60 ft."},
+      {id:"trance_of_order", name:"Trance of Order", level:14, max:always(1), reset:always("long"),
+        hint:"Bonus action for 1 minute: no advantage against you, treat d20 rolls of 9 or lower as 10. More uses cost 5 sorcery points."},
+      {id:"clockwork_cavalcade", name:"Clockwork Cavalcade", level:18, max:always(1), reset:always("long"),
+        hint:"Action: 30-ft cube heals up to 100 HP, repairs objects and ends spells of 6th level or lower. More uses cost 7 sorcery points."}
     ],
     "Aberrant Mind": [
-      {id:"telepathic_speech", name:"Telepathic Speech", level:1,
-        max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Bonus action: form a telepathic connection with a creature you can see within 30 ft for sorcerer-level minutes."}
+      {id:"warping_implosion", name:"Warping Implosion", level:18, max:always(1), reset:always("long"),
+        hint:"Action: teleport 120 ft; creatures near your old space take 3d10 force and are pulled (STR save). More uses cost 5 sorcery points."}
+    ],
+    "Divine Soul": [
+      {id:"favored_by_the_gods", name:"Favored by the Gods", level:1, max:always(1), reset:always("short"),
+        hint:"When you fail a save or miss an attack, add 2d4 to the total."},
+      {id:"unearthly_recovery", name:"Unearthly Recovery", level:18, max:always(1), reset:always("long"),
+        hint:"Bonus action below half HP: regain half your hit point maximum."}
     ],
     "Storm Sorcery": [
       {id:"wind_soul", name:"Wind Soul (Share Flight)", level:18, max:always(1), reset:always("short"),
@@ -352,24 +361,52 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Warlock": {
+    "The Fiend": [
+      {id:"dark_ones_own_luck", name:"Dark One's Own Luck", level:6, max:always(1), reset:always("short"),
+        hint:"Add a d10 to an ability check or saving throw after seeing the roll."},
+      {id:"hurl_through_hell", name:"Hurl Through Hell", level:14, max:always(1), reset:always("long"),
+        hint:"On a hit: send the target through the lower planes until the end of your next turn (10d10 psychic unless it's a fiend)."}
+    ],
     "The Archfey": [
       {id:"fey_presence", name:"Fey Presence", level:1, max:always(1), reset:always("short"),
-        hint:"Action: creatures in a 10-ft cube around you must make a WIS save or be charmed or frightened."}
+        hint:"Action: creatures in a 10-ft cube from you make a WIS save or are charmed or frightened until the end of your next turn."},
+      {id:"misty_escape", name:"Misty Escape", level:6, max:always(1), reset:always("short"),
+        hint:"Reaction when you take damage: turn invisible and teleport up to 60 ft."},
+      {id:"dark_delirium", name:"Dark Delirium", level:14, max:always(1), reset:always("short"),
+        hint:"Action: a creature within 60 ft makes a WIS save or is lost in an illusory realm, charmed or frightened (concentration, 1 minute)."}
+    ],
+    "The Great Old One": [
+      {id:"entropic_ward", name:"Entropic Ward", level:6, max:always(1), reset:always("short"),
+        hint:"Reaction: impose disadvantage on an attack against you; if it misses, advantage on your next attack against it."}
     ],
     "The Hexblade": [
-      {id:"hexblades_curse", name:"Hexblade's Curse", level:1,
-        max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Bonus action: curse a creature within 30 ft: add proficiency to damage, crit on a 19 or 20, regain HP equal to warlock level + CHA when it dies."}
+      {id:"hexblades_curse", name:"Hexblade's Curse", level:1, max:always(1), reset:always("short"),
+        hint:"Bonus action: curse a creature within 30 ft: add proficiency to damage, crit on a 19 or 20, regain HP equal to warlock level + CHA when it dies."},
+      {id:"accursed_specter", name:"Accursed Specter", level:6, max:always(1), reset:always("long"),
+        hint:"When you slay a humanoid: raise its spirit as a specter that serves you until your next long rest."}
     ],
     "The Celestial": [
       {id:"healing_light", name:"Healing Light", level:1, pool:true,
         max:function(lv){ return 1 + lv; }, reset:always("long"),
-        hint:"Bonus action: spend d6s from this pool (max CHA mod per turn) to heal a creature within 60 ft."}
+        hint:"Bonus action: spend d6s from this pool (max CHA mod at once) to heal a creature within 60 ft."},
+      {id:"searing_vengeance", name:"Searing Vengeance", level:14, max:always(1), reset:always("long"),
+        hint:"Instead of a death save: regain half your max HP and stand; creatures of your choice within 30 ft take 2d8 + CHA radiant and are blinded."}
     ],
     "The Fathomless": [
-      {id:"tentacle_of_the_deeps", name:"Tentacle of the Deeps", level:1,
-        max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Bonus action: summon a spectral tentacle for 1 minute: lash out for 2d8 cold damage or deal 1d8 cold to attackers as a reaction."}
+      {id:"tentacle_of_the_deeps", name:"Tentacle of the Deeps", level:1, max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Bonus action: a 1-minute spectral tentacle within 60 ft that strikes for 1d8 cold (2d8 from level 10) and slows."},
+      {id:"grasping_tentacles", name:"Grasping Tentacles (Free Casting)", level:10, max:always(1), reset:always("long"),
+        hint:"Cast Evard's Black Tentacles without a spell slot; gain temp HP equal to your warlock level."},
+      {id:"fathomless_plunge", name:"Fathomless Plunge", level:14, max:always(1), reset:always("short"),
+        hint:"Action: teleport you and up to five willing creatures within 30 ft up to 1 mile, to water you've seen."}
+    ],
+    "The Genie": [
+      {id:"bottled_respite", name:"Bottled Respite", level:1, max:always(1), reset:always("long"),
+        hint:"Action: vanish into your vessel for up to twice your proficiency bonus in hours."},
+      {id:"elemental_gift_flight", name:"Elemental Gift (Flight)", level:6, max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Bonus action: 30-ft flying speed with hover for 10 minutes."},
+      {id:"limited_wish", name:"Limited Wish", level:14, max:always(1), reset:always("manual"),
+        hint:"Action: the effect of any spell of 6th level or lower (1-action casting time). Returns after 1d4 long rests: roll when you use it and regain it yourself."}
     ],
     "The Undead": [
       {id:"form_of_dread", name:"Form of Dread", level:1,
