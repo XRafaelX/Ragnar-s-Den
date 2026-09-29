@@ -55,8 +55,10 @@ export function classSpellAbility(cl){
      grants        {armor, weapons, tools} proficiencies (Battle Ready)
      magicWeaponAbility  ability usable for attacks with magic weapons
      chosenWeaponAbility  ability usable with one weapon the player marks
-                   as `chosenWeapon` in the inventory (Hex Warrior) */
-var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility"];
+                   as `chosenWeapon` in the inventory (Hex Warrior)
+     abilityBonus  {str:4, ...} added to ability scores at level-up, up to
+                   abilityMax (default 20) (Primal Champion) */
+var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax"];
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -195,6 +197,9 @@ export function restoreResources(c, restType){
 }
 export function barbarianClassEntry(c){
   return (c.classes||[]).find(function(cl){ return cl.name==="Barbarian"; });
+}
+export function barbarianRageDamage(level){
+  return level>=16 ? 4 : level>=9 ? 3 : 2;
 }
 export function barbarianRageMax(level){
   if(level>=20) return Infinity;

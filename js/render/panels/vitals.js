@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, computeArmorClass, computeInitiative, characterResources, restoreResources } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, characterResources, restoreResources } from "../../core/helpers.js";
 import { CLASSES_INFO } from "../../data/classes.js";
 import { HIT_DICE_BY_CLASS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -554,7 +554,7 @@ export function renderVitalsPanel(c){
 
     var rageP = document.createElement("p");
     rageP.style.fontSize="13px"; rageP.style.margin="0 0 10px";
-    rageP.textContent = "Rages remaining: "+rageRemaining+" / "+rageMaxLabel;
+    rageP.textContent = "Rages remaining: "+rageRemaining+" / "+rageMaxLabel+" · Rage damage +"+barbarianRageDamage(barbClass.level||1);
     rageCard.appendChild(rageP);
 
     var rageBtn = document.createElement("button");

@@ -407,7 +407,27 @@ function stepAsi(container){
 
 function conModAfterAsi(){
   var con = (Number(lu.c.abilities.con)||10) + (lu.asiMode==="asi" && target().asi ? lu.asi.con : 0);
+  var fb = featureAbilityBonus().con;
+  if(fb) con = Math.min(fb.max, con + fb.bonus);
   return mod(con);
+}
+
+/* Ability increases from features this level-up grants, as
+   {ability: {bonus, max}} (Primal Champion: +4 STR and CON, max 24).
+   Worked out from the target class level, so call it before finish()
+   changes the class entry. */
+function featureAbilityBonus(){
+  var t = target();
+  var entry = {name: lu.className, level: t.newLevel,
+    subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : "")};
+  var out = {};
+  classFeaturesGainedAt(entry, t.newLevel).forEach(function(f){
+    if(!f.abilityBonus) return;
+    Object.keys(f.abilityBonus).forEach(function(k){
+      out[k] = {bonus: (out[k] ? out[k].bonus : 0) + f.abilityBonus[k], max: f.abilityMax || 20};
+    });
+  });
+  return out;
 }
 
 function stepHp(container){
@@ -555,6 +575,7 @@ function finish(){
   var t = target();
   var subName = t.needsSubclass ? chosenSubclass() : null;
   var gain = hpGain();
+  var featureBonus = featureAbilityBonus();
   var before = {total: totalLevel(c), pb: profBonus(c), slots: slotSnapshot(c), pact: c.spellcasting.pact ? JSON.parse(JSON.stringify(c.spellcasting.pact)) : null};
   var record = {
     className: lu.className, isNewClass: !t.existing, prevSubclass: t.existing ? (t.existing.subclass||"") : "",
@@ -609,6 +630,17 @@ function finish(){
     if(f.speed) record.speedGain += f.speed;
   });
   c.speed = (Number(c.speed)||30) + record.speedGain;
+
+  // Ability increases from features (Primal Champion), recorded with the
+  // ASI so the unlock popup shows them and undo takes them back off.
+  Object.keys(featureBonus).forEach(function(k){
+    var was = Number(c.abilities[k])||10;
+    var now = Math.min(featureBonus[k].max, was + featureBonus[k].bonus);
+    if(now === was) return;
+    c.abilities[k] = now;
+    record.asi = record.asi || {};
+    record.asi[k] = (record.asi[k]||0) + (now - was);
+  });
 
   c.hp.max = (Number(c.hp.max)||0) + gain;
   c.hp.current = (Number(c.hp.current)||0) + gain;

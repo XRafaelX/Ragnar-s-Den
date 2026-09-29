@@ -46,7 +46,17 @@ export var CLASS_PROGRESSION = {
       5: [
         {name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."},
         {name:"Fast Movement", text:"Your speed increases by 10 feet while you aren't wearing heavy armor. (Already added to your speed.)", speed:10}
-      ]
+      ],
+      7: [{name:"Feral Instinct", text:"You have advantage on initiative rolls. If you are surprised at the start of combat and aren't incapacitated, you can act normally on your first turn, but only if you enter your rage before doing anything else."}],
+      9: [
+        {name:"Rage", replaces:"Rage", text:"Bonus action to enter a rage for 1 minute: +3 damage on Strength melee weapon attacks, resistance to bludgeoning, piercing and slashing damage, and advantage on Strength checks and saves. You can't cast or concentrate on spells while raging. It ends early if you are knocked unconscious, or if your turn ends without you attacking a hostile creature or taking damage since your last turn."},
+        {name:"Brutal Critical", text:"When you score a critical hit with a melee attack, roll one additional weapon damage die for the extra critical damage (two dice from level 13, three from level 17)."}
+      ],
+      11: [{name:"Relentless Rage", text:"If you drop to 0 hit points while raging and don't die outright, you can make a DC 10 CON save to drop to 1 hit point instead. Each later use adds 5 to the DC, which resets to 10 after a short or long rest."}],
+      15: [{name:"Persistent Rage", text:"Your rage ends early only if you fall unconscious or choose to end it."}],
+      16: [{name:"Rage", replaces:"Rage", text:"Bonus action to enter a rage for 1 minute: +4 damage on Strength melee weapon attacks, resistance to bludgeoning, piercing and slashing damage, and advantage on Strength checks and saves. You can't cast or concentrate on spells while raging. It ends early only if you fall unconscious or choose to end it."}],
+      18: [{name:"Indomitable Might", text:"If your total for a Strength check is lower than your Strength score, you can use the score instead."}],
+      20: [{name:"Primal Champion", text:"Your Strength and Constitution scores increase by 4, and their maximum becomes 24. (Already added to your scores and hit points.)", abilityBonus:{str:4, con:4}, abilityMax:24}]
     }
   },
   "Bard": {
@@ -56,13 +66,21 @@ export var CLASS_PROGRESSION = {
     features: {
       2: [
         {name:"Jack of All Trades", text:"Add half your proficiency bonus (rounded down) to any ability check that doesn't already include your proficiency bonus."},
-        {name:"Song of Rest", text:"During a short rest, allies who spend hit dice while hearing you perform regain an extra 1d6 hit points."}
+        {name:"Song of Rest", text:"During a short rest, allies who spend hit dice while hearing you perform regain an extra 1d6 hit points (1d8 at level 9, 1d10 at 13, 1d12 at 17)."}
       ],
       3: [{name:"Expertise", text:"Pick two skills you're proficient in: your proficiency bonus is doubled for them. Tick the E box next to them on the Abilities & Skills tab."}],
       5: [
-        {name:"Bardic Inspiration", replaces:"Bardic Inspiration", text:"Bonus action to give an ally within 60 feet a d8 inspiration die to add to one ability check, attack roll or saving throw. Uses equal to your Charisma modifier."},
+        {name:"Bardic Inspiration", replaces:"Bardic Inspiration", text:"Bonus action to give an ally within 60 feet a d8 inspiration die to add to one ability check, attack roll or saving throw within 10 minutes. Uses equal to your Charisma modifier (minimum 1)."},
         {name:"Font of Inspiration", text:"You regain all your Bardic Inspiration uses on a short rest as well as a long rest."}
-      ]
+      ],
+      6: [{name:"Countercharm", text:"As an action, start a performance lasting until the end of your next turn. You and friendly creatures within 30 feet that can hear you have advantage on saves against being frightened or charmed. It ends early if you are incapacitated or silenced, or you end it."}],
+      10: [
+        {name:"Bardic Inspiration", replaces:"Bardic Inspiration", text:"Bonus action to give an ally within 60 feet a d10 inspiration die to add to one ability check, attack roll or saving throw within 10 minutes. Uses equal to your Charisma modifier (minimum 1)."},
+        {name:"Expertise", replaces:"Expertise", text:"Pick two more skills you're proficient in (four in total): your proficiency bonus is doubled for them. Tick the E box next to them on the Abilities & Skills tab."},
+        {name:"Magical Secrets", text:"You learn two spells of your choice from any class (cantrips or spells of a level you can cast). They count as bard spells for you and are included in your spells known. You learn two more at levels 14 and 18."}
+      ],
+      15: [{name:"Bardic Inspiration", replaces:"Bardic Inspiration", text:"Bonus action to give an ally within 60 feet a d12 inspiration die to add to one ability check, attack roll or saving throw within 10 minutes. Uses equal to your Charisma modifier (minimum 1)."}],
+      20: [{name:"Superior Inspiration", text:"When you roll initiative and have no Bardic Inspiration uses left, you regain one."}]
     }
   },
   "Cleric": {
@@ -70,8 +88,10 @@ export var CLASS_PROGRESSION = {
     prereq: [["wis"]], casterType: "full", spellAbility: "wis", asiLevels: STANDARD_ASI,
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:[], tools:[], note:""},
     features: {
-      2: [{name:"Channel Divinity (1/rest)", text:"Channel divine power once per short or long rest. Every cleric has Turn Undead: each undead within 30 feet that fails a Wisdom save must flee from you for 1 minute. Your domain adds another option."}],
-      5: [{name:"Destroy Undead (CR 1/2)", text:"When an undead of challenge rating 1/2 or lower fails its save against your Turn Undead, it is destroyed instantly."}]
+      2: [{name:"Channel Divinity", text:"Channel divine power once per short or long rest. Every cleric has Turn Undead (action: each undead within 30 feet that can see or hear you makes a WIS save or is turned for 1 minute or until it takes damage), and your domain adds another option."}],
+      5: [{name:"Destroy Undead", text:"When an undead of challenge rating 1/2 or lower fails its save against your Turn Undead, it is destroyed instantly (CR 1 at level 8, CR 2 at 11, CR 3 at 14, CR 4 at 17)."}],
+      6: [{name:"Channel Divinity", replaces:"Channel Divinity", text:"Channel divine power twice per short or long rest (three times from level 18). Every cleric has Turn Undead (action: each undead within 30 feet that can see or hear you makes a WIS save or is turned for 1 minute or until it takes damage), and your domain adds another option."}],
+      10: [{name:"Divine Intervention", text:"As an action, describe the help you seek and roll percentile dice; if you roll equal to or lower than your cleric level, your deity intervenes (the DM chooses how). If it does, you can't use this again for 7 days; otherwise you can after a long rest. From level 20 the call succeeds automatically."}]
     }
   },
   "Druid": {
@@ -80,7 +100,13 @@ export var CLASS_PROGRESSION = {
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:[], tools:[], note:""},
     features: {
       2: [{name:"Wild Shape", text:"Action to turn into a beast you've seen (max CR 1/4, no flying or swimming speed) for hours equal to half your druid level. Twice per short or long rest. You use the beast's hit points; when they hit 0 you turn back."}],
-      4: [{name:"Wild Shape", replaces:"Wild Shape", text:"Action to turn into a beast you've seen (max CR 1/2, no flying speed) for hours equal to half your druid level. Twice per short or long rest. You use the beast's hit points; when they hit 0 you turn back."}]
+      4: [{name:"Wild Shape", replaces:"Wild Shape", text:"Action to turn into a beast you've seen (max CR 1/2, no flying speed) for hours equal to half your druid level. Twice per short or long rest. You use the beast's hit points; when they hit 0 you turn back."}],
+      8: [{name:"Wild Shape", replaces:"Wild Shape", text:"Action to turn into a beast you've seen (max CR 1, flying allowed) for hours equal to half your druid level. Twice per short or long rest (unlimited from level 20). You use the beast's hit points; when they hit 0 you turn back."}],
+      18: [
+        {name:"Timeless Body", text:"You age only 1 year for every 10 that pass."},
+        {name:"Beast Spells", text:"You can cast many of your druid spells in any Wild Shape form, performing their verbal and somatic components, but you can't provide material components."}
+      ],
+      20: [{name:"Archdruid", text:"You can use Wild Shape an unlimited number of times. You can ignore the verbal and somatic components of your druid spells, and material components that have no cost and aren't consumed, in normal and beast form."}]
     }
   },
   "Fighter": {

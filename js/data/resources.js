@@ -20,16 +20,18 @@ export var CLASS_RESOURCES = {
     {id:"bardic_inspiration", name:"Bardic Inspiration", level:1,
       max:function(lv, m){ return atLeastOne(m.cha); },
       reset:function(lv){ return lv>=5 ? "short" : "long"; },
-      hint:"Bonus action: give an ally within 60 ft an inspiration die (d6, d8 from level 5) to add to one check, attack or save."}
+      hint:"Bonus action: give an ally within 60 ft an inspiration die (d6; d8 from level 5, d10 from 10, d12 from 15) to add to one check, attack or save."}
   ],
   "Cleric": [
     {id:"channel_divinity", name:"Channel Divinity", level:2,
       max:function(lv){ return lv>=18 ? 3 : lv>=6 ? 2 : 1; }, reset:always("short"),
-      hint:"Turn Undead or your domain's Channel Divinity option."}
+      hint:"Turn Undead or your domain's Channel Divinity option."},
+    {id:"divine_intervention", name:"Divine Intervention", level:10, max:always(1), reset:always("manual"),
+      hint:"Action: roll d100; at or under your cleric level (always from level 20), your deity helps. Regain after 7 days if it worked, or after a long rest if it didn't."}
   ],
   "Druid": [
     {id:"wild_shape", name:"Wild Shape", level:2, max:always(2), reset:always("short"),
-      hint:"Action (bonus action for Circle of the Moon): turn into a beast you've seen."}
+      hint:"Action (bonus action for Circle of the Moon): turn into a beast you've seen. Unlimited from level 20 (Archdruid)."}
   ],
   "Fighter": [
     {id:"second_wind", name:"Second Wind", level:1, max:always(1), reset:always("short"),
