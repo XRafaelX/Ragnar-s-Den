@@ -66,6 +66,32 @@ export var CLASS_RESOURCES = {
 
 /* Keyed by class, then subclass name (as in SUBCLASSES). */
 export var SUBCLASS_RESOURCES = {
+  "Barbarian": {
+    "Path of the Zealot": [
+      {id:"zealous_presence", name:"Zealous Presence", level:10, max:always(1), reset:always("long"),
+        hint:"Bonus action: up to ten allies within 60 ft have advantage on attack rolls and saves until the start of your next turn."}
+    ],
+    "Path of the Ancestral Guardian": [
+      {id:"consult_the_spirits", name:"Consult the Spirits", level:10, max:always(1), reset:always("short"),
+        hint:"Cast Augury or Clairvoyance without a spell slot or material components."}
+    ],
+    "Path of Wild Magic": [
+      {id:"magic_awareness", name:"Magic Awareness", level:3,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Action: sense spells and magic items within 60 ft until the end of your next turn."},
+      {id:"bolstering_magic", name:"Bolstering Magic", level:6,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Action: a touched creature adds a d3 to attacks and checks for 10 minutes, or regains a spell slot of up to a d3's level."}
+    ],
+    "Path of the Beast": [
+      {id:"infectious_fury", name:"Infectious Fury", level:10,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"On a natural-weapon hit while raging: WIS save or it attacks a creature you choose, or takes 2d12 psychic."},
+      {id:"call_the_hunt", name:"Call the Hunt", level:14,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"When you rage: allies (up to CON mod) add 1d6 to one hit each turn; you gain 5 temp HP per ally."}
+    ]
+  },
   "Artificer": {
     "Alchemist": [
       {id:"experimental_elixir", name:"Free Experimental Elixir", level:3,
@@ -78,6 +104,13 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Bard": {
+    "College of Eloquence": [
+      {id:"universal_speech", name:"Universal Speech", level:6, max:always(1), reset:always("long"),
+        hint:"Action: up to CHA mod creatures within 60 ft understand you for 1 hour. More uses cost a spell slot."},
+      {id:"infectious_inspiration", name:"Infectious Inspiration", level:14,
+        max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
+        hint:"Reaction when your Bardic Inspiration die helps someone succeed: give another creature within 60 ft a free die."}
+    ],
     "College of Creation": [
       {id:"performance_of_creation", name:"Performance of Creation", level:3, max:always(1), reset:always("long"),
         hint:"Action: create a nonmagical item worth up to 20 x your bard level gp. More uses cost a 2nd-level or higher spell slot."},

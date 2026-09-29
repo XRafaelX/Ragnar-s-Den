@@ -233,58 +233,71 @@ export var SUBCLASSES = {
     }}
   ],
   "Barbarian": [
-    {name:"Path of the Berserker", blurb:"Rage turns into a violent frenzy for extra attacks.", features:{3:[
-      {name:"Frenzy", text:"When you rage you can choose to frenzy: make one extra melee attack as a bonus action each turn. When the rage ends you gain one level of exhaustion."}
-    ]}},
-    {name:"Path of the Totem Warrior", blurb:"Draws strength from a spirit animal guide.", features:{3:[
-      {name:"Spirit Seeker", text:"You can cast Beast Sense and Speak with Animals as rituals."},
-      {name:"Totem Spirit", text:"Choose a totem: Bear (resist all damage but psychic while raging), Eagle (others have disadvantage on opportunity attacks against you; Dash as a bonus action) or Wolf (allies have advantage on melee attacks against enemies next to you while you rage)."}
-    ]}},
-    {name:"Path of the Zealot", blurb:"A divine warrior powered by a god's fury.", features:{3:[
-      {name:"Divine Fury", text:"While raging, the first creature you hit each turn takes an extra 1d6 + half your barbarian level radiant or necrotic damage."},
-      {name:"Warrior of the Gods", text:"Spells that would bring you back from the dead need no material components."}
-    ]}},
+    {name:"Path of the Berserker", blurb:"Rage turns into a violent frenzy for extra attacks.", features:{
+      3:[{name:"Frenzy", text:"When you rage, you can choose to frenzy. For the rest of that rage, on each of your turns after this one you can make a single melee weapon attack as a bonus action. When the rage ends, you suffer one level of exhaustion."}],
+      6:[{name:"Mindless Rage", text:"You can't be charmed or frightened while raging. If you are charmed or frightened when you enter your rage, the effect is suspended for the rage's duration."}],
+      10:[{name:"Intimidating Presence", text:"As an action, frighten one creature you can see within 30 feet that can see or hear you. It makes a WIS save (DC 8 + proficiency bonus + CHA modifier) or is frightened of you until the end of your next turn. On later turns you can use your action to extend this until the end of your next turn. The effect ends if the creature ends its turn out of your line of sight or more than 60 feet away. If it succeeds on its save, you can't use this on it again for 24 hours."}],
+      14:[{name:"Retaliation", text:"When you take damage from a creature within 5 feet of you, you can use your reaction to make a melee weapon attack against it."}]
+    }},
+    {name:"Path of the Totem Warrior", blurb:"Draws strength from a spirit animal guide.", features:{
+      3:[
+        {name:"Spirit Seeker", text:"You can cast Beast Sense and Speak with Animals, but only as rituals."},
+        {name:"Totem Spirit", text:"Choose a totem animal (you can pick a different animal at levels 6 and 14). Bear: while raging, you have resistance to all damage except psychic. Eagle: while raging and not wearing heavy armor, other creatures have disadvantage on opportunity attacks against you, and you can Dash as a bonus action. Wolf: while raging, your friends have advantage on melee attacks against any hostile creature within 5 feet of you. Elk (SCAG): while raging and not wearing heavy armor, your walking speed increases by 15 feet. Tiger (SCAG): while raging, you can add 10 feet to your long jump and 3 feet to your high jump."}
+      ],
+      6:[{name:"Aspect of the Beast", text:"Choose a totem animal. Bear: your carrying capacity doubles, and you have advantage on STR checks to push, pull, lift or break objects. Eagle: you can see up to 1 mile away as clearly as if it were 100 feet, and dim light doesn't give you disadvantage on WIS (Perception) checks. Wolf: you can track creatures while travelling at a fast pace, and move stealthily while travelling at a normal pace. Elk: your travel pace is doubled, as is that of up to ten companions within 60 feet of you (while you aren't incapacitated). Tiger: you gain proficiency in two of Athletics, Acrobatics, Stealth and Survival (tick them on the Abilities & Skills tab)."}],
+      10:[{name:"Spirit Walker", text:"You can cast Commune with Nature, but only as a ritual. A spiritual version of one of your totem animals appears to give you the information."}],
+      14:[{name:"Totemic Attunement", text:"Choose a totem animal. Bear: while raging, any hostile creature within 5 feet of you that can see or hear you has disadvantage on attacks against targets other than you or another character with this feature (unless it can't be frightened). Eagle: while raging, you have a flying speed equal to your walking speed, but you fall if you end your turn in the air with nothing holding you aloft. Wolf: while raging, when you hit a Large or smaller creature with a melee weapon attack, you can use a bonus action to knock it prone. Elk: while raging, you can use a bonus action to move through the space of a Large or smaller creature; it makes a STR save (DC 8 + STR modifier + proficiency bonus) or is knocked prone and takes 1d12 + STR modifier bludgeoning damage. Tiger: while raging, if you move at least 20 feet in a straight line toward a Large or smaller target right before a melee weapon attack against it, you can make an extra melee weapon attack against it as a bonus action."}]
+    }},
+    {name:"Path of the Zealot", blurb:"A divine warrior powered by a god's fury.", features:{
+      3:[
+        {name:"Divine Fury", text:"While raging, the first creature you hit with a weapon attack on each of your turns takes an extra 1d6 + half your barbarian level damage. Choose radiant or necrotic when you gain this feature."},
+        {name:"Warrior of the Gods", text:"A spell that restores you to life, but not one that makes you undead, needs no material components when cast on you."}
+      ],
+      6:[{name:"Fanatical Focus", text:"If you fail a saving throw while raging, you can reroll it, and you must use the new roll. You can do this only once per rage."}],
+      10:[{name:"Zealous Presence", text:"As a bonus action, let out a battle cry. Up to ten other creatures of your choice within 60 feet that can hear you have advantage on attack rolls and saving throws until the start of your next turn. Once per long rest."}],
+      14:[{name:"Rage Beyond Death", text:"While raging, having 0 hit points doesn't knock you unconscious. You still make death saving throws and suffer the normal effects of taking damage at 0 hit points, but if you would die from failed death saves, you don't die until your rage ends, and then only if you still have 0 hit points."}]
+    }},
     {name:"Path of the Ancestral Guardian", blurb:"Calls on ancestral spirits to protect allies and hinder foes.", features:{
       3:[
-        {name:"Ancestral Protectors", text:"While you're raging, the first creature you hit with an attack on your turn becomes the quarry of your ancestors. Until the start of your next turn it has disadvantage on attack rolls against targets other than you, and any creature other than you that it attacks has resistance to all damage from that attack."}
+        {name:"Ancestral Protectors", text:"While you're raging, the first creature you hit with an attack on your turn is hindered by your ancestors' spirits until the start of your next turn: it has disadvantage on attack rolls against anyone other than you, and when it hits a creature other than you with an attack, that creature has resistance to the damage. The effect ends early if your rage ends."}
       ],
       6:[
-        {name:"Spirit Shield", text:"While you're raging, you can use your reaction when another creature you can see within 30 feet is damaged to reduce that damage by 2d6. This increases to 3d6 at level 10 and 4d6 at level 14."}
+        {name:"Spirit Shield", text:"While you're raging, when another creature you can see within 30 feet takes damage, you can use your reaction to reduce that damage by 2d6. This increases to 3d6 at level 10 and 4d6 at level 14."}
       ],
       10:[
-        {name:"Consult the Spirits", text:"You gain the ability to consult ancestral spirits. You cast Clairvoyance or Augury (no spell slot or material components) a number of times equal to your proficiency bonus, regained on a long rest."}
+        {name:"Consult the Spirits", text:"You can cast Augury or Clairvoyance without a spell slot or material components (Wisdom is your spellcasting ability for them). Instead of a sensor, this Clairvoyance invisibly summons one of your ancestral spirits to the chosen location. Once per short or long rest."}
       ],
       14:[
-        {name:"Vengeful Ancestors", text:"Your ancestral spirits grow powerful enough to strike back. When you use Spirit Shield to reduce damage, the attacker takes force damage equal to the amount reduced."}
+        {name:"Vengeful Ancestors", text:"When you use Spirit Shield to reduce the damage of an attack, the attacker takes force damage equal to the damage your Spirit Shield prevents."}
       ]
     }},
     {name:"Path of Wild Magic", blurb:"Fuels rage with unstable magical energy from the raw weave.", features:{
       3:[
-        {name:"Magic Awareness", text:"As an action, you can sense the presence of spells or magic items within 60 feet until the end of your next turn. You can use this a number of times equal to your proficiency bonus, regained on a long rest."},
-        {name:"Wild Surge", text:"Each time you enter a rage, roll on the Wild Magic table: one of eight random surges occurs (e.g. teleport up to 30 ft, summon a spectral warrior, deal necrotic damage to each creature within 30 ft, or gain +5 ft fly speed)."}
+        {name:"Magic Awareness", text:"As an action, until the end of your next turn you know the location of any spell or magic item within 60 feet that isn't behind total cover, and the school of magic of any spell you sense. You can use this a number of times equal to your proficiency bonus, regained on a long rest."},
+        {name:"Wild Surge", text:"When you enter your rage, roll a d8 on the Wild Magic table (save DC 8 + proficiency bonus + CON modifier). 1: each creature of your choice within 30 feet makes a CON save or takes 1d12 necrotic damage, and you gain 1d12 temporary HP. 2: teleport up to 30 feet to a space you can see; until the rage ends you can do this again as a bonus action each turn. 3: a spirit appears next to a creature within 30 feet and explodes at the end of the turn (DEX save or 1d6 force to each creature within 5 feet of it); until the rage ends you can summon another as a bonus action each turn. 4: a weapon you hold deals force damage and gains the light and thrown (20/60) properties until the rage ends, reappearing in your hand at the end of the turn if it leaves it. 5: until the rage ends, any creature that hits you with an attack roll takes 1d6 force damage. 6: until the rage ends, you and allies within 10 feet of you gain +1 AC. 7: until the rage ends, the ground within 15 feet of you is difficult terrain for your enemies. 8: another creature within 30 feet makes a CON save or takes 1d6 radiant damage and is blinded until the start of your next turn; until the rage ends you can do this again as a bonus action each turn."}
       ],
       6:[
-        {name:"Bolstering Magic", text:"As an action, touch a creature (including yourself) to give it one of: advantage on attack rolls and ability checks for 10 minutes, or expend one of your rage uses to restore a 1st- or 2nd-level spell slot to it. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
+        {name:"Bolstering Magic", text:"As an action, touch a creature (it can be you) and choose one: for 10 minutes it can roll a d3 and add it to each attack roll or ability check it makes; or roll a d3, and it regains one expended spell slot of that level or lower (its choice). A creature can't benefit from this again until after a long rest. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
       ],
       10:[
-        {name:"Unstable Backlash", text:"When you take damage or fail a saving throw while raging, you can use your reaction to roll on the Wild Magic table and immediately apply the result. This replaces the current Wild Surge effect."}
+        {name:"Unstable Backlash", text:"Immediately after you take damage or fail a saving throw while raging, you can use your reaction to roll on the Wild Magic table and produce that effect at once. It replaces your current Wild Magic effect."}
       ],
       14:[
-        {name:"Controlled Surge", text:"Whenever you roll on the Wild Magic table, roll twice and choose which of the two effects to apply. If both results are the same you can ignore the table and pick any result."}
+        {name:"Controlled Surge", text:"Whenever you roll on the Wild Magic table, roll the die twice and choose which effect to unleash. If both rolls match, you can ignore them and choose any effect on the table."}
       ]
     }},
     {name:"Path of the Beast", blurb:"Taps into a monstrous inner nature to sprout natural weapons.", features:{
       3:[
-        {name:"Form of the Beast", text:"While raging, you manifest one natural weapon of your choice: Bite (1d8 piercing; if the target is Large or smaller, make a second bite as a bonus action for 1d8 + STR, regaining HP equal to half the damage), Claws (two attacks with 1d6 slashing; each hit lets you make another claw attack as a bonus action), or Tail (1d8 piercing with 10 ft reach; once per turn when a creature within reach hits you, add your proficiency bonus to AC against that attack as a reaction)."}
+        {name:"Form of the Beast", text:"When you enter your rage, you can manifest a natural weapon until the rage ends (choose its form each time). It counts as a simple melee weapon, and you add your STR modifier to its attack and damage rolls. Bite: 1d8 piercing; once on each of your turns when you damage a creature with it while you have less than half your hit points, you regain hit points equal to your proficiency bonus. Claws: 1d6 slashing per claw (the hand must be empty); once on each of your turns when you attack with a claw using the Attack action, you can make one additional claw attack as part of the same action. Tail: 1d8 piercing with reach; when a creature you can see within 10 feet hits you with an attack roll, you can use your reaction to roll a d8 and add it to your AC against that attack, possibly making it miss."}
       ],
       6:[
-        {name:"Bestial Soul", text:"Your natural weapons count as magical for overcoming resistance. Additionally, choose one permanent buff: swim speed equal to your walking speed and water breathing, climb speed equal to walking speed, or jump triple the normal distance. You can change this choice on a long rest."}
+        {name:"Bestial Soul", text:"Your natural weapons count as magical for overcoming resistance and immunity to nonmagical attacks and damage. When you finish a short or long rest, choose one benefit that lasts until your next short or long rest: a swimming speed equal to your walking speed and water breathing; a climbing speed equal to your walking speed, climbing difficult surfaces (even upside down on ceilings) without an ability check; or, once per turn when you jump, a STR (Athletics) check that extends the jump by a number of feet equal to the check's total."}
       ],
       10:[
-        {name:"Infectious Fury", text:"When you hit a creature with your natural weapons while raging, the creature must succeed on a Wisdom save (DC 8 + proficiency + CON) or suffer one of two effects (your choice): it uses its reaction to attack a creature of your choice, or it takes 2d12 psychic damage. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
+        {name:"Infectious Fury", text:"When you hit a creature with your natural weapons while raging, it makes a WIS save (DC 8 + CON modifier + proficiency bonus) or suffers one of these (your choice): it uses its reaction to make a melee attack against another creature of your choice that you can see, or it takes 2d12 psychic damage. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
       ],
       14:[
-        {name:"Call the Hunt", text:"At the start of each of your rages, you can choose up to five willing creatures you can see within 30 feet. Until the rage ends, each target deals +1d6 damage on their first hit each turn with a weapon or unarmed strike. You also gain 5 temporary HP per creature that accepts this benefit. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
+        {name:"Call the Hunt", text:"When you enter your rage, choose a number of other willing creatures you can see within 30 feet equal to your CON modifier (minimum 1). You gain 5 temporary hit points for each one that accepts. Until the rage ends, once on each of their turns, each of them can roll a d6 and add it to the damage when they hit a target with an attack roll and deal damage. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
       ]
     }},
     {name:"Path of the Giant", blurb:"Channels the might of giants to grow huge and hurl elemental weapons.", features:{
@@ -332,22 +345,30 @@ export var SUBCLASSES = {
     }}
   ],
   "Bard": [
-    {name:"College of Lore", blurb:"Collects knowledge and uses words to undermine foes.", features:{3:[
-      {name:"Bonus Proficiencies", text:"Gain proficiency with three skills of your choice. Tick them on the Abilities & Skills tab."},
-      {name:"Cutting Words", text:"Reaction: spend a Bardic Inspiration die to subtract it from an enemy's attack roll, ability check or damage roll."}
-    ]}},
-    {name:"College of Valor", blurb:"A battle-bard who inspires heroics on the front line.", features:{3:[
-      {name:"Bonus Proficiencies", text:"Proficiency with medium armor, shields and martial weapons."},
-      {name:"Combat Inspiration", text:"Allies can add your Bardic Inspiration die to a damage roll, or to their AC against one attack."}
-    ]}},
+    {name:"College of Lore", blurb:"Collects knowledge and uses words to undermine foes.", features:{
+      3:[
+        {name:"Bonus Proficiencies", text:"Gain proficiency with three skills of your choice. Tick them on the Abilities & Skills tab."},
+        {name:"Cutting Words", text:"When a creature you can see within 60 feet makes an attack roll, ability check or damage roll, you can use your reaction to expend a Bardic Inspiration die, roll it and subtract the number from the creature's roll. You can do this after it rolls but before the DM says whether the attack or check succeeds, or before it deals its damage. It has no effect on a creature that can't hear you or is immune to being charmed."}
+      ],
+      6:[{name:"Additional Magical Secrets", text:"You learn two spells of your choice from any class. Each must be a cantrip or of a level you can cast. They count as bard spells for you but don't count against your spells known."}],
+      14:[{name:"Peerless Skill", text:"When you make an ability check, you can expend a Bardic Inspiration die, roll it and add the number to the check. You can do this after rolling but before the DM says whether you succeed."}]
+    }},
+    {name:"College of Valor", blurb:"A battle-bard who inspires heroics on the front line.", features:{
+      3:[
+        {name:"Bonus Proficiencies", text:"Proficiency with medium armor, shields and martial weapons."},
+        {name:"Combat Inspiration", text:"A creature with one of your Bardic Inspiration dice can roll it and add the number to a weapon damage roll it just made. Or, when an attack roll is made against it, it can use its reaction to roll the die and add the number to its AC against that attack, after seeing the roll but before knowing whether it hits."}
+      ],
+      6:[{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}],
+      14:[{name:"Battle Magic", text:"When you use your action to cast a bard spell, you can make one weapon attack as a bonus action."}]
+    }},
     {name:"College of Eloquence", blurb:"A master orator whose words never miss and always inspire.", features:{
       3:[
         {name:"Silver Tongue", text:"When you make a Persuasion or Deception check you can treat a roll of 9 or lower on the d20 as a 10."},
-        {name:"Unsettling Words", text:"As a bonus action, expend one Bardic Inspiration die and choose a creature you can see within 60 feet. Roll the die; until the end of your next turn the creature subtracts the result from its next saving throw."}
+        {name:"Unsettling Words", text:"As a bonus action, expend one Bardic Inspiration die and choose a creature you can see within 60 feet. Roll the die; the creature subtracts the result from the next saving throw it makes before the start of your next turn."}
       ],
       6:[
         {name:"Unfailing Inspiration", text:"When a creature adds your Bardic Inspiration die to a roll and fails, it keeps the die; it isn't expended."},
-        {name:"Universal Speech", text:"As an action, choose up to a number of creatures equal to your CHA modifier (minimum 1) within 60 feet. For 1 hour they magically understand you, regardless of language. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
+        {name:"Universal Speech", text:"As an action, choose up to a number of creatures equal to your CHA modifier (minimum 1) within 60 feet. For 1 hour they magically understand you, regardless of language. Once per long rest, or expend a spell slot of any level to use it again."}
       ],
       14:[
         {name:"Infectious Inspiration", text:"When a creature uses your Bardic Inspiration die and succeeds on the roll, you can use your reaction to give a different creature within 60 feet a Bardic Inspiration die without expending one of your uses. You can use this reaction a number of times equal to your CHA modifier (minimum 1), regained on a long rest."}
@@ -357,7 +378,7 @@ export var SUBCLASSES = {
       3:[
         {name:"Bonus Proficiencies", text:"You gain proficiency with medium armor and with the scimitar. If you are already proficient with a simple or martial melee weapon you can use it as a spellcasting focus."},
         {name:"Fighting Style", text:"Choose one fighting style: Dueling (+2 damage with a one-handed melee weapon while your other hand is empty) or Two-Weapon Fighting (add your modifier to the off-hand attack's damage)."},
-        {name:"Blade Flourish", text:"When you take the Attack action, your walking speed increases by 10 feet until the end of the turn, and one attack you make this turn can be a Blade Flourish. Expend a Bardic Inspiration die to choose one: Defensive Flourish (add the die to the attack's damage and to your AC until the start of your next turn), Slashing Flourish (add the die to the damage and deal the same damage to any other creature within 5 feet of the target), or Mobile Flourish (add the die to the damage and push the target up to 5 + the die result feet away; you can then move up to your speed toward it as a reaction)."}
+        {name:"Blade Flourish", text:"When you take the Attack action, your walking speed increases by 10 feet until the end of the turn, and one attack you make this turn can be a Blade Flourish. Expend a Bardic Inspiration die to choose one: Defensive Flourish (add the die to the attack's damage and to your AC until the start of your next turn), Slashing Flourish (add the die to the damage of the attack, and deal the same amount of damage to any other creature of your choice you can see within 5 feet of you), or Mobile Flourish (add the die to the damage and push the target up to 5 + the die result feet away; you can then move up to your speed toward it as a reaction)."}
       ],
       6:[
         {name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}
