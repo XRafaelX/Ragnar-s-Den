@@ -1,7 +1,7 @@
-/* ---------------- Armor data (SRD) ---------------- */
+/* ---------------- Armor data (SRD, plus Spiked Armor for the Battlerager) ---------------- */
 export var ARMOR_GROUPS = {
   "Light Armor": ["Padded","Leather","Studded Leather"],
-  "Medium Armor": ["Hide","Chain Shirt","Scale Mail","Breastplate","Half Plate"],
+  "Medium Armor": ["Hide","Chain Shirt","Scale Mail","Spiked Armor","Breastplate","Half Plate"],
   "Heavy Armor": ["Ring Mail","Chain Mail","Splint","Plate"],
   "Shields": ["Shield"]
 };
@@ -15,6 +15,7 @@ export var ARMOR_DATA = {
   "Hide":           {category:"medium", baseAC:12, weight:12, stealthDisadvantage:false},
   "Chain Shirt":    {category:"medium", baseAC:13, weight:20, stealthDisadvantage:false},
   "Scale Mail":     {category:"medium", baseAC:14, weight:45, stealthDisadvantage:true},
+  "Spiked Armor":   {category:"medium", baseAC:14, weight:45, stealthDisadvantage:true},
   "Breastplate":    {category:"medium", baseAC:14, weight:20, stealthDisadvantage:false},
   "Half Plate":     {category:"medium", baseAC:15, weight:40, stealthDisadvantage:true},
   "Ring Mail":      {category:"heavy",  baseAC:14, weight:40, stealthDisadvantage:true},

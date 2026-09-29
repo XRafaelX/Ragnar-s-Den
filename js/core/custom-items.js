@@ -88,6 +88,9 @@ function merge(kind){
   if(!lists[kind].length) return;
   k.groups[ITEM_HOMEBREW_GROUP] = [];
   lists[kind].slice().sort(function(a, b){ return a.name.localeCompare(b.name); }).forEach(function(e){
+    // A built-in item added later with the same name (e.g. Spiked Armor)
+    // wins, so the delete above never removes built-in data.
+    if(k.data[e.name] && !k.data[e.name].custom) return;
     k.data[e.name] = k.toData(e);
     k.groups[ITEM_HOMEBREW_GROUP].push(e.name);
     merged[kind].push(e.name);

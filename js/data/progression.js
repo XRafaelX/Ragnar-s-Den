@@ -286,6 +286,49 @@ export var SUBCLASSES = {
       14:[
         {name:"Call the Hunt", text:"At the start of each of your rages, you can choose up to five willing creatures you can see within 30 feet. Until the rage ends, each target deals +1d6 damage on their first hit each turn with a weapon or unarmed strike. You also gain 5 temporary HP per creature that accepts this benefit. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
       ]
+    }},
+    {name:"Path of the Giant", blurb:"Channels the might of giants to grow huge and hurl elemental weapons.", features:{
+      3:[
+        {name:"Giant's Power", text:"You learn to speak, read and write Giant (or another language of your choice if you already know Giant). You also learn the Druidcraft or Thaumaturgy cantrip; Wisdom is your spellcasting ability for it."},
+        {name:"Giant's Havoc", text:"While raging: Crushing Throw (when you hit with a ranged attack using a thrown weapon and Strength, add your Rage damage bonus to the damage) and Giant Stature (your reach increases by 5 feet, and if you are smaller than Large you become Large, along with anything you're wearing, if there's room)."}
+      ],
+      6:[
+        {name:"Elemental Cleaver", text:"When you enter your rage, infuse one weapon you're holding with acid, cold, fire, lightning or thunder until the rage ends. It deals that damage type instead of its normal type plus an extra 1d6 damage of that type, gains the thrown property (range 20/60) and flies back to your hand right after you throw it. As a bonus action on later turns of the rage, you can change the damage type."}
+      ],
+      10:[
+        {name:"Mighty Impel", text:"Bonus action while raging: choose one Medium or smaller creature within your reach and move it to an unoccupied space you can see within 30 feet of you. An unwilling creature makes a Strength save (DC 8 + proficiency bonus + STR modifier) to avoid it. A creature moved into the air falls and takes falling damage as normal."}
+      ],
+      14:[
+        {name:"Demiurgic Colossus", text:"While raging, Giant Stature increases your reach by 10 feet instead of 5, and you can choose to become Large or Huge if there's room. Mighty Impel can now move Large or smaller creatures, and the extra damage from Elemental Cleaver increases to 2d6."}
+      ]
+    }},
+    {name:"Path of the Storm Herald", blurb:"Rages as a living storm, surrounded by an aura of desert, sea or tundra.", features:{
+      3:[
+        {name:"Storm Aura", text:"While raging you emanate a 10-foot aura. Choose desert, sea or tundra (you can change it each time you gain a barbarian level). The effect activates when you enter your rage, and again each turn as a bonus action. Save DC is 8 + proficiency bonus + CON modifier. Desert: every other creature in the aura takes 2 fire damage (3 at level 5, 4 at 10, 5 at 15, 6 at 20). Sea: one other creature in the aura makes a DEX save or takes 1d6 lightning damage, half on a success (2d6 at level 10, 3d6 at 15, 4d6 at 20). Tundra: each creature of your choice in the aura gains 2 temporary HP (3 at level 5, 4 at 10, 5 at 15, 6 at 20)."}
+      ],
+      6:[
+        {name:"Storm Soul", text:"You gain a benefit based on your aura, even when not raging. Desert: resistance to fire damage, no ill effects from extreme heat, and as an action you can set fire to a flammable object you touch that no one is wearing or carrying. Sea: resistance to lightning damage, you can breathe underwater, and you gain a 30-foot swim speed. Tundra: resistance to cold damage, no ill effects from extreme cold, and as an action you can touch water and turn a 5-foot cube of it into ice, which melts after 1 minute."}
+      ],
+      10:[
+        {name:"Shielding Storm", text:"Each creature of your choice has the damage resistance you gained from Storm Soul while it is in your Storm Aura."}
+      ],
+      14:[
+        {name:"Raging Storm", text:"Your aura gains a stronger effect while raging. Desert: right after a creature in your aura hits you with an attack, use your reaction to force it to make a DEX save; on a failure it takes fire damage equal to half your barbarian level. Sea: when you hit a creature in your aura, use your reaction to force it to make a STR save; on a failure it is knocked prone. Tundra: whenever your aura's effect activates, choose one creature in it; it makes a STR save or its speed becomes 0 until the start of your next turn."}
+      ]
+    }},
+    {name:"Path of the Battlerager", blurb:"A dwarven berserker who charges into battle clad in spiked armor.", features:{
+      3:[
+        {name:"Battlerager Armor", text:"Traditionally for dwarves only (ask your DM). While wearing spiked armor and raging, you can use a bonus action to make one melee attack with your armor spikes against a creature within 5 feet: 1d4 + STR piercing damage on a hit. When you use the Attack action to grapple and succeed, the target also takes 3 piercing damage."}
+      ],
+      6:[
+        {name:"Reckless Abandon", text:"When you use Reckless Attack while raging, you gain temporary hit points equal to your CON modifier (minimum 1). They vanish when your rage ends."}
+      ],
+      10:[
+        {name:"Battlerager Charge", text:"You can take the Dash action as a bonus action while you are raging."}
+      ],
+      14:[
+        {name:"Spiked Retribution", text:"When a creature within 5 feet of you hits you with a melee attack, it takes 3 piercing damage if you are raging, aren't incapacitated and are wearing spiked armor."}
+      ]
     }}
   ],
   "Bard": [
