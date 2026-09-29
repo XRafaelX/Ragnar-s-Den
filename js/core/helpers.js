@@ -52,13 +52,16 @@ export function classSpellAbility(cl){
      speed         walking speed gained at level-up (Fast Movement)
      initiative    ability ("wis", "int", ...) or "pb" added to initiative
      acHeavyArmor  AC bonus while wearing heavy armor (Soul of the Forge)
-     grants        {armor, weapons, tools} proficiencies (Battle Ready)
+     grants        {armor, weapons, tools, savingThrows} proficiencies
+                   (Battle Ready; Diamond Soul grants every save)
+     saveBonus     ability whose modifier (minimum +1) is added to every
+                   saving throw (Aura of Protection: "cha")
      magicWeaponAbility  ability usable for attacks with magic weapons
      chosenWeaponAbility  ability usable with one weapon the player marks
                    as `chosenWeapon` in the inventory (Hex Warrior)
      abilityBonus  {str:4, ...} added to ability scores at level-up, up to
                    abilityMax (default 20) (Primal Champion) */
-var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax"];
+var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus"];
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -148,9 +151,9 @@ export function classProficiencies(c, idx){
   var extra = classFeatureList(cl).filter(function(f){ return f.grants; });
   if(!extra.length) return base;
   var p = {armor:(base&&base.armor||[]).slice(), weapons:(base&&base.weapons||[]).slice(), tools:(base&&base.tools||[]).slice(),
-    savingThrows:(base&&base.savingThrows)||[], note:base&&base.note};
+    savingThrows:(base&&base.savingThrows||[]).slice(), note:base&&base.note};
   extra.forEach(function(f){
-    ["armor","weapons","tools"].forEach(function(k){
+    ["armor","weapons","tools","savingThrows"].forEach(function(k){
       (f.grants[k]||[]).forEach(function(v){ if(p[k].indexOf(v)===-1) p[k].push(v); });
     });
   });
@@ -304,6 +307,28 @@ export function computeInitiative(c){
   var misc = Number(c.initiativeMisc)||0;
   value += misc; breakdown += " + misc (" + fmtMod(misc) + ")"; short += " + misc";
   return { value: value, breakdown: breakdown, short: short };
+}
+
+/* A saving throw: ability modifier, proficiency (ticked on the sheet or
+   granted by a feature such as Diamond Soul) and feature bonuses such as
+   Aura of Protection. `grantedBy` names the feature that makes the save
+   proficient, so the sheet can lock that box. */
+export function computeSave(c, key){
+  var abilityMod = mod(c.abilities && c.abilities[key]);
+  var grantedBy = null, bonuses = [];
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){
+      if(!grantedBy && f.grants && (f.grants.savingThrows||[]).indexOf(key)!==-1) grantedBy = f.name;
+      if(f.saveBonus && !bonuses.some(function(b){ return b.name===f.name; })){
+        bonuses.push({name:f.name, value: Math.max(1, mod(c.abilities && c.abilities[f.saveBonus]))});
+      }
+    });
+  });
+  var prof = !!(c.saveProfs && c.saveProfs[key]) || !!grantedBy;
+  var value = abilityMod + (prof ? profBonus(c) : 0);
+  var breakdown = key.toUpperCase() + " (" + fmtMod(abilityMod) + ")" + (prof ? " + proficiency (" + fmtMod(profBonus(c)) + ")" : "");
+  bonuses.forEach(function(b){ value += b.value; breakdown += " + " + b.name + " (" + fmtMod(b.value) + ")"; });
+  return { value: value, prof: prof, grantedBy: grantedBy, breakdown: breakdown };
 }
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`

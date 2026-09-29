@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { fmtMod, mod, profBonus, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, escapeHtml } from "../../core/helpers.js";
+import { fmtMod, mod, profBonus, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, escapeHtml } from "../../core/helpers.js";
 import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
@@ -95,12 +95,16 @@ export function renderAbilitiesPanel(c){
   saveRows.className = "list-rows";
   ABILITIES.forEach(function(a){
     var key = a[0];
-    var pb = c.saveProfs[key] ? profBonus(c) : 0;
-    var total = mod(c.abilities[key]) + pb;
+    var sv = computeSave(c, key);
+    var total = sv.value;
     var row = document.createElement("div");
     row.className = "list-row";
+    row.title = sv.breakdown;
     var cb = document.createElement("input");
-    cb.type="checkbox"; cb.className="chk"; cb.checked = !!c.saveProfs[key];
+    cb.type="checkbox"; cb.className="chk"; cb.checked = sv.prof;
+    // A save a feature makes proficient (Diamond Soul) is locked on;
+    // the player's own ticks are left as they are underneath.
+    if(sv.grantedBy){ cb.disabled = true; cb.title = "Proficient from " + sv.grantedBy; }
     cb.addEventListener("change", function(){ c.saveProfs[key]=cb.checked; save(); renderAll(); });
     var name = document.createElement("span");
     name.className = "row-name"; name.textContent = a[1];

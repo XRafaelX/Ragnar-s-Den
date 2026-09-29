@@ -38,12 +38,15 @@ export var CLASS_RESOURCES = {
       hint:"Bonus action: regain 1d10 + your fighter level hit points."},
     {id:"action_surge", name:"Action Surge", level:2,
       max:function(lv){ return lv>=17 ? 2 : 1; }, reset:always("short"),
-      hint:"Take one additional action on your turn."}
+      hint:"Take one additional action on your turn (only once per turn)."},
+    {id:"indomitable", name:"Indomitable", level:9,
+      max:function(lv){ return lv>=17 ? 3 : lv>=13 ? 2 : 1; }, reset:always("long"),
+      hint:"Reroll a failed saving throw; you must use the new roll."}
   ],
   "Monk": [
     {id:"ki", name:"Ki Points", level:2, pool:true,
       max:function(lv){ return lv; }, reset:always("short"),
-      hint:"1 ki: Flurry of Blows, Patient Defense or Step of the Wind. Stunning Strike from level 5."}
+      hint:"1 ki: Flurry of Blows, Patient Defense or Step of the Wind. Stunning Strike from level 5, Diamond Soul reroll from 14, Empty Body (4 or 8 ki) from 18."}
   ],
   "Paladin": [
     {id:"divine_sense", name:"Divine Sense", level:1,
@@ -53,7 +56,10 @@ export var CLASS_RESOURCES = {
       max:function(lv){ return lv*5; }, reset:always("long"),
       hint:"Action: restore hit points from this pool, or spend 5 to cure a disease or poison."},
     {id:"channel_divinity", name:"Channel Divinity", level:3, max:always(1), reset:always("short"),
-      hint:"Use one of your Sacred Oath's Channel Divinity options."}
+      hint:"Use one of your Sacred Oath's Channel Divinity options."},
+    {id:"cleansing_touch", name:"Cleansing Touch", level:14,
+      max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
+      hint:"Action: end one spell on yourself or a willing creature you touch."}
   ],
   "Sorcerer": [
     {id:"sorcery_points", name:"Sorcery Points", level:2, pool:true,

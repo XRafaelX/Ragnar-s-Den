@@ -116,7 +116,11 @@ export var CLASS_PROGRESSION = {
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:""},
     features: {
       2: [{name:"Action Surge", text:"Once per short or long rest, take one additional action on your turn, e.g. to attack again or cast a second spell with an action."}],
-      5: [{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}]
+      5: [{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}],
+      9: [{name:"Indomitable", text:"You can reroll a saving throw that you fail, and you must use the new roll. Once per long rest (twice from level 13, three times from level 17)."}],
+      11: [{name:"Extra Attack", replaces:"Extra Attack", text:"When you take the Attack action, you attack three times instead of once."}],
+      17: [{name:"Action Surge", replaces:"Action Surge", text:"Twice per short or long rest, take one additional action on your turn, but only once on the same turn."}],
+      20: [{name:"Extra Attack", replaces:"Extra Attack", text:"When you take the Attack action, you attack four times instead of once."}]
     }
   },
   "Monk": {
@@ -133,8 +137,34 @@ export var CLASS_PROGRESSION = {
       5: [
         {name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."},
         {name:"Stunning Strike", text:"When you hit with a melee weapon attack, spend 1 ki: the target must make a Constitution save or be stunned until the end of your next turn."},
-        {name:"Martial Arts", replaces:"Martial Arts", text:"Use DEX for unarmed strikes and monk weapons, which now deal 1d6 damage. Bonus action unarmed strike after the Attack action."}
-      ]
+        {name:"Martial Arts", replaces:"Martial Arts", text:"Use DEX instead of STR for unarmed strikes and monk weapons, which deal 1d6 damage. When you take the Attack action with them, you can make one unarmed strike as a bonus action."}
+      ],
+      6: [
+        {name:"Ki-Empowered Strikes", text:"Your unarmed strikes count as magical for overcoming resistance and immunity to nonmagical attacks and damage."},
+        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 15 feet while you wear no armor and no shield. (Already added to your speed.)", speed:5}
+      ],
+      7: [
+        {name:"Evasion", text:"When an effect lets you make a DEX save to take half damage, you take no damage on a success and half on a failure."},
+        {name:"Stillness of Mind", text:"As an action, end one effect on yourself that is causing you to be charmed or frightened."}
+      ],
+      9: [{name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 15 feet while you wear no armor and no shield. (Already added to your speed.) You can also move along vertical surfaces and across liquids on your turn without falling during the move."}],
+      10: [
+        {name:"Purity of Body", text:"You are immune to disease and poison."},
+        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 20 feet while you wear no armor and no shield. (Already added to your speed.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5}
+      ],
+      11: [{name:"Martial Arts", replaces:"Martial Arts", text:"Use DEX instead of STR for unarmed strikes and monk weapons, which deal 1d8 damage. When you take the Attack action with them, you can make one unarmed strike as a bonus action."}],
+      13: [{name:"Tongue of the Sun and Moon", text:"You understand all spoken languages, and any creature that understands a language can understand what you say."}],
+      14: [
+        {name:"Diamond Soul", text:"You gain proficiency in all saving throws (already applied to your saves). When you fail a saving throw, you can spend 1 ki to reroll it and take the second result.", grants:{savingThrows:["str","dex","con","int","wis","cha"]}},
+        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 25 feet while you wear no armor and no shield. (Already added to your speed.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5}
+      ],
+      15: [{name:"Timeless Body", text:"You suffer none of the frailty of old age and can't be aged magically, but still die of old age. You no longer need food or water."}],
+      17: [{name:"Martial Arts", replaces:"Martial Arts", text:"Use DEX instead of STR for unarmed strikes and monk weapons, which deal 1d10 damage. When you take the Attack action with them, you can make one unarmed strike as a bonus action."}],
+      18: [
+        {name:"Empty Body", text:"As an action, spend 4 ki to become invisible for 1 minute, with resistance to all damage except force. Or spend 8 ki to cast Astral Projection on yourself only, without material components."},
+        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 30 feet while you wear no armor and no shield. (Already added to your speed.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5}
+      ],
+      20: [{name:"Perfect Self", text:"When you roll initiative and have no ki points left, you regain 4 ki points."}]
     }
   },
   "Paladin": {
@@ -146,10 +176,14 @@ export var CLASS_PROGRESSION = {
       2: [
         {name:"Fighting Style", text:"Adopt a fighting style: Defense (+1 AC in armor), Dueling (+2 damage with a one-handed weapon and nothing in the other hand), Great Weapon Fighting (reroll 1s and 2s on two-handed damage) or Protection (impose disadvantage on an attack against an ally next to you)."},
         {name:"Spellcasting", text:"You can now cast paladin spells using Charisma. Each day you prepare Charisma modifier + half your paladin level spells from the paladin list."},
-        {name:"Divine Smite", text:"When you hit with a melee weapon attack, spend a spell slot to deal an extra 2d8 radiant damage (+1d8 per slot level above 1st, +1d8 against undead or fiends)."}
+        {name:"Divine Smite", text:"When you hit with a melee weapon attack, spend a spell slot to deal an extra 2d8 radiant damage, +1d8 per slot level above 1st (to a maximum of 5d8), and +1d8 against undead or fiends."}
       ],
       3: [{name:"Divine Health", text:"You are immune to disease."}],
-      5: [{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}]
+      5: [{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}],
+      6: [{name:"Aura of Protection", text:"While you're conscious, whenever you or a friendly creature within 10 feet of you makes a saving throw, it gains a bonus equal to your CHA modifier (minimum +1); it's already added to your own saves. The range becomes 30 feet at level 18.", saveBonus:"cha"}],
+      10: [{name:"Aura of Courage", text:"While you're conscious, you and friendly creatures within 10 feet of you can't be frightened. The range becomes 30 feet at level 18."}],
+      11: [{name:"Improved Divine Smite", text:"Whenever you hit a creature with a melee weapon, it takes an extra 1d8 radiant damage. This stacks with Divine Smite."}],
+      14: [{name:"Cleansing Touch", text:"As an action, end one spell on yourself or on a willing creature you touch. Uses equal to your CHA modifier (minimum 1) per long rest."}]
     }
   },
   "Ranger": {
@@ -163,7 +197,16 @@ export var CLASS_PROGRESSION = {
         {name:"Spellcasting", text:"You can now cast ranger spells using Wisdom. You know two 1st-level ranger spells and learn more as you level."}
       ],
       3: [{name:"Primeval Awareness", text:"Spend a spell slot to sense for 1 minute per slot level whether aberrations, celestials, dragons, elementals, fey, fiends or undead are within 1 mile (6 in your favored terrain)."}],
-      5: [{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}]
+      5: [{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}],
+      6: [
+        {name:"Favored Enemy", replaces:"Favored Enemy", text:"Choose favored enemies (a type of creature, or two humanoid races): you have advantage on WIS (Survival) checks to track them and INT checks to recall information about them, and you learn a language they speak. You pick a second one at level 6 and a third at level 14."},
+        {name:"Natural Explorer", replaces:"Natural Explorer", text:"Choose favored terrains (arctic, coast, desert, forest, grassland, mountain, swamp or Underdark). When you travel through one, difficult terrain doesn't slow your group, you can't become lost except by magic, you stay alert while doing other activities, you can move stealthily alone at a normal pace, you find twice as much food, and you learn more when tracking. Your proficiency bonus is doubled for INT and WIS checks about them. You pick a second terrain at level 6 and a third at level 10."}
+      ],
+      8: [{name:"Land's Stride", text:"Moving through nonmagical difficult terrain costs you no extra movement, and you can pass through nonmagical plants without being slowed or harmed by thorns, spines or similar hazards. You have advantage on saves against plants that are magically created or manipulated to impede movement."}],
+      10: [{name:"Hide in Plain Sight", text:"Spend 1 minute creating camouflage against a solid surface. While you stay there without moving or taking actions or reactions, you have +10 to DEX (Stealth) checks; once you do, you must camouflage yourself again."}],
+      14: [{name:"Vanish", text:"You can take the Hide action as a bonus action, and you can't be tracked by nonmagical means unless you choose to leave a trail."}],
+      18: [{name:"Feral Senses", text:"Attacking a creature you can't see doesn't give you disadvantage, and you know where any invisible creature within 30 feet of you is, as long as it isn't hidden from you and you aren't blinded or deafened."}],
+      20: [{name:"Foe Slayer", text:"Once on each of your turns, you can add your WIS modifier to the attack roll or the damage roll of an attack against one of your favored enemies, choosing before or after the roll but before its effects."}]
     }
   },
   "Rogue": {
