@@ -47,6 +47,15 @@ export function classSpellAbility(cl){
   var prog = CLASS_PROGRESSION[cl.name];
   return prog && prog.spellAbility || null;
 }
+/* Mechanical flags a class or subclass feature can carry; they're copied
+   onto classFeatureList items so the sheet can apply them:
+     speed         walking speed gained at level-up (Fast Movement)
+     initiative    ability ("wis", "int", ...) or "pb" added to initiative
+     acHeavyArmor  AC bonus while wearing heavy armor (Soul of the Forge)
+     grants        {armor, weapons, tools} proficiencies (Battle Ready)
+     magicWeaponAbility  ability usable for attacks with magic weapons */
+var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility"];
+
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
    entry swaps out the earlier version), then subclass features. Each item
@@ -70,9 +79,7 @@ export function classFeatureList(cl, uptoLevel){
   }
   function addFeature(f, atLevel, isSub){
     var item = {id:(isSub ? "sub_" : "class_")+cl.name+"_"+f.name, name:f.name, text:f.text, level:atLevel, subclass:isSub};
-    if(f.speed) item.speed = f.speed;
-    if(f.initiative) item.initiative = f.initiative;
-    if(f.acHeavyArmor) item.acHeavyArmor = f.acHeavyArmor;
+    FEATURE_FLAGS.forEach(function(k){ if(f[k]) item[k] = f[k]; });
     var at = f.replaces ? list.findIndex(function(x){ return x.name===f.replaces; }) : -1;
     if(at!==-1){ item.id = list[at].id; item.upgraded = true; list[at] = item; }
     else list.push(item);
@@ -125,11 +132,25 @@ export function computeSpellSlots(classes){
 export function classProficiencies(c, idx){
   var cl = (c.classes||[])[idx];
   if(!cl) return null;
-  if(idx===0) return CLASS_PROFICIENCIES[cl.name] || null;
+  var base;
   var prog = CLASS_PROGRESSION[cl.name];
-  if(!prog) return CLASS_PROFICIENCIES[cl.name] || null;
-  var m = prog.multiclassProfs;
-  return {armor:m.armor, weapons:m.weapons, tools:m.tools, savingThrows:[], note:m.note};
+  if(idx===0 || !prog) base = CLASS_PROFICIENCIES[cl.name] || null;
+  else {
+    var m = prog.multiclassProfs;
+    base = {armor:m.armor, weapons:m.weapons, tools:m.tools, savingThrows:[], note:m.note};
+  }
+  // Features tagged `grants` (a subclass's tool or armor proficiency) add
+  // to the class's own list; copies, so the shared data isn't changed.
+  var extra = classFeatureList(cl).filter(function(f){ return f.grants; });
+  if(!extra.length) return base;
+  var p = {armor:(base&&base.armor||[]).slice(), weapons:(base&&base.weapons||[]).slice(), tools:(base&&base.tools||[]).slice(),
+    savingThrows:(base&&base.savingThrows)||[], note:base&&base.note};
+  extra.forEach(function(f){
+    ["armor","weapons","tools"].forEach(function(k){
+      (f.grants[k]||[]).forEach(function(v){ if(p[k].indexOf(v)===-1) p[k].push(v); });
+    });
+  });
+  return p;
 }
 /* Limited-use resources this character has right now, from each class
    and its subclass. `key` is unique per character (class + resource id)
@@ -366,9 +387,17 @@ export function autoEquipLoadout(items){
 export function weaponAbilityMod(c, item){
   var strMod = mod(c.abilities && c.abilities.str);
   var dexMod = mod(c.abilities && c.abilities.dex);
-  if(item.ability==="dex") return dexMod;
-  if(item.ability==="finesse") return Math.max(strMod, dexMod);
-  return strMod;
+  var best = item.ability==="dex" ? dexMod : item.ability==="finesse" ? Math.max(strMod, dexMod) : strMod;
+  // A feature tagged `magicWeaponAbility` lets magic weapons (magic bonus
+  // above 0) use that ability instead, when it's higher.
+  if((Number(item.magicBonus)||0) > 0){
+    (c.classes||[]).forEach(function(cl){
+      classFeatureList(cl).forEach(function(f){
+        if(f.magicWeaponAbility) best = Math.max(best, mod(c.abilities && c.abilities[f.magicWeaponAbility]));
+      });
+    });
+  }
+  return best;
 }
 export function weaponAttackBonus(c, item){
   var pb = item.proficient ? profBonus(c) : 0;

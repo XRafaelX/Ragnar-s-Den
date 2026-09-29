@@ -60,13 +60,17 @@ export function renderInfusionsCard(c){
   (c.inventory||[]).forEach(function(item){ if(!item.id) item.id = uid(); });
   var inf = c.infusions;
   var maxKnown = infusionsKnownAt(level), maxActive = infusedItemsAt(level);
+  // Armor Modifications (Armorer 9): two more infused items, which must be
+  // parts of the Arcane Armor. The panel doesn't check which items they are.
+  var armorMods = level>=9 && (c.classes||[]).some(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer"; }) ? 2 : 0;
+  maxActive += armorMods;
   var bonusValue = level>=10 ? 2 : 1;
 
   var card = makeCard("Artifice infusions");
   card.classList.add("inf-card");
   var summary = document.createElement("p");
   summary.className = "inf-summary";
-  summary.innerHTML = "Known <b>"+inf.known.length+" / "+maxKnown+"</b> · Infused items <b>"+inf.active.length+" / "+maxActive+"</b>"+
+  summary.innerHTML = "Known <b>"+inf.known.length+" / "+maxKnown+"</b> · Infused items <b>"+inf.active.length+" / "+maxActive+"</b>"+(armorMods ? " (+2 for Arcane Armor parts)" : "")+
     (inf.known.length>maxKnown ? " <span class='inf-warn'>(more known than your level allows)</span>" : "");
   card.appendChild(summary);
 

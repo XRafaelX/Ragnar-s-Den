@@ -96,11 +96,33 @@ export var SUBCLASS_RESOURCES = {
     "Alchemist": [
       {id:"experimental_elixir", name:"Free Experimental Elixir", level:3,
         max:function(lv){ return lv>=15 ? 3 : lv>=6 ? 2 : 1; }, reset:always("long"),
-        hint:"Elixirs you create for free after a long rest. You can still make more by spending spell slots."}
+        hint:"Elixirs you create for free after a long rest. You can still make more by spending spell slots."},
+      {id:"restorative_reagents", name:"Restorative Reagents (Lesser Restoration)", level:9,
+        max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+        hint:"Cast Lesser Restoration without a spell slot, using alchemist's supplies as your focus."},
+      {id:"chemical_mastery_greater_restoration", name:"Chemical Mastery: Greater Restoration", level:15, max:always(1), reset:always("long"),
+        hint:"Cast Greater Restoration without a spell slot or material components."},
+      {id:"chemical_mastery_heal", name:"Chemical Mastery: Heal", level:15, max:always(1), reset:always("long"),
+        hint:"Cast Heal without a spell slot or material components."}
     ],
     "Artillerist": [
       {id:"eldritch_cannon", name:"Eldritch Cannon", level:3, max:always(1), reset:always("long"),
-        hint:"Create a cannon without spending a spell slot. After that, each one costs a spell slot."}
+        hint:"Create a cannon (two at once from level 15) without spending a spell slot. After that, each one costs a spell slot."}
+    ],
+    "Battle Smith": [
+      {id:"steel_defender_repair", name:"Steel Defender: Repair", level:3, max:always(3), reset:always("long"),
+        hint:"Your steel defender's action: restore 2d8 + proficiency bonus HP to itself or a construct or object within 5 ft."},
+      {id:"arcane_jolt", name:"Arcane Jolt", level:9,
+        max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+        hint:"On a magic weapon or steel defender hit: +2d6 force damage, or heal a creature within 30 ft of the target 2d6 (4d6 from level 15)."}
+    ],
+    "Armorer": [
+      {id:"defensive_field", name:"Defensive Field (Guardian)", level:3,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Guardian model, bonus action: gain temporary HP equal to your artificer level."},
+      {id:"perfected_armor_pull", name:"Perfected Armor Pull (Guardian)", level:15,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Guardian model, reaction: pull a creature ending its turn within 30 ft up to 30 ft toward you (STR save), then attack it if adjacent."}
     ]
   },
   "Bard": {
