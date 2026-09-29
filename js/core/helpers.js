@@ -236,7 +236,7 @@ export function computeArmorClass(c){
 
 /* Initiative: DEX, plus the ability modifier of any class or subclass
    feature tagged `initiative` (Dread Ambusher adds WIS, Tactical Wit INT,
-   ...), the Alert feat, a Harengon's Hare-Trigger and the misc modifier.
+   ...; "pb" adds the proficiency bonus, e.g. Aura of the Sentinel), the Alert feat, a Harengon's Hare-Trigger and the misc modifier.
    Same shape as computeArmorClass: `breakdown` for the tooltip, `short`
    for the hint under the value. */
 export function computeInitiative(c){
@@ -247,7 +247,7 @@ export function computeInitiative(c){
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
       if(!f.initiative) return;
-      var bonus = mod(c.abilities && c.abilities[f.initiative]);
+      var bonus = f.initiative==="pb" ? profBonus(c) : mod(c.abilities && c.abilities[f.initiative]);
       value += bonus;
       breakdown += " + " + f.name + " (" + fmtMod(bonus) + ")";
       short += " + " + f.initiative.toUpperCase();

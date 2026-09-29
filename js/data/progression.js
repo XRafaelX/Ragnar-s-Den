@@ -870,6 +870,19 @@ export var SUBCLASSES = {
       15:[{name:"Unyielding Spirit", text:"You have advantage on saving throws to avoid becoming paralyzed or stunned."}],
       17:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Command, Compelled Duel, Warding Bond, Zone of Truth, Aura of Vitality, Spirit Guardians, Banishment, Guardian of Faith, Circle of Power and Geas prepared."}],
       20:[{name:"Exalted Champion", text:"As an action, for 1 hour (or until you are incapacitated or die): you have resistance to bludgeoning, piercing and slashing damage from nonmagical weapons, your allies within 30 feet have advantage on death saving throws, and you and those allies have advantage on WIS saving throws. Once per long rest."}]
+    }},
+    {name:"Oath of the Watchers", blurb:"Guards the mortal realm against extraplanar threats, banishing fiends, aberrations, and extraplanar invaders.", features:{
+      3:[
+        {name:"Oath Spells", text:"You always have Alarm and Detect Magic prepared; they don't count against your prepared spells."},
+        {name:"Channel Divinity", text:"Once per short or long rest: Watcher's Will (action: choose up to your CHA modifier (minimum 1) creatures you can see within 30 feet; for 1 minute, you and they have advantage on INT, WIS and CHA saves) or Abjure the Extraplanar (action: each aberration, celestial, elemental, fey or fiend within 30 feet that can hear you makes a WIS save or is turned for 1 minute or until it takes damage)."}
+      ],
+      5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Alarm, Detect Magic, Moonbeam and See Invisibility prepared."}],
+      7:[{name:"Aura of the Sentinel", text:"While you aren't incapacitated, you and creatures of your choice within 10 feet of you add your proficiency bonus to initiative rolls (already added to yours on the sheet). The aura's range becomes 30 feet at level 18.", initiative:"pb"}],
+      9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Alarm, Detect Magic, Moonbeam, See Invisibility, Counterspell and Nondetection prepared."}],
+      13:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Alarm, Detect Magic, Moonbeam, See Invisibility, Counterspell, Nondetection, Aura of Purity and Banishment prepared."}],
+      15:[{name:"Vigilant Rebuke", text:"Whenever you or a creature you can see within 30 feet succeeds on an INT, WIS or CHA saving throw, you can use your reaction to deal 2d8 + your CHA modifier force damage to the creature that forced the save."}],
+      17:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Alarm, Detect Magic, Moonbeam, See Invisibility, Counterspell, Nondetection, Aura of Purity, Banishment, Hold Monster and Scrying prepared."}],
+      20:[{name:"Mortal Bulwark", text:"As a bonus action, for 1 minute: you gain truesight out to 120 feet; you have advantage on attack rolls against aberrations, celestials, elementals, fey and fiends; and when you hit one of them and deal damage, you can force it to make a CHA save against your spell save DC or be banished to its native plane if it isn't there now (on a success it can't be banished this way for 24 hours). Once per long rest, or expend a 5th-level spell slot to use it again."}]
     }}
   ],
   "Ranger": [

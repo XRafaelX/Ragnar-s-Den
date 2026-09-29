@@ -169,6 +169,10 @@ export var SUBCLASS_RESOURCES = {
     "Oath of the Crown": [
       {id:"exalted_champion", name:"Exalted Champion", level:20, max:always(1), reset:always("long"),
         hint:"Action for 1 hour: resist nonmagical weapon damage; allies within 30 ft get advantage on death saves, and you all get advantage on WIS saves."}
+    ],
+    "Oath of the Watchers": [
+      {id:"mortal_bulwark", name:"Mortal Bulwark", level:20, max:always(1), reset:always("long"),
+        hint:"Bonus action for 1 minute: truesight 120 ft, advantage against extraplanar creatures, and banish them on a hit (CHA save). More uses cost a 5th-level slot."}
     ]
   },
   "Ranger": {
