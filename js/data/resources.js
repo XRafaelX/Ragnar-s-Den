@@ -124,6 +124,37 @@ export var SUBCLASS_RESOURCES = {
       {id:"fighting_spirit", name:"Fighting Spirit", level:3,
         max:always(3), reset:always("long"),
         hint:"Bonus action: advantage on all weapon attacks until end of your turn, and gain 5 temporary HP (10 at level 10, 15 at level 15)."}
+    ],
+    "Arcane Archer": [
+      {id:"arcane_shot", name:"Arcane Shot", level:3, max:always(2), reset:always("short"),
+        hint:"Once per turn, apply an Arcane Shot option to an arrow fired as part of the Attack action. Regain one on initiative if empty (level 15)."}
+    ],
+    "Psi Warrior": [
+      {id:"psionic_energy_dice", name:"Psionic Energy Dice", level:3, pool:true,
+        max:function(lv, m){ return m.pb * 2; }, reset:always("long"),
+        hint:"Fuel Protective Field, Psionic Strike and extra uses of your other psionic features. Once per short rest, regain one as a bonus action."},
+      {id:"telekinetic_movement", name:"Telekinetic Movement", level:3, max:always(1), reset:always("short"),
+        hint:"Action: move a Large or smaller object or a willing creature within 30 ft up to 30 ft. More uses cost a Psionic Energy die."},
+      {id:"psi_powered_leap", name:"Psi-Powered Leap", level:7, max:always(1), reset:always("short"),
+        hint:"Bonus action: flying speed equal to twice your walking speed until the end of the turn. More uses cost a Psionic Energy die."},
+      {id:"bulwark_of_force", name:"Bulwark of Force", level:15, max:always(1), reset:always("long"),
+        hint:"Bonus action: up to INT mod creatures within 30 ft (you included) gain half cover for 1 minute. More uses cost a Psionic Energy die."},
+      {id:"telekinetic_master", name:"Telekinetic Master", level:18, max:always(1), reset:always("long"),
+        hint:"Cast Telekinesis without a slot; make a weapon attack as a bonus action each turn you concentrate on it. More uses cost a Psionic Energy die."}
+    ]
+  },
+  "Monk": {
+    "Way of the Ascendant Dragon": [
+      {id:"draconic_presence", name:"Draconic Presence", level:3, max:always(1), reset:always("long"),
+        hint:"Reaction: reroll a failed CHA (Intimidation or Persuasion) check. Spent only when the reroll succeeds."},
+      {id:"breath_of_the_dragon", name:"Breath of the Dragon", level:3,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Replace one attack with a 20-ft cone or 30-ft line of elemental damage (DEX save). When out, spend 2 ki instead."},
+      {id:"wings_unfurled", name:"Wings Unfurled", level:6,
+        max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"When you use Step of the Wind, gain a flying speed equal to your walking speed until the end of the turn."},
+      {id:"aspect_of_the_wyrm", name:"Aspect of the Wyrm", level:11, max:always(1), reset:always("long"),
+        hint:"Bonus action: 10-ft aura for 1 minute with Frightful Presence or elemental resistance. More uses cost 3 ki."}
     ]
   },
   "Sorcerer": {
@@ -231,6 +262,12 @@ export var SUBCLASS_RESOURCES = {
       {id:"cosmic_omen", name:"Cosmic Omen", level:6,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Reaction: add or subtract 1d6 from a creature's attack roll, check or save (Weal adds, Woe subtracts). Determined each long rest."}
+    ],
+    "Circle of the Shepherd": [
+      {id:"spirit_totem", name:"Spirit Totem", level:2, max:always(1), reset:always("short"),
+        hint:"Bonus action: summon a Bear, Hawk or Unicorn spirit with a 30-ft aura for 1 minute."},
+      {id:"faithful_summons", name:"Faithful Summons", level:14, max:always(1), reset:always("long"),
+        hint:"When you drop to 0 HP or are incapacitated against your will, four CR 2 or lower beasts appear to protect you for 1 hour."}
     ]
   },
   "Rogue": {

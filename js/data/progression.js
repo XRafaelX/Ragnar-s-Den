@@ -625,6 +625,15 @@ export var SUBCLASSES = {
       6:[{name:"Fungal Infestation", text:"When a Small or Medium beast or humanoid dies within 10 feet of you, you can use your reaction to animate it as a zombie (it has 1 HP). It acts immediately after you each round and obeys your mental commands. It turns to dust after 1 hour or when it drops to 0 HP. Uses equal to your WIS modifier per long rest."}],
       10:[{name:"Spreading Spores", text:"While Symbiotic Entity is active, use a bonus action to hurl spores up to 30 feet. Halo of Spores works in a 10-foot cube centered on that point instead of around you. Each turn you can move the cube up to 10 feet using your reaction."}],
       14:[{name:"Fungal Body", text:"The fungal spores permeate your body: you are immune to blinded, deafened, frightened and poisoned conditions, and critical hits against you become normal hits."}]
+    }},
+    {name:"Circle of the Shepherd", blurb:"Speaks with beasts and fey, summons guardian spirits and empowers conjured allies.", features:{
+      2:[
+        {name:"Speech of the Woods", text:"You learn to speak, read and write Sylvan. Beasts can also understand your speech, and you can decipher their noises and motions (most beasts can't share complex ideas, but a friendly one can relay what it has seen and heard recently)."},
+        {name:"Spirit Totem", text:"As a bonus action, summon an incorporeal spirit to a point you can see within 60 feet. It creates a 30-foot aura for 1 minute or until you are incapacitated; as a bonus action you can move it up to 60 feet. Choose one spirit. Bear: each creature of your choice in the aura when it appears gains 5 + your druid level temporary HP, and you and your allies have advantage on STR checks and saves while in it. Hawk: when a creature makes an attack roll against a target in the aura, you can use your reaction to give that roll advantage; you and your allies also have advantage on WIS (Perception) checks while in it. Unicorn: you and your allies have advantage on checks to detect creatures in the aura, and when you cast a spell with a spell slot that restores hit points to anyone, each creature of your choice in the aura also regains HP equal to your druid level. Once per short or long rest."}
+      ],
+      6:[{name:"Mighty Summoner", text:"Beasts and fey you summon or create with a spell have 2 extra hit points per Hit Die, and their natural weapons count as magical for overcoming resistance and immunity to nonmagical attacks and damage."}],
+      10:[{name:"Guardian Spirit", text:"When a beast or fey you summoned or created with a spell ends its turn in your Spirit Totem aura, it regains hit points equal to half your druid level."}],
+      14:[{name:"Faithful Summons", text:"When you are reduced to 0 hit points or incapacitated against your will, you gain the benefits of Conjure Animals as if cast with a 9th-level slot: four beasts of your choice (CR 2 or lower) appear within 20 feet of you and protect you from harm. They last 1 hour and need no concentration. Once per long rest."}]
     }}
   ],
   "Fighter": [
@@ -687,6 +696,32 @@ export var SUBCLASSES = {
       10:[{name:"Tireless Spirit", text:"At the start of combat if you have no uses of Fighting Spirit left, regain one use."}],
       15:[{name:"Rapid Strike", text:"When you have advantage on a weapon attack, forgo it to make one additional weapon attack as a bonus action this turn (once per turn)."}],
       18:[{name:"Strength Before Death", text:"When damage reduces you to 0 HP but doesn't kill you outright, you can delay falling unconscious until the end of your next turn. You immediately take a special turn (after the triggering creature's turn), though you can't regain HP until the start of that turn. If you drop to 0 HP during this turn you die. Once per long rest."}]
+    }},
+    {name:"Arcane Archer", blurb:"Weaves elven magic into arrows for spectacular, magical trick shots.", features:{
+      3:[
+        {name:"Arcane Archer Lore", text:"You gain proficiency in Arcana or Nature (tick it on the Abilities & Skills tab), and you learn the Prestidigitation or Druidcraft cantrip."},
+        {name:"Arcane Shot", text:"You learn two Arcane Shot options (one more at levels 7, 10, 15 and 18). Once per turn, when you fire an arrow from a shortbow or longbow as part of the Attack action, you can apply one option, deciding after the hit unless the option involves no attack roll. You have two uses, regained on a short or long rest. Save DC is 8 + proficiency bonus + INT modifier. Extra damage marked (x) doubles at level 18. Banishing Arrow: CHA save or banished to the Feywild until the end of its next turn (from level 18 also +2d6 force). Beguiling Arrow: +2d6 psychic (x); WIS save or charmed by an ally of yours within 30 feet until the start of your next turn. Bursting Arrow: the target and all within 10 feet take 2d6 force (x). Enfeebling Arrow: +2d6 necrotic (x); CON save or its weapon damage is halved until the start of your next turn. Grasping Arrow: +2d6 poison (x); for 1 minute its speed drops by 10 feet and it takes 2d6 slashing the first time it moves on each turn, until a creature uses an action to pull the brambles free with a STR (Athletics) check against your DC. Piercing Arrow: no attack roll; a 30-foot line that passes through objects and ignores cover, each creature in it makes a DEX save or takes the arrow's damage + 1d6 piercing (x), half on a success. Seeking Arrow: no attack roll; aim at a creature you've seen in the past minute and the arrow curves around obstacles to it; DEX save or the arrow's damage + 1d6 force (x) and you learn its location, half on a success. Shadow Arrow: +2d6 psychic (x); WIS save or it can't see beyond 5 feet until the start of your next turn."}
+      ],
+      7:[
+        {name:"Magic Arrow", text:"Whenever you fire a nonmagical arrow from a shortbow or longbow, you can make it magical for overcoming resistance and immunity. The magic fades right after it hits or misses."},
+        {name:"Curving Shot", text:"When you miss with an attack using a magic arrow, you can use a bonus action to reroll the attack against a different target within 60 feet of the original target."}
+      ],
+      15:[{name:"Ever-Ready Shot", text:"When you roll initiative and have no uses of Arcane Shot left, you regain one use."}]
+    }},
+    {name:"Psi Warrior", blurb:"Augments physical might with psionic power to shield allies and hurl foes.", features:{
+      3:[
+        {name:"Psionic Power", text:"You have Psionic Energy dice equal to twice your proficiency bonus; the die is a d6 (d8 at level 5, d10 at 11, d12 at 17). You regain all of them on a long rest, and once per short rest you can regain one as a bonus action. Protective Field: when you or a creature you can see within 30 feet takes damage, use your reaction and expend one die to reduce the damage by the roll + your INT modifier (minimum 1). Psionic Strike: once on each of your turns, right after you hit a target within 30 feet with a weapon attack, expend one die to deal extra force damage equal to the roll + your INT modifier. Telekinetic Movement: as an action, move one Large or smaller object, or one willing creature other than you, within 30 feet up to 30 feet to an unoccupied space you can see (a Tiny object can go to or from your hand). Once per short or long rest, or expend a die to use it again."}
+      ],
+      7:[{name:"Telekinetic Adept", text:"Psi-Powered Leap: as a bonus action, gain a flying speed of twice your walking speed until the end of the turn; once per short or long rest, or expend a Psionic Energy die to use it again. Telekinetic Thrust: when you deal damage with Psionic Strike, the target makes a STR save (DC 8 + proficiency bonus + INT modifier) or you knock it prone or move it up to 10 feet horizontally."}],
+      10:[{name:"Guarded Mind", text:"You have resistance to psychic damage. If you start your turn charmed or frightened, you can expend a Psionic Energy die to end every effect on you causing those conditions."}],
+      15:[{name:"Bulwark of Force", text:"As a bonus action, choose up to your INT modifier (minimum 1) creatures within 30 feet, including yourself. Each has half cover for 1 minute or until you are incapacitated. Once per long rest, or expend a Psionic Energy die to use it again."}],
+      18:[{name:"Telekinetic Master", text:"You learn Telekinesis and can cast it without a spell slot or components (INT is your spellcasting ability for it). On each of your turns while concentrating on it, including the turn you cast it, you can make one weapon attack as a bonus action. Once per long rest, or expend a Psionic Energy die to use it again."}]
+    }},
+    {name:"Banneret (Purple Dragon Knight)", blurb:"A knight-commander whose rallying cries heal and inspire allies.", features:{
+      3:[{name:"Rallying Cry", text:"When you use Second Wind, choose up to three allies within 60 feet that can see or hear you. Each regains hit points equal to your fighter level."}],
+      7:[{name:"Royal Envoy", text:"You gain proficiency in Persuasion, or if you already have it, in one of Animal Handling, Insight, Intimidation or Performance (tick it on the Abilities & Skills tab). Your proficiency bonus is doubled for any Persuasion check."}],
+      10:[{name:"Inspiring Surge", text:"When you use Action Surge, choose one ally within 60 feet that can see or hear you. It can use its reaction to make one melee or ranged weapon attack. From level 18 you can choose two allies."}],
+      15:[{name:"Bulwark", text:"When you use Indomitable to reroll an INT, WIS or CHA save and aren't incapacitated, choose one ally within 60 feet that failed its save against the same effect and can see or hear you. It can reroll the save and must use the new roll."}]
     }}
   ],
   "Monk": [
@@ -723,6 +758,36 @@ export var SUBCLASSES = {
       6:[{name:"Visage of the Astral Self", text:"Spend 1 ki (bonus action) to summon a spectral visage for 10 minutes. Gain darkvision 120 ft, advantage on WIS (Insight) and CHA (Intimidation) checks, and understand all spoken languages. You can speak and be understood in any language."}],
       11:[{name:"Body of the Astral Self", text:"When arms and visage are both active, spectral body armor appears. Gain resistance to bludgeoning, piercing and slashing damage, and when a creature within 10 feet hits you with an attack you can use your reaction to deal force damage equal to 3d10."}],
       17:[{name:"Awakened Astral Self", text:"Spend 5 ki (bonus action) to empower your astral form for 10 minutes: arms deal +2d6 force damage on each hit, you gain a flying speed equal to your walking speed, and you can cast Banishment (save DC = ki save DC) once per activation without expending a spell slot."}]
+    }},
+    {name:"Way of the Ascendant Dragon", blurb:"Channels draconic power to breathe elemental energy and sprout spectral wings.", features:{
+      3:[
+        {name:"Draconic Disciple", text:"Draconic Strike: when you damage a target with an unarmed strike, you can change its damage type to acid, cold, fire, lightning or poison. Tongue of Dragons: you learn to speak, read and write Draconic (or another language if you already know it). Draconic Presence: when you fail a CHA (Intimidation or Persuasion) check, you can use your reaction to reroll it; once this turns a failure into a success, you can't use it again until you finish a long rest."},
+        {name:"Breath of the Dragon", text:"When you take the Attack action, you can replace one attack with a 20-foot cone or a 30-foot line (5 feet wide) of acid, cold, fire, lightning or poison. Each creature in it makes a DEX save against your ki save DC, taking two rolls of your Martial Arts die in damage on a failure, or half on a success (three rolls from level 11). You can use this a number of times equal to your proficiency bonus per long rest; once they're spent, you can spend 2 ki to use it again."}
+      ],
+      6:[{name:"Wings Unfurled", text:"When you use Step of the Wind, you can unfurl spectral draconic wings and gain a flying speed equal to your walking speed until the end of the turn. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}],
+      11:[{name:"Aspect of the Wyrm", text:"As a bonus action, create a 10-foot aura of draconic power around you for 1 minute, choosing one effect. Frightful Presence: when you create the aura, and as a bonus action on later turns, choose a creature in it; it makes a WIS save against your ki save DC or is frightened of you for 1 minute (repeating the save at the end of each of its turns). Resistance: choose acid, cold, fire, lightning or poison; you and your allies in the aura have resistance to it. Once per long rest, or spend 3 ki to use it again."}],
+      17:[{name:"Ascendant Aspect", text:"Augment Breath: when you use Breath of the Dragon, you can spend 1 ki to make it a 60-foot cone or a 90-foot line and deal four rolls of your Martial Arts die. Blindsight: you gain blindsight out to 10 feet. Explosive Fury: when you activate Aspect of the Wyrm, choose any creatures in the aura; each makes a DEX save against your ki save DC or takes 3d10 acid, cold, fire, lightning or poison damage (your choice), half on a success."}]
+    }},
+    {name:"Way of the Drunken Master", blurb:"Sways and staggers unpredictably, dodging blows and turning them on others.", features:{
+      3:[
+        {name:"Bonus Proficiencies", text:"You gain proficiency in Performance (tick it on the Abilities & Skills tab) and with brewer's supplies."},
+        {name:"Drunken Technique", text:"Whenever you use Flurry of Blows, you also gain the benefit of the Disengage action, and your walking speed increases by 10 feet until the end of the turn."}
+      ],
+      6:[{name:"Tipsy Sway", text:"Leap to Your Feet: when you're prone, you can stand up by spending only 5 feet of movement. Redirect Attack: when a creature misses you with a melee attack, you can spend 1 ki as a reaction to make that attack hit another creature of your choice (not the attacker) that you can see within 5 feet of you."}],
+      11:[{name:"Drunkard's Luck", text:"When you make an ability check, attack roll or saving throw with disadvantage, you can spend 2 ki to cancel the disadvantage for that roll."}],
+      17:[{name:"Intoxicated Frenzy", text:"When you use Flurry of Blows, you can make up to three additional attacks with it (five in total), as long as each attack targets a different creature this turn."}]
+    }},
+    {name:"Way of the Sun Soul", blurb:"Channels inner radiance into blazing bolts and bursts of searing light.", features:{
+      3:[{name:"Radiant Sun Bolt", text:"You gain a ranged spell attack with a range of 30 feet that you can use with the Attack action. You are proficient with it and add your DEX modifier to its attack and damage rolls. It deals radiant damage using your Martial Arts die. When you take the Attack action and use this attack as part of it, you can spend 1 ki to make it twice more as a bonus action. From level 5 (Extra Attack), it can replace any of your attacks from the Attack action."}],
+      6:[{name:"Searing Arc Strike", text:"Immediately after you take the Attack action on your turn, you can spend 2 ki to cast Burning Hands as a bonus action. Each extra ki you spend raises the spell's level by 1, up to a total ki cost of half your monk level."}],
+      11:[{name:"Searing Sunburst", text:"As an action, create an orb of light at a point within 150 feet that erupts in a 20-foot-radius sphere. Each creature in it makes a CON save against your ki save DC or takes 2d6 radiant damage (a creature behind total cover that is opaque doesn't save). You can spend up to 3 ki to increase the damage by 2d6 per ki."}],
+      17:[{name:"Sun Shield", text:"You shed bright light in a 30-foot radius and dim light for another 30 feet; you can turn it off or on as a bonus action. While it shines, when a creature hits you with a melee attack you can use your reaction to deal it radiant damage equal to 5 + your WIS modifier."}]
+    }},
+    {name:"Way of Long Death", blurb:"Studies the mechanics of dying to feed on life and cheat death.", features:{
+      3:[{name:"Touch of Death", text:"When you reduce a creature within 5 feet of you to 0 hit points, you gain temporary hit points equal to your WIS modifier + your monk level (minimum 1)."}],
+      6:[{name:"Hour of Reaping", text:"As an action, each creature within 30 feet of you that can see you makes a WIS save against your ki save DC or is frightened of you until the end of your next turn."}],
+      11:[{name:"Mastery of Death", text:"When you are reduced to 0 hit points, you can spend 1 ki (no action required) to have 1 hit point instead."}],
+      17:[{name:"Touch of the Long Death", text:"As an action, touch one creature within 5 feet and spend 1 to 10 ki. It makes a CON save against your ki save DC, taking 2d10 necrotic damage per ki spent on a failure, or half on a success."}]
     }}
   ],
   "Paladin": [
