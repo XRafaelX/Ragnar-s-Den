@@ -8,7 +8,7 @@ export var SORCERER_SUBCLASSES = [
       {name:"Draconic Resilience", text:"Your hit point maximum increases by 1 per sorcerer level, and while you wear no armor your AC is 13 + your DEX modifier. (Already added to your max HP and AC.)"}
     ],
     6:[{name:"Elemental Affinity", text:"When you cast a spell that deals your ancestry's damage type, add your CHA modifier to one damage roll of it. At the same time, you can spend 1 sorcery point to gain resistance to that damage type for 1 hour."}],
-    14:[{name:"Dragon Wings", text:"As a bonus action, sprout dragon wings and gain a flying speed equal to your current speed, until you dismiss them as a bonus action. You can't manifest them while wearing armor unless it's made to accommodate them."}],
+    14:[{name:"Dragon Wings", text:"As a bonus action, sprout dragon wings and gain a flying speed equal to your current speed, until you dismiss them as a bonus action. You can't manifest them while wearing armor unless it's made to accommodate them.", speeds:[{type:"fly", value:"walk", when:"wings out (bonus action)"}]}],
     18:[{name:"Draconic Presence", text:"As an action, spend 5 sorcery points to exude a 60-foot aura of awe or fear (your choice) for 1 minute or until your concentration ends (as if concentrating on a spell). Each hostile creature that starts its turn in the aura makes a WIS save or is charmed (awe) or frightened (fear) until the aura ends; one that succeeds is immune to it for 24 hours."}]
   }},
   {name:"Wild Magic", blurb:"Chaotic magic that surges unpredictably.", features:{
@@ -38,7 +38,7 @@ export var SORCERER_SUBCLASSES = [
       {name:"Psionic Sorcery", text:"You can cast a 1st-level or higher spell from Psionic Spells by spending sorcery points equal to its level instead of a spell slot. Cast this way, it needs no verbal or somatic components, and no material components unless they are consumed."},
       {name:"Psychic Defenses", text:"You have resistance to psychic damage and advantage on saving throws against being charmed or frightened."}
     ],
-    14:[{name:"Revelation in Flesh", text:"As a bonus action, spend 1 or more sorcery points to transform for 10 minutes, gaining one benefit per point: you see any invisible creature within 60 feet not behind total cover; a flying speed equal to your walking speed, with hover; a swimming speed equal to twice your walking speed, and you can breathe underwater; or your body becomes slimy and pliable, letting you move through spaces 1 inch wide without squeezing and spend 5 feet of movement to escape nonmagical restraints or a grapple."}],
+    14:[{name:"Revelation in Flesh", text:"As a bonus action, spend 1 or more sorcery points to transform for 10 minutes, gaining one benefit per point: you see any invisible creature within 60 feet not behind total cover; a flying speed equal to your walking speed, with hover; a swimming speed equal to twice your walking speed, and you can breathe underwater; or your body becomes slimy and pliable, letting you move through spaces 1 inch wide without squeezing and spend 5 feet of movement to escape nonmagical restraints or a grapple.", speeds:[{type:"fly", value:"walk", when:"Revelation in Flesh, 10 minutes, hover"},{type:"swim", value:"2walk", when:"Revelation in Flesh, 10 minutes"}]}],
     18:[{name:"Warping Implosion", text:"As an action, teleport to an unoccupied space you can see within 120 feet. Each creature within 30 feet of the space you left makes a STR save, taking 3d10 force damage and being pulled toward that space on a failure, or half damage and no pull on a success. Once per long rest, or spend 5 sorcery points to use it again."}]
   }},
   {name:"Divine Soul", blurb:"Bears a divine spark that grants access to cleric spells alongside sorcery.", features:{
@@ -47,7 +47,7 @@ export var SORCERER_SUBCLASSES = [
       {name:"Favored by the Gods", text:"When you fail a saving throw or miss with an attack roll, you can roll 2d4 and add it to the total, possibly changing the outcome. Once per short or long rest."}
     ],
     6:[{name:"Empowered Healing", text:"When you or an ally within 5 feet rolls dice to determine the hit points a spell restores, you can spend 1 sorcery point to reroll any number of those dice once, if you aren't incapacitated. Once per turn."}],
-    14:[{name:"Otherworldly Wings", text:"As a bonus action, manifest spectral wings (their look depends on your affinity) and gain a flying speed of 30 feet until you are incapacitated, die or dismiss them as a bonus action."}],
+    14:[{name:"Otherworldly Wings", text:"As a bonus action, manifest spectral wings (their look depends on your affinity) and gain a flying speed of 30 feet until you are incapacitated, die or dismiss them as a bonus action.", speeds:[{type:"fly", value:30, when:"wings out (bonus action)"}]}],
     18:[{name:"Unearthly Recovery", text:"As a bonus action when you have fewer than half your hit points remaining, regain hit points equal to half your hit point maximum. Once per long rest."}]
   }},
   {name:"Shadow Magic", blurb:"Born of shadow, drawing on the Shadowfell for dark and terrifying power.", features:{
@@ -69,7 +69,7 @@ export var SORCERER_SUBCLASSES = [
       {name:"Storm Guide", text:"If it's raining, you can use an action to stop rain falling in a 20-foot-radius sphere centered on you (end it as a bonus action). If it's windy, you can use a bonus action each round to choose the wind's direction in a 100-foot-radius sphere centered on you, until the end of your next turn. Neither changes the wind's speed."}
     ],
     14:[{name:"Storm's Fury", text:"When a creature hits you with a melee attack, you can use your reaction to deal lightning damage to it equal to your sorcerer level. It must also make a STR save against your spell save DC or be pushed up to 20 feet straight away from you."}],
-    18:[{name:"Wind Soul", text:"You are immune to lightning and thunder damage, and you gain a magical flying speed of 60 feet. As an action, you can reduce your flying speed to 30 feet for 1 hour and choose up to 3 + your CHA modifier creatures within 30 feet; they gain a magical flying speed of 30 feet for 1 hour. Once you share your flight this way, you can't do so again until you finish a short or long rest."}]
+    18:[{name:"Wind Soul", text:"You are immune to lightning and thunder damage, and you gain a magical flying speed of 60 feet. As an action, you can reduce your flying speed to 30 feet for 1 hour and choose up to 3 + your CHA modifier creatures within 30 feet; they gain a magical flying speed of 30 feet for 1 hour. Once you share your flight this way, you can't do so again until you finish a short or long rest.", speeds:[{type:"fly", value:60}]}]
   }},
   {name:"Lunar Sorcery", blurb:"Draws power from the moons, shifting between full, new and crescent phases.", features:{
     1:[

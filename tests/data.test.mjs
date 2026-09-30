@@ -10,7 +10,7 @@ import { SPELL_DATA, catalogSpellName } from "../js/data/spells.js";
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
 const FEATURE_KEYS = new Set(["name", "text", "replaces", "speed", "initiative", "acHeavyArmor", "grants",
-  "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice"]);
+  "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds"]);
 const LONG_DASH = /[–—]/;
 
 // Lowest acceptable last-feature level per class: guards against a
@@ -51,6 +51,11 @@ function checkFeature(f, where){
       opts.forEach((o) => checkSpells(f.spellChoice.options[o], f.name + " (" + o + ")"));
     }
   } else assert.ok(f.spellKind == null, where + " " + f.name + ": spellKind without spells");
+  (f.speeds || []).forEach((sp) => {
+    assert.ok(["fly", "swim", "climb"].includes(sp.type), where + " " + f.name + ": speed type " + sp.type);
+    assert.ok(sp.bonus > 0 || sp.value === "walk" || sp.value === "2walk" || sp.value > 0, where + " " + f.name + ": speed value");
+    assert.ok(!(sp.bonus && sp.when), where + " " + f.name + ": a speed bonus has no condition");
+  });
   if(f.abilityBonus){
     for(const [k, v] of Object.entries(f.abilityBonus)) assert.ok(ABILITIES.includes(k) && v > 0, where + " " + f.name + ": abilityBonus");
   }

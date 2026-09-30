@@ -53,7 +53,7 @@ export var ROGUE_SUBCLASSES = [
       {name:"Wails from the Grave", text:"Immediately after you deal Sneak Attack damage to a creature on your turn, you can target a second creature you can see within 30 feet of the first. Roll half your Sneak Attack dice (rounded up); it takes that much necrotic damage. Uses equal to your proficiency bonus per long rest."}
     ],
     9:[{name:"Tokens of the Departed", text:"As a reaction when a creature you can see dies within 30 feet, a Tiny soul trinket appears in your free hand; you can hold up to your proficiency bonus of them. While you carry one, you have advantage on death saves and CON saves. When you deal Sneak Attack damage on your turn, you can destroy one to use Wails from the Grave without spending a use. As an action, you can destroy one (wherever it is) to ask its spirit one question; it answers concisely, knowing only what it knew in life, and needn't be truthful."}],
-    13:[{name:"Ghost Walk", text:"As a bonus action, assume a spectral form for 10 minutes (end it as a bonus action): a 10-foot flying speed with hover, attack rolls against you have disadvantage, and you can move through creatures and objects as difficult terrain, taking 1d10 force damage if you end your turn inside one. Once per long rest, or destroy a soul trinket as part of the bonus action to use it again."}],
+    13:[{name:"Ghost Walk", text:"As a bonus action, assume a spectral form for 10 minutes (end it as a bonus action): a 10-foot flying speed with hover, attack rolls against you have disadvantage, and you can move through creatures and objects as difficult terrain, taking 1d10 force damage if you end your turn inside one. Once per long rest, or destroy a soul trinket as part of the bonus action to use it again.", speeds:[{type:"fly", value:10, when:"spectral form, 10 minutes, hover"}]}],
     17:[{name:"Death's Friend", text:"Wails from the Grave can deal its necrotic damage to both the first and the second creature. After you finish a long rest, a soul trinket appears in your hand if you have none."}]
   }},
   {name:"Scout", blurb:"An expert skirmisher and survivalist who strikes from range and keeps moving.", features:{
@@ -61,7 +61,7 @@ export var ROGUE_SUBCLASSES = [
       {name:"Skirmisher", text:"When an enemy ends its turn within 5 feet of you, you can use your reaction to move up to half your speed without provoking opportunity attacks."},
       {name:"Survivalist", text:"You gain proficiency in Nature and Survival (tick them on the Abilities & Skills tab), and your proficiency bonus is doubled for checks using them."}
     ],
-    9:[{name:"Superior Mobility", text:"Your walking speed increases by 10 feet. (Already added to your speed.) If you have a climbing or swimming speed, those also increase by 10 feet.", speed:10}],
+    9:[{name:"Superior Mobility", text:"Your walking speed increases by 10 feet. (Already added to your speed.) If you have a climbing or swimming speed, those also increase by 10 feet.", speeds:[{type:"climb", bonus:10},{type:"swim", bonus:10}], speed:10}],
     13:[{name:"Ambush Master", text:"You have advantage on initiative rolls. The first creature you hit during the first round of a combat is easier to strike: attack rolls against it by anyone have advantage until the start of your next turn."}],
     17:[{name:"Sudden Strike", text:"If you take the Attack action on your turn, you can make one additional attack as a bonus action. It can use Sneak Attack even if you already have this turn, but not against the same target twice in a turn."}]
   }},

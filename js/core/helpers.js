@@ -1,6 +1,7 @@
 import { HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
+import { RACE_DATA } from "../data/race-data.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
 import { WEAPON_DATA } from "../data/weapons.js";
@@ -69,11 +70,16 @@ export function classSpellAbility(cl){
      spellKind     "prepared", "known", "spellbook", "ritual" or "expanded"
                    (added to the spells the class can learn: a warlock
                    patron's list) (see featureSpells)
+     speeds        [{type, value, when}]: a fly, swim or climb speed. value
+                   is feet, "walk" (equal to walking speed) or "2walk";
+                   `when` says when it applies ("while raging (Eagle)"),
+                   none for an always-on speed. {type, bonus} instead adds
+                   to that speed from any other source (Superior Mobility).
      spellChoice   {id, label, options:{name: spells}}: more spells that
                    depend on a choice (Circle of the Land's land, a genie
                    kind), each option shaped like `spells`. The pick is
                    saved on the class entry as spellChoices[id]. */
-var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice"];
+var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds"];
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -264,10 +270,40 @@ export function toughBonus(c){
 export function maxHp(c){
   return (Number(c.hp && c.hp.max)||0) + toughBonus(c);
 }
-/* Walking speed: the saved number plus Mobile's 10 ft. */
+/* Walking speed: the saved number plus Mobile's 10 ft. `others` are the
+   fly, swim and climb speeds from the race and from features tagged
+   `speeds`, as {type, value, when, source}: always-on ones first (only
+   the best of each type), then the ones that depend on something. */
 export function computeSpeed(c){
   var mobile = hasFeat(c, "Mobile") ? 10 : 0;
-  return { value: (Number(c.speed)||0) + mobile, bonus: mobile };
+  var walk = (Number(c.speed)||0) + mobile;
+  var list = [], bonus = {};
+  var race = RACE_DATA[c.race];
+  var rs = race && race.speed || {};
+  ["fly", "swim", "climb"].forEach(function(t){
+    if(rs[t]) list.push({type: t, value: rs[t], when: (race.speedWhen||{})[t] || "", source: c.race});
+  });
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){
+      (f.speeds||[]).forEach(function(sp){
+        if(sp.bonus){ bonus[sp.type] = (bonus[sp.type]||0) + sp.bonus; return; }
+        var value = sp.value==="walk" ? walk : sp.value==="2walk" ? 2 * walk : sp.value;
+        list.push({type: sp.type, value: value, when: sp.when || "", source: f.name});
+      });
+    });
+  });
+  list.forEach(function(o){ if(bonus[o.type]) o.value += bonus[o.type]; });
+  var always = [];
+  list.filter(function(o){ return !o.when; }).forEach(function(o){
+    var same = always.find(function(a){ return a.type===o.type; });
+    if(!same) always.push(o);
+    else if(o.value > same.value){ always[always.indexOf(same)] = o; }
+  });
+  // A conditional speed no better than an always-on one adds nothing.
+  var others = always.concat(list.filter(function(o){
+    return o.when && !always.some(function(a){ return a.type===o.type && a.value >= o.value; });
+  }));
+  return { value: walk, bonus: mobile, others: others };
 }
 /* HP from one spent hit die: roll + CON (at least 1). Durable raises the
    floor to twice the CON modifier, at least 2. */

@@ -104,3 +104,9 @@
 .res-pip.full{background:var(--brass);}
 .res-count{font-size:13px;color:var(--text-on-parch-dim);}
 .res-count b{font-size:18px;color:var(--text-on-parch);font-family:var(--serif);font-weight:normal;}
+
+/* Speed box: fly, swim and climb speeds under walking speed */
+.speed-others{display:flex;flex-direction:column;gap:3px;margin:6px 0 4px;font-size:12px;text-align:center;}
+.speed-other b{color:var(--text-on-parch);font-weight:600;}
+.speed-other.conditional b{color:var(--text-on-parch-dim);font-weight:500;}
+.speed-when{display:block;font-size:10.5px;line-height:1.3;color:var(--text-on-parch-dim);}

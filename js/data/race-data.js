@@ -103,7 +103,7 @@ export var RACE_DATA = {
       tr("Infernal Legacy", "You know Thaumaturgy; Hellish Rebuke once per long rest from level 3 and Darkness from level 5, cast with Charisma.")]},
 
   /* ---- Expanded ---- */
-  "Aarakocra": {asi:{dex:2,wis:1}, size:"Medium", speed:{walk:25, fly:50}, darkvision:0,
+  "Aarakocra": {asi:{dex:2,wis:1}, size:"Medium", speed:{walk:25, fly:50}, speedWhen:{fly:"not in medium or heavy armor"}, darkvision:0,
     languages:{fixed:["Common","Aarakocra","Auran"]}, source:"Elemental Evil Player's Companion",
     traits:[tr("Flight", "Flying speed of 50 feet, but not while wearing medium or heavy armor."),
       tr("Talons", "Your unarmed strikes deal 1d4 slashing damage.")]},
@@ -143,7 +143,7 @@ export var RACE_DATA = {
   "Eladrin": {asi:{dex:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Elvish"]}, source:"Mordenkainen's Tome of Foes",
     traits:ELF_BASE.concat([tr("Fey Step", "Bonus action: teleport up to 30 feet to a space you can see. Once per short or long rest; your season adds an extra effect.")])},
-  "Fairy": {asiText:"+2 to one score and +1 to another (your choice)", size:"Small", speed:{walk:30, fly:30}, darkvision:0,
+  "Fairy": {asiText:"+2 to one score and +1 to another (your choice)", size:"Small", speed:{walk:30, fly:30}, speedWhen:{fly:"not in medium or heavy armor"}, darkvision:0,
     languages:{fixed:["Common"], choose:1}, source:"The Wild Beyond the Witchlight",
     traits:[tr("Fey", "Your creature type is fey rather than humanoid."),
       tr("Fairy Magic", "You know Druidcraft; Faerie Fire from level 3 and Enlarge/Reduce from level 5, each once per long rest."),

@@ -472,7 +472,31 @@ export function renderVitalsPanel(c){
   grid.appendChild(initBox);
 
   var speed = computeSpeed(c);
-  grid.appendChild(smallVital("Speed","speed",null,speed.bonus ? "per turn, incl. Mobile +"+speed.bonus : "per turn",5," ft",speed.bonus));
+  var speedBox = smallVital("Speed","speed",null,speed.bonus ? "per turn, incl. Mobile +"+speed.bonus : "per turn",5," ft",speed.bonus);
+  // Fly, swim and climb speeds under walking speed; conditional ones say when.
+  if(speed.others.length){
+    var others = document.createElement("div");
+    others.className = "speed-others";
+    speed.others.forEach(function(o){
+      var line = document.createElement("div");
+      line.className = "speed-other" + (o.when ? " conditional" : "");
+      line.title = "From " + o.source;
+      var amount = document.createElement("b");
+      amount.textContent = o.type.charAt(0).toUpperCase() + o.type.slice(1) + " " + o.value + " ft";
+      line.appendChild(amount);
+      if(o.when){
+        var when = document.createElement("span");
+        when.className = "speed-when";
+        when.textContent = o.when;
+        line.appendChild(when);
+      }
+      others.appendChild(line);
+    });
+    // Inside the hint row: the mini boxes share a 4-row subgrid (label,
+    // value, hint, stepper), so an extra child would land on the stepper.
+    speedBox.querySelector(".vital-hint").appendChild(others);
+  }
+  grid.appendChild(speedBox);
 
   card.appendChild(grid);
   panel.appendChild(card);

@@ -189,8 +189,8 @@ test("feats: Medium Armor Master, Tough, Mobile and Durable", () => {
   assert.equal(hp([{ name: "Tough" }]), 50);                                     // 2 per character level (5)
 
   const speed = (feats) => H.computeSpeed({ ...char([{ name: "Rogue", level: 1 }], { feats }), speed: 30 });
-  assert.deepEqual(speed([]), { value: 30, bonus: 0 });
-  assert.deepEqual(speed([{ name: "Mobile" }]), { value: 40, bonus: 10 });
+  assert.deepEqual([speed([]).value, speed([]).bonus], [30, 0]);
+  assert.deepEqual([speed([{ name: "Mobile" }]).value, speed([{ name: "Mobile" }]).bonus], [40, 10]);
 
   const heal = (con, feats, roll) => H.hitDieHealing(char([{ name: "Fighter", level: 1 }], { abilities: { con }, feats }), roll);
   assert.equal(heal(16, [], 1), 4);                          // 1 + 3
@@ -322,4 +322,25 @@ test("spell choices: Circle of the Land, the Genie, Divine Soul, patron lists", 
   // Option text for the pickers.
   assert.equal(H.spellOptionText(["Bless"]), "Bless");
   assert.equal(H.spellOptionText({ 3: ["Hold Person", "Spike Growth"], 5: ["Sleet Storm", "Slow"] }, "Druid"), "Hold Person, Spike Growth (Druid 3); Sleet Storm, Slow (5)");
+});
+
+test("speeds: race fly/swim/climb, feature speeds, conditions, Superior Mobility", () => {
+  const sp = (classes, extra = {}) => H.computeSpeed({ ...char(classes, extra), speed: extra.speed ?? 30 });
+  const show = (r) => r.others.map((o) => o.type + " " + o.value + (o.when ? " (" + o.when + ")" : ""));
+
+  assert.deepEqual(show(sp([{ name: "Fighter", level: 1 }])), []);
+  assert.deepEqual(show(sp([{ name: "Fighter", level: 1 }], { race: "Aarakocra", speed: 25 })), ["fly 50 (not in medium or heavy armor)"]);
+  assert.deepEqual(show(sp([{ name: "Rogue", level: 1 }], { race: "Tabaxi" })), ["climb 20"]);
+  // "Equal to walking speed" follows walking speed, Mobile included.
+  assert.deepEqual(show(sp([{ name: "Barbarian", subclass: "Path of the Totem Warrior", level: 14 }], { feats: [{ name: "Mobile" }] })), ["fly 40 (while raging (Eagle))"]);
+  assert.deepEqual(show(sp([{ name: "Barbarian", subclass: "Path of the Totem Warrior", level: 13 }])), []);
+  // Always-on: only the best of a type; a Triton warlock keeps the 40 ft swim.
+  assert.deepEqual(show(sp([{ name: "Warlock", subclass: "The Fathomless", level: 1 }], { race: "Triton" })), ["swim 40"]);
+  // A conditional speed no better than an always-on one is left out.
+  assert.deepEqual(show(sp([{ name: "Sorcerer", subclass: "Storm Sorcery", level: 18 }], { race: "Aarakocra", speed: 25 })), ["fly 60"]);
+  // Superior Mobility adds 10 to climbing and swimming speeds you already have.
+  assert.deepEqual(show(sp([{ name: "Rogue", subclass: "Scout", level: 9 }], { race: "Tabaxi" })), ["climb 30"]);
+  assert.deepEqual(show(sp([{ name: "Rogue", subclass: "Scout", level: 9 }])), []);
+  // Revelation in Flesh: fly equal to walking, swim twice walking.
+  assert.deepEqual(show(sp([{ name: "Sorcerer", subclass: "Aberrant Mind", level: 14 }])).map((x) => x.split(" (")[0]), ["fly 30", "swim 60"]);
 });

@@ -3,6 +3,7 @@ import { CLASSES_INFO, FIGHTING_STYLES, CLASS_PROFICIENCIES } from "../data/clas
 import { FEATS_CATALOG } from "../data/feats.js";
 import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
+import { RACE_DATA } from "../data/race-data.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices } from "../core/helpers.js";
 import { catalogSpellName } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
@@ -326,6 +327,9 @@ export function finishWizard(){
   var info = CLASSES_INFO[w.classId];
   var c = newCharacter((w.name||"").trim());
   c.race = w.race;
+  // Walking speed from the race (dwarves 25, wood elves 35); fly, swim
+  // and climb speeds are read from the race data on the sheet.
+  c.speed = (RACE_DATA[w.race] && RACE_DATA[w.race].speed && RACE_DATA[w.race].speed.walk) || 30;
   c.background = w.background;
   c.alignment = w.alignment;
   c.classes = [{name:w.classId, subclass:"", level:1}];
