@@ -134,7 +134,8 @@ function checkResource(r, where, ids){
     for(const m of [-1, 0, 3, 5]){
       const mods = { str: m, dex: m, con: m, int: m, wis: m, cha: m, pb: Math.floor((lv - 1) / 4) + 2 };
       const max = r.max(lv, mods);
-      assert.ok(Number.isFinite(max) && max >= 0, where + " " + r.id + ": max " + max + " at level " + lv);
+      // Infinity is allowed: an unlimited feature (Archdruid's Wild Shape).
+      assert.ok((Number.isFinite(max) || max === Infinity) && max >= 0, where + " " + r.id + ": max " + max + " at level " + lv);
       assert.ok(["short", "long", "manual"].includes(r.reset(lv)), where + " " + r.id + ": reset " + r.reset(lv));
     }
   }

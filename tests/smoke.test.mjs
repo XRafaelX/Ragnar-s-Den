@@ -18,7 +18,8 @@ for(const [cls, subs] of Object.entries(SUBCLASSES)){
         const features = H.classFeatureList(entry);
         assert.ok(features.every((f) => f.level <= lv), where + ": feature above current level");
         assert.equal(new Set(features.map((f) => f.id)).size, features.length, where + ": duplicate feature ids");
-        for(const r of H.characterResources(c)) assert.ok(Number.isFinite(r.max) && r.max >= 0, where + ": " + r.name + " max " + r.max);
+        // Infinity is allowed: an unlimited feature (Archdruid's Wild Shape).
+        for(const r of H.characterResources(c)) assert.ok((Number.isFinite(r.max) || r.max === Infinity) && r.max >= 0, where + ": " + r.name + " max " + r.max);
         const slots = H.computeSpellSlots(c.classes);
         assert.ok(Object.values(slots.slots).every((n) => n >= 0), where + ": negative slots");
         assert.ok(H.computeArmorClass(c).value >= 10, where + ": AC");

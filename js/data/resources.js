@@ -10,7 +10,8 @@
      also counts as covered by a long rest). "manual" for the odd one no
      rest restores on its own (Necrotic Husk); the player regains it.
    pool: true for point pools (Ki, Lay on Hands) shown as a number rather
-     than pips.
+     than pips. max can return Infinity for a feature that becomes
+     unlimited (Archdruid's Wild Shape); it then shows as Unlimited.
    armorModel: only while the Armorer has that model (Defensive Field:
      "Guardian"). */
 
@@ -32,7 +33,8 @@ export var CLASS_RESOURCES = {
       hint:"Action: roll d100; at or under your cleric level (always from level 20), your deity helps. Regain after 7 days if it worked, or after a long rest if it didn't."}
   ],
   "Druid": [
-    {id:"wild_shape", name:"Wild Shape", level:2, max:always(2), reset:always("short"),
+    {id:"wild_shape", name:"Wild Shape", level:2,
+      max:function(lv){ return lv>=20 ? Infinity : 2; }, reset:always("short"),
       hint:"Action (bonus action for Circle of the Moon): turn into a beast you've seen. Unlimited from level 20 (Archdruid)."}
   ],
   "Fighter": [
@@ -208,6 +210,9 @@ export var SUBCLASS_RESOURCES = {
         hint:"When your echo is destroyed by damage: gain 2d6 + CON mod temporary HP (if you have none)."}
     ],
     "Rune Knight": [
+      {id:"rune_invocations", name:"Rune Invocations", level:3,
+        max:function(lv){ return (lv>=15 ? 5 : lv>=10 ? 4 : lv>=7 ? 3 : 2) * (lv>=15 ? 2 : 1); }, reset:always("short"),
+        hint:"Invoke each rune you know once per short or long rest (twice from level 15, Master of Runes). One pip per invocation across all your runes."},
       {id:"giants_might", name:"Giant's Might", level:3,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Bonus action for 1 minute: become Large, advantage on STR checks and saves, +1d6 damage once per turn (1d8 at 10, 1d10 at 18)."},
@@ -500,7 +505,9 @@ export var SUBCLASS_RESOURCES = {
     ],
     "School of Transmutation": [
       {id:"shapechanger", name:"Shapechanger (Polymorph Self)", level:10, max:always(1), reset:always("short"),
-        hint:"Cast Polymorph on yourself (beast of CR 1 or lower) without a spell slot."}
+        hint:"Cast Polymorph on yourself (beast of CR 1 or lower) without a spell slot."},
+      {id:"master_transmuter", name:"Master Transmuter", level:14, max:always(1), reset:always("long"),
+        hint:"Action: consume your transmuter's stone for Major Transformation, Panacea, Restore Life or Restore Youth. You can't make a new stone until you finish a long rest."}
     ],
     "Chronurgy Magic": [
       {id:"chronal_shift", name:"Chronal Shift", level:2, max:always(2), reset:always("long"),

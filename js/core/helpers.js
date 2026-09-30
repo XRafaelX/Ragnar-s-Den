@@ -205,7 +205,7 @@ export function characterResources(c){
       var max = r.max(lv, m);
       list.push({
         key: key, name: r.name, source: d.source, hint: r.hint, pool: !!r.pool,
-        max: max, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
+        max: max, used: max===Infinity ? 0 : clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
         reset: r.reset(lv)
       });
     });

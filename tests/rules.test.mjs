@@ -139,6 +139,16 @@ test("resources: counts scale and rests restore the right ones", () => {
   assert.equal(res(char([{ name: "Fighter", level: 17 }]))["Action Surge"], 2);
   assert.equal(res(char([{ name: "Cleric", level: 18 }]))["Channel Divinity"], 3);
   assert.equal(res(char([{ name: "Rogue", level: 13, subclass: "Misfortune Bringer" }]))["Jinx Points"], 6);
+  // Wild Shape from druid 2, unlimited at 20 (Archdruid), with nothing counted as used.
+  assert.equal(res(char([{ name: "Druid", level: 1 }]))["Wild Shape"], undefined);
+  assert.equal(res(char([{ name: "Druid", level: 19 }]))["Wild Shape"], 2);
+  const archdruid = H.characterResources(char([{ name: "Druid", level: 20 }], { resourcesUsed: { "Druid:wild_shape": 2 } }));
+  assert.deepEqual(archdruid.filter((r) => r.name === "Wild Shape").map((r) => [r.max, r.used]), [[Infinity, 0]]);
+  // Rune Knight: one invocation per rune known (2/3/4/5 at 3/7/10/15), twice each from 15.
+  const runes = (lv) => res(char([{ name: "Fighter", level: lv, subclass: "Rune Knight" }]))["Rune Invocations"];
+  assert.deepEqual([runes(3), runes(7), runes(10), runes(14), runes(15)], [2, 3, 4, 4, 10]);
+  assert.equal(res(char([{ name: "Wizard", level: 13, subclass: "School of Transmutation" }]))["Master Transmuter"], undefined);
+  assert.equal(res(char([{ name: "Wizard", level: 14, subclass: "School of Transmutation" }]))["Master Transmuter"], 1);
 
   const c = char([{ name: "Warlock", level: 14, subclass: "The Genie" }], { resourcesUsed: {} });
   c.resourcesUsed = { "Warlock:limited_wish": 1, "Warlock:bottled_respite": 1, "Warlock:mystic_arcanum_6": 1 };

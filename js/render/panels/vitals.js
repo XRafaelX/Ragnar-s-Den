@@ -678,7 +678,7 @@ function renderResourcesCard(c, resources){
     var tag = document.createElement("span");
     tag.className = "res-reset res-reset-"+r.reset;
     tag.textContent = r.reset==="short" ? "Short rest" : r.reset==="manual" ? "Manual" : "Long rest";
-    name.appendChild(tag);
+    if(r.max!==Infinity) name.appendChild(tag);
     info.appendChild(name);
     var hint = document.createElement("div");
     hint.className = "res-hint";
@@ -688,6 +688,16 @@ function renderResourcesCard(c, resources){
 
     var ctrl = document.createElement("div");
     ctrl.className = "res-ctrl";
+    row.appendChild(ctrl);
+    // Unlimited (Archdruid's Wild Shape): nothing to count or spend.
+    if(r.max===Infinity){
+      var unlimited = document.createElement("div");
+      unlimited.className = "res-count";
+      unlimited.innerHTML = "<b>Unlimited</b>";
+      ctrl.appendChild(unlimited);
+      list.appendChild(row);
+      return;
+    }
     if(!r.pool && r.max <= RESOURCE_PIP_LIMIT){
       var pips = document.createElement("div");
       pips.className = "res-pips";
@@ -726,7 +736,6 @@ function renderResourcesCard(c, resources){
     stepper.appendChild(useBtn);
     stepper.appendChild(regainBtn);
     ctrl.appendChild(stepper);
-    row.appendChild(ctrl);
 
     function setUsed(n){
       n = clamp(n, 0, r.max);
