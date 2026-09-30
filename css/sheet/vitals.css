@@ -25,6 +25,10 @@
 }
 .hp-actions-row{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-bottom:8px;flex-wrap:wrap;}
 .hp-actions-row .quick-adj-btn{min-width:30px;height:26px;padding:0 6px;font-size:11.5px;font-weight:600;}
+/* Any-amount damage/heal (and Heavy Armor Master's reduced hit) */
+.hp-amount-row{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;width:100%;margin-bottom:8px;}
+.hp-amount-row .btn{height:28px;padding:0 10px;font-size:12px;}
+.hp-amount-input{width:84px;height:28px;box-sizing:border-box;padding:0 8px;border-radius:6px;border:1px solid var(--rule);background:rgba(0,0,0,.18);color:var(--text-on-parch);font:inherit;font-size:13px;text-align:center;}
 .quick-heal-btn{color:var(--moss);border-color:var(--moss);}
 .quick-heal-btn:hover{background:rgba(90,164,105,0.15);}
 .hp-sub-row{display:flex;align-items:center;justify-content:center;gap:14px;width:100%;padding-top:8px;border-top:1px dashed var(--rule);flex-wrap:wrap;}

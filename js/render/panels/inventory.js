@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, powerAttackFeat, powerAttackOn } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
 import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker, openArmorPicker } from "../armory.js";
@@ -365,6 +365,23 @@ function renderWeaponCard(c, item, idx){
     dmgBtn.title = "Enter damage dice like \"1d8\" to roll";
   }
   actions.appendChild(dmgBtn);
+
+  // Great Weapon Master / Sharpshooter: -5 to hit, +10 damage while on.
+  var powerFeat = powerAttackFeat(c, item);
+  if(powerFeat){
+    var on = powerAttackOn(c, item);
+    var power = document.createElement("button");
+    power.type = "button";
+    power.className = "btn small inv-power-btn" + (on ? " primary" : "");
+    power.setAttribute("aria-pressed", on ? "true" : "false");
+    power.textContent = "−5 / +10";
+    power.title = powerFeat + ": " + (on ? "on. Attacks take −5 to hit and deal +10 damage. Tap to turn off." : "take −5 to hit for +10 damage");
+    power.addEventListener("click", function(){
+      if(on) delete item.powerAttack; else item.powerAttack = true;
+      save(); renderAll();
+    });
+    actions.appendChild(power);
+  }
   card.appendChild(actions);
 
   return card;

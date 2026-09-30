@@ -632,13 +632,27 @@ export function isMagicWeapon(c, item){
   var active = c.infusions && c.infusions.active || [];
   return !!item.id && active.some(function(a){ return a.itemId===item.id; });
 }
+/* The feat that lets this weapon trade -5 to hit for +10 damage:
+   Great Weapon Master for a heavy melee weapon, Sharpshooter for a ranged
+   one, both only with weapons you're proficient with. Null if neither. */
+export function powerAttackFeat(c, item){
+  if(!item.proficient) return null;
+  if(isRangedWeapon(item)) return hasFeat(c, "Sharpshooter") ? "Sharpshooter" : null;
+  var d = WEAPON_DATA[item.name];
+  var heavy = /\bheavy\b/i.test(((d && d.properties) || "") + " " + (item.notes || ""));
+  return heavy && hasFeat(c, "Great Weapon Master") ? "Great Weapon Master" : null;
+}
+/* The weapon's -5/+10 switch is on (and its feat still applies). */
+export function powerAttackOn(c, item){
+  return !!item.powerAttack && !!powerAttackFeat(c, item);
+}
 export function weaponAttackBonus(c, item){
   var pb = item.proficient ? profBonus(c) : 0;
   var archery = isRangedWeapon(item) && hasFightingStyle(c, "Archery") ? 2 : 0;
-  return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0) + archery;
+  return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0) + archery - (powerAttackOn(c, item) ? 5 : 0);
 }
 export function weaponDamageBonus(c, item){
-  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0);
+  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0) + (powerAttackOn(c, item) ? 10 : 0);
 }
 export function parseDiceNotation(str){
   var m2 = /^(\d*)d(\d+)$/i.exec((str||"").trim());
@@ -650,6 +664,8 @@ export function parseDiceNotation(str){
    true if any of the character's classes list the weapon's category
    ("Simple weapons"/"Martial weapons") or name it specifically. */
 export function isProficientWithWeapon(c, weaponName, category){
+  // Weapon Master's picks.
+  if(weaponName && featProficiencies(c).weapons.some(function(w){ return w.name===weaponName; })) return true;
   return (c.classes||[]).some(function(cl, idx){
     var p = classProficiencies(c, idx);
     if(!p || !p.weapons) return false;
@@ -704,6 +720,13 @@ export function computeDarkvision(c){
 export function getCharacterSenses(c){
   var dv = computeDarkvision(c);
   return dv.range ? "Darkvision " + dv.range + " ft" : "No darkvision";
+}
+
+/* Heavy Armor Master: nonmagical bludgeoning, piercing and slashing
+   damage is reduced by 3 while wearing heavy armor. */
+export function heavyArmorMasterActive(c){
+  return hasFeat(c, "Heavy Armor Master") &&
+    (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
 }
 
 /* ---------------- Armor proficiency and Stealth ---------------- */

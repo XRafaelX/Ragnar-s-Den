@@ -529,3 +529,51 @@ test("senses, armor proficiency and Stealth", () => {
   assert.equal(st([{ name: "Fighter", level: 4 }], [scale], { feats: [{ name: "Medium Armor Master" }] }), "none");
   assert.equal(st([{ name: "Artificer", subclass: "Armorer", level: 3, armorModel: "Infiltrator" }], [plate]), "adv");
 });
+
+test("feats: Great Weapon Master / Sharpshooter switch, Weapon Master, Heavy Armor Master", () => {
+  const great = { id: "g1", type: "weapon", name: "Greatsword", ability: "str", proficient: true, magicBonus: 0 };
+  const bow = { id: "b1", type: "weapon", name: "Longbow", ability: "dex", proficient: true, magicBonus: 0 };
+  const sword = { id: "s1", type: "weapon", name: "Longsword", ability: "str", proficient: true, magicBonus: 0 };
+  const fighter = (feats, inv) => char([{ name: "Fighter", level: 4 }], { abilities: { str: 16, dex: 16 }, feats, inventory: inv });
+  const gwm = fighter([{ name: "Great Weapon Master" }], [great, bow, sword]);
+  assert.equal(H.powerAttackFeat(gwm, great), "Great Weapon Master");
+  assert.equal(H.powerAttackFeat(gwm, sword), null);                        // not heavy
+  assert.equal(H.powerAttackFeat(gwm, bow), null);                          // needs Sharpshooter
+  assert.equal(H.powerAttackFeat(gwm, { ...great, proficient: false }), null);
+  assert.deepEqual([H.weaponAttackBonus(gwm, great), H.weaponDamageBonus(gwm, great)], [5, 3]);
+  const on = { ...great, powerAttack: true };
+  assert.deepEqual([H.weaponAttackBonus(gwm, on), H.weaponDamageBonus(gwm, on)], [0, 13]);
+  // The switch does nothing once the feat is gone.
+  assert.equal(H.weaponAttackBonus(fighter([], [on]), on), 5);
+  assert.equal(H.powerAttackFeat(fighter([{ name: "Sharpshooter" }], [bow]), bow), "Sharpshooter");
+
+  // Weapon Master: four weapons; carried ones become proficient, and back.
+  const wiz = char([{ name: "Wizard", level: 4 }], { inventory: [{ id: "w1", type: "weapon", name: "Longsword", proficient: false }] });
+  const feat = { id: "f", name: "Weapon Master" };
+  wiz.feats.push(feat);
+  const def = FP.featDef("Weapon Master");
+  const picks = { ability: "str", skills: [], expertise: [], weapons: ["Longsword", "Rapier", "Whip"] };
+  assert.match(FP.featPicksProblem(def, picks, {}), /4 different weapons/);
+  picks.weapons.push("Longbow");
+  assert.equal(FP.featPicksProblem(def, picks, {}), "");
+  FP.applyFeatPicks(wiz, feat, picks);
+  assert.equal(wiz.inventory[0].proficient, true);
+  assert.equal(H.isProficientWithWeapon(wiz, "Rapier", "martial"), true);
+  assert.equal(H.isProficientWithWeapon(wiz, "Greatsword", "martial"), false);
+  assert.equal(wiz.abilities.str, 11);
+  // Re-applying (finishing an older Weapon Master) never doubles the +1.
+  FP.applyFeatPicks(wiz, feat, picks);
+  assert.equal(wiz.abilities.str, 11);
+  FP.revertFeatPicks(wiz, feat);
+  assert.deepEqual([wiz.inventory[0].proficient, wiz.abilities.str], [false, 10]);
+  // An older Weapon Master (picks without weapons) asks for them; "already added" stops asking.
+  assert.equal(FP.featPicksPending({ name: "Weapon Master", picks: { ability: "dex", skills: [], expertise: [] } }), true);
+  assert.equal(FP.featPicksPending({ name: "Weapon Master", picks: { ability: "dex", manual: true } }), false);
+  assert.deepEqual(FP.startingPicks(def, { picks: { ability: "dex", skills: [], expertise: [] } }).ability, "dex");
+
+  // Heavy Armor Master: only in heavy armor.
+  const plate = { type: "armor", equipped: true, name: "Plate", category: "heavy", baseAC: 18 };
+  assert.equal(H.heavyArmorMasterActive(char([{ name: "Fighter", level: 4 }], { feats: [{ name: "Heavy Armor Master" }], inventory: [plate] })), true);
+  assert.equal(H.heavyArmorMasterActive(char([{ name: "Fighter", level: 4 }], { feats: [{ name: "Heavy Armor Master" }], inventory: [{ ...plate, equipped: false }] })), false);
+  assert.equal(H.heavyArmorMasterActive(char([{ name: "Fighter", level: 4 }], { inventory: [plate] })), false);
+});

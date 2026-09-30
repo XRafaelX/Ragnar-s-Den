@@ -1,9 +1,10 @@
 import { ABILITIES, SKILLS } from "../data/abilities-skills.js";
-import { mod, fmtMod, ce } from "../core/helpers.js";
+import { mod, fmtMod, ce, isProficientWithWeapon } from "../core/helpers.js";
 import { themedPicker } from "./themed-picker.js";
 import { openInfoModal } from "./info-modal.js";
+import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
 import {
-  TOOL_GROUPS, featDef, featHasPicks, featNeedsChoice, emptyPicks, featPicksProblem,
+  TOOL_GROUPS, featDef, featHasPicks, featNeedsChoice, startingPicks, featPicksProblem,
   expertiseOptions, expertiseReason, applyFeatPicks
 } from "../core/feat-picks.js";
 
@@ -13,7 +14,8 @@ import {
    modal (a feat added from the Compendium, or one taken before the sheet
    applied picks). It changes `picks` in place and calls onChange() after
    each pick so the caller can re-render and re-check.
-   ctx: {abilities, skillProfs} of the character taking the feat. */
+   ctx: {abilities, skillProfs} of the character taking the feat, plus
+   knowsWeapon(name) when it's known (greys out weapons already proficient). */
 var SKILL_NAMES = SKILLS.map(function(s){ return s[0]; });
 
 export function renderFeatPicks(def, picks, ctx, onChange){
@@ -83,6 +85,30 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       onPick: function(v){ picks.expertise[j] = v; onChange(); }
     })));
   })(j);
+
+  if(def.weapons && !picks.weapons) picks.weapons = [];
+  // Weapons the character already knows stay pickable (a Fighter can take
+  // Weapon Master for its +1) but move to the end of the list.
+  var weaponGroups = {}, known = [];
+  Object.keys(WEAPON_GROUPS).forEach(function(g){
+    var fresh = WEAPON_GROUPS[g].filter(function(n){
+      if(ctx.knowsWeapon && ctx.knowsWeapon(n)){ known.push(n); return false; }
+      return true;
+    });
+    if(fresh.length) weaponGroups[g] = fresh;
+  });
+  if(known.length) weaponGroups["Already proficient"] = known;
+  for(var w = 0; w < (def.weapons || 0); w++) (function(w){
+    if(w===0) box.appendChild(label("Gain proficiency with " + def.weapons + " weapons of your choice"));
+    box.appendChild(field(themedPicker({
+      key: "feat:" + def.name + ":weapon:" + w, ariaLabel: def.name + " weapon " + (w + 1),
+      placeholder: "Choose a weapon", groups: weaponGroups, value: picks.weapons[w] || "",
+      reasonFor: function(v){
+        return v!==picks.weapons[w] && picks.weapons.indexOf(v)!==-1 ? "picked" : "";
+      },
+      onPick: function(v){ picks.weapons[w] = v; onChange(); }
+    })));
+  })(w);
   return box;
 }
 function label(text){ var l = ce("div", "fp-label"); l.textContent = text; return l; }
@@ -95,8 +121,9 @@ function field(el){ var f = ce("div", "field rt-field fp-field"); f.appendChild(
    score by hand. onDone() runs after either. */
 export function openFeatPicksModal(c, feat, onDone){
   var def = featDef(feat.name);
-  var picks = emptyPicks(def);
-  var ctx = {abilities: c.abilities, skillProfs: c.skillProfs};
+  // A Weapon Master from before weapon picks keeps its +1 and adds weapons.
+  var picks = startingPicks(def, feat);
+  var ctx = featPicksContext(c);
   openInfoModal(feat.name, function(body){
     var lead = ce("p", "fp-lead");
     lead.textContent = featNeedsChoice(def)
@@ -124,7 +151,20 @@ export function openFeatPicksModal(c, feat, onDone){
     }
     function close(){ document.getElementById("info-modal-close").click(); }
     apply.addEventListener("click", function(){ applyFeatPicks(c, feat, picks); close(); onDone(); });
-    manual.addEventListener("click", function(){ feat.picks = {ability: "", skills: [], expertise: []}; close(); onDone(); });
+    manual.addEventListener("click", function(){
+      if(!feat.picks) feat.picks = {ability: "", skills: [], expertise: [], weapons: []};
+      feat.picks.manual = true;
+      close(); onDone();
+    });
     draw();
   });
+}
+
+/* The picker's view of a character on the sheet. */
+export function featPicksContext(c){
+  return {abilities: c.abilities, skillProfs: c.skillProfs,
+    knowsWeapon: function(name){
+      var d = WEAPON_DATA[name];
+      return isProficientWithWeapon(c, name, d && d.category);
+    }};
 }

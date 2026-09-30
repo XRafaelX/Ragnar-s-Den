@@ -19,7 +19,7 @@ import { showActionToast } from "../ui/toast.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makePlusSvg } from "../ui/svg-icons.js";
 import { openCompendium } from "../render/compendium.js";
 import { featDef, featNeedsChoice, emptyPicks, featPicksProblem, featPicksSummary, applyFeatPicks, revertFeatPicks } from "../core/feat-picks.js";
-import { renderFeatPicks } from "../ui/feat-picks.js";
+import { renderFeatPicks, featPicksContext } from "../ui/feat-picks.js";
 
 /* ---------------- Level-up flow ----------------
    A short guided flow in the same full-screen overlay as the creation
@@ -449,7 +449,7 @@ function stepAsi(container){
   fill();
   drawPicks();
 }
-function featCtx(){ return {abilities: lu.c.abilities, skillProfs: lu.c.skillProfs}; }
+function featCtx(){ return featPicksContext(lu.c); }
 /* The +1 the chosen feat gives (Durable: CON), or null. */
 function featAbilityPick(){
   return target().asi && lu.asiMode==="feat" && lu.featPicks && lu.featPicks.ability || null;

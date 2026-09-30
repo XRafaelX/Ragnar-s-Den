@@ -177,10 +177,11 @@ export function renderInformationPanel(c){
       if(saves.indexOf(label)===-1) saves.push(label);
     });
   });
-  // Plus what feats grant (Moderately Armored, Skilled, Resilient).
+  // Plus what feats grant (Moderately Armored, Skilled, Weapon Master, Resilient).
   var fromFeats = featProficiencies(c);
   fromFeats.armor.forEach(function(p){ if(armor.indexOf(p.name)===-1) armor.push(p.name); });
   fromFeats.tools.forEach(function(p){ if(tools.indexOf(p.name)===-1) tools.push(p.name); });
+  fromFeats.weapons.forEach(function(p){ if(weapons.indexOf(p.name)===-1) weapons.push(p.name); });
   fromFeats.saves.forEach(function(p){
     var label = ABILITY_NAME[p.ability] || p.ability;
     if(saves.indexOf(label)===-1) saves.push(label);

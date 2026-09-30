@@ -1,19 +1,22 @@
 import { FEATS_CATALOG } from "../data/feats.js";
 import { ABILITIES, SKILLS } from "../data/abilities-skills.js";
 import { ARTISAN_TOOLS, MUSICAL_INSTRUMENTS } from "../data/classes.js";
+import { WEAPON_GROUPS } from "../data/weapons.js";
 
 /* ---------------- Feat picks ----------------
    Choices a feat asks for when it's taken: the ability a half-feat raises
    by 1 (Athlete: STR or DEX), Skilled's three skills or tools, Skill
-   Expert's skill and expertise. The catalog entry says what a feat
+   Expert's skill and expertise, Weapon Master's four weapons. The catalog
+   entry says what a feat
    offers (see the key at the top of js/data/feats.js).
 
    The character's copy of the feat keeps `picks` (what was chosen) and
    `applied` (what that actually changed: a score already at 20 or a skill
    already proficient changes nothing), so removing the feat, or undoing
    the level-up that gave it, takes back exactly that. Resilient's save,
-   armor and tool proficiencies aren't written anywhere; they're read from
-   the picks (featProficiencies). */
+   armor, tool and weapon proficiencies aren't written anywhere; they're
+   read from the picks (featProficiencies). Weapon picks do tick the
+   Proficient box on matching weapons already carried (and undo it). */
 
 export var TOOL_GROUPS = {
   "Artisan's tools": ARTISAN_TOOLS,
@@ -30,14 +33,19 @@ export function featDef(name){
 }
 /* Anything taking this feat changes on the sheet. */
 export function featHasPicks(def){
-  return !!def && !!((def.ability && def.ability.length) || def.skills || def.skillsOrTools || def.expertise);
+  return !!def && !!((def.ability && def.ability.length) || def.skills || def.skillsOrTools || def.expertise || def.weapons);
 }
 /* Something the player has to choose (not just a fixed +1). */
 export function featNeedsChoice(def){
-  return !!def && !!((def.ability && def.ability.length > 1) || def.skills || def.skillsOrTools || def.expertise);
+  return !!def && !!((def.ability && def.ability.length > 1) || def.skills || def.skillsOrTools || def.expertise || def.weapons);
 }
 export function emptyPicks(def){
-  return { ability: def && def.ability && def.ability.length===1 ? def.ability[0] : "", skills: [], expertise: [] };
+  return { ability: def && def.ability && def.ability.length===1 ? def.ability[0] : "", skills: [], expertise: [], weapons: [] };
+}
+/* Picks to start a picker from: the feat's own (to finish them) or empty. */
+export function startingPicks(def, feat){
+  var p = feat && feat.picks && !feat.picks.manual ? feat.picks : emptyPicks(def);
+  return {ability: p.ability || emptyPicks(def).ability, skills: (p.skills||[]).slice(), expertise: (p.expertise||[]).slice(), weapons: (p.weapons||[]).slice()};
 }
 function profCount(def){ return def.skillsOrTools || def.skills || 0; }
 
@@ -55,6 +63,9 @@ export function featPicksProblem(def, picks, ctx){
   var exp = (picks.expertise||[]).slice(0, def.expertise||0).filter(Boolean);
   if(exp.length < (def.expertise||0)) return "Pick a skill for "+def.name+"'s expertise.";
   if(exp.some(function(x){ return expertiseReason(ctx, picks, x); })) return "Pick a skill you're proficient in and don't already have expertise in.";
+  var w = def.weapons || 0;
+  var weapons = (picks.weapons||[]).slice(0, w).filter(Boolean);
+  if(weapons.length < w || new Set(weapons).size < w) return "Pick "+w+" different weapons for "+def.name+".";
   return "";
 }
 function hasProf(ctx, skill){ var e = ctx && ctx.skillProfs && ctx.skillProfs[skill]; return !!(e && e.prof); }
@@ -76,15 +87,20 @@ export function featPicksSummary(def, picks){
   if(picks.ability) bits.push(abilityName(picks.ability)+" +1"+(def.saveProf ? " and its saving throw" : ""));
   (picks.skills||[]).filter(Boolean).forEach(function(s){ bits.push(s); });
   (picks.expertise||[]).filter(Boolean).forEach(function(s){ bits.push("expertise in "+s); });
+  (picks.weapons||[]).filter(Boolean).forEach(function(s){ bits.push(s); });
   return bits.join(", ");
 }
 
-/* Apply the picks to the character (feat is its copy, already in c.feats). */
+/* Apply the picks to the character (feat is its copy, already in c.feats).
+   Picks made before are taken back first, so finishing or changing them
+   (a Weapon Master taken before weapon picks existed) never doubles up. */
 export function applyFeatPicks(c, feat, picks){
   var def = featDef(feat.name);
   if(!featHasPicks(def)) return;
-  feat.picks = {ability: picks.ability||"", skills: (picks.skills||[]).filter(Boolean), expertise: (picks.expertise||[]).filter(Boolean)};
-  var applied = {abilities:{}, skills:[], expertise:[]};
+  revertFeatPicks(c, feat);
+  feat.picks = {ability: picks.ability||"", skills: (picks.skills||[]).filter(Boolean), expertise: (picks.expertise||[]).filter(Boolean),
+    weapons: (picks.weapons||[]).filter(Boolean)};
+  var applied = {abilities:{}, skills:[], expertise:[], weaponItems:[]};
   var k = feat.picks.ability;
   if(k){
     var was = Number(c.abilities[k])||10, now = Math.min(20, was + 1);
@@ -101,6 +117,12 @@ export function applyFeatPicks(c, feat, picks){
     if(!entry.expertise){ entry.expertise = true; applied.expertise.push(sk); }
     c.skillProfs[sk] = entry;
   });
+  // Weapons already carried become proficient.
+  (c.inventory||[]).forEach(function(item){
+    if(item.type==="weapon" && !item.proficient && item.id && feat.picks.weapons.indexOf(item.name)!==-1){
+      item.proficient = true; applied.weaponItems.push(item.id);
+    }
+  });
   feat.applied = applied;
 }
 /* Take back what applyFeatPicks changed. Returns a summary of it for a toast or dialog. */
@@ -114,6 +136,7 @@ export function revertFeatPicks(c, feat){
   });
   (a.expertise||[]).forEach(function(sk){ if(c.skillProfs[sk]) c.skillProfs[sk].expertise = false; });
   (a.skills||[]).forEach(function(sk){ if(c.skillProfs[sk]){ c.skillProfs[sk].prof = false; c.skillProfs[sk].expertise = false; } });
+  (c.inventory||[]).forEach(function(item){ if((a.weaponItems||[]).indexOf(item.id)!==-1) item.proficient = false; });
   delete feat.applied;
   return bits.concat(a.skills||[], (a.expertise||[]).map(function(s){ return "expertise in "+s; })).join(", ");
 }
@@ -124,22 +147,28 @@ export function featAppliedSummary(feat){
   return Object.keys(a.abilities||{}).map(function(k){ return abilityName(k)+" +"+a.abilities[k]; })
     .concat(a.skills||[], (a.expertise||[]).map(function(s){ return "expertise in "+s; })).join(", ");
 }
-/* A feat whose picks were never made: taken before the sheet applied
-   them, or added from the Compendium and the picker closed. */
+/* A feat whose picks were never made (taken before the sheet applied
+   them, or added from the Compendium and the picker closed), or whose
+   weapons are missing (a Weapon Master from before weapon picks). */
 export function featPicksPending(feat){
-  return !feat.picks && featHasPicks(featDef(feat.name));
+  var def = featDef(feat.name);
+  if(!featHasPicks(def)) return false;
+  if(!feat.picks) return true;
+  return !feat.picks.manual && !!def.weapons && (feat.picks.weapons||[]).length < def.weapons;
 }
 
-/* Proficiencies feats grant: armor (Moderately Armored), tools (Skilled)
-   and saving throws (Resilient), each tagged with the feat's name. */
+/* Proficiencies feats grant: armor (Moderately Armored), tools (Skilled),
+   weapons (Weapon Master) and saving throws (Resilient), each tagged with
+   the feat's name. */
 export function featProficiencies(c){
-  var out = {armor:[], tools:[], saves:[]};
+  var out = {armor:[], tools:[], weapons:[], saves:[]};
   (c.feats||[]).forEach(function(feat){
     var def = featDef(feat.name);
     if(!def) return;
     (def.armor||[]).forEach(function(a){ out.armor.push({name:a, feat:feat.name}); });
     if(!feat.picks) return;
     (feat.picks.skills||[]).forEach(function(x){ if(!isSkill(x)) out.tools.push({name:x, feat:feat.name}); });
+    (feat.picks.weapons||[]).forEach(function(x){ out.weapons.push({name:x, feat:feat.name}); });
     if(def.saveProf && feat.picks.ability) out.saves.push({ability:feat.picks.ability, feat:feat.name});
   });
   return out;

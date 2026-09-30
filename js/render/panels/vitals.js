@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, characterResources, restoreResources, maxHp, toughBonus, computeSpeed, hitDieHealing } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, characterResources, restoreResources, maxHp, toughBonus, computeSpeed, hitDieHealing, heavyArmorMasterActive } from "../../core/helpers.js";
 import { CLASSES_INFO } from "../../data/classes.js";
 import { HIT_DICE_BY_CLASS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -135,6 +135,34 @@ export function renderVitalsPanel(c){
   hpControlsRow.appendChild(fullBtn);
 
   hpBox.appendChild(hpControlsRow);
+
+  // Heavy Armor Master in heavy armor only (Vitals stays uncluttered for
+  // everyone else): type a hit's damage, then take it in full or reduced
+  // by 3 for a nonmagical bludgeoning, piercing or slashing hit.
+  if(heavyArmorMasterActive(c)){
+    var amountRow = document.createElement("div");
+    amountRow.className = "hp-amount-row";
+    var amountInput = document.createElement("input");
+    amountInput.type = "number"; amountInput.min = "0"; amountInput.inputMode = "numeric";
+    amountInput.className = "hp-amount-input";
+    amountInput.placeholder = "Damage";
+    amountInput.setAttribute("aria-label", "Damage amount");
+    amountRow.appendChild(amountInput);
+    var amount = function(){ return Math.max(0, Math.floor(Number(amountInput.value)||0)); };
+    var amountButton = function(text, title, onUse){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "btn small danger"; b.textContent = text; b.title = title;
+      b.addEventListener("click", function(e){ e.stopPropagation(); var n = amount(); if(n > 0) onUse(n); });
+      amountRow.appendChild(b);
+    };
+    amountButton("Take", "Take the full damage (temp HP first)", applyQuickDamage);
+    amountButton("Take −3 (HAM)", "Heavy Armor Master: nonmagical bludgeoning, piercing or slashing damage is reduced by 3", function(n){
+      var taken = Math.max(0, n - 3);
+      logRoll("Heavy Armor Master", n + " damage reduced to " + taken + ".");
+      if(taken > 0) applyQuickDamage(taken); else { save(); renderAll(); }
+    });
+    hpBox.appendChild(amountRow);
+  }
 
   // Sub row for Max & Temp HP
   var subRow = document.createElement("div");

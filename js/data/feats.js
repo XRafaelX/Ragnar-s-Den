@@ -5,7 +5,8 @@
      skills         skill proficiencies to pick (Skill Expert)
      skillsOrTools  skills or tools to pick (Skilled)
      expertise      expertise picks, in skills the character is proficient in
-     armor          armor proficiencies it grants */
+     armor          armor proficiencies it grants
+     weapons        weapon proficiencies to pick (Weapon Master) */
 export var FEATS_CATALOG = [
   {
     name: "Alert",
@@ -309,7 +310,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Weapon Master",
-    ability:["str","dex"],
+    ability:["str","dex"], weapons:4,
     prerequisite: "None",
     category: "Combat",
     summary: "+1 STR or DEX, gain proficiency with four weapons of your choice.",
