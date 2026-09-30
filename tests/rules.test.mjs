@@ -606,3 +606,12 @@ test("follow-ups: Divine Soul's cleric list, old walking speeds", () => {
   ensureShape(c);
   assert.equal(c.speed, 30);
 });
+
+test("character title: older saves get an empty title, a set one is kept", () => {
+  const old = { name: "Old", classes: [{ name: "Fighter", level: 1 }] };
+  ensureShape(old);
+  assert.equal(old.title, "");
+  const titled = { name: "Ragnar", title: "the Unbroken", classes: [{ name: "Fighter", level: 1 }] };
+  ensureShape(titled);
+  assert.equal(titled.title, "the Unbroken");
+});

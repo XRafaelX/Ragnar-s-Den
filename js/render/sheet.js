@@ -16,6 +16,7 @@ import { makeKebabSvg, makeCheckSvg } from "../ui/svg-icons.js";
 import { buildLevelRow, subclassEligible, openSubclassPicker } from "../levelup/level-row.js";
 import { buildAvatar, refreshAvatarInitial } from "../ui/avatar.js";
 import { applyBackdrop, backdropMenuItems, buildBanner } from "../ui/backdrop.js";
+import { buildCharTitle } from "../ui/char-title.js";
 
 export var TABS = [
   ["vitals","Vitals"],
@@ -271,6 +272,7 @@ export function renderIdentity(c){
   });
   nameRow.appendChild(nameInput);
   main.appendChild(nameRow);
+  main.appendChild(buildCharTitle(c));
 
   var subRow = document.createElement("div");
   subRow.className = "sub-row";

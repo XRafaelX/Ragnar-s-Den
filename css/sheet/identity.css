@@ -129,3 +129,107 @@
   .identity .sub-row{display:none;}
   .identity-compact{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
 }
+
+/* Character title under the name (see js/ui/char-title.js): gleaming
+   small caps between two ornaments. On a new title or a freshly opened
+   sheet it condenses in from wide, blurred letters with a soft burst of
+   light while the ornaments draw in; after that a light sweep passes
+   over it every few seconds and small glints twinkle around it. */
+.char-title-wrap{display:flex;align-items:center;min-height:26px;margin-top:1px;}
+.char-title{
+  --ct-gold:#f3d58a;
+  position:relative;isolation:isolate;display:inline-flex;align-items:center;gap:8px;max-width:100%;
+  padding:2px 6px;margin-left:-6px;border-radius:6px;cursor:pointer;
+  transition:background .2s;
+}
+.char-title:hover{background:color-mix(in srgb, var(--brass) 9%, transparent);}
+.char-title:focus-visible{outline:1px solid var(--brass);outline-offset:1px;}
+.ct-text{
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:.15em;
+  font-family:var(--serif);font-style:italic;font-variant:small-caps;font-size:17px;line-height:1.35;
+  letter-spacing:.12em;color:var(--brass-bright);
+  filter:blur(0) drop-shadow(0 0 6px color-mix(in srgb, var(--brass) 55%, transparent));
+}
+.ct-shine{
+  background:linear-gradient(100deg, var(--brass-bright) 0%, var(--brass-bright2) 38%,
+    #fff6dc 47%, var(--ct-gold) 50%, #fff6dc 53%, var(--brass-bright2) 62%, var(--brass-bright) 100%);
+  background-size:300% 100%;background-position:100% 0;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:ct-shimmer 7s ease-in-out infinite; /* 7s = SHIMMER_MS in char-title.js */
+}
+/* soft burst of light behind the title as it arrives */
+.char-title::before{
+  content:"";position:absolute;inset:-8px -14px;z-index:-1;pointer-events:none;opacity:0;border-radius:50%;
+  background:radial-gradient(closest-side, color-mix(in srgb, var(--brass) 45%, transparent), transparent);
+}
+.ct-enter::before{animation:ct-burst 1.1s ease-out both;}
+.ct-enter .ct-text{animation:ct-reveal .9s cubic-bezier(.2,.7,.2,1) both;}
+
+.ct-flourish{flex:none;display:inline-flex;width:34px;height:12px;color:var(--brass-bright);}
+.ct-flourish svg{width:100%;height:100%;overflow:visible;}
+.ct-right svg{transform:scaleX(-1);}
+.ct-rule{fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-dasharray:1;opacity:.75;}
+.ct-dot{fill:currentColor;opacity:.7;}
+.ct-gem{
+  fill:var(--ct-gold);stroke:var(--brass-bright);stroke-width:.8;
+  transform-box:fill-box;transform-origin:center;
+  animation:ct-gem-pulse 3.5s ease-in-out 1.2s infinite;
+}
+.ct-enter .ct-rule{animation:ct-draw .7s ease-out .25s both;}
+.ct-enter .ct-dot{animation:ct-fade .3s ease-out .85s both;}
+.ct-enter .ct-gem{animation:ct-gem-pop .5s cubic-bezier(.2,.9,.3,1.5) .7s both, ct-gem-pulse 3.5s ease-in-out 1.2s infinite;}
+
+/* four-point glints, each twinkling at its own moment in the cycle */
+.ct-spark{
+  position:absolute;width:7px;height:7px;pointer-events:none;opacity:0;
+  background:#fff6dc;
+  clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);
+  animation:ct-twinkle 4.8s ease-in-out infinite;
+}
+.ct-spark-1{top:-3px;left:32%;animation-delay:1.4s;}
+.ct-spark-2{bottom:-2px;left:64%;width:5px;height:5px;animation-delay:3s;}
+.ct-spark-3{top:0;right:30px;width:6px;height:6px;animation-delay:4.3s;}
+
+@keyframes ct-shimmer{0%{background-position:100% 0;}28%,100%{background-position:0 0;}}
+@keyframes ct-reveal{
+  0%{opacity:0;letter-spacing:.55em;filter:blur(6px) drop-shadow(0 0 14px color-mix(in srgb, var(--brass) 90%, transparent));}
+  55%{opacity:1;}
+  100%{opacity:1;letter-spacing:.12em;filter:blur(0) drop-shadow(0 0 6px color-mix(in srgb, var(--brass) 55%, transparent));}
+}
+@keyframes ct-burst{0%{opacity:0;transform:scaleX(.3);}35%{opacity:.9;}100%{opacity:0;transform:scaleX(1.15);}}
+@keyframes ct-draw{from{stroke-dashoffset:1;}to{stroke-dashoffset:0;}}
+@keyframes ct-fade{from{opacity:0;}}
+@keyframes ct-gem-pop{0%{transform:scale(0) rotate(-90deg);}100%{transform:scale(1) rotate(0);}}
+@keyframes ct-gem-pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+@keyframes ct-twinkle{
+  0%,70%,100%{opacity:0;transform:scale(0) rotate(0);}
+  78%{opacity:1;transform:scale(1) rotate(45deg);}
+  88%{opacity:0;transform:scale(0) rotate(90deg);}
+}
+
+/* empty: a quiet prompt; editing: the same lettering in a plain field */
+.char-title-add{
+  background:none;border:none;border-bottom:1px dashed transparent;padding:1px 0;cursor:pointer;
+  font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text-on-parch-dim);opacity:.75;
+  transition:opacity .15s, color .15s, border-color .15s;
+}
+.char-title-add:hover, .char-title-add:focus-visible{opacity:1;color:var(--brass-bright);border-bottom-color:var(--rule);outline:none;}
+.char-title-edit{display:flex;align-items:center;gap:6px;width:100%;max-width:380px;}
+.char-title-input{
+  flex:1;min-width:0;padding:2px 0;background:transparent;border:none;border-bottom:1px solid var(--brass);
+  font-family:var(--serif);font-style:italic;font-variant:small-caps;font-size:17px;letter-spacing:.12em;
+  color:var(--brass-bright);
+}
+.char-title-input:focus{outline:none;}
+.char-title-input::placeholder{color:var(--text-on-parch-dim);opacity:.6;}
+.char-title-dice{flex:none;padding:3px 7px;}
+.char-title-dice .btn-icon-svg{margin-right:0;}
+
+@media (max-width:560px){
+  .ct-flourish{width:22px;}
+  .ct-text, .char-title-input{font-size:16px;}
+}
+@media (prefers-reduced-motion: reduce){
+  .ct-shine, .ct-enter .ct-text, .ct-enter::before, .ct-rule, .ct-dot, .ct-gem, .ct-spark{animation:none !important;}
+  .ct-spark{display:none;}
+}

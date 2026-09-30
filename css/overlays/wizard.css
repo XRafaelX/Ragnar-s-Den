@@ -58,6 +58,13 @@
 }
 .wiz-name-chip{border-color:var(--rule);color:var(--text-on-parch-dim);}
 .wiz-name-chip:hover{color:var(--brass-bright);border-color:var(--brass);}
+.wiz-title-input{
+  width:100%;max-width:320px;padding:4px 0;background:transparent;border:none;border-bottom:1px solid var(--rule);
+  font-family:var(--serif);font-style:italic;font-variant:small-caps;font-size:17px;letter-spacing:.12em;
+  color:var(--brass-bright);
+}
+.wiz-title-input:focus{outline:none;border-bottom-color:var(--brass);}
+.wiz-title-input::placeholder{color:var(--text-on-parch-dim);opacity:.6;}
 
 .wiz-equip-option{
   border:1px solid var(--rule);border-radius:6px;padding:10px 12px;margin-bottom:8px;cursor:pointer;

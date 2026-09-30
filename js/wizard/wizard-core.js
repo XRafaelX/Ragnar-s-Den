@@ -303,7 +303,7 @@ export function validateStep(id){
 
 export function openWizard(){
   wizardState = {
-    step:"class", name:"", classId:null, race:"", background:"", alignment:"",
+    step:"class", name:"", title:"", classId:null, race:"", background:"", alignment:"",
     abilityMethod:null,
     abilities:{str:10,dex:10,con:10,int:10,wis:10,cha:10},
     assignIdx:{str:null,dex:null,con:null,int:null,wis:null,cha:null},
@@ -337,6 +337,7 @@ export function finishWizard(){
   var w = wizardState;
   var info = CLASSES_INFO[w.classId];
   var c = newCharacter((w.name||"").trim());
+  c.title = (w.title||"").trim();
   c.race = w.race;
   // Walking speed from the race (dwarves 25, wood elves 35); fly, swim
   // and climb speeds are read from the race data on the sheet.

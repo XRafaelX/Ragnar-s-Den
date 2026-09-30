@@ -14,6 +14,7 @@ export function newCharacter(name){
   return {
     id: uid(),
     name: name || "New Character",
+    title: "",
     avatar: null,
     inspiration: 0,
     backdrop: null,
@@ -53,6 +54,7 @@ export function newCharacter(name){
 
 /* ---------------- Migration safety (older saves) ---------------- */
 export function ensureShape(c){
+  if(typeof c.title!=="string") c.title = "";
   if(c.avatar===undefined) c.avatar = null;
   if(c.inspiration===undefined) c.inspiration = c.inspired ? 1 : 0;
   delete c.inspired;

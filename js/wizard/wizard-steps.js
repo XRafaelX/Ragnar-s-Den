@@ -3,7 +3,8 @@ import { CLASSES_INFO, FIGHTING_STYLES } from "../data/classes.js";
 import { RACES, RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/alignments.js";
-import { POINT_BUY_COSTS, pickNameIdeas } from "../data/misc.js";
+import { POINT_BUY_COSTS, pickNameIdeas, pickTitleIdeas } from "../data/misc.js";
+import { TITLE_MAX } from "../ui/char-title.js";
 import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass, autoEquipLoadout } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../ui/svg-icons.js";
@@ -1063,6 +1064,34 @@ export function wizardStepSpells(container){
   container.appendChild(card);
 }
 
+/* "Need ideas?" row: four random suggestions from pick(n) as chips, plus a
+   button that deals four more. Tapping a chip hands it to onPick. */
+function ideaChips(pick, onPick){
+  var wrap = ce("div","wiz-name-ideas");
+  var label = document.createElement("span");
+  label.textContent = "Need ideas? ";
+  wrap.appendChild(label);
+  function render(){
+    wrap.querySelectorAll(".wiz-name-chip").forEach(function(el){ el.remove(); });
+    pick(4).forEach(function(idea){
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "btn small ghost wiz-name-chip";
+      chip.textContent = idea;
+      chip.addEventListener("click", function(){ onPick(idea); });
+      wrap.appendChild(chip);
+    });
+    var shuffleBtn = document.createElement("button");
+    shuffleBtn.type = "button";
+    shuffleBtn.className = "btn small ghost wiz-name-chip";
+    shuffleBtn.innerHTML = makeDiceSvg() + "More ideas";
+    shuffleBtn.addEventListener("click", render);
+    wrap.appendChild(shuffleBtn);
+  }
+  render();
+  return wrap;
+}
+
 export function wizardStepReview(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Review & Finish</span></h3>";
@@ -1082,37 +1111,33 @@ export function wizardStepReview(container){
   });
   nameWrap.appendChild(nameInput);
 
-  var ideaWrap = ce("div","wiz-name-ideas");
-  var ideaLabel = document.createElement("span");
-  ideaLabel.textContent = "Need ideas? ";
-  ideaWrap.appendChild(ideaLabel);
-  function renderIdeaChips(){
-    ideaWrap.querySelectorAll(".wiz-name-chip").forEach(function(el){ el.remove(); });
-    pickNameIdeas(4).forEach(function(idea){
-      var chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "btn small ghost wiz-name-chip";
-      chip.textContent = idea;
-      chip.addEventListener("click", function(){
-        wizardState.name = idea;
-        nameInput.value = idea;
-        nameInput.classList.remove("wiz-invalid");
-        var errBox = document.getElementById("wizard-error");
-        if(errBox) errBox.classList.remove("show");
-      });
-      ideaWrap.appendChild(chip);
-    });
-    var shuffleBtn = document.createElement("button");
-    shuffleBtn.type = "button";
-    shuffleBtn.className = "btn small ghost wiz-name-chip";
-    shuffleBtn.innerHTML = makeDiceSvg() + "More ideas";
-    shuffleBtn.addEventListener("click", renderIdeaChips);
-    ideaWrap.appendChild(shuffleBtn);
-  }
-  renderIdeaChips();
-  nameWrap.appendChild(ideaWrap);
+  nameWrap.appendChild(ideaChips(pickNameIdeas, function(idea){
+    wizardState.name = idea;
+    nameInput.value = idea;
+    nameInput.classList.remove("wiz-invalid");
+    var errBox = document.getElementById("wizard-error");
+    if(errBox) errBox.classList.remove("show");
+  }));
 
   card.appendChild(nameWrap);
+
+  // Optional epithet, shown under the name on the sheet.
+  var titleWrap = document.createElement("div");
+  titleWrap.style.cssText = "margin-bottom:16px;";
+  titleWrap.innerHTML = "<label for='wiz-title-input' style='font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);display:block;margin-bottom:3px;'>Title <span style='text-transform:none;letter-spacing:0;'>(optional)</span></label>";
+  var titleInput = document.createElement("input");
+  titleInput.id = "wiz-title-input";
+  titleInput.className = "wiz-title-input";
+  titleInput.value = wizardState.title || "";
+  titleInput.maxLength = TITLE_MAX;
+  titleInput.placeholder = "e.g. the Unbroken";
+  titleInput.addEventListener("input", function(){ wizardState.title = titleInput.value; });
+  titleWrap.appendChild(titleInput);
+  titleWrap.appendChild(ideaChips(pickTitleIdeas, function(idea){
+    wizardState.title = idea;
+    titleInput.value = idea;
+  }));
+  card.appendChild(titleWrap);
 
   var info = currentClassInfo();
   var finalAb = finalAbilities();

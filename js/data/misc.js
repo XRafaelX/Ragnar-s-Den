@@ -22,11 +22,23 @@ export var NAME_IDEAS = [
   "Commander Zavala", "Ikora Rey", "Cayde-6", "Saint-14", "Osiris",
   "Eris Morn", "Lord Shaxx", "Mara Sov", "Savathun", "Crow"
 ];
-export function pickNameIdeas(n){
-  var pool = NAME_IDEAS.slice();
+/* Title ideas: the epithet shown under the name on the sheet, offered on
+   the Review step and by the dice button when editing a title. */
+export var TITLE_IDEAS = [
+  "the Unbroken", "Slayer of Wyrms", "Oathkeeper", "the Grey Wanderer",
+  "Stormborn", "Breaker of Chains", "Wolf of the North", "Last of the Line",
+  "Keeper of the Flame", "Bane of the Undead", "the Lucky", "Scourge of the Seas",
+  "Hand of the Gods", "the Silver Tongue", "Warden of the Wilds", "Dragonfriend",
+  "the Twice-Dead", "Shieldbreaker", "Friend of Crows", "Kingslayer",
+  "the Unkillable", "Tavern Legend", "Eater of Rations", "Voice of the Storm"
+];
+function pickIdeas(list, n){
+  var pool = list.slice();
   var picks = [];
   while(picks.length<n && pool.length){
     picks.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
   }
   return picks;
 }
+export function pickNameIdeas(n){ return pickIdeas(NAME_IDEAS, n); }
+export function pickTitleIdeas(n){ return pickIdeas(TITLE_IDEAS, n); }
