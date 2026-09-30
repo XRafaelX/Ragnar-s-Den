@@ -267,6 +267,12 @@ export function computeArmorClass(c){
   var defense = bodyArmor && hasFightingStyle(c, "Defense") ? 1 : 0;
   if(defense){ breakdown += " + Defense style (+1)"; short += " + Defense"; }
   base += defense;
+  // Dual Wielder: +1 while wielding a separate melee weapon in each hand
+  // (two equipped melee weapon items; a "Dagger ×2" stack is one weapon).
+  var dualWielder = (c.feats||[]).some(function(f){ return f.name==="Dual Wielder"; }) &&
+    (c.inventory||[]).filter(function(i){ return i.type==="weapon" && i.equipped && !isRangedWeapon(i); }).length >= 2 ? 1 : 0;
+  if(dualWielder){ breakdown += " + Dual Wielder (+1)"; short += " + Dual Wielder"; }
+  base += dualWielder;
   // Class or subclass features tagged `acHeavyArmor` (Soul of the Forge)
   // add their bonus while the character wears heavy armor.
   if(bodyArmor && bodyArmor.category==="heavy"){

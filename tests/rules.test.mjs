@@ -78,6 +78,17 @@ test("armor class: armor, unarmored defense and feature bonuses", () => {
   assert.equal(H.computeArmorClass(char([{ name: "Cleric", level: 6, subclass: "Life Domain" }], { inventory: [plate] })).value, 18);
 });
 
+test("armor class: Dual Wielder needs a melee weapon in each hand", () => {
+  const weapon = (name) => ({ type: "weapon", equipped: true, name });
+  const dw = { feats: [{ name: "Dual Wielder" }] };
+  const ac = (inventory, extra = dw) => H.computeArmorClass(char([{ name: "Fighter", level: 4 }], { ...extra, inventory })).value;
+  assert.equal(ac([weapon("Longsword"), weapon("Rapier")]), 13);          // 10 + DEX 2 + 1
+  assert.equal(ac([weapon("Longsword"), weapon("Rapier")], {}), 12);      // no feat
+  assert.equal(ac([weapon("Longsword")]), 12);                           // one weapon
+  assert.equal(ac([weapon("Longsword"), { ...weapon("Dagger"), equipped: false }]), 12);
+  assert.equal(ac([weapon("Longsword"), weapon("Hand Crossbow")]), 12);  // ranged doesn't count
+});
+
 test("saving throws: proficiency, Aura of Protection, granted saves", () => {
   const ab = { str: 14, dex: 16, con: 12, int: 10, wis: 16, cha: 16 };
   const pal6 = char([{ name: "Paladin", level: 6 }], { abilities: ab, saveProfs: { wis: true, cha: true } });
