@@ -2,8 +2,8 @@
    Short, quiet, synthesized tones (no audio files; stays fully offline)
    played only for meaningful moments: adding or removing something (a
    weapon, a feat, a character…), rolling a natural 20 or natural 1,
-   rolling ability scores, dragging the theme slider, and adding or
-   spending coin in the purse. Never used for routine interaction like
+   rolling ability scores, dragging the theme slider, adding or
+   spending coin in the purse, and death saving throws. Never used for routine interaction like
    toggles, typing, or numeric steppers, so it stays a subtle accent
    instead of noise. */
 var audioCtx = null;
@@ -129,5 +129,78 @@ export function playCoins(count, spend){
       scheduleTone(ctx, t, f, f*0.985, 0.16, "sine", 0.07);
       scheduleTone(ctx, t, f*1.51, f*1.49, 0.09, "sine", 0.035);
     }
+  }catch(e){}
+}
+
+/* A soft heartbeat (lub-dub) under a small rising chime; a death save
+   succeeds. */
+export function playDeathSaveSuccess(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    scheduleTone(ctx, now, 95, 60, 0.14, "sine", 0.28);
+    scheduleTone(ctx, now + 0.16, 85, 55, 0.12, "sine", 0.2);
+    scheduleTone(ctx, now + 0.1, 523, 784, 0.22, "sine", 0.08);
+  }catch(e){}
+}
+
+/* A hollow low toll; a death save fails. `double` (a natural 1, two
+   failures) tolls twice, the second lower. */
+export function playDeathSaveFail(double){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    scheduleTone(ctx, now, 220, 150, 0.38, "triangle", 0.16);
+    scheduleTone(ctx, now, 110, 80, 0.42, "sine", 0.18);
+    if(double){
+      scheduleTone(ctx, now + 0.24, 185, 120, 0.46, "triangle", 0.16);
+      scheduleTone(ctx, now + 0.24, 92, 65, 0.5, "sine", 0.18);
+    }
+  }catch(e){}
+}
+
+/* A calm major chord settling upward; three successes, the character is
+   stable. */
+export function playStabilized(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    scheduleTone(ctx, now, 392, 392, 0.5, "sine", 0.1);
+    scheduleTone(ctx, now + 0.1, 494, 494, 0.5, "sine", 0.1);
+    scheduleTone(ctx, now + 0.2, 587, 587, 0.55, "sine", 0.1);
+    scheduleTone(ctx, now + 0.34, 784, 784, 0.8, "sine", 0.09);
+  }catch(e){}
+}
+
+/* A slow falling knell; three failures, the character dies. */
+export function playDeath(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    scheduleTone(ctx, now, 196, 190, 0.7, "triangle", 0.14);
+    scheduleTone(ctx, now, 98, 96, 0.8, "sine", 0.16);
+    scheduleTone(ctx, now + 0.45, 165, 160, 0.75, "triangle", 0.13);
+    scheduleTone(ctx, now + 0.9, 131, 110, 1.3, "triangle", 0.13);
+    scheduleTone(ctx, now + 0.9, 65, 55, 1.4, "sine", 0.18);
+  }catch(e){}
+}
+
+/* A heartbeat kicking back in, then a bright rising sweep; a natural 20
+   on a death save brings the character back with 1 HP. */
+export function playRevive(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    scheduleTone(ctx, now, 95, 60, 0.14, "sine", 0.28);
+    scheduleTone(ctx, now + 0.16, 85, 55, 0.12, "sine", 0.2);
+    scheduleTone(ctx, now + 0.3, 330, 990, 0.4, "sine", 0.1);
+    scheduleTone(ctx, now + 0.42, 659, 659, 0.3, "triangle", 0.12);
+    scheduleTone(ctx, now + 0.52, 784, 784, 0.3, "triangle", 0.13);
+    scheduleTone(ctx, now + 0.62, 1046, 1318, 0.45, "triangle", 0.14);
   }catch(e){}
 }

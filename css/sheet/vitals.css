@@ -25,6 +25,14 @@
 }
 .hp-actions-row{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-bottom:8px;flex-wrap:wrap;}
 .hp-actions-row .quick-adj-btn{min-width:30px;height:26px;padding:0 6px;font-size:11.5px;font-weight:600;}
+/* Fixed-height HP buttons: center the label on its visible glyphs. A
+   plain line box also holds the font's descender space, so digits (which
+   have none) sat a couple of pixels high with fonts like Segoe UI or Roboto.
+   text-box trims the line to cap height and baseline where supported. */
+.hp-actions-row .quick-adj-btn,.hp-amount-row .btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  line-height:1;text-box:trim-both cap alphabetic;
+}
 /* Any-amount damage/heal (and Heavy Armor Master's reduced hit) */
 .hp-amount-row{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;width:100%;margin-bottom:8px;}
 .hp-amount-row .btn{height:28px;padding:0 10px;font-size:12px;}
@@ -75,10 +83,164 @@
   .vital-mini .stat-stepper{padding:1px 2px;}
 }
 
-.death-saves{display:flex;justify-content:center;gap:16px;margin-top:10px;font-size:12px;}
-.death-saves .grp{display:flex;flex-direction:column;align-items:center;gap:4px;}
-.death-saves .boxes{display:flex;gap:4px;}
-.death-saves .boxes input{width:15px;height:15px;}
+/* Death saves: shown in the HP box at 0 HP. Heart pips (successes) and
+   skull pips (failures) either side of a d20; the header heart beats
+   faster as failures pile up (--ds-beat, set from JS). */
+.hp-vital-box.is-dying{border-color:color-mix(in srgb, var(--oxblood) 55%, transparent);background:radial-gradient(ellipse at 50% 100%, rgba(217,69,95,.10), transparent 70%), rgba(255,255,255,.04);}
+.hp-vital-box.is-dying .hp-cur-num{color:var(--oxblood);}
+.death-saves{
+  --ds-ok:var(--moss);--ds-bad:var(--oxblood);
+  width:100%;margin-top:10px;padding-top:10px;border-top:1px dashed var(--rule);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.ds-head{display:flex;align-items:center;gap:6px;}
+.ds-title{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-on-parch-dim);font-weight:600;}
+.ds-heart{display:inline-flex;width:14px;height:14px;color:var(--ds-bad);}
+.ds-heart svg{width:100%;height:100%;fill:currentColor;animation:ds-beat var(--ds-beat,1.2s) ease-in-out infinite;transform-origin:50% 60%;}
+@keyframes ds-beat{
+  0%,40%,100%{transform:scale(1);}
+  10%{transform:scale(1.28);}
+  20%{transform:scale(1.02);}
+  30%{transform:scale(1.18);}
+}
+.ds-body{display:flex;align-items:center;justify-content:center;gap:18px;}
+.ds-track{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.ds-track-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;color:var(--text-on-parch-dim);}
+.ds-pips{display:flex;gap:6px;}
+.ds-pip{
+  --pip:var(--ds-ok);
+  position:relative;width:28px;height:28px;padding:5px;border-radius:50%;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1.5px dashed color-mix(in srgb, var(--pip) 55%, transparent);
+  background:rgba(0,0,0,.18);color:color-mix(in srgb, var(--pip) 35%, transparent);
+  transition:transform .12s ease, border-color .15s, background .15s, color .15s, box-shadow .15s;
+}
+.ds-fail .ds-pip{--pip:var(--ds-bad);}
+.ds-pip:hover{transform:scale(1.1);border-color:var(--pip);color:color-mix(in srgb, var(--pip) 70%, transparent);}
+.ds-pip:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.ds-pip svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.ds-success .ds-pip svg{fill:currentColor;stroke:none;}
+.ds-pip.filled{
+  border-style:solid;border-color:var(--pip);color:#fff;
+  background:radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--pip) 70%, #fff), var(--pip) 60%, color-mix(in srgb, var(--pip) 60%, #000));
+  box-shadow:0 0 10px color-mix(in srgb, var(--pip) 45%, transparent);
+}
+.ds-fail .ds-pip.filled .ds-skull-eye{fill:currentColor;}
+/* Newly marked pip: pops in with an expanding ring. */
+.ds-pip.just-marked{animation:ds-pip-pop .5s cubic-bezier(.2,1.6,.4,1) both;}
+.ds-pip.just-marked::after{
+  content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--pip);
+  animation:ds-pip-ring .6s ease-out both;animation-delay:inherit;pointer-events:none;
+}
+@keyframes ds-pip-pop{
+  0%{transform:scale(.3);opacity:.2;}
+  60%{transform:scale(1.25);opacity:1;}
+  100%{transform:scale(1);}
+}
+@keyframes ds-pip-ring{
+  0%{transform:scale(.8);opacity:.9;}
+  100%{transform:scale(2);opacity:0;}
+}
+
+/* The d20 roll button (and the Stable / Dead badge that replaces it). */
+.ds-core{display:flex;align-items:center;justify-content:center;min-width:64px;}
+.ds-roll{
+  display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 4px;
+  background:none;border:none;cursor:pointer;color:var(--text-on-parch-dim);
+}
+.ds-die{display:block;width:46px;height:46px;transition:transform .15s ease;}
+.ds-die svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45));}
+.ds-die svg .die-bg{fill:url(#dieGradPrimary);stroke:var(--brass);stroke-width:2.5;stroke-linejoin:round;}
+.ds-die svg .die-facet{fill:none;stroke:rgba(196,167,247,.35);stroke-width:1.5;stroke-linejoin:round;}
+.ds-die svg .die-text{font-family:var(--serif);font-size:34px;font-weight:bold;fill:var(--text-on-ink);text-anchor:middle;dominant-baseline:central;user-select:none;}
+.ds-roll-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--brass-bright);}
+.ds-roll:hover:not(:disabled) .ds-die{transform:scale(1.1) rotate(-8deg);}
+.ds-roll:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;border-radius:8px;}
+.ds-roll:disabled{cursor:default;}
+.ds-roll.rolling .ds-die{animation:ds-tumble .32s linear infinite;}
+.ds-roll.landed .ds-die{animation:ds-land .35s cubic-bezier(.2,1.5,.4,1);}
+@keyframes ds-tumble{
+  0%{transform:translateY(0) rotate(0deg) scale(1);}
+  50%{transform:translateY(-8px) rotate(180deg) scale(1.12);}
+  100%{transform:translateY(0) rotate(360deg) scale(1);}
+}
+@keyframes ds-land{0%{transform:scale(1.25);}100%{transform:scale(1);}}
+.ds-roll.was-success .die-bg{stroke:var(--ds-ok);}
+.ds-roll.was-success .die-text{fill:#c9f0d2;}
+.ds-roll.was-fail .die-bg{stroke:var(--ds-bad);}
+.ds-roll.was-fail .die-text{fill:#f2a9b6;}
+.ds-roll.nat-1 .die-bg{fill:url(#dieGradCrimson);stroke:var(--ds-bad);stroke-width:3;}
+.ds-roll.nat-1 .die-text{fill:#fca5a5;font-weight:900;}
+.ds-roll.nat-20 .die-bg{fill:url(#dieGradGold);stroke:#ffd700;stroke-width:3;}
+.ds-roll.nat-20 .die-text{fill:#fff;font-weight:900;}
+.ds-roll.nat-20 .ds-die svg{filter:drop-shadow(0 0 10px rgba(255,215,0,.85));}
+
+.ds-outcome{display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--serif);font-size:15px;font-weight:700;}
+.ds-outcome svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.is-stable .ds-outcome{color:var(--ds-ok);text-shadow:0 0 12px color-mix(in srgb, var(--ds-ok) 50%, transparent);}
+.is-stable .ds-outcome svg{fill:color-mix(in srgb, var(--ds-ok) 22%, transparent);}
+.is-dead .ds-outcome{color:var(--ds-bad);text-shadow:0 0 12px color-mix(in srgb, var(--ds-bad) 50%, transparent);}
+.is-dead .ds-outcome .ds-skull-eye{fill:currentColor;}
+
+.ds-status{font-size:11.5px;color:var(--text-on-parch-dim);min-height:1.3em;text-align:center;}
+.ds-status.is-success{color:var(--ds-ok);font-weight:600;}
+.ds-status.is-fail{color:var(--ds-bad);font-weight:600;}
+
+/* Stable: calm green, slow heart. Dead: drained, heart stopped. */
+.death-saves.is-stable .ds-heart{color:var(--ds-ok);}
+.death-saves.is-stable .ds-heart svg{animation-duration:2s;}
+.death-saves.is-stable .ds-status{color:var(--ds-ok);}
+.death-saves.is-dead .ds-heart{color:var(--text-on-parch-dim);opacity:.5;}
+.death-saves.is-dead .ds-heart svg{animation:none;}
+.death-saves.is-dead .ds-success{filter:grayscale(1);opacity:.45;}
+.death-saves.is-dead .ds-status{color:var(--ds-bad);}
+
+/* One-shot effects added from JS after a change. */
+.death-saves.ds-enter{animation:ds-enter .45s ease-out both;}
+.death-saves.ds-shake .ds-body{animation:ds-shake .42s ease-in-out;}
+.death-saves.ds-glow .ds-success .ds-pips{animation:ds-glow .8s ease-out;}
+.death-saves.just-finished .ds-outcome{animation:ds-outcome-in .7s cubic-bezier(.2,1.4,.4,1) both;}
+.death-saves.is-dead.just-finished .ds-body{animation:ds-drain 1.4s ease-out both;}
+.hp-cur-num.hp-revived{animation:ds-revive 1.2s ease-out;display:inline-block;}
+@keyframes ds-enter{
+  0%{opacity:0;transform:translateY(-6px);}
+  100%{opacity:1;transform:none;}
+}
+@keyframes ds-shake{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-4px);}
+  40%{transform:translateX(4px);}
+  60%{transform:translateX(-3px);}
+  80%{transform:translateX(2px);}
+}
+@keyframes ds-glow{
+  30%{filter:drop-shadow(0 0 8px color-mix(in srgb, var(--moss) 80%, transparent));}
+}
+@keyframes ds-outcome-in{
+  0%{opacity:0;transform:scale(.4);}
+  100%{opacity:1;transform:scale(1);}
+}
+@keyframes ds-drain{
+  0%{filter:none;}
+  30%{filter:drop-shadow(0 0 14px rgba(217,69,95,.9));}
+  100%{filter:none;}
+}
+@keyframes ds-revive{
+  0%{color:var(--oxblood);transform:scale(1);}
+  25%{color:#8fe3a1;transform:scale(1.35);text-shadow:0 0 16px rgba(90,164,105,.9);}
+  100%{transform:scale(1);text-shadow:none;}
+}
+@media (max-width:400px){
+  .ds-body{gap:10px;}
+  .ds-pips{gap:4px;}
+  .ds-pip{width:25px;height:25px;padding:4px;}
+  .ds-die{width:40px;height:40px;}
+}
+@media (prefers-reduced-motion: reduce){
+  .ds-heart svg,.ds-pip.just-marked,.ds-pip.just-marked::after,.ds-roll.rolling .ds-die,.ds-roll.landed .ds-die,
+  .death-saves.ds-enter,.death-saves.ds-shake .ds-body,.death-saves.ds-glow .ds-success .ds-pips,
+  .death-saves.just-finished .ds-outcome,.death-saves.is-dead.just-finished .ds-body,.hp-cur-num.hp-revived{animation:none;}
+}
 
 /* Rest buttons */
 .rest-row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}

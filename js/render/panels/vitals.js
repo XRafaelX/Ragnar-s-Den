@@ -9,6 +9,7 @@ import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { elixirsOnLongRest } from "../../core/artificer.js";
 import { restoreCompanions } from "../../core/companions.js";
+import { renderDeathSaves } from "./death-saves.js";
 
 /* ---- Vitals panel ---- */
 export function renderVitalsPanel(c){
@@ -62,8 +63,16 @@ export function renderVitalsPanel(c){
       c.hp.temp = temp - absorbed;
       n -= absorbed;
     }
+    var wasUp = (Number(c.hp.current)||0) > 0;
     c.hp.current = Math.max(0, (Number(c.hp.current)||0) - n);
+    // Dropping to 0 starts a fresh set of death saves.
+    var wentDown = wasUp && c.hp.current === 0;
+    if(wentDown) c.deathSaves = {success:0, fail:0};
     save(); renderSidebar(); renderAll();
+    if(wentDown){
+      var ds = document.querySelector(".death-saves");
+      if(ds) ds.classList.add("ds-enter");
+    }
   }
 
   function applyQuickHeal(n){
@@ -269,27 +278,8 @@ export function renderVitalsPanel(c){
   hpBox.appendChild(subRow);
 
   if(c.hp.current<=0){
-    var ds = document.createElement("div");
-    ds.className = "death-saves";
-    ["success","fail"].forEach(function(kind){
-      var grp = document.createElement("div"); grp.className="grp";
-      var lbl = document.createElement("div"); lbl.textContent = kind==="success"?"Successes":"Failures";
-      var boxes = document.createElement("div"); boxes.className="boxes";
-      for(var i=0;i<3;i++){
-        var cb = document.createElement("input"); cb.type="checkbox";
-        cb.checked = i < (c.deathSaves[kind]||0);
-        (function(i){
-          cb.addEventListener("change", function(){
-            c.deathSaves[kind] = cb.checked ? i+1 : i;
-            save(); renderAll();
-          });
-        })(i);
-        boxes.appendChild(cb);
-      }
-      grp.appendChild(lbl); grp.appendChild(boxes);
-      ds.appendChild(grp);
-    });
-    hpBox.appendChild(ds);
+    hpBox.classList.add("is-dying");
+    hpBox.appendChild(renderDeathSaves(c));
   }
   grid.appendChild(hpBox);
 
