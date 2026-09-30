@@ -5,6 +5,7 @@ import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.j
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
 import { WEAPON_DATA } from "../data/weapons.js";
 import { CLASS_RESOURCES, SUBCLASS_RESOURCES } from "../data/resources.js";
+import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
 
 /* ---------------- Helpers ---------------- */
 export function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
@@ -60,8 +61,13 @@ export function classSpellAbility(cl){
      chosenWeaponAbility  ability usable with one weapon the player marks
                    as `chosenWeapon` in the inventory (Hex Warrior)
      abilityBonus  {str:4, ...} added to ability scores at level-up, up to
-                   abilityMax (default 20) (Primal Champion) */
-var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus"];
+                   abilityMax (default 20) (Primal Champion)
+     spells        spells the feature grants: a list (a replacing entry
+                   carries the whole list so far, like Domain Spells) or an
+                   object keyed by class level (Psionic Spells)
+     spellKind     "prepared", "known", "spellbook" or "ritual" (see
+                   featureSpells) */
+var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind"];
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -329,6 +335,36 @@ export function computeSave(c, key){
   var breakdown = key.toUpperCase() + " (" + fmtMod(abilityMod) + ")" + (prof ? " + proficiency (" + fmtMod(profBonus(c)) + ")" : "");
   bonuses.forEach(function(b){ value += b.value; breakdown += " + " + b.name + " (" + fmtMod(b.value) + ")"; });
   return { value: value, prof: prof, grantedBy: grantedBy, breakdown: breakdown };
+}
+
+/* Spells the character's class and subclass features grant, once each,
+   in feature order: always prepared (Domain Spells), always known (Psionic
+   Spells, bonus cantrips), added to the spellbook (Undead Thralls) or
+   ritual-only (Spirit Seeker). Worked out from the current features, not
+   saved, so it follows level-ups and undo. `data` is the catalog entry. */
+export function featureSpells(c){
+  var out = [];
+  (c.classes||[]).forEach(function(cl){
+    var lv = Number(cl.level)||1;
+    classFeatureList(cl).forEach(function(f){
+      if(!f.spells) return;
+      var names = Array.isArray(f.spells) ? f.spells : Object.keys(f.spells)
+        .filter(function(k){ return Number(k) <= lv; })
+        .reduce(function(a, k){ return a.concat(f.spells[k]); }, []);
+      names.forEach(function(name){
+        if(out.some(function(x){ return x.name===name; })) return;
+        var data = SPELL_DATA[catalogSpellName(name)] || null;
+        out.push({ name: name, data: data, level: data ? data.level : 0, kind: f.spellKind || "prepared",
+          source: f.subclass ? cl.subclass : cl.name, feature: f.name });
+      });
+    });
+  });
+  return out;
+}
+/* The Spells tab shows for casters, and for anyone a feature grants a
+   spell (a Shadow monk's Minor Illusion). */
+export function hasSpellsTab(c){
+  return characterIsCaster(c) || featureSpells(c).length > 0;
 }
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`

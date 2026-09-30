@@ -65,3 +65,14 @@
   padding:6px 8px;font-size:13px;resize:vertical;font-family:inherit;
 }
 .spell-textarea:focus{outline:none;border-color:var(--brass);}
+
+/* "From your features" card: spells granted by class and subclass features */
+.feature-spells-intro{font-size:12px;color:var(--text-on-parch-dim);margin:0 0 6px;line-height:1.45;}
+.feature-spell-card .inv-card-header{cursor:default;}
+.feature-spell-card .inv-card-header-actions{gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+/* On narrow screens the two tags would squeeze the spell name down to a
+   few letters, so they drop to their own line under it. */
+@media (max-width: 560px){
+  .feature-spell-card .inv-card-header{flex-wrap:wrap;row-gap:6px;}
+  .feature-spell-card .inv-card-header-actions{flex:1 1 100%;justify-content:flex-start;}
+}

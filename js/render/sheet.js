@@ -1,5 +1,5 @@
 import { state, getActive, save } from "../core/state.js";
-import { characterIsCaster, fmtMod, profBonus, unseenUnlockCount } from "../core/helpers.js";
+import { hasSpellsTab, fmtMod, profBonus, unseenUnlockCount } from "../core/helpers.js";
 import { renderSidebar } from "./sidebar.js";
 import { renderVitalsPanel } from "./panels/vitals.js";
 import { renderInformationPanel } from "./panels/information.js";
@@ -25,7 +25,7 @@ export var TABS = [
   ["journal","Journal"]
 ];
 export function visibleTabs(c){
-  return TABS.filter(function(t){ return t[0]!=="spells" || characterIsCaster(c); });
+  return TABS.filter(function(t){ return t[0]!=="spells" || hasSpellsTab(c); });
 }
 
 var lastTabsActive = null;
@@ -74,7 +74,7 @@ export function renderAll(){
     renderRollLog();
     return;
   }
-  if(state.activeTab==="spells" && !characterIsCaster(c)) state.activeTab = "vitals";
+  if(state.activeTab==="spells" && !hasSpellsTab(c)) state.activeTab = "vitals";
   // The tab bar is rebuilt below; remember where it was scrolled so the new
   // one starts from the same spot instead of snapping back to the far left.
   var oldTabsBar = document.getElementById("tabs");

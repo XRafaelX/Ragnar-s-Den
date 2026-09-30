@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { profBonus, mod, fmtMod, clamp, ce } from "../../core/helpers.js";
+import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { performRoll } from "../../dice/dice.js";
 import { playDelete } from "../../ui/sound.js";
@@ -359,11 +359,95 @@ function slotsLeftText(c, lvl){
   return (s.max - s.used)+" of "+s.max+" slots left";
 }
 
+/* ---- Spells from features ----
+   Read-only: they come from the character's class and subclass features
+   (featureSpells), so they follow level-ups and can't be removed here. */
+var KIND_LABELS = { prepared: "Always prepared", known: "Always known", spellbook: "In your spellbook", ritual: "Ritual only" };
+
+function renderFeatureSpellCard(fs){
+  var d = fs.data || {};
+  var card = document.createElement("div");
+  card.className = "ff-item-card inv-item-card feature-spell-card";
+  var header = document.createElement("div");
+  header.className = "inv-card-header";
+  var titleGroup = document.createElement("div");
+  titleGroup.className = "inv-card-title-group";
+  var nameSpan = document.createElement("span");
+  nameSpan.className = "inv-name-inline";
+  nameSpan.textContent = fs.name;
+  titleGroup.appendChild(nameSpan);
+  [[d.concentration, "C", "Concentration"], [d.ritual, "R", "Ritual"]].forEach(function(t){
+    if(!t[0]) return;
+    var tag = document.createElement("span");
+    tag.className = "inv-qty-badge";
+    tag.textContent = t[1]; tag.title = t[2];
+    titleGroup.appendChild(tag);
+  });
+  header.appendChild(titleGroup);
+  var actions = document.createElement("div");
+  actions.className = "inv-card-header-actions";
+  var kind = document.createElement("span");
+  kind.className = "ff-tag source-feat";
+  kind.textContent = fs.level === 0 ? "Cantrip" : KIND_LABELS[fs.kind] || KIND_LABELS.prepared;
+  var source = document.createElement("span");
+  source.className = "ff-tag source-class";
+  source.textContent = fs.source;
+  source.title = "From " + fs.feature;
+  actions.appendChild(kind);
+  actions.appendChild(source);
+  header.appendChild(actions);
+  card.appendChild(header);
+  var sub = spellSubtitle(d);
+  if(sub){
+    var subEl = document.createElement("div");
+    subEl.className = "inv-card-subtitle";
+    subEl.textContent = sub;
+    card.appendChild(subEl);
+  }
+  if(d.summary){
+    var summaryP = document.createElement("p");
+    summaryP.className = "inv-armor-note";
+    summaryP.textContent = d.summary;
+    card.appendChild(summaryP);
+  }
+  return card;
+}
+
+function renderFeatureSpellsCard(c, list){
+  var card = makeCard("From your features");
+  var intro = document.createElement("p");
+  intro.className = "feature-spells-intro";
+  intro.textContent = "Granted by your class and subclass features. Prepared ones don't count against your prepared spells.";
+  card.appendChild(intro);
+  var sorted = list.slice().sort(function(a, b){ return a.level - b.level || a.name.localeCompare(b.name); });
+  var currentLevel = null, group = null;
+  sorted.forEach(function(fs){
+    if(fs.level !== currentLevel){
+      currentLevel = fs.level;
+      var label = document.createElement("div");
+      label.className = "spell-level-label";
+      label.textContent = spellLevelLabel(fs.level);
+      card.appendChild(label);
+      group = document.createElement("div");
+      group.className = "ff-items-list inv-items-list";
+      card.appendChild(group);
+    }
+    group.appendChild(renderFeatureSpellCard(fs));
+  });
+  return card;
+}
+
 /* ---- Spells panel ---- */
 export function renderSpellsPanel(c){
   var panel = document.createElement("div");
-  panel.appendChild(renderSpellcastingCard(c));
-  panel.appendChild(renderSlotsCard(c));
+  // Non-casters reach this tab only through a granted spell (a Shadow
+  // monk's Minor Illusion), so skip the spellcasting and slot cards.
+  if(characterIsCaster(c)){
+    panel.appendChild(renderSpellcastingCard(c));
+    panel.appendChild(renderSlotsCard(c));
+  }
+  var granted = featureSpells(c);
+  if(granted.length) panel.appendChild(renderFeatureSpellsCard(c, granted));
 
   var spellCard = makeCard("Known / prepared spells");
   var spells = c.spells || [];

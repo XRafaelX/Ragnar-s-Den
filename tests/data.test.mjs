@@ -5,11 +5,12 @@ import assert from "node:assert/strict";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL, XP_THRESHOLDS, SPELL_SLOT_TABLE, PACT_SLOT_TABLE, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from "../js/data/progression.js";
 import { CLASS_RESOURCES, SUBCLASS_RESOURCES } from "../js/data/resources.js";
 import { CLASSES_INFO } from "../js/data/classes.js";
+import { SPELL_DATA, catalogSpellName } from "../js/data/spells.js";
 
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
 const FEATURE_KEYS = new Set(["name", "text", "replaces", "speed", "initiative", "acHeavyArmor", "grants",
-  "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus"]);
+  "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind"]);
 const LONG_DASH = /[–—]/;
 
 // Lowest acceptable last-feature level per class: guards against a
@@ -34,6 +35,13 @@ function checkFeature(f, where){
     for(const k of Object.keys(f.grants)) assert.ok(["armor", "weapons", "tools", "savingThrows"].includes(k), where + " " + f.name + ": grants." + k);
     (f.grants.savingThrows || []).forEach((s) => assert.ok(ABILITIES.includes(s), where + " " + f.name + ": grants save " + s));
   }
+  if(f.spells){
+    assert.ok(["prepared", "known", "spellbook", "ritual"].includes(f.spellKind), where + " " + f.name + ": spellKind " + f.spellKind);
+    const names = Array.isArray(f.spells) ? f.spells : Object.values(f.spells).flat();
+    assert.ok(names.length, where + " " + f.name + ": empty spell list");
+    names.forEach((n) => assert.ok(SPELL_DATA[catalogSpellName(n)], where + " " + f.name + ": spell not in the catalog: " + n));
+    if(!Array.isArray(f.spells)) Object.keys(f.spells).forEach((k) => assert.ok(+k >= 1 && +k <= MAX_LEVEL, where + " " + f.name + ": spell level key " + k));
+  } else assert.ok(f.spellKind == null, where + " " + f.name + ": spellKind without spells");
   if(f.abilityBonus){
     for(const [k, v] of Object.entries(f.abilityBonus)) assert.ok(ABILITIES.includes(k) && v > 0, where + " " + f.name + ": abilityBonus");
   }
@@ -83,11 +91,17 @@ test("subclasses: complete, unique, well formed", () => {
       assert.ok(Math.max(...lv) <= MAX_LEVEL, where + ": feature past the level cap");
       assert.ok(Math.max(...lv) >= MIN_TOP_LEVEL[cls], where + ": stops at level " + Math.max(...lv));
       const seen = new Set();
+      const lastSpells = {};
       for(const l of lv.sort((a, b) => a - b)){
         for(const f of sub.features[l]){
           checkFeature(f, where + " " + l);
           if(f.replaces) assert.ok(seen.has(f.replaces), where + " " + l + ": replaces unknown " + f.replaces);
           seen.add(f.name);
+          // A replacing spell list must keep every spell the previous one had.
+          if(Array.isArray(f.spells)){
+            (lastSpells[f.name] || []).forEach((n) => assert.ok(f.spells.includes(n), where + " " + l + " " + f.name + ": drops " + n));
+            lastSpells[f.name] = f.spells;
+          }
         }
       }
     }

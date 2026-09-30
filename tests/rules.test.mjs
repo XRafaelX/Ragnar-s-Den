@@ -132,6 +132,30 @@ test("resources: counts scale and rests restore the right ones", () => {
   assert.deepEqual(Object.keys(c.resourcesUsed), ["Warlock:limited_wish"]); // manual reset survives a long rest
 });
 
+test("spells granted by features: levels, kinds, sources and the Spells tab", () => {
+  const names = (classes) => H.featureSpells(char(classes)).map((s) => s.name);
+  assert.deepEqual(names([{ name: "Cleric", level: 1, subclass: "Life Domain" }]), ["Bless", "Cure Wounds"]);
+  assert.deepEqual(names([{ name: "Cleric", level: 5, subclass: "Life Domain" }]), ["Bless", "Cure Wounds", "Lesser Restoration", "Spiritual Weapon", "Beacon of Hope", "Revivify"]);
+  assert.equal(names([{ name: "Sorcerer", level: 1, subclass: "Clockwork Soul" }]).length, 2);
+  assert.ok(names([{ name: "Sorcerer", level: 7, subclass: "Clockwork Soul" }]).includes("Summon Construct"));
+  assert.ok(!names([{ name: "Sorcerer", level: 2, subclass: "Shadow Magic" }]).includes("Darkness"));
+  assert.ok(names([{ name: "Sorcerer", level: 3, subclass: "Shadow Magic" }]).includes("Darkness"));
+  const totem = H.featureSpells(char([{ name: "Barbarian", level: 3, subclass: "Path of the Totem Warrior" }]));
+  assert.deepEqual(totem.map((s) => s.kind), ["ritual", "ritual"]);
+  assert.equal(totem[0].source, "Path of the Totem Warrior");
+  // Book names resolve to the catalog entry (Melf's Acid Arrow is SRD Acid Arrow).
+  const alch = H.featureSpells(char([{ name: "Artificer", level: 5, subclass: "Alchemist" }]));
+  assert.equal(alch.find((s) => s.name === "Melf's Acid Arrow").data.level, 2);
+  // Granted once even when two features grant it.
+  const dup = H.featureSpells(char([{ name: "Cleric", level: 1, subclass: "Light Domain" }, { name: "Warlock", level: 1, subclass: "The Celestial" }]));
+  assert.equal(dup.filter((s) => s.name === "Light").length, 1);
+  // The Spells tab: casters always, non-casters only with a granted spell.
+  assert.ok(!H.hasSpellsTab(char([{ name: "Monk", level: 3, subclass: "Way of the Open Hand" }])));
+  assert.ok(H.hasSpellsTab(char([{ name: "Monk", level: 3, subclass: "Way of Shadow" }])));
+  assert.ok(!H.hasSpellsTab(char([{ name: "Barbarian", level: 2 }])));
+  assert.ok(H.hasSpellsTab(char([{ name: "Barbarian", level: 3, subclass: "Path of the Totem Warrior" }])));
+});
+
 test("spell slots: single class, half casters, multiclass, pact magic", () => {
   const slots = (classes) => H.computeSpellSlots(classes);
   assert.deepEqual(Object.values(slots([{ name: "Wizard", level: 20 }]).slots), [4, 3, 3, 3, 3, 2, 2, 1, 1]);

@@ -405,8 +405,21 @@ export var SPELL_DATA = {
   "True Polymorph": s(9,"Tra",A,"30 feet","V, S, M",CONC1H,"Bard,Warlock,Wizard","Transform a creature into another creature, or an object into a creature, and vice versa.",{material:"a drop of mercury, a dollop of gum arabic, and a wisp of smoke"}),
   "True Resurrection": s(9,"Nec","1 hour","Touch","V, S, M","Instantaneous","Cleric,Druid","Return a creature that has been dead for up to 200 years to life, even without a body.",{material:"a sprinkle of holy water and diamonds worth at least 25,000 gp, which the spell consumes"}),
   "Weird": s(9,"Ill",A,"120 feet","V, S",CONC1M,"Warlock,Wizard","Create a creature's worst fears; Wis save or take 4d10 psychic damage and be frightened.",{}),
-  "Wish": s(9,"Con",A,"Self","V","Instantaneous","Sorcerer,Wizard","The mightiest spell: duplicate any spell of 8th level or lower, or shape reality (with risks).")
+  "Wish": s(9,"Con",A,"Self","V","Instantaneous","Sorcerer,Wizard","The mightiest spell: duplicate any spell of 8th level or lower, or shape reality (with risks)."),
+
+  // Beyond the core list: spells that subclass spell lists grant
+  // (Xanathar's and Tasha's), so every always-prepared spell has an entry.
+  "Mind Sliver": s(0,"Enc",A,"60 feet","V","1 round","Sorcerer,Warlock,Wizard","Int save or take 1d6 psychic damage and subtract 1d4 from the next saving throw it makes before the end of your next turn. Damage grows at levels 5, 11 and 17."),
+  "Conjure Barrage": s(3,"Con",A,"Self (60-foot cone)","V, S, M","Instantaneous","Ranger","Throw a weapon or fire a piece of ammunition to fill a 60-ft cone with copies: Dex save or 3d8 damage of the weapon's type (half on success).",{material:"one piece of ammunition or a thrown weapon"}),
+  "Summon Fey": s(3,"Con",A,"90 feet","V, S, M",CONC1H,"Druid,Ranger,Warlock,Wizard","Summon a fuming, mirthful or tricksy fey spirit that obeys you; its stats scale with the spell's level.",{material:"a gilded flower worth at least 300 gp"}),
+  "Fabricate": s(4,"Tra","10 minutes","120 feet","V, S","Instantaneous","Artificer,Wizard","Turn raw materials into a product of the same material, up to a 10-ft cube (5-ft cube of minerals); fine work needs proficiency with the right tools."),
+  "Summon Aberration": s(4,"Con",A,"90 feet","V, S, M",CONC1H,"Warlock,Wizard","Summon a beholderkin, slaad or star spawn spirit that obeys you; its stats scale with the spell's level.",{material:"a pickled tentacle and an eyeball in a platinum-inlaid vial worth at least 400 gp"}),
+  "Summon Construct": s(4,"Con",A,"90 feet","V, S, M",CONC1H,"Artificer,Wizard","Summon a clay, metal or stone construct spirit that obeys you; its stats scale with the spell's level.",{material:"an ornate stone and metal lockbox worth at least 400 gp"})
 };
+
+/* Book names that the catalog lists under their SRD name. */
+export var SPELL_ALIASES = { "Melf's Acid Arrow": "Acid Arrow" };
+export function catalogSpellName(name){ return SPELL_ALIASES[name] || name; }
 
 /* ---- Derived views ---- */
 export var SPELL_LEVEL_LABELS = ["Cantrip","1st Level","2nd Level","3rd Level","4th Level","5th Level","6th Level","7th Level","8th Level","9th Level"];

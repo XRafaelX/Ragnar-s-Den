@@ -42,7 +42,7 @@ export var WARLOCK_SUBCLASSES = [
   {name:"The Celestial", blurb:"A pact with a powerful being of the Upper Planes.", features:{
     1:[
       {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: Cure Wounds and Guiding Bolt (1st level), Flaming Sphere and Lesser Restoration (2nd, from warlock level 3), Daylight and Revivify (3rd, from warlock level 5), Guardian of Faith and Wall of Fire (4th, from warlock level 7), Flame Strike and Greater Restoration (5th, from warlock level 9)."},
-      {name:"Bonus Cantrips", text:"You learn the Light and Sacred Flame cantrips; they don't count against your cantrips known."},
+      {name:"Bonus Cantrips", text:"You learn the Light and Sacred Flame cantrips; they don't count against your cantrips known.", spells:["Light","Sacred Flame"], spellKind:"known"},
       {name:"Healing Light", text:"You have a pool of d6s equal to 1 + your warlock level, regained on a long rest. As a bonus action, heal a creature you can see within 60 feet by spending dice from the pool, up to your CHA modifier (minimum 1) at once, restoring hit points equal to their total."}
     ],
     6:[{name:"Radiant Soul", text:"You have resistance to radiant damage. When you cast a spell that deals radiant or fire damage, add your CHA modifier to one radiant or fire damage roll of it against one target."}],
@@ -59,7 +59,7 @@ export var WARLOCK_SUBCLASSES = [
       {name:"Oceanic Soul", text:"You have resistance to cold damage. While fully submerged, you and any other fully submerged creature can understand each other's speech."},
       {name:"Guardian Coil", text:"When you or a creature you can see takes damage within 10 feet of your tentacle, you can use your reaction to reduce the damage to one of them by 1d8 (2d8 from level 10)."}
     ],
-    10:[{name:"Grasping Tentacles", text:"You learn Evard's Black Tentacles (it doesn't count against your spells known) and can cast it once per long rest without a spell slot. Whenever you cast it, you gain temporary hit points equal to your warlock level, and damage can't break your concentration on it."}],
+    10:[{name:"Grasping Tentacles", text:"You learn Evard's Black Tentacles (it doesn't count against your spells known) and can cast it once per long rest without a spell slot. Whenever you cast it, you gain temporary hit points equal to your warlock level, and damage can't break your concentration on it.", spells:["Evard's Black Tentacles"], spellKind:"known"}],
     14:[{name:"Fathomless Plunge", text:"As an action, teleport yourself and up to five willing creatures you can see within 30 feet up to 1 mile away, to a body of water you've seen (pond-sized or larger) or within 30 feet of it, each appearing within 30 feet of the others. Once per short or long rest."}]
   }},
   {name:"The Genie", blurb:"A pact with one of the noble genies of the four elements.", features:{
@@ -83,7 +83,7 @@ export var WARLOCK_SUBCLASSES = [
   {name:"The Undying", blurb:"A pact with a being that has defied death, granting resilience and command over your own mortality.", features:{
     1:[
       {name:"Expanded Spell List", text:"These are added to the warlock spells you can learn: False Life and Ray of Sickness (1st level), Blindness/Deafness and Silence (2nd, from warlock level 3), Feign Death and Speak with Dead (3rd, from warlock level 5), Aura of Life and Death Ward (4th, from warlock level 7), Contagion and Legend Lore (5th, from warlock level 9)."},
-      {name:"Among the Dead", text:"You learn the Spare the Dying cantrip (it doesn't count against your cantrips known) and have advantage on saves against disease. When an undead targets you directly with an attack or harmful spell, it must make a WIS save against your spell save DC or choose a new target (possibly wasting the attack or spell). On a success, or if you attack it or target it with a harmful spell, it is immune to this effect for 24 hours. Area effects that include you aren't affected."}
+      {name:"Among the Dead", text:"You learn the Spare the Dying cantrip (it doesn't count against your cantrips known) and have advantage on saves against disease. When an undead targets you directly with an attack or harmful spell, it must make a WIS save against your spell save DC or choose a new target (possibly wasting the attack or spell). On a success, or if you attack it or target it with a harmful spell, it is immune to this effect for 24 hours. Area effects that include you aren't affected.", spells:["Spare the Dying"], spellKind:"known"}
     ],
     6:[{name:"Defy Death", text:"When you succeed on a death saving throw, or stabilize a creature with Spare the Dying, you can regain 1d8 + your CON modifier (minimum 1) hit points. Once per long rest."}],
     10:[{name:"Undying Nature", text:"You can hold your breath indefinitely, and you don't need food, water or sleep (though you still need rest to reduce exhaustion and still benefit from short and long rests). You age only 1 year for every 10 that pass, and you can't be magically aged."}],

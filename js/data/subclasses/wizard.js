@@ -32,7 +32,7 @@ export var WIZARD_SUBCLASSES = [
   {name:"School of Illusion", blurb:"Fools the senses with illusions.", features:{
     2:[
       {name:"Illusion Savant", text:"Copying illusion spells into your spellbook costs half the gold and time."},
-      {name:"Improved Minor Illusion", text:"You learn Minor Illusion if you don't know it (it doesn't count against your cantrips known), and you can create both a sound and an image with a single casting."}
+      {name:"Improved Minor Illusion", text:"You learn Minor Illusion if you don't know it (it doesn't count against your cantrips known), and you can create both a sound and an image with a single casting.", spells:["Minor Illusion"], spellKind:"known"}
     ],
     6:[{name:"Malleable Illusions", text:"When you cast an illusion spell with a duration of 1 minute or longer, you can use your action to change the illusion (within the spell's normal limits) while you can see it."}],
     10:[{name:"Illusory Self", text:"When a creature makes an attack roll against you, you can use your reaction to interpose an illusory duplicate: the attack automatically misses. Once per short or long rest."}],
@@ -43,7 +43,7 @@ export var WIZARD_SUBCLASSES = [
       {name:"Necromancy Savant", text:"Copying necromancy spells into your spellbook costs half the gold and time."},
       {name:"Grim Harvest", text:"Once per turn when you kill one or more creatures with a spell of 1st level or higher, you regain hit points equal to twice the spell's level, or three times its level for a necromancy spell. Killing constructs or undead doesn't count."}
     ],
-    6:[{name:"Undead Thralls", text:"You add Animate Dead to your spellbook, and when you cast it you can animate one additional corpse or pile of bones. Undead you create with necromancy spells add your wizard level to their hit point maximum and your proficiency bonus to their weapon damage rolls."}],
+    6:[{name:"Undead Thralls", text:"You add Animate Dead to your spellbook, and when you cast it you can animate one additional corpse or pile of bones. Undead you create with necromancy spells add your wizard level to their hit point maximum and your proficiency bonus to their weapon damage rolls.", spells:["Animate Dead"], spellKind:"spellbook"}],
     10:[{name:"Inured to Undeath", text:"You have resistance to necrotic damage, and your hit point maximum can't be reduced."}],
     14:[{name:"Command Undead", text:"As an action, choose an undead you can see within 60 feet. It makes a CHA save against your spell save DC (with advantage if its INT is 8 or higher). On a failure, it is friendly and obeys you until you use this again; if its INT is 12 or higher, it repeats the save every hour. On a success, you can't use this on it again."}]
   }},
@@ -98,7 +98,7 @@ export var WIZARD_SUBCLASSES = [
       {name:"Minor Alchemy", text:"Transform a nonmagical object made entirely of wood, stone (not gemstone), iron, copper or silver into another of those materials, 1 cubic foot per 10 minutes of work. It reverts after 1 hour or when your concentration ends (as if concentrating on a spell)."}
     ],
     6:[{name:"Transmuter's Stone", text:"Over 8 hours, create a transmuter's stone. Whoever holds it gains one benefit you choose when you make it: darkvision 60 feet; +10 feet speed while unencumbered; proficiency in CON saves; or resistance to acid, cold, fire, lightning or thunder damage (your choice). While it's on you, you can change its benefit whenever you cast a transmutation spell of 1st level or higher. Making a new stone ends the old one."}],
-    10:[{name:"Shapechanger", text:"You add Polymorph to your spellbook and can cast it without a spell slot, targeting only yourself and becoming a beast of challenge rating 1 or lower. Once per short or long rest."}],
+    10:[{name:"Shapechanger", text:"You add Polymorph to your spellbook and can cast it without a spell slot, targeting only yourself and becoming a beast of challenge rating 1 or lower. Once per short or long rest.", spells:["Polymorph"], spellKind:"spellbook"}],
     14:[{name:"Master Transmuter", text:"As an action, consume your transmuter's stone for one effect (you can't make a new one until you finish a long rest). Major Transformation: over 10 minutes, turn a nonmagical object up to a 5-foot cube into another nonmagical object of similar size and mass and equal or lesser value. Panacea: a creature you touch is cured of all curses, diseases and poisons and regains all its hit points. Restore Life: cast Raise Dead on a creature you touch with the stone, without a spell slot or having it in your spellbook. Restore Youth: a willing creature's apparent age drops by 3d10 years (minimum 13), without extending its lifespan."}]
   }},
   {name:"Chronurgy Magic", blurb:"Manipulates the flow of time to reroll fate, freeze foes and store spells for later.", features:{

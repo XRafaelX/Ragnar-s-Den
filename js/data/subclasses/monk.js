@@ -9,7 +9,7 @@ export var MONK_SUBCLASSES = [
     17:[{name:"Quivering Palm", text:"When you hit a creature with an unarmed strike, you can spend 3 ki to set up lethal vibrations that last a number of days equal to your monk level. While on the same plane, you can use an action to end them: the creature makes a CON save, dropping to 0 hit points on a failure or taking 10d10 necrotic damage on a success. Only one creature can be affected at a time, and you can end the vibrations harmlessly with no action."}]
   }},
   {name:"Way of Shadow", blurb:"A ninja who uses darkness and stealth.", features:{
-    3:[{name:"Shadow Arts", text:"As an action, spend 2 ki to cast Darkness, Darkvision, Pass without Trace or Silence without material components. You also learn the Minor Illusion cantrip if you don't know it."}],
+    3:[{name:"Shadow Arts", text:"As an action, spend 2 ki to cast Darkness, Darkvision, Pass without Trace or Silence without material components. You also learn the Minor Illusion cantrip if you don't know it.", spells:["Minor Illusion"], spellKind:"known"}],
     6:[{name:"Shadow Step", text:"While in dim light or darkness, as a bonus action you can teleport up to 60 feet to an unoccupied space you can see that is also in dim light or darkness. You then have advantage on the first melee attack you make before the end of the turn."}],
     11:[{name:"Cloak of Shadows", text:"While in dim light or darkness, you can use your action to become invisible until you make an attack, cast a spell or are in bright light."}],
     17:[{name:"Opportunist", text:"When a creature within 5 feet of you is hit by an attack made by someone other than you, you can use your reaction to make a melee attack against it."}]

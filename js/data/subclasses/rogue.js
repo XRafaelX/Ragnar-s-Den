@@ -22,7 +22,7 @@ export var ROGUE_SUBCLASSES = [
   }},
   {name:"Arcane Trickster", blurb:"Enhances stealth and trickery with illusion and enchantment magic.", casterType:"third", spellAbility:"int", features:{
     3:[
-      {name:"Spellcasting", text:"You cast wizard spells with Intelligence, using a third of your rogue level for spell slots. You know Mage Hand and two other wizard cantrips (a third at level 10), and three 1st-level wizard spells, two of which must be enchantment or illusion. You learn more as you level; spells learned at levels 8, 14 and 20 can come from any school."},
+      {name:"Spellcasting", text:"You cast wizard spells with Intelligence, using a third of your rogue level for spell slots. You know Mage Hand and two other wizard cantrips (a third at level 10), and three 1st-level wizard spells, two of which must be enchantment or illusion. You learn more as you level; spells learned at levels 8, 14 and 20 can come from any school.", spells:["Mage Hand"], spellKind:"known"},
       {name:"Mage Hand Legerdemain", text:"When you cast Mage Hand, you can make the hand invisible, and it can also stow an object in, or retrieve one from, a container another creature wears or carries, and use thieves' tools at range. You can do one of these unnoticed with a DEX (Sleight of Hand) check contested by the creature's WIS (Perception). You can control the hand with your Cunning Action bonus action."}
     ],
     9:[{name:"Magical Ambush", text:"If you are hidden from a creature when you cast a spell on it, it has disadvantage on saving throws against the spell this turn."}],
