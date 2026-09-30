@@ -1,6 +1,6 @@
 /* ---------------- Companions ----------------
-   Creatures a subclass feature gives you, shown on the Vitals tab as a
-   stat card with an HP tracker and roll buttons (see
+   Creatures a subclass feature gives you, shown on the sheet's Companions
+   tab (only there when the character has one) as a stat card with an HP tracker and roll buttons (see
    js/render/panels/companions.js). Each entry:
      id, name, cls, subclass, level   who gets it, from which class level
      choice       optional {label, options}: picked on the card and saved

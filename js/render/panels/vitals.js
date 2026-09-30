@@ -7,8 +7,6 @@ import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
-import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
-import { renderCompanionCards } from "./companions.js";
 import { elixirsOnLongRest } from "../../core/artificer.js";
 import { restoreCompanions } from "../../core/companions.js";
 
@@ -654,11 +652,6 @@ export function renderVitalsPanel(c){
 
   var resources = characterResources(c);
   if(resources.length) panel.appendChild(renderResourcesCard(c, resources));
-
-  // Artificer extras and companions (Steel Defender, Eldritch Cannon).
-  [renderArmorModelCard(c), renderElixirCard(c)].concat(renderCompanionCards(c)).forEach(function(card){
-    if(card) panel.appendChild(card);
-  });
 
   return panel;
 }

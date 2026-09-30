@@ -1,6 +1,7 @@
 import { SKILLS } from "../data/abilities-skills.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { uid } from "./helpers.js";
+import { RACE_DATA } from "../data/race-data.js";
 
 /* ---------------- Default character ---------------- */
 export function newCharacter(name){
@@ -80,6 +81,17 @@ export function ensureShape(c){
   if(c.acMisc==null) c.acMisc = 0;
   if(c.initiativeMisc==null) c.initiativeMisc = 0;
   if(c.speed==null) c.speed = 30;
+  // Characters made before the wizard used the race's walking speed all
+  // started at 30 ft (a dwarf should have 25). Once per character, a speed
+  // that still matches that old default (30 plus speed gained on recorded
+  // level-ups) moves to the race's speed; a speed changed by hand doesn't
+  // match and is left alone, and so is one set back to 30 later.
+  if(!c.raceSpeedChecked){
+    var raceWalk = RACE_DATA[c.race] && RACE_DATA[c.race].speed && RACE_DATA[c.race].speed.walk;
+    var gained = (c.levelHistory||[]).reduce(function(a, r){ return a + (Number(r.speedGain)||0); }, 0);
+    if(raceWalk && raceWalk!==30 && Number(c.speed)===30 + gained) c.speed = raceWalk + gained;
+    c.raceSpeedChecked = true;
+  }
   if(c.hitDiceUsed==null) c.hitDiceUsed = 0;
   if(!c.deathSaves) c.deathSaves = {success:0, fail:0};
   if(!c.rage) c.rage = {active:false, used:0};

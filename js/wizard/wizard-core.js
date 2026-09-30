@@ -4,8 +4,8 @@ import { FEATS_CATALOG } from "../data/feats.js";
 import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
 import { RACE_DATA } from "../data/race-data.js";
-import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices } from "../core/helpers.js";
-import { catalogSpellName } from "../data/spells.js";
+import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists } from "../core/helpers.js";
+import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
 import { featPicksProblem, applyFeatPicks } from "../core/feat-picks.js";
 import { state, save } from "../core/state.js";
@@ -21,7 +21,7 @@ import {
   wizardStepAbilities, wizardStepSkills, wizardStepRaceChoices, wizardStepChoices, wizardStepLanguages, wizardStepEquipment, wizardStepSpells, wizardStepReview,
   expertiseOptions, resetHomebrewPickers
 } from "./wizard-steps.js";
-import { makeMoveLeftSvg, makeMoveRightSvg } from "../ui/svg-icons.js";
+import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons.js";
 
 /* ---------------- Character Creation Wizard ---------------- */
 export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","raceChoices","choices","languages","equipment","spells","review"];
@@ -58,6 +58,17 @@ export function wizardExpandedSpells(subclass){
   return featureSpells({classes: [wizardClassEntry(subclass)]})
     .filter(function(fs){ return fs.kind==="expanded"; })
     .map(function(fs){ return catalogSpellName(fs.name); });
+}
+/* Spells from other classes' lists the chosen subclass opens (a Divine
+   Soul sorcerer can pick cleric spells), as catalog names. */
+export function wizardExtraListSpells(){
+  var out = [];
+  classExtraSpellLists(wizardClassEntry()).forEach(function(list){ out = out.concat(Object.keys(spellDataForClass(list))); });
+  return out;
+}
+/* Which list an extra spell comes from, for its tag in the picker. */
+export function wizardExtraListName(){
+  return classExtraSpellLists(wizardClassEntry())[0] || "";
 }
 /* Some gear needs a proficiency only certain subclasses give (a cleric's
    chain mail needs a heavy-armor domain). */
@@ -517,7 +528,8 @@ export function renderWizard(){
   nextBtn.addEventListener("click", function(){
     var err = validateStep(wizardState.step);
     if(err){
-      errorBox.textContent = "⚠ "+err;
+      errorBox.innerHTML = makeAlertSvg() + "<span></span>";
+      errorBox.lastChild.textContent = err;
       errorBox.classList.add("show");
       if(wizardState.step==="review"){
         var nameEl = document.getElementById("wiz-name-input");

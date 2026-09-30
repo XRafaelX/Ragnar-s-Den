@@ -4,6 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as H from "../js/core/helpers.js";
+import { ensureShape } from "../js/core/character.js";
 import { CLASS_PROFICIENCIES } from "../js/data/classes.js";
 import * as FP from "../js/core/feat-picks.js";
 import * as ART from "../js/core/artificer.js";
@@ -576,4 +577,22 @@ test("feats: Great Weapon Master / Sharpshooter switch, Weapon Master, Heavy Arm
   assert.equal(H.heavyArmorMasterActive(char([{ name: "Fighter", level: 4 }], { feats: [{ name: "Heavy Armor Master" }], inventory: [plate] })), true);
   assert.equal(H.heavyArmorMasterActive(char([{ name: "Fighter", level: 4 }], { feats: [{ name: "Heavy Armor Master" }], inventory: [{ ...plate, equipped: false }] })), false);
   assert.equal(H.heavyArmorMasterActive(char([{ name: "Fighter", level: 4 }], { inventory: [plate] })), false);
+});
+
+test("follow-ups: Divine Soul's cleric list, old walking speeds", () => {
+  assert.deepEqual(H.classExtraSpellLists({ name: "Sorcerer", subclass: "Divine Soul", level: 1 }), ["Cleric"]);
+  assert.deepEqual(H.classExtraSpellLists({ name: "Sorcerer", subclass: "Wild Magic", level: 1 }), []);
+
+  // A dwarf made before the fix (30 ft, never edited) moves to 25; level-up gains are kept.
+  const old = (extra) => { const c = { name: "Old", race: "Hill Dwarf", speed: 30, classes: [{ name: "Fighter", level: 1 }], ...extra }; ensureShape(c); return c; };
+  assert.equal(old({}).speed, 25);
+  assert.equal(old({ speed: 40, classes: [{ name: "Monk", level: 2 }], levelHistory: [{ speedGain: 10 }] }).speed, 35);
+  // Edited by hand, a race at 30 anyway, or already checked: left alone.
+  assert.equal(old({ speed: 35 }).speed, 35);
+  assert.equal(old({ race: "Human" }).speed, 30);
+  assert.equal(old({ raceSpeedChecked: true }).speed, 30);
+  const c = old({});
+  c.speed = 30;                  // set back to 30 on purpose later
+  ensureShape(c);
+  assert.equal(c.speed, 30);
 });

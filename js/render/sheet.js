@@ -8,6 +8,8 @@ import { renderFeaturesPanel } from "./panels/features.js";
 import { renderSpellsPanel } from "./panels/spells.js";
 import { renderInventoryPanel } from "./panels/inventory.js";
 import { renderJournalPanel } from "./panels/journal.js";
+import { renderCompanionsPanel } from "./panels/companions.js";
+import { characterCompanions } from "../core/companions.js";
 import { renderRollLog } from "../dice/dice.js";
 import { confirmDeleteCharacter } from "../app.js";
 import { makeKebabSvg, makeCheckSvg } from "../ui/svg-icons.js";
@@ -21,11 +23,18 @@ export var TABS = [
   ["abilities","Abilities & Skills"],
   ["features","Features & Feats"],
   ["spells","Spells"],
+  ["companions","Companions"],
   ["inventory","Inventory"],
   ["journal","Journal"]
 ];
+/* Spells shows for casters (or a granted spell); Companions only for a
+   character with a companion (Steel Defender, drake, ...). */
 export function visibleTabs(c){
-  return TABS.filter(function(t){ return t[0]!=="spells" || hasSpellsTab(c); });
+  return TABS.filter(function(t){
+    if(t[0]==="spells") return hasSpellsTab(c);
+    if(t[0]==="companions") return characterCompanions(c).length > 0;
+    return true;
+  });
 }
 
 var lastTabsActive = null;
@@ -74,7 +83,7 @@ export function renderAll(){
     renderRollLog();
     return;
   }
-  if(state.activeTab==="spells" && !hasSpellsTab(c)) state.activeTab = "vitals";
+  if(!visibleTabs(c).some(function(t){ return t[0]===state.activeTab; })) state.activeTab = "vitals";
   // The tab bar is rebuilt below; remember where it was scrolled so the new
   // one starts from the same spot instead of snapping back to the far left.
   var oldTabsBar = document.getElementById("tabs");
@@ -130,6 +139,7 @@ export function renderAll(){
     abilities: renderAbilitiesPanel,
     features: renderFeaturesPanel,
     spells: renderSpellsPanel,
+    companions: renderCompanionsPanel,
     inventory: renderInventoryPanel,
     journal: renderJournalPanel
   };

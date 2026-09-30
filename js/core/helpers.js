@@ -77,13 +77,15 @@ export function classSpellAbility(cl){
                    `when` says when it applies ("while raging (Eagle)"),
                    none for an always-on speed. {type, bonus} instead adds
                    to that speed from any other source (Superior Mobility).
+     extraSpellList  another class's list the class can learn spells from
+                   (Divine Magic: "Cleric"); the spell pickers include it
      darkvision    {range, add}: darkvision out to `range` feet, or `add`
                    feet more if the character already has it (Umbral Sight)
      spellChoice   {id, label, options:{name: spells}}: more spells that
                    depend on a choice (Circle of the Land's land, a genie
                    kind), each option shaped like `spells`. The pick is
                    saved on the class entry as spellChoices[id]. */
-var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision"];
+var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList"];
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -503,6 +505,13 @@ export function pendingSpellChoices(c){
 export function spellOptionText(spells, className){
   if(Array.isArray(spells)) return spells.join(", ");
   return Object.keys(spells).map(function(k, i){ return spells[k].join(", ") + " (" + (i ? "" : (className || "level") + " ") + k + ")"; }).join("; ");
+}
+/* Other classes' lists this class entry can learn spells from (a Divine
+   Soul sorcerer: the cleric list). */
+export function classExtraSpellLists(cl){
+  var out = [];
+  classFeatureList(cl).forEach(function(f){ if(f.extraSpellList && out.indexOf(f.extraSpellList)===-1) out.push(f.extraSpellList); });
+  return out;
 }
 /* The Spells tab shows for casters, and for anyone a feature grants a
    spell (a Shadow monk's Minor Illusion). */

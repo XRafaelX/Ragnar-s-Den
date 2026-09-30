@@ -166,3 +166,8 @@
   border:1px solid var(--rule);color:var(--text-on-parch-dim);background:rgba(0,0,0,.12);
 }
 .cmp-align-cell.on{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 28%, transparent);color:#fff;font-weight:700;}
+
+/* Companions tab: a level stepper over the read-only stat block */
+.cmp-level-stepper{display:flex;align-items:center;gap:10px;margin:4px 0 12px;}
+.cmp-level-value{font-size:13px;min-width:150px;text-align:center;}
+.cmp-companion .comp-tiles{margin-top:4px;}

@@ -4,6 +4,7 @@ import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../..
 import { performRoll } from "../../dice/dice.js";
 import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, powerAttackFeat, powerAttackOn } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
+import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker, openArmorPicker } from "../armory.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
@@ -571,6 +572,9 @@ export function renderInventoryPanel(c){
   addArmorBtn.addEventListener("click", function(){ openArmorPicker(c); });
   armorCard.appendChild(addArmorBtn);
   panel.appendChild(armorCard);
+  // An Armorer's Arcane Armor model sits with the armor.
+  var arcane = renderArmorModelCard(c);
+  if(arcane) panel.appendChild(arcane);
 
   // Other equipment
   var gearCard = makeCard("Other Equipment");
@@ -600,6 +604,9 @@ export function renderInventoryPanel(c){
   });
   gearCard.appendChild(addItemBtn);
   panel.appendChild(gearCard);
+  // An Alchemist's experimental elixirs are carried gear.
+  var elixirs = renderElixirCard(c);
+  if(elixirs) panel.appendChild(elixirs);
 
   panel.appendChild(renderCurrencyCard(c));
 

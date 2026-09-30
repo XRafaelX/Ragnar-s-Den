@@ -8,7 +8,7 @@ import { makeCard, renderAll } from "../sheet.js";
 import { performRoll } from "../../dice/dice.js";
 import { makeDiceSvg } from "../../ui/svg-icons.js";
 
-/* ---- Companion cards (Vitals tab) ----
+/* ---- Companion cards (Companions tab) ----
    One stat card per companion (js/data/companions.js): its choice (a
    drake's essence), AC, HP tracker (one per copy, e.g. two cannons),
    speed, ability scores, then attacks and actions with roll buttons,
@@ -87,16 +87,12 @@ function choiceRow(c, comp){
   return box;
 }
 
-function renderCompanion(c, comp){
-  var s = comp.stats, name = comp.def.name;
-  if(!s) return renderSetupCard(c, comp);
-  var card = makeCard(name + (s.count > 1 ? " ×" + s.count : ""));
-  card.classList.add("comp-card");
-  var type = ce("p", "art-intro");
-  type.textContent = s.type + " · from " + comp.def.subclass;
-  card.appendChild(type);
-  if(comp.def.choice) card.appendChild(choiceRow(c, comp));
-
+/* The stat block itself (AC/HP/speed tiles, abilities, facts, attacks,
+   actions, reactions, traits) into `card`. opts.rolls adds roll buttons
+   (the sheet); opts.afterTiles(card) adds rows under the tiles (HP
+   trackers). The Compendium's Companions list shows it read-only. */
+export function renderStatBlock(card, s, name, opts){
+  opts = opts || {};
   var tiles = ce("div", "comp-tiles");
   [["AC", s.ac], ["Max HP", s.hp], ["Speed", s.speed]].forEach(function(t){
     var tile = ce("div", "comp-tile");
@@ -107,7 +103,7 @@ function renderCompanion(c, comp){
     tiles.appendChild(tile);
   });
   card.appendChild(tiles);
-  comp.hp.forEach(function(_, i){ card.appendChild(hpTracker(c, comp, i)); });
+  if(opts.afterTiles) opts.afterTiles(card);
 
   if(s.abilities){
     var ab = ce("div", "comp-abilities");
@@ -138,6 +134,10 @@ function renderCompanion(c, comp){
     var box = ce("div", "comp-entry-box");
     box.appendChild(textEntry({name: a.name, text: a.text + " Hit: " + diceText(a.dice, a.bonus) + " " + a.damageType + " damage" +
       (a.extraDice ? " plus " + a.extraDice + " " + a.extraType : "") + "."}));
+    if(!opts.rolls){
+      box.appendChild(textEntry({name: "To hit", text: fmtMod(a.toHit)}));
+      return box;
+    }
     var rolls = ce("div", "inv-roll-actions");
     rolls.appendChild(rollButton("Attack " + fmtMod(a.toHit), function(){ performRoll(20, 1, a.toHit, "none", name + ": " + a.name); }));
     rolls.appendChild(rollButton("Damage " + diceText(a.dice, a.bonus), function(){ rollDice(a.dice, a.bonus, name + ": " + a.name + " damage"); }));
@@ -148,8 +148,8 @@ function renderCompanion(c, comp){
   if(attacks) card.appendChild(attacks);
   var actions = entryBlock("Actions", s.actions, function(a){
     var box = ce("div", "comp-entry-box");
-    box.appendChild(textEntry({name: a.name, text: (a.save ? a.save + " save. " : "") + a.text}));
-    if(a.dice){
+    box.appendChild(textEntry({name: a.name, text: (a.save ? a.save + " save. " : "") + a.text + (a.dice && !opts.rolls ? " (" + diceText(a.dice, a.bonus) + ")" : "")}));
+    if(a.dice && opts.rolls){
       var rolls = ce("div", "inv-roll-actions");
       rolls.appendChild(rollButton(diceText(a.dice, a.bonus), function(){ rollDice(a.dice, a.bonus, name + ": " + a.name); }));
       box.appendChild(rolls);
@@ -161,6 +161,21 @@ function renderCompanion(c, comp){
   if(reactions) card.appendChild(reactions);
   var traits = entryBlock("Traits", s.traits, textEntry);
   if(traits) card.appendChild(traits);
+}
+
+function renderCompanion(c, comp){
+  var s = comp.stats, name = comp.def.name;
+  if(!s) return renderSetupCard(c, comp);
+  var card = makeCard(name + (s.count > 1 ? " ×" + s.count : ""));
+  card.classList.add("comp-card");
+  var type = ce("p", "art-intro");
+  type.textContent = s.type + " · from " + comp.def.subclass;
+  card.appendChild(type);
+  if(comp.def.choice) card.appendChild(choiceRow(c, comp));
+
+  renderStatBlock(card, s, name, {rolls: true, afterTiles: function(el){
+    comp.hp.forEach(function(_, i){ el.appendChild(hpTracker(c, comp, i)); });
+  }});
   if(isSetupMode(comp)){
     var edit = document.createElement("button");
     edit.type = "button"; edit.className = "btn small ghost comp-edit";
@@ -301,6 +316,9 @@ function openBeastForm(c, comp){
   });
 }
 
-export function renderCompanionCards(c){
-  return characterCompanions(c).map(function(comp){ return renderCompanion(c, comp); });
+/* The Companions tab (shown only when the character has one). */
+export function renderCompanionsPanel(c){
+  var panel = document.createElement("div");
+  characterCompanions(c).forEach(function(comp){ panel.appendChild(renderCompanion(c, comp)); });
+  return panel;
 }

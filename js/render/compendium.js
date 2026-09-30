@@ -18,15 +18,17 @@ import { ABILITIES, SKILLS, HIT_DICE_BY_CLASS } from "../data/abilities-skills.j
 import { getHomebrewEntry, saveHomebrew, deleteHomebrew, homebrewNameProblem, charactersUsingHomebrew } from "../core/custom-homebrew.js";
 import { FEATURE_SOURCES, FEAT_CATEGORIES, getCustom, getCustomEntry, saveCustom, deleteCustom, customNameProblem,
   charactersWithCustom, characterHasCustom, addCustomToCharacter, linkCharacterCopy } from "../core/custom-features.js";
-import { classFeatureList, escapeHtml, uid } from "../core/helpers.js";
+import { classFeatureList, escapeHtml, uid, ce } from "../core/helpers.js";
 import { facts, textField, homebrewShell, numberField, pickerField, previewCard } from "../ui/homebrew-form.js";
 import { save } from "../core/state.js";
 import { featHasPicks, featNeedsChoice, emptyPicks, applyFeatPicks } from "../core/feat-picks.js";
 import { openFeatPicksModal } from "../ui/feat-picks.js";
+import { COMPANIONS, BEAST_PRESETS } from "../data/companions.js";
+import { renderStatBlock } from "./panels/companions.js";
 
 /* ---------------- Compendium ----------------
    A read-only reference (home screen) for classes, subclasses, races,
-   backgrounds, feats, custom features and alignments,
+   backgrounds, feats, custom features, companions and alignments,
    in the same browse page as the Armory and Spellbook. Tapping an entry
    opens its details instead of adding it to anyone. The Subclasses tab's
    + makes a custom (homebrew) subclass: pick the class, name it and list
@@ -518,6 +520,83 @@ function backgroundSection(){
   return section;
 }
 
+/* ---- Companions: the creatures subclasses give (js/data/companions.js) ----
+   One entry per creature, grouped by class; a Beast Master lists each of
+   Tasha's primal beasts plus "your own beast". Stats depend on level, so
+   the detail view has a level stepper and shows the numbers for an
+   example +3 spellcasting modifier (the sheet uses the character's own). */
+var EXAMPLE_MOD = 3;
+function companionEntries(){
+  var out = [];
+  COMPANIONS.forEach(function(def){
+    if(def.id==="beast_companion"){
+      def.choice.options.forEach(function(o){
+        out.push({key: o===def.setup ? "Ranger's Companion (your own beast)" : o, def: def, choice: o});
+      });
+    } else out.push({key: def.name, def: def, choice: ""});
+  });
+  return out;
+}
+function exampleStats(e, level){
+  var pb = Math.floor((level - 1) / 4) + 2;
+  var mods = {str:0, dex:0, con:0, int:EXAMPLE_MOD, wis:EXAMPLE_MOD, cha:EXAMPLE_MOD};
+  return e.def.stats({lv: level, pb: pb, mods: mods, spellAttack: pb + EXAMPLE_MOD, spellDC: 8 + pb + EXAMPLE_MOD, choice: e.choice, beast: null});
+}
+function showCompanion(e){
+  var level = e.def.level;
+  openInfoModal(e.key, function(body){
+    var lead = ce("p", "cmp-lead");
+    lead.textContent = "From " + e.def.subclass + " (" + e.def.cls + " " + e.def.level + "+). It gets its own card on the sheet's Companions tab, with an HP tracker and roll buttons.";
+    body.appendChild(lead);
+    var stepper = ce("div", "cmp-level-stepper");
+    var holder = ce("div", "cmp-companion");
+    function button(text, label, delta){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "btn small"; b.textContent = text; b.setAttribute("aria-label", label);
+      b.addEventListener("click", function(){ level = Math.max(e.def.level, Math.min(20, level + delta)); draw(); });
+      return b;
+    }
+    var shown = ce("span", "cmp-level-value");
+    stepper.appendChild(button("−", "Lower level", -1));
+    stepper.appendChild(shown);
+    stepper.appendChild(button("+", "Higher level", 1));
+    body.appendChild(stepper);
+    body.appendChild(holder);
+    var note = ce("p", "cmp-muted");
+    body.appendChild(note);
+    function draw(){
+      shown.textContent = "At " + e.def.cls + " level " + level;
+      holder.innerHTML = "";
+      var stats = exampleStats(e, level);
+      if(stats){
+        renderStatBlock(holder, stats, e.key, {rolls: false});
+        note.textContent = "Shown with a +" + EXAMPLE_MOD + " spellcasting modifier" + (e.def.id==="steel_defender" ? " (and INT)" : "") + "." +
+          (e.def.choice && e.def.id!=="beast_companion" ? " Its " + e.def.choice.label.toLowerCase() + " (" + e.def.choice.options.join(", ") + ") is picked on the sheet." : "");
+      } else {
+        holder.innerHTML = "<p>Choose a beast no larger than Medium with a challenge rating of 1/4 or lower (for example: " + escapeHtml(Object.keys(BEAST_PRESETS).join(", ")) +
+          "). On the sheet you enter its stat block as printed, and the sheet adds your proficiency bonus to its AC, attack and damage rolls and proficient saves and skills; its hit point maximum becomes four times your ranger level when that's higher.</p>";
+        note.textContent = "";
+      }
+    }
+    draw();
+  });
+}
+function companionSection(){
+  var groups = {}, data = {};
+  companionEntries().forEach(function(e){
+    (groups[e.def.cls] = groups[e.def.cls] || []).push(e.key);
+    data[e.key] = e;
+  });
+  return {
+    key:"companions", label:"Companions", searchPlaceholder:"Search companions…",
+    groups:groups, data:data,
+    renderSub:function(name, e){ return e.def.subclass; },
+    renderRight:function(name, e){ return [e.def.cls + " " + e.def.level + "+", ""]; },
+    searchText:function(name, e){ return name + " " + e.def.subclass + " " + e.def.cls; },
+    onAdd:function(name){ showCompanion(data[name]); return false; }
+  };
+}
+
 /* Grouped Good / Neutral / Evil (the data keeps them in one list). */
 function alignmentSection(){
   var groups = {"Good":[], "Neutral":[], "Evil":[]}, data = {};
@@ -558,12 +637,12 @@ function alignmentSection(){
    (newSubclassFor / onSubclassSaved are the older names for
     create:"subclass" + forClass / onSaved.) */
 var presetClass = null, savedHook = null, savedHookKind = null;
-var CREATE_TAB = {subclass:1, race:2, background:3, feat:4, feature:4};
+var CREATE_TAB = {subclass:1, race:2, background:3, feat:4, feature:4, companion:5};
 export function openCompendium(opts){
   opts = opts || {};
   var create = opts.create || (opts.newSubclassFor ? "subclass" : null) || (opts.edit ? opts.edit.kind : null);
   giveTarget = opts.forCharacter || null;
-  var sections = [classSection(), subclassSection(), raceSection(), backgroundSection(), featSection(), alignmentSection()];
+  var sections = [classSection(), subclassSection(), raceSection(), backgroundSection(), featSection(), companionSection(), alignmentSection()];
   openCatalogPicker({
     sections:sections,
     initialSection: CREATE_TAB[create || opts.tab] || 0,

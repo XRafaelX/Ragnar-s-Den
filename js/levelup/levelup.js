@@ -16,7 +16,7 @@ import { confirmDialog } from "../ui/confirm-modal.js";
 import { openInfoModal } from "../ui/info-modal.js";
 import { playAdd, playDelete } from "../ui/sound.js";
 import { showActionToast } from "../ui/toast.js";
-import { makeMoveLeftSvg, makeMoveRightSvg, makePlusSvg } from "../ui/svg-icons.js";
+import { makeMoveLeftSvg, makeMoveRightSvg, makePlusSvg, makeAlertSvg } from "../ui/svg-icons.js";
 import { openCompendium } from "../render/compendium.js";
 import { featDef, featNeedsChoice, emptyPicks, featPicksProblem, featPicksSummary, applyFeatPicks, revertFeatPicks } from "../core/feat-picks.js";
 import { renderFeatPicks, featPicksContext } from "../ui/feat-picks.js";
@@ -214,7 +214,7 @@ function render(){
   else nextBtn.innerHTML = "Next" + makeMoveRightSvg();
   nextBtn.addEventListener("click", function(){
     var err = validate(lu.step);
-    if(err){ errorBox.textContent = "⚠ "+err; errorBox.classList.add("show"); return; }
+    if(err){ errorBox.innerHTML = makeAlertSvg() + "<span></span>"; errorBox.lastChild.textContent = err; errorBox.classList.add("show"); return; }
     if(lu.step==="review"){ finish(); return; }
     go(1);
   });

@@ -7,7 +7,7 @@ import { showActionToast } from "../../ui/toast.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { facts, textField, homebrewShell, pickerField, previewCard } from "../../ui/homebrew-form.js";
 import { themedPicker } from "../../ui/themed-picker.js";
-import { escapeHtml, featureSpells } from "../../core/helpers.js";
+import { escapeHtml, featureSpells, classExtraSpellLists } from "../../core/helpers.js";
 import {
   getCustomSpell, saveCustomSpell, deleteCustomSpell,
   spellNameProblem, charactersWithSpell, SPELL_HOMEBREW_GROUP
@@ -276,10 +276,12 @@ export function buildSpellSections(c){
     var data = spellDataForClass(name);
     if(!Object.keys(data).length) return;
     var groups = buildSpellGroups(name);
-    // A warlock patron's expanded list joins the class's own spells.
+    // A warlock patron's expanded list, and another class's whole list a
+    // feature opens (Divine Soul: cleric), join the class's own spells.
     var extra = featureSpells(c).filter(function(fs){ return fs.kind==="expanded" && fs.className===name; })
-      .map(function(fs){ return catalogSpellName(fs.name); })
-      .filter(function(n){ return SPELL_DATA[n] && !data[n]; });
+      .map(function(fs){ return catalogSpellName(fs.name); });
+    classExtraSpellLists(cl).forEach(function(list){ extra = extra.concat(Object.keys(spellDataForClass(list))); });
+    extra = extra.filter(function(n, i){ return SPELL_DATA[n] && !data[n] && extra.indexOf(n)===i; });
     if(extra.length){
       extra.forEach(function(n){
         data[n] = SPELL_DATA[n];

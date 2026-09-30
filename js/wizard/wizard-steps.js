@@ -12,7 +12,7 @@ import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
 import { makePlusSvg } from "../ui/svg-icons.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardExtraListSpells, wizardExtraListName } from "./wizard-core.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { emptyPicks, featPicksProblem } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
@@ -932,7 +932,9 @@ export function wizardStepEquipment(container){
 /* One pick-N-from-a-list block (cantrips or 1st-level spells). Toggling
    updates the rows in place rather than re-rendering the whole wizard, so a
    long list keeps its scroll position and the search box keeps focus. */
-function spellPickSection(title, help, count, level, chosen, listClass, exclude, extra){
+/* extra: spells beyond the class list; extraTag(name) labels one ("Patron
+   spell", "Cleric spell"), default "Patron spell". */
+function spellPickSection(title, help, count, level, chosen, listClass, exclude, extra, extraTag){
   var wrap = ce("div","wiz-spell-section");
 
   var head = ce("div","wiz-spell-head");
@@ -966,7 +968,7 @@ function spellPickSection(title, help, count, level, chosen, listClass, exclude,
     var row = ce("div","wiz-pick-row wiz-spell-row");
     var cb = document.createElement("input"); cb.type = "checkbox"; cb.className = "chk";
     var text = ce("div","wiz-spell-text");
-    var meta = ((extra||[]).indexOf(name)!==-1 ? ["Patron spell"] : []).concat([d.school, d.castingTime, d.range], d.concentration ? ["Concentration"] : [], d.ritual ? ["Ritual"] : []).join(" · ");
+    var meta = ((extra||[]).indexOf(name)!==-1 ? [extraTag ? extraTag(name) : "Patron spell"] : []).concat([d.school, d.castingTime, d.range], d.concentration ? ["Concentration"] : [], d.ritual ? ["Ritual"] : []).join(" · ");
     text.innerHTML =
       '<span class="row-name">' + escapeHtml(name) + '</span>' +
       '<span class="wiz-spell-meta">' + escapeHtml(meta) + '</span>' +
@@ -1039,7 +1041,17 @@ export function wizardStepSpells(container){
   // A shrinking count (e.g. lower Wisdom after going back) trims extra picks.
   var need = spellPickCount(sc);
   if(wizardState.spellChoices.spells.length > need) wizardState.spellChoices.spells.length = need;
-  card.appendChild(spellPickSection("Cantrips", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList, grants.cantrips));
+  // A Divine Soul can also pick from the cleric list.
+  var extraList = wizardExtraListSpells();
+  // (expandedSpells is set further down, after the cantrips section.)
+  var extraTag = function(name){ return (expandedSpells||[]).indexOf(name)!==-1 ? "Patron spell" : wizardExtraListName() + " spell"; };
+  if(extraList.length){
+    var also = document.createElement("p");
+    also.style.cssText = "font-size:13px;margin:0 0 12px;";
+    also.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> can also learn cleric spells; they're in the lists below.";
+    card.appendChild(also);
+  }
+  card.appendChild(spellPickSection("Cantrips", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList, grants.cantrips, extraList, extraTag));
   var expandedSpells = wizardExpandedSpells().filter(function(n){ return (SPELL_DATA[n]||{}).level===1; });
   if(expandedSpells.length){
     var exp = document.createElement("p");
@@ -1047,7 +1059,7 @@ export function wizardStepSpells(container){
     exp.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> adds "+escapeHtml(expandedSpells.join(", ").replace(/, ([^,]*)$/, " and $1"))+" to the spells you can learn (marked <i>Patron spell</i>).";
     card.appendChild(exp);
   }
-  card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", need, 1, wizardState.spellChoices.spells, sc.spellList, grants.spells, expandedSpells.length ? expandedSpells : null));
+  card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", need, 1, wizardState.spellChoices.spells, sc.spellList, grants.spells, expandedSpells.concat(extraList), extraTag));
   container.appendChild(card);
 }
 

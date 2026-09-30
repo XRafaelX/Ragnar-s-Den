@@ -10,7 +10,7 @@ import { performRoll, logRoll } from "../../dice/dice.js";
 import { makeDiceSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
 
-/* ---- Artificer cards on the Vitals tab ----
+/* ---- Artificer cards on the Inventory tab ----
    Armorer: pick the armor model; its special weapon gets roll buttons and
    its perks are listed. Alchemist: the experimental elixirs on hand, with
    rolls for the free ones and a spell slot for more. */
@@ -50,7 +50,7 @@ export function renderArmorModelCard(c){
 
   if(!wearingBodyArmor(c)){
     var warn = ce("p", "art-warn");
-    warn.textContent = "Equip your armor on the Inventory tab: the model's weapon and perks only work while you wear it.";
+    warn.textContent = "Equip your armor above: the model's weapon and perks only work while you wear it.";
     card.appendChild(warn);
   }
   var w = armorModelWeapon(c);
