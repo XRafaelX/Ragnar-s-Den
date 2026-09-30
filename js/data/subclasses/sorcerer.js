@@ -43,7 +43,7 @@ export var SORCERER_SUBCLASSES = [
   }},
   {name:"Divine Soul", blurb:"Bears a divine spark that grants access to cleric spells alongside sorcery.", features:{
     1:[
-      {name:"Divine Magic", text:"When you learn or replace a sorcerer cantrip or spell, you can choose it from the cleric list as well as the sorcerer list. Choose an affinity and learn its spell, which doesn't count against your spells known: Good (Cure Wounds), Evil (Inflict Wounds), Law (Bless), Chaos (Bane) or Neutrality (Protection from Evil and Good)."},
+      {name:"Divine Magic", text:"When you learn or replace a sorcerer cantrip or spell, you can choose it from the cleric list as well as the sorcerer list. Choose an affinity and learn its spell, which doesn't count against your spells known: Good (Cure Wounds), Evil (Inflict Wounds), Law (Bless), Chaos (Bane) or Neutrality (Protection from Evil and Good).", spellChoice:{id:"affinity",label:"Affinity",options:{Good:["Cure Wounds"],Evil:["Inflict Wounds"],Law:["Bless"],Chaos:["Bane"],Neutrality:["Protection from Evil and Good"]}}, spellKind:"known"},
       {name:"Favored by the Gods", text:"When you fail a saving throw or miss with an attack roll, you can roll 2d4 and add it to the total, possibly changing the outcome. Once per short or long rest."}
     ],
     6:[{name:"Empowered Healing", text:"When you or an ally within 5 feet rolls dice to determine the hit points a spell restores, you can spend 1 sorcery point to reroll any number of those dice once, if you aren't incapacitated. Once per turn."}],

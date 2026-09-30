@@ -10,7 +10,7 @@ import { SPELL_DATA, catalogSpellName } from "../js/data/spells.js";
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
 const FEATURE_KEYS = new Set(["name", "text", "replaces", "speed", "initiative", "acHeavyArmor", "grants",
-  "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind"]);
+  "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice"]);
 const LONG_DASH = /[–—]/;
 
 // Lowest acceptable last-feature level per class: guards against a
@@ -35,12 +35,21 @@ function checkFeature(f, where){
     for(const k of Object.keys(f.grants)) assert.ok(["armor", "weapons", "tools", "savingThrows"].includes(k), where + " " + f.name + ": grants." + k);
     (f.grants.savingThrows || []).forEach((s) => assert.ok(ABILITIES.includes(s), where + " " + f.name + ": grants save " + s));
   }
-  if(f.spells){
-    assert.ok(["prepared", "known", "spellbook", "ritual"].includes(f.spellKind), where + " " + f.name + ": spellKind " + f.spellKind);
-    const names = Array.isArray(f.spells) ? f.spells : Object.values(f.spells).flat();
-    assert.ok(names.length, where + " " + f.name + ": empty spell list");
-    names.forEach((n) => assert.ok(SPELL_DATA[catalogSpellName(n)], where + " " + f.name + ": spell not in the catalog: " + n));
-    if(!Array.isArray(f.spells)) Object.keys(f.spells).forEach((k) => assert.ok(+k >= 1 && +k <= MAX_LEVEL, where + " " + f.name + ": spell level key " + k));
+  const checkSpells = (spells, label) => {
+    const names = Array.isArray(spells) ? spells : Object.values(spells).flat();
+    assert.ok(names.length, where + " " + label + ": empty spell list");
+    names.forEach((n) => assert.ok(SPELL_DATA[catalogSpellName(n)], where + " " + label + ": spell not in the catalog: " + n));
+    if(!Array.isArray(spells)) Object.keys(spells).forEach((k) => assert.ok(+k >= 1 && +k <= MAX_LEVEL, where + " " + label + ": spell level key " + k));
+  };
+  if(f.spells || f.spellChoice){
+    assert.ok(["prepared", "known", "spellbook", "ritual", "expanded"].includes(f.spellKind), where + " " + f.name + ": spellKind " + f.spellKind);
+    if(f.spells) checkSpells(f.spells, f.name);
+    if(f.spellChoice){
+      assert.ok(f.spellChoice.id && f.spellChoice.label, where + " " + f.name + ": spellChoice needs id and label");
+      const opts = Object.keys(f.spellChoice.options || {});
+      assert.ok(opts.length >= 2, where + " " + f.name + ": spellChoice needs options");
+      opts.forEach((o) => checkSpells(f.spellChoice.options[o], f.name + " (" + o + ")"));
+    }
   } else assert.ok(f.spellKind == null, where + " " + f.name + ": spellKind without spells");
   if(f.abilityBonus){
     for(const [k, v] of Object.entries(f.abilityBonus)) assert.ok(ABILITIES.includes(k) && v > 0, where + " " + f.name + ": abilityBonus");

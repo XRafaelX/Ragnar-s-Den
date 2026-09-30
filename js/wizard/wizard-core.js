@@ -3,7 +3,8 @@ import { CLASSES_INFO, FIGHTING_STYLES, CLASS_PROFICIENCIES } from "../data/clas
 import { FEATS_CATALOG } from "../data/feats.js";
 import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
-import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp } from "../core/helpers.js";
+import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices } from "../core/helpers.js";
+import { catalogSpellName } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
 import { featPicksProblem, applyFeatPicks } from "../core/feat-picks.js";
 import { state, save } from "../core/state.js";
@@ -36,6 +37,26 @@ export function subclassGrants(info, picks){
   var ch = subclassChoice(info);
   var v = ch && picks[ch.id];
   return (v && ch.grants && ch.grants[v]) || {};
+}
+/* The level-1 class entry being built, with a level-1 subclass (Warlock
+   patron, Sorcerous Origin) and its spell picks (genie kind, Divine
+   Soul affinity), so the sheet's own spell helpers can read it. */
+function wizardClassEntry(subclass){
+  var ch = subclassChoice(currentClassInfo());
+  return {name: wizardState.classId, level: 1,
+    subclass: subclass!=null ? subclass : (ch && wizardState.classChoices[ch.id]) || "",
+    spellChoices: wizardState.classChoices.spellChoices || {}};
+}
+/* Spell choices the chosen subclass asks for at level 1: [{feature, choice, pick}]. */
+export function wizardSpellChoices(){
+  return classSpellChoices(wizardClassEntry());
+}
+/* Spells a subclass adds to the list the character can learn at level 1
+   (a warlock patron's expanded list), as catalog names. */
+export function wizardExpandedSpells(subclass){
+  return featureSpells({classes: [wizardClassEntry(subclass)]})
+    .filter(function(fs){ return fs.kind==="expanded"; })
+    .map(function(fs){ return catalogSpellName(fs.name); });
 }
 /* Some gear needs a proficiency only certain subclasses give (a cleric's
    chain mail needs a heavy-armor domain). */
@@ -231,6 +252,8 @@ export function validateStep(id){
     var bonus = g.expertise;
     if(bonus && (wizardState.classChoices[bonus.id]||[]).length!==bonus.count) return "Choose "+bonus.count+" skills for "+bonus.label+".";
     if(g.pick && !wizardState.classChoices[g.pick.id]) return "Choose a "+g.pick.label+".";
+    var spellPick = wizardSpellChoices().find(function(x){ return !x.pick; });
+    if(spellPick) return "Choose your "+spellPick.choice.label.toLowerCase()+" for "+spellPick.feature+".";
     return null;
   }
   if(id==="languages"){
@@ -402,6 +425,13 @@ export function applyClassChoices(c, info, picks){
     if(!v) return;
     if(ch.kind==="subclass"){
       c.classes[0].subclass = v;
+      // Spell picks for this subclass only (not ones left over from
+      // another subclass tried first).
+      wizardSpellChoices().forEach(function(x){
+        if(!x.pick) return;
+        c.classes[0].spellChoices = c.classes[0].spellChoices || {};
+        c.classes[0].spellChoices[x.choice.id] = x.pick;
+      });
       var g = subclassGrants(info, picks);
       (g.expertise && picks[g.expertise.id] || []).forEach(function(sk){ c.skillProfs[sk] = {prof:true, expertise:true}; });
       var picked = g.pick && g.pick.options.find(function(o){ return o.name===picks[g.pick.id]; });

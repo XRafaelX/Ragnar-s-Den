@@ -66,9 +66,14 @@ export function classSpellAbility(cl){
      spells        spells the feature grants: a list (a replacing entry
                    carries the whole list so far, like Domain Spells) or an
                    object keyed by class level (Psionic Spells)
-     spellKind     "prepared", "known", "spellbook" or "ritual" (see
-                   featureSpells) */
-var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind"];
+     spellKind     "prepared", "known", "spellbook", "ritual" or "expanded"
+                   (added to the spells the class can learn: a warlock
+                   patron's list) (see featureSpells)
+     spellChoice   {id, label, options:{name: spells}}: more spells that
+                   depend on a choice (Circle of the Land's land, a genie
+                   kind), each option shaped like `spells`. The pick is
+                   saved on the class entry as spellChoices[id]. */
+var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice"];
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -408,19 +413,46 @@ export function featureSpells(c){
   (c.classes||[]).forEach(function(cl){
     var lv = Number(cl.level)||1;
     classFeatureList(cl).forEach(function(f){
-      if(!f.spells) return;
-      var names = Array.isArray(f.spells) ? f.spells : Object.keys(f.spells)
-        .filter(function(k){ return Number(k) <= lv; })
-        .reduce(function(a, k){ return a.concat(f.spells[k]); }, []);
+      var names = f.spells ? spellsUpTo(f.spells, lv) : [];
+      var pick = f.spellChoice && (cl.spellChoices||{})[f.spellChoice.id];
+      if(pick && f.spellChoice.options[pick]) names = names.concat(spellsUpTo(f.spellChoice.options[pick], lv));
       names.forEach(function(name){
         if(out.some(function(x){ return x.name===name; })) return;
         var data = SPELL_DATA[catalogSpellName(name)] || null;
         out.push({ name: name, data: data, level: data ? data.level : 0, kind: f.spellKind || "prepared",
-          source: f.subclass ? cl.subclass : cl.name, feature: f.name });
+          source: f.subclass ? cl.subclass : cl.name, feature: f.name, className: cl.name });
       });
     });
   });
   return out;
+}
+/* A `spells` list: every name, or those keyed at or below class level `lv`. */
+function spellsUpTo(spells, lv){
+  if(Array.isArray(spells)) return spells;
+  return Object.keys(spells).filter(function(k){ return Number(k) <= lv; })
+    .reduce(function(a, k){ return a.concat(spells[k]); }, []);
+}
+/* Spell choices a class entry has at `level` (default: its own), with
+   what's picked: [{feature, choice, pick}]. */
+export function classSpellChoices(cl, level){
+  return classFeatureList(cl, level).filter(function(f){ return f.spellChoice; }).map(function(f){
+    return {feature: f.name, choice: f.spellChoice, pick: (cl.spellChoices||{})[f.spellChoice.id] || ""};
+  });
+}
+/* Choices still to make, across classes: [{cl, feature, choice}]. */
+export function pendingSpellChoices(c){
+  var out = [];
+  (c.classes||[]).forEach(function(cl){
+    classSpellChoices(cl).forEach(function(x){ if(!x.pick) out.push({cl: cl, feature: x.feature, choice: x.choice}); });
+  });
+  return out;
+}
+/* One option's spells as text: "Hold Person, Spike Growth (Druid 3);
+   Sleet Storm, Slow (5); ..." (the class level each pair arrives at), or
+   just the names for a flat list. */
+export function spellOptionText(spells, className){
+  if(Array.isArray(spells)) return spells.join(", ");
+  return Object.keys(spells).map(function(k, i){ return spells[k].join(", ") + " (" + (i ? "" : (className || "level") + " ") + k + ")"; }).join("; ");
 }
 /* The Spells tab shows for casters, and for anyone a feature grants a
    spell (a Shadow monk's Minor Illusion). */

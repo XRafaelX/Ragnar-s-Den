@@ -551,8 +551,9 @@ Object.assign(CLASSES_INFO["Sorcerer"], {
   }
 });
 
-/* Warlock: Otherworldly Patron at level 1. `expandedSpells` join the list
-   the wizard's spell picker offers; Pact Magic uses `pact` slots (one
+/* Warlock: Otherworldly Patron at level 1. Each patron's expanded spell
+   list comes from its subclass data (spellKind "expanded"), and the
+   wizard's spell picker offers it; Pact Magic uses `pact` slots (one
    1st-level slot, back on a short rest) instead of regular ones. */
 Object.assign(CLASSES_INFO["Warlock"], {
   available:true,
@@ -561,12 +562,7 @@ Object.assign(CLASSES_INFO["Warlock"], {
   skillChoices:{count:2, options:["Arcana","Deception","History","Intimidation","Investigation","Nature","Religion"]},
   choices:[
     {id:"subclass", kind:"subclass", label:"Otherworldly Patron",
-      help:"The being you made your pact with. It grants a feature now and adds a few spells to the list you can learn from.",
-      grants:{
-        "The Fiend":{expandedSpells:["Burning Hands","Command"]},
-        "The Archfey":{expandedSpells:["Faerie Fire","Sleep"]},
-        "The Great Old One":{expandedSpells:["Dissonant Whispers","Tasha's Hideous Laughter"]}
-      }}
+      help:"The being you made your pact with. It grants a feature now and adds a few spells to the list you can learn from."}
   ],
   spellcasting:{
     ability:"cha", spellList:"Warlock", cantrips:2, spells:2, prepares:false, slots:{}, pact:{max:1, slotLevel:1},

@@ -234,3 +234,6 @@ button.class-chip:hover{border-color:var(--brass);}
 .lu-custom-note b{color:var(--text-on-parch);}
 .lu-custom-note .btn{display:inline-flex;align-items:center;gap:6px;flex:none;}
 .lu-custom-note .btn svg{width:15px;height:15px;}
+
+/* Spells step: one heading per spell choice (Circle Spells: Land) */
+.lu-choice-title{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;}

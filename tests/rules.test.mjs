@@ -288,3 +288,38 @@ test("feat picks: half-feat +1, Resilient save, Skilled and Skill Expert", () =>
   assert.equal(FP.featPicksPending({ name: "Athlete", picks: { ability: "" } }), false);
   assert.equal(FP.featPicksPending({ name: "Alert" }), false);
 });
+
+test("spell choices: Circle of the Land, the Genie, Divine Soul, patron lists", () => {
+  const spells = (classes) => H.featureSpells(char(classes));
+  const names = (list, kind) => list.filter((s) => !kind || s.kind === kind).map((s) => s.name).sort();
+
+  // No land picked yet: no land spells, and the pick is pending from druid 3.
+  const land = (level, spellChoices) => [{ name: "Druid", subclass: "Circle of the Land", level, spellChoices }];
+  assert.deepEqual(names(spells(land(5))), []);
+  assert.equal(H.pendingSpellChoices(char(land(2))).length, 0);           // Circle Spells comes at 3
+  assert.equal(H.pendingSpellChoices(char(land(3)))[0].choice.id, "land");
+  // Arctic at druid 5: the level 3 and 5 spells, always prepared.
+  assert.deepEqual(names(spells(land(5, { land: "Arctic" })), "prepared"), ["Hold Person", "Sleet Storm", "Slow", "Spike Growth"]);
+  assert.equal(H.pendingSpellChoices(char(land(5, { land: "Arctic" }))).length, 0);
+
+  // The Genie at warlock 5: shared list plus the kind's, as spells you can learn.
+  const genie = spells([{ name: "Warlock", subclass: "The Genie", level: 5, spellChoices: { genieKind: "Efreeti" } }]);
+  assert.deepEqual(names(genie, "expanded"), ["Burning Hands", "Create Food and Water", "Detect Evil and Good", "Fireball", "Phantasmal Force", "Scorching Ray"]);
+  assert.ok(genie.every((s) => s.className === "Warlock"));
+  // Wish only from warlock 17.
+  assert.ok(!names(spells([{ name: "Warlock", subclass: "The Genie", level: 16, spellChoices: { genieKind: "Dao" } }])).includes("Wish"));
+  assert.ok(names(spells([{ name: "Warlock", subclass: "The Genie", level: 17, spellChoices: { genieKind: "Dao" } }])).includes("Wish"));
+
+  // Divine Soul: the affinity's spell is always known.
+  assert.deepEqual(names(spells([{ name: "Sorcerer", subclass: "Divine Soul", level: 1, spellChoices: { affinity: "Chaos" } }]), "known"), ["Bane"]);
+
+  // A fixed patron list, gated by warlock level; Summon Elemental is in the catalog.
+  const fathomless = spells([{ name: "Warlock", subclass: "The Fathomless", level: 7 }]);
+  assert.deepEqual(names(fathomless.filter((s) => s.level === 4), "expanded"), ["Control Water", "Summon Elemental"]);
+  assert.ok(fathomless.every((s) => s.data), "every patron spell has catalog data");
+  assert.equal(names(spells([{ name: "Warlock", subclass: "The Fiend", level: 1 }]), "expanded").length, 2);
+
+  // Option text for the pickers.
+  assert.equal(H.spellOptionText(["Bless"]), "Bless");
+  assert.equal(H.spellOptionText({ 3: ["Hold Person", "Spike Growth"], 5: ["Sleet Storm", "Slow"] }, "Druid"), "Hold Person, Spike Growth (Druid 3); Sleet Storm, Slow (5)");
+});

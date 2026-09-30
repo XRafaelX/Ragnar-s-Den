@@ -1,12 +1,13 @@
 import { save } from "../../core/state.js";
-import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster } from "../../core/helpers.js";
+import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { performRoll } from "../../dice/dice.js";
 import { playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
-import { SPELL_LEVEL_LABELS, spellLevelLabel } from "../../data/spells.js";
-import { openSpellPicker } from "./spell-picker.js";
+import { SPELL_LEVEL_LABELS, spellLevelLabel, SPELL_DATA, catalogSpellName } from "../../data/spells.js";
+import { openSpellPicker, addCatalogSpell } from "./spell-picker.js";
+import { renderSpellChoiceOptions } from "../../ui/spell-choice.js";
 import { sheetHeader } from "./inventory.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -362,9 +363,14 @@ function slotsLeftText(c, lvl){
 /* ---- Spells from features ----
    Read-only: they come from the character's class and subclass features
    (featureSpells), so they follow level-ups and can't be removed here. */
-var KIND_LABELS = { prepared: "Always prepared", known: "Always known", spellbook: "In your spellbook", ritual: "Ritual only" };
+var KIND_LABELS = { prepared: "Always prepared", known: "Always known", spellbook: "In your spellbook", ritual: "Ritual only", expanded: "Can learn" };
 
-function renderFeatureSpellCard(fs){
+function knowsSpell(c, fs){
+  var names = [fs.name, catalogSpellName(fs.name)].map(function(n){ return n.toLowerCase(); });
+  return (c.spells||[]).some(function(sp){ return names.indexOf((sp.name||"").trim().toLowerCase())!==-1; });
+}
+
+function renderFeatureSpellCard(c, fs){
   var d = fs.data || {};
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card feature-spell-card";
@@ -388,13 +394,27 @@ function renderFeatureSpellCard(fs){
   actions.className = "inv-card-header-actions";
   var kind = document.createElement("span");
   kind.className = "ff-tag source-feat";
-  kind.textContent = fs.level === 0 ? "Cantrip" : KIND_LABELS[fs.kind] || KIND_LABELS.prepared;
+  var learned = fs.kind==="expanded" && knowsSpell(c, fs);
+  kind.textContent = learned ? "Learned" : fs.level === 0 ? "Cantrip" : KIND_LABELS[fs.kind] || KIND_LABELS.prepared;
   var source = document.createElement("span");
   source.className = "ff-tag source-class";
   source.textContent = fs.source;
   source.title = "From " + fs.feature;
   actions.appendChild(kind);
   actions.appendChild(source);
+  // A patron spell isn't free: "Learn" adds it to the spells you know.
+  var catalogName = catalogSpellName(fs.name);
+  if(fs.kind==="expanded" && !learned && SPELL_DATA[catalogName]){
+    var learn = document.createElement("button");
+    learn.type = "button";
+    learn.className = "btn small";
+    learn.textContent = "Learn";
+    learn.title = "Add " + fs.name + " to your known spells";
+    learn.addEventListener("click", function(){
+      if(addCatalogSpell(c, catalogName, SPELL_DATA[catalogName])){ showActionToast("Learned " + fs.name + "."); renderAll(); }
+    });
+    actions.appendChild(learn);
+  }
   header.appendChild(actions);
   card.appendChild(header);
   var sub = spellSubtitle(d);
@@ -413,11 +433,11 @@ function renderFeatureSpellCard(fs){
   return card;
 }
 
-function renderFeatureSpellsCard(c, list){
-  var card = makeCard("From your features");
+function renderFeatureSpellsCard(c, list, title, introText){
+  var card = makeCard(title);
   var intro = document.createElement("p");
   intro.className = "feature-spells-intro";
-  intro.textContent = "Granted by your class and subclass features. Prepared ones don't count against your prepared spells.";
+  intro.textContent = introText;
   card.appendChild(intro);
   var sorted = list.slice().sort(function(a, b){ return a.level - b.level || a.name.localeCompare(b.name); });
   var currentLevel = null, group = null;
@@ -432,7 +452,58 @@ function renderFeatureSpellsCard(c, list){
       group.className = "ff-items-list inv-items-list";
       card.appendChild(group);
     }
-    group.appendChild(renderFeatureSpellCard(fs));
+    group.appendChild(renderFeatureSpellCard(c, fs));
+  });
+  return card;
+}
+
+/* ---- Spell choices ----
+   Features whose spells depend on a pick (Circle of the Land's land, a
+   genie kind, a Divine Soul's affinity). An unmade pick shows every
+   option; a made one shows its spells and a Change button. */
+var changingChoice = null;
+
+function renderSpellChoicesCard(c){
+  var rows = [];
+  (c.classes||[]).forEach(function(cl){
+    classSpellChoices(cl).forEach(function(x){ rows.push({cl: cl, feature: x.feature, choice: x.choice, pick: x.pick}); });
+  });
+  if(!rows.length) return null;
+  var card = makeCard("Spell choices");
+  rows.forEach(function(r){
+    var key = r.cl.name + ":" + r.choice.id;
+    var row = ce("div", "spell-choice-row" + (r.pick ? "" : " pending"));
+    var head = ce("div", "spell-choice-head");
+    var label = ce("span", "spell-choice-label");
+    label.textContent = r.feature + " (" + (r.cl.subclass || r.cl.name) + "): " + r.choice.label + (r.pick ? " " : "");
+    head.appendChild(label);
+    if(r.pick){
+      var value = ce("strong", "spell-choice-value");
+      value.textContent = r.pick;
+      head.appendChild(value);
+    }
+    row.appendChild(head);
+    function pick(v){
+      if(!r.cl.spellChoices) r.cl.spellChoices = {};
+      r.cl.spellChoices[r.choice.id] = v;
+      changingChoice = null;
+      save(); renderAll();
+    }
+    if(r.pick && changingChoice!==key){
+      var spells = ce("p", "feature-spells-intro");
+      spells.textContent = spellOptionText(r.choice.options[r.pick] || [], r.cl.name);
+      row.appendChild(spells);
+      var change = document.createElement("button");
+      change.type = "button"; change.className = "btn small ghost"; change.textContent = "Change";
+      change.addEventListener("click", function(){ changingChoice = key; renderAll(); });
+      row.appendChild(change);
+    } else {
+      var hint = ce("p", "feature-spells-intro");
+      hint.textContent = r.pick ? "Pick another " + r.choice.label.toLowerCase() + "." : "Choose your " + r.choice.label.toLowerCase() + " to add its spells.";
+      row.appendChild(hint);
+      row.appendChild(renderSpellChoiceOptions(r.choice, r.pick, pick, r.cl.name));
+    }
+    card.appendChild(row);
   });
   return card;
 }
@@ -446,8 +517,15 @@ export function renderSpellsPanel(c){
     panel.appendChild(renderSpellcastingCard(c));
     panel.appendChild(renderSlotsCard(c));
   }
-  var granted = featureSpells(c);
-  if(granted.length) panel.appendChild(renderFeatureSpellsCard(c, granted));
+  var choices = renderSpellChoicesCard(c);
+  if(choices) panel.appendChild(choices);
+  var all = featureSpells(c);
+  var granted = all.filter(function(fs){ return fs.kind!=="expanded"; });
+  var expanded = all.filter(function(fs){ return fs.kind==="expanded"; });
+  if(granted.length) panel.appendChild(renderFeatureSpellsCard(c, granted, "From your features",
+    "Granted by your class and subclass features. Prepared ones don't count against your prepared spells."));
+  if(expanded.length) panel.appendChild(renderFeatureSpellsCard(c, expanded, "Added to your spell list",
+    "Your patron adds these to the spells you can learn. They still count as spells known: learn one when you gain or swap a spell."));
 
   var spellCard = makeCard("Known / prepared spells");
   var spells = c.spells || [];

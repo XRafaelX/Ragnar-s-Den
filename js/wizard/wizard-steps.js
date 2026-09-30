@@ -12,7 +12,8 @@ import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
 import { makePlusSvg } from "../ui/svg-icons.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, finalAbilities, featPrereqReason, wizardSkillProfs } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells } from "./wizard-core.js";
+import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { emptyPicks, featPicksProblem } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
 import { FEATS_CATALOG } from "../data/feats.js";
@@ -612,7 +613,8 @@ function choiceSubclass(card, ch){
     var extras = [];
     if(grants.profs && grants.profs.length) extras.push("Proficient with "+grants.profs.map(function(p){ return PROF_LABELS[p]||p; }).join(" and "));
     if(grants.spells && grants.spells.length) extras.push("Always prepared: "+grants.spells.join(", "));
-    if(grants.expandedSpells && grants.expandedSpells.length) extras.push("Adds to your spell list: "+grants.expandedSpells.join(", "));
+    var expanded = wizardExpandedSpells(sub.name);
+    if(expanded.length) extras.push("Adds to your spell list: "+expanded.join(", "));
     var row = ce("div","wiz-equip-option");
     if(wizardState.classChoices[ch.id]===sub.name) row.classList.add("selected");
     row.innerHTML = "<div><strong>"+escapeHtml(sub.name)+"</strong><br>"+
@@ -648,6 +650,18 @@ function choiceSubclass(card, ch){
       card.appendChild(row);
     });
   }
+  // Spell picks the subclass asks for now: a genie kind, a Divine Soul's affinity.
+  wizardSpellChoices().forEach(function(x){
+    var t = document.createElement("p");
+    t.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    t.textContent = x.feature+": "+x.choice.label;
+    card.appendChild(t);
+    card.appendChild(renderSpellChoiceOptions(x.choice, x.pick, function(v){
+      wizardState.classChoices.spellChoices = Object.assign({}, wizardState.classChoices.spellChoices);
+      wizardState.classChoices.spellChoices[x.choice.id] = v;
+      renderWizard();
+    }, wizardState.classId));
+  });
   var bonus = g.expertise;
   if(bonus){
     var title = document.createElement("p");
@@ -1026,13 +1040,14 @@ export function wizardStepSpells(container){
   var need = spellPickCount(sc);
   if(wizardState.spellChoices.spells.length > need) wizardState.spellChoices.spells.length = need;
   card.appendChild(spellPickSection("Cantrips", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList, grants.cantrips));
-  if(grants.expandedSpells){
+  var expandedSpells = wizardExpandedSpells().filter(function(n){ return (SPELL_DATA[n]||{}).level===1; });
+  if(expandedSpells.length){
     var exp = document.createElement("p");
     exp.style.cssText = "font-size:13px;margin:0 0 12px;";
-    exp.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> adds "+escapeHtml(grants.expandedSpells.join(" and "))+" to the spells you can learn (marked <i>Patron spell</i>).";
+    exp.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> adds "+escapeHtml(expandedSpells.join(", ").replace(/, ([^,]*)$/, " and $1"))+" to the spells you can learn (marked <i>Patron spell</i>).";
     card.appendChild(exp);
   }
-  card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", need, 1, wizardState.spellChoices.spells, sc.spellList, grants.spells, grants.expandedSpells));
+  card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", need, 1, wizardState.spellChoices.spells, sc.spellList, grants.spells, expandedSpells.length ? expandedSpells : null));
   container.appendChild(card);
 }
 

@@ -414,6 +414,7 @@ export var SPELL_DATA = {
   "Summon Fey": s(3,"Con",A,"90 feet","V, S, M",CONC1H,"Druid,Ranger,Warlock,Wizard","Summon a fuming, mirthful or tricksy fey spirit that obeys you; its stats scale with the spell's level.",{material:"a gilded flower worth at least 300 gp"}),
   "Fabricate": s(4,"Tra","10 minutes","120 feet","V, S","Instantaneous","Artificer,Wizard","Turn raw materials into a product of the same material, up to a 10-ft cube (5-ft cube of minerals); fine work needs proficiency with the right tools."),
   "Summon Aberration": s(4,"Con",A,"90 feet","V, S, M",CONC1H,"Warlock,Wizard","Summon a beholderkin, slaad or star spawn spirit that obeys you; its stats scale with the spell's level.",{material:"a pickled tentacle and an eyeball in a platinum-inlaid vial worth at least 400 gp"}),
+  "Summon Elemental": s(4,"Con",A,"90 feet","V, S, M",CONC1H,"Druid,Ranger,Warlock,Wizard","Summon an air, earth, fire or water elemental spirit that obeys you; its stats scale with the spell's level.",{material:"air, a pebble, ash, and water inside a gold-inlaid vial worth at least 400 gp"}),
   "Summon Construct": s(4,"Con",A,"90 feet","V, S, M",CONC1H,"Artificer,Wizard","Summon a clay, metal or stone construct spirit that obeys you; its stats scale with the spell's level.",{material:"an ornate stone and metal lockbox worth at least 400 gp"})
 };
 

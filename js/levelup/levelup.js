@@ -6,8 +6,9 @@ import {
   mod, fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus,
   classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots,
   wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFightingStyle,
-  hasFeat, maxHp, computeSpeed
+  hasFeat, maxHp, computeSpeed, classSpellChoices
 } from "../core/helpers.js";
+import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { logRoll, getDieSvg } from "../dice/dice.js";
@@ -27,8 +28,8 @@ import { renderFeatPicks } from "../ui/feat-picks.js";
    (Fighter 1, Paladin 2, Ranger 2), an Ability Score Improvement / feat
    at class level 4, then hit points. Applying it records what changed in
    c.levelHistory so the last level-up can be undone. */
-var STEP_IDS = ["class","subclass","style","asi","hp","review"];
-var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Fighting style", asi:"Abilities", hp:"Hit points", review:"Review"};
+var STEP_IDS = ["class","subclass","style","spells","asi","hp","review"];
+var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Fighting style", spells:"Spells", asi:"Abilities", hp:"Hit points", review:"Review"};
 var lu = null;
 
 function abilityName(key){
@@ -80,11 +81,23 @@ function stepApplicable(id){
   var t = target();
   if(id==="subclass") return t.needsSubclass;
   if(id==="style") return !!t.fightingStyle;
+  if(id==="spells") return dueSpellChoices().length > 0;
   if(id==="asi") return t.asi;
   return true;
 }
 
 function chosenSubclass(){ return lu.subclass || ""; }
+
+/* Spell choices the class has at its new level that aren't made yet
+   (Circle Spells at druid 3; a Genie or Divine Soul taken on this
+   level-up). Asked on the Spells step, saved on the class entry. */
+function dueSpellChoices(){
+  var t = target();
+  var entry = {name: lu.className, level: t.newLevel,
+    subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : ""),
+    spellChoices: t.existing && t.existing.spellChoices};
+  return classSpellChoices(entry).filter(function(x){ return !x.pick; });
+}
 
 function asiPointsUsed(){
   return Object.keys(lu.asi).reduce(function(a,k){ return a + lu.asi[k]; }, 0);
@@ -97,6 +110,10 @@ function validate(id){
     // Nothing left to pick if the character already has every style
     // this class offers (possible with multiclassing).
     return lu.style || !availableStyles().length ? null : "Pick a fighting style.";
+  }
+  if(id==="spells"){
+    var missing = dueSpellChoices().find(function(x){ return !lu.spellChoices[x.choice.id]; });
+    return missing ? "Choose your "+missing.choice.label.toLowerCase()+" for "+missing.feature+"." : null;
   }
   if(id==="asi"){
     if(lu.asiMode==="feat") return lu.featName ? featPicksProblem(featDef(lu.featName), lu.featPicks, featCtx()) || null : "Pick a feat, or switch to raising ability scores.";
@@ -123,7 +140,7 @@ export function openLevelUp(c){
     c: c, step:"class",
     className: c.classes.length===1 ? c.classes[0].name : null,
     subclass:"", style:"",
-    asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featPicks:null,
+    asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featPicks:null, spellChoices:{},
     hpMethod:"avg", hpRoll:null
   };
   wizardScrollReset();
@@ -180,7 +197,7 @@ function render(){
   var inner = ce("div"); inner.id = "wizard-body-inner";
   body.appendChild(inner);
   overlay.appendChild(body);
-  ({class:stepClass, subclass:stepSubclass, style:stepStyle, asi:stepAsi, hp:stepHp, review:stepReview})[lu.step](inner);
+  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, asi:stepAsi, hp:stepHp, review:stepReview})[lu.step](inner);
 
   var errorBox = ce("div","wiz-error");
   overlay.appendChild(errorBox);
@@ -232,6 +249,7 @@ function resetChoicesFor(name){
   lu.className = name;
   lu.subclass = "";
   lu.style = "";
+  lu.spellChoices = {};
   lu.asi = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; lu.featName = ""; lu.featPicks = null; lu.asiMode = "asi";
   lu.hpRoll = null; lu.hpMethod = "avg";
 }
@@ -340,6 +358,17 @@ function stepSubclass(container){
   });
   note.appendChild(make);
   card.appendChild(note);
+}
+
+function stepSpells(container){
+  var card = stepCard(container, "Subclass spells",
+    "<b>Pick once:</b> part of your subclass's spell list depends on this choice. You can change it later on the sheet's Spells tab.");
+  dueSpellChoices().forEach(function(x){
+    var title = ce("p","lu-choice-title");
+    title.textContent = x.feature+": "+x.choice.label;
+    card.appendChild(title);
+    card.appendChild(renderSpellChoiceOptions(x.choice, lu.spellChoices[x.choice.id], function(v){ lu.spellChoices[x.choice.id] = v; render(); }, lu.className));
+  });
 }
 
 function stepAsi(container){
@@ -550,6 +579,7 @@ function stepReview(container){
     " (character level "+(totalLevel(c)+1)+")";
   if(t.needsSubclass) items.push(target().prog.subclassLabel+": "+chosenSubclass());
   if(t.fightingStyle && lu.style) items.push("Fighting style: "+lu.style);
+  dueSpellChoices().forEach(function(x){ if(lu.spellChoices[x.choice.id]) items.push(x.choice.label+": "+lu.spellChoices[x.choice.id]); });
   if(t.asi){
     if(lu.asiMode==="feat"){
       var picked = featPicksSummary(featDef(lu.featName), lu.featPicks);
@@ -607,6 +637,7 @@ function finish(){
   var c = lu.c;
   var t = target();
   var subName = t.needsSubclass ? chosenSubclass() : null;
+  var dueChoices = dueSpellChoices();
   var gain = hpGain();
   var featureBonus = featureAbilityBonus();
   var before = {total: totalLevel(c), pb: profBonus(c), slots: slotSnapshot(c), pact: c.spellcasting.pact ? JSON.parse(JSON.stringify(c.spellcasting.pact)) : null,
@@ -640,6 +671,14 @@ function finish(){
   if(entry) entry.level = t.newLevel;
   else { entry = {name: lu.className, subclass: "", level: 1}; c.classes.push(entry); }
   if(subName) entry.subclass = subName;
+  // Spell choices made on this level-up; undo clears them again.
+  dueChoices.forEach(function(x){
+    var v = lu.spellChoices[x.choice.id];
+    if(!v) return;
+    entry.spellChoices = entry.spellChoices || {};
+    entry.spellChoices[x.choice.id] = v;
+    (record.spellChoiceIds = record.spellChoiceIds || []).push(x.choice.id);
+  });
 
   // The picked style becomes a tagged feature (like a starting Fighter's),
   // so Defense/Archery apply and undo can remove it.
@@ -732,7 +771,10 @@ export function undoLastLevelUp(c){
     c.levelHistory.pop();
     if(entry){
       if(rec.isNewClass) c.classes.splice(c.classes.indexOf(entry), 1);
-      else { entry.level = Math.max(1, (Number(entry.level)||1)-1); entry.subclass = rec.prevSubclass; }
+      else {
+        entry.level = Math.max(1, (Number(entry.level)||1)-1); entry.subclass = rec.prevSubclass;
+        (rec.spellChoiceIds||[]).forEach(function(id){ if(entry.spellChoices) delete entry.spellChoices[id]; });
+      }
     }
     if(rec.asi) Object.keys(rec.asi).forEach(function(k){ c.abilities[k] = (Number(c.abilities[k])||10) - rec.asi[k]; });
     if(rec.featId){
