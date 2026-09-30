@@ -7,6 +7,10 @@ import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
+import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
+import { renderCompanionCards } from "./companions.js";
+import { elixirsOnLongRest } from "../../core/artificer.js";
+import { restoreCompanions } from "../../core/companions.js";
 
 /* ---- Vitals panel ---- */
 export function renderVitalsPanel(c){
@@ -472,7 +476,7 @@ export function renderVitalsPanel(c){
   grid.appendChild(initBox);
 
   var speed = computeSpeed(c);
-  var speedBox = smallVital("Speed","speed",null,speed.bonus ? "per turn, incl. Mobile +"+speed.bonus : "per turn",5," ft",speed.bonus);
+  var speedBox = smallVital("Speed","speed",null,speed.parts.length ? "per turn, incl. "+speed.parts.map(function(p){ return p.name+" +"+p.value; }).join(", ") : "per turn",5," ft",speed.bonus);
   // Fly, swim and climb speeds under walking speed; conditional ones say when.
   if(speed.others.length){
     var others = document.createElement("div");
@@ -564,7 +568,10 @@ export function renderVitalsPanel(c){
         c.rage.used = 0;
         c.rage.active = false;
         restoreResources(c, "long");
-        logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered.");
+        restoreCompanions(c);
+        var elixirs = elixirsOnLongRest(c);
+        logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered."+
+          (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : ""));
         save(); renderAll();
       }
     );
@@ -619,6 +626,11 @@ export function renderVitalsPanel(c){
 
   var resources = characterResources(c);
   if(resources.length) panel.appendChild(renderResourcesCard(c, resources));
+
+  // Artificer extras and companions (Steel Defender, Eldritch Cannon).
+  [renderArmorModelCard(c), renderElixirCard(c)].concat(renderCompanionCards(c)).forEach(function(card){
+    if(card) panel.appendChild(card);
+  });
 
   return panel;
 }

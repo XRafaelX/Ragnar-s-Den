@@ -10,7 +10,9 @@
      also counts as covered by a long rest). "manual" for the odd one no
      rest restores on its own (Necrotic Husk); the player regains it.
    pool: true for point pools (Ki, Lay on Hands) shown as a number rather
-     than pips. */
+     than pips.
+   armorModel: only while the Armorer has that model (Defensive Field:
+     "Guardian"). */
 
 function atLeastOne(n){ return Math.max(1, n); }
 function always(value){ return function(){ return value; }; }
@@ -126,9 +128,6 @@ export var SUBCLASS_RESOURCES = {
   },
   "Artificer": {
     "Alchemist": [
-      {id:"experimental_elixir", name:"Free Experimental Elixir", level:3,
-        max:function(lv){ return lv>=15 ? 3 : lv>=6 ? 2 : 1; }, reset:always("long"),
-        hint:"Elixirs you create for free after a long rest. You can still make more by spending spell slots."},
       {id:"restorative_reagents", name:"Restorative Reagents (Lesser Restoration)", level:9,
         max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
         hint:"Cast Lesser Restoration without a spell slot, using alchemist's supplies as your focus."},
@@ -149,10 +148,10 @@ export var SUBCLASS_RESOURCES = {
         hint:"On a magic weapon or steel defender hit: +2d6 force damage, or heal a creature within 30 ft of the target 2d6 (4d6 from level 15)."}
     ],
     "Armorer": [
-      {id:"defensive_field", name:"Defensive Field (Guardian)", level:3,
+      {id:"defensive_field", name:"Defensive Field (Guardian)", level:3, armorModel:"Guardian",
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Guardian model, bonus action: gain temporary HP equal to your artificer level."},
-      {id:"perfected_armor_pull", name:"Perfected Armor Pull (Guardian)", level:15,
+      {id:"perfected_armor_pull", name:"Perfected Armor Pull (Guardian)", level:15, armorModel:"Guardian",
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Guardian model, reaction: pull a creature ending its turn within 30 ft up to 30 ft toward you (STR save), then attack it if adjacent."}
     ]

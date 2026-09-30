@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon } from "../../core/helpers.js";
 import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker, openArmorPicker } from "../armory.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
@@ -285,6 +285,24 @@ function openWeaponSheet(c, item, idx){
       item.magicBonus = v; save(); renderAll();
     }));
 
+    // Magic without a bonus (a Flame Tongue, a +0 weapon): counts for
+    // Battle Ready and anything else that needs a magic weapon. A bonus or
+    // an infusion already makes it magic, so the box shows ticked.
+    var alreadyMagic = (Number(item.magicBonus)||0) > 0 || (isMagicWeapon(c, item) && !item.magic);
+    var magicLbl = document.createElement("label");
+    magicLbl.className = "inv-prof-label";
+    var magicCb = document.createElement("input"); magicCb.type="checkbox"; magicCb.className="chk";
+    magicCb.checked = isMagicWeapon(c, item);
+    magicCb.disabled = alreadyMagic;
+    if(alreadyMagic) magicLbl.title = (Number(item.magicBonus)||0) > 0 ? "Magic because of its bonus" : "Magic because it's infused";
+    magicCb.addEventListener("change", function(){
+      if(magicCb.checked) item.magic = true; else delete item.magic;
+      save(); renderAll();
+    });
+    magicLbl.appendChild(magicCb);
+    magicLbl.appendChild(document.createTextNode("Magic weapon"));
+    details.appendChild(magicLbl);
+
     body.appendChild(details);
   });
 }
@@ -304,6 +322,7 @@ function renderWeaponCard(c, item, idx){
   subtitleParts.push(abilityLabel);
   subtitleParts.push(item.proficient ? "Proficient" : "Not proficient");
   if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
+  else if(isMagicWeapon(c, item)) subtitleParts.push("Magic");
   var chosenFeat = item.chosenWeapon && chosenWeaponFeature(c);
   if(chosenFeat) subtitleParts.push(chosenFeat.name);
   var subtitle = document.createElement("div");

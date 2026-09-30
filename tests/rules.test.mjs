@@ -6,6 +6,8 @@ import assert from "node:assert/strict";
 import * as H from "../js/core/helpers.js";
 import { CLASS_PROFICIENCIES } from "../js/data/classes.js";
 import * as FP from "../js/core/feat-picks.js";
+import * as ART from "../js/core/artificer.js";
+import * as COMP from "../js/core/companions.js";
 
 const AB = { str: 10, dex: 14, con: 14, int: 10, wis: 10, cha: 10 };
 function char(classes, extra = {}){
@@ -343,4 +345,78 @@ test("speeds: race fly/swim/climb, feature speeds, conditions, Superior Mobility
   assert.deepEqual(show(sp([{ name: "Rogue", subclass: "Scout", level: 9 }])), []);
   // Revelation in Flesh: fly equal to walking, swim twice walking.
   assert.deepEqual(show(sp([{ name: "Sorcerer", subclass: "Aberrant Mind", level: 14 }])).map((x) => x.split(" (")[0]), ["fly 30", "swim 60"]);
+});
+
+test("artificer: magic weapons, armor model, elixirs", () => {
+  // Magic: marked, with a bonus, or infused. Battle Ready then uses INT.
+  const smith = (inv, extra = {}) => ({ ...char([{ name: "Artificer", subclass: "Battle Smith", level: 3 }], { abilities: { str: 10, int: 18 }, inventory: inv }), ...extra });
+  const sword = { id: "w1", type: "weapon", name: "Longsword", ability: "str", proficient: true, magicBonus: 0 };
+  assert.equal(H.isMagicWeapon(smith([sword]), sword), false);
+  assert.equal(H.weaponAttackBonus(smith([sword]), sword), 0 + 2);
+  assert.equal(H.weaponAttackBonus(smith([{ ...sword, magic: true }]), { ...sword, magic: true }), 4 + 2);
+  const infused = smith([sword], { infusions: { known: [], active: [{ id: "a", itemId: "w1" }] } });
+  assert.equal(H.isMagicWeapon(infused, sword), true);
+
+  // Armor model: weapon uses INT when higher, Infiltrator walks 5 ft faster in armor.
+  const plate = { type: "armor", equipped: true, name: "Plate", category: "heavy", baseAC: 18 };
+  const armorer = (model, inv = [plate]) => char([{ name: "Artificer", subclass: "Armorer", level: 5, armorModel: model }], { abilities: { str: 14, dex: 12, int: 16 }, inventory: inv });
+  assert.equal(ART.armorModelWeapon(armorer(undefined)), null);
+  const g = ART.armorModelWeapon(armorer("Guardian"));
+  assert.deepEqual([g.name, g.ability, g.toHit, g.damageBonus, g.diceText], ["Thunder Gauntlets", "int", 3 + 3, 3, "1d8"]);
+  const i = ART.armorModelWeapon(armorer("Infiltrator"));
+  assert.deepEqual([i.name, i.range, i.extraText], ["Lightning Launcher", "90/300 ft", "1d6"]);
+  assert.equal(H.computeSpeed({ ...armorer("Infiltrator"), speed: 30 }).value, 35);
+  assert.equal(H.computeSpeed({ ...armorer("Infiltrator", []), speed: 30 }).value, 30);      // not wearing it
+  assert.equal(H.computeSpeed({ ...armorer("Guardian"), speed: 30 }).value, 30);
+  // Defensive Field is a Guardian resource only.
+  const has = (model) => H.characterResources(armorer(model)).some((r) => /Defensive Field/.test(r.name));
+  assert.deepEqual([has("Guardian"), has("Infiltrator"), has(undefined)], [true, false, false]);
+
+  // Elixirs: free ones by level, rolled on a d6; more cost the lowest slot left.
+  const alch = (level) => ({ ...char([{ name: "Artificer", subclass: "Alchemist", level }], { abilities: { int: 16 } }),
+    spellcasting: { slots: { 1: { max: 2, used: 2 }, 2: { max: 1, used: 0 } } } });
+  assert.deepEqual([3, 6, 15].map(ART.freeElixirCount), [1, 2, 3]);
+  const a = alch(6);
+  const rolls = [1, 5];
+  assert.deepEqual(ART.rollFreeElixirs(a, () => rolls.shift()), ["Healing", "Flight"]);
+  assert.equal(ART.freeElixirsLeft(a), 0);
+  assert.deepEqual(ART.rollFreeElixirs(a), []);                                       // none left until a long rest
+  assert.equal(ART.brewElixirWithSlot(a, "Boldness"), 2);                            // 1st-level slots are spent
+  assert.equal(a.spellcasting.slots[2].used, 1);
+  assert.equal(ART.brewElixirWithSlot(a, "Boldness"), 0);                            // nothing left
+  assert.deepEqual(a.elixirs.list.map((e) => e.name), ["Healing", "Flight", "Boldness"]);
+  ART.useElixir(a, a.elixirs.list[0].id);
+  assert.equal(a.elixirs.list.length, 2);
+  assert.deepEqual(ART.elixirsOnLongRest(a, () => 3), ["Resilience", "Resilience"]);   // old ones expire
+  assert.deepEqual(ART.elixirRolls(alch(3), "Healing").map((r) => r.label + " " + r.diceText + "+" + r.bonus), ["Heal 2d4+3"]);
+  assert.deepEqual(ART.elixirRolls(alch(9), "Flight").map((r) => r.label), ["Temp HP"]);   // Restorative Reagents
+  assert.deepEqual(ART.elixirsOnLongRest(char([{ name: "Wizard", level: 5 }])), []);
+});
+
+test("companions: Steel Defender and Eldritch Cannon", () => {
+  const withSub = (sub, level) => char([{ name: "Artificer", subclass: sub, level }], { abilities: { int: 16 } });
+  assert.deepEqual(COMP.characterCompanions(withSub("Battle Smith", 2)), []);
+  const bs = withSub("Battle Smith", 5);
+  const [def] = COMP.characterCompanions(bs);
+  assert.equal(def.def.name, "Steel Defender");
+  assert.deepEqual([def.stats.ac, def.stats.hp], [15, 2 + 3 + 25]);
+  assert.equal(def.stats.attacks[0].toHit, 3 + 3);                                 // your spell attack
+  assert.equal(def.stats.attacks[0].bonus, 3);                                     // 1d8 + PB
+  assert.equal(COMP.characterCompanions(withSub("Battle Smith", 15))[0].stats.ac, 17);
+  // HP: starts full, is clamped, and a long rest refills it.
+  COMP.setCompanionHp(bs, "steel_defender", 0, 12, def.stats.hp);
+  assert.deepEqual(COMP.characterCompanions(bs)[0].hp, [12]);
+  COMP.setCompanionHp(bs, "steel_defender", 0, -4, def.stats.hp);
+  assert.deepEqual(COMP.characterCompanions(bs)[0].hp, [0]);
+  COMP.restoreCompanions(bs);
+  assert.deepEqual(COMP.characterCompanions(bs)[0].hp, [30]);
+
+  const can = (lv) => COMP.characterCompanions(withSub("Artillerist", lv))[0].stats;
+  assert.deepEqual([can(5).ac, can(5).hp, can(5).count], [18, 25, 1]);
+  assert.equal(can(5).attacks[0].dice, "2d8");
+  assert.equal(can(9).attacks[0].dice, "3d8");                                     // Explosive Cannon
+  assert.equal(can(5).actions.find((x) => x.name === "Flamethrower").save, "DEX 14");
+  assert.equal(can(15).count, 2);
+  const two = withSub("Artillerist", 15);
+  assert.equal(COMP.characterCompanions(two)[0].hp.length, 2);
 });

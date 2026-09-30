@@ -2,6 +2,7 @@ import { HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { RACE_DATA } from "../data/race-data.js";
+import { ARMOR_MODELS } from "../data/artificer-extras.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
 import { WEAPON_DATA } from "../data/weapons.js";
@@ -193,6 +194,8 @@ export function characterResources(c){
     defs.forEach(function(d){
       var r = d.def;
       if(lv < r.level) return;
+      // Armor-model uses (Defensive Field) only for that model.
+      if(r.armorModel && cl.armorModel!==r.armorModel) return;
       var key = cl.name+":"+r.id;
       var max = r.max(lv, m);
       list.push({
@@ -270,12 +273,20 @@ export function toughBonus(c){
 export function maxHp(c){
   return (Number(c.hp && c.hp.max)||0) + toughBonus(c);
 }
-/* Walking speed: the saved number plus Mobile's 10 ft. `others` are the
+/* Walking speed: the saved number plus Mobile's 10 ft and an Infiltrator
+   Armorer's Powered Steps (while wearing armor); `parts` names each bonus
+   for the hint. `others` are the
    fly, swim and climb speeds from the race and from features tagged
    `speeds`, as {type, value, when, source}: always-on ones first (only
    the best of each type), then the ones that depend on something. */
 export function computeSpeed(c){
-  var mobile = hasFeat(c, "Mobile") ? 10 : 0;
+  var parts = [];
+  if(hasFeat(c, "Mobile")) parts.push({name: "Mobile", value: 10});
+  var armorer = (c.classes||[]).find(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer" && (Number(cl.level)||1) >= 3; });
+  var model = armorer && ARMOR_MODELS[armorer.armorModel];
+  var inArmor = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
+  if(model && model.speed && inArmor) parts.push({name: "Powered Steps", value: model.speed});
+  var mobile = parts.reduce(function(a, p){ return a + p.value; }, 0);
   var walk = (Number(c.speed)||0) + mobile;
   var list = [], bonus = {};
   var race = RACE_DATA[c.race];
@@ -303,7 +314,7 @@ export function computeSpeed(c){
   var others = always.concat(list.filter(function(o){
     return o.when && !always.some(function(a){ return a.type===o.type && a.value >= o.value; });
   }));
-  return { value: walk, bonus: mobile, others: others };
+  return { value: walk, bonus: mobile, parts: parts, others: others };
 }
 /* HP from one spent hit die: roll + CON (at least 1). Durable raises the
    floor to twice the CON modifier, at least 2. */
@@ -585,10 +596,10 @@ export function weaponAbilityMod(c, item){
   var strMod = mod(c.abilities && c.abilities.str);
   var dexMod = mod(c.abilities && c.abilities.dex);
   var best = item.ability==="dex" ? dexMod : item.ability==="finesse" ? Math.max(strMod, dexMod) : strMod;
-  // A feature tagged `magicWeaponAbility` lets magic weapons (magic bonus
-  // above 0) use that ability instead, when it's higher; one tagged
+  // A feature tagged `magicWeaponAbility` lets magic weapons (see
+  // isMagicWeapon) use that ability instead, when it's higher; one tagged
   // `chosenWeaponAbility` does the same for the weapon marked `chosenWeapon`.
-  var isMagic = (Number(item.magicBonus)||0) > 0;
+  var isMagic = isMagicWeapon(c, item);
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
       if(f.magicWeaponAbility && isMagic) best = Math.max(best, mod(c.abilities && c.abilities[f.magicWeaponAbility]));
@@ -605,6 +616,13 @@ export function chosenWeaponFeature(c){
     classFeatureList(cl).forEach(function(f){ if(!found && f.chosenWeaponAbility) found = f; });
   });
   return found;
+}
+/* A magic weapon: marked magic on the sheet (a Flame Tongue, a +0
+   weapon), with a magic bonus, or holding an active artificer infusion. */
+export function isMagicWeapon(c, item){
+  if(item.magic || (Number(item.magicBonus)||0) > 0) return true;
+  var active = c.infusions && c.infusions.active || [];
+  return !!item.id && active.some(function(a){ return a.itemId===item.id; });
 }
 export function weaponAttackBonus(c, item){
   var pb = item.proficient ? profBonus(c) : 0;
