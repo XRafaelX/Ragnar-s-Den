@@ -490,3 +490,42 @@ test("companions: Tasha's primal beasts and the Blighted Sapling", () => {
   assert.deepEqual([s10.actions[0].dice, s10.actions[0].save], ["4d6", "CON 15"]);
   assert.match(druid(14)[0].stats.attacks[0].text, /two Claws attacks/);
 });
+
+test("senses, armor proficiency and Stealth", () => {
+  // Darkvision from the race data, then features.
+  const dv = (race, classes = [{ name: "Fighter", level: 1 }]) => H.computeDarkvision(char(classes, { race }));
+  assert.equal(dv("Human").range, 0);
+  assert.equal(H.getCharacterSenses(char([{ name: "Fighter", level: 1 }], { race: "Human" })), "No darkvision");
+  assert.equal(dv("Duergar").range, 120);                        // was guessed as none
+  assert.equal(dv("Deep Gnome (Svirfneblin)").range, 120);        // was guessed as 60
+  assert.equal(dv("Yuan-ti Pureblood").range, 60);
+  const gloom = [{ name: "Ranger", subclass: "Gloom Stalker", level: 3 }];
+  assert.deepEqual(dv("Human", gloom), { range: 60, sources: ["Umbral Sight"] });
+  assert.deepEqual(dv("Hill Dwarf", gloom), { range: 90, sources: ["Hill Dwarf", "Umbral Sight"] });
+  assert.equal(dv("Hill Dwarf", [{ name: "Cleric", subclass: "Twilight Domain", level: 1 }]).range, 300);
+
+  // Armor proficiency: class, multiclass, feat and race.
+  const plate = { type: "armor", equipped: true, name: "Plate", category: "heavy", baseAC: 18 };
+  const scale = { type: "armor", equipped: true, name: "Scale Mail", category: "medium", baseAC: 14 };
+  const shield = { type: "armor", equipped: true, name: "Shield", category: "shield", baseAC: 2 };
+  const prof = (classes, item, extra = {}) => H.isProficientWithArmor(char(classes, extra), item);
+  assert.equal(prof([{ name: "Wizard", level: 5 }], plate), false);
+  assert.equal(prof([{ name: "Fighter", level: 1 }], plate), true);
+  assert.equal(prof([{ name: "Wizard", level: 5 }, { name: "Fighter", level: 1 }], plate), false);   // multiclass Fighter: no heavy
+  assert.equal(prof([{ name: "Wizard", level: 5 }, { name: "Fighter", level: 1 }], shield), true);
+  assert.equal(prof([{ name: "Wizard", level: 5 }], scale, { race: "Mountain Dwarf" }), true);
+  assert.equal(prof([{ name: "Wizard", level: 5 }], scale, { feats: [{ name: "Moderately Armored" }] }), true);
+  assert.equal(prof([{ name: "Cleric", subclass: "Life Domain", level: 1 }], plate), true);          // Life Domain grants heavy
+  const warned = H.equipProblems(char([{ name: "Wizard", level: 5 }], { inventory: [plate] }));
+  assert.match(warned[0].text, /aren't proficient with Plate/);
+  assert.equal(H.equipProblems(char([{ name: "Fighter", level: 1 }], { inventory: [plate] })).length, 0);
+
+  // Stealth: noisy armor gives disadvantage, Medium Armor Master removes it for medium, Dampening Field gives advantage.
+  const st = (classes, inv, extra = {}) => H.stealthCheck(char(classes, { inventory: inv, ...extra })).mode;
+  assert.equal(st([{ name: "Fighter", level: 1 }], []), "none");
+  assert.equal(st([{ name: "Fighter", level: 1 }], [plate]), "dis");
+  assert.equal(st([{ name: "Fighter", level: 1 }], [{ ...plate, equipped: false }]), "none");
+  assert.equal(st([{ name: "Fighter", level: 1 }], [{ type: "armor", equipped: true, name: "Breastplate", category: "medium", baseAC: 14 }]), "none");
+  assert.equal(st([{ name: "Fighter", level: 4 }], [scale], { feats: [{ name: "Medium Armor Master" }] }), "none");
+  assert.equal(st([{ name: "Artificer", subclass: "Armorer", level: 3, armorModel: "Infiltrator" }], [plate]), "adv");
+});

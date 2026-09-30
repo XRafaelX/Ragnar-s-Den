@@ -1,8 +1,8 @@
 import { save } from "../../core/state.js";
-import { fmtMod, mod, profBonus, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, escapeHtml } from "../../core/helpers.js";
+import { fmtMod, mod, profBonus, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, computeDarkvision, stealthCheck, escapeHtml } from "../../core/helpers.js";
 import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { makeStatArrowSvg } from "../../ui/svg-icons.js";
+import { makeStatArrowSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
 
 /* ---- Abilities & Skills panel ---- */
@@ -128,6 +128,7 @@ export function renderAbilitiesPanel(c){
     '<span class="row-name" style="font-size:10px;color:var(--text-on-parch-dim);text-transform:uppercase;">Skill</span>'+
     '<span class="abbr"></span><span class="row-mod"></span>';
   skillRows.appendChild(header);
+  var stealth = stealthCheck(c);
   SKILLS.forEach(function(s){
     var name = s[0], ab = s[1];
     var entry = c.skillProfs[name] || {prof:false, expertise:false};
@@ -145,7 +146,18 @@ export function renderAbilitiesPanel(c){
     expCb.addEventListener("change", function(){ entry.expertise = expCb.checked; c.skillProfs[name]=entry; save(); renderAll(); });
     var nameSpan = document.createElement("span");
     nameSpan.className = "row-name"; nameSpan.textContent = name;
-    nameSpan.addEventListener("click", function(){ performRoll(20,1,bonus,"none", name); });
+    // Stealth rolls with armor's disadvantage (or Dampening Field's advantage).
+    var rollMode = name==="Stealth" ? stealth.mode : "none";
+    if(rollMode!=="none"){
+      var tag = document.createElement("span");
+      tag.className = "skill-roll-tag " + rollMode;
+      if(rollMode==="dis") tag.innerHTML = makeAlertSvg() + "Dis";
+      else tag.textContent = "Adv";
+      tag.title = stealth.reason;
+      nameSpan.appendChild(tag);
+      nameSpan.title = stealth.reason;
+    }
+    nameSpan.addEventListener("click", function(){ performRoll(20,1,bonus,rollMode, name); });
     var abbr = document.createElement("span");
     abbr.className = "abbr"; abbr.textContent = ab.toUpperCase();
     var modSpan = document.createElement("span");
@@ -168,7 +180,7 @@ export function renderAbilitiesPanel(c){
     { label: "Passive Perception", val: pPerc, sub: "WIS ("+fmtMod(mod(c.abilities.wis))+")" },
     { label: "Passive Investigation", val: pInv, sub: "INT ("+fmtMod(mod(c.abilities.int))+")" },
     { label: "Passive Insight", val: pIns, sub: "WIS ("+fmtMod(mod(c.abilities.wis))+")" },
-    { label: "Senses", val: senses, sub: (c.race || "Base race") }
+    { label: "Senses", val: senses, sub: computeDarkvision(c).sources.join(", ") || (c.race || "Base race") }
   ].forEach(function(st){
     var box = document.createElement("div");
     box.className = "passive-box";

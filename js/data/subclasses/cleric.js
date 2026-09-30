@@ -109,7 +109,7 @@ export var CLERIC_SUBCLASSES = [
     1:[
       {name:"Domain Spells", text:"You always have Faerie Fire and Sleep prepared; they don't count against your prepared spells.", spells:["Faerie Fire","Sleep"], spellKind:"prepared"},
       {name:"Bonus Proficiencies", text:"You gain proficiency with martial weapons and heavy armor.", grants:{armor:["Heavy armor"], weapons:["Martial weapons"]}},
-      {name:"Eyes of Night", text:"You have darkvision out to 300 feet. As an action, you can share it for 1 hour with willing creatures you can see within 10 feet, up to your Wisdom modifier (minimum 1). Once per long rest, or expend a spell slot of any level to share it again."},
+      {name:"Eyes of Night", text:"You have darkvision out to 300 feet. As an action, you can share it for 1 hour with willing creatures you can see within 10 feet, up to your Wisdom modifier (minimum 1). Once per long rest, or expend a spell slot of any level to share it again.", darkvision:{range:300}},
       {name:"Vigilant Blessing", text:"As an action, give one creature you touch (including yourself) advantage on the next initiative roll it makes. The benefit ends right after that roll or when you use this feature again."}
     ],
     2:[{name:"Channel Divinity: Twilight Sanctuary", text:"As an action, a 30-foot-radius sphere of dim twilight emanates from you and moves with you for 1 minute, or until you are incapacitated or die. Whenever a creature (including you) ends its turn in the sphere, you can grant it one of these benefits: temporary hit points equal to 1d6 + your cleric level, or end one effect on it that is causing it to be charmed or frightened."}],

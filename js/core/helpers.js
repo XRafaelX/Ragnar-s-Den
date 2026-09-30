@@ -3,6 +3,7 @@ import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { ARMOR_MODELS } from "../data/artificer-extras.js";
+import { ARMOR_DATA } from "../data/armor.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
 import { WEAPON_DATA } from "../data/weapons.js";
@@ -76,11 +77,13 @@ export function classSpellAbility(cl){
                    `when` says when it applies ("while raging (Eagle)"),
                    none for an always-on speed. {type, bonus} instead adds
                    to that speed from any other source (Superior Mobility).
+     darkvision    {range, add}: darkvision out to `range` feet, or `add`
+                   feet more if the character already has it (Umbral Sight)
      spellChoice   {id, label, options:{name: spells}}: more spells that
                    depend on a choice (Circle of the Land's land, a genie
                    kind), each option shaped like `spells`. The pick is
                    saved on the class entry as spellChoices[id]. */
-var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds"];
+var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision"];
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -571,6 +574,11 @@ export function equipProblems(c){
   var armor = eq.filter(isBodyArmor), shields = eq.filter(isShield);
   if(armor.length > 1) out.push({kind:"armor", text:"You can only wear one suit of armor. Unequip "+armor.slice(1).map(function(i){ return i.name; }).join(", ")+" (only "+armor[0].name+" counts toward AC)."});
   if(shields.length > 1) out.push({kind:"armor", text:"You can only carry one shield. Unequip "+shields.slice(1).map(function(i){ return i.name; }).join(", ")+"."});
+  // Armor without proficiency (2014 rules): disadvantage on STR and DEX
+  // checks, saves and attacks, and no spellcasting.
+  armor.concat(shields).forEach(function(i){
+    if(!isProficientWithArmor(c, i)) out.push({kind:"armor", text:"You aren't proficient with "+(i.name||"this armor")+": while you wear it you have disadvantage on ability checks, saving throws and attack rolls that use STR or DEX, and you can't cast spells."});
+  });
   var hands = handsInUse(c);
   if(hands.used > 2) out.push({kind:"hands", text:"That's "+hands.used+" hands' worth of gear ("+hands.items.map(function(i){ return i.name; }).join(", ")+"). You only have two."});
   return out;
@@ -676,16 +684,62 @@ export function passiveInsight(c){
   var bonus = wisMod + (entry && entry.expertise ? pb*2 : (entry && entry.prof ? pb : 0));
   return 10 + bonus;
 }
+/* Darkvision: the race's (from the race data) and features tagged
+   `darkvision` (Eyes of the Dark 120 ft; Umbral Sight 60 ft, or +30 on top
+   of the race's). {range, sources} with range 0 for none. */
+export function computeDarkvision(c){
+  var race = RACE_DATA[c.race];
+  var range = race && Number(race.darkvision) || 0;
+  var sources = range ? [c.race] : [];
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){
+      var dv = f.darkvision;
+      if(!dv) return;
+      var next = dv.add && range ? range + dv.add : Math.max(range, dv.range || 0);
+      if(next > range){ range = next; sources.push(f.name); }
+    });
+  });
+  return {range: range, sources: sources};
+}
 export function getCharacterSenses(c){
-  var race = (c.race||"").toLowerCase();
-  if(race.indexOf("drow")!==-1) return "Superior Darkvision 120 ft";
-  if(race.indexOf("dwarf")!==-1 || race.indexOf("elf")!==-1 || race.indexOf("gnome")!==-1 ||
-     race.indexOf("half-elf")!==-1 || race.indexOf("half-orc")!==-1 || race.indexOf("tiefling")!==-1 ||
-     race.indexOf("orc")!==-1 || race.indexOf("goblin")!==-1 || race.indexOf("kobold")!==-1 ||
-     race.indexOf("bugbear")!==-1 || race.indexOf("aasimar")!==-1 || race.indexOf("tabaxi")!==-1) {
-    return "Darkvision 60 ft";
-  }
-  return "Normal (60 ft)";
+  var dv = computeDarkvision(c);
+  return dv.range ? "Darkvision " + dv.range + " ft" : "No darkvision";
+}
+
+/* ---------------- Armor proficiency and Stealth ---------------- */
+/* Armor proficiencies, lowercased ("light armor", "shields"): each class's
+   list (multiclass lists after the first), features' grants, feats and
+   the race's armor training. */
+export function armorProficiencies(c){
+  var out = [];
+  function add(v){ v = (v||"").toLowerCase(); if(v && out.indexOf(v)===-1) out.push(v); }
+  (c.classes||[]).forEach(function(cl, idx){
+    var p = classProficiencies(c, idx);
+    (p && p.armor || []).forEach(add);
+  });
+  featProficiencies(c).armor.forEach(function(a){ add(a.name); });
+  var race = RACE_DATA[c.race];
+  (race && race.armorProfs || []).forEach(add);
+  return out;
+}
+export function isProficientWithArmor(c, item){
+  var profs = armorProficiencies(c);
+  if(item.category==="shield") return profs.some(function(p){ return p.indexOf("shield")===0; });
+  return profs.indexOf("all armor")!==-1 || profs.indexOf((item.category||"") + " armor")!==-1;
+}
+/* How Stealth checks roll: disadvantage from worn armor (Scale Mail,
+   Plate...) unless Medium Armor Master covers medium armor; an
+   Infiltrator Armorer's Dampening Field gives advantage instead.
+   {mode: "none"|"dis"|"adv", reason}. */
+export function stealthCheck(c){
+  var armor = (c.inventory||[]).find(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
+  var armorer = (c.classes||[]).find(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer" && (Number(cl.level)||1) >= 3; });
+  if(armor && armorer && armorer.armorModel==="Infiltrator") return {mode: "adv", reason: "Dampening Field (Infiltrator)"};
+  var d = armor && ARMOR_DATA[armor.name];
+  var noisy = armor && (armor.stealthDisadvantage || (d && d.stealthDisadvantage));
+  if(!noisy) return {mode: "none", reason: ""};
+  if(armor.category==="medium" && hasFeat(c, "Medium Armor Master")) return {mode: "none", reason: ""};
+  return {mode: "dis", reason: (armor.name || "Your armor") + " gives disadvantage on Stealth checks"};
 }
 export function getAllCharacterFeatures(c){
   var list = [];

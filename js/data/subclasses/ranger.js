@@ -18,7 +18,7 @@ export var RANGER_SUBCLASSES = [
     3:[
       {name:"Dread Ambusher", text:"Add your WIS modifier to initiative (already added on the sheet). At the start of your first turn of each combat, your walking speed increases by 10 feet until the end of that turn, and if you take the Attack action on that turn you can make one additional weapon attack as part of it, dealing an extra 1d8 damage of the weapon's type on a hit.", initiative:"wis"},
       {name:"Gloom Stalker Magic", text:"You always know Disguise Self; it doesn't count against your ranger spells known.", spells:["Disguise Self"], spellKind:"known"},
-      {name:"Umbral Sight", text:"You gain darkvision out to 60 feet (or +30 feet if you already have it). While in darkness, you are invisible to any creature that relies on darkvision to see you there."}
+      {name:"Umbral Sight", text:"You gain darkvision out to 60 feet (or +30 feet if you already have it). While in darkness, you are invisible to any creature that relies on darkvision to see you there.", darkvision:{range:60, add:30}}
     ],
     5:[{name:"Gloom Stalker Magic", replaces:"Gloom Stalker Magic", text:"You always know Disguise Self and Rope Trick; they don't count against your ranger spells known.", spells:["Disguise Self","Rope Trick"], spellKind:"known"}],
     7:[{name:"Iron Mind", text:"You gain proficiency in Wisdom saving throws, or in Intelligence or Charisma saves (your choice) if you already have Wisdom."}],

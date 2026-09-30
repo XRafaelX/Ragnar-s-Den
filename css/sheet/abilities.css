@@ -108,3 +108,9 @@
 .list-row .abbr{width:28px;color:var(--text-on-parch-dim);font-size:11px;}
 .chk{width:15px;height:15px;accent-color:var(--oxblood);}
 .exp-chk{width:13px;height:13px;accent-color:var(--brass);}
+
+/* Stealth's roll mode from armor: disadvantage, or Dampening Field's advantage */
+.skill-roll-tag{display:inline-block;margin-left:6px;padding:0 5px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;vertical-align:1px;}
+.skill-roll-tag.dis{color:var(--oxblood);border:1px solid var(--oxblood);display:inline-flex;align-items:center;gap:3px;}
+.skill-roll-tag .alert-svg{width:11px;height:11px;}
+.skill-roll-tag.adv{color:var(--moss);border:1px solid var(--moss);}

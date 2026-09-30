@@ -1,8 +1,9 @@
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../../ui/svg-icons.js";
+import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor } from "../../core/helpers.js";
+import { ARMOR_DATA } from "../../data/armor.js";
 import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker, openArmorPicker } from "../armory.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
@@ -425,6 +426,9 @@ function renderArmorCard(c, item, idx){
   var acText = item.category==="shield" ? "+" + item.baseAC + " AC" : "Base AC " + item.baseAC;
   var subtitleParts = [acText, catLabel];
   if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
+  var armorData = ARMOR_DATA[item.name];
+  if(item.stealthDisadvantage || (armorData && armorData.stealthDisadvantage)) subtitleParts.push("Stealth disadvantage");
+  if(!isProficientWithArmor(c, item)) subtitleParts.push("Not proficient");
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");
@@ -494,7 +498,8 @@ export function renderInventoryPanel(c){
     problems.filter(function(p){ return p.kind===kind; }).forEach(function(p){
       var w = document.createElement("p");
       w.className = "inv-equip-warn";
-      w.textContent = "⚠ "+p.text;
+      w.innerHTML = makeAlertSvg() + "<span></span>";
+      w.lastChild.textContent = p.text;
       card.appendChild(w);
     });
   }

@@ -8,6 +8,7 @@
    size:       "Medium", "Small", or "Small or Medium".
    speed:      {walk, fly?, swim?, climb?} in feet.
    darkvision: range in feet (0 = none; 120 = superior darkvision).
+   armorProfs: armor proficiencies the race grants (Dwarven Armor Training).
    languages:  {fixed:[…], choose:n}.
    traits:     [{name, text}] short paraphrases of each trait.
    source:     where it's from. Expanded races use their original
@@ -46,7 +47,7 @@ export var RACE_DATA = {
   "Hill Dwarf": {asi:{con:2,wis:1}, size:"Medium", speed:{walk:25}, darkvision:60,
     languages:{fixed:["Common","Dwarvish"]}, source:"Player's Handbook",
     traits:DWARF_BASE.concat([tr("Dwarven Toughness", "Your hit point maximum increases by 1, and by 1 more every time you gain a level.")])},
-  "Mountain Dwarf": {asi:{str:2,con:2}, size:"Medium", speed:{walk:25}, darkvision:60,
+  "Mountain Dwarf": {asi:{str:2,con:2}, size:"Medium", speed:{walk:25}, darkvision:60, armorProfs:["Light armor","Medium armor"],
     languages:{fixed:["Common","Dwarvish"]}, source:"Player's Handbook",
     traits:DWARF_BASE.concat([tr("Dwarven Armor Training", "Proficiency with light and medium armor.")])},
   "High Elf": {asi:{dex:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:60,
@@ -171,7 +172,7 @@ export var RACE_DATA = {
     traits:[tr("Acid Resistance", "Resistance to acid damage."),
       tr("Amphibious", "You can breathe air and water."),
       tr("Call to the Wave", "You know Shape Water; from level 3 cast Create or Destroy Water as a 2nd-level spell once per long rest, using Constitution.")]},
-  "Gith (Githyanki)": {asi:{str:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:0,
+  "Gith (Githyanki)": {asi:{str:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:0, armorProfs:["Light armor","Medium armor"],
     languages:{fixed:["Common","Gith"], choose:1}, source:"Mordenkainen's Tome of Foes",
     traits:[tr("Decadent Mastery", "Proficiency in one skill or tool of your choice (plus one extra language)."),
       tr("Martial Prodigy", "Proficiency with light and medium armor, shortswords, longswords and greatswords."),
@@ -196,7 +197,7 @@ export var RACE_DATA = {
       tr("Leporine Senses", "Proficiency in the Perception skill."),
       tr("Lucky Footwork", "Reaction when you fail a DEX save: add 1d4 to the roll."),
       tr("Rabbit Hop", "Bonus action: jump 5 × your proficiency bonus in feet without provoking opportunity attacks. Uses equal to your proficiency bonus per long rest.")]},
-  "Hobgoblin": {asi:{con:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:60,
+  "Hobgoblin": {asi:{con:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:60, armorProfs:["Light armor"],
     languages:{fixed:["Common","Goblin"]}, source:"Volo's Guide to Monsters",
     traits:[tr("Martial Training", "Proficiency with two martial weapons of your choice and with light armor."),
       tr("Saving Face", "When you miss an attack or fail a check or save, gain a bonus equal to the number of allies you can see (max +5). Once per short or long rest.")]},
