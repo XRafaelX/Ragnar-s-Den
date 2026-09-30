@@ -127,6 +127,7 @@
 .comp-tile{border:1px solid var(--rule);border-radius:8px;padding:8px 6px;text-align:center;display:flex;flex-direction:column;gap:2px;}
 .comp-tile .lbl,.comp-ability .lbl{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-on-parch-dim);}
 .comp-tile .val{font-family:var(--serif);font-size:18px;}
+.comp-tile .val.long{font-family:inherit;font-size:13px;line-height:1.35;}
 .comp-hp{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0;}
 .comp-hp-label{font-size:12px;color:var(--text-on-parch-dim);}
 .comp-hp-value{font-family:var(--serif);font-size:18px;min-width:70px;}
@@ -137,6 +138,19 @@
 .comp-section{margin-top:10px;}
 .comp-section-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--brass-bright);border-bottom:1px solid var(--rule);padding-bottom:3px;margin-bottom:6px;}
 .comp-entry-box{margin-bottom:8px;}
+.comp-choice{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px;}
+.comp-choice-label{font-size:12.5px;color:var(--text-on-parch-dim);margin-right:2px;}
+.comp-choice.pending .comp-choice-label{color:var(--brass-bright);font-weight:600;}
+.comp-edit{margin-top:10px;}
+/* Beast Master setup form (in the info modal) */
+.beast-form{display:flex;flex-direction:column;gap:10px;}
+.beast-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;}
+.beast-abilities{grid-template-columns:repeat(6,minmax(0,1fr));}
+.beast-field{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--text-on-parch-dim);}
+.beast-field.wide{grid-column:1 / -1;}
+.beast-field input,.beast-field textarea{background:rgba(0,0,0,.18);border:1px solid var(--rule);border-radius:6px;color:var(--text-on-parch);padding:6px 8px;font:inherit;font-size:13px;min-width:0;}
+.beast-field textarea{min-height:64px;resize:vertical;}
 @media (max-width:560px){
   .comp-abilities{grid-template-columns:repeat(3,1fr);}
+  .beast-abilities{grid-template-columns:repeat(3,minmax(0,1fr));}
 }

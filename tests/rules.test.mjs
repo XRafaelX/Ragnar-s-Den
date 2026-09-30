@@ -8,6 +8,7 @@ import { CLASS_PROFICIENCIES } from "../js/data/classes.js";
 import * as FP from "../js/core/feat-picks.js";
 import * as ART from "../js/core/artificer.js";
 import * as COMP from "../js/core/companions.js";
+import { BEAST_PRESETS } from "../js/data/companions.js";
 
 const AB = { str: 10, dex: 14, con: 14, int: 10, wis: 10, cha: 10 };
 function char(classes, extra = {}){
@@ -419,4 +420,73 @@ test("companions: Steel Defender and Eldritch Cannon", () => {
   assert.equal(can(15).count, 2);
   const two = withSub("Artillerist", 15);
   assert.equal(COMP.characterCompanions(two)[0].hp.length, 2);
+});
+
+test("companions: drake, wildfire spirit, Beast Master's beast", () => {
+  const comp = (cls, sub, level, abilities = {}) => {
+    const c = char([{ name: cls, subclass: sub, level }], { abilities: { wis: 16, ...abilities } });
+    return { c, list: () => COMP.characterCompanions(c) };
+  };
+  // Drake: grows at 7 and 15; its essence names the damage.
+  const d = comp("Ranger", "Drakewarden", 7);
+  let drake = d.list()[0].stats;
+  assert.deepEqual([drake.type, drake.ac, drake.hp], ["Medium dragon", 14 + 3, 5 + 35]);
+  assert.equal(drake.attacks[0].extraDice, "1d6");
+  assert.match(drake.immunities, /^essence/);                          // not picked yet
+  COMP.setCompanionChoice(d.c, "drake", "Cold");
+  drake = d.list()[0].stats;
+  assert.equal(drake.attacks[0].extraType, "cold");
+  assert.equal(drake.immunities, "cold damage");
+  assert.equal(drake.actions.length, 0);                                // breath from 11
+  const big = comp("Ranger", "Drakewarden", 15).list()[0].stats;
+  assert.deepEqual([big.type, big.attacks[0].extraDice, big.actions[0].dice, big.actions[0].save], ["Large dragon", "2d6", "10d6", "DEX 16"]);
+
+  // Wildfire spirit: HP 5 + 5 x druid level; Flame Seed uses the druid's spell attack.
+  const w = comp("Druid", "Circle of Wildfire", 6).list()[0].stats;
+  assert.deepEqual([w.ac, w.hp, w.attacks[0].toHit, w.attacks[0].bonus], [13, 35, 3 + 3, 3]);
+  assert.equal(comp("Druid", "Circle of Wildfire", 1).list().length, 0);
+
+  // Beast Master: nothing until a beast is entered, then the ranger's bonuses.
+  const b = comp("Ranger", "Beast Master", 5);
+  assert.equal(b.list()[0].stats, null);
+  COMP.setCompanionBeast(b.c, "beast_companion", JSON.parse(JSON.stringify(BEAST_PRESETS.Wolf)));
+  const wolf = b.list()[0].stats;
+  assert.deepEqual([wolf.ac, wolf.hp, wolf.attacks[0].toHit, wolf.attacks[0].bonus], [13 + 3, 20, 4 + 3, 2 + 3]);   // HP: max(11, 4 x 5)
+  assert.equal(wolf.skills, "Perception +6, Stealth +7");
+  assert.equal(b.list()[0].hp[0], 20);
+  // A beast with more HP than 4 x level keeps its own.
+  const tough = comp("Ranger", "Beast Master", 3);
+  COMP.setCompanionBeast(tough.c, "beast_companion", { ...JSON.parse(JSON.stringify(BEAST_PRESETS.Panther)), hp: 13 });
+  assert.equal(tough.list()[0].stats.hp, 13);
+});
+
+test("companions: Tasha's primal beasts and the Blighted Sapling", () => {
+  const ranger = (level) => char([{ name: "Ranger", subclass: "Beast Master", level }], { abilities: { wis: 16 } });
+  const r = ranger(5);
+  assert.equal(COMP.characterCompanions(r)[0].stats, null);                     // nothing chosen yet
+  COMP.setCompanionChoice(r, "beast_companion", "Beast of the Land");
+  let land = COMP.characterCompanions(r)[0].stats;
+  assert.deepEqual([land.ac, land.hp, land.attacks[0].toHit, land.attacks[0].dice, land.attacks[0].bonus], [13 + 3, 5 + 25, 3 + 3, "1d8", 2 + 3]);
+  COMP.setCompanionChoice(r, "beast_companion", "Beast of the Sky");
+  const sky = COMP.characterCompanions(r)[0].stats;
+  assert.deepEqual([sky.type, sky.hp, sky.speed, sky.attacks[0].bonus], ["Small beast (primal)", 4 + 20, "10 ft, fly 60 ft", 3 + 3]);
+  assert.equal(COMP.characterCompanions(r)[0].hp[0], 24);                        // new kind, full HP
+  COMP.setCompanionChoice(r, "beast_companion", "Your own beast");
+  assert.equal(COMP.characterCompanions(r)[0].stats, null);                     // until the beast is entered
+  const r11 = ranger(11);
+  COMP.setCompanionChoice(r11, "beast_companion", "Beast of the Land");
+  assert.match(COMP.characterCompanions(r11)[0].stats.traits.find((t) => t.name === "Commands").text, /two attacks/);
+  COMP.setCompanionChoice(r, "beast_companion", "Beast of the Sea");
+  assert.match(COMP.characterCompanions(r)[0].stats.attacks[0].text, /grappled/);
+
+  const druid = (level) => COMP.characterCompanions(char([{ name: "Druid", subclass: "Circle of the Blighted", level }], { abilities: { wis: 16 } }));
+  assert.equal(druid(5).length, 0);                                             // from druid 6
+  const s6 = druid(6)[0].stats;
+  assert.deepEqual([s6.ac, s6.hp, s6.attacks[0].toHit, s6.attacks[0].bonus, s6.vulnerabilities, s6.resistances], [13, 12, 6, 3, "fire", "necrotic, poison"]);
+  assert.equal(s6.actions.length, 0);
+  const s10 = druid(10)[0].stats;
+  assert.equal(s10.resistances, "");
+  assert.match(s10.immunities, /necrotic and poison damage/);
+  assert.deepEqual([s10.actions[0].dice, s10.actions[0].save], ["4d6", "CON 15"]);
+  assert.match(druid(14)[0].stats.attacks[0].text, /two Claws attacks/);
 });
