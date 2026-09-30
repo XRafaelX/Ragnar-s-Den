@@ -85,6 +85,15 @@ export function renderAll(){
   var mainEl = document.getElementById("main");
   var sameView = lastTabsCharId===c.id && lastTabsActive===state.activeTab;
   var prevMainScroll = mainEl && sameView ? mainEl.scrollTop : null;
+  // Switching tabs on the same character: pin the tab bar to where it sat
+  // on screen, so the new section opens right under it instead of the page
+  // jumping back up to the portrait. If the bar was scrolled out of view,
+  // bring it back to the top edge.
+  var prevTabsTop = null;
+  if(mainEl && oldTabsBar && !sameView && lastTabsCharId===c.id){
+    var mainTop = mainEl.getBoundingClientRect().top;
+    prevTabsTop = Math.max(0, oldTabsBar.getBoundingClientRect().top - mainTop);
+  }
   empty.style.display = "none";
   sheet.style.display = "block";
   sheet.innerHTML = "";
@@ -130,6 +139,10 @@ export function renderAll(){
     sheet.appendChild(panel);
   });
   if(prevMainScroll!=null) mainEl.scrollTop = prevMainScroll;
+  else if(prevTabsTop!=null){
+    var tabsTop = tabsBar.getBoundingClientRect().top - mainEl.getBoundingClientRect().top;
+    mainEl.scrollTop += tabsTop - prevTabsTop;
+  }
 
   renderRollLog();
 }
