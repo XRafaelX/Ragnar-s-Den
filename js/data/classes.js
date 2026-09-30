@@ -426,8 +426,8 @@ CLASSES_INFO["Monk"].features = [
   {name:"Martial Arts", text:"Use DEX for unarmed strikes and monk weapons (1d4 damage). Bonus action unarmed strike after Attack action."}
 ];
 
-var ARTISAN_TOOLS = ["Alchemist's supplies","Brewer's supplies","Calligrapher's supplies","Carpenter's tools","Cartographer's tools","Cobbler's tools","Cook's utensils","Glassblower's tools","Jeweler's tools","Leatherworker's tools","Mason's tools","Painter's supplies","Potter's tools","Smith's tools","Tinker's tools","Weaver's tools","Woodcarver's tools"];
-var MUSICAL_INSTRUMENTS = ["Bagpipes","Drum","Dulcimer","Flute","Horn","Lute","Lyre","Pan flute","Shawm","Viol"];
+export var ARTISAN_TOOLS = ["Alchemist's supplies","Brewer's supplies","Calligrapher's supplies","Carpenter's tools","Cartographer's tools","Cobbler's tools","Cook's utensils","Glassblower's tools","Jeweler's tools","Leatherworker's tools","Mason's tools","Painter's supplies","Potter's tools","Smith's tools","Tinker's tools","Weaver's tools","Woodcarver's tools"];
+export var MUSICAL_INSTRUMENTS = ["Bagpipes","Drum","Dulcimer","Flute","Horn","Lute","Lyre","Pan flute","Shawm","Viol"];
 
 /* Monk: no armor, so Unarmored Defense (10 + DEX + WIS) is the AC. Monk
    weapons (shortswords, simple melee) can use DEX thanks to Martial Arts,

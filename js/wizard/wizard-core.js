@@ -3,8 +3,9 @@ import { CLASSES_INFO, FIGHTING_STYLES, CLASS_PROFICIENCIES } from "../data/clas
 import { FEATS_CATALOG } from "../data/feats.js";
 import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
-import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset } from "../core/helpers.js";
+import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp } from "../core/helpers.js";
 import { newCharacter } from "../core/character.js";
+import { featPicksProblem, applyFeatPicks } from "../core/feat-picks.js";
 import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { closeSidebarMobile } from "../ui/mobile-nav.js";
@@ -48,9 +49,12 @@ export function raceChoiceDef(){ return wizardState && RACE_CHOICES[wizardState.
 
 /* The scores the character will actually have: the base scores from the
    Ability Scores step plus any racial increases picked on Race Traits
-   (capped at 20). Everything downstream (HP, AC, spell counts, feat
-   prerequisites, the finished sheet) reads these. */
-export function finalAbilities(){
+   (capped at 20), plus the Race Traits feat's +1. Everything downstream
+   (HP, AC, spell counts, the review) reads these. withoutFeat leaves the
+   feat's +1 out: for feat prerequisites, and for the finished sheet,
+   where applyFeatPicks adds it and records it so removing the feat
+   takes it back. */
+export function finalAbilities(opts){
   var out = {};
   Object.keys(wizardState.abilities).forEach(function(k){ out[k] = wizardState.abilities[k]; });
   var def = raceChoiceDef();
@@ -60,6 +64,19 @@ export function finalAbilities(){
       if(k && picks.indexOf(k)===i) out[k] = Math.min(20, (Number(out[k])||10) + def.abilityBonus.amount);
     });
   }
+  var fp = def && def.feat && !(opts && opts.withoutFeat) && wizardState.raceChoices.featPicks;
+  if(fp && fp.ability) out[fp.ability] = Math.min(20, (Number(out[fp.ability])||10) + 1);
+  return out;
+}
+/* The new character's skills so far (class picks, background, the Race
+   Traits skill), in the sheet's skillProfs shape, for feat picks. */
+export function wizardSkillProfs(){
+  var out = {};
+  var def = raceChoiceDef();
+  var raceSkills = def && def.skills ? wizardState.raceChoices.skills.slice(0, def.skills) : [];
+  wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[], raceSkills).forEach(function(sk){
+    if(sk) out[sk] = {prof:true, expertise:false};
+  });
   return out;
 }
 
@@ -69,7 +86,7 @@ var ABILITY_WORDS = {Strength:"str", Dexterity:"dex", Constitution:"con", Intell
 export function featPrereqReason(feat){
   var req = feat.prerequisite || "None";
   if(req==="None") return "";
-  var ab = finalAbilities(), info = currentClassInfo() || {};
+  var ab = finalAbilities({withoutFeat:true}), info = currentClassInfo() || {};
   var m = /^(.+?) 13 or higher$/.exec(req);
   if(m){
     var keys = m[1].split(" or ").map(function(w){ return ABILITY_WORDS[w.trim()]; });
@@ -188,6 +205,8 @@ export function validateStep(id){
       if(!feat) return "Pick a feat.";
       var why = featPrereqReason(feat);
       if(why) return feat.name+" "+why+". Pick another feat or change your scores.";
+      var picksWhy = featPicksProblem(feat, rc.featPicks, {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs()});
+      if(picksWhy) return picksWhy;
     }
     return null;
   }
@@ -257,7 +276,7 @@ export function openWizard(){
     rolledPool:null,
     skillChoices:[],
     classChoices:{},
-    raceChoices:{abilities:[], skills:[], feat:""},
+    raceChoices:{abilities:[], skills:[], feat:"", featPicks:null},
     languageChoices:[],
     equipment:{},
     spellChoices:{cantrips:[], spells:[]}
@@ -287,7 +306,7 @@ export function finishWizard(){
   c.background = w.background;
   c.alignment = w.alignment;
   c.classes = [{name:w.classId, subclass:"", level:1}];
-  var fa = finalAbilities();
+  var fa = finalAbilities({withoutFeat:true}); // applyRaceChoices adds the feat's +1
   c.abilities = {str:fa.str, dex:fa.dex, con:fa.con, int:fa.int, wis:fa.wis, cha:fa.cha};
   info.savingThrows.forEach(function(k){ c.saveProfs[k] = true; });
   w.skillChoices.forEach(function(sk){ c.skillProfs[sk] = {prof:true, expertise:false}; });
@@ -304,7 +323,7 @@ export function finishWizard(){
   applyRaceChoices(c);
   var conMod = mod(c.abilities.con);
   c.hp.max = HIT_DICE_BY_CLASS[w.classId] + conMod + (subclassGrants(info, w.classChoices).hpPerLevel||0);
-  c.hp.current = c.hp.max;
+  c.hp.current = maxHp(c); // a Variant Human's Tough counts too
   // AC is derived on the sheet from equipped armor (see computeArmorClass);
   // no armor is equipped yet, so it starts from unarmored / class defense.
   c.inventory = buildEquipmentList(info, w.equipment);
@@ -350,8 +369,9 @@ export function finishWizard(){
   playAdd();
 }
 
-/* Race Traits picks (Variant Human): the skill and the feat. The ability
-   increases are already in c.abilities via finalAbilities(). */
+/* Race Traits picks (Variant Human): the skill, the feat and its picks.
+   The race's ability increases are already in c.abilities via
+   finalAbilities(); the feat's +1 is added here. */
 function applyRaceChoices(c){
   var def = raceChoiceDef();
   if(!def) return;
@@ -364,8 +384,12 @@ function applyRaceChoices(c){
   });
   if(def.feat){
     var f = FEATS_CATALOG.find(function(x){ return x.name===rc.feat; });
-    if(f) c.feats.push({id:uid(), name:f.name, prerequisite:f.prerequisite, category:f.category, summary:f.summary, description:f.description,
-      source:f.custom ? "Custom" : "SRD", homebrewId:f.custom ? f.id : undefined});
+    if(f){
+      var feat = {id:uid(), name:f.name, prerequisite:f.prerequisite, category:f.category, summary:f.summary, description:f.description,
+        source:f.custom ? "Custom" : "SRD", homebrewId:f.custom ? f.id : undefined};
+      c.feats.push(feat);
+      if(rc.featPicks) applyFeatPicks(c, feat, rc.featPicks);
+    }
   }
 }
 

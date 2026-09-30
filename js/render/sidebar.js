@@ -1,5 +1,5 @@
 import { state, getActive } from "../core/state.js";
-import { clamp, escapeHtml } from "../core/helpers.js";
+import { clamp, escapeHtml, maxHp } from "../core/helpers.js";
 import { closeSidebarMobile } from "../ui/mobile-nav.js";
 import { buildAvatar } from "../ui/avatar.js";
 import { renderAll } from "./sheet.js";
@@ -11,7 +11,8 @@ export function renderSidebar(){
   state.characters.forEach(function(c){
     var li = document.createElement("li");
     li.className = c.id===state.activeId ? "active" : "";
-    var pct = c.hp.max>0 ? clamp(Math.round((c.hp.current/c.hp.max)*100),0,100) : 0;
+    var hpMax = maxHp(c);
+    var pct = hpMax>0 ? clamp(Math.round((c.hp.current/hpMax)*100),0,100) : 0;
     var clsText = (c.classes||[]).map(function(cl){return (cl.name||"?")+" "+(cl.level||1);}).join(" / ");
     var row = document.createElement("div");
     row.className = "char-row";

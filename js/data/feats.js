@@ -1,4 +1,11 @@
 /* ---------------- Feats Catalog (Standard 5e SRD) ---------------- */
+/* What taking a feat changes on the sheet (see js/core/feat-picks.js):
+     ability        abilities its +1 can go to (one entry: no choice)
+     saveProf       also proficiency in saves of that ability (Resilient)
+     skills         skill proficiencies to pick (Skill Expert)
+     skillsOrTools  skills or tools to pick (Skilled)
+     expertise      expertise picks, in skills the character is proficient in
+     armor          armor proficiencies it grants */
 export var FEATS_CATALOG = [
   {
     name: "Alert",
@@ -9,6 +16,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Athlete",
+    ability:["str","dex"],
     prerequisite: "None",
     category: "Physical",
     summary: "+1 STR/DEX, stand up with 5ft movement, climbing uses no extra movement, running jumps need only 5ft.",
@@ -16,6 +24,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Actor",
+    ability:["cha"],
     prerequisite: "None",
     category: "Social",
     summary: "+1 CHA, advantage on Deception/Performance when impersonating, mimic speech and sounds.",
@@ -58,6 +67,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Durable",
+    ability:["con"],
     prerequisite: "None",
     category: "Defense",
     summary: "+1 CON, minimum HP regained from rolling a Hit Die is 2x your CON modifier (minimum 2).",
@@ -93,6 +103,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Heavily Armored",
+    ability:["str"], armor:["Heavy armor"],
     prerequisite: "Proficiency with medium armor",
     category: "Defense",
     summary: "+1 STR, gain proficiency with heavy armor.",
@@ -100,6 +111,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Heavy Armor Master",
+    ability:["str"],
     prerequisite: "Proficiency with heavy armor",
     category: "Defense",
     summary: "+1 STR, reduce nonmagical bludgeoning, piercing, and slashing damage by 3 while wearing heavy armor.",
@@ -114,6 +126,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Keen Mind",
+    ability:["int"],
     prerequisite: "None",
     category: "Utility",
     summary: "+1 INT, always know north and time until sunrise/sunset, perfectly recall past month.",
@@ -121,6 +134,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Lightly Armored",
+    ability:["str","dex"], armor:["Light armor"],
     prerequisite: "None",
     category: "Defense",
     summary: "+1 STR or DEX, gain proficiency with light armor.",
@@ -170,6 +184,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Moderately Armored",
+    ability:["str","dex"], armor:["Medium armor","Shields"],
     prerequisite: "Proficiency with light armor",
     category: "Defense",
     summary: "+1 STR or DEX, gain proficiency with medium armor and shields.",
@@ -184,6 +199,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Observant",
+    ability:["int","wis"],
     prerequisite: "None",
     category: "Utility",
     summary: "+1 INT or WIS, read lips, +5 bonus to passive Perception and passive Investigation.",
@@ -198,6 +214,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Resilient",
+    ability:["str","dex","con","int","wis","cha"], saveProf:true,
     prerequisite: "None",
     category: "Defense",
     summary: "+1 to any ability score, gain saving throw proficiency in that chosen ability.",
@@ -240,6 +257,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Skill Expert",
+    ability:["str","dex","con","int","wis","cha"], skills:1, expertise:1,
     prerequisite: "None",
     category: "Utility",
     summary: "+1 to any ability score, gain proficiency in one skill, and gain expertise in one proficient skill.",
@@ -247,6 +265,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Skilled",
+    skillsOrTools:3,
     prerequisite: "None",
     category: "Utility",
     summary: "Gain proficiency in any combination of three skills or tools of your choice.",
@@ -268,6 +287,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Tavern Brawler",
+    ability:["str","con"],
     prerequisite: "None",
     category: "Combat",
     summary: "+1 STR or CON, proficient with improvised weapons, 1d4 unarmed strikes, bonus action grapple on unarmed/improvised hit.",
@@ -289,6 +309,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Weapon Master",
+    ability:["str","dex"],
     prerequisite: "None",
     category: "Combat",
     summary: "+1 STR or DEX, gain proficiency with four weapons of your choice.",

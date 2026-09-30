@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, characterResources, restoreResources } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, characterResources, restoreResources, maxHp, toughBonus, computeSpeed, hitDieHealing } from "../../core/helpers.js";
 import { CLASSES_INFO } from "../../data/classes.js";
 import { HIT_DICE_BY_CLASS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -11,6 +11,9 @@ import { confirmDialog } from "../../ui/confirm-modal.js";
 /* ---- Vitals panel ---- */
 export function renderVitalsPanel(c){
   var panel = document.createElement("div");
+  // Max HP with Tough's bonus; c.hp.max is the part the stepper edits.
+  var hpMax = maxHp(c);
+  var tough = toughBonus(c);
 
   var card = makeCard("Hit points & defense");
   var grid = document.createElement("div");
@@ -34,7 +37,8 @@ export function renderVitalsPanel(c){
 
   var maxSpan = document.createElement("span");
   maxSpan.className = "hp-max-num";
-  maxSpan.textContent = c.hp.max;
+  maxSpan.textContent = hpMax;
+  if(tough) maxSpan.title = "Includes Tough (+" + tough + ")";
 
   heroDisplay.appendChild(curSpan);
   heroDisplay.appendChild(slashSpan);
@@ -62,7 +66,7 @@ export function renderVitalsPanel(c){
 
   function applyQuickHeal(n){
     if(n <= 0) return;
-    c.hp.current = clamp((Number(c.hp.current)||0) + n, 0, c.hp.max);
+    c.hp.current = clamp((Number(c.hp.current)||0) + n, 0, hpMax);
     save(); renderSidebar(); renderAll();
   }
 
@@ -121,7 +125,7 @@ export function renderVitalsPanel(c){
   fullBtn.title = "Restore to full HP";
   fullBtn.addEventListener("click", function(e){
     e.stopPropagation();
-    c.hp.current = c.hp.max;
+    c.hp.current = hpMax;
     save(); renderSidebar(); renderAll();
   });
   hpControlsRow.appendChild(fullBtn);
@@ -155,14 +159,15 @@ export function renderVitalsPanel(c){
     var curMax = Number(c.hp.max) || 1;
     if(curMax > 1){
       c.hp.max = curMax - 1;
-      if(c.hp.current > c.hp.max) c.hp.current = c.hp.max;
+      if(c.hp.current > hpMax - 1) c.hp.current = hpMax - 1;
       save(); renderSidebar(); renderAll();
     }
   });
 
   var maxValSpan = document.createElement("span");
   maxValSpan.className = "stat-score-val";
-  maxValSpan.textContent = c.hp.max;
+  maxValSpan.textContent = hpMax;
+  if(tough) maxValSpan.title = "Includes Tough (+" + tough + ")";
 
   var maxUp = document.createElement("button");
   maxUp.type = "button";
@@ -260,7 +265,7 @@ export function renderVitalsPanel(c){
 
   // Same four-row shape as AC / Initiative (label, hero value, hint, controls)
   // so the three boxes line up on the shared subgrid.
-  function smallVital(label, key, isNested, hint, step, suffix){
+  function smallVital(label, key, isNested, hint, step, suffix, bonus){
     step = step || 1;
     suffix = suffix || "";
     var box = document.createElement("div");
@@ -272,7 +277,7 @@ export function renderVitalsPanel(c){
 
     var valDiv = document.createElement("div");
     valDiv.className = "init-hero-val vital-plain-val";
-    valDiv.textContent = val + suffix;
+    valDiv.textContent = (val + (bonus||0)) + suffix;
     box.appendChild(valDiv);
 
     var hintEl = document.createElement("div");
@@ -466,7 +471,8 @@ export function renderVitalsPanel(c){
   });
   grid.appendChild(initBox);
 
-  grid.appendChild(smallVital("Speed","speed",null,"per turn",5," ft"));
+  var speed = computeSpeed(c);
+  grid.appendChild(smallVital("Speed","speed",null,speed.bonus ? "per turn, incl. Mobile +"+speed.bonus : "per turn",5," ft",speed.bonus));
 
   card.appendChild(grid);
   panel.appendChild(card);
@@ -494,10 +500,10 @@ export function renderVitalsPanel(c){
     var die = primaryHitDie(c);
     var conMod = mod(c.abilities.con);
     var roll = Math.floor(Math.random()*die)+1;
-    var healed = Math.max(1, roll+conMod);
+    var healed = hitDieHealing(c, roll);
     c.hitDiceUsed = hdUsed+1;
-    c.hp.current = clamp(c.hp.current+healed, 0, c.hp.max);
-    logRoll("Hit die (d"+die+"+"+conMod+")", roll+" "+fmtMod(conMod)+" = "+healed+" HP healed");
+    c.hp.current = clamp(c.hp.current+healed, 0, hpMax);
+    logRoll("Hit die (d"+die+"+"+conMod+")", roll+" "+fmtMod(conMod)+" = "+healed+" HP healed"+(healed > Math.max(1, roll+conMod) ? " (Durable minimum)" : ""));
     save(); renderAll();
   });
   restRow.appendChild(spendBtn);
@@ -522,7 +528,7 @@ export function renderVitalsPanel(c){
       "Take a long rest?",
       "This resets HP to full, clears temp HP and death saves, restores spell slots, rage and class resources, and recovers hit dice.",
       function(){
-        c.hp.current = c.hp.max;
+        c.hp.current = hpMax;
         c.hp.temp = 0;
         c.deathSaves = {success:0, fail:0};
         var recovered = Math.max(1, Math.floor(hd/2));
@@ -593,13 +599,13 @@ export function renderVitalsPanel(c){
   return panel;
 }
 
-/* ---- Class resources ----
-   One row per limited-use feature: pips for small counts, a number for
+/* ---- Resources ----
+   One row per limited-use class feature or feat: pips for small counts, a number for
    point pools (Ki, Lay on Hands), with use/regain buttons. */
 var RESOURCE_PIP_LIMIT = 10;
 
 function renderResourcesCard(c, resources){
-  var card = makeCard("Class resources");
+  var card = makeCard(resources.some(function(r){ return r.key.indexOf("feat:")===0; }) ? "Class & feat resources" : "Class resources");
   var list = document.createElement("div");
   list.className = "res-list";
   resources.forEach(function(r){

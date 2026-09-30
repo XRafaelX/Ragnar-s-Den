@@ -5,6 +5,7 @@ import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
 import { classFeatureList, classProficiencies } from "../../core/helpers.js";
+import { featProficiencies } from "../../core/feat-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -175,6 +176,14 @@ export function renderInformationPanel(c){
       var label = ABILITY_NAME[v] || v;
       if(saves.indexOf(label)===-1) saves.push(label);
     });
+  });
+  // Plus what feats grant (Moderately Armored, Skilled, Resilient).
+  var fromFeats = featProficiencies(c);
+  fromFeats.armor.forEach(function(p){ if(armor.indexOf(p.name)===-1) armor.push(p.name); });
+  fromFeats.tools.forEach(function(p){ if(tools.indexOf(p.name)===-1) tools.push(p.name); });
+  fromFeats.saves.forEach(function(p){
+    var label = ABILITY_NAME[p.ability] || p.ability;
+    if(saves.indexOf(label)===-1) saves.push(label);
   });
   profCard.appendChild(chipRow("Armor", armor));
   profCard.appendChild(chipRow("Weapons", weapons));

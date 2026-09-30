@@ -21,6 +21,8 @@ import { FEATURE_SOURCES, FEAT_CATEGORIES, getCustom, getCustomEntry, saveCustom
 import { classFeatureList, escapeHtml, uid } from "../core/helpers.js";
 import { facts, textField, homebrewShell, numberField, pickerField, previewCard } from "../ui/homebrew-form.js";
 import { save } from "../core/state.js";
+import { featHasPicks, featNeedsChoice, emptyPicks, applyFeatPicks } from "../core/feat-picks.js";
+import { openFeatPicksModal } from "../ui/feat-picks.js";
 
 /* ---------------- Compendium ----------------
    A read-only reference (home screen) for classes, subclasses, races,
@@ -1007,9 +1009,17 @@ function showFeat(feat){
       if(entry) addCustomToCharacter("feat", giveTarget, entry);
       else {
         if(!giveTarget.feats) giveTarget.feats = [];
-        giveTarget.feats.push({id:uid(), name:feat.name, prerequisite:feat.prerequisite||"None", category:feat.category||"General",
-          summary:feat.summary||"", description:feat.description||"", source:"SRD"});
+        var copy = {id:uid(), name:feat.name, prerequisite:feat.prerequisite||"None", category:feat.category||"General",
+          summary:feat.summary||"", description:feat.description||"", source:"SRD"};
+        giveTarget.feats.push(copy);
         save();
+        // Its +1 or skills: asked for now (applied at once when there's
+        // nothing to choose); skipping leaves a prompt on the sheet.
+        if(featHasPicks(feat)){
+          var target = giveTarget;
+          if(featNeedsChoice(feat)) openFeatPicksModal(target, copy, function(){ save(); afterCustomChange(); });
+          else { applyFeatPicks(target, copy, emptyPicks(feat)); save(); }
+        }
       }
       gave(feat.name);
     });

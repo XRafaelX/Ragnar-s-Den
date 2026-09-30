@@ -173,6 +173,19 @@
 .rt-ab.on .rt-ab-lbl, .rt-ab.on .rt-ab-mod{color:var(--brass-bright);font-weight:700;}
 .rt-ab.off{opacity:.4;cursor:not-allowed;}
 
+/* Feat picks (js/ui/feat-picks.js): the +1 ability, skills and expertise
+   a feat asks for, in the level-up dialog, the wizard and the picks modal. */
+.fp-box{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.fp-box:empty{display:none;}
+.fp-label{font-size:12.5px;color:var(--text-on-parch-dim);margin-top:4px;}
+.fp-ab-grid{justify-content:start;}
+.fp-ab-grid .rt-ab:disabled{cursor:default;opacity:1;}
+.fp-field{margin:0;}
+.fp-lead{font-size:13px;line-height:1.5;margin:0 0 4px;}
+.fp-problem{font-size:12.5px;color:var(--text-on-parch-dim);margin:10px 0 0;min-height:1em;}
+.fp-modal-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;}
+.ff-picks-pending{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:8px;font-size:12.5px;color:var(--brass-bright);}
+
 /* The chosen feat: summary up front, full rules text expandable. */
 .rt-feat{
   margin-top:10px;padding:12px 14px;border-radius:8px;

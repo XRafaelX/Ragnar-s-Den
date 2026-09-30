@@ -5,7 +5,8 @@ import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL, XP_THRESHOLDS, SPELL_TIPS, TH
 import {
   mod, fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus,
   classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots,
-  wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFightingStyle
+  wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFightingStyle,
+  hasFeat, maxHp, computeSpeed
 } from "../core/helpers.js";
 import { save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
@@ -16,6 +17,8 @@ import { playAdd, playDelete } from "../ui/sound.js";
 import { showActionToast } from "../ui/toast.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makePlusSvg } from "../ui/svg-icons.js";
 import { openCompendium } from "../render/compendium.js";
+import { featDef, featNeedsChoice, emptyPicks, featPicksProblem, featPicksSummary, applyFeatPicks, revertFeatPicks } from "../core/feat-picks.js";
+import { renderFeatPicks } from "../ui/feat-picks.js";
 
 /* ---------------- Level-up flow ----------------
    A short guided flow in the same full-screen overlay as the creation
@@ -96,7 +99,7 @@ function validate(id){
     return lu.style || !availableStyles().length ? null : "Pick a fighting style.";
   }
   if(id==="asi"){
-    if(lu.asiMode==="feat") return lu.featName ? null : "Pick a feat, or switch to raising ability scores.";
+    if(lu.asiMode==="feat") return lu.featName ? featPicksProblem(featDef(lu.featName), lu.featPicks, featCtx()) || null : "Pick a feat, or switch to raising ability scores.";
     return asiPointsUsed()===2 ? null : "Spend both ability points (you have "+(2-asiPointsUsed())+" left).";
   }
   if(id==="hp"){
@@ -120,7 +123,7 @@ export function openLevelUp(c){
     c: c, step:"class",
     className: c.classes.length===1 ? c.classes[0].name : null,
     subclass:"", style:"",
-    asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"",
+    asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featPicks:null,
     hpMethod:"avg", hpRoll:null
   };
   wizardScrollReset();
@@ -229,7 +232,7 @@ function resetChoicesFor(name){
   lu.className = name;
   lu.subclass = "";
   lu.style = "";
-  lu.asi = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; lu.featName = ""; lu.asiMode = "asi";
+  lu.asi = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; lu.featName = ""; lu.featPicks = null; lu.asiMode = "asi";
   lu.hpRoll = null; lu.hpMethod = "avg";
 }
 
@@ -386,6 +389,14 @@ function stepAsi(container){
   card.appendChild(search);
   var list = ce("div","wiz-spell-list");
   card.appendChild(list);
+  // The chosen feat's picks (a half-feat's +1, Skilled's skills) sit
+  // under the list and redraw on their own, so the list keeps its scroll.
+  var picksBox = ce("div");
+  card.appendChild(picksBox);
+  function drawPicks(){
+    picksBox.innerHTML = "";
+    if(lu.featName) picksBox.appendChild(renderFeatPicks(featDef(lu.featName), lu.featPicks, featCtx(), drawPicks));
+  }
   function fill(){
     list.innerHTML = "";
     var q = lu.featQuery.toLowerCase().trim();
@@ -397,16 +408,27 @@ function stepAsi(container){
       r.innerHTML = "<div class='wiz-spell-text'><b>"+escapeHtml(f.name)+"</b>"+
         (f.prerequisite && f.prerequisite!=="None" ? "<span class='wiz-spell-meta'>Requires: "+escapeHtml(f.prerequisite)+"</span>" : "")+
         "<span class='wiz-spell-desc'>"+escapeHtml(f.summary||"")+"</span></div>";
-      r.addEventListener("click", function(){ lu.featName = f.name; fill(); });
+      r.addEventListener("click", function(){
+        if(lu.featName!==f.name){ lu.featName = f.name; lu.featPicks = emptyPicks(f); }
+        fill(); drawPicks();
+        if(featNeedsChoice(f)) picksBox.scrollIntoView({block:"nearest", behavior:"smooth"});
+      });
       list.appendChild(r);
     });
   }
   search.addEventListener("input", function(){ lu.featQuery = search.value; fill(); });
   fill();
+  drawPicks();
+}
+function featCtx(){ return {abilities: lu.c.abilities, skillProfs: lu.c.skillProfs}; }
+/* The +1 the chosen feat gives (Durable: CON), or null. */
+function featAbilityPick(){
+  return target().asi && lu.asiMode==="feat" && lu.featPicks && lu.featPicks.ability || null;
 }
 
 function conModAfterAsi(){
   var con = (Number(lu.c.abilities.con)||10) + (lu.asiMode==="asi" && target().asi ? lu.asi.con : 0);
+  if(featAbilityPick()==="con") con = Math.min(20, con + 1);
   var fb = featureAbilityBonus().con;
   if(fb) con = Math.min(fb.max, con + fb.bonus);
   return mod(con);
@@ -510,6 +532,14 @@ function hpGain(){
   var draconic = lu.className==="Sorcerer" && sub==="Draconic Bloodline" ? 1 : 0;
   return Math.max(1, base + newCon) + (newCon - oldCon) * totalLevel(lu.c) + draconic;
 }
+/* Tough's share of this level's HP: 2 for the new level, or 2 per
+   character level when Tough is the feat taken now. The sheet works it
+   out from the feat (maxHp), so this is only for showing it. */
+function toughGain(){
+  var t = target();
+  if(hasFeat(lu.c, "Tough")) return 2;
+  return t.asi && lu.asiMode==="feat" && lu.featName==="Tough" ? 2 * (totalLevel(lu.c)+1) : 0;
+}
 
 function stepReview(container){
   var c = lu.c;
@@ -521,10 +551,13 @@ function stepReview(container){
   if(t.needsSubclass) items.push(target().prog.subclassLabel+": "+chosenSubclass());
   if(t.fightingStyle && lu.style) items.push("Fighting style: "+lu.style);
   if(t.asi){
-    if(lu.asiMode==="feat") items.push("Feat: "+lu.featName);
+    if(lu.asiMode==="feat"){
+      var picked = featPicksSummary(featDef(lu.featName), lu.featPicks);
+      items.push("Feat: "+lu.featName+(picked ? " ("+picked+")" : ""));
+    }
     else items.push(ABILITIES.filter(function(a){ return lu.asi[a[0]]; }).map(function(a){ return a[1]+" +"+lu.asi[a[0]]; }).join(", "));
   }
-  items.push("Max HP +"+hpGain());
+  items.push("Max HP +"+(hpGain()+toughGain()));
   var newPb = Math.floor(totalLevel(c)/4)+2;
   if(newPb!==profBonus(c)) items.push("Proficiency bonus "+fmtMod(profBonus(c))+" → "+fmtMod(newPb));
   var ul = document.createElement("ul"); ul.className = "lu-review-list";
@@ -576,7 +609,8 @@ function finish(){
   var subName = t.needsSubclass ? chosenSubclass() : null;
   var gain = hpGain();
   var featureBonus = featureAbilityBonus();
-  var before = {total: totalLevel(c), pb: profBonus(c), slots: slotSnapshot(c), pact: c.spellcasting.pact ? JSON.parse(JSON.stringify(c.spellcasting.pact)) : null};
+  var before = {total: totalLevel(c), pb: profBonus(c), slots: slotSnapshot(c), pact: c.spellcasting.pact ? JSON.parse(JSON.stringify(c.spellcasting.pact)) : null,
+    hpMax: maxHp(c), speed: computeSpeed(c).value};
   var record = {
     className: lu.className, isNewClass: !t.existing, prevSubclass: t.existing ? (t.existing.subclass||"") : "",
     hpGain: gain, speedGain: 0, asi: null, featId: null, unlockIds: [],
@@ -589,6 +623,7 @@ function finish(){
     feat = {id: uid(), name: f.name, prerequisite: f.prerequisite, category: f.category, summary: f.summary, description: f.description, source: f.custom ? "Custom" : "SRD"};
     if(f.custom) feat.homebrewId = f.id; // linked to the Compendium entry
     c.feats.push(feat);
+    if(lu.featPicks) applyFeatPicks(c, feat, lu.featPicks);
     record.featId = feat.id;
   } else if(t.asi){
     record.asi = {};
@@ -642,8 +677,12 @@ function finish(){
     record.asi[k] = (record.asi[k]||0) + (now - was);
   });
 
+  // Current HP rises by the whole max HP change, Tough's part included;
+  // the record keeps Tough's part so undo can take it back off.
   c.hp.max = (Number(c.hp.max)||0) + gain;
-  c.hp.current = (Number(c.hp.current)||0) + gain;
+  var maxGain = maxHp(c) - before.hpMax;
+  record.toughGain = maxGain - gain;
+  c.hp.current = (Number(c.hp.current)||0) + maxGain;
 
   applySpellSlots(c);
   var ability = classSpellAbility(entry);
@@ -667,11 +706,21 @@ function finish(){
 
   showUnlocked(c, {
     className: entry.name, isNewClass: record.isNewClass, newClassLevel: t.newLevel, subclass: subName, currentSubclass: entry.subclass,
-    totalBefore: before.total, pbBefore: before.pb, hpGain: gain, speedGain: record.speedGain,
-    features: gained, feat: feat, asi: record.asi,
+    totalBefore: before.total, pbBefore: before.pb, hpGain: maxGain, speedGain: computeSpeed(c).value - before.speed,
+    features: gained, feat: feat, asi: withFeatAbility(record.asi, feat),
     slotsBefore: before.slots, pactBefore: before.pact,
     thirdCaster: classCasterType(entry)==="third"
   });
+}
+
+/* The popup's ability changes: the ASI's plus the feat's +1 (kept on the
+   feat, not the record, so undo doesn't take it back twice). */
+function withFeatAbility(asi, feat){
+  var gained = feat && feat.applied && feat.applied.abilities;
+  if(!gained || !Object.keys(gained).length) return asi;
+  var out = Object.assign({}, asi||{});
+  Object.keys(gained).forEach(function(k){ out[k] = (out[k]||0) + gained[k]; });
+  return out;
 }
 
 export function undoLastLevelUp(c){
@@ -686,13 +735,16 @@ export function undoLastLevelUp(c){
       else { entry.level = Math.max(1, (Number(entry.level)||1)-1); entry.subclass = rec.prevSubclass; }
     }
     if(rec.asi) Object.keys(rec.asi).forEach(function(k){ c.abilities[k] = (Number(c.abilities[k])||10) - rec.asi[k]; });
-    if(rec.featId) c.feats = c.feats.filter(function(f){ return f.id!==rec.featId; });
+    if(rec.featId){
+      revertFeatPicks(c, c.feats.find(function(f){ return f.id===rec.featId; }));
+      c.feats = c.feats.filter(function(f){ return f.id!==rec.featId; });
+    }
     if(rec.featureId) c.features = c.features.filter(function(f){ return f.id!==rec.featureId; });
     c.hp.max = Math.max(1, (Number(c.hp.max)||1) - rec.hpGain);
     // Level-up added the gain to current HP too, so take it back off, but
     // never knock a conscious character down to 0 just by undoing.
     var cur = Number(c.hp.current)||0;
-    c.hp.current = clamp(cur - rec.hpGain, Math.min(cur, 1), c.hp.max);
+    c.hp.current = clamp(cur - rec.hpGain - (rec.toughGain||0), Math.min(cur, 1), maxHp(c));
     c.speed = (Number(c.speed)||30) - (rec.speedGain||0);
     var prev = rec.prevSpellcasting;
     c.spellcasting.ability = prev.ability;
@@ -728,7 +780,7 @@ function showUnlocked(c, s){
       var d = ce("div","lu-stat"); d.innerHTML = "<span class='lbl'>"+escapeHtml(label)+"</span><span class='val'>"+escapeHtml(value)+"</span>";
       stats.appendChild(d);
     }
-    stat("Max HP", "+"+s.hpGain+" (now "+c.hp.max+")");
+    stat("Max HP", "+"+s.hpGain+" (now "+maxHp(c)+")");
     if(profBonus(c)!==s.pbBefore) stat("Proficiency", fmtMod(s.pbBefore)+" → "+fmtMod(profBonus(c)));
     if(s.speedGain) stat("Speed", "+"+s.speedGain+" ft");
     if(s.asi) Object.keys(s.asi).forEach(function(k){ stat(abilityName(k), "+"+s.asi[k]+" (now "+c.abilities[k]+")"); });

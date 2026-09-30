@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { getAllCharacterFeatures, unseenUnlockCount } from "../../core/helpers.js";
+import { getAllCharacterFeatures, unseenUnlockCount, maxHp } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { openFeatEditor } from "./feat-picker.js";
 import { openCompendium } from "../compendium.js";
@@ -7,6 +7,8 @@ import { getCustomEntry } from "../../core/custom-features.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { playDelete } from "../../ui/sound.js";
 import { renderInfusionsCard } from "./infusions.js";
+import { featPicksPending, featAppliedSummary, revertFeatPicks } from "../../core/feat-picks.js";
+import { openFeatPicksModal } from "../../ui/feat-picks.js";
 
 /* ---- Features & Feats panel ----
    One list for everything the character has: class, subclass, racial and
@@ -236,8 +238,13 @@ export function renderFeaturesPanel(c){
         rmFeatBtn.textContent = "Remove";
         rmFeatBtn.title = "Remove feat";
         rmFeatBtn.addEventListener("click", function(){
-          confirmDialog("Remove feat " + item.name + "?", "Are you sure you want to remove this feat from " + (c.name || "this character") + "?", function(){
+          var takesBack = featAppliedSummary(item.featObj);
+          confirmDialog("Remove feat " + item.name + "?", "Are you sure you want to remove this feat from " + (c.name || "this character") + "?" +
+            (takesBack ? " This also takes back " + takesBack + "." : ""), function(){
+            revertFeatPicks(c, item.featObj);
             c.feats = c.feats.filter(function(f){ return f !== item.featObj; });
+            // Without Tough the max may drop below current HP.
+            c.hp.current = Math.min(Number(c.hp.current)||0, maxHp(c));
             save();
             renderAll();
             playDelete();
@@ -254,6 +261,23 @@ export function renderFeaturesPanel(c){
         desc.className = "ff-desc";
         desc.textContent = item.text;
         card.appendChild(desc);
+      }
+
+      // A feat whose +1 or skills were never applied (taken before the
+      // sheet did it, or the picks were skipped).
+      if(item.isFeat && item.featObj && featPicksPending(item.featObj)){
+        var pending = document.createElement("div");
+        pending.className = "ff-picks-pending";
+        pending.appendChild(document.createTextNode("This feat's ability increase or proficiencies aren't on the sheet yet."));
+        var pickBtn = document.createElement("button");
+        pickBtn.type = "button";
+        pickBtn.className = "btn small primary";
+        pickBtn.textContent = "Choose";
+        pickBtn.addEventListener("click", function(){
+          openFeatPicksModal(c, item.featObj, function(){ save(); renderAll(); });
+        });
+        pending.appendChild(pickBtn);
+        card.appendChild(pending);
       }
 
       featListContainer.appendChild(card);

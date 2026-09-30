@@ -12,7 +12,9 @@ import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
 import { makePlusSvg } from "../ui/svg-icons.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, finalAbilities, featPrereqReason } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, finalAbilities, featPrereqReason, wizardSkillProfs } from "./wizard-core.js";
+import { emptyPicks, featPicksProblem } from "../core/feat-picks.js";
+import { renderFeatPicks } from "../ui/feat-picks.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
 import { SUBCLASSES } from "../data/progression.js";
@@ -520,7 +522,8 @@ export function wizardStepRaceChoices(container){
 
   if(def.feat){
     var chosenFeat = FEATS_CATALOG.find(function(f){ return f.name===rc.feat; });
-    var featOk = !!chosenFeat && !featPrereqReason(chosenFeat);
+    var featCtx = {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs()};
+    var featOk = !!chosenFeat && !featPrereqReason(chosenFeat) && !featPicksProblem(chosenFeat, rc.featPicks, featCtx);
     var sec3 = section("Feat", "A special talent most characters only get later. Greyed-out feats need something your character doesn't have yet.", featOk);
     var byCategory = {};
     FEATS_CATALOG.slice().sort(function(a, b){ return a.name.localeCompare(b.name); }).forEach(function(f){
@@ -530,7 +533,10 @@ export function wizardStepRaceChoices(container){
       key:"race:feat", placeholder:"Choose a feat", ariaLabel:"Feat",
       groups:byCategory, value:rc.feat||"",
       reasonFor:function(name){ return featPrereqReason(FEATS_CATALOG.find(function(f){ return f.name===name; })); },
-      onPick:function(v){ rc.feat = v; picked(); }
+      onPick:function(v){
+        if(v!==rc.feat) rc.featPicks = emptyPicks(FEATS_CATALOG.find(function(f){ return f.name===v; }));
+        rc.feat = v; picked();
+      }
     })));
     if(chosenFeat){
       var why = featPrereqReason(chosenFeat);
@@ -546,6 +552,10 @@ export function wizardStepRaceChoices(container){
         box.appendChild(more);
       }
       sec3.appendChild(box);
+      if(!why){
+        if(!rc.featPicks) rc.featPicks = emptyPicks(chosenFeat);
+        sec3.appendChild(renderFeatPicks(chosenFeat, rc.featPicks, featCtx, picked));
+      }
     }
   }
   container.appendChild(card);
@@ -560,6 +570,9 @@ export function expertiseOptions(choice){
   // Plus a skill picked on Race Traits (Variant Human).
   var def = raceChoiceDef();
   if(def && def.skills) wizardState.raceChoices.skills.slice(0, def.skills).forEach(function(sk){ if(sk && skills.indexOf(sk)===-1) skills.push(sk); });
+  // And skills its feat granted (Skilled, Skill Expert).
+  var fp = def && def.feat && wizardState.raceChoices.featPicks;
+  if(fp) (fp.skills||[]).forEach(function(sk){ if(sk && SKILLS.some(function(x){ return x[0]===sk; }) && skills.indexOf(sk)===-1) skills.push(sk); });
   return skills.concat(choice.tools||[]);
 }
 

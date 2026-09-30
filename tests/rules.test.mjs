@@ -5,6 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as H from "../js/core/helpers.js";
 import { CLASS_PROFICIENCIES } from "../js/data/classes.js";
+import * as FP from "../js/core/feat-picks.js";
 
 const AB = { str: 10, dex: 14, con: 14, int: 10, wis: 10, cha: 10 };
 function char(classes, extra = {}){
@@ -174,4 +175,116 @@ test("spell slots: single class, half casters, multiclass, pact magic", () => {
   assert.deepEqual(Object.values(slots([{ name: "Paladin", level: 10 }, { name: "Sorcerer", level: 10 }]).slots), [4, 3, 3, 3, 2, 1, 1, 1, 0]);
   assert.equal(slots([{ name: "Fighter", level: 3, subclass: "Eldritch Knight" }]).slots[1], 2);
   assert.deepEqual(slots([{ name: "Warlock", level: 11 }]).pact, { max: 3, slotLevel: 5 });
+});
+
+test("feats: Medium Armor Master, Tough, Mobile and Durable", () => {
+  const breastplate = { type: "armor", equipped: true, name: "Breastplate", category: "medium", baseAC: 14 };
+  const dex18 = { abilities: { dex: 18 }, inventory: [breastplate] };
+  assert.equal(H.computeArmorClass(char([{ name: "Fighter", level: 4 }], dex18)).value, 16);   // DEX capped at +2
+  assert.equal(H.computeArmorClass(char([{ name: "Fighter", level: 4 }], { ...dex18, feats: [{ name: "Medium Armor Master" }] })).value, 17);
+  assert.equal(H.computeArmorClass(char([{ name: "Fighter", level: 4 }], { abilities: { dex: 14 }, inventory: [breastplate], feats: [{ name: "Medium Armor Master" }] })).value, 16);
+
+  const hp = (feats, classes = [{ name: "Fighter", level: 3 }, { name: "Wizard", level: 2 }]) => H.maxHp({ ...char(classes, { feats }), hp: { max: 40 } });
+  assert.equal(hp([]), 40);
+  assert.equal(hp([{ name: "Tough" }]), 50);                                     // 2 per character level (5)
+
+  const speed = (feats) => H.computeSpeed({ ...char([{ name: "Rogue", level: 1 }], { feats }), speed: 30 });
+  assert.deepEqual(speed([]), { value: 30, bonus: 0 });
+  assert.deepEqual(speed([{ name: "Mobile" }]), { value: 40, bonus: 10 });
+
+  const heal = (con, feats, roll) => H.hitDieHealing(char([{ name: "Fighter", level: 1 }], { abilities: { con }, feats }), roll);
+  assert.equal(heal(16, [], 1), 4);                          // 1 + 3
+  assert.equal(heal(16, [{ name: "Durable" }], 1), 6);       // floor is 2 x CON mod
+  assert.equal(heal(16, [{ name: "Durable" }], 5), 8);       // a good roll still counts
+  assert.equal(heal(8, [{ name: "Durable" }], 1), 2);        // floor is at least 2
+  assert.equal(heal(8, [], 1), 1);
+});
+
+test("feat resources: Lucky, Magic Initiate, Martial Adept", () => {
+  const res = (classes, feats, used = {}) => H.characterResources(char(classes, { feats, resourcesUsed: used }));
+  const lucky = res([{ name: "Rogue", level: 1 }], [{ name: "Lucky" }]).find((r) => r.name === "Luck Points");
+  assert.equal(lucky.max, 3);
+  assert.equal(lucky.reset, "long");
+  const mi = res([{ name: "Rogue", level: 1 }], [{ name: "Magic Initiate" }]).find((r) => r.source === "Magic Initiate");
+  assert.equal(mi.max, 1);
+  assert.equal(mi.reset, "long");
+  // Martial Adept alone: its own d6, back on a short rest.
+  const adept = res([{ name: "Rogue", level: 4 }], [{ name: "Martial Adept" }]).find((r) => r.source === "Martial Adept");
+  assert.equal(adept.max, 1);
+  assert.equal(adept.reset, "short");
+  // With Battle Master dice it joins that pool instead.
+  const bm = res([{ name: "Fighter", level: 7, subclass: "Battle Master" }], [{ name: "Martial Adept" }], { "Fighter:superiority_dice": 6 });
+  assert.equal(bm.filter((r) => /Superiority/.test(r.name)).length, 1);
+  const pool = bm.find((r) => r.key === "Fighter:superiority_dice");
+  assert.equal(pool.max, 6);
+  assert.equal(pool.used, 6);
+  assert.equal(res([{ name: "Rogue", level: 1 }], []).length, 0);
+  // A rest restores feat uses like class ones.
+  const c = char([{ name: "Rogue", level: 1 }], { feats: [{ name: "Lucky" }], resourcesUsed: { "feat:luck_points": 2 } });
+  assert.deepEqual(H.restoreResources(c, "long"), ["Luck Points"]);
+  assert.equal(c.resourcesUsed["feat:luck_points"], undefined);
+});
+
+test("feat picks: half-feat +1, Resilient save, Skilled and Skill Expert", () => {
+  const skills = () => ({ Stealth: { prof: true, expertise: false }, Arcana: { prof: false, expertise: false } });
+  const take = (name, picks, extra = {}) => {
+    const c = { ...char([{ name: "Rogue", level: 4 }], extra), skillProfs: skills() };
+    const feat = { id: "f1", name };
+    c.feats.push(feat);
+    const def = FP.featDef(name);
+    assert.equal(FP.featPicksProblem(def, picks, c), "", name + " picks are complete");
+    FP.applyFeatPicks(c, feat, picks);
+    return { c, feat };
+  };
+
+  // Athlete: +1 to the chosen ability, taken back on removal.
+  const ath = take("Athlete", { ability: "dex", skills: [], expertise: [] });
+  assert.equal(ath.c.abilities.dex, 15);
+  assert.equal(FP.featAppliedSummary(ath.feat), "Dexterity +1");
+  FP.revertFeatPicks(ath.c, ath.feat);
+  assert.equal(ath.c.abilities.dex, 14);
+  // A score already at 20 doesn't move, so removal doesn't lower it either.
+  const capped = take("Athlete", { ability: "dex", skills: [], expertise: [] }, { abilities: { dex: 20 } });
+  assert.equal(capped.c.abilities.dex, 20);
+  FP.revertFeatPicks(capped.c, capped.feat);
+  assert.equal(capped.c.abilities.dex, 20);
+  // Only the listed abilities, and one must be picked.
+  assert.match(FP.featPicksProblem(FP.featDef("Athlete"), { ability: "int", skills: [], expertise: [] }, {}), /Pick the ability/);
+  assert.deepEqual(FP.emptyPicks(FP.featDef("Actor")).ability, "cha");            // fixed: nothing to choose
+  assert.equal(FP.featNeedsChoice(FP.featDef("Actor")), false);
+
+  // Resilient: +1 and the save, read from the picks.
+  const res = take("Resilient", { ability: "wis", skills: [], expertise: [] });
+  const save = H.computeSave(res.c, "wis");
+  assert.equal(save.grantedBy, "Resilient");
+  assert.equal(save.value, 0 + 2);                                          // WIS 11 (+0) + proficiency 2
+  assert.equal(H.computeSave(res.c, "int").prof, false);
+
+  // Skilled: skills go on the sheet, tools are listed as proficiencies.
+  const sk = take("Skilled", { ability: "", skills: ["Arcana", "History", "Thieves' tools"], expertise: [] });
+  assert.equal(sk.c.skillProfs.Arcana.prof, true);
+  assert.equal(sk.c.skillProfs.History.prof, true);
+  assert.deepEqual(FP.featProficiencies(sk.c).tools, [{ name: "Thieves' tools", feat: "Skilled" }]);
+  FP.revertFeatPicks(sk.c, sk.feat);
+  assert.equal(sk.c.skillProfs.Arcana.prof, false);
+  assert.equal(sk.c.skillProfs.Stealth.prof, true);                        // untouched
+  assert.match(FP.featPicksProblem(FP.featDef("Skilled"), { skills: ["Stealth", "Arcana", "History"] }, { skillProfs: skills() }), /not already proficient/);
+  assert.match(FP.featPicksProblem(FP.featDef("Skilled"), { skills: ["Arcana", "Arcana", "History"] }, { skillProfs: skills() }), /3 different/);
+
+  // Skill Expert: a new skill, and expertise in a proficient one (or the new one).
+  const se = take("Skill Expert", { ability: "int", skills: ["Arcana"], expertise: ["Stealth"] });
+  assert.equal(se.c.abilities.int, 11);
+  assert.equal(se.c.skillProfs.Arcana.prof, true);
+  assert.equal(se.c.skillProfs.Stealth.expertise, true);
+  FP.revertFeatPicks(se.c, se.feat);
+  assert.equal(se.c.skillProfs.Stealth.expertise, false);
+  assert.equal(se.c.skillProfs.Stealth.prof, true);
+  assert.equal(FP.featPicksProblem(FP.featDef("Skill Expert"), { ability: "int", skills: ["Arcana"], expertise: ["Arcana"] }, { skillProfs: skills() }), "");
+  assert.match(FP.featPicksProblem(FP.featDef("Skill Expert"), { ability: "int", skills: ["Arcana"], expertise: ["History"] }, { skillProfs: skills() }), /proficient in/);
+
+  // Armor feats list their proficiency; feats from before picks existed are flagged.
+  assert.deepEqual(FP.featProficiencies({ feats: [{ name: "Moderately Armored" }] }).armor.map((a) => a.name), ["Medium armor", "Shields"]);
+  assert.equal(FP.featPicksPending({ name: "Athlete" }), true);
+  assert.equal(FP.featPicksPending({ name: "Athlete", picks: { ability: "" } }), false);
+  assert.equal(FP.featPicksPending({ name: "Alert" }), false);
 });

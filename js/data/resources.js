@@ -673,3 +673,22 @@ export var SUBCLASS_RESOURCES = {
     ]
   }
 };
+
+/* Feats with uses, keyed by feat name. `level` and `lv` don't apply; max
+   gets the character's modifiers like the class ones. Martial Adept's die
+   joins a Battle Master's pool instead when there is one (see
+   characterResources). */
+export var FEAT_RESOURCES = {
+  "Lucky": [
+    {id:"luck_points", name:"Luck Points", max:always(3), reset:always("long"),
+      hint:"Spend one to roll an extra d20 on an attack, check or save (or on an attack against you) and choose which d20 counts."}
+  ],
+  "Martial Adept": [
+    {id:"superiority_dice", name:"Superiority Die", max:always(1), reset:always("short"),
+      hint:"A d6 that fuels your two Martial Adept maneuvers."}
+  ],
+  "Magic Initiate": [
+    {id:"magic_initiate", name:"Magic Initiate Spell", max:always(1), reset:always("long"),
+      hint:"Cast your Magic Initiate 1st-level spell at its lowest level without a slot. Casting it with a slot doesn't use this."}
+  ]
+};

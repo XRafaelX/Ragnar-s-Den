@@ -4,7 +4,8 @@ import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
 import { WEAPON_DATA } from "../data/weapons.js";
-import { CLASS_RESOURCES, SUBCLASS_RESOURCES } from "../data/resources.js";
+import { CLASS_RESOURCES, SUBCLASS_RESOURCES, FEAT_RESOURCES } from "../data/resources.js";
+import { featDef, featProficiencies, featPicksSummary } from "./feat-picks.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
 
 /* ---------------- Helpers ---------------- */
@@ -190,6 +191,29 @@ export function characterResources(c){
       });
     });
   });
+  // Feats with uses. Martial Adept's die adds to a Battle Master's
+  // superiority dice when the character has them.
+  Object.keys(FEAT_RESOURCES).forEach(function(featName){
+    if(!hasFeat(c, featName)) return;
+    FEAT_RESOURCES[featName].forEach(function(r){
+      var key = "feat:"+r.id;
+      if(featName==="Martial Adept"){
+        var pool = list.find(function(x){ return x.key==="Fighter:superiority_dice"; });
+        if(pool){
+          pool.max += 1;
+          pool.used = clamp(Number((c.resourcesUsed||{})[pool.key])||0, 0, pool.max);
+          pool.hint += " Includes Martial Adept's extra die (a d6).";
+          return;
+        }
+      }
+      var max = r.max(0, m);
+      list.push({
+        key: key, name: r.name, source: featName, hint: r.hint, pool: !!r.pool,
+        max: max, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
+        reset: r.reset(0)
+      });
+    });
+  });
   return list;
 }
 /* Restore resources on a rest. A long rest restores everything except
@@ -219,6 +243,35 @@ export function barbarianRageMax(level){
   return 2;
 }
 
+/* ---------------- Feats the sheet applies ----------------
+   Feats are matched by name. Their bonuses are worked out when shown
+   rather than added to saved numbers, so taking, deleting or undoing a
+   feat needs no bookkeeping. */
+export function hasFeat(c, name){
+  var lower = name.toLowerCase();
+  return (c.feats||[]).some(function(f){ return ((f.name||"") + "").toLowerCase()===lower; });
+}
+/* Max HP: the saved number (hit dice, level-ups, manual changes) plus
+   Tough's 2 per character level. */
+export function toughBonus(c){
+  return hasFeat(c, "Tough") ? 2 * totalLevel(c) : 0;
+}
+export function maxHp(c){
+  return (Number(c.hp && c.hp.max)||0) + toughBonus(c);
+}
+/* Walking speed: the saved number plus Mobile's 10 ft. */
+export function computeSpeed(c){
+  var mobile = hasFeat(c, "Mobile") ? 10 : 0;
+  return { value: (Number(c.speed)||0) + mobile, bonus: mobile };
+}
+/* HP from one spent hit die: roll + CON (at least 1). Durable raises the
+   floor to twice the CON modifier, at least 2. */
+export function hitDieHealing(c, roll){
+  var conMod = mod(c.abilities && c.abilities.con);
+  var floor = hasFeat(c, "Durable") ? Math.max(2, 2 * conMod) : 1;
+  return Math.max(floor, roll + conMod);
+}
+
 /* ---------------- Armor Class ----------------
    Computed from equipped armor/shield inventory items rather than a raw
    manual number, with Barbarian/Monk Unarmored Defense honored when no
@@ -235,7 +288,7 @@ export function computeArmorClass(c){
   if(bodyArmor){
     var dexContribution = 0;
     if(bodyArmor.category==="light") dexContribution = dexMod;
-    else if(bodyArmor.category==="medium") dexContribution = Math.min(dexMod,2);
+    else if(bodyArmor.category==="medium") dexContribution = Math.min(dexMod, hasFeat(c, "Medium Armor Master") ? 3 : 2);
     var armorAC = Number(bodyArmor.baseAC)||10;
     var magic = Number(bodyArmor.magicBonus)||0;
     base = armorAC + dexContribution + magic;
@@ -269,7 +322,7 @@ export function computeArmorClass(c){
   base += defense;
   // Dual Wielder: +1 while wielding a separate melee weapon in each hand
   // (two equipped melee weapon items; a "Dagger ×2" stack is one weapon).
-  var dualWielder = (c.feats||[]).some(function(f){ return f.name==="Dual Wielder"; }) &&
+  var dualWielder = hasFeat(c, "Dual Wielder") &&
     (c.inventory||[]).filter(function(i){ return i.type==="weapon" && i.equipped && !isRangedWeapon(i); }).length >= 2 ? 1 : 0;
   if(dualWielder){ breakdown += " + Dual Wielder (+1)"; short += " + Dual Wielder"; }
   base += dualWielder;
@@ -309,7 +362,7 @@ export function computeInitiative(c){
       short += " + " + f.initiative.toUpperCase();
     });
   });
-  if((c.feats||[]).some(function(f){ return f.name==="Alert"; })){
+  if(hasFeat(c, "Alert")){
     value += 5; breakdown += " + Alert (+5)"; short += " + Alert";
   }
   if(c.race==="Harengon"){
@@ -336,6 +389,8 @@ export function computeSave(c, key){
       }
     });
   });
+  // Resilient: proficiency in the ability it raised.
+  if(!grantedBy) featProficiencies(c).saves.forEach(function(s){ if(!grantedBy && s.ability===key) grantedBy = s.feat; });
   var prof = !!(c.saveProfs && c.saveProfs[key]) || !!grantedBy;
   var value = abilityMod + (prof ? profBonus(c) : 0);
   var breakdown = key.toUpperCase() + " (" + fmtMod(abilityMod) + ")" + (prof ? " + proficiency (" + fmtMod(profBonus(c)) + ")" : "");
@@ -517,7 +572,7 @@ export function passivePerception(c){
   var entry = c.skillProfs && c.skillProfs["Perception"];
   var pb = profBonus(c);
   var bonus = wisMod + (entry && entry.expertise ? pb*2 : (entry && entry.prof ? pb : 0));
-  var featBonus = (c.feats||[]).some(function(f){ return ((f.name||"") + "").toLowerCase()==="observant"; }) ? 5 : 0;
+  var featBonus = hasFeat(c, "Observant") ? 5 : 0;
   return 10 + bonus + featBonus;
 }
 export function passiveInvestigation(c){
@@ -525,7 +580,7 @@ export function passiveInvestigation(c){
   var entry = c.skillProfs && c.skillProfs["Investigation"];
   var pb = profBonus(c);
   var bonus = intMod + (entry && entry.expertise ? pb*2 : (entry && entry.prof ? pb : 0));
-  var featBonus = (c.feats||[]).some(function(f){ return ((f.name||"") + "").toLowerCase()==="observant"; }) ? 5 : 0;
+  var featBonus = hasFeat(c, "Observant") ? 5 : 0;
   return 10 + bonus + featBonus;
 }
 export function passiveInsight(c){
@@ -584,6 +639,8 @@ export function getAllCharacterFeatures(c){
   }
   (c.feats||[]).forEach(function(feat){
     var descText = (feat.prerequisite && feat.prerequisite !== "None" ? "(Prerequisite: " + feat.prerequisite + ")\n" : "") + (feat.description || feat.summary || "");
+    var picked = featPicksSummary(featDef(feat.name), feat.picks);
+    if(picked) descText += "\n\nYour picks: " + picked + ".";
     list.push({
       id: "feat_"+(feat.id || feat.name),
       name: feat.name,
