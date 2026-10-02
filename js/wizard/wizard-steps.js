@@ -1022,38 +1022,55 @@ function spellPickSection(title, help, count, level, chosen, listClass, exclude,
   return wrap;
 }
 
-export function wizardStepSpells(container){
-  var info = currentClassInfo();
-  var sc = info.spellcasting;
+/* Shared top of the Cantrips and Spells steps: the card, its explainer,
+   the subclass freebies of this kind, and the note when a subclass opens
+   another class's list (a Divine Soul can pick cleric spells). */
+function spellStepCard(title, explainHtml, freebies){
   var card = ce("div","card");
-  card.innerHTML = "<h3><span>Spells</span></h3>";
+  card.innerHTML = "<h3><span>"+escapeHtml(title)+"</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>Why this matters:</b> Cantrips are spells you can cast at will, and your starting spells are your first real tools. You can always change or add more from the Spells tab once your character exists.";
+  explain.innerHTML = explainHtml;
   card.appendChild(explain);
-
-  var grants = subclassGrants(info, wizardState.classChoices);
-  var freebies = (grants.cantrips||[]).concat(grants.spells||[]);
   if(freebies.length){
     var free = document.createElement("p");
     free.style.cssText = "font-size:13px;margin:0 0 12px;";
-    free.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> also gives you "+escapeHtml(freebies.join(", "))+" for free. They're added automatically and don't count toward the picks below.";
+    free.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> also gives you "+escapeHtml(freebies.join(", "))+" for free. "+(freebies.length>1 ? "They're" : "It's")+" added automatically and "+(freebies.length>1 ? "don't" : "doesn't")+" count toward the picks below.";
     card.appendChild(free);
   }
+  if(wizardExtraListSpells().length){
+    var also = document.createElement("p");
+    also.style.cssText = "font-size:13px;margin:0 0 12px;";
+    also.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> can also learn "+escapeHtml(wizardExtraListName().toLowerCase())+" spells; they're in the list below.";
+    card.appendChild(also);
+  }
+  return card;
+}
+
+export function wizardStepCantrips(container){
+  var info = currentClassInfo();
+  var sc = info.spellcasting;
+  var grants = subclassGrants(info, wizardState.classChoices);
+  var card = spellStepCard("Cantrips",
+    "<b>Why this matters:</b> Cantrips are spells you can cast at will, as often as you like, without using a spell slot. You can always change or add more from the Spells tab once your character exists.",
+    grants.cantrips||[]);
+  var extraTag = function(){ return wizardExtraListName() + " spell"; };
+  card.appendChild(spellPickSection("Cantrips", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList, grants.cantrips, wizardExtraListSpells(), extraTag));
+  container.appendChild(card);
+}
+
+export function wizardStepSpells(container){
+  var info = currentClassInfo();
+  var sc = info.spellcasting;
+  var grants = subclassGrants(info, wizardState.classChoices);
+  var card = spellStepCard("Spells",
+    "<b>Why this matters:</b> Your starting spells are your first real tools. Each cast uses a spell slot, and your slots come back when you rest. You can always change or add more from the Spells tab once your character exists.",
+    grants.spells||[]);
   // A shrinking count (e.g. lower Wisdom after going back) trims extra picks.
   var need = spellPickCount(sc);
   if(wizardState.spellChoices.spells.length > need) wizardState.spellChoices.spells.length = need;
-  // A Divine Soul can also pick from the cleric list.
   var extraList = wizardExtraListSpells();
-  // (expandedSpells is set further down, after the cantrips section.)
-  var extraTag = function(name){ return (expandedSpells||[]).indexOf(name)!==-1 ? "Patron spell" : wizardExtraListName() + " spell"; };
-  if(extraList.length){
-    var also = document.createElement("p");
-    also.style.cssText = "font-size:13px;margin:0 0 12px;";
-    also.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> can also learn cleric spells; they're in the lists below.";
-    card.appendChild(also);
-  }
-  card.appendChild(spellPickSection("Cantrips", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList, grants.cantrips, extraList, extraTag));
   var expandedSpells = wizardExpandedSpells().filter(function(n){ return (SPELL_DATA[n]||{}).level===1; });
+  var extraTag = function(name){ return expandedSpells.indexOf(name)!==-1 ? "Patron spell" : wizardExtraListName() + " spell"; };
   if(expandedSpells.length){
     var exp = document.createElement("p");
     exp.style.cssText = "font-size:13px;margin:0 0 12px;";

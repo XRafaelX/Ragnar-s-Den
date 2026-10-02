@@ -203,7 +203,7 @@ CLASSES_INFO["Wizard"].features = [
 ];
 
 /* Wizard is fully guided in the creation wizard (the first spellcaster to
-   be). `spellcasting` drives the wizard's Spells step: how many cantrips
+   be). `spellcasting` drives the wizard's Cantrips and Spells steps: how many cantrips
    and 1st-level spells to pick, which class list to pick from, and the
    level-1 slots. `prepares` casters choose from a spellbook and prepare
    a subset (ability modifier + level) rather than knowing them all. */

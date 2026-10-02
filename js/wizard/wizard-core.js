@@ -18,13 +18,13 @@ import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import {
   buildEquipmentList,
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
-  wizardStepAbilities, wizardStepSkills, wizardStepRaceChoices, wizardStepChoices, wizardStepLanguages, wizardStepEquipment, wizardStepSpells, wizardStepReview,
+  wizardStepAbilities, wizardStepSkills, wizardStepRaceChoices, wizardStepChoices, wizardStepLanguages, wizardStepEquipment, wizardStepCantrips, wizardStepSpells, wizardStepReview,
   expertiseOptions, resetHomebrewPickers
 } from "./wizard-steps.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons.js";
 
 /* ---------------- Character Creation Wizard ---------------- */
-export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","raceChoices","choices","languages","equipment","spells","review"];
+export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","raceChoices","choices","languages","equipment","cantrips","spells","review"];
 export var wizardState = null;
 
 export function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardState.classId]; }
@@ -165,7 +165,7 @@ export function spellPickCount(sc){
 }
 
 export function isStepApplicable(id){
-  if(id==="spells"){
+  if(id==="cantrips" || id==="spells"){
     var info = currentClassInfo();
     return !!(info && info.spellcasting);
   }
@@ -183,7 +183,7 @@ export function wizardStepTitle(id){
     class:"Choose a Class", race:"Choose a Race", background:"Choose a Background",
     alignment:"Choose an Alignment",
     abilities:"Ability Scores", skills:"Skills & Proficiencies", raceChoices:"Race Traits", choices:"Class Features", languages:"Languages", equipment:"Starting Equipment",
-    spells:"Spells", review:"Review & Finish"
+    cantrips:"Cantrips", spells:"Spells", review:"Review & Finish"
   }[id];
 }
 
@@ -286,13 +286,16 @@ export function validateStep(id){
     });
     return locked ? "Your class choices don't give proficiency with one of the picked items. Pick another option." : null;
   }
+  if(id==="cantrips"){
+    var csc = info.spellcasting;
+    if(!csc) return null;
+    return wizardState.spellChoices.cantrips.length===csc.cantrips ? null : "Choose "+csc.cantrips+" cantrips.";
+  }
   if(id==="spells"){
     var sc = info.spellcasting;
     if(!sc) return null;
-    var picked = wizardState.spellChoices;
-    if(picked.cantrips.length!==sc.cantrips) return "Choose "+sc.cantrips+" cantrips.";
     var need = spellPickCount(sc);
-    if(picked.spells.length!==need) return "Choose "+need+" 1st-level spells.";
+    if(wizardState.spellChoices.spells.length!==need) return "Choose "+need+" 1st-level spell"+(need>1?"s":"")+".";
     return null;
   }
   if(id==="review"){
@@ -509,7 +512,7 @@ export function renderWizard(){
     class: wizardStepClass, race: wizardStepRace, background: wizardStepBackground,
     alignment: wizardStepAlignment,
     abilities: wizardStepAbilities, skills: wizardStepSkills, raceChoices: wizardStepRaceChoices, choices: wizardStepChoices, languages: wizardStepLanguages, equipment: wizardStepEquipment,
-    spells: wizardStepSpells, review: wizardStepReview
+    cantrips: wizardStepCantrips, spells: wizardStepSpells, review: wizardStepReview
   };
   renderers[wizardState.step](inner);
 
