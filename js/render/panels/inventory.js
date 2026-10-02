@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, powerAttackFeat, powerAttackOn } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -366,6 +366,18 @@ function renderWeaponCard(c, item, idx){
     dmgBtn.title = "Enter damage dice like \"1d8\" to roll";
   }
   actions.appendChild(dmgBtn);
+
+  // Symbiotic Entity: melee weapon hits deal an extra 1d6 poison.
+  if(effectOn(c, "symbiotic_entity") && !isRangedWeapon(item)){
+    var sporeBtn = document.createElement("button");
+    sporeBtn.type = "button"; sporeBtn.className = "btn small inv-roll-btn";
+    sporeBtn.innerHTML = makeDicesSvg() + "+1d6 poison";
+    sporeBtn.title = "Symbiotic Entity: extra poison damage on a hit";
+    sporeBtn.addEventListener("click", function(){
+      performRoll(6, 1, 0, "none", (item.name||"Weapon") + ": Symbiotic Entity (poison)");
+    });
+    actions.appendChild(sporeBtn);
+  }
 
   // Great Weapon Master / Sharpshooter: -5 to hit, +10 damage while on.
   var powerFeat = powerAttackFeat(c, item);

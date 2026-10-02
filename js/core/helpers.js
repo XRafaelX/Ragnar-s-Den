@@ -10,6 +10,7 @@ import { WEAPON_DATA } from "../data/weapons.js";
 import { CLASS_RESOURCES, SUBCLASS_RESOURCES, FEAT_RESOURCES } from "../data/resources.js";
 import { featDef, featProficiencies, featPicksSummary } from "./feat-picks.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
+import { TOGGLE_EFFECTS } from "../data/effects.js";
 
 /* ---------------- Helpers ---------------- */
 export function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
@@ -278,8 +279,9 @@ export function toughBonus(c){
 export function maxHp(c){
   return (Number(c.hp && c.hp.max)||0) + toughBonus(c);
 }
-/* Walking speed: the saved number plus Mobile's 10 ft and an Infiltrator
-   Armorer's Powered Steps (while wearing armor); `parts` names each bonus
+/* Walking speed: the saved number plus Mobile's 10 ft, an Infiltrator
+   Armorer's Powered Steps (while wearing armor) and Bladesong's 10 ft
+   (while it's on); `parts` names each bonus
    for the hint. `others` are the
    fly, swim and climb speeds from the race and from features tagged
    `speeds`, as {type, value, when, source}: always-on ones first (only
@@ -291,6 +293,7 @@ export function computeSpeed(c){
   var model = armorer && ARMOR_MODELS[armorer.armorModel];
   var inArmor = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
   if(model && model.speed && inArmor) parts.push({name: "Powered Steps", value: model.speed});
+  if(effectOn(c, "bladesong")) parts.push({name: "Bladesong", value: 10});
   var mobile = parts.reduce(function(a, p){ return a + p.value; }, 0);
   var walk = (Number(c.speed)||0) + mobile;
   var list = [], bonus = {};
@@ -395,6 +398,14 @@ export function computeArmorClass(c){
       });
     });
   }
+  // Effects switched on from the Active effects card.
+  if(effectOn(c, "bladesong")){
+    var song = bladesongBonus(c);
+    base += song; breakdown += " + Bladesong (" + fmtMod(song) + ")"; short += " + Bladesong";
+  }
+  if(effectOn(c, "awakened_astral_self")){
+    base += 2; breakdown += " + Armor of the Spirit (+2)"; short += " + Astral Self";
+  }
   if(misc){ breakdown += " + misc (" + fmtMod(misc) + ")"; short += " + misc"; }
 
   return { value: base + shieldBonus + misc, breakdown: breakdown, short: short };
@@ -431,12 +442,13 @@ export function computeInitiative(c){
   return { value: value, breakdown: breakdown, short: short };
 }
 
-/* A saving throw: ability modifier, proficiency (ticked on the sheet or
+/* A saving throw: ability modifier (WIS for STR with the astral arms out), proficiency (ticked on the sheet or
    granted by a feature such as Diamond Soul) and feature bonuses such as
    Aura of Protection. `grantedBy` names the feature that makes the save
    proficient, so the sheet can lock that box. */
 export function computeSave(c, key){
-  var abilityMod = mod(c.abilities && c.abilities[key]);
+  var ability = checkAbility(c, key);
+  var abilityMod = ability.mod;
   var grantedBy = null, bonuses = [];
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
@@ -450,7 +462,7 @@ export function computeSave(c, key){
   if(!grantedBy) featProficiencies(c).saves.forEach(function(s){ if(!grantedBy && s.ability===key) grantedBy = s.feat; });
   var prof = !!(c.saveProfs && c.saveProfs[key]) || !!grantedBy;
   var value = abilityMod + (prof ? profBonus(c) : 0);
-  var breakdown = key.toUpperCase() + " (" + fmtMod(abilityMod) + ")" + (prof ? " + proficiency (" + fmtMod(profBonus(c)) + ")" : "");
+  var breakdown = ability.label + " (" + fmtMod(abilityMod) + ")" + (prof ? " + proficiency (" + fmtMod(profBonus(c)) + ")" : "");
   bonuses.forEach(function(b){ value += b.value; breakdown += " + " + b.name + " (" + fmtMod(b.value) + ")"; });
   return { value: value, prof: prof, grantedBy: grantedBy, breakdown: breakdown };
 }
@@ -661,7 +673,7 @@ export function weaponAttackBonus(c, item){
   return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0) + archery - (powerAttackOn(c, item) ? 5 : 0);
 }
 export function weaponDamageBonus(c, item){
-  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0) + (powerAttackOn(c, item) ? 10 : 0);
+  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item);
 }
 export function parseDiceNotation(str){
   var m2 = /^(\d*)d(\d+)$/i.exec((str||"").trim());
@@ -724,6 +736,8 @@ export function computeDarkvision(c){
       if(next > range){ range = next; sources.push(f.name); }
     });
   });
+  // Astral Sight sees through any darkness; shown as 120 ft while the visage is out.
+  if(effectOn(c, "astral_visage") && range < 120){ range = 120; sources.push("Astral Sight"); }
   return {range: range, sources: sources};
 }
 export function getCharacterSenses(c){
@@ -736,6 +750,141 @@ export function getCharacterSenses(c){
 export function heavyArmorMasterActive(c){
   return hasFeat(c, "Heavy Armor Master") &&
     (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
+}
+
+/* ---------------- Temporary effects ----------------
+   Bladesong, the Astral Self and Symbiotic Entity (js/data/effects.js).
+   c.effects holds the ids switched on. One only counts while the
+   character still has the feature and nothing has cut it short: Bladesong
+   in medium or heavy armor or with a shield, Symbiotic Entity with its
+   temporary HP gone, Awakened Astral Self without the arms and visage. */
+function effectDef(id){
+  return TOGGLE_EFFECTS.find(function(d){ return d.id===id; });
+}
+function effectClass(c, def){
+  return (c.classes||[]).find(function(cl){
+    return cl.name===def.className && cl.subclass===def.subclass && (Number(cl.level)||1) >= def.level;
+  });
+}
+/* Why an effect that's switched on gives nothing right now, or "". */
+export function effectBlocked(c, id){
+  if(id==="bladesong"){
+    var worn = (c.inventory||[]).find(function(i){
+      return i.type==="armor" && i.equipped && (i.category==="medium" || i.category==="heavy" || i.category==="shield");
+    });
+    if(worn) return "Not working while you wear " + (worn.name || "medium or heavy armor or a shield") + ".";
+  }
+  return "";
+}
+export function effectOn(c, id){
+  var def = effectDef(id);
+  if(!def || !(c.effects && c.effects[id]) || !effectClass(c, def)) return false;
+  if((def.requires||[]).some(function(r){ return !effectOn(c, r); })) return false;
+  if(id==="symbiotic_entity" && !((Number(c.hp && c.hp.temp)||0) > 0)) return false;
+  return !effectBlocked(c, id);
+}
+/* The effects this character has, for the card: {def, on, blocked,
+   resource (the class resource it spends), why (it can't start, or "")}. */
+export function characterEffects(c){
+  var resources = characterResources(c);
+  var flags = c.effects || {};
+  return TOGGLE_EFFECTS.filter(function(def){ return effectClass(c, def); }).map(function(def){
+    var res = resources.find(function(r){ return r.key===def.className+":"+def.cost.resource; });
+    var on = !!flags[def.id];
+    var why = "";
+    if(!on){
+      var missing = (def.requires||[]).filter(function(r){ return !flags[r]; });
+      if(missing.length) why = "Needs " + missing.map(function(r){ return effectDef(r).name; }).join(" and ") + " first.";
+      else if(!res || res.max - res.used < def.cost.amount) why = "Not enough " + (res ? res.name : def.cost.resource) + " left.";
+    }
+    return {def: def, on: on, blocked: on ? effectBlocked(c, def.id) : "", resource: res, why: why};
+  });
+}
+/* Switch an effect on: pay its cost and, for Symbiotic Entity, gain its
+   temporary HP (they don't stack: keep the higher). False if it can't. */
+export function startEffect(c, id){
+  var e = characterEffects(c).find(function(x){ return x.def.id===id; });
+  if(!e || e.on || e.why) return false;
+  if(e.resource.max!==Infinity){
+    if(!c.resourcesUsed) c.resourcesUsed = {};
+    c.resourcesUsed[e.resource.key] = e.resource.used + e.def.cost.amount;
+  }
+  if(!c.effects) c.effects = {};
+  c.effects[id] = true;
+  if(id==="symbiotic_entity"){
+    if(!c.hp) c.hp = {max:0, current:0, temp:0};
+    c.hp.temp = Math.max(Number(c.hp.temp)||0, symbioticTempHp(c));
+  }
+  return true;
+}
+/* Switch an effect off, and anything that needs it. */
+export function endEffect(c, id){
+  if(!c.effects) return;
+  delete c.effects[id];
+  TOGGLE_EFFECTS.forEach(function(d){ if((d.requires||[]).indexOf(id)!==-1) endEffect(c, d.id); });
+}
+/* A rest or dropping to 0 HP ends every effect. Returns the names that were on. */
+export function endAllEffects(c){
+  var ended = TOGGLE_EFFECTS.filter(function(d){ return c.effects && c.effects[d.id]; }).map(function(d){ return d.name; });
+  c.effects = {};
+  return ended;
+}
+/* Drop flags that can't come back on their own: the feature is gone
+   (level undone) or Symbiotic Entity's temporary HP ran out. True if any went. */
+export function pruneEffects(c){
+  var changed = false;
+  Object.keys(c.effects||{}).forEach(function(id){
+    var def = effectDef(id);
+    var gone = !def || !effectClass(c, def) || (id==="symbiotic_entity" && !((Number(c.hp && c.hp.temp)||0) > 0));
+    if(gone){ endEffect(c, id); changed = true; }
+  });
+  return changed;
+}
+function classLevelOf(c, name, subclass){
+  var cl = (c.classes||[]).find(function(x){ return x.name===name && (!subclass || x.subclass===subclass); });
+  return cl ? Number(cl.level)||1 : 0;
+}
+/* Bladesong's bonus to AC and concentration saves (and Song of Victory's damage). */
+export function bladesongBonus(c){
+  return Math.max(1, mod(c.abilities && c.abilities.int));
+}
+export function symbioticTempHp(c){
+  return 4 * classLevelOf(c, "Druid", "Circle of Spores");
+}
+/* Halo of Spores' die by druid level (d4, d6 from 6, d8 from 10, d10 from 14). */
+export function haloOfSporesDie(c){
+  var lv = classLevelOf(c, "Druid", "Circle of Spores");
+  return lv>=14 ? 10 : lv>=10 ? 8 : lv>=6 ? 6 : 4;
+}
+/* The Martial Arts die by monk level (d4, d6 from 5, d8 from 11, d10 from 17). */
+export function martialArtsDie(c){
+  var lv = classLevelOf(c, "Monk");
+  return lv>=17 ? 10 : lv>=11 ? 8 : lv>=5 ? 6 : 4;
+}
+/* An unarmed strike with the astral arms: the best of STR, DEX and WIS,
+   plus proficiency, Martial Arts die of force damage; Empowered Arms
+   (monk 11) adds one more die once per turn. */
+export function astralArmsAttack(c){
+  var ab = c.abilities || {};
+  var best = Math.max(mod(ab.str), mod(ab.dex), mod(ab.wis));
+  return {attack: best + profBonus(c), damage: best, die: martialArtsDie(c),
+    empowered: classLevelOf(c, "Monk", "Way of the Astral Self") >= 11};
+}
+/* The ability a check or save uses: Arms of the Astral Self lets WIS
+   stand in for STR when it's higher. {mod, label}. */
+export function checkAbility(c, key){
+  var m = mod(c.abilities && c.abilities[key]);
+  if(key==="str" && effectOn(c, "astral_arms")){
+    var wis = mod(c.abilities && c.abilities.wis);
+    if(wis > m) return {mod: wis, label: "WIS (Arms of the Astral Self)"};
+  }
+  return {mod: m, label: key.toUpperCase()};
+}
+/* Song of Victory: + Bladesong's bonus to melee weapon damage while
+   Bladesong is on (wizard 14). */
+export function songOfVictoryBonus(c, item){
+  if(isRangedWeapon(item) || !effectOn(c, "bladesong")) return 0;
+  return classLevelOf(c, "Wizard", "Bladesinging") >= 14 ? bladesongBonus(c) : 0;
 }
 
 /* ---------------- Armor proficiency and Stealth ---------------- */
@@ -772,6 +921,15 @@ export function stealthCheck(c){
   if(!noisy) return {mode: "none", reason: ""};
   if(armor.category==="medium" && hasFeat(c, "Medium Armor Master")) return {mode: "none", reason: ""};
   return {mode: "dis", reason: (armor.name || "Your armor") + " gives disadvantage on Stealth checks"};
+}
+/* How a skill check rolls: Stealth as stealthCheck says, advantage on
+   Acrobatics during Bladesong and on Insight and Intimidation with the
+   astral visage out. {mode: "none"|"dis"|"adv", reason}. */
+export function skillRollMode(c, skill){
+  if(skill==="Stealth") return stealthCheck(c);
+  if(skill==="Acrobatics" && effectOn(c, "bladesong")) return {mode: "adv", reason: "Bladesong"};
+  if((skill==="Insight" || skill==="Intimidation") && effectOn(c, "astral_visage")) return {mode: "adv", reason: "Wisdom of the Spirit (Visage of the Astral Self)"};
+  return {mode: "none", reason: ""};
 }
 export function getAllCharacterFeatures(c){
   var list = [];

@@ -615,3 +615,98 @@ test("character title: older saves get an empty title, a set one is kept", () =>
   ensureShape(titled);
   assert.equal(titled.title, "the Unbroken");
 });
+
+test("active effects: Bladesong, the Astral Self, Symbiotic Entity", () => {
+  // Bladesong: pays a use; +INT AC, +10 ft, Acrobatics advantage, Song of Victory.
+  const rapier = { id: "r1", type: "weapon", name: "Rapier", ability: "finesse", proficient: true, magicBonus: 0 };
+  const bow = { id: "b1", type: "weapon", name: "Shortbow", ability: "dex", proficient: true, magicBonus: 0 };
+  const blade = char([{ name: "Wizard", subclass: "Bladesinging", level: 14 }], { abilities: { int: 16 }, inventory: [rapier, bow] });
+  blade.speed = 30; blade.effects = {};
+  assert.deepEqual(H.characterEffects(blade).map((e) => e.def.id), ["bladesong"]);
+  assert.equal(H.computeArmorClass(blade).value, 12);
+  assert.equal(H.weaponDamageBonus(blade, rapier), 2);
+  assert.equal(H.startEffect(blade, "bladesong"), true);
+  assert.equal(blade.resourcesUsed["Wizard:bladesong"], 1);
+  assert.equal(H.startEffect(blade, "bladesong"), false);                   // already on
+  assert.equal(H.computeArmorClass(blade).value, 15);
+  assert.match(H.computeArmorClass(blade).breakdown, /Bladesong \(\+3\)/);
+  assert.equal(H.computeSpeed(blade).value, 40);
+  assert.equal(H.skillRollMode(blade, "Acrobatics").mode, "adv");
+  assert.equal(H.skillRollMode(blade, "Athletics").mode, "none");
+  assert.equal(H.weaponDamageBonus(blade, rapier), 5);                      // Song of Victory
+  assert.equal(H.weaponDamageBonus(blade, bow), 2);                         // melee only
+  // A shield stops it working without switching it off.
+  blade.inventory.push({ type: "armor", equipped: true, name: "Shield", category: "shield", baseAC: 2 });
+  assert.equal(H.effectOn(blade, "bladesong"), false);
+  assert.match(H.effectBlocked(blade, "bladesong"), /Shield/);
+  assert.equal(H.computeSpeed(blade).value, 30);
+  blade.inventory.pop();
+  assert.deepEqual(H.endAllEffects(blade), ["Bladesong"]);
+  assert.equal(H.computeArmorClass(blade).value, 12);
+  // Out of uses: can't start, and the card says why.
+  blade.resourcesUsed["Wizard:bladesong"] = 5;
+  assert.match(H.characterEffects(blade)[0].why, /Not enough Bladesong/);
+  assert.equal(H.startEffect(blade, "bladesong"), false);
+  // Below level 2 there's nothing to switch on, and old flags count for nothing.
+  const novice = char([{ name: "Wizard", subclass: "Bladesinging", level: 1 }]);
+  novice.effects = { bladesong: true };
+  assert.deepEqual(H.characterEffects(novice), []);
+  assert.equal(H.effectOn(novice, "bladesong"), false);
+  assert.equal(H.pruneEffects(novice), true);
+  assert.deepEqual(novice.effects, {});
+
+  // Astral Self: arms and visage cost 1 ki each, awakening 5 and needs both.
+  const monk = char([{ name: "Monk", subclass: "Way of the Astral Self", level: 17 }], { abilities: { wis: 18 } });
+  monk.effects = {};
+  assert.deepEqual(H.characterEffects(monk).map((e) => e.def.id), ["astral_arms", "astral_visage", "awakened_astral_self"]);
+  assert.match(H.characterEffects(monk)[2].why, /Needs Arms of the Astral Self and Visage of the Astral Self/);
+  assert.equal(H.startEffect(monk, "awakened_astral_self"), false);
+  assert.equal(H.computeSave(monk, "str").value, 6);                       // Diamond Soul: proficient
+  H.startEffect(monk, "astral_arms");
+  assert.equal(monk.resourcesUsed["Monk:ki"], 1);
+  assert.deepEqual(H.checkAbility(monk, "str"), { mod: 4, label: "WIS (Arms of the Astral Self)" });
+  assert.equal(H.computeSave(monk, "str").value, 10);
+  assert.match(H.computeSave(monk, "str").breakdown, /^WIS \(Arms of the Astral Self\)/);
+  assert.deepEqual(H.astralArmsAttack(monk), { attack: 10, damage: 4, die: 10, empowered: true });
+  H.startEffect(monk, "astral_visage");
+  assert.deepEqual(H.computeDarkvision(monk), { range: 120, sources: ["Astral Sight"] });
+  assert.equal(H.skillRollMode(monk, "Insight").mode, "adv");
+  assert.equal(H.skillRollMode(monk, "Intimidation").mode, "adv");
+  assert.equal(H.computeArmorClass(monk).value, 16);
+  assert.equal(H.startEffect(monk, "awakened_astral_self"), true);
+  assert.equal(monk.resourcesUsed["Monk:ki"], 7);
+  assert.equal(H.computeArmorClass(monk).value, 18);
+  // Dismissing the arms ends the awakening too.
+  H.endEffect(monk, "astral_arms");
+  assert.deepEqual(monk.effects, { astral_visage: true });
+  assert.equal(H.computeArmorClass(monk).value, 16);
+  assert.deepEqual(H.astralArmsAttack(char([{ name: "Monk", subclass: "Way of the Astral Self", level: 5 }])).die, 6);
+
+  // Symbiotic Entity: a Wild Shape use for 4 temp HP per druid level; ends with them.
+  const druid = char([{ name: "Druid", subclass: "Circle of Spores", level: 6 }]);
+  druid.hp = { max: 40, current: 40, temp: 5 }; druid.effects = {};
+  assert.equal(H.haloOfSporesDie(druid), 6);
+  assert.equal(H.startEffect(druid, "symbiotic_entity"), true);
+  assert.equal(druid.resourcesUsed["Druid:wild_shape"], 1);
+  assert.equal(druid.hp.temp, 24);
+  assert.equal(H.effectOn(druid, "symbiotic_entity"), true);
+  druid.hp.temp = 0;
+  assert.equal(H.effectOn(druid, "symbiotic_entity"), false);
+  assert.equal(H.pruneEffects(druid), true);
+  assert.deepEqual(druid.effects, {});
+  // Temp HP don't stack: a bigger pool stays.
+  druid.hp.temp = 30;
+  H.startEffect(druid, "symbiotic_entity");
+  assert.equal(druid.hp.temp, 30);
+  // Archdruid: unlimited Wild Shape, so it costs nothing.
+  const arch = char([{ name: "Druid", subclass: "Circle of Spores", level: 20 }]);
+  arch.hp = { max: 100, current: 100, temp: 0 };
+  assert.equal(H.startEffect(arch, "symbiotic_entity"), true);
+  assert.equal(arch.resourcesUsed["Druid:wild_shape"], undefined);
+  assert.equal(arch.hp.temp, 80);
+
+  // Older saves get an empty set of effects.
+  const old = { classes: [{ name: "Wizard", level: 2 }] };
+  ensureShape(old);
+  assert.deepEqual(old.effects, {});
+});

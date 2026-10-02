@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, characterResources, restoreResources, maxHp, toughBonus, computeSpeed, hitDieHealing, heavyArmorMasterActive } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, characterResources, restoreResources, maxHp, toughBonus, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect } from "../../core/helpers.js";
 import { CLASSES_INFO } from "../../data/classes.js";
 import { HIT_DICE_BY_CLASS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -10,6 +10,7 @@ import { confirmDialog } from "../../ui/confirm-modal.js";
 import { elixirsOnLongRest } from "../../core/artificer.js";
 import { restoreCompanions } from "../../core/companions.js";
 import { renderDeathSaves } from "./death-saves.js";
+import { renderEffectsCard } from "./effects.js";
 
 /* ---- Vitals panel ---- */
 export function renderVitalsPanel(c){
@@ -67,7 +68,8 @@ export function renderVitalsPanel(c){
     c.hp.current = Math.max(0, (Number(c.hp.current)||0) - n);
     // Dropping to 0 starts a fresh set of death saves.
     var wentDown = wasUp && c.hp.current === 0;
-    if(wentDown) c.deathSaves = {success:0, fail:0};
+    // Dropping to 0 also ends Bladesong, the Astral Self and the spores.
+    if(wentDown){ c.deathSaves = {success:0, fail:0}; endAllEffects(c); }
     save(); renderSidebar(); renderAll();
     if(wentDown){
       var ds = document.querySelector(".death-saves");
@@ -560,6 +562,8 @@ export function renderVitalsPanel(c){
     if(c.spellcasting.pact && c.spellcasting.pact.used){ c.spellcasting.pact.used = 0; pactNote = " Pact slots restored."; }
     var restored = restoreResources(c, "short");
     var resNote = restored.length ? " Restored: "+restored.join(", ")+"." : "";
+    var ended = endAllEffects(c);
+    if(ended.length) resNote += " Ended: "+ended.join(", ")+".";
     logRoll("Short rest taken", "Spend hit dice as needed to heal."+pactNote+resNote);
     save(); renderAll();
   });
@@ -583,6 +587,7 @@ export function renderVitalsPanel(c){
         if(c.spellcasting.pact) c.spellcasting.pact.used = 0;
         c.rage.used = 0;
         c.rage.active = false;
+        endAllEffects(c);
         restoreResources(c, "long");
         restoreCompanions(c);
         var elixirs = elixirsOnLongRest(c);
@@ -639,6 +644,9 @@ export function renderVitalsPanel(c){
 
     panel.appendChild(rageCard);
   }
+
+  var effectsCard = renderEffectsCard(c);
+  if(effectsCard) panel.appendChild(effectsCard);
 
   var resources = characterResources(c);
   if(resources.length) panel.appendChild(renderResourcesCard(c, resources));
@@ -729,6 +737,8 @@ function renderResourcesCard(c, resources){
 
     function setUsed(n){
       n = clamp(n, 0, r.max);
+      // Using Wild Shape again ends Symbiotic Entity.
+      if(r.key==="Druid:wild_shape" && n > r.used) endEffect(c, "symbiotic_entity");
       if(n) c.resourcesUsed[r.key] = n; else delete c.resourcesUsed[r.key];
       save(); renderAll();
     }

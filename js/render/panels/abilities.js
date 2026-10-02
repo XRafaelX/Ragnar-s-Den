@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { fmtMod, mod, profBonus, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, computeDarkvision, stealthCheck, escapeHtml } from "../../core/helpers.js";
+import { fmtMod, mod, profBonus, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, computeDarkvision, skillRollMode, checkAbility, escapeHtml } from "../../core/helpers.js";
 import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeAlertSvg } from "../../ui/svg-icons.js";
@@ -16,23 +16,25 @@ export function renderAbilitiesPanel(c){
     var key = a[0];
     var score = Number(c.abilities[key]) || 10;
     var m = mod(score);
+    // Checks roll this; Arms of the Astral Self can swap WIS in for STR.
+    var check = checkAbility(c, key);
     var box = document.createElement("div");
     box.className = "ability-box";
 
     var rollArea = document.createElement("div");
     rollArea.className = "ability-roll-area";
-    rollArea.title = "Roll " + a[1] + " check (1d20" + fmtMod(m) + ")";
+    rollArea.title = "Roll " + a[1] + " check (1d20" + fmtMod(check.mod) + (check.mod!==m ? ", " + check.label : "") + ")";
     rollArea.setAttribute("role", "button");
     rollArea.setAttribute("tabindex", "0");
-    rollArea.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(m)+'</div>';
+    rollArea.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(check.mod)+'</div>';
     rollArea.addEventListener("click", function(e){
       e.stopPropagation();
-      performRoll(20,1,mod(c.abilities[key]),"none", a[1]+" check");
+      performRoll(20,1,check.mod,"none", a[1]+" check");
     });
     rollArea.addEventListener("keydown", function(e){
       if(e.key === "Enter" || e.key === " "){
         e.preventDefault();
-        performRoll(20,1,mod(c.abilities[key]),"none", a[1]+" check");
+        performRoll(20,1,check.mod,"none", a[1]+" check");
       }
     });
     box.appendChild(rollArea);
@@ -128,12 +130,12 @@ export function renderAbilitiesPanel(c){
     '<span class="row-name" style="font-size:10px;color:var(--text-on-parch-dim);text-transform:uppercase;">Skill</span>'+
     '<span class="abbr"></span><span class="row-mod"></span>';
   skillRows.appendChild(header);
-  var stealth = stealthCheck(c);
   SKILLS.forEach(function(s){
     var name = s[0], ab = s[1];
     var entry = c.skillProfs[name] || {prof:false, expertise:false};
     var pb = profBonus(c);
-    var bonus = mod(c.abilities[ab]) + (entry.expertise ? pb*2 : (entry.prof ? pb : 0));
+    var skillAbility = checkAbility(c, ab);
+    var bonus = skillAbility.mod + (entry.expertise ? pb*2 : (entry.prof ? pb : 0));
     var row = document.createElement("div");
     row.className = "list-row";
     var profCb = document.createElement("input");
@@ -146,20 +148,23 @@ export function renderAbilitiesPanel(c){
     expCb.addEventListener("change", function(){ entry.expertise = expCb.checked; c.skillProfs[name]=entry; save(); renderAll(); });
     var nameSpan = document.createElement("span");
     nameSpan.className = "row-name"; nameSpan.textContent = name;
-    // Stealth rolls with armor's disadvantage (or Dampening Field's advantage).
-    var rollMode = name==="Stealth" ? stealth.mode : "none";
+    // Stealth with armor's disadvantage (or Dampening Field's advantage),
+    // advantage from an effect that's on (Bladesong, the astral visage).
+    var roll = skillRollMode(c, name);
+    var rollMode = roll.mode;
     if(rollMode!=="none"){
       var tag = document.createElement("span");
       tag.className = "skill-roll-tag " + rollMode;
       if(rollMode==="dis") tag.innerHTML = makeAlertSvg() + "Dis";
       else tag.textContent = "Adv";
-      tag.title = stealth.reason;
+      tag.title = roll.reason;
       nameSpan.appendChild(tag);
-      nameSpan.title = stealth.reason;
+      nameSpan.title = roll.reason;
     }
     nameSpan.addEventListener("click", function(){ performRoll(20,1,bonus,rollMode, name); });
     var abbr = document.createElement("span");
-    abbr.className = "abbr"; abbr.textContent = ab.toUpperCase();
+    abbr.className = "abbr"; abbr.textContent = skillAbility.label.slice(0, 3);
+    if(skillAbility.label.length > 3) abbr.title = skillAbility.label;
     var modSpan = document.createElement("span");
     modSpan.className = "row-mod"; modSpan.textContent = fmtMod(bonus);
     row.appendChild(profCb); row.appendChild(expCb); row.appendChild(nameSpan); row.appendChild(abbr); row.appendChild(modSpan);
