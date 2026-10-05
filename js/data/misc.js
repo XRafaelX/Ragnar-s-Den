@@ -6,7 +6,7 @@ export var POINT_BUY_COSTS = {8:0,9:1,10:2,11:3,12:4,13:5,14:7,15:9};
 export var NAME_IDEAS = [
   // Our table's characters
   "Ragnar", "Nanos", "Kayn", "Belisarius", "Hunter", "Cyrene",
-  "TOUKELLIENMELI", "Tommys the Barber", "Orinel", "Michael", "Death",
+  "TOUKELLIENMELI", "Tommys the Barber", "Orinel", "Luner", "Death",
 
   // Baldur's Gate 3 companions
   "Astarion", "Shadowheart", "Gale Dekarios", "Lae'zel", "Wyll Ravengard",
