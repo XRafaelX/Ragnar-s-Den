@@ -1,50 +1,31 @@
 /* ---------------- Background data ---------------- */
 export var BACKGROUNDS = {
-  "Standard (SRD)": ["Acolyte"],
-  "Expanded": [
-    "Charlatan","Criminal","Entertainer","Folk Hero","Guild Artisan","Guild Merchant",
-    "Hermit","Noble","Outlander","Sage","Sailor","Soldier","Urchin","Anthropologist",
-    "Archaeologist","City Watch","Clan Crafter","Cloistered Scholar","Courtier",
-    "Faction Agent","Far Traveler","Inheritor","Knight of the Order","Mercenary Veteran",
-    "Urban Bounty Hunter","Uthgardt Tribe Member","Waterdhavian Noble"
+  "Player's Handbook": [
+    "Acolyte","Charlatan","Criminal","Entertainer","Folk Hero","Guild Artisan","Guild Merchant",
+    "Hermit","Noble","Outlander","Sage","Sailor","Soldier","Urchin"
   ],
-  "Sword Coast Adventurer's Guide": [
+  "Forgotten Realms (SCAG / ToA)": [
+    "Anthropologist","Archaeologist","City Watch","Clan Crafter","Cloistered Scholar","Courtier",
+    "Faction Agent","Far Traveler","Inheritor","Knight of the Order","Mercenary Veteran",
+    "Urban Bounty Hunter","Uthgardt Tribe Member","Waterdhavian Noble",
     "Investigator","Pirate"
   ],
-  "Guildmasters' Guide to Ravnica": [
+  "Other Settings": [
     "Azorius Functionary","Boros Legionnaire","Dimir Operative","Golgari Agent",
     "Gruul Anarch","Izzet Engineer","Orzhov Representative","Rakdos Cultist",
-    "Selesnya Initiate","Simic Scientist"
-  ],
-  "Ghosts of Saltmarsh": [
-    "Fisher","Marine","Shipwright","Smuggler"
-  ],
-  "Acquisitions Incorporated": [
-    "Celebrity Adventurer's Scion","Failed Merchant","Gambler","Plaintiff","Rival Intern"
-  ],
-  "Eberron: Rising from the Last War": [
-    "House Agent"
-  ],
-  "Mythic Odysseys of Theros": [
-    "Athlete"
-  ],
-  "Strixhaven: Curriculum of Chaos": [
-    "Lorehold Student","Prismari Student","Quandrix Student","Silverquill Student","Witherbloom Student"
-  ],
-  "The Wild Beyond the Witchlight": [
-    "Feylost","Witchlight Hand"
-  ],
-  "Spelljammer: Adventures in Space": [
-    "Astral Drifter","Wildspacer"
-  ],
-  "Dragonlance: Shadow of the Dragon Queen": [
-    "Knight of Solamnia","Mage of High Sorcery"
-  ],
-  "Planescape: Adventures in the Multiverse": [
-    "Gate Warden","Planar Philosopher"
-  ],
-  "Glory of the Giants": [
+    "Selesnya Initiate","Simic Scientist",
+    "House Agent",
+    "Athlete",
+    "Lorehold Student","Prismari Student","Quandrix Student","Silverquill Student","Witherbloom Student",
+    "Knight of Solamnia","Mage of High Sorcery",
+    "Gate Warden","Planar Philosopher",
     "Giant Foundling","Rune Carver"
+  ],
+  "Adventures & Supplements": [
+    "Fisher","Marine","Shipwright","Smuggler",
+    "Celebrity Adventurer's Scion","Failed Merchant","Gambler","Plaintiff","Rival Intern",
+    "Feylost","Witchlight Hand",
+    "Astral Drifter","Wildspacer"
   ]
 };
 
