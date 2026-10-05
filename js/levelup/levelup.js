@@ -778,7 +778,8 @@ export function undoLastLevelUp(c){
     }
     if(rec.asi) Object.keys(rec.asi).forEach(function(k){ c.abilities[k] = (Number(c.abilities[k])||10) - rec.asi[k]; });
     if(rec.featId){
-      revertFeatPicks(c, c.feats.find(function(f){ return f.id===rec.featId; }));
+      var featToRevert = c.feats.find(function(f){ return f.id===rec.featId; });
+      if(featToRevert) revertFeatPicks(c, featToRevert);
       c.feats = c.feats.filter(function(f){ return f.id!==rec.featId; });
     }
     if(rec.featureId) c.features = c.features.filter(function(f){ return f.id!==rec.featureId; });
