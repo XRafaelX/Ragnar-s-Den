@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText } from "../../core/helpers.js";
+import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { performRoll } from "../../dice/dice.js";
 import { playDelete } from "../../ui/sound.js";
@@ -14,8 +14,6 @@ import { showActionToast } from "../../ui/toast.js";
 
 
 var SCHOOLS = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"];
-
-function ordinal(n){ return n + (n===1 ? "st" : n===2 ? "nd" : n===3 ? "rd" : "th"); }
 
 function spellSubtitle(sp){
   return [sp.school, sp.castingTime, sp.range, sp.components, sp.duration].filter(Boolean).join(" · ");

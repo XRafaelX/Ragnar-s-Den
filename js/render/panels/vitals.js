@@ -353,7 +353,6 @@ export function renderVitalsPanel(c){
     return box;
   }
   var acResult = computeArmorClass(c);
-  c.ac = acResult.value;
 
   var acBox = document.createElement("div");
   acBox.className = "vital-box vital-mini ac-vital-box";

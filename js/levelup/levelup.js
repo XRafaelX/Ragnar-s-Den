@@ -6,7 +6,7 @@ import {
   mod, fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus,
   classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots,
   wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFightingStyle,
-  hasFeat, maxHp, computeSpeed, classSpellChoices
+  hasFeat, maxHp, computeSpeed, classSpellChoices, ordinal
 } from "../core/helpers.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { save } from "../core/state.js";
@@ -887,4 +887,3 @@ function showUnlocked(c, s){
   });
 }
 
-function ordinal(n){ return n + (n===1 ? "st" : n===2 ? "nd" : n===3 ? "rd" : "th"); }

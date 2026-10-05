@@ -905,7 +905,7 @@ export function armorProficiencies(c){
 }
 export function isProficientWithArmor(c, item){
   var profs = armorProficiencies(c);
-  if(item.category==="shield") return profs.some(function(p){ return p.indexOf("shield")===0; });
+  if(item.category==="shield") return profs.some(function(p){ return p.indexOf("shield")!==-1; });
   return profs.indexOf("all armor")!==-1 || profs.indexOf((item.category||"") + " armor")!==-1;
 }
 /* How Stealth checks roll: disadvantage from worn armor (Scale Mail,
@@ -1029,6 +1029,7 @@ export function escapeHtml(s){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
   });
 }
+export function ordinal(n){ var s=n%100; var t=s>=11&&s<=13?"th":[,"st","nd","rd"][n%10]||"th"; return n+t; }
 export function nowStamp(){
   var d = new Date();
   return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})+" · "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
