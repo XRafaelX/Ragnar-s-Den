@@ -365,7 +365,7 @@ export function computeArmorClass(c){
       var conMod = mod(c.abilities && c.abilities.con);
       options.push({value: 10 + dexMod + conMod, breakdown: "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + CON (" + fmtMod(conMod) + ")", short: "10 + DEX + CON"});
     }
-    if(hasClass("Monk") && !shieldBonus){
+    if(hasClass("Monk") && !items.some(function(i){ return i.category==="shield"; })){
       var wisMod = mod(c.abilities && c.abilities.wis);
       options.push({value: 10 + dexMod + wisMod, breakdown: "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + WIS (" + fmtMod(wisMod) + ")", short: "10 + DEX + WIS"});
     }
@@ -377,7 +377,7 @@ export function computeArmorClass(c){
   }
 
   if(shieldBonus){ breakdown += " + shield (" + fmtMod(shieldBonus) + ")"; short += " + shield"; }
-  var defense = bodyArmor && hasFightingStyle(c, "Defense") ? 1 : 0;
+  var defense = (bodyArmor || shieldBonus > 0) && hasFightingStyle(c, "Defense") ? 1 : 0;
   if(defense){ breakdown += " + Defense style (+1)"; short += " + Defense"; }
   base += defense;
   // Dual Wielder: +1 while wielding a separate melee weapon in each hand

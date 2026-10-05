@@ -256,7 +256,7 @@ CLASSES_INFO["Cleric"].features = [
 ];
 
 /* Clerics and Druids prepare WIS modifier + level spells (min 1). */
-function wisModPlusOne(w){ return Math.max(1, Math.floor((w.abilities.wis-10)/2) + 1); }
+function wisModPlusOne(w){ return Math.max(1, Math.floor(((w.abilities && w.abilities.wis || 10)-10)/2) + 1); }
 
 /* Cleric picks its subclass (Divine Domain) at level 1, so the wizard's
    Class Features step offers it. `grants` is what each domain adds at
