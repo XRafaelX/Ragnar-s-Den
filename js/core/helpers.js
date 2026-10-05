@@ -805,7 +805,7 @@ export function characterEffects(c){
 export function startEffect(c, id){
   var e = characterEffects(c).find(function(x){ return x.def.id===id; });
   if(!e || e.on || e.why) return false;
-  if(e.resource.max!==Infinity){
+  if(e.resource && e.resource.max!==Infinity){
     if(!c.resourcesUsed) c.resourcesUsed = {};
     c.resourcesUsed[e.resource.key] = e.resource.used + e.def.cost.amount;
   }
