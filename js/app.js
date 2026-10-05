@@ -45,7 +45,16 @@ export function setupTopLevel(){
   document.getElementById("tb-title").addEventListener("click", goHome);
   document.getElementById("sidebar-home-link").addEventListener("click", goHome);
 
-  document.getElementById("export-btn").addEventListener("click", function(){
+  /* --- Data modal (import / export) --- */
+  var dataModal = document.getElementById("data-modal");
+  function openDataModal(){ dataModal.classList.add("open"); }
+  function closeDataModal(){ dataModal.classList.remove("open"); }
+  document.getElementById("data-btn").addEventListener("click", openDataModal);
+  document.getElementById("data-modal-close").addEventListener("click", closeDataModal);
+  dataModal.addEventListener("click", function(e){ if(e.target === dataModal) closeDataModal(); });
+
+  document.getElementById("data-export-btn").addEventListener("click", function(){
+    closeDataModal();
     // Characters plus homebrew made in the Compendium. (Older backups were
     // just the characters array; import still accepts those.)
     var backup = {version:2, appVersion:APP_VERSION, characters:state.characters, customSubclasses:getCustomSubclasses(),
@@ -62,7 +71,8 @@ export function setupTopLevel(){
     setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
   });
 
-  document.getElementById("import-btn").addEventListener("click", function(){
+  document.getElementById("data-import-btn").addEventListener("click", function(){
+    closeDataModal();
     document.getElementById("import-file").click();
   });
   document.getElementById("import-file").addEventListener("change", function(e){

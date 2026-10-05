@@ -67,10 +67,10 @@ var STEPS = [
     }
   },
   {
-    target: byId("export-btn"),
+    target: byId("data-btn"),
     desktopOnly: true,
     title: "Back up your vault",
-    text: "Everything lives only in this browser. Export a backup now and then, and import it to move to another device."
+    text: "Everything lives only in this browser. Use Import & Export to save a backup and move to another device."
   },
   {
     target: byId("theme-btn"),

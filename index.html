@@ -69,8 +69,14 @@
     <ul id="char-list"></ul>
     <div id="sidebar-footer">
       <button class="btn primary" id="new-char-btn">+ New Character</button>
-      <button class="btn small ghost" id="export-btn">Export all (backup)</button>
-      <button class="btn small ghost" id="import-btn">Import backup</button>
+      <button class="btn small ghost" id="data-btn">
+        <svg class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" x2="12" y1="15" y2="3"/>
+        </svg>
+        Import &amp; Export
+      </button>
       <input type="file" id="import-file" accept="application/json" style="display:none;">
       <input type="file" id="avatar-file" accept="image/*" style="display:none;">
       <input type="file" id="backdrop-file" accept="image/*" style="display:none;">
@@ -329,6 +335,39 @@
       <button class="rd-modal-close" id="char-picker-close" aria-label="Close">✕</button>
     </div>
     <div id="char-picker-body"></div>
+  </div>
+</div>
+
+<div class="rd-backdrop" id="data-modal">
+  <div class="rd-modal" role="dialog" aria-modal="true" aria-labelledby="data-modal-title">
+    <div class="rd-modal-header">
+      <h4 id="data-modal-title">Import &amp; Export</h4>
+      <button class="rd-modal-close" id="data-modal-close" aria-label="Close">✕</button>
+    </div>
+    <div class="data-modal-options">
+      <button class="data-option-card" id="data-export-btn" aria-label="Export backup">
+        <span class="data-option-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" x2="12" y1="15" y2="3"/>
+          </svg>
+        </span>
+        <span class="data-option-label">Export backup</span>
+        <span class="data-option-desc">Save a backup file to your device.</span>
+      </button>
+      <button class="data-option-card" id="data-import-btn" aria-label="Import backup">
+        <span class="data-option-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" x2="12" y1="3" y2="15"/>
+          </svg>
+        </span>
+        <span class="data-option-label">Import backup</span>
+        <span class="data-option-desc">Restore from a backup file.</span>
+      </button>
+    </div>
   </div>
 </div>
 
