@@ -280,17 +280,26 @@ function slotRow(levelText, subText, pipsEl, rightEl){
   return row;
 }
 
+/* Edit mode's stepper: changes the maximum and records the change as
+   s.extra (slots from items or homebrew), which recalculating the class
+   slots on a level-up keeps (applySpellSlots). */
 function maxStepper(s){
   var st = ce("div","stat-stepper slot-stepper");
   var down = ce("button","stat-arrow-btn stat-arrow-down");
   down.type = "button"; down.innerHTML = makeStatArrowSvg("down");
   down.setAttribute("aria-label","Fewer slots"); down.disabled = s.max <= 0;
-  down.addEventListener("click", function(){ s.max = Math.max(0, s.max-1); s.used = clamp(s.used,0,s.max); save(); renderAll(); });
+  down.addEventListener("click", function(){
+    if(s.max <= 0) return;
+    s.max--; s.extra = (Number(s.extra)||0) - 1; s.used = clamp(s.used,0,s.max); save(); renderAll();
+  });
   var val = ce("span","stat-score-val"); val.textContent = s.max;
   var up = ce("button","stat-arrow-btn stat-arrow-up");
   up.type = "button"; up.innerHTML = makeStatArrowSvg("up");
   up.setAttribute("aria-label","More slots"); up.disabled = s.max >= 9;
-  up.addEventListener("click", function(){ s.max = Math.min(9, s.max+1); save(); renderAll(); });
+  up.addEventListener("click", function(){
+    if(s.max >= 9) return;
+    s.max++; s.extra = (Number(s.extra)||0) + 1; save(); renderAll();
+  });
   st.appendChild(down); st.appendChild(val); st.appendChild(up);
   return st;
 }

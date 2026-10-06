@@ -65,7 +65,7 @@ export var CLASS_PROGRESSION = {
       ],
       5: [
         {name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."},
-        {name:"Fast Movement", text:"Your speed increases by 10 feet while you aren't wearing heavy armor. (Already added to your speed.)", speed:10}
+        {name:"Fast Movement", text:"Your speed increases by 10 feet while you aren't wearing heavy armor. (Added to your speed while that's true.)", speed:10, speedWhen:"noHeavyArmor"}
       ],
       7: [{name:"Feral Instinct", text:"You have advantage on initiative rolls. If you are surprised at the start of combat and aren't incapacitated, you can act normally on your first turn, but only if you enter your rage before doing anything else."}],
       9: [
@@ -150,7 +150,7 @@ export var CLASS_PROGRESSION = {
     features: {
       2: [
         {name:"Ki", text:"You have ki points equal to your monk level, regained on a short or long rest. Spend 1 ki for: Flurry of Blows (two unarmed strikes as a bonus action), Patient Defense (Dodge as a bonus action) or Step of the Wind (Disengage or Dash as a bonus action, jump distance doubled). Save DC = 8 + proficiency + WIS."},
-        {name:"Unarmored Movement", text:"Your speed increases by 10 feet while you wear no armor and no shield. (Already added to your speed.)", speed:10}
+        {name:"Unarmored Movement", text:"Your speed increases by 10 feet while you wear no armor and no shield. (Added to your speed while that's true.)", speed:10, speedWhen:"unarmored"}
       ],
       3: [{name:"Deflect Missiles", text:"Reaction when hit by a ranged weapon attack: reduce the damage by 1d10 + DEX modifier + monk level. If that reduces it to 0 you can catch it and spend 1 ki to throw it back."}],
       4: [{name:"Slow Fall", text:"Reaction when you fall: reduce the falling damage by five times your monk level."}],
@@ -161,28 +161,28 @@ export var CLASS_PROGRESSION = {
       ],
       6: [
         {name:"Ki-Empowered Strikes", text:"Your unarmed strikes count as magical for overcoming resistance and immunity to nonmagical attacks and damage."},
-        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 15 feet while you wear no armor and no shield. (Already added to your speed.)", speed:5}
+        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 15 feet while you wear no armor and no shield. (Added to your speed while that's true.)", speed:5, speedWhen:"unarmored"}
       ],
       7: [
         {name:"Evasion", text:"When an effect lets you make a DEX save to take half damage, you take no damage on a success and half on a failure."},
         {name:"Stillness of Mind", text:"As an action, end one effect on yourself that is causing you to be charmed or frightened."}
       ],
-      9: [{name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 15 feet while you wear no armor and no shield. (Already added to your speed.) You can also move along vertical surfaces and across liquids on your turn without falling during the move."}],
+      9: [{name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 15 feet while you wear no armor and no shield. (Added to your speed while that's true.) You can also move along vertical surfaces and across liquids on your turn without falling during the move."}],
       10: [
         {name:"Purity of Body", text:"You are immune to disease and poison."},
-        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 20 feet while you wear no armor and no shield. (Already added to your speed.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5}
+        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 20 feet while you wear no armor and no shield. (Added to your speed while that's true.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5, speedWhen:"unarmored"}
       ],
       11: [{name:"Martial Arts", replaces:"Martial Arts", text:"Use DEX instead of STR for unarmed strikes and monk weapons, which deal 1d8 damage. When you take the Attack action with them, you can make one unarmed strike as a bonus action."}],
       13: [{name:"Tongue of the Sun and Moon", text:"You understand all spoken languages, and any creature that understands a language can understand what you say."}],
       14: [
         {name:"Diamond Soul", text:"You gain proficiency in all saving throws (already applied to your saves). When you fail a saving throw, you can spend 1 ki to reroll it and take the second result.", grants:{savingThrows:["str","dex","con","int","wis","cha"]}},
-        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 25 feet while you wear no armor and no shield. (Already added to your speed.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5}
+        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 25 feet while you wear no armor and no shield. (Added to your speed while that's true.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5, speedWhen:"unarmored"}
       ],
       15: [{name:"Timeless Body", text:"You suffer none of the frailty of old age and can't be aged magically, but still die of old age. You no longer need food or water."}],
       17: [{name:"Martial Arts", replaces:"Martial Arts", text:"Use DEX instead of STR for unarmed strikes and monk weapons, which deal 1d10 damage. When you take the Attack action with them, you can make one unarmed strike as a bonus action."}],
       18: [
         {name:"Empty Body", text:"As an action, spend 4 ki to become invisible for 1 minute, with resistance to all damage except force. Or spend 8 ki to cast Astral Projection on yourself only, without material components."},
-        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 30 feet while you wear no armor and no shield. (Already added to your speed.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5}
+        {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 30 feet while you wear no armor and no shield. (Added to your speed while that's true.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5, speedWhen:"unarmored"}
       ],
       20: [{name:"Perfect Self", text:"When you roll initiative and have no ki points left, you regain 4 ki points."}]
     }

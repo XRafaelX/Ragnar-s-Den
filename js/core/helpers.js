@@ -56,6 +56,8 @@ export function classSpellAbility(cl){
 /* Mechanical flags a class or subclass feature can carry; they're copied
    onto classFeatureList items so the sheet can apply them:
      speed         walking speed gained at level-up (Fast Movement)
+     speedWhen     when that speed counts: "unarmored" (no armor or
+                   shield) or "noHeavyArmor" (see computeSpeed)
      initiative    ability ("wis", "int", ...) or "pb" added to initiative
      acHeavyArmor  AC bonus while wearing heavy armor (Soul of the Forge)
      grants        {armor, weapons, tools, savingThrows} proficiencies
@@ -86,7 +88,7 @@ export function classSpellAbility(cl){
                    depend on a choice (Circle of the Land's land, a genie
                    kind), each option shaped like `spells`. The pick is
                    saved on the class entry as spellChoices[id]. */
-var FEATURE_FLAGS = ["speed", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList"];
+var FEATURE_FLAGS = ["speed", "speedWhen", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList"];
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -295,10 +297,40 @@ export function hpBonuses(c){
 export function maxHp(c){
   return (Number(c.hp && c.hp.max)||0) + toughBonus(c) + raceHpBonus(c);
 }
+/* Walking speed gained from features that only count out of armor
+   (`speedWhen`: "unarmored" for Unarmored Movement, "noHeavyArmor" for
+   Fast Movement), by feature name: {name: {when, value}}. Level-ups add
+   it to the saved speed, so computeSpeed takes it back off in armor. */
+function conditionalSpeeds(cl){
+  var lv = Number(cl.level)||1, out = {};
+  var prog = CLASS_PROGRESSION[cl.name], sub = findSubclass(cl.name, cl.subclass);
+  for(var l=1; l<=lv; l++){
+    ((prog && prog.features[l]) || []).concat((sub && sub.features && sub.features[l]) || []).forEach(function(f){
+      if(!f.speed || !f.speedWhen) return;
+      var g = out[f.name] = out[f.name] || {when: f.speedWhen, value: 0};
+      g.value += f.speed;
+    });
+  }
+  return out;
+}
+/* The Strength this heavy armor needs and the character lacks (0 when
+   it doesn't slow them): never for dwarves (Unslowed) or an Armorer,
+   whose armor is Arcane Armor with no Strength requirement. */
+export function armorStrengthShortfall(c, item){
+  if(!item || item.category!=="heavy") return 0;
+  var req = Number(item.strReq) || (ARMOR_DATA[item.name] && ARMOR_DATA[item.name].strReq) || 0;
+  if(!req || (Number(c.abilities && c.abilities.str)||10) >= req) return 0;
+  var race = RACE_DATA[c.race];
+  if(race && (race.traits||[]).some(function(t){ return t.name==="Unslowed"; })) return 0;
+  var armorer = (c.classes||[]).some(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer" && (Number(cl.level)||1) >= 3; });
+  return armorer ? 0 : req;
+}
 /* Walking speed: the saved number plus Mobile's 10 ft, an Infiltrator
    Armorer's Powered Steps (while wearing armor) and Bladesong's 10 ft
-   (while it's on); `parts` names each bonus
-   for the hint. `others` are the
+   (while it's on), minus Unarmored or Fast Movement while armor rules
+   them out and 10 ft for heavy armor worn without the Strength it needs
+   (not for dwarves, or an Armorer's Arcane Armor);
+   `parts` names each change ({name, value, why}) for the hint. `others` are the
    fly, swim and climb speeds from the race and from features tagged
    `speeds`, as {type, value, when, source}: always-on ones first (only
    the best of each type), then the ones that depend on something. */
@@ -310,8 +342,21 @@ export function computeSpeed(c){
   var inArmor = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
   if(model && model.speed && inArmor) parts.push({name: "Powered Steps", value: model.speed});
   if(effectOn(c, "bladesong")) parts.push({name: "Bladesong", value: 10});
+  var worn = (c.inventory||[]).filter(function(i){ return i.type==="armor" && i.equipped; });
+  var body = worn.find(function(i){ return i.category!=="shield"; });
+  var shield = worn.some(function(i){ return i.category==="shield"; });
+  (c.classes||[]).forEach(function(cl){
+    var gained = conditionalSpeeds(cl);
+    Object.keys(gained).forEach(function(name){
+      var g = gained[name];
+      var off = g.when==="unarmored" ? !!(body || shield) : g.when==="noHeavyArmor" ? !!(body && body.category==="heavy") : false;
+      if(off) parts.push({name: name, value: -g.value, why: g.when==="unarmored" ? (body ? "in armor" : "with a shield") : "in heavy armor"});
+    });
+  });
+  var strReq = armorStrengthShortfall(c, body);
+  if(strReq) parts.push({name: body.name || "Heavy armor", value: -10, why: "needs STR " + strReq});
   var mobile = parts.reduce(function(a, p){ return a + p.value; }, 0);
-  var walk = (Number(c.speed)||0) + mobile;
+  var walk = Math.max(0, (Number(c.speed)||0) + mobile);
   var list = [], bonus = {};
   var race = RACE_DATA[c.race];
   var rs = race && race.speed || {};
@@ -692,10 +737,25 @@ export function autoEquipLoadout(items){
 }
 
 /* ---------------- Weapon attack & damage bonuses ---------------- */
+/* A monk weapon: a shortsword, or a simple melee weapon that isn't
+   two-handed or heavy. */
+export function isMonkWeapon(item){
+  if(item.name==="Shortsword") return true;
+  var d = WEAPON_DATA[item.name];
+  if(!d || d.category!=="simple" || d.ranged) return false;
+  return !/two-handed|heavy/i.test(d.properties || "");
+}
+/* Martial Arts: a monk wearing no armor and holding no shield can use DEX
+   instead of STR with monk weapons. */
+export function martialArtsApplies(c, item){
+  if(!(c.classes||[]).some(function(cl){ return cl.name==="Monk"; }) || !isMonkWeapon(item)) return false;
+  return !(c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
+}
 export function weaponAbilityMod(c, item){
   var strMod = mod(c.abilities && c.abilities.str);
   var dexMod = mod(c.abilities && c.abilities.dex);
   var best = item.ability==="dex" ? dexMod : item.ability==="finesse" ? Math.max(strMod, dexMod) : strMod;
+  if(martialArtsApplies(c, item)) best = Math.max(best, strMod, dexMod);
   // A feature tagged `magicWeaponAbility` lets magic weapons (see
   // isMagicWeapon) use that ability instead, when it's higher; one tagged
   // `chosenWeaponAbility` does the same for the weapon marked `chosenWeapon`.

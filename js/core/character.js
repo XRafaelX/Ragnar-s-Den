@@ -2,6 +2,7 @@ import { SKILLS } from "../data/abilities-skills.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { uid } from "./helpers.js";
 import { RACE_DATA } from "../data/race-data.js";
+import { syncInfusions } from "./artificer.js";
 
 /* ---------------- Default character ---------------- */
 export function newCharacter(name){
@@ -101,6 +102,8 @@ export function ensureShape(c){
   if(!c.effects || typeof c.effects!=="object") c.effects = {};
   if(!c.resourcesUsed) c.resourcesUsed = {};
   if(!c.infusions) c.infusions = {known:[], active:[]};
+  if(!Array.isArray(c.infusions.known)) c.infusions.known = [];
+  if(!Array.isArray(c.infusions.active)) c.infusions.active = [];
   if(!c.spellcasting) c.spellcasting = {ability:"int", slots:{}};
   if(!c.spellcasting.slots) c.spellcasting.slots = {};
   if(c.spellcasting.pact===undefined) c.spellcasting.pact = null;
@@ -156,5 +159,7 @@ export function ensureShape(c){
   if(!c.currency) c.currency = {cp:0,sp:0,ep:0,gp:0,pp:0};
   if(!Array.isArray(c.notes)) c.notes = [];
   if(!Array.isArray(c.rollLog)) c.rollLog = [];
+  // Infusion bonuses saved before they followed the artificer's level.
+  syncInfusions(c);
   return c;
 }

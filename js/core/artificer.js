@@ -1,4 +1,5 @@
 import { ARMOR_MODELS, ELIXIR_EFFECTS } from "../data/artificer-extras.js";
+import { INFUSIONS } from "../data/infusions.js";
 import { mod, profBonus, parseDiceNotation, uid } from "./helpers.js";
 
 /* ---------------- Artificer extras ----------------
@@ -46,6 +47,50 @@ export function armorModelPerks(c){
   if(!model) return [];
   var lv = Number(cl.level)||1;
   return model.perks.filter(function(p){ return lv >= p.level; }).map(function(p){ return p.text; });
+}
+
+/* ---- Infusions ----
+   An active infusion with a bonus adds it to the infused item's
+   magicBonus (see js/render/panels/infusions.js) and remembers how much
+   in active.bonus, so ending it takes exactly that back off. */
+export function artificerLevel(c){
+  var cl = (c.classes||[]).find(function(x){ return x.name==="Artificer"; });
+  return cl ? (Number(cl.level)||1) : 0;
+}
+/* The bonus an infusion gives now: +1, or +2 from artificer level 10 for
+   the ones that scale. 0 for one without a bonus. */
+export function infusionBonus(c, name){
+  var data = INFUSIONS.find(function(i){ return i.name===name; });
+  if(!data || !data.bonus) return 0;
+  return data.scales && artificerLevel(c) >= 10 ? 2 : 1;
+}
+export function endInfusion(c, active){
+  var item = active.itemId && (c.inventory||[]).find(function(i){ return i.id===active.itemId; });
+  if(item && active.bonus) item.magicBonus = (Number(item.magicBonus)||0) - active.bonus;
+  c.infusions.active = c.infusions.active.filter(function(a){ return a.id!==active.id; });
+}
+/* After the artificer level changes (a level-up or its undo): bonuses
+   that scale move to +2 at level 10 (or back to +1), and below level 2,
+   where there are no infusions, every one ends. True if anything changed. */
+export function syncInfusions(c){
+  var inf = c.infusions;
+  if(!inf || !(inf.active||[]).length) return false;
+  if(artificerLevel(c) < 2){
+    inf.active.slice().forEach(function(a){ endInfusion(c, a); });
+    return true;
+  }
+  var changed = false;
+  inf.active.forEach(function(a){
+    if(!a.bonus) return;
+    var known = (inf.known||[]).find(function(k){ return k.id===a.knownId; });
+    var want = infusionBonus(c, known ? known.name : a.name);
+    if(!want || want===a.bonus) return;
+    var item = a.itemId && (c.inventory||[]).find(function(i){ return i.id===a.itemId; });
+    if(item) item.magicBonus = (Number(item.magicBonus)||0) + want - a.bonus;
+    a.bonus = want;
+    changed = true;
+  });
+  return changed;
 }
 
 /* ---- Experimental elixirs ---- */

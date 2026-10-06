@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -319,6 +319,8 @@ function renderWeaponCard(c, item, idx){
   card.appendChild(itemHeader(c, item, idx, function(){ openWeaponSheet(c, item, idx); }));
 
   var abilityLabel = item.ability==="finesse" ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
+  // Martial Arts: a monk weapon uses the better of STR and DEX.
+  if(martialArtsApplies(c, item)) abilityLabel = "Martial Arts (STR or DEX)";
   var subtitleParts = [];
   if(item.damageDice) subtitleParts.push(item.damageDice + (item.damageType ? " " + item.damageType : ""));
   subtitleParts.push(abilityLabel);
@@ -459,6 +461,8 @@ function renderArmorCard(c, item, idx){
   var armorData = ARMOR_DATA[item.name];
   if(item.stealthDisadvantage || (armorData && armorData.stealthDisadvantage)) subtitleParts.push("Stealth disadvantage");
   if(!isProficientWithArmor(c, item)) subtitleParts.push("Not proficient");
+  var strShort = armorStrengthShortfall(c, item);
+  if(strShort) subtitleParts.push("Needs STR "+strShort+" (speed -10 ft)");
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");

@@ -494,7 +494,9 @@ export function renderVitalsPanel(c){
   grid.appendChild(initBox);
 
   var speed = computeSpeed(c);
-  var speedBox = smallVital("Speed","speed",null,speed.parts.length ? "per turn, incl. "+speed.parts.map(function(p){ return p.name+" +"+p.value; }).join(", ") : "per turn",5," ft",speed.bonus);
+  var speedBox = smallVital("Speed","speed",null,speed.parts.length ? "per turn, incl. "+speed.parts.map(function(p){
+    return p.name+" "+fmtMod(p.value)+(p.why ? " ("+p.why+")" : "");
+  }).join(", ") : "per turn",5," ft",speed.bonus);
   // Fly, swim and climb speeds under walking speed; conditional ones say when.
   if(speed.others.length){
     var others = document.createElement("div");

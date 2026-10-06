@@ -3,6 +3,7 @@ import { uid, escapeHtml } from "../../core/helpers.js";
 import { INFUSIONS, infusionsKnownAt, infusedItemsAt } from "../../data/infusions.js";
 import { WEAPON_DATA } from "../../data/weapons.js";
 import { makeCard, renderAll } from "../sheet.js";
+import { artificerLevel, infusionBonus, endInfusion } from "../../core/artificer.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -20,10 +21,6 @@ import { playAdd, playDelete } from "../../ui/sound.js";
 var learnPick = "", learnNote = "";
 var infusePick = "", infuseTarget = "", infuseFreeText = "";
 
-function artificerLevel(c){
-  var cl = (c.classes||[]).find(function(x){ return x.name==="Artificer"; });
-  return cl ? (Number(cl.level)||1) : 0;
-}
 function infusionData(name){ return INFUSIONS.find(function(i){ return i.name===name; }); }
 
 function weaponProps(item){
@@ -46,11 +43,6 @@ function targetItems(c, inf){
   });
 }
 
-function endInfusion(c, active){
-  var item = active.itemId && (c.inventory||[]).find(function(i){ return i.id===active.itemId; });
-  if(item && active.bonus) item.magicBonus = (Number(item.magicBonus)||0) - active.bonus;
-  c.infusions.active = c.infusions.active.filter(function(a){ return a.id!==active.id; });
-}
 
 export function renderInfusionsCard(c){
   var level = artificerLevel(c);
@@ -64,7 +56,6 @@ export function renderInfusionsCard(c){
   // parts of the Arcane Armor. The panel doesn't check which items they are.
   var armorMods = level>=9 && (c.classes||[]).some(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer"; }) ? 2 : 0;
   maxActive += armorMods;
-  var bonusValue = level>=10 ? 2 : 1;
 
   var card = makeCard("Artifice infusions");
   card.classList.add("inf-card");
@@ -100,7 +91,7 @@ export function renderInfusionsCard(c){
     card.appendChild(row);
   });
 
-  if(inf.known.length) card.appendChild(infuseForm(c, maxActive, bonusValue));
+  if(inf.known.length) card.appendChild(infuseForm(c, maxActive));
 
   /* -- Known infusions -- */
   card.appendChild(sectionTitle("Known infusions"));
@@ -177,7 +168,7 @@ function learnForm(c, level){
   return wrap;
 }
 
-function infuseForm(c, maxActive, bonusValue){
+function infuseForm(c, maxActive){
   var inf = c.infusions;
   var wrap = document.createElement("div");
   wrap.className = "inf-form";
@@ -234,7 +225,7 @@ function infuseForm(c, maxActive, bonusValue){
     }
     // Over the limit: the oldest infusion ends, as in the rules.
     while(inf.active.length >= maxActive && inf.active.length) endInfusion(c, inf.active[0]);
-    var bonus = data.bonus && item ? bonusValue : 0;
+    var bonus = item ? infusionBonus(c, known.name) : 0;
     if(bonus) item.magicBonus = (Number(item.magicBonus)||0) + bonus;
     inf.active.push({id:uid(), knownId:known.id, name:known.name + (known.note ? ": "+known.note : ""), itemId:item ? item.id : null, itemName:itemName, bonus:bonus});
     infusePick = ""; infuseTarget = ""; infuseFreeText = "";

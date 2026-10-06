@@ -16,6 +16,8 @@ import { state } from "../js/core/state.js";
 import { ensureShape } from "../js/core/character.js";
 import * as W from "../js/wizard/wizard-core.js";
 import { importCustomSpells, getCustomSpells } from "../js/core/custom-spells.js";
+import { applySpellSlots } from "../js/levelup/levelup.js";
+import { syncInfusions, infusionBonus } from "../js/core/artificer.js";
 
 /* ---------- shared helpers ---------------------------------------- */
 const AB = { str: 10, dex: 14, con: 14, int: 10, wis: 10, cha: 10 };
@@ -515,4 +517,114 @@ test("initiative: the breakdown leaves out a zero misc modifier", () => {
   c.initiativeMisc = 2;
   assert.match(H.computeInitiative(c).breakdown, /misc \(\+2\)/);
   assert.equal(H.computeInitiative(c).value, 4);
+});
+
+/* ================================================================
+   Phase 2 of the full review
+   ================================================================ */
+const SHIELD = { type: "armor", equipped: true, name: "Shield", category: "shield", baseAC: 2 };
+const LEATHER = { type: "armor", equipped: true, name: "Leather", category: "light", baseAC: 11 };
+const BREASTPLATE = { type: "armor", equipped: true, name: "Breastplate", category: "medium", baseAC: 14 };
+const CHAIN = { type: "armor", equipped: true, name: "Chain Mail", category: "heavy", baseAC: 16 };
+const PLATE = { type: "armor", equipped: true, name: "Plate", category: "heavy", baseAC: 18 };
+
+/* ---------- 8. Speed that needs no armor ---------- */
+test("speed: Unarmored Movement only counts with no armor and no shield", () => {
+  // Monk 6: +15 ft, already in the saved 45.
+  const monk = (inventory) => char([{ name: "Monk", level: 6 }], { inventory, speed: 45 });
+  assert.equal(H.computeSpeed(monk([])).value, 45);
+  assert.equal(H.computeSpeed(monk([LEATHER])).value, 30);
+  const shield = H.computeSpeed(monk([SHIELD]));
+  assert.equal(shield.value, 30);
+  assert.deepEqual(shield.parts, [{ name: "Unarmored Movement", value: -15, why: "with a shield" }]);
+});
+
+test("speed: Fast Movement only counts out of heavy armor", () => {
+  const barb = (inventory) => char([{ name: "Barbarian", level: 5 }], { inventory, speed: 40, abilities: { str: 16 } });
+  assert.equal(H.computeSpeed(barb([BREASTPLATE, SHIELD])).value, 40);
+  assert.equal(H.computeSpeed(barb([CHAIN])).value, 30);
+});
+
+/* ---------- 9. Heavy armor's Strength ---------- */
+test("speed: heavy armor without its Strength costs 10 ft", () => {
+  const fighter = (str, inventory, race = "Human") => char([{ name: "Fighter", level: 1 }], { inventory, race, speed: 30, abilities: { str } });
+  const slow = H.computeSpeed(fighter(12, [CHAIN]));
+  assert.equal(slow.value, 20);
+  assert.deepEqual(slow.parts, [{ name: "Chain Mail", value: -10, why: "needs STR 13" }]);
+  assert.equal(H.computeSpeed(fighter(13, [CHAIN])).value, 30, "STR 13 is enough for chain mail");
+  assert.equal(H.computeSpeed(fighter(14, [PLATE])).value, 20, "plate needs 15");
+  assert.equal(H.computeSpeed(fighter(8, [BREASTPLATE])).value, 30, "medium armor has no requirement");
+  assert.equal(H.armorStrengthShortfall(fighter(14, [PLATE]), PLATE), 15);
+});
+
+test("speed: dwarves and an Armorer's Arcane Armor ignore the Strength requirement", () => {
+  const dwarf = char([{ name: "Fighter", level: 1 }], { inventory: [PLATE], race: "Hill Dwarf", speed: 25, abilities: { str: 8 } });
+  assert.equal(H.computeSpeed(dwarf).value, 25);
+  const armorer = char([{ name: "Artificer", subclass: "Armorer", level: 3, armorModel: "Guardian" }], { inventory: [PLATE], speed: 30, abilities: { str: 8 } });
+  assert.equal(H.computeSpeed(armorer).value, 30);
+});
+
+/* ---------- 10. Monk weapons ---------- */
+test("weapons: a monk uses DEX with monk weapons while unarmored", () => {
+  const staff = { type: "weapon", name: "Quarterstaff", ability: "str", proficient: true };
+  const monk = (inventory = []) => char([{ name: "Monk", level: 1 }], { inventory, abilities: { str: 10, dex: 16 } });
+  assert.equal(H.weaponAttackBonus(monk(), staff), 5, "DEX +3 + PB 2");
+  assert.equal(H.weaponDamageBonus(monk(), staff), 3);
+  assert.equal(H.weaponAttackBonus(monk([SHIELD]), staff), 2, "a shield turns Martial Arts off");
+  assert.equal(H.weaponAttackBonus(monk(), { ...staff, name: "Shortsword" }), 5);
+  assert.equal(H.weaponAttackBonus(monk(), { ...staff, name: "Greatclub" }), 2, "two-handed isn't a monk weapon");
+  assert.equal(H.weaponAttackBonus(monk(), { ...staff, name: "Longsword" }), 2, "martial isn't a monk weapon");
+  const fighter = char([{ name: "Fighter", level: 1 }], { abilities: { str: 10, dex: 16 } });
+  assert.equal(H.weaponAttackBonus(fighter, staff), 2, "only monks get Martial Arts");
+});
+
+/* ---------- 11. Spell slots edited by hand ---------- */
+test("spell slots: slots added by hand survive a recalculation", () => {
+  const wiz = newCharacter("Slots");
+  wiz.classes = [{ name: "Wizard", level: 3 }];
+  applySpellSlots(wiz);
+  assert.equal(wiz.spellcasting.slots[1].max, 4);
+  wiz.spellcasting.slots[1].max = 5; wiz.spellcasting.slots[1].extra = 1;   // what Edit's + does
+  wiz.spellcasting.slots[2].max = 1; wiz.spellcasting.slots[2].extra = -1;  // and its -
+  wiz.classes[0].level = 4;
+  applySpellSlots(wiz);
+  assert.equal(wiz.spellcasting.slots[1].max, 5, "4 + 1 by hand");
+  assert.equal(wiz.spellcasting.slots[2].max, 2, "3 - 1 by hand");
+});
+
+/* ---------- 12. Infusions follow the artificer's level ---------- */
+function artificerWithInfusions(level){
+  const sword = { id: "w1", type: "weapon", name: "Longsword", magicBonus: 1 };
+  const bow = { id: "w2", type: "weapon", name: "Light Crossbow", magicBonus: 1 };
+  const c = char([{ name: "Artificer", level }], { inventory: [sword, bow] });
+  c.infusions = { known: [{ id: "k1", name: "Enhanced Weapon" }, { id: "k2", name: "Repeating Shot" }],
+    active: [{ id: "a1", knownId: "k1", name: "Enhanced Weapon", itemId: "w1", bonus: 1 },
+             { id: "a2", knownId: "k2", name: "Repeating Shot", itemId: "w2", bonus: 1 }] };
+  return { c, sword, bow };
+}
+
+test("infusions: Enhanced Weapon becomes +2 at artificer 10, Repeating Shot stays +1", () => {
+  const { c, sword, bow } = artificerWithInfusions(10);
+  assert.equal(infusionBonus(c, "Enhanced Weapon"), 2);
+  assert.equal(infusionBonus(c, "Repeating Shot"), 1);
+  assert.equal(syncInfusions(c), true);
+  assert.equal(sword.magicBonus, 2);
+  assert.equal(bow.magicBonus, 1);
+  c.classes[0].level = 9;   // the level-up undone
+  syncInfusions(c);
+  assert.equal(sword.magicBonus, 1);
+});
+
+test("infusions: below artificer 2 they all end and their bonuses come off", () => {
+  const { c, sword, bow } = artificerWithInfusions(1);
+  syncInfusions(c);
+  assert.equal(c.infusions.active.length, 0);
+  assert.equal(sword.magicBonus, 0);
+  assert.equal(bow.magicBonus, 0);
+});
+
+test("infusions: an older save at artificer 10 is brought up to +2 on load", () => {
+  const { c, sword } = artificerWithInfusions(12);
+  ensureShape(c);
+  assert.equal(sword.magicBonus, 2);
 });

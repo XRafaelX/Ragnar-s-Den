@@ -10,6 +10,7 @@ import {
 } from "../core/helpers.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { save } from "../core/state.js";
+import { syncInfusions } from "../core/artificer.js";
 import { renderAll } from "../render/sheet.js";
 import { logRoll, getDieSvg } from "../dice/dice.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
@@ -611,7 +612,8 @@ function slotSnapshot(c){
   return s;
 }
 
-/* Recompute slot maximums from the class levels, keeping used counts. */
+/* Recompute slot maximums from the class levels, keeping used counts and
+   any slots added or removed by hand on the Spells tab (s.extra). */
 export function applySpellSlots(c){
   // A character with no spellcasting class keeps whatever slots were typed
   // in by hand (magic items, homebrew); only casters get recalculated.
@@ -619,7 +621,7 @@ export function applySpellSlots(c){
   var res = computeSpellSlots(c.classes);
   for(var i=1;i<=9;i++){
     var s = c.spellcasting.slots[i];
-    s.max = res.slots[i];
+    s.max = Math.max(0, res.slots[i] + (Number(s.extra)||0));
     s.used = clamp(s.used||0, 0, s.max);
   }
   if(res.pact){
@@ -725,6 +727,7 @@ function finish(){
   c.hp.current = (Number(c.hp.current)||0) + maxGain;
 
   applySpellSlots(c);
+  syncInfusions(c); // Enhanced Weapon / Defense become +2 at artificer 10
   var ability = classSpellAbility(entry);
   if(ability && !hadAnyCasting(before.slots, before.pact) && classCasterType(entry)) c.spellcasting.ability = ability;
 
@@ -803,6 +806,7 @@ export function undoLastLevelUp(c){
       used: clamp(pactNow ? (pactNow.used||0) : (prev.pact.used||0), 0, prev.pact.max)} : null;
     c.newUnlocks = c.newUnlocks.filter(function(id){ return rec.unlockIds.indexOf(id)===-1; });
     syncHitDice(c);
+    syncInfusions(c);
     save(); renderAll(); playDelete();
     showActionToast("Level-up undone. Back to level "+totalLevel(c)+".");
   });

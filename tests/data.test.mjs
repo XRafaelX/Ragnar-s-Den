@@ -9,7 +9,7 @@ import { SPELL_DATA, catalogSpellName } from "../js/data/spells.js";
 
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
-const FEATURE_KEYS = new Set(["name", "text", "replaces", "speed", "initiative", "acHeavyArmor", "grants",
+const FEATURE_KEYS = new Set(["name", "text", "replaces", "speed", "speedWhen", "initiative", "acHeavyArmor", "grants",
   "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList"]);
 const LONG_DASH = /[–—]/;
 

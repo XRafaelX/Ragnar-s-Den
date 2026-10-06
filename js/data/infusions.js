@@ -4,15 +4,17 @@
    target: which inventory items it can infuse ("armor" = body armor or a
      shield, "shield", "weapon", "ammoWeapon" = a weapon that uses
      ammunition, "thrownWeapon"); null means any object, typed by name.
-   bonus: adds +1 to that item's magic bonus while infused (+2 from
-     artificer level 10), so AC / attack and damage update by themselves.
+   bonus: adds +1 to that item's magic bonus while infused, so AC /
+     attack and damage update by themselves.
+   scales: the bonus becomes +2 from artificer level 10 (Enhanced
+     Defense, Enhanced Weapon); the others stay +1.
    repeatable: can be learned more than once (Replicate Magic Item). */
 export var INFUSIONS = [
   {name:"Enhanced Arcane Focus", level:2, item:"A rod, staff or wand (requires attunement)", target:null,
     text:"While holding it, you gain +1 to spell attack rolls (+2 from artificer level 10), and your spell attacks ignore half cover."},
-  {name:"Enhanced Defense", level:2, item:"A suit of armor or a shield", target:"armor", bonus:true,
+  {name:"Enhanced Defense", level:2, item:"A suit of armor or a shield", target:"armor", bonus:true, scales:true,
     text:"A creature gains +1 to AC while wearing (armor) or wielding (shield) the infused item. The bonus becomes +2 from artificer level 10."},
-  {name:"Enhanced Weapon", level:2, item:"A simple or martial weapon", target:"weapon", bonus:true,
+  {name:"Enhanced Weapon", level:2, item:"A simple or martial weapon", target:"weapon", bonus:true, scales:true,
     text:"This magic weapon grants +1 to attack and damage rolls made with it. The bonus becomes +2 from artificer level 10."},
   {name:"Homunculus Servant", level:2, item:"A gem or crystal worth at least 100 gp", target:null,
     text:"You create a homunculus bound to the gem. It's friendly to you and your allies, acts on your initiative, and can deliver your touch spells. It uses your proficiency bonus for its stats."},
