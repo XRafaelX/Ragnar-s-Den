@@ -3,9 +3,10 @@
 /* Vitals */
 .vitals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .vital-box{
+  position:relative;overflow:hidden;
   border:1px solid var(--rule);border-radius:8px;padding:12px 10px;text-align:center;
   background:rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;justify-content:space-between;
-  min-height:105px;box-sizing:border-box;transition:border-color 0.15s, background 0.15s;
+  min-height:105px;box-sizing:border-box;transition:border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 .vital-box.hp-vital-box{grid-column:1 / -1;min-height:auto;}
 .vital-box .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-on-parch-dim);font-weight:600;margin-bottom:4px;}
@@ -13,47 +14,128 @@
 .vital-box .stat-score-val{font-size:16px;}
 .vital-box .vital-hint{font-size:10px;color:var(--text-on-parch-dim);margin-top:4px;line-height:1.3;}
 
+/* ---- HP fill bar ----
+   A pseudo-element that slides behind the HP box content, driven by
+   --hp-pct (set from JS) so it always reflects the true current/max ratio.
+   Color shifts from moss (healthy) toward oxblood (critical) as HP drops.
+   The bar lives on the box itself so it underlines the whole widget. */
+.hp-vital-box::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:linear-gradient(
+    to right,
+    color-mix(in srgb, var(--brass) 20%, transparent) 0%,
+    color-mix(in srgb, var(--brass) 14%, transparent) var(--hp-pct, 100%),
+    transparent var(--hp-pct, 100%)
+  );
+  transition:background 0.5s ease;
+  pointer-events:none;
+  z-index:0;
+}
+/* At low HP (< ~30%) tint shifts toward danger */
+.hp-vital-box.hp-low::before{
+  background:linear-gradient(
+    to right,
+    color-mix(in srgb, var(--oxblood) 22%, transparent) 0%,
+    color-mix(in srgb, var(--oxblood) 14%, transparent) var(--hp-pct, 100%),
+    transparent var(--hp-pct, 100%)
+  );
+}
+/* Dying: no bar, the radial gradient handles it */
+.hp-vital-box.is-dying::before{display:none;}
+/* Ensure all HP box children sit above the fill bar */
+.hp-vital-box > *{position:relative;z-index:1;}
+
 /* HP Hero Display & Controls */
 .hp-hero-display{display:flex;align-items:baseline;justify-content:center;gap:3px;margin:2px 0 8px;font-family:var(--serif);line-height:1;}
-.hp-cur-num{font-size:26px;font-weight:700;color:var(--text-on-parch);}
+.hp-cur-num{font-size:26px;font-weight:700;color:var(--text-on-parch);display:inline-block;transition:color 0.2s;}
 .hp-slash{color:var(--text-on-parch-dim);font-size:20px;font-weight:400;margin:0 2px;}
 .hp-max-num{font-size:20px;color:var(--text-on-parch-dim);font-weight:600;}
+
+/* Flash animations for HP changes */
+.hp-cur-num.hp-dmg{animation:hp-flash-dmg .55s cubic-bezier(.2,1.4,.4,1) both;}
+.hp-cur-num.hp-heal{animation:hp-flash-heal .55s cubic-bezier(.2,1.4,.4,1) both;}
+@keyframes hp-flash-dmg{
+  0%{transform:scale(1.22);color:var(--oxblood);text-shadow:0 0 16px color-mix(in srgb,var(--oxblood) 70%,transparent);}
+  60%{transform:scale(.96);}
+  100%{transform:scale(1);color:var(--text-on-parch);text-shadow:none;}
+}
+@keyframes hp-flash-heal{
+  0%{transform:scale(1.22);color:#8fe3a1;text-shadow:0 0 16px rgba(90,164,105,.7);}
+  60%{transform:scale(.96);}
+  100%{transform:scale(1);color:var(--text-on-parch);text-shadow:none;}
+}
 .hp-temp-badge{
   font-size:11px;font-family:var(--sans);font-weight:600;color:#60a5fa;
   background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.3);
   border-radius:12px;padding:2px 7px;margin-left:6px;transform:translateY(-2px);
 }
-.hp-actions-row{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-bottom:8px;flex-wrap:wrap;}
-.hp-actions-row .quick-adj-btn{min-width:30px;height:26px;padding:0 6px;font-size:11.5px;font-weight:600;}
-/* Fixed-height HP buttons: center the label on its visible glyphs. A
-   plain line box also holds the font's descender space, so digits (which
-   have none) sat a couple of pixels high with fonts like Segoe UI or Roboto.
-   text-box trims the line to cap height and baseline where supported. */
-.hp-actions-row .quick-adj-btn,.hp-amount-row .btn{
-  display:inline-flex;align-items:center;justify-content:center;
-  line-height:1;text-box:trim-both cap alphabetic;
-}
-/* Any-amount damage/heal (and Heavy Armor Master's reduced hit) */
+
+/* ---- Quick HP buttons ---- */
+.hp-actions-row{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-bottom:8px;}
+.hp-full-inline{font-size:11px;padding:0 12px;height:28px;display:inline-flex;align-items:center;justify-content:center;}
+
+/* ---- Heavy Armor Master damage row ---- */
 .hp-amount-row{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;width:100%;margin-bottom:8px;}
-.hp-amount-row .btn{height:28px;padding:0 10px;font-size:12px;}
+.hp-amount-row .btn{height:28px;padding:0 10px;font-size:12px;display:inline-flex;align-items:center;justify-content:center;line-height:1;}
 .hp-amount-input{width:84px;height:28px;box-sizing:border-box;padding:0 8px;border-radius:6px;border:1px solid var(--rule);background:rgba(0,0,0,.18);color:var(--text-on-parch);font:inherit;font-size:13px;text-align:center;}
-.quick-heal-btn{color:var(--moss);border-color:var(--moss);}
-.quick-heal-btn:hover{background:rgba(90,164,105,0.15);}
-.hp-sub-row{display:flex;align-items:center;justify-content:center;gap:14px;width:100%;padding-top:8px;border-top:1px dashed var(--rule);flex-wrap:wrap;}
+/* Sub-row: lighter by default; steppers ghost until hovered/focused */
+.hp-sub-row{
+  display:flex;align-items:center;justify-content:center;gap:14px;width:100%;
+  padding-top:8px;border-top:1px dashed var(--rule);flex-wrap:wrap;
+  opacity:0.7;transition:opacity 0.2s;
+}
+.hp-sub-row:hover,.hp-sub-row:focus-within{opacity:1;}
 .hp-sub-group{display:flex;align-items:center;gap:6px;}
-.hp-sub-lbl{font-size:10.5px;color:var(--text-on-parch-dim);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.hp-sub-lbl{font-size:10px;color:var(--text-on-parch-dim);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
 .hp-sub-stepper{max-width:88px;}
 
 /* AC, Initiative, Speed */
 .vital-hero-num{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--text-on-parch);line-height:1.1;margin:2px 0;}
 .vital-val{font-size:15.5px;font-weight:700;}
 .vital-stepper{max-width:110px;margin:2px auto;}
-.init-vital-box:hover{border-color:var(--brass);background:rgba(234,179,8,0.06);}
-.init-hero-val{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--brass-bright);line-height:1.1;margin:2px 0;transition:transform 0.12s ease;}
+
+/* Mini box hover: border lift + hero number glow */
+.vital-mini:hover{
+  border-color:color-mix(in srgb, var(--brass) 55%, transparent);
+  box-shadow:0 0 14px color-mix(in srgb, var(--brass) 14%, transparent);
+  background:rgba(255,255,255,.07);
+}
+.vital-mini:hover .init-hero-val{
+  text-shadow:0 0 14px color-mix(in srgb, var(--brass-bright) 60%, transparent);
+}
+/* Keep the existing initiative-specific hover subtle */
+.init-vital-box:hover{border-color:var(--brass);background:rgba(139,92,246,0.06);}
+
+.init-hero-val{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--brass-bright);line-height:1.1;margin:2px 0;transition:transform 0.14s ease, text-shadow 0.2s ease;}
 .init-vital-box:hover .init-hero-val{transform:scale(1.08);}
 .init-misc-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 4px;margin-top:6px;font-size:11px;color:var(--text-on-parch-dim);}
 .vital-step-lbl{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--text-on-parch-dim);}
 .vital-hint .hint-short{display:none;}
+
+/* Icon glyphs before mini vital labels via inline SVG data URIs */
+.ac-vital-box .lbl::before{
+  content:"";
+  display:inline-block;width:11px;height:11px;margin-right:4px;
+  vertical-align:middle;opacity:0.65;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a8fb5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.init-vital-box .lbl::before{
+  content:"";
+  display:inline-block;width:11px;height:11px;margin-right:4px;
+  vertical-align:middle;opacity:0.65;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a8fb5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m13 19 6-6'/%3E%3Cpath d='M14.5 17.5 3.586 6.586A2 2 0 013 5.172V3h2.172a2 2 0 011.414.586L17.5 14.5'/%3E%3Cpath d='m14.828 6.172 2.586-2.586A2 2 0 0118.828 3H21v2.172a2 2 0 01-.586 1.414l-2.586 2.586'/%3E%3Cpath d='m16 16 4 4'/%3E%3Cpath d='m19 21 2-2'/%3E%3Cpath d='m5 14 4 4'/%3E%3Cpath d='m5 21-2-2'/%3E%3Cpath d='M7.5 16.5 4 20'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+/* Speed box: the lbl is inside the smallVital-generated box with class vital-mini
+   but not ac-vital-box or init-vital-box, so target via :not() */
+.vital-mini:not(.ac-vital-box):not(.init-vital-box) .lbl::before{
+  content:"";
+  display:inline-block;width:11px;height:11px;margin-right:4px;
+  vertical-align:middle;opacity:0.65;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a8fb5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z'/%3E%3C/svg%3E") center/contain no-repeat;
+}
 
 /* AC / Initiative / Speed share the grid's rows via subgrid, so labels,
    hero numbers, hints and controls line up across the three boxes no matter
@@ -239,7 +321,8 @@
 @media (prefers-reduced-motion: reduce){
   .ds-heart svg,.ds-pip.just-marked,.ds-pip.just-marked::after,.ds-roll.rolling .ds-die,.ds-roll.landed .ds-die,
   .death-saves.ds-enter,.death-saves.ds-shake .ds-body,.death-saves.ds-glow .ds-success .ds-pips,
-  .death-saves.just-finished .ds-outcome,.death-saves.is-dead.just-finished .ds-body,.hp-cur-num.hp-revived{animation:none;}
+  .death-saves.just-finished .ds-outcome,.death-saves.is-dead.just-finished .ds-body,.hp-cur-num.hp-revived,
+  .hp-cur-num.hp-dmg,.hp-cur-num.hp-heal,.hp-vital-box::before{animation:none;transition:none;}
 }
 
 /* Rest buttons */

@@ -29,6 +29,13 @@ export function renderVitalsPanel(c){
   hpBox.className = "vital-box hp-vital-box";
   hpBox.innerHTML = '<div class="lbl">Hit Points</div>';
 
+  // HP fill bar: set the CSS variable so the ::before pseudo-element
+  // knows how wide the fill should be. Clamp to [0,100]% and flag low HP.
+  var hpCur = Number(c.hp.current) || 0;
+  var hpPct = hpMax > 0 ? Math.round(clamp(hpCur / hpMax, 0, 1) * 1000) / 10 : 0;
+  hpBox.style.setProperty("--hp-pct", hpPct + "%");
+  if(hpPct <= 30 && hpCur > 0) hpBox.classList.add("hp-low");
+
   var heroDisplay = document.createElement("div");
   heroDisplay.className = "hp-hero-display";
 
@@ -55,9 +62,8 @@ export function renderVitalsPanel(c){
     tempBadge.textContent = "+" + c.hp.temp + " temp";
     heroDisplay.appendChild(tempBadge);
   }
-  hpBox.appendChild(heroDisplay);
-
-  function applyQuickDamage(n){
+  // ---- Core damage/heal logic ----
+  function applyDamage(n){
     if(n <= 0) return;
     var temp = Number(c.hp.temp) || 0;
     if(temp > 0){
@@ -67,111 +73,94 @@ export function renderVitalsPanel(c){
     }
     var wasUp = (Number(c.hp.current)||0) > 0;
     c.hp.current = Math.max(0, (Number(c.hp.current)||0) - n);
-    // Dropping to 0 starts a fresh set of death saves.
     var wentDown = wasUp && c.hp.current === 0;
-    // Dropping to 0 also ends Bladesong, the Astral Self and the spores.
     if(wentDown){ c.deathSaves = {success:0, fail:0}; endAllEffects(c); }
     save(); renderSidebar(); renderAll();
-    if(wentDown){
-      var ds = document.querySelector(".death-saves");
-      if(ds) ds.classList.add("ds-enter");
-    }
+    flashHpNum("hp-dmg");
+    if(wentDown){ var ds = document.querySelector(".death-saves"); if(ds) ds.classList.add("ds-enter"); }
   }
 
-  function applyQuickHeal(n){
+  function applyHeal(n){
     if(n <= 0) return;
     c.hp.current = clamp((Number(c.hp.current)||0) + n, 0, hpMax);
     save(); renderSidebar(); renderAll();
+    flashHpNum("hp-heal");
   }
 
-  // Quick HP controls
-  var hpControlsRow = document.createElement("div");
-  hpControlsRow.className = "hp-actions-row";
+  function flashHpNum(cls){
+    requestAnimationFrame(function(){
+      var el = document.querySelector(".hp-vital-box .hp-cur-num");
+      if(!el) return;
+      el.classList.remove("hp-dmg", "hp-heal");
+      void el.offsetWidth;
+      el.classList.add(cls);
+      el.addEventListener("animationend", function(){ el.classList.remove(cls); }, {once:true});
+    });
+  }
 
-  var dmg5Btn = document.createElement("button");
-  dmg5Btn.type = "button";
-  dmg5Btn.className = "btn small danger quick-adj-btn";
-  dmg5Btn.textContent = "-5";
-  dmg5Btn.title = "Take 5 damage";
-  dmg5Btn.addEventListener("click", function(e){
-    e.stopPropagation();
-    applyQuickDamage(5);
-  });
-  hpControlsRow.appendChild(dmg5Btn);
+  hpBox.appendChild(heroDisplay);
+
+  // ---- Quick HP buttons: ↓ (damage) · Full · ↑ (heal) ----
+  var hpActionsRow = document.createElement("div");
+  hpActionsRow.className = "hp-actions-row";
 
   var dmg1Btn = document.createElement("button");
   dmg1Btn.type = "button";
-  dmg1Btn.className = "btn small danger quick-adj-btn";
-  dmg1Btn.textContent = "-1";
+  dmg1Btn.className = "stat-arrow-btn stat-arrow-down";
   dmg1Btn.title = "Take 1 damage";
-  dmg1Btn.addEventListener("click", function(e){
-    e.stopPropagation();
-    applyQuickDamage(1);
-  });
-  hpControlsRow.appendChild(dmg1Btn);
-
-  var heal1Btn = document.createElement("button");
-  heal1Btn.type = "button";
-  heal1Btn.className = "btn small quick-adj-btn quick-heal-btn";
-  heal1Btn.textContent = "+1";
-  heal1Btn.title = "Heal 1 HP";
-  heal1Btn.addEventListener("click", function(e){
-    e.stopPropagation();
-    applyQuickHeal(1);
-  });
-  hpControlsRow.appendChild(heal1Btn);
-
-  var heal5Btn = document.createElement("button");
-  heal5Btn.type = "button";
-  heal5Btn.className = "btn small quick-adj-btn quick-heal-btn";
-  heal5Btn.textContent = "+5";
-  heal5Btn.title = "Heal 5 HP";
-  heal5Btn.addEventListener("click", function(e){
-    e.stopPropagation();
-    applyQuickHeal(5);
-  });
-  hpControlsRow.appendChild(heal5Btn);
+  dmg1Btn.setAttribute("aria-label", "Take 1 damage");
+  dmg1Btn.innerHTML = makeStatArrowSvg("down");
+  dmg1Btn.addEventListener("click", function(e){ e.stopPropagation(); applyDamage(1); });
+  hpActionsRow.appendChild(dmg1Btn);
 
   var fullBtn = document.createElement("button");
   fullBtn.type = "button";
-  fullBtn.className = "btn small quick-adj-btn quick-heal-btn";
+  fullBtn.className = "btn small quick-heal-btn hp-full-inline";
   fullBtn.textContent = "Full";
-  fullBtn.title = "Restore to full HP";
+  fullBtn.title = "Restore to full HP (resources are not restored — use Long rest for that)";
   fullBtn.addEventListener("click", function(e){
     e.stopPropagation();
     c.hp.current = hpMax;
     save(); renderSidebar(); renderAll();
+    flashHpNum("hp-heal");
   });
-  hpControlsRow.appendChild(fullBtn);
+  hpActionsRow.appendChild(fullBtn);
 
-  hpBox.appendChild(hpControlsRow);
+  var heal1Btn = document.createElement("button");
+  heal1Btn.type = "button";
+  heal1Btn.className = "stat-arrow-btn stat-arrow-up";
+  heal1Btn.title = "Heal 1 HP";
+  heal1Btn.setAttribute("aria-label", "Heal 1 HP");
+  heal1Btn.innerHTML = makeStatArrowSvg("up");
+  heal1Btn.addEventListener("click", function(e){ e.stopPropagation(); applyHeal(1); });
+  hpActionsRow.appendChild(heal1Btn);
 
-  // Heavy Armor Master in heavy armor only (Vitals stays uncluttered for
-  // everyone else): type a hit's damage, then take it in full or reduced
-  // by 3 for a nonmagical bludgeoning, piercing or slashing hit.
+  hpBox.appendChild(hpActionsRow);
+
+  // ---- Heavy Armor Master ----
   if(heavyArmorMasterActive(c)){
-    var amountRow = document.createElement("div");
-    amountRow.className = "hp-amount-row";
-    var amountInput = document.createElement("input");
-    amountInput.type = "number"; amountInput.min = "0"; amountInput.inputMode = "numeric";
-    amountInput.className = "hp-amount-input";
-    amountInput.placeholder = "Damage";
-    amountInput.setAttribute("aria-label", "Damage amount");
-    amountRow.appendChild(amountInput);
-    var amount = function(){ return Math.max(0, Math.floor(Number(amountInput.value)||0)); };
-    var amountButton = function(text, title, onUse){
+    var hamRow = document.createElement("div");
+    hamRow.className = "hp-amount-row";
+    var hamInput = document.createElement("input");
+    hamInput.type = "number"; hamInput.min = "0"; hamInput.inputMode = "numeric";
+    hamInput.className = "hp-amount-input";
+    hamInput.placeholder = "Damage";
+    hamInput.setAttribute("aria-label", "Damage amount");
+    hamRow.appendChild(hamInput);
+    var hamAmount = function(){ return Math.max(0, Math.floor(Number(hamInput.value)||0)); };
+    var makeHamBtn = function(text, title, fn){
       var b = document.createElement("button");
       b.type = "button"; b.className = "btn small danger"; b.textContent = text; b.title = title;
-      b.addEventListener("click", function(e){ e.stopPropagation(); var n = amount(); if(n > 0) onUse(n); });
-      amountRow.appendChild(b);
+      b.addEventListener("click", function(e){ e.stopPropagation(); var n = hamAmount(); if(n > 0) fn(n); });
+      hamRow.appendChild(b);
     };
-    amountButton("Take", "Take the full damage (temp HP first)", applyQuickDamage);
-    amountButton("Take −3 (HAM)", "Heavy Armor Master: nonmagical bludgeoning, piercing or slashing damage is reduced by 3", function(n){
+    makeHamBtn("Take", "Take the full damage (temp HP first)", applyDamage);
+    makeHamBtn("Take −3", "Heavy Armor Master: nonmagical B/P/S reduced by 3", function(n){
       var taken = Math.max(0, n - 3);
       logRoll("Heavy Armor Master", n + " damage reduced to " + taken + ".");
-      if(taken > 0) applyQuickDamage(taken); else { save(); renderAll(); }
+      if(taken > 0) applyDamage(taken); else { save(); renderAll(); flashHpNum("hp-dmg"); }
     });
-    hpBox.appendChild(amountRow);
+    hpBox.appendChild(hamRow);
   }
 
   // Sub row for Max & Temp HP
