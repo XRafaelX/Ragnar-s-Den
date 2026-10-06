@@ -18,6 +18,8 @@ import * as W from "../js/wizard/wizard-core.js";
 import { importCustomSpells, getCustomSpells } from "../js/core/custom-spells.js";
 import { applySpellSlots } from "../js/levelup/levelup.js";
 import { syncInfusions, infusionBonus } from "../js/core/artificer.js";
+import { featDef, featPicksProblem, featPicksSummary, applyFeatPicks } from "../js/core/feat-picks.js";
+import { featPicksContext } from "../js/ui/feat-picks.js";
 
 /* ---------- shared helpers ---------------------------------------- */
 const AB = { str: 10, dex: 14, con: 14, int: 10, wis: 10, cha: 10 };
@@ -331,7 +333,7 @@ test("armor class: computed from equipment, never from the saved c.ac", () => {
 const BASE_SCORES = { str: 15, dex: 14, con: 13, int: 8, wis: 12, cha: 10 };
 function startWizard(choices){
   W.openWizard();
-  const rc = Object.assign({ abilities: [], preset: "", skills: [], feat: "", featPicks: null }, choices.raceChoices);
+  const rc = Object.assign({ abilities: [], preset: "", skills: [], tools: [], feat: "", featPicks: null }, choices.raceChoices);
   Object.assign(W.wizardState, {
     name: "Wizard test", classId: "Fighter", race: "Human", background: "Soldier", alignment: "Neutral",
     abilityMethod: "pointbuy", abilities: { ...BASE_SCORES }, skillChoices: ["Athletics", "Perception"],
@@ -374,8 +376,8 @@ test("creation: increases stay within 1 to 20", (t) => {
 test("creation: Half-Elf adds +2 CHA and +1 to two other picked scores", (t) => {
   assert.match(raceTraitsError(t, { race: "Half-Elf", raceChoices: { abilities: ["str"] } }), /2 different abilities/);
   assert.match(raceTraitsError(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "cha"] } }), /not Charisma/);
-  assert.equal(raceTraitsError(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "con"] } }), null);
-  const c = createThroughWizard(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "con"] } });
+  assert.equal(raceTraitsError(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "con"], skills: ["Stealth", "History"] } }), null);
+  const c = createThroughWizard(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "con"], skills: ["Stealth", "History"] } });
   assert.deepEqual(c.abilities, { str: 16, dex: 14, con: 14, int: 8, wis: 12, cha: 12 });
 });
 
@@ -627,4 +629,140 @@ test("infusions: an older save at artificer 10 is brought up to +2 on load", () 
   const { c, sword } = artificerWithInfusions(12);
   ensureShape(c);
   assert.equal(sword.magicBonus, 2);
+});
+
+/* ================================================================
+   Phase 3 of the full review: rules the user chose to model
+   ================================================================ */
+
+/* ---------- Rage damage on weapons ---------- */
+test("rage: melee STR weapons add rage damage while raging", () => {
+  const axe = { type: "weapon", name: "Greataxe", ability: "str", proficient: true };
+  const bow = { type: "weapon", name: "Longbow", ability: "dex", proficient: true };
+  const barb = (extra = {}) => char([{ name: "Barbarian", level: 9 }], { abilities: { str: 16, dex: 14 }, ...extra });
+  const raging = barb(); raging.rage = { active: true, used: 1 };
+  assert.equal(H.weaponDamageBonus(raging, axe), 3 + 3, "STR +3, rage +3 at level 9");
+  assert.equal(H.weaponDamageBonus(raging, bow), 2, "ranged attacks don't get it");
+  const calm = barb(); calm.rage = { active: false, used: 0 };
+  assert.equal(H.weaponDamageBonus(calm, axe), 3);
+  const heavy = barb({ inventory: [PLATE] }); heavy.rage = { active: true, used: 1 };
+  assert.equal(H.rageDamageBonus(heavy, axe), 0, "no rage benefits in heavy armor");
+  const finesse = barb({ abilities: { str: 10, dex: 18 } }); finesse.rage = { active: true, used: 1 };
+  assert.equal(H.rageDamageBonus(finesse, { type: "weapon", name: "Rapier", ability: "finesse" }), 0, "a DEX attack doesn't get it");
+});
+
+/* ---------- Armor without proficiency ---------- */
+test("armor: wearing armor you aren't proficient with gives disadvantage on STR and DEX rolls", () => {
+  const wiz = char([{ name: "Wizard", level: 1 }], { inventory: [CHAIN] });
+  assert.equal(H.unproficientArmor(wiz).name, "Chain Mail");
+  assert.equal(H.skillRollMode(wiz, "Athletics").mode, "dis");
+  assert.equal(H.skillRollMode(wiz, "Arcana").mode, "none", "INT skills are fine");
+  assert.equal(H.saveRollMode(wiz, "dex").mode, "dis");
+  assert.equal(H.saveRollMode(wiz, "wis").mode, "none");
+  assert.equal(H.checkRollMode(wiz, "str").mode, "dis");
+  assert.equal(H.attackRollMode(wiz, { type: "weapon", name: "Dagger", ability: "finesse" }).mode, "dis");
+  const fighter = char([{ name: "Fighter", level: 1 }], { inventory: [CHAIN] });
+  assert.equal(H.skillRollMode(fighter, "Athletics").mode, "none", "a proficient wearer is fine");
+});
+
+test("rolls: advantage and disadvantage cancel out; reasons of one kind add up", () => {
+  const r = H.combineRolls([{ mode: "adv", reason: "Bladesong" }, { mode: "dis", reason: "Not proficient with Plate" }]);
+  assert.equal(r.mode, "none");
+  assert.match(r.reason, /cancel/);
+  // A wizard in chain mail: Stealth has the armor's disadvantage twice over.
+  const wiz = char([{ name: "Wizard", level: 1 }], { inventory: [CHAIN] });
+  const stealth = H.skillRollMode(wiz, "Stealth");
+  assert.equal(stealth.mode, "dis");
+  assert.match(stealth.reason, /Not proficient with Chain Mail; Chain Mail gives disadvantage/);
+});
+
+/* ---------- Warforged ---------- */
+test("armor class: Warforged add Integrated Protection's +1", () => {
+  const c = char([{ name: "Fighter", level: 1 }], { race: "Warforged", inventory: [CHAIN] });
+  const ac = H.computeArmorClass(c);
+  assert.equal(ac.value, 17);
+  assert.match(ac.breakdown, /Integrated Protection \(\+1\)/);
+  assert.equal(H.computeArmorClass(char([{ name: "Fighter", level: 1 }], { inventory: [CHAIN] })).value, 16);
+});
+
+/* ---------- Race skill and tool picks ---------- */
+test("creation: Changeling skills come from its list, Warforged picks a skill and a tool", (t) => {
+  assert.match(raceTraitsError(t, { race: "Changeling", raceChoices: { abilities: ["dex"], skills: ["Stealth", "Insight"] } }), /from Deception, Insight, Intimidation, Persuasion/);
+  assert.equal(raceTraitsError(t, { race: "Changeling", raceChoices: { abilities: ["dex"], skills: ["Deception", "Insight"] } }), null);
+  assert.match(raceTraitsError(t, { race: "Warforged", raceChoices: { abilities: ["str"], skills: ["Stealth"] } }), /Pick a tool/);
+  const c = createThroughWizard(t, { race: "Warforged", raceChoices: { abilities: ["str"], skills: ["Stealth"], tools: ["Smith's tools"] } });
+  assert.equal(c.skillProfs.Stealth.prof, true);
+  assert.ok(c.features.some(f => f.name === "Tool proficiency: Smith's tools" && f.source === "Race"));
+});
+
+/* ---------- Expertise needs proficiency ---------- */
+test("skills: expertise only counts with proficiency; old saves are fixed on load", () => {
+  const c = char([{ name: "Rogue", level: 1 }], { abilities: { dex: 16 } });
+  c.skillProfs = { Stealth: { prof: false, expertise: true } };
+  assert.equal(H.skillCheck(c, "Stealth").value, 3, "expertise alone adds nothing");
+  ensureShape(c);
+  assert.equal(c.skillProfs.Stealth.prof, true, "loading ticks the proficiency it implies");
+  assert.equal(H.skillCheck(c, "Stealth").value, 3 + 4);
+});
+
+/* ---------- Passive scores with advantage or disadvantage ---------- */
+test("passives: +5 with advantage on the check, -5 with disadvantage", () => {
+  const monk = char([{ name: "Monk", level: 6, subclass: "Way of the Astral Self" }], { abilities: { wis: 14 } });
+  assert.equal(H.passiveInsight(monk), 12);
+  monk.effects = { astral_visage: true };
+  assert.equal(H.passiveInsight(monk), 17, "the visage's advantage on Insight");
+  const wiz = char([{ name: "Wizard", level: 1 }], { inventory: [CHAIN], abilities: { wis: 10 } });
+  assert.equal(H.passivePerception(wiz), 10, "WIS isn't affected by armor");
+});
+
+/* ---------- Jack of All Trades and Remarkable Athlete ---------- */
+test("skills: Jack of All Trades adds half proficiency to checks without it", () => {
+  const bard = char([{ name: "Bard", level: 5 }], { abilities: { dex: 14, wis: 12 } });   // PB 3
+  bard.skillProfs = { Performance: { prof: true, expertise: false } };
+  assert.equal(H.skillCheck(bard, "Athletics").value, 0 + 1, "half of 3, rounded down");
+  assert.equal(H.skillCheck(bard, "Performance").value, 0 + 3, "proficient skills don't get it too");
+  assert.equal(H.computeInitiative(bard).value, 2 + 1);
+  assert.equal(H.passivePerception(bard), 10 + 1 + 1);
+  assert.equal(H.abilityCheck(bard, "int").value, 1);
+  assert.equal(H.skillCheck(char([{ name: "Bard", level: 1 }]), "Athletics").value, 0, "only from bard level 2");
+});
+
+test("skills: Remarkable Athlete adds half proficiency, rounded up, to STR, DEX and CON", () => {
+  const champ = char([{ name: "Fighter", level: 7, subclass: "Champion" }], { abilities: { str: 16, dex: 14, int: 10 } });   // PB 3
+  assert.equal(H.skillCheck(champ, "Athletics").value, 3 + 2);
+  assert.equal(H.skillCheck(champ, "Arcana").value, 0, "not INT");
+  assert.equal(H.computeInitiative(champ).value, 2 + 2);
+  assert.match(H.computeInitiative(champ).breakdown, /Remarkable Athlete \(\+2\)/);
+});
+
+/* ---------- Per-class spellcasting ---------- */
+test("spellcasting: each casting ability gets its own save DC and attack", () => {
+  const c = char([{ name: "Cleric", level: 3 }, { name: "Wizard", level: 2 }], { abilities: { int: 16, wis: 14 } });   // PB 3
+  const list = H.spellcastingAbilities(c);
+  assert.deepEqual(list.map(x => [x.ability, x.classes.join("/"), x.dc, x.attack]), [["wis", "Cleric", 13, 5], ["int", "Wizard", 14, 6]]);
+  const pal = char([{ name: "Paladin", level: 1 }, { name: "Sorcerer", level: 1 }]);
+  assert.deepEqual(H.spellcastingAbilities(pal).map(x => x.classes.join("/")), ["Sorcerer"], "a level 1 paladin doesn't cast yet");
+  const same = char([{ name: "Sorcerer", level: 2 }, { name: "Warlock", level: 2 }]);
+  assert.deepEqual(H.spellcastingAbilities(same).map(x => x.classes.join("/")), ["Sorcerer/Warlock"], "same ability, one entry");
+});
+
+/* ---------- Elemental Adept ---------- */
+test("feats: Elemental Adept picks a damage type and can be taken again for another", () => {
+  const def = featDef("Elemental Adept");
+  const c = char([{ name: "Sorcerer", level: 8 }]);
+  const ctx = featPicksContext(c);
+  assert.match(featPicksProblem(def, { option: "" }, ctx), /Pick a damage type/);
+  const first = { id: "e1", name: "Elemental Adept" };
+  c.feats.push(first);
+  applyFeatPicks(c, first, { option: "Fire" });
+  assert.equal(featPicksSummary(def, first.picks), "Fire");
+  assert.match(featPicksProblem(def, { option: "Fire" }, featPicksContext(c)), /already have Elemental Adept \(Fire\)/);
+  assert.equal(featPicksProblem(def, { option: "Cold" }, featPicksContext(c)), "");
+  assert.equal(def.repeatable, true);
+});
+
+/* ---------- Duergar ---------- */
+test("speed: Duergar ignore heavy armor's Strength like other dwarves", () => {
+  const c = char([{ name: "Fighter", level: 1 }], { race: "Duergar", inventory: [PLATE], speed: 25, abilities: { str: 10 } });
+  assert.equal(H.computeSpeed(c).value, 25);
 });

@@ -10,7 +10,7 @@ import { SPELL_DATA, catalogSpellName } from "../js/data/spells.js";
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
 const FEATURE_KEYS = new Set(["name", "text", "replaces", "speed", "speedWhen", "initiative", "acHeavyArmor", "grants",
-  "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList"]);
+  "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "halfProficiency"]);
 const LONG_DASH = /[–—]/;
 
 // Lowest acceptable last-feature level per class: guards against a

@@ -256,7 +256,14 @@ export function validateStep(id){
     if(def.skills){
       var known = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]);
       var sk = rc.skills.slice(0, def.skills).filter(Boolean);
-      if(sk.length!==def.skills || sk.some(function(x){ return known.indexOf(x)!==-1; })) return "Pick "+(def.skills>1 ? def.skills+" skills" : "a skill")+" you're not already proficient in.";
+      var allowed = def.skillOptions || null;
+      if(sk.length!==def.skills || new Set(sk).size!==sk.length || sk.some(function(x){ return known.indexOf(x)!==-1 || (allowed && allowed.indexOf(x)===-1); })){
+        return "Pick "+(def.skills>1 ? def.skills+" different skills" : "a skill")+(allowed ? " from "+allowed.join(", ") : "")+" you're not already proficient in.";
+      }
+    }
+    if(def.tools){
+      var tl = (rc.tools||[]).slice(0, def.tools).filter(Boolean);
+      if(tl.length!==def.tools || new Set(tl).size!==tl.length) return "Pick "+(def.tools>1 ? def.tools+" different tools" : "a tool")+" to be proficient with.";
     }
     if(def.feat){
       var feat = FEATS_CATALOG.find(function(f){ return f.name===rc.feat; });
@@ -339,7 +346,7 @@ export function openWizard(){
     rolledPool:null,
     skillChoices:[],
     classChoices:{},
-    raceChoices:{abilities:[], preset:"", skills:[], feat:"", featPicks:null},
+    raceChoices:{abilities:[], preset:"", skills:[], tools:[], feat:"", featPicks:null},
     languageChoices:[],
     equipment:{},
     spellChoices:{cantrips:[], spells:[]}
@@ -436,9 +443,10 @@ export function finishWizard(){
   playAdd();
 }
 
-/* Race Traits picks (Variant Human): the skill, the feat and its picks.
-   The race's ability increases are already in c.abilities via
-   finalAbilities(); the feat's +1 is added here. */
+/* Race Traits picks: skills, tools (a feature on the sheet, like the
+   class's tool picks), the feat and its picks. The race's ability
+   increases are already in c.abilities via finalAbilities(); the feat's
+   +1 is added here. */
 function applyRaceChoices(c){
   var def = raceChoiceDef();
   if(!def) return;
@@ -448,6 +456,10 @@ function applyRaceChoices(c){
     var entry = c.skillProfs[sk] || {prof:false, expertise:false};
     entry.prof = true;
     c.skillProfs[sk] = entry;
+  });
+  if(def.tools) (rc.tools||[]).slice(0, def.tools).filter(Boolean).forEach(function(tool){
+    c.features.push({id:uid(), name:"Tool proficiency: "+tool, source:"Race",
+      text:"From your "+wizardState.race+" traits: you're proficient with "+tool.toLowerCase()+", so add your proficiency bonus to ability checks you make with them.", isPassive:true});
   });
   if(def.feat){
     var f = FEATS_CATALOG.find(function(x){ return x.name===rc.feat; });

@@ -1083,7 +1083,7 @@ function showFeat(feat){
     }
     block(body, "", "<p class='cmp-lead'>"+escapeHtml(feat.summary||"")+"</p>"+facts(rows));
     block(body, "Full description", "<p class='cmp-desc'>"+escapeHtml(feat.description||"")+"</p>");
-    giveRow(body, giveTarget && hasFeatNamed(giveTarget, feat.name), function(){
+    giveRow(body, giveTarget && !feat.repeatable && hasFeatNamed(giveTarget, feat.name), function(){
       var entry = feat.custom && getCustomEntry("feat", feat.id);
       if(entry) addCustomToCharacter("feat", giveTarget, entry);
       else {

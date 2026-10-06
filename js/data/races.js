@@ -84,14 +84,16 @@ export var RACE_LANGUAGES_FALLBACK = {fixed:["Common"], choose:1,
      +1s go to scores other than Charisma).
    abilityPreset: {label, options:{name: {asi}}}: a fixed set of increases
      picked by subrace or type (Aasimar, Shifter).
-   skills: skill proficiencies of their choice; feat: a feat. */
+   skills: skill proficiencies of their choice, from `skillOptions` when
+     given (Changeling Instincts); tools: tool proficiencies of their
+     choice (Warforged); feat: a feat. */
 var PLUS_TWO_ONE = {amounts:[2, 1]};
 export var RACE_CHOICES = {
   "Variant Human":{abilityBonus:{amounts:[1, 1]}, skills:1, feat:true},
-  "Half-Elf":{abilityBonus:{amounts:[1, 1], exclude:["cha"]}},
-  "Changeling":{abilityBonus:{amounts:[1], exclude:["cha"]}},
+  "Half-Elf":{abilityBonus:{amounts:[1, 1], exclude:["cha"]}, skills:2},
+  "Changeling":{abilityBonus:{amounts:[1], exclude:["cha"]}, skills:2, skillOptions:["Deception", "Insight", "Intimidation", "Persuasion"]},
   "Simic Hybrid":{abilityBonus:{amounts:[1], exclude:["con"]}},
-  "Warforged":{abilityBonus:{amounts:[1], exclude:["con"]}},
+  "Warforged":{abilityBonus:{amounts:[1], exclude:["con"]}, skills:1, tools:1},
   "Fairy":{abilityBonus:PLUS_TWO_ONE},
   "Harengon":{abilityBonus:PLUS_TWO_ONE},
   "Thri-kreen":{abilityBonus:PLUS_TWO_ONE},

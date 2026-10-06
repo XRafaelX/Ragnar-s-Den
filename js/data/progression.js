@@ -85,7 +85,7 @@ export var CLASS_PROGRESSION = {
     multiclassProfs: {armor:["Light armor"], weapons:[], tools:["One musical instrument"], note:"Also gain proficiency in one skill of your choice. Tick it on the Abilities & Skills tab."},
     features: {
       2: [
-        {name:"Jack of All Trades", text:"Add half your proficiency bonus (rounded down) to any ability check that doesn't already include your proficiency bonus."},
+        {name:"Jack of All Trades", text:"Add half your proficiency bonus (rounded down) to any ability check that doesn't already include your proficiency bonus. (Already added to your checks, initiative and passive scores.)", halfProficiency:{abilities:"all", round:"down"}},
         {name:"Song of Rest", text:"During a short rest, allies who spend hit dice while hearing you perform regain an extra 1d6 hit points (1d8 at level 9, 1d10 at 13, 1d12 at 17)."}
       ],
       3: [{name:"Expertise", text:"Pick two skills you're proficient in: your proficiency bonus is doubled for them. Tick the E box next to them on the Abilities & Skills tab."}],

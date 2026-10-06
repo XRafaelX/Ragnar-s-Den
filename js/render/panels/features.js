@@ -268,7 +268,7 @@ export function renderFeaturesPanel(c){
       if(item.isFeat && item.featObj && featPicksPending(item.featObj)){
         var pending = document.createElement("div");
         pending.className = "ff-picks-pending";
-        pending.appendChild(document.createTextNode("This feat's ability increase or proficiencies aren't on the sheet yet."));
+        pending.appendChild(document.createTextNode("This feat's choices (an ability increase, proficiencies or an element) aren't on the sheet yet."));
         var pickBtn = document.createElement("button");
         pickBtn.type = "button";
         pickBtn.className = "btn small primary";

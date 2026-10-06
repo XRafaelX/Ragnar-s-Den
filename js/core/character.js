@@ -79,6 +79,11 @@ export function ensureShape(c){
     c.skillProfs = {};
     SKILLS.forEach(function(s){ c.skillProfs[s[0]] = {prof:false, expertise:false}; });
   }
+  // Expertise only counts with proficiency; an old save ticked it alone.
+  Object.keys(c.skillProfs).forEach(function(sk){
+    var e = c.skillProfs[sk];
+    if(e && e.expertise && !e.prof) e.prof = true;
+  });
   if(!c.saveProfs) c.saveProfs = {str:false,dex:false,con:false,int:false,wis:false,cha:false};
   if(!c.hp) c.hp = {max:10, current:10, temp:0};
   if(c.ac==null) c.ac = 10;

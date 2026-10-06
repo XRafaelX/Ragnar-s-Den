@@ -4,7 +4,7 @@
 export var FIGHTER_SUBCLASSES = [
   {name:"Champion", blurb:"Simple, reliable raw power with more critical hits.", features:{
     3:[{name:"Improved Critical", text:"Your weapon attacks score a critical hit on a roll of 19 or 20."}],
-    7:[{name:"Remarkable Athlete", text:"Add half your proficiency bonus (rounded up) to any STR, DEX or CON check that doesn't already use your proficiency bonus. Your running long jump distance also increases by a number of feet equal to your STR modifier."}],
+    7:[{name:"Remarkable Athlete", text:"Add half your proficiency bonus (rounded up) to any STR, DEX or CON check that doesn't already use your proficiency bonus (already added to those checks, initiative and passive scores). Your running long jump distance also increases by a number of feet equal to your STR modifier.", halfProficiency:{abilities:["str","dex","con"], round:"up"}}],
     10:[{name:"Additional Fighting Style", text:"Choose a second Fighting Style option."}],
     15:[{name:"Improved Critical", replaces:"Improved Critical", text:"Your weapon attacks score a critical hit on a roll of 18 to 20 (Superior Critical)."}],
     18:[{name:"Survivor", text:"At the start of each of your turns, if you have no more than half your hit points left (but at least 1), you regain 5 + your CON modifier hit points."}]

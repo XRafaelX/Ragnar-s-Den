@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -329,6 +329,8 @@ function renderWeaponCard(c, item, idx){
   else if(isMagicWeapon(c, item)) subtitleParts.push("Magic");
   var chosenFeat = item.chosenWeapon && chosenWeaponFeature(c);
   if(chosenFeat) subtitleParts.push(chosenFeat.name);
+  var rage = rageDamageBonus(c, item);
+  if(rage) subtitleParts.push("Rage +" + rage + " damage");
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");
@@ -345,11 +347,13 @@ function renderWeaponCard(c, item, idx){
   actions.className = "inv-roll-actions";
 
   var atkBonus = weaponAttackBonus(c, item);
+  var atkRoll = attackRollMode(c, item);
   var atkBtn = document.createElement("button");
   atkBtn.type = "button"; atkBtn.className = "btn small inv-roll-btn";
-  atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(atkBonus);
+  atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(atkBonus) + (atkRoll.mode==="dis" ? " (Dis)" : atkRoll.mode==="adv" ? " (Adv)" : "");
+  if(atkRoll.reason) atkBtn.title = atkRoll.reason;
   atkBtn.addEventListener("click", function(){
-    performRoll(20, 1, atkBonus, "none", (item.name||"Weapon") + ": Attack");
+    performRoll(20, 1, atkBonus, atkRoll.mode, (item.name||"Weapon") + ": Attack");
   });
   actions.appendChild(atkBtn);
 

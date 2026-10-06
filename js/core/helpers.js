@@ -1,4 +1,4 @@
-import { HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
+import { HIT_DICE_BY_CLASS, SKILLS } from "../data/abilities-skills.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { RACE_DATA } from "../data/race-data.js";
@@ -58,6 +58,10 @@ export function classSpellAbility(cl){
      speed         walking speed gained at level-up (Fast Movement)
      speedWhen     when that speed counts: "unarmored" (no armor or
                    shield) or "noHeavyArmor" (see computeSpeed)
+     halfProficiency  {abilities: "all" or ["str", ...], round: "down" or
+                   "up"}: half the proficiency bonus on those ability checks
+                   when they don't already use it (Jack of All Trades,
+                   Remarkable Athlete; see halfProficiency)
      initiative    ability ("wis", "int", ...) or "pb" added to initiative
      acHeavyArmor  AC bonus while wearing heavy armor (Soul of the Forge)
      grants        {armor, weapons, tools, savingThrows} proficiencies
@@ -88,7 +92,7 @@ export function classSpellAbility(cl){
                    depend on a choice (Circle of the Land's land, a genie
                    kind), each option shaped like `spells`. The pick is
                    saved on the class entry as spellChoices[id]. */
-var FEATURE_FLAGS = ["speed", "speedWhen", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList"];
+var FEATURE_FLAGS = ["speed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList"];
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -496,6 +500,13 @@ export function computeArmorClass(c){
   var defense = bodyArmor && hasFightingStyle(c, "Defense") ? 1 : 0;
   if(defense){ breakdown += " + Defense style (+1)"; short += " + Defense"; }
   base += defense;
+  // A race's own bonus (Warforged's Integrated Protection).
+  var raceAc = RACE_DATA[c.race] && Number(RACE_DATA[c.race].acBonus) || 0;
+  if(raceAc){
+    var acTrait = RACE_DATA[c.race].acTrait || c.race;
+    breakdown += " + " + acTrait + " (" + fmtMod(raceAc) + ")"; short += " + " + acTrait;
+    base += raceAc;
+  }
   // Dual Wielder: +1 while wielding a separate melee weapon in each hand
   // (two equipped melee weapon items; a "Dagger ×2" stack is one weapon).
   var dualWielder = hasFeat(c, "Dual Wielder") &&
@@ -537,6 +548,9 @@ export function computeInitiative(c){
   var value = dexMod;
   var breakdown = "DEX (" + fmtMod(dexMod) + ")";
   var short = "DEX";
+  // Initiative is a DEX check: Jack of All Trades / Remarkable Athlete.
+  var half = halfProficiency(c, "dex");
+  if(half){ value += half.value; breakdown += " + " + half.name + " (" + fmtMod(half.value) + ")"; short += " + " + half.name; }
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
       if(!f.initiative) return;
@@ -581,6 +595,26 @@ export function computeSave(c, key){
   var breakdown = ability.label + " (" + fmtMod(abilityMod) + ")" + (prof ? " + proficiency (" + fmtMod(profBonus(c)) + ")" : "");
   bonuses.forEach(function(b){ value += b.value; breakdown += " + " + b.name + " (" + fmtMod(b.value) + ")"; });
   return { value: value, prof: prof, grantedBy: grantedBy, breakdown: breakdown };
+}
+
+/* The spellcasting abilities of the classes that cast spells now (a
+   Paladin or Ranger from level 2, an Eldritch Knight or Arcane Trickster
+   from 3), one entry per ability: [{ability, classes:[names], dc, attack}].
+   A Cleric/Wizard has two; most characters one. */
+export function spellcastingAbilities(c){
+  var out = [];
+  (c.classes||[]).forEach(function(cl){
+    var type = classCasterType(cl), ability = classSpellAbility(cl), lv = Number(cl.level)||1;
+    if(!type || !ability || (type==="half" && lv < 2) || (type==="third" && lv < 3)) return;
+    var entry = out.find(function(x){ return x.ability===ability; });
+    if(!entry){
+      var m = mod(c.abilities && c.abilities[ability]);
+      entry = {ability: ability, classes: [], dc: 8 + profBonus(c) + m, attack: profBonus(c) + m};
+      out.push(entry);
+    }
+    entry.classes.push(cl.name);
+  });
+  return out;
 }
 
 /* Spells the character's class and subclass features grant, once each,
@@ -804,7 +838,17 @@ export function weaponAttackBonus(c, item){
   return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0) + archery - (powerAttackOn(c, item) ? 5 : 0);
 }
 export function weaponDamageBonus(c, item){
-  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item);
+  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item);
+}
+/* Rage: + rage damage to melee weapon attacks that use STR, while raging
+   and not in heavy armor. */
+export function rageDamageBonus(c, item){
+  if(!c.rage || !c.rage.active || isRangedWeapon(item)) return 0;
+  var barb = barbarianClassEntry(c);
+  if(!barb) return 0;
+  if((c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; })) return 0;
+  if(weaponAbilityMod(c, item)!==mod(c.abilities && c.abilities.str)) return 0;
+  return barbarianRageDamage(Number(barb.level)||1);
 }
 export function parseDiceNotation(str){
   var m2 = /^(\d*)d(\d+)$/i.exec((str||"").trim());
@@ -829,29 +873,62 @@ export function isProficientWithWeapon(c, weaponName, category){
     });
   });
 }
-export function passivePerception(c){
-  var wisMod = mod(c.abilities && c.abilities.wis != null ? c.abilities.wis : 10);
-  var entry = c.skillProfs && c.skillProfs["Perception"];
-  var pb = profBonus(c);
-  var bonus = wisMod + (entry && entry.expertise ? pb*2 : (entry && entry.prof ? pb : 0));
-  var featBonus = hasFeat(c, "Observant") ? 5 : 0;
-  return 10 + bonus + featBonus;
+/* ---------------- Ability checks and skills ---------------- */
+var SKILL_ABILITY = {};
+SKILLS.forEach(function(s){ SKILL_ABILITY[s[0]] = s[1]; });
+/* Half the proficiency bonus on checks of this ability that don't use it
+   already: Jack of All Trades (any check, rounded down) or Remarkable
+   Athlete (STR, DEX, CON, rounded up). They don't stack; the larger
+   counts. {value, name} or null. */
+export function halfProficiency(c, ability){
+  var best = null, pb = profBonus(c);
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){
+      var h = f.halfProficiency;
+      if(!h || (h.abilities!=="all" && h.abilities.indexOf(ability)===-1)) return;
+      var v = h.round==="up" ? Math.ceil(pb/2) : Math.floor(pb/2);
+      if(!best || v > best.value) best = {value: v, name: f.name};
+    });
+  });
+  return best;
 }
-export function passiveInvestigation(c){
-  var intMod = mod(c.abilities && c.abilities.int != null ? c.abilities.int : 10);
-  var entry = c.skillProfs && c.skillProfs["Investigation"];
-  var pb = profBonus(c);
-  var bonus = intMod + (entry && entry.expertise ? pb*2 : (entry && entry.prof ? pb : 0));
-  var featBonus = hasFeat(c, "Observant") ? 5 : 0;
-  return 10 + bonus + featBonus;
+/* A plain ability check (no skill): the ability (WIS for STR with the
+   astral arms) plus half proficiency. {value, label, breakdown, roll}. */
+export function abilityCheck(c, key){
+  var ab = checkAbility(c, key);
+  var value = ab.mod, breakdown = ab.label + " (" + fmtMod(ab.mod) + ")";
+  var half = halfProficiency(c, key);
+  if(half){ value += half.value; breakdown += " + " + half.name + " (" + fmtMod(half.value) + ")"; }
+  return {value: value, label: ab.label, breakdown: breakdown, roll: checkRollMode(c, key)};
 }
-export function passiveInsight(c){
-  var wisMod = mod(c.abilities && c.abilities.wis != null ? c.abilities.wis : 10);
-  var entry = c.skillProfs && c.skillProfs["Insight"];
+/* A skill check: its ability, then proficiency (doubled with expertise)
+   or, without proficiency, half proficiency. {value, label, breakdown, roll}. */
+export function skillCheck(c, skill){
+  var key = SKILL_ABILITY[skill] || "str";
+  var ab = checkAbility(c, key);
+  var entry = c.skillProfs && c.skillProfs[skill] || {};
   var pb = profBonus(c);
-  var bonus = wisMod + (entry && entry.expertise ? pb*2 : (entry && entry.prof ? pb : 0));
-  return 10 + bonus;
+  var value = ab.mod, breakdown = ab.label + " (" + fmtMod(ab.mod) + ")";
+  if(entry.prof){
+    var p = entry.expertise ? 2*pb : pb;
+    value += p; breakdown += " + " + (entry.expertise ? "expertise" : "proficiency") + " (" + fmtMod(p) + ")";
+  } else {
+    var half = halfProficiency(c, key);
+    if(half){ value += half.value; breakdown += " + " + half.name + " (" + fmtMod(half.value) + ")"; }
+  }
+  return {value: value, label: ab.label, breakdown: breakdown, roll: skillRollMode(c, skill)};
 }
+/* 10 + everything the check adds, +5 with advantage or -5 with
+   disadvantage on it, and Observant's +5 to Perception and Investigation. */
+function passiveScore(c, skill){
+  var check = skillCheck(c, skill);
+  var score = 10 + check.value + (check.roll.mode==="adv" ? 5 : check.roll.mode==="dis" ? -5 : 0);
+  if((skill==="Perception" || skill==="Investigation") && hasFeat(c, "Observant")) score += 5;
+  return score;
+}
+export function passivePerception(c){ return passiveScore(c, "Perception"); }
+export function passiveInvestigation(c){ return passiveScore(c, "Investigation"); }
+export function passiveInsight(c){ return passiveScore(c, "Insight"); }
 /* Darkvision: the race's (from the race data) and features tagged
    `darkvision` (Eyes of the Dark 120 ft; Umbral Sight 60 ft, or +30 on top
    of the race's). {range, sources} with range 0 for none. */
@@ -1055,14 +1132,47 @@ export function stealthCheck(c){
   if(armor.category==="medium" && hasFeat(c, "Medium Armor Master")) return {mode: "none", reason: ""};
   return {mode: "dis", reason: (armor.name || "Your armor") + " gives disadvantage on Stealth checks"};
 }
+/* Armor or a shield worn without proficiency (2014 rules): disadvantage
+   on any ability check, saving throw or attack roll that uses STR or DEX.
+   The first such item, or null. */
+export function unproficientArmor(c){
+  return (c.inventory||[]).find(function(i){ return i.type==="armor" && i.equipped && !isProficientWithArmor(c, i); }) || null;
+}
+function armorPenalty(c, ability){
+  if(ability!=="str" && ability!=="dex") return null;
+  var item = unproficientArmor(c);
+  return item ? {mode: "dis", reason: "Not proficient with " + (item.name || "your armor")} : null;
+}
+/* Several reasons to roll with advantage or disadvantage: any of each
+   cancel out (one die, as the rules say). {mode, reason}. */
+export function combineRolls(list){
+  list = list.filter(function(r){ return r && r.mode!=="none"; });
+  var adv = list.filter(function(r){ return r.mode==="adv"; }), dis = list.filter(function(r){ return r.mode==="dis"; });
+  if(adv.length && dis.length) return {mode: "none", reason: "Advantage and disadvantage cancel out (" + list.map(function(r){ return r.reason; }).join("; ") + ")"};
+  var on = adv.length ? adv : dis;
+  return on.length ? {mode: on[0].mode, reason: on.map(function(r){ return r.reason; }).join("; ")} : {mode: "none", reason: ""};
+}
 /* How a skill check rolls: Stealth as stealthCheck says, advantage on
    Acrobatics during Bladesong and on Insight and Intimidation with the
-   astral visage out. {mode: "none"|"dis"|"adv", reason}. */
+   astral visage out, disadvantage on STR and DEX skills in armor you
+   aren't proficient with. {mode: "none"|"dis"|"adv", reason}. */
 export function skillRollMode(c, skill){
-  if(skill==="Stealth") return stealthCheck(c);
-  if(skill==="Acrobatics" && effectOn(c, "bladesong")) return {mode: "adv", reason: "Bladesong"};
-  if((skill==="Insight" || skill==="Intimidation") && effectOn(c, "astral_visage")) return {mode: "adv", reason: "Wisdom of the Spirit (Visage of the Astral Self)"};
-  return {mode: "none", reason: ""};
+  var list = [armorPenalty(c, SKILL_ABILITY[skill])];
+  if(skill==="Stealth") list.push(stealthCheck(c));
+  if(skill==="Acrobatics" && effectOn(c, "bladesong")) list.push({mode: "adv", reason: "Bladesong"});
+  if((skill==="Insight" || skill==="Intimidation") && effectOn(c, "astral_visage")) list.push({mode: "adv", reason: "Wisdom of the Spirit (Visage of the Astral Self)"});
+  return combineRolls(list);
+}
+/* A plain ability check or a saving throw with this ability. */
+export function checkRollMode(c, key){ return combineRolls([armorPenalty(c, key)]); }
+export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)]); }
+/* A weapon attack: disadvantage in armor you aren't proficient with when
+   it uses STR or DEX (not INT from Battle Ready or CHA from Hex Warrior). */
+export function attackRollMode(c, item){
+  var used = weaponAbilityMod(c, item);
+  var ab = c.abilities || {};
+  var physical = used===mod(ab.str) || used===mod(ab.dex);
+  return combineRolls([physical ? armorPenalty(c, "str") : null]);
 }
 export function getAllCharacterFeatures(c){
   var list = [];

@@ -11,6 +11,8 @@
    armorProfs: armor proficiencies the race grants (Dwarven Armor Training).
    hpPerLevel: extra max HP per character level, added on the sheet
                (Dwarven Toughness); hpTrait names it in tooltips.
+   acBonus:    added to AC on the sheet (Warforged's Integrated
+               Protection); acTrait names it in the breakdown.
    languages:  {fixed:[…], choose:n}.
    traits:     [{name, text}] short paraphrases of each trait.
    source:     where it's from. Expanded races use their original
@@ -141,6 +143,7 @@ export var RACE_DATA = {
     traits:[tr("Superior Darkvision", "Darkvision out to 120 feet."),
       tr("Duergar Resilience", "Advantage on saves against illusions and against being charmed or paralyzed."),
       tr("Dwarven Resilience", "Advantage on saves against poison, and resistance to poison damage."),
+      tr("Unslowed", "Heavy armor doesn't reduce your speed."),
       tr("Duergar Magic", "From level 3, cast Enlarge/Reduce (enlarge only) on yourself, and from level 5 Invisibility on yourself, each once per long rest."),
       SUNLIGHT]},
   "Eladrin": {asi:{dex:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:60,
@@ -300,7 +303,7 @@ export var RACE_DATA = {
       tr("Persuasive", "Proficiency in the Persuasion skill."),
       tr("Telepathic Insight", "Advantage on Wisdom and Charisma saves."),
       tr("Growth", "You grow from Small to Medium at level 5.")]},
-  "Warforged": {asi:{con:2}, asiText:"+2 Constitution, and +1 to one other score of your choice", size:"Medium", speed:{walk:30}, darkvision:0,
+  "Warforged": {asi:{con:2}, asiText:"+2 Constitution, and +1 to one other score of your choice", size:"Medium", speed:{walk:30}, darkvision:0, acBonus:1, acTrait:"Integrated Protection",
     languages:{fixed:["Common"], choose:1}, source:"Eberron: Rising from the Last War",
     traits:[tr("Constructed Resilience", "Advantage on saves against poison, resistance to poison damage, immune to disease, and no need to eat, drink or breathe."),
       tr("Sentry's Rest", "A long rest is 6 hours of inactivity, during which you stay aware of your surroundings."),

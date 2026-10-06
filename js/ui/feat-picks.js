@@ -22,6 +22,17 @@ export function renderFeatPicks(def, picks, ctx, onChange){
   var box = ce("div", "fp-box");
   if(!featHasPicks(def)) return box;
 
+  if(def.option){
+    box.appendChild(label("Choose a " + def.option.label.toLowerCase()));
+    var taken = ctx.optionsTaken ? ctx.optionsTaken(def.name) : [];
+    box.appendChild(field(themedPicker({
+      key: "feat:" + def.name + ":option", ariaLabel: def.name + " " + def.option.label.toLowerCase(),
+      placeholder: "Choose a " + def.option.label.toLowerCase(), groups: {"": def.option.options}, value: picks.option || "", search: false,
+      reasonFor: function(v){ return taken.indexOf(v)!==-1 ? "taken" : ""; },
+      onPick: function(v){ picks.option = v; onChange(); }
+    })));
+  }
+
   if(def.ability && def.ability.length){
     var choose = def.ability.length > 1;
     box.appendChild(label(choose
@@ -160,9 +171,13 @@ export function openFeatPicksModal(c, feat, onDone){
   });
 }
 
-/* The picker's view of a character on the sheet. */
+/* The picker's view of a character on the sheet. optionsTaken(name):
+   the options its copies of a repeatable feat already have. */
 export function featPicksContext(c){
   return {abilities: c.abilities, skillProfs: c.skillProfs,
+    optionsTaken: function(name){
+      return (c.feats||[]).filter(function(f){ return f.name===name && f.picks && f.picks.option; }).map(function(f){ return f.picks.option; });
+    },
     knowsWeapon: function(name){
       var d = WEAPON_DATA[name];
       return isProficientWithWeapon(c, name, d && d.category);

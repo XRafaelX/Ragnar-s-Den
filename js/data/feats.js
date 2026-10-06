@@ -6,7 +6,12 @@
      skillsOrTools  skills or tools to pick (Skilled)
      expertise      expertise picks, in skills the character is proficient in
      armor          armor proficiencies it grants
-     weapons        weapon proficiencies to pick (Weapon Master) */
+     weapons        weapon proficiencies to pick (Weapon Master)
+     option         {label, options}: one choice that changes nothing else
+                    on the sheet but is kept and shown (Elemental Adept's
+                    damage type)
+     repeatable     can be taken more than once, each time with a
+                    different option */
 export var FEATS_CATALOG = [
   {
     name: "Alert",
@@ -76,6 +81,8 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Elemental Adept",
+    option: {label: "Damage type", options: ["Acid", "Cold", "Fire", "Lightning", "Thunder"]},
+    repeatable: true,
     prerequisite: "Spellcasting feature",
     category: "Magic",
     summary: "Spells ignore resistance to a chosen element; treat 1s on damage dice as 2s.",

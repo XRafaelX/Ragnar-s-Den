@@ -1,9 +1,19 @@
 import { save } from "../../core/state.js";
-import { fmtMod, mod, profBonus, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, computeDarkvision, skillRollMode, checkAbility, escapeHtml } from "../../core/helpers.js";
+import { fmtMod, mod, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, computeDarkvision, checkAbility, abilityCheck, skillCheck, saveRollMode, escapeHtml } from "../../core/helpers.js";
 import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
+
+/* "Adv" / "Dis" tag for a check, save or skill that rolls that way. */
+function rollTag(roll){
+  var tag = document.createElement("span");
+  tag.className = "skill-roll-tag " + roll.mode;
+  if(roll.mode==="dis") tag.innerHTML = makeAlertSvg() + "Dis";
+  else tag.textContent = "Adv";
+  tag.title = roll.reason;
+  return tag;
+}
 
 /* ---- Abilities & Skills panel ---- */
 export function renderAbilitiesPanel(c){
@@ -16,25 +26,31 @@ export function renderAbilitiesPanel(c){
     var key = a[0];
     var score = Number(c.abilities[key]) || 10;
     var m = mod(score);
-    // Checks roll this; Arms of the Astral Self can swap WIS in for STR.
-    var check = checkAbility(c, key);
+    // The box shows the modifier (Arms of the Astral Self can swap WIS in
+    // for STR); a check also adds Jack of All Trades and can roll with
+    // disadvantage (armor without proficiency).
+    var shown = checkAbility(c, key).mod;
+    var check = abilityCheck(c, key);
     var box = document.createElement("div");
     box.className = "ability-box";
 
     var rollArea = document.createElement("div");
     rollArea.className = "ability-roll-area";
-    rollArea.title = "Roll " + a[1] + " check (1d20" + fmtMod(check.mod) + (check.mod!==m ? ", " + check.label : "") + ")";
+    rollArea.title = "Roll " + a[1] + " check (1d20" + fmtMod(check.value) + (check.value!==m ? ": " + check.breakdown : "") + ")" +
+      (check.roll.mode!=="none" ? ". " + (check.roll.mode==="dis" ? "Disadvantage: " : "Advantage: ") + check.roll.reason : "");
     rollArea.setAttribute("role", "button");
     rollArea.setAttribute("tabindex", "0");
-    rollArea.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(check.mod)+'</div>';
+    rollArea.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(shown)+'</div>';
+    if(check.roll.mode!=="none") rollArea.appendChild(rollTag(check.roll));
+    function rollCheck(){ performRoll(20,1,check.value,check.roll.mode, a[1]+" check"); }
     rollArea.addEventListener("click", function(e){
       e.stopPropagation();
-      performRoll(20,1,check.mod,"none", a[1]+" check");
+      rollCheck();
     });
     rollArea.addEventListener("keydown", function(e){
       if(e.key === "Enter" || e.key === " "){
         e.preventDefault();
-        performRoll(20,1,check.mod,"none", a[1]+" check");
+        rollCheck();
       }
     });
     box.appendChild(rollArea);
@@ -110,7 +126,9 @@ export function renderAbilitiesPanel(c){
     cb.addEventListener("change", function(){ c.saveProfs[key]=cb.checked; save(); renderAll(); });
     var name = document.createElement("span");
     name.className = "row-name"; name.textContent = a[1];
-    name.addEventListener("click", function(){ performRoll(20,1,total,"none", a[1]+" save"); });
+    var saveRoll = saveRollMode(c, key);
+    if(saveRoll.mode!=="none"){ name.appendChild(rollTag(saveRoll)); name.title = saveRoll.reason; }
+    name.addEventListener("click", function(){ performRoll(20,1,total,saveRoll.mode, a[1]+" save"); });
     var modSpan = document.createElement("span");
     modSpan.className = "row-mod"; modSpan.textContent = fmtMod(total);
     row.appendChild(cb); row.appendChild(name); row.appendChild(modSpan);
@@ -133,34 +151,32 @@ export function renderAbilitiesPanel(c){
   SKILLS.forEach(function(s){
     var name = s[0], ab = s[1];
     var entry = c.skillProfs[name] || {prof:false, expertise:false};
-    var pb = profBonus(c);
+    var check = skillCheck(c, name);
     var skillAbility = checkAbility(c, ab);
-    var bonus = skillAbility.mod + (entry.expertise ? pb*2 : (entry.prof ? pb : 0));
+    var bonus = check.value;
     var row = document.createElement("div");
     row.className = "list-row";
     var profCb = document.createElement("input");
     profCb.type="checkbox"; profCb.className="chk";
     profCb.checked = !!entry.prof;
-    profCb.addEventListener("change", function(){ entry.prof = profCb.checked; c.skillProfs[name]=entry; save(); renderAll(); });
+    // Expertise needs proficiency: dropping proficiency drops it too.
+    profCb.addEventListener("change", function(){ entry.prof = profCb.checked; if(!entry.prof) entry.expertise = false; c.skillProfs[name]=entry; save(); renderAll(); });
     var expCb = document.createElement("input");
     expCb.type="checkbox"; expCb.className="exp-chk";
     expCb.checked = !!entry.expertise;
-    expCb.addEventListener("change", function(){ entry.expertise = expCb.checked; c.skillProfs[name]=entry; save(); renderAll(); });
+    // ...and ticking expertise ticks proficiency.
+    expCb.addEventListener("change", function(){ entry.expertise = expCb.checked; if(entry.expertise) entry.prof = true; c.skillProfs[name]=entry; save(); renderAll(); });
     var nameSpan = document.createElement("span");
     nameSpan.className = "row-name"; nameSpan.textContent = name;
     // Stealth with armor's disadvantage (or Dampening Field's advantage),
     // advantage from an effect that's on (Bladesong, the astral visage).
-    var roll = skillRollMode(c, name);
+    var roll = check.roll;
     var rollMode = roll.mode;
     if(rollMode!=="none"){
-      var tag = document.createElement("span");
-      tag.className = "skill-roll-tag " + rollMode;
-      if(rollMode==="dis") tag.innerHTML = makeAlertSvg() + "Dis";
-      else tag.textContent = "Adv";
-      tag.title = roll.reason;
-      nameSpan.appendChild(tag);
+      nameSpan.appendChild(rollTag(roll));
       nameSpan.title = roll.reason;
-    }
+    } else if(roll.reason) nameSpan.title = roll.reason;   // advantage and disadvantage cancelled
+    row.title = check.breakdown;
     nameSpan.addEventListener("click", function(){ performRoll(20,1,bonus,rollMode, name); });
     var abbr = document.createElement("span");
     abbr.className = "abbr"; abbr.textContent = skillAbility.label.slice(0, 3);

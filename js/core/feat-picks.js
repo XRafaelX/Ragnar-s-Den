@@ -33,19 +33,19 @@ export function featDef(name){
 }
 /* Anything taking this feat changes on the sheet. */
 export function featHasPicks(def){
-  return !!def && !!((def.ability && def.ability.length) || def.skills || def.skillsOrTools || def.expertise || def.weapons);
+  return !!def && !!((def.ability && def.ability.length) || def.skills || def.skillsOrTools || def.expertise || def.weapons || def.option);
 }
 /* Something the player has to choose (not just a fixed +1). */
 export function featNeedsChoice(def){
-  return !!def && !!((def.ability && def.ability.length > 1) || def.skills || def.skillsOrTools || def.expertise || def.weapons);
+  return !!def && !!((def.ability && def.ability.length > 1) || def.skills || def.skillsOrTools || def.expertise || def.weapons || def.option);
 }
 export function emptyPicks(def){
-  return { ability: def && def.ability && def.ability.length===1 ? def.ability[0] : "", skills: [], expertise: [], weapons: [] };
+  return { ability: def && def.ability && def.ability.length===1 ? def.ability[0] : "", skills: [], expertise: [], weapons: [], option: "" };
 }
 /* Picks to start a picker from: the feat's own (to finish them) or empty. */
 export function startingPicks(def, feat){
   var p = feat && feat.picks && !feat.picks.manual ? feat.picks : emptyPicks(def);
-  return {ability: p.ability || emptyPicks(def).ability, skills: (p.skills||[]).slice(), expertise: (p.expertise||[]).slice(), weapons: (p.weapons||[]).slice()};
+  return {ability: p.ability || emptyPicks(def).ability, skills: (p.skills||[]).slice(), expertise: (p.expertise||[]).slice(), weapons: (p.weapons||[]).slice(), option: p.option || ""};
 }
 function profCount(def){ return def.skillsOrTools || def.skills || 0; }
 
@@ -54,6 +54,10 @@ function profCount(def){ return def.skillsOrTools || def.skills || 0; }
 export function featPicksProblem(def, picks, ctx){
   if(!featHasPicks(def)) return "";
   picks = picks || {};
+  if(def.option){
+    if(def.option.options.indexOf(picks.option)===-1) return "Pick a "+def.option.label.toLowerCase()+" for "+def.name+".";
+    if(ctx && ctx.optionsTaken && ctx.optionsTaken(def.name).indexOf(picks.option)!==-1) return "You already have "+def.name+" ("+picks.option+"). Pick another "+def.option.label.toLowerCase()+".";
+  }
   if(def.ability && def.ability.length && def.ability.indexOf(picks.ability)===-1) return "Pick the ability "+def.name+" raises.";
   var n = profCount(def);
   var chosen = (picks.skills||[]).slice(0, n).filter(Boolean);
@@ -84,6 +88,7 @@ export function expertiseOptions(ctx, picks){
 export function featPicksSummary(def, picks){
   if(!featHasPicks(def) || !picks) return "";
   var bits = [];
+  if(picks.option) bits.push(picks.option);
   if(picks.ability) bits.push(abilityName(picks.ability)+" +1"+(def.saveProf ? " and its saving throw" : ""));
   (picks.skills||[]).filter(Boolean).forEach(function(s){ bits.push(s); });
   (picks.expertise||[]).filter(Boolean).forEach(function(s){ bits.push("expertise in "+s); });
@@ -99,7 +104,7 @@ export function applyFeatPicks(c, feat, picks){
   if(!featHasPicks(def)) return;
   revertFeatPicks(c, feat);
   feat.picks = {ability: picks.ability||"", skills: (picks.skills||[]).filter(Boolean), expertise: (picks.expertise||[]).filter(Boolean),
-    weapons: (picks.weapons||[]).filter(Boolean)};
+    weapons: (picks.weapons||[]).filter(Boolean), option: picks.option||""};
   var applied = {abilities:{}, skills:[], expertise:[], weaponItems:[]};
   var k = feat.picks.ability;
   if(k){

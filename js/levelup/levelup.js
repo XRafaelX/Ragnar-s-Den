@@ -431,7 +431,7 @@ function stepAsi(container){
     list.innerHTML = "";
     var q = lu.featQuery.toLowerCase().trim();
     FEATS_CATALOG.filter(function(f){
-      if((c.feats||[]).some(function(x){ return x.name===f.name; })) return false;
+      if(!f.repeatable && (c.feats||[]).some(function(x){ return x.name===f.name; })) return false;
       return !q || f.name.toLowerCase().indexOf(q)!==-1 || (f.summary||"").toLowerCase().indexOf(q)!==-1;
     }).slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(f){
       var r = ce("div","wiz-spell-row wiz-pick-row"+(lu.featName===f.name?" selected":""));

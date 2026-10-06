@@ -18,6 +18,7 @@ import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClas
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { emptyPicks, featPicksProblem } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
+import { TOOL_GROUPS } from "../core/feat-picks.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
 import { SUBCLASSES } from "../data/progression.js";
@@ -301,7 +302,7 @@ export function wizardStepRace(container){
     explain.innerHTML = raceExplainHtml(wizardState.race);
     if(wizardState.race!==shownRace){
       var rc = wizardState.raceChoices;
-      rc.abilities = []; rc.preset = ""; rc.skills = []; rc.feat = ""; rc.featPicks = null;
+      rc.abilities = []; rc.preset = ""; rc.skills = []; rc.tools = []; rc.feat = ""; rc.featPicks = null;
       shownRace = wizardState.race;
     }
   }, "race");
@@ -566,13 +567,15 @@ export function wizardStepRaceChoices(container){
   }
 
   if(def.skills){
-    var skillsPicked = rc.skills.slice(0, def.skills).filter(function(sk){ return sk && known.indexOf(sk)===-1; });
-    var sec2 = section("Skill proficiency", "Become proficient in "+(def.skills>1 ? def.skills+" skills" : "one skill")+" of your choice.", skillsPicked.length===def.skills);
+    var skillList = def.skillOptions || SKILLS.map(function(x){ return x[0]; });
+    var skillsPicked = rc.skills.slice(0, def.skills).filter(function(sk, i, all){ return sk && known.indexOf(sk)===-1 && skillList.indexOf(sk)!==-1 && all.indexOf(sk)===i; });
+    var sec2 = section(def.skills>1 ? "Skill proficiencies" : "Skill proficiency",
+      "Become proficient in "+(def.skills>1 ? def.skills+" skills" : "one skill")+(def.skillOptions ? " from "+def.skillOptions.join(", ") : " of your choice")+".", skillsPicked.length===def.skills);
     for(var s=0;s<def.skills;s++){
       (function(s){
         sec2.appendChild(pickerField(themedPicker({
-          key:"race:skill:"+s, placeholder:"Choose a skill", ariaLabel:"Race skill",
-          groups:{"":SKILLS.map(function(x){ return x[0]; })},
+          key:"race:skill:"+s, placeholder:"Choose a skill", ariaLabel:"Race skill"+(def.skills>1 ? " "+(s+1) : ""),
+          groups:{"":skillList},
           value:rc.skills[s]||"",
           reasonFor:function(sk){
             if(known.indexOf(sk)!==-1) return "known";
@@ -581,6 +584,22 @@ export function wizardStepRaceChoices(container){
           onPick:function(v){ rc.skills[s] = v; picked(); }
         })));
       })(s);
+    }
+  }
+
+  if(def.tools){
+    rc.tools = rc.tools || [];
+    var toolsPicked = rc.tools.slice(0, def.tools).filter(Boolean);
+    var secT = section("Tool proficiency", "Become proficient with "+(def.tools>1 ? def.tools+" tools" : "one tool")+" of your choice.", toolsPicked.length===def.tools);
+    for(var tIdx=0; tIdx<def.tools; tIdx++){
+      (function(i){
+        secT.appendChild(pickerField(themedPicker({
+          key:"race:tool:"+i, placeholder:"Choose a tool", ariaLabel:"Race tool"+(def.tools>1 ? " "+(i+1) : ""),
+          groups:TOOL_GROUPS, value:rc.tools[i]||"",
+          reasonFor:function(t){ return t!==rc.tools[i] && rc.tools.indexOf(t)!==-1 ? "picked" : ""; },
+          onPick:function(v){ rc.tools[i] = v; picked(); }
+        })));
+      })(tIdx);
     }
   }
 
@@ -1326,7 +1345,8 @@ export function wizardStepReview(container){
   if(raceDef){
     var rc = wizardState.raceChoices;
     if(raceDef.abilityPreset && rc.preset) row(raceDef.abilityPreset.label, rc.preset);
-    if(raceDef.skills) row("Race skill", rc.skills.slice(0, raceDef.skills).filter(Boolean).join(", ") || "None");
+    if(raceDef.skills) row(raceDef.skills>1 ? "Race skills" : "Race skill", rc.skills.slice(0, raceDef.skills).filter(Boolean).join(", ") || "None");
+    if(raceDef.tools) row("Race tool", (rc.tools||[]).slice(0, raceDef.tools).filter(Boolean).join(", ") || "None");
     if(raceDef.feat) row("Feat", rc.feat || "None");
   }
   row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+(hpBonus ? " + "+hpBonus+" "+wizardState.classChoices.subclass : "")+

@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal } from "../../core/helpers.js";
+import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { performRoll } from "../../dice/dice.js";
 import { playDelete } from "../../ui/sound.js";
@@ -208,6 +208,10 @@ function statTile(label, hint){
 }
 
 function renderSpellcastingCard(c){
+  // Classes casting with different abilities (a Cleric/Wizard) each get
+  // their own save DC and spell attack.
+  var byAbility = spellcastingAbilities(c);
+  if(byAbility.length > 1) return renderMulticlassCasting(byAbility);
   var card = makeCard("Spellcasting");
   var pb = profBonus(c);
   var scMod = mod(c.abilities[c.spellcasting.ability]);
@@ -240,6 +244,30 @@ function renderSpellcastingCard(c){
   grid.appendChild(atk.box);
 
   card.appendChild(grid);
+  return card;
+}
+
+function renderMulticlassCasting(byAbility){
+  var card = makeCard("Spellcasting");
+  byAbility.forEach(function(x){
+    var label = x.classes.join(" / ") + " · " + x.ability.toUpperCase();
+    var head = ce("p","sc-class-head"); head.textContent = label;
+    card.appendChild(head);
+    var grid = ce("div","vitals-grid sc-class-grid");
+    var dc = statTile("Save DC", "8 + prof + " + x.ability.toUpperCase());
+    dc.val.textContent = x.dc;
+    grid.appendChild(dc.box);
+    var atk = statTile("Spell attack", "Tap to roll");
+    atk.val.textContent = fmtMod(x.attack);
+    atk.box.classList.add("sc-roll");
+    atk.box.setAttribute("role","button"); atk.box.tabIndex = 0;
+    atk.box.title = "Roll a " + x.classes.join(" / ") + " spell attack";
+    function roll(){ performRoll(20,1,x.attack,"none", x.classes.join(" / ") + " spell attack"); }
+    atk.box.addEventListener("click", roll);
+    atk.box.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); roll(); } });
+    grid.appendChild(atk.box);
+    card.appendChild(grid);
+  });
   return card;
 }
 
