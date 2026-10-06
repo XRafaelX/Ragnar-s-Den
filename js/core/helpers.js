@@ -377,7 +377,9 @@ export function computeArmorClass(c){
   }
 
   if(shieldBonus){ breakdown += " + shield (" + fmtMod(shieldBonus) + ")"; short += " + shield"; }
-  var defense = (bodyArmor || shieldBonus > 0) && hasFightingStyle(c, "Defense") ? 1 : 0;
+  // Defense needs worn armor; a shield alone doesn't count (the 2024 text
+  // says "Light, Medium, or Heavy armor").
+  var defense = bodyArmor && hasFightingStyle(c, "Defense") ? 1 : 0;
   if(defense){ breakdown += " + Defense style (+1)"; short += " + Defense"; }
   base += defense;
   // Dual Wielder: +1 while wielding a separate melee weapon in each hand
