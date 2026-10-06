@@ -1,6 +1,6 @@
-/* Regression tests for the 8 bugs found and fixed in the audit.
-   Each test is named after the bug it covers so a failure points
-   straight at the regression. */
+/* Regression tests for the bugs found and fixed in the audit. Each
+   test is named after the behavior it protects, prefixed by the area of
+   the app, so a failure points straight at what broke. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as H from "../js/core/helpers.js";
@@ -74,12 +74,12 @@ function withFakeDom(t, fn){
 }
 
 /* ================================================================
-   FIX 1: startEffect: null guard on e.resource
+   Active effects: starting one whose class resource is missing
    ================================================================
    An effect whose class resource is missing gets resource:undefined
    from characterEffects. startEffect must refuse it cleanly, without
    touching the character. */
-test("fix 1: startEffect refuses an effect whose class resource is missing", () => {
+test("active effects: one whose class resource is missing can't be started", () => {
   // No real effect lacks its resource, so add one for this test.
   const def = { id: "test_missing_resource", name: "Test", className: "Fighter", subclass: "Champion", level: 1,
     cost: { resource: "no_such_resource", amount: 1 } };
@@ -100,14 +100,14 @@ test("fix 1: startEffect refuses an effect whose class resource is missing", () 
   }
 });
 
-test("fix 1: startEffect returns false for effects the character doesn't have", () => {
+test("active effects: a character without an effect can't start it", () => {
   const fighter = char([{ name: "Fighter", level: 5 }]);
   TOGGLE_EFFECTS.forEach(function(def){
     assert.equal(H.startEffect(fighter, def.id), false, def.id);
   });
 });
 
-test("fix 1: startEffect still spends the resource when it is present", () => {
+test("active effects: starting Bladesong spends one use", () => {
   const wizard = char([{ name: "Wizard", level: 2, subclass: "Bladesinging" }]);
   assert.equal(H.startEffect(wizard, "bladesong"), true);
   assert.equal(H.effectOn(wizard, "bladesong"), true);
@@ -115,7 +115,7 @@ test("fix 1: startEffect still spends the resource when it is present", () => {
 });
 
 /* ================================================================
-   FIX 2: undoLastLevelUp with a feat deleted by hand
+   Level-up undo: a feat deleted by hand
    ================================================================
    Deleting a feat on the Features tab reverts its picks there. Undoing
    the level-up that gave it must still work, and must not take the
@@ -140,7 +140,7 @@ function undo(t, c){
   });
 }
 
-test("fix 2: undo after the level-up's feat was deleted by hand", (t) => {
+test("level-up undo: works after the level's feat was deleted by hand", (t) => {
   const c = fighterWithFeatLevelUp();
   // What the Features tab's delete does.
   revertFeatPicks(c, c.feats[0]);
@@ -154,7 +154,7 @@ test("fix 2: undo after the level-up's feat was deleted by hand", (t) => {
   assert.equal(c.hp.max, 34);
 });
 
-test("fix 2: undo with the feat still there reverts and removes it", (t) => {
+test("level-up undo: reverts and removes the level's feat", (t) => {
   const c = fighterWithFeatLevelUp();
   undo(t, c);
   assert.equal(c.classes[0].level, 3);
@@ -163,12 +163,12 @@ test("fix 2: undo with the feat still there reverts and removes it", (t) => {
 });
 
 /* ================================================================
-   FIX 3: Monk Unarmored Defense: shield with baseAC 0 must block it
+   Armor class: Monk Unarmored Defense with a 0 AC shield
    ================================================================
    Before the fix, Monk Unarmored Defense used !shieldBonus which
    is true for a baseAC:0 shield. It must check whether a shield is
    actually equipped, not whether its bonus is non-zero. */
-test("fix 3: Monk Unarmored Defense: 0-AC shield disables it", () => {
+test("armor class: any equipped shield turns off Monk Unarmored Defense", () => {
   const zeroShield = { type: "armor", equipped: true, name: "Broken Shield", category: "shield", baseAC: 0 };
   const normalShield = { type: "armor", equipped: true, name: "Shield", category: "shield", baseAC: 2 };
 
@@ -190,12 +190,12 @@ test("fix 3: Monk Unarmored Defense: 0-AC shield disables it", () => {
 });
 
 /* ================================================================
-   FIX 4: wisModPlusOne: null guard for missing abilities
+   Spellcasting: Cleric and Druid prepared spells without abilities
    ================================================================
    spellPickCount passes {abilities: finalAbilities()} into the
    function. finalAbilities() always returns a full set, but we test
    the guard directly for robustness. */
-test("fix 4: wisModPlusOne: does not crash when abilities is missing", () => {
+test("spellcasting: Cleric and Druid prepared spell count with no abilities", () => {
   const clericSC = CLASSES_INFO["Cleric"].spellcasting;
   assert.equal(typeof clericSC.spells, "function",
     "Cleric's spells property should be a function (wisModPlusOne)");
@@ -217,13 +217,13 @@ test("fix 4: wisModPlusOne: does not crash when abilities is missing", () => {
 });
 
 /* ================================================================
-   FIX 5: Defense fighting style needs worn armor
+   Armor class: the Defense fighting style needs worn armor
    ================================================================
    "While you are wearing armor, you gain a +1 bonus to AC." A shield
    alone doesn't count: the 2024 text says "Light, Medium, or Heavy
    armor", and Barbarian Unarmored Defense ("wearing no armor ... you
    can still use a shield") treats a shield as separate from armor. */
-test("fix 5: Defense fighting style applies with worn armor, not a shield alone", () => {
+test("armor class: Defense style applies with worn armor, not a shield alone", () => {
   const shield = { type: "armor", equipped: true, name: "Shield", category: "shield", baseAC: 2 };
   const chainmail = { type: "armor", equipped: true, name: "Chain Mail", category: "heavy", baseAC: 16 };
 
@@ -255,10 +255,10 @@ test("fix 5: Defense fighting style applies with worn armor, not a shield alone"
 });
 
 /* ================================================================
-   FIX 6: isProficientWithArmor: shield proficiency found anywhere
-            in the string, not only at its start
+   Armor proficiency: a shield proficiency found anywhere in the
+   string, not only at its start
    ================================================================ */
-test("fix 6: isProficientWithArmor: shield proficiency strings", () => {
+test("armor proficiency: shield proficiency matches anywhere in the name", () => {
   const shield = { type: "armor", equipped: true, name: "Shield", category: "shield", baseAC: 2 };
 
   // "Shields" and "Shields (non-metal)" from the class data.
@@ -279,9 +279,9 @@ test("fix 6: isProficientWithArmor: shield proficiency strings", () => {
 });
 
 /* ================================================================
-   FIX 7: ordinal() is shared from helpers.js and handles 11th to 13th
+   Ordinals: one shared ordinal() that handles 11th to 13th
    ================================================================ */
-test("fix 7: ordinal suffixes", () => {
+test("ordinals: 1st, 2nd, 3rd, 11th to 13th, 21st", () => {
   assert.equal(H.ordinal(1), "1st");
   assert.equal(H.ordinal(2), "2nd");
   assert.equal(H.ordinal(3), "3rd");
@@ -296,11 +296,11 @@ test("fix 7: ordinal suffixes", () => {
 });
 
 /* ================================================================
-   FIX 8: c.ac is not written during render
+   Armor class: c.ac is not written during render
    ================================================================
    The Vitals panel used to write c.ac = computeArmorClass(c).value
    while rendering, without saving. AC is always computed. */
-test("fix 8: rendering the Vitals panel leaves c.ac alone", (t) => {
+test("armor class: rendering Vitals leaves the saved c.ac alone", (t) => {
   const c = newCharacter("Render test");
   c.classes = [{ name: "Fighter", level: 1 }];
   c.inventory = [{ type: "armor", equipped: true, name: "Chain Mail", category: "heavy", baseAC: 16 }];
@@ -309,7 +309,7 @@ test("fix 8: rendering the Vitals panel leaves c.ac alone", (t) => {
   assert.equal(c.ac, 10, "render must not overwrite c.ac (the AC is 16)");
 });
 
-test("fix 8: computeArmorClass does not depend on c.ac", () => {
+test("armor class: computed from equipment, never from the saved c.ac", () => {
   const plate = { type: "armor", equipped: true, name: "Plate", category: "heavy", baseAC: 18, magicBonus: 0 };
   const c = char([{ name: "Fighter", level: 1 }], { inventory: [plate] });
   c.ac = 99;
