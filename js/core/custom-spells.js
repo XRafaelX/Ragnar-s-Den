@@ -173,21 +173,23 @@ export function deleteCustomSpell(id){
   // Orphaned copies on characters keep their data; homebrewId becomes stale.
 }
 
-/* Backup import: skips entries whose names are already taken.
-   Returns number added. */
+/* Backup import: skips entries whose names are already taken. Returns
+   {oldId: newId} (a taken name maps onto your spell of that name) so
+   imported characters' copies can be relinked. */
 export function importCustomSpells(entries){
-  var added = 0;
+  var idMap = {}, added = 0;
   (entries || []).forEach(function(e){
     if(!e || !e.name) return;
     var lower = String(e.name).trim().toLowerCase();
     var same = list.find(function(x){ return x.name.toLowerCase() === lower; });
-    if(same) return; // already have it
+    if(same){ if(e.id) idMap[e.id] = same.id; return; } // already have it
     if(spellNameProblem(String(e.name), null)) return; // name taken by built-in
     var copy = clean(Object.assign({}, e, { name: String(e.name) }));
     copy.id = uid();
+    if(e.id) idMap[e.id] = copy.id;
     list.push(copy);
     added++;
   });
   if(added){ write(); merge(); }
-  return added;
+  return idMap;
 }

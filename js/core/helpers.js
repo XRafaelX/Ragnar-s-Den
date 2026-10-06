@@ -272,12 +272,28 @@ export function hasFeat(c, name){
   return (c.feats||[]).some(function(f){ return ((f.name||"") + "").toLowerCase()===lower; });
 }
 /* Max HP: the saved number (hit dice, level-ups, manual changes) plus
-   Tough's 2 per character level. */
+   Tough's 2 per character level and the race's hpPerLevel (Dwarven
+   Toughness: 1 per level), worked out so they follow levels and feats. */
 export function toughBonus(c){
   return hasFeat(c, "Tough") ? 2 * totalLevel(c) : 0;
 }
+export function raceHpPerLevel(c){
+  var race = RACE_DATA[c.race];
+  return race && Number(race.hpPerLevel) || 0;
+}
+export function raceHpBonus(c){
+  return raceHpPerLevel(c) * totalLevel(c);
+}
+/* The bonuses above that apply, as [{name, value}], for tooltips. */
+export function hpBonuses(c){
+  var out = [];
+  var tough = toughBonus(c), race = raceHpBonus(c);
+  if(tough) out.push({name:"Tough", value:tough});
+  if(race) out.push({name:(RACE_DATA[c.race].hpTrait || c.race), value:race});
+  return out;
+}
 export function maxHp(c){
-  return (Number(c.hp && c.hp.max)||0) + toughBonus(c);
+  return (Number(c.hp && c.hp.max)||0) + toughBonus(c) + raceHpBonus(c);
 }
 /* Walking speed: the saved number plus Mobile's 10 ft, an Infiltrator
    Armorer's Powered Steps (while wearing armor) and Bladesong's 10 ft
@@ -324,6 +340,59 @@ export function computeSpeed(c){
   }));
   return { value: walk, bonus: mobile, parts: parts, others: others };
 }
+/* ---------------- Hit dice ----------------
+   One die per class level, by size (a Barbarian 3 / Wizard 2 has 3d12
+   and 2d6). c.hitDiceSpent = {12: 1, 6: 0} counts spent dice per size and
+   c.hitDiceUsed keeps the total. Older saves only have the total; it's
+   read as spent from the largest die down. [{die, total, used}], largest
+   die first. */
+export function hitDicePools(c){
+  var totals = {};
+  (c.classes||[]).forEach(function(cl){
+    var d = HIT_DICE_BY_CLASS[cl.name] || 8;
+    totals[d] = (totals[d]||0) + (Number(cl.level)||1);
+  });
+  var sizes = Object.keys(totals).map(Number).sort(function(a, b){ return b - a; });
+  if(!sizes.length){ sizes = [8]; totals[8] = 1; }
+  var spent = c.hitDiceSpent;
+  var left = clamp(Number(c.hitDiceUsed)||0, 0, totalLevel(c));
+  return sizes.map(function(d){
+    var used;
+    if(spent) used = clamp(Number(spent[d])||0, 0, totals[d]);
+    else { used = Math.min(left, totals[d]); left -= used; }
+    return {die: d, total: totals[d], used: used};
+  });
+}
+function saveHitDice(c, pools){
+  c.hitDiceSpent = {};
+  pools.forEach(function(p){ if(p.used) c.hitDiceSpent[p.die] = p.used; });
+  c.hitDiceUsed = pools.reduce(function(n, p){ return n + p.used; }, 0);
+}
+/* Brings c.hitDiceSpent and c.hitDiceUsed in line with the classes (after
+   a level-up is undone). */
+export function syncHitDice(c){ saveHitDice(c, hitDicePools(c)); }
+/* Spend the largest die left. Returns its size, or 0 if none are left. */
+export function spendHitDie(c){
+  var pools = hitDicePools(c);
+  var pool = pools.find(function(p){ return p.used < p.total; });
+  if(!pool) return 0;
+  pool.used++;
+  saveHitDice(c, pools);
+  return pool.die;
+}
+/* A long rest gives back half the character's dice (at least one),
+   largest first. Returns how many came back. */
+export function recoverHitDice(c){
+  var pools = hitDicePools(c);
+  var n = Math.max(1, Math.floor(totalLevel(c) / 2)), back = 0;
+  pools.forEach(function(p){
+    var take = Math.min(n - back, p.used);
+    p.used -= take; back += take;
+  });
+  saveHitDice(c, pools);
+  return back;
+}
+
 /* HP from one spent hit die: roll + CON (at least 1). Durable raises the
    floor to twice the CON modifier, at least 2. */
 export function hitDieHealing(c, roll){
@@ -440,7 +509,7 @@ export function computeInitiative(c){
     value += pb; breakdown += " + Hare-Trigger (" + fmtMod(pb) + ")"; short += " + PB";
   }
   var misc = Number(c.initiativeMisc)||0;
-  value += misc; breakdown += " + misc (" + fmtMod(misc) + ")"; short += " + misc";
+  if(misc){ value += misc; breakdown += " + misc (" + fmtMod(misc) + ")"; short += " + misc"; }
   return { value: value, breakdown: breakdown, short: short };
 }
 
@@ -825,10 +894,12 @@ export function endEffect(c, id){
   delete c.effects[id];
   TOGGLE_EFFECTS.forEach(function(d){ if((d.requires||[]).indexOf(id)!==-1) endEffect(c, d.id); });
 }
-/* A rest or dropping to 0 HP ends every effect. Returns the names that were on. */
+/* A rest or dropping to 0 HP ends every effect, and a Barbarian's Rage.
+   Returns the names that were on. */
 export function endAllEffects(c){
   var ended = TOGGLE_EFFECTS.filter(function(d){ return c.effects && c.effects[d.id]; }).map(function(d){ return d.name; });
   c.effects = {};
+  if(c.rage && c.rage.active){ c.rage.active = false; ended.push("Rage"); }
   return ended;
 }
 /* Drop flags that can't come back on their own: the feature is gone

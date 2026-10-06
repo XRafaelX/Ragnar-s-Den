@@ -80,23 +80,43 @@ export function equipmentOptionAvailable(opt){
 /* Race picks (Variant Human): what the race lets you choose, if anything. */
 export function raceChoiceDef(){ return wizardState && RACE_CHOICES[wizardState.race] || null; }
 
+/* The race's ability increases as {ability: amount}: its fixed ones
+   (Hill Dwarf +2 CON, +1 WIS) plus what's picked on Race Traits, either
+   one ability per abilityBonus amount or an abilityPreset option.
+   fixedOnly leaves the picks out. */
+export function raceAbilityIncreases(opts){
+  var out = {};
+  function add(k, n){ if(n) out[k] = (out[k]||0) + n; }
+  var race = RACE_DATA[wizardState.race];
+  var fixed = race && race.asi || {};
+  Object.keys(fixed).forEach(function(k){ add(k, Number(fixed[k])||0); });
+  if(opts && opts.fixedOnly) return out;
+  var def = raceChoiceDef(), rc = wizardState.raceChoices;
+  if(def && def.abilityBonus){
+    var amounts = def.abilityBonus.amounts, exclude = def.abilityBonus.exclude || [];
+    var picks = rc.abilities.slice(0, amounts.length);
+    picks.forEach(function(k, i){
+      if(k && picks.indexOf(k)===i && exclude.indexOf(k)===-1) add(k, amounts[i]);
+    });
+  }
+  var preset = def && def.abilityPreset && def.abilityPreset.options[rc.preset];
+  Object.keys(preset || {}).forEach(function(k){ add(k, preset[k]); });
+  return out;
+}
+
 /* The scores the character will actually have: the base scores from the
-   Ability Scores step plus any racial increases picked on Race Traits
-   (capped at 20), plus the Race Traits feat's +1. Everything downstream
-   (HP, AC, spell counts, the review) reads these. withoutFeat leaves the
-   feat's +1 out: for feat prerequisites, and for the finished sheet,
-   where applyFeatPicks adds it and records it so removing the feat
-   takes it back. */
+   Ability Scores step plus the race's increases (kept within 1 to 20),
+   plus the Race Traits feat's +1. Everything downstream (HP, AC, spell
+   counts, the review) reads these. withoutFeat leaves the feat's +1 out:
+   for feat prerequisites, and for the finished sheet, where
+   applyFeatPicks adds it and records it so removing the feat takes it
+   back. */
 export function finalAbilities(opts){
   var out = {};
   Object.keys(wizardState.abilities).forEach(function(k){ out[k] = wizardState.abilities[k]; });
+  var inc = raceAbilityIncreases();
+  Object.keys(inc).forEach(function(k){ out[k] = Math.max(1, Math.min(20, (Number(out[k])||10) + inc[k])); });
   var def = raceChoiceDef();
-  if(def && def.abilityBonus){
-    var picks = wizardState.raceChoices.abilities.slice(0, def.abilityBonus.count);
-    picks.forEach(function(k, i){
-      if(k && picks.indexOf(k)===i) out[k] = Math.min(20, (Number(out[k])||10) + def.abilityBonus.amount);
-    });
-  }
   var fp = def && def.feat && !(opts && opts.withoutFeat) && wizardState.raceChoices.featPicks;
   if(fp && fp.ability) out[fp.ability] = Math.min(20, (Number(out[fp.ability])||10) + 1);
   return out;
@@ -225,9 +245,14 @@ export function validateStep(id){
   if(id==="raceChoices"){
     var def = raceChoiceDef(), rc = wizardState.raceChoices;
     if(def.abilityBonus){
-      var ab = rc.abilities.slice(0, def.abilityBonus.count).filter(Boolean);
-      if(ab.length!==def.abilityBonus.count || new Set(ab).size!==ab.length) return "Pick "+def.abilityBonus.count+" different abilities to increase.";
+      var n = def.abilityBonus.amounts.length, exclude = def.abilityBonus.exclude || [];
+      var ab = rc.abilities.slice(0, n).filter(Boolean);
+      if(ab.length!==n || new Set(ab).size!==ab.length || ab.some(function(k){ return exclude.indexOf(k)!==-1; })){
+        return n===1 ? "Pick an ability to increase"+(exclude.length ? " other than "+exclude.map(abilityFullName).join(" or ") : "")+"."
+          : "Pick "+n+" different abilities to increase"+(exclude.length ? ", not "+exclude.map(abilityFullName).join(" or ") : "")+".";
+      }
     }
+    if(def.abilityPreset && !def.abilityPreset.options[rc.preset]) return "Pick your "+def.abilityPreset.label.toLowerCase()+".";
     if(def.skills){
       var known = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]);
       var sk = rc.skills.slice(0, def.skills).filter(Boolean);
@@ -314,7 +339,7 @@ export function openWizard(){
     rolledPool:null,
     skillChoices:[],
     classChoices:{},
-    raceChoices:{abilities:[], skills:[], feat:"", featPicks:null},
+    raceChoices:{abilities:[], preset:"", skills:[], feat:"", featPicks:null},
     languageChoices:[],
     equipment:{},
     spellChoices:{cantrips:[], spells:[]}

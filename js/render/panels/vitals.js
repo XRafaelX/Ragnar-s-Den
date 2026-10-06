@@ -1,7 +1,6 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, primaryHitDie, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, characterResources, restoreResources, maxHp, toughBonus, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, characterResources, restoreResources, maxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect } from "../../core/helpers.js";
 import { CLASSES_INFO } from "../../data/classes.js";
-import { HIT_DICE_BY_CLASS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
@@ -15,9 +14,11 @@ import { renderEffectsCard } from "./effects.js";
 /* ---- Vitals panel ---- */
 export function renderVitalsPanel(c){
   var panel = document.createElement("div");
-  // Max HP with Tough's bonus; c.hp.max is the part the stepper edits.
+  // Max HP with Tough's and Dwarven Toughness's bonus; c.hp.max is the
+  // part the stepper edits.
   var hpMax = maxHp(c);
-  var tough = toughBonus(c);
+  var bonusTitle = hpBonuses(c).map(function(b){ return b.name+" (+"+b.value+")"; }).join(", ");
+  if(bonusTitle) bonusTitle = "Includes "+bonusTitle;
 
   var card = makeCard("Hit points & defense");
   var grid = document.createElement("div");
@@ -42,7 +43,7 @@ export function renderVitalsPanel(c){
   var maxSpan = document.createElement("span");
   maxSpan.className = "hp-max-num";
   maxSpan.textContent = hpMax;
-  if(tough) maxSpan.title = "Includes Tough (+" + tough + ")";
+  if(bonusTitle) maxSpan.title = bonusTitle;
 
   heroDisplay.appendChild(curSpan);
   heroDisplay.appendChild(slashSpan);
@@ -208,7 +209,7 @@ export function renderVitalsPanel(c){
   var maxValSpan = document.createElement("span");
   maxValSpan.className = "stat-score-val";
   maxValSpan.textContent = hpMax;
-  if(tough) maxValSpan.title = "Includes Tough (+" + tough + ")";
+  if(bonusTitle) maxValSpan.title = bonusTitle;
 
   var maxUp = document.createElement("button");
   maxUp.type = "button";
@@ -525,14 +526,14 @@ export function renderVitalsPanel(c){
   // Hit dice + rest
   var restCard = makeCard("Hit dice & rest");
   var hd = totalLevel(c);
-  var hdUsed = clamp(c.hitDiceUsed||0,0,hd);
-  var hdRemaining = hd-hdUsed;
+  // Multiclassed characters have a mix of dice (e.g. 3d12 + 2d6), counted
+  // per size; spending rolls the largest die left.
+  var pools = hitDicePools(c);
+  var hdRemaining = pools.reduce(function(n, p){ return n + p.total - p.used; }, 0);
   var hdP = document.createElement("p");
   hdP.style.fontSize="13px"; hdP.style.margin="0 0 8px";
-  // Multiclassed characters have a mix of dice (e.g. 3d12 + 2d6); spending
-  // still rolls the first class's die.
-  var hdMix = (c.classes||[]).map(function(cl){ return (cl.level||1)+"d"+(HIT_DICE_BY_CLASS[cl.name]||8); }).join(" + ");
-  hdP.textContent = "Hit dice remaining: "+hdRemaining+" / "+hd+"  ("+hdMix+")";
+  hdP.textContent = "Hit dice remaining: "+hdRemaining+" / "+hd+
+    (pools.length > 1 ? "  ("+pools.map(function(p){ return (p.total-p.used)+"/"+p.total+" d"+p.die; }).join(", ")+")" : "  (d"+pools[0].die+")");
   restCard.appendChild(hdP);
 
   var restRow = document.createElement("div");
@@ -540,15 +541,15 @@ export function renderVitalsPanel(c){
 
   var spendBtn = document.createElement("button");
   spendBtn.className = "btn small"; spendBtn.textContent = "Spend 1 hit die";
+  spendBtn.disabled = hdRemaining<=0;
   spendBtn.addEventListener("click", function(){
-    if(hdRemaining<=0){ return; }
-    var die = primaryHitDie(c);
+    var die = spendHitDie(c);
+    if(!die) return;
     var conMod = mod(c.abilities.con);
     var roll = Math.floor(Math.random()*die)+1;
     var healed = hitDieHealing(c, roll);
-    c.hitDiceUsed = hdUsed+1;
     c.hp.current = clamp(c.hp.current+healed, 0, hpMax);
-    logRoll("Hit die (d"+die+"+"+conMod+")", roll+" "+fmtMod(conMod)+" = "+healed+" HP healed"+(healed > Math.max(1, roll+conMod) ? " (Durable minimum)" : ""));
+    logRoll("Hit die (d"+die+fmtMod(conMod)+")", roll+" "+fmtMod(conMod)+" = "+healed+" HP healed"+(healed > Math.max(1, roll+conMod) ? " (Durable minimum)" : ""));
     save(); renderAll();
   });
   restRow.appendChild(spendBtn);
@@ -578,15 +579,13 @@ export function renderVitalsPanel(c){
         c.hp.current = hpMax;
         c.hp.temp = 0;
         c.deathSaves = {success:0, fail:0};
-        var recovered = Math.max(1, Math.floor(hd/2));
-        c.hitDiceUsed = clamp(hdUsed-recovered, 0, hd);
+        var recovered = recoverHitDice(c);
         Object.keys(c.spellcasting.slots).forEach(function(lvl){
           c.spellcasting.slots[lvl].used = 0;
         });
         if(c.spellcasting.pact) c.spellcasting.pact.used = 0;
         c.rage.used = 0;
-        c.rage.active = false;
-        endAllEffects(c);
+        endAllEffects(c); // also ends Rage
         restoreResources(c, "long");
         restoreCompanions(c);
         var elixirs = elixirsOnLongRest(c);

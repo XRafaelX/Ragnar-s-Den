@@ -103,6 +103,14 @@ export function setupTopLevel(){
         if(monsters.length) extras.push(monsters.length+" custom monster(s)");
         if(spells.length) extras.push(spells.length+" custom spell(s)");
         if(!Array.isArray(data)) throw new Error("Invalid format");
+        // Shape every character now, on copies, so a broken entry rejects
+        // the file before anything is imported.
+        data = data.map(function(entry){
+          if(!entry || typeof entry!=="object" || Array.isArray(entry)) throw new Error("Invalid character");
+          var c = ensureShape(JSON.parse(JSON.stringify(entry)));
+          c.id = uid(); // avoid collisions
+          return c;
+        });
         confirmDialog(
           "Import backup?",
           "This will add "+data.length+" character(s)"+(extras.length ? " and "+extras.join(", ") : "")+" from the backup file to your current vault. Existing characters are kept.",
@@ -115,15 +123,14 @@ export function setupTopLevel(){
             var featIds = importCustom("feat", feats), featureIds = importCustom("feature", features);
             var weaponIds = importCustomItems("weapon", weapons), armorIds = importCustomItems("armor", armor);
             importCustomMonsters(monsters);
-            importCustomSpells(spells);
+            var spellIds = importCustomSpells(spells);
             data.forEach(function(c){
-              c.id = uid(); // avoid collisions
-              ensureShape(c);
               c.feats.forEach(function(f){ if(f.homebrewId) f.homebrewId = featIds[f.homebrewId] || null; });
               c.features.forEach(function(f){ if(f.homebrewId) f.homebrewId = featureIds[f.homebrewId] || null; });
               c.inventory.forEach(function(i){
                 if(i.homebrewId) i.homebrewId = (i.type==="armor" ? armorIds : weaponIds)[i.homebrewId] || null;
               });
+              c.spells.forEach(function(sp){ if(sp.homebrewId) sp.homebrewId = spellIds[sp.homebrewId] || null; });
               state.characters.push(c);
             });
             save();

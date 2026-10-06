@@ -11,6 +11,11 @@ import { revertFeatPicks } from "../js/core/feat-picks.js";
 import { newCharacter } from "../js/core/character.js";
 import { undoLastLevelUp } from "../js/levelup/levelup.js";
 import { renderVitalsPanel } from "../js/render/panels/vitals.js";
+import { renderJournalPanel } from "../js/render/panels/journal.js";
+import { state } from "../js/core/state.js";
+import { ensureShape } from "../js/core/character.js";
+import * as W from "../js/wizard/wizard-core.js";
+import { importCustomSpells, getCustomSpells } from "../js/core/custom-spells.js";
 
 /* ---------- shared helpers ---------------------------------------- */
 const AB = { str: 10, dex: 14, con: 14, int: 10, wis: 10, cha: 10 };
@@ -52,25 +57,24 @@ function sink(){
 /* Runs fn with a stand-in DOM; returns the elements handed out by id so
    a test can click the confirm dialog's buttons. Timers are mocked so the
    toast doesn't hold the test open. */
+function clickable(){
+  const el = sink(); const handlers = {};
+  el.addEventListener = (type, f) => { handlers[type] = f; };
+  el.click = () => handlers.click && handlers.click();
+  return el;
+}
+const timersOn = new WeakSet();
 function withFakeDom(t, fn){
-  t.mock.timers.enable({ apis: ["setTimeout"] });
-  const saved = { getElementById: document.getElementById, createElement: document.createElement,
-    documentElement: document.documentElement, body: document.body };
-  const byId = {};
-  document.getElementById = (id) => {
-    if(!byId[id]){
-      const el = sink(); const handlers = {};
-      el.addEventListener = (type, f) => { handlers[type] = f; };
-      el.click = () => handlers.click && handlers.click();
-      byId[id] = el;
-    }
-    return byId[id];
-  };
-  document.createElement = () => sink();
-  document.documentElement = sink();
-  document.body = sink();
-  try { fn(byId); }
-  finally { Object.assign(document, saved); }
+  if(!timersOn.has(t)){ t.mock.timers.enable({ apis: ["setTimeout"] }); timersOn.add(t); }
+  const saved = { document: globalThis.document, raf: globalThis.requestAnimationFrame };
+  const byId = {}, made = [];
+  const doc = sink();
+  doc.getElementById = (id) => byId[id] || (byId[id] = clickable());
+  doc.createElement = () => { const el = clickable(); made.push(el); return el; };
+  globalThis.document = doc;
+  globalThis.requestAnimationFrame = () => 0;
+  try { fn(byId, made); }
+  finally { globalThis.document = saved.document; globalThis.requestAnimationFrame = saved.raf; }
 }
 
 /* ================================================================
@@ -314,4 +318,201 @@ test("armor class: computed from equipment, never from the saved c.ac", () => {
   const c = char([{ name: "Fighter", level: 1 }], { inventory: [plate] });
   c.ac = 99;
   assert.equal(H.computeArmorClass(c).value, 18);
+});
+
+/* ================================================================
+   Phase 1 of the full review
+   ================================================================ */
+
+/* Runs the creation wizard's real finish with these choices on top of a
+   plain point-buy Fighter, and returns the new character. */
+const BASE_SCORES = { str: 15, dex: 14, con: 13, int: 8, wis: 12, cha: 10 };
+function startWizard(choices){
+  W.openWizard();
+  const rc = Object.assign({ abilities: [], preset: "", skills: [], feat: "", featPicks: null }, choices.raceChoices);
+  Object.assign(W.wizardState, {
+    name: "Wizard test", classId: "Fighter", race: "Human", background: "Soldier", alignment: "Neutral",
+    abilityMethod: "pointbuy", abilities: { ...BASE_SCORES }, skillChoices: ["Athletics", "Perception"],
+    classChoices: { fightingStyle: "Defense" }, equipment: { 0: "chain" }
+  }, choices, { raceChoices: rc });
+}
+function createThroughWizard(t, choices){
+  let made;
+  withFakeDom(t, () => {
+    startWizard(choices);
+    W.finishWizard();
+    made = state.characters[state.characters.length - 1];
+  });
+  return made;
+}
+function raceTraitsError(t, choices){
+  let err;
+  withFakeDom(t, () => { startWizard(choices); err = W.validateStep("raceChoices"); });
+  return err;
+}
+
+/* ---------- 1. Race ability increases at creation ---------- */
+test("creation: a race's fixed increases are added (Hill Dwarf +2 CON, +1 WIS)", (t) => {
+  const c = createThroughWizard(t, { race: "Hill Dwarf" });
+  assert.deepEqual(c.abilities, { str: 15, dex: 14, con: 15, int: 8, wis: 13, cha: 10 });
+});
+
+test("creation: Human gets +1 to every score", (t) => {
+  const c = createThroughWizard(t, { race: "Human" });
+  assert.deepEqual(c.abilities, { str: 16, dex: 15, con: 14, int: 9, wis: 13, cha: 11 });
+});
+
+test("creation: increases stay within 1 to 20", (t) => {
+  const high = createThroughWizard(t, { race: "Mountain Dwarf", abilityMethod: "manual", abilities: { ...BASE_SCORES, str: 20 } });
+  assert.equal(high.abilities.str, 20, "20 + 2 is capped at 20");
+  const low = createThroughWizard(t, { race: "Kobold", abilityMethod: "manual", abilities: { ...BASE_SCORES, str: 2 } });
+  assert.equal(low.abilities.str, 1, "Kobold's -2 STR can't go below 1");
+});
+
+test("creation: Half-Elf adds +2 CHA and +1 to two other picked scores", (t) => {
+  assert.match(raceTraitsError(t, { race: "Half-Elf", raceChoices: { abilities: ["str"] } }), /2 different abilities/);
+  assert.match(raceTraitsError(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "cha"] } }), /not Charisma/);
+  assert.equal(raceTraitsError(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "con"] } }), null);
+  const c = createThroughWizard(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "con"] } });
+  assert.deepEqual(c.abilities, { str: 16, dex: 14, con: 14, int: 8, wis: 12, cha: 12 });
+});
+
+test("creation: a Fairy picks +2 for one score and +1 for another", (t) => {
+  assert.match(raceTraitsError(t, { race: "Fairy", raceChoices: { abilities: ["dex", "dex"] } }), /2 different abilities/);
+  const c = createThroughWizard(t, { race: "Fairy", raceChoices: { abilities: ["dex", "wis"] } });
+  assert.equal(c.abilities.dex, 16);
+  assert.equal(c.abilities.wis, 13);
+  assert.equal(c.abilities.str, 15, "unpicked scores don't change");
+});
+
+test("creation: a Shifter's type sets its increases", (t) => {
+  assert.match(raceTraitsError(t, { race: "Shifter" }), /shifter type/);
+  const c = createThroughWizard(t, { race: "Shifter", raceChoices: { preset: "Beasthide" } });
+  assert.equal(c.abilities.con, 15);
+  assert.equal(c.abilities.str, 16);
+});
+
+test("creation: Variant Human still picks two +1s", (t) => {
+  assert.match(raceTraitsError(t, { race: "Variant Human", raceChoices: { abilities: ["str"] } }), /2 different abilities/);
+  const c = createThroughWizard(t, { race: "Variant Human",
+    raceChoices: { abilities: ["str", "con"], skills: ["Stealth"], feat: "Alert", featPicks: { ability: "", skills: [], expertise: [], weapons: [] } } });
+  assert.equal(c.abilities.str, 16);
+  assert.equal(c.abilities.con, 14);
+  assert.equal(c.abilities.dex, 14);
+});
+
+/* ---------- 2. Dwarven Toughness ---------- */
+test("hit points: a new Hill Dwarf includes Dwarven Toughness", (t) => {
+  const c = createThroughWizard(t, { race: "Hill Dwarf" });
+  // d10 + CON 15 (+2) + Dwarven Toughness 1
+  assert.equal(H.maxHp(c), 13);
+  assert.equal(c.hp.current, 13);
+});
+
+test("hit points: Dwarven Toughness adds 1 per level, with Tough on top", () => {
+  const c = char([{ name: "Fighter", level: 5 }], { race: "Hill Dwarf" });
+  c.hp = { max: 44, current: 44, temp: 0 };
+  assert.equal(H.maxHp(c), 49);
+  c.feats = [{ id: "f", name: "Tough" }];
+  assert.equal(H.maxHp(c), 59);
+  assert.deepEqual(H.hpBonuses(c).map(b => b.name), ["Tough", "Dwarven Toughness"]);
+  c.race = "Mountain Dwarf";
+  assert.equal(H.maxHp(c), 54, "only Hill Dwarves have it");
+});
+
+/* ---------- 3. Hit dice by size ---------- */
+test("hit dice: a multiclass character spends its largest dice first", () => {
+  const c = char([{ name: "Wizard", level: 2 }, { name: "Barbarian", level: 3 }]);
+  assert.deepEqual(H.hitDicePools(c).map(p => [p.die, p.total, p.used]), [[12, 3, 0], [6, 2, 0]]);
+  assert.deepEqual([1, 2, 3, 4, 5, 6].map(() => H.spendHitDie(c)), [12, 12, 12, 6, 6, 0]);
+  assert.equal(c.hitDiceUsed, 5);
+  assert.deepEqual(c.hitDiceSpent, { 12: 3, 6: 2 });
+});
+
+test("hit dice: a long rest gives back half, largest first", () => {
+  const c = char([{ name: "Wizard", level: 2 }, { name: "Barbarian", level: 3 }]);
+  c.hitDiceSpent = { 12: 3, 6: 2 }; c.hitDiceUsed = 5;
+  assert.equal(H.recoverHitDice(c), 2);
+  assert.deepEqual(c.hitDiceSpent, { 12: 1, 6: 2 });
+  assert.equal(c.hitDiceUsed, 3);
+});
+
+test("hit dice: an older save's total counts from the largest die down", () => {
+  const c = char([{ name: "Wizard", level: 2 }, { name: "Barbarian", level: 3 }]);
+  c.hitDiceUsed = 4;
+  assert.deepEqual(H.hitDicePools(c).map(p => p.used), [3, 1]);
+});
+
+test("hit dice: undoing a class level keeps the spent count within the dice left", () => {
+  const c = char([{ name: "Barbarian", level: 2 }]);
+  c.hitDiceSpent = { 12: 3 }; c.hitDiceUsed = 3;
+  H.syncHitDice(c);
+  assert.equal(c.hitDiceUsed, 2);
+});
+
+/* ---------- 4. Rage ends with the other effects ---------- */
+test("rage: dropping to 0 HP or resting ends it", () => {
+  const c = char([{ name: "Barbarian", level: 3 }]);
+  c.rage = { active: true, used: 1 };
+  assert.deepEqual(H.endAllEffects(c), ["Rage"]);
+  assert.equal(c.rage.active, false);
+  assert.equal(c.rage.used, 1, "the rage stays spent");
+  assert.deepEqual(H.endAllEffects(c), [], "nothing left to end");
+});
+
+/* ---------- 5. Import ---------- */
+test("import: custom spells map old ids to new ones so characters relink", () => {
+  const map = importCustomSpells([{ id: "old1", name: "Phase One Bolt", level: 1, school: "Evocation" }]);
+  const saved = getCustomSpells().find(x => x.name === "Phase One Bolt");
+  assert.ok(saved, "the spell is imported");
+  assert.equal(map.old1, saved.id);
+  // Importing it again maps onto the one already there.
+  const again = importCustomSpells([{ id: "old2", name: "Phase One Bolt", level: 1 }]);
+  assert.equal(again.old2, saved.id);
+});
+
+test("import: a character with broken lists is repaired, not left half-shaped", () => {
+  const c = ensureShape({ name: "Broken", classes: "Fighter", spells: { a: 1 }, feats: [null, "Alert"],
+    features: {}, inventory: [null, { name: "Rope" }], notes: "x", rollLog: 5 });
+  assert.equal(c.classes[0].name, "Fighter");
+  assert.deepEqual(c.spells, []);
+  assert.deepEqual(c.feats.map(f => f.name), ["Alert"]);
+  assert.deepEqual(c.features, []);
+  assert.deepEqual(c.inventory.map(i => i.name), ["Rope"]);
+  assert.deepEqual(c.notes, []);
+  assert.deepEqual(c.rollLog, []);
+});
+
+/* ---------- 6. Journal ---------- */
+function journalDelete(t, text){
+  const c = char([{ name: "Fighter", level: 1 }]);
+  c.notes = [{ ts: "today", text }];
+  let asked = false;
+  withFakeDom(t, (byId, made) => {
+    renderJournalPanel(c);
+    made.find(el => el.className === "rm-btn").click();
+    asked = !!byId["confirm-ok"];
+  });
+  return { c, asked };
+}
+
+test("journal: an entry with writing asks before it's deleted", (t) => {
+  const r = journalDelete(t, "The dragon's lair is under the mill.");
+  assert.equal(r.asked, true, "the confirm dialog opens");
+  assert.equal(r.c.notes.length, 1, "nothing is deleted until confirmed");
+});
+
+test("journal: an empty entry is deleted at once", (t) => {
+  const r = journalDelete(t, "  ");
+  assert.equal(r.asked, false);
+  assert.equal(r.c.notes.length, 0);
+});
+
+/* ---------- 7. Cosmetic ---------- */
+test("initiative: the breakdown leaves out a zero misc modifier", () => {
+  const c = char([{ name: "Fighter", level: 1 }]);
+  assert.doesNotMatch(H.computeInitiative(c).breakdown, /misc/);
+  c.initiativeMisc = 2;
+  assert.match(H.computeInitiative(c).breakdown, /misc \(\+2\)/);
+  assert.equal(H.computeInitiative(c).value, 4);
 });

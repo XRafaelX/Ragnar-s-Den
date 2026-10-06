@@ -2,6 +2,7 @@ import { save } from "../../core/state.js";
 import { nowStamp } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
+import { confirmDialog } from "../../ui/confirm-modal.js";
 
 var ENTRY_MAX_HEIGHT = 320; // px; beyond this the box scrolls instead of growing
 var ENTRY_MAX_CHARS = 8000; // generous ceiling, mainly a guard against runaway paste/storage bloat
@@ -32,7 +33,14 @@ export function renderJournalPanel(c){
     tsRow.className = "journal-entry-header";
     var ts = document.createElement("span"); ts.className="ts"; ts.textContent = entry.ts;
     var rmBtn = document.createElement("button"); rmBtn.className="rm-btn"; rmBtn.textContent="✕";
-    rmBtn.addEventListener("click", function(){ c.notes.splice(idx,1); save(); renderAll(); playDelete(); });
+    rmBtn.title = "Delete entry";
+    rmBtn.setAttribute("aria-label", "Delete entry");
+    rmBtn.addEventListener("click", function(){
+      function remove(){ c.notes.splice(c.notes.indexOf(entry),1); save(); renderAll(); playDelete(); }
+      // An empty entry goes at once; one with writing asks first.
+      if(!(entry.text||"").trim()) remove();
+      else confirmDialog("Delete this journal entry?", "This cannot be undone.", remove);
+    });
     tsRow.appendChild(ts); tsRow.appendChild(rmBtn);
     e.appendChild(tsRow);
     var ta = document.createElement("textarea");

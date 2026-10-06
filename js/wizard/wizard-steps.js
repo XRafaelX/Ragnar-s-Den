@@ -1,6 +1,7 @@
 import { ABILITIES, SKILLS, CLASS_LIST, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASSES_INFO, FIGHTING_STYLES } from "../data/classes.js";
 import { RACES, RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
+import { RACE_DATA, raceAsiText } from "../data/race-data.js";
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/alignments.js";
 import { POINT_BUY_COSTS, pickNameIdeas, pickTitleIdeas } from "../data/misc.js";
@@ -13,7 +14,7 @@ import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
 import { makePlusSvg, makeCheckSvg } from "../ui/svg-icons.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardExtraListSpells, wizardExtraListName } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardExtraListSpells, wizardExtraListName } from "./wizard-core.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { emptyPicks, featPicksProblem } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
@@ -221,7 +222,7 @@ function abilityStepperGrid(container, get, set, min, max, canUp){
 export function wizardManualUI(container){
   var hint = document.createElement("p");
   hint.style.cssText = "font-size:13px;margin-bottom:10px;color:var(--text-on-parch-dim);";
-  hint.textContent = "Set each score to whatever you like, from 1 to 20.";
+  hint.textContent = "Set each score to whatever you like, from 1 to 20, before your race's increases.";
   container.appendChild(hint);
   abilityStepperGrid(container,
     function(key){ return wizardState.abilities[key]; },
@@ -294,8 +295,15 @@ export function wizardStepRace(container){
   explain.innerHTML = raceExplainHtml(wizardState.race);
   card.appendChild(explain);
 
+  // Race Traits picks belong to one race: a different race starts fresh.
+  var shownRace = wizardState.race;
   var dd = wizardDropdown("Race", "race", RACES, wizardState, function(){
     explain.innerHTML = raceExplainHtml(wizardState.race);
+    if(wizardState.race!==shownRace){
+      var rc = wizardState.raceChoices;
+      rc.abilities = []; rc.preset = ""; rc.skills = []; rc.feat = ""; rc.featPicks = null;
+      shownRace = wizardState.race;
+    }
   }, "race");
   dd.firstChild.style.maxWidth = "320px";
   card.appendChild(dd);
@@ -332,13 +340,23 @@ export function wizardStepAlignment(container){
   container.appendChild(card);
 }
 
+/* What the race adds on top of these scores, for the Ability Scores step. */
+function raceBonusNote(){
+  var race = RACE_DATA[wizardState.race], def = raceChoiceDef();
+  var picks = def && (def.abilityBonus || def.abilityPreset);
+  var fixed = Object.keys(raceAbilityIncreases({fixedOnly:true})).length;
+  if(!race || (!fixed && !picks)) return "";
+  return " As a "+escapeHtml(wizardState.race)+" you also get <b>"+escapeHtml(raceAsiText(race))+"</b>"+
+    (picks ? ", picked on the Race Traits step" : ", added for you")+". Enter your scores before that.";
+}
+
 export function wizardStepAbilities(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Ability Scores</span></h3>";
   var info = currentClassInfo();
   var explain = ce("div","wiz-explain");
   explain.innerHTML = "<b>Why this matters:</b> These six scores drive almost everything you roll. As a "+escapeHtml(wizardState.classId)+", <b>"+escapeHtml(info.primaryAbilityLabel || abilityFullName(info.primaryAbility))+"</b> matters most, so prioritize it if you can."+
-    (raceChoiceDef() && raceChoiceDef().abilityBonus ? " As a "+escapeHtml(wizardState.race)+" you'll add <b>+"+raceChoiceDef().abilityBonus.amount+" to "+raceChoiceDef().abilityBonus.count+" scores</b> of your choice on the Race Traits step." : "");
+    raceBonusNote();
   card.appendChild(explain);
 
   var methodRow = ce("div","wiz-method-row");
@@ -442,11 +460,13 @@ export function wizardStepSkills(container){
   container.appendChild(card);
 }
 
-/* Race Traits (Variant Human): +1 to two abilities, a skill and a feat.
-   Each pick is a numbered section that shows a check once it's done. The
-   ability increase is a row of tappable score tiles (pick N); the skill
-   and feat use themed pickers, and the chosen feat gets a summary card
-   with its full text tucked into an expandable section. */
+/* Race Traits: the picks a race leaves to the player (see RACE_CHOICES):
+   ability increases (Variant Human's two +1s, a Half-Elf's, a Fairy's +2
+   and +1, an Aasimar's subrace), a skill and a feat. Each pick is a
+   numbered section that shows a check once it's done. Equal increases are
+   a row of tappable score tiles (pick N), different ones a picker each;
+   the skill and feat use themed pickers, and the chosen feat gets a
+   summary card with its full text tucked into an expandable section. */
 var CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12.5 10 17.5 19 7"/></svg>';
 
 export function wizardStepRaceChoices(container){
@@ -476,31 +496,73 @@ export function wizardStepRaceChoices(container){
   }
   function picked(){ var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show"); renderWizard(); }
 
+  // Scores with the race's fixed increases, which the picks add to.
+  var fixedInc = raceAbilityIncreases({fixedOnly:true});
+  function baseScore(key){ return Math.max(1, Math.min(20, (Number(wizardState.abilities[key])||10) + (fixedInc[key]||0))); }
+
   if(def.abilityBonus){
-    var n = def.abilityBonus.count, amt = def.abilityBonus.amount;
-    var chosen = rc.abilities.slice(0, n).filter(Boolean);
-    var sec1 = section("Ability score increase", "Tap "+n+" different scores to raise by +"+amt+" (up to 20).", chosen.length===n);
-    var grid = ce("div","rt-ab-grid");
-    ABILITIES.forEach(function(a){
-      var key = a[0], base = Number(wizardState.abilities[key])||10;
-      var isOn = chosen.indexOf(key)!==-1, atMax = base>=20;
-      var full = !isOn && chosen.length>=n;
-      var tile = document.createElement("button");
-      tile.type = "button";
-      tile.className = "rt-ab"+(isOn ? " on" : "")+(full || atMax ? " off" : "");
-      tile.disabled = !isOn && (full || atMax);
-      tile.setAttribute("aria-pressed", isOn ? "true" : "false");
-      tile.setAttribute("aria-label", a[1]+" "+base+(isOn ? ", raised to "+Math.min(20, base+amt) : ""));
-      tile.innerHTML = "<span class='rt-ab-lbl'>"+a[1].slice(0,3).toUpperCase()+"</span>"+
-        "<span class='rt-ab-score'>"+(isOn ? "<s>"+base+"</s> "+Math.min(20, base+amt) : base)+"</span>"+
-        "<span class='rt-ab-mod'>"+(isOn ? "+"+amt : (atMax ? "max" : fmtMod(mod(base))))+"</span>";
-      tile.addEventListener("click", function(){
-        rc.abilities = isOn ? chosen.filter(function(k){ return k!==key; }) : chosen.concat([key]);
-        picked();
+    var amounts = def.abilityBonus.amounts, n = amounts.length, exclude = def.abilityBonus.exclude || [];
+    var notText = exclude.length ? " other than "+exclude.map(abilityFullName).join(" or ") : "";
+    var chosen = rc.abilities.slice(0, n).filter(function(k){ return k && exclude.indexOf(k)===-1; });
+    var allSame = amounts.every(function(a){ return a===amounts[0]; });
+    if(allSame){
+      // Same amount for each pick: tap that many score tiles.
+      var amt = amounts[0];
+      var sec1 = section("Ability score increase",
+        (n===1 ? "Tap a score" : "Tap "+n+" different scores")+notText+" to raise by +"+amt+" (up to 20).", chosen.length===n);
+      var grid = ce("div","rt-ab-grid");
+      ABILITIES.forEach(function(a){
+        var key = a[0], base = baseScore(key);
+        var isOn = chosen.indexOf(key)!==-1, atMax = base>=20, excluded = exclude.indexOf(key)!==-1;
+        var full = !isOn && chosen.length>=n;
+        var tile = document.createElement("button");
+        tile.type = "button";
+        tile.className = "rt-ab"+(isOn ? " on" : "")+(full || atMax || excluded ? " off" : "");
+        tile.disabled = !isOn && (full || atMax || excluded);
+        tile.setAttribute("aria-pressed", isOn ? "true" : "false");
+        tile.setAttribute("aria-label", a[1]+" "+base+(isOn ? ", raised to "+Math.min(20, base+amt) : ""));
+        tile.innerHTML = "<span class='rt-ab-lbl'>"+a[1].slice(0,3).toUpperCase()+"</span>"+
+          "<span class='rt-ab-score'>"+(isOn ? "<s>"+base+"</s> "+Math.min(20, base+amt) : base)+"</span>"+
+          "<span class='rt-ab-mod'>"+(isOn ? "+"+amt : (excluded ? "racial" : atMax ? "max" : fmtMod(mod(base))))+"</span>";
+        tile.addEventListener("click", function(){
+          rc.abilities = isOn ? chosen.filter(function(k){ return k!==key; }) : chosen.concat([key]);
+          picked();
+        });
+        grid.appendChild(tile);
       });
-      grid.appendChild(tile);
-    });
-    sec1.appendChild(grid);
+      sec1.appendChild(grid);
+    } else {
+      // Different amounts (+2 to one, +1 to another): one picker each.
+      var slots = rc.abilities.slice(0, n);
+      var done = slots.filter(Boolean).length===n && new Set(slots).size===n;
+      var secA = section("Ability score increase", amounts.map(function(a){ return "+"+a; }).join(" to one score and ")+" to another, up to 20.", done);
+      amounts.forEach(function(amt, i){
+        secA.appendChild(pickerField(themedPicker({
+          key:"race:ability:"+i, placeholder:"+"+amt+" to…", ariaLabel:"Ability for +"+amt,
+          groups:{"":ABILITIES.map(function(a){ return {value:a[0], label:"+"+amt+" "+a[1]+" ("+baseScore(a[0])+")"}; })},
+          value:slots[i]||"", search:false,
+          reasonFor:function(k){
+            if(baseScore(k)>=20) return "max";
+            return slots.some(function(x, j){ return j!==i && x===k; }) ? "picked" : "";
+          },
+          onPick:function(v){ var next = rc.abilities.slice(0, n); next[i] = v; rc.abilities = next; picked(); }
+        })));
+      });
+    }
+  }
+
+  if(def.abilityPreset){
+    var ap = def.abilityPreset;
+    var secP = section(ap.label, "Your "+ap.label.toLowerCase()+" sets which scores go up.", !!ap.options[rc.preset]);
+    secP.appendChild(pickerField(themedPicker({
+      key:"race:preset", placeholder:"Choose your "+ap.label.toLowerCase(), ariaLabel:ap.label,
+      groups:{"":Object.keys(ap.options).map(function(name){
+        var inc = ap.options[name];
+        return {value:name, label:name+": "+Object.keys(inc).map(function(k){ return "+"+inc[k]+" "+k.toUpperCase(); }).join(", ")};
+      })},
+      value:rc.preset||"", search:false,
+      onPick:function(v){ rc.preset = v; picked(); }
+    })));
   }
 
   if(def.skills){
@@ -1229,7 +1291,9 @@ export function wizardStepReview(container){
   var finalAb = finalAbilities();
   var conMod = mod(finalAb.con);
   var hpBonus = subclassGrants(info, wizardState.classChoices).hpPerLevel||0;
-  var hp = HIT_DICE_BY_CLASS[wizardState.classId] + conMod + hpBonus;
+  var race = RACE_DATA[wizardState.race];
+  var raceHp = race && Number(race.hpPerLevel) || 0; // Dwarven Toughness
+  var hp = HIT_DICE_BY_CLASS[wizardState.classId] + conMod + hpBonus + raceHp;
   // Same AC math as the sheet, run on the gear and picks chosen so far.
   var preview = {
     abilities: finalAb,
@@ -1255,14 +1319,18 @@ export function wizardStepReview(container){
   var langPlan = languagePlan();
   row("Languages", langPlan.fixed.concat(wizardState.languageChoices.slice(0, langPlan.slots.length).filter(Boolean)).join(", "));
   row("Ability scores", ABILITIES.map(function(a){ return a[1].slice(0,3).toUpperCase()+" "+finalAb[a[0]]; }).join("  "));
+  var raceInc = raceAbilityIncreases();
+  var raceIncKeys = ABILITIES.map(function(a){ return a[0]; }).filter(function(k){ return raceInc[k]; });
+  if(raceIncKeys.length) row("Race increases", raceIncKeys.map(function(k){ return k.toUpperCase()+" "+fmtMod(raceInc[k]); }).join(", "));
   var raceDef = raceChoiceDef();
   if(raceDef){
     var rc = wizardState.raceChoices;
-    if(raceDef.abilityBonus) row("Race bonus", rc.abilities.slice(0, raceDef.abilityBonus.count).filter(Boolean).map(function(k){ return k.toUpperCase()+" +"+raceDef.abilityBonus.amount; }).join(", ") || "None");
+    if(raceDef.abilityPreset && rc.preset) row(raceDef.abilityPreset.label, rc.preset);
     if(raceDef.skills) row("Race skill", rc.skills.slice(0, raceDef.skills).filter(Boolean).join(", ") || "None");
     if(raceDef.feat) row("Feat", rc.feat || "None");
   }
-  row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+(hpBonus ? " + "+hpBonus+" "+wizardState.classChoices.subclass : "")+")");
+  row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+(hpBonus ? " + "+hpBonus+" "+wizardState.classChoices.subclass : "")+
+    (raceHp ? " + "+raceHp+" "+(race.hpTrait || wizardState.race) : "")+")");
   row("Armor Class", ac.value + " (" + ac.breakdown + ")");
   row("Saving throws", info.savingThrows.map(function(k){ return k.toUpperCase(); }).join(", "));
   var allSkills = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[],

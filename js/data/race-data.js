@@ -9,6 +9,8 @@
    speed:      {walk, fly?, swim?, climb?} in feet.
    darkvision: range in feet (0 = none; 120 = superior darkvision).
    armorProfs: armor proficiencies the race grants (Dwarven Armor Training).
+   hpPerLevel: extra max HP per character level, added on the sheet
+               (Dwarven Toughness); hpTrait names it in tooltips.
    languages:  {fixed:[…], choose:n}.
    traits:     [{name, text}] short paraphrases of each trait.
    source:     where it's from. Expanded races use their original
@@ -44,7 +46,7 @@ export var RACE_DATA = {
   "Variant Human": {asiText:"+1 to two different ability scores of your choice", size:"Medium", speed:{walk:30}, darkvision:0,
     languages:{fixed:["Common"], choose:1}, source:"Player's Handbook",
     traits:[tr("Skills", "Proficiency in one skill of your choice."), tr("Feat", "You gain one feat of your choice at level 1.")]},
-  "Hill Dwarf": {asi:{con:2,wis:1}, size:"Medium", speed:{walk:25}, darkvision:60,
+  "Hill Dwarf": {asi:{con:2,wis:1}, size:"Medium", speed:{walk:25}, darkvision:60, hpPerLevel:1, hpTrait:"Dwarven Toughness",
     languages:{fixed:["Common","Dwarvish"]}, source:"Player's Handbook",
     traits:DWARF_BASE.concat([tr("Dwarven Toughness", "Your hit point maximum increases by 1, and by 1 more every time you gain a level.")])},
   "Mountain Dwarf": {asi:{str:2,con:2}, size:"Medium", speed:{walk:25}, darkvision:60, armorProfs:["Light armor","Medium armor"],

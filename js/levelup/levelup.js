@@ -6,7 +6,7 @@ import {
   mod, fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus,
   classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots,
   wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFightingStyle,
-  hasFeat, maxHp, computeSpeed, classSpellChoices, ordinal
+  hasFeat, maxHp, raceHpPerLevel, syncHitDice, computeSpeed, classSpellChoices, ordinal
 } from "../core/helpers.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { save } from "../core/state.js";
@@ -561,13 +561,14 @@ function hpGain(){
   var draconic = lu.className==="Sorcerer" && sub==="Draconic Bloodline" ? 1 : 0;
   return Math.max(1, base + newCon) + (newCon - oldCon) * totalLevel(lu.c) + draconic;
 }
-/* Tough's share of this level's HP: 2 for the new level, or 2 per
-   character level when Tough is the feat taken now. The sheet works it
-   out from the feat (maxHp), so this is only for showing it. */
+/* The share of this level's HP the sheet adds itself (see maxHp): Tough's
+   2 for the new level, or 2 per character level when Tough is the feat
+   taken now, plus Dwarven Toughness's 1. Only for showing it. */
 function toughGain(){
   var t = target();
-  if(hasFeat(lu.c, "Tough")) return 2;
-  return t.asi && lu.asiMode==="feat" && lu.featName==="Tough" ? 2 * (totalLevel(lu.c)+1) : 0;
+  var race = raceHpPerLevel(lu.c);
+  if(hasFeat(lu.c, "Tough")) return 2 + race;
+  return (t.asi && lu.asiMode==="feat" && lu.featName==="Tough" ? 2 * (totalLevel(lu.c)+1) : 0) + race;
 }
 
 function stepReview(container){
@@ -801,7 +802,7 @@ export function undoLastLevelUp(c){
     c.spellcasting.pact = prev.pact ? {max: prev.pact.max, slotLevel: prev.pact.slotLevel,
       used: clamp(pactNow ? (pactNow.used||0) : (prev.pact.used||0), 0, prev.pact.max)} : null;
     c.newUnlocks = c.newUnlocks.filter(function(id){ return rec.unlockIds.indexOf(id)===-1; });
-    c.hitDiceUsed = clamp(c.hitDiceUsed||0, 0, totalLevel(c));
+    syncHitDice(c);
     save(); renderAll(); playDelete();
     showActionToast("Level-up undone. Back to level "+totalLevel(c)+".");
   });

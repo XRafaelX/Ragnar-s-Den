@@ -62,7 +62,7 @@ export function ensureShape(c){
   if(c.backdrop===undefined) c.backdrop = null;
   if(c.backdropPalette===undefined) c.backdropPalette = null;
   if(c.backdropTheme===undefined) c.backdropTheme = true;
-  if(!c.classes) c.classes = [{name:"Fighter", subclass:"", level: c.level||1}];
+  if(!Array.isArray(c.classes) || !c.classes.length) c.classes = [{name:"Fighter", subclass:"", level: c.level||1}];
   if(c.xp==null) c.xp = 0;
   if(!Array.isArray(c.levelHistory)) c.levelHistory = [];
   if(!Array.isArray(c.newUnlocks)) c.newUnlocks = [];
@@ -105,10 +105,10 @@ export function ensureShape(c){
   if(!c.spellcasting.slots) c.spellcasting.slots = {};
   if(c.spellcasting.pact===undefined) c.spellcasting.pact = null;
   for(var i=1;i<=9;i++){ if(!c.spellcasting.slots[i]) c.spellcasting.slots[i] = {max:0,used:0}; }
-  if(!c.spells) c.spells = [];
-  if(!c.feats) c.feats = [];
+  if(!Array.isArray(c.spells)) c.spells = [];
+  if(!Array.isArray(c.feats)) c.feats = [];
   else {
-    c.feats = c.feats.map(function(item){
+    c.feats = c.feats.filter(Boolean).map(function(item){
       if(typeof item === "string"){
         var found = FEATS_CATALOG.find(function(f){ return f.name.toLowerCase()===item.toLowerCase(); });
         return {
@@ -125,9 +125,9 @@ export function ensureShape(c){
       return item;
     });
   }
-  if(!c.features) c.features = [];
+  if(!Array.isArray(c.features)) c.features = [];
   else {
-    c.features = c.features.map(function(item){
+    c.features = c.features.filter(Boolean).map(function(item){
       if(typeof item === "string"){
         var parts = item.split(":");
         var name = parts[0].trim();
@@ -145,15 +145,16 @@ export function ensureShape(c){
       return item;
     });
   }
-  if(!c.inventory) c.inventory = [];
+  if(!Array.isArray(c.inventory)) c.inventory = [];
   else {
+    c.inventory = c.inventory.filter(function(item){ return item && typeof item==="object"; });
     c.inventory.forEach(function(item){
       if(!item.type) item.type = "gear";
       if(!item.id) item.id = uid();
     });
   }
   if(!c.currency) c.currency = {cp:0,sp:0,ep:0,gp:0,pp:0};
-  if(!c.notes) c.notes = [];
-  if(!c.rollLog) c.rollLog = [];
+  if(!Array.isArray(c.notes)) c.notes = [];
+  if(!Array.isArray(c.rollLog)) c.rollLog = [];
   return c;
 }

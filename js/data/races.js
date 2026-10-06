@@ -77,9 +77,26 @@ Object.keys(RACE_DATA).forEach(function(name){
 export var RACE_LANGUAGES_FALLBACK = {fixed:["Common"], choose:1,
   note:"Homebrew races usually speak Common plus one more language; check with your DM."};
 
-/* Level-1 picks a race makes in the creation wizard's Race Traits step.
-   abilityBonus: +amount to `count` different abilities of the player's
-   choice; skills: skill proficiencies of their choice; feat: a feat. */
+/* Level-1 picks a race makes in the creation wizard's Race Traits step,
+   on top of its fixed increases (RACE_DATA asi, added automatically).
+   abilityBonus: {amounts, exclude}: one different ability per amount
+     (Fairy: +2 to one, +1 to another), none from `exclude` (a Half-Elf's
+     +1s go to scores other than Charisma).
+   abilityPreset: {label, options:{name: {asi}}}: a fixed set of increases
+     picked by subrace or type (Aasimar, Shifter).
+   skills: skill proficiencies of their choice; feat: a feat. */
+var PLUS_TWO_ONE = {amounts:[2, 1]};
 export var RACE_CHOICES = {
-  "Variant Human":{abilityBonus:{count:2, amount:1}, skills:1, feat:true}
+  "Variant Human":{abilityBonus:{amounts:[1, 1]}, skills:1, feat:true},
+  "Half-Elf":{abilityBonus:{amounts:[1, 1], exclude:["cha"]}},
+  "Changeling":{abilityBonus:{amounts:[1], exclude:["cha"]}},
+  "Simic Hybrid":{abilityBonus:{amounts:[1], exclude:["con"]}},
+  "Warforged":{abilityBonus:{amounts:[1], exclude:["con"]}},
+  "Fairy":{abilityBonus:PLUS_TWO_ONE},
+  "Harengon":{abilityBonus:PLUS_TWO_ONE},
+  "Thri-kreen":{abilityBonus:PLUS_TWO_ONE},
+  "Aasimar":{abilityPreset:{label:"Aasimar subrace", options:{
+    "Protector":{wis:1}, "Scourge":{con:1}, "Fallen":{str:1}}}},
+  "Shifter":{abilityPreset:{label:"Shifter type", options:{
+    "Beasthide":{con:2, str:1}, "Longtooth":{str:2, dex:1}, "Swiftstride":{dex:2, cha:1}, "Wildhunt":{wis:2, dex:1}}}}
 };
