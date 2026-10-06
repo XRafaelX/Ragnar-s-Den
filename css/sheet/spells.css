@@ -1,15 +1,22 @@
 /* Spells panel. */
 
-/* Spellcasting tiles: reuse the Vitals tile look. The ability select
-   is dressed as the tile's big value. */
-.sc-ability-select{
-  font:inherit;color:inherit;background:transparent;border:none;
-  padding:0 16px 0 2px;cursor:pointer;text-align:center;appearance:none;-webkit-appearance:none;
-  background-image:linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position:right 5px center, right 0 center;background-size:5px 5px;background-repeat:no-repeat;
+/* Spellcasting tiles: reuse the Vitals tile look. The ability picker
+   (js/ui/themed-picker.js, pill variant) is dressed as the tile's big
+   value, with a soft pill on hover like the ability-score pills. */
+.sc-tile .tp-pill{display:inline-block;width:auto;}
+.sc-ability-pill.tp-trigger{
+  display:inline-flex;align-items:center;gap:2px;width:auto;
+  padding:0 4px 0 10px;border:1px solid transparent;border-radius:14px;background:transparent;
+  font:inherit;color:inherit;cursor:pointer;
+  transition:border-color .15s ease, background-color .15s ease;
 }
-.sc-ability-select:focus{outline:none;}
-.sc-ability-select option{background:var(--ink);color:var(--text-on-ink);font-size:14px;}
+.sc-ability-pill.tp-trigger:hover, .sc-tile .tp.open .sc-ability-pill{
+  border-color:color-mix(in srgb, var(--brass) 45%, transparent);
+  background:color-mix(in srgb, var(--brass) 14%, transparent);
+}
+.sc-ability-pill.tp-trigger:focus-visible{outline:none;border-color:var(--brass);}
+.sc-ability-pill .tp-chevron{stroke:var(--brass-bright);}
+.sc-tile .tp-menu{left:50%;right:auto;transform:translateX(-50%);min-width:96px;}
 .sc-roll{cursor:pointer;}
 .sc-roll:hover{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 8%, transparent);}
 .sc-roll:hover .init-hero-val{transform:scale(1.08);}

@@ -11,6 +11,7 @@ import { renderSpellChoiceOptions } from "../../ui/spell-choice.js";
 import { sheetHeader } from "./inventory.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
+import { themedPicker } from "../../ui/themed-picker.js";
 
 
 var SCHOOLS = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"];
@@ -128,29 +129,23 @@ function openSpellSheet(c, sp){
     var levelField = document.createElement("div");
     levelField.className = "field-inline spell-field";
     levelField.innerHTML = "<label>Level</label>";
-    var levelSel = document.createElement("select");
-    SPELL_LEVEL_LABELS.forEach(function(label, i){
-      var o = document.createElement("option"); o.value = i; o.textContent = label;
-      if((sp.level||0) === i) o.selected = true;
-      levelSel.appendChild(o);
-    });
-    levelSel.addEventListener("change", function(){ sp.level = Number(levelSel.value)||0; save(); renderAll(); });
-    levelField.appendChild(levelSel);
+    levelField.appendChild(themedPicker({
+      variant:"field", search:false,
+      groups:{"":SPELL_LEVEL_LABELS.map(function(label, i){ return {value:String(i), label:label}; })},
+      value:String(sp.level||0), ariaLabel:"Spell level",
+      onPick:function(v){ sp.level = Number(v)||0; save(); renderAll(); }
+    }));
     details.appendChild(levelField);
 
     var schoolField = document.createElement("div");
     schoolField.className = "field-inline spell-field";
     schoolField.innerHTML = "<label>School</label>";
-    var schoolSel = document.createElement("select");
-    var blank = document.createElement("option"); blank.value = ""; blank.textContent = "None";
-    schoolSel.appendChild(blank);
-    SCHOOLS.forEach(function(name){
-      var o = document.createElement("option"); o.value = name; o.textContent = name;
-      if(sp.school === name) o.selected = true;
-      schoolSel.appendChild(o);
-    });
-    schoolSel.addEventListener("change", function(){ sp.school = schoolSel.value; save(); renderAll(); });
-    schoolField.appendChild(schoolSel);
+    schoolField.appendChild(themedPicker({
+      variant:"field", search:false,
+      groups:{"": [{value:"", label:"None", muted:true}].concat(SCHOOLS.map(function(name){ return {value:name, label:name}; }))},
+      value:sp.school||"", ariaLabel:"Spell school",
+      onPick:function(v){ sp.school = v; save(); renderAll(); }
+    }));
     details.appendChild(schoolField);
 
     textField("Casting time", "castingTime");
@@ -194,8 +189,8 @@ function openSpellSheet(c, sp){
 }
 
 /* ---- Spellcasting stats ----
-   Same tile look as the Vitals tab: ability (a select styled as the big
-   value), save DC, and spell attack (tap to roll). */
+   Same tile look as the Vitals tab: ability (a themed picker styled as
+   the big value), save DC, and spell attack (tap to roll). */
 function statTile(label, hint){
   var box = ce("div","vital-box vital-mini sc-tile");
   var lbl = ce("div","lbl"); lbl.textContent = label;
@@ -218,15 +213,12 @@ function renderSpellcastingCard(c){
   var grid = ce("div","vitals-grid");
 
   var ab = statTile("Ability", fmtMod(scMod)+" modifier");
-  var sel = ce("select","sc-ability-select");
-  sel.setAttribute("aria-label", "Spellcasting ability");
-  [["int","INT"],["wis","WIS"],["cha","CHA"]].forEach(function(a){
-    var o = document.createElement("option"); o.value = a[0]; o.textContent = a[1];
-    if(c.spellcasting.ability===a[0]) o.selected = true;
-    sel.appendChild(o);
-  });
-  sel.addEventListener("change", function(){ c.spellcasting.ability = sel.value; save(); renderAll(); });
-  ab.val.appendChild(sel);
+  ab.val.appendChild(themedPicker({
+    variant:"pill", triggerClass:"sc-ability-pill", chevron:true, search:false,
+    groups:{"":[{value:"int", label:"INT"}, {value:"wis", label:"WIS"}, {value:"cha", label:"CHA"}]},
+    value:c.spellcasting.ability, ariaLabel:"Spellcasting ability",
+    onPick:function(v){ c.spellcasting.ability = v; save(); renderAll(); }
+  }));
   grid.appendChild(ab.box);
 
   var dc = statTile("Save DC", "8 + prof + mod");

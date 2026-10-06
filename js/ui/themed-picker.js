@@ -15,6 +15,8 @@
      variant      "field" (underlined, like a form field; left-aligned list)
                   or "pill" (the ability-score pills; centered list).
      triggerClass extra class for the trigger (e.g. the pill styling).
+     chevron      true to show the open/close chevron on a pill too (field
+                  triggers always have it).
      search       true/false; default: on when there are more than 12 items.
      homebrew     {noun} to add "Custom / homebrew…" plus a text box for
                   anything not on the list; the search also offers
@@ -65,7 +67,7 @@ export function themedPicker(opts){
   var valueSpan = document.createElement("span");
   valueSpan.className = "tp-value";
   trigger.appendChild(valueSpan);
-  if(variant==="field") trigger.insertAdjacentHTML("beforeend", CHEVRON);
+  if(variant==="field" || opts.chevron) trigger.insertAdjacentHTML("beforeend", CHEVRON);
   wrap.appendChild(trigger);
 
   var customInput = null;
