@@ -20,7 +20,7 @@ import { playAdd, playDelete } from "../../ui/sound.js";
 
 // Form state survives the re-render each pick triggers.
 var learnPick = "", learnNote = "";
-var infusePick = "", infuseTarget = "", infuseFreeText = "";
+var infusingId = "", infuseTarget = "", infuseFreeText = "";
 
 function infusionData(name){ return INFUSIONS.find(function(i){ return i.name===name; }); }
 
@@ -57,75 +57,151 @@ export function renderInfusionsCard(c){
   // parts of the Arcane Armor. The panel doesn't check which items they are.
   var armorMods = level>=9 && (c.classes||[]).some(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer"; }) ? 2 : 0;
   maxActive += armorMods;
+  if(infusingId && !inf.known.some(function(k){ return k.id===infusingId; })) infusingId = "";
 
   var card = makeCard("Artifice infusions");
   card.classList.add("inf-card");
-  var summary = document.createElement("p");
-  summary.className = "inf-summary";
-  summary.innerHTML = "Known <b>"+inf.known.length+" / "+maxKnown+"</b> · Infused items <b>"+inf.active.length+" / "+maxActive+"</b>"+(armorMods ? " (+2 for Arcane Armor parts)" : "")+
-    (inf.known.length>maxKnown ? " <span class='inf-warn'>(more known than your level allows)</span>" : "");
-  card.appendChild(summary);
+  card.appendChild(hint("Infusions turn everyday items into magic ones. Learn a few, then after a long rest put each one on an item. An infusion can be on one item at a time."));
 
-  /* -- Infused items -- */
-  card.appendChild(sectionTitle("Infused items"));
-  if(!inf.active.length){
-    card.appendChild(hint("Nothing infused yet. After a long rest you can touch an object and infuse it with one of your known infusions."));
+  var meters = document.createElement("div");
+  meters.className = "inf-meters";
+  meters.appendChild(meter("Infusions known", inf.known.length, maxKnown,
+    inf.known.length>maxKnown ? "More than your level allows" : inf.known.length<maxKnown ? (maxKnown-inf.known.length)+" left to learn" : "All learned"));
+  meters.appendChild(meter("Items infused", inf.active.length, maxActive,
+    armorMods ? "+2 for Arcane Armor parts" : inf.active.length>=maxActive ? "Full: a new one ends the oldest" : (maxActive-inf.active.length)+" free"));
+  card.appendChild(meters);
+
+  /* -- Known infusions, each with what it's on right now -- */
+  card.appendChild(sectionTitle("Your infusions"));
+  if(!inf.known.length) card.appendChild(hint("You don't know any infusions yet. Learn one below."));
+  inf.known.forEach(function(k){
+    var using = inf.active.filter(function(a){ return a.knownId===k.id; });
+    card.appendChild(infusionEntry(c, k, using, maxActive));
+  });
+  // Older saves can hold an infusion whose known entry is gone.
+  inf.active.filter(function(a){ return !inf.known.some(function(k){ return k.id===a.knownId; }); }).forEach(function(a){
+    var entry = document.createElement("div");
+    entry.className = "inf-entry is-on";
+    entry.appendChild(entryHead(a.name, null));
+    entry.appendChild(statusRow(c, a));
+    card.appendChild(entry);
+  });
+
+  /* -- Learn -- */
+  if(inf.known.length < maxKnown){
+    card.appendChild(sectionTitle("Learn an infusion"));
+    card.appendChild(learnForm(c, level));
+  } else {
+    card.appendChild(hint("You know as many infusions as your level allows. Each time you gain an artificer level you can swap one: forget it, then learn the new one."));
   }
-  inf.active.forEach(function(a){
-    // Look the text up through the known entry: a replicated item's name
-    // carries the item ("Replicate Magic Item: Bag of Holding").
-    var k = inf.known.find(function(x){ return x.id===a.knownId; });
-    var data = infusionData(k ? k.name : a.name) || {};
-    var row = document.createElement("div");
-    row.className = "inf-row";
-    row.innerHTML = "<div class='inf-row-main'><b>"+escapeHtml(a.name)+"</b> <span class='inf-arrow'>on</span> "+escapeHtml(a.itemName)+
-      (a.bonus ? " <span class='inf-tag'>+"+a.bonus+" applied</span>" : "")+
-      "<div class='inf-text'>"+escapeHtml(data.text||"")+"</div></div>";
-    var end = document.createElement("button");
-    end.className = "btn small ghost";
-    end.textContent = "End";
-    end.addEventListener("click", function(){
-      endInfusion(c, a);
+  return card;
+}
+
+function meter(label, count, max, sub){
+  var box = document.createElement("div");
+  box.className = "inf-meter"+(count>max ? " over" : "");
+  var top = document.createElement("div");
+  top.className = "inf-meter-top";
+  top.innerHTML = "<span class='inf-meter-lbl'>"+escapeHtml(label)+"</span><span class='inf-meter-val'><b>"+count+"</b> of "+max+"</span>";
+  box.appendChild(top);
+  var pips = document.createElement("div");
+  pips.className = "inf-pips";
+  for(var i=0;i<Math.max(count, max);i++){
+    var pip = document.createElement("span");
+    pip.className = "inf-pip"+(i<count ? " full" : "");
+    pips.appendChild(pip);
+  }
+  box.appendChild(pips);
+  var s = document.createElement("div");
+  s.className = "inf-meter-sub";
+  s.textContent = sub;
+  box.appendChild(s);
+  return box;
+}
+
+function entryHead(title, onForget){
+  var head = document.createElement("div");
+  head.className = "inf-entry-head";
+  var t = document.createElement("span");
+  t.className = "inf-entry-title";
+  t.textContent = title;
+  head.appendChild(t);
+  if(onForget){
+    var forget = document.createElement("button");
+    forget.className = "btn small ghost inf-forget";
+    forget.textContent = "Forget";
+    forget.addEventListener("click", onForget);
+    head.appendChild(forget);
+  }
+  return head;
+}
+
+function infusionEntry(c, k, using, maxActive){
+  var inf = c.infusions;
+  var data = infusionData(k.name) || {};
+  var entry = document.createElement("div");
+  entry.className = "inf-entry"+(using.length ? " is-on" : "");
+  entry.appendChild(entryHead(k.name+(k.note ? ": "+k.note : ""), function(){
+    confirmDialog("Forget "+k.name+"?", using.length ? "This also ends it on "+using.map(function(a){ return a.itemName; }).join(", ")+"." : "You can learn another infusion in its place.", function(){
+      using.forEach(function(a){ endInfusion(c, a); });
+      inf.known = inf.known.filter(function(x){ return x.id!==k.id; });
       save(); renderAll(); playDelete();
     });
-    row.appendChild(end);
-    card.appendChild(row);
-  });
-
-  if(inf.known.length) card.appendChild(infuseForm(c, maxActive));
-
-  /* -- Known infusions -- */
-  card.appendChild(sectionTitle("Known infusions"));
-  if(!inf.known.length) card.appendChild(hint("Pick the infusions you know. You can swap one for another each time you gain an artificer level."));
-  inf.known.forEach(function(k){
-    var data = infusionData(k.name) || {};
+  }));
+  if(data.item){
+    var goes = document.createElement("div");
+    goes.className = "inf-goes";
+    goes.innerHTML = "<span>Goes on</span> "+escapeHtml(data.item);
+    entry.appendChild(goes);
+  }
+  if(data.text){
+    var text = document.createElement("div");
+    text.className = "inf-text";
+    text.textContent = data.text;
+    entry.appendChild(text);
+  }
+  if(using.length){
+    using.forEach(function(a){ entry.appendChild(statusRow(c, a)); });
+  } else if(infusingId===k.id){
+    entry.appendChild(infuseForm(c, k, data, maxActive));
+  } else {
     var row = document.createElement("div");
-    row.className = "inf-row";
-    row.innerHTML = "<div class='inf-row-main'><b>"+escapeHtml(k.name)+"</b>"+(k.note ? ": "+escapeHtml(k.note) : "")+
-      "<div class='inf-item'>"+escapeHtml(data.item||"")+"</div><div class='inf-text'>"+escapeHtml(data.text||"")+"</div></div>";
-    var forget = document.createElement("button");
-    forget.className = "btn small ghost";
-    forget.textContent = "Forget";
-    forget.addEventListener("click", function(){
-      var using = inf.active.filter(function(a){ return a.knownId===k.id; });
-      confirmDialog("Forget "+k.name+"?", using.length ? "This also ends it on "+using.map(function(a){ return a.itemName; }).join(", ")+"." : "You can learn another infusion in its place.", function(){
-        using.forEach(function(a){ endInfusion(c, a); });
-        inf.known = inf.known.filter(function(x){ return x.id!==k.id; });
-        save(); renderAll(); playDelete();
-      });
+    row.className = "inf-status";
+    row.innerHTML = "<span class='inf-off'>Not on an item</span>";
+    var btn = document.createElement("button");
+    btn.className = "btn small inf-act";
+    btn.textContent = "Infuse an item";
+    btn.addEventListener("click", function(){
+      infusingId = k.id; infuseTarget = ""; infuseFreeText = "";
+      renderAll();
     });
-    row.appendChild(forget);
-    card.appendChild(row);
-  });
+    row.appendChild(btn);
+    entry.appendChild(row);
+  }
+  return entry;
+}
 
-  if(inf.known.length < maxKnown) card.appendChild(learnForm(c, level));
-  return card;
+function statusRow(c, a){
+  var row = document.createElement("div");
+  row.className = "inf-status";
+  row.innerHTML = "<span class='inf-on'>Infused on <b>"+escapeHtml(a.itemName)+"</b></span>"+
+    (a.bonus ? "<span class='inf-tag'>+"+a.bonus+" applied</span>" : "");
+  var end = document.createElement("button");
+  end.className = "btn small ghost inf-act";
+  end.textContent = "End";
+  end.setAttribute("aria-label", "End "+a.name+" on "+a.itemName);
+  end.addEventListener("click", function(){
+    endInfusion(c, a);
+    save(); renderAll(); playDelete();
+  });
+  row.appendChild(end);
+  return row;
 }
 
 function learnForm(c, level){
   var inf = c.infusions;
   var wrap = document.createElement("div");
-  wrap.className = "inf-form";
+  wrap.className = "inf-form inf-learn";
   var knownNames = inf.known.map(function(k){ return k.name; });
   var options = INFUSIONS.filter(function(i){ return i.repeatable || knownNames.indexOf(i.name)===-1; });
   if(learnPick && !options.some(function(o){ return o.name===learnPick && o.level<=level; })) learnPick = "";
@@ -134,7 +210,7 @@ function learnForm(c, level){
   var levelOf = {};
   options.forEach(function(i){ levelOf[i.name] = i.level; });
   wrap.appendChild(field(themedPicker({
-    key: "inf:learn", ariaLabel: "Infusion to learn", placeholder: "Learn an infusion…",
+    key: "inf:learn", ariaLabel: "Infusion to learn", placeholder: "Pick an infusion to learn…",
     groups: {"": options.map(function(i){ return i.name; })}, value: learnPick,
     reasonFor: function(v){ return levelOf[v] > level ? "artificer " + levelOf[v] : ""; },
     onPick: function(v){ learnPick = v; renderAll(); }
@@ -150,7 +226,6 @@ function learnForm(c, level){
     noteInput.addEventListener("input", function(){ learnNote = noteInput.value; });
     wrap.appendChild(field(noteInput));
   }
-  if(picked) wrap.appendChild(hint(picked.item+". "+picked.text));
 
   var btn = document.createElement("button");
   btn.className = "btn small primary";
@@ -165,53 +240,48 @@ function learnForm(c, level){
     save(); renderAll(); playAdd();
   });
   wrap.appendChild(btn);
+  if(picked){
+    var preview = document.createElement("div");
+    preview.className = "inf-preview";
+    preview.innerHTML = "<div class='inf-goes'><span>Goes on</span> "+escapeHtml(picked.item)+"</div><div class='inf-text'>"+escapeHtml(picked.text)+"</div>";
+    wrap.appendChild(preview);
+  }
   return wrap;
 }
 
-function infuseForm(c, maxActive){
+/* Inline on an infusion's entry: pick the item (or name the object), then
+   Infuse. Over the limit, the oldest infusion ends, as in the rules. */
+function infuseForm(c, known, data, maxActive){
   var inf = c.infusions;
   var wrap = document.createElement("div");
-  wrap.className = "inf-form";
-  if(infusePick && !inf.known.some(function(k){ return k.id===infusePick; })) infusePick = "";
-
-  wrap.appendChild(field(themedPicker({
-    key: "inf:infuse", ariaLabel: "Infusion to use", placeholder: "Infuse an item with…",
-    groups: {"": inf.known.map(function(k){ return {value:k.id, label:k.name+(k.note ? ": "+k.note : "")}; })}, value: infusePick,
-    onPick: function(v){ infusePick = v; infuseTarget = ""; infuseFreeText = ""; renderAll(); }
-  })));
-
-  var known = inf.known.find(function(k){ return k.id===infusePick; });
-  var data = known && infusionData(known.name);
-  var targets = data && data.target ? targetItems(c, data) : null;
-  if(data){
-    if(targets){
-      if(infuseTarget && !targets.some(function(i){ return i.id===infuseTarget; })) infuseTarget = "";
-      if(!targets.length){
-        wrap.appendChild(hint("No suitable item in your inventory ("+data.item.toLowerCase()+"). Add one on the Inventory tab first."));
-      } else {
-        wrap.appendChild(field(themedPicker({
-          key: "inf:target", ariaLabel: "Item to infuse", placeholder: "Pick the item…",
-          groups: {"": targets.map(function(i){ return {value:i.id, label:i.name + (i.magicBonus ? " (+"+i.magicBonus+")" : "")}; })}, value: infuseTarget,
-          onPick: function(v){ infuseTarget = v; }
-        })));
-      }
+  wrap.className = "inf-form inf-infuse";
+  var targets = data.target ? targetItems(c, data) : null;
+  if(targets){
+    if(infuseTarget && !targets.some(function(i){ return i.id===infuseTarget; })) infuseTarget = "";
+    if(!targets.length){
+      wrap.appendChild(hint("No suitable item in your inventory ("+data.item.toLowerCase()+"). Add one on the Inventory tab first."));
     } else {
-      var input = document.createElement("input");
-      input.type = "text";
-      input.placeholder = data.item;
-      input.value = infuseFreeText;
-      input.addEventListener("input", function(){ infuseFreeText = input.value; });
-      wrap.appendChild(field(input));
+      wrap.appendChild(field(themedPicker({
+        key: "inf:target", ariaLabel: "Item to infuse", placeholder: "Which item?",
+        groups: {"": targets.map(function(i){ return {value:i.id, label:i.name + (i.magicBonus ? " (+"+i.magicBonus+")" : "")}; })}, value: infuseTarget,
+        onPick: function(v){ infuseTarget = v; }
+      })));
     }
+  } else {
+    var input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Which object? e.g. "+data.item.replace(/ \(.*\)$/, "").replace(/^An? /, "").toLowerCase();
+    input.setAttribute("aria-label", "Object to infuse");
+    input.value = infuseFreeText;
+    input.addEventListener("input", function(){ infuseFreeText = input.value; });
+    wrap.appendChild(field(input));
   }
 
-  var full = inf.active.length >= maxActive;
   var btn = document.createElement("button");
   btn.className = "btn small primary";
-  btn.textContent = full && inf.active.length ? "Infuse (ends "+inf.active[0].name+" on "+inf.active[0].itemName+")" : "Infuse";
-  btn.disabled = !data || (targets && !targets.length);
+  btn.textContent = "Infuse";
+  btn.disabled = targets && !targets.length;
   btn.addEventListener("click", function(){
-    if(!data) return;
     var item = null, itemName = "";
     if(targets){
       item = targets.find(function(i){ return i.id===infuseTarget; });
@@ -221,15 +291,27 @@ function infuseForm(c, maxActive){
       itemName = (infuseFreeText||"").trim();
       if(!itemName){ showActionToast("Name the object you're infusing.", true); return; }
     }
-    // Over the limit: the oldest infusion ends, as in the rules.
     while(inf.active.length >= maxActive && inf.active.length) endInfusion(c, inf.active[0]);
     var bonus = item ? infusionBonus(c, known.name) : 0;
     if(bonus) item.magicBonus = (Number(item.magicBonus)||0) + bonus;
     inf.active.push({id:uid(), knownId:known.id, name:known.name + (known.note ? ": "+known.note : ""), itemId:item ? item.id : null, itemName:itemName, bonus:bonus});
-    infusePick = ""; infuseTarget = ""; infuseFreeText = "";
+    infusingId = ""; infuseTarget = ""; infuseFreeText = "";
     save(); renderAll(); playAdd();
   });
   wrap.appendChild(btn);
+
+  var cancel = document.createElement("button");
+  cancel.className = "btn small ghost";
+  cancel.textContent = "Cancel";
+  cancel.addEventListener("click", function(){ infusingId = ""; renderAll(); });
+  wrap.appendChild(cancel);
+
+  if(inf.active.length >= maxActive && inf.active.length){
+    var oldest = inf.active[0];
+    var warn = hint("You're at your limit, so this ends "+oldest.name+" on "+oldest.itemName+".");
+    warn.classList.add("inf-note");
+    wrap.appendChild(warn);
+  }
   return wrap;
 }
 
