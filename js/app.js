@@ -147,6 +147,23 @@ export function setupTopLevel(){
   });
 }
 
+/* ---------------- Duplicate character ---------------- */
+/* Opened from the identity card's ⋮ menu. Adds a full copy right after
+   the original and opens it, so the copy can be edited without touching
+   the source. */
+export function duplicateCharacter(c){
+  var copy = ensureShape(JSON.parse(JSON.stringify(c)));
+  copy.id = uid();
+  copy.name = (c.name || "Unnamed") + " (copy)";
+  var at = state.characters.findIndex(function(x){ return x.id===c.id; });
+  state.characters.splice(at + 1, 0, copy);
+  state.activeId = copy.id;
+  state.activeTab = "vitals";
+  save();
+  renderAll();
+  playAdd();
+}
+
 /* ---------------- Delete character ---------------- */
 /* Opened from the identity card's ⋮ menu. */
 export function confirmDeleteCharacter(c){

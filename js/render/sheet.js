@@ -11,7 +11,7 @@ import { renderJournalPanel } from "./panels/journal.js";
 import { renderCompanionsPanel } from "./panels/companions.js";
 import { characterCompanions } from "../core/companions.js";
 import { renderRollLog } from "../dice/dice.js";
-import { confirmDeleteCharacter } from "../app.js";
+import { confirmDeleteCharacter, duplicateCharacter } from "../app.js";
 import { makeKebabSvg, makeCheckSvg } from "../ui/svg-icons.js";
 import { buildLevelRow, subclassEligible, openSubclassPicker } from "../levelup/level-row.js";
 import { buildAvatar, refreshAvatarInitial } from "../ui/avatar.js";
@@ -177,7 +177,7 @@ function lockedField(labelTxt, value){
 }
 
 /* ⋮ overflow menu in the identity card's top-right corner. Holds the
-   rarely used actions (background image and Delete character) so they
+   rarely used actions (background image, Duplicate and Delete character) so they
    don't take rows of their own. Closes on an outside tap or Escape. */
 function buildIdentityMenu(c){
   var menu = document.createElement("div");
@@ -214,6 +214,7 @@ function buildIdentityMenu(c){
     pop.appendChild(item);
   }
   backdropMenuItems(c).forEach(function(it){ addItem(it.label, it.run, "", it.checked); });
+  addItem("Duplicate character", function(){ duplicateCharacter(c); });
   var sep = document.createElement("div");
   sep.className = "identity-menu-sep";
   sep.setAttribute("role", "separator");
