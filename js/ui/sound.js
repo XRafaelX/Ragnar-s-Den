@@ -204,3 +204,12 @@ export function playRevive(){
     scheduleTone(ctx, now + 0.62, 1046, 1318, 0.45, "triangle", 0.14);
   }catch(e){}
 }
+
+/* Easter egg: plays a sound clip when a character named TOUKELLIENMELI
+   is created. The clip is the one audio file the app ships (sounds/). */
+export function playToukellienmeli(){
+  try{
+    var clip = new Audio("sounds/toukellienmeli.mp3");
+    clip.play().catch(function(){});
+  }catch(e){}
+}

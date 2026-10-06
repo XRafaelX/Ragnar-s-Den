@@ -12,7 +12,7 @@ import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { closeSidebarMobile } from "../ui/mobile-nav.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
-import { playAdd } from "../ui/sound.js";
+import { playAdd, playToukellienmeli } from "../ui/sound.js";
 import { SPELL_DATA } from "../data/spells.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import {
@@ -440,7 +440,8 @@ export function finishWizard(){
   save();
   document.getElementById("wizard-overlay").classList.remove("open");
   renderAll();
-  playAdd();
+  if(c.name.toUpperCase()==="TOUKELLIENMELI") playToukellienmeli();
+  else playAdd();
 }
 
 /* Race Traits picks: skills, tools (a feature on the sheet, like the

@@ -7,8 +7,8 @@
 # Enable once per clone with:
 #   git config core.hooksPath .githooks
 
-APP_FILES='^(index\.html|manifest\.json|css/|js/|images/)'
-TESTED_FILES='^(index\.html|manifest\.json|css/|js/|images/|tests/|package\.json|sw\.js)'
+APP_FILES='^(index\.html|manifest\.json|css/|js/|images/|sounds/)'
+TESTED_FILES='^(index\.html|manifest\.json|css/|js/|images/|sounds/|tests/|package\.json|sw\.js)'
 
 staged=$(git diff --cached --name-only)
 
