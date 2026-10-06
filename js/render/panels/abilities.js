@@ -15,6 +15,25 @@ function rollTag(roll){
   return tag;
 }
 
+/* The modifier pill on a save or skill row: a button, so a roll can be
+   made from the keyboard too. Its click bubbles up to the row's roll. */
+function rollButton(value, label){
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "row-mod";
+  btn.textContent = fmtMod(value);
+  btn.setAttribute("aria-label", "Roll " + label + " (" + fmtMod(value) + ")");
+  return btn;
+}
+
+/* Clicking anywhere on a save or skill row rolls it, except its checkboxes. */
+function onRowRoll(row, roll){
+  row.addEventListener("click", function(e){
+    if(e.target.closest("input")) return;
+    roll();
+  });
+}
+
 /* ---- Abilities & Skills panel ---- */
 export function renderAbilitiesPanel(c){
   var panel = document.createElement("div");
@@ -110,44 +129,41 @@ export function renderAbilitiesPanel(c){
 
   var saveCard = makeCard("Saving throws");
   var saveRows = document.createElement("div");
-  saveRows.className = "list-rows";
+  saveRows.className = "save-grid";
   ABILITIES.forEach(function(a){
     var key = a[0];
     var sv = computeSave(c, key);
     var total = sv.value;
+    var saveRoll = saveRollMode(c, key);
     var row = document.createElement("div");
-    row.className = "list-row";
+    row.className = "list-row save-tile" + (sv.prof ? " is-prof" : "");
     row.title = sv.breakdown;
     var cb = document.createElement("input");
-    cb.type="checkbox"; cb.className="chk"; cb.checked = sv.prof;
+    cb.type="checkbox"; cb.className="prof-pip"; cb.checked = sv.prof;
+    cb.title = "Proficient in " + a[1] + " saves";
+    cb.setAttribute("aria-label", cb.title);
     // A save a feature makes proficient (Diamond Soul) is locked on;
     // the player's own ticks are left as they are underneath.
     if(sv.grantedBy){ cb.disabled = true; cb.title = "Proficient from " + sv.grantedBy; }
     cb.addEventListener("change", function(){ c.saveProfs[key]=cb.checked; save(); renderAll(); });
     var name = document.createElement("span");
     name.className = "row-name"; name.textContent = a[1];
-    var saveRoll = saveRollMode(c, key);
     if(saveRoll.mode!=="none"){ name.appendChild(rollTag(saveRoll)); name.title = saveRoll.reason; }
-    name.addEventListener("click", function(){ performRoll(20,1,total,saveRoll.mode, a[1]+" save"); });
-    var modSpan = document.createElement("span");
-    modSpan.className = "row-mod"; modSpan.textContent = fmtMod(total);
-    row.appendChild(cb); row.appendChild(name); row.appendChild(modSpan);
+    row.appendChild(cb); row.appendChild(name); row.appendChild(rollButton(total, a[1] + " save"));
+    onRowRoll(row, function(){ performRoll(20,1,total,saveRoll.mode, a[1]+" save"); });
     saveRows.appendChild(row);
   });
   saveCard.appendChild(saveRows);
   panel.appendChild(saveCard);
 
   var skillCard = makeCard("Skills");
+  var legend = document.createElement("span");
+  legend.className = "prof-legend";
+  legend.innerHTML = '<span><i class="legend-pip"></i>Proficient</span><span><i class="legend-pip exp"></i>Expertise</span>';
+  skillCard.querySelector("h3").appendChild(legend);
   var skillRows = document.createElement("div");
-  skillRows.className = "list-rows";
-  var header = document.createElement("div");
-  header.className = "list-row";
-  header.style.borderBottom = "1px solid var(--rule)";
-  header.innerHTML = '<span style="width:15px;font-size:10px;color:var(--text-on-parch-dim);">P</span>'+
-    '<span style="width:15px;font-size:10px;color:var(--text-on-parch-dim);">E</span>'+
-    '<span class="row-name" style="font-size:10px;color:var(--text-on-parch-dim);text-transform:uppercase;">Skill</span>'+
-    '<span class="abbr"></span><span class="row-mod"></span>';
-  skillRows.appendChild(header);
+  skillRows.className = "skill-list";
+  skillRows.style.setProperty("--skill-rows", Math.ceil(SKILLS.length / 2));
   SKILLS.forEach(function(s){
     var name = s[0], ab = s[1];
     var entry = c.skillProfs[name] || {prof:false, expertise:false};
@@ -155,17 +171,24 @@ export function renderAbilitiesPanel(c){
     var skillAbility = checkAbility(c, ab);
     var bonus = check.value;
     var row = document.createElement("div");
-    row.className = "list-row";
+    row.className = "list-row skill-row" + (entry.expertise ? " is-exp" : entry.prof ? " is-prof" : "");
+    var pips = document.createElement("span");
+    pips.className = "skill-pips";
     var profCb = document.createElement("input");
-    profCb.type="checkbox"; profCb.className="chk";
+    profCb.type="checkbox"; profCb.className="prof-pip";
     profCb.checked = !!entry.prof;
+    profCb.title = "Proficient in " + name;
+    profCb.setAttribute("aria-label", profCb.title);
     // Expertise needs proficiency: dropping proficiency drops it too.
     profCb.addEventListener("change", function(){ entry.prof = profCb.checked; if(!entry.prof) entry.expertise = false; c.skillProfs[name]=entry; save(); renderAll(); });
     var expCb = document.createElement("input");
     expCb.type="checkbox"; expCb.className="exp-chk";
     expCb.checked = !!entry.expertise;
+    expCb.title = "Expertise in " + name;
+    expCb.setAttribute("aria-label", expCb.title);
     // ...and ticking expertise ticks proficiency.
     expCb.addEventListener("change", function(){ entry.expertise = expCb.checked; if(entry.expertise) entry.prof = true; c.skillProfs[name]=entry; save(); renderAll(); });
+    pips.appendChild(profCb); pips.appendChild(expCb);
     var nameSpan = document.createElement("span");
     nameSpan.className = "row-name"; nameSpan.textContent = name;
     // Stealth with armor's disadvantage (or Dampening Field's advantage),
@@ -177,13 +200,11 @@ export function renderAbilitiesPanel(c){
       nameSpan.title = roll.reason;
     } else if(roll.reason) nameSpan.title = roll.reason;   // advantage and disadvantage cancelled
     row.title = check.breakdown;
-    nameSpan.addEventListener("click", function(){ performRoll(20,1,bonus,rollMode, name); });
     var abbr = document.createElement("span");
     abbr.className = "abbr"; abbr.textContent = skillAbility.label.slice(0, 3);
     if(skillAbility.label.length > 3) abbr.title = skillAbility.label;
-    var modSpan = document.createElement("span");
-    modSpan.className = "row-mod"; modSpan.textContent = fmtMod(bonus);
-    row.appendChild(profCb); row.appendChild(expCb); row.appendChild(nameSpan); row.appendChild(abbr); row.appendChild(modSpan);
+    row.appendChild(pips); row.appendChild(nameSpan); row.appendChild(abbr); row.appendChild(rollButton(bonus, name));
+    onRowRoll(row, function(){ performRoll(20,1,bonus,rollMode, name); });
     skillRows.appendChild(row);
   });
   skillCard.appendChild(skillRows);

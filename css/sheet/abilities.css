@@ -109,6 +109,130 @@
 .chk{width:15px;height:15px;accent-color:var(--oxblood);}
 .exp-chk{width:13px;height:13px;accent-color:var(--brass);}
 
+/* ---- Saving throw tiles & skill rows ----
+   Both roll on a click anywhere on the row. Proficiency is a round pip,
+   expertise a diamond; a proficient row tints its modifier pill with the
+   theme accent, expertise a little stronger. */
+.prof-pip,
+.skill-row .exp-chk{
+  appearance:none;-webkit-appearance:none;margin:0;flex:none;cursor:pointer;
+  border:1.5px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  background:rgba(0,0,0,.22);
+  transition:background .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+}
+.prof-pip{width:16px;height:16px;border-radius:50%;}
+.skill-row .exp-chk{width:11px;height:11px;border-radius:2px;transform:rotate(45deg);}
+.prof-pip:hover,
+.skill-row .exp-chk:hover{border-color:var(--brass-bright);}
+.prof-pip:checked{
+  border-color:var(--brass);
+  background:radial-gradient(circle, var(--brass-bright) 0 35%, var(--brass) 40%);
+  box-shadow:0 0 8px color-mix(in srgb, var(--brass) 45%, transparent);
+}
+.skill-row .exp-chk:checked{
+  border-color:var(--brass-bright);
+  background:var(--brass-bright);
+  box-shadow:0 0 8px color-mix(in srgb, var(--brass-bright) 50%, transparent);
+}
+.prof-pip:active,
+.skill-row .exp-chk:active{transform:scale(.85);}
+.skill-row .exp-chk:active{transform:rotate(45deg) scale(.85);}
+.prof-pip:focus-visible,
+.skill-row .exp-chk:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+/* Locked on by a feature (Diamond Soul) */
+.prof-pip:disabled{cursor:not-allowed;opacity:.75;box-shadow:none;}
+
+.save-tile .row-mod,
+.skill-row .row-mod{
+  width:auto;min-width:40px;flex:none;padding:2px 8px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.24);
+  color:var(--text-on-parch);font:inherit;font-weight:700;font-variant-numeric:tabular-nums;
+  text-align:center;line-height:1.35;cursor:pointer;
+  transition:background .15s ease, border-color .15s ease, color .15s ease, transform .12s ease;
+}
+.save-tile .row-mod:focus-visible,
+.skill-row .row-mod:focus-visible{outline:2px solid var(--brass-bright);outline-offset:1px;}
+.is-prof .row-mod{
+  color:var(--brass-bright);
+  background:color-mix(in srgb, var(--brass) 18%, transparent);
+  border-color:color-mix(in srgb, var(--brass) 45%, transparent);
+}
+.is-exp .row-mod{
+  color:var(--text-on-parch);
+  background:color-mix(in srgb, var(--brass) 38%, transparent);
+  border-color:var(--brass);
+}
+.save-tile:hover .row-mod,
+.skill-row:hover .row-mod{border-color:var(--brass-bright);color:var(--brass-bright2);}
+.save-tile:active .row-mod,
+.skill-row:active .row-mod{transform:scale(.94);}
+
+/* Saving throws: a 3x2 grid of tiles */
+.save-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.save-grid .list-row.save-tile{
+  gap:10px;padding:9px 10px;border:1px solid var(--rule);border-radius:8px;
+  background:rgba(255,255,255,.03);cursor:pointer;font-size:13.5px;
+  transition:background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.save-grid .list-row.save-tile:last-child{border-bottom:1px solid var(--rule);}
+.save-tile.is-prof{
+  background:color-mix(in srgb, var(--brass) 9%, transparent);
+  border-color:color-mix(in srgb, var(--brass) 55%, transparent);
+}
+.save-tile:hover{
+  background:color-mix(in srgb, var(--brass) 14%, transparent);
+  border-color:color-mix(in srgb, var(--brass) 70%, transparent);
+  box-shadow:0 2px 12px color-mix(in srgb, var(--brass) 18%, transparent);
+}
+.save-tile .row-name{min-width:0;}
+
+/* Skills: two columns read top to bottom, one on phones */
+.prof-legend{
+  display:inline-flex;gap:12px;font-family:var(--sans);font-size:10.5px;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);
+}
+.prof-legend > span{display:inline-flex;align-items:center;gap:5px;}
+.legend-pip{
+  display:inline-block;width:9px;height:9px;border-radius:50%;
+  background:radial-gradient(circle, var(--brass-bright) 0 35%, var(--brass) 40%);
+}
+.legend-pip.exp{width:7px;height:7px;border-radius:1px;transform:rotate(45deg);background:var(--brass-bright);}
+.skill-list{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:repeat(var(--skill-rows,9),auto);grid-auto-flow:column;column-gap:24px;
+}
+.skill-list .list-row.skill-row{
+  gap:10px;padding:5px 8px;border-radius:6px;cursor:pointer;
+  border-bottom:1px solid color-mix(in srgb, var(--brass) 14%, transparent);
+  transition:background .15s ease;
+}
+.skill-row:hover{background:color-mix(in srgb, var(--brass) 12%, transparent);}
+.skill-row .row-name{min-width:0;color:var(--text-on-parch-dim);}
+.skill-row.is-prof .row-name,
+.skill-row.is-exp .row-name{color:var(--text-on-parch);font-weight:600;}
+.skill-list .row-name:hover,
+.save-grid .row-name:hover{color:inherit;}
+.skill-row:hover .row-name{color:var(--text-on-parch);}
+.skill-pips{display:inline-flex;align-items:center;gap:9px;flex:none;}
+.skill-row .abbr{
+  width:auto;flex:none;padding:1px 5px;border-radius:4px;
+  font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  background:rgba(255,255,255,.05);color:var(--text-on-parch-dim);
+}
+
+@media (max-width:720px){
+  .skill-list{grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-auto-flow:row;}
+  .save-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (max-width:420px){
+  .prof-legend{gap:8px;font-size:9.5px;}
+  .save-grid{gap:6px;}
+  .save-grid .list-row.save-tile{gap:6px;padding:8px 6px;font-size:12.5px;}
+  .save-tile .prof-pip{width:14px;height:14px;}
+  .save-tile .row-mod{min-width:32px;padding:2px 5px;}
+  .save-tile .row-name{overflow-wrap:normal;}
+}
+
 /* Stealth's roll mode from armor: disadvantage, or Dampening Field's advantage */
 .skill-roll-tag{display:inline-block;margin-left:6px;padding:0 5px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;vertical-align:1px;}
 .skill-roll-tag.dis{color:var(--oxblood);border:1px solid var(--oxblood);display:inline-flex;align-items:center;gap:3px;}
