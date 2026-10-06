@@ -28,7 +28,8 @@
                   in the homebrew box (don't re-render then: it would
                   steal focus).
    Keyboard: Enter/Space/Down opens; Up/Down move; Enter picks; Escape or
-   Tab closes; a click outside closes. */
+   Tab closes (Escape stops there, so a bottom sheet or dialog around the
+   picker stays open); a click outside closes. */
 
 var customOpen = {};
 export function resetThemedPickers(){ customOpen = {}; }
@@ -215,6 +216,11 @@ export function themedPicker(opts){
     wrap.classList.add("open");
     trigger.setAttribute("aria-expanded", "true");
     buildList();
+    // A list wider than its trigger near the right edge (a phone) slides
+    // left to stay on screen.
+    var r = menu.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+    var over = Math.min(r.right - (vw - 8), r.left - 8);
+    if(over > 0) menu.style.marginLeft = -over + "px";
     // Don't pop the on-screen keyboard over the list on touch screens;
     // the search box is one tap away there.
     var touch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
@@ -240,7 +246,8 @@ export function themedPicker(opts){
       if(e.key==="ArrowDown" || e.key==="ArrowUp"){ e.preventDefault(); open(); }
       return;
     }
-    if(e.key==="Escape"){ e.preventDefault(); close(true); }
+    // Escape closes only the list, not a sheet or dialog around it.
+    if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); close(true); }
     else if(e.key==="ArrowDown"){ e.preventDefault(); setActive(active+1); }
     else if(e.key==="ArrowUp"){ e.preventDefault(); setActive(active-1); }
     else if(e.key==="Enter" || (e.key===" " && !search)){

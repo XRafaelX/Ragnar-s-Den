@@ -9,6 +9,10 @@
   color:var(--text-on-parch);font-size:13px;padding:4px 0;text-align:left;cursor:pointer;
 }
 .tp-field .tp-trigger:focus-visible, .tp-field.open .tp-trigger{outline:none;border-bottom-color:var(--brass);}
+/* In a .field-inline grid (the inventory sheets) the trigger is boxed
+   like the inputs beside it. */
+.field-inline .tp-field .tp-trigger{background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;padding:5px 8px;}
+.field-inline .tp-field .tp-trigger:focus-visible, .field-inline .tp-field.open .tp-trigger{border-color:var(--brass);}
 .tp-trigger.placeholder .tp-value{color:var(--text-on-parch-dim);}
 .tp-value{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tp-chevron{width:14px;height:14px;flex:none;fill:none;stroke:var(--text-on-parch-dim);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s;}

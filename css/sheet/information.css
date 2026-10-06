@@ -63,11 +63,10 @@
   background:none;border-style:dashed;color:var(--text-on-parch-dim);cursor:pointer;font:inherit;font-size:11.5px;
 }
 .info-lang-add-chip:hover{color:var(--brass-bright);border-color:var(--brass);}
-.info-lang-select{
-  flex:1;min-width:160px;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:8px 10px;font-size:13.5px;color-scheme:dark;
+/* The language picker keeps the boxed look of this row. */
+.info-lang-add-row .info-lang-picker{flex:1;min-width:160px;width:auto;}
+.info-lang-picker .tp-trigger,.info-lang-picker .tp-custom-input{
+  background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:8px 10px;font-size:13.5px;
 }
-.info-lang-select:focus{outline:none;border-color:var(--brass);}
-.info-lang-input{
-  flex-basis:100%;background:var(--field-bg);border:1px solid var(--rule);border-radius:4px;color:var(--text-on-parch);padding:8px 10px;font-size:13.5px;
-}
-.info-lang-input:focus{outline:none;border-color:var(--brass);}
+.info-lang-picker .tp-custom-input{margin-top:8px;}
+.info-lang-picker .tp-trigger:focus-visible,.info-lang-picker.open .tp-trigger,.info-lang-picker .tp-custom-input:focus{outline:none;border-color:var(--brass);}

@@ -117,7 +117,7 @@ export function renderVitalsPanel(c){
   fullBtn.type = "button";
   fullBtn.className = "btn small quick-heal-btn hp-full-inline";
   fullBtn.textContent = "Full";
-  fullBtn.title = "Restore to full HP (resources are not restored — use Long rest for that)";
+  fullBtn.title = "Restore to full HP. Resources are not restored, use Long rest for that";
   fullBtn.addEventListener("click", function(e){
     e.stopPropagation();
     c.hp.current = hpMax;
@@ -509,6 +509,7 @@ export function renderVitalsPanel(c){
     // value, hint, stepper), so an extra child would land on the stepper.
     speedBox.querySelector(".vital-hint").appendChild(others);
   }
+  speedBox.classList.add("speed-vital-box");
   grid.appendChild(speedBox);
 
   card.appendChild(grid);

@@ -1,6 +1,7 @@
 import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { FEAT_CATEGORIES as CATEGORIES } from "../../core/custom-features.js";
+import { themedPicker } from "../../ui/themed-picker.js";
 
 /* ---- Feat editor ----
    Edits a built-in feat's copy on one sheet. Feats are added from the
@@ -33,16 +34,13 @@ function buildFeatForm(container, opts){
 
   var catField = document.createElement("div"); catField.className = "field";
   catField.innerHTML = "<label>Category</label>";
-  var catSelect = document.createElement("select");
   var cats = CATEGORIES.slice();
   if(feat && feat.category && cats.indexOf(feat.category) === -1) cats.push(feat.category);
-  cats.forEach(function(cat){
-    var o = document.createElement("option"); o.value = cat; o.textContent = cat;
-    if(feat && feat.category === cat) o.selected = true;
-    catSelect.appendChild(o);
-  });
-  if(!feat) catSelect.value = "General";
-  catField.appendChild(catSelect);
+  var category = feat ? (feat.category || cats[0]) : "General";
+  catField.appendChild(themedPicker({
+    groups:{"":cats}, value:category, ariaLabel:"Category", search:false,
+    onPick:function(v){ category = v; }
+  }));
   row.appendChild(catField);
   form.appendChild(row);
 
@@ -71,7 +69,7 @@ function buildFeatForm(container, opts){
     if(!nameVal){ alert("Please enter a feat name."); nameInput.focus(); return; }
     var fields = {
       name: nameVal, prerequisite: prereqInput.value.trim() || "None",
-      category: catSelect.value, description: desc.value
+      category: category, description: desc.value
     };
     opts.onSubmit(fields);
   });

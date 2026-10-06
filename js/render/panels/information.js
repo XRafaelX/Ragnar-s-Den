@@ -9,6 +9,7 @@ import { featProficiencies } from "../../core/feat-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
+import { themedPicker } from "../../ui/themed-picker.js";
 
 /* ---- Information panel ----
    A calm "About the character" summary. Proficiencies & Languages are
@@ -19,6 +20,7 @@ import { playAdd, playDelete } from "../../ui/sound.js";
 var ABILITY_NAME = {};
 // Which character's Languages card has its add row open (null = closed).
 var langAddOpenFor = null;
+var langAddSeq = 0;   // a fresh picker key each time the add row opens
 ABILITIES.forEach(function(a){ ABILITY_NAME[a[0]] = a[1]; });
 
 function splitIntoTraits(text){
@@ -228,8 +230,9 @@ export function renderInformationPanel(c){
     openBtn.textContent = "+ Add language";
     openBtn.addEventListener("click", function(){
       langAddOpenFor = c.id;
+      langAddSeq++;
       renderAll();
-      var field = document.querySelector(".info-lang-select");
+      var field = document.querySelector(".info-lang-picker .tp-trigger");
       if(field) field.focus();
     });
     chipsWrap.appendChild(openBtn);
@@ -242,38 +245,20 @@ export function renderInformationPanel(c){
     var addRow = document.createElement("div");
     addRow.className = "info-lang-add-row";
 
-    var select = document.createElement("select");
-    select.className = "info-lang-select";
-    var blankOpt = document.createElement("option");
-    blankOpt.value = ""; blankOpt.textContent = "Select a language…";
-    blankOpt.disabled = true; blankOpt.selected = true; blankOpt.hidden = true;
-    select.appendChild(blankOpt);
+    var groups = {};
     Object.keys(LANGUAGES).forEach(function(groupLabel){
       var remaining = LANGUAGES[groupLabel].filter(function(l){ return knownLower.indexOf(l.toLowerCase())===-1; });
-      if(!remaining.length) return;
-      var og = document.createElement("optgroup");
-      og.label = LANGUAGE_GROUP_LABELS[groupLabel] || groupLabel;
-      remaining.forEach(function(l){
-        var o = document.createElement("option");
-        o.value = l; o.textContent = l;
-        og.appendChild(o);
-      });
-      select.appendChild(og);
+      if(remaining.length) groups[LANGUAGE_GROUP_LABELS[groupLabel] || groupLabel] = remaining;
     });
-    var customOpt = document.createElement("option");
-    customOpt.value = "__custom__"; customOpt.textContent = "Custom / homebrew…";
-    select.appendChild(customOpt);
-
-    var customInput = document.createElement("input");
-    customInput.type = "text";
-    customInput.className = "info-lang-input";
-    customInput.placeholder = "Enter custom language";
-    customInput.style.display = "none";
-    select.addEventListener("change", function(){
-      var isCustom = select.value === "__custom__";
-      customInput.style.display = isCustom ? "block" : "none";
-      if(isCustom) customInput.focus();
+    // "Custom / homebrew…" opens a text box for any other language. The
+    // key is new each time the row opens, so it starts on the list again.
+    var langPick = "";
+    var picker = themedPicker({
+      groups:groups, value:"", placeholder:"Select a language…", ariaLabel:"Language to add",
+      homebrew:{noun:"language"}, key:"info-lang-"+langAddSeq,
+      onPick:function(v){ langPick = v; }
     });
+    picker.classList.add("info-lang-picker");
 
     var addBtn = document.createElement("button");
     addBtn.type = "button";
@@ -287,7 +272,7 @@ export function renderInformationPanel(c){
     closeBtn.setAttribute("aria-label", "Close add language");
     function closeAdd(){ langAddOpenFor = null; renderAll(); }
     function addLanguage(){
-      var val = select.value === "__custom__" ? customInput.value.trim() : select.value;
+      var val = (langPick || "").trim();
       if(!val) return;
       var exists = c.languages.some(function(l){ return l.toLowerCase()===val.toLowerCase(); });
       langAddOpenFor = null;
@@ -300,16 +285,17 @@ export function renderInformationPanel(c){
     }
     addBtn.addEventListener("click", addLanguage);
     closeBtn.addEventListener("click", closeAdd);
-    customInput.addEventListener("keydown", function(e){
-      if(e.key==="Enter"){ e.preventDefault(); addLanguage(); }
-      else if(e.key==="Escape") closeAdd();
-    });
-    select.addEventListener("keydown", function(e){ if(e.key==="Escape") closeAdd(); });
+    // Enter in the custom box adds; Escape closes the row, unless it is
+    // closing the open list (capture: runs before the picker's own keys).
+    picker.addEventListener("keydown", function(e){
+      var inCustom = e.target.classList.contains("tp-custom-input");
+      if(inCustom && e.key==="Enter"){ e.preventDefault(); addLanguage(); }
+      else if(e.key==="Escape" && !picker.classList.contains("open")) closeAdd();
+    }, true);
 
-    addRow.appendChild(select);
+    addRow.appendChild(picker);
     addRow.appendChild(addBtn);
     addRow.appendChild(closeBtn);
-    addRow.appendChild(customInput);
     langCard.appendChild(addRow);
   }
 

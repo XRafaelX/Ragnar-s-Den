@@ -5,6 +5,7 @@ import { WEAPON_DATA } from "../../data/weapons.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { artificerLevel, infusionBonus, endInfusion } from "../../core/artificer.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
+import { themedPicker } from "../../ui/themed-picker.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 
@@ -129,16 +130,15 @@ function learnForm(c, level){
   var options = INFUSIONS.filter(function(i){ return i.repeatable || knownNames.indexOf(i.name)===-1; });
   if(learnPick && !options.some(function(o){ return o.name===learnPick && o.level<=level; })) learnPick = "";
 
-  var select = document.createElement("select");
-  select.appendChild(opt("", "Learn an infusion…", true));
-  options.forEach(function(i){
-    var o = opt(i.name, i.name + (i.level>level ? " (artificer "+i.level+")" : ""));
-    if(i.level>level) o.disabled = true;
-    select.appendChild(o);
-  });
-  select.value = learnPick;
-  select.addEventListener("change", function(){ learnPick = select.value; renderAll(); });
-  wrap.appendChild(field(select));
+  // Infusions above the artificer's level are listed but greyed out.
+  var levelOf = {};
+  options.forEach(function(i){ levelOf[i.name] = i.level; });
+  wrap.appendChild(field(themedPicker({
+    key: "inf:learn", ariaLabel: "Infusion to learn", placeholder: "Learn an infusion…",
+    groups: {"": options.map(function(i){ return i.name; })}, value: learnPick,
+    reasonFor: function(v){ return levelOf[v] > level ? "artificer " + levelOf[v] : ""; },
+    onPick: function(v){ learnPick = v; renderAll(); }
+  })));
 
   var picked = infusionData(learnPick);
   var noteInput = null;
@@ -174,12 +174,11 @@ function infuseForm(c, maxActive){
   wrap.className = "inf-form";
   if(infusePick && !inf.known.some(function(k){ return k.id===infusePick; })) infusePick = "";
 
-  var select = document.createElement("select");
-  select.appendChild(opt("", "Infuse an item with…", true));
-  inf.known.forEach(function(k){ select.appendChild(opt(k.id, k.name+(k.note ? ": "+k.note : ""))); });
-  select.value = infusePick;
-  select.addEventListener("change", function(){ infusePick = select.value; infuseTarget = ""; infuseFreeText = ""; renderAll(); });
-  wrap.appendChild(field(select));
+  wrap.appendChild(field(themedPicker({
+    key: "inf:infuse", ariaLabel: "Infusion to use", placeholder: "Infuse an item with…",
+    groups: {"": inf.known.map(function(k){ return {value:k.id, label:k.name+(k.note ? ": "+k.note : "")}; })}, value: infusePick,
+    onPick: function(v){ infusePick = v; infuseTarget = ""; infuseFreeText = ""; renderAll(); }
+  })));
 
   var known = inf.known.find(function(k){ return k.id===infusePick; });
   var data = known && infusionData(known.name);
@@ -190,12 +189,11 @@ function infuseForm(c, maxActive){
       if(!targets.length){
         wrap.appendChild(hint("No suitable item in your inventory ("+data.item.toLowerCase()+"). Add one on the Inventory tab first."));
       } else {
-        var tsel = document.createElement("select");
-        tsel.appendChild(opt("", "Pick the item…", true));
-        targets.forEach(function(i){ tsel.appendChild(opt(i.id, i.name + (i.magicBonus ? " (+"+i.magicBonus+")" : ""))); });
-        tsel.value = infuseTarget;
-        tsel.addEventListener("change", function(){ infuseTarget = tsel.value; });
-        wrap.appendChild(field(tsel));
+        wrap.appendChild(field(themedPicker({
+          key: "inf:target", ariaLabel: "Item to infuse", placeholder: "Pick the item…",
+          groups: {"": targets.map(function(i){ return {value:i.id, label:i.name + (i.magicBonus ? " (+"+i.magicBonus+")" : "")}; })}, value: infuseTarget,
+          onPick: function(v){ infuseTarget = v; }
+        })));
       }
     } else {
       var input = document.createElement("input");
@@ -235,12 +233,6 @@ function infuseForm(c, maxActive){
   return wrap;
 }
 
-function opt(value, label, placeholder){
-  var o = document.createElement("option");
-  o.value = value; o.textContent = label;
-  if(placeholder){ o.disabled = true; o.hidden = true; }
-  return o;
-}
 function field(el){
   var f = document.createElement("div");
   f.className = "field inf-field";

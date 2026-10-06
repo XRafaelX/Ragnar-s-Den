@@ -8,6 +8,7 @@ import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker, openArmorPicker } from "../armory.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
+import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { renderCurrencyCard } from "./coin-purse.js";
@@ -230,33 +231,13 @@ function openWeaponSheet(c, item, idx){
     diceField.appendChild(diceInput);
     details.appendChild(diceField);
 
-    var dmgTypeField = document.createElement("div");
-    dmgTypeField.className = "field-inline";
-    dmgTypeField.innerHTML = "<label>Damage type</label>";
-    var dmgTypeSelect = document.createElement("select");
-    var blankDmg = document.createElement("option"); blankDmg.value=""; blankDmg.textContent="None";
-    dmgTypeSelect.appendChild(blankDmg);
-    DAMAGE_TYPES.forEach(function(dt){
-      var o = document.createElement("option"); o.value = dt; o.textContent = dt;
-      if(item.damageType===dt) o.selected = true;
-      dmgTypeSelect.appendChild(o);
-    });
-    dmgTypeSelect.addEventListener("change", function(){ item.damageType = dmgTypeSelect.value; save(); renderAll(); });
-    dmgTypeField.appendChild(dmgTypeSelect);
-    details.appendChild(dmgTypeField);
+    details.appendChild(inlinePicker("Damage type",
+      [{value:"", label:"None", muted:true}].concat(DAMAGE_TYPES), item.damageType || "",
+      function(v){ item.damageType = v; save(); renderAll(); }));
 
-    var abilityField = document.createElement("div");
-    abilityField.className = "field-inline";
-    abilityField.innerHTML = "<label>Ability</label>";
-    var abilitySelect = document.createElement("select");
-    [["str","Strength"],["dex","Dexterity"],["finesse","Finesse (best)"]].forEach(function(a){
-      var o = document.createElement("option"); o.value=a[0]; o.textContent=a[1];
-      if(item.ability===a[0]) o.selected = true;
-      abilitySelect.appendChild(o);
-    });
-    abilitySelect.addEventListener("change", function(){ item.ability = abilitySelect.value; save(); renderAll(); });
-    abilityField.appendChild(abilitySelect);
-    details.appendChild(abilityField);
+    details.appendChild(inlinePicker("Ability",
+      [{value:"str", label:"Strength"}, {value:"dex", label:"Dexterity"}, {value:"finesse", label:"Finesse (best)"}], item.ability,
+      function(v){ item.ability = v; save(); renderAll(); }));
 
     var profLbl = document.createElement("label");
     profLbl.className = "inv-prof-label";
@@ -408,6 +389,16 @@ function renderWeaponCard(c, item, idx){
 
 /* Opens the armor's editable fields (Category, Base AC, Magic bonus) in a
    bottom sheet instead of growing the card in place. */
+/* A labelled dropdown in a sheet's .field-inline grid (themed, boxed
+   like the inputs beside it). */
+function inlinePicker(label, items, value, onPick){
+  var f = document.createElement("div");
+  f.className = "field-inline";
+  f.innerHTML = "<label>"+label+"</label>";
+  f.appendChild(themedPicker({ groups:{"":items}, value:value, ariaLabel:label, search:false, onPick:onPick }));
+  return f;
+}
+
 function openArmorSheet(c, item, idx){
   openBottomSheet(function(body, refresh, close){
     var catLabel = (ARMOR_CATEGORIES.find(function(cat){ return cat.key===item.category; })||{}).label || item.category;
@@ -419,18 +410,9 @@ function openArmorSheet(c, item, idx){
     var details = document.createElement("div");
     details.className = "inv-type-fields";
 
-    var catField = document.createElement("div");
-    catField.className = "field-inline";
-    catField.innerHTML = "<label>Category</label>";
-    var catSelect = document.createElement("select");
-    ARMOR_CATEGORIES.forEach(function(cat){
-      var o = document.createElement("option"); o.value = cat.key; o.textContent = cat.label;
-      if(item.category===cat.key) o.selected = true;
-      catSelect.appendChild(o);
-    });
-    catSelect.addEventListener("change", function(){ item.category = catSelect.value; save(); renderAll(); });
-    catField.appendChild(catSelect);
-    details.appendChild(catField);
+    details.appendChild(inlinePicker("Category",
+      ARMOR_CATEGORIES.map(function(cat){ return {value:cat.key, label:cat.label}; }), item.category,
+      function(v){ item.category = v; save(); renderAll(); }));
 
     var baseField = document.createElement("div");
     baseField.className = "field-inline";
