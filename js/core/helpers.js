@@ -10,6 +10,8 @@ import { WEAPON_DATA } from "../data/weapons.js";
 import { CLASS_RESOURCES, SUBCLASS_RESOURCES, FEAT_RESOURCES } from "../data/resources.js";
 import { featDef, featProficiencies, featPicksSummary } from "./feat-picks.js";
 import { invocationSpells, invocationResources, invocationSpeedSources, invocationSenses } from "./invocations.js";
+import { optionEffects, knownOptions as knownClassOptions } from "./class-options.js";
+import { styleSpells, styleSenses } from "./fighting-styles.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
 import { TOGGLE_EFFECTS } from "../data/effects.js";
 
@@ -89,11 +91,14 @@ export function classSpellAbility(cl){
                    (Divine Magic: "Cleric"); the spell pickers include it
      darkvision    {range, add}: darkvision out to `range` feet, or `add`
                    feet more if the character already has it (Umbral Sight)
+     styleChoice   {options}: a Fighting Style the subclass grants, asked
+                   for in the level-up ("class" = the class's own list;
+                   Champion 10) or from a short list (College of Swords)
      spellChoice   {id, label, options:{name: spells}}: more spells that
                    depend on a choice (Circle of the Land's land, a genie
                    kind), each option shaped like `spells`. The pick is
                    saved on the class entry as spellChoices[id]. */
-var FEATURE_FLAGS = ["speed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList"];
+var FEATURE_FLAGS = ["speed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice"];
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -211,6 +216,10 @@ export function characterResources(c){
       if(r.armorModel && cl.armorModel!==r.armorModel) return;
       var key = cl.name+":"+r.id;
       var max = r.max(lv, m);
+      // Rune invocations follow the runes actually known (older sheets
+      // without picks keep the count for their level).
+      var runes = r.id==="rune_invocations" ? knownClassOptions(cl, "runes").length : 0;
+      if(runes) max = runes * (lv>=15 ? 2 : 1);
       list.push({
         key: key, name: r.name, source: d.source, hint: r.hint, pool: !!r.pool,
         max: max, used: max===Infinity ? 0 : clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
@@ -242,6 +251,20 @@ export function characterResources(c){
       });
     });
   });
+  // Superior Technique (Tasha's fighting style): one d6 superiority die,
+  // added to a pool the character already has (Battle Master, Martial Adept).
+  if((c.features||[]).some(function(f){ return f && f.fightingStyle==="Superior Technique"; })){
+    var stPool = list.find(function(x){ return x.key==="Fighter:superiority_dice"; }) || list.find(function(x){ return x.key==="feat:superiority_dice"; });
+    if(stPool){
+      stPool.max += 1;
+      stPool.used = clamp(Number((c.resourcesUsed||{})[stPool.key])||0, 0, stPool.max);
+      stPool.hint += " Includes Superior Technique's die (a d6).";
+    } else {
+      list.push({key: "style:superiority_dice", name: "Superiority Die", source: "Superior Technique", pool: false,
+        hint: "A d6 that fuels your Superior Technique maneuver.", max: 1,
+        used: clamp(Number((c.resourcesUsed||{})["style:superiority_dice"])||0, 0, 1), reset: "short"});
+    }
+  }
   // Pact Boon and invocation uses (Tomb of Levistus, Sign of Ill Omen's curse).
   return list.concat(invocationResources(c, m));
 }
@@ -351,6 +374,10 @@ export function computeSpeed(c){
   if(effectOn(c, "bladesong")) parts.push({name: "Bladesong", value: 10});
   var worn = (c.inventory||[]).filter(function(i){ return i.type==="armor" && i.equipped; });
   var body = worn.find(function(i){ return i.category!=="shield"; });
+  // A totem's speed while raging (Elk: +15 ft), not in heavy armor.
+  if(c.rage && c.rage.active && !(body && body.category==="heavy")){
+    optionEffects(c).forEach(function(f){ if(f.rageSpeed) parts.push({name: f.name, value: f.rageSpeed}); });
+  }
   var shield = worn.some(function(i){ return i.category==="shield"; });
   (c.classes||[]).forEach(function(cl){
     var gained = conditionalSpeeds(cl);
@@ -372,7 +399,7 @@ export function computeSpeed(c){
   });
   var speedSources = [];
   (c.classes||[]).forEach(function(cl){ speedSources = speedSources.concat(classFeatureList(cl)); });
-  speedSources.concat(invocationSpeedSources(c)).forEach(function(f){
+  speedSources.concat(invocationSpeedSources(c), optionEffects(c)).forEach(function(f){
     (f.speeds||[]).forEach(function(sp){
       if(sp.bonus){ bonus[sp.type] = (bonus[sp.type]||0) + sp.bonus; return; }
       var value = sp.value==="walk" ? walk : sp.value==="2walk" ? 2 * walk : sp.value;
@@ -654,8 +681,9 @@ export function featureSpells(c){
       out.push({ name: name, data: data, level: data ? data.level : 0, kind: "free", source: feat.name, feature: feat.name, note: note });
     });
   });
-  // The Pact Boon's and invocations' spells (Armor of Shadows' Mage Armor).
-  invocationSpells(c).forEach(function(fs){
+  // The Pact Boon's and invocations' spells (Armor of Shadows' Mage Armor),
+  // and Blessed / Druidic Warrior's cantrips.
+  invocationSpells(c).concat(styleSpells(c)).forEach(function(fs){
     if(!out.some(function(x){ return x.name===fs.name; })) out.push(fs);
   });
   return out;
@@ -972,13 +1000,17 @@ export function computeDarkvision(c){
       if(next > range){ range = next; sources.push(f.name); }
     });
   });
+  // Options that give darkvision (the Stone rune's 120 feet).
+  optionEffects(c).forEach(function(f){
+    if(f.darkvision && f.darkvision.range > range){ range = f.darkvision.range; sources.push(f.name); }
+  });
   // Astral Sight sees through any darkness; shown as 120 ft while the visage is out.
   if(effectOn(c, "astral_visage") && range < 120){ range = 120; sources.push("Astral Sight"); }
   return {range: range, sources: sources};
 }
 export function getCharacterSenses(c){
   var dv = computeDarkvision(c);
-  var extra = invocationSenses(c);
+  var extra = styleSenses(c).concat(invocationSenses(c));
   if(!dv.range && extra.length) return extra.join(", ");
   return [dv.range ? "Darkvision " + dv.range + " ft" : "No darkvision"].concat(extra).join(", ");
 }

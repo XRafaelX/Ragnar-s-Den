@@ -155,7 +155,10 @@ export function renderFeatPicks(def, picks, ctx, onChange){
     for(var q = 0; q < op.count; q++) (function(q){
       box.appendChild(field(themedPicker({
         key: "feat:" + def.name + ":opt:" + q, ariaLabel: def.name + " " + set.noun + " " + (q + 1),
-        placeholder: "Choose a " + set.noun, groups: {"": featOptionChoices(def).filter(function(n){ return known.indexOf(n)===-1; })},
+        placeholder: "Choose a " + set.noun, groups: {"": featOptionChoices(def).filter(function(n){
+          var o = set.options.find(function(x){ return x.name===n; });
+          return known.indexOf(n)===-1 && !(o.optional && !ctx.tasha); // Tasha's ones only with the switch on
+        })},
         value: picks.options[q] || "", sheet: true, search: true,
         detailFor: function(v){ var o = set.options.find(function(x){ return x.name===v; }); return o ? o.text : ""; },
         reasonFor: function(v){ return v!==picks.options[q] && picks.options.indexOf(v)!==-1 ? "picked" : ""; },
@@ -225,10 +228,10 @@ export function openFeatPicksModal(c, feat, onDone){
 /* The picker's view of a character on the sheet. optionsTaken(name):
    the options its copies of a repeatable feat already have. */
 export function featPicksContext(c){
-  return {abilities: c.abilities, skillProfs: c.skillProfs,
-    // Options the class already knows (a Battle Master's maneuvers) aren't offered again.
+  return {abilities: c.abilities, skillProfs: c.skillProfs, tasha: !!c.tashaOptional,
+    // Options already known (a Battle Master's maneuvers, Superior Technique's) aren't offered again.
     optionsKnown: function(setId){
-      return allKnownOptions({classes: c.classes || [], feats: []}, setId).map(function(o){ return o.name; });
+      return allKnownOptions({classes: c.classes || [], feats: [], features: c.features || []}, setId).map(function(o){ return o.name; });
     },
     optionsTaken: function(name){
       return (c.feats||[]).filter(function(f){ return f.name===name && f.picks && f.picks.option; }).map(function(f){ return f.picks.option; });

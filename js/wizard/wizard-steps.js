@@ -18,6 +18,8 @@ import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClas
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { emptyPicks, featNeedsChoice, featPicksSummary } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
+import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
+import { styleNeedsPicks } from "../core/fighting-styles.js";
 import { TOOL_GROUPS } from "../core/feat-picks.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
@@ -731,7 +733,7 @@ export function wizardStepFeatPicks(container){
   explain.innerHTML = "<b>"+escapeHtml(feat.name)+":</b> "+escapeHtml(feat.summary || "")+" Choose what it gives you; the sheet applies it for you.";
   card.appendChild(explain);
   if(!rc.featPicks) rc.featPicks = emptyPicks(feat);
-  var ctx = {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs()};
+  var ctx = {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs(), tasha: !!wizardState.tashaOptional};
   card.appendChild(renderFeatPicks(feat, rc.featPicks, ctx, function(){
     var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
     renderWizard();
@@ -950,17 +952,44 @@ function wizardDropdown(labelTxt, key, groups, obj, onChangeExtra, createKind){
   return wrap;
 }
 
+/* A level 1 Fighting Style. Tasha's optional styles are offered when the
+   switch here is on (it carries over to the new character's Optional
+   rules); a style with its own picks (Superior Technique's maneuver)
+   shows them under the list, kept as classChoices[id + "Picks"]. */
 function choiceFightingStyle(card, ch){
-  ch.options.forEach(function(name){
-    var row = ce("div","wiz-equip-option");
-    if(wizardState.classChoices[ch.id]===name) row.classList.add("selected");
-    row.innerHTML = "<div><strong>"+escapeHtml(name)+"</strong><br><span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(FIGHTING_STYLES[name].text)+"</span></div>";
-    row.addEventListener("click", function(){
-      wizardState.classChoices[ch.id] = name;
-      renderWizard();
-    });
-    card.appendChild(row);
+  var tasha = !!wizardState.tashaOptional;
+  var row = ce("div","opt-rule wiz-tasha-switch");
+  row.innerHTML = "<div class='opt-rule-text'><b>Tasha's optional class features</b><span>Your DM decides whether your table uses these. Turned on, Tasha's extra fighting styles are listed too.</span></div>";
+  var sw = document.createElement("button");
+  sw.type = "button";
+  sw.className = "switch" + (tasha ? " on" : "");
+  sw.setAttribute("role", "switch");
+  sw.setAttribute("aria-checked", tasha ? "true" : "false");
+  sw.setAttribute("aria-label", "Use Tasha's optional class features");
+  sw.innerHTML = "<span class='switch-knob'></span>";
+  sw.addEventListener("click", function(){
+    wizardState.tashaOptional = !tasha;
+    // A Tasha's style picked before the switch went off no longer applies.
+    var picked = FIGHTING_STYLES[wizardState.classChoices[ch.id]];
+    if(!wizardState.tashaOptional && picked && picked.optional){ delete wizardState.classChoices[ch.id]; delete wizardState.classChoices[ch.id+"Picks"]; }
+    renderWizard();
   });
+  row.appendChild(sw);
+  card.appendChild(row);
+  var noChar = {features: []};
+  card.appendChild(renderStyleOptions(noChar, ch.options, wizardState.classChoices[ch.id] || "", tasha, function(name){
+    if(name!==wizardState.classChoices[ch.id]) wizardState.classChoices[ch.id+"Picks"] = {options: [], spells: []};
+    wizardState.classChoices[ch.id] = name;
+    renderWizard();
+  }));
+  var chosen = wizardState.classChoices[ch.id];
+  if(chosen && styleNeedsPicks(chosen)){
+    var picks = wizardState.classChoices[ch.id+"Picks"] = wizardState.classChoices[ch.id+"Picks"] || {options: [], spells: []};
+    card.appendChild(renderStylePicks(chosen, picks, tasha, [], function(){
+      var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+      renderWizard();
+    }, "wiz:style"));
+  }
 }
 
 function choiceExpertise(card, ch){

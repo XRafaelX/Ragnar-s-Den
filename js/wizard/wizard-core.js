@@ -1,5 +1,5 @@
 import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
-import { CLASSES_INFO, FIGHTING_STYLES, CLASS_PROFICIENCIES } from "../data/classes.js";
+import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
@@ -9,6 +9,7 @@ import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset,
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
 import { featPicksProblem, applyFeatPicks, featNeedsChoice } from "../core/feat-picks.js";
+import { stylePicksProblem, makeStyleFeature } from "../core/fighting-styles.js";
 import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { closeSidebarMobile } from "../ui/mobile-nav.js";
@@ -305,7 +306,7 @@ export function validateStep(id){
     return why ? feat.name+" "+why+". Pick another feat or change your scores." : null;
   }
   if(id==="featPicks"){
-    return featPicksProblem(wizardFeat(), wizardState.raceChoices.featPicks || {}, {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs()}) || null;
+    return featPicksProblem(wizardFeat(), wizardState.raceChoices.featPicks || {}, {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs(), tasha: !!wizardState.tashaOptional}) || null;
   }
   if(id==="choices"){
     var missing = (info.choices||[]).find(function(ch){
@@ -320,6 +321,13 @@ export function validateStep(id){
       }
       return !v;
     });
+    if(missing && missing.kind==="fightingStyle"){
+      return "Choose a "+missing.label+".";
+    }
+    // A style with its own picks (Superior Technique's maneuver).
+    var styleCh = (info.choices||[]).find(function(ch){ return ch.kind==="fightingStyle" && wizardState.classChoices[ch.id]; });
+    var stylePick = styleCh && stylePicksProblem(wizardState.classChoices[styleCh.id], wizardState.classChoices[styleCh.id+"Picks"], !!wizardState.tashaOptional, []);
+    if(stylePick) return stylePick;
     if(missing){
       if(missing.kind==="listPick" && missing.count>1) return "Choose "+missing.count+" different "+missing.label.toLowerCase()+".";
       return missing.kind==="expertise" ? "Choose "+missing.count+" for "+missing.label+"." : "Choose a "+missing.label+".";
@@ -416,6 +424,7 @@ export function finishWizard(){
   c.background = w.background;
   c.alignment = w.alignment;
   c.classes = [{name:w.classId, subclass:"", level:1}];
+  if(w.tashaOptional) c.tashaOptional = true;
   var fa = finalAbilities({withoutFeat:true}); // applyRaceChoices adds the feat's +1
   c.abilities = {str:fa.str, dex:fa.dex, con:fa.con, int:fa.int, wis:fa.wis, cha:fa.cha};
   info.savingThrows.forEach(function(k){ c.saveProfs[k] = true; });
@@ -535,8 +544,7 @@ export function applyClassChoices(c, info, picks){
         "You're proficient with "+joined.toLowerCase()+": add your proficiency bonus to ability checks you make with them.";
       c.features.push({id:uid(), name:ch.label+": "+joined, source:"Class", text:text, isPassive:true});
     } else if(ch.kind==="fightingStyle"){
-      var style = FIGHTING_STYLES[v];
-      c.features.push({id:uid(), name:"Fighting Style: "+v, source:"Class", text:style ? style.text : "", isPassive:true, fightingStyle:v});
+      c.features.push(makeStyleFeature(v, picks[ch.id+"Picks"]));
     } else if(ch.kind==="expertise"){
       v.forEach(function(name){
         if((ch.tools||[]).indexOf(name)!==-1){

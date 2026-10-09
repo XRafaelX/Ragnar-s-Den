@@ -95,6 +95,8 @@ export function featPicksProblem(def, picks, ctx){
     var known = ctx && ctx.optionsKnown ? ctx.optionsKnown(op.set) : [];
     var dup = opts.find(function(x){ return known.indexOf(x)!==-1; });
     if(dup) return "You already know "+dup+". Pick another "+set.noun+".";
+    var optional = opts.find(function(x){ var o = set.options.find(function(y){ return y.name===x; }); return o && o.optional && !(ctx && ctx.tasha); });
+    if(optional) return optional+" is one of Tasha's optional "+set.noun+"s, which this character doesn't use. Pick another.";
   }
   return "";
 }

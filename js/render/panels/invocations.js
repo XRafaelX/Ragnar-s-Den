@@ -80,7 +80,7 @@ function pactSection(c, cl){
       cl.pactBoon = name;
       changingBoon = false;
       save(); renderAll(); playAdd();
-    }));
+    }, !!c.tashaOptional));
     if(boon){
       var cancel = document.createElement("button");
       cancel.className = "btn small ghost"; cancel.textContent = "Keep " + boon.name;

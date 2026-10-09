@@ -20,6 +20,9 @@
                 class's list (Book of Ancient Secrets' two rituals)
      blast      what it adds to Eldritch Blast, for the card's summary:
                 {damage: true} (+CHA), {range: 300}, {rider: "..."}
+     optional   one of Tasha's optional class features (all of Tasha's
+                invocations and Pact of the Talisman): offered only to a
+                character using them (c.tashaOptional)
      sight      a sense shown with the character's senses ("Devil's Sight 120 ft")
    Anything else an invocation does stays as its text on the card. */
 export var INVOCATIONS = [
@@ -120,21 +123,21 @@ export var INVOCATIONS = [
     text:"You can cast freedom of movement once on yourself without expending a spell slot. You regain the ability to do so when you finish a long rest."},
 
   /* ---- Tasha's Cauldron of Everything ---- */
-  {name:"Bond of the Talisman", source:"TCE", level:12, pact:"Pact of the Talisman", uses:{max:"pb", reset:"long", name:"Talisman teleports"},
+  {name:"Bond of the Talisman", source:"TCE", optional:true, level:12, pact:"Pact of the Talisman", uses:{max:"pb", reset:"long", name:"Talisman teleports"},
     text:"While someone else is wearing your talisman, you can use your action to teleport to the unoccupied space closest to them, provided you're on the same plane of existence. The wearer can do the same, using their action to teleport to you. The teleportation can be used a number of times equal to your proficiency bonus, regained when you finish a long rest."},
-  {name:"Eldritch Mind", source:"TCE",
+  {name:"Eldritch Mind", source:"TCE", optional:true,
     text:"You have advantage on Constitution saving throws that you make to maintain your concentration on a spell."},
-  {name:"Far Scribe", source:"TCE", level:5, pact:"Pact of the Tome", spells:[{name:"Sending", kind:"atwill"}],
+  {name:"Far Scribe", source:"TCE", optional:true, level:5, pact:"Pact of the Tome", spells:[{name:"Sending", kind:"atwill"}],
     text:"A new page appears in your Book of Shadows. With your permission, a creature can use its action to write its name on it; the page holds a number of names equal to your proficiency bonus. You can cast sending, targeting a creature whose name is on the page, without a spell slot or material components: you write the message on the page, and any reply appears there. The writing disappears after 1 minute. As an action, you can erase a name by touching it."},
-  {name:"Gift of the Protectors", source:"TCE", level:9, pact:"Pact of the Tome", uses:{max:"1", reset:"long", name:"Gift of the Protectors"},
+  {name:"Gift of the Protectors", source:"TCE", optional:true, level:9, pact:"Pact of the Tome", uses:{max:"1", reset:"long", name:"Gift of the Protectors"},
     text:"A new page appears in your Book of Shadows. With your permission, a creature can use its action to write its name on it; the page holds a number of names equal to your proficiency bonus. When any creature whose name is on the page is reduced to 0 hit points but not killed outright, it drops to 1 hit point instead. Once this triggers, no creature can benefit from it until you finish a long rest. As an action, you can erase a name by touching it."},
-  {name:"Investment of the Chain Master", source:"TCE", pact:"Pact of the Chain",
+  {name:"Investment of the Chain Master", source:"TCE", optional:true, pact:"Pact of the Chain",
     text:"When you cast find familiar, the familiar gains a flying or swimming speed (your choice) of 40 feet. As a bonus action, you can command it to take the Attack action. Its weapon attacks count as magical for overcoming resistance and immunity, and any saving throw it forces uses your spell save DC. When it takes damage, you can use your reaction to give it resistance to that damage."},
-  {name:"Protection of the Talisman", source:"TCE", level:7, pact:"Pact of the Talisman", uses:{max:"pb", reset:"long", name:"Talisman save d4"},
+  {name:"Protection of the Talisman", source:"TCE", optional:true, level:7, pact:"Pact of the Talisman", uses:{max:"pb", reset:"long", name:"Talisman save d4"},
     text:"When the wearer of your talisman fails a saving throw, they can add a d4 to the roll, potentially turning the save into a success. This can be used a number of times equal to your proficiency bonus, regained when you finish a long rest."},
-  {name:"Rebuke of the Talisman", source:"TCE", pact:"Pact of the Talisman",
+  {name:"Rebuke of the Talisman", source:"TCE", optional:true, pact:"Pact of the Talisman",
     text:"When the wearer of your talisman is hit by an attacker you can see within 30 feet of you, you can use your reaction to deal psychic damage to the attacker equal to your proficiency bonus and push it up to 10 feet away from the talisman's wearer."},
-  {name:"Undying Servitude", source:"TCE", level:5, spells:[{name:"Animate Dead", kind:"free"}],
+  {name:"Undying Servitude", source:"TCE", optional:true, level:5, spells:[{name:"Animate Dead", kind:"free"}],
     text:"You can cast animate dead without using a spell slot. Once you do so, you can't cast it in this way again until you finish a long rest."}
 ];
 
@@ -150,7 +153,7 @@ export var PACT_BOONS = [
   {name:"Pact of the Tome", source:"PHB", spellPick:{count:3, level:0, label:"cantrips from any class"},
     summary:"A Book of Shadows with three cantrips from any class's spell list.",
     text:"Your patron gives you a grimoire called a Book of Shadows. Choose three cantrips from any class's spell list. While the book is on your person, you can cast them at will; they don't count against your cantrips known and are warlock spells for you. If you lose the book, a 1-hour ceremony gets you a replacement (and destroys the old one)."},
-  {name:"Pact of the Talisman", source:"TCE", uses:{max:"pb", reset:"long", name:"Talisman d4"},
+  {name:"Pact of the Talisman", source:"TCE", optional:true, uses:{max:"pb", reset:"long", name:"Talisman d4"},
     summary:"An amulet whose wearer can add a d4 to a failed ability check.",
     text:"Your patron gives you an amulet. When its wearer fails an ability check, they can add a d4 to the roll, potentially turning it into a success. This can be used a number of times equal to your proficiency bonus, regained when you finish a long rest. If you lose the talisman, a 1-hour ceremony gets you a replacement (and destroys the old one)."}
 ];

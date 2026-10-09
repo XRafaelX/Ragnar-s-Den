@@ -34,7 +34,7 @@ export var BARD_SUBCLASSES = [
   {name:"College of Swords", blurb:"A daring blade performer who weaves weapon tricks into combat.", features:{
     3:[
       {name:"Bonus Proficiencies", text:"You gain proficiency with medium armor and with the scimitar. If you are already proficient with a simple or martial melee weapon you can use it as a spellcasting focus.", grants:{armor:["Medium armor"], weapons:["Scimitars"]}},
-      {name:"Fighting Style", text:"Choose one fighting style: Dueling (+2 damage with a one-handed melee weapon while your other hand is empty) or Two-Weapon Fighting (add your modifier to the off-hand attack's damage)."},
+      {name:"Fighting Style", text:"Choose one fighting style: Dueling (+2 damage with a one-handed melee weapon while your other hand holds no weapon) or Two-Weapon Fighting (add your ability modifier to the damage of your off-hand attack). The level-up asks you to choose, and it's added to your Features tab.", styleChoice:{options:["Dueling","Two-Weapon Fighting"]}},
       {name:"Blade Flourish", text:"When you take the Attack action, your walking speed increases by 10 feet until the end of the turn, and one attack you make this turn can be a Blade Flourish. Expend a Bardic Inspiration die to choose one: Defensive Flourish (add the die to the attack's damage and to your AC until the start of your next turn), Slashing Flourish (add the die to the damage of the attack, and deal the same amount of damage to any other creature of your choice you can see within 5 feet of you), or Mobile Flourish (add the die to the damage and push the target up to 5 + the die result feet away; you can then move up to your speed toward it as a reaction)."}
     ],
     6:[

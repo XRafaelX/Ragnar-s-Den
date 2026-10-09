@@ -38,6 +38,7 @@ export function invocationContext(c, cl, over){
     level: over.level!=null ? over.level : (cl ? Number(cl.level)||1 : 0),
     pactBoon: over.pactBoon!=null ? over.pactBoon : (cl && cl.pactBoon) || "",
     known: known,
+    tasha: over.tasha!=null ? over.tasha : !!c.tashaOptional,
     knowsSpell: function(name){ return spells.indexOf(name)!==-1; },
     // Hexblade's Curse and Sign of Ill Omen count as features that curse.
     curses: (cl && cl.subclass==="The Hexblade") || known.indexOf("Sign of Ill Omen")!==-1
@@ -47,6 +48,7 @@ export function invocationContext(c, cl, over){
    pickers show next to it. */
 export function invocationReason(inv, ctx){
   if(ctx.known.indexOf(inv.name)!==-1) return "known";
+  if(inv.optional && !ctx.tasha) return "Tasha's optional";
   if(inv.level && ctx.level < inv.level) return "warlock " + inv.level;
   if(inv.pact && ctx.pactBoon!==inv.pact) return "needs " + inv.pact.replace("Pact of the ", "") + " pact";
   if(inv.needs==="eldritchBlast" && !ctx.knowsSpell("Eldritch Blast")) return "needs Eldritch Blast";
@@ -291,7 +293,7 @@ export function levelUpProblem(c, cl, newLevel, choice){
   if(!plan.applies) return null;
   if(plan.pactDue){
     var boon = pactBoonDef(choice.pactBoon);
-    if(!boon) return "Choose your Pact Boon.";
+    if(!boon || (boon.optional && !c.tashaOptional)) return "Choose your Pact Boon.";
     if(boon.spellPick && !picksComplete(boon.spellPick, choice.pactSpells)) return "Choose "+boon.spellPick.count+" "+boon.spellPick.label+" for your "+boon.name+".";
   }
   var n = plan.slots, ctx = levelUpContext(c, cl, newLevel, choice);
@@ -350,5 +352,6 @@ export function hiddenInvocationNotes(ctx){
   if(why.some(function(w){ return /^needs .* pact$/.test(w); })) notes.push(ctx.pactBoon ? "Some need a different Pact Boon than your "+ctx.pactBoon+"." : "Some need a Pact Boon, which you choose at warlock level 3.");
   if(why.indexOf("needs Hex")!==-1) notes.push("Maddening Hex and Relentless Hex need the Hex spell or a curse (Sign of Ill Omen, Hexblade's Curse).");
   if(why.some(function(w){ return /^warlock /.test(w); })) notes.push("More unlock at higher warlock levels.");
+  if(why.indexOf("Tasha's optional")!==-1) notes.push("Tasha's Cauldron adds 8 more if your character uses Tasha's optional class features (Information tab).");
   return notes;
 }

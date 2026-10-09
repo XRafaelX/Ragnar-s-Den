@@ -42,17 +42,27 @@ export function allKnownOptions(c, setId){
     var def = featDef(f.name);
     if(def && def.optionPicks && def.optionPicks.set===setId && f.picks) (f.picks.options||[]).forEach(function(n){ out.push({name: n, from: f.name}); });
   });
+  // A fighting style's picks (Superior Technique's maneuver).
+  (c.features||[]).forEach(function(f){
+    if(f && f.fightingStyle && f.picks && setId==="maneuvers") (f.picks.options||[]).forEach(function(n){ out.push({name: n, from: f.fightingStyle}); });
+  });
   return out;
 }
 
-/* Why an option can't be learned ("" if it can). ctx: {level, known}. */
+/* Why an option can't be learned ("" if it can). ctx: {level, known, tasha}. */
 export function optionReason(opt, ctx){
   if(ctx.known.indexOf(opt.name)!==-1) return "known";
+  if(opt.optional && !ctx.tasha) return "Tasha's optional";
   if(opt.level && ctx.level < opt.level) return "level " + opt.level;
   return "";
 }
 export function availableOptions(set, ctx){
   return set.options.filter(function(o){ return !optionReason(o, ctx); });
+}
+/* How many of a set's options only Tasha's optional features unlock
+   (0 when they're on), for a "more with Tasha's" note. */
+export function tashaOnlyCount(set, ctx){
+  return ctx.tasha ? 0 : set.options.filter(function(o){ return o.optional && ctx.known.indexOf(o.name)===-1; }).length;
 }
 
 /* ---- Level-up ----
@@ -68,7 +78,7 @@ export function levelUpOptionPlans(c, cl, className, subclass, newLevel){
     var fresh = Math.max(0, optionsKnownAt(set, newLevel) - known.length);
     var canSwap = known.length > 0 && (
       (set.swap==="level") || (set.swap==="learn" && fresh > 0) ||
-      (set.versatility && tashaOn(c) && asi));
+      (!!set.versatility && tashaOn(c) && asi));
     return {set: set, fresh: fresh, canSwap: canSwap, total: optionsKnownAt(set, newLevel),
       why: canSwap && !(set.swap==="level" || (set.swap==="learn" && fresh > 0)) ? "versatility" : ""};
   }).filter(function(p){ return p.fresh > 0 || p.canSwap; });
@@ -79,9 +89,10 @@ export function planSlots(plan, cl, choice){
   return plan.fresh + (swapping ? 1 : 0);
 }
 export function planContext(c, cl, plan, choice, newLevel){
-  // A feat's picks (Martial Adept) count as known too: no learning one twice.
-  var others = allKnownOptions({classes: [], feats: c.feats||[]}, plan.set.id).map(function(o){ return o.name; });
-  return {level: newLevel,
+  // A feat's or style's picks (Martial Adept, Superior Technique) count as
+  // known too: no learning one twice.
+  var others = allKnownOptions({classes: [], feats: c.feats||[], features: c.features||[]}, plan.set.id).map(function(o){ return o.name; });
+  return {level: newLevel, tasha: tashaOn(c),
     known: knownOptions(cl, plan.set.id).filter(function(e){ return e.id!==choice.swapOut; }).map(function(e){ return e.name; }).concat(others)};
 }
 /* What's missing or wrong for one set, or null. */
@@ -130,3 +141,25 @@ export function forgetOption(cl, setId, id){
   return e;
 }
 export { optionSetDef, optionsKnownAt };
+
+/* ---- What known options do on the sheet ----
+   Pseudo-features for the sheet's calculations, from options known on
+   class entries: {name, darkvision, speeds, rageSpeed}. Speeds with a
+   `level` start at that class level (Storm Soul's swim at 6). */
+export function optionEffects(c){
+  var out = [];
+  (c.classes||[]).forEach(function(cl){
+    var lv = Number(cl.level)||1;
+    entrySets(cl).forEach(function(set){
+      knownOptions(cl, set.id).forEach(function(e){
+        var o = set.options.find(function(x){ return x.name===e.name; });
+        if(!o) return;
+        var speeds = (o.speeds||[]).filter(function(sp){ return !sp.level || lv >= sp.level; });
+        if(o.darkvision || speeds.length || o.rageSpeed){
+          out.push({name: o.name + " (" + set.label + ")", darkvision: o.darkvision ? {range: o.darkvision} : null, speeds: speeds, rageSpeed: o.rageSpeed || 0});
+        }
+      });
+    });
+  });
+  return out;
+}

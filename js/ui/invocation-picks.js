@@ -8,10 +8,11 @@ import { themedPicker } from "./themed-picker.js";
    Shared by the level-up dialog and the sheet's Eldritch invocations card
    (js/render/panels/invocations.js). */
 
-/* The four Pact Boons as tappable cards; onPick(name). */
-export function renderPactBoonOptions(value, onPick){
+/* The Pact Boons as tappable cards; onPick(name). Pact of the Talisman
+   (Tasha's optional) only when `tasha` is on, or when it's already the pick. */
+export function renderPactBoonOptions(value, onPick, tasha){
   var box = ce("div", "eli-boons");
-  PACT_BOONS.forEach(function(b){
+  PACT_BOONS.filter(function(b){ return !b.optional || tasha || b.name===value; }).forEach(function(b){
     var row = ce("div", "wiz-equip-option eli-boon" + (value===b.name ? " selected" : ""));
     row.setAttribute("role", "button");
     row.tabIndex = 0;

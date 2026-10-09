@@ -348,7 +348,9 @@ test("speeds: race fly/swim/climb, feature speeds, conditions, Superior Mobility
   assert.deepEqual(show(sp([{ name: "Fighter", level: 1 }], { race: "Aarakocra", speed: 25 })), ["fly 50 (not in medium or heavy armor)"]);
   assert.deepEqual(show(sp([{ name: "Rogue", level: 1 }], { race: "Tabaxi" })), ["climb 20"]);
   // "Equal to walking speed" follows walking speed, Mobile included.
-  assert.deepEqual(show(sp([{ name: "Barbarian", subclass: "Path of the Totem Warrior", level: 14 }], { feats: [{ name: "Mobile" }] })), ["fly 40 (while raging (Eagle))"]);
+  // Eagle at Totemic Attunement (the animal picked for level 14); none for another animal.
+  assert.deepEqual(show(sp([{ name: "Barbarian", subclass: "Path of the Totem Warrior", level: 14, options: { totemAttunement: [{ id: "t", name: "Eagle" }] } }], { feats: [{ name: "Mobile" }] })), ["fly 40 (while raging)"]);
+  assert.deepEqual(show(sp([{ name: "Barbarian", subclass: "Path of the Totem Warrior", level: 14, options: { totemAttunement: [{ id: "t", name: "Wolf" }] } }])), []);
   assert.deepEqual(show(sp([{ name: "Barbarian", subclass: "Path of the Totem Warrior", level: 13 }])), []);
   // Always-on: only the best of a type; a Triton warlock keeps the 40 ft swim.
   assert.deepEqual(show(sp([{ name: "Warlock", subclass: "The Fathomless", level: 1 }], { race: "Triton" })), ["swim 40"]);

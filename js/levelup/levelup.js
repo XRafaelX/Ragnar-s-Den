@@ -1,5 +1,5 @@
 import { ABILITIES, CLASS_LIST, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
-import { CLASSES_INFO, FIGHTING_STYLES } from "../data/classes.js";
+import { CLASSES_INFO } from "../data/classes.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL, XP_THRESHOLDS, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from "../data/progression.js";
 import {
@@ -12,11 +12,14 @@ import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { save } from "../core/state.js";
 import { syncInfusions } from "../core/artificer.js";
 import { invocationsKnownAt, invocationDef, pactBoonDef } from "../data/invocations.js";
+import { optionsKnownAt } from "../data/class-options.js";
 import { knownInvocations, availableInvocations, levelUpPlan, levelUpContext, levelUpProblem, applyLevelUpChoices, undoLevelUpChoices } from "../core/invocations.js";
 import { renderPactBoonOptions, renderInvocationPicker, renderSpellPickPickers, renderHiddenNotes } from "../ui/invocation-picks.js";
 import { themedPicker } from "../ui/themed-picker.js";
-import { levelUpOptionPlans, planSlots, planContext, planProblem, applyPlan, undoPlan, knownOptions, availableOptions } from "../core/class-options.js";
-import { renderOptionPicker } from "../ui/option-picks.js";
+import { levelUpOptionPlans, planSlots, planContext, planProblem, applyPlan, undoPlan, knownOptions, availableOptions, allKnownOptions } from "../core/class-options.js";
+import { styleDueAt, classStyleList, availableStyleNames, versatilityStyleSwap, styleFeatures, stylePicksProblem, styleNeedsPicks, makeStyleFeature } from "../core/fighting-styles.js";
+import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
+import { renderOptionPicker, renderTashaNote } from "../ui/option-picks.js";
 import { renderAll } from "../render/sheet.js";
 import { logRoll, getDieSvg } from "../dice/dice.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
@@ -39,7 +42,7 @@ import { renderFeatPicks, featPicksContext } from "../ui/feat-picks.js";
    picks step after it), then hit points. Applying it records what changed in
    c.levelHistory so the last level-up can be undone. */
 var STEP_IDS = ["class","subclass","style","spells","invocations","options","asi","featPicks","hp","review"];
-var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Fighting style", spells:"Spells", invocations:"Invocations", options:"Options", asi:"Abilities", featPicks:"Feat picks", hp:"Hit points", review:"Review"};
+var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Spells", invocations:"Invocations", options:"Options", asi:"Abilities", featPicks:"Feat picks", hp:"Hit points", review:"Review"};
 var lu = null;
 
 function abilityName(key){
@@ -75,13 +78,16 @@ function target(){
   var prog = progFor(lu.className);
   var newLevel = existing ? (Number(existing.level)||1)+1 : 1;
   var hasSub = !!(existing && existing.subclass);
+  var needsSubclass = !!prog.subclassLevel && newLevel >= prog.subclassLevel && !hasSub;
   return {
     existing: existing,
     prog: prog,
     newLevel: newLevel,
-    needsSubclass: !!prog.subclassLevel && newLevel >= prog.subclassLevel && !hasSub,
+    needsSubclass: needsSubclass,
     asi: prog.asiLevels.indexOf(newLevel) !== -1,
-    fightingStyle: prog.fightingStyle && prog.fightingStyle.level===newLevel ? prog.fightingStyle : null,
+    // The class's Fighting Style level, or a subclass's (Champion 10,
+    // College of Swords 3, with the subclass maybe picked on this level-up).
+    fightingStyle: styleDueAt(lu.className, hasSub ? existing.subclass : (needsSubclass ? lu.subclass || "" : ""), newLevel),
     hitDie: HIT_DICE_BY_CLASS[lu.className] || 8
   };
 }
@@ -90,7 +96,7 @@ function stepApplicable(id){
   if(!lu.className) return id==="class";
   var t = target();
   if(id==="subclass") return t.needsSubclass;
-  if(id==="style") return !!t.fightingStyle;
+  if(id==="style") return !!t.fightingStyle || styleSwapOffered();
   if(id==="spells") return dueSpellChoices().length > 0;
   if(id==="invocations") return lu.className==="Warlock" && t.newLevel >= 2;
   if(id==="options") return optionPlans().length > 0;
@@ -149,9 +155,16 @@ function validate(id){
   if(id==="class") return lu.className ? null : "Pick a class to gain the level in.";
   if(id==="subclass") return chosenSubclass() ? null : "Pick a "+(target().prog.subclassLabel||"subclass").toLowerCase()+".";
   if(id==="style"){
-    // Nothing left to pick if the character already has every style
-    // this class offers (possible with multiclassing).
-    return lu.style || !availableStyles().length ? null : "Pick a fighting style.";
+    var tS = target();
+    if(tS.fightingStyle){
+      // Nothing left to pick if the character already has every style
+      // this class offers (possible with multiclassing).
+      if(!lu.style) return availableStyles().length ? "Pick a fighting style." : null;
+    } else {
+      if(!lu.styleSwapOut) return null;
+      if(!lu.style) return "Pick the fighting style that replaces "+swapOutStyle().fightingStyle+".";
+    }
+    return stylePicksProblem(lu.style, lu.stylePicks, !!lu.c.tashaOptional, knownManeuvers()) || null;
   }
   if(id==="spells"){
     var missing = dueSpellChoices().find(function(x){ return !lu.spellChoices[x.choice.id]; });
@@ -194,6 +207,7 @@ export function openLevelUp(c){
     subclass:"", style:"",
     asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featPicks:null, spellChoices:{},
     pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{},
+    stylePicks:{options:[], spells:[]}, styleSwapOut:"",
     hpMethod:"avg", hpRoll:null
   };
   wizardScrollReset();
@@ -310,7 +324,7 @@ function resetChoicesFor(name){
   if(lu.className===name) return;
   lu.className = name;
   lu.subclass = "";
-  lu.style = "";
+  lu.style = ""; lu.stylePicks = {options: [], spells: []}; lu.styleSwapOut = "";
   lu.spellChoices = {};
   lu.pactBoon = ""; lu.pactSpells = []; lu.invPicks = []; lu.invSpells = {}; lu.swapOut = ""; lu.optChoices = {};
   lu.asi = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; lu.featName = ""; lu.featPicks = null; lu.asiMode = "asi";
@@ -357,32 +371,51 @@ function stepClass(container){
   mcCard.appendChild(mcGrid);
 }
 
-/* Styles this class may pick that the character doesn't already have
-   (e.g. a Fighter who multiclasses into Paladin keeps Defense and picks
-   another). */
-function availableStyles(){
-  var fs = target().fightingStyle;
-  return fs ? fs.options.filter(function(n){ return !hasFightingStyle(lu.c, n); }) : [];
+/* Styles this class may pick now that the character doesn't already have
+   (a Fighter who multiclasses into Paladin keeps Defense and picks
+   another); Tasha's optional ones only with the switch on. */
+function styleOptions(){
+  var t = target();
+  return t.fightingStyle ? t.fightingStyle.options : classStyleList(lu.className);
 }
+function availableStyles(){ return availableStyleNames(lu.c, styleOptions(), !!lu.c.tashaOptional); }
+/* Martial Versatility: no new style this level, but one may be swapped. */
+function styleSwapOffered(){
+  var t = target();
+  return !t.fightingStyle && versatilityStyleSwap(lu.c, lu.className, t.newLevel);
+}
+function swapOutStyle(){ return styleFeatures(lu.c).find(function(f){ return f.id===lu.styleSwapOut; }) || null; }
+function knownManeuvers(){ return allKnownOptions(lu.c, "maneuvers").map(function(o){ return o.name; }); }
 
 function stepStyle(container){
-  var fs = target().fightingStyle;
-  var card = stepCard(container, "Choose a Fighting Style",
-    "<b>Your fighting style</b> is a combat specialty you keep for good. <b>Defense</b> and <b>Archery</b> are added to your AC and attacks automatically; the others are reminders on your Features tab.");
-  fs.options.forEach(function(name){
-    var owned = hasFightingStyle(lu.c, name);
-    var opt = ce("div","wiz-equip-option"+(lu.style===name?" selected":""));
-    opt.innerHTML = "<b>"+escapeHtml(name)+"</b><div class='lu-sub-blurb'>"+escapeHtml(FIGHTING_STYLES[name].text)+"</div>"+
-      (owned ? "<div class='lu-sub-feats'>You already have this style.</div>" : "");
-    if(owned){ opt.style.opacity = ".5"; opt.style.cursor = "not-allowed"; }
-    else opt.addEventListener("click", function(){ lu.style = name; render(); });
-    card.appendChild(opt);
-  });
-  if(!availableStyles().length){
-    var p = ce("p","lu-note");
-    p.textContent = "You already know every style this class can pick, so there's nothing to choose.";
-    card.appendChild(p);
+  var t = target(), tasha = !!lu.c.tashaOptional, card;
+  function pick(name){
+    if(name!==lu.style) lu.stylePicks = {options: [], spells: []};
+    lu.style = name; render();
   }
+  if(t.fightingStyle){
+    card = stepCard(container, t.fightingStyle.from==="Fighting Style" ? "Choose a Fighting Style" : t.fightingStyle.from,
+      "<b>Your fighting style</b> is a combat specialty you keep for good. <b>Defense</b> and <b>Archery</b> are added to your AC and attacks automatically, and a few others add a sense, a maneuver or cantrips; the rest are reminders on your Features tab.");
+    card.appendChild(renderStyleOptions(lu.c, t.fightingStyle.options, lu.style, tasha, pick));
+    if(!availableStyles().length){
+      var p = ce("p","lu-note");
+      p.textContent = "You already know every style this class can pick, so there's nothing to choose.";
+      card.appendChild(p);
+    }
+  } else {
+    card = stepCard(container, "Fighting style",
+      "<b>Martial Versatility</b> (Tasha's optional features): at this level you may replace one fighting style you know with another from the "+escapeHtml(lu.className.toLowerCase())+"'s list. Most players keep theirs.");
+    var field = ce("div","field rt-field fp-field eli-field");
+    var options = [{value:"", label:"Keep my fighting style", muted:true}].concat(styleFeatures(lu.c).map(function(f){ return {value:f.id, label:"Replace "+f.fightingStyle}; }));
+    field.appendChild(themedPicker({
+      key: "lu:styleswap", ariaLabel: "Fighting style to replace", placeholder: "Keep my fighting style", search: false,
+      groups: {"": options}, value: lu.styleSwapOut,
+      onPick: function(v){ lu.styleSwapOut = v; lu.style = ""; lu.stylePicks = {options: [], spells: []}; render(); }
+    }));
+    card.appendChild(field);
+    if(lu.styleSwapOut) card.appendChild(renderStyleOptions(lu.c, classStyleList(lu.className), lu.style, tasha, pick));
+  }
+  if(lu.style && styleNeedsPicks(lu.style)) card.appendChild(renderStylePicks(lu.style, lu.stylePicks, tasha, knownManeuvers(), render, "lu:style"));
 }
 
 function stepSubclass(container){
@@ -443,7 +476,7 @@ function stepInvocations(container){
     pc.appendChild(renderPactBoonOptions(lu.pactBoon, function(name){
       if(name!==lu.pactBoon) lu.pactSpells = [];
       lu.pactBoon = name; render();
-    }));
+    }, !!lu.c.tashaOptional));
     var boon = pactBoonDef(lu.pactBoon);
     if(boon && boon.spellPick){
       var title = ce("p","lu-choice-title");
@@ -529,9 +562,13 @@ function stepOptions(container){
     var ctx = planContext(lu.c, t.existing, plan, choice, t.newLevel);
     var names = availableOptions(set, ctx).map(function(o){ return o.name; });
     choice.picks = choice.picks.slice(0, n).map(function(v){ return names.indexOf(v)!==-1 ? v : ""; });
-    var lead = plan.fresh
-      ? "At "+escapeHtml(lu.className.toLowerCase())+" level "+t.newLevel+" you know "+plan.total+", so you learn <b>"+plan.fresh+" new</b> now. "
-      : "You don't learn a new one this level. ";
+    // One-pick sets (a totem animal, a storm environment) read as a choice.
+    var single = optionsKnownAt(set, 20)===1;
+    var lead = single
+      ? (plan.fresh ? "Choose one now. " : "")
+      : plan.fresh
+        ? "At "+escapeHtml(lu.className.toLowerCase())+" level "+t.newLevel+" you know "+plan.total+", so you learn <b>"+plan.fresh+" new</b> now. "
+        : "You don't learn a new one this level. ";
     var card = stepCard(container, set.label, "<b>"+escapeHtml(set.label)+":</b> "+escapeHtml(set.help)+" "+lead);
     function picker(i, labelText){
       var label = ce("p","lu-choice-title");
@@ -543,14 +580,15 @@ function stepOptions(container){
         onPick: function(v){ choice.picks[i] = v; render(); }
       }));
     }
-    for(var i=0;i<plan.fresh;i++) picker(i, plan.fresh>1 ? "New "+set.noun+" "+(i+1) : "New "+set.noun);
+    for(var i=0;i<plan.fresh;i++) picker(i, single ? "Your "+set.noun : plan.fresh>1 ? "New "+set.noun+" "+(i+1) : "New "+set.noun);
     if(plan.canSwap){
       var swapTitle = ce("p","lu-choice-title");
-      swapTitle.textContent = "Swap one you know (optional)";
+      swapTitle.textContent = single ? "Change your "+set.noun+" (optional)" : "Swap one you know (optional)";
       card.appendChild(swapTitle);
       var help = ce("p","lu-note");
       help.textContent = plan.why==="versatility"
         ? "Tasha's optional features let you replace one "+set.noun+" at this level. Most players keep theirs."
+        : single ? "You may pick a different "+set.noun+" each time you gain a level in this class."
         : "You may replace one "+set.noun+" you know with another you could learn now. Most players keep theirs.";
       card.appendChild(help);
       var field = ce("div","field rt-field fp-field eli-field");
@@ -567,6 +605,8 @@ function stepOptions(container){
       var replacing = choice.swapOut && known.find(function(e){ return e.id===choice.swapOut; });
       if(replacing) picker(n-1, "Replacement for "+replacing.name);
     }
+    var note = renderTashaNote(set, ctx);
+    if(note) card.appendChild(note);
   });
 }
 
@@ -789,7 +829,12 @@ function stepReview(container){
   var classLine = (t.existing ? lu.className+" Lvl "+t.newLevel : "Multiclass: "+lu.className+" Lvl 1")+
     " (character level "+(totalLevel(c)+1)+")";
   if(t.needsSubclass) items.push(target().prog.subclassLabel+": "+chosenSubclass());
-  if(t.fightingStyle && lu.style) items.push("Fighting style: "+lu.style);
+  if(stepApplicable("style") && lu.style){
+    var swappedStyle = lu.styleSwapOut && swapOutStyle();
+    var stylePicked = (lu.stylePicks.options||[]).concat(lu.stylePicks.spells||[]).filter(Boolean);
+    items.push(swappedStyle ? "Fighting style swap: "+swappedStyle.fightingStyle+" → "+lu.style
+      : "Fighting style: "+lu.style+(stylePicked.length ? " ("+stylePicked.join(", ")+")" : ""));
+  }
   dueSpellChoices().forEach(function(x){ if(lu.spellChoices[x.choice.id]) items.push(x.choice.label+": "+lu.spellChoices[x.choice.id]); });
   if(stepApplicable("invocations")){
     if(pactDue() && lu.pactBoon) items.push("Pact Boon: "+lu.pactBoon+(lu.pactSpells.length ? " ("+lu.pactSpells.filter(Boolean).join(", ")+")" : ""));
@@ -935,9 +980,16 @@ function finish(){
 
   // The picked style becomes a tagged feature (like a starting Fighter's),
   // so Defense/Archery apply and undo can remove it.
+  // A Martial Versatility swap takes the old style off first (undo puts
+  // it back).
   var styleFeature = null;
-  if(t.fightingStyle && lu.style){
-    styleFeature = {id:uid(), name:"Fighting Style: "+lu.style, source:"Class", text:FIGHTING_STYLES[lu.style].text, isPassive:true, fightingStyle:lu.style};
+  if(lu.style && (t.fightingStyle || lu.styleSwapOut)){
+    var outStyle = lu.styleSwapOut && swapOutStyle();
+    if(outStyle){
+      c.features = c.features.filter(function(f){ return f!==outStyle; });
+      record.styleSwappedOut = outStyle;
+    }
+    styleFeature = makeStyleFeature(lu.style, lu.stylePicks);
     c.features.push(styleFeature);
     record.featureId = styleFeature.id;
   }
@@ -1040,6 +1092,7 @@ export function undoLastLevelUp(c){
       c.feats = c.feats.filter(function(f){ return f.id!==rec.featId; });
     }
     if(rec.featureId) c.features = c.features.filter(function(f){ return f.id!==rec.featureId; });
+    if(rec.styleSwappedOut) c.features.push(rec.styleSwappedOut);
     c.hp.max = Math.max(1, (Number(c.hp.max)||1) - rec.hpGain);
     // Level-up added the gain to current HP too, so take it back off, but
     // never knock a conscious character down to 0 just by undoing.

@@ -131,7 +131,8 @@ export var CLASS_PROGRESSION = {
   },
   "Fighter": {
     subclassLevel: 3, subclassLabel: "Martial Archetype",
-    fightingStyle: {level:1, options:["Archery","Defense","Dueling","Great Weapon Fighting","Protection","Two-Weapon Fighting"]},
+    fightingStyle: {level:1, options:["Archery","Defense","Dueling","Great Weapon Fighting","Protection","Two-Weapon Fighting",
+      "Blind Fighting","Interception","Superior Technique","Thrown Weapon Fighting","Unarmed Fighting"]},
     prereq: [["str"], ["dex"]], casterType: null, asiLevels: [4, 6, 8, 12, 14, 16, 19],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:""},
     features: {
@@ -189,7 +190,7 @@ export var CLASS_PROGRESSION = {
   },
   "Paladin": {
     subclassLevel: 3, subclassLabel: "Sacred Oath",
-    fightingStyle: {level:2, options:["Defense","Dueling","Great Weapon Fighting","Protection"]},
+    fightingStyle: {level:2, options:["Defense","Dueling","Great Weapon Fighting","Protection","Blessed Warrior","Blind Fighting","Interception"]},
     prereq: [["str", "cha"]], casterType: "half", spellAbility: "cha", asiLevels: STANDARD_ASI,
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:""},
     features: {
@@ -208,7 +209,7 @@ export var CLASS_PROGRESSION = {
   },
   "Ranger": {
     subclassLevel: 3, subclassLabel: "Ranger Archetype",
-    fightingStyle: {level:2, options:["Archery","Defense","Dueling","Two-Weapon Fighting"]},
+    fightingStyle: {level:2, options:["Archery","Defense","Dueling","Two-Weapon Fighting","Blind Fighting","Druidic Warrior","Thrown Weapon Fighting"]},
     prereq: [["dex", "wis"]], casterType: "half", spellAbility: "wis", asiLevels: STANDARD_ASI,
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:"Also gain proficiency in one skill from the ranger list. Tick it on the Abilities & Skills tab."},
     features: {

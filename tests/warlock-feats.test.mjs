@@ -327,14 +327,15 @@ test("warlockEntry and knownInvocations", () => {
 test("every invocation's prerequisite, one by one", () => {
   // A warlock 20 with every pact and Eldritch Blast meets them all...
   for(const inv of INVOCATIONS){
-    const c = warlock(20, { spells: [{ name: "Eldritch Blast" }, { name: "Hex" }] }, { pactBoon: inv.pact || "Pact of the Blade" });
+    const c = warlock(20, { spells: [{ name: "Eldritch Blast" }, { name: "Hex" }], tashaOptional: true }, { pactBoon: inv.pact || "Pact of the Blade" });
     assert.equal(reason(c, c.classes[0], inv.name), "", inv.name);
   }
   // ...and each requirement shows when it's missing.
   for(const inv of INVOCATIONS){
     const c = warlock(2, { spells: [] }, { pactBoon: "" });
     const why = reason(c, c.classes[0], inv.name);
-    if(inv.level) assert.equal(why, "warlock " + inv.level, inv.name);
+    if(inv.optional) assert.equal(why, "Tasha's optional", inv.name + ": Tasha's optional comes first");
+    else if(inv.level) assert.equal(why, "warlock " + inv.level, inv.name);
     else if(inv.pact) assert.equal(why, "needs " + inv.pact.replace("Pact of the ", "") + " pact", inv.name);
     else if(inv.needs === "eldritchBlast") assert.equal(why, "needs Eldritch Blast", inv.name);
     else if(inv.needs === "hex") assert.equal(why, "needs Hex", inv.name);
@@ -383,14 +384,18 @@ test("pickers list only what the warlock can take, and say why others are missin
   // Warlock 2, no Eldritch Blast, no pact (the screenshot's case).
   const c = warlock(2, { spells: [] });
   const two = listed(c);
-  for(const n of ["Armor of Shadows", "Beast Speech", "Beguiling Influence", "Devil's Sight", "Eldritch Mind", "Thief of Five Fates"]) assert.ok(two.includes(n), n);
-  for(const n of ["Agonizing Blast", "Ascendant Step", "Bewitching Whispers", "Book of Ancient Secrets", "Lifedrinker", "Maddening Hex", "Thirsting Blade"]) assert.ok(!two.includes(n), n);
+  for(const n of ["Armor of Shadows", "Beast Speech", "Beguiling Influence", "Devil's Sight", "Thief of Five Fates"]) assert.ok(two.includes(n), n);
+  for(const n of ["Agonizing Blast", "Ascendant Step", "Bewitching Whispers", "Book of Ancient Secrets", "Lifedrinker", "Maddening Hex", "Thirsting Blade", "Eldritch Mind"]) assert.ok(!two.includes(n), n);
   assert.ok(two.every((n) => reason(c, c.classes[0], n) === ""), "everything listed passes its prerequisite");
-  assert.equal(two.length, INVOCATIONS.filter((i) => !i.level && !i.pact && !i.needs).length, "exactly the ones with no prerequisite");
+  assert.equal(two.length, INVOCATIONS.filter((i) => !i.level && !i.pact && !i.needs && !i.optional).length, "exactly the ones with no prerequisite, Tasha's left out");
+  // With Tasha's optional features, Eldritch Mind joins them.
+  assert.ok(listed(c, { tasha: true }).includes("Eldritch Mind"));
+  assert.ok(!notes(c, { tasha: true }).some((n) => /Tasha's Cauldron adds/.test(n)), "and the Tasha's note goes");
   assert.deepEqual(notes(c), [
     "Eldritch Blast upgrades such as Agonizing Blast appear once you know the Eldritch Blast cantrip (add it on the Spells tab).",
     "Some need a Pact Boon, which you choose at warlock level 3.",
-    "More unlock at higher warlock levels."
+    "More unlock at higher warlock levels.",
+    "Tasha's Cauldron adds 8 more if your character uses Tasha's optional class features (Information tab)."
   ], "at warlock 2 the Hex ones are hidden for their level first");
   assert.ok(notes(c, { level: 7 }).includes("Maddening Hex and Relentless Hex need the Hex spell or a curse (Sign of Ill Omen, Hexblade's Curse)."), "at warlock 7, the Hex note");
   // Known ones leave the list but need no note.
@@ -400,13 +405,28 @@ test("pickers list only what the warlock can take, and say why others are missin
   c.spells = [{ name: "Eldritch Blast" }];
   assert.ok(listed(c).includes("Agonizing Blast") && listed(c).includes("Repelling Blast"));
   assert.ok(!notes(c).some((n) => /Eldritch Blast upgrades/.test(n)));
-  const tome = listed(c, { level: 5, pactBoon: "Pact of the Tome" });
+  const tome = listed(c, { level: 5, pactBoon: "Pact of the Tome", tasha: true });
   assert.ok(tome.includes("Book of Ancient Secrets") && tome.includes("Far Scribe") && tome.includes("Mire the Mind") && !tome.includes("Thirsting Blade"));
+  assert.ok(!listed(c, { level: 5, pactBoon: "Pact of the Tome" }).includes("Far Scribe"), "Far Scribe is Tasha's: not without the switch");
   assert.ok(notes(c, { level: 5, pactBoon: "Pact of the Tome" }).includes("Some need a different Pact Boon than your Pact of the Tome."));
   // A warlock 20 with Hex and the Blade pact has nothing locked but other pacts.
   c.spells.push({ name: "Hex" });
-  assert.deepEqual(notes(c, { level: 20, pactBoon: "Pact of the Blade" }), ["Some need a different Pact Boon than your Pact of the Blade."]);
+  assert.deepEqual(notes(c, { level: 20, pactBoon: "Pact of the Blade", tasha: true }), ["Some need a different Pact Boon than your Pact of the Blade."]);
   assert.ok(listed(c, { level: 20, pactBoon: "Pact of the Blade" }).includes("Lifedrinker"));
+});
+
+test("Pact of the Talisman needs Tasha's optional features", () => {
+  assert.ok(pactBoonDef("Pact of the Talisman").optional);
+  assert.ok(INVOCATIONS.filter((i) => i.source === "TCE").every((i) => i.optional), "all of Tasha's invocations are optional");
+  assert.ok(INVOCATIONS.filter((i) => i.source !== "TCE").every((i) => !i.optional));
+  const c = warlock(2, { spells: [] });
+  const choice = { pactBoon: "Pact of the Talisman", picks: [] };
+  INV.learnInvocation(c, c.classes[0], "Devil's Sight", []);
+  INV.learnInvocation(c, c.classes[0], "Beast Speech", []);
+  assert.equal(INV.levelUpProblem(c, c.classes[0], 3, choice), "Choose your Pact Boon.");
+  c.tashaOptional = true;
+  assert.equal(INV.levelUpProblem(c, c.classes[0], 3, choice), null);
+  assert.equal(INV.levelUpProblem({ ...c, tashaOptional: false }, c.classes[0], 3, { pactBoon: "Pact of the Blade", picks: [] }), null);
 });
 
 test("prerequisite text and a prerequisite that's gone", () => {
