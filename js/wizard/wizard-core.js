@@ -3,6 +3,7 @@ import { CLASSES_INFO, FIGHTING_STYLES, CLASS_PROFICIENCIES } from "../data/clas
 import { FEATS_CATALOG } from "../data/feats.js";
 import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
+import { LANGUAGES } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists } from "../core/helpers.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
@@ -121,13 +122,23 @@ export function finalAbilities(opts){
   if(fp && fp.ability) out[fp.ability] = Math.min(20, (Number(out[fp.ability])||10) + 1);
   return out;
 }
+/* Skills the chosen background gives: its fixed ones plus the player's
+   picks from its `skillPick` list (a Haunted One's two of four). Picks
+   that don't fit the background (it was changed since) are left out. */
+export function wizardBackgroundSkills(){
+  var info = BACKGROUND_INFO[wizardState.background] || {};
+  var pick = info.skillPick;
+  var picks = pick ? (wizardState.bgSkillChoices||[]).filter(function(sk){ return pick.options.indexOf(sk)!==-1; }).slice(0, pick.count) : [];
+  return (info.skills||[]).concat(picks);
+}
+
 /* The new character's skills so far (class picks, background, the Race
    Traits skill), in the sheet's skillProfs shape, for feat picks. */
 export function wizardSkillProfs(){
   var out = {};
   var def = raceChoiceDef();
   var raceSkills = def && def.skills ? wizardState.raceChoices.skills.slice(0, def.skills) : [];
-  wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[], raceSkills).forEach(function(sk){
+  wizardState.skillChoices.concat(wizardBackgroundSkills(), raceSkills).forEach(function(sk){
     if(sk) out[sk] = {prof:true, expertise:false};
   });
   return out;
@@ -170,9 +181,13 @@ export function languagePlan(){
   ((info && info.languages)||[]).forEach(addFixed);
   (grants.languages||[]).forEach(addFixed);
   var slots = [];
-  function addSlots(n, source, help){ for(var i=0;i<(n||0);i++) slots.push({source:source, help:help||""}); }
+  function addSlots(n, source, help, exotic){ for(var i=0;i<(n||0);i++) slots.push({source:source, help:help||"", exotic:!!exotic}); }
   addSlots(race.choose, w.race || "Race", race.note);
-  addSlots(BACKGROUND_LANGUAGES[w.background]!=null ? BACKGROUND_LANGUAGES[w.background] : 0, w.background);
+  // A Haunted One's first pick has to be an exotic language.
+  var bgCount = BACKGROUND_LANGUAGES[w.background]!=null ? BACKGROUND_LANGUAGES[w.background] : 0;
+  var bgExotic = Math.min(bgCount, (BACKGROUND_INFO[w.background]||{}).exoticLanguages || 0);
+  addSlots(bgExotic, w.background, bgExotic ? (bgExotic===bgCount ? "These must be exotic languages." : "The first must be an exotic language, such as the tongue of whatever haunts you.") : "", true);
+  addSlots(bgCount - bgExotic, w.background);
   if(info && info.languagePicks) addSlots(info.languagePicks.count, info.languagePicks.label, info.languagePicks.help);
   addSlots(grants.languagePicks, w.classChoices.subclass);
   return {fixed:fixed, slots:slots};
@@ -240,7 +255,14 @@ export function validateStep(id){
     return null;
   }
   if(id==="skills"){
-    return wizardState.skillChoices.length===info.skillChoices.count ? null : "Choose "+info.skillChoices.count+" skills.";
+    if(wizardState.skillChoices.length!==info.skillChoices.count) return "Choose "+info.skillChoices.count+" skills from your class list.";
+    var bgInfo = BACKGROUND_INFO[wizardState.background] || {}, bgPick = bgInfo.skillPick;
+    if(bgPick){
+      var bgPicked = wizardBackgroundSkills().slice((bgInfo.skills||[]).length);
+      if(bgPicked.length!==bgPick.count) return "Choose "+(bgPick.count>1 ? bgPick.count+" skills" : "a skill")+" from your "+wizardState.background+" background.";
+      if(bgPicked.some(function(sk){ return wizardState.skillChoices.indexOf(sk)!==-1; })) return "Pick different skills for your class and your background.";
+    }
+    return null;
   }
   if(id==="raceChoices"){
     var def = raceChoiceDef(), rc = wizardState.raceChoices;
@@ -254,7 +276,7 @@ export function validateStep(id){
     }
     if(def.abilityPreset && !def.abilityPreset.options[rc.preset]) return "Pick your "+def.abilityPreset.label.toLowerCase()+".";
     if(def.skills){
-      var known = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]);
+      var known = wizardState.skillChoices.concat(wizardBackgroundSkills());
       var sk = rc.skills.slice(0, def.skills).filter(Boolean);
       var allowed = def.skillOptions || null;
       if(sk.length!==def.skills || new Set(sk).size!==sk.length || sk.some(function(x){ return known.indexOf(x)!==-1 || (allowed && allowed.indexOf(x)===-1); })){
@@ -307,6 +329,9 @@ export function validateStep(id){
     var fixedLower = plan.fixed.map(function(l){ return l.toLowerCase(); });
     var filled = picks.map(function(l){ return (l||"").trim().toLowerCase(); }).filter(function(l){ return l && fixedLower.indexOf(l)===-1; });
     if(filled.length!==plan.slots.length || new Set(filled).size!==filled.length) return "Pick "+plan.slots.length+" different language"+(plan.slots.length>1?"s":"")+" you don't already know.";
+    var standardLower = LANGUAGES.Standard.map(function(l){ return l.toLowerCase(); });
+    var notExotic = plan.slots.find(function(slot, i){ return slot.exotic && standardLower.indexOf((picks[i]||"").trim().toLowerCase())!==-1; });
+    if(notExotic) return "Your "+notExotic.source+" background needs an exotic language (Abyssal, Celestial, Draconic, Infernal...).";
     return null;
   }
   if(id==="equipment"){
@@ -345,6 +370,7 @@ export function openWizard(){
     pointBuy:{str:8,dex:8,con:8,int:8,wis:8,cha:8},
     rolledPool:null,
     skillChoices:[],
+    bgSkillChoices:[],
     classChoices:{},
     raceChoices:{abilities:[], preset:"", skills:[], tools:[], feat:"", featPicks:null},
     languageChoices:[],
@@ -384,14 +410,11 @@ export function finishWizard(){
   c.abilities = {str:fa.str, dex:fa.dex, con:fa.con, int:fa.int, wis:fa.wis, cha:fa.cha};
   info.savingThrows.forEach(function(k){ c.saveProfs[k] = true; });
   w.skillChoices.forEach(function(sk){ c.skillProfs[sk] = {prof:true, expertise:false}; });
-  var bgInfo = BACKGROUND_INFO[w.background];
-  if(bgInfo && bgInfo.skills){
-    bgInfo.skills.forEach(function(sk){
-      var entry = c.skillProfs[sk] || {prof:false, expertise:false};
-      entry.prof = true;
-      c.skillProfs[sk] = entry;
-    });
-  }
+  wizardBackgroundSkills().forEach(function(sk){
+    var entry = c.skillProfs[sk] || {prof:false, expertise:false};
+    entry.prof = true;
+    c.skillProfs[sk] = entry;
+  });
   c.features = [];
   c.feats = [];
   applyRaceChoices(c);

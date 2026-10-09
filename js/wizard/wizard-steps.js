@@ -14,7 +14,7 @@ import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
 import { makePlusSvg, makeCheckSvg } from "../ui/svg-icons.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardExtraListSpells, wizardExtraListName } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills } from "./wizard-core.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { emptyPicks, featPicksProblem } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
@@ -414,31 +414,60 @@ export function wizardStepSkills(container){
   card.appendChild(explain);
 
   var bgInfo = BACKGROUND_INFO[wizardState.background];
+  var bgPick = bgInfo && bgInfo.skillPick;
   if(bgInfo && bgInfo.skills && bgInfo.skills.length){
     var bgP = document.createElement("p");
     bgP.style.cssText = "font-size:13px;color:var(--text-on-parch-dim);margin-bottom:12px;";
-    bgP.innerHTML = "From your <b>"+escapeHtml(wizardState.background)+"</b> background: "+bgInfo.skills.join(", ")+" (automatic).";
+    bgP.innerHTML = "From your <b>"+escapeHtml(wizardState.background)+"</b> background: "+bgInfo.skills.join(", ")+" (automatic)"+(bgPick ? ", plus your pick below" : "")+".";
     card.appendChild(bgP);
   }
+  // Picks that no longer fit (the background was changed) are dropped.
+  if(!bgPick) wizardState.bgSkillChoices = [];
+  else wizardState.bgSkillChoices = (wizardState.bgSkillChoices||[]).filter(function(sk){ return bgPick.options.indexOf(sk)!==-1; });
 
   var info = currentClassInfo();
+  card.appendChild(pickLabel("Choose "+info.skillChoices.count+" from your class list:"));
+  card.appendChild(checkList(info.skillChoices.options, wizardState.skillChoices, info.skillChoices.count,
+    function(sk){ return wizardState.bgSkillChoices.indexOf(sk)!==-1 || ((bgInfo && bgInfo.skills)||[]).indexOf(sk)!==-1 ? "from background" : ""; },
+    function(list){ wizardState.skillChoices = list; }));
+
+  if(bgPick){
+    var bgLabel = pickLabel("");
+    bgLabel.innerHTML = "Choose "+bgPick.count+" from your <b>"+escapeHtml(wizardState.background)+"</b> background:";
+    bgLabel.style.marginTop = "16px";
+    card.appendChild(bgLabel);
+    card.appendChild(checkList(bgPick.options, wizardState.bgSkillChoices, bgPick.count,
+      function(sk){ return wizardState.skillChoices.indexOf(sk)!==-1 ? "from class" : ""; },
+      function(list){ wizardState.bgSkillChoices = list; }));
+  }
+  container.appendChild(card);
+}
+function pickLabel(text){
   var label = document.createElement("p");
   label.style.cssText = "font-size:13px;margin-bottom:8px;";
-  label.textContent = "Choose "+info.skillChoices.count+" from your class list:";
-  card.appendChild(label);
-
+  label.textContent = text;
+  return label;
+}
+/* Tappable checkbox rows: pick up to `count` of `options`. takenReason(sk)
+   greys out a skill the other list already gives ("from class"). */
+function checkList(options, chosen, count, takenReason, onChange){
   var rows = ce("div","list-rows");
-  info.skillChoices.options.forEach(function(sk){
+  options.forEach(function(sk){
     var row = ce("div","list-row wiz-pick-row");
     var cb = document.createElement("input");
     cb.type="checkbox"; cb.className="chk";
-    var checked = wizardState.skillChoices.indexOf(sk)!==-1;
+    var checked = chosen.indexOf(sk)!==-1;
     cb.checked = checked;
-    var full = !checked && wizardState.skillChoices.length>=info.skillChoices.count;
-    cb.disabled = full;
-    if(full) row.classList.add("disabled");
+    var taken = !checked && takenReason(sk);
+    var full = !checked && chosen.length>=count;
+    cb.disabled = full || !!taken;
+    if(cb.disabled) row.classList.add("disabled");
     var name = document.createElement("span"); name.className="row-name"; name.textContent = sk;
     row.appendChild(cb); row.appendChild(name);
+    if(taken){
+      var why = document.createElement("span"); why.className="row-meta"; why.textContent = taken;
+      row.appendChild(why);
+    }
     rows.appendChild(row);
 
     // The whole row is the tap target, not just the small checkbox; matters
@@ -449,16 +478,15 @@ export function wizardStepSkills(container){
       if(cb.disabled) return;
       if(e.target!==cb) cb.checked = !cb.checked;
       if(cb.checked){
-        if(wizardState.skillChoices.length>=info.skillChoices.count){ cb.checked=false; return; }
-        wizardState.skillChoices.push(sk);
+        if(chosen.length>=count){ cb.checked=false; return; }
+        onChange(chosen.concat([sk]));
       } else {
-        wizardState.skillChoices = wizardState.skillChoices.filter(function(x){ return x!==sk; });
+        onChange(chosen.filter(function(x){ return x!==sk; }));
       }
       renderWizard();
     });
   });
-  card.appendChild(rows);
-  container.appendChild(card);
+  return rows;
 }
 
 /* Race Traits: the picks a race leaves to the player (see RACE_CHOICES):
@@ -478,7 +506,7 @@ export function wizardStepRaceChoices(container){
   explain.innerHTML = "<b>Why this matters:</b> As a <b>"+escapeHtml(wizardState.race)+"</b> you choose some of your traits yourself instead of getting fixed ones. These picks let you shape exactly the character you want.";
   card.appendChild(explain);
 
-  var known = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[]);
+  var known = wizardState.skillChoices.concat(wizardBackgroundSkills());
   var number = 0;
   function section(titleText, helpText, done){
     var sec = ce("div","rt-section"+(done ? " done" : ""));
@@ -648,7 +676,7 @@ export function wizardStepRaceChoices(container){
    character is proficient in (class picks + background) plus any tools
    the choice allows. */
 export function expertiseOptions(choice){
-  var bgSkills = (BACKGROUND_INFO[wizardState.background]||{}).skills||[];
+  var bgSkills = wizardBackgroundSkills();
   var skills = wizardState.skillChoices.concat(bgSkills.filter(function(sk){ return wizardState.skillChoices.indexOf(sk)===-1; }));
   // Plus a skill picked on Race Traits (Variant Human).
   var def = raceChoiceDef();
@@ -954,8 +982,13 @@ export function wizardStepLanguages(container){
       }
     }
     card.appendChild(homebrewSelect({
-      key:"lang:"+i, groups:(function(){ var g = {}; g[LANGUAGE_GROUP_LABELS.Standard] = LANGUAGES.Standard; g[LANGUAGE_GROUP_LABELS.Exotic] = LANGUAGES.Exotic; return g; })(), value:picks[i],
-      placeholder:"Select a language", noun:"language",
+      key:"lang:"+i, groups:(function(){
+        var g = {};
+        if(!slot.exotic) g[LANGUAGE_GROUP_LABELS.Standard] = LANGUAGES.Standard;
+        g[LANGUAGE_GROUP_LABELS.Exotic] = LANGUAGES.Exotic;
+        return g;
+      })(), value:picks[i],
+      placeholder:slot.exotic ? "Select an exotic language" : "Select a language", noun:"language",
       // Greyed out and labelled so it's clear why it can't be picked.
       takenReason:function(name){
         if(plan.fixed.indexOf(name)!==-1) return "known";
@@ -1353,7 +1386,7 @@ export function wizardStepReview(container){
     (raceHp ? " + "+raceHp+" "+(race.hpTrait || wizardState.race) : "")+")");
   row("Armor Class", ac.value + " (" + ac.breakdown + ")");
   row("Saving throws", info.savingThrows.map(function(k){ return k.toUpperCase(); }).join(", "));
-  var allSkills = wizardState.skillChoices.concat((BACKGROUND_INFO[wizardState.background]||{}).skills||[],
+  var allSkills = wizardState.skillChoices.concat(wizardBackgroundSkills(),
     raceDef && raceDef.skills ? wizardState.raceChoices.skills.slice(0, raceDef.skills).filter(Boolean) : []);
   row("Skills", allSkills.filter(function(sk, i){ return allSkills.indexOf(sk)===i; }).join(", ") || "None");
   (info.choices||[]).forEach(function(ch){

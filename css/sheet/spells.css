@@ -81,6 +81,7 @@
 .feature-spells-intro{font-size:12px;color:var(--text-on-parch-dim);margin:0 0 6px;line-height:1.45;}
 .feature-spell-card .inv-card-header{cursor:default;}
 .feature-spell-card .inv-card-header-actions{gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.feature-spell-note{font-style:normal;margin-top:4px;color:var(--text-on-parch);}
 /* On narrow screens the two tags would squeeze the spell name down to a
    few letters, so they drop to their own line under it. */
 @media (max-width: 560px){

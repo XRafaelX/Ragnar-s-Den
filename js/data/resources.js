@@ -681,7 +681,8 @@ export var SUBCLASS_RESOURCES = {
 };
 
 /* Feats with uses, keyed by feat name. `level` and `lv` don't apply; max
-   gets the character's modifiers like the class ones. Martial Adept's die
+   gets the character's modifiers like the class ones, and `name` can be a
+   function of the character's copy of the feat (its picks). Martial Adept's die
    joins a Battle Master's pool instead when there is one (see
    characterResources). */
 export var FEAT_RESOURCES = {
@@ -696,5 +697,13 @@ export var FEAT_RESOURCES = {
   "Magic Initiate": [
     {id:"magic_initiate", name:"Magic Initiate Spell", max:always(1), reset:always("long"),
       hint:"Cast your Magic Initiate 1st-level spell at its lowest level without a slot. Casting it with a slot doesn't use this."}
+  ],
+  // name(feat) names the use after the spell the player picked.
+  "Fey Touched": [
+    {id:"fey_touched_misty_step", name:"Misty Step (Fey Touched)", max:always(1), reset:always("long"),
+      hint:"Cast Misty Step once without a spell slot. Casting it with a slot you have doesn't use this."},
+    {id:"fey_touched_spell", name:function(feat){ var sp = feat && feat.picks && (feat.picks.spells||[])[0]; return (sp || "1st-level spell") + " (Fey Touched)"; },
+      max:always(1), reset:always("long"),
+      hint:"Cast your Fey Touched 1st-level spell once without a spell slot. Casting it with a slot you have doesn't use this."}
   ]
 };

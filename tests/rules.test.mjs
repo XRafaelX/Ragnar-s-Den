@@ -8,8 +8,10 @@ import { ensureShape } from "../js/core/character.js";
 import { CLASS_PROFICIENCIES } from "../js/data/classes.js";
 import * as FP from "../js/core/feat-picks.js";
 import * as ART from "../js/core/artificer.js";
+import * as INV from "../js/core/invocations.js";
 import * as COMP from "../js/core/companions.js";
 import { BEAST_PRESETS } from "../js/data/companions.js";
+import { INVOCATIONS } from "../js/data/invocations.js";
 
 const AB = { str: 10, dex: 14, con: 14, int: 10, wis: 10, cha: 10 };
 function char(classes, extra = {}){
@@ -709,4 +711,105 @@ test("active effects: Bladesong, the Astral Self, Symbiotic Entity", () => {
   const old = { classes: [{ name: "Wizard", level: 2 }] };
   ensureShape(old);
   assert.deepEqual(old.effects, {});
+});
+
+test("Fey Touched: picks a spell, which joins Misty Step on the Spells tab with free uses", () => {
+  const def = FP.featDef("Fey Touched");
+  const ctx = { abilities: AB, skillProfs: {} };
+  const picks = FP.emptyPicks(def);
+  picks.ability = "wis";
+  assert.match(FP.featPicksProblem(def, picks, ctx), /1st-level divination or enchantment spell/);
+  picks.spells = ["Fireball"];                 // wrong level and school
+  assert.ok(FP.featPicksProblem(def, picks, ctx));
+  picks.spells = ["Magic Missile"];            // 1st level, but evocation
+  assert.ok(FP.featPicksProblem(def, picks, ctx));
+  picks.spells = ["Hex"];
+  assert.equal(FP.featPicksProblem(def, picks, ctx), "");
+  assert.ok(FP.featSpellOptions(def).includes("Command") && FP.featSpellOptions(def).includes("Detect Magic"));
+
+  const c = char([{ name: "Fighter", level: 4 }], { abilities: { wis: 15 } });
+  const feat = { id: "f1", name: "Fey Touched" };
+  c.feats.push(feat);
+  c.skillProfs = {};
+  assert.equal(FP.featPicksPending(feat), true);
+  FP.applyFeatPicks(c, feat, picks);
+  assert.equal(c.abilities.wis, 16);
+  assert.equal(FP.featPicksPending(feat), false);
+  assert.equal(FP.featPicksSummary(def, feat.picks), "Wisdom +1, Misty Step, Hex");
+  const spells = H.featureSpells(c);
+  assert.deepEqual(spells.map((s) => s.name), ["Misty Step", "Hex"]);
+  assert.ok(spells.every((s) => s.kind === "free" && s.source === "Fey Touched"));
+  assert.match(spells[0].note, /Uses Wisdom: save DC 13, spell attack \+5/);  // 8 + PB 2 + WIS 3
+  assert.equal(H.hasSpellsTab(c), true);       // a non-caster gets the tab
+  const res = H.characterResources(c).filter((r) => r.source === "Fey Touched");
+  assert.deepEqual(res.map((r) => r.name), ["Misty Step (Fey Touched)", "Hex (Fey Touched)"]);
+  assert.ok(res.every((r) => r.max === 1 && r.reset === "long"));
+  FP.revertFeatPicks(c, feat);
+  assert.equal(c.abilities.wis, 15);
+});
+
+test("invocations: prerequisites by level, pact, Eldritch Blast and curses", () => {
+  const c = char([{ name: "Warlock", subclass: "The Fiend", level: 5 }]);
+  c.spells = [];
+  const cl = c.classes[0];
+  const why = (name, over) => INV.invocationReason(INVOCATIONS.find((i) => i.name === name), INV.invocationContext(c, cl, over));
+  assert.equal(why("Devil's Sight"), "");
+  assert.equal(why("Ascendant Step"), "warlock 9");
+  assert.equal(why("Thirsting Blade"), "needs Blade pact");
+  assert.equal(why("Thirsting Blade", { pactBoon: "Pact of the Blade" }), "");
+  assert.equal(why("Agonizing Blast"), "needs Eldritch Blast");
+  assert.equal(why("Maddening Hex"), "needs Hex");
+  c.spells = [{ name: "Eldritch Blast" }, { name: "Hex" }];
+  assert.equal(why("Agonizing Blast"), "");
+  assert.equal(why("Maddening Hex"), "");
+  // Pact of the Tome's cantrips count, and so do Hexblade's Curse and Sign of Ill Omen.
+  c.spells = [];
+  assert.equal(why("Agonizing Blast", { pactSpells: ["Eldritch Blast"] }), "");
+  assert.equal(why("Maddening Hex", { known: ["Sign of Ill Omen"] }), "");
+  cl.subclass = "The Hexblade";
+  assert.equal(why("Relentless Hex", { level: 7 }), "");
+  assert.equal(why("Devil's Sight", { known: ["Devil's Sight"] }), "known");
+});
+
+test("invocations: what they give on the sheet, and forgetting takes it back", () => {
+  const c = char([{ name: "Warlock", subclass: "The Fiend", level: 9, pactBoon: "Pact of the Tome", pactSpells: ["Guidance", "Eldritch Blast", "Light"] }],
+    { abilities: { cha: 18 } });
+  c.spells = []; c.speed = 30; c.skillProfs = { Deception: { prof: true, expertise: false } };
+  const cl = c.classes[0];
+  const beguile = INV.learnInvocation(c, cl, "Beguiling Influence", []);
+  assert.deepEqual(beguile.applied.skills, ["Persuasion"]);  // Deception was already there
+  assert.equal(c.skillProfs.Persuasion.prof, true);
+  INV.learnInvocation(c, cl, "Armor of Shadows", []);
+  INV.learnInvocation(c, cl, "Sign of Ill Omen", []);
+  INV.learnInvocation(c, cl, "Gift of the Depths", []);
+  INV.learnInvocation(c, cl, "Book of Ancient Secrets", ["Find Familiar", "Alarm"]);
+  INV.learnInvocation(c, cl, "Agonizing Blast", []);
+  INV.learnInvocation(c, cl, "Devil's Sight", []);
+
+  const spells = Object.fromEntries(H.featureSpells(c).filter((s) => s.source === "Invocation" || s.source === "Pact Boon").map((s) => [s.name, s.kind]));
+  assert.deepEqual(spells, { "Guidance": "known", "Eldritch Blast": "known", "Light": "known", "Mage Armor": "atwill",
+    "Bestow Curse": "slot", "Water Breathing": "free", "Find Familiar": "ritual", "Alarm": "ritual" });
+  const res = H.characterResources(c).filter((r) => r.source === "Invocation").map((r) => r.name);
+  assert.deepEqual(res, ["Bestow Curse (Sign of Ill Omen)", "Water Breathing (Gift of the Depths)"]);
+  assert.ok(H.computeSpeed(c).others.some((o) => o.type === "swim" && o.value === 30), "Gift of the Depths swim speed");
+  assert.match(H.getCharacterSenses(c), /Devil's Sight 120 ft/);
+  const blast = INV.eldritchBlastSummary(c);
+  assert.deepEqual([blast.beams, blast.bonus, blast.range], [2, 4, 120]);
+
+  INV.forgetInvocation(c, cl, beguile.id);
+  assert.equal(c.skillProfs.Persuasion.prof, false);
+  assert.equal(c.skillProfs.Deception.prof, true);
+  assert.equal(INV.knownInvocations(cl).length, 6);
+  assert.deepEqual(INV.pendingInvocationPicks(cl), []);
+});
+
+test("invocations: custom features from older sheets move onto the card", () => {
+  const c = char([{ name: "Warlock", level: 2 }]);
+  c.skillProfs = {};
+  c.features = [{ id: "a", name: "Agonizing Blast", source: "Custom", text: "x" }, { id: "b", name: "Eldritch Invocation: Devil's Sight", source: "Custom", text: "x" },
+    { id: "c", name: "Lucky charm", source: "Custom", text: "x" }];
+  assert.equal(INV.customInvocationFeatures(c).length, 2);
+  assert.deepEqual(INV.adoptCustomInvocations(c, c.classes[0]), ["Agonizing Blast", "Devil's Sight"]);
+  assert.deepEqual(c.features.map((f) => f.id), ["c"]);
+  assert.deepEqual(INV.knownInvocations(c.classes[0]).map((e) => e.name), ["Agonizing Blast", "Devil's Sight"]);
 });

@@ -3,9 +3,10 @@ import { mod, fmtMod, ce, isProficientWithWeapon } from "../core/helpers.js";
 import { themedPicker } from "./themed-picker.js";
 import { openInfoModal } from "./info-modal.js";
 import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
+import { SPELL_DATA } from "../data/spells.js";
 import {
   TOOL_GROUPS, featDef, featHasPicks, featNeedsChoice, startingPicks, featPicksProblem,
-  expertiseOptions, expertiseReason, applyFeatPicks
+  expertiseOptions, expertiseReason, applyFeatPicks, featSpellOptions
 } from "../core/feat-picks.js";
 
 /* ---------------- Feat picks UI ----------------
@@ -120,7 +121,35 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       onPick: function(v){ picks.weapons[w] = v; onChange(); }
     })));
   })(w);
+
+  if(def.grantsSpells && def.grantsSpells.length){
+    box.appendChild(label("You learn " + def.grantsSpells.join(" and ")));
+    def.grantsSpells.forEach(function(name){ if(SPELL_DATA[name]) box.appendChild(spellNote(name)); });
+  }
+  if(def.spellPick){
+    if(!picks.spells) picks.spells = [];
+    var sp = def.spellPick, bySchool = {};
+    featSpellOptions(def).forEach(function(name){ var sc = SPELL_DATA[name].school; (bySchool[sc] = bySchool[sc] || []).push(name); });
+    box.appendChild(label("Learn " + (sp.count > 1 ? sp.count + " spells" : "one spell") + ": " + sp.label));
+    for(var p = 0; p < sp.count; p++) (function(p){
+      box.appendChild(field(themedPicker({
+        key: "feat:" + def.name + ":spell:" + p, ariaLabel: def.name + " spell " + (p + 1),
+        placeholder: "Choose a spell", groups: bySchool, value: picks.spells[p] || "",
+        reasonFor: function(v){ return v!==picks.spells[p] && picks.spells.indexOf(v)!==-1 ? "picked" : ""; },
+        onPick: function(v){ picks.spells[p] = v; onChange(); }
+      })));
+      if(picks.spells[p] && SPELL_DATA[picks.spells[p]]) box.appendChild(spellNote(picks.spells[p]));
+    })(p);
+  }
   return box;
+}
+function spellNote(name){
+  var n = ce("p", "fp-spell-note");
+  var b = document.createElement("b");
+  b.textContent = name + ": ";
+  n.appendChild(b);
+  n.appendChild(document.createTextNode(SPELL_DATA[name].summary || ""));
+  return n;
 }
 function label(text){ var l = ce("div", "fp-label"); l.textContent = text; return l; }
 function field(el){ var f = ce("div", "field rt-field fp-field"); f.appendChild(el); return f; }
@@ -163,7 +192,7 @@ export function openFeatPicksModal(c, feat, onDone){
     function close(){ document.getElementById("info-modal-close").click(); }
     apply.addEventListener("click", function(){ applyFeatPicks(c, feat, picks); close(); onDone(); });
     manual.addEventListener("click", function(){
-      if(!feat.picks) feat.picks = {ability: "", skills: [], expertise: [], weapons: []};
+      if(!feat.picks) feat.picks = {ability: "", skills: [], expertise: [], weapons: [], spells: []};
       feat.picks.manual = true;
       close(); onDone();
     });

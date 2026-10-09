@@ -9,6 +9,7 @@ import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from
 import { WEAPON_DATA } from "../data/weapons.js";
 import { CLASS_RESOURCES, SUBCLASS_RESOURCES, FEAT_RESOURCES } from "../data/resources.js";
 import { featDef, featProficiencies, featPicksSummary } from "./feat-picks.js";
+import { invocationSpells, invocationResources, invocationSpeedSources, invocationSenses } from "./invocations.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
 import { TOGGLE_EFFECTS } from "../data/effects.js";
 
@@ -220,7 +221,8 @@ export function characterResources(c){
   // Feats with uses. Martial Adept's die adds to a Battle Master's
   // superiority dice when the character has them.
   Object.keys(FEAT_RESOURCES).forEach(function(featName){
-    if(!hasFeat(c, featName)) return;
+    var feat = (c.feats||[]).find(function(f){ return f.name===featName; });
+    if(!feat) return;
     FEAT_RESOURCES[featName].forEach(function(r){
       var key = "feat:"+r.id;
       if(featName==="Martial Adept"){
@@ -234,13 +236,14 @@ export function characterResources(c){
       }
       var max = r.max(0, m);
       list.push({
-        key: key, name: r.name, source: featName, hint: r.hint, pool: !!r.pool,
+        key: key, name: typeof r.name==="function" ? r.name(feat) : r.name, source: featName, hint: r.hint, pool: !!r.pool,
         max: max, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
         reset: r.reset(0)
       });
     });
   });
-  return list;
+  // Pact Boon and invocation uses (Tomb of Levistus, Sign of Ill Omen's curse).
+  return list.concat(invocationResources(c, m));
 }
 /* Restore resources on a rest. A long rest restores everything except
    "manual" ones; a short rest only what recharges on one. Returns the names restored. */
@@ -367,13 +370,13 @@ export function computeSpeed(c){
   ["fly", "swim", "climb"].forEach(function(t){
     if(rs[t]) list.push({type: t, value: rs[t], when: (race.speedWhen||{})[t] || "", source: c.race});
   });
-  (c.classes||[]).forEach(function(cl){
-    classFeatureList(cl).forEach(function(f){
-      (f.speeds||[]).forEach(function(sp){
-        if(sp.bonus){ bonus[sp.type] = (bonus[sp.type]||0) + sp.bonus; return; }
-        var value = sp.value==="walk" ? walk : sp.value==="2walk" ? 2 * walk : sp.value;
-        list.push({type: sp.type, value: value, when: sp.when || "", source: f.name});
-      });
+  var speedSources = [];
+  (c.classes||[]).forEach(function(cl){ speedSources = speedSources.concat(classFeatureList(cl)); });
+  speedSources.concat(invocationSpeedSources(c)).forEach(function(f){
+    (f.speeds||[]).forEach(function(sp){
+      if(sp.bonus){ bonus[sp.type] = (bonus[sp.type]||0) + sp.bonus; return; }
+      var value = sp.value==="walk" ? walk : sp.value==="2walk" ? 2 * walk : sp.value;
+      list.push({type: sp.type, value: value, when: sp.when || "", source: f.name});
     });
   });
   list.forEach(function(o){ if(bonus[o.type]) o.value += bonus[o.type]; });
@@ -638,7 +641,32 @@ export function featureSpells(c){
       });
     });
   });
+  // Feats that teach spells (Fey Touched: Misty Step and the picked
+  // spell), cast with the ability the feat raised.
+  (c.feats||[]).forEach(function(feat){
+    var def = featDef(feat.name);
+    if(!def || !(def.grantsSpells || def.spellPick)) return;
+    var picks = feat.picks || {};
+    var note = spellAbilityNote(c, picks.ability, "Free once per long rest, or cast it with a spell slot.");
+    (def.grantsSpells||[]).concat(picks.spells||[]).forEach(function(name){
+      if(!name || out.some(function(x){ return x.name===name; })) return;
+      var data = SPELL_DATA[catalogSpellName(name)] || null;
+      out.push({ name: name, data: data, level: data ? data.level : 0, kind: "free", source: feat.name, feature: feat.name, note: note });
+    });
+  });
+  // The Pact Boon's and invocations' spells (Armor of Shadows' Mage Armor).
+  invocationSpells(c).forEach(function(fs){
+    if(!out.some(function(x){ return x.name===fs.name; })) out.push(fs);
+  });
   return out;
+}
+/* "Uses Wisdom: save DC 13, spell attack +5." for a spell cast with
+   `ability`, after `lead`. Without an ability yet, says where to pick it. */
+export function spellAbilityNote(c, ability, lead){
+  if(!ability) return lead + " Choose the feat's ability on the Features & Feats tab to see its save DC.";
+  var m = mod(c.abilities && c.abilities[ability]), pb = profBonus(c);
+  var name = {str:"Strength", dex:"Dexterity", con:"Constitution", int:"Intelligence", wis:"Wisdom", cha:"Charisma"}[ability];
+  return lead + " Uses " + name + ": save DC " + (8 + pb + m) + ", spell attack " + fmtMod(pb + m) + ".";
 }
 /* A `spells` list: every name, or those keyed at or below class level `lv`. */
 function spellsUpTo(spells, lv){
@@ -950,7 +978,9 @@ export function computeDarkvision(c){
 }
 export function getCharacterSenses(c){
   var dv = computeDarkvision(c);
-  return dv.range ? "Darkvision " + dv.range + " ft" : "No darkvision";
+  var extra = invocationSenses(c);
+  if(!dv.range && extra.length) return extra.join(", ");
+  return [dv.range ? "Darkvision " + dv.range + " ft" : "No darkvision"].concat(extra).join(", ");
 }
 
 /* Heavy Armor Master: nonmagical bludgeoning, piercing and slashing
@@ -1205,7 +1235,7 @@ export function getAllCharacterFeatures(c){
       id: "bg_"+c.background,
       name: c.background + " Lore & Features",
       source: "Background · " + c.background,
-      text: bg ? bg.blurb : BACKGROUND_INFO_FALLBACK,
+      text: (bg ? bg.blurb : BACKGROUND_INFO_FALLBACK) + (bg && bg.feature && bg.feature.name ? "\n\n" + bg.feature.name + ": " + (bg.feature.text || "") : ""),
       category: "background",
       isDerived: true
     });

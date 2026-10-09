@@ -82,6 +82,7 @@
 .wiz-pick-row.disabled{cursor:not-allowed;opacity:.45;}
 .wiz-pick-row.disabled:hover{background:none;}
 .wiz-pick-row .chk{width:18px;height:18px;}
+.wiz-pick-row .row-meta{font-size:11.5px;color:var(--text-on-parch-dim);font-style:italic;}
 
 /* Wizard spell-pick step */
 .wiz-spell-section{margin-top:18px;}
@@ -290,6 +291,8 @@
 .fp-ab-grid{justify-content:start;}
 .fp-ab-grid .rt-ab:disabled{cursor:default;opacity:1;}
 .fp-field{margin:0;}
+.fp-spell-note{font-size:12.5px;line-height:1.45;margin:0;color:var(--text-on-parch-dim);}
+.fp-spell-note b{color:var(--text-on-parch);font-weight:600;}
 .fp-lead{font-size:13px;line-height:1.5;margin:0 0 4px;}
 .fp-problem{font-size:12.5px;color:var(--text-on-parch-dim);margin:10px 0 0;min-height:1em;}
 .fp-modal-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;}

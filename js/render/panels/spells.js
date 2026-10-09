@@ -390,7 +390,8 @@ function slotsLeftText(c, lvl){
 /* ---- Spells from features ----
    Read-only: they come from the character's class and subclass features
    (featureSpells), so they follow level-ups and can't be removed here. */
-var KIND_LABELS = { prepared: "Always prepared", known: "Always known", spellbook: "In your spellbook", ritual: "Ritual only", expanded: "Can learn" };
+var KIND_LABELS = { prepared: "Always prepared", known: "Always known", spellbook: "In your spellbook", ritual: "Ritual only", expanded: "Can learn",
+  free: "Free 1/long rest", atwill: "At will" };
 
 function knowsSpell(c, fs){
   var names = [fs.name, catalogSpellName(fs.name)].map(function(n){ return n.toLowerCase(); });
@@ -456,6 +457,12 @@ function renderFeatureSpellCard(c, fs){
     summaryP.className = "inv-armor-note";
     summaryP.textContent = d.summary;
     card.appendChild(summaryP);
+  }
+  if(fs.note){
+    var noteP = document.createElement("p");
+    noteP.className = "inv-armor-note feature-spell-note";
+    noteP.textContent = fs.note;
+    card.appendChild(noteP);
   }
   return card;
 }
@@ -550,7 +557,7 @@ export function renderSpellsPanel(c){
   var granted = all.filter(function(fs){ return fs.kind!=="expanded"; });
   var expanded = all.filter(function(fs){ return fs.kind==="expanded"; });
   if(granted.length) panel.appendChild(renderFeatureSpellsCard(c, granted, "From your features",
-    "Granted by your class and subclass features. Prepared ones don't count against your prepared spells."));
+    "Granted by your class features, feats and invocations. They don't count against your spells known or prepared."));
   if(expanded.length) panel.appendChild(renderFeatureSpellsCard(c, expanded, "Added to your spell list",
     "Your patron adds these to the spells you can learn. They still count as spells known: learn one when you gain or swap a spell."));
 

@@ -11,7 +11,14 @@
                     on the sheet but is kept and shown (Elemental Adept's
                     damage type)
      repeatable     can be taken more than once, each time with a
-                    different option */
+                    different option
+     grantsSpells   spells the feat teaches outright (Fey Touched: Misty
+                    Step); shown on the Spells tab (see featureSpells)
+     spellPick      {count, level, schools, label}: spells to pick from
+                    any class's list, at that spell level and from those
+                    schools (Fey Touched's 1st-level divination or
+                    enchantment spell). Cast with the ability picked for
+                    the feat's +1. */
 export var FEATS_CATALOG = [
   {
     name: "Alert",
@@ -87,6 +94,16 @@ export var FEATS_CATALOG = [
     category: "Magic",
     summary: "Spells ignore resistance to a chosen element; treat 1s on damage dice as 2s.",
     description: "When you gain this feat, choose one damage type: acid, cold, fire, lightning, or thunder.\n• Spells you cast ignore resistance to damage of the chosen type.\n• In addition, when you roll damage for a spell you cast that deals damage of that type, you can treat any 1 on a damage die as a 2."
+  },
+  {
+    name: "Fey Touched",
+    ability:["int","wis","cha"],
+    grantsSpells:["Misty Step"],
+    spellPick:{count:1, level:1, schools:["Divination","Enchantment"], label:"1st-level divination or enchantment spell"},
+    prerequisite: "None",
+    category: "Magic",
+    summary: "+1 INT/WIS/CHA, learn Misty Step and one 1st-level divination or enchantment spell; cast each once per long rest without a slot.",
+    description: "Your exposure to the Feywild's magic has changed you, granting you the following benefits:\n• Increase your Intelligence, Wisdom, or Charisma score by 1, to a maximum of 20.\n• You learn the misty step spell and one 1st-level spell of your choice. The 1st-level spell must be from the divination or enchantment school of magic. You can cast each of these spells without expending a spell slot. Once you cast either of these spells in this way, you can't cast that spell in this way again until you finish a long rest. You can also cast these spells using spell slots you have of the appropriate level. The spells' spellcasting ability is the ability increased by this feat."
   },
   {
     name: "Grappler",

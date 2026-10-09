@@ -2,11 +2,13 @@ import { FEATS_CATALOG } from "../data/feats.js";
 import { ABILITIES, SKILLS } from "../data/abilities-skills.js";
 import { ARTISAN_TOOLS, MUSICAL_INSTRUMENTS } from "../data/classes.js";
 import { WEAPON_GROUPS } from "../data/weapons.js";
+import { spellsMatching } from "../data/spells.js";
 
 /* ---------------- Feat picks ----------------
    Choices a feat asks for when it's taken: the ability a half-feat raises
    by 1 (Athlete: STR or DEX), Skilled's three skills or tools, Skill
-   Expert's skill and expertise, Weapon Master's four weapons. The catalog
+   Expert's skill and expertise, Weapon Master's four weapons, Fey
+   Touched's 1st-level spell. The catalog
    entry says what a feat
    offers (see the key at the top of js/data/feats.js).
 
@@ -15,7 +17,8 @@ import { WEAPON_GROUPS } from "../data/weapons.js";
    already proficient changes nothing), so removing the feat, or undoing
    the level-up that gave it, takes back exactly that. Resilient's save,
    armor, tool and weapon proficiencies aren't written anywhere; they're
-   read from the picks (featProficiencies). Weapon picks do tick the
+   read from the picks (featProficiencies), and so are picked spells
+   (featureSpells puts them on the Spells tab). Weapon picks do tick the
    Proficient box on matching weapons already carried (and undo it). */
 
 export var TOOL_GROUPS = {
@@ -33,19 +36,23 @@ export function featDef(name){
 }
 /* Anything taking this feat changes on the sheet. */
 export function featHasPicks(def){
-  return !!def && !!((def.ability && def.ability.length) || def.skills || def.skillsOrTools || def.expertise || def.weapons || def.option);
+  return !!def && !!((def.ability && def.ability.length) || def.skills || def.skillsOrTools || def.expertise || def.weapons || def.option || def.spellPick);
 }
 /* Something the player has to choose (not just a fixed +1). */
 export function featNeedsChoice(def){
-  return !!def && !!((def.ability && def.ability.length > 1) || def.skills || def.skillsOrTools || def.expertise || def.weapons || def.option);
+  return !!def && !!((def.ability && def.ability.length > 1) || def.skills || def.skillsOrTools || def.expertise || def.weapons || def.option || def.spellPick);
 }
 export function emptyPicks(def){
-  return { ability: def && def.ability && def.ability.length===1 ? def.ability[0] : "", skills: [], expertise: [], weapons: [], option: "" };
+  return { ability: def && def.ability && def.ability.length===1 ? def.ability[0] : "", skills: [], expertise: [], weapons: [], option: "", spells: [] };
+}
+/* The spells a feat's spellPick can choose from. */
+export function featSpellOptions(def){
+  return def && def.spellPick ? spellsMatching(def.spellPick) : [];
 }
 /* Picks to start a picker from: the feat's own (to finish them) or empty. */
 export function startingPicks(def, feat){
   var p = feat && feat.picks && !feat.picks.manual ? feat.picks : emptyPicks(def);
-  return {ability: p.ability || emptyPicks(def).ability, skills: (p.skills||[]).slice(), expertise: (p.expertise||[]).slice(), weapons: (p.weapons||[]).slice(), option: p.option || ""};
+  return {ability: p.ability || emptyPicks(def).ability, skills: (p.skills||[]).slice(), expertise: (p.expertise||[]).slice(), weapons: (p.weapons||[]).slice(), option: p.option || "", spells: (p.spells||[]).slice()};
 }
 function profCount(def){ return def.skillsOrTools || def.skills || 0; }
 
@@ -70,6 +77,11 @@ export function featPicksProblem(def, picks, ctx){
   var w = def.weapons || 0;
   var weapons = (picks.weapons||[]).slice(0, w).filter(Boolean);
   if(weapons.length < w || new Set(weapons).size < w) return "Pick "+w+" different weapons for "+def.name+".";
+  if(def.spellPick){
+    var sp = def.spellPick, options = featSpellOptions(def);
+    var spells = (picks.spells||[]).slice(0, sp.count).filter(function(x){ return options.indexOf(x)!==-1; });
+    if(spells.length < sp.count || new Set(spells).size < sp.count) return "Pick "+(sp.count===1 ? "a "+sp.label : sp.count+" different spells ("+sp.label+")")+" for "+def.name+".";
+  }
   return "";
 }
 function hasProf(ctx, skill){ var e = ctx && ctx.skillProfs && ctx.skillProfs[skill]; return !!(e && e.prof); }
@@ -93,6 +105,7 @@ export function featPicksSummary(def, picks){
   (picks.skills||[]).filter(Boolean).forEach(function(s){ bits.push(s); });
   (picks.expertise||[]).filter(Boolean).forEach(function(s){ bits.push("expertise in "+s); });
   (picks.weapons||[]).filter(Boolean).forEach(function(s){ bits.push(s); });
+  (def.grantsSpells||[]).concat((picks.spells||[]).filter(Boolean)).forEach(function(s){ bits.push(s); });
   return bits.join(", ");
 }
 
@@ -104,7 +117,7 @@ export function applyFeatPicks(c, feat, picks){
   if(!featHasPicks(def)) return;
   revertFeatPicks(c, feat);
   feat.picks = {ability: picks.ability||"", skills: (picks.skills||[]).filter(Boolean), expertise: (picks.expertise||[]).filter(Boolean),
-    weapons: (picks.weapons||[]).filter(Boolean), option: picks.option||""};
+    weapons: (picks.weapons||[]).filter(Boolean), option: picks.option||"", spells: (picks.spells||[]).filter(Boolean)};
   var applied = {abilities:{}, skills:[], expertise:[], weaponItems:[]};
   var k = feat.picks.ability;
   if(k){
@@ -159,7 +172,9 @@ export function featPicksPending(feat){
   var def = featDef(feat.name);
   if(!featHasPicks(def)) return false;
   if(!feat.picks) return true;
-  return !feat.picks.manual && !!def.weapons && (feat.picks.weapons||[]).length < def.weapons;
+  if(feat.picks.manual) return false;
+  return (!!def.weapons && (feat.picks.weapons||[]).length < def.weapons) ||
+    (!!def.spellPick && (feat.picks.spells||[]).length < def.spellPick.count);
 }
 
 /* Proficiencies feats grant: armor (Moderately Armored), tools (Skilled),

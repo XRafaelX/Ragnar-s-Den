@@ -131,6 +131,15 @@ export function renderInformationPanel(c){
     if(bg && bg.skills && bg.skills.length){
       body.appendChild(chipRow("Skill Proficiencies", bg.skills));
     }
+    if(bg && bg.feature && bg.feature.name){
+      var feat = document.createElement("p");
+      feat.className = "info-blurb";
+      var b = document.createElement("b");
+      b.textContent = bg.feature.name + ": ";
+      feat.appendChild(b);
+      feat.appendChild(document.createTextNode(bg.feature.text || ""));
+      body.appendChild(feat);
+    }
   }));
 
   aboutCard.appendChild(linkRow("Alignment", c.alignment, "Alignment · " + (c.alignment || ""), function(body){

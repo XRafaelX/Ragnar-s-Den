@@ -25,7 +25,8 @@ export var BACKGROUNDS = {
     "Fisher","Marine","Shipwright","Smuggler",
     "Celebrity Adventurer's Scion","Failed Merchant","Gambler","Plaintiff","Rival Intern",
     "Feylost","Witchlight Hand",
-    "Astral Drifter","Wildspacer"
+    "Astral Drifter","Wildspacer",
+    "Haunted One"
   ]
 };
 
@@ -48,14 +49,14 @@ export var BACKGROUND_INFO = {
   "Archaeologist": {skills:["History","Survival"], blurb:"Grants History and Survival. You dig through ruins to uncover the secrets of lost civilizations."},
   "City Watch": {skills:["Athletics","Insight"], blurb:"Grants Athletics and Insight, plus two languages. You kept the peace on a city's streets."},
   "Clan Crafter": {skills:["History","Insight"], blurb:"Grants History and Insight, plus a set of artisan's tools. You learned a craft from a dwarven clan."},
-  "Cloistered Scholar": {skills:["History"], skillChoice:"plus one of Arcana, Nature or Religion", blurb:"Grants History plus one of Arcana, Nature or Religion, and two languages. You studied in a great library or monastery."},
+  "Cloistered Scholar": {skills:["History"], skillChoice:"plus one of Arcana, Nature or Religion", skillPick:{count:1, options:["Arcana","Nature","Religion"]}, blurb:"Grants History plus one of Arcana, Nature or Religion, and two languages. You studied in a great library or monastery."},
   "Courtier": {skills:["Insight","Persuasion"], blurb:"Grants Insight and Persuasion, plus two languages. You know the etiquette and intrigue of royal courts."},
-  "Faction Agent": {skills:["Insight"], skillChoice:"plus one Intelligence, Wisdom or Charisma skill", blurb:"Grants Insight plus one more social or mental skill, and two languages. You serve a faction and can call on its members."},
+  "Faction Agent": {skills:["Insight"], skillChoice:"plus one Intelligence, Wisdom or Charisma skill", skillPick:{count:1, options:["Arcana","History","Investigation","Nature","Religion","Animal Handling","Medicine","Perception","Survival","Deception","Intimidation","Performance","Persuasion"]}, blurb:"Grants Insight plus one more social or mental skill, and two languages. You serve a faction and can call on its members."},
   "Far Traveler": {skills:["Insight","Perception"], blurb:"Grants Insight and Perception. You come from a distant land, and people are curious about your ways."},
-  "Inheritor": {skills:["Survival"], skillChoice:"plus one of Arcana, History or Religion", blurb:"Grants Survival plus one of Arcana, History or Religion. You carry an heirloom others would kill for."},
-  "Knight of the Order": {skills:["Persuasion"], skillChoice:"plus one of Arcana, History, Nature or Religion", blurb:"Grants Persuasion plus one of Arcana, History, Nature or Religion. You're sworn to a knightly order and its ideals."},
+  "Inheritor": {skills:["Survival"], skillChoice:"plus one of Arcana, History or Religion", skillPick:{count:1, options:["Arcana","History","Religion"]}, blurb:"Grants Survival plus one of Arcana, History or Religion. You carry an heirloom others would kill for."},
+  "Knight of the Order": {skills:["Persuasion"], skillChoice:"plus one of Arcana, History, Nature or Religion", skillPick:{count:1, options:["Arcana","History","Nature","Religion"]}, blurb:"Grants Persuasion plus one of Arcana, History, Nature or Religion. You're sworn to a knightly order and its ideals."},
   "Mercenary Veteran": {skills:["Athletics","Persuasion"], blurb:"Grants Athletics and Persuasion. You fought for coin with a mercenary company."},
-  "Urban Bounty Hunter": {skills:[], skillChoice:"two of Deception, Insight, Persuasion or Stealth", blurb:"Grants two of Deception, Insight, Persuasion or Stealth. You hunt fugitives through a city's streets and underworld."},
+  "Urban Bounty Hunter": {skills:[], skillChoice:"two of Deception, Insight, Persuasion or Stealth", skillPick:{count:2, options:["Deception","Insight","Persuasion","Stealth"]}, blurb:"Grants two of Deception, Insight, Persuasion or Stealth. You hunt fugitives through a city's streets and underworld."},
   "Uthgardt Tribe Member": {skills:["Athletics","Survival"], blurb:"Grants Athletics and Survival. You belong to one of the barbarian tribes of the North."},
   "Waterdhavian Noble": {skills:["History","Persuasion"], blurb:"Grants History and Persuasion. You were born into a wealthy family of the City of Splendors."},
 
@@ -115,11 +116,17 @@ export var BACKGROUND_INFO = {
 
   /* ---- Planescape: Adventures in the Multiverse ---- */
   "Gate Warden": {skills:["Persuasion","Survival"], blurb:"Grants Persuasion and Survival. You grew up near a permanent planar portal, absorbing the essence of other planes and growing comfortable with the extraordinary."},
-  "Planar Philosopher": {skills:["Arcana"], skillChoice:"plus one skill linked to your Sigil faction (e.g. Religion, History, Nature, Stealth, Perception, Insight, Medicine, Survival, Persuasion, Performance, or Athletics)", blurb:"Grants Arcana plus one faction-linked skill. You subscribe to a philosophy seeking hidden truths of the multiverse, aligned to one of Sigil's great factions."},
+  "Planar Philosopher": {skills:["Arcana"], skillChoice:"plus one skill linked to your Sigil faction (e.g. Religion, History, Nature, Stealth, Perception, Insight, Medicine, Survival, Persuasion, Performance, or Athletics)", skillPick:{count:1, options:["Athletics","History","Insight","Medicine","Nature","Perception","Performance","Persuasion","Religion","Stealth","Survival"]}, blurb:"Grants Arcana plus one faction-linked skill. You subscribe to a philosophy seeking hidden truths of the multiverse, aligned to one of Sigil's great factions."},
 
   /* ---- Glory of the Giants ---- */
   "Giant Foundling": {skills:["Intimidation","Survival"], blurb:"Grants Intimidation and Survival. You were raised among giants and carry their perspective — and their magic — with you into a world that seems small by comparison."},
-  "Rune Carver": {skills:["History","Perception"], blurb:"Grants History and Perception. You have dedicated your life to studying the ancient runic magic of giants, carving their secrets into objects to wield their power."}
+  "Rune Carver": {skills:["History","Perception"], blurb:"Grants History and Perception. You have dedicated your life to studying the ancient runic magic of giants, carving their secrets into objects to wield their power."},
+
+  /* ---- Curse of Strahd / Van Richten's Guide to Ravenloft ---- */
+  "Haunted One": {skills:[], skillChoice:"two of Arcana, Investigation, Religion or Survival", skillPick:{count:2, options:["Arcana","Investigation","Religion","Survival"]},
+    exoticLanguages:1,
+    blurb:"Grants two of Arcana, Investigation, Religion or Survival, and two languages (one of them exotic). Something terrible happened to you, and a dark presence still follows you. Starts with a monster hunter's pack (chest, crowbar, hammer, three wooden stakes, holy symbol, holy water, manacles, steel mirror, oil, tinderbox, three torches) and one gothic trinket.",
+    feature:{name:"Heart of Darkness", text:"Those who look into your eyes can see that you have faced unimaginable horror and that you are no stranger to darkness. Though they might fear you, commoners will extend you every courtesy and do their utmost to help you. Unless you have shown yourself to be a danger to them, they will even take up arms to fight alongside you, should you find yourself facing an enemy alone."}}
 };
 
 /* Tool (and vehicle) proficiencies each background grants, for the
@@ -179,10 +186,17 @@ export var BACKGROUND_TOOLS = {
   "Gate Warden":"None", "Planar Philosopher":"None",
 
   /* ---- Glory of the Giants ---- */
-  "Giant Foundling":"None", "Rune Carver":"One type of artisan's tools"
+  "Giant Foundling":"None", "Rune Carver":"One type of artisan's tools",
+
+  /* ---- Curse of Strahd / Van Richten's Guide to Ravenloft ---- */
+  "Haunted One":"None"
 };
-/* Some backgrounds let the player pick a skill (`skillChoice`); the wizard
-   grants the fixed `skills` and the blurb says what else to tick. */
+/* Some backgrounds let the player pick skills: `skillChoice` describes it
+   (Compendium) and `skillPick` {count, options} is what the creation
+   wizard's Skills step offers on top of the fixed `skills`.
+   `exoticLanguages`: how many of the background's languages must be
+   exotic ones (Haunted One: one of its two). `feature`: {name, text}, the
+   background feature shown on the Features tab and in the Compendium. */
 export var BACKGROUND_INFO_FALLBACK = "Grants two skill proficiencies of your choice (and usually a tool or language). Pick whatever fits your character's story; you can add them on the sheet's Skills tab afterward.";
 
 /* Languages of your choice each background grants (0 when it gives a
@@ -235,5 +249,8 @@ export var BACKGROUND_LANGUAGES = {
   "Gate Warden":2, "Planar Philosopher":2,
 
   /* ---- Glory of the Giants ---- */
-  "Giant Foundling":2, "Rune Carver":1
+  "Giant Foundling":2, "Rune Carver":1,
+
+  /* ---- Curse of Strahd / Van Richten's Guide to Ravenloft ---- */
+  "Haunted One":2
 };

@@ -7,6 +7,7 @@ import { getCustomEntry } from "../../core/custom-features.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { playDelete } from "../../ui/sound.js";
 import { renderInfusionsCard } from "./infusions.js";
+import { renderInvocationsCard } from "./invocations.js";
 import { featPicksPending, featAppliedSummary, revertFeatPicks } from "../../core/feat-picks.js";
 import { openFeatPicksModal } from "../../ui/feat-picks.js";
 
@@ -287,6 +288,8 @@ export function renderFeaturesPanel(c){
   updateFeatureList();
   var infusionsCard = renderInfusionsCard(c);
   if(infusionsCard) panel.appendChild(infusionsCard);
+  var invocationsCard = renderInvocationsCard(c);
+  if(invocationsCard) panel.appendChild(invocationsCard);
   panel.appendChild(featDirCard);
 
   return panel;

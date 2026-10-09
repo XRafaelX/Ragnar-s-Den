@@ -461,3 +461,14 @@ export function spellDataForClass(className){
   });
   return out;
 }
+
+/* Catalog spells of one spell level from any class's list, optionally
+   only from some schools or only rituals, sorted by name. For picks that
+   aren't tied to a class list: Fey Touched's 1st-level spell, Pact of the
+   Tome's cantrips, Book of Ancient Secrets' rituals. */
+export function spellsMatching(filter){
+  return Object.keys(SPELL_DATA).filter(function(name){
+    var d = SPELL_DATA[name];
+    return d.level===filter.level && (!filter.schools || filter.schools.indexOf(d.school)!==-1) && (!filter.ritual || d.ritual);
+  }).sort();
+}

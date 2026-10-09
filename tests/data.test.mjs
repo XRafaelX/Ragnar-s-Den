@@ -6,6 +6,10 @@ import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL, XP_THRESHOLDS, SPELL_SLOT_TAB
 import { CLASS_RESOURCES, SUBCLASS_RESOURCES } from "../js/data/resources.js";
 import { CLASSES_INFO } from "../js/data/classes.js";
 import { SPELL_DATA, catalogSpellName } from "../js/data/spells.js";
+import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_TOOLS } from "../js/data/backgrounds.js";
+import { SKILLS } from "../js/data/abilities-skills.js";
+import { INVOCATIONS, PACT_BOONS, INVOCATION_SOURCES, invocationsKnownAt } from "../js/data/invocations.js";
+import { FEATS_CATALOG } from "../js/data/feats.js";
 
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
@@ -182,4 +186,60 @@ test("spell tips: only casters, levels 1 to 20, no long dashes", () => {
     assert.ok(Object.keys(tips).some((l) => +l >= 17), cls + " tips stop early");
   }
   for(const lv of Object.keys(THIRD_CASTER_SPELL_TIPS)) assert.ok(+lv >= 3 && +lv <= 20);
+});
+
+test("backgrounds: every listed one has info, tools and languages; skill picks are real skills", () => {
+  const skills = SKILLS.map((x) => x[0]);
+  for(const name of Object.values(BACKGROUNDS).flat()){
+    const info = BACKGROUND_INFO[name];
+    assert.ok(info && info.blurb, name + ": info");
+    assert.ok(name in BACKGROUND_TOOLS, name + ": tools");
+    assert.ok(name in BACKGROUND_LANGUAGES, name + ": languages");
+    (info.skills || []).forEach((sk) => assert.ok(skills.includes(sk), name + ": skill " + sk));
+    if(info.skillPick){
+      assert.ok(info.skillChoice, name + ": skillPick without skillChoice text");
+      assert.ok(info.skillPick.count >= 1 && info.skillPick.count < info.skillPick.options.length, name + ": pick count");
+      info.skillPick.options.forEach((sk) => assert.ok(skills.includes(sk) && !(info.skills || []).includes(sk), name + ": pick option " + sk));
+    }
+    if(info.exoticLanguages) assert.ok(info.exoticLanguages <= BACKGROUND_LANGUAGES[name], name + ": exotic languages");
+  }
+  const haunted = BACKGROUND_INFO["Haunted One"];
+  assert.deepEqual(haunted.skillPick, { count: 2, options: ["Arcana", "Investigation", "Religion", "Survival"] });
+  assert.equal(BACKGROUND_LANGUAGES["Haunted One"], 2);
+  assert.equal(haunted.exoticLanguages, 1);
+  assert.equal(haunted.feature.name, "Heart of Darkness");
+  assert.ok(!LONG_DASH.test(haunted.blurb + haunted.feature.text));
+});
+
+test("Fey Touched: in the catalog with its spells", () => {
+  const f = FEATS_CATALOG.find((x) => x.name === "Fey Touched");
+  assert.deepEqual(f.ability, ["int", "wis", "cha"]);
+  assert.deepEqual(f.grantsSpells, ["Misty Step"]);
+  assert.ok(SPELL_DATA["Misty Step"]);
+  assert.equal(f.spellPick.level, 1);
+  assert.deepEqual(f.spellPick.schools, ["Divination", "Enchantment"]);
+  assert.ok(!LONG_DASH.test(f.summary + f.description));
+});
+
+test("invocations: well formed, spells exist, prerequisites are real", () => {
+  const names = new Set();
+  const pacts = PACT_BOONS.map((p) => p.name);
+  const skills = SKILLS.map((x) => x[0]);
+  for(const inv of INVOCATIONS.concat(PACT_BOONS)){
+    assert.ok(!names.has(inv.name), "duplicate " + inv.name);
+    names.add(inv.name);
+    assert.ok(INVOCATION_SOURCES[inv.source], inv.name + ": source");
+    assert.ok(inv.text.length > 20 && !LONG_DASH.test(inv.name + inv.text + (inv.summary || "")), inv.name + ": text");
+    if(inv.level != null) assert.ok([5, 7, 9, 12, 15].includes(inv.level), inv.name + ": level " + inv.level);
+    if(inv.pact) assert.ok(pacts.includes(inv.pact), inv.name + ": pact " + inv.pact);
+    if(inv.needs) assert.ok(["eldritchBlast", "hex"].includes(inv.needs), inv.name + ": needs");
+    (inv.spells || []).forEach((sp) => {
+      assert.ok(SPELL_DATA[sp.name], inv.name + ": spell " + sp.name);
+      assert.ok(["atwill", "free", "slot", "known"].includes(sp.kind), inv.name + ": kind " + sp.kind);
+    });
+    (inv.skills || []).forEach((sk) => assert.ok(skills.includes(sk), inv.name + ": skill " + sk));
+    if(inv.uses) assert.ok(["1", "pb"].includes(inv.uses.max) && ["short", "long"].includes(inv.uses.reset), inv.name + ": uses");
+  }
+  assert.equal(INVOCATIONS.length, 54, "PHB 32 + XGE 14 + TCE 8");
+  assert.deepEqual([1, 2, 4, 5, 7, 9, 12, 15, 18, 20].map(invocationsKnownAt), [0, 2, 2, 3, 4, 5, 6, 7, 8, 8]);
 });

@@ -43,13 +43,14 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Death Saves**: Track successes and failures with automatic stabilization.
   - **Companions**: Full companion panel for Steel Defender, Eldritch Cannon, Drake Companion, Wildfire Spirit, Beast Master beast, Tasha's primal beasts and Blighted Sapling — with HP tracking, beast form entry, and long rest restoration.
   - **Artificer Infusions**: Dedicated infusions tab and picker for Artificer characters.
+  - **Warlock Invocations**: An Eldritch invocations card for Warlocks with all 54 invocations (PHB, Xanathar's, Tasha's) and the four Pact Boons. The level-up asks for new invocations when due (and offers a swap every warlock level), greys out ones whose prerequisites aren't met, and the sheet applies what they do: at-will and once-a-day spells on the Spells tab, uses on Vitals, Beguiling Influence's skills, Gift of the Depths' swim speed, Devil's Sight in senses and an Eldritch Blast summary.
   - **Journal & Information**: Rich notes, backstory, physical characteristics, proficiencies (languages, weapons, armor, tools), and custom notes.
 - **Monsters Browser**:
   - Searchable monster compendium with full stat blocks.
   - Customize and create your own monsters for encounters.
 - **Compendium & Reference Overlays**:
   - Built-in searchable compendium for Races, Classes, Subclasses, Backgrounds, Alignments, Feats, Spells, Weapons, Armor, and Infusions.
-  - All 66 backgrounds have full skill/tool entries and descriptive blurbs.
+  - All 67 backgrounds have full skill/tool entries and descriptive blurbs. Backgrounds that let you choose skills (Haunted One, Urban Bounty Hunter, Cloistered Scholar...) ask for them on the wizard's Skills step.
   - Inspect full trait descriptions, spell requirements, and item properties without leaving the app.
 - **Custom Homebrew Builder**:
   - Create and manage custom Subclasses, Races, Backgrounds, Spells, Items, Features, and Monsters directly in the Compendium.
@@ -154,6 +155,7 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 - `smoke.test.mjs` — every class and subclass at every level from 1 to 20, plus multiclass builds, runs through every sheet calculation without errors.
 - `project.test.mjs` — every file in the service worker's offline list exists, every relative `import` resolves, and `index.html`'s local scripts and stylesheets exist.
 - `bugfixes.test.mjs` — 12 regression tests covering each bug fixed in v2.0.0: `startEffect` null guard, `undoLastLevelUp` deleted-feat guard, Monk Unarmored Defense 0-AC shield, `wisModPlusOne` missing abilities, Defense style with shield only, shield proficiency contains-check, `ordinal()` teen suffixes, and the stale `c.ac` render write.
+- `warlock-feats.test.mjs`: the Haunted One and background skill picks (through the real creation wizard), Fey Touched (spell picks, DC, free casts, Variant Human), and eldritch invocations: every invocation's prerequisite, learning and forgetting, the spells, uses, speeds and senses they give, the Eldritch Blast summary, and the level-up's Pact Boon, new picks, swap and undo. `fake-dom.mjs` is the stand-in DOM it shares with `bugfixes.test.mjs`.
 
 `tests/setup.mjs` gives the browser modules just enough of `window`, `document` and `localStorage` to load in Node. The tests check data and calculations, not rendering — use the checklist below for the screens.
 
