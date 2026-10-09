@@ -470,10 +470,14 @@ export function finishWizard(){
       sp.learnedBy = w.classId;
       c.spells.push(sp);
     });
-    // Subclass freebies: bonus cantrips and always-prepared spells.
+    // Subclass freebies: bonus cantrips and always-prepared spells. The
+    // ones a feature grants (domain spells, Light Domain's Light) already
+    // show in the Spells tab's "From your features" card, so they aren't
+    // copied into the spell list as well.
     var grants = subclassGrants(info, w.classChoices);
+    var fromFeatures = featureSpells(c).map(function(fs){ return fs.name; });
     (grants.cantrips||[]).concat(grants.spells||[]).forEach(function(name){
-      if(!SPELL_DATA[name] || c.spells.some(function(sp){ return sp.name===name; })) return;
+      if(!SPELL_DATA[name] || fromFeatures.indexOf(name)!==-1 || c.spells.some(function(sp){ return sp.name===name; })) return;
       var sp = spellFromCatalog(name, SPELL_DATA[name]);
       sp.prepared = true;
       sp.notes = (grants.spells||[]).indexOf(name)!==-1 ? "Domain spell: always prepared, doesn't count against your prepared spells." : "Bonus cantrip from your "+w.classChoices.subclass+".";

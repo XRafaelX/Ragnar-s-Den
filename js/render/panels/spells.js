@@ -12,7 +12,7 @@ import { sheetHeader } from "./inventory.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
 import { themedPicker } from "../../ui/themed-picker.js";
-import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef } from "../../core/spells-known.js";
+import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, alwaysPrepared } from "../../core/spells-known.js";
 import { PREPARED_CASTERS } from "../../data/spells-known.js";
 
 
@@ -50,6 +50,15 @@ function spellHeader(c, sp, idx, patron){
   var actions = document.createElement("div");
   actions.className = "inv-card-header-actions";
 
+  // A domain spell that's also on the list: always ready, no switch.
+  var always = alwaysPrepared(c, sp);
+  if(always){
+    var alwaysTag = document.createElement("span");
+    alwaysTag.className = "ff-tag source-feat";
+    alwaysTag.textContent = "Always prepared";
+    alwaysTag.title = "From " + always.feature + " (" + always.source + "); doesn't count against your prepared spells";
+    actions.appendChild(alwaysTag);
+  }
   if(patron){
     var src = document.createElement("span");
     src.className = "ff-tag source-class";
@@ -63,7 +72,12 @@ function spellHeader(c, sp, idx, patron){
     var prepCb = document.createElement("input"); prepCb.type = "checkbox"; prepCb.className = "chk";
     prepCb.checked = !!sp.prepared;
     prepCb.addEventListener("click", function(e){ e.stopPropagation(); });
-    prepCb.addEventListener("change", function(){ sp.prepared = prepCb.checked; save(); renderAll(); });
+    prepCb.addEventListener("change", function(){
+      // A preparing class can't go over its daily limit.
+      var why = prepCb.checked && prepareProblem(c, sp);
+      if(why){ prepCb.checked = false; showActionToast(why, true); return; }
+      sp.prepared = prepCb.checked; save(); renderAll();
+    });
     prepLbl.appendChild(prepCb);
     prepLbl.appendChild(document.createTextNode("Prepared"));
     actions.appendChild(prepLbl);
@@ -643,6 +657,95 @@ function renderSpellCounts(c){
   return wrap;
 }
 
+/* ---- Prepare today ----
+   A sheet listing each preparing class's spells with a switch each and
+   the daily limit (ticking past it, or a spell too high a level, is
+   blocked). Opened from the Known / prepared card and after a long rest
+   on the Vitals tab (only when there's a spell to choose). */
+function preparingClasses(c){
+  return (c.classes||[]).filter(function(cl){ return preparedState(c, cl.name); }).map(function(cl){ return cl.name; });
+}
+export function openPrepareSheet(c, onlyWithChoices){
+  var classes = preparingClasses(c);
+  if(!classes.length) return;
+  // After a long rest, only when there's a spell the player could tick.
+  if(onlyWithChoices && !(c.spells||[]).some(function(sp){ return preparingClassFor(c, sp) && !prepareLevelProblem(c, sp); })) return;
+  openBottomSheet(function(body, refresh, close){
+    var header = ce("div", "bs-header");
+    var title = ce("h3", "prep-title");
+    title.textContent = "Prepare today's spells";
+    header.appendChild(title);
+    var closeBtn = ce("button", "bs-close");
+    closeBtn.type = "button"; closeBtn.textContent = "✕"; closeBtn.title = "Close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.addEventListener("click", close);
+    header.appendChild(closeBtn);
+    body.appendChild(header);
+    var lead = ce("p", "bs-subtitle");
+    lead.textContent = "After a long rest you choose which spells are ready today. Cantrips are always ready.";
+    body.appendChild(lead);
+
+    var granted = featureSpells(c).filter(function(fs){ return fs.kind==="prepared" && fs.level > 0; });
+    classes.forEach(function(cls){
+      var st = preparedState(c, cls);
+      var head = ce("div", "prep-head");
+      var name = ce("b"); name.textContent = cls;
+      var count = ce("span", "spell-count " + (st.have > st.max ? "over" : st.have < st.max ? "under" : "full"));
+      count.textContent = st.have + " of " + st.max + " prepared";
+      head.appendChild(name); head.appendChild(count);
+      body.appendChild(head);
+      var always = granted.filter(function(fs){ return fs.className===cls; });
+      if(always.length){
+        var note = ce("p", "prep-note");
+        note.textContent = "Always prepared, and not counted: " + always.map(function(fs){ return fs.name; }).join(", ") + ".";
+        body.appendChild(note);
+      }
+      var mine = (c.spells||[]).filter(function(sp){ return preparingClassFor(c, sp)===cls; })
+        .sort(function(a, b){ return (a.level||0) - (b.level||0) || (a.name||"").localeCompare(b.name||""); });
+      if(!mine.length){
+        var none = ce("p", "prep-note");
+        none.textContent = "No " + cls.toLowerCase() + " spells on your Spells tab yet.";
+        body.appendChild(none);
+      }
+      if(mine.some(function(sp){ return prepareLevelProblem(c, sp); })){
+        var later = ce("p", "prep-note");
+        later.textContent = "Spells marked Not yet are too high a level for you to prepare now.";
+        body.appendChild(later);
+      }
+      var list = ce("div", "prep-list");
+      mine.forEach(function(sp){
+        var row = ce("label", "prep-row" + (sp.prepared ? " on" : ""));
+        var cb = document.createElement("input"); cb.type = "checkbox"; cb.className = "chk";
+        cb.checked = !!sp.prepared;
+        // Too high a level for the class yet, or today's limit reached.
+        var why = prepareProblem(c, sp);
+        cb.disabled = !!why;
+        if(why){ row.classList.add("disabled"); row.title = why; }
+        cb.addEventListener("change", function(){
+          sp.prepared = cb.checked; save(); renderAll(); refresh();
+        });
+        var text = ce("span", "prep-name"); text.textContent = sp.name || "Unnamed spell";
+        var lvl = ce("span", "prep-level"); lvl.textContent = spellLevelLabel(sp.level||0);
+        row.appendChild(cb); row.appendChild(text); row.appendChild(lvl);
+        if(prepareLevelProblem(c, sp)){
+          var later = ce("span", "prep-later");
+          later.textContent = "Not yet";
+          row.appendChild(later);
+        }
+        list.appendChild(row);
+      });
+      body.appendChild(list);
+    });
+
+    var actions = ce("div", "prep-actions");
+    var done = ce("button", "btn small primary");
+    done.type = "button"; done.textContent = "Done";
+    done.addEventListener("click", close);
+    actions.appendChild(done);
+    body.appendChild(actions);
+  });
+}
+
 /* ---- Spells panel ---- */
 export function renderSpellsPanel(c){
   var panel = document.createElement("div");
@@ -663,6 +766,15 @@ export function renderSpellsPanel(c){
 
   var prepares = (c.classes||[]).some(function(cl){ return PREPARED_CASTERS[cl.name]; });
   var spellCard = makeCard(prepares ? "Known / prepared spells" : "Known spells");
+  if(preparingClasses(c).length){
+    var prepBtn = ce("button", "btn small ghost");
+    prepBtn.type = "button"; prepBtn.textContent = "Prepare today";
+    prepBtn.title = "Choose today's prepared spells";
+    prepBtn.addEventListener("click", function(){ openPrepareSheet(c); });
+    var tools = ce("div", "slot-tools");
+    tools.appendChild(prepBtn);
+    spellCard.querySelector("h3").appendChild(tools);
+  }
   var counts = renderSpellCounts(c);
   if(counts) spellCard.appendChild(counts);
   var spells = c.spells || [];

@@ -8,7 +8,8 @@
      spells       spells known by class level: classes that know a fixed
                   set (bard, ranger, sorcerer, warlock, the third casters)
      spellbook    spells added to a wizard's spellbook: {1: 6, else: 2}
-     maxLevel     highest spell level it can learn at a class level
+     maxLevel     highest spell level it can learn (or prepare) at a class
+                  level
      swap         may replace one known spell each level in the class
      schools      third casters: most picks must come from these schools
      anySchoolAt  third casters: levels whose new spell may be any school
@@ -29,6 +30,7 @@ function fullMax(lv){ return Math.min(9, Math.ceil(lv / 2)); }
 function halfMax(lv){ return lv < 2 ? 0 : Math.min(5, Math.ceil(Math.ceil(lv / 2) / 2)); }
 function thirdMax(lv){ return lv < 3 ? 0 : Math.min(4, Math.ceil(Math.ceil(lv / 3) / 2)); }
 function pactMax(lv){ return Math.min(5, Math.ceil(lv / 2)); }
+function artificerMax(lv){ return Math.min(5, Math.ceil(Math.ceil(lv / 2) / 2)); }
 
 export var KNOWN_CASTERS = {
   "Bard": {list: "Bard", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: fullMax, swap: true,
@@ -40,10 +42,10 @@ export var KNOWN_CASTERS = {
   "Ranger": {list: "Ranger", cantrips: byLevel({}), maxLevel: halfMax, swap: true,
     spells: [0, 0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11]},
   "Wizard": {list: "Wizard", cantrips: byLevel({1: 3, 4: 4, 10: 5}), maxLevel: fullMax, spellbook: {1: 6, else: 2}},
-  "Cleric": {list: "Cleric", cantrips: byLevel({1: 3, 4: 4, 10: 5})},
-  "Druid": {list: "Druid", cantrips: byLevel({1: 2, 4: 3, 10: 4})},
-  "Artificer": {list: "Artificer", cantrips: byLevel({1: 2, 10: 3, 14: 4})},
-  "Paladin": {list: "Paladin", cantrips: byLevel({})}
+  "Cleric": {list: "Cleric", cantrips: byLevel({1: 3, 4: 4, 10: 5}), maxLevel: fullMax},
+  "Druid": {list: "Druid", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: fullMax},
+  "Artificer": {list: "Artificer", cantrips: byLevel({1: 2, 10: 3, 14: 4}), maxLevel: artificerMax},
+  "Paladin": {list: "Paladin", cantrips: byLevel({}), maxLevel: halfMax}
 };
 
 var THIRD_SPELLS = [0, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13];

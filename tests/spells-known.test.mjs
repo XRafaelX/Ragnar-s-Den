@@ -8,8 +8,12 @@ import assert from "node:assert/strict";
 import * as SK from "../js/core/spells-known.js";
 import { KNOWN_CASTERS, SUBCLASS_CASTERS } from "../js/data/spells-known.js";
 import { SPELL_DATA } from "../js/data/spells.js";
-import { newCharacter } from "../js/core/character.js";
+import { newCharacter, ensureShape } from "../js/core/character.js";
 import { spellFromCatalog } from "../js/render/panels/spell-picker.js";
+import * as W from "../js/wizard/wizard-core.js";
+import * as H from "../js/core/helpers.js";
+import { state } from "../js/core/state.js";
+import { withFakeDom } from "./fake-dom.mjs";
 
 function makeChar(classes, spells = [], abilities = {}){
   const c = newCharacter("Test");
@@ -185,4 +189,69 @@ test("Spells tab: counts per class, Prepared only for preparing classes", () => 
   const mixed = makeChar([{ name: "Warlock", subclass: "The Fiend", level: 2 }, { name: "Wizard", subclass: "", level: 1 }], [["Hex", "Warlock"], ["Sleep", "Wizard"]]);
   assert.equal(SK.spellNeedsPreparing(mixed, mixed.spells[0]), false);
   assert.equal(SK.spellNeedsPreparing(mixed, mixed.spells[1]), true);
+});
+
+test("prepared limit: a cleric can't tick past WIS + level; unticking is always fine", () => {
+  const c = makeChar([{ name: "Cleric", subclass: "Life Domain", level: 1 }], ["Sacred Flame", "Bane", "Command", "Guiding Bolt"], { wis: 12 });
+  assert.equal(SK.preparingClassFor(c, c.spells[1]), "Cleric");
+  assert.equal(SK.preparingClassFor(c, c.spells[0]), "", "cantrips need no preparing");
+  assert.deepEqual(SK.preparedState(c, "Cleric"), { have: 0, max: 2 });
+  c.spells[1].prepared = true; c.spells[2].prepared = true;
+  assert.equal(SK.prepareProblem(c, c.spells[3]), "You can prepare 2 cleric spells today. Untick one first.");
+  assert.equal(SK.prepareProblem(c, c.spells[1]), null, "unticking a prepared one");
+  c.spells[2].prepared = false;
+  assert.equal(SK.prepareProblem(c, c.spells[3]), null);
+  // A warlock's spells have no limit to hit.
+  const lock = makeChar([{ name: "Warlock", subclass: "The Fiend", level: 1 }], ["Hex"]);
+  assert.equal(SK.prepareProblem(lock, lock.spells[0]), null);
+  assert.equal(SK.preparedState(lock, "Warlock"), null);
+});
+
+test("loading drops the wizard's copies of domain spells, keeps edited ones and other spells", () => {
+  const c = makeChar([{ name: "Cleric", subclass: "Life Domain", level: 1 }], ["Guidance", "Bless", "Cure Wounds", "Bane"]);
+  const note = "Domain spell: always prepared, doesn't count against your prepared spells.";
+  c.spells[1].notes = note;
+  c.spells[2].notes = note + " I use this a lot.";
+  c.spells[3].notes = note;   // Bane isn't a Life Domain spell, so it stays
+  delete c.grantedSpellsChecked;
+  ensureShape(c);
+  assert.deepEqual(c.spells.map((s) => s.name), ["Guidance", "Cure Wounds", "Bane"]);
+  assert.equal(c.grantedSpellsChecked, true);
+  const light = makeChar([{ name: "Cleric", subclass: "Light Domain", level: 1 }], ["Light"]);
+  light.spells[0].notes = "Bonus cantrip from your Light Domain.";
+  delete light.grantedSpellsChecked;
+  ensureShape(light);
+  assert.equal(light.spells.length, 0, "Light Domain's bonus Light cantrip copy goes too");
+});
+
+test("creation wizard: a Life cleric's domain spells stay out of the spell list; picks carry their class", (t) => {
+  let c;
+  withFakeDom(t, () => {
+    W.openWizard();
+    Object.assign(W.wizardState, { name: "Wiz Cleric", classId: "Cleric", race: "Human", background: "Acolyte", alignment: "Neutral",
+      abilityMethod: "pointbuy", abilities: { str: 10, dex: 12, con: 14, int: 8, wis: 15, cha: 10 }, skillChoices: ["Insight", "Medicine"],
+      bgSkillChoices: [], languageChoices: [], equipment: {}, classChoices: { subclass: "Life Domain" },
+      spellChoices: { cantrips: ["Guidance", "Sacred Flame", "Thaumaturgy"], spells: ["Bane", "Command"] } });
+    W.finishWizard();
+    c = state.characters[state.characters.length - 1];
+  });
+  const names = c.spells.map((s) => s.name);
+  assert.ok(!names.includes("Bless") && !names.includes("Cure Wounds"), names.join(", "));
+  assert.ok(c.spells.every((s) => s.learnedBy === "Cleric"));
+  assert.ok(H.featureSpells(c).some((fs) => fs.name === "Bless" && fs.kind === "prepared"), "still shown as a feature spell");
+});
+
+test("preparing: a domain spell on the list is always prepared; spells above the class's slots wait", () => {
+  const c = makeChar([{ name: "Cleric", subclass: "Life Domain", level: 1 }], ["Cure Wounds", "Detect Evil and Good", "Lesser Restoration", "Hold Person"], { wis: 10 });
+  assert.ok(SK.alwaysPrepared(c, c.spells[0]), "Cure Wounds is a Life Domain spell");
+  assert.equal(SK.spellNeedsPreparing(c, c.spells[0]), false, "so it has no Prepared switch");
+  assert.equal(SK.preparingClassFor(c, c.spells[0]), "");
+  assert.equal(SK.prepareLevelProblem(c, c.spells[1]), null);
+  assert.equal(SK.prepareLevelProblem(c, c.spells[2]), "Lesser Restoration is a 2nd-level spell: clerics prepare those from cleric level 3.");
+  assert.match(SK.prepareProblem(c, c.spells[3]), /Hold Person is a 2nd-level spell/);
+  c.classes[0].level = 3;
+  assert.equal(SK.prepareLevelProblem(c, c.spells[3]), null, "a 3rd-level cleric prepares 2nd-level spells");
+  assert.ok(SK.alwaysPrepared(c, c.spells[2]), "Lesser Restoration joins the domain list at cleric 3");
+  const pal = makeChar([{ name: "Paladin", subclass: "", level: 4 }], ["Find Steed"]);
+  assert.match(SK.prepareLevelProblem(pal, pal.spells[0]), /from paladin level 5/);
 });

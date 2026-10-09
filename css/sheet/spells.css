@@ -115,3 +115,23 @@
 .spell-count.full{color:var(--moss);border-color:color-mix(in srgb, var(--moss) 45%, transparent);}
 .spell-count.under{color:var(--brass-bright);border-color:color-mix(in srgb, var(--brass) 55%, transparent);}
 .spell-count.over{color:#fca5a5;border-color:rgba(217,69,95,0.5);}
+
+/* "Prepare today's spells" sheet: a switch per spell of each preparing
+   class, with the daily count. */
+.prep-title{flex:1;margin:0;font-family:var(--serif);font-weight:normal;font-size:18px;color:var(--text-on-parch);}
+.prep-head{display:flex;align-items:center;gap:8px;margin:16px 0 6px;font-size:13px;color:var(--text-on-parch);}
+.prep-head .spell-count{font-size:12px;}
+.prep-note{font-size:12px;line-height:1.45;color:var(--text-on-parch-dim);margin:0 0 8px;}
+.prep-list{display:flex;flex-direction:column;gap:6px;}
+.prep-row{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;
+  border:1px solid var(--rule);border-radius:8px;background:rgba(255,255,255,.035);
+}
+.prep-row:hover{border-color:var(--brass);}
+.prep-row.on{border-color:color-mix(in srgb, var(--brass) 70%, transparent);background:color-mix(in srgb, var(--brass) 12%, transparent);}
+.prep-row.disabled{opacity:.5;cursor:not-allowed;}
+.prep-row.disabled:hover{border-color:var(--rule);}
+.prep-name{flex:1;min-width:0;font-size:14px;color:var(--text-on-parch);}
+.prep-level{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);white-space:nowrap;}
+.prep-later{font-size:10.5px;padding:1px 7px;border-radius:10px;border:1px solid var(--rule);color:var(--text-on-parch-dim);white-space:nowrap;}
+.prep-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}

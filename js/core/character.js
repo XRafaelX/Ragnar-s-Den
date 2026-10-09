@@ -1,6 +1,6 @@
 import { SKILLS } from "../data/abilities-skills.js";
 import { FEATS_CATALOG } from "../data/feats.js";
-import { uid } from "./helpers.js";
+import { uid, featureSpells } from "./helpers.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { syncInfusions } from "./artificer.js";
 
@@ -166,5 +166,16 @@ export function ensureShape(c){
   if(!Array.isArray(c.rollLog)) c.rollLog = [];
   // Infusion bonuses saved before they followed the artificer's level.
   syncInfusions(c);
+  // The creation wizard used to copy a domain's spells and bonus cantrip
+  // into the spell list, though the Spells tab already shows them under
+  // "From your features". Once per character, copies still carrying the
+  // wizard's own note are dropped; one the player edited keeps its note
+  // changes and stays.
+  if(!c.grantedSpellsChecked){
+    var autoNote = /^(Domain spell: always prepared, doesn't count against your prepared spells\.|Bonus cantrip from your .+\.)$/;
+    var granted = featureSpells(c).filter(function(fs){ return fs.kind!=="expanded"; }).map(function(fs){ return fs.name; });
+    c.spells = c.spells.filter(function(sp){ return !(autoNote.test(sp.notes||"") && granted.indexOf(sp.name)!==-1); });
+    c.grantedSpellsChecked = true;
+  }
   return c;
 }

@@ -10,6 +10,10 @@ import { elixirsOnLongRest } from "../../core/artificer.js";
 import { restoreCompanions } from "../../core/companions.js";
 import { renderDeathSaves } from "./death-saves.js";
 import { renderEffectsCard } from "./effects.js";
+import { openPrepareSheet } from "./spells.js";
+import { preparedState } from "../../core/spells-known.js";
+
+function preparesSpells(c){ return (c.classes||[]).some(function(cl){ return preparedState(c, cl.name); }); }
 
 /* ---- Vitals panel ---- */
 export function renderVitalsPanel(c){
@@ -566,7 +570,8 @@ export function renderVitalsPanel(c){
   longRestBtn.addEventListener("click", function(){
     confirmDialog(
       "Take a long rest?",
-      "This resets HP to full, clears temp HP and death saves, restores spell slots, rage and class resources, and recovers hit dice.",
+      "This resets HP to full, clears temp HP and death saves, restores spell slots, rage and class resources, and recovers hit dice."+
+        (preparesSpells(c) ? " Afterwards you can choose today's prepared spells." : ""),
       function(){
         c.hp.current = hpMax;
         c.hp.temp = 0;
@@ -584,6 +589,9 @@ export function renderVitalsPanel(c){
         logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered."+
           (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : ""));
         save(); renderAll();
+        // A cleric, druid, paladin, wizard or artificer picks today's
+        // spells after a long rest.
+        openPrepareSheet(c, true);
       }
     );
   });

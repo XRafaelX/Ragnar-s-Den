@@ -344,9 +344,61 @@ export function preparedMax(c, cl){
    known caster learned (bards, sorcerers, warlocks and rangers don't
    prepare). Only spells of preparing classes show a Prepared switch. */
 export function spellNeedsPreparing(c, sp){
-  if(!(sp.level||0) || sp.arcanum) return false;
+  if(!(sp.level||0) || sp.arcanum || alwaysPrepared(c, sp)) return false;
   if(sp.learnedBy) return !!PREPARED_CASTERS[sp.learnedBy];
   var owner = untaggedOwner(c);
   if(owner) return !!PREPARED_CASTERS[owner];
   return (c.classes||[]).some(function(cl){ return PREPARED_CASTERS[cl.name]; });
+}
+
+/* The preparing class a sheet spell belongs to, or "" when it has none
+   or it can't be told (two preparing classes and an untagged spell). */
+export function preparingClassFor(c, sp){
+  if(!spellNeedsPreparing(c, sp)) return "";
+  if(sp.learnedBy) return sp.learnedBy;
+  var owner = untaggedOwner(c);
+  if(owner) return PREPARED_CASTERS[owner] ? owner : "";
+  var preparing = (c.classes||[]).filter(function(cl){ return PREPARED_CASTERS[cl.name]; });
+  return preparing.length===1 ? preparing[0].name : "";
+}
+/* {have, max} prepared today for a preparing class, or null. */
+export function preparedState(c, className){
+  var cl = (c.classes||[]).find(function(x){ return x.name===className; });
+  var max = cl ? preparedMax(c, cl) : 0;
+  if(!max) return null;
+  var known = classKnownSpells(c, className);
+  if(!known.certain) return null;
+  return {have: known.spells.filter(function(sp){ return sp.prepared; }).length, max: max};
+}
+/* The feature that keeps a sheet spell always prepared (a domain spell
+   also on the spell list), or null. */
+export function alwaysPrepared(c, sp){
+  var key = spellKey(sp.name);
+  return featureSpells(c).find(function(fs){ return fs.kind==="prepared" && spellKey(fs.name)===key; }) || null;
+}
+/* Why a preparing class can't prepare `sp` yet because of its level
+   ("Lesser Restoration is a 2nd-level spell: clerics prepare those from
+   cleric level 3."), or null. */
+export function prepareLevelProblem(c, sp){
+  var cls = preparingClassFor(c, sp);
+  var cl = cls && (c.classes||[]).find(function(x){ return x.name===cls; });
+  var def = cl && casterDef(cl.name, cl.subclass);
+  if(!def || !def.maxLevel) return null;
+  var lv = Number(cl.level)||1, sl = sp.level||0;
+  if(sl <= def.maxLevel(lv)) return null;
+  var from = 0;
+  for(var i = lv + 1; i <= 20 && !from; i++) if(def.maxLevel(i) >= sl) from = i;
+  return sp.name + " is " + (/^[8]/.test(String(sl)) ? "an " : "a ") + ordinal(sl) + "-level spell: " + cls.toLowerCase() + "s prepare those" +
+    (from ? " from " + cls.toLowerCase() + " level " + from + "." : " at higher levels.");
+}
+/* Why `sp` can't be prepared now (too high a level, or its class is at
+   its daily limit), or null. Unpreparing is always fine. */
+export function prepareProblem(c, sp){
+  if(sp.prepared) return null;
+  var tooHigh = prepareLevelProblem(c, sp);
+  if(tooHigh) return tooHigh;
+  var cls = preparingClassFor(c, sp);
+  var st = cls && preparedState(c, cls);
+  if(!st || st.have < st.max) return null;
+  return "You can prepare " + st.max + " " + cls.toLowerCase() + " spell" + (st.max===1 ? "" : "s") + " today. Untick one first.";
 }
