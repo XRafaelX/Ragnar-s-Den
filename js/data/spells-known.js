@@ -66,12 +66,23 @@ export var LORE_SECRETS = {subclass: "College of Lore", level: 6, count: 2};
 /* Warlock: Mystic Arcanum, one spell of each level from 6th to 9th. */
 export var MYSTIC_ARCANUM = {11: 6, 13: 7, 15: 8, 17: 9};
 
-/* Preparing casters: how many spells they prepare each day,
-   ability modifier + class level (or half it, rounded down), minimum 1. */
+/* Preparing casters: how many spells they prepare each day, by class
+   level (index = level). The 2024 Player's Handbook's Prepared Spells
+   columns (and Eberron: Forge of the Artificer's), which replace the 2014
+   "ability modifier + level" formula: the count no longer depends on the
+   ability score. A paladin casts from level 2 here (the app's spell
+   slots follow the 2014 half-caster table), so its count starts there. */
+var FULL_PREPARED = [0, 4, 5, 6, 7, 9, 10, 11, 12, 14, 15, 16, 16, 17, 17, 18, 18, 19, 20, 21, 22];
+var HALF_PREPARED = [0, 2, 3, 4, 5, 6, 6, 7, 7, 9, 9, 10, 10, 11, 11, 12, 12, 14, 14, 15, 15];
 export var PREPARED_CASTERS = {
-  "Cleric": {ability: "wis", half: false},
-  "Druid": {ability: "wis", half: false},
-  "Wizard": {ability: "int", half: false},
-  "Paladin": {ability: "cha", half: true, from: 2},
-  "Artificer": {ability: "int", half: true}
+  "Cleric": {table: FULL_PREPARED},
+  "Druid": {table: FULL_PREPARED},
+  "Wizard": {table: [0, 4, 5, 6, 7, 9, 10, 11, 12, 14, 15, 16, 16, 17, 18, 19, 21, 22, 23, 24, 25]},
+  "Paladin": {table: HALF_PREPARED, from: 2},
+  "Artificer": {table: HALF_PREPARED}
 };
+/* How many spells `className` prepares at class level `lv` (0 if none). */
+export function preparedAt(className, lv){
+  var p = PREPARED_CASTERS[className];
+  return p && lv >= (p.from || 1) ? p.table[Math.min(20, lv)] || 0 : 0;
+}

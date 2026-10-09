@@ -17,6 +17,7 @@ import { confirmDialog } from "../ui/confirm-modal.js";
 import { playAdd, playToukellienmeli } from "../ui/sound.js";
 import { SPELL_DATA } from "../data/spells.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
+import { preparedAt } from "../data/spells-known.js";
 import {
   buildEquipmentList,
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
@@ -195,7 +196,7 @@ export function languagePlan(){
 }
 
 /* 1st-level spells to pick: a fixed number, or computed from the scores
-   (a cleric prepares WIS modifier + 1). */
+   when a class's `spells` is a function. */
 export function spellPickCount(sc){
   return typeof sc.spells==="function" ? sc.spells({abilities:finalAbilities()}) : sc.spells;
 }
@@ -454,9 +455,10 @@ export function finishWizard(){
     c.spellcasting.ability = sc.ability;
     Object.keys(sc.slots).forEach(function(lvl){ c.spellcasting.slots[lvl] = {max:sc.slots[lvl], used:0}; });
     if(sc.pact) c.spellcasting.pact = {max:sc.pact.max, slotLevel:sc.pact.slotLevel, used:0};
-    // Preparing casters get a starting prepared list (ability mod + level,
-    // at least 1); everyone else knows (and so has prepared) all of theirs.
-    var prepareCount = sc.prepares ? Math.max(1, mod(c.abilities[sc.ability]) + 1) : Infinity;
+    // Preparing casters get a starting prepared list (the class's level-1
+    // count: a wizard prepares 4 of their 6 spellbook spells); everyone
+    // else knows (and so has prepared) all of theirs.
+    var prepareCount = sc.prepares ? preparedAt(w.classId, 1) : Infinity;
     // Picked spells carry their class, so the Spells tab and later
     // level-ups can count them (see js/core/spells-known.js).
     w.spellChoices.cantrips.forEach(function(name){

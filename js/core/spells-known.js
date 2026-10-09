@@ -16,8 +16,8 @@
      auto       cantrips learned for free (an Arcane Trickster's Mage Hand)
      summary    the step's lead text */
 import { SPELL_DATA, spellDataForClass, catalogSpellName } from "../data/spells.js";
-import { KNOWN_CASTERS, SUBCLASS_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, PREPARED_CASTERS } from "../data/spells-known.js";
-import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, mod, ordinal } from "./helpers.js";
+import { KNOWN_CASTERS, SUBCLASS_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, PREPARED_CASTERS, preparedAt } from "../data/spells-known.js";
+import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal } from "./helpers.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
 
 /* The casting rules for a class (or its casting subclass), or null. */
@@ -332,13 +332,10 @@ export function spellCounts(c){
   });
   return out;
 }
-/* How many spells a preparing class prepares each day, or 0. */
+/* How many spells a preparing class prepares each day (the 2024
+   tables, see PREPARED_CASTERS), or 0. */
 export function preparedMax(c, cl){
-  var p = PREPARED_CASTERS[cl.name];
-  var lv = Number(cl.level)||1;
-  if(!p || lv < (p.from||1)) return 0;
-  var m = mod(c.abilities && c.abilities[p.ability]);
-  return Math.max(1, m + (p.half ? Math.floor(lv / 2) : lv));
+  return preparedAt(cl.name, Number(cl.level)||1);
 }
 /* True when a sheet spell is always ready: a cantrip, or a spell a
    known caster learned (bards, sorcerers, warlocks and rangers don't

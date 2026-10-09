@@ -31,6 +31,7 @@ import { openCompendium } from "../render/compendium.js";
 import { featDef, featHasPicks, featNeedsChoice, emptyPicks, featPicksProblem, featPicksSummary, applyFeatPicks, revertFeatPicks } from "../core/feat-picks.js";
 import { renderFeatPicks, featPicksContext } from "../ui/feat-picks.js";
 import { learnPlan, swapSection, learnProblem, applyLearn, undoLearn } from "../core/spells-known.js";
+import { preparedAt } from "../data/spells-known.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 
 /* ---------------- Level-up flow ----------------
@@ -1247,6 +1248,9 @@ function showUnlocked(c, s){
     if(slotChanges.length) stat("Spell slots", slotChanges.join(", "));
     var pact = c.spellcasting.pact, pb = s.pactBefore;
     if(pact && (!pb || pb.max!==pact.max || pb.slotLevel!==pact.slotLevel)) stat("Pact slots", pact.max+" × "+ordinal(pact.slotLevel)+"-level");
+    // A preparing class's daily count grows on set levels (2024 tables).
+    var prepNow = preparedAt(s.className, s.newClassLevel), prepWas = s.isNewClass ? 0 : preparedAt(s.className, s.newClassLevel - 1);
+    if(prepNow > prepWas) stat("Prepared spells", prepNow+" a day"+(prepWas ? " (was "+prepWas+")" : ""));
     body.appendChild(stats);
 
     if(s.subclass){

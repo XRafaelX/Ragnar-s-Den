@@ -177,30 +177,33 @@ test("Spells tab: counts per class, Prepared only for preparing classes", () => 
   assert.equal(SK.spellNeedsPreparing(lock, lock.spells[1]), false, "warlock spells are always ready");
   const cleric = makeChar([{ name: "Cleric", subclass: "Life Domain", level: 5 }], ["Sacred Flame", "Guiding Bolt", "Hold Person"], { wis: 16 });
   cleric.spells[1].prepared = true;
-  assert.equal(SK.preparedMax(cleric, cleric.classes[0]), 8);
-  assert.deepEqual(SK.spellCounts(cleric)[0].prepared, { have: 1, max: 8 });
+  assert.equal(SK.preparedMax(cleric, cleric.classes[0]), 9, "2024: a 5th-level cleric prepares 9, whatever its WIS");
+  assert.deepEqual(SK.spellCounts(cleric)[0].prepared, { have: 1, max: 9 });
   assert.equal(SK.spellNeedsPreparing(cleric, cleric.spells[1]), true);
   assert.equal(SK.spellNeedsPreparing(cleric, cleric.spells[0]), false, "cantrips are always ready");
   const pal = makeChar([{ name: "Paladin", subclass: "", level: 1 }], [], { cha: 16 });
   assert.equal(SK.preparedMax(pal, pal.classes[0]), 0, "paladins cast from level 2");
   pal.classes[0].level = 5;
-  assert.equal(SK.preparedMax(pal, pal.classes[0]), 5, "CHA +3 + half of 5");
+  assert.equal(SK.preparedMax(pal, pal.classes[0]), 6, "2024 half-caster table");
+  const wiz = makeChar([{ name: "Wizard", subclass: "", level: 16 }], [], { int: 8 });
+  assert.equal(SK.preparedMax(wiz, wiz.classes[0]), 21, "the wizard's own table, not the cleric's");
   // A warlock/wizard: a warlock-learned spell has no switch, a wizard one does.
   const mixed = makeChar([{ name: "Warlock", subclass: "The Fiend", level: 2 }, { name: "Wizard", subclass: "", level: 1 }], [["Hex", "Warlock"], ["Sleep", "Wizard"]]);
   assert.equal(SK.spellNeedsPreparing(mixed, mixed.spells[0]), false);
   assert.equal(SK.spellNeedsPreparing(mixed, mixed.spells[1]), true);
 });
 
-test("prepared limit: a cleric can't tick past WIS + level; unticking is always fine", () => {
-  const c = makeChar([{ name: "Cleric", subclass: "Life Domain", level: 1 }], ["Sacred Flame", "Bane", "Command", "Guiding Bolt"], { wis: 12 });
+test("prepared limit (2024 table): a cleric 1 prepares 4, even with WIS 8; unticking is always fine", () => {
+  const c = makeChar([{ name: "Cleric", subclass: "Life Domain", level: 1 }],
+    ["Sacred Flame", "Bane", "Command", "Guiding Bolt", "Healing Word", "Sanctuary"], { wis: 8 });
   assert.equal(SK.preparingClassFor(c, c.spells[1]), "Cleric");
   assert.equal(SK.preparingClassFor(c, c.spells[0]), "", "cantrips need no preparing");
-  assert.deepEqual(SK.preparedState(c, "Cleric"), { have: 0, max: 2 });
-  c.spells[1].prepared = true; c.spells[2].prepared = true;
-  assert.equal(SK.prepareProblem(c, c.spells[3]), "You can prepare 2 cleric spells today. Untick one first.");
+  assert.deepEqual(SK.preparedState(c, "Cleric"), { have: 0, max: 4 });
+  [1, 2, 3, 4].forEach((i) => { c.spells[i].prepared = true; });
+  assert.equal(SK.prepareProblem(c, c.spells[5]), "You can prepare 4 cleric spells today. Untick one first.");
   assert.equal(SK.prepareProblem(c, c.spells[1]), null, "unticking a prepared one");
   c.spells[2].prepared = false;
-  assert.equal(SK.prepareProblem(c, c.spells[3]), null);
+  assert.equal(SK.prepareProblem(c, c.spells[5]), null);
   // A warlock's spells have no limit to hit.
   const lock = makeChar([{ name: "Warlock", subclass: "The Fiend", level: 1 }], ["Hex"]);
   assert.equal(SK.prepareProblem(lock, lock.spells[0]), null);

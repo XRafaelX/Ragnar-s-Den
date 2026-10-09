@@ -217,7 +217,8 @@ CLASSES_INFO["Wizard"].features = [
    be). `spellcasting` drives the wizard's Cantrips and Spells steps: how many cantrips
    and 1st-level spells to pick, which class list to pick from, and the
    level-1 slots. `prepares` casters choose from a spellbook and prepare
-   a subset (ability modifier + level) rather than knowing them all. */
+   a subset (a set number per level, PREPARED_CASTERS in
+   spells-known.js) rather than knowing them all. */
 Object.assign(CLASSES_INFO["Wizard"], {
   available:true,
   primaryAbility:"int",
@@ -226,7 +227,7 @@ Object.assign(CLASSES_INFO["Wizard"], {
   spellcasting:{
     ability:"int", spellList:"Wizard", cantrips:3, spells:6, prepares:true, slots:{1:2},
     spellsLabel:"Spellbook spells",
-    spellsHelp:"Your spellbook starts with six 1st-level wizard spells. Each day you prepare a number equal to your Intelligence modifier + your wizard level; the rest stay in the book for later."
+    spellsHelp:"Your spellbook starts with six 1st-level wizard spells. Each day you prepare 4 of them (more as you level); the rest stay in the book for later. You can change which after a long rest."
   },
   equipment:{
     choiceGroups:[
@@ -266,15 +267,12 @@ CLASSES_INFO["Cleric"].features = [
   {name:"Divine Domain", text:"Chosen religious domain granting domain spells and bonus domain features."}
 ];
 
-/* Clerics and Druids prepare WIS modifier + level spells (min 1). */
-function wisModPlusOne(w){ return Math.max(1, Math.floor(((w.abilities && w.abilities.wis || 10)-10)/2) + 1); }
-
 /* Cleric picks its subclass (Divine Domain) at level 1, so the wizard's
    Class Features step offers it. `grants` is what each domain adds at
    creation: proficiencies that unlock gear (`requires` on an equipment
    option), always-prepared domain spells, bonus cantrips, and Knowledge's
    extra expertise pick. Clerics prepare from the whole cleric list, so the
-   "spells" count is how many to prepare today (WIS modifier + 1). */
+   "spells" count is how many to prepare today (4 at level 1). */
 Object.assign(CLASSES_INFO["Cleric"], {
   available:true,
   primaryAbility:"wis",
@@ -297,9 +295,9 @@ Object.assign(CLASSES_INFO["Cleric"], {
   ],
   spellcasting:{
     ability:"wis", spellList:"Cleric", cantrips:3, prepares:true, slots:{1:2},
-    spells:wisModPlusOne,
+    spells:4,
     spellsLabel:"Prepared spells",
-    spellsHelp:"You know every cleric spell. Each day you prepare a number equal to your Wisdom modifier + your cleric level; pick today's here and swap them on the Spells tab after a long rest. Your domain spells are always prepared on top of these."
+    spellsHelp:"You know every cleric spell. Each day you prepare 4 of them (more as you level); pick today's here and change them on the Spells tab after a long rest. Your domain spells are always prepared on top of these."
   },
   equipment:{
     choiceGroups:[
@@ -401,9 +399,9 @@ Object.assign(CLASSES_INFO["Druid"], {
   languages:["Druidic"],
   spellcasting:{
     ability:"wis", spellList:"Druid", cantrips:2, prepares:true, slots:{1:2},
-    spells:wisModPlusOne,
+    spells:4,
     spellsLabel:"Prepared spells",
-    spellsHelp:"You know every druid spell. Each day you prepare a number equal to your Wisdom modifier + your druid level; pick today's here and swap them on the Spells tab after a long rest."
+    spellsHelp:"You know every druid spell. Each day you prepare 4 of them (more as you level); pick today's here and change them on the Spells tab after a long rest."
   },
   equipment:{
     choiceGroups:[
@@ -699,8 +697,8 @@ Object.assign(CLASSES_INFO["Ranger"], {
   }
 });
 
-/* Artificer (Tasha's): prepares INT modifier + half its level (rounded
-   down, min 1) from the artificer list, and gets two 1st-level slots at
+/* Artificer (Tasha's): prepares 2 spells at level 1 (the 2024 count,
+   see PREPARED_CASTERS) from the artificer list, and gets two 1st-level slots at
    level 1. Infusions start at level 2. */
 Object.assign(CLASSES_INFO["Artificer"], {
   available:true,
@@ -715,9 +713,9 @@ Object.assign(CLASSES_INFO["Artificer"], {
   ],
   spellcasting:{
     ability:"int", spellList:"Artificer", cantrips:2, prepares:true, slots:{1:2},
-    spells:function(w){ return Math.max(1, Math.floor((w.abilities.int-10)/2)); },
+    spells:2,
     spellsLabel:"Prepared spells",
-    spellsHelp:"You know every artificer spell. Each day you prepare a number equal to your Intelligence modifier + half your artificer level (at least one); pick today's here and swap them on the Spells tab after a long rest."
+    spellsHelp:"You know every artificer spell. Each day you prepare 2 of them (more as you level); pick today's here and change them on the Spells tab after a long rest."
   },
   equipment:{
     choiceGroups:[

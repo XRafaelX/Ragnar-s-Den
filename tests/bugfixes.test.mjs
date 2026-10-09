@@ -158,30 +158,14 @@ test("armor class: any equipped shield turns off Monk Unarmored Defense", () => 
 });
 
 /* ================================================================
-   Spellcasting: Cleric and Druid prepared spells without abilities
+   Spellcasting: how many spells a new preparing caster prepares
    ================================================================
-   spellPickCount passes {abilities: finalAbilities()} into the
-   function. finalAbilities() always returns a full set, but we test
-   the guard directly for robustness. */
-test("spellcasting: Cleric and Druid prepared spell count with no abilities", () => {
-  const clericSC = CLASSES_INFO["Cleric"].spellcasting;
-  assert.equal(typeof clericSC.spells, "function",
-    "Cleric's spells property should be a function (wisModPlusOne)");
-
-  assert.doesNotThrow(
-    () => clericSC.spells({}),
-    "wisModPlusOne must not throw when abilities is undefined"
-  );
-  assert.ok(clericSC.spells({}) >= 1,
-    "wisModPlusOne should return >= 1 when abilities is missing");
-
-  // With real WIS 16 (mod +3): 1 + 3 = 4.
-  assert.equal(clericSC.spells({ abilities: { wis: 16 } }), 4);
-  // With WIS 8 (mod -1): clamped to 1.
-  assert.equal(clericSC.spells({ abilities: { wis: 8 } }), 1);
-  // Same guard applies to Druid.
-  const druidSC = CLASSES_INFO["Druid"].spellcasting;
-  assert.doesNotThrow(() => druidSC.spells({}), "Druid wisModPlusOne must not throw either");
+   The 2024 Prepared Spells columns: a fixed count per level, whatever
+   the ability score (a cleric with WIS 8 still prepares 4 at level 1). */
+test("spellcasting: a new cleric, druid or artificer prepares the 2024 level-1 count", () => {
+  assert.equal(CLASSES_INFO["Cleric"].spellcasting.spells, 4);
+  assert.equal(CLASSES_INFO["Druid"].spellcasting.spells, 4);
+  assert.equal(CLASSES_INFO["Artificer"].spellcasting.spells, 2);
 });
 
 /* ================================================================
