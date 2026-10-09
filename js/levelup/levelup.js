@@ -30,6 +30,8 @@ import { makeMoveLeftSvg, makeMoveRightSvg, makePlusSvg, makeAlertSvg } from "..
 import { openCompendium } from "../render/compendium.js";
 import { featDef, featHasPicks, featNeedsChoice, emptyPicks, featPicksProblem, featPicksSummary, applyFeatPicks, revertFeatPicks } from "../core/feat-picks.js";
 import { renderFeatPicks, featPicksContext } from "../ui/feat-picks.js";
+import { learnPlan, swapSection, learnProblem, applyLearn, undoLearn } from "../core/spells-known.js";
+import { spellPickGrid } from "../ui/spell-pick-grid.js";
 
 /* ---------------- Level-up flow ----------------
    A short guided flow in the same full-screen overlay as the creation
@@ -37,12 +39,14 @@ import { renderFeatPicks, featPicksContext } from "../ui/feat-picks.js";
    one), a subclass when one is due, a Fighting Style when one is due
    (Fighter 1, Paladin 2, Ranger 2), a warlock's Pact Boon and eldritch
    invocations (new ones when due, and an optional swap of one known
-   invocation every warlock level), an Ability Score Improvement / feat
+   invocation every warlock level), the spells and cantrips the class
+   learns (New spells, with an optional swap for classes that know a
+   fixed set), an Ability Score Improvement / feat
    at class level 4 (a feat's own picks, when it has any, on a Feat
    picks step after it), then hit points. Applying it records what changed in
    c.levelHistory so the last level-up can be undone. */
-var STEP_IDS = ["class","subclass","style","spells","invocations","options","asi","featPicks","hp","review"];
-var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Spells", invocations:"Invocations", options:"Options", asi:"Abilities", featPicks:"Feat picks", hp:"Hit points", review:"Review"};
+var STEP_IDS = ["class","subclass","style","spells","learn","invocations","options","asi","featPicks","hp","review"];
+var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Subclass spells", learn:"New spells", invocations:"Invocations", options:"Options", asi:"Abilities", featPicks:"Feat picks", hp:"Hit points", review:"Review"};
 var lu = null;
 
 function abilityName(key){
@@ -98,6 +102,7 @@ function stepApplicable(id){
   if(id==="subclass") return t.needsSubclass;
   if(id==="style") return !!t.fightingStyle || styleSwapOffered();
   if(id==="spells") return dueSpellChoices().length > 0;
+  if(id==="learn"){ var lp = currentLearnPlan(); return lp.sections.length > 0 || !!lp.swap || lp.auto.length > 0; }
   if(id==="invocations") return lu.className==="Warlock" && t.newLevel >= 2;
   if(id==="options") return optionPlans().length > 0;
   if(id==="asi") return t.asi;
@@ -147,6 +152,23 @@ function dueSpellChoices(){
   return classSpellChoices(entry).filter(function(x){ return !x.pick; });
 }
 
+/* ---- New spells ----
+   lu.learnPicks[sectionId]: the spells picked in each list of the plan
+   (js/core/spells-known.js); lu.learnSwap: a known spell to replace,
+   whose replacement is picked in the extra "swapIn" list. */
+function learnEntry(){
+  var t = target();
+  var choices = Object.assign({}, t.existing && t.existing.spellChoices, lu.spellChoices);
+  return {name: lu.className, level: t.newLevel, spellChoices: choices,
+    subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : "")};
+}
+function currentLearnPlan(){ return learnPlan(lu.c, learnEntry(), !target().existing); }
+function learnSections(plan){
+  plan = plan || currentLearnPlan();
+  var swap = swapSection(lu.c, learnEntry(), plan, lu.learnSwap);
+  return swap ? plan.sections.concat([swap]) : plan.sections;
+}
+
 function asiPointsUsed(){
   return Object.keys(lu.asi).reduce(function(a,k){ return a + lu.asi[k]; }, 0);
 }
@@ -170,6 +192,7 @@ function validate(id){
     var missing = dueSpellChoices().find(function(x){ return !lu.spellChoices[x.choice.id]; });
     return missing ? "Choose your "+missing.choice.label.toLowerCase()+" for "+missing.feature+"." : null;
   }
+  if(id==="learn") return learnProblem(learnSections(), lu.learnPicks);
   if(id==="invocations") return invocationProblem();
   if(id==="options"){
     var t = target(), plans = optionPlans();
@@ -206,7 +229,7 @@ export function openLevelUp(c){
     className: c.classes.length===1 ? c.classes[0].name : null,
     subclass:"", style:"",
     asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featPicks:null, spellChoices:{},
-    pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{},
+    pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{}, learnPicks:{}, learnSwap:"",
     stylePicks:{options:[], spells:[]}, styleSwapOut:"",
     hpMethod:"avg", hpRoll:null
   };
@@ -249,7 +272,7 @@ function render(){
   var inner = ce("div"); inner.id = "wizard-body-inner";
   body.appendChild(inner);
   overlay.appendChild(body);
-  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, invocations:stepInvocations, options:stepOptions, asi:stepAsi, featPicks:stepFeatPicks, hp:stepHp, review:stepReview})[lu.step](inner);
+  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, learn:stepLearn, invocations:stepInvocations, options:stepOptions, asi:stepAsi, featPicks:stepFeatPicks, hp:stepHp, review:stepReview})[lu.step](inner);
 
   var errorBox = ce("div","wiz-error");
   overlay.appendChild(errorBox);
@@ -325,7 +348,7 @@ function resetChoicesFor(name){
   lu.className = name;
   lu.subclass = "";
   lu.style = ""; lu.stylePicks = {options: [], spells: []}; lu.styleSwapOut = "";
-  lu.spellChoices = {};
+  lu.spellChoices = {}; lu.learnPicks = {}; lu.learnSwap = "";
   lu.pactBoon = ""; lu.pactSpells = []; lu.invPicks = []; lu.invSpells = {}; lu.swapOut = ""; lu.optChoices = {};
   lu.asi = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; lu.featName = ""; lu.featPicks = null; lu.asiMode = "asi";
   lu.hpRoll = null; lu.hpMethod = "avg";
@@ -465,6 +488,60 @@ function stepSpells(container){
     card.appendChild(title);
     card.appendChild(renderSpellChoiceOptions(x.choice, lu.spellChoices[x.choice.id], function(v){ lu.spellChoices[x.choice.id] = v; render(); }, lu.className));
   });
+}
+
+/* New spells: a pick list per kind of spell the class learns this level
+   (cantrips, spells, a third caster's any-school spell, Magical Secrets,
+   a wizard's spellbook, Mystic Arcanum), then the optional swap. */
+function stepLearn(container){
+  var plan = currentLearnPlan();
+  var cls = lu.className.toLowerCase();
+  var lead = plan.summary ? "<b>Spells you know:</b> "+escapeHtml(plan.summary)+" " : "";
+  var patron = plan.sections.some(function(s){ return Object.keys(s.tags).some(function(n){ return s.tags[n].indexOf("Patron spell")!==-1; }); });
+  var card = stepCard(container, "New spells", lead +
+    (patron ? "Your patron's spells are mixed in and marked <i>Patron spell</i>; each one you take counts as one of your spells known. " : "") +
+    "Each card says what the spell does; tap one to pick it.");
+  if(plan.note){
+    var note = ce("p","lu-note"); note.textContent = plan.note;
+    card.appendChild(note);
+  }
+  if(plan.auto.length){
+    var auto = ce("p","lu-note");
+    auto.textContent = "You learn "+plan.auto.join(" and ")+" for free; "+(plan.auto.length>1 ? "they're" : "it's")+" added automatically.";
+    card.appendChild(auto);
+  }
+  // A spell picked in one list is greyed out in the others.
+  var grids = [];
+  function grid(s){
+    var g = spellPickGrid({title: s.title, help: s.help, count: s.count, names: s.names, tags: s.tags,
+      chosen: lu.learnPicks[s.id] = lu.learnPicks[s.id] || [],
+      taken: function(){ return Object.keys(lu.learnPicks).filter(function(id){ return id!==s.id; }).reduce(function(a, id){ return a.concat(lu.learnPicks[id]); }, []); },
+      onChange: function(){ grids.forEach(function(other){ if(other!==g) other.refresh(); }); }});
+    grids.push(g);
+    return g;
+  }
+  learnSections(plan).forEach(function(s){
+    if(s.id==="swapIn") return;
+    card.appendChild(grid(s));
+  });
+  if(!plan.swap) return;
+  var swapTitle = ce("p","lu-choice-title");
+  swapTitle.textContent = "Swap one you know (optional)";
+  card.appendChild(swapTitle);
+  var swapHelp = ce("p","lu-note");
+  swapHelp.textContent = "Each time you gain a "+cls+" level you may replace one "+cls+" spell you know with another of up to "+ordinal(plan.swap.maxLevel)+" level. Most players keep theirs.";
+  card.appendChild(swapHelp);
+  if(plan.swap.known.indexOf(lu.learnSwap)===-1) lu.learnSwap = "";
+  var field = ce("div","field rt-field fp-field eli-field");
+  field.appendChild(themedPicker({
+    key: "lu:spellswap", ariaLabel: "Spell to replace", placeholder: "Keep them all", search: plan.swap.known.length > 8,
+    groups: {"": [{value:"", label:"Keep them all", muted:true}].concat(plan.swap.known.map(function(n){ return {value:n, label:"Replace "+n}; }))},
+    value: lu.learnSwap,
+    onPick: function(v){ if(v!==lu.learnSwap) lu.learnPicks.swapIn = []; lu.learnSwap = v; render(); }
+  }));
+  card.appendChild(field);
+  var swapIn = swapSection(lu.c, learnEntry(), plan, lu.learnSwap);
+  if(swapIn) card.appendChild(grid(swapIn));
 }
 
 function stepInvocations(container){
@@ -836,6 +913,16 @@ function stepReview(container){
       : "Fighting style: "+lu.style+(stylePicked.length ? " ("+stylePicked.join(", ")+")" : ""));
   }
   dueSpellChoices().forEach(function(x){ if(lu.spellChoices[x.choice.id]) items.push(x.choice.label+": "+lu.spellChoices[x.choice.id]); });
+  if(stepApplicable("learn")){
+    var lp = currentLearnPlan();
+    learnSections(lp).forEach(function(s){
+      var got = (lu.learnPicks[s.id]||[]).slice(0, s.count).filter(Boolean);
+      if(!got.length) return;
+      if(s.id==="swapIn") items.push("Spell swap: "+lu.learnSwap+" → "+got[0]);
+      else items.push(s.title+": "+got.join(", "));
+    });
+    if(lp.auto.length) items.push("Free cantrip: "+lp.auto.join(", "));
+  }
   if(stepApplicable("invocations")){
     if(pactDue() && lu.pactBoon) items.push("Pact Boon: "+lu.pactBoon+(lu.pactSpells.length ? " ("+lu.pactSpells.filter(Boolean).join(", ")+")" : ""));
     var swapped = lu.swapOut && knownNow().find(function(e){ return e.id===lu.swapOut; });
@@ -913,6 +1000,8 @@ function finish(){
   var dueChoices = dueSpellChoices();
   // Asked before the class entry's level changes (target() reads it).
   var doInvocations = stepApplicable("invocations");
+  var learnNow = stepApplicable("learn") ? currentLearnPlan() : null;
+  var learnLists = learnNow ? learnSections(learnNow) : [];
   var optPlans = stepApplicable("options") ? optionPlans() : [];
   var gain = hpGain();
   var featureBonus = featureAbilityBonus();
@@ -955,6 +1044,9 @@ function finish(){
     entry.spellChoices[x.choice.id] = v;
     (record.spellChoiceIds = record.spellChoiceIds || []).push(x.choice.id);
   });
+
+  // New spells (and a swapped-out one); undo takes back exactly these.
+  if(learnNow) record.learn = applyLearn(c, lu.className, learnNow, learnLists, lu.learnPicks, lu.learnSwap);
 
   // Pact Boon and invocations; undo takes back exactly these.
   var invGained = [];
@@ -1054,7 +1146,7 @@ function finish(){
     className: entry.name, isNewClass: record.isNewClass, newClassLevel: t.newLevel, subclass: subName, currentSubclass: entry.subclass,
     totalBefore: before.total, pbBefore: before.pb, hpGain: maxGain, speedGain: computeSpeed(c).value - before.speed,
     features: gained, feat: feat, asi: withFeatAbility(record.asi, feat),
-    slotsBefore: before.slots, pactBefore: before.pact,
+    slotsBefore: before.slots, pactBefore: before.pact, learned: record.learn ? record.learn.added : [],
     thirdCaster: classCasterType(entry)==="third"
   });
 }
@@ -1074,8 +1166,9 @@ export function undoLastLevelUp(c){
   if(!rec) return;
   var entry = c.classes.find(function(cl){ return cl.name===rec.className; });
   var label = rec.className+" "+(entry ? entry.level : "");
-  confirmDialog("Undo last level-up?", "This removes "+label+" and reverts the HP, ability scores, feat, fighting style, invocations, maneuvers or Metamagic, and spell slots it gave.", function(){
+  confirmDialog("Undo last level-up?", "This removes "+label+" and reverts the HP, ability scores, feat, fighting style, spells, invocations, maneuvers or Metamagic, and spell slots it gave.", function(){
     c.levelHistory.pop();
+    undoLearn(c, rec.learn);
     if(entry){
       if(rec.isNewClass) c.classes.splice(c.classes.indexOf(entry), 1);
       else {
@@ -1116,6 +1209,14 @@ export function undoLastLevelUp(c){
     save(); renderAll(); playDelete();
     showActionToast("Level-up undone. Back to level "+totalLevel(c)+".");
   });
+}
+
+/* A spell tip without the sentences about picking spells, which the New
+   spells step just did. */
+function learnedTipRest(tip){
+  return tip.split(/(?<=\.)\s+/).filter(function(sentence){
+    return !(/^(Learn|Pick|Add|Choose)\b/.test(sentence) && /spell|cantrip/i.test(sentence) && !/infusion/i.test(sentence));
+  }).join(" ").replace(/, and choose an? \S+ Mystic Arcanum spell/, "");
 }
 
 /* ---------------- "You unlocked…" popup ----------------
@@ -1170,7 +1271,14 @@ function showUnlocked(c, s){
 
     var tips = [];
     var spellTip = s.thirdCaster ? THIRD_CASTER_SPELL_TIPS[s.newClassLevel] : (SPELL_TIPS[s.className]||{})[s.newClassLevel];
-    if(spellTip) tips.push(spellTip+" Add them on the Spells tab.");
+    if(s.learned.length){
+      tips.push("You learned "+s.learned.join(", ")+". "+(s.learned.length>1 ? "They're" : "It's")+" on the Spells tab.");
+      // What's left of the tip once the picks it asks for are made
+      // ("Your pact slots are now 2nd level.").
+      spellTip = spellTip && learnedTipRest(spellTip);
+      if(spellTip) tips.push(spellTip);
+    }
+    else if(spellTip) tips.push(spellTip+" Add them on the Spells tab.");
     if(s.isNewClass){
       var m = progFor(s.className).multiclassProfs;
       if(m){

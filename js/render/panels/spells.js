@@ -12,6 +12,8 @@ import { sheetHeader } from "./inventory.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
 import { themedPicker } from "../../ui/themed-picker.js";
+import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef } from "../../core/spells-known.js";
+import { PREPARED_CASTERS } from "../../data/spells-known.js";
 
 
 var SCHOOLS = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"];
@@ -20,10 +22,12 @@ function spellSubtitle(sp){
   return [sp.school, sp.castingTime, sp.range, sp.components, sp.duration].filter(Boolean).join(" · ");
 }
 
-/* Compact header: name + concentration/ritual tags, a Prepared pill
-   (cantrips are always ready, so no pill), edit pencil, remove. Tapping
-   the row opens the spell sheet. */
-function spellHeader(c, sp, idx){
+/* Compact header: name + concentration/ritual tags, the patron's name
+   for a learned patron spell, a Prepared pill (only for spells of a class
+   that prepares: cantrips and a bard's, sorcerer's, warlock's or ranger's
+   spells are always ready), edit pencil, remove. Tapping the row opens
+   the spell sheet. */
+function spellHeader(c, sp, idx, patron){
   var header = document.createElement("div");
   header.className = "inv-card-header";
   header.addEventListener("click", function(){ openSpellSheet(c, sp); });
@@ -46,12 +50,20 @@ function spellHeader(c, sp, idx){
   var actions = document.createElement("div");
   actions.className = "inv-card-header-actions";
 
-  if((sp.level||0) > 0){
+  if(patron){
+    var src = document.createElement("span");
+    src.className = "ff-tag source-class";
+    src.textContent = patron.source;
+    src.title = "Patron spell, from " + patron.feature;
+    actions.appendChild(src);
+  }
+
+  if(spellNeedsPreparing(c, sp)){
     var prepLbl = document.createElement("label"); prepLbl.className = "inv-eq-pill";
     var prepCb = document.createElement("input"); prepCb.type = "checkbox"; prepCb.className = "chk";
     prepCb.checked = !!sp.prepared;
     prepCb.addEventListener("click", function(e){ e.stopPropagation(); });
-    prepCb.addEventListener("change", function(){ sp.prepared = prepCb.checked; save(); });
+    prepCb.addEventListener("change", function(){ sp.prepared = prepCb.checked; save(); renderAll(); });
     prepLbl.appendChild(prepCb);
     prepLbl.appendChild(document.createTextNode("Prepared"));
     actions.appendChild(prepLbl);
@@ -78,10 +90,10 @@ function spellHeader(c, sp, idx){
   return header;
 }
 
-function renderSpellCard(c, sp, idx){
+function renderSpellCard(c, sp, idx, patron){
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card";
-  card.appendChild(spellHeader(c, sp, idx));
+  card.appendChild(spellHeader(c, sp, idx, patron));
 
   var sub = spellSubtitle(sp);
   if(sub){
@@ -390,15 +402,18 @@ function slotsLeftText(c, lvl){
 /* ---- Spells from features ----
    Read-only: they come from the character's class and subclass features
    (featureSpells), so they follow level-ups and can't be removed here. */
-var KIND_LABELS = { prepared: "Always prepared", known: "Always known", spellbook: "In your spellbook", ritual: "Ritual only", expanded: "Can learn",
+var KIND_LABELS = { prepared: "Always prepared", known: "Always known", spellbook: "In your spellbook", ritual: "Ritual only",
   free: "Free 1/long rest", atwill: "At will" };
 
+function isFeatureSpell(fs, sp){
+  var name = (sp.name||"").trim().toLowerCase();
+  return name===fs.name.toLowerCase() || name===catalogSpellName(fs.name).toLowerCase();
+}
 function knowsSpell(c, fs){
-  var names = [fs.name, catalogSpellName(fs.name)].map(function(n){ return n.toLowerCase(); });
-  return (c.spells||[]).some(function(sp){ return names.indexOf((sp.name||"").trim().toLowerCase())!==-1; });
+  return (c.spells||[]).some(function(sp){ return isFeatureSpell(fs, sp); });
 }
 
-function renderFeatureSpellCard(c, fs){
+function renderFeatureSpellCard(c, fs, canLearn){
   var d = fs.data || {};
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card feature-spell-card";
@@ -420,26 +435,35 @@ function renderFeatureSpellCard(c, fs){
   header.appendChild(titleGroup);
   var actions = document.createElement("div");
   actions.className = "inv-card-header-actions";
-  var kind = document.createElement("span");
-  kind.className = "ff-tag source-feat";
-  var learned = fs.kind==="expanded" && knowsSpell(c, fs);
-  kind.textContent = learned ? "Learned" : fs.level === 0 ? "Cantrip" : KIND_LABELS[fs.kind] || KIND_LABELS.prepared;
-  var source = document.createElement("span");
-  source.className = "ff-tag source-class";
-  source.textContent = fs.source;
-  source.title = "From " + fs.feature;
-  actions.appendChild(kind);
-  actions.appendChild(source);
-  // A patron spell isn't free: "Learn" adds it to the spells you know.
+  // The Patron spells card already says where these come from, so a
+  // patron spell only carries its Learn button.
+  if(fs.kind!=="expanded"){
+    var kind = document.createElement("span");
+    kind.className = "ff-tag source-feat";
+    kind.textContent = fs.level === 0 ? "Cantrip" : KIND_LABELS[fs.kind] || KIND_LABELS.prepared;
+    var source = document.createElement("span");
+    source.className = "ff-tag source-class";
+    source.textContent = fs.source;
+    source.title = "From " + fs.feature;
+    actions.appendChild(kind);
+    actions.appendChild(source);
+  }
+  // A patron spell isn't free: "Learn" adds it to the spells you know,
+  // offered while the warlock has spells left to learn this level.
   var catalogName = catalogSpellName(fs.name);
-  if(fs.kind==="expanded" && !learned && SPELL_DATA[catalogName]){
+  if(fs.kind==="expanded" && canLearn && SPELL_DATA[catalogName]){
     var learn = document.createElement("button");
     learn.type = "button";
     learn.className = "btn small";
     learn.textContent = "Learn";
     learn.title = "Add " + fs.name + " to your known spells";
     learn.addEventListener("click", function(){
-      if(addCatalogSpell(c, catalogName, SPELL_DATA[catalogName])){ showActionToast("Learned " + fs.name + "."); renderAll(); }
+      if(addCatalogSpell(c, catalogName, SPELL_DATA[catalogName])){
+        c.spells[c.spells.length-1].learnedBy = fs.className;
+        save();
+        showActionToast("Learned " + fs.name + ".");
+        renderAll();
+      }
     });
     actions.appendChild(learn);
   }
@@ -473,6 +497,10 @@ function renderFeatureSpellsCard(c, list, title, introText){
   intro.className = "feature-spells-intro";
   intro.textContent = introText;
   card.appendChild(intro);
+  appendFeatureSpellGroups(c, card, list);
+  return card;
+}
+function appendFeatureSpellGroups(c, card, list, canLearn){
   var sorted = list.slice().sort(function(a, b){ return a.level - b.level || a.name.localeCompare(b.name); });
   var currentLevel = null, group = null;
   sorted.forEach(function(fs){
@@ -486,9 +514,57 @@ function renderFeatureSpellsCard(c, list, title, introText){
       group.className = "ff-items-list inv-items-list";
       card.appendChild(group);
     }
-    group.appendChild(renderFeatureSpellCard(c, fs));
+    group.appendChild(renderFeatureSpellCard(c, fs, canLearn));
   });
+}
+
+/* ---- Patron spells ----
+   A warlock patron's expanded list. A learned one is an ordinary known
+   spell (listed under Known spells with the patron's tag), so here it is
+   only a checked chip; the ones still to learn get full cards with a
+   Learn button. */
+function renderPatronSpellsCard(c, list){
+  var card = makeCard("Patron spells");
+  var learned = list.filter(function(fs){ return knowsSpell(c, fs); });
+  var toLearn = list.filter(function(fs){ return !knowsSpell(c, fs); });
+  var count = ce("span", "patron-spell-count");
+  count.textContent = learned.length + " of " + list.length + " learned";
+  card.querySelector("h3").appendChild(count);
+  var patron = list[0].source;
+  var room = warlockSpellRoom(c);
+  var intro = ce("p", "feature-spells-intro");
+  intro.textContent = !toLearn.length
+    ? "You know every " + patron + " spell open to you at this level. They're under Known spells with the " + patron + " tag."
+    : patron + " adds these to the warlock spells you can learn. You pick them like any other warlock spell when you level up (the New spells step), and each one counts as one of your spells known." +
+      (room > 0 ? " You still have " + room + " spell" + (room===1 ? "" : "s") + " to learn, so you can take " + (room===1 ? "one" : "them") + " here."
+        : room===0 ? " You know all the warlock spells your level allows; swap one for a patron spell on your next level-up." : "");
+  card.appendChild(intro);
+  if(learned.length){
+    var chips = ce("div", "patron-spell-chips");
+    chips.setAttribute("aria-label", "Patron spells you know");
+    learned.slice().sort(function(a, b){ return a.level - b.level || a.name.localeCompare(b.name); }).forEach(function(fs){
+      var chip = ce("span", "patron-spell-chip");
+      chip.textContent = "✓ " + fs.name;
+      chip.title = spellLevelLabel(fs.level) + ", in your known spells";
+      chips.appendChild(chip);
+    });
+    card.appendChild(chips);
+  }
+  if(toLearn.length) appendFeatureSpellGroups(c, card, toLearn, room!==0);
   return card;
+}
+/* Warlock spells still to learn at this level: a number, or -1 when the
+   sheet's spells can't be told apart by class. */
+function warlockSpellRoom(c){
+  var cl = (c.classes||[]).find(function(x){ return x.name==="Warlock"; });
+  var def = cl && casterDef("Warlock");
+  if(!def) return -1;
+  var known = classKnownSpells(c, "Warlock");
+  return known.certain ? Math.max(0, def.spells[Number(cl.level)||1] - known.spells.length) : -1;
+}
+/* The patron feature a known spell comes from, or null. */
+function patronSpellFor(expanded, sp){
+  return expanded.find(function(fs){ return isFeatureSpell(fs, sp); }) || null;
 }
 
 /* ---- Spell choices ----
@@ -542,6 +618,31 @@ function renderSpellChoicesCard(c){
   return card;
 }
 
+/* "Warlock: Spells 6 of 6 · Cantrips 3 of 3" per spellcasting class, so
+   a player can see what's left to learn (or prepare) and when they're
+   over. */
+function renderSpellCounts(c){
+  var rows = spellCounts(c);
+  if(!rows.length) return null;
+  var wrap = ce("div", "spell-counts");
+  rows.forEach(function(r){
+    var row = ce("div", "spell-count-row");
+    var name = ce("span", "spell-count-class");
+    name.textContent = r.className;
+    row.appendChild(name);
+    [["Spells known", r.spells], ["Cantrips", r.cantrips], ["Prepared today", r.prepared]].forEach(function(x){
+      if(!x[1]) return;
+      var pill = ce("span", "spell-count" + (x[1].have > x[1].max ? " over" : x[1].have < x[1].max ? " under" : " full"));
+      pill.textContent = x[0] + " " + x[1].have + " of " + x[1].max;
+      pill.title = x[1].have > x[1].max ? (x[1].have - x[1].max) + " more than your level allows"
+        : x[1].have < x[1].max ? (x[1].max - x[1].have) + " left" : "All set";
+      row.appendChild(pill);
+    });
+    wrap.appendChild(row);
+  });
+  return wrap;
+}
+
 /* ---- Spells panel ---- */
 export function renderSpellsPanel(c){
   var panel = document.createElement("div");
@@ -558,10 +659,12 @@ export function renderSpellsPanel(c){
   var expanded = all.filter(function(fs){ return fs.kind==="expanded"; });
   if(granted.length) panel.appendChild(renderFeatureSpellsCard(c, granted, "From your features",
     "Granted by your class features, feats and invocations. They don't count against your spells known or prepared."));
-  if(expanded.length) panel.appendChild(renderFeatureSpellsCard(c, expanded, "Added to your spell list",
-    "Your patron adds these to the spells you can learn. They still count as spells known: learn one when you gain or swap a spell."));
+  if(expanded.length) panel.appendChild(renderPatronSpellsCard(c, expanded));
 
-  var spellCard = makeCard("Known / prepared spells");
+  var prepares = (c.classes||[]).some(function(cl){ return PREPARED_CASTERS[cl.name]; });
+  var spellCard = makeCard(prepares ? "Known / prepared spells" : "Known spells");
+  var counts = renderSpellCounts(c);
+  if(counts) spellCard.appendChild(counts);
   var spells = c.spells || [];
   if(!spells.length){
     var empty = document.createElement("p");
@@ -595,7 +698,7 @@ export function renderSpellsPanel(c){
         list.className = "ff-items-list inv-items-list";
         spellCard.appendChild(list);
       }
-      list.appendChild(renderSpellCard(c, entry.sp, entry.idx));
+      list.appendChild(renderSpellCard(c, entry.sp, entry.idx, patronSpellFor(expanded, entry.sp)));
     });
   }
 

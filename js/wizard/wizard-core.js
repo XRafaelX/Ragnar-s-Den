@@ -457,12 +457,17 @@ export function finishWizard(){
     // Preparing casters get a starting prepared list (ability mod + level,
     // at least 1); everyone else knows (and so has prepared) all of theirs.
     var prepareCount = sc.prepares ? Math.max(1, mod(c.abilities[sc.ability]) + 1) : Infinity;
+    // Picked spells carry their class, so the Spells tab and later
+    // level-ups can count them (see js/core/spells-known.js).
     w.spellChoices.cantrips.forEach(function(name){
-      c.spells.push(spellFromCatalog(name, SPELL_DATA[name]));
+      var sp = spellFromCatalog(name, SPELL_DATA[name]);
+      sp.learnedBy = w.classId;
+      c.spells.push(sp);
     });
     w.spellChoices.spells.forEach(function(name, i){
       var sp = spellFromCatalog(name, SPELL_DATA[name]);
       sp.prepared = i < prepareCount;
+      sp.learnedBy = w.classId;
       c.spells.push(sp);
     });
     // Subclass freebies: bonus cantrips and always-prepared spells.

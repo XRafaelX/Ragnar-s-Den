@@ -13,9 +13,10 @@ import { getDieSvg } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
-import { makePlusSvg, makeCheckSvg } from "../ui/svg-icons.js";
+import { makePlusSvg } from "../ui/svg-icons.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, refreshWizardProgress } from "./wizard-core.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
+import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { emptyPicks, featNeedsChoice, featPicksSummary } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
@@ -1149,156 +1150,16 @@ export function wizardStepEquipment(container){
 /* extra: spells beyond the class list; extraTag(name) labels one ("Patron
    spell", "Cleric spell"), default "Patron spell". */
 function spellPickSection(title, help, count, level, chosen, listClass, exclude, extra, extraTag){
-  var wrap = ce("div","wiz-spell-section");
-
-  var head = ce("div","wiz-spell-head");
-  var h = document.createElement("h4"); h.textContent = title;
-  var counter = ce("span","wiz-spell-counter");
-  head.appendChild(h); head.appendChild(counter);
-  wrap.appendChild(head);
-
-  if(help){
-    var helpP = document.createElement("p");
-    helpP.className = "wiz-spell-help";
-    helpP.textContent = help;
-    wrap.appendChild(helpP);
-  }
-
   var data = spellDataForClass(listClass);
   // Extra spells a subclass adds to the class list (a warlock's patron).
   (extra||[]).forEach(function(name){ if(SPELL_DATA[name]) data[name] = SPELL_DATA[name]; });
   // Spells the character gets for free (domain spells, bonus cantrips) are
   // left out so a pick isn't wasted on them.
   exclude = exclude || [];
-  for(var i=chosen.length-1;i>=0;i--){ if(exclude.indexOf(chosen[i])!==-1) chosen.splice(i,1); }
   var names = Object.keys(data).filter(function(name){ return data[name].level === level && exclude.indexOf(name)===-1; }).sort();
-
-  var bar = ce("div","wiz-spell-bar");
-  var tray = ce("div","wiz-spell-tray");
-  bar.appendChild(tray);
-  var search = document.createElement("input");
-  search.type = "search"; search.className = "wiz-spell-search";
-  search.placeholder = "Search " + title.toLowerCase() + "…";
-  search.setAttribute("aria-label", "Search " + title.toLowerCase());
-  bar.appendChild(search);
-  wrap.appendChild(bar);
-
-  // School filter, only for the schools this list has.
-  var schools = names.map(function(n){ return data[n].school; }).filter(function(sch, idx, all){ return sch && all.indexOf(sch)===idx; }).sort();
-  var school = "";
-  var filters = ce("div","wiz-spell-filters");
-  filters.setAttribute("role", "group");
-  filters.setAttribute("aria-label", "Filter by school");
-  var filterBtns = [""].concat(schools).map(function(sch){
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "wiz-spell-filter" + (sch ? " school-" + sch.toLowerCase() : "");
-    b.textContent = sch || "All schools";
-    b.addEventListener("click", function(){ school = sch; applyFilter(); });
-    filters.appendChild(b);
-    return {school:sch, btn:b};
-  });
-  if(schools.length > 1) wrap.appendChild(filters);
-
-  var grid = ce("div","wiz-spell-grid");
-  var entries = names.map(function(name){
-    var d = data[name];
-    var card = ce("label","wiz-spell-card school-" + (d.school||"").toLowerCase());
-    var cb = document.createElement("input"); cb.type = "checkbox"; cb.className = "wiz-spell-check";
-    var tags = [];
-    if((extra||[]).indexOf(name)!==-1) tags.push("<span class='wiz-spell-tag extra'>" + escapeHtml(extraTag ? extraTag(name) : "Patron spell") + "</span>");
-    if(d.concentration) tags.push("<span class='wiz-spell-tag'>Concentration</span>");
-    if(d.ritual) tags.push("<span class='wiz-spell-tag'>Ritual</span>");
-    var body = ce("span","wiz-spell-body");
-    body.innerHTML =
-      '<span class="wiz-spell-top"><span class="wiz-spell-name">' + escapeHtml(name) + '</span><span class="wiz-spell-tick" aria-hidden="true">' + makeCheckSvg() + '</span></span>' +
-      '<span class="wiz-spell-school">' + escapeHtml(d.school || "") + '</span>' +
-      '<span class="wiz-spell-facts">' + [d.castingTime, d.range].filter(Boolean).map(function(f){ return '<span class="wiz-spell-fact">' + escapeHtml(f) + '</span>'; }).join("") + tags.join("") + '</span>' +
-      '<span class="wiz-spell-summary">' + escapeHtml(d.summary || "") + '</span>';
-    card.appendChild(cb); card.appendChild(body);
-    grid.appendChild(card);
-    cb.addEventListener("change", function(){
-      var at = chosen.indexOf(name);
-      if(cb.checked && at === -1){
-        if(chosen.length >= count){ cb.checked = false; return; }
-        chosen.push(name);
-      } else if(!cb.checked && at !== -1){
-        chosen.splice(at, 1);
-      }
-      var errBox = document.getElementById("wizard-error");
-      if(errBox) errBox.classList.remove("show");
-      refresh();
-    });
-    return {name:name, d:d, card:card, cb:cb};
-  });
-  wrap.appendChild(grid);
-
-  var empty = ce("p","wiz-spell-empty");
-  empty.textContent = "No spells match. Try another search or school.";
-  wrap.appendChild(empty);
-
-  var shownInTray = chosen.slice();
-  function refresh(){
-    var full = chosen.length >= count;
-    counter.textContent = chosen.length + " of " + count + " chosen";
-    counter.classList.toggle("complete", chosen.length === count);
-    entries.forEach(function(e){
-      var on = chosen.indexOf(e.name) !== -1;
-      e.cb.checked = on;
-      e.cb.disabled = !on && full;
-      e.card.classList.toggle("selected", on);
-      e.card.classList.toggle("disabled", !on && full);
-    });
-    // One slot per pick: picked spells first, then empty slots.
-    tray.innerHTML = "";
-    for(var k=0;k<count;k++){
-      var name = chosen[k];
-      if(name){
-        var chip = document.createElement("button");
-        chip.type = "button";
-        // Only a spell that just went in pops in.
-        chip.className = "wiz-spell-slot filled school-" + ((data[name]||{}).school||"").toLowerCase() + (shownInTray.indexOf(name)===-1 ? " added" : "");
-        chip.setAttribute("aria-label", "Remove " + name);
-        chip.innerHTML = '<span>' + escapeHtml(name) + '</span><span class="wiz-spell-x" aria-hidden="true">×</span>';
-        chip.addEventListener("click", (function(n){ return function(){
-          chosen.splice(chosen.indexOf(n), 1);
-          refresh();
-        }; })(name));
-        tray.appendChild(chip);
-      } else {
-        var slot = ce("span","wiz-spell-slot");
-        slot.textContent = "Empty";
-        tray.appendChild(slot);
-      }
-    }
-    shownInTray = chosen.slice();
-    if(full){
-      var hint = ce("span","wiz-spell-full");
-      hint.textContent = "All picked. Tap × to swap one out.";
-      tray.appendChild(hint);
-    }
-  }
-
-  function applyFilter(){
-    var q = search.value.toLowerCase().trim();
-    var shown = 0;
-    entries.forEach(function(e){
-      var hay = (e.name + " " + e.d.school + " " + e.d.summary + (e.d.concentration ? " concentration" : "") + (e.d.ritual ? " ritual" : "")).toLowerCase();
-      var ok = (!q || hay.indexOf(q) !== -1) && (!school || e.d.school === school);
-      e.card.hidden = !ok;
-      if(ok) shown++;
-    });
-    filterBtns.forEach(function(f){
-      f.btn.classList.toggle("active", f.school === school);
-      f.btn.setAttribute("aria-pressed", f.school === school ? "true" : "false");
-    });
-    empty.hidden = shown > 0;
-  }
-
-  search.addEventListener("input", applyFilter);
-  refresh();
-  applyFilter();
-  return wrap;
+  var tags = {};
+  (extra||[]).forEach(function(name){ tags[name] = [extraTag ? extraTag(name) : "Patron spell"]; });
+  return spellPickGrid({title: title, help: help, count: count, names: names, chosen: chosen, tags: tags});
 }
 
 /* Shared top of the Cantrips and Spells steps: the card, its explainer,
