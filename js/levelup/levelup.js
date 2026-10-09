@@ -33,10 +33,11 @@ import { renderFeatPicks, featPicksContext } from "../ui/feat-picks.js";
    (Fighter 1, Paladin 2, Ranger 2), a warlock's Pact Boon and eldritch
    invocations (new ones when due, and an optional swap of one known
    invocation every warlock level), an Ability Score Improvement / feat
-   at class level 4, then hit points. Applying it records what changed in
+   at class level 4 (a feat's own picks, when it has any, on a Feat
+   picks step after it), then hit points. Applying it records what changed in
    c.levelHistory so the last level-up can be undone. */
-var STEP_IDS = ["class","subclass","style","spells","invocations","asi","hp","review"];
-var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Fighting style", spells:"Spells", invocations:"Invocations", asi:"Abilities", hp:"Hit points", review:"Review"};
+var STEP_IDS = ["class","subclass","style","spells","invocations","asi","featPicks","hp","review"];
+var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Fighting style", spells:"Spells", invocations:"Invocations", asi:"Abilities", featPicks:"Feat picks", hp:"Hit points", review:"Review"};
 var lu = null;
 
 function abilityName(key){
@@ -91,6 +92,7 @@ function stepApplicable(id){
   if(id==="spells") return dueSpellChoices().length > 0;
   if(id==="invocations") return lu.className==="Warlock" && t.newLevel >= 2;
   if(id==="asi") return t.asi;
+  if(id==="featPicks") return t.asi && lu.asiMode==="feat" && !!lu.featName && featNeedsChoice(featDef(lu.featName));
   return true;
 }
 
@@ -142,9 +144,10 @@ function validate(id){
   }
   if(id==="invocations") return invocationProblem();
   if(id==="asi"){
-    if(lu.asiMode==="feat") return lu.featName ? featPicksProblem(featDef(lu.featName), lu.featPicks, featCtx()) || null : "Pick a feat, or switch to raising ability scores.";
+    if(lu.asiMode==="feat") return lu.featName ? null : "Pick a feat, or switch to raising ability scores.";
     return asiPointsUsed()===2 ? null : "Spend both ability points (you have "+(2-asiPointsUsed())+" left).";
   }
+  if(id==="featPicks") return featPicksProblem(featDef(lu.featName), lu.featPicks, featCtx()) || null;
   if(id==="hp"){
     if(lu.hpRolling) return "Wait for the die to land.";
     return (lu.hpMethod==="avg" || lu.hpRoll!=null) ? null : "Take the average or roll your hit die.";
@@ -203,28 +206,13 @@ function render(){
   header.appendChild(h2); header.appendChild(closeBtn);
   overlay.appendChild(header);
 
-  // Labelled steps so players can see what's left (steps that don't apply
-  // this level, e.g. Subclass, are left out).
-  var progress = ce("div","lu-progress"); progress.id = "wizard-progress";
-  var steps = STEP_IDS.filter(stepApplicable);
-  var cur = steps.indexOf(lu.step);
-  steps.forEach(function(id, i){
-    var step = ce("div","lu-step");
-    var dot = ce("div","wiz-dot");
-    if(i<cur){ dot.classList.add("done"); step.classList.add("done"); }
-    if(i===cur){ dot.classList.add("current"); step.classList.add("current"); step.setAttribute("aria-current", "step"); }
-    var label = ce("span","lu-step-label");
-    label.textContent = STEP_LABELS[id];
-    step.appendChild(dot); step.appendChild(label);
-    progress.appendChild(step);
-  });
-  overlay.appendChild(progress);
+  overlay.appendChild(buildProgress());
 
   var body = ce("div"); body.id = "wizard-body";
   var inner = ce("div"); inner.id = "wizard-body-inner";
   body.appendChild(inner);
   overlay.appendChild(body);
-  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, invocations:stepInvocations, asi:stepAsi, hp:stepHp, review:stepReview})[lu.step](inner);
+  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, invocations:stepInvocations, asi:stepAsi, featPicks:stepFeatPicks, hp:stepHp, review:stepReview})[lu.step](inner);
 
   var errorBox = ce("div","wiz-error");
   overlay.appendChild(errorBox);
@@ -248,6 +236,30 @@ function render(){
   footer.appendChild(backBtn); footer.appendChild(nextBtn);
   overlay.appendChild(footer);
   wizardScrollRestore(keepScroll);
+}
+
+/* Labelled steps so players can see what's left (steps that don't apply
+   this level, e.g. Subclass, are left out). */
+function buildProgress(){
+  var progress = ce("div","lu-progress"); progress.id = "wizard-progress";
+  var steps = STEP_IDS.filter(stepApplicable);
+  var cur = steps.indexOf(lu.step);
+  steps.forEach(function(id, i){
+    var step = ce("div","lu-step");
+    var dot = ce("div","wiz-dot");
+    if(i<cur){ dot.classList.add("done"); step.classList.add("done"); }
+    if(i===cur){ dot.classList.add("current"); step.classList.add("current"); step.setAttribute("aria-current", "step"); }
+    var label = ce("span","lu-step-label");
+    label.textContent = STEP_LABELS[id];
+    step.appendChild(dot); step.appendChild(label);
+    progress.appendChild(step);
+  });
+  return progress;
+}
+/* Redraw just the progress bar (a feat with choices adds a step). */
+function refreshProgress(){
+  var old = document.getElementById("wizard-progress");
+  if(old) old.replaceWith(buildProgress());
 }
 
 function stepCard(container, title, explainHtml){
@@ -520,13 +532,14 @@ function stepAsi(container){
   card.appendChild(search);
   var list = ce("div","wiz-spell-list");
   card.appendChild(list);
-  // The chosen feat's picks (a half-feat's +1, Skilled's skills) sit
-  // under the list and redraw on their own, so the list keeps its scroll.
-  var picksBox = ce("div");
-  card.appendChild(picksBox);
-  function drawPicks(){
-    picksBox.innerHTML = "";
-    if(lu.featName) picksBox.appendChild(renderFeatPicks(featDef(lu.featName), lu.featPicks, featCtx(), drawPicks));
+  // Under the list: a line saying the feat's own picks come next (they
+  // have their own step). Redrawn on its own so the list keeps its scroll.
+  var nextBox = ce("p","lu-note lu-feat-next");
+  card.appendChild(nextBox);
+  function drawNext(){
+    var def = lu.featName && featDef(lu.featName);
+    nextBox.textContent = def ? (featNeedsChoice(def) ? lu.featName+": next, you'll choose what it gives you." : lu.featName+": nothing to choose, the sheet applies it.") : "";
+    nextBox.hidden = !def;
   }
   function fill(){
     list.innerHTML = "";
@@ -541,15 +554,25 @@ function stepAsi(container){
         "<span class='wiz-spell-desc'>"+escapeHtml(f.summary||"")+"</span></div>";
       r.addEventListener("click", function(){
         if(lu.featName!==f.name){ lu.featName = f.name; lu.featPicks = emptyPicks(f); }
-        fill(); drawPicks();
-        if(featNeedsChoice(f)) picksBox.scrollIntoView({block:"nearest", behavior:"smooth"});
+        fill(); drawNext();
+        refreshProgress(); // a feat with choices adds the Feat picks step
       });
       list.appendChild(r);
     });
   }
   search.addEventListener("input", function(){ lu.featQuery = search.value; fill(); });
   fill();
-  drawPicks();
+  drawNext();
+}
+
+/* Feat picks: the picked feat's own picks (a half-feat's +1, Fey
+   Touched's spell, Skilled's skills), on a screen of their own. */
+function stepFeatPicks(container){
+  var def = featDef(lu.featName);
+  var card = stepCard(container, def.name,
+    "<b>Your new feat:</b> "+escapeHtml(def.summary || "")+" Choose what it gives you; the sheet applies it, and undoing the level-up takes it back.");
+  if(!lu.featPicks) lu.featPicks = emptyPicks(def);
+  card.appendChild(renderFeatPicks(def, lu.featPicks, featCtx(), render));
 }
 function featCtx(){ return featPicksContext(lu.c); }
 /* The +1 the chosen feat gives (Durable: CON), or null. */

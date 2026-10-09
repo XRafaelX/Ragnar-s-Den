@@ -8,7 +8,7 @@ import { RACE_DATA } from "../data/race-data.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists } from "../core/helpers.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
-import { featPicksProblem, applyFeatPicks } from "../core/feat-picks.js";
+import { featPicksProblem, applyFeatPicks, featNeedsChoice } from "../core/feat-picks.js";
 import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { closeSidebarMobile } from "../ui/mobile-nav.js";
@@ -19,13 +19,13 @@ import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import {
   buildEquipmentList,
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
-  wizardStepAbilities, wizardStepSkills, wizardStepRaceChoices, wizardStepChoices, wizardStepLanguages, wizardStepEquipment, wizardStepCantrips, wizardStepSpells, wizardStepReview,
+  wizardStepAbilities, wizardStepSkills, wizardStepRaceChoices, wizardStepFeat, wizardStepFeatPicks, wizardStepChoices, wizardStepLanguages, wizardStepEquipment, wizardStepCantrips, wizardStepSpells, wizardStepReview,
   expertiseOptions, resetHomebrewPickers
 } from "./wizard-steps.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons.js";
 
 /* ---------------- Character Creation Wizard ---------------- */
-export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","raceChoices","choices","languages","equipment","cantrips","spells","review"];
+export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","raceChoices","feat","featPicks","choices","languages","equipment","cantrips","spells","review"];
 export var wizardState = null;
 
 export function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardState.classId]; }
@@ -210,14 +210,23 @@ export function isStepApplicable(id){
   }
   if(id==="languages") return languagePlan().slots.length > 0;
   if(id==="raceChoices") return !!raceChoiceDef();
+  // A race's feat (Variant Human) gets its own step, and the feat's own
+  // picks (Fey Touched's spell, Skilled's skills) one more, only when it has any.
+  if(id==="feat") return !!(raceChoiceDef() && raceChoiceDef().feat);
+  if(id==="featPicks") return isStepApplicable("feat") && featNeedsChoice(wizardFeat());
   return true;
+}
+/* The feat picked for the race (Variant Human), or null. */
+export function wizardFeat(){
+  var name = wizardState && wizardState.raceChoices.feat;
+  return name ? FEATS_CATALOG.find(function(f){ return f.name===name; }) || null : null;
 }
 
 export function wizardStepTitle(id){
   return {
     class:"Choose a Class", race:"Choose a Race", background:"Choose a Background",
     alignment:"Choose an Alignment",
-    abilities:"Ability Scores", skills:"Skills & Proficiencies", raceChoices:"Race Traits", choices:"Class Features", languages:"Languages", equipment:"Starting Equipment",
+    abilities:"Ability Scores", skills:"Skills & Proficiencies", raceChoices:"Race Traits", feat:"Choose a Feat", featPicks:"Feat Choices", choices:"Class Features", languages:"Languages", equipment:"Starting Equipment",
     cantrips:"Cantrips", spells:"Spells", review:"Review & Finish"
   }[id];
 }
@@ -287,15 +296,16 @@ export function validateStep(id){
       var tl = (rc.tools||[]).slice(0, def.tools).filter(Boolean);
       if(tl.length!==def.tools || new Set(tl).size!==tl.length) return "Pick "+(def.tools>1 ? def.tools+" different tools" : "a tool")+" to be proficient with.";
     }
-    if(def.feat){
-      var feat = FEATS_CATALOG.find(function(f){ return f.name===rc.feat; });
-      if(!feat) return "Pick a feat.";
-      var why = featPrereqReason(feat);
-      if(why) return feat.name+" "+why+". Pick another feat or change your scores.";
-      var picksWhy = featPicksProblem(feat, rc.featPicks, {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs()});
-      if(picksWhy) return picksWhy;
-    }
     return null;
+  }
+  if(id==="feat"){
+    var feat = wizardFeat();
+    if(!feat) return "Pick a feat.";
+    var why = featPrereqReason(feat);
+    return why ? feat.name+" "+why+". Pick another feat or change your scores." : null;
+  }
+  if(id==="featPicks"){
+    return featPicksProblem(wizardFeat(), wizardState.raceChoices.featPicks || {}, {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs()}) || null;
   }
   if(id==="choices"){
     var missing = (info.choices||[]).find(function(ch){
@@ -541,6 +551,26 @@ export function applyClassChoices(c, info, picks){
   });
 }
 
+/* One dot per step that applies, the current one lit. */
+function buildWizardProgress(){
+  var progress = ce("div"); progress.id = "wizard-progress";
+  var applicableSteps = WIZARD_STEP_IDS.filter(isStepApplicable);
+  var curPos = applicableSteps.indexOf(wizardState.step);
+  applicableSteps.forEach(function(id, i){
+    var dot = ce("div","wiz-dot");
+    if(i<curPos) dot.classList.add("done");
+    if(i===curPos) dot.classList.add("current");
+    progress.appendChild(dot);
+  });
+  return progress;
+}
+/* Redraw just the dots, when a pick adds or removes a step (a feat with
+   choices) without redrawing the step itself. */
+export function refreshWizardProgress(){
+  var old = document.getElementById("wizard-progress");
+  if(old) old.replaceWith(buildWizardProgress());
+}
+
 export function renderWizard(){
   var overlay = document.getElementById("wizard-overlay");
   var keepScroll = wizardScrollSave("create:"+wizardState.step);
@@ -553,16 +583,7 @@ export function renderWizard(){
   header.appendChild(h2); header.appendChild(closeBtn);
   overlay.appendChild(header);
 
-  var progress = ce("div"); progress.id = "wizard-progress";
-  var applicableSteps = WIZARD_STEP_IDS.filter(isStepApplicable);
-  var curPos = applicableSteps.indexOf(wizardState.step);
-  applicableSteps.forEach(function(id, i){
-    var dot = ce("div","wiz-dot");
-    if(i<curPos) dot.classList.add("done");
-    if(i===curPos) dot.classList.add("current");
-    progress.appendChild(dot);
-  });
-  overlay.appendChild(progress);
+  overlay.appendChild(buildWizardProgress());
 
   var body = ce("div"); body.id = "wizard-body";
   var inner = ce("div"); inner.id = "wizard-body-inner";
@@ -572,7 +593,7 @@ export function renderWizard(){
   var renderers = {
     class: wizardStepClass, race: wizardStepRace, background: wizardStepBackground,
     alignment: wizardStepAlignment,
-    abilities: wizardStepAbilities, skills: wizardStepSkills, raceChoices: wizardStepRaceChoices, choices: wizardStepChoices, languages: wizardStepLanguages, equipment: wizardStepEquipment,
+    abilities: wizardStepAbilities, skills: wizardStepSkills, raceChoices: wizardStepRaceChoices, feat: wizardStepFeat, featPicks: wizardStepFeatPicks, choices: wizardStepChoices, languages: wizardStepLanguages, equipment: wizardStepEquipment,
     cantrips: wizardStepCantrips, spells: wizardStepSpells, review: wizardStepReview
   };
   renderers[wizardState.step](inner);

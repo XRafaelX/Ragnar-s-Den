@@ -38,7 +38,7 @@ export function renderInvocationPicker(opts){
   var field = ce("div", "field inf-field eli-field");
   field.appendChild(themedPicker({
     key: opts.key, ariaLabel: opts.ariaLabel || "Eldritch invocation", placeholder: opts.placeholder || "Pick an invocation…",
-    groups: groups, value: opts.value || "", search: true,
+    groups: groups, value: opts.value || "", search: true, sheet: true,
     reasonFor: function(v){
       if(v!==opts.value && (opts.taken||[]).indexOf(v)!==-1) return "picked";
       var inv = INVOCATIONS.find(function(i){ return i.name===v; });
@@ -69,7 +69,8 @@ export function renderSpellPickPickers(pick, values, key, onChange){
     var field = ce("div", "field inf-field eli-field");
     field.appendChild(themedPicker({
       key: key + ":" + i, ariaLabel: pick.label + " " + (i + 1), placeholder: "Choose a spell", search: true,
-      groups: {"": options}, value: values[i] || "",
+      groups: {"": options}, value: values[i] || "", sheet: true,
+      detailFor: function(v){ return SPELL_DATA[v] ? SPELL_DATA[v].summary || "" : ""; },
       reasonFor: function(v){ return v!==values[i] && values.indexOf(v)!==-1 ? "picked" : ""; },
       onPick: function(v){ values[i] = v; onChange(); }
     }));

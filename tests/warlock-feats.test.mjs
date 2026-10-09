@@ -240,14 +240,67 @@ test("Fey Touched through a Variant Human in the creation wizard", (t) => {
   const vh = (featPicks) => ({ classId: "Fighter", background: "Soldier", skillChoices: ["Athletics", "Perception"], bgSkillChoices: [],
     languageChoices: ["Elvish"], classChoices: { fightingStyle: "Defense" }, equipment: { 0: "chain" }, race: "Variant Human",
     raceChoices: { abilities: ["str", "con"], preset: "", skills: ["Stealth"], tools: [], feat: "Fey Touched", featPicks } });
-  assert.match(inWizard(t, vh({ ...FP.emptyPicks(FEY), ability: "wis" }), () => W.validateStep("raceChoices")), /1st-level divination or enchantment spell/);
+  assert.match(inWizard(t, vh({ ...FP.emptyPicks(FEY), ability: "wis" }), () => W.validateStep("featPicks")), /1st-level divination or enchantment spell/);
   const picks = { ...FP.emptyPicks(FEY), ability: "wis", spells: ["Hex"] };
-  assert.equal(inWizard(t, vh(picks), () => W.validateStep("raceChoices")), null);
+  assert.equal(inWizard(t, vh(picks), () => W.validateStep("featPicks")), null);
   const c = inWizard(t, vh(picks), () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
   const feat = c.feats.find((f) => f.name === "Fey Touched");
   assert.deepEqual(feat.picks.spells, ["Hex"]);
   assert.equal(c.abilities.wis, 13, "point-buy 12 + the feat's 1");
   assert.deepEqual(H.featureSpells(c).map((s) => s.name), ["Misty Step", "Hex"]);
+});
+
+/* ================================================================
+   A race's feat has its own wizard steps
+   ================================================================ */
+const vhuman = (raceChoices, extra = {}) => ({ classId: "Fighter", background: "Soldier", skillChoices: ["Athletics", "Perception"], bgSkillChoices: [],
+  languageChoices: ["Elvish"], classChoices: { fightingStyle: "Defense" }, equipment: { 0: "chain" }, race: "Variant Human",
+  raceChoices: { abilities: ["str", "con"], preset: "", skills: ["Stealth"], tools: [], feat: "", featPicks: null, ...raceChoices }, ...extra });
+
+test("wizard: the Feat step only for a race with a feat, Feat Choices only for a feat with picks", (t) => {
+  const steps = (choices) => inWizard(t, choices, () => W.WIZARD_STEP_IDS.filter(W.isStepApplicable));
+  const around = (list) => list.slice(list.indexOf("raceChoices"), list.indexOf("raceChoices") + 3);
+  assert.deepEqual(around(steps(vhuman({}))), ["raceChoices", "feat", "choices"], "no feat yet: no Feat Choices");
+  assert.deepEqual(around(steps(vhuman({ feat: "Fey Touched" }))), ["raceChoices", "feat", "featPicks"]);
+  for(const [feat, has] of [["Alert", false], ["Tough", false], ["Actor", false], ["Athlete", true], ["Skilled", true], ["Weapon Master", true], ["Elemental Adept", true]]){
+    assert.equal(steps(vhuman({ feat })).includes("featPicks"), has, feat);
+  }
+  assert.equal(steps(vhuman({ feat: "No Such Feat" })).includes("featPicks"), false, "an unknown name adds nothing");
+  // Other races: neither step.
+  for(const race of ["Human", "Half-Elf", "Hill Dwarf"]){
+    const list = steps({ race, classId: "Fighter" });
+    assert.ok(!list.includes("feat") && !list.includes("featPicks"), race);
+  }
+  assert.equal(inWizard(t, vhuman({ feat: "Alert" }), () => W.wizardFeat()).name, "Alert");
+  assert.equal(inWizard(t, vhuman({}), () => W.wizardFeat()), null);
+  assert.equal(inWizard(t, vhuman({}), () => W.wizardStepTitle("feat")), "Choose a Feat");
+  assert.equal(inWizard(t, vhuman({}), () => W.wizardStepTitle("featPicks")), "Feat Choices");
+});
+
+test("wizard: Race Traits no longer asks for the feat; the Feat steps do", (t) => {
+  const err = (step, rc) => inWizard(t, vhuman(rc), () => W.validateStep(step));
+  assert.equal(err("raceChoices", {}), null, "Race Traits is done without a feat");
+  assert.match(err("raceChoices", { abilities: ["str"] }), /2 different abilities/, "its own picks are still checked");
+  assert.equal(err("feat", {}), "Pick a feat.");
+  assert.equal(err("feat", { feat: "No Such Feat" }), "Pick a feat.");
+  assert.equal(err("feat", { feat: "Alert" }), null);
+  // Point-buy STR 8 (+1 from the race's pick goes to CON and DEX here): Grappler needs STR 13.
+  assert.match(inWizard(t, vhuman({ abilities: ["dex", "con"], feat: "Grappler" }, { abilityMethod: "pointbuy", abilities: { str: 8, dex: 14, con: 13, int: 10, wis: 12, cha: 15 } }),
+    () => W.validateStep("feat")), /^Grappler needs STR 13\. Pick another feat or change your scores\.$/);
+  assert.match(err("feat", { feat: "Elemental Adept" }), /needs spellcasting/, "a Fighter has no Spellcasting feature");
+  // Feat Choices checks the feat's own picks.
+  assert.match(err("featPicks", { feat: "Athlete", featPicks: null }), /Pick the ability Athlete raises/);
+  assert.match(err("featPicks", { feat: "Skilled", featPicks: { ...FP.emptyPicks(FP.featDef("Skilled")), skills: ["Arcana"] } }), /Pick 3 different skills or tools/);
+  assert.equal(err("featPicks", { feat: "Athlete", featPicks: { ...FP.emptyPicks(FP.featDef("Athlete")), ability: "dex" } }), null);
+});
+
+test("wizard: a Variant Human's feat and picks still reach the new character", (t) => {
+  const make = (rc) => inWizard(t, vhuman(rc), () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
+  const athlete = make({ feat: "Athlete", featPicks: { ...FP.emptyPicks(FP.featDef("Athlete")), ability: "dex" } });
+  assert.deepEqual(athlete.feats.map((f) => [f.name, f.picks.ability]), [["Athlete", "dex"]]);
+  assert.equal(athlete.abilities.dex, 15, "point-buy 14 + the feat's 1 (the race's +1s went to STR and CON)");
+  const alert = make({ feat: "Alert", featPicks: FP.emptyPicks(FP.featDef("Alert")) });
+  assert.deepEqual(alert.feats.map((f) => f.name), ["Alert"]);
 });
 
 /* ================================================================

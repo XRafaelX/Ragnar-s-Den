@@ -14,9 +14,9 @@ import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
 import { makePlusSvg, makeCheckSvg } from "../ui/svg-icons.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, refreshWizardProgress } from "./wizard-core.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
-import { emptyPicks, featPicksProblem } from "../core/feat-picks.js";
+import { emptyPicks, featNeedsChoice, featPicksSummary } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
 import { TOOL_GROUPS } from "../core/feat-picks.js";
 import { FEATS_CATALOG } from "../data/feats.js";
@@ -491,11 +491,11 @@ function checkList(options, chosen, count, takenReason, onChange){
 
 /* Race Traits: the picks a race leaves to the player (see RACE_CHOICES):
    ability increases (Variant Human's two +1s, a Half-Elf's, a Fairy's +2
-   and +1, an Aasimar's subrace), a skill and a feat. Each pick is a
+   and +1, an Aasimar's subrace), a skill and a tool. Each pick is a
    numbered section that shows a check once it's done. Equal increases are
    a row of tappable score tiles (pick N), different ones a picker each;
-   the skill and feat use themed pickers, and the chosen feat gets a
-   summary card with its full text tucked into an expandable section. */
+   skills and tools use themed pickers. A race's feat has its own steps
+   after this one (wizardStepFeat, wizardStepFeatPicks). */
 var CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12.5 10 17.5 19 7"/></svg>';
 
 export function wizardStepRaceChoices(container){
@@ -631,44 +631,111 @@ export function wizardStepRaceChoices(container){
     }
   }
 
-  if(def.feat){
-    var chosenFeat = FEATS_CATALOG.find(function(f){ return f.name===rc.feat; });
-    var featCtx = {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs()};
-    var featOk = !!chosenFeat && !featPrereqReason(chosenFeat) && !featPicksProblem(chosenFeat, rc.featPicks, featCtx);
-    var sec3 = section("Feat", "A special talent most characters only get later. Greyed-out feats need something your character doesn't have yet.", featOk);
-    var byCategory = {};
-    FEATS_CATALOG.slice().sort(function(a, b){ return a.name.localeCompare(b.name); }).forEach(function(f){
-      (byCategory[f.category] = byCategory[f.category] || []).push(f.name);
+  container.appendChild(card);
+}
+
+/* Feat (a Variant Human's): a searchable list like the level-up's, each
+   feat with its prerequisite and summary; ones the character can't take
+   yet are greyed out with the reason. Its own picks come on the next
+   step (Feat Choices), so each screen does one thing. */
+export function wizardStepFeat(container){
+  var rc = wizardState.raceChoices;
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Choose a Feat</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> As a <b>"+escapeHtml(wizardState.race)+"</b> you start with a feat, a special talent most characters only get later. "+
+    "Greyed-out feats need something your character doesn't have yet.";
+  card.appendChild(explain);
+  var search = document.createElement("input");
+  search.type = "text"; search.className = "wiz-spell-search";
+  search.placeholder = "Search feats…"; search.value = wizardState.featQuery || "";
+  search.setAttribute("aria-label", "Search feats");
+  card.appendChild(search);
+  var list = ce("div","wiz-spell-list");
+  card.appendChild(list);
+  var chosenBox = ce("div");
+  card.appendChild(chosenBox);
+  // The list and the chosen feat redraw on their own, so the list keeps
+  // its scroll and the search box its focus.
+  function drawChosen(){
+    chosenBox.innerHTML = "";
+    var f = FEATS_CATALOG.find(function(x){ return x.name===rc.feat; });
+    if(f) chosenBox.appendChild(featSummaryBox(f, featPrereqReason(f)));
+  }
+  function fill(){
+    list.innerHTML = "";
+    var q = (wizardState.featQuery||"").toLowerCase().trim();
+    FEATS_CATALOG.filter(function(f){
+      return !q || f.name.toLowerCase().indexOf(q)!==-1 || (f.summary||"").toLowerCase().indexOf(q)!==-1;
+    }).slice().sort(function(a, b){ return a.name.localeCompare(b.name); }).forEach(function(f){
+      var why = featPrereqReason(f);
+      var r = ce("div","wiz-spell-row wiz-pick-row"+(rc.feat===f.name ? " selected" : "")+(why ? " disabled" : ""));
+      r.setAttribute("role", "button");
+      r.tabIndex = why ? -1 : 0;
+      r.setAttribute("aria-pressed", rc.feat===f.name ? "true" : "false");
+      r.innerHTML = "<div class='wiz-spell-text'><b>"+escapeHtml(f.name)+"</b>"+
+        (f.prerequisite && f.prerequisite!=="None" ? "<span class='wiz-spell-meta'>Requires: "+escapeHtml(f.prerequisite)+(why ? " ("+escapeHtml(why)+")" : "")+"</span>" : "")+
+        "<span class='wiz-spell-desc'>"+escapeHtml(f.summary||"")+"</span></div>";
+      function choose(){
+        if(why) return;
+        if(rc.feat!==f.name){ rc.feat = f.name; rc.featPicks = emptyPicks(f); }
+        var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+        fill(); drawChosen();
+        refreshWizardProgress(); // a feat with choices adds a step
+      }
+      r.addEventListener("click", choose);
+      r.addEventListener("keydown", function(e){ if(e.key==="Enter" || e.key===" "){ e.preventDefault(); choose(); } });
+      list.appendChild(r);
     });
-    sec3.appendChild(pickerField(themedPicker({
-      key:"race:feat", placeholder:"Choose a feat", ariaLabel:"Feat",
-      groups:byCategory, value:rc.feat||"",
-      reasonFor:function(name){ return featPrereqReason(FEATS_CATALOG.find(function(f){ return f.name===name; })); },
-      onPick:function(v){
-        if(v!==rc.feat) rc.featPicks = emptyPicks(FEATS_CATALOG.find(function(f){ return f.name===v; }));
-        rc.feat = v; picked();
-      }
-    })));
-    if(chosenFeat){
-      var why = featPrereqReason(chosenFeat);
-      var box = ce("div","rt-feat"+(why ? " blocked" : ""));
-      box.innerHTML =
-        "<div class='rt-feat-top'><strong>"+escapeHtml(chosenFeat.name)+"</strong><span class='rt-tag'>"+escapeHtml(chosenFeat.category)+"</span></div>"+
-        (chosenFeat.prerequisite && chosenFeat.prerequisite!=="None" ? "<div class='rt-feat-req'>Requires: "+escapeHtml(chosenFeat.prerequisite)+(why ? " ("+escapeHtml(why)+")" : "")+"</div>" : "")+
-        "<p class='rt-feat-sum'>"+escapeHtml(chosenFeat.summary || "")+"</p>";
-      if(chosenFeat.description){
-        var more = document.createElement("details");
-        more.className = "rt-feat-more";
-        more.innerHTML = "<summary>Full description</summary><p>"+escapeHtml(chosenFeat.description)+"</p>";
-        box.appendChild(more);
-      }
-      sec3.appendChild(box);
-      if(!why){
-        if(!rc.featPicks) rc.featPicks = emptyPicks(chosenFeat);
-        sec3.appendChild(renderFeatPicks(chosenFeat, rc.featPicks, featCtx, picked));
-      }
+    if(!list.children.length){
+      var none = ce("p","wiz-spell-empty");
+      none.textContent = "No feats match \u201c"+wizardState.featQuery+"\u201d.";
+      list.appendChild(none);
     }
   }
+  search.addEventListener("input", function(){ wizardState.featQuery = search.value; fill(); });
+  fill();
+  drawChosen();
+  container.appendChild(card);
+}
+/* The picked feat: name, category, prerequisite, the full text tucked
+   away, and whether its choices come next (its summary is already in
+   its list row, so it isn't repeated on a phone's small screen). */
+function featSummaryBox(feat, why){
+  var box = ce("div","rt-feat"+(why ? " blocked" : ""));
+  box.innerHTML =
+    "<div class='rt-feat-top'><strong>"+escapeHtml(feat.name)+"</strong><span class='rt-tag'>"+escapeHtml(feat.category)+"</span></div>"+
+    (feat.prerequisite && feat.prerequisite!=="None" ? "<div class='rt-feat-req'>Requires: "+escapeHtml(feat.prerequisite)+(why ? " ("+escapeHtml(why)+")" : "")+"</div>" : "");
+  if(feat.description){
+    var more = document.createElement("details");
+    more.className = "rt-feat-more";
+    more.innerHTML = "<summary>Full description</summary><p>"+escapeHtml(feat.description)+"</p>";
+    box.appendChild(more);
+  }
+  if(!why && featNeedsChoice(feat)){
+    var next = ce("p","rt-feat-next");
+    next.textContent = "Next, you'll choose what "+feat.name+" gives you.";
+    box.appendChild(next);
+  }
+  return box;
+}
+
+/* Feat Choices: the picked feat's own picks (a half-feat's +1, Fey
+   Touched's spell, Skilled's skills), shown only when it has any. */
+export function wizardStepFeatPicks(container){
+  var rc = wizardState.raceChoices;
+  var feat = FEATS_CATALOG.find(function(f){ return f.name===rc.feat; });
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Feat Choices</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>"+escapeHtml(feat.name)+":</b> "+escapeHtml(feat.summary || "")+" Choose what it gives you; the sheet applies it for you.";
+  card.appendChild(explain);
+  if(!rc.featPicks) rc.featPicks = emptyPicks(feat);
+  var ctx = {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs()};
+  card.appendChild(renderFeatPicks(feat, rc.featPicks, ctx, function(){
+    var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+    renderWizard();
+  }));
   container.appendChild(card);
 }
 
@@ -1380,7 +1447,10 @@ export function wizardStepReview(container){
     if(raceDef.abilityPreset && rc.preset) row(raceDef.abilityPreset.label, rc.preset);
     if(raceDef.skills) row(raceDef.skills>1 ? "Race skills" : "Race skill", rc.skills.slice(0, raceDef.skills).filter(Boolean).join(", ") || "None");
     if(raceDef.tools) row("Race tool", (rc.tools||[]).slice(0, raceDef.tools).filter(Boolean).join(", ") || "None");
-    if(raceDef.feat) row("Feat", rc.feat || "None");
+    if(raceDef.feat){
+      var featPicked = rc.feat && featPicksSummary(FEATS_CATALOG.find(function(f){ return f.name===rc.feat; }), rc.featPicks);
+      row("Feat", (rc.feat || "None") + (featPicked ? " ("+featPicked+")" : ""));
+    }
   }
   row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+(hpBonus ? " + "+hpBonus+" "+wizardState.classChoices.subclass : "")+
     (raceHp ? " + "+raceHp+" "+(race.hpTrait || wizardState.race) : "")+")");

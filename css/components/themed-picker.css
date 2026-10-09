@@ -60,3 +60,33 @@
 /* Pill variant (ability-score pills): centered serif numbers. */
 .tp-pill .tp-trigger{width:100%;}
 .tp-pill .tp-option{text-align:center;font-family:var(--serif);font-size:14px;font-weight:700;padding:6px 4px;}
+
+/* A one-line description under an option (what a spell does). */
+.tp-option-detail{display:block;margin-top:2px;font-size:11.5px;line-height:1.35;color:var(--text-on-parch-dim);}
+.tp-option.active .tp-option-detail{color:var(--text-on-parch);}
+.tp-option.selected .tp-option-detail{color:rgba(255,255,255,.85);}
+
+/* Phone sheet (opts.sheet): the list slides up from the bottom of the
+   screen over everything, so a long list never stretches the page. */
+.tp-backdrop{position:fixed;inset:0;z-index:1199;background:rgba(0,0,0,.55);animation:tpIn .15s ease-out;}
+.tp-menu.tp-sheet{
+  position:fixed;top:auto;left:0;right:0;bottom:0;z-index:1200;min-width:0;
+  display:flex;flex-direction:column;max-height:78vh;max-height:78dvh;
+  border-width:1px 0 0;border-radius:16px 16px 0 0;
+  padding-bottom:env(safe-area-inset-bottom);
+  animation:tpSheetIn .2s ease-out;
+}
+@keyframes tpSheetIn{from{transform:translateY(40px);opacity:0;}to{transform:none;opacity:1;}}
+.tp-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px 10px;
+  font-size:14px;font-weight:600;color:var(--text-on-parch);border-bottom:1px solid var(--rule);}
+.tp-sheet-close{border:none;background:transparent;color:var(--text-on-parch-dim);font-size:16px;line-height:1;padding:6px 8px;cursor:pointer;}
+/* The sheet sits outside .tp (in <body>), so its search box is styled here. */
+.tp-sheet .tp-search{
+  display:block;width:100%;border:none;border-bottom:1px solid var(--rule);border-radius:0;
+  background:rgba(255,255,255,.03);color:var(--text-on-parch);
+  font-size:16px;padding:11px 14px; /* 16px: no iOS zoom on focus */
+}
+.tp-sheet .tp-search:focus{outline:none;border-bottom-color:var(--brass);}
+.tp-sheet .tp-list{flex:1;max-height:none;padding:6px 8px 12px;}
+.tp-sheet .tp-option{padding:10px 12px;font-size:15px;}
+@media (prefers-reduced-motion: reduce){ .tp-menu.tp-sheet, .tp-backdrop{animation:none;} }

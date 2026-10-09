@@ -24,6 +24,13 @@
      key          stable id so an open homebrew box survives re-renders.
      reasonFor    function(value) -> "" or a short reason ("known",
                   "picked") that greys the item out.
+     detailFor    function(value) -> "" or a one-line description shown
+                  under the item (what a spell does). Kept out of the
+                  item's accessible name.
+     sheet        true: on a phone the list opens as a sheet from the
+                  bottom of the screen, over everything, instead of
+                  under the trigger (where a long list made the page
+                  itself scroll). Desktop is unchanged.
      onPick       function(value, meta): meta.typing is true while typing
                   in the homebrew box (don't re-render then: it would
                   steal focus).
@@ -51,6 +58,7 @@ export function themedPicker(opts){
   groups.forEach(function(g){ all = all.concat(g.items); });
   var useSearch = opts.search!=null ? opts.search : all.length > 12;
   var reasonFor = opts.reasonFor || function(){ return ""; };
+  var detailFor = opts.detailFor || function(){ return ""; };
   var listId = "tp-list-"+(++uidCounter);
 
   var value = opts.value==null ? "" : opts.value;
@@ -154,7 +162,7 @@ export function themedPicker(opts){
       items.forEach(function(i){
         var reason = reasonFor(i.value);
         addEntry({kind:"item", value:i.value, label:i.label + (reason ? " ("+reason+")" : ""), disabled:!!reason,
-          selected:!isCustom && i.value===value, extraClass:i.muted ? "tp-muted" : ""});
+          selected:!isCustom && i.value===value, extraClass:i.muted ? "tp-muted" : "", detail:detailFor(i.value)});
       });
     });
     if(opts.homebrew){
@@ -182,6 +190,13 @@ export function themedPicker(opts){
     li.setAttribute("aria-selected", e.selected ? "true" : "false");
     if(e.disabled) li.setAttribute("aria-disabled", "true");
     li.textContent = e.label;
+    if(e.detail){
+      var d = document.createElement("span");
+      d.className = "tp-option-detail";
+      d.setAttribute("aria-hidden", "true");
+      d.textContent = e.detail;
+      li.appendChild(d);
+    }
     var idx = entries.length;
     if(!e.disabled){
       li.addEventListener("pointerenter", function(){ setActive(idx); });
@@ -192,10 +207,31 @@ export function themedPicker(opts){
     entries.push(e);
   }
 
+  var backdrop = null;
   function open(){
     if(menu) return;
+    var asSheet = !!opts.sheet && !!window.matchMedia && window.matchMedia("(max-width: 600px)").matches;
     menu = document.createElement("div");
-    menu.className = "tp-menu";
+    menu.className = "tp-menu" + (asSheet ? " tp-sheet" : "");
+    if(asSheet){
+      // A sheet over the whole screen: a dimmed backdrop (tap to close), a
+      // title saying what's being picked, and the list filling the rest.
+      backdrop = document.createElement("div");
+      backdrop.className = "tp-backdrop";
+      document.body.appendChild(backdrop);
+      var head = document.createElement("div");
+      head.className = "tp-sheet-head";
+      var title = document.createElement("span");
+      title.textContent = opts.placeholder || opts.ariaLabel || "Choose";
+      var x = document.createElement("button");
+      x.type = "button";
+      x.className = "tp-sheet-close";
+      x.setAttribute("aria-label", "Close");
+      x.textContent = "✕";
+      x.addEventListener("click", function(){ close(true); });
+      head.appendChild(title); head.appendChild(x);
+      menu.appendChild(head);
+    }
     if(useSearch){
       search = document.createElement("input");
       search.type = "text";
@@ -212,10 +248,14 @@ export function themedPicker(opts){
     list.id = listId;
     list.setAttribute("role", "listbox");
     menu.appendChild(list);
-    wrap.appendChild(menu);
+    (asSheet ? document.body : wrap).appendChild(menu);
     wrap.classList.add("open");
     trigger.setAttribute("aria-expanded", "true");
     buildList();
+    if(asSheet){
+      document.addEventListener("pointerdown", onOutside, true);
+      return;
+    }
     // A list wider than its trigger near the right edge (a phone) slides
     // left to stay on screen.
     var r = menu.getBoundingClientRect(), vw = document.documentElement.clientWidth;
@@ -232,6 +272,7 @@ export function themedPicker(opts){
   function close(keepFocus){
     if(!menu) return;
     menu.remove();
+    if(backdrop){ backdrop.remove(); backdrop = null; }
     menu = null; search = null; list = null; entries = []; active = -1;
     wrap.classList.remove("open");
     trigger.setAttribute("aria-expanded", "false");
@@ -239,7 +280,7 @@ export function themedPicker(opts){
     document.removeEventListener("pointerdown", onOutside, true);
     if(keepFocus) trigger.focus();
   }
-  function onOutside(e){ if(!wrap.contains(e.target)) close(false); }
+  function onOutside(e){ if(!wrap.contains(e.target) && !(menu && menu.contains(e.target))) close(false); }
 
   function onKey(e){
     if(!menu){

@@ -122,19 +122,21 @@ export function renderFeatPicks(def, picks, ctx, onChange){
     })));
   })(w);
 
+  // Kept short for phones: the free spell is one line, and the pick opens
+  // as a sheet listing what each spell does.
   if(def.grantsSpells && def.grantsSpells.length){
-    box.appendChild(label("You learn " + def.grantsSpells.join(" and ")));
-    def.grantsSpells.forEach(function(name){ if(SPELL_DATA[name]) box.appendChild(spellNote(name)); });
+    def.grantsSpells.forEach(function(name){ if(SPELL_DATA[name]) box.appendChild(spellNote(name, "Also learned: ")); });
   }
   if(def.spellPick){
     if(!picks.spells) picks.spells = [];
     var sp = def.spellPick, bySchool = {};
     featSpellOptions(def).forEach(function(name){ var sc = SPELL_DATA[name].school; (bySchool[sc] = bySchool[sc] || []).push(name); });
-    box.appendChild(label("Learn " + (sp.count > 1 ? sp.count + " spells" : "one spell") + ": " + sp.label));
+    box.appendChild(label(sp.count > 1 ? "Choose " + sp.count + " spells: " + sp.label + "s" : "Choose your " + sp.label));
     for(var p = 0; p < sp.count; p++) (function(p){
       box.appendChild(field(themedPicker({
         key: "feat:" + def.name + ":spell:" + p, ariaLabel: def.name + " spell " + (p + 1),
-        placeholder: "Choose a spell", groups: bySchool, value: picks.spells[p] || "",
+        placeholder: "Choose a spell", groups: bySchool, value: picks.spells[p] || "", sheet: true,
+        detailFor: function(v){ return SPELL_DATA[v] ? SPELL_DATA[v].summary || "" : ""; },
         reasonFor: function(v){ return v!==picks.spells[p] && picks.spells.indexOf(v)!==-1 ? "picked" : ""; },
         onPick: function(v){ picks.spells[p] = v; onChange(); }
       })));
@@ -143,10 +145,10 @@ export function renderFeatPicks(def, picks, ctx, onChange){
   }
   return box;
 }
-function spellNote(name){
+function spellNote(name, lead){
   var n = ce("p", "fp-spell-note");
   var b = document.createElement("b");
-  b.textContent = name + ": ";
+  b.textContent = (lead || "") + name + ": ";
   n.appendChild(b);
   n.appendChild(document.createTextNode(SPELL_DATA[name].summary || ""));
   return n;
