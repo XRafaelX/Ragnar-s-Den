@@ -6,8 +6,10 @@ import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
 import { SPELL_DATA } from "../data/spells.js";
 import {
   TOOL_GROUPS, featDef, featHasPicks, featNeedsChoice, startingPicks, featPicksProblem,
-  expertiseOptions, expertiseReason, applyFeatPicks, featSpellOptions
+  expertiseOptions, expertiseReason, applyFeatPicks, featSpellOptions, featOptionChoices
 } from "../core/feat-picks.js";
+import { optionSetDef } from "../data/class-options.js";
+import { allKnownOptions } from "../core/class-options.js";
 
 /* ---------------- Feat picks UI ----------------
    The choices block for a feat (see js/core/feat-picks.js), shared by the
@@ -143,6 +145,24 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       if(picks.spells[p] && SPELL_DATA[picks.spells[p]]) box.appendChild(spellNote(picks.spells[p]));
     })(p);
   }
+  // Options from a class list (Martial Adept's maneuvers): a sheet on
+  // phones, each with what it does, and a line under each pick.
+  if(def.optionPicks){
+    if(!picks.options) picks.options = [];
+    var op = def.optionPicks, set = optionSetDef(op.set);
+    var known = ctx.optionsKnown ? ctx.optionsKnown(op.set) : [];
+    box.appendChild(label("Learn " + op.count + " " + set.noun + "s"));
+    for(var q = 0; q < op.count; q++) (function(q){
+      box.appendChild(field(themedPicker({
+        key: "feat:" + def.name + ":opt:" + q, ariaLabel: def.name + " " + set.noun + " " + (q + 1),
+        placeholder: "Choose a " + set.noun, groups: {"": featOptionChoices(def).filter(function(n){ return known.indexOf(n)===-1; })},
+        value: picks.options[q] || "", sheet: true, search: true,
+        detailFor: function(v){ var o = set.options.find(function(x){ return x.name===v; }); return o ? o.text : ""; },
+        reasonFor: function(v){ return v!==picks.options[q] && picks.options.indexOf(v)!==-1 ? "picked" : ""; },
+        onPick: function(v){ picks.options[q] = v; onChange(); }
+      })));
+    })(q);
+  }
   return box;
 }
 function spellNote(name, lead){
@@ -206,6 +226,10 @@ export function openFeatPicksModal(c, feat, onDone){
    the options its copies of a repeatable feat already have. */
 export function featPicksContext(c){
   return {abilities: c.abilities, skillProfs: c.skillProfs,
+    // Options the class already knows (a Battle Master's maneuvers) aren't offered again.
+    optionsKnown: function(setId){
+      return allKnownOptions({classes: c.classes || [], feats: []}, setId).map(function(o){ return o.name; });
+    },
     optionsTaken: function(name){
       return (c.feats||[]).filter(function(f){ return f.name===name && f.picks && f.picks.option; }).map(function(f){ return f.picks.option; });
     },

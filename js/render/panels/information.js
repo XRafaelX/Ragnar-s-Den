@@ -309,6 +309,36 @@ export function renderInformationPanel(c){
   }
 
   panel.appendChild(langCard);
+  panel.appendChild(optionalRulesCard(c));
 
   return panel;
 }
+
+/* Optional rules the table may use. Tasha's optional class features are
+   off unless the player turns them on (their DM decides); for now they add
+   the Versatility swaps at Ability Score Improvement levels. */
+function optionalRulesCard(c){
+  var card = makeCard("Optional rules");
+  var row = document.createElement("div");
+  row.className = "opt-rule";
+  var text = document.createElement("div");
+  text.className = "opt-rule-text";
+  text.innerHTML = "<b>Tasha's optional class features</b>"+
+    "<span>Your DM decides whether your table uses these. Turned on, the level-up also lets you swap a Metamagic option (sorcerer) or a maneuver (Battle Master) at Ability Score Improvement levels.</span>";
+  var sw = document.createElement("button");
+  sw.type = "button";
+  sw.className = "switch" + (c.tashaOptional ? " on" : "");
+  sw.setAttribute("role", "switch");
+  sw.setAttribute("aria-checked", c.tashaOptional ? "true" : "false");
+  sw.setAttribute("aria-label", "Use Tasha's optional class features");
+  sw.innerHTML = "<span class='switch-knob'></span>";
+  sw.addEventListener("click", function(){
+    c.tashaOptional = !c.tashaOptional;
+    save(); renderAll();
+  });
+  row.appendChild(text);
+  row.appendChild(sw);
+  card.appendChild(row);
+  return card;
+}
+

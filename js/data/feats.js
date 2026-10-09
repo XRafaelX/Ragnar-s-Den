@@ -18,7 +18,10 @@
                     any class's list, at that spell level and from those
                     schools (Fey Touched's 1st-level divination or
                     enchantment spell). Cast with the ability picked for
-                    the feat's +1. */
+                    the feat's +1.
+     optionPicks    {set, count}: options to learn from a class option set
+                    (js/data/class-options.js); Martial Adept's two
+                    maneuvers. */
 export var FEATS_CATALOG = [
   {
     name: "Alert",
@@ -188,6 +191,7 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Martial Adept",
+    optionPicks:{set:"maneuvers", count:2},
     prerequisite: "None",
     category: "Combat",
     summary: "Learn two Battle Master maneuvers and gain one superiority die (d6) per short or long rest.",

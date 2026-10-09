@@ -120,7 +120,7 @@ const CTX = { abilities: { int: 10, wis: 15, cha: 8 }, skillProfs: {} };
 test("Fey Touched: it asks for a choice, and its picks start empty", () => {
   assert.equal(FP.featHasPicks(FEY), true);
   assert.equal(FP.featNeedsChoice(FEY), true);
-  assert.deepEqual(FP.emptyPicks(FEY), { ability: "", skills: [], expertise: [], weapons: [], option: "", spells: [] });
+  assert.deepEqual(FP.emptyPicks(FEY), { ability: "", skills: [], expertise: [], weapons: [], option: "", spells: [], options: [] });
   // Starting from a feat's own picks copies its spells, not shares them.
   const feat = { name: "Fey Touched", picks: { ability: "cha", skills: [], expertise: [], weapons: [], spells: ["Command"] } };
   const start = FP.startingPicks(FEY, feat);

@@ -3,6 +3,7 @@ import { uid, escapeHtml } from "../../core/helpers.js";
 import { INFUSIONS, infusionsKnownAt, infusedItemsAt } from "../../data/infusions.js";
 import { WEAPON_DATA } from "../../data/weapons.js";
 import { makeCard, renderAll } from "../sheet.js";
+import { meter, sectionTitle, hint } from "../../ui/card-parts.js";
 import { artificerLevel, infusionBonus, endInfusion } from "../../core/artificer.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { themedPicker } from "../../ui/themed-picker.js";
@@ -43,7 +44,6 @@ function targetItems(c, inf){
     return false;
   });
 }
-
 
 export function renderInfusionsCard(c){
   var level = artificerLevel(c);
@@ -95,28 +95,6 @@ export function renderInfusionsCard(c){
     card.appendChild(hint("You know as many infusions as your level allows. Each time you gain an artificer level you can swap one: forget it, then learn the new one."));
   }
   return card;
-}
-
-function meter(label, count, max, sub){
-  var box = document.createElement("div");
-  box.className = "inf-meter"+(count>max ? " over" : "");
-  var top = document.createElement("div");
-  top.className = "inf-meter-top";
-  top.innerHTML = "<span class='inf-meter-lbl'>"+escapeHtml(label)+"</span><span class='inf-meter-val'><b>"+count+"</b> of "+max+"</span>";
-  box.appendChild(top);
-  var pips = document.createElement("div");
-  pips.className = "inf-pips";
-  for(var i=0;i<Math.max(count, max);i++){
-    var pip = document.createElement("span");
-    pip.className = "inf-pip"+(i<count ? " full" : "");
-    pips.appendChild(pip);
-  }
-  box.appendChild(pips);
-  var s = document.createElement("div");
-  s.className = "inf-meter-sub";
-  s.textContent = sub;
-  box.appendChild(s);
-  return box;
 }
 
 function entryHead(title, onForget){
@@ -320,16 +298,4 @@ function field(el){
   f.className = "field inf-field";
   f.appendChild(el);
   return f;
-}
-function sectionTitle(text){
-  var p = document.createElement("p");
-  p.className = "inf-section";
-  p.textContent = text;
-  return p;
-}
-function hint(text){
-  var p = document.createElement("p");
-  p.className = "inf-hint";
-  p.textContent = text;
-  return p;
 }

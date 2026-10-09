@@ -3,6 +3,7 @@ import { ABILITIES, SKILLS } from "../data/abilities-skills.js";
 import { ARTISAN_TOOLS, MUSICAL_INSTRUMENTS } from "../data/classes.js";
 import { WEAPON_GROUPS } from "../data/weapons.js";
 import { spellsMatching } from "../data/spells.js";
+import { optionSetDef } from "../data/class-options.js";
 
 /* ---------------- Feat picks ----------------
    Choices a feat asks for when it's taken: the ability a half-feat raises
@@ -36,14 +37,19 @@ export function featDef(name){
 }
 /* Anything taking this feat changes on the sheet. */
 export function featHasPicks(def){
-  return !!def && !!((def.ability && def.ability.length) || def.skills || def.skillsOrTools || def.expertise || def.weapons || def.option || def.spellPick);
+  return !!def && !!((def.ability && def.ability.length) || def.skills || def.skillsOrTools || def.expertise || def.weapons || def.option || def.spellPick || def.optionPicks);
 }
 /* Something the player has to choose (not just a fixed +1). */
 export function featNeedsChoice(def){
-  return !!def && !!((def.ability && def.ability.length > 1) || def.skills || def.skillsOrTools || def.expertise || def.weapons || def.option || def.spellPick);
+  return !!def && !!((def.ability && def.ability.length > 1) || def.skills || def.skillsOrTools || def.expertise || def.weapons || def.option || def.spellPick || def.optionPicks);
 }
 export function emptyPicks(def){
-  return { ability: def && def.ability && def.ability.length===1 ? def.ability[0] : "", skills: [], expertise: [], weapons: [], option: "", spells: [] };
+  return { ability: def && def.ability && def.ability.length===1 ? def.ability[0] : "", skills: [], expertise: [], weapons: [], option: "", spells: [], options: [] };
+}
+/* The option names a feat's optionPicks can choose from (Martial Adept: maneuvers). */
+export function featOptionChoices(def){
+  var set = def && def.optionPicks && optionSetDef(def.optionPicks.set);
+  return set ? set.options.map(function(o){ return o.name; }) : [];
 }
 /* The spells a feat's spellPick can choose from. */
 export function featSpellOptions(def){
@@ -52,7 +58,7 @@ export function featSpellOptions(def){
 /* Picks to start a picker from: the feat's own (to finish them) or empty. */
 export function startingPicks(def, feat){
   var p = feat && feat.picks && !feat.picks.manual ? feat.picks : emptyPicks(def);
-  return {ability: p.ability || emptyPicks(def).ability, skills: (p.skills||[]).slice(), expertise: (p.expertise||[]).slice(), weapons: (p.weapons||[]).slice(), option: p.option || "", spells: (p.spells||[]).slice()};
+  return {ability: p.ability || emptyPicks(def).ability, skills: (p.skills||[]).slice(), expertise: (p.expertise||[]).slice(), weapons: (p.weapons||[]).slice(), option: p.option || "", spells: (p.spells||[]).slice(), options: (p.options||[]).slice()};
 }
 function profCount(def){ return def.skillsOrTools || def.skills || 0; }
 
@@ -82,6 +88,14 @@ export function featPicksProblem(def, picks, ctx){
     var spells = (picks.spells||[]).slice(0, sp.count).filter(function(x){ return options.indexOf(x)!==-1; });
     if(spells.length < sp.count || new Set(spells).size < sp.count) return "Pick "+(sp.count===1 ? "a "+sp.label : sp.count+" different spells ("+sp.label+")")+" for "+def.name+".";
   }
+  if(def.optionPicks){
+    var op = def.optionPicks, set = optionSetDef(op.set), choices = featOptionChoices(def);
+    var opts = (picks.options||[]).slice(0, op.count).filter(function(x){ return choices.indexOf(x)!==-1; });
+    if(opts.length < op.count || new Set(opts).size < op.count) return "Pick "+op.count+" different "+set.noun+"s for "+def.name+".";
+    var known = ctx && ctx.optionsKnown ? ctx.optionsKnown(op.set) : [];
+    var dup = opts.find(function(x){ return known.indexOf(x)!==-1; });
+    if(dup) return "You already know "+dup+". Pick another "+set.noun+".";
+  }
   return "";
 }
 function hasProf(ctx, skill){ var e = ctx && ctx.skillProfs && ctx.skillProfs[skill]; return !!(e && e.prof); }
@@ -106,6 +120,7 @@ export function featPicksSummary(def, picks){
   (picks.expertise||[]).filter(Boolean).forEach(function(s){ bits.push("expertise in "+s); });
   (picks.weapons||[]).filter(Boolean).forEach(function(s){ bits.push(s); });
   (def.grantsSpells||[]).concat((picks.spells||[]).filter(Boolean)).forEach(function(s){ bits.push(s); });
+  (picks.options||[]).filter(Boolean).forEach(function(s){ bits.push(s); });
   return bits.join(", ");
 }
 
@@ -117,7 +132,8 @@ export function applyFeatPicks(c, feat, picks){
   if(!featHasPicks(def)) return;
   revertFeatPicks(c, feat);
   feat.picks = {ability: picks.ability||"", skills: (picks.skills||[]).filter(Boolean), expertise: (picks.expertise||[]).filter(Boolean),
-    weapons: (picks.weapons||[]).filter(Boolean), option: picks.option||"", spells: (picks.spells||[]).filter(Boolean)};
+    weapons: (picks.weapons||[]).filter(Boolean), option: picks.option||"", spells: (picks.spells||[]).filter(Boolean),
+    options: (picks.options||[]).filter(Boolean)};
   var applied = {abilities:{}, skills:[], expertise:[], weaponItems:[]};
   var k = feat.picks.ability;
   if(k){
@@ -174,7 +190,8 @@ export function featPicksPending(feat){
   if(!feat.picks) return true;
   if(feat.picks.manual) return false;
   return (!!def.weapons && (feat.picks.weapons||[]).length < def.weapons) ||
-    (!!def.spellPick && (feat.picks.spells||[]).length < def.spellPick.count);
+    (!!def.spellPick && (feat.picks.spells||[]).length < def.spellPick.count) ||
+    (!!def.optionPicks && (feat.picks.options||[]).length < def.optionPicks.count);
 }
 
 /* Proficiencies feats grant: armor (Moderately Armored), tools (Skilled),

@@ -6,6 +6,7 @@ import {
   learnInvocation, forgetInvocation, eldritchBlastSummary, customInvocationFeatures, adoptCustomInvocations
 } from "../../core/invocations.js";
 import { makeCard, renderAll } from "../sheet.js";
+import { meter, sectionTitle, hint } from "../../ui/card-parts.js";
 import { renderPactBoonOptions, renderInvocationPicker, renderSpellPickPickers, renderHiddenNotes } from "../../ui/invocation-picks.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -233,27 +234,6 @@ function learnForm(c, cl){
   return wrap;
 }
 
-function meter(label, count, max, sub){
-  var box = document.createElement("div");
-  box.className = "inf-meter"+(count>max ? " over" : "");
-  var top = document.createElement("div");
-  top.className = "inf-meter-top";
-  top.innerHTML = "<span class='inf-meter-lbl'>"+escapeHtml(label)+"</span><span class='inf-meter-val'><b>"+count+"</b> of "+max+"</span>";
-  box.appendChild(top);
-  var pips = document.createElement("div");
-  pips.className = "inf-pips";
-  for(var i=0;i<Math.max(count, max);i++){
-    var pip = document.createElement("span");
-    pip.className = "inf-pip"+(i<count ? " full" : "");
-    pips.appendChild(pip);
-  }
-  box.appendChild(pips);
-  var s = document.createElement("div");
-  s.className = "inf-meter-sub";
-  s.textContent = sub;
-  box.appendChild(s);
-  return box;
-}
 function entryHead(title, actionLabel, onAction){
   var head = document.createElement("div");
   head.className = "inf-entry-head";
@@ -285,16 +265,4 @@ function text(t){
   d.className = "inf-text";
   d.textContent = t;
   return d;
-}
-function sectionTitle(t){
-  var p = document.createElement("p");
-  p.className = "inf-section";
-  p.textContent = t;
-  return p;
-}
-function hint(t){
-  var p = document.createElement("p");
-  p.className = "inf-hint";
-  p.textContent = t;
-  return p;
 }

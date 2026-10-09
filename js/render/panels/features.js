@@ -8,6 +8,7 @@ import { confirmDialog } from "../../ui/confirm-modal.js";
 import { playDelete } from "../../ui/sound.js";
 import { renderInfusionsCard } from "./infusions.js";
 import { renderInvocationsCard } from "./invocations.js";
+import { renderOptionSetCards } from "./class-options.js";
 import { featPicksPending, featAppliedSummary, revertFeatPicks } from "../../core/feat-picks.js";
 import { openFeatPicksModal } from "../../ui/feat-picks.js";
 
@@ -290,6 +291,7 @@ export function renderFeaturesPanel(c){
   if(infusionsCard) panel.appendChild(infusionsCard);
   var invocationsCard = renderInvocationsCard(c);
   if(invocationsCard) panel.appendChild(invocationsCard);
+  renderOptionSetCards(c).forEach(function(card){ panel.appendChild(card); });
   panel.appendChild(featDirCard);
 
   return panel;
