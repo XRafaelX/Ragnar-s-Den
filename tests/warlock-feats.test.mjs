@@ -377,6 +377,38 @@ test("prerequisites: what counts as a curse", () => {
   assert.deepEqual([ctx.level, ctx.pactBoon, ctx.known, ctx.curses], [0, "", [], false]);
 });
 
+test("pickers list only what the warlock can take, and say why others are missing", () => {
+  const listed = (c, over) => INV.availableInvocations(INV.invocationContext(c, c.classes[0], over)).map((i) => i.name);
+  const notes = (c, over) => INV.hiddenInvocationNotes(INV.invocationContext(c, c.classes[0], over));
+  // Warlock 2, no Eldritch Blast, no pact (the screenshot's case).
+  const c = warlock(2, { spells: [] });
+  const two = listed(c);
+  for(const n of ["Armor of Shadows", "Beast Speech", "Beguiling Influence", "Devil's Sight", "Eldritch Mind", "Thief of Five Fates"]) assert.ok(two.includes(n), n);
+  for(const n of ["Agonizing Blast", "Ascendant Step", "Bewitching Whispers", "Book of Ancient Secrets", "Lifedrinker", "Maddening Hex", "Thirsting Blade"]) assert.ok(!two.includes(n), n);
+  assert.ok(two.every((n) => reason(c, c.classes[0], n) === ""), "everything listed passes its prerequisite");
+  assert.equal(two.length, INVOCATIONS.filter((i) => !i.level && !i.pact && !i.needs).length, "exactly the ones with no prerequisite");
+  assert.deepEqual(notes(c), [
+    "Eldritch Blast upgrades such as Agonizing Blast appear once you know the Eldritch Blast cantrip (add it on the Spells tab).",
+    "Some need a Pact Boon, which you choose at warlock level 3.",
+    "More unlock at higher warlock levels."
+  ], "at warlock 2 the Hex ones are hidden for their level first");
+  assert.ok(notes(c, { level: 7 }).includes("Maddening Hex and Relentless Hex need the Hex spell or a curse (Sign of Ill Omen, Hexblade's Curse)."), "at warlock 7, the Hex note");
+  // Known ones leave the list but need no note.
+  INV.learnInvocation(c, c.classes[0], "Devil's Sight", []);
+  assert.ok(!listed(c).includes("Devil's Sight"));
+  // With Eldritch Blast, a pact and levels, the list and notes follow.
+  c.spells = [{ name: "Eldritch Blast" }];
+  assert.ok(listed(c).includes("Agonizing Blast") && listed(c).includes("Repelling Blast"));
+  assert.ok(!notes(c).some((n) => /Eldritch Blast upgrades/.test(n)));
+  const tome = listed(c, { level: 5, pactBoon: "Pact of the Tome" });
+  assert.ok(tome.includes("Book of Ancient Secrets") && tome.includes("Far Scribe") && tome.includes("Mire the Mind") && !tome.includes("Thirsting Blade"));
+  assert.ok(notes(c, { level: 5, pactBoon: "Pact of the Tome" }).includes("Some need a different Pact Boon than your Pact of the Tome."));
+  // A warlock 20 with Hex and the Blade pact has nothing locked but other pacts.
+  c.spells.push({ name: "Hex" });
+  assert.deepEqual(notes(c, { level: 20, pactBoon: "Pact of the Blade" }), ["Some need a different Pact Boon than your Pact of the Blade."]);
+  assert.ok(listed(c, { level: 20, pactBoon: "Pact of the Blade" }).includes("Lifedrinker"));
+});
+
 test("prerequisite text and a prerequisite that's gone", () => {
   assert.equal(INV.invocationPrereqText(invocationDef("Devil's Sight")), "");
   assert.equal(INV.invocationPrereqText(invocationDef("Lifedrinker")), "Warlock 12, Pact of the Blade");

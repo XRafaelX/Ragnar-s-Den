@@ -1,7 +1,7 @@
 import { ce, escapeHtml } from "../core/helpers.js";
-import { INVOCATIONS, PACT_BOONS, INVOCATION_SOURCES } from "../data/invocations.js";
+import { PACT_BOONS, INVOCATION_SOURCES } from "../data/invocations.js";
 import { SPELL_DATA } from "../data/spells.js";
-import { invocationReason, invocationPrereqText, pickOptions } from "../core/invocations.js";
+import { invocationPrereqText, pickOptions, availableInvocations, hiddenInvocationNotes } from "../core/invocations.js";
 import { themedPicker } from "./themed-picker.js";
 
 /* ---------------- Invocation and Pact Boon pickers ----------------
@@ -25,31 +25,38 @@ export function renderPactBoonOptions(value, onPick){
   return box;
 }
 
-/* One invocation dropdown (grouped by book; the ones whose prerequisite
-   isn't met are greyed out with the reason) and, under it, what the
-   picked one does. ctx: invocationContext(); taken: names picked in the
-   other dropdowns, greyed out as "picked". */
+/* One invocation dropdown, grouped by book, listing only the ones the
+   warlock can learn now (renderHiddenNotes says why others are missing),
+   and, under it, what the picked one does. ctx: invocationContext();
+   taken: names picked in the other dropdowns, greyed out as "picked". */
 export function renderInvocationPicker(opts){
   var wrap = ce("div", "eli-pick");
+  var available = availableInvocations(opts.ctx);
   var groups = {};
   Object.keys(INVOCATION_SOURCES).forEach(function(src){
-    groups[INVOCATION_SOURCES[src]] = INVOCATIONS.filter(function(i){ return i.source===src; }).map(function(i){ return i.name; });
+    var names = available.filter(function(i){ return i.source===src; }).map(function(i){ return i.name; });
+    if(names.length) groups[INVOCATION_SOURCES[src]] = names;
   });
   var field = ce("div", "field inf-field eli-field");
   field.appendChild(themedPicker({
     key: opts.key, ariaLabel: opts.ariaLabel || "Eldritch invocation", placeholder: opts.placeholder || "Pick an invocation…",
     groups: groups, value: opts.value || "", search: true, sheet: true,
-    reasonFor: function(v){
-      if(v!==opts.value && (opts.taken||[]).indexOf(v)!==-1) return "picked";
-      var inv = INVOCATIONS.find(function(i){ return i.name===v; });
-      return inv ? invocationReason(inv, opts.ctx) : "";
-    },
+    reasonFor: function(v){ return v!==opts.value && (opts.taken||[]).indexOf(v)!==-1 ? "picked" : ""; },
     onPick: opts.onPick
   }));
   wrap.appendChild(field);
-  var inv = INVOCATIONS.find(function(i){ return i.name===opts.value; });
+  var inv = available.find(function(i){ return i.name===opts.value; });
   if(inv) wrap.appendChild(invocationPreview(inv));
   return wrap;
+}
+/* Under the pickers: why some invocations aren't listed and how to unlock
+   them, or null when only known ones are left out. */
+export function renderHiddenNotes(ctx){
+  var notes = hiddenInvocationNotes(ctx);
+  if(!notes.length) return null;
+  var p = ce("p", "eli-hidden-note");
+  p.textContent = "Only invocations you can take now are listed. " + notes.join(" ");
+  return p;
 }
 export function invocationPreview(inv){
   var box = ce("div", "inf-preview eli-preview");

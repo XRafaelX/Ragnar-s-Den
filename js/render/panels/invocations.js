@@ -6,7 +6,7 @@ import {
   learnInvocation, forgetInvocation, eldritchBlastSummary, customInvocationFeatures, adoptCustomInvocations
 } from "../../core/invocations.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { renderPactBoonOptions, renderInvocationPicker, renderSpellPickPickers } from "../../ui/invocation-picks.js";
+import { renderPactBoonOptions, renderInvocationPicker, renderSpellPickPickers, renderHiddenNotes } from "../../ui/invocation-picks.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -216,6 +216,8 @@ function learnForm(c, cl){
     key: "eli:learn", ctx: ctx, value: learnPick, ariaLabel: "Invocation to learn",
     onPick: function(v){ learnPick = v; renderAll(); }
   }));
+  var hiddenNote = renderHiddenNotes(ctx);
+  if(hiddenNote) wrap.appendChild(hiddenNote);
   var btn = document.createElement("button");
   btn.className = "btn small primary";
   btn.textContent = "Learn";

@@ -125,7 +125,7 @@ export var BACKGROUND_INFO = {
   /* ---- Curse of Strahd / Van Richten's Guide to Ravenloft ---- */
   "Haunted One": {skills:[], skillChoice:"two of Arcana, Investigation, Religion or Survival", skillPick:{count:2, options:["Arcana","Investigation","Religion","Survival"]},
     exoticLanguages:1,
-    blurb:"Grants two of Arcana, Investigation, Religion or Survival, and two languages (one of them exotic). Something terrible happened to you, and a dark presence still follows you. Starts with a monster hunter's pack (chest, crowbar, hammer, three wooden stakes, holy symbol, holy water, manacles, steel mirror, oil, tinderbox, three torches) and one gothic trinket.",
+    blurb:"Grants two of Arcana, Investigation, Religion or Survival, and two languages (one of them exotic). Something terrible happened to you, and a dark presence still follows you. Starts with a monster hunter's pack (chest, crowbar, hammer, three wooden stakes, holy symbol, holy water, manacles, steel mirror, oil, tinderbox, three torches), one trinket of special significance, a set of common clothes and 1 sp.",
     feature:{name:"Heart of Darkness", text:"Those who look into your eyes can see that you have faced unimaginable horror and that you are no stranger to darkness. Though they might fear you, commoners will extend you every courtesy and do their utmost to help you. Unless you have shown yourself to be a danger to them, they will even take up arms to fight alongside you, should you find yourself facing an enemy alone."}}
 };
 

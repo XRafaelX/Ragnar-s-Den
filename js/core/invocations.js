@@ -334,3 +334,21 @@ export function undoLevelUpChoices(c, cl, rec){
   if(rec.invSwappedOut) restoreInvocation(c, cl, rec.invSwappedOut);
   if(rec.pactBoonSet){ delete cl.pactBoon; delete cl.pactSpells; }
 }
+
+/* ---- What a picker lists ----
+   Only the invocations the warlock can learn right now (the user asked
+   for unavailable ones to be left out, not greyed). */
+export function availableInvocations(ctx){
+  return INVOCATIONS.filter(function(inv){ return !invocationReason(inv, ctx); });
+}
+/* Why some invocations aren't listed, in plain words, so a new player
+   knows how to unlock them: [] when nothing is hidden except ones known. */
+export function hiddenInvocationNotes(ctx){
+  var why = INVOCATIONS.map(function(inv){ return invocationReason(inv, ctx); });
+  var notes = [];
+  if(why.indexOf("needs Eldritch Blast")!==-1) notes.push("Eldritch Blast upgrades such as Agonizing Blast appear once you know the Eldritch Blast cantrip (add it on the Spells tab).");
+  if(why.some(function(w){ return /^needs .* pact$/.test(w); })) notes.push(ctx.pactBoon ? "Some need a different Pact Boon than your "+ctx.pactBoon+"." : "Some need a Pact Boon, which you choose at warlock level 3.");
+  if(why.indexOf("needs Hex")!==-1) notes.push("Maddening Hex and Relentless Hex need the Hex spell or a curse (Sign of Ill Omen, Hexblade's Curse).");
+  if(why.some(function(w){ return /^warlock /.test(w); })) notes.push("More unlock at higher warlock levels.");
+  return notes;
+}

@@ -12,8 +12,8 @@ import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { save } from "../core/state.js";
 import { syncInfusions } from "../core/artificer.js";
 import { invocationsKnownAt, invocationDef, pactBoonDef } from "../data/invocations.js";
-import { knownInvocations, levelUpPlan, levelUpContext, levelUpProblem, applyLevelUpChoices, undoLevelUpChoices } from "../core/invocations.js";
-import { renderPactBoonOptions, renderInvocationPicker, renderSpellPickPickers } from "../ui/invocation-picks.js";
+import { knownInvocations, availableInvocations, levelUpPlan, levelUpContext, levelUpProblem, applyLevelUpChoices, undoLevelUpChoices } from "../core/invocations.js";
+import { renderPactBoonOptions, renderInvocationPicker, renderSpellPickPickers, renderHiddenNotes } from "../ui/invocation-picks.js";
 import { themedPicker } from "../ui/themed-picker.js";
 import { renderAll } from "../render/sheet.js";
 import { logRoll, getDieSvg } from "../dice/dice.js";
@@ -433,13 +433,19 @@ function stepInvocations(container){
   var known = knownNow();
   var need = newInvocationCount();
   var total = invocationsKnownAt(t.newLevel);
+  var ctx = luInvocationCtx();
+  // Only invocations the warlock can take are listed; a pick that no
+  // longer qualifies (the Pact Boon changed above) is cleared.
+  var availableNames = availableInvocations(ctx).map(function(i){ return i.name; });
+  var n = invocationSlots();
+  lu.invPicks = lu.invPicks.slice(0, n).map(function(v){ return availableNames.indexOf(v)!==-1 ? v : ""; });
+  var favourites = [["Agonizing Blast", "more Eldritch Blast damage"], ["Devil's Sight", "see in magical darkness"], ["Armor of Shadows", "free Mage Armor"]]
+    .filter(function(f){ return availableNames.indexOf(f[0])!==-1; }).slice(0, 2)
+    .map(function(f){ return "<b>"+escapeHtml(f[0])+"</b> ("+escapeHtml(f[1])+")"; });
   var card = stepCard(container, "Eldritch invocations",
     "<b>Invocations</b> are lasting gifts from your patron, such as casting a spell at will or a stronger Eldritch Blast. "+
     (need ? "At warlock level "+t.newLevel+" you know "+total+", so you learn <b>"+need+" new</b> now. " : "You don't learn a new one this level. ")+
-    "Ones you can't take yet are greyed out with the reason. If you're unsure, <b>Agonizing Blast</b> (more Eldritch Blast damage) and <b>Devil's Sight</b> are favourites.");
-  var ctx = luInvocationCtx();
-  var n = invocationSlots();
-  lu.invPicks = lu.invPicks.slice(0, n);
+    (favourites.length ? "If you're unsure, "+favourites.join(" and ")+(favourites.length>1 ? " are favourites." : " is a favourite.") : ""));
   function picker(i, labelText){
     var label = ce("p","lu-choice-title");
     label.textContent = labelText;
@@ -483,6 +489,8 @@ function stepInvocations(container){
     var replacing = lu.swapOut && known.find(function(e){ return e.id===lu.swapOut; });
     if(replacing) picker(n-1, "Replacement for "+replacing.name);
   }
+  var hiddenNote = renderHiddenNotes(ctx);
+  if(hiddenNote) card.appendChild(hiddenNote);
 }
 
 function stepAsi(container){
