@@ -688,6 +688,17 @@ export function featureSpells(c){
   });
   return out;
 }
+/* Where the character already has this spell: "known" for one on the
+   sheet, "from Fey Touched" (the granting feature's source) for a granted
+   one, "" for neither. The pickers grey such a spell out with it. */
+export function spellHeldBy(c, name){
+  var key = function(n){ return catalogSpellName((n||"").trim()).toLowerCase(); };
+  var want = key(name);
+  if(!want) return "";
+  if((c.spells||[]).some(function(sp){ return key(sp.name)===want; })) return "known";
+  var fs = featureSpells(c).find(function(f){ return f.kind!=="expanded" && key(f.name)===want; });
+  return fs ? "from " + fs.source : "";
+}
 /* "Uses Wisdom: save DC 13, spell attack +5." for a spell cast with
    `ability`, after `lead`. Without an ability yet, says where to pick it. */
 export function spellAbilityNote(c, ability, lead){

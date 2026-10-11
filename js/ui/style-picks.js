@@ -40,8 +40,10 @@ export function renderStyleOptions(c, options, value, tasha, onPick){
 
 /* The picked style's own picks, when it has any (Superior Technique's
    maneuver, Blessed or Druidic Warrior's cantrips). Changes `picks` in
-   place and calls onChange(). known: option names already known. */
-export function renderStylePicks(name, picks, tasha, known, onChange, keyBase){
+   place and calls onChange(). known: option names already known.
+   held(name): "" or why the character already has the cantrip ("known"),
+   which greys it out. */
+export function renderStylePicks(name, picks, tasha, known, onChange, keyBase, held){
   var def = styleDef(name);
   var box = ce("div", "fs-picks");
   if(!def || !(def.optionPick || def.spellPick)) return box;
@@ -69,7 +71,7 @@ export function renderStylePicks(name, picks, tasha, known, onChange, keyBase){
         key: keyBase + ":spell:" + j, ariaLabel: name + " cantrip " + (j+1), placeholder: "Choose a cantrip",
         groups: {"": choices}, value: picks.spells[j] || "", search: true, sheet: true,
         detailFor: function(v){ return SPELL_DATA[v] ? SPELL_DATA[v].summary || "" : ""; },
-        reasonFor: function(v){ return v!==picks.spells[j] && picks.spells.indexOf(v)!==-1 ? "picked" : ""; },
+        reasonFor: function(v){ return v!==picks.spells[j] && picks.spells.indexOf(v)!==-1 ? "picked" : (held && held(v)) || ""; },
         onPick: function(v){ picks.spells[j] = v; onChange(); }
       })));
     })(j);

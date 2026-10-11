@@ -87,6 +87,9 @@ export function featPicksProblem(def, picks, ctx){
     var sp = def.spellPick, options = featSpellOptions(def);
     var spells = (picks.spells||[]).slice(0, sp.count).filter(function(x){ return options.indexOf(x)!==-1; });
     if(spells.length < sp.count || new Set(spells).size < sp.count) return "Pick "+(sp.count===1 ? "a "+sp.label : sp.count+" different spells ("+sp.label+")")+" for "+def.name+".";
+    // A spell being learned as a class spell in the same level-up.
+    var clash = ctx && ctx.spellTaken && spells.find(function(x){ return ctx.spellTaken(x); });
+    if(clash) return clash+" is already one of the spells you're learning this level. Pick another for "+def.name+", or go back and learn a different spell.";
   }
   if(def.optionPicks){
     var op = def.optionPicks, set = optionSetDef(op.set), choices = featOptionChoices(def);

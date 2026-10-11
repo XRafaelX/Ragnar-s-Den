@@ -7,7 +7,7 @@ import { showActionToast } from "../../ui/toast.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { facts, textField, homebrewShell, pickerField, previewCard } from "../../ui/homebrew-form.js";
 import { themedPicker } from "../../ui/themed-picker.js";
-import { escapeHtml, featureSpells, classExtraSpellLists } from "../../core/helpers.js";
+import { escapeHtml, featureSpells, classExtraSpellLists, spellHeldBy } from "../../core/helpers.js";
 import {
   getCustomSpell, saveCustomSpell, deleteCustomSpell,
   spellNameProblem, charactersWithSpell, SPELL_HOMEBREW_GROUP
@@ -42,6 +42,13 @@ export function spellFromCatalog(name, d){
 export function addCatalogSpell(c, name, d){
   if(hasSpell(c, name)){
     showActionToast(name + " is already on " + (c.name || "this character") + "'s list.");
+    return false;
+  }
+  // A spell a feature grants (Fey Touched's Misty Step, a domain spell)
+  // is on the Spells tab already.
+  var held = spellHeldBy(c, name);
+  if(held){
+    showActionToast((c.name || "This character") + " already has " + name + " (" + held + ").");
     return false;
   }
   c.spells.push(spellFromCatalog(name, d));

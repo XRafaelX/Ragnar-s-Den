@@ -43,6 +43,28 @@ function spellKey(name){ return catalogSpellName((name || "").trim()).toLowerCas
 function grantedNames(c){
   return featureSpells(c).filter(function(fs){ return fs.kind!=="expanded"; }).map(function(fs){ return spellKey(fs.name); });
 }
+/* The character with class entry `entry` as the level-up will leave it
+   (new level, a subclass or spell choice picked in the dialog), so the
+   spells that level brings on its own can be read ahead of time. */
+function afterLevelUp(c, entry){
+  var merged = function(cl){
+    var out = Object.assign({}, cl);
+    Object.keys(entry).forEach(function(k){ if(entry[k]!==undefined && entry[k]!=="") out[k] = entry[k]; });
+    return out;
+  };
+  var found = false;
+  var classes = (c.classes||[]).map(function(cl){ if(cl.name!==entry.name) return cl; found = true; return merged(cl); });
+  if(!found) classes.push(merged({}));
+  return Object.assign({}, c, {classes: classes});
+}
+/* Spells the level-up itself grants (an Aberrant Mind's Detect Thoughts
+   at sorcerer 3, a new Light cleric's Light) that the sheet doesn't have
+   yet: [{name, key, source}]. They aren't offered as picks. */
+function comingSpells(c, entry){
+  var have = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c));
+  return featureSpells(afterLevelUp(c, entry)).filter(function(fs){ return fs.kind!=="expanded" && have.indexOf(spellKey(fs.name))===-1; })
+    .map(function(fs){ return {name: catalogSpellName(fs.name), key: spellKey(fs.name), source: fs.source}; });
+}
 
 /* The class that owns spells with no learnedBy: the character's only
    spellcasting class, else none. */
@@ -123,13 +145,23 @@ function allSpellsOf(levels){
    spellChoices); `existing` says whether the class was already there. */
 export function learnPlan(c, entry, isNewClass){
   var def = casterDef(entry.name, entry.subclass);
-  var empty = {sections: [], swap: null, auto: [], summary: "", note: "", tashaNote: ""};
+  var empty = {sections: [], swap: null, auto: [], granted: [], summary: "", note: "", tashaNote: ""};
   if(!def) return empty;
   var lv = Number(entry.level)||1;
   var known = classKnownSpells(c, entry.name);
   if(isNewClass){ known = {spells: [], cantrips: [], certain: true}; }
   var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c));
   var fresh = function(n){ return onSheet.indexOf(spellKey(n))===-1; };
+  // Spells this level brings on its own, and the free cantrips, aren't
+  // offered; `granted` lists the ones a list would otherwise have shown.
+  var coming = comingSpells(c, entry), granted = [], autoKeys = [];
+  var offered = function(n){
+    var key = spellKey(n);
+    if(!fresh(n) || autoKeys.indexOf(key)!==-1) return false;
+    var g = coming.find(function(x){ return x.key===key; });
+    if(g && !granted.some(function(x){ return x.key===key; })) granted.push(g);
+    return !g;
+  };
   var maxLevel = def.maxLevel ? def.maxLevel(lv) : 0;
   var sections = [];
   var cls = def.list.toLowerCase();
@@ -146,7 +178,7 @@ export function learnPlan(c, entry, isNewClass){
     return tags;
   }
   function add(id, kind, title, help, count, list){
-    var names = list.names.filter(fresh);
+    var names = list.names.filter(offered);
     count = Math.min(count, names.length);
     if(count > 0) sections.push({id: id, kind: kind, title: title, help: help, count: count, names: names, tags: list.tags || {}});
   }
@@ -158,6 +190,7 @@ export function learnPlan(c, entry, isNewClass){
 
   // Cantrips (every caster), less any learned for free.
   var auto = (lv===firstCastingLevel(def) ? def.autoCantrips || [] : []).filter(fresh);
+  autoKeys = auto.map(spellKey);
   var cantripNeed = Math.max(0, need(def.cantrips, known.cantrips.length) - auto.length);
   if(cantripNeed){
     var cl = classListNames(entry, def, [0], tasha);
@@ -229,7 +262,7 @@ export function learnPlan(c, entry, isNewClass){
     if(more) tashaNote = "Tasha's Cauldron adds " + more + " more " + cls + " spell" + (more===1 ? "" : "s") + " to choose from if your character uses Tasha's optional class features (Information tab).";
   }
   return {sections: sections, swap: swap, auto: auto, maxLevel: maxLevel, def: def, known: known, note: note, tashaNote: tashaNote,
-    summary: summaryText(entry, def, known, lv)};
+    granted: granted.map(function(g){ return {name: g.name, source: g.source}; }), summary: summaryText(entry, def, known, lv)};
 }
 function firstCastingLevel(def){
   for(var i = 1; i <= 20; i++) if(def.cantrips[i] || (def.spells && def.spells[i]) || (def.spellbook && i===1)) return i;
@@ -269,7 +302,8 @@ export function swapSection(c, entry, plan, swapOut){
   var def = plan.def;
   var out = SPELL_DATA[catalogSpellName(swapOut)];
   var list = classListNames(entry, def, range(1, plan.swap.maxLevel), !!c.tashaOptional);
-  var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c));
+  var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c))
+    .concat(comingSpells(c, entry).map(function(g){ return g.key; }));
   var names = list.names.filter(function(n){ return onSheet.indexOf(spellKey(n))===-1; });
   if(def.schools && !(out && def.schools.indexOf(out.school)===-1)){
     names = names.filter(function(n){ return def.schools.indexOf(SPELL_DATA[n].school)!==-1; });

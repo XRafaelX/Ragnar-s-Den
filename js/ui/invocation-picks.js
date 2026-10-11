@@ -69,8 +69,9 @@ export function invocationPreview(inv){
 
 /* Pickers for a spellPick ({count, level, ritual, label}): the Tome's
    cantrips, Book of Ancient Secrets' rituals. Changes `values` in place
-   and calls onChange() after each pick. */
-export function renderSpellPickPickers(pick, values, key, onChange){
+   and calls onChange() after each pick. held(name): "" or why the
+   character already has the spell ("known"), which greys it out. */
+export function renderSpellPickPickers(pick, values, key, onChange, held){
   var box = ce("div", "eli-spell-picks");
   var options = pickOptions(pick);
   for(var i = 0; i < pick.count; i++) (function(i){
@@ -79,7 +80,7 @@ export function renderSpellPickPickers(pick, values, key, onChange){
       key: key + ":" + i, ariaLabel: pick.label + " " + (i + 1), placeholder: "Choose a spell", search: true,
       groups: {"": options}, value: values[i] || "", sheet: true,
       detailFor: function(v){ return SPELL_DATA[v] ? SPELL_DATA[v].summary || "" : ""; },
-      reasonFor: function(v){ return v!==values[i] && values.indexOf(v)!==-1 ? "picked" : ""; },
+      reasonFor: function(v){ return v!==values[i] && values.indexOf(v)!==-1 ? "picked" : (held && held(v)) || ""; },
       onPick: function(v){ values[i] = v; onChange(); }
     }));
     box.appendChild(field);

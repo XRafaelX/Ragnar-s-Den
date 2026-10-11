@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { escapeHtml } from "../../core/helpers.js";
+import { escapeHtml, spellHeldBy } from "../../core/helpers.js";
 import { invocationDef, pactBoonDef, INVOCATION_SOURCES } from "../../data/invocations.js";
 import {
   warlockEntry, knownInvocations, invocationsDue, invocationContext, invocationReason, invocationBroken,
@@ -102,7 +102,7 @@ function pactSection(c, cl){
     if(picks.length >= boon.spellPick.count){
       entry.appendChild(tagRow(["Spells tab: " + picks.join(", ")]));
     } else {
-      entry.appendChild(pendingPicks(boon.spellPick, "pact", function(values){ cl.pactSpells = values; }));
+      entry.appendChild(pendingPicks(c, boon.spellPick, "pact", function(values){ cl.pactSpells = values; }));
     }
   }
   var tags = effectTags(boon);
@@ -111,15 +111,17 @@ function pactSection(c, cl){
   return box;
 }
 
-/* Spells to choose for a pending entry: pickers, then Save once full. */
-function pendingPicks(pick, draftKey, onSave){
+/* Spells to choose for a pending entry: pickers, then Save once full.
+   Spells the character already has are greyed out. */
+function pendingPicks(c, pick, draftKey, onSave){
+  var held = function(name){ return spellHeldBy(c, name); };
   var wrap = document.createElement("div");
   wrap.className = "eli-pending";
   var draft = pickDrafts[draftKey] = pickDrafts[draftKey] || [];
   var lead = hint("Choose " + pick.count + " " + pick.label + ":");
   lead.classList.add("inf-note");
   wrap.appendChild(lead);
-  wrap.appendChild(renderSpellPickPickers(pick, draft, "eli:" + draftKey, function(){ renderAll(); }));
+  wrap.appendChild(renderSpellPickPickers(pick, draft, "eli:" + draftKey, function(){ renderAll(); }, held));
   var btn = document.createElement("button");
   btn.className = "btn small primary";
   btn.textContent = "Save";
@@ -153,7 +155,7 @@ function invocationEntry(c, cl, e){
   entry.appendChild(text(inv.text));
   if(inv.spellPick){
     if((e.spells||[]).length >= inv.spellPick.count) entry.appendChild(tagRow(["Rituals: " + e.spells.join(", ")]));
-    else entry.appendChild(pendingPicks(inv.spellPick, e.id, function(values){ e.spells = values; }));
+    else entry.appendChild(pendingPicks(c, inv.spellPick, e.id, function(values){ e.spells = values; }));
   }
   var tags = effectTags(inv);
   if(tags.length) entry.appendChild(tagRow(tags));

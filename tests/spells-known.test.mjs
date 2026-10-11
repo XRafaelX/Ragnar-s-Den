@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import * as SK from "../js/core/spells-known.js";
 import { KNOWN_CASTERS, SUBCLASS_CASTERS } from "../js/data/spells-known.js";
 import { SPELL_DATA } from "../js/data/spells.js";
+import { SUBCLASSES } from "../js/data/progression.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
 import { spellFromCatalog } from "../js/render/panels/spell-picker.js";
 import * as W from "../js/wizard/wizard-core.js";
@@ -300,4 +301,73 @@ test("preparing: a domain spell on the list is always prepared; spells above the
   assert.ok(SK.alwaysPrepared(c, c.spells[2]), "Lesser Restoration joins the domain list at cleric 3");
   const pal = makeChar([{ name: "Paladin", subclass: "", level: 4 }], ["Find Steed"]);
   assert.match(SK.prepareLevelProblem(pal, pal.spells[0]), /from paladin level 5/);
+});
+
+/* ================================================================
+   No spell twice: what a level-up grants isn't offered as a pick
+   ================================================================ */
+const offeredAt = (cls, subclass, level, have = []) => {
+  const c = makeChar(level > 1 ? [{ name: cls, subclass, level: level - 1 }] : [], have);
+  const plan = SK.learnPlan(c, { name: cls, subclass, level }, level === 1);
+  return { plan, names: plan.sections.flatMap((s) => s.names) };
+};
+
+test("the New spells step leaves out spells the same level-up grants", () => {
+  // The new level's subclass spells.
+  let r = offeredAt("Sorcerer", "Aberrant Mind", 3);
+  assert.ok(!r.names.includes("Detect Thoughts") && r.names.includes("Hold Person"));
+  assert.deepEqual(r.plan.granted, [{ name: "Detect Thoughts", source: "Aberrant Mind" }]);
+  // A new class's level-1 grants (multiclassing into a Light cleric, a new Aberrant Mind).
+  assert.ok(!offeredAt("Cleric", "Light Domain", 1).names.includes("Light"));
+  assert.ok(!offeredAt("Sorcerer", "Aberrant Mind", 1).names.includes("Mind Sliver"));
+  r = offeredAt("Sorcerer", "Lunar Sorcery", 1);
+  assert.ok(!["Shield", "Ray of Sickness", "Color Spray"].some((n) => r.names.includes(n)), "a pick chosen in the dialog would add more; the fixed ones are out");
+  // A wizard school's spellbook spell.
+  assert.ok(!offeredAt("Wizard", "School of Necromancy", 6).names.includes("Animate Dead"));
+  // Nothing coming: nothing to say, and the list is whole.
+  r = offeredAt("Sorcerer", "Draconic Bloodline", 3);
+  assert.deepEqual(r.plan.granted, []);
+  assert.ok(r.names.includes("Detect Thoughts"));
+});
+
+test("a free cantrip isn't also in the pick list, and still counts", () => {
+  const r = offeredAt("Rogue", "Arcane Trickster", 3);
+  assert.deepEqual(r.plan.auto, ["Mage Hand"]);
+  const cantrips = r.plan.sections.find((s) => s.id === "cantrips");
+  assert.ok(!cantrips.names.includes("Mage Hand"));
+  assert.equal(cantrips.count, 2, "three cantrips at level 3, Mage Hand being one");
+});
+
+test("no class and level offers a spell that level grants", () => {
+  for(const [cls, subs] of Object.entries(SUBCLASSES)){
+    for(const sub of [""].concat(subs.map((s) => typeof s === "string" ? s : s.name))){
+      for(let lv = 1; lv <= 20; lv++){
+        const c = makeChar(lv > 1 ? [{ name: cls, subclass: sub, level: lv - 1 }] : []);
+        const entry = { name: cls, subclass: sub, level: lv };
+        const plan = SK.learnPlan(c, entry, lv === 1);
+        const granted = H.featureSpells({ ...c, classes: [entry] }).filter((f) => f.kind !== "expanded").map((f) => f.name);
+        const offered = plan.sections.flatMap((s) => s.names);
+        assert.deepEqual(granted.filter((n) => offered.includes(n)), [], cls + " / " + sub + " reaching level " + lv);
+      }
+    }
+  }
+});
+
+test("a replacement spell can't be one the level grants either", () => {
+  const c = makeChar([{ name: "Sorcerer", subclass: "Aberrant Mind", level: 2 }], [["Magic Missile", "Sorcerer"], ["Shield", "Sorcerer"], ["Sleep", "Sorcerer"]]);
+  const entry = { name: "Sorcerer", subclass: "Aberrant Mind", level: 3 };
+  const plan = SK.learnPlan(c, entry, false);
+  const swap = SK.swapSection(c, entry, plan, "Sleep");
+  assert.ok(swap.names.includes("Hold Person") && !swap.names.includes("Detect Thoughts"));
+});
+
+test("spellHeldBy: on the sheet, from a feature, or neither", () => {
+  const c = makeChar([{ name: "Cleric", subclass: "Life Domain", level: 1 }], ["Guidance"]);
+  c.feats = [{ name: "Fey Touched", picks: { ability: "wis", spells: ["Hex"] } }];
+  assert.equal(H.spellHeldBy(c, "Guidance"), "known");
+  assert.equal(H.spellHeldBy(c, "Bless"), "from Life Domain");
+  assert.equal(H.spellHeldBy(c, "Hex"), "from Fey Touched");
+  assert.equal(H.spellHeldBy(c, "Misty Step"), "from Fey Touched");
+  assert.equal(H.spellHeldBy(c, "Fireball"), "");
+  assert.equal(H.spellHeldBy(c, ""), "");
 });

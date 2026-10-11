@@ -1,5 +1,5 @@
 import { ABILITIES, SKILLS } from "../data/abilities-skills.js";
-import { mod, fmtMod, ce, isProficientWithWeapon } from "../core/helpers.js";
+import { mod, fmtMod, ce, isProficientWithWeapon, spellHeldBy } from "../core/helpers.js";
 import { themedPicker } from "./themed-picker.js";
 import { openInfoModal } from "./info-modal.js";
 import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
@@ -18,7 +18,10 @@ import { allKnownOptions } from "../core/class-options.js";
    applied picks). It changes `picks` in place and calls onChange() after
    each pick so the caller can re-render and re-check.
    ctx: {abilities, skillProfs} of the character taking the feat, plus
-   knowsWeapon(name) when it's known (greys out weapons already proficient). */
+   knowsWeapon(name) when it's known (greys out weapons already proficient),
+   spellTaken(name) for a spell being learned in the same level-up (greyed
+   out) and spellHeld(name) for one the character already has (still
+   pickable: the feat adds its free cast, and a line says so). */
 var SKILL_NAMES = SKILLS.map(function(s){ return s[0]; });
 
 export function renderFeatPicks(def, picks, ctx, onChange){
@@ -139,10 +142,16 @@ export function renderFeatPicks(def, picks, ctx, onChange){
         key: "feat:" + def.name + ":spell:" + p, ariaLabel: def.name + " spell " + (p + 1),
         placeholder: "Choose a spell", groups: bySchool, value: picks.spells[p] || "", sheet: true,
         detailFor: function(v){ return SPELL_DATA[v] ? SPELL_DATA[v].summary || "" : ""; },
-        reasonFor: function(v){ return v!==picks.spells[p] && picks.spells.indexOf(v)!==-1 ? "picked" : ""; },
+        reasonFor: function(v){ return v!==picks.spells[p] && picks.spells.indexOf(v)!==-1 ? "picked" : (ctx.spellTaken && ctx.spellTaken(v)) || ""; },
         onPick: function(v){ picks.spells[p] = v; onChange(); }
       })));
       if(picks.spells[p] && SPELL_DATA[picks.spells[p]]) box.appendChild(spellNote(picks.spells[p]));
+      var held = picks.spells[p] && ctx.spellHeld && ctx.spellHeld(picks.spells[p]);
+      if(held){
+        var again = ce("p", "fp-spell-note fp-spell-held");
+        again.textContent = "You already have " + picks.spells[p] + " (" + held + "). " + def.name + " still adds one free cast of it per long rest; pick another spell if you'd rather learn something new.";
+        box.appendChild(again);
+      }
     })(p);
   }
   // Options from a class list (Martial Adept's maneuvers): a sheet on
@@ -229,6 +238,7 @@ export function openFeatPicksModal(c, feat, onDone){
    the options its copies of a repeatable feat already have. */
 export function featPicksContext(c){
   return {abilities: c.abilities, skillProfs: c.skillProfs, tasha: !!c.tashaOptional,
+    spellHeld: function(name){ return spellHeldBy(c, name); },
     // Options already known (a Battle Master's maneuvers, Superior Technique's) aren't offered again.
     optionsKnown: function(setId){
       return allKnownOptions({classes: c.classes || [], feats: [], features: c.features || []}, setId).map(function(o){ return o.name; });

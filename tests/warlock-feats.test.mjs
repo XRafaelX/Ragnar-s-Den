@@ -278,6 +278,17 @@ test("wizard: a spell the feat already gives isn't picked again as a class spell
   assert.deepEqual(inWizard(t, { spellChoices: { cantrips: [], spells: ["Hex"] } }, () => { W.dropGrantedSpellPicks(); return W.wizardState.spellChoices.spells; }), ["Hex"]);
 });
 
+test("Fey Touched: a spell being learned this level is refused; a known one is allowed", () => {
+  const picks = { ...FP.emptyPicks(FEY), ability: "cha", spells: ["Hex"] };
+  const ctx = { abilities: {}, skillProfs: {} };
+  assert.equal(FP.featPicksProblem(FEY, picks, ctx) || null, null);
+  // Hex picked on this level-up's New spells step.
+  assert.match(FP.featPicksProblem(FEY, picks, { ...ctx, spellTaken: (n) => n === "Hex" ? "new this level" : "" }),
+    /Hex is already one of the spells you're learning this level/);
+  // Already known from an earlier level: the feat adds its free cast.
+  assert.equal(FP.featPicksProblem(FEY, picks, { ...ctx, spellTaken: () => "", spellHeld: () => "known" }) || null, null);
+});
+
 /* ================================================================
    A race's feat has its own wizard steps
    ================================================================ */

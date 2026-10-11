@@ -6,8 +6,7 @@ import {
   mod, fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus,
   classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots,
   wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFightingStyle,
-  hasFeat, maxHp, raceHpPerLevel, syncHitDice, computeSpeed, classSpellChoices, ordinal
-} from "../core/helpers.js";
+  hasFeat, maxHp, raceHpPerLevel, syncHitDice, computeSpeed, classSpellChoices, ordinal, spellHeldBy } from "../core/helpers.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { save } from "../core/state.js";
 import { syncInfusions } from "../core/artificer.js";
@@ -138,7 +137,28 @@ function knownNow(){ return knownInvocations(target().existing); }
 function newInvocationCount(){ return invPlan().fresh; }
 function invocationSlots(){ return invPlan().slots; }
 function luInvocationCtx(){ var t = target(); return levelUpContext(lu.c, t.existing, t.newLevel, invChoice()); }
-function invocationProblem(){ var t = target(); return levelUpProblem(lu.c, t.existing, t.newLevel, invChoice()); }
+function invocationProblem(){
+  var t = target();
+  var problem = levelUpProblem(lu.c, t.existing, t.newLevel, invChoice());
+  if(problem) return problem;
+  // A Tome cantrip or ritual the character already has (or is learning now).
+  var choice = invChoice();
+  var picked = (pactDue() ? choice.pactSpells||[] : []).concat(Object.keys(choice.pickSpells||{}).reduce(function(a, k){
+    return (choice.picks||[]).indexOf(k)!==-1 ? a.concat(choice.pickSpells[k]) : a; }, [])).filter(Boolean);
+  var dup = picked.find(function(n){ return spellHeldNow(n); });
+  return dup ? "You already have "+dup+" ("+spellHeldNow(dup)+"). Pick a different spell." : null;
+}
+/* Spells being learned as class spells in this level-up: the New spells
+   step's picks and the cantrips it adds for free. */
+function learningNow(){
+  var plan = currentLearnPlan();
+  return learnSections(plan).reduce(function(a, s){ return a.concat((lu.learnPicks[s.id]||[]).slice(0, s.count)); }, plan.auto.slice()).filter(Boolean);
+}
+/* Why a pick list should grey a spell out: the character has it ("known",
+   "from Fey Touched") or is learning it in this level-up; "" otherwise. */
+function spellHeldNow(name){
+  return spellHeldBy(lu.c, name) || (learningNow().indexOf(name)!==-1 ? "new this level" : "");
+}
 
 function chosenSubclass(){ return lu.subclass || ""; }
 
@@ -187,7 +207,10 @@ function validate(id){
       if(!lu.styleSwapOut) return null;
       if(!lu.style) return "Pick the fighting style that replaces "+swapOutStyle().fightingStyle+".";
     }
-    return stylePicksProblem(lu.style, lu.stylePicks, !!lu.c.tashaOptional, knownManeuvers()) || null;
+    var styleProblem = stylePicksProblem(lu.style, lu.stylePicks, !!lu.c.tashaOptional, knownManeuvers());
+    if(styleProblem) return styleProblem;
+    var dupCantrip = ((lu.stylePicks||{}).spells||[]).find(function(n){ return n && spellHeldBy(lu.c, n); });
+    return dupCantrip ? "You already have "+dupCantrip+" ("+spellHeldBy(lu.c, dupCantrip)+"). Pick a different cantrip." : null;
   }
   if(id==="spells"){
     var missing = dueSpellChoices().find(function(x){ return !lu.spellChoices[x.choice.id]; });
@@ -439,7 +462,8 @@ function stepStyle(container){
     card.appendChild(field);
     if(lu.styleSwapOut) card.appendChild(renderStyleOptions(lu.c, classStyleList(lu.className), lu.style, tasha, pick));
   }
-  if(lu.style && styleNeedsPicks(lu.style)) card.appendChild(renderStylePicks(lu.style, lu.stylePicks, tasha, knownManeuvers(), render, "lu:style"));
+  if(lu.style && styleNeedsPicks(lu.style)) card.appendChild(renderStylePicks(lu.style, lu.stylePicks, tasha, knownManeuvers(), render, "lu:style",
+    function(n){ return spellHeldBy(lu.c, n); }));
 }
 
 function stepSubclass(container){
@@ -510,6 +534,12 @@ function stepLearn(container){
     var tashaNote = ce("p","lu-note"); tashaNote.textContent = plan.tashaNote;
     card.appendChild(tashaNote);
   }
+  if(plan.granted.length){
+    var free = ce("p","lu-note lu-granted-note");
+    free.textContent = "This level also gives you " + plan.granted.map(function(g){ return g.name + " (from " + g.source + ")"; }).join(", ").replace(/, ([^,]*)$/, " and $1") +
+      " for free, so " + (plan.granted.length>1 ? "they aren't" : "it isn't") + " in the list" + (plan.sections.length>1 ? "s" : "") + " below.";
+    card.appendChild(free);
+  }
   if(plan.auto.length){
     var auto = ce("p","lu-note");
     auto.textContent = "You learn "+plan.auto.join(" and ")+" for free; "+(plan.auto.length>1 ? "they're" : "it's")+" added automatically.";
@@ -564,7 +594,7 @@ function stepInvocations(container){
       var title = ce("p","lu-choice-title");
       title.textContent = "Your Book of Shadows: choose "+boon.spellPick.count+" "+boon.spellPick.label;
       pc.appendChild(title);
-      pc.appendChild(renderSpellPickPickers(boon.spellPick, lu.pactSpells, "lu:pact", render));
+      pc.appendChild(renderSpellPickPickers(boon.spellPick, lu.pactSpells, "lu:pact", render, spellHeldNow));
     }
   }
 
@@ -599,7 +629,7 @@ function stepInvocations(container){
       var sp = ce("p","lu-choice-title");
       sp.textContent = inv.name+": choose "+inv.spellPick.count+" "+inv.spellPick.label;
       card.appendChild(sp);
-      card.appendChild(renderSpellPickPickers(inv.spellPick, values, "lu:invsp:"+i, render));
+      card.appendChild(renderSpellPickPickers(inv.spellPick, values, "lu:invsp:"+i, render, spellHeldNow));
     }
   }
   for(var i=0;i<need;i++) picker(i, need>1 ? "New invocation "+(i+1) : "New invocation");
@@ -781,7 +811,13 @@ function stepFeatPicks(container){
   if(!lu.featPicks) lu.featPicks = emptyPicks(def);
   card.appendChild(renderFeatPicks(def, lu.featPicks, featCtx(), render));
 }
-function featCtx(){ return featPicksContext(lu.c); }
+function featCtx(){
+  var ctx = featPicksContext(lu.c);
+  // A spell learned on this level's New spells step isn't also the feat's.
+  var learning = learningNow();
+  ctx.spellTaken = function(name){ return learning.indexOf(name)!==-1 ? "new this level" : ""; };
+  return ctx;
+}
 /* The +1 the chosen feat gives (Durable: CON), or null. */
 function featAbilityPick(){
   return target().asi && lu.asiMode==="feat" && lu.featPicks && lu.featPicks.ability || null;
