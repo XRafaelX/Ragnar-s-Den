@@ -408,7 +408,9 @@ export var SPELL_DATA = {
   "Wish": s(9,"Con",A,"Self","V","Instantaneous","Sorcerer,Wizard","The mightiest spell: duplicate any spell of 8th level or lower, or shape reality (with risks)."),
 
   // Beyond the core list: spells that subclass spell lists grant
-  // (Xanathar's and Tasha's), so every always-prepared spell has an entry.
+  // (Xanathar's and Tasha's), so every always-prepared spell has an entry,
+  // plus popular cantrips a feature points to (Toll the Dead for Reaper).
+  "Toll the Dead": s(0,"Nec",A,"60 feet","V, S","Instantaneous","Cleric,Warlock,Wizard","Wis save or take 1d8 necrotic damage, or 1d12 if the target is missing any hit points. Scales."),
   "Mind Sliver": s(0,"Enc",A,"60 feet","V","1 round","Sorcerer,Warlock,Wizard","Int save or take 1d6 psychic damage and subtract 1d4 from the next saving throw it makes before the end of your next turn. Damage grows at levels 5, 11 and 17."),
   "Conjure Barrage": s(3,"Con",A,"Self (60-foot cone)","V, S, M","Instantaneous","Ranger","Throw a weapon or fire a piece of ammunition to fill a 60-ft cone with copies: Dex save or 3d8 damage of the weapon's type (half on success).",{material:"one piece of ammunition or a thrown weapon"}),
   "Summon Fey": s(3,"Con",A,"90 feet","V, S, M",CONC1H,"Druid,Ranger,Warlock,Wizard","Summon a fuming, mirthful or tricksy fey spirit that obeys you; its stats scale with the spell's level.",{material:"a gilded flower worth at least 300 gp"}),

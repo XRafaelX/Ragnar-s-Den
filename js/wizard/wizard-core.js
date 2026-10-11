@@ -474,7 +474,7 @@ export function finishWizard(){
     });
     // Subclass freebies: bonus cantrips and always-prepared spells. The
     // ones a feature grants (domain spells, Light Domain's Light) already
-    // show in the Spells tab's "From your features" card, so they aren't
+    // show in the Spells tab's spell list on their own, so they aren't
     // copied into the spell list as well.
     var grants = subclassGrants(info, w.classChoices);
     var fromFeatures = featureSpells(c).map(function(fs){ return fs.name; });

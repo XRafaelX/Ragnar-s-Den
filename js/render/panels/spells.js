@@ -12,8 +12,9 @@ import { sheetHeader } from "./inventory.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
 import { themedPicker } from "../../ui/themed-picker.js";
-import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, alwaysPrepared } from "../../core/spells-known.js";
+import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner } from "../../core/spells-known.js";
 import { PREPARED_CASTERS } from "../../data/spells-known.js";
+import { spellScalingLine } from "../../core/spell-scaling.js";
 
 
 var SCHOOLS = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"];
@@ -23,11 +24,12 @@ function spellSubtitle(sp){
 }
 
 /* Compact header: name + concentration/ritual tags, the patron's name
-   for a learned patron spell, a Prepared pill (only for spells of a class
+   for a learned patron spell, the feature's tags for a spell a feature
+   also grants (Fey Touched's Hex on a warlock), a Prepared pill (only for spells of a class
    that prepares: cantrips and a bard's, sorcerer's, warlock's or ranger's
    spells are always ready), edit pencil, remove. Tapping the row opens
    the spell sheet. */
-function spellHeader(c, sp, idx, patron){
+function spellHeader(c, sp, idx, patron, granted){
   var header = document.createElement("div");
   header.className = "inv-card-header";
   header.addEventListener("click", function(){ openSpellSheet(c, sp); });
@@ -50,15 +52,9 @@ function spellHeader(c, sp, idx, patron){
   var actions = document.createElement("div");
   actions.className = "inv-card-header-actions";
 
-  // A domain spell that's also on the list: always ready, no switch.
-  var always = alwaysPrepared(c, sp);
-  if(always){
-    var alwaysTag = document.createElement("span");
-    alwaysTag.className = "ff-tag source-feat";
-    alwaysTag.textContent = "Always prepared";
-    alwaysTag.title = "From " + always.feature + " (" + always.source + "); doesn't count against your prepared spells";
-    actions.appendChild(alwaysTag);
-  }
+  // A spell a feature also grants: the feature's tags (a domain spell's
+  // Always prepared needs no Prepared switch).
+  if(granted) appendGrantTags(actions, granted);
   if(patron){
     var src = document.createElement("span");
     src.className = "ff-tag source-class";
@@ -104,10 +100,19 @@ function spellHeader(c, sp, idx, patron){
   return header;
 }
 
-function renderSpellCard(c, sp, idx, patron){
+/* The "what it does at your level" line (spellScalingLine). */
+function appendScaling(card, text){
+  if(!text) return;
+  var p = document.createElement("p");
+  p.className = "spell-scaling";
+  p.textContent = text;
+  card.appendChild(p);
+}
+
+function renderSpellCard(c, sp, idx, patron, granted){
   var card = document.createElement("div");
-  card.className = "ff-item-card inv-item-card";
-  card.appendChild(spellHeader(c, sp, idx, patron));
+  card.className = "ff-item-card inv-item-card" + (granted ? " feature-spell-card" : "");
+  card.appendChild(spellHeader(c, sp, idx, patron, granted));
 
   var sub = spellSubtitle(sp);
   if(sub){
@@ -121,6 +126,13 @@ function renderSpellCard(c, sp, idx, patron){
     summaryP.className = "inv-armor-note";
     summaryP.textContent = sp.summary;
     card.appendChild(summaryP);
+  }
+  appendScaling(card, spellScalingLine(c, sp.name, sp.level||0, {pact: spellOwner(c, sp)==="Warlock", fixed: !!sp.arcanum}));
+  if(granted && granted.note){
+    var grantP = document.createElement("p");
+    grantP.className = "inv-armor-note feature-spell-note";
+    grantP.textContent = granted.note;
+    card.appendChild(grantP);
   }
   if(sp.notes){
     var notesP = document.createElement("p");
@@ -415,7 +427,9 @@ function slotsLeftText(c, lvl){
 
 /* ---- Spells from features ----
    Read-only: they come from the character's class and subclass features
-   (featureSpells), so they follow level-ups and can't be removed here. */
+   (featureSpells), so they follow level-ups and can't be removed here.
+   They're listed with the known spells; one already on the sheet shows
+   once, as the sheet's card with the feature's tags. */
 var KIND_LABELS = { prepared: "Always prepared", known: "Always known", spellbook: "In your spellbook", ritual: "Ritual only",
   free: "Free 1/long rest", atwill: "At will" };
 
@@ -451,17 +465,7 @@ function renderFeatureSpellCard(c, fs, canLearn){
   actions.className = "inv-card-header-actions";
   // The Patron spells card already says where these come from, so a
   // patron spell only carries its Learn button.
-  if(fs.kind!=="expanded"){
-    var kind = document.createElement("span");
-    kind.className = "ff-tag source-feat";
-    kind.textContent = fs.level === 0 ? "Cantrip" : KIND_LABELS[fs.kind] || KIND_LABELS.prepared;
-    var source = document.createElement("span");
-    source.className = "ff-tag source-class";
-    source.textContent = fs.source;
-    source.title = "From " + fs.feature;
-    actions.appendChild(kind);
-    actions.appendChild(source);
-  }
+  if(fs.kind!=="expanded") appendGrantTags(actions, fs);
   // A patron spell isn't free: "Learn" adds it to the spells you know,
   // offered while the warlock has spells left to learn this level.
   var catalogName = catalogSpellName(fs.name);
@@ -496,6 +500,10 @@ function renderFeatureSpellCard(c, fs, canLearn){
     summaryP.textContent = d.summary;
     card.appendChild(summaryP);
   }
+  // At will and as a ritual it's cast at its own level, like an
+  // invocation's free cast; other warlock spells use the pact slots.
+  var fixed = fs.kind==="atwill" || fs.kind==="ritual" || (fs.kind==="free" && fs.className==="Warlock");
+  appendScaling(card, spellScalingLine(c, fs.name, fs.level, {pact: fs.className==="Warlock" && !fixed, fixed: fixed}));
   if(fs.note){
     var noteP = document.createElement("p");
     noteP.className = "inv-armor-note feature-spell-note";
@@ -505,14 +513,19 @@ function renderFeatureSpellCard(c, fs, canLearn){
   return card;
 }
 
-function renderFeatureSpellsCard(c, list, title, introText){
-  var card = makeCard(title);
-  var intro = document.createElement("p");
-  intro.className = "feature-spells-intro";
-  intro.textContent = introText;
-  card.appendChild(intro);
-  appendFeatureSpellGroups(c, card, list);
-  return card;
+/* "Free 1/long rest" (or Always prepared, Cantrip...) and the source's
+   name, for a spell a feature grants. */
+function appendGrantTags(actions, fs){
+  var kind = document.createElement("span");
+  kind.className = "ff-tag source-feat";
+  kind.textContent = fs.level === 0 ? "Cantrip" : KIND_LABELS[fs.kind] || KIND_LABELS.prepared;
+  if(fs.kind==="prepared" && fs.level > 0) kind.title = "Doesn't count against your prepared spells";
+  var source = document.createElement("span");
+  source.className = "ff-tag source-class";
+  source.textContent = fs.source;
+  source.title = "From " + fs.feature;
+  actions.appendChild(kind);
+  actions.appendChild(source);
 }
 function appendFeatureSpellGroups(c, card, list, canLearn){
   var sorted = list.slice().sort(function(a, b){ return a.level - b.level || a.name.localeCompare(b.name); });
@@ -576,9 +589,9 @@ function warlockSpellRoom(c){
   var known = classKnownSpells(c, "Warlock");
   return known.certain ? Math.max(0, def.spells[Number(cl.level)||1] - known.spells.length) : -1;
 }
-/* The patron feature a known spell comes from, or null. */
-function patronSpellFor(expanded, sp){
-  return expanded.find(function(fs){ return isFeatureSpell(fs, sp); }) || null;
+/* The entry in `list` (patron or granted spells) a sheet spell matches, or null. */
+function featureSpellFor(list, sp){
+  return list.find(function(fs){ return isFeatureSpell(fs, sp); }) || null;
 }
 
 /* ---- Spell choices ----
@@ -760,8 +773,6 @@ export function renderSpellsPanel(c){
   var all = featureSpells(c);
   var granted = all.filter(function(fs){ return fs.kind!=="expanded"; });
   var expanded = all.filter(function(fs){ return fs.kind==="expanded"; });
-  if(granted.length) panel.appendChild(renderFeatureSpellsCard(c, granted, "From your features",
-    "Granted by your class features, feats and invocations. They don't count against your spells known or prepared."));
   if(expanded.length) panel.appendChild(renderPatronSpellsCard(c, expanded));
 
   var prepares = (c.classes||[]).some(function(cl){ return PREPARED_CASTERS[cl.name]; });
@@ -778,7 +789,9 @@ export function renderSpellsPanel(c){
   var counts = renderSpellCounts(c);
   if(counts) spellCard.appendChild(counts);
   var spells = c.spells || [];
-  if(!spells.length){
+  // Granted spells not on the sheet join the list as read-only cards.
+  var extra = granted.filter(function(fs){ return !knowsSpell(c, fs); });
+  if(!spells.length && !extra.length){
     var empty = document.createElement("p");
     empty.style.cssText = "font-size:13px;color:var(--text-on-parch-dim);";
     empty.textContent = "No spells yet.";
@@ -786,14 +799,13 @@ export function renderSpellsPanel(c){
   } else {
     // Grouped by spell level, alphabetical within each; idx stays the
     // position in c.spells so removal hits the right entry.
-    var entries = spells.map(function(sp, idx){ return {sp:sp, idx:idx}; });
-    entries.sort(function(a, b){
-      return (a.sp.level||0) - (b.sp.level||0) || (a.sp.name||"").localeCompare(b.sp.name||"");
-    });
+    var entries = spells.map(function(sp, idx){ return {sp:sp, idx:idx, level:sp.level||0, name:sp.name||""}; })
+      .concat(extra.map(function(fs){ return {fs:fs, level:fs.level, name:fs.name}; }));
+    entries.sort(function(a, b){ return a.level - b.level || a.name.localeCompare(b.name); });
     var currentLevel = null;
     var list = null;
     entries.forEach(function(entry){
-      var lvl = entry.sp.level || 0;
+      var lvl = entry.level;
       if(lvl !== currentLevel){
         currentLevel = lvl;
         var label = document.createElement("div");
@@ -810,7 +822,8 @@ export function renderSpellsPanel(c){
         list.className = "ff-items-list inv-items-list";
         spellCard.appendChild(list);
       }
-      list.appendChild(renderSpellCard(c, entry.sp, entry.idx, patronSpellFor(expanded, entry.sp)));
+      list.appendChild(entry.fs ? renderFeatureSpellCard(c, entry.fs)
+        : renderSpellCard(c, entry.sp, entry.idx, featureSpellFor(expanded, entry.sp), featureSpellFor(granted, entry.sp)));
     });
   }
 

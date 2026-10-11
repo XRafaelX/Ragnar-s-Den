@@ -167,8 +167,8 @@ export function ensureShape(c){
   // Infusion bonuses saved before they followed the artificer's level.
   syncInfusions(c);
   // The creation wizard used to copy a domain's spells and bonus cantrip
-  // into the spell list, though the Spells tab already shows them under
-  // "From your features". Once per character, copies still carrying the
+  // into the spell list, though the Spells tab already lists them from
+  // the features. Once per character, copies still carrying the
   // wizard's own note are dropped; one the player edited keeps its note
   // changes and stays.
   if(!c.grantedSpellsChecked){

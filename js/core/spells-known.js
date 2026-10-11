@@ -45,6 +45,11 @@ function untaggedOwner(c){
   var casters = (c.classes||[]).filter(function(cl){ return classCasterType(cl); });
   return casters.length===1 ? casters[0].name : "";
 }
+/* The class a sheet spell belongs to: its learnedBy, else the only
+   spellcasting class, else "". */
+export function spellOwner(c, sp){
+  return sp.learnedBy || untaggedOwner(c);
+}
 
 /* Spells on the sheet that count for `className`: {spells, cantrips,
    certain}. `certain` is false when untagged spells could belong to it
