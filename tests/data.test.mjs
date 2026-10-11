@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL, XP_THRESHOLDS, SPELL_SLOT_TABLE, PACT_SLOT_TABLE, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from "../js/data/progression.js";
 import { CLASS_RESOURCES, SUBCLASS_RESOURCES } from "../js/data/resources.js";
 import { CLASSES_INFO } from "../js/data/classes.js";
-import { SPELL_DATA, catalogSpellName } from "../js/data/spells.js";
+import { SPELL_DATA, catalogSpellName, spellDataForClass, buildSpellGroups, spellOnClassList, tashaAddsSpell, tashaSpellCount } from "../js/data/spells.js";
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_TOOLS } from "../js/data/backgrounds.js";
 import { SKILLS } from "../js/data/abilities-skills.js";
 import { INVOCATIONS, PACT_BOONS, INVOCATION_SOURCES, invocationsKnownAt } from "../js/data/invocations.js";
@@ -219,6 +219,63 @@ test("Fey Touched: in the catalog with its spells", () => {
   assert.equal(f.spellPick.level, 1);
   assert.deepEqual(f.spellPick.schools, ["Divination", "Enchantment"]);
   assert.ok(!LONG_DASH.test(f.summary + f.description));
+});
+
+test("spell catalog: well formed, with the Player's Handbook, Xanathar's and Tasha's", () => {
+  const casters = CLASSES.filter((c) => CLASSES_INFO[c].spellcaster);
+  const count = {};
+  for(const [name, d] of Object.entries(SPELL_DATA)){
+    assert.ok(d.level >= 0 && d.level <= 9 && d.school, name + ": level or school");
+    assert.ok(d.castingTime && d.range && d.components && d.duration, name + ": casting time, range, components, duration");
+    assert.equal(d.components.includes("M"), !!d.material, name + ": material component");
+    assert.ok(d.summary.length > 15 && !LONG_DASH.test(name + d.summary + d.material), name + ": summary");
+    assert.ok(d.classes.length && d.classes.every((c) => casters.includes(c)), name + ": classes " + d.classes);
+    assert.deepEqual(d.classes, d.classes.slice().sort(), name + ": classes in order");
+    d.classes.forEach((c) => { count[c] = (count[c] || 0) + 1; });
+  }
+  assert.equal(Object.keys(SPELL_DATA).length, 477, "PHB 361 + XGE 95 + TCE 21");
+  assert.deepEqual(count, { Artificer: 95, Bard: 134, Cleric: 115, Druid: 153, Paladin: 50, Ranger: 58, Sorcerer: 195, Warlock: 125, Wizard: 311 });
+  // An artificer has spells to prepare at every level it casts.
+  for(let l = 0; l <= 5; l++) assert.ok(Object.values(SPELL_DATA).some((d) => d.level === l && d.classes.includes("Artificer")), "artificer level " + l);
+  ["Haste", "Revivify", "Bigby's Hand", "Absorb Elements", "Tiny Servant"].forEach((n) => assert.ok(SPELL_DATA[n].classes.includes("Artificer"), n));
+  assert.deepEqual(SPELL_DATA["Summon Elemental"].classes, ["Druid", "Ranger", "Wizard"]);
+  assert.ok(SPELL_DATA["Skywrite"].ritual && SPELL_DATA["Ceremony"].ritual && SPELL_DATA["Tenser's Floating Disk"].ritual);
+});
+
+test("Tasha's Additional Spells: 65 class entries, off the class list until the switch is on", () => {
+  const casters = CLASSES.filter((c) => CLASSES_INFO[c].spellcaster);
+  const count = {};
+  for(const [name, d] of Object.entries(SPELL_DATA)){
+    assert.ok(Array.isArray(d.tashaClasses), name + ": tashaClasses");
+    assert.deepEqual(d.tashaClasses, d.tashaClasses.slice().sort(), name + ": Tasha's classes in order");
+    d.tashaClasses.forEach((c) => {
+      assert.ok(casters.includes(c) && !d.classes.includes(c), name + ": " + c + " is a Tasha's addition or on the list, not both");
+      count[c] = (count[c] || 0) + 1;
+    });
+    // Tasha's additions are levelled Player's Handbook spells.
+    if(d.tashaClasses.length) assert.ok(d.level >= 1, name + ": level");
+  }
+  assert.deepEqual(count, { Bard: 13, Cleric: 6, Druid: 13, Paladin: 3, Ranger: 11, Sorcerer: 10, Warlock: 5, Wizard: 4 });
+  casters.forEach((c) => assert.equal(tashaSpellCount(c), count[c] || 0, c));
+  assert.equal(tashaSpellCount("Bard", [1]), 2, "Color Spray and Command");
+  assert.equal(tashaSpellCount("Ranger", [1, 2]), 6);
+
+  const aid = SPELL_DATA["Aid"];
+  assert.deepEqual(aid.classes, ["Artificer", "Cleric", "Paladin"]);
+  assert.deepEqual(aid.tashaClasses, ["Bard", "Ranger"]);
+  assert.ok(tashaAddsSpell(aid, "Bard") && !tashaAddsSpell(aid, "Cleric") && !tashaAddsSpell(null, "Bard"));
+  assert.ok(!spellOnClassList(aid, "Bard") && spellOnClassList(aid, "Bard", true) && spellOnClassList(aid, "Cleric") && !spellOnClassList(aid, "Wizard", true));
+  // Entries the catalog used to give everyone are Tasha's only now.
+  [["Heroes' Feast", "Bard"], ["Prismatic Spray", "Bard"], ["Bigby's Hand", "Sorcerer"], ["Weird", "Warlock"], ["Mislead", "Warlock"],
+    ["Power Word Heal", "Cleric"], ["Symbol", "Druid"], ["Prayer of Healing", "Paladin"], ["Warding Bond", "Paladin"], ["Antipathy/Sympathy", "Bard"]]
+    .forEach(([n, c]) => assert.ok(!SPELL_DATA[n].classes.includes(c) && SPELL_DATA[n].tashaClasses.includes(c), n + " for " + c));
+
+  const plain = spellDataForClass("Bard"), withTasha = spellDataForClass("Bard", true);
+  assert.equal(Object.keys(plain).length, 134);
+  assert.equal(Object.keys(withTasha).length, 147);
+  assert.ok(!plain["Slow"] && withTasha["Slow"] === SPELL_DATA["Slow"]);
+  assert.ok(!buildSpellGroups("Ranger")["1st Level"].includes("Entangle") && buildSpellGroups("Ranger", true)["1st Level"].includes("Entangle"));
+  assert.deepEqual(Object.keys(spellDataForClass("Artificer", true)), Object.keys(spellDataForClass("Artificer")), "Tasha's adds nothing to the artificer");
 });
 
 test("invocations: well formed, spells exist, prerequisites are real", () => {

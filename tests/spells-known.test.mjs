@@ -69,6 +69,49 @@ test("warlock 4 to 5: one new spell up to 3rd level, patron spells tagged, known
   assert.match(plan.summary, /5th-level warlock knows 6 spells and 3 cantrips/);
 });
 
+test("Tasha's Additional Spells join the lists only for a character using Tasha's optional features", () => {
+  const bard = () => makeChar([{ name: "Bard", subclass: "College of Lore", level: 4 }],
+    ["Vicious Mockery", "Light", "Charm Person", "Healing Word", "Sleep", "Faerie Fire", "Hold Person", "Shatter", "Invisibility"]);
+  // Off: none of the 13 bard additions, and a note counting the ones this level could pick (1st to 3rd level).
+  let c = bard();
+  let plan = planFor(c, "Bard");
+  let spells = section(plan, "spells");
+  assert.ok(["Aid", "Slow", "Command", "Mass Healing Word", "Mirror Image"].every((n) => !spells.names.includes(n)));
+  assert.equal(plan.tashaNote, "Tasha's Cauldron adds 7 more bard spells to choose from if your character uses Tasha's optional class features (Information tab).");
+  // On: they're offered and tagged, the note is gone, and the swap's replacement list has them too.
+  c = bard();
+  c.tashaOptional = true;
+  plan = planFor(c, "Bard");
+  spells = section(plan, "spells");
+  assert.ok(["Aid", "Slow", "Command", "Mass Healing Word", "Mirror Image", "Color Spray", "Enlarge/Reduce"].every((n) => spells.names.includes(n)));
+  assert.deepEqual(spells.tags["Slow"], ["Tasha's optional"]);
+  assert.equal(spells.tags["Fear"], undefined);
+  assert.ok(!spells.names.includes("Phantasmal Killer"), "a 4th-level spell is out of reach at bard 5");
+  assert.equal(plan.tashaNote, "");
+  const entry = { name: "Bard", subclass: "College of Lore", level: 5 };
+  const swapIn = SK.swapSection(c, entry, plan, "Sleep");
+  assert.ok(swapIn.names.includes("Aid") && swapIn.tags["Aid"].includes("Tasha's optional"));
+  c.tashaOptional = false;
+  assert.ok(!SK.swapSection(c, entry, planFor(c, "Bard"), "Sleep").names.includes("Aid"));
+
+  // A warlock's Mystic Arcanum: Tasha's adds a 9th-level choice (Gate and Weird) at 17.
+  const lock = makeChar([{ name: "Warlock", subclass: "The Fiend", level: 16 }], ["Eldritch Blast"]);
+  assert.ok(!section(planFor(lock, "Warlock"), "arcanum").names.includes("Weird"));
+  assert.match(planFor(lock, "Warlock").tashaNote, /^Tasha's Cauldron adds \d+ more warlock spells/);
+  lock.tashaOptional = true;
+  const arcanum = section(planFor(lock, "Warlock"), "arcanum");
+  assert.ok(arcanum.names.includes("Weird") && arcanum.names.includes("Gate") && arcanum.tags["Gate"].includes("Tasha's optional"));
+
+  // A wizard's spellbook, and no note for a class Tasha's adds nothing to at these levels.
+  const wiz = makeChar([{ name: "Wizard", subclass: "School of Evocation", level: 2 }], ["Fire Bolt", "Magic Missile"]);
+  assert.match(planFor(wiz, "Wizard").tashaNote, /adds 2 more wizard spells/, "Augury and Enhance Ability at 2nd level");
+  wiz.tashaOptional = true;
+  const book = section(planFor(wiz, "Wizard"), "spellbook");
+  assert.ok(book.names.includes("Augury") && book.tags["Augury"].includes("Tasha's optional") && !book.names.includes("Divination"));
+  const wiz1 = makeChar([], []);
+  assert.equal(SK.learnPlan(wiz1, { name: "Wizard", subclass: "", level: 1 }, true).tashaNote, "", "no 1st-level wizard additions");
+});
+
 test("a warlock who already knows the table's spells learns none, with a note", () => {
   const known = ["Armor of Agathys", "Bane", "False Life", "Blindness/Deafness", "Phantasmal Force", "Phantom Steed", "Speak with Dead"];
   const c = makeChar([{ name: "Warlock", subclass: "The Undead", level: 5 }], ["Eldritch Blast", "Blade Ward", "Mage Hand"].concat(known));

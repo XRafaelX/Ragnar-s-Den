@@ -66,7 +66,7 @@ export function wizardExpandedSpells(subclass){
    Soul sorcerer can pick cleric spells), as catalog names. */
 export function wizardExtraListSpells(){
   var out = [];
-  classExtraSpellLists(wizardClassEntry()).forEach(function(list){ out = out.concat(Object.keys(spellDataForClass(list))); });
+  classExtraSpellLists(wizardClassEntry()).forEach(function(list){ out = out.concat(Object.keys(spellDataForClass(list, !!wizardState.tashaOptional))); });
   return out;
 }
 /* Which list an extra spell comes from, for its tag in the picker. */

@@ -1,4 +1,4 @@
-import { SPELL_DATA, SPELL_LEVEL_LABELS, buildSpellGroups, spellDataForClass, spellLevelLabel, catalogSpellName } from "../../data/spells.js";
+import { SPELL_DATA, SPELL_LEVEL_LABELS, buildSpellGroups, spellDataForClass, spellLevelLabel, catalogSpellName, tashaAddsSpell } from "../../data/spells.js";
 import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { openCatalogPicker, showCatalogCustomView, refreshCatalog } from "../../ui/catalog-picker.js";
@@ -229,7 +229,9 @@ export function buildCustomSpellForm(container, _closeCustom, onSubmit){
 }
 
 /* ---- Section descriptor ---- */
-export function spellSection(key, label, groups, data, onAdd, onCustomSaved){
+/* listClass: the class whose list the section shows, so the spells
+   Tasha's optional Additional Spells adds to it are marked. */
+export function spellSection(key, label, groups, data, onAdd, onCustomSaved, listClass){
   return {
     key: key,
     label: label,
@@ -237,10 +239,12 @@ export function spellSection(key, label, groups, data, onAdd, onCustomSaved){
     groups: groups,
     data: data,
     searchText: function(name, d){
-      return [name, d.school, (d.classes||[]).join(" "), d.summary,
+      return [name, d.school, (d.classes||[]).concat(d.tashaClasses||[]).join(" "), d.summary,
               d.concentration ? "concentration" : "", d.ritual ? "ritual" : ""].join(" ");
     },
-    renderSub: function(name, d){ return (d.school || "") + " · " + (d.castingTime || "") + " · " + (d.range || ""); },
+    renderSub: function(name, d){
+      return (d.school || "") + " · " + (d.castingTime || "") + " · " + (d.range || "") + (listClass && tashaAddsSpell(d, listClass) ? " · Tasha's optional" : "");
+    },
     renderDetail: function(name, d){ return d.summary; },
     renderRight: function(name, d){
       var tags = [];
@@ -273,14 +277,17 @@ export function buildSpellSections(c){
     var name = cl.name;
     if(seen[name]) return;
     seen[name] = true;
-    var data = spellDataForClass(name);
+    // With Tasha's optional features on, the class list includes the
+    // spells Tasha's Additional Spells adds to it.
+    var tasha = !!c.tashaOptional;
+    var data = spellDataForClass(name, tasha);
     if(!Object.keys(data).length) return;
-    var groups = buildSpellGroups(name);
+    var groups = buildSpellGroups(name, tasha);
     // A warlock patron's expanded list, and another class's whole list a
     // feature opens (Divine Soul: cleric), join the class's own spells.
     var extra = featureSpells(c).filter(function(fs){ return fs.kind==="expanded" && fs.className===name; })
       .map(function(fs){ return catalogSpellName(fs.name); });
-    classExtraSpellLists(cl).forEach(function(list){ extra = extra.concat(Object.keys(spellDataForClass(list))); });
+    classExtraSpellLists(cl).forEach(function(list){ extra = extra.concat(Object.keys(spellDataForClass(list, tasha))); });
     extra = extra.filter(function(n, i){ return SPELL_DATA[n] && !data[n] && extra.indexOf(n)===i; });
     if(extra.length){
       extra.forEach(function(n){
@@ -293,7 +300,7 @@ export function buildSpellSections(c){
       SPELL_LEVEL_LABELS.concat(Object.keys(groups)).forEach(function(l){ if(groups[l] && !ordered[l]) ordered[l] = groups[l]; });
       groups = ordered;
     }
-    sections.push(spellSection("class-" + name, name + " spells", groups, data, onAdd, onCustomSaved));
+    sections.push(spellSection("class-" + name, name + " spells", groups, data, onAdd, onCustomSaved, name));
   });
   // "All spells" tab always includes the homebrew group
   sections.push(spellSection("all", "All spells", buildSpellGroups(), SPELL_DATA, onAdd, onCustomSaved));

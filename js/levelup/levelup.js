@@ -506,6 +506,10 @@ function stepLearn(container){
     var note = ce("p","lu-note"); note.textContent = plan.note;
     card.appendChild(note);
   }
+  if(plan.tashaNote){
+    var tashaNote = ce("p","lu-note"); tashaNote.textContent = plan.tashaNote;
+    card.appendChild(tashaNote);
+  }
   if(plan.auto.length){
     var auto = ce("p","lu-note");
     auto.textContent = "You learn "+plan.auto.join(" and ")+" for free; "+(plan.auto.length>1 ? "they're" : "it's")+" added automatically.";

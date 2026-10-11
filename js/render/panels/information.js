@@ -325,7 +325,7 @@ function optionalRulesCard(c){
   var text = document.createElement("div");
   text.className = "opt-rule-text";
   text.innerHTML = "<b>Tasha's optional class features</b>"+
-    "<span>Your DM decides whether your table uses these. Turned on, you can pick the extra options Tasha's Cauldron adds to class features (fighting styles, Metamagic, maneuvers, eldritch invocations, Pact of the Talisman), and the level-up lets you swap a fighting style, Metamagic option or maneuver at Ability Score Improvement levels.</span>";
+    "<span>Your DM decides whether your table uses these. Turned on, you can pick the extra options Tasha's Cauldron adds to class features (fighting styles, Metamagic, maneuvers, eldritch invocations, Pact of the Talisman) and the spells it adds to each class's spell list, and the level-up lets you swap a fighting style, Metamagic option or maneuver at Ability Score Improvement levels.</span>";
   var sw = document.createElement("button");
   sw.type = "button";
   sw.className = "switch" + (c.tashaOptional ? " on" : "");

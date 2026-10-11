@@ -46,7 +46,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Warlock Invocations**: An Eldritch invocations card for Warlocks with all 54 invocations (PHB, Xanathar's, Tasha's) and the four Pact Boons. The level-up asks for new invocations when due (and offers a swap every warlock level), greys out ones whose prerequisites aren't met, and the sheet applies what they do: at-will and once-a-day spells on the Spells tab, uses on Vitals, Beguiling Influence's skills, Gift of the Depths' swim speed, Devil's Sight in senses and an Eldritch Blast summary.
   - **Class options**: Picked on the level-up's Options step and listed in their own Features-tab cards with costs, save DCs and dice: a sorcerer's Metamagic, a Battle Master's maneuvers (also Martial Adept's and Superior Technique's), a Rune Knight's runes (Stone rune darkvision, invocation uses by runes known), Arcane Shots, a Four Elements monk's disciplines, the Hunter's four choices, Totem Warrior animals (Elk and Eagle speeds while raging), the Storm Herald's environment and the Misfortune Bringer's misfortunes, each with the book's rules for when one can be swapped.
   - **Fighting styles**: Picked at a class's Fighting Style level, Champion 10 and College of Swords 3. Tasha's styles add their effects (Blind Fighting's blindsight, Superior Technique's maneuver and die, Blessed and Druidic Warrior's cantrips).
-  - **Optional rules**: A per-character switch on the Information tab (and in the wizard for a level 1 fighter) for Tasha's optional class features: Tasha's extra fighting styles, Metamagic, maneuvers, invocations and Pact of the Talisman, plus swapping a style, Metamagic option or maneuver at Ability Score Improvement levels.
+  - **Optional rules**: A per-character switch on the Information tab (and in the wizard for a level 1 fighter) for Tasha's optional class features: Tasha's extra fighting styles, Metamagic, maneuvers, invocations and Pact of the Talisman, the 65 spells Tasha's Additional Spells adds to the class lists (marked "Tasha's optional" in the spell pickers, the level-up and the wizard's Spells step, which has the switch too), plus swapping a style, Metamagic option or maneuver at Ability Score Improvement levels.
   - **Journal & Information**: Rich notes, backstory, physical characteristics, proficiencies (languages, weapons, armor, tools), and custom notes.
 - **Monsters Browser**:
   - Searchable monster compendium with full stat blocks.
@@ -153,7 +153,7 @@ The app needs no build step. `package.json` exists only to run the tests and has
 Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/` and completes in well under a second. **70 tests, 0 failures.**
 
 - `coins.test.mjs` — coin parsing, spending, change-giving, and formatting.
-- `data.test.mjs` — class, subclass and resource data is complete and well-formed. Every subclass reaches its top level, `replaces` points at a real earlier feature, feature flags use known names and valid values, every Resources card entry belongs to a subclass that exists, counters stay sane at every level, and text has no long dashes.
+- `data.test.mjs`: class, subclass and resource data is complete and well-formed. Every subclass reaches its top level, `replaces` points at a real earlier feature, feature flags use known names and valid values, every Resources card entry belongs to a subclass that exists, counters stay sane at every level, the spell catalog is well formed (477 spells, every class's count, artificer spells at every level, Tasha's Additional Spells kept off the class lists until the switch is on), and text has no long dashes.
 - `rules.test.mjs` — sheet calculations against hand-worked 2014 rules numbers: proficiency bonus, Sneak Attack and Martial Arts scaling, speed bonuses, rage, initiative, Armor Class (unarmored defenses, Dual Wielder, Defense style, Soul of the Forge), saving throws (Aura of Protection, Diamond Soul, Resilient), Battle Ready and Hex Warrior attacks, proficiency grants, rests, spell slots, feat resources, feat picks, spell choices, speeds, artificer weapons and elixirs, and companions.
 - `smoke.test.mjs` — every class and subclass at every level from 1 to 20, plus multiclass builds, runs through every sheet calculation without errors.
 - `project.test.mjs` — every file in the service worker's offline list exists, every relative `import` resolves, and `index.html`'s local scripts and stylesheets exist.
@@ -231,7 +231,7 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   │   ├── race-data.js               # Detailed racial traits, speeds, sizes, and darkvision
 │   │   ├── races.js                   # Race definitions and summary blurbs
 │   │   ├── resources.js               # Class and subclass resource pools (Ki, Rages, Sorcery Points, etc.)
-│   │   ├── spells.js                  # Spells catalog (cantrips to 9th level) with components and descriptions
+│   │   ├── spells.js                  # Spells catalog: all 477 spells of the Player's Handbook, Xanathar's and Tasha's, with components and summaries
 │   │   ├── subclasses/                # Per-class subclass feature data (one file per class)
 │   │   │   ├── artificer.js
 │   │   │   ├── barbarian.js

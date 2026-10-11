@@ -71,7 +71,8 @@ export function openSpellbook(){
   // "All spells" first (includes Homebrew group), then one tab per class
   var sections = [spellSection("all", "All spells", buildSpellGroups(), SPELL_DATA, onAdd, onCustomSaved)];
   spellClassNames().forEach(function(cl){
-    sections.push(spellSection("class-" + cl, cl, buildSpellGroups(cl), spellDataForClass(cl), onAdd, onCustomSaved));
+    // Class tabs include what Tasha's optional Additional Spells adds (marked on each row).
+    sections.push(spellSection("class-" + cl, cl, buildSpellGroups(cl, true), spellDataForClass(cl, true), onAdd, onCustomSaved, cl));
   });
   openCatalogPicker({
     sections: sections,

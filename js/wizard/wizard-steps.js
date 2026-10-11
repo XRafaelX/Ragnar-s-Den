@@ -6,7 +6,7 @@ import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/
 import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/alignments.js";
 import { POINT_BUY_COSTS, pickNameIdeas, pickTitleIdeas } from "../data/misc.js";
 import { TITLE_MAX } from "../ui/char-title.js";
-import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
+import { SPELL_DATA, spellDataForClass, tashaAddsSpell, tashaSpellCount } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass, autoEquipLoadout } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg } from "../ui/svg-icons.js";
 import { getDieSvg } from "../dice/dice.js";
@@ -953,14 +953,13 @@ function wizardDropdown(labelTxt, key, groups, obj, onChangeExtra, createKind){
   return wrap;
 }
 
-/* A level 1 Fighting Style. Tasha's optional styles are offered when the
-   switch here is on (it carries over to the new character's Optional
-   rules); a style with its own picks (Superior Technique's maneuver)
-   shows them under the list, kept as classChoices[id + "Picks"]. */
-function choiceFightingStyle(card, ch){
+/* The "Tasha's optional class features" switch (it carries over to the
+   new character's Optional rules). `what` says what turning it on adds
+   here; `afterToggle` runs before the wizard redraws. */
+function tashaSwitchRow(what, afterToggle){
   var tasha = !!wizardState.tashaOptional;
   var row = ce("div","opt-rule wiz-tasha-switch");
-  row.innerHTML = "<div class='opt-rule-text'><b>Tasha's optional class features</b><span>Your DM decides whether your table uses these. Turned on, Tasha's extra fighting styles are listed too.</span></div>";
+  row.innerHTML = "<div class='opt-rule-text'><b>Tasha's optional class features</b><span>Your DM decides whether your table uses these. "+escapeHtml(what)+"</span></div>";
   var sw = document.createElement("button");
   sw.type = "button";
   sw.className = "switch" + (tasha ? " on" : "");
@@ -970,13 +969,24 @@ function choiceFightingStyle(card, ch){
   sw.innerHTML = "<span class='switch-knob'></span>";
   sw.addEventListener("click", function(){
     wizardState.tashaOptional = !tasha;
-    // A Tasha's style picked before the switch went off no longer applies.
-    var picked = FIGHTING_STYLES[wizardState.classChoices[ch.id]];
-    if(!wizardState.tashaOptional && picked && picked.optional){ delete wizardState.classChoices[ch.id]; delete wizardState.classChoices[ch.id+"Picks"]; }
+    if(afterToggle) afterToggle();
     renderWizard();
   });
   row.appendChild(sw);
-  card.appendChild(row);
+  return row;
+}
+
+/* A level 1 Fighting Style. Tasha's optional styles are offered when the
+   switch here is on (it carries over to the new character's Optional
+   rules); a style with its own picks (Superior Technique's maneuver)
+   shows them under the list, kept as classChoices[id + "Picks"]. */
+function choiceFightingStyle(card, ch){
+  var tasha = !!wizardState.tashaOptional;
+  card.appendChild(tashaSwitchRow("Turned on, Tasha's extra fighting styles are listed too.", function(){
+    // A Tasha's style picked before the switch went off no longer applies.
+    var picked = FIGHTING_STYLES[wizardState.classChoices[ch.id]];
+    if(!wizardState.tashaOptional && picked && picked.optional){ delete wizardState.classChoices[ch.id]; delete wizardState.classChoices[ch.id+"Picks"]; }
+  }));
   var noChar = {features: []};
   card.appendChild(renderStyleOptions(noChar, ch.options, wizardState.classChoices[ch.id] || "", tasha, function(name){
     if(name!==wizardState.classChoices[ch.id]) wizardState.classChoices[ch.id+"Picks"] = {options: [], spells: []};
@@ -1150,7 +1160,8 @@ export function wizardStepEquipment(container){
 /* extra: spells beyond the class list; extraTag(name) labels one ("Patron
    spell", "Cleric spell"), default "Patron spell". */
 function spellPickSection(title, help, count, level, chosen, listClass, exclude, extra, extraTag){
-  var data = spellDataForClass(listClass);
+  // With Tasha's optional features on, the list has Tasha's additions too.
+  var data = spellDataForClass(listClass, !!wizardState.tashaOptional);
   // Extra spells a subclass adds to the class list (a warlock's patron).
   (extra||[]).forEach(function(name){ if(SPELL_DATA[name]) data[name] = SPELL_DATA[name]; });
   // Spells the character gets for free (domain spells, bonus cantrips) are
@@ -1158,6 +1169,7 @@ function spellPickSection(title, help, count, level, chosen, listClass, exclude,
   exclude = exclude || [];
   var names = Object.keys(data).filter(function(name){ return data[name].level === level && exclude.indexOf(name)===-1; }).sort();
   var tags = {};
+  names.forEach(function(name){ if(tashaAddsSpell(data[name], listClass)) tags[name] = ["Tasha's optional"]; });
   (extra||[]).forEach(function(name){ tags[name] = [extraTag ? extraTag(name) : "Patron spell"]; });
   return spellPickGrid({title: title, help: help, count: count, names: names, chosen: chosen, tags: tags});
 }
@@ -1217,6 +1229,9 @@ export function wizardStepSpells(container){
     exp.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> adds "+escapeHtml(expandedSpells.join(", ").replace(/, ([^,]*)$/, " and $1"))+" to the spells you can learn (marked <i>Patron spell</i>).";
     card.appendChild(exp);
   }
+  // Tasha's Additional Spells: offered when the switch here is on.
+  var tashaMore = tashaSpellCount(sc.spellList, [1]);
+  if(tashaMore) card.appendChild(tashaSwitchRow("Turned on, the " + tashaMore + " 1st-level spell" + (tashaMore===1 ? "" : "s") + " Tasha's Cauldron adds to the " + sc.spellList.toLowerCase() + " list " + (tashaMore===1 ? "is" : "are") + " listed too (more at higher levels)."));
   card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", need, 1, wizardState.spellChoices.spells, sc.spellList, grants.spells, expandedSpells.concat(extraList), extraTag));
   container.appendChild(card);
 }

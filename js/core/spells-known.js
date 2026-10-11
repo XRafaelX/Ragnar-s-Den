@@ -14,8 +14,13 @@
      swap       {known: [spell names], maxLevel} when the class may
                 replace a spell it knows, else null
      auto       cantrips learned for free (an Arcane Trickster's Mage Hand)
-     summary    the step's lead text */
-import { SPELL_DATA, spellDataForClass, catalogSpellName } from "../data/spells.js";
+     summary    the step's lead text
+     tashaNote  how many more spells Tasha's optional Additional Spells
+                would offer, for a character not using them ("" otherwise)
+
+   A character using Tasha's optional class features (c.tashaOptional)
+   picks from the class list with Tasha's additions, tagged in the lists. */
+import { SPELL_DATA, spellDataForClass, spellOnClassList, tashaAddsSpell, tashaSpellCount, catalogSpellName } from "../data/spells.js";
 import { KNOWN_CASTERS, SUBCLASS_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, PREPARED_CASTERS, preparedAt } from "../data/spells-known.js";
 import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal } from "./helpers.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
@@ -74,10 +79,12 @@ export function classKnownSpells(c, className){
 }
 
 /* Spell names (catalog) the class can learn of the given levels: its
-   own list, a patron's expanded list, a Divine Soul's cleric list. */
-function classListNames(entry, def, levels){
-  var data = spellDataForClass(def.list);
+   own list (with Tasha's additions when `tasha` is set), a patron's
+   expanded list, a Divine Soul's cleric list. */
+function classListNames(entry, def, levels, tasha){
+  var data = spellDataForClass(def.list, tasha);
   var extra = {};
+  Object.keys(data).forEach(function(n){ if(tashaAddsSpell(data[n], def.list)) extra[n] = TASHA_TAG; });
   if(def.list===entry.name){
     // Expanded lists only add to a class's own list (not a third caster's).
     var lv = Number(entry.level)||1;
@@ -89,7 +96,7 @@ function classListNames(entry, def, levels){
       names.forEach(function(n){ n = catalogSpellName(n); if(SPELL_DATA[n]) extra[n] = "Patron spell"; });
     });
     classExtraSpellLists(entry).forEach(function(list){
-      Object.keys(spellDataForClass(list)).forEach(function(n){ if(!extra[n]) extra[n] = list + " spell"; });
+      Object.keys(spellDataForClass(list, tasha)).forEach(function(n){ if(!extra[n]) extra[n] = list + " spell"; });
     });
   }
   // A patron's spells lead the list, so a warlock sees them first.
@@ -99,6 +106,7 @@ function classListNames(entry, def, levels){
     .sort(function(a, b){ return patron(a) - patron(b) || a.localeCompare(b); });
   return {names: out, extra: extra};
 }
+var TASHA_TAG = "Tasha's optional";
 function spellsUpTo(spells, lv){
   if(!spells) return [];
   if(Array.isArray(spells)) return spells;
@@ -115,7 +123,7 @@ function allSpellsOf(levels){
    spellChoices); `existing` says whether the class was already there. */
 export function learnPlan(c, entry, isNewClass){
   var def = casterDef(entry.name, entry.subclass);
-  var empty = {sections: [], swap: null, auto: [], summary: "", note: ""};
+  var empty = {sections: [], swap: null, auto: [], summary: "", note: "", tashaNote: ""};
   if(!def) return empty;
   var lv = Number(entry.level)||1;
   var known = classKnownSpells(c, entry.name);
@@ -125,6 +133,7 @@ export function learnPlan(c, entry, isNewClass){
   var maxLevel = def.maxLevel ? def.maxLevel(lv) : 0;
   var sections = [];
   var cls = def.list.toLowerCase();
+  var tasha = !!c.tashaOptional;
 
   function tagsFor(names, extra, mark){
     var tags = {};
@@ -151,7 +160,7 @@ export function learnPlan(c, entry, isNewClass){
   var auto = (lv===firstCastingLevel(def) ? def.autoCantrips || [] : []).filter(fresh);
   var cantripNeed = Math.max(0, need(def.cantrips, known.cantrips.length) - auto.length);
   if(cantripNeed){
-    var cl = classListNames(entry, def, [0]);
+    var cl = classListNames(entry, def, [0], tasha);
     add("cantrips", "cantrip", "New cantrips", countText(cantripNeed, "cantrip", def.list), cantripNeed,
       {names: cl.names, tags: tagsFor(cl.names, cl.extra)});
   }
@@ -162,7 +171,7 @@ export function learnPlan(c, entry, isNewClass){
     var secrets = entry.name==="Bard" && MAGICAL_SECRETS_LEVELS.indexOf(lv)!==-1 ? Math.min(2, spellNeed) : 0;
     var anySchool = def.schools && def.anySchoolAt.indexOf(lv)!==-1 ? Math.min(1, spellNeed) : 0;
     var normal = spellNeed - secrets - anySchool;
-    var own = classListNames(entry, def, levels);
+    var own = classListNames(entry, def, levels, tasha);
     if(def.schools){
       var inSchool = own.names.filter(function(n){ return def.schools.indexOf(SPELL_DATA[n].school)!==-1; });
       add("spells", "spell", def.schools.join(" or ") + " spells",
@@ -178,28 +187,28 @@ export function learnPlan(c, entry, isNewClass){
       var any = allSpellsOf(levels);
       add("secrets", "spell", "Magical Secrets",
         "Pick " + secrets + " spells from any class's list" + upToText(maxLevel) + " They count as bard spells for you.", secrets,
-        {names: any, tags: tagsFor(any, null, otherClassTag("Bard"))});
+        {names: any, tags: tagsFor(any, null, otherClassTag("Bard", tasha))});
     }
   }
   if(entry.name==="Bard" && entry.subclass===LORE_SECRETS.subclass && lv===LORE_SECRETS.level){
     var lore = allSpellsOf(range(1, maxLevel));
     add("loreSecrets", "bonus", "Additional Magical Secrets",
       "Your college teaches you " + LORE_SECRETS.count + " spells from any class's list" + upToText(maxLevel) + " They don't count against your spells known.",
-      LORE_SECRETS.count, {names: lore, tags: tagsFor(lore, null, otherClassTag("Bard"))});
+      LORE_SECRETS.count, {names: lore, tags: tagsFor(lore, null, otherClassTag("Bard", tasha))});
   }
   if(def.spellbook && maxLevel){
     var book = lv===1 ? def.spellbook[1] : def.spellbook.else;
-    var bookList = classListNames(entry, def, range(1, maxLevel));
+    var bookList = classListNames(entry, def, range(1, maxLevel), tasha);
     add("spellbook", "spell", "Spells for your spellbook",
       "Copy " + book + " " + cls + " spells into your spellbook" + upToText(maxLevel) + " You prepare from your spellbook each day.", book,
-      {names: bookList.names});
+      {names: bookList.names, tags: tagsFor(bookList.names, bookList.extra)});
   }
   if(entry.name==="Warlock" && MYSTIC_ARCANUM[lv]){
     var arc = MYSTIC_ARCANUM[lv];
-    var arcList = classListNames(entry, def, [arc]);
+    var arcList = classListNames(entry, def, [arc], tasha);
     add("arcanum", "arcanum", "Mystic Arcanum (" + ordinal(arc) + " level)",
       "Choose one " + ordinal(arc) + "-level warlock spell. You can cast it once per long rest without a spell slot. It doesn't count against your spells known.", 1,
-      {names: arcList.names});
+      {names: arcList.names, tags: tagsFor(arcList.names, arcList.extra)});
   }
 
   var note = "";
@@ -212,7 +221,14 @@ export function learnPlan(c, entry, isNewClass){
   if(def.swap && !isNewClass && maxLevel && known.spells.length){
     swap = {known: known.spells.map(function(sp){ return sp.name; }).sort(), maxLevel: maxLevel};
   }
-  return {sections: sections, swap: swap, auto: auto, maxLevel: maxLevel, def: def, known: known, note: note,
+  // What Tasha's Additional Spells would add to this level's lists.
+  var tashaNote = "";
+  if(!tasha && (sections.length || swap)){
+    var pickLevels = range(1, maxLevel).concat(MYSTIC_ARCANUM[lv] && entry.name==="Warlock" ? [MYSTIC_ARCANUM[lv]] : []);
+    var more = tashaSpellCount(def.list, pickLevels);
+    if(more) tashaNote = "Tasha's Cauldron adds " + more + " more " + cls + " spell" + (more===1 ? "" : "s") + " to choose from if your character uses Tasha's optional class features (Information tab).";
+  }
+  return {sections: sections, swap: swap, auto: auto, maxLevel: maxLevel, def: def, known: known, note: note, tashaNote: tashaNote,
     summary: summaryText(entry, def, known, lv)};
 }
 function firstCastingLevel(def){
@@ -225,10 +241,10 @@ function countText(n, noun, list, maxLevel){
 function upToText(maxLevel){
   return maxLevel ? ", up to " + ordinal(maxLevel) + " level." : ".";
 }
-function otherClassTag(own){
+function otherClassTag(own, tasha){
   return function(n){
     var cls = SPELL_DATA[n].classes || [];
-    return cls.indexOf(own)!==-1 ? "" : cls.slice(0, 2).join(" / ") + " spell";
+    return spellOnClassList(SPELL_DATA[n], own, tasha) ? "" : cls.slice(0, 2).join(" / ") + " spell";
   };
 }
 function summaryText(entry, def, known, lv){
@@ -252,7 +268,7 @@ export function swapSection(c, entry, plan, swapOut){
   if(!plan.swap || !swapOut) return null;
   var def = plan.def;
   var out = SPELL_DATA[catalogSpellName(swapOut)];
-  var list = classListNames(entry, def, range(1, plan.swap.maxLevel));
+  var list = classListNames(entry, def, range(1, plan.swap.maxLevel), !!c.tashaOptional);
   var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c));
   var names = list.names.filter(function(n){ return onSheet.indexOf(spellKey(n))===-1; });
   if(def.schools && !(out && def.schools.indexOf(out.school)===-1)){

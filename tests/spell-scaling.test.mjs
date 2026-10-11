@@ -54,14 +54,46 @@ test("every warlock spell that grows at higher levels has an entry", () => {
     "Bestow Curse", "Animate Dead", "Banishment", "Blight", "Summon Aberration", "Summon Elemental", "Wall of Fire", "Dominate Beast",
     "Phantasmal Killer", "Confusion", "Hold Monster", "Flame Strike", "Dominate Person", "Cone of Cold", "Bigby's Hand", "Cloudkill",
     "Creation", "Conjure Elemental", "Circle of Death", "Conjure Fey", "Create Undead", "Mass Suggestion", "Dominate Monster", "Major Image",
-    "Create or Destroy Water", "Chill Touch", "Eldritch Blast", "Poison Spray", "Toll the Dead", "Mind Sliver"];
+    "Create or Destroy Water", "Chill Touch", "Eldritch Blast", "Poison Spray", "Toll the Dead", "Mind Sliver",
+    // Xanathar's and Tasha's
+    "Create Bonfire", "Frostbite", "Infestation", "Thunderclap", "Booming Blade", "Green-Flame Blade", "Lightning Lure", "Sword Burst",
+    "Cause Fear", "Mind Spike", "Shadow Blade", "Intellect Fortress", "Spirit Shroud", "Summon Lesser Demons", "Summon Shadowspawn",
+    "Summon Undead", "Thunder Step", "Charm Monster", "Elemental Bane", "Summon Greater Demon", "Danse Macabre", "Enervation",
+    "Infernal Calling", "Wall of Light", "Summon Fiend", "Crown of Stars"];
   for(const name of grows){
     assert.ok(names.has(name) || SPELL_DATA[name].level===0, name + " is a warlock spell");
     assert.ok(SPELL_SCALING[name], name + " has a scaling entry");
   }
 });
 
+test("the other casters' spells that grow have an entry too", () => {
+  const grows = ["Magic Missile", "Bless", "Healing Word", "Inflict Wounds", "Chromatic Orb", "Hunter's Mark", "Absorb Elements", "Aid",
+    "Spiritual Weapon", "Moonbeam", "Heat Metal", "Magic Weapon", "Acid Arrow", "Call Lightning", "Spirit Guardians", "Conjure Animals",
+    "Glyph of Warding", "Mass Healing Word", "Ice Storm", "Summon Construct", "Animate Objects", "Mass Cure Wounds", "Planar Binding",
+    "Summon Celestial", "Chain Lightning", "Disintegrate", "Heal", "Globe of Invulnerability", "Delayed Blast Fireball", "Etherealness",
+    "Primal Savagery", "Word of Radiance"];
+  for(const name of grows) assert.ok(SPELL_DATA[name] && SPELL_SCALING[name], name + " has a scaling entry");
+  // Spells with no higher-level effect stay out.
+  for(const name of ["Shield", "Misty Step", "Haste", "Polymorph", "Wish", "Far Step", "Magic Stone"]) assert.ok(!SPELL_SCALING[name], name);
+  const wiz = char([{ name: "Wizard", level: 5 }]);
+  assert.equal(line(wiz, "Magic Missile"), "Higher slots: one more dart per slot level above 1st.");
+  assert.equal(line(wiz, "Spiritual Weapon"), "Higher slots: +1d8 force damage for every two slot levels above 2nd.");
+  assert.equal(line(wiz, "Magic Weapon"), "Higher slots: +2 with a 4th- or 5th-level slot, +3 with 6th or higher.");
+  assert.equal(line(wiz, "Etherealness"), "Higher slots: up to three willing creatures (you included) per slot level above 7th.");
+  assert.equal(SPELL_SCALING["Spiritual Weapon"].at(4, 6), "3d8 + your spellcasting modifier force damage");
+  assert.equal(SPELL_SCALING["Hail of Thorns"].at(8, 9), "6d10 piercing damage");
+  assert.equal(SPELL_SCALING["Globe of Invulnerability"].at(2, 8), "blocks spells of 7th level or lower");
+  assert.equal(SPELL_SCALING["Disintegrate"].at(1, 7), "13d6 + 40 force damage");
+  assert.equal(SPELL_SCALING["Etherealness"].at(2, 9), "up to 6 willing creatures, you included");
+});
+
 test("cantrips: dice by character level, the next step named", () => {
+  assert.equal(line(lock(1), "Booming Blade"), "At level 1: 1d8 thunder damage if the target willingly moves. More at level 5.");
+  assert.equal(line(lock(5), "Booming Blade"), "At level 5: +1d8 thunder damage on the hit, and 2d8 thunder damage if the target willingly moves. More at level 11.");
+  assert.equal(line(lock(1), "Green-Flame Blade"), "At level 1: your spellcasting modifier in fire damage to the second creature. More at level 5.");
+  assert.equal(line(lock(11), "Green-Flame Blade"), "At level 11: +2d8 fire damage on the hit, and 2d8 + your spellcasting modifier in fire damage to the second creature. More at level 17.");
+  assert.equal(line(lock(17), "Frostbite"), "At level 17: 4d6 cold damage.");
+  assert.equal(spellScalingLine(lock(5), "Magic Stone", 0), "");
   assert.equal(line(lock(1), "Toll the Dead"), "At level 1: 1d8 necrotic damage, or 1d12 if the target is missing any hit points. More at level 5.");
   assert.equal(line(lock(5), "Chill Touch"), "At level 5: 2d8 necrotic damage. More at level 11.");
   assert.equal(line(lock(11), "Poison Spray"), "At level 11: 3d12 poison damage. More at level 17.");
@@ -92,6 +124,11 @@ test("a warlock's spells grow with its pact slots", () => {
   assert.equal(line(lock(9), "Counterspell", pact), "With your 5th-level pact slots: automatically stops spells of 5th level or lower.");
   assert.equal(line(lock(9), "Scorching Ray", pact), "With your 5th-level pact slots: 6 rays, 2d6 fire damage each.");
   assert.equal(line(lock(9), "Summon Fey", pact), "With your 5th-level pact slots: spirit with AC 17, 50 hit points, 2 attacks a turn (shortsword 1d6 + 8 piercing + 1d6 force).");
+  assert.equal(line(lock(9), "Summon Undead", pact), "With your 5th-level pact slots: spirit with AC 16, 50 hit points (40 if skeletal), 2 attacks a turn (each its die + 8).");
+  assert.equal(line(lock(5), "Summon Shadowspawn", pact), "Higher slots: a stronger spirit per slot level above 3rd.");
+  assert.equal(line(lock(9), "Shadow Blade", pact), "With your 5th-level pact slots: 4d8 psychic damage.");
+  assert.equal(line(lock(9), "Spirit Shroud", pact), "With your 5th-level pact slots: 2d8 extra damage.");
+  assert.equal(line(lock(9), "Summon Greater Demon", pact), "With your 5th-level pact slots: a demon of challenge rating 6 or lower.");
   // At the spell's own level: the rule, so the player knows it will grow.
   assert.equal(line(lock(1), "Hellish Rebuke", pact), "Higher slots: +1d10 fire damage per slot level above 1st.");
   // A Mystic Arcanum level above the pact slots: no line.
