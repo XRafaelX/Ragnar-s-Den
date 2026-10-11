@@ -14,7 +14,7 @@ import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
 import { makePlusSvg } from "../ui/svg-icons.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, refreshWizardProgress } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, refreshWizardProgress } from "./wizard-core.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { emptyPicks, featNeedsChoice, featPicksSummary } from "../core/feat-picks.js";
@@ -1174,6 +1174,26 @@ function spellPickSection(title, help, count, level, chosen, listClass, exclude,
   return spellPickGrid({title: title, help: help, count: count, names: names, chosen: chosen, tags: tags});
 }
 
+/* Spells of `level` on this step's list that the character already has
+   from a feature other than the subclass freebies (a feat's spell, a
+   subclass pick's): they're left out of the picks, with a line saying so.
+   Returns their names. */
+function alreadyGranted(card, level, listClass, extra, freebies){
+  var data = spellDataForClass(listClass, !!wizardState.tashaOptional);
+  var mine = wizardGrantedSpells().filter(function(g){
+    return (SPELL_DATA[g.name]||{}).level===level && (freebies||[]).indexOf(g.name)===-1 && (data[g.name] || (extra||[]).indexOf(g.name)!==-1);
+  });
+  if(mine.length){
+    var note = document.createElement("p");
+    note.className = "wiz-granted-note";
+    note.style.cssText = "font-size:13px;margin:0 0 12px;";
+    note.innerHTML = "You already have " + mine.map(function(g){ return "<b>"+escapeHtml(g.name)+"</b> (from "+escapeHtml(g.source)+")"; }).join(", ").replace(/, ([^,]*)$/, " and $1") +
+      ", so " + (mine.length>1 ? "they aren't" : "it isn't") + " offered below. Pick something else here.";
+    card.appendChild(note);
+  }
+  return mine.map(function(g){ return g.name; });
+}
+
 /* Shared top of the Cantrips and Spells steps: the card, its explainer,
    the subclass freebies of this kind, and the note when a subclass opens
    another class's list (a Divine Soul can pick cleric spells). */
@@ -1206,7 +1226,9 @@ export function wizardStepCantrips(container){
     "<b>Why this matters:</b> Cantrips are spells you can cast at will, as often as you like, without using a spell slot. You can always change or add more from the Spells tab once your character exists.",
     grants.cantrips||[]);
   var extraTag = function(){ return wizardExtraListName() + " spell"; };
-  card.appendChild(spellPickSection("Cantrips known", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList, grants.cantrips, wizardExtraListSpells(), extraTag));
+  dropGrantedSpellPicks();
+  var have = alreadyGranted(card, 0, sc.spellList, wizardExtraListSpells(), grants.cantrips);
+  card.appendChild(spellPickSection("Cantrips known", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList, (grants.cantrips||[]).concat(have), wizardExtraListSpells(), extraTag));
   container.appendChild(card);
 }
 
@@ -1219,6 +1241,7 @@ export function wizardStepSpells(container){
     grants.spells||[]);
   // A shrinking count (e.g. lower Wisdom after going back) trims extra picks.
   var need = spellPickCount(sc);
+  dropGrantedSpellPicks();
   if(wizardState.spellChoices.spells.length > need) wizardState.spellChoices.spells.length = need;
   var extraList = wizardExtraListSpells();
   var expandedSpells = wizardExpandedSpells().filter(function(n){ return (SPELL_DATA[n]||{}).level===1; });
@@ -1232,7 +1255,8 @@ export function wizardStepSpells(container){
   // Tasha's Additional Spells: offered when the switch here is on.
   var tashaMore = tashaSpellCount(sc.spellList, [1]);
   if(tashaMore) card.appendChild(tashaSwitchRow("Turned on, the " + tashaMore + " 1st-level spell" + (tashaMore===1 ? "" : "s") + " Tasha's Cauldron adds to the " + sc.spellList.toLowerCase() + " list " + (tashaMore===1 ? "is" : "are") + " listed too (more at higher levels)."));
-  card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", need, 1, wizardState.spellChoices.spells, sc.spellList, grants.spells, expandedSpells.concat(extraList), extraTag));
+  var have = alreadyGranted(card, 1, sc.spellList, expandedSpells.concat(extraList), grants.spells);
+  card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", need, 1, wizardState.spellChoices.spells, sc.spellList, (grants.spells||[]).concat(have), expandedSpells.concat(extraList), extraTag));
   container.appendChild(card);
 }
 

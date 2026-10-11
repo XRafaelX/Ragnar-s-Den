@@ -250,6 +250,34 @@ test("Fey Touched through a Variant Human in the creation wizard", (t) => {
   assert.deepEqual(H.featureSpells(c).map((s) => s.name), ["Misty Step", "Hex"]);
 });
 
+test("wizard: a spell the feat already gives isn't picked again as a class spell", (t) => {
+  // A Variant Human warlock who took Hex with Fey Touched, then Hex again on the Spells step.
+  const lock = (featSpell, spells) => ({ race: "Variant Human", languageChoices: ["Elvish"],
+    raceChoices: { abilities: ["cha", "con"], preset: "", skills: ["Stealth"], tools: [], feat: "Fey Touched",
+      featPicks: { ...FP.emptyPicks(FEY), ability: "cha", spells: [featSpell] } },
+    spellChoices: { cantrips: ["Eldritch Blast", "Mage Hand"], spells } });
+  const granted = inWizard(t, lock("Hex", []), () => W.wizardGrantedSpells());
+  assert.deepEqual(granted, [{ name: "Misty Step", source: "Fey Touched" }, { name: "Hex", source: "Fey Touched" }]);
+  // The doubled Hex is dropped, so the step asks for another spell.
+  const after = inWizard(t, lock("Hex", ["Hex", "Armor of Agathys"]), () => {
+    const err = W.validateStep("spells");
+    return { err, spells: W.wizardState.spellChoices.spells.slice() };
+  });
+  assert.deepEqual(after.spells, ["Armor of Agathys"]);
+  assert.match(after.err, /Choose 2 1st-level spells/);
+  // Two other spells: fine, and the sheet has one Hex (the feat's).
+  const c = inWizard(t, lock("Hex", ["Hellish Rebuke", "Armor of Agathys"]), () => {
+    assert.equal(W.validateStep("spells"), null);
+    W.finishWizard(); return state.characters[state.characters.length - 1];
+  });
+  assert.deepEqual(c.spells.map((sp) => sp.name), ["Eldritch Blast", "Mage Hand", "Hellish Rebuke", "Armor of Agathys"]);
+  assert.ok(H.featureSpells(c).some((fs) => fs.name === "Hex" && fs.source === "Fey Touched"));
+  // A different feat spell leaves a class pick of Hex alone.
+  assert.equal(inWizard(t, lock("Command", ["Hex", "Armor of Agathys"]), () => W.validateStep("spells")), null);
+  // No feat (a plain Human): nothing granted, nothing dropped.
+  assert.deepEqual(inWizard(t, { spellChoices: { cantrips: [], spells: ["Hex"] } }, () => { W.dropGrantedSpellPicks(); return W.wizardState.spellChoices.spells; }), ["Hex"]);
+});
+
 /* ================================================================
    A race's feat has its own wizard steps
    ================================================================ */

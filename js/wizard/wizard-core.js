@@ -62,6 +62,26 @@ export function wizardExpandedSpells(subclass){
     .filter(function(fs){ return fs.kind==="expanded"; })
     .map(function(fs){ return catalogSpellName(fs.name); });
 }
+/* Spells the character being built already gets from its features, as
+   [{name, source}] with catalog names: the subclass's (domain spells, a
+   Divine Soul's affinity spell) and the Race Traits feat's (Fey Touched's
+   Misty Step and its picked spell). The Cantrips and Spells steps leave
+   them out, so a class pick isn't spent on a spell the character has. */
+export function wizardGrantedSpells(){
+  var feat = isStepApplicable("feat") && wizardFeat();
+  var standIn = {classes: [wizardClassEntry()], abilities: finalAbilities(),
+    feats: feat ? [{name: feat.name, picks: wizardState.raceChoices.featPicks || {}}] : []};
+  return featureSpells(standIn).filter(function(fs){ return fs.kind!=="expanded"; })
+    .map(function(fs){ return {name: catalogSpellName(fs.name), source: fs.source}; });
+}
+/* Drops class picks the features now grant (the feat's spell was changed
+   to one already picked). In place: the pick grids hold these arrays. */
+export function dropGrantedSpellPicks(){
+  var granted = wizardGrantedSpells().map(function(g){ return g.name; });
+  [wizardState.spellChoices.cantrips, wizardState.spellChoices.spells].forEach(function(list){
+    for(var i=list.length-1;i>=0;i--) if(granted.indexOf(list[i])!==-1) list.splice(i, 1);
+  });
+}
 /* Spells from other classes' lists the chosen subclass opens (a Divine
    Soul sorcerer can pick cleric spells), as catalog names. */
 export function wizardExtraListSpells(){
@@ -365,12 +385,14 @@ export function validateStep(id){
   if(id==="cantrips"){
     var csc = info.spellcasting;
     if(!csc) return null;
+    dropGrantedSpellPicks();
     return wizardState.spellChoices.cantrips.length===csc.cantrips ? null : "Choose "+csc.cantrips+" cantrips.";
   }
   if(id==="spells"){
     var sc = info.spellcasting;
     if(!sc) return null;
     var need = spellPickCount(sc);
+    dropGrantedSpellPicks();
     if(wizardState.spellChoices.spells.length!==need) return "Choose "+need+" 1st-level spell"+(need>1?"s":"")+".";
     return null;
   }
