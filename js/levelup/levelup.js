@@ -540,6 +540,13 @@ function stepLearn(container){
       " for free, so " + (plan.granted.length>1 ? "they aren't" : "it isn't") + " in the list" + (plan.sections.length>1 ? "s" : "") + " below.";
     card.appendChild(free);
   }
+  if(plan.freed.length){
+    var back = ce("p","lu-note lu-freed-note");
+    var many = plan.freed.length>1;
+    back.textContent = "You already know " + plan.freed.join(", ").replace(/, ([^,]*)$/, " and $1") + ", and this level gives " + (many ? "them" : "it") + " to you for free. " +
+      (many ? "They no longer count" : "It no longer counts") + " against the " + cls + " spells you know, so you learn " + (many ? "others in their place." : "another in its place.");
+    card.appendChild(back);
+  }
   if(plan.auto.length){
     var auto = ce("p","lu-note");
     auto.textContent = "You learn "+plan.auto.join(" and ")+" for free; "+(plan.auto.length>1 ? "they're" : "it's")+" added automatically.";

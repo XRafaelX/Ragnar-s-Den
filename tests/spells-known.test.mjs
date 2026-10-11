@@ -371,3 +371,50 @@ test("spellHeldBy: on the sheet, from a feature, or neither", () => {
   assert.equal(H.spellHeldBy(c, "Fireball"), "");
   assert.equal(H.spellHeldBy(c, ""), "");
 });
+
+/* ================================================================
+   A spell learned earlier that a feature later gives for free
+   ================================================================ */
+test("a learned spell a feature now grants stops counting, and the level-up gives the pick back", () => {
+  // An Aberrant Mind sorcerer 4 who learned Sending as a class spell.
+  const c = makeChar([{ name: "Sorcerer", subclass: "Aberrant Mind", level: 4 }],
+    [["Magic Missile", "Sorcerer"], ["Shield", "Sorcerer"], ["Sleep", "Sorcerer"], ["Hold Person", "Sorcerer"], ["Sending", "Sorcerer"]]);
+  assert.equal(SK.classKnownSpells(c, "Sorcerer").spells.length, 5);
+  // Level 5 grants Hunger of Hadar and Sending: the learned Sending is freed.
+  const entry = { name: "Sorcerer", subclass: "Aberrant Mind", level: 5 };
+  const plan = SK.learnPlan(c, entry, false);
+  assert.deepEqual(plan.freed, ["Sending"]);
+  assert.equal(plan.sections.find((s) => s.id === "spells").count, 2, "level 5's new spell, and one in Sending's place");
+  assert.ok(!plan.swap.known.includes("Sending"), "the free copy isn't offered for swapping");
+  // After the level, the sheet copy stays (one card) but isn't counted.
+  c.classes[0].level = 5;
+  assert.deepEqual(SK.classKnownSpells(c, "Sorcerer").spells.map((sp) => sp.name), ["Magic Missile", "Shield", "Sleep", "Hold Person"]);
+  assert.deepEqual(SK.spellCounts(c)[0].spells, { have: 4, max: 6 });
+  // Nothing freed on an ordinary level.
+  assert.deepEqual(SK.learnPlan(makeChar([{ name: "Sorcerer", subclass: "Draconic Bloodline", level: 4 }], [["Sending", "Sorcerer"]]),
+    { name: "Sorcerer", subclass: "Draconic Bloodline", level: 5 }, false).freed, []);
+});
+
+test("freed copies: a wizard's Minor Illusion, a feat's spell; not the limited grants", () => {
+  // School of Illusion at wizard 2: "if you already know it, learn a different cantrip".
+  const wiz = makeChar([{ name: "Wizard", subclass: "", level: 1 }], [["Minor Illusion", "Wizard"], ["Fire Bolt", "Wizard"], ["Light", "Wizard"]]);
+  const plan = SK.learnPlan(wiz, { name: "Wizard", subclass: "School of Illusion", level: 2 }, false);
+  assert.deepEqual(plan.freed, ["Minor Illusion"]);
+  assert.equal(plan.sections.find((s) => s.id === "cantrips").count, 1);
+  // Fey Touched's Hex on a warlock who knows Hex: the class copy stops counting.
+  const lock = makeChar([{ name: "Warlock", subclass: "The Fiend", level: 4 }], [["Hex", "Warlock"], ["Hellish Rebuke", "Warlock"]]);
+  assert.equal(SK.classKnownSpells(lock, "Warlock").spells.length, 2);
+  lock.feats = [{ name: "Fey Touched", picks: { ability: "cha", spells: ["Hex"] } }];
+  assert.deepEqual(SK.classKnownSpells(lock, "Warlock").spells.map((sp) => sp.name), ["Hellish Rebuke"]);
+  // An Arcane Trickster's Mage Hand is part of its cantrip count.
+  const at = makeChar([{ name: "Rogue", subclass: "Arcane Trickster", level: 3 }], [["Mage Hand", "Rogue"], ["Minor Illusion", "Rogue"], ["Prestidigitation", "Rogue"]]);
+  assert.equal(SK.classKnownSpells(at, "Rogue").cantrips.length, 3);
+  // Limited grants don't free the class copy: a wizard school's spellbook spell
+  // (still prepared), an invocation's once-a-day spell.
+  const necro = makeChar([{ name: "Wizard", subclass: "School of Necromancy", level: 6 }], [["Animate Dead", "Wizard"]]);
+  necro.spells[0].prepared = true;
+  assert.equal(SK.classKnownSpells(necro, "Wizard").spells.length, 1);
+  assert.equal(SK.preparedState(necro, "Wizard").have, 1, "it still takes one of the day's prepared spells");
+  const bane = makeChar([{ name: "Warlock", subclass: "The Undead", level: 4, invocations: [{ name: "Thief of Five Fates" }] }], [["Bane", "Warlock"]]);
+  assert.equal(SK.classKnownSpells(bane, "Warlock").spells.length, 1);
+});

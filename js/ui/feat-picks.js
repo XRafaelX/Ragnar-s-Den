@@ -130,7 +130,12 @@ export function renderFeatPicks(def, picks, ctx, onChange){
   // Kept short for phones: the free spell is one line, and the pick opens
   // as a sheet listing what each spell does.
   if(def.grantsSpells && def.grantsSpells.length){
-    def.grantsSpells.forEach(function(name){ if(SPELL_DATA[name]) box.appendChild(spellNote(name, "Also learned: ")); });
+    def.grantsSpells.forEach(function(name){
+      if(!SPELL_DATA[name]) return;
+      box.appendChild(spellNote(name, "Also learned: "));
+      var has = ctx.spellHeld && ctx.spellHeld(name);
+      if(has) box.appendChild(heldNote(def, name, has));
+    });
   }
   if(def.spellPick){
     if(!picks.spells) picks.spells = [];
@@ -147,11 +152,7 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       })));
       if(picks.spells[p] && SPELL_DATA[picks.spells[p]]) box.appendChild(spellNote(picks.spells[p]));
       var held = picks.spells[p] && ctx.spellHeld && ctx.spellHeld(picks.spells[p]);
-      if(held){
-        var again = ce("p", "fp-spell-note fp-spell-held");
-        again.textContent = "You already have " + picks.spells[p] + " (" + held + "). " + def.name + " still adds one free cast of it per long rest; pick another spell if you'd rather learn something new.";
-        box.appendChild(again);
-      }
+      if(held) box.appendChild(heldNote(def, picks.spells[p], held));
     })(p);
   }
   // Options from a class list (Martial Adept's maneuvers): a sheet on
@@ -176,6 +177,13 @@ export function renderFeatPicks(def, picks, ctx, onChange){
     })(q);
   }
   return box;
+}
+/* The line under a feat's spell the character already has. */
+function heldNote(def, name, held){
+  var n = ce("p", "fp-spell-note fp-spell-held");
+  n.textContent = "You already have " + name + " (" + held + "). " + def.name + " adds one free cast of it per long rest" +
+    (held==="known" ? ", and it stops counting against the spells you know, so you can learn another in its place at your next level-up." : ".");
+  return n;
 }
 function spellNote(name, lead){
   var n = ce("p", "fp-spell-note");

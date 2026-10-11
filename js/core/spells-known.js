@@ -57,6 +57,15 @@ function afterLevelUp(c, entry){
   if(!found) classes.push(merged({}));
   return Object.assign({}, c, {classes: classes});
 }
+/* Spells a feature gives the character in full, so a class's own copy
+   needn't count as learned: always prepared or always known ones, and a
+   feat's (cast free once a day, or with any spell slot). Not the limited
+   grants: an invocation's once-a-day or at-will spell, a ritual-only
+   copy, a spell added to a wizard's spellbook (still prepared normally). */
+function freeNames(c){
+  return featureSpells(c).filter(function(fs){ return fs.kind==="prepared" || fs.kind==="known" || (fs.kind==="free" && !fs.className); })
+    .map(function(fs){ return spellKey(fs.name); });
+}
 /* Spells the level-up itself grants (an Aberrant Mind's Detect Thoughts
    at sorcerer 3, a new Light cleric's Light) that the sheet doesn't have
    yet: [{name, key, source}]. They aren't offered as picks. */
@@ -85,9 +94,16 @@ export function classKnownSpells(c, className){
   var granted = grantedNames(c);
   var owner = untaggedOwner(c);
   var anyUntagged = false;
+  // A learned spell a feature now gives for free stops counting (the
+  // pick comes back at the next level-up), except the cantrips the
+  // class's own table already includes (an Arcane Trickster's Mage Hand).
+  var free = freeNames(c);
+  var entry = (c.classes||[]).find(function(cl){ return cl.name===className; });
+  var def = entry && casterDef(className, entry.subclass);
+  var own = ((def && def.autoCantrips) || []).map(spellKey);
   var mine = (c.spells||[]).filter(function(sp){
     if(sp.arcanum || sp.bonusSecret) return false;
-    if(sp.learnedBy) return sp.learnedBy===className;
+    if(sp.learnedBy) return sp.learnedBy===className && (free.indexOf(spellKey(sp.name))===-1 || own.indexOf(spellKey(sp.name))!==-1);
     if(granted.indexOf(spellKey(sp.name))!==-1) return false;
     anyUntagged = true;
     return owner===className;
@@ -145,10 +161,17 @@ function allSpellsOf(levels){
    spellChoices); `existing` says whether the class was already there. */
 export function learnPlan(c, entry, isNewClass){
   var def = casterDef(entry.name, entry.subclass);
-  var empty = {sections: [], swap: null, auto: [], granted: [], summary: "", note: "", tashaNote: ""};
+  var empty = {sections: [], swap: null, auto: [], granted: [], freed: [], summary: "", note: "", tashaNote: ""};
   if(!def) return empty;
   var lv = Number(entry.level)||1;
-  var known = classKnownSpells(c, entry.name);
+  // Counted as the level-up will leave the character: a spell learned
+  // earlier that this level now gives for free no longer counts, so
+  // another is learned in its place (`freed` names those).
+  var before = classKnownSpells(c, entry.name);
+  var known = classKnownSpells(afterLevelUp(c, entry), entry.name);
+  var freed = isNewClass ? [] : before.spells.concat(before.cantrips)
+    .filter(function(sp){ return known.spells.indexOf(sp)===-1 && known.cantrips.indexOf(sp)===-1; })
+    .map(function(sp){ return sp.name; });
   if(isNewClass){ known = {spells: [], cantrips: [], certain: true}; }
   var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c));
   var fresh = function(n){ return onSheet.indexOf(spellKey(n))===-1; };
@@ -262,7 +285,7 @@ export function learnPlan(c, entry, isNewClass){
     if(more) tashaNote = "Tasha's Cauldron adds " + more + " more " + cls + " spell" + (more===1 ? "" : "s") + " to choose from if your character uses Tasha's optional class features (Information tab).";
   }
   return {sections: sections, swap: swap, auto: auto, maxLevel: maxLevel, def: def, known: known, note: note, tashaNote: tashaNote,
-    granted: granted.map(function(g){ return {name: g.name, source: g.source}; }), summary: summaryText(entry, def, known, lv)};
+    granted: granted.map(function(g){ return {name: g.name, source: g.source}; }), freed: freed, summary: summaryText(entry, def, known, lv)};
 }
 function firstCastingLevel(def){
   for(var i = 1; i <= 20; i++) if(def.cantrips[i] || (def.spells && def.spells[i]) || (def.spellbook && i===1)) return i;
