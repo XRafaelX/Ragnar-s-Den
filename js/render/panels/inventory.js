@@ -374,7 +374,12 @@ function renderWeaponCard(c, item, idx){
     power.type = "button";
     power.className = "btn small inv-power-btn" + (on ? " primary" : "");
     power.setAttribute("aria-pressed", on ? "true" : "false");
-    power.textContent = "−5 / +10";
+    // The feat's name only shows on a phone, where the switch has its own row.
+    var powerName = document.createElement("span");
+    powerName.className = "inv-power-feat";
+    powerName.textContent = powerFeat;
+    power.appendChild(powerName);
+    power.appendChild(document.createTextNode("−5 / +10"));
     power.title = powerFeat + ": " + (on ? "on. Attacks take −5 to hit and deal +10 damage. Tap to turn off." : "take −5 to hit for +10 damage");
     power.addEventListener("click", function(){
       if(on) delete item.powerAttack; else item.powerAttack = true;
