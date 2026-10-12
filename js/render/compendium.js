@@ -21,7 +21,7 @@ import { FEATURE_SOURCES, FEAT_CATEGORIES, getCustom, getCustomEntry, saveCustom
 import { classFeatureList, escapeHtml, uid, ce } from "../core/helpers.js";
 import { facts, textField, homebrewShell, numberField, pickerField, previewCard } from "../ui/homebrew-form.js";
 import { save } from "../core/state.js";
-import { featHasPicks, featNeedsChoice, emptyPicks, applyFeatPicks } from "../core/feat-picks.js";
+import { featHasPicks, featNeedsChoice, emptyPicks, applyFeatPicks, backgroundFeatGrant } from "../core/feat-picks.js";
 import { openFeatPicksModal } from "../ui/feat-picks.js";
 import { COMPANIONS, BEAST_PRESETS } from "../data/companions.js";
 import { renderStatBlock } from "./panels/companions.js";
@@ -178,7 +178,7 @@ function showBackground(name){
       ["Skills", info ? backgroundSkills(info) : "Two of your choice"],
       ["Tools", BACKGROUND_TOOLS[name] || "Check your sourcebook"],
       ["Languages", backgroundLanguages(name)]
-    ]));
+    ].concat(backgroundFeatGrant(name) ? [["Feat", backgroundFeatGrant(name).def.name + (backgroundFeatGrant(name).option ? " (" + backgroundFeatGrant(name).option + ")" : "")]] : [])));
     if(info && info.feature && info.feature.name) block(body, "Feature", featureList([info.feature]));
   });
 }

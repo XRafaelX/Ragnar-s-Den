@@ -25,7 +25,8 @@ import { renderStylePicks } from "./style-picks.js";
    each pick so the caller can re-render and re-check.
    ctx: {abilities, skillProfs, languages, pb} of the character taking
    the feat, plus styleReason(name) and invocationChoices() for Fighting
-   Initiate and Eldritch Adept,
+   Initiate and Eldritch Adept, lockedOption for a background's feat whose
+   option the book already chose (shown, not asked for),
    knowsWeapon(name) when it's known (greys out weapons already proficient),
    spellTaken(name) for a spell being learned in the same level-up (greyed
    out) and spellHeld(name) for one the character already has (still
@@ -37,7 +38,12 @@ export function renderFeatPicks(def, picks, ctx, onChange){
   var box = ce("div", "fp-box");
   if(!featHasPicks(def)) return box;
 
-  if(def.option){
+  if(def.option && ctx.lockedOption){
+    picks.option = ctx.lockedOption;
+    box.appendChild(label(def.option.label));
+    box.appendChild(textNote(ctx.lockedOption + ", set by your background."));
+    if(def.option.details) box.appendChild(textNote(featPickDetail(def, picks)));
+  } else if(def.option){
     var optNoun = def.option.label.toLowerCase(), details = def.option.details;
     box.appendChild(label("Choose " + aOrAn(optNoun)));
     var taken = def.repeatable && ctx.optionsTaken ? ctx.optionsTaken(def.name) : [];
@@ -332,6 +338,7 @@ export function openFeatPicksModal(c, feat, onDone){
   // A Weapon Master from before weapon picks keeps its +1 and adds weapons.
   var picks = startingPicks(def, feat);
   var ctx = featPicksContext(c);
+  if(feat.lockedOption) ctx.lockedOption = feat.lockedOption;
   openInfoModal(feat.name, function(body){
     var lead = ce("p", "fp-lead");
     lead.textContent = featNeedsChoice(def)

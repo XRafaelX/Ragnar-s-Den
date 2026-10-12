@@ -96,31 +96,31 @@ export var BACKGROUND_INFO = {
   "Athlete": {skills:["Acrobatics","Athletics"], blurb:"Grants Acrobatics and Athletics. You have competed in the great athletic contests of Theros, earning glory, the roar of crowds, and the notice of the gods."},
 
   /* ---- Strixhaven: Curriculum of Chaos ---- */
-  "Lorehold Student": {skills:["History","Arcana"], blurb:"Grants History and Arcana. A student of Lorehold College, devoted to exploring the past through magic, archaeology, and communing with spirits of history."},
-  "Prismari Student": {skills:["Arcana","Performance"], blurb:"Grants Arcana and Performance. A student of Prismari College, merging elemental magic with artistic expression in grand, emotionally charged displays."},
-  "Quandrix Student": {skills:["Arcana","Nature"], blurb:"Grants Arcana and Nature. A student of Quandrix College, studying the mathematical and geometric underpinnings of magic and the natural world."},
-  "Silverquill Student": {skills:["History","Persuasion"], blurb:"Grants History and Persuasion. A student of Silverquill College, wielding the power of words — inspiring speeches, cutting wit, and ink-forged magic."},
-  "Witherbloom Student": {skills:["Survival","Medicine"], blurb:"Grants Survival and Medicine. A student of Witherbloom College, drawing power from the essence of life and death through biology, herbalism, and dark vitality."},
+  "Lorehold Student": {feat:{name:"Strixhaven Initiate", option:"Lorehold"}, skills:["History","Arcana"], blurb:"Grants History and Arcana. A student of Lorehold College, devoted to exploring the past through magic, archaeology, and communing with spirits of history."},
+  "Prismari Student": {feat:{name:"Strixhaven Initiate", option:"Prismari"}, skills:["Arcana","Performance"], blurb:"Grants Arcana and Performance. A student of Prismari College, merging elemental magic with artistic expression in grand, emotionally charged displays."},
+  "Quandrix Student": {feat:{name:"Strixhaven Initiate", option:"Quandrix"}, skills:["Arcana","Nature"], blurb:"Grants Arcana and Nature. A student of Quandrix College, studying the mathematical and geometric underpinnings of magic and the natural world."},
+  "Silverquill Student": {feat:{name:"Strixhaven Initiate", option:"Silverquill"}, skills:["History","Persuasion"], blurb:"Grants History and Persuasion. A student of Silverquill College, wielding the power of words — inspiring speeches, cutting wit, and ink-forged magic."},
+  "Witherbloom Student": {feat:{name:"Strixhaven Initiate", option:"Witherbloom"}, skills:["Survival","Medicine"], blurb:"Grants Survival and Medicine. A student of Witherbloom College, drawing power from the essence of life and death through biology, herbalism, and dark vitality."},
 
   /* ---- The Wild Beyond the Witchlight ---- */
   "Feylost": {skills:["Deception","Survival"], blurb:"Grants Deception and Survival. You grew up in the Feywild after vanishing from your home plane as a child, returning changed by your time among the fey."},
   "Witchlight Hand": {skills:["Performance","Sleight of Hand"], blurb:"Grants Performance and Sleight of Hand. You work behind the scenes of the Witchlight Carnival, keeping its wonders running and its secrets hidden."},
 
   /* ---- Spelljammer: Adventures in Space ---- */
-  "Astral Drifter": {skills:["Insight","Religion"], blurb:"Grants Insight and Religion. You have traversed the Astral Sea for longer than you can remember, camping on dead gods and navigating the Silver Void."},
-  "Wildspacer": {skills:["Athletics","Survival"], blurb:"Grants Athletics and Survival. You grew up in Wildspace — on a spelljamming ship or far-flung settlement — and its dangers have made you tough as nails."},
+  "Astral Drifter": {feat:{name:"Magic Initiate", option:"Cleric"}, skills:["Insight","Religion"], blurb:"Grants Insight and Religion. You have traversed the Astral Sea for longer than you can remember, camping on dead gods and navigating the Silver Void."},
+  "Wildspacer": {feat:{name:"Tough"}, skills:["Athletics","Survival"], blurb:"Grants Athletics and Survival. You grew up in Wildspace — on a spelljamming ship or far-flung settlement — and its dangers have made you tough as nails."},
 
   /* ---- Dragonlance: Shadow of the Dragon Queen ---- */
-  "Knight of Solamnia": {skills:["Athletics","Persuasion"], blurb:"Grants Athletics and Persuasion. You have trained as a Knight of Solamnia, bound by strict codes of honor to defend the weak and oppose evil across Krynn."},
-  "Mage of High Sorcery": {skills:["Arcana","History"], blurb:"Grants Arcana and History. You have studied at the Towers of High Sorcery on Krynn, devoting yourself to the disciplines of magic in one of its three orders."},
+  "Knight of Solamnia": {feat:{name:"Squire of Solamnia"}, skills:["Athletics","Persuasion"], blurb:"Grants Athletics and Persuasion. You have trained as a Knight of Solamnia, bound by strict codes of honor to defend the weak and oppose evil across Krynn."},
+  "Mage of High Sorcery": {feat:{name:"Initiate of High Sorcery"}, skills:["Arcana","History"], blurb:"Grants Arcana and History. You have studied at the Towers of High Sorcery on Krynn, devoting yourself to the disciplines of magic in one of its three orders."},
 
   /* ---- Planescape: Adventures in the Multiverse ---- */
-  "Gate Warden": {skills:["Persuasion","Survival"], blurb:"Grants Persuasion and Survival. You grew up near a permanent planar portal, absorbing the essence of other planes and growing comfortable with the extraordinary."},
-  "Planar Philosopher": {skills:["Arcana"], skillChoice:"plus one skill linked to your Sigil faction (e.g. Religion, History, Nature, Stealth, Perception, Insight, Medicine, Survival, Persuasion, Performance, or Athletics)", skillPick:{count:1, options:["Athletics","History","Insight","Medicine","Nature","Perception","Performance","Persuasion","Religion","Stealth","Survival"]}, blurb:"Grants Arcana plus one faction-linked skill. You subscribe to a philosophy seeking hidden truths of the multiverse, aligned to one of Sigil's great factions."},
+  "Gate Warden": {feat:{name:"Scion of the Outer Planes"}, skills:["Persuasion","Survival"], blurb:"Grants Persuasion and Survival. You grew up near a permanent planar portal, absorbing the essence of other planes and growing comfortable with the extraordinary."},
+  "Planar Philosopher": {feat:{name:"Scion of the Outer Planes"}, skills:["Arcana"], skillChoice:"plus one skill linked to your Sigil faction (e.g. Religion, History, Nature, Stealth, Perception, Insight, Medicine, Survival, Persuasion, Performance, or Athletics)", skillPick:{count:1, options:["Athletics","History","Insight","Medicine","Nature","Perception","Performance","Persuasion","Religion","Stealth","Survival"]}, blurb:"Grants Arcana plus one faction-linked skill. You subscribe to a philosophy seeking hidden truths of the multiverse, aligned to one of Sigil's great factions."},
 
   /* ---- Glory of the Giants ---- */
-  "Giant Foundling": {skills:["Intimidation","Survival"], blurb:"Grants Intimidation and Survival. You were raised among giants and carry their perspective — and their magic — with you into a world that seems small by comparison."},
-  "Rune Carver": {skills:["History","Perception"], blurb:"Grants History and Perception. You have dedicated your life to studying the ancient runic magic of giants, carving their secrets into objects to wield their power."},
+  "Giant Foundling": {feat:{name:"Strike of the Giants"}, skills:["Intimidation","Survival"], blurb:"Grants Intimidation and Survival. You were raised among giants and carry their perspective — and their magic — with you into a world that seems small by comparison."},
+  "Rune Carver": {feat:{name:"Rune Shaper"}, skills:["History","Perception"], blurb:"Grants History and Perception. You have dedicated your life to studying the ancient runic magic of giants, carving their secrets into objects to wield their power."},
 
   /* ---- Curse of Strahd / Van Richten's Guide to Ravenloft ---- */
   "Haunted One": {skills:[], skillChoice:"two of Arcana, Investigation, Religion or Survival", skillPick:{count:2, options:["Arcana","Investigation","Religion","Survival"]},
@@ -196,7 +196,12 @@ export var BACKGROUND_TOOLS = {
    wizard's Skills step offers on top of the fixed `skills`.
    `exoticLanguages`: how many of the background's languages must be
    exotic ones (Haunted One: one of its two). `feature`: {name, text}, the
-   background feature shown on the Features tab and in the Compendium. */
+   background feature shown on the Features tab and in the Compendium.
+   `feat`: {name, option}: a feat the background gives (Wildspacer: Tough),
+   with the choice the book makes for it when it makes one (a Lorehold
+   Student's Strixhaven Initiate is Lorehold's; an Astral Drifter's Magic
+   Initiate is the cleric's). The creation wizard grants it; an older
+   sheet is offered it on the Features tab. */
 export var BACKGROUND_INFO_FALLBACK = "Grants two skill proficiencies of your choice (and usually a tool or language). Pick whatever fits your character's story; you can add them on the sheet's Skills tab afterward.";
 
 /* Languages of your choice each background grants (0 when it gives a

@@ -1,6 +1,6 @@
 import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES, FIGHTING_STYLES } from "../data/classes.js";
-import { FEATS_CATALOG } from "../data/feats.js";
+import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
 import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
 import { LANGUAGES } from "../data/languages.js";
@@ -8,7 +8,7 @@ import { RACE_DATA } from "../data/race-data.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists } from "../core/helpers.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
-import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason } from "../core/feat-picks.js";
+import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason, featHasPicks, featDef, emptyPicks, backgroundFeatGrant, backgroundFeatCopy, backgroundFeatPicks, campaignLevel1Feats, campaignFeatCopy } from "../core/feat-picks.js";
 import { stylePicksProblem, makeStyleFeature } from "../core/fighting-styles.js";
 import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
@@ -21,13 +21,13 @@ import { preparedAt } from "../data/spells-known.js";
 import {
   buildEquipmentList,
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
-  wizardStepAbilities, wizardStepSkills, wizardStepRaceChoices, wizardStepFeat, wizardStepFeatPicks, wizardStepChoices, wizardStepLanguages, wizardStepEquipment, wizardStepCantrips, wizardStepSpells, wizardStepReview,
+  wizardStepAbilities, wizardStepSkills, wizardStepRaceChoices, wizardStepFeat, wizardStepFeatPicks, wizardStepBgFeat, wizardStepChoices, wizardStepLanguages, wizardStepEquipment, wizardStepCantrips, wizardStepSpells, wizardStepReview,
   expertiseOptions, resetHomebrewPickers
 } from "./wizard-steps.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons.js";
 
 /* ---------------- Character Creation Wizard ---------------- */
-export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","raceChoices","feat","featPicks","choices","languages","equipment","cantrips","spells","review"];
+export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","raceChoices","feat","featPicks","bgFeat","choices","languages","equipment","cantrips","spells","review"];
 export var wizardState = null;
 
 export function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardState.classId]; }
@@ -68,9 +68,10 @@ export function wizardExpandedSpells(subclass){
    Misty Step and its picked spell). The Cantrips and Spells steps leave
    them out, so a class pick isn't spent on a spell the character has. */
 export function wizardGrantedSpells(){
-  var feat = isStepApplicable("feat") && wizardFeat();
+  var feat = isStepApplicable("feat") && wizardFeat(), bg = wizardBackgroundFeat();
   var standIn = {classes: [wizardClassEntry()], abilities: finalAbilities(),
-    feats: feat ? [{name: feat.name, picks: wizardState.raceChoices.featPicks || {}}] : []};
+    feats: (feat ? [{name: feat.name, picks: wizardState.raceChoices.featPicks || {}}] : [])
+      .concat(bg && bg.def ? [{name: bg.def.name, picks: wizardBackgroundFeatPicks()}] : [])};
   return featureSpells(standIn).filter(function(fs){ return fs.kind!=="expanded"; })
     .map(function(fs){ return {name: catalogSpellName(fs.name), source: fs.source}; });
 }
@@ -173,6 +174,8 @@ var ABILITY_WORDS = {Strength:"str", Dexterity:"dex", Constitution:"con", Intell
 export function featPrereqReason(feat){
   var blocked = featRequiresReason(feat, {race: wizardState.race, level: 1, feats: []});
   if(blocked) return blocked;
+  var bg = wizardBackgroundFeat();
+  if(bg && bg.def===feat && !feat.repeatable) return bg.campaign ? "it's your campaign feat" : "your background already gives it";
   var req = feat.prerequisite || "None";
   if(req==="None") return "";
   var ab = finalAbilities({withoutFeat:true}), info = currentClassInfo() || {};
@@ -242,21 +245,52 @@ export function isStepApplicable(id){
   // picks (Fey Touched's spell, Skilled's skills) one more, only when it has any.
   if(id==="feat") return !!(raceChoiceDef() && raceChoiceDef().feat);
   if(id==="featPicks") return isStepApplicable("feat") && featNeedsChoice(wizardFeat());
+  // A background's feat is given, not chosen; only its own picks need a step.
+  // A campaign's feat is picked on that step too (Skilled or Tough).
+  if(id==="bgFeat"){ var bg = wizardBackgroundFeat(); return !!bg && (!!bg.choices || featNeedsChoice(bg.def)); }
   return true;
 }
 /* The new character as the feat pickers see it. Its languages are only
    the race's fixed ones here: the Languages step comes later and leaves
    out whatever the feat teaches. */
-export function wizardFeatContext(){
+export function wizardFeatContext(opts){
   var w = wizardState, info = currentClassInfo() || {};
+  var profs = wizardSkillProfs();
+  // The background's or campaign's feat comes after the race's, whose skills count as known.
+  var racePicks = opts && opts.forBackgroundFeat && isStepApplicable("feat") && w.raceChoices.featPicks;
+  if(racePicks) (racePicks.skills||[]).forEach(function(sk){ if(sk) profs[sk] = profs[sk] || {prof:true, expertise:false}; });
   var styleCh = (info.choices||[]).find(function(ch){ return ch.kind==="fightingStyle"; });
   var classStyle = styleCh && w.classChoices[styleCh.id];
-  return {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs(), tasha: !!w.tashaOptional, pb: 2,
+  return {abilities: finalAbilities({withoutFeat:true}), skillProfs: profs, tasha: !!w.tashaOptional, pb: 2,
     languages: (RACE_LANGUAGES[w.race] || RACE_LANGUAGES_FALLBACK).fixed,
     styleReason: function(name){
       if(classStyle===name) return "known";
       return (FIGHTING_STYLES[name]||{}).optional && !w.tashaOptional ? "Tasha's optional" : "";
     }};
+}
+/* The feat the new character starts with besides a race's: the chosen
+   background's, as {def, option}, or, when it gives none and a campaign
+   that hands out feats is set (wizardState.campaign), the campaign's:
+   {def, option:"", choices, campaign}, where def is the one picked from
+   `choices` (null until then). Null when there is neither. */
+export function wizardBackgroundFeat(){
+  var w = wizardState;
+  if(!w) return null;
+  var own = backgroundFeatGrant(w.background);
+  if(own) return own;
+  var choices = campaignLevel1Feats(w.campaign, w.background);
+  if(!choices.length) return null;
+  return {def: choices.indexOf(w.campaignFeat)!==-1 ? featDef(w.campaignFeat) : null, option: "", choices: choices, campaign: w.campaign};
+}
+/* Its picks, kept in wizardState.bgFeat and started afresh when the
+   background or the feat (and so the option the book fixes) changes. */
+export function wizardBackgroundFeatPicks(){
+  var g = wizardBackgroundFeat(), w = wizardState;
+  if(!g || !g.def) return null;
+  if(!w.bgFeat || w.bgFeat.background!==w.background || (w.bgFeat.name || g.def.name)!==g.def.name){
+    w.bgFeat = {background: w.background, name: g.def.name, picks: g.campaign ? emptyPicks(g.def) : backgroundFeatPicks(w.background)};
+  }
+  return w.bgFeat.picks;
 }
 /* The feat picked for the race (Variant Human), or null. */
 export function wizardFeat(){
@@ -265,10 +299,12 @@ export function wizardFeat(){
 }
 
 export function wizardStepTitle(id){
+  // The same step asks for a campaign's feat when the background has none.
+  if(id==="bgFeat" && wizardBackgroundFeat() && wizardBackgroundFeat().campaign) return "Campaign Feat";
   return {
     class:"Choose a Class", race:"Choose a Race", background:"Choose a Background",
     alignment:"Choose an Alignment",
-    abilities:"Ability Scores", skills:"Skills & Proficiencies", raceChoices:"Race Traits", feat:"Choose a Feat", featPicks:"Feat Choices", choices:"Class Features", languages:"Languages", equipment:"Starting Equipment",
+    abilities:"Ability Scores", skills:"Skills & Proficiencies", raceChoices:"Race Traits", feat:"Choose a Feat", featPicks:"Feat Choices", bgFeat:"Background Feat", choices:"Class Features", languages:"Languages", equipment:"Starting Equipment",
     cantrips:"Cantrips", spells:"Spells", review:"Review & Finish"
   }[id];
 }
@@ -345,6 +381,13 @@ export function validateStep(id){
     if(!feat) return "Pick a feat.";
     var why = featPrereqReason(feat);
     return why ? feat.name+" "+why+". Pick another feat or change your scores." : null;
+  }
+  if(id==="bgFeat"){
+    var bgf = wizardBackgroundFeat();
+    if(!bgf.def) return "Pick "+bgf.choices.join(" or ")+" as your campaign feat.";
+    var raceFeat = isStepApplicable("feat") && wizardFeat();
+    if(bgf.campaign && raceFeat===bgf.def) return "You already took "+bgf.def.name+" as your "+wizardState.race+" feat. Pick the other one.";
+    return featPicksProblem(bgf.def, wizardBackgroundFeatPicks(), wizardFeatContext({forBackgroundFeat:true})) || null;
   }
   if(id==="featPicks"){
     return featPicksProblem(wizardFeat(), wizardState.raceChoices.featPicks || {}, wizardFeatContext()) || null;
@@ -434,6 +477,7 @@ export function openWizard(){
     bgSkillChoices:[],
     classChoices:{},
     raceChoices:{abilities:[], preset:"", skills:[], tools:[], feat:"", featPicks:null},
+    bgFeat:null, campaign:"", campaignFeat:"",
     languageChoices:[],
     equipment:{},
     spellChoices:{cantrips:[], spells:[]}
@@ -480,6 +524,16 @@ export function finishWizard(){
   c.features = [];
   c.feats = [];
   applyRaceChoices(c);
+  // The background's feat, with the picks from its step (a Wildspacer's
+  // Tough has none and is simply added).
+  // A campaign's feat (Skilled or Tough) goes on the same way.
+  var grant = wizardBackgroundFeat();
+  if(CAMPAIGN_FEATS[w.campaign]) c.campaign = w.campaign;
+  if(grant && grant.def){
+    var bgFeat = grant.campaign ? campaignFeatCopy(grant.def, grant.campaign, 1) : backgroundFeatCopy(w.background);
+    c.feats.push(bgFeat);
+    if(featHasPicks(grant.def)) applyFeatPicks(c, bgFeat, wizardBackgroundFeatPicks());
+  }
   var conMod = mod(c.abilities.con);
   c.hp.max = HIT_DICE_BY_CLASS[w.classId] + conMod + (subclassGrants(info, w.classChoices).hpPerLevel||0);
   c.hp.current = maxHp(c); // a Variant Human's Tough counts too
@@ -654,7 +708,7 @@ export function renderWizard(){
   var renderers = {
     class: wizardStepClass, race: wizardStepRace, background: wizardStepBackground,
     alignment: wizardStepAlignment,
-    abilities: wizardStepAbilities, skills: wizardStepSkills, raceChoices: wizardStepRaceChoices, feat: wizardStepFeat, featPicks: wizardStepFeatPicks, choices: wizardStepChoices, languages: wizardStepLanguages, equipment: wizardStepEquipment,
+    abilities: wizardStepAbilities, skills: wizardStepSkills, raceChoices: wizardStepRaceChoices, feat: wizardStepFeat, featPicks: wizardStepFeatPicks, bgFeat: wizardStepBgFeat, choices: wizardStepChoices, languages: wizardStepLanguages, equipment: wizardStepEquipment,
     cantrips: wizardStepCantrips, spells: wizardStepSpells, review: wizardStepReview
   };
   renderers[wizardState.step](inner);

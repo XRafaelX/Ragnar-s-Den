@@ -701,7 +701,8 @@ export var FEAT_RESOURCES = {
       hint:"A d6 that fuels your two Martial Adept maneuvers."}
   ],
   "Magic Initiate": [
-    {id:"magic_initiate", name:"Magic Initiate Spell", max:always(1), reset:always("long"),
+    {id:"magic_initiate", name:function(feat){ var sp = feat && feat.picks && (feat.picks.spells||[])[2]; return sp ? sp + " (Magic Initiate)" : "Magic Initiate Spell"; },
+      max:always(1), reset:always("long"), freeCast:true,
       hint:"Cast your Magic Initiate 1st-level spell at its lowest level without a slot. Casting it with a slot doesn't use this."}
   ],
   // name(feat) names the use after the spell the player picked.

@@ -27,8 +27,9 @@
                     Step); shown on the Spells tab (see featureSpells).
                     A name, or {name, use}: "long" or "short" for one
                     free cast per rest (the default for a leveled spell),
-                    "atwill", "ritual", or "known" (the default for a
-                    cantrip)
+                    "once" (one cast per long rest at its lowest level
+                    and no other way: Magic Initiate), "atwill", "ritual",
+                    or "known" (the default for a cantrip)
      grantsByOption {option: [spells]}: spells that depend on `option`
                     (Scion of the Outer Planes' cantrip)
      spellPick      {count, level, schools, list, names, byOption, label,
@@ -42,6 +43,8 @@
      castAbility    what the feat's spells are cast with when that isn't
                     its +1: an ability ("cha"), a list to pick from, or
                     {feat}: the one picked for that feat
+     castAbilityByOption  {option: ability}: it follows `option` (Magic
+                    Initiate's class)
      optionPicks    {set, count}: options to learn from a class option set
                     (js/data/class-options.js); Martial Adept's two
                     maneuvers
@@ -222,6 +225,14 @@ export var FEATS_CATALOG = [
   },
   {
     name: "Magic Initiate",
+    option:{label:"Class", options:["Bard","Cleric","Druid","Sorcerer","Warlock","Wizard"]},
+    castAbilityByOption:{"Bard":"cha", "Cleric":"wis", "Druid":"wis", "Sorcerer":"cha", "Warlock":"cha", "Wizard":"int"},
+    spellPick:[
+      {count:2, level:0, label:"cantrip from that class's list", plural:"cantrips from that class's list", byOption:{
+        "Bard":{list:"Bard"}, "Cleric":{list:"Cleric"}, "Druid":{list:"Druid"}, "Sorcerer":{list:"Sorcerer"}, "Warlock":{list:"Warlock"}, "Wizard":{list:"Wizard"}}},
+      {count:1, level:1, label:"1st-level spell from that class's list", use:"once", byOption:{
+        "Bard":{list:"Bard"}, "Cleric":{list:"Cleric"}, "Druid":{list:"Druid"}, "Sorcerer":{list:"Sorcerer"}, "Warlock":{list:"Warlock"}, "Wizard":{list:"Wizard"}}}
+    ],
     prerequisite: "None",
     category: "Magic",
     summary: "Learn 2 cantrips and one 1st-level spell from a chosen spellcaster class; cast 1st-level spell 1/day.",
@@ -1079,3 +1090,17 @@ export var FEATS_CATALOG = [
     description: "You have learned to channel your magic through a deck of cards, which you can use as a spellcasting focus. You gain the following benefits:\n• Card Tricks. You learn the prestidigitation cantrip and can use it to create illusions that duplicate the effects of stage magic. When you use a card deck as your focus, you can conceal the verbal and somatic components of the cantrip in ordinary conversation and card handling.\n• Hidden Ace. When you finish a long rest, you can choose one spell from your class's spell list and imbue that spell into a card. The spell must have a casting time of 1 action, and it must be of a level for which you have spell slots. The card stays imbued for 8 hours. While you hold it, you can use a bonus action to flourish the card and cast the spell within. The card then loses its magic."
   }
 ];
+
+/* Campaign rules that hand out feats. The DM decides whether a campaign
+   uses them, so they are set per character (c.campaign):
+     level1  a feat at creation for a character whose background gives
+             none (one that does gets its background's)
+     level4  another at character level 4, from this list; a feat's own
+             prerequisites still apply (a Knight feat needs Squire of
+             Solamnia) */
+export var CAMPAIGN_FEATS = {
+  "Dragonlance": {label:"Dragonlance: Shadow of the Dragon Queen", level1:["Skilled","Tough"],
+    level4:["Adept of the Black Robes","Adept of the Red Robes","Adept of the White Robes","Alert","Divinely Favored",
+      "Knight of the Crown","Knight of the Rose","Knight of the Sword","Mobile","Sentinel","War Caster"]},
+  "Glory of the Giants": {label:"Bigby Presents: Glory of the Giants", level1:["Skilled","Tough"]}
+};

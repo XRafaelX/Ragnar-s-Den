@@ -10,10 +10,11 @@ import * as H from "../js/core/helpers.js";
 import * as FP from "../js/core/feat-picks.js";
 import * as FS from "../js/core/fighting-styles.js";
 import * as CO from "../js/core/class-options.js";
-import { FEATS_CATALOG } from "../js/data/feats.js";
+import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../js/data/feats.js";
 import { FEAT_RESOURCES } from "../js/data/resources.js";
 import { SPELL_DATA } from "../js/data/spells.js";
 import { RACE_DATA } from "../js/data/race-data.js";
+import { BACKGROUND_INFO } from "../js/data/backgrounds.js";
 import { optionSetDef } from "../js/data/class-options.js";
 import { FEAT_CATEGORIES } from "../js/core/custom-features.js";
 
@@ -325,4 +326,106 @@ test("Metamagic Adept: two options and 2 sorcery points, added to a sorcerer's",
   const res = H.characterResources(sorc);
   assert.equal(res.find((r) => r.key === "Sorcerer:sorcery_points").max, 7);
   assert.ok(!res.some((r) => r.key === "feat:sorcery_points"));
+});
+
+test("Magic Initiate: a class, two of its cantrips and a 1st-level spell cast with that class's ability", () => {
+  const def = FP.featDef("Magic Initiate");
+  assert.match(problem("Magic Initiate", {}), /Pick a class/);
+  assert.match(problem("Magic Initiate", { option: "Cleric", spells: ["Guidance", "Fire Bolt"] }), /2 different cantrips from that class's list/);
+  assert.match(problem("Magic Initiate", { option: "Cleric", spells: ["Guidance", "Light", "Sleep"] }), /1st-level spell from that class's list/);
+  assert.equal(problem("Magic Initiate", { option: "Cleric", spells: ["Guidance", "Light", "Bless"] }), "");
+  const c = char([{ name: "Fighter", level: 4 }], { abilities: { wis: 16 } });
+  // Before its picks (an older sheet): the use it always had, and a Choose prompt.
+  const feat = { id: "mi", name: "Magic Initiate" };
+  c.feats.push(feat);
+  assert.deepEqual(featUses(c).map((r) => [r.key, r.name]), [["feat:magic_initiate", "Magic Initiate Spell"]]);
+  assert.equal(FP.featPicksPending(feat, c), true);
+  FP.applyFeatPicks(c, feat, { ...FP.emptyPicks(def), option: "Cleric", spells: ["Guidance", "Light", "Bless"] });
+  assert.equal(FP.featPicksPending(feat, c), false);
+  assert.deepEqual(featUses(c).map((r) => [r.key, r.name]), [["feat:magic_initiate", "Bless (Magic Initiate)"]]);
+  const spells = H.featureSpells(c);
+  assert.deepEqual(spells.map((s) => [s.name, s.kind]), [["Guidance", "known"], ["Light", "known"], ["Bless", "free"]]);
+  assert.match(spells[2].note, /Once per long rest at its lowest level.*Uses Wisdom: save DC 13/);
+  assert.equal(FP.featCastAbility(c, def, { option: "Wizard" }), "int");
+});
+
+test("backgrounds that give a feat: which one, the book's choice for it, and the sheet's offer", () => {
+  const grant = (bg) => { const g = FP.backgroundFeatGrant(bg); return g ? g.def.name + (g.option ? " (" + g.option + ")" : "") : null; };
+  assert.deepEqual(["Lorehold Student", "Witherbloom Student", "Astral Drifter", "Wildspacer", "Knight of Solamnia", "Mage of High Sorcery",
+    "Gate Warden", "Planar Philosopher", "Giant Foundling", "Rune Carver", "Acolyte", "Haunted One", "No such background"].map(grant),
+    ["Strixhaven Initiate (Lorehold)", "Strixhaven Initiate (Witherbloom)", "Magic Initiate (Cleric)", "Tough", "Squire of Solamnia", "Initiate of High Sorcery",
+      "Scion of the Outer Planes", "Scion of the Outer Planes", "Strike of the Giants", "Rune Shaper", null, null, null]);
+  // Every grant names a real feat, and an option it really has.
+  let count = 0;
+  for(const [name, info] of Object.entries(BACKGROUND_INFO)){
+    if(!info.feat) continue;
+    count++;
+    const def = FP.featDef(info.feat.name);
+    assert.ok(def, name + ": feat " + info.feat.name);
+    if(info.feat.option) assert.ok(def.option.options.includes(info.feat.option), name + ": option " + info.feat.option);
+  }
+  assert.equal(count, 13);
+  // The copy remembers where it came from and keeps the book's choice.
+  const copy = FP.backgroundFeatCopy("Astral Drifter");
+  assert.equal(copy.from, "Astral Drifter");
+  assert.equal(copy.lockedOption, "Cleric");
+  assert.equal(FP.startingPicks(FP.featDef("Magic Initiate"), copy).option, "Cleric");
+  assert.equal(FP.backgroundFeatPicks("Lorehold Student").option, "Lorehold");
+  assert.equal(FP.backgroundFeatCopy("Acolyte"), null);
+  // An older Wildspacer is offered Tough until it has it or says no.
+  const c = char([{ name: "Fighter", level: 3 }]);
+  c.background = "Wildspacer";
+  assert.equal(FP.backgroundFeatMissing(c).def.name, "Tough");
+  c.feats.push(FP.backgroundFeatCopy(c.background));
+  assert.equal(FP.backgroundFeatMissing(c), null);
+  assert.match(H.getAllCharacterFeatures(c).find((f) => f.isFeat).text, /^\(From your Wildspacer background\)/);
+  c.feats = [];
+  c.backgroundFeatSkipped = "Wildspacer";
+  assert.equal(FP.backgroundFeatMissing(c), null);
+  c.background = "Rune Carver"; // a new background is a new offer
+  assert.equal(FP.backgroundFeatMissing(c).def.name, "Rune Shaper");
+});
+
+test("campaign bonus feats: Skilled or Tough at level 1 without a background feat, Dragonlance's list at level 4", () => {
+  assert.deepEqual(Object.keys(CAMPAIGN_FEATS), ["Dragonlance", "Glory of the Giants"]);
+  for(const [name, camp] of Object.entries(CAMPAIGN_FEATS)){
+    for(const f of camp.level1.concat(camp.level4 || [])) assert.ok(FP.featDef(f), name + ": " + f);
+  }
+  assert.equal(CAMPAIGN_FEATS["Dragonlance"].level4.length, 11);
+  assert.equal(CAMPAIGN_FEATS["Glory of the Giants"].level4, undefined);
+  // Level 1: only when the background has no feat of its own.
+  assert.deepEqual(FP.campaignLevel1Feats("Dragonlance", "Acolyte"), ["Skilled", "Tough"]);
+  assert.deepEqual(FP.campaignLevel1Feats("Dragonlance", "Knight of Solamnia"), []);
+  assert.deepEqual(FP.campaignLevel1Feats("Glory of the Giants", "Rune Carver"), []);
+  assert.deepEqual(FP.campaignLevel1Feats("", "Acolyte"), []);
+  assert.deepEqual(FP.campaignLevel1Feats("Planescape", "Acolyte"), [], "no rule on record for it");
+  // The sheet's offer: until taken or declined, leaving out a feat the character has anyway.
+  const c = char([{ name: "Fighter", level: 3 }]);
+  c.background = "Acolyte";
+  assert.equal(FP.campaignFeatMissing(c), null, "no campaign set");
+  c.campaign = "Dragonlance";
+  assert.deepEqual(FP.campaignFeatMissing(c), { campaign: "Dragonlance", choices: ["Skilled", "Tough"] });
+  c.feats.push({ id: "t", name: "Tough" });
+  assert.deepEqual(FP.campaignFeatMissing(c).choices, ["Skilled"], "Tough taken another way");
+  const copy = FP.campaignFeatCopy(FP.featDef("Skilled"), "Dragonlance", 1);
+  assert.deepEqual([copy.campaign, copy.campaignLevel], ["Dragonlance", 1]);
+  c.feats.push(copy);
+  assert.equal(FP.campaignFeatMissing(c), null);
+  assert.match(H.getAllCharacterFeatures(c).find((f) => f.name === "Skilled").text, /^\(Bonus feat from your Dragonlance campaign\)/);
+  c.feats = [];
+  c.campaignFeatSkipped = "Dragonlance";
+  assert.equal(FP.campaignFeatMissing(c), null);
+  c.background = "Mage of High Sorcery";
+  delete c.campaignFeatSkipped;
+  assert.equal(FP.campaignFeatMissing(c), null, "the background's own feat is the one owed");
+  assert.equal(FP.backgroundFeatMissing(c).def.name, "Initiate of High Sorcery");
+  // Level 4: Dragonlance only, once.
+  assert.equal(FP.campaignFeatsAt(c, 4).length, 11);
+  assert.deepEqual(FP.campaignFeatsAt(c, 3), []);
+  assert.deepEqual(FP.campaignFeatsAt(c, 5), []);
+  c.feats.push(FP.campaignFeatCopy(FP.featDef("Alert"), "Dragonlance", 4));
+  assert.deepEqual(FP.campaignFeatsAt(c, 4), []);
+  c.feats = [];
+  c.campaign = "Glory of the Giants";
+  assert.deepEqual(FP.campaignFeatsAt(c, 4), []);
 });

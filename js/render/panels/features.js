@@ -5,11 +5,12 @@ import { openFeatEditor } from "./feat-picker.js";
 import { openCompendium } from "../compendium.js";
 import { getCustomEntry } from "../../core/custom-features.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
-import { playDelete } from "../../ui/sound.js";
+import { playAdd, playDelete } from "../../ui/sound.js";
 import { renderInfusionsCard } from "./infusions.js";
 import { renderInvocationsCard } from "./invocations.js";
 import { renderOptionSetCards } from "./class-options.js";
-import { featPicksPending, featAppliedSummary, revertFeatPicks } from "../../core/feat-picks.js";
+import { featPicksPending, featAppliedSummary, revertFeatPicks, featHasPicks, featNeedsChoice, applyFeatPicks,
+  backgroundFeatMissing, backgroundFeatCopy, backgroundFeatPicks, campaignFeatMissing, campaignFeatCopy, featDef, emptyPicks } from "../../core/feat-picks.js";
 import { openFeatPicksModal } from "../../ui/feat-picks.js";
 
 /* ---- Features & Feats panel ----
@@ -263,6 +264,68 @@ export function renderFeaturesPanel(c){
         desc.className = "ff-desc";
         desc.textContent = item.text;
         card.appendChild(desc);
+      }
+
+      // The background's own feat, for a sheet made before backgrounds
+      // gave theirs (or whose background was changed): add it, or say no.
+      var owed = item.category==="background" && item.isDerived && backgroundFeatMissing(c);
+      if(owed){
+        var offer = document.createElement("div");
+        offer.className = "ff-picks-pending";
+        offer.appendChild(document.createTextNode("This background also gives the " + owed.def.name + " feat" + (owed.option ? " (" + owed.option + ")" : "") + "."));
+        var addBtn2 = document.createElement("button");
+        addBtn2.type = "button";
+        addBtn2.className = "btn small primary";
+        addBtn2.textContent = "Add it";
+        addBtn2.addEventListener("click", function(){
+          var copy = backgroundFeatCopy(c.background);
+          if(!c.feats) c.feats = [];
+          c.feats.push(copy);
+          // Nothing to choose: applied at once. Otherwise its picks are
+          // asked for now; closing the picker leaves the Choose prompt.
+          if(featHasPicks(owed.def) && !featNeedsChoice(owed.def)) applyFeatPicks(c, copy, backgroundFeatPicks(c.background));
+          save(); renderAll(); playAdd();
+          if(featNeedsChoice(owed.def)) openFeatPicksModal(c, copy, function(){ save(); renderAll(); });
+        });
+        var skipBtn = document.createElement("button");
+        skipBtn.type = "button";
+        skipBtn.className = "btn small ghost";
+        skipBtn.textContent = "Not for this character";
+        skipBtn.addEventListener("click", function(){ c.backgroundFeatSkipped = c.background; save(); renderAll(); });
+        offer.appendChild(addBtn2);
+        offer.appendChild(skipBtn);
+        card.appendChild(offer);
+      }
+
+      // The campaign's level 1 feat, for a character whose background has
+      // none (a campaign set on the Information tab after creation).
+      var camp = item.category==="background" && item.isDerived && !owed && campaignFeatMissing(c);
+      if(camp){
+        var campOffer = document.createElement("div");
+        campOffer.className = "ff-picks-pending";
+        campOffer.appendChild(document.createTextNode("Your " + camp.campaign + " campaign gives a feat at level 1 when the background has none: " + camp.choices.join(" or ") + "."));
+        camp.choices.forEach(function(name){
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn small primary";
+          btn.textContent = "Add " + name;
+          btn.addEventListener("click", function(){
+            var def = featDef(name), copy = campaignFeatCopy(def, camp.campaign, 1);
+            if(!c.feats) c.feats = [];
+            c.feats.push(copy);
+            if(featHasPicks(def) && !featNeedsChoice(def)) applyFeatPicks(c, copy, emptyPicks(def));
+            save(); renderAll(); playAdd();
+            if(featNeedsChoice(def)) openFeatPicksModal(c, copy, function(){ save(); renderAll(); });
+          });
+          campOffer.appendChild(btn);
+        });
+        var campSkip = document.createElement("button");
+        campSkip.type = "button";
+        campSkip.className = "btn small ghost";
+        campSkip.textContent = "Not for this character";
+        campSkip.addEventListener("click", function(){ c.campaignFeatSkipped = c.campaign; save(); renderAll(); });
+        campOffer.appendChild(campSkip);
+        card.appendChild(campOffer);
       }
 
       // A feat whose +1 or skills were never applied (taken before the

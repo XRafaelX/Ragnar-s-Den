@@ -10,6 +10,7 @@ import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { themedPicker } from "../../ui/themed-picker.js";
+import { CAMPAIGN_FEATS } from "../../data/feats.js";
 
 /* ---- Information panel ----
    A calm "About the character" summary. Proficiencies & Languages are
@@ -340,6 +341,32 @@ function optionalRulesCard(c){
   row.appendChild(text);
   row.appendChild(sw);
   card.appendChild(row);
+  card.appendChild(campaignRule(c));
   return card;
+}
+/* Campaign bonus feats: books whose campaigns give every character a
+   feat (see CAMPAIGN_FEATS). None unless the player sets one; the
+   Features tab then offers a level 1 feat the character is owed, and the
+   level-up asks for Dragonlance's at level 4. */
+function campaignRule(c){
+  var row = document.createElement("div");
+  row.className = "opt-rule opt-rule-pick";
+  var text = document.createElement("div");
+  text.className = "opt-rule-note"; // same look as the switch rows' .opt-rule-text
+  text.innerHTML = "<b>Campaign bonus feats</b>"+
+    "<span>Some campaign books give every character a feat at level 1: the background's own feat, or Skilled or Tough when the background has none. Dragonlance gives another at level 4, picked during that level-up. Your DM decides whether your campaign uses one of these rules.</span>";
+  var pick = document.createElement("div");
+  pick.className = "field opt-rule-field";
+  pick.appendChild(themedPicker({
+    key:"info-campaign", ariaLabel:"Campaign", search:false, value:CAMPAIGN_FEATS[c.campaign] ? c.campaign : "",
+    groups:{"":[{value:"", label:"None", muted:true}].concat(Object.keys(CAMPAIGN_FEATS).map(function(k){ return {value:k, label:CAMPAIGN_FEATS[k].label}; }))},
+    onPick:function(v){
+      if(v) c.campaign = v; else delete c.campaign;
+      save(); renderAll();
+    }
+  }));
+  text.appendChild(pick);
+  row.appendChild(text);
+  return row;
 }
 

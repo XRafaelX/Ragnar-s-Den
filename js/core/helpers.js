@@ -704,7 +704,7 @@ export function featureSpells(c){
     var def = featDef(feat.name);
     if(!def) return;
     var picks = feat.picks || {};
-    var hasAbility = !!(def.castAbility || (def.ability && def.ability.length));
+    var hasAbility = !!(def.castAbility || def.castAbilityByOption || (def.ability && def.ability.length));
     var ability = featCastAbility(c, def, picks);
     featSpellEntries(def, picks).forEach(function(e){
       if(out.some(function(x){ return x.name===e.name; })) return;
@@ -721,10 +721,11 @@ export function featureSpells(c){
   });
   return out;
 }
-var FEAT_SPELL_KINDS = {long: "free", short: "free", atwill: "atwill", ritual: "ritual", known: "known"};
+var FEAT_SPELL_KINDS = {long: "free", short: "free", once: "free", atwill: "atwill", ritual: "ritual", known: "known"};
 var FEAT_SPELL_LEADS = {
   long: "Free once per long rest, or cast it with a spell slot.",
   short: "Free once per short or long rest, or cast it with a spell slot.",
+  once: "Once per long rest at its lowest level, without a spell slot.",
   atwill: "At will, without a spell slot.",
   ritual: "Cast it as a ritual.",
   known: "A cantrip you always know from this feat."
@@ -1334,7 +1335,8 @@ export function getAllCharacterFeatures(c){
     });
   }
   (c.feats||[]).forEach(function(feat){
-    var descText = (feat.prerequisite && feat.prerequisite !== "None" ? "(Prerequisite: " + feat.prerequisite + ")\n" : "") + (feat.description || feat.summary || "");
+    // A background's feat says where it came from in place of a prerequisite it didn't have to meet.
+    var descText = (feat.from ? "(From your " + feat.from + " background)\n" : feat.campaign ? "(Bonus feat from your " + feat.campaign + " campaign)\n" : feat.prerequisite && feat.prerequisite !== "None" ? "(Prerequisite: " + feat.prerequisite + ")\n" : "") + (feat.description || feat.summary || "");
     var picked = featPicksSummary(featDef(feat.name), feat.picks);
     if(picked) descText += "\n\nYour picks: " + picked + ".";
     var detail = featPickDetail(featDef(feat.name), feat.picks);

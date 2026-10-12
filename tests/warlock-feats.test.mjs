@@ -852,3 +852,76 @@ test("wizard: a Variant Human's Linguist languages, and the feats that aren't th
   const styles = inWizard(t, vhuman({}), () => { const ctx = W.wizardFeatContext(); return ["Defense", "Archery", "Blind Fighting"].map(ctx.styleReason); });
   assert.deepEqual(styles, ["known", "", "Tasha's optional"]);
 });
+
+test("wizard: a background's feat gets its own step, its picks and a place on the new sheet", (t) => {
+  const steps = (choices) => inWizard(t, choices, () => W.WIZARD_STEP_IDS.filter(W.isStepApplicable));
+  assert.equal(steps({ background: "Haunted One" }).includes("bgFeat"), false);
+  assert.equal(steps({ background: "Wildspacer" }).includes("bgFeat"), false, "Tough has nothing to choose");
+  assert.equal(steps({ background: "Knight of Solamnia" }).includes("bgFeat"), false);
+  const student = { background: "Lorehold Student", bgSkillChoices: [], languageChoices: ["Elvish"] };
+  const order = steps(student);
+  assert.equal(order[order.indexOf("bgFeat") + 1], "choices", "after the race's steps, before Class Features");
+  // The college is the book's; the rest is asked for.
+  assert.equal(inWizard(t, student, () => W.wizardBackgroundFeatPicks().option), "Lorehold");
+  assert.match(inWizard(t, student, () => W.validateStep("bgFeat")), /spellcasting ability/);
+  const picks = { ...FP.emptyPicks(FP.featDef("Strixhaven Initiate")), option: "Lorehold", castAbility: "cha", spells: ["Light", "Thaumaturgy", "Bless"] };
+  const done = { ...student, bgFeat: { background: "Lorehold Student", picks } };
+  assert.equal(inWizard(t, done, () => W.validateStep("bgFeat")), null);
+  // Its spells are left out of the class's own picks.
+  assert.deepEqual(inWizard(t, done, () => W.wizardGrantedSpells().map((s) => s.name)), ["Light", "Thaumaturgy", "Bless"]);
+  // Changing the background starts the picks afresh.
+  assert.deepEqual(inWizard(t, { ...done, background: "Prismari Student" }, () => { const p = W.wizardBackgroundFeatPicks(); return [p.option, p.spells.length]; }), ["Prismari", 0]);
+  const c = inWizard(t, done, () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
+  const feat = c.feats.find((f) => f.name === "Strixhaven Initiate");
+  assert.equal(feat.from, "Lorehold Student");
+  assert.equal(feat.lockedOption, "Lorehold");
+  assert.deepEqual(feat.picks.spells, ["Light", "Thaumaturgy", "Bless"]);
+  assert.equal(FP.backgroundFeatMissing(c), null);
+  // A Wildspacer starts with Tough: 2 more hit points at level 1.
+  const plain = inWizard(t, { background: "Haunted One" }, () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
+  const spacer = inWizard(t, { background: "Wildspacer", bgSkillChoices: [], languageChoices: [] }, () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
+  assert.deepEqual(spacer.feats.map((f) => [f.name, f.from]), [["Tough", "Wildspacer"]]);
+  assert.equal(H.maxHp(spacer), H.maxHp(plain) + 2);
+  assert.equal(spacer.hp.current, H.maxHp(spacer));
+  // A Variant Human can't spend the race's feat on the one the background gives.
+  assert.equal(inWizard(t, vhuman({}, { background: "Wildspacer" }), () => W.featPrereqReason(FP.featDef("Tough"))), "your background already gives it");
+  assert.equal(inWizard(t, vhuman({}), () => W.featPrereqReason(FP.featDef("Tough"))), "");
+});
+
+test("wizard: a campaign's feat for a background without one (Skilled or Tough)", (t) => {
+  const steps = (choices) => inWizard(t, choices, () => W.WIZARD_STEP_IDS.filter(W.isStepApplicable));
+  const plain = { background: "Haunted One" };
+  assert.equal(steps(plain).includes("bgFeat"), false, "no campaign: no step");
+  assert.equal(steps({ ...plain, campaign: "Dragonlance" }).includes("bgFeat"), true);
+  assert.equal(steps({ ...plain, campaign: "Glory of the Giants" }).includes("bgFeat"), true);
+  assert.equal(inWizard(t, { ...plain, campaign: "Dragonlance" }, () => W.wizardStepTitle("bgFeat")), "Campaign Feat");
+  assert.equal(inWizard(t, { background: "Wildspacer", campaign: "Dragonlance" }, () => W.wizardStepTitle("bgFeat")), "Background Feat");
+  // A background with its own feat keeps it; the campaign adds nothing.
+  assert.equal(inWizard(t, { background: "Mage of High Sorcery", bgSkillChoices: [], campaign: "Dragonlance" }, () => W.wizardBackgroundFeat().def.name), "Initiate of High Sorcery");
+  assert.equal(inWizard(t, { background: "Wildspacer", bgSkillChoices: [], campaign: "Dragonlance" }, () => W.wizardBackgroundFeat().campaign), undefined);
+  // Next waits for the pick, then for Skilled's picks (not skills the character has).
+  const dl = { ...plain, campaign: "Dragonlance" };
+  assert.match(inWizard(t, dl, () => W.validateStep("bgFeat")), /Pick Skilled or Tough as your campaign feat/);
+  assert.equal(inWizard(t, { ...dl, campaignFeat: "Tough" }, () => W.validateStep("bgFeat")), null);
+  assert.match(inWizard(t, { ...dl, campaignFeat: "Skilled" }, () => W.validateStep("bgFeat")), /3 different skills or tools/);
+  const skilled = (skills) => ({ ...dl, campaignFeat: "Skilled", bgFeat: { background: "Haunted One", name: "Skilled", picks: { ...FP.emptyPicks(FP.featDef("Skilled")), skills } } });
+  assert.match(inWizard(t, skilled(["Deception", "Stealth", "Thieves' tools"]), () => W.validateStep("bgFeat")), /not already proficient/);
+  assert.equal(inWizard(t, skilled(["Athletics", "Stealth", "Thieves' tools"]), () => W.validateStep("bgFeat")), null);
+  // Switching to Tough drops Skilled's picks.
+  assert.equal(inWizard(t, { ...skilled(["Athletics", "Stealth", "Thieves' tools"]), campaignFeat: "Tough" }, () => W.wizardBackgroundFeatPicks().skills.length), 0);
+  // The new sheet: the feat tagged with the campaign, which is saved for the level-up.
+  const c = inWizard(t, skilled(["Athletics", "Stealth", "Thieves' tools"]), () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
+  assert.equal(c.campaign, "Dragonlance");
+  const feat = c.feats.find((f) => f.name === "Skilled");
+  assert.deepEqual([feat.campaign, feat.campaignLevel], ["Dragonlance", 1]);
+  assert.equal(c.skillProfs.Athletics.prof && c.skillProfs.Stealth.prof, true);
+  assert.equal(FP.campaignFeatMissing(c), null);
+  const tough = inWizard(t, { ...dl, campaignFeat: "Tough" }, () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
+  const none = inWizard(t, plain, () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
+  assert.equal(H.maxHp(tough), H.maxHp(none) + 2);
+  assert.equal(none.campaign, undefined);
+  assert.deepEqual(none.feats, []);
+  // A Variant Human who took Tough as the race's feat picks the other one.
+  assert.match(inWizard(t, vhuman({ feat: "Tough" }, { campaign: "Dragonlance", campaignFeat: "Tough" }), () => W.validateStep("bgFeat")), /already took Tough/);
+  assert.equal(inWizard(t, vhuman({}, { campaign: "Dragonlance", campaignFeat: "Tough" }), () => W.featPrereqReason(FP.featDef("Tough"))), "it's your campaign feat");
+});

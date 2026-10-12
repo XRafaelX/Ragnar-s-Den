@@ -14,15 +14,15 @@ import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
 import { makePlusSvg } from "../ui/svg-icons.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardFeatContext, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, refreshWizardProgress } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, refreshWizardProgress } from "./wizard-core.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
-import { emptyPicks, featNeedsChoice, featPicksSummary } from "../core/feat-picks.js";
+import { emptyPicks, featNeedsChoice, featHasPicks, featDef, featPicksSummary, backgroundFeatGrant, campaignLevel1Feats } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
 import { styleNeedsPicks } from "../core/fighting-styles.js";
 import { TOOL_GROUPS } from "../core/feat-picks.js";
-import { FEATS_CATALOG } from "../data/feats.js";
+import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
 import { SUBCLASSES } from "../data/progression.js";
 
@@ -261,7 +261,13 @@ export function raceExplainHtml(name){
 export function backgroundExplainHtml(name){
   if(!name) return "<b>Why this matters:</b> Your background grants two skill proficiencies (and usually a tool or language) that reflect your life before adventuring.";
   var info = BACKGROUND_INFO[name];
-  return "<b>"+escapeHtml(name)+":</b> "+(info ? info.blurb : BACKGROUND_INFO_FALLBACK);
+  // A background that gives a feat says so (and which choice the book makes for it).
+  var grant = backgroundFeatGrant(name);
+  var feat = grant ? " <b>Feat:</b> "+escapeHtml(grant.def.name+(grant.option ? " ("+grant.option+")" : ""))+". "+escapeHtml(grant.def.summary) : "";
+  // No feat of its own: the campaign's, when one is set below.
+  var camp = wizardState && campaignLevel1Feats(wizardState.campaign, name);
+  if(!grant && camp && camp.length) feat = " <b>Campaign feat:</b> "+escapeHtml(camp.join(" or "))+", picked on a later step.";
+  return "<b>"+escapeHtml(name)+":</b> "+(info ? info.blurb : BACKGROUND_INFO_FALLBACK)+feat;
 }
 
 export function alignmentExplainHtml(name){
@@ -327,6 +333,35 @@ export function wizardStepBackground(container){
   dd.firstChild.style.maxWidth = "320px";
   card.appendChild(dd);
   container.appendChild(card);
+  container.appendChild(campaignCard(function(){ explain.innerHTML = backgroundExplainHtml(wizardState.background); }));
+}
+
+/* Campaign (optional): books whose campaigns give every character a
+   feat at level 1. Off unless picked; the DM decides. */
+function campaignCard(onChange){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Campaign bonus feat (optional)</span></h3>";
+  var note = document.createElement("p");
+  note.className = "lu-note";
+  note.textContent = "Some campaign books give every character a feat at level 1: the background's own feat, or Skilled or Tough when the background has none. "+
+    "Dragonlance gives another at level 4. Leave this on None unless your DM uses one of these rules.";
+  card.appendChild(note);
+  var f = ce("div","field");
+  f.style.maxWidth = "320px";
+  var l = document.createElement("label");
+  l.textContent = "Campaign";
+  f.appendChild(l);
+  f.appendChild(themedPicker({
+    key:"field:campaign", ariaLabel:"Campaign", search:false, value:wizardState.campaign || "",
+    groups:{"":[{value:"", label:"None", muted:true}].concat(Object.keys(CAMPAIGN_FEATS).map(function(k){ return {value:k, label:CAMPAIGN_FEATS[k].label}; }))},
+    onPick:function(v){
+      wizardState.campaign = v;
+      onChange();
+      refreshWizardProgress(); // the campaign's feat adds a step
+    }
+  }));
+  card.appendChild(f);
+  return card;
 }
 
 export function wizardStepAlignment(container){
@@ -741,6 +776,73 @@ export function wizardStepFeatPicks(container){
   container.appendChild(card);
 }
 
+/* Background Feat: the picks of the feat the background gives (a
+   Lorehold Student's Strixhaven Initiate spells). The feat itself isn't a
+   choice, and an option the book fixes (the college) is shown, not asked. */
+export function wizardStepBgFeat(container){
+  var grant = wizardBackgroundFeat(), feat = grant.def;
+  if(grant.campaign) return wizardStepCampaignFeat(container, grant);
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Background Feat</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>From your "+escapeHtml(wizardState.background)+" background:</b> you start with the <b>"+escapeHtml(feat.name)+"</b> feat. "+
+    escapeHtml(feat.summary || "")+" Choose what it gives you; the sheet applies it for you.";
+  card.appendChild(explain);
+  var ctx = wizardFeatContext({forBackgroundFeat:true});
+  if(grant.option) ctx.lockedOption = grant.option;
+  card.appendChild(renderFeatPicks(feat, wizardBackgroundFeatPicks(), ctx, function(){
+    var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+    renderWizard();
+  }));
+  if(feat.description){
+    var more = document.createElement("details");
+    more.className = "rt-feat-more";
+    more.innerHTML = "<summary>Full description</summary><p>"+escapeHtml(feat.description)+"</p>";
+    card.appendChild(more);
+  }
+  container.appendChild(card);
+}
+
+/* Campaign Feat: the same step for a character whose background has no
+   feat in a campaign that gives one. Pick it (Skilled or Tough), then
+   make its picks. */
+function wizardStepCampaignFeat(container, grant){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Campaign Feat</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>From your "+escapeHtml(CAMPAIGN_FEATS[grant.campaign].label)+" campaign:</b> your background doesn't come with a feat, so you choose one of these. "+
+    "Tough is the simple pick: more hit points at every level.";
+  card.appendChild(explain);
+  var raceFeat = wizardState.raceChoices.feat;
+  var box = ce("div","fs-options");
+  grant.choices.forEach(function(name){
+    var def = featDef(name), taken = raceChoiceDef() && raceChoiceDef().feat && raceFeat===name;
+    var row = ce("div","wiz-equip-option fs-option"+(grant.def===def ? " selected" : "")+(taken ? " disabled" : ""));
+    row.setAttribute("role","button");
+    row.tabIndex = taken ? -1 : 0;
+    row.setAttribute("aria-pressed", grant.def===def ? "true" : "false");
+    row.innerHTML = "<div><strong>"+escapeHtml(name)+"</strong><div class='lu-sub-blurb'>"+escapeHtml(def.summary||"")+"</div>"+
+      (taken ? "<div class='lu-sub-feats'>You already took it as your "+escapeHtml(wizardState.race)+" feat.</div>" : "")+"</div>";
+    function choose(){
+      if(taken) return;
+      wizardState.campaignFeat = name;
+      var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+      renderWizard();
+    }
+    row.addEventListener("click", choose);
+    row.addEventListener("keydown", function(e){ if(e.key==="Enter" || e.key===" "){ e.preventDefault(); choose(); } });
+    box.appendChild(row);
+  });
+  card.appendChild(box);
+  if(grant.def && featHasPicks(grant.def)){
+    card.appendChild(renderFeatPicks(grant.def, wizardBackgroundFeatPicks(), wizardFeatContext({forBackgroundFeat:true}), function(){
+      var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+      renderWizard();
+    }));
+  }
+  container.appendChild(card);
+}
+
 /* What a Rogue-style expertise pick can target: every skill the new
    character is proficient in (class picks + background) plus any tools
    the choice allows. */
@@ -753,6 +855,9 @@ export function expertiseOptions(choice){
   // And skills its feat granted (Skilled, Skill Expert).
   var fp = def && def.feat && wizardState.raceChoices.featPicks;
   if(fp) (fp.skills||[]).forEach(function(sk){ if(sk && SKILLS.some(function(x){ return x[0]===sk; }) && skills.indexOf(sk)===-1) skills.push(sk); });
+  // And the background's or campaign's feat (a Dragonlance character's Skilled).
+  var bp = wizardBackgroundFeatPicks();
+  if(bp) (bp.skills||[]).forEach(function(sk){ if(sk && SKILLS.some(function(x){ return x[0]===sk; }) && skills.indexOf(sk)===-1) skills.push(sk); });
   return skills.concat(choice.tools||[]);
 }
 
@@ -1340,7 +1445,10 @@ export function wizardStepReview(container){
   var hpBonus = subclassGrants(info, wizardState.classChoices).hpPerLevel||0;
   var race = RACE_DATA[wizardState.race];
   var raceHp = race && Number(race.hpPerLevel) || 0; // Dwarven Toughness
-  var hp = HIT_DICE_BY_CLASS[wizardState.classId] + conMod + hpBonus + raceHp;
+  // Tough from the background (Wildspacer) or the race's feat: 2 at level 1.
+  var bgGrant = wizardBackgroundFeat(), raceDefHp = raceChoiceDef();
+  var toughHp = (bgGrant && bgGrant.def && bgGrant.def.name==="Tough") || (raceDefHp && raceDefHp.feat && wizardState.raceChoices.feat==="Tough") ? 2 : 0;
+  var hp = HIT_DICE_BY_CLASS[wizardState.classId] + conMod + hpBonus + raceHp + toughHp;
   // Same AC math as the sheet, run on the gear and picks chosen so far.
   var preview = {
     abilities: finalAb,
@@ -1380,8 +1488,12 @@ export function wizardStepReview(container){
       row("Feat", (rc.feat || "None") + (featPicked ? " ("+featPicked+")" : ""));
     }
   }
+  if(bgGrant && bgGrant.def){
+    var bgPicked = featPicksSummary(bgGrant.def, wizardBackgroundFeatPicks());
+    row(bgGrant.campaign ? "Campaign feat" : "Background feat", bgGrant.def.name + (bgPicked ? " ("+bgPicked+")" : ""));
+  }
   row("Hit points", hp+" (d"+HIT_DICE_BY_CLASS[wizardState.classId]+" + CON "+fmtMod(conMod)+(hpBonus ? " + "+hpBonus+" "+wizardState.classChoices.subclass : "")+
-    (raceHp ? " + "+raceHp+" "+(race.hpTrait || wizardState.race) : "")+")");
+    (raceHp ? " + "+raceHp+" "+(race.hpTrait || wizardState.race) : "")+(toughHp ? " + "+toughHp+" Tough" : "")+")");
   row("Armor Class", ac.value + " (" + ac.breakdown + ")");
   row("Saving throws", info.savingThrows.map(function(k){ return k.toUpperCase(); }).join(", "));
   var allSkills = wizardState.skillChoices.concat(wizardBackgroundSkills(),

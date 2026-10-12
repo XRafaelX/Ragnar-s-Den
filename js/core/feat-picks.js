@@ -1,4 +1,4 @@
-import { FEATS_CATALOG } from "../data/feats.js";
+import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
 import { ABILITIES, SKILLS } from "../data/abilities-skills.js";
 import { ARTISAN_TOOLS, MUSICAL_INSTRUMENTS } from "../data/classes.js";
 import { WEAPON_GROUPS } from "../data/weapons.js";
@@ -6,6 +6,7 @@ import { SPELL_DATA } from "../data/spells.js";
 import { optionSetDef } from "../data/class-options.js";
 import { INVOCATIONS, invocationDef } from "../data/invocations.js";
 import { RACE_DATA } from "../data/race-data.js";
+import { BACKGROUND_INFO } from "../data/backgrounds.js";
 import { profBonus, uid } from "./helpers.js";
 import { classStyleList, styleDef, stylePicksProblem, makeStyleFeature } from "./fighting-styles.js";
 
@@ -124,6 +125,7 @@ export function featSpellEntries(def, picks){
 export function featCastAbility(c, def, picks){
   picks = picks || {};
   var ca = def && def.castAbility;
+  if(def && def.castAbilityByOption) return def.castAbilityByOption[picks.option] || "";
   if(typeof ca==="string") return ca;
   if(Array.isArray(ca)) return picks.castAbility || "";
   if(ca && ca.feat){
@@ -157,7 +159,7 @@ export function featPickDetail(def, picks){
 /* Picks to start a picker from: the feat's own (to finish them) or empty. */
 export function startingPicks(def, feat){
   var p = feat && feat.picks && !feat.picks.manual ? feat.picks : emptyPicks(def);
-  return {ability: p.ability || emptyPicks(def).ability, skills: (p.skills||[]).slice(), expertise: (p.expertise||[]).slice(), weapons: (p.weapons||[]).slice(), option: p.option || "", spells: (p.spells||[]).slice(), options: (p.options||[]).slice(),
+  return {ability: p.ability || emptyPicks(def).ability, skills: (p.skills||[]).slice(), expertise: (p.expertise||[]).slice(), weapons: (p.weapons||[]).slice(), option: (feat && feat.lockedOption) || p.option || "", spells: (p.spells||[]).slice(), options: (p.options||[]).slice(),
     castAbility: p.castAbility || "", tools: (p.tools||[]).slice(), languages: (p.languages||[]).slice()};
 }
 function profCount(def){ return def.skillsOrTools || def.skills || 0; }
@@ -166,6 +168,72 @@ export function featToolChoices(def){
   var g = def && def.toolPicks && def.toolPicks.group;
   if(g) return TOOL_GROUPS[g].slice();
   return Object.keys(TOOL_GROUPS).reduce(function(all, k){ return all.concat(TOOL_GROUPS[k]); }, []);
+}
+
+/* ---- A background's feat ----
+   The feat a background gives, as {def, option} (option: the choice the
+   book makes for it, or ""), or null. */
+export function backgroundFeatGrant(background){
+  var grant = (BACKGROUND_INFO[background] || {}).feat;
+  var def = grant && featDef(grant.name);
+  return def ? {def: def, option: grant.option || ""} : null;
+}
+/* The character's copy of that feat: `from` names the background, and
+   `lockedOption` keeps the book's choice out of the pickers. */
+export function backgroundFeatCopy(background){
+  var g = backgroundFeatGrant(background);
+  if(!g) return null;
+  var copy = {id: uid(), name: g.def.name, prerequisite: g.def.prerequisite, category: g.def.category, summary: g.def.summary,
+    description: g.def.description, source: "SRD", from: background};
+  if(g.option) copy.lockedOption = g.option;
+  return copy;
+}
+/* The picks such a feat starts from (its locked option already made). */
+export function backgroundFeatPicks(background){
+  var g = backgroundFeatGrant(background);
+  if(!g) return null;
+  var picks = emptyPicks(g.def);
+  picks.option = g.option;
+  return picks;
+}
+/* The background's feat when the character doesn't have it and wasn't
+   told to go without (a sheet from before backgrounds gave feats, or one
+   whose background was changed), else null. */
+export function backgroundFeatMissing(c){
+  var g = backgroundFeatGrant(c.background);
+  if(!g || c.backgroundFeatSkipped===c.background) return null;
+  return (c.feats||[]).some(function(f){ return f.name===g.def.name; }) ? null : g;
+}
+
+/* ---- A campaign's bonus feats (see CAMPAIGN_FEATS) ----
+   The character's copy of one: `campaign` names the campaign and
+   `campaignLevel` the level it was given at (1 or 4). */
+export function campaignFeatCopy(def, campaign, level){
+  return {id: uid(), name: def.name, prerequisite: def.prerequisite, category: def.category, summary: def.summary,
+    description: def.description, source: "SRD", campaign: campaign, campaignLevel: level};
+}
+/* The level 1 feats a character's campaign offers: none without a
+   campaign, or when the background gives a feat of its own. */
+export function campaignLevel1Feats(campaign, background){
+  var camp = CAMPAIGN_FEATS[campaign];
+  return camp && !backgroundFeatGrant(background) ? camp.level1.slice() : [];
+}
+/* That feat when the character hasn't taken it and wasn't told to go
+   without (a campaign switched on after creation): {campaign, choices},
+   leaving out feats the character has anyway. Else null. */
+export function campaignFeatMissing(c){
+  var choices = campaignLevel1Feats(c.campaign, c.background);
+  if(!choices.length || c.campaignFeatSkipped===c.campaign) return null;
+  if((c.feats||[]).some(function(f){ return f.campaignLevel===1; })) return null;
+  choices = choices.filter(function(n){ return !(c.feats||[]).some(function(f){ return f.name===n; }); });
+  return choices.length ? {campaign: c.campaign, choices: choices} : null;
+}
+/* The feats the campaign offers when the character reaches `level`
+   (Dragonlance: character level 4), [] when none are due. */
+export function campaignFeatsAt(c, level){
+  var camp = CAMPAIGN_FEATS[c.campaign];
+  if(!camp || !camp.level4 || level!==4) return [];
+  return (c.feats||[]).some(function(f){ return f.campaignLevel===4; }) ? [] : camp.level4.slice();
 }
 
 /* Why this character can't take the feat ("" if they can), from its

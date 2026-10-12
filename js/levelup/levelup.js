@@ -1,6 +1,6 @@
 import { ABILITIES, CLASS_LIST, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASSES_INFO } from "../data/classes.js";
-import { FEATS_CATALOG } from "../data/feats.js";
+import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL, XP_THRESHOLDS, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from "../data/progression.js";
 import {
   mod, fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus,
@@ -27,7 +27,7 @@ import { playAdd, playDelete } from "../ui/sound.js";
 import { showActionToast } from "../ui/toast.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makePlusSvg, makeAlertSvg } from "../ui/svg-icons.js";
 import { openCompendium } from "../render/compendium.js";
-import { featDef, featHasPicks, featNeedsChoice, emptyPicks, featPicksProblem, featPicksSummary, applyFeatPicks, revertFeatPicks, featRequiresReason, featSpellEntries } from "../core/feat-picks.js";
+import { featDef, featHasPicks, featNeedsChoice, emptyPicks, featPicksProblem, featPicksSummary, applyFeatPicks, revertFeatPicks, featRequiresReason, featSpellEntries, campaignFeatsAt, campaignFeatCopy } from "../core/feat-picks.js";
 import { renderFeatPicks, featPicksContext } from "../ui/feat-picks.js";
 import { learnPlan, swapSection, learnProblem, applyLearn, undoLearn } from "../core/spells-known.js";
 import { preparedAt } from "../data/spells-known.js";
@@ -45,8 +45,8 @@ import { spellPickGrid } from "../ui/spell-pick-grid.js";
    at class level 4 (a feat's own picks, when it has any, on a Feat
    picks step after it), then hit points. Applying it records what changed in
    c.levelHistory so the last level-up can be undone. */
-var STEP_IDS = ["class","subclass","style","spells","learn","invocations","options","asi","featPicks","hp","review"];
-var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Subclass spells", learn:"New spells", invocations:"Invocations", options:"Options", asi:"Abilities", featPicks:"Feat picks", hp:"Hit points", review:"Review"};
+var STEP_IDS = ["class","subclass","style","spells","learn","invocations","options","asi","featPicks","bonusFeat","bonusFeatPicks","hp","review"];
+var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Subclass spells", learn:"New spells", invocations:"Invocations", options:"Options", asi:"Abilities", featPicks:"Feat picks", bonusFeat:"Campaign feat", bonusFeatPicks:"Campaign feat picks", hp:"Hit points", review:"Review"};
 var lu = null;
 
 function abilityName(key){
@@ -107,7 +107,25 @@ function stepApplicable(id){
   if(id==="options") return optionPlans().length > 0;
   if(id==="asi") return t.asi;
   if(id==="featPicks") return t.asi && lu.asiMode==="feat" && !!lu.featName && featNeedsChoice(featDef(lu.featName));
+  if(id==="bonusFeat") return bonusFeatChoices().length > 0;
+  if(id==="bonusFeatPicks") return bonusFeatChoices().length > 0 && !!lu.bonusFeatName && featNeedsChoice(featDef(lu.bonusFeatName));
   return true;
+}
+
+/* ---- A campaign's bonus feat ----
+   Dragonlance gives one at character level 4, from its own list (see
+   CAMPAIGN_FEATS). lu.bonusFeatName / lu.bonusFeatPicks hold the choice.
+   A feat's prerequisites still apply, and the feat taken instead of an
+   ability increase on this same level-up counts as already had. */
+function bonusFeatChoices(){ return campaignFeatsAt(lu.c, totalLevel(lu.c) + 1); }
+function asiFeatNow(){
+  return target().asi && lu.asiMode==="feat" && lu.featName ? {name: lu.featName, picks: lu.featPicks || {}} : null;
+}
+function bonusFeatReason(def){
+  var c = lu.c, now = asiFeatNow();
+  if((c.feats||[]).some(function(f){ return f.name===def.name; })) return "you have it";
+  if(now && now.name===def.name) return "picked as your feat this level";
+  return featRequiresReason(def, {race: c.race, level: totalLevel(c) + 1, feats: (c.feats||[]).concat(now ? [now] : [])});
 }
 
 /* ---- Warlock: Pact Boon and invocations ----
@@ -235,6 +253,12 @@ function validate(id){
     return asiPointsUsed()===2 ? null : "Spend both ability points (you have "+(2-asiPointsUsed())+" left).";
   }
   if(id==="featPicks") return featPicksProblem(featDef(lu.featName), lu.featPicks, featCtx()) || null;
+  if(id==="bonusFeat"){
+    if(!lu.bonusFeatName || bonusFeatChoices().indexOf(lu.bonusFeatName)===-1) return "Pick your campaign's bonus feat.";
+    var bonusWhy = bonusFeatReason(featDef(lu.bonusFeatName));
+    return bonusWhy ? lu.bonusFeatName+": "+bonusWhy+". Pick another." : null;
+  }
+  if(id==="bonusFeatPicks") return featPicksProblem(featDef(lu.bonusFeatName), lu.bonusFeatPicks, bonusFeatCtx()) || null;
   if(id==="hp"){
     if(lu.hpRolling) return "Wait for the die to land.";
     return (lu.hpMethod==="avg" || lu.hpRoll!=null) ? null : "Take the average or roll your hit die.";
@@ -256,7 +280,7 @@ export function openLevelUp(c){
     c: c, step:"class",
     className: c.classes.length===1 ? c.classes[0].name : null,
     subclass:"", style:"",
-    asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featPicks:null, spellChoices:{},
+    asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featPicks:null, bonusFeatName:"", bonusFeatPicks:null, spellChoices:{},
     pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{}, learnPicks:{}, learnSwap:"",
     stylePicks:{options:[], spells:[]}, styleSwapOut:"",
     hpMethod:"avg", hpRoll:null
@@ -300,7 +324,7 @@ function render(){
   var inner = ce("div"); inner.id = "wizard-body-inner";
   body.appendChild(inner);
   overlay.appendChild(body);
-  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, learn:stepLearn, invocations:stepInvocations, options:stepOptions, asi:stepAsi, featPicks:stepFeatPicks, hp:stepHp, review:stepReview})[lu.step](inner);
+  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, learn:stepLearn, invocations:stepInvocations, options:stepOptions, asi:stepAsi, featPicks:stepFeatPicks, bonusFeat:stepBonusFeat, bonusFeatPicks:stepBonusFeatPicks, hp:stepHp, review:stepReview})[lu.step](inner);
 
   var errorBox = ce("div","wiz-error");
   overlay.appendChild(errorBox);
@@ -834,14 +858,68 @@ function featCtx(){
   ctx.spellTaken = function(name){ return learning.indexOf(name)!==-1 ? "new this level" : ""; };
   return ctx;
 }
+/* Campaign feat: the campaign's list as tappable cards, the ones this
+   character can't take greyed out with why. */
+function stepBonusFeat(container){
+  var c = lu.c, camp = CAMPAIGN_FEATS[c.campaign];
+  var card = stepCard(container, "Campaign feat",
+    "<b>A bonus from your "+escapeHtml(camp.label)+" campaign:</b> at level 4 every character gains one of these feats, on top of everything else this level gives. "+
+    "Greyed-out ones need something your character doesn't have.");
+  var box = ce("div","fs-options");
+  bonusFeatChoices().forEach(function(name){
+    var def = featDef(name), why = bonusFeatReason(def);
+    var row = ce("div","wiz-equip-option fs-option"+(lu.bonusFeatName===name ? " selected" : "")+(why ? " disabled" : ""));
+    row.setAttribute("role","button");
+    row.tabIndex = why ? -1 : 0;
+    row.setAttribute("aria-pressed", lu.bonusFeatName===name ? "true" : "false");
+    row.innerHTML = "<div><strong>"+escapeHtml(name)+"</strong><div class='lu-sub-blurb'>"+escapeHtml(def.summary||"")+"</div>"+
+      (def.prerequisite && def.prerequisite!=="None" ? "<div class='lu-sub-feats'>Requires: "+escapeHtml(def.prerequisite)+(why ? " ("+escapeHtml(why)+")" : "")+"</div>"
+        : why ? "<div class='lu-sub-feats'>"+escapeHtml(why.charAt(0).toUpperCase()+why.slice(1))+".</div>" : "")+"</div>";
+    function choose(){
+      if(why) return;
+      if(lu.bonusFeatName!==name){ lu.bonusFeatName = name; lu.bonusFeatPicks = emptyPicks(def); }
+      render();
+    }
+    row.addEventListener("click", choose);
+    row.addEventListener("keydown", function(e){ if(e.key==="Enter" || e.key===" "){ e.preventDefault(); choose(); } });
+    box.appendChild(row);
+  });
+  card.appendChild(box);
+}
+function stepBonusFeatPicks(container){
+  var def = featDef(lu.bonusFeatName);
+  var card = stepCard(container, def.name,
+    "<b>Your campaign feat:</b> "+escapeHtml(def.summary || "")+" Choose what it gives you; the sheet applies it, and undoing the level-up takes it back.");
+  if(!lu.bonusFeatPicks) lu.bonusFeatPicks = emptyPicks(def);
+  card.appendChild(renderFeatPicks(def, lu.bonusFeatPicks, bonusFeatCtx(), render));
+}
+/* Its picks see the other feat taken this level: a spell that one
+   teaches isn't picked again, and an ability it raised counts. */
+function bonusFeatCtx(){
+  var ctx = featCtx(), now = asiFeatNow();
+  if(!now) return ctx;
+  var taken = featSpellEntries(featDef(now.name), now.picks).map(function(e){ return e.name; });
+  var earlier = ctx.spellTaken;
+  ctx.spellTaken = function(name){ return taken.indexOf(name)!==-1 ? "from " + now.name : earlier(name); };
+  if(now.picks.ability){
+    ctx.abilities = Object.assign({}, ctx.abilities);
+    ctx.abilities[now.picks.ability] = Math.min(20, (Number(ctx.abilities[now.picks.ability])||10) + 1);
+  }
+  return ctx;
+}
 /* The +1 the chosen feat gives (Durable: CON), or null. */
 function featAbilityPick(){
   return target().asi && lu.asiMode==="feat" && lu.featPicks && lu.featPicks.ability || null;
+}
+/* And the campaign feat's (Knight of the Crown: CON), or null. */
+function bonusFeatAbilityPick(){
+  return stepApplicable("bonusFeat") && lu.bonusFeatName && lu.bonusFeatPicks && lu.bonusFeatPicks.ability || null;
 }
 
 function conModAfterAsi(){
   var con = (Number(lu.c.abilities.con)||10) + (lu.asiMode==="asi" && target().asi ? lu.asi.con : 0);
   if(featAbilityPick()==="con") con = Math.min(20, con + 1);
+  if(bonusFeatAbilityPick()==="con") con = Math.min(20, con + 1);
   var fb = featureAbilityBonus().con;
   if(fb) con = Math.min(fb.max, con + fb.bonus);
   return mod(con);
@@ -1003,6 +1081,10 @@ function stepReview(container){
     }
     else items.push(ABILITIES.filter(function(a){ return lu.asi[a[0]]; }).map(function(a){ return a[1]+" +"+lu.asi[a[0]]; }).join(", "));
   }
+  if(stepApplicable("bonusFeat") && lu.bonusFeatName){
+    var bonusPicked = featPicksSummary(featDef(lu.bonusFeatName), lu.bonusFeatPicks);
+    items.push("Campaign feat: "+lu.bonusFeatName+(bonusPicked ? " ("+bonusPicked+")" : ""));
+  }
   items.push("Max HP +"+(hpGain()+toughGain()));
   var newPb = Math.floor(totalLevel(c)/4)+2;
   if(newPb!==profBonus(c)) items.push("Proficiency bonus "+fmtMod(profBonus(c))+" → "+fmtMod(newPb));
@@ -1070,6 +1152,7 @@ function finish(){
     prevSpellcasting: {ability: c.spellcasting.ability, slots: before.slots, pact: before.pact}
   };
 
+  var bonusFeatDue = stepApplicable("bonusFeat"); // asked before the feats below change the answer
   var feat = null;
   if(t.asi && lu.asiMode==="feat"){
     var f = FEATS_CATALOG.find(function(x){ return x.name===lu.featName; });
@@ -1087,6 +1170,15 @@ function finish(){
       // Record what was actually added (after the 20 cap) so undo is exact.
       if(c.abilities[a[0]] !== was) record.asi[a[0]] = c.abilities[a[0]] - was;
     });
+  }
+
+  // The campaign's bonus feat, after the level's own so it sees that one.
+  var bonusFeat = null;
+  if(bonusFeatDue && lu.bonusFeatName){
+    bonusFeat = campaignFeatCopy(featDef(lu.bonusFeatName), c.campaign, 4);
+    c.feats.push(bonusFeat);
+    if(lu.bonusFeatPicks) applyFeatPicks(c, bonusFeat, lu.bonusFeatPicks);
+    record.bonusFeatId = bonusFeat.id;
   }
 
   var entry = t.existing;
@@ -1184,6 +1276,7 @@ function finish(){
 
   var ids = gained.map(function(f){ return f.id; });
   if(feat) ids.push("feat_"+feat.id);
+  if(bonusFeat) ids.push("feat_"+bonusFeat.id);
   if(styleFeature){
     ids.push(styleFeature.id);
     gained.push({id:styleFeature.id, name:styleFeature.name, text:styleFeature.text, subclass:false});
@@ -1202,7 +1295,7 @@ function finish(){
   showUnlocked(c, {
     className: entry.name, isNewClass: record.isNewClass, newClassLevel: t.newLevel, subclass: subName, currentSubclass: entry.subclass,
     totalBefore: before.total, pbBefore: before.pb, hpGain: maxGain, speedGain: computeSpeed(c).value - before.speed,
-    features: gained, feat: feat, asi: withFeatAbility(record.asi, feat),
+    features: gained, feat: feat, bonusFeat: bonusFeat, asi: withFeatAbility(withFeatAbility(record.asi, feat), bonusFeat),
     slotsBefore: before.slots, pactBefore: before.pact, learned: record.learn ? record.learn.added : [],
     thirdCaster: classCasterType(entry)==="third"
   });
@@ -1240,6 +1333,11 @@ export function undoLastLevelUp(c){
       var featToRevert = c.feats.find(function(f){ return f.id===rec.featId; });
       if(featToRevert) revertFeatPicks(c, featToRevert);
       c.feats = c.feats.filter(function(f){ return f.id!==rec.featId; });
+    }
+    if(rec.bonusFeatId){
+      var bonusToRevert = c.feats.find(function(f){ return f.id===rec.bonusFeatId; });
+      if(bonusToRevert) revertFeatPicks(c, bonusToRevert);
+      c.feats = c.feats.filter(function(f){ return f.id!==rec.bonusFeatId; });
     }
     if(rec.featureId) c.features = c.features.filter(function(f){ return f.id!==rec.featureId; });
     if(rec.styleSwappedOut) c.features.push(rec.styleSwappedOut);
@@ -1317,6 +1415,7 @@ function showUnlocked(c, s){
 
     var unlocked = s.features.map(function(f){ return {name:f.name, text:f.text, tag: f.tag || (f.subclass ? (s.currentSubclass || s.subclass) : s.className), upgraded: f.upgraded}; });
     if(s.feat) unlocked.push({name:s.feat.name, text:s.feat.summary || s.feat.description, tag:"Feat"});
+    if(s.bonusFeat) unlocked.push({name:s.bonusFeat.name, text:s.bonusFeat.summary || s.bonusFeat.description, tag:"Campaign feat"});
     if(unlocked.length){
       var h = ce("h5","info-modal-subhead"); h.textContent = "New things you unlocked";
       body.appendChild(h);

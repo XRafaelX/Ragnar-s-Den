@@ -72,6 +72,8 @@
 }
 .wiz-equip-option:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);}
 .wiz-equip-option.selected{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 16%, transparent);}
+.wiz-equip-option.disabled{cursor:not-allowed;opacity:.5;}
+.wiz-equip-option.disabled:hover{background:none;}
 
 /* Skill picker: the whole row is the tap target (not just the checkbox),
    with enough padding for a comfortable touch target on phones. */
