@@ -91,33 +91,41 @@ function loadImage(src){
 }
 
 /* Finds the image's dominant vivid hue: pixels are binned by hue (15°
-   buckets) and weighted by how colorful they are, ignoring near-black,
-   near-white, and washed-out pixels. Resolves null for an image with no
-   real color (a grayscale photo), in which case the sheet keeps the app
-   theme. */
+   buckets), ignoring near-black, near-white, and gray pixels. Each pixel is
+   weighted by saturation squared, so a vivid color wins over a larger area
+   of near-gray haze (moss over mist, fire over storm cloud), and a bucket
+   is scored together with its two neighbors so a color that straddles a
+   bucket edge isn't split in half. The cutoffs are loose enough that a
+   dark, mostly-gray image with a little color (a blue glint on a black
+   scene) still yields that color. Resolves null for an image with no real
+   color (a grayscale photo), in which case the sheet keeps the app theme. */
 export function extractPalette(src){
   return loadImage(src).then(function(img){
-    var W = 48, H = Math.max(1, Math.round(W * img.height / img.width));
+    var W = 96, H = Math.max(1, Math.round(W * img.height / img.width));
     var canvas = document.createElement("canvas");
     canvas.width = W; canvas.height = H;
     var ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, W, H);
     var data = ctx.getImageData(0, 0, W, H).data;
 
-    var weight = [], sumH = [], sumS = [];
-    for(var b = 0; b < 24; b++){ weight[b] = 0; sumH[b] = 0; sumS[b] = 0; }
+    // Hues are summed as unit vectors so averaging across 0°/360° works.
+    var weight = [], sumX = [], sumY = [], sumS = [];
+    for(var b = 0; b < 24; b++){ weight[b] = 0; sumX[b] = 0; sumY[b] = 0; sumS[b] = 0; }
     for(var i = 0; i < data.length; i += 4){
       var c = rgbToHsl(data[i], data[i+1], data[i+2]);
-      if(c[2] < 0.12 || c[2] > 0.92 || c[1] < 0.2) continue;
-      var w = c[1] * (1 - Math.abs(2 * c[2] - 1));
-      var bucket = Math.floor(c[0] / 15) % 24;
-      weight[bucket] += w; sumH[bucket] += w * c[0]; sumS[bucket] += w * c[1];
+      if(c[2] < 0.06 || c[2] > 0.92 || c[1] < 0.12) continue;
+      var w = c[1] * c[1] * (1 - Math.abs(2 * c[2] - 1));
+      var bucket = Math.floor(c[0] / 15) % 24, rad = c[0] * Math.PI / 180;
+      weight[bucket] += w; sumS[bucket] += w * c[1];
+      sumX[bucket] += w * Math.cos(rad); sumY[bucket] += w * Math.sin(rad);
     }
+    function around(arr, k){ return arr[(k + 23) % 24] + arr[k] + arr[(k + 1) % 24]; }
     var best = 0;
-    for(var k = 1; k < 24; k++){ if(weight[k] > weight[best]) best = k; }
-    if(weight[best] < 8) return null;
-    var hue = sumH[best] / weight[best];
-    var sat = Math.min(0.85, Math.max(0.45, sumS[best] / weight[best]));
+    for(var k = 1; k < 24; k++){ if(around(weight, k) > around(weight, best)) best = k; }
+    var total = around(weight, best);
+    if(total < W * H * 0.0005) return null;
+    var hue = (Math.atan2(around(sumY, best), around(sumX, best)) * 180 / Math.PI + 360) % 360;
+    var sat = Math.min(0.85, Math.max(0.45, around(sumS, best) / total));
     return paletteForHue(hue, sat);
   });
 }
@@ -140,10 +148,29 @@ export function applyBackdrop(c){
     appliedUrl = url;
   }
 
+  if(url && !c.backdropPalette) retryPalette(c);
+
   var pal = url && c.backdropTheme !== false ? c.backdropPalette : null;
   PALETTE_KEYS.forEach(function(key){
     if(pal && pal[key]) root.style.setProperty(key, pal[key]);
     else root.style.removeProperty(key);
+  });
+}
+
+/* Images saved before the extractor's cutoffs were loosened may have a null
+   palette stored; re-run it once per image per session so those characters
+   get the "match colors" option without re-uploading. */
+var paletteRetried = {};
+function retryPalette(c){
+  if(paletteRetried[c.id] === c.backdrop) return;
+  paletteRetried[c.id] = c.backdrop;
+  var url = c.backdrop;
+  extractPalette(url).catch(function(){ return null; }).then(function(palette){
+    if(!palette || c.backdrop !== url) return;
+    c.backdropPalette = palette;
+    if(c.backdropTheme === undefined) c.backdropTheme = true;
+    save();
+    renderAll();
   });
 }
 
