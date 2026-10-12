@@ -120,7 +120,7 @@ const CTX = { abilities: { int: 10, wis: 15, cha: 8 }, skillProfs: {} };
 test("Fey Touched: it asks for a choice, and its picks start empty", () => {
   assert.equal(FP.featHasPicks(FEY), true);
   assert.equal(FP.featNeedsChoice(FEY), true);
-  assert.deepEqual(FP.emptyPicks(FEY), { ability: "", skills: [], expertise: [], weapons: [], option: "", spells: [], options: [] });
+  assert.deepEqual(FP.emptyPicks(FEY), { ability: "", skills: [], expertise: [], weapons: [], option: "", spells: [], options: [], castAbility: "", tools: [], languages: [] });
   // Starting from a feat's own picks copies its spells, not shares them.
   const feat = { name: "Fey Touched", picks: { ability: "cha", skills: [], expertise: [], weapons: [], spells: ["Command"] } };
   const start = FP.startingPicks(FEY, feat);
@@ -833,4 +833,22 @@ test("the invocations card: none for non-warlocks, and every state draws", (t) =
     cl.pactSpells = ["Eldritch Blast", "Light", "Guidance"];
     assert.doesNotThrow(() => renderInvocationsCard(busy), "with the Eldritch Blast box");
   });
+});
+
+test("wizard: a Variant Human's Linguist languages, and the feats that aren't theirs to take", (t) => {
+  const LING = FP.featDef("Linguist");
+  const picks = { ...FP.emptyPicks(LING), languages: ["Giant", "Orc", "Sylvan"] };
+  // The feat's languages are fixed on the Languages step, so its picks aren't spent on them.
+  const plan = inWizard(t, vhuman({ feat: "Linguist", featPicks: picks }), () => W.languagePlan());
+  assert.ok(["Giant", "Orc", "Sylvan"].every((l) => plan.fixed.includes(l)), plan.fixed.join(", "));
+  assert.match(inWizard(t, vhuman({ feat: "Linguist", featPicks: { ...picks, languages: ["Giant", "Common", "Orc"] } }), () => W.validateStep("featPicks")), /already know Common/);
+  const c = inWizard(t, vhuman({ feat: "Linguist", featPicks: picks }), () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
+  assert.deepEqual(c.languages.slice().sort(), ["Common", "Elvish", "Giant", "Orc", "Sylvan"]);
+  assert.deepEqual(c.feats[0].applied.languages, ["Giant", "Orc", "Sylvan"], "so removing the feat takes them back");
+  // Racial feats, and ones that need a level or another feat first.
+  const reasons = inWizard(t, vhuman({}), () => ["Dragon Hide", "Prodigy", "Cartomancer", "Agent of Order", "Shadow Touched"].map((n) => W.featPrereqReason(FP.featDef(n))));
+  assert.deepEqual(reasons, ["only for a dragonborn", "", "needs level 4", "needs level 4", ""]);
+  // Fighting Initiate: not the style the fighter already picked, nor Tasha's without the switch.
+  const styles = inWizard(t, vhuman({}), () => { const ctx = W.wizardFeatContext(); return ["Defense", "Archery", "Blind Fighting"].map(ctx.styleReason); });
+  assert.deepEqual(styles, ["known", "", "Tasha's optional"]);
 });

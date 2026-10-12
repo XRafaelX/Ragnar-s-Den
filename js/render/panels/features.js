@@ -267,10 +267,12 @@ export function renderFeaturesPanel(c){
 
       // A feat whose +1 or skills were never applied (taken before the
       // sheet did it, or the picks were skipped).
-      if(item.isFeat && item.featObj && featPicksPending(item.featObj)){
+      if(item.isFeat && item.featObj && featPicksPending(item.featObj, c)){
         var pending = document.createElement("div");
         pending.className = "ff-picks-pending";
-        pending.appendChild(document.createTextNode("This feat's choices (an ability increase, proficiencies or an element) aren't on the sheet yet."));
+        // With picks already made, it has grown one (a Rune Shaper's next rune).
+        pending.appendChild(document.createTextNode(item.featObj.picks ? "This feat has another choice to make."
+          : "This feat's choices (an ability increase, proficiencies or an element) aren't on the sheet yet."));
         var pickBtn = document.createElement("button");
         pickBtn.type = "button";
         pickBtn.className = "btn small primary";

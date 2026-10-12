@@ -1,15 +1,21 @@
 import { ABILITIES, SKILLS } from "../data/abilities-skills.js";
-import { mod, fmtMod, ce, isProficientWithWeapon, spellHeldBy } from "../core/helpers.js";
+import { mod, fmtMod, ce, isProficientWithWeapon, spellHeldBy, profBonus } from "../core/helpers.js";
 import { themedPicker } from "./themed-picker.js";
 import { openInfoModal } from "./info-modal.js";
 import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
 import { SPELL_DATA } from "../data/spells.js";
 import {
   TOOL_GROUPS, featDef, featHasPicks, featNeedsChoice, startingPicks, featPicksProblem,
-  expertiseOptions, expertiseReason, applyFeatPicks, featSpellOptions, featOptionChoices
+  expertiseOptions, expertiseReason, applyFeatPicks, featSpellGroups, featOptionChoices,
+  featToolChoices, featStyleChoices, featInvocationChoices, featPickDetail
 } from "../core/feat-picks.js";
 import { optionSetDef } from "../data/class-options.js";
 import { allKnownOptions } from "../core/class-options.js";
+import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
+import { INVOCATIONS, invocationDef } from "../data/invocations.js";
+import { styleDef, styleReason } from "../core/fighting-styles.js";
+import { warlockEntry, invocationContext, invocationReason } from "../core/invocations.js";
+import { renderStylePicks } from "./style-picks.js";
 
 /* ---------------- Feat picks UI ----------------
    The choices block for a feat (see js/core/feat-picks.js), shared by the
@@ -17,26 +23,75 @@ import { allKnownOptions } from "../core/class-options.js";
    modal (a feat added from the Compendium, or one taken before the sheet
    applied picks). It changes `picks` in place and calls onChange() after
    each pick so the caller can re-render and re-check.
-   ctx: {abilities, skillProfs} of the character taking the feat, plus
+   ctx: {abilities, skillProfs, languages, pb} of the character taking
+   the feat, plus styleReason(name) and invocationChoices() for Fighting
+   Initiate and Eldritch Adept,
    knowsWeapon(name) when it's known (greys out weapons already proficient),
    spellTaken(name) for a spell being learned in the same level-up (greyed
    out) and spellHeld(name) for one the character already has (still
    pickable: the feat adds its free cast, and a line says so). */
 var SKILL_NAMES = SKILLS.map(function(s){ return s[0]; });
+function aOrAn(word){ return (/^[aeiou]/i.test(word) ? "an " : "a ") + word; }
 
 export function renderFeatPicks(def, picks, ctx, onChange){
   var box = ce("div", "fp-box");
   if(!featHasPicks(def)) return box;
 
   if(def.option){
-    box.appendChild(label("Choose a " + def.option.label.toLowerCase()));
-    var taken = ctx.optionsTaken ? ctx.optionsTaken(def.name) : [];
+    var optNoun = def.option.label.toLowerCase(), details = def.option.details;
+    box.appendChild(label("Choose " + aOrAn(optNoun)));
+    var taken = def.repeatable && ctx.optionsTaken ? ctx.optionsTaken(def.name) : [];
     box.appendChild(field(themedPicker({
-      key: "feat:" + def.name + ":option", ariaLabel: def.name + " " + def.option.label.toLowerCase(),
-      placeholder: "Choose a " + def.option.label.toLowerCase(), groups: {"": def.option.options}, value: picks.option || "", search: false,
+      key: "feat:" + def.name + ":option", ariaLabel: def.name + " " + optNoun,
+      placeholder: "Choose " + aOrAn(optNoun), groups: {"": def.option.options}, value: picks.option || "", search: false, sheet: !!details,
+      detailFor: function(v){ return (details && details[v]) || ""; },
       reasonFor: function(v){ return taken.indexOf(v)!==-1 ? "taken" : ""; },
+      onPick: function(v){
+        picks.option = v;
+        // Spells picked for another option (a different college's) no longer fit.
+        var groups = featSpellGroups(def, picks, ctx);
+        picks.spells = (picks.spells||[]).map(function(name, i){
+          var g = groups.filter(function(x){ return i >= x.offset; }).pop();
+          return g && g.options.indexOf(name)!==-1 ? name : "";
+        });
+        onChange();
+      }
+    })));
+    if(picks.option && details) box.appendChild(textNote(featPickDetail(def, picks)));
+  }
+
+  // Fighting Initiate: a fighter's style, then the style's own picks
+  // (Superior Technique's maneuver).
+  if(def.stylePick){
+    var styleWhy = function(v){
+      var why = ctx.styleReason ? ctx.styleReason(v) : ((styleDef(v)||{}).optional && !ctx.tasha ? "Tasha's optional" : "");
+      return why==="known" ? "known" : why;
+    };
+    box.appendChild(label("Choose a fighting style"));
+    box.appendChild(field(themedPicker({
+      key: "feat:" + def.name + ":style", ariaLabel: def.name + " fighting style", placeholder: "Choose a fighting style",
+      groups: {"": featStyleChoices().filter(function(n){ return styleWhy(n)!=="Tasha's optional"; })},
+      value: picks.option || "", search: false, sheet: true,
+      detailFor: function(v){ return (styleDef(v)||{}).text || ""; },
+      reasonFor: function(v){ return styleWhy(v); },
+      onPick: function(v){ picks.option = v; picks.options = []; onChange(); }
+    })));
+    if(picks.option){
+      box.appendChild(textNote(picks.option + ": " + ((styleDef(picks.option)||{}).text || "")));
+      box.appendChild(renderStylePicks(picks.option, picks, !!ctx.tasha, ctx.optionsKnown ? ctx.optionsKnown("maneuvers") : [], onChange, "feat:" + def.name + ":style"));
+    }
+  }
+
+  // Eldritch Adept: one invocation, with what it does.
+  if(def.invocationPick){
+    box.appendChild(label("Learn an eldritch invocation"));
+    box.appendChild(field(themedPicker({
+      key: "feat:" + def.name + ":invocation", ariaLabel: def.name + " invocation", placeholder: "Choose an invocation",
+      groups: {"": featInvocationChoices(ctx)}, value: picks.option || "", search: true, sheet: true,
+      detailFor: function(v){ var inv = invocationDef(v); return inv ? inv.text : ""; },
       onPick: function(v){ picks.option = v; onChange(); }
     })));
+    if(picks.option) box.appendChild(textNote(featPickDetail(def, picks)));
   }
 
   if(def.ability && def.ability.length){
@@ -66,15 +121,30 @@ export function renderFeatPicks(def, picks, ctx, onChange){
     box.appendChild(grid);
   }
 
+  // The ability its spells use, when that's a choice of its own
+  // (Strixhaven Initiate, Gift of the Metallic Dragon).
+  if(Array.isArray(def.castAbility)){
+    box.appendChild(label("Choose the ability this feat's spells use"));
+    box.appendChild(field(themedPicker({
+      key: "feat:" + def.name + ":cast", ariaLabel: def.name + " spellcasting ability", placeholder: "Choose an ability", search: false,
+      groups: {"": ABILITIES.filter(function(a){ return def.castAbility.indexOf(a[0])!==-1; }).map(function(a){
+        return {value: a[0], label: a[1] + " (" + fmtMod(mod(Number(ctx.abilities && ctx.abilities[a[0]])||10)) + ")"};
+      })},
+      value: picks.castAbility || "",
+      onPick: function(v){ picks.castAbility = v; onChange(); }
+    })));
+  }
+
   var n = def.skillsOrTools || def.skills || 0;
   if(n){
-    box.appendChild(label(def.skillsOrTools ? "Gain proficiency in " + n + " skills or tools" : "Gain proficiency in " + (n > 1 ? n + " skills" : "a skill")));
-    var groups = def.skillsOrTools ? Object.assign({"Skills": SKILL_NAMES}, TOOL_GROUPS) : {"": SKILL_NAMES};
+    box.appendChild(label(def.skillOptions ? "Gain proficiency in " + def.skillOptions.join(" or ")
+      : def.skillsOrTools ? "Gain proficiency in " + n + " skills or tools" : "Gain proficiency in " + (n > 1 ? n + " skills" : "a skill")));
+    var groups = def.skillOptions ? {"": def.skillOptions} : def.skillsOrTools ? Object.assign({"Skills": SKILL_NAMES}, TOOL_GROUPS) : {"": SKILL_NAMES};
     for(var i = 0; i < n; i++) (function(i){
       box.appendChild(field(themedPicker({
         key: "feat:" + def.name + ":skill:" + i, ariaLabel: def.name + " proficiency " + (i + 1),
         placeholder: def.skillsOrTools ? "Choose a skill or tool" : "Choose a skill",
-        groups: groups, value: picks.skills[i] || "",
+        groups: groups, value: picks.skills[i] || "", search: def.skillOptions ? false : undefined,
         reasonFor: function(v){
           var e = ctx.skillProfs && ctx.skillProfs[v];
           if(e && e.prof) return "known";
@@ -103,6 +173,43 @@ export function renderFeatPicks(def, picks, ctx, onChange){
     })));
   })(j);
 
+  // Tools of its own (Prodigy; Artificer Initiate's artisan's tools).
+  if(def.toolPicks){
+    if(!picks.tools) picks.tools = [];
+    var tp = def.toolPicks, toolGroups = {};
+    if(tp.group) toolGroups[""] = featToolChoices(def); else toolGroups = TOOL_GROUPS;
+    box.appendChild(label("Gain proficiency with " + (tp.count > 1 ? tp.count + " tools" : tp.group ? "one type of " + tp.group.toLowerCase() : "a tool")));
+    for(var t = 0; t < tp.count; t++) (function(t){
+      box.appendChild(field(themedPicker({
+        key: "feat:" + def.name + ":tool:" + t, ariaLabel: def.name + " tool " + (t + 1), placeholder: "Choose a tool",
+        groups: toolGroups, value: picks.tools[t] || "",
+        reasonFor: function(v){ return v!==picks.tools[t] && picks.tools.indexOf(v)!==-1 ? "picked" : ""; },
+        onPick: function(v){ picks.tools[t] = v; onChange(); }
+      })));
+    })(t);
+  }
+
+  // Languages: the ones it teaches outright, then the ones to pick.
+  if(def.languages && def.languages.length) box.appendChild(textNote("Also learned: " + def.languages.join(", ") + "."));
+  if(def.languagePicks){
+    if(!picks.languages) picks.languages = [];
+    var knownLangs = (ctx.languages || []).concat(def.languages || []).map(function(l){ return l.toLowerCase(); });
+    var langGroups = {};
+    Object.keys(LANGUAGES).forEach(function(g){ langGroups[LANGUAGE_GROUP_LABELS[g] || g] = LANGUAGES[g]; });
+    box.appendChild(label("Learn " + (def.languagePicks > 1 ? def.languagePicks + " languages" : "a language")));
+    for(var l = 0; l < def.languagePicks; l++) (function(l){
+      box.appendChild(field(themedPicker({
+        key: "feat:" + def.name + ":lang:" + l, ariaLabel: def.name + " language " + (l + 1), placeholder: "Choose a language",
+        groups: langGroups, value: picks.languages[l] || "", search: false,
+        reasonFor: function(v){
+          if(knownLangs.indexOf(v.toLowerCase())!==-1) return "known";
+          return v!==picks.languages[l] && picks.languages.indexOf(v)!==-1 ? "picked" : "";
+        },
+        onPick: function(v){ picks.languages[l] = v; onChange(); }
+      })));
+    })(l);
+  }
+
   if(def.weapons && !picks.weapons) picks.weapons = [];
   // Weapons the character already knows stay pickable (a Fighter can take
   // Weapon Master for its +1) but move to the end of the list.
@@ -129,31 +236,45 @@ export function renderFeatPicks(def, picks, ctx, onChange){
 
   // Kept short for phones: the free spell is one line, and the pick opens
   // as a sheet listing what each spell does.
-  if(def.grantsSpells && def.grantsSpells.length){
-    def.grantsSpells.forEach(function(name){
-      if(!SPELL_DATA[name]) return;
-      box.appendChild(spellNote(name, "Also learned: "));
-      var has = ctx.spellHeld && ctx.spellHeld(name);
-      if(has) box.appendChild(heldNote(def, name, has));
-    });
-  }
+  // A feat already on the sheet (added from the Compendium, its picks made
+  // after) holds its own spells: not worth a line.
+  var ownSpell = "from " + def.name;
+  var granted = (def.grantsSpells||[]).concat((def.grantsByOption && def.grantsByOption[picks.option]) || []);
+  granted.forEach(function(g){
+    var name = typeof g==="string" ? g : g.name;
+    if(!SPELL_DATA[name]) return;
+    box.appendChild(spellNote(name, "Also learned: "));
+    var has = SPELL_DATA[name].level > 0 && (!g.use || g.use==="long" || g.use==="short") && ctx.spellHeld && ctx.spellHeld(name);
+    if(has && has!==ownSpell) box.appendChild(heldNote(def, name, has, g.use));
+  });
   if(def.spellPick){
     if(!picks.spells) picks.spells = [];
-    var sp = def.spellPick, bySchool = {};
-    featSpellOptions(def).forEach(function(name){ var sc = SPELL_DATA[name].school; (bySchool[sc] = bySchool[sc] || []).push(name); });
-    box.appendChild(label(sp.count > 1 ? "Choose " + sp.count + " spells: " + sp.label + "s" : "Choose your " + sp.label));
-    for(var p = 0; p < sp.count; p++) (function(p){
-      box.appendChild(field(themedPicker({
-        key: "feat:" + def.name + ":spell:" + p, ariaLabel: def.name + " spell " + (p + 1),
-        placeholder: "Choose a spell", groups: bySchool, value: picks.spells[p] || "", sheet: true,
-        detailFor: function(v){ return SPELL_DATA[v] ? SPELL_DATA[v].summary || "" : ""; },
-        reasonFor: function(v){ return v!==picks.spells[p] && picks.spells.indexOf(v)!==-1 ? "picked" : (ctx.spellTaken && ctx.spellTaken(v)) || ""; },
-        onPick: function(v){ picks.spells[p] = v; onChange(); }
-      })));
-      if(picks.spells[p] && SPELL_DATA[picks.spells[p]]) box.appendChild(spellNote(picks.spells[p]));
-      var held = picks.spells[p] && ctx.spellHeld && ctx.spellHeld(picks.spells[p]);
-      if(held) box.appendChild(heldNote(def, picks.spells[p], held));
-    })(p);
+    featSpellGroups(def, picks, ctx).forEach(function(sp){
+      box.appendChild(label(sp.count > 1 ? "Choose " + sp.count + " " + sp.plural : "Choose your " + sp.label));
+      if(!sp.options.length){
+        box.appendChild(textNote("Choose " + aOrAn(def.option.label.toLowerCase()) + " above first."));
+        return;
+      }
+      // Few enough to list flat (a college's three cantrips); otherwise by school.
+      var spellGroups = {};
+      if(sp.options.length <= 6 || sp.tags) spellGroups[""] = sp.options;
+      else sp.options.forEach(function(name){ var sc = SPELL_DATA[name].school; (spellGroups[sc] = spellGroups[sc] || []).push(name); });
+      for(var p = sp.offset; p < sp.offset + sp.count; p++) (function(p){
+        box.appendChild(field(themedPicker({
+          key: "feat:" + def.name + ":spell:" + p, ariaLabel: def.name + " spell " + (p + 1),
+          placeholder: sp.tags ? "Choose a " + sp.label : "Choose a spell", groups: spellGroups, value: picks.spells[p] || "", sheet: true,
+          detailFor: function(v){
+            var summary = SPELL_DATA[v] ? SPELL_DATA[v].summary || "" : "";
+            return sp.tags && sp.tags[v] ? sp.tags[v] + ". " + summary : summary;
+          },
+          reasonFor: function(v){ return v!==picks.spells[p] && picks.spells.indexOf(v)!==-1 ? "picked" : (ctx.spellTaken && ctx.spellTaken(v)) || ""; },
+          onPick: function(v){ picks.spells[p] = v; onChange(); }
+        })));
+        if(picks.spells[p] && SPELL_DATA[picks.spells[p]]) box.appendChild(spellNote(picks.spells[p], sp.tags && sp.tags[picks.spells[p]] ? sp.tags[picks.spells[p]] + ", " : ""));
+        var held = sp.level > 0 && picks.spells[p] && ctx.spellHeld && ctx.spellHeld(picks.spells[p]);
+        if(held && held!==ownSpell) box.appendChild(heldNote(def, picks.spells[p], held, sp.use));
+      })(p);
+    });
   }
   // Options from a class list (Martial Adept's maneuvers): a sheet on
   // phones, each with what it does, and a line under each pick.
@@ -179,10 +300,15 @@ export function renderFeatPicks(def, picks, ctx, onChange){
   return box;
 }
 /* The line under a feat's spell the character already has. */
-function heldNote(def, name, held){
+function heldNote(def, name, held, use){
   var n = ce("p", "fp-spell-note fp-spell-held");
-  n.textContent = "You already have " + name + " (" + held + "). " + def.name + " adds one free cast of it per long rest" +
+  n.textContent = "You already have " + name + " (" + held + "). " + def.name + " adds one free cast of it per " + (use==="short" ? "short or long" : "long") + " rest" +
     (held==="known" ? ", and it stops counting against the spells you know, so you can learn another in its place at your next level-up." : ".");
+  return n;
+}
+function textNote(text){
+  var n = ce("p", "fp-spell-note");
+  n.textContent = text;
   return n;
 }
 function spellNote(name, lead){
@@ -234,7 +360,7 @@ export function openFeatPicksModal(c, feat, onDone){
     function close(){ document.getElementById("info-modal-close").click(); }
     apply.addEventListener("click", function(){ applyFeatPicks(c, feat, picks); close(); onDone(); });
     manual.addEventListener("click", function(){
-      if(!feat.picks) feat.picks = {ability: "", skills: [], expertise: [], weapons: [], spells: []};
+      if(!feat.picks) feat.picks = {ability: "", skills: [], expertise: [], weapons: [], spells: [], tools: [], languages: []};
       feat.picks.manual = true;
       close(); onDone();
     });
@@ -246,7 +372,18 @@ export function openFeatPicksModal(c, feat, onDone){
    the options its copies of a repeatable feat already have. */
 export function featPicksContext(c){
   return {abilities: c.abilities, skillProfs: c.skillProfs, tasha: !!c.tashaOptional,
+    languages: c.languages || [], pb: profBonus(c),
     spellHeld: function(name){ return spellHeldBy(c, name); },
+    styleReason: function(name){ return styleReason(c, name, !!c.tashaOptional); },
+    // A warlock may take an invocation whose prerequisite they meet;
+    // anyone else only the ones without one.
+    invocationChoices: function(){
+      var cl = warlockEntry(c), ictx = invocationContext(c, cl);
+      return INVOCATIONS.filter(function(inv){
+        if(inv.spellPick || invocationReason(inv, ictx)) return false;
+        return !!cl || !(inv.level || inv.pact || inv.needs);
+      }).map(function(inv){ return inv.name; });
+    },
     // Options already known (a Battle Master's maneuvers, Superior Technique's) aren't offered again.
     optionsKnown: function(setId){
       return allKnownOptions({classes: c.classes || [], feats: [], features: c.features || []}, setId).map(function(o){ return o.name; });

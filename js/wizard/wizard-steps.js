@@ -14,7 +14,7 @@ import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
 import { makePlusSvg } from "../ui/svg-icons.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, refreshWizardProgress } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, applyClassChoices, subclassGrants, equipmentOptionAvailable, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, featPrereqReason, wizardFeatContext, wizardSkillProfs, wizardSpellChoices, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, refreshWizardProgress } from "./wizard-core.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { emptyPicks, featNeedsChoice, featPicksSummary } from "../core/feat-picks.js";
@@ -734,8 +734,7 @@ export function wizardStepFeatPicks(container){
   explain.innerHTML = "<b>"+escapeHtml(feat.name)+":</b> "+escapeHtml(feat.summary || "")+" Choose what it gives you; the sheet applies it for you.";
   card.appendChild(explain);
   if(!rc.featPicks) rc.featPicks = emptyPicks(feat);
-  var ctx = {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs(), tasha: !!wizardState.tashaOptional};
-  card.appendChild(renderFeatPicks(feat, rc.featPicks, ctx, function(){
+  card.appendChild(renderFeatPicks(feat, rc.featPicks, wizardFeatContext(), function(){
     var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
     renderWizard();
   }));

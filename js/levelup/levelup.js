@@ -27,7 +27,7 @@ import { playAdd, playDelete } from "../ui/sound.js";
 import { showActionToast } from "../ui/toast.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makePlusSvg, makeAlertSvg } from "../ui/svg-icons.js";
 import { openCompendium } from "../render/compendium.js";
-import { featDef, featHasPicks, featNeedsChoice, emptyPicks, featPicksProblem, featPicksSummary, applyFeatPicks, revertFeatPicks } from "../core/feat-picks.js";
+import { featDef, featHasPicks, featNeedsChoice, emptyPicks, featPicksProblem, featPicksSummary, applyFeatPicks, revertFeatPicks, featRequiresReason, featSpellEntries } from "../core/feat-picks.js";
 import { renderFeatPicks, featPicksContext } from "../ui/feat-picks.js";
 import { learnPlan, swapSection, learnProblem, applyLearn, undoLearn } from "../core/spells-known.js";
 import { preparedAt } from "../data/spells-known.js";
@@ -227,7 +227,11 @@ function validate(id){
     return null;
   }
   if(id==="asi"){
-    if(lu.asiMode==="feat") return lu.featName ? null : "Pick a feat, or switch to raising ability scores.";
+    if(lu.asiMode==="feat"){
+      if(!lu.featName) return "Pick a feat, or switch to raising ability scores.";
+      var blocked = featRequiresReason(featDef(lu.featName), {race: lu.c.race, level: totalLevel(lu.c) + 1, feats: lu.c.feats || []});
+      return blocked ? lu.featName+" "+blocked+". Pick another feat." : null;
+    }
     return asiPointsUsed()===2 ? null : "Spend both ability points (you have "+(2-asiPointsUsed())+" left).";
   }
   if(id==="featPicks") return featPicksProblem(featDef(lu.featName), lu.featPicks, featCtx()) || null;
@@ -785,6 +789,7 @@ function stepAsi(container){
     nextBox.textContent = def ? (featNeedsChoice(def) ? lu.featName+": next, you'll choose what it gives you." : lu.featName+": nothing to choose, the sheet applies it.") : "";
     nextBox.hidden = !def;
   }
+  var who = {race: c.race, level: totalLevel(c) + 1, feats: c.feats || []};
   function fill(){
     list.innerHTML = "";
     var q = lu.featQuery.toLowerCase().trim();
@@ -792,10 +797,14 @@ function stepAsi(container){
       if(!f.repeatable && (c.feats||[]).some(function(x){ return x.name===f.name; })) return false;
       return !q || f.name.toLowerCase().indexOf(q)!==-1 || (f.summary||"").toLowerCase().indexOf(q)!==-1;
     }).slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(f){
-      var r = ce("div","wiz-spell-row wiz-pick-row"+(lu.featName===f.name?" selected":""));
+      // A feat for another race, a higher level or after another feat
+      // is greyed out, with why.
+      var why = featRequiresReason(f, who);
+      var r = ce("div","wiz-spell-row wiz-pick-row"+(lu.featName===f.name?" selected":"")+(why ? " disabled" : ""));
       r.innerHTML = "<div class='wiz-spell-text'><b>"+escapeHtml(f.name)+"</b>"+
-        (f.prerequisite && f.prerequisite!=="None" ? "<span class='wiz-spell-meta'>Requires: "+escapeHtml(f.prerequisite)+"</span>" : "")+
+        (f.prerequisite && f.prerequisite!=="None" ? "<span class='wiz-spell-meta'>Requires: "+escapeHtml(f.prerequisite)+(why ? " ("+escapeHtml(why)+")" : "")+"</span>" : "")+
         "<span class='wiz-spell-desc'>"+escapeHtml(f.summary||"")+"</span></div>";
+      if(why) return list.appendChild(r);
       r.addEventListener("click", function(){
         if(lu.featName!==f.name){ lu.featName = f.name; lu.featPicks = emptyPicks(f); }
         fill(); drawNext();
@@ -1341,7 +1350,9 @@ function showUnlocked(c, s){
     // Catalog feats apply their +1 themselves (feat picks); only a custom one needs it added by hand.
     var featData = s.feat && featDef(s.feat.name);
     if(s.feat && !featHasPicks(featData) && /increase your \w+/i.test(s.feat.description||"")) tips.push("Your feat raises an ability score. Add it on the Abilities & Skills tab.");
-    if(featData && (featData.grantsSpells || featData.spellPick)) tips.push("Your feat's spells are on the Spells tab, with a free cast of each on the Vitals tab.");
+    var featSpells = featData ? featSpellEntries(featData, s.feat.picks) : [];
+    if(featSpells.some(function(e){ return e.use==="long" || e.use==="short"; })) tips.push("Your feat's spells are on the Spells tab, with a free cast of each on the Vitals tab.");
+    else if(featSpells.length) tips.push("Your feat's spells are on the Spells tab.");
     if(unlocked.length) tips.push("These are marked NEW on the Features & Feats tab. Tap one to clear its badge.");
     var optTags = s.features.filter(function(f){ return f.id && f.id.indexOf("opt_")===0; });
     if(optTags.length) tips.push("Your new "+optTags[0].tag.toLowerCase()+(optTags.length>1 ? "s are listed in their" : " is listed in its")+" card on the Features & Feats tab.");

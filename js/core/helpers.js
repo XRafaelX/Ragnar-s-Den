@@ -8,7 +8,7 @@ import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.j
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
 import { WEAPON_DATA } from "../data/weapons.js";
 import { CLASS_RESOURCES, SUBCLASS_RESOURCES, FEAT_RESOURCES } from "../data/resources.js";
-import { featDef, featProficiencies, featPicksSummary } from "./feat-picks.js";
+import { featDef, featProficiencies, featPicksSummary, featSpellEntries, featCastAbility, featPickDetail } from "./feat-picks.js";
 import { invocationSpells, invocationResources, invocationSpeedSources, invocationSenses } from "./invocations.js";
 import { optionEffects, knownOptions as knownClassOptions } from "./class-options.js";
 import { styleSpells, styleSenses } from "./fighting-styles.js";
@@ -227,27 +227,43 @@ export function characterResources(c){
       });
     });
   });
-  // Feats with uses. Martial Adept's die adds to a Battle Master's
-  // superiority dice when the character has them.
+  // Feats with uses. One that `joins` a class pool adds to it when the
+  // character has that pool (Martial Adept's die and a Battle Master's
+  // superiority dice, Metamagic Adept's points and a sorcerer's).
   Object.keys(FEAT_RESOURCES).forEach(function(featName){
     var feat = (c.feats||[]).find(function(f){ return f.name===featName; });
     if(!feat) return;
     FEAT_RESOURCES[featName].forEach(function(r){
       var key = "feat:"+r.id;
-      if(featName==="Martial Adept"){
-        var pool = list.find(function(x){ return x.key==="Fighter:superiority_dice"; });
-        if(pool){
-          pool.max += 1;
-          pool.used = clamp(Number((c.resourcesUsed||{})[pool.key])||0, 0, pool.max);
-          pool.hint += " Includes Martial Adept's extra die (a d6).";
-          return;
-        }
-      }
       var max = r.max(0, m);
+      var pool = r.joins && list.find(function(x){ return x.key===r.joins; });
+      if(pool){
+        pool.max += max;
+        pool.used = clamp(Number((c.resourcesUsed||{})[pool.key])||0, 0, pool.max);
+        pool.hint += " " + r.joinHint;
+        return;
+      }
       list.push({
         key: key, name: typeof r.name==="function" ? r.name(feat) : r.name, source: featName, hint: r.hint, pool: !!r.pool,
         max: max, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
         reset: r.reset(0)
+      });
+    });
+  });
+  // A free cast of each spell a feat teaches (Shadow Touched's
+  // Invisibility, Telepathic's Detect Thoughts). Fey Touched's two keep
+  // the entries they have always had in FEAT_RESOURCES.
+  (c.feats||[]).forEach(function(feat){
+    var def = featDef(feat.name);
+    if(!def || (FEAT_RESOURCES[feat.name]||[]).some(function(r){ return r.freeCast; })) return;
+    featSpellEntries(def, feat.picks).forEach(function(e){
+      if(e.use!=="long" && e.use!=="short") return;
+      var key = "feat:" + slug(feat.name) + ":" + slug(e.name);
+      if(list.some(function(x){ return x.key===key; })) return;
+      list.push({
+        key: key, name: e.name + " (" + feat.name + ")", source: feat.name, pool: false,
+        hint: "Cast " + e.name + " once without a spell slot. Casting it with a slot you have doesn't use this.",
+        max: 1, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, 1), reset: e.use
       });
     });
   });
@@ -270,6 +286,7 @@ export function characterResources(c){
 }
 /* Restore resources on a rest. A long rest restores everything except
    "manual" ones; a short rest only what recharges on one. Returns the names restored. */
+function slug(text){ return (text||"").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, ""); }
 export function restoreResources(c, restType){
   var restored = [];
   characterResources(c).forEach(function(r){
@@ -367,6 +384,12 @@ export function armorStrengthShortfall(c, item){
 export function computeSpeed(c){
   var parts = [];
   if(hasFeat(c, "Mobile")) parts.push({name: "Mobile", value: 10});
+  // Feats tagged `speed` (Squat Nimbleness: 5 ft).
+  var speedFeats = [];
+  (c.feats||[]).forEach(function(f){
+    var fd = featDef(f.name);
+    if(fd && fd.speed && speedFeats.indexOf(fd)===-1){ speedFeats.push(fd); parts.push({name: fd.name, value: fd.speed}); }
+  });
   var armorer = (c.classes||[]).find(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer" && (Number(cl.level)||1) >= 3; });
   var model = armorer && ARMOR_MODELS[armorer.armorModel];
   var inArmor = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
@@ -520,6 +543,11 @@ export function computeArmorClass(c){
     if(hasClass("Sorcerer", "Draconic Bloodline")){
       options.push({value: 13 + dexMod, breakdown: "Draconic Resilience: 13 + DEX (" + fmtMod(dexMod) + ")", short: "13 + DEX"});
     }
+    // A feat's own formula (Dragon Hide: 13 + DEX).
+    (c.feats||[]).forEach(function(f){
+      var fd = featDef(f.name);
+      if(fd && fd.unarmoredAc) options.push({value: fd.unarmoredAc + dexMod, breakdown: fd.name + ": " + fd.unarmoredAc + " + DEX (" + fmtMod(dexMod) + ")", short: fd.unarmoredAc + " + DEX"});
+    });
     var best = options.reduce(function(a, o){ return o.value > a.value ? o : a; });
     base = best.value; breakdown = best.breakdown; short = best.short;
   }
@@ -669,16 +697,21 @@ export function featureSpells(c){
     });
   });
   // Feats that teach spells (Fey Touched: Misty Step and the picked
-  // spell), cast with the ability the feat raised.
+  // spell), cast with the ability the feat raised or names (Drow High
+  // Magic: Charisma). A cantrip is simply known; the rest get a free
+  // cast per rest, or are at will or ritual only.
   (c.feats||[]).forEach(function(feat){
     var def = featDef(feat.name);
-    if(!def || !(def.grantsSpells || def.spellPick)) return;
+    if(!def) return;
     var picks = feat.picks || {};
-    var note = spellAbilityNote(c, picks.ability, "Free once per long rest, or cast it with a spell slot.");
-    (def.grantsSpells||[]).concat(picks.spells||[]).forEach(function(name){
-      if(!name || out.some(function(x){ return x.name===name; })) return;
-      var data = SPELL_DATA[catalogSpellName(name)] || null;
-      out.push({ name: name, data: data, level: data ? data.level : 0, kind: "free", source: feat.name, feature: feat.name, note: note });
+    var hasAbility = !!(def.castAbility || (def.ability && def.ability.length));
+    var ability = featCastAbility(c, def, picks);
+    featSpellEntries(def, picks).forEach(function(e){
+      if(out.some(function(x){ return x.name===e.name; })) return;
+      var data = SPELL_DATA[catalogSpellName(e.name)] || null;
+      var lead = FEAT_SPELL_LEADS[e.use];
+      out.push({ name: e.name, data: data, level: data ? data.level : 0, kind: FEAT_SPELL_KINDS[e.use], source: feat.name, feature: feat.name,
+        note: hasAbility ? spellAbilityNote(c, ability, lead) : lead, kindLabel: e.use==="short" ? "Free 1/short rest" : undefined });
     });
   });
   // The Pact Boon's and invocations' spells (Armor of Shadows' Mage Armor),
@@ -688,6 +721,14 @@ export function featureSpells(c){
   });
   return out;
 }
+var FEAT_SPELL_KINDS = {long: "free", short: "free", atwill: "atwill", ritual: "ritual", known: "known"};
+var FEAT_SPELL_LEADS = {
+  long: "Free once per long rest, or cast it with a spell slot.",
+  short: "Free once per short or long rest, or cast it with a spell slot.",
+  atwill: "At will, without a spell slot.",
+  ritual: "Cast it as a ritual.",
+  known: "A cantrip you always know from this feat."
+};
 /* Where the character already has this spell: "known" for one on the
    sheet, "from Fey Touched" (the granting feature's source) for a granted
    one, "" for neither. The pickers grey such a spell out with it. */
@@ -1011,6 +1052,15 @@ export function computeDarkvision(c){
       if(next > range){ range = next; sources.push(f.name); }
     });
   });
+  // Feats tagged `darkvision` (Keenness of the Stone Giant: 60 ft, or 60 more).
+  var seen = [];
+  (c.feats||[]).forEach(function(f){
+    var fd = featDef(f.name), dv = fd && fd.darkvision;
+    if(!dv || seen.indexOf(fd)!==-1) return;
+    seen.push(fd);
+    var next = dv.add && range ? range + dv.add : Math.max(range, dv.range || 0);
+    if(next > range){ range = next; sources.push(fd.name); }
+  });
   // Options that give darkvision (the Stone rune's 120 feet).
   optionEffects(c).forEach(function(f){
     if(f.darkvision && f.darkvision.range > range){ range = f.darkvision.range; sources.push(f.name); }
@@ -1287,6 +1337,8 @@ export function getAllCharacterFeatures(c){
     var descText = (feat.prerequisite && feat.prerequisite !== "None" ? "(Prerequisite: " + feat.prerequisite + ")\n" : "") + (feat.description || feat.summary || "");
     var picked = featPicksSummary(featDef(feat.name), feat.picks);
     if(picked) descText += "\n\nYour picks: " + picked + ".";
+    var detail = featPickDetail(featDef(feat.name), feat.picks);
+    if(detail) descText += "\n" + detail;
     list.push({
       id: "feat_"+(feat.id || feat.name),
       name: feat.name,

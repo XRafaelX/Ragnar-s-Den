@@ -681,10 +681,15 @@ export var SUBCLASS_RESOURCES = {
 };
 
 /* Feats with uses, keyed by feat name. `level` and `lv` don't apply; max
-   gets the character's modifiers like the class ones, and `name` can be a
-   function of the character's copy of the feat (its picks). Martial Adept's die
-   joins a Battle Master's pool instead when there is one (see
-   characterResources). */
+   gets the character's modifiers like the class ones (m.pb: the
+   proficiency bonus), and `name` can be a function of the character's
+   copy of the feat (its picks). `joins` names a class pool the uses are
+   added to instead when the character has it (Martial Adept's die and a
+   Battle Master's dice), with `joinHint` added to that pool's hint.
+   A free cast of a spell a feat teaches needs no entry here: the sheet
+   makes one from the feat's spells (see characterResources). Fey
+   Touched's are listed (`freeCast`) because they came first. */
+function profBonusUses(){ return function(lv, m){ return m.pb; }; }
 export var FEAT_RESOURCES = {
   "Lucky": [
     {id:"luck_points", name:"Luck Points", max:always(3), reset:always("long"),
@@ -692,6 +697,7 @@ export var FEAT_RESOURCES = {
   ],
   "Martial Adept": [
     {id:"superiority_dice", name:"Superiority Die", max:always(1), reset:always("short"),
+      joins:"Fighter:superiority_dice", joinHint:"Includes Martial Adept's extra die (a d6).",
       hint:"A d6 that fuels your two Martial Adept maneuvers."}
   ],
   "Magic Initiate": [
@@ -700,10 +706,110 @@ export var FEAT_RESOURCES = {
   ],
   // name(feat) names the use after the spell the player picked.
   "Fey Touched": [
-    {id:"fey_touched_misty_step", name:"Misty Step (Fey Touched)", max:always(1), reset:always("long"),
+    {id:"fey_touched_misty_step", name:"Misty Step (Fey Touched)", max:always(1), reset:always("long"), freeCast:true,
       hint:"Cast Misty Step once without a spell slot. Casting it with a slot you have doesn't use this."},
     {id:"fey_touched_spell", name:function(feat){ var sp = feat && feat.picks && (feat.picks.spells||[])[0]; return (sp || "1st-level spell") + " (Fey Touched)"; },
-      max:always(1), reset:always("long"),
+      max:always(1), reset:always("long"), freeCast:true,
       hint:"Cast your Fey Touched 1st-level spell once without a spell slot. Casting it with a slot you have doesn't use this."}
+  ],
+  "Metamagic Adept": [
+    {id:"sorcery_points", name:"Sorcery Points (Metamagic Adept)", max:always(2), reset:always("long"), pool:true,
+      joins:"Sorcerer:sorcery_points", joinHint:"Includes Metamagic Adept's 2 points, which can only be spent on Metamagic.",
+      hint:"Spend them on your two Metamagic options."}
+  ],
+  "Fade Away": [
+    {id:"fade_away", name:"Fade Away", max:always(1), reset:always("short"),
+      hint:"Reaction after you take damage: turn invisible until the end of your next turn, or until you attack, deal damage or force a saving throw."}
+  ],
+  "Orcish Fury": [
+    {id:"orcish_fury", name:"Orcish Fury", max:always(1), reset:always("short"),
+      hint:"When you hit with a simple or martial weapon, roll one of its damage dice again and add it."}
+  ],
+  "Second Chance": [
+    {id:"second_chance", name:"Second Chance", max:always(1), reset:always("short"),
+      hint:"Reaction: make a creature reroll an attack that hit you. Also comes back when you roll initiative."}
+  ],
+  "Gift of the Chromatic Dragon": [
+    {id:"chromatic_infusion", name:"Chromatic Infusion", max:always(1), reset:always("long"),
+      hint:"Bonus action: a simple or martial weapon deals an extra 1d4 acid, cold, fire, lightning or poison damage for 1 minute."},
+    {id:"reactive_resistance", name:"Reactive Resistance", max:profBonusUses(), reset:always("long"),
+      hint:"Reaction: resistance to one instance of acid, cold, fire, lightning or poison damage."}
+  ],
+  "Gift of the Gem Dragon": [
+    {id:"telekinetic_reprisal", name:"Telekinetic Reprisal", max:profBonusUses(), reset:always("long"),
+      hint:"Reaction when a creature within 10 ft damages you: Strength save or 2d8 force damage and pushed 10 ft (half damage on a success)."}
+  ],
+  "Gift of the Metallic Dragon": [
+    {id:"protective_wings", name:"Protective Wings", max:profBonusUses(), reset:always("long"),
+      hint:"Reaction when you or a creature within 5 ft is hit: add your proficiency bonus to its AC against that attack."}
+  ],
+  "Strixhaven Mascot": [
+    {id:"mascot_swap", name:"Mascot Swap", max:always(1), reset:always("long"),
+      hint:"Action: teleport, swapping places with your mascot familiar within 60 ft. After this, it costs a spell slot of 2nd level or higher."}
+  ],
+  "Squire of Solamnia": [
+    {id:"precise_strike", name:"Precise Strike", max:profBonusUses(), reset:always("long"),
+      hint:"Once per turn, give a weapon attack advantage; on a hit it deals an extra 1d8. A use is spent only if the attack hits."}
+  ],
+  "Knight of the Crown": [
+    {id:"commanding_rally", name:"Commanding Rally", max:profBonusUses(), reset:always("long"),
+      hint:"Bonus action: an ally within 30 ft makes one weapon attack with its reaction, dealing an extra 1d8 on a hit."}
+  ],
+  "Knight of the Sword": [
+    {id:"demoralizing_strike", name:"Demoralizing Strike", max:profBonusUses(), reset:always("long"),
+      hint:"Once per turn when you hit with a weapon: Wisdom save or the target is frightened of you until the end of your next turn."}
+  ],
+  "Knight of the Rose": [
+    {id:"bolstering_rally", name:"Bolstering Rally", max:profBonusUses(), reset:always("long"),
+      hint:"Bonus action: a creature within 30 ft gains temporary hit points equal to 1d8 + your proficiency bonus + the ability this feat raised."}
+  ],
+  "Adept of the Red Robes": [
+    {id:"magical_balance", name:"Magical Balance", max:profBonusUses(), reset:always("long"),
+      hint:"Treat a d20 roll of 9 or lower on an attack roll or ability check as a 10."}
+  ],
+  "Strike of the Giants": [
+    {id:"strike_of_the_giants", name:function(feat){ return (feat && feat.picks && feat.picks.option) || "Strike of the Giants"; },
+      max:profBonusUses(), reset:always("long"),
+      hint:"Once per turn when you hit with a melee weapon or a thrown weapon, add your strike's damage and effect."}
+  ],
+  "Ember of the Fire Giant": [
+    {id:"searing_ignition", name:"Searing Ignition", max:profBonusUses(), reset:always("long"),
+      hint:"Replace one attack: creatures you choose within 15 ft make a Dexterity save or take 1d8 + proficiency bonus fire damage and are blinded (half damage on a success)."}
+  ],
+  "Fury of the Frost Giant": [
+    {id:"frigid_retaliation", name:"Frigid Retaliation", max:profBonusUses(), reset:always("long"),
+      hint:"Reaction when a creature within 30 ft hits you: Constitution save or 1d8 + proficiency bonus cold damage and its speed is 0."}
+  ],
+  "Guile of the Cloud Giant": [
+    {id:"cloudy_escape", name:"Cloudy Escape", max:profBonusUses(), reset:always("long"),
+      hint:"Reaction when you're hit: resistance to that attack's damage, then teleport up to 30 ft."}
+  ],
+  "Keenness of the Stone Giant": [
+    {id:"stone_throw", name:"Stone Throw", max:profBonusUses(), reset:always("long"),
+      hint:"Bonus action: ranged spell attack (60 ft) for 1d10 force damage; Strength save or the target is knocked prone."}
+  ],
+  "Soul of the Storm Giant": [
+    {id:"maelstrom_aura", name:"Maelstrom Aura", max:profBonusUses(), reset:always("long"),
+      hint:"Bonus action: a 10 ft aura until your next turn. Resistance to lightning and thunder, and attacks against you have disadvantage."}
+  ],
+  "Agent of Order": [
+    {id:"stasis_strike", name:"Stasis Strike", max:profBonusUses(), reset:always("long"),
+      hint:"Once per turn when you damage a creature within 60 ft: an extra 1d8 force damage, and a Wisdom save or it is restrained."}
+  ],
+  "Baleful Scion": [
+    {id:"grasp_of_avarice", name:"Grasp of Avarice", max:profBonusUses(), reset:always("long"),
+      hint:"Once per turn when you damage a creature within 60 ft: 1d6 + proficiency bonus necrotic damage, and you regain that many hit points."}
+  ],
+  "Righteous Heritor": [
+    {id:"soothe_pain", name:"Soothe Pain", max:profBonusUses(), reset:always("long"),
+      hint:"Reaction when you or a creature within 30 ft takes damage: reduce it by 1d10 + your proficiency bonus."}
+  ],
+  "Planar Wanderer": [
+    {id:"portal_sense", name:"Portal Sense", max:always(1), reset:always("long"),
+      hint:"Action: detect any portals within 30 ft that aren't behind total cover."}
+  ],
+  "Cartomancer": [
+    {id:"hidden_ace", name:"Hidden Ace", max:always(1), reset:always("long"),
+      hint:"Bonus action: flourish the card you imbued after your long rest and cast its spell."}
   ]
 };

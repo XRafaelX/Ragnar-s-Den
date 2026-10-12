@@ -974,6 +974,12 @@ function hasFeatNamed(c, name){
   return (c.feats||[]).some(function(f){ return (f.name||"").toLowerCase()===lower; });
 }
 function hasPrereq(f){ return f.prerequisite && f.prerequisite!=="None"; }
+var FEAT_SOURCES = {
+  PHB:"Player's Handbook", TCE:"Tasha's Cauldron of Everything", XGE:"Xanathar's Guide to Everything",
+  MTF:"Mordenkainen's Tome of Foes", ERLW:"Eberron: Rising from the Last War", FTD:"Fizban's Treasury of Dragons",
+  SCC:"Strixhaven: A Curriculum of Chaos", DSotDQ:"Dragonlance: Shadow of the Dragon Queen",
+  BGG:"Bigby Presents: Glory of the Giants", PAitM:"Planescape: Adventures in the Multiverse", BMT:"The Book of Many Things"
+};
 
 function fillFeatSection(section){
   var byCat = {}, data = {};
@@ -1077,6 +1083,7 @@ function showFeat(feat){
   openInfoModal(feat.name, function(body){
     if(feat.custom) customBar(body, function(){ openCustomForm({kind:"feat", edit:feat.id}); }, function(){ confirmDeleteCustom("feat", feat.id); });
     var rows = [["Category", feat.category], ["Prerequisite", hasPrereq(feat) ? feat.prerequisite : "None"]];
+    if(feat.source && FEAT_SOURCES[feat.source]) rows.push(["Source", FEAT_SOURCES[feat.source]]);
     if(feat.custom){
       var users = charactersWithCustom("feat", feat).map(function(c){ return c.name || "A character"; });
       rows.push(["Characters", users.join(", ") || "None yet"]);

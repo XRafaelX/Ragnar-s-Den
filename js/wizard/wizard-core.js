@@ -1,5 +1,5 @@
 import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
-import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
+import { CLASSES_INFO, CLASS_PROFICIENCIES, FIGHTING_STYLES } from "../data/classes.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
@@ -8,7 +8,7 @@ import { RACE_DATA } from "../data/race-data.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists } from "../core/helpers.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
-import { featPicksProblem, applyFeatPicks, featNeedsChoice } from "../core/feat-picks.js";
+import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason } from "../core/feat-picks.js";
 import { stylePicksProblem, makeStyleFeature } from "../core/fighting-styles.js";
 import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
@@ -166,10 +166,13 @@ export function wizardSkillProfs(){
   return out;
 }
 
-/* Why the new character can't take a feat yet ("" if they can): ability
-   minimums, a Spellcasting feature, or armor proficiency. */
+/* Why the new character can't take a feat yet ("" if they can): its race,
+   a level or feat it needs first, ability minimums, a Spellcasting
+   feature, or armor proficiency. */
 var ABILITY_WORDS = {Strength:"str", Dexterity:"dex", Constitution:"con", Intelligence:"int", Wisdom:"wis", Charisma:"cha"};
 export function featPrereqReason(feat){
+  var blocked = featRequiresReason(feat, {race: wizardState.race, level: 1, feats: []});
+  if(blocked) return blocked;
   var req = feat.prerequisite || "None";
   if(req==="None") return "";
   var ab = finalAbilities({withoutFeat:true}), info = currentClassInfo() || {};
@@ -200,6 +203,9 @@ export function languagePlan(){
   var fixed = [];
   function addFixed(l){ if(fixed.indexOf(l)===-1) fixed.push(l); }
   race.fixed.forEach(addFixed);
+  // Languages the Race Traits feat teaches (Linguist's three).
+  var feat = isStepApplicable("feat") && wizardFeat(), fp = feat && w.raceChoices.featPicks;
+  if(feat) (feat.languages||[]).concat((fp && fp.languages)||[]).filter(Boolean).forEach(addFixed);
   ((info && info.languages)||[]).forEach(addFixed);
   (grants.languages||[]).forEach(addFixed);
   var slots = [];
@@ -237,6 +243,20 @@ export function isStepApplicable(id){
   if(id==="feat") return !!(raceChoiceDef() && raceChoiceDef().feat);
   if(id==="featPicks") return isStepApplicable("feat") && featNeedsChoice(wizardFeat());
   return true;
+}
+/* The new character as the feat pickers see it. Its languages are only
+   the race's fixed ones here: the Languages step comes later and leaves
+   out whatever the feat teaches. */
+export function wizardFeatContext(){
+  var w = wizardState, info = currentClassInfo() || {};
+  var styleCh = (info.choices||[]).find(function(ch){ return ch.kind==="fightingStyle"; });
+  var classStyle = styleCh && w.classChoices[styleCh.id];
+  return {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs(), tasha: !!w.tashaOptional, pb: 2,
+    languages: (RACE_LANGUAGES[w.race] || RACE_LANGUAGES_FALLBACK).fixed,
+    styleReason: function(name){
+      if(classStyle===name) return "known";
+      return (FIGHTING_STYLES[name]||{}).optional && !w.tashaOptional ? "Tasha's optional" : "";
+    }};
 }
 /* The feat picked for the race (Variant Human), or null. */
 export function wizardFeat(){
@@ -327,7 +347,7 @@ export function validateStep(id){
     return why ? feat.name+" "+why+". Pick another feat or change your scores." : null;
   }
   if(id==="featPicks"){
-    return featPicksProblem(wizardFeat(), wizardState.raceChoices.featPicks || {}, {abilities: finalAbilities({withoutFeat:true}), skillProfs: wizardSkillProfs(), tasha: !!wizardState.tashaOptional}) || null;
+    return featPicksProblem(wizardFeat(), wizardState.raceChoices.featPicks || {}, wizardFeatContext()) || null;
   }
   if(id==="choices"){
     var missing = (info.choices||[]).find(function(ch){

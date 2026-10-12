@@ -104,7 +104,10 @@ function setFacts(c, set, entry, all){
       rows.push(["Superiority dice", dice.max + " × " + size, (dice.max - dice.used) + " left · back on a short rest"]);
     }
   }
-  if(set.id==="metamagic") uses("Sorcerer:sorcery_points", "Sorcery points", "long");
+  if(set.id==="metamagic"){
+    uses("Sorcerer:sorcery_points", "Sorcery points", "long");
+    uses("feat:sorcery_points", "Sorcery points", "long"); // Metamagic Adept without sorcerer levels
+  }
   if(set.id==="runes" && entry){
     dc("Rune save DC", "con");
     uses("Fighter:rune_invocations", "Rune invocations", "short");

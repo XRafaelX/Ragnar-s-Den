@@ -1,6 +1,7 @@
 import { INVOCATIONS, invocationsKnownAt, invocationDef, pactBoonDef } from "../data/invocations.js";
 import { SPELL_DATA, catalogSpellName, spellsMatching } from "../data/spells.js";
 import { uid, mod, totalLevel } from "./helpers.js";
+import { featDef } from "./feat-picks.js";
 
 /* ---------------- Eldritch invocations and the Pact Boon ----------------
    Saved on the warlock's class entry:
@@ -21,6 +22,18 @@ export function warlockEntry(c){
 export function knownInvocations(cl){
   return cl && Array.isArray(cl.invocations) ? cl.invocations : [];
 }
+/* Invocations learned through a feat (Eldritch Adept), as their catalog
+   entries. They give the same spells, uses, speeds and senses as a
+   warlock's own, and aren't offered to the warlock again. */
+export function featInvocations(c){
+  var out = [];
+  (c.feats||[]).forEach(function(f){
+    var def = featDef(f.name);
+    var inv = def && def.invocationPick && f.picks && invocationDef(f.picks.option);
+    if(inv && out.indexOf(inv)===-1) out.push(inv);
+  });
+  return out;
+}
 /* How many invocations this class entry should know now. */
 export function invocationsDue(cl){
   return cl ? invocationsKnownAt(Number(cl.level)||1) : 0;
@@ -31,7 +44,8 @@ export function invocationsDue(cl){
    known (names), pactSpells}. */
 export function invocationContext(c, cl, over){
   over = over || {};
-  var known = over.known || knownInvocations(cl).map(function(e){ return e.name; });
+  var known = (over.known || knownInvocations(cl).map(function(e){ return e.name; }))
+    .concat(featInvocations(c).map(function(inv){ return inv.name; }));
   var pactSpells = over.pactSpells || (cl && cl.pactSpells) || [];
   var spells = (c.spells||[]).map(function(sp){ return (sp.name||"").trim(); }).concat(pactSpells);
   return {
@@ -159,6 +173,9 @@ export function invocationSpells(c){
       (e.spells||[]).forEach(function(n){ add(n, "ritual", "Invocation", inv.name, "Book of Ancient Secrets: cast it only as a ritual, with your Book of Shadows in hand."); });
     });
   });
+  featInvocations(c).forEach(function(inv){
+    (inv.spells||[]).forEach(function(s){ add(s.name, s.kind, "Invocation", inv.name, inv.name + ": " + inv.text); });
+  });
   return out;
 }
 /* Limited uses, as characterResources entries. `m.pb` is the proficiency bonus. */
@@ -172,22 +189,25 @@ export function invocationResources(c, m){
     var max = def.uses.max==="pb" ? m.pb : Number(def.uses.max)||1;
     add("inv:" + def.name, def.uses.name || def.name, label, def.text.split(". ")[0] + ".", max, def.uses.reset);
   }
+  function fromInvocation(inv){
+    if(inv.uses) fromUses(inv, "Invocation");
+    (inv.spells||[]).forEach(function(s){
+      if(s.kind!=="free" && s.kind!=="slot") return;
+      add("inv:" + inv.name + ":" + s.name, s.name + " (" + inv.name + ")", "Invocation",
+        s.kind==="slot" ? "Cast " + s.name + " once with a warlock spell slot; back on a long rest." : "Cast " + s.name + " once without a spell slot; back on a long rest.",
+        1, "long");
+    });
+  }
   (c.classes||[]).forEach(function(cl){
     if(cl.name!=="Warlock") return;
     var boon = (Number(cl.level)||1) >= 3 && pactBoonDef(cl.pactBoon);
     if(boon && boon.uses) fromUses(boon, "Pact Boon");
     knownInvocations(cl).forEach(function(e){
       var inv = invocationDef(e.name);
-      if(!inv) return;
-      if(inv.uses) fromUses(inv, "Invocation");
-      (inv.spells||[]).forEach(function(s){
-        if(s.kind!=="free" && s.kind!=="slot") return;
-        add("inv:" + inv.name + ":" + s.name, s.name + " (" + inv.name + ")", "Invocation",
-          s.kind==="slot" ? "Cast " + s.name + " once with a warlock spell slot; back on a long rest." : "Cast " + s.name + " once without a spell slot; back on a long rest.",
-          1, "long");
-      });
+      if(inv) fromInvocation(inv);
     });
   });
+  featInvocations(c).forEach(fromInvocation);
   return out;
 }
 /* Speeds from invocations (Gift of the Depths), shaped like features':
@@ -200,6 +220,7 @@ export function invocationSpeedSources(c){
       if(inv && inv.speeds) out.push({name: inv.name, speeds: inv.speeds});
     });
   });
+  featInvocations(c).forEach(function(inv){ if(inv.speeds) out.push({name: inv.name, speeds: inv.speeds}); });
   return out;
 }
 /* Extra senses: "Devil's Sight 120 ft". */
@@ -211,6 +232,7 @@ export function invocationSenses(c){
       if(inv && inv.sight) out.push(inv.sight);
     });
   });
+  featInvocations(c).forEach(function(inv){ if(inv.sight && out.indexOf(inv.sight)===-1) out.push(inv.sight); });
   return out;
 }
 
