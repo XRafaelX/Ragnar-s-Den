@@ -1,6 +1,6 @@
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
+import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
 import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
@@ -25,7 +25,7 @@ var ARMOR_CATEGORIES = [
    the row, including the name itself, to open the edit sheet; renaming
    happens there instead of inline, so the name text has no invisible
    input hit-box left over to swallow clicks), a qty badge when stacked,
-   an Equipped toggle (weapons and armor only: equipping other gear
+   an Equip switch (weapons and armor only: equipping other gear
    changes nothing, so it would only be clutter), and an edit control. */
 function itemHeader(c, item, idx, onOpenDetails, noEquip){
   var header = document.createElement("div");
@@ -52,21 +52,25 @@ function itemHeader(c, item, idx, onOpenDetails, noEquip){
   actions.className = "inv-card-header-actions";
 
   if(!noEquip){
-    var eqLbl = document.createElement("label"); eqLbl.className = "inv-eq-pill";
-    var eqCb = document.createElement("input"); eqCb.type="checkbox"; eqCb.className="chk";
-    eqCb.checked = !!item.equipped;
-    eqCb.addEventListener("click", function(e){ e.stopPropagation(); });
-    eqCb.addEventListener("change", function(){
-      if(!eqCb.checked){ item.equipped = false; save(); renderAll(); return; }
+    // A button whose label follows the state: "Equip", then "Equipped"
+    // with a tick. Never reads Equipped on something that is not.
+    var eqBtn = document.createElement("button");
+    eqBtn.type = "button";
+    eqBtn.className = "inv-equip-btn" + (item.equipped ? " on" : "");
+    eqBtn.setAttribute("aria-pressed", item.equipped ? "true" : "false");
+    if(item.equipped) eqBtn.innerHTML = makeCheckSvg();
+    eqBtn.appendChild(document.createTextNode(item.equipped ? "Equipped" : "Equip"));
+    eqBtn.title = item.equipped ? "Equipped. Tap to unequip." : "Equip";
+    eqBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      if(item.equipped){ item.equipped = false; save(); renderAll(); return; }
       // One suit of armor, one shield, two hands (see tryEquip).
       var res = tryEquip(c, item);
-      if(!res.ok){ eqCb.checked = false; showActionToast(res.message, true); return; }
+      if(!res.ok){ showActionToast(res.message, true); return; }
       if(res.message) showActionToast(res.message);
       save(); renderAll();
     });
-    eqLbl.appendChild(eqCb);
-    eqLbl.appendChild(document.createTextNode("Equipped"));
-    actions.appendChild(eqLbl);
+    actions.appendChild(eqBtn);
   }
 
   var editBtn = document.createElement("button");
@@ -296,7 +300,7 @@ function renderWeaponCard(c, item, idx){
   if(item.magicBonus==null) item.magicBonus = 0;
 
   var card = document.createElement("div");
-  card.className = "ff-item-card inv-item-card";
+  card.className = "ff-item-card inv-item-card" + (item.equipped ? " is-equipped" : " is-stowed");
   card.appendChild(itemHeader(c, item, idx, function(){ openWeaponSheet(c, item, idx); }));
 
   var abilityLabel = item.ability==="finesse" ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
@@ -442,7 +446,7 @@ function renderArmorCard(c, item, idx){
   if(item.magicBonus==null) item.magicBonus = 0;
 
   var card = document.createElement("div");
-  card.className = "ff-item-card inv-item-card";
+  card.className = "ff-item-card inv-item-card" + (item.equipped ? " is-equipped" : " is-stowed");
   card.appendChild(itemHeader(c, item, idx, function(){ openArmorSheet(c, item, idx); }));
 
   var catLabel = (ARMOR_CATEGORIES.find(function(cat){ return cat.key===item.category; })||{}).label || item.category;

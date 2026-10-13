@@ -201,6 +201,45 @@
 }
 .inv-card-header-actions{display:flex;align-items:center;gap:10px;flex:none;}
 .inv-eq-pill{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-on-parch-dim);cursor:pointer;white-space:nowrap;}
+/* Equip switch on a weapon or armor card: an outlined "Equip" that turns
+   into a tinted "Equipped" with a tick. The fixed width keeps the switches
+   in one column down the list, and the extra right margin keeps it clear
+   of the edit and remove buttons. */
+.inv-equip-btn{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  min-width:98px;height:28px;padding:0 11px;margin-right:6px;border-radius:14px;
+  font-size:11.5px;font-weight:600;letter-spacing:.02em;line-height:1;white-space:nowrap;cursor:pointer;
+  color:var(--text-on-parch-dim);background:transparent;border:1px solid var(--rule);
+  transition:background .15s ease, border-color .15s ease, color .15s ease, transform .12s ease;
+}
+.inv-equip-btn svg{width:13px;height:13px;flex:none;}
+@media (hover:hover){
+  .inv-equip-btn:hover{color:var(--brass-bright);border-color:var(--brass);background:color-mix(in srgb, var(--brass) 12%, transparent);}
+  .inv-equip-btn.on:hover{background:color-mix(in srgb, var(--brass) 32%, transparent);}
+}
+.inv-equip-btn:active{transform:scale(.95);}
+.inv-equip-btn:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.inv-equip-btn.on{
+  color:var(--brass-bright2);border-color:var(--brass);
+  background:color-mix(in srgb, var(--brass) 22%, transparent);
+}
+/* A finger gets a taller target than the pill it sees. */
+@media (pointer:coarse){
+  .inv-equip-btn{height:32px;}
+  .inv-equip-btn::after{content:"";position:absolute;inset:-6px -4px;}
+}
+/* On a phone the item's name needs the room: the switch hugs its label. */
+@media (max-width:560px){
+  .inv-equip-btn{min-width:0;padding:0 9px;margin-right:-4px;}
+}
+@media (prefers-reduced-motion: reduce){ .inv-equip-btn{transition:none;} }
+/* The card says it too: an accent edge on what is equipped, a quieter
+   name on what is not. */
+.ff-item-card.inv-item-card.is-equipped{
+  border-color:color-mix(in srgb, var(--brass) 60%, transparent);
+  box-shadow:inset 3px 0 0 var(--brass);
+}
+.inv-item-card.is-stowed .inv-name-inline{color:color-mix(in srgb, var(--text-on-parch) 70%, var(--text-on-parch-dim));}
 .inv-edit-btn{
   background:none;border:none;color:var(--text-on-parch-dim);padding:4px 5px;cursor:pointer;
   font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;transition:color .15s ease;
