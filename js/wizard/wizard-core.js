@@ -10,6 +10,7 @@ import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
 import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason, featHasPicks, featDef, emptyPicks, backgroundFeatGrant, backgroundFeatCopy, backgroundFeatPicks, campaignLevel1Feats, campaignFeatCopy } from "../core/feat-picks.js";
 import { stylePicksProblem, makeStyleFeature } from "../core/fighting-styles.js";
+import { entryGrants, grantHasChoices, classPickContext, classPicksProblem, fillSlots, applyClassPicks } from "../core/class-picks.js";
 import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { closeSidebarMobile } from "../ui/mobile-nav.js";
@@ -50,6 +51,53 @@ function wizardClassEntry(subclass){
   return {name: wizardState.classId, level: 1,
     subclass: subclass!=null ? subclass : (ch && wizardState.classChoices[ch.id]) || "",
     spellChoices: wizardState.classChoices.spellChoices || {}};
+}
+/* What the chosen subclass's level-1 features give beyond armor and
+   weapons (see js/core/class-picks.js): an Order cleric's skill, a
+   Knowledge cleric's skills and languages, a Storm sorcerer's Primordial.
+   Picks are kept in classChoices.profPicks[key], one list per slot. */
+export function wizardClassGrants(){
+  return wizardState && wizardState.classId ? entryGrants(wizardClassEntry(), false) : [];
+}
+export function wizardPickSlots(key){
+  var all = wizardState.classChoices.profPicks = wizardState.classChoices.profPicks || {};
+  return all[key] = all[key] || [];
+}
+/* The new character as those pickers see it: the skills picked so far,
+   the feats' skills and languages, the race's and class's languages.
+   What another of the subclass's features picked is greyed out. */
+export function wizardPickContext(grant){
+  var w = wizardState, info = currentClassInfo() || {}, entry = wizardClassEntry();
+  var feat = isStepApplicable("feat") && wizardFeat(), bg = wizardBackgroundFeat();
+  var feats = (feat ? [{name: feat.name, picks: w.raceChoices.featPicks || {}}] : [])
+    .concat(bg && bg.def ? [{name: bg.def.name, picks: wizardBackgroundFeatPicks() || {}}] : []);
+  var profs = wizardSkillProfs(), saves = {};
+  var languages = (RACE_LANGUAGES[w.race] || RACE_LANGUAGES_FALLBACK).fixed.concat(info.languages || [], subclassGrants(info, w.classChoices).languages || []);
+  feats.forEach(function(f){
+    (f.picks.skills||[]).forEach(function(sk){ if(sk) profs[sk] = profs[sk] || {prof:true, expertise:false}; });
+    (f.picks.expertise||[]).forEach(function(sk){ if(sk) profs[sk] = {prof:true, expertise:true}; });
+    languages = languages.concat((featDef(f.name) || {}).languages || [], f.picks.languages || []);
+  });
+  (info.savingThrows||[]).forEach(function(k){ saves[k] = true; });
+  var ctx = classPickContext({classes:[entry], skillProfs:profs, saveProfs:saves, languages:languages.filter(Boolean), feats:feats, inventory:[]}, entry, grant.key);
+  ctx.taken = function(v){
+    return wizardClassGrants().some(function(g){
+      return g.key!==grant.key && ((w.classChoices.profPicks||{})[g.key] || []).some(function(slot){ return (slot||[]).indexOf(v)!==-1; });
+    }) ? "picked" : "";
+  };
+  return ctx;
+}
+/* Languages those features teach: given outright or picked. */
+function wizardClassLanguages(){
+  var out = [], standard = LANGUAGES.Standard.concat(LANGUAGES.Exotic);
+  wizardClassGrants().forEach(function(g){
+    out = out.concat(g.def.languages || []);
+    ((wizardState.classChoices.profPicks||{})[g.key] || []).forEach(function(slot, i){
+      var kind = ((g.def.pick||[])[i] || {}).kind;
+      if(kind==="language" || kind==="skillOrLanguage") out = out.concat((slot||[]).filter(function(v){ return standard.indexOf(v)!==-1; }));
+    });
+  });
+  return out;
 }
 /* Spell choices the chosen subclass asks for at level 1: [{feature, choice, pick}]. */
 export function wizardSpellChoices(){
@@ -197,8 +245,9 @@ export function featPrereqReason(feat){
 
 /* Languages the new character knows: `fixed` ones come automatically
    (race, class, subclass); `slots` are free picks, each tagged with where
-   it comes from (race, background, Ranger's favored enemy, Knowledge
-   Domain). */
+   it comes from (race, background, Ranger's favored enemy). `fromClass`
+   are the fixed ones only a subclass feature gives or picked (Class
+   Features step), which the sheet records with that feature. */
 export function languagePlan(){
   var w = wizardState, info = currentClassInfo();
   var race = RACE_LANGUAGES[w.race] || RACE_LANGUAGES_FALLBACK;
@@ -220,8 +269,8 @@ export function languagePlan(){
   addSlots(bgExotic, w.background, bgExotic ? (bgExotic===bgCount ? "These must be exotic languages." : "The first must be an exotic language, such as the tongue of whatever haunts you.") : "", true);
   addSlots(bgCount - bgExotic, w.background);
   if(info && info.languagePicks) addSlots(info.languagePicks.count, info.languagePicks.label, info.languagePicks.help);
-  addSlots(grants.languagePicks, w.classChoices.subclass);
-  return {fixed:fixed, slots:slots};
+  var fromClass = wizardClassLanguages().filter(function(l, i, all){ return fixed.indexOf(l)===-1 && all.indexOf(l)===i; });
+  return {fixed:fixed.concat(fromClass), slots:slots, fromClass:fromClass};
 }
 
 /* 1st-level spells to pick: a fixed number, or computed from the scores
@@ -417,9 +466,15 @@ export function validateStep(id){
       return missing.kind==="expertise" ? "Choose "+missing.count+" for "+missing.label+"." : "Choose a "+missing.label+".";
     }
     var g = subclassGrants(info, wizardState.classChoices);
-    var bonus = g.expertise;
-    if(bonus && (wizardState.classChoices[bonus.id]||[]).length!==bonus.count) return "Choose "+bonus.count+" skills for "+bonus.label+".";
     if(g.pick && !wizardState.classChoices[g.pick.id]) return "Choose a "+g.pick.label+".";
+    // Proficiencies the subclass lets you choose (a domain's skill).
+    var grantWhy = "";
+    wizardClassGrants().forEach(function(gr){
+      if(grantWhy || !grantHasChoices(gr.def)) return;
+      var pctx = wizardPickContext(gr);
+      grantWhy = classPicksProblem(gr, fillSlots(gr.def, wizardPickSlots(gr.key), pctx), pctx);
+    });
+    if(grantWhy) return grantWhy;
     var spellPick = wizardSpellChoices().find(function(x){ return !x.pick; });
     if(spellPick) return "Choose your "+spellPick.choice.label.toLowerCase()+" for "+spellPick.feature+".";
     return null;
@@ -544,7 +599,13 @@ export function finishWizard(){
   var plan = languagePlan();
   c.languages = plan.fixed.concat(w.languageChoices.slice(0, plan.slots.length).filter(function(l, i, all){
     return l && plan.fixed.indexOf(l)===-1 && all.indexOf(l)===i;
-  }));
+  })).filter(function(l){ return plan.fromClass.indexOf(l)===-1; });
+  // The subclass's skills, expertise and languages (given or picked on
+  // the Class Features step), recorded with the feature that gives them.
+  entryGrants(c.classes[0], false).forEach(function(g){
+    var slots = ((w.classChoices.profPicks||{})[g.key] || []).map(function(s){ return (s||[]).slice(); });
+    applyClassPicks(c, c.classes[0], g, fillSlots(g.def, slots, classPickContext(c, c.classes[0], g.key)));
+  });
 
   if(info.spellcasting){
     var sc = info.spellcasting;
@@ -639,7 +700,6 @@ export function applyClassChoices(c, info, picks){
         c.classes[0].spellChoices[x.choice.id] = x.pick;
       });
       var g = subclassGrants(info, picks);
-      (g.expertise && picks[g.expertise.id] || []).forEach(function(sk){ c.skillProfs[sk] = {prof:true, expertise:true}; });
       var picked = g.pick && g.pick.options.find(function(o){ return o.name===picks[g.pick.id]; });
       if(picked) c.features.push({id:uid(), name:g.pick.label+": "+picked.name, source:"Class", text:picked.text, isPassive:true});
     } else if(ch.kind==="listPick"){

@@ -50,7 +50,8 @@ export var CLERIC_SUBCLASSES = [
   {name:"Knowledge Domain", blurb:"Seeks and guards secrets and lore.", features:{
     1:[
       {name:"Domain Spells", text:"You always have Command and Identify prepared; they don't count against your prepared spells.", spells:["Command","Identify"], spellKind:"prepared"},
-      {name:"Blessings of Knowledge", text:"You learn two languages and gain proficiency in two of Arcana, History, Nature or Religion. Your proficiency bonus is doubled for checks with those two skills. Tick them on the Abilities & Skills tab."}
+      {name:"Blessings of Knowledge", text:"You learn two languages and gain proficiency in two of Arcana, History, Nature or Religion. Your proficiency bonus is doubled for checks with those two skills.",
+        profs:{pick:[{kind:"skill", count:2, options:["Arcana","History","Nature","Religion"], expertise:true}, {kind:"language", count:2}]}}
     ],
     2:[{name:"Channel Divinity: Knowledge of the Ages", text:"As an action, choose one skill or tool. For 10 minutes, you are proficient with it."}],
     3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Command, Identify, Augury and Suggestion prepared; they don't count against your prepared spells.", spells:["Command","Identify","Augury","Suggestion"], spellKind:"prepared"}],
@@ -93,7 +94,7 @@ export var CLERIC_SUBCLASSES = [
   {name:"Nature Domain", blurb:"Channels the power of nature to command beasts and wield elemental fury.", features:{
     1:[
       {name:"Domain Spells", text:"You always have Animal Friendship and Speak with Animals prepared; they don't count against your prepared spells.", spells:["Animal Friendship","Speak with Animals"], spellKind:"prepared"},
-      {name:"Acolyte of Nature", text:"You learn one druid cantrip (it counts as a cleric cantrip for you) and gain proficiency in one of Animal Handling, Nature or Survival."},
+      {name:"Acolyte of Nature", text:"You learn one druid cantrip (it counts as a cleric cantrip for you) and gain proficiency in one of Animal Handling, Nature or Survival.", profs:{pick:[{kind:"skill", options:["Animal Handling","Nature","Survival"]}]}},
       {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor.", grants:{armor:["Heavy armor"]}}
     ],
     2:[{name:"Channel Divinity: Charm Animals and Plants", text:"As an action, each beast or plant creature within 30 feet that can see you makes a WIS save. On a failure, it is charmed by you for 1 minute or until it takes damage, and is friendly to you and creatures you designate."}],
@@ -139,7 +140,7 @@ export var CLERIC_SUBCLASSES = [
   {name:"Order Domain", blurb:"Enforces divine law and compels others to act through holy authority.", features:{
     1:[
       {name:"Domain Spells", text:"You always have Command and Heroism prepared; they don't count against your prepared spells.", spells:["Command","Heroism"], spellKind:"prepared"},
-      {name:"Bonus Proficiencies", text:"You gain proficiency with heavy armor, and in Intimidation or Persuasion (your choice; tick it on the Abilities & Skills tab).", grants:{armor:["Heavy armor"]}},
+      {name:"Bonus Proficiencies", text:"You gain proficiency with heavy armor, and in Intimidation or Persuasion (your choice).", grants:{armor:["Heavy armor"]}, profs:{pick:[{kind:"skill", options:["Intimidation","Persuasion"]}]}},
       {name:"Voice of Authority", text:"When you cast a spell with a spell slot of 1st level or higher that targets an ally, that ally can use its reaction right after the spell to make one weapon attack against a creature of your choice that you can see. If the spell targets several allies, you choose which one can attack."}
     ],
     2:[{name:"Channel Divinity: Order's Demand", text:"As an action, each creature of your choice within 30 feet that can see or hear you makes a WIS save or is charmed by you until the end of your next turn or until it takes damage. You can also make any creature that fails drop what it is holding."}],
@@ -154,7 +155,7 @@ export var CLERIC_SUBCLASSES = [
   {name:"Peace Domain", blurb:"Spreads harmony, protection and unity among allies.", features:{
     1:[
       {name:"Domain Spells", text:"You always have Heroism and Sanctuary prepared; they don't count against your prepared spells.", spells:["Heroism","Sanctuary"], spellKind:"prepared"},
-      {name:"Implement of Peace", text:"You gain proficiency in Insight, Performance or Persuasion (your choice; tick it on the Abilities & Skills tab)."},
+      {name:"Implement of Peace", text:"You gain proficiency in Insight, Performance or Persuasion (your choice).", profs:{pick:[{kind:"skill", options:["Insight","Performance","Persuasion"]}]}},
       {name:"Emboldening Bond", text:"As an action, bond a number of willing creatures within 30 feet equal to your proficiency bonus (you can include yourself) for 10 minutes, or until you use this again. While a bonded creature is within 30 feet of another, it can roll a d4 and add it to an attack roll, ability check or saving throw it makes, no more than once per turn. You can use this a number of times equal to your proficiency bonus, regained on a long rest."}
     ],
     2:[{name:"Channel Divinity: Balm of Peace", text:"As an action, move up to your speed without provoking opportunity attacks. When you move within 5 feet of another creature during this action, you can restore 2d6 + your Wisdom modifier (minimum 1) hit points to it; each creature can be healed only once per use."}],
@@ -184,7 +185,7 @@ export var CLERIC_SUBCLASSES = [
   {name:"Arcana Domain", blurb:"A scholar-priest of magic who wields wizard spells and banishes otherworldly foes.", features:{
     1:[
       {name:"Domain Spells", text:"You always have Detect Magic and Magic Missile prepared; they don't count against your prepared spells.", spells:["Detect Magic","Magic Missile"], spellKind:"prepared"},
-      {name:"Arcane Initiate", text:"You gain proficiency in Arcana (tick it on the Abilities & Skills tab) and learn two wizard cantrips of your choice. They count as cleric cantrips for you."}
+      {name:"Arcane Initiate", text:"You gain proficiency in Arcana and learn two wizard cantrips of your choice. They count as cleric cantrips for you.", profs:{skills:["Arcana"]}}
     ],
     2:[{name:"Channel Divinity: Arcane Abjuration", text:"Action: choose one celestial, elemental, fey or fiend within 30 feet that can see or hear you. It makes a Wisdom save or is turned for 1 minute or until it takes damage: it must spend its turns moving away from you, can't willingly come within 30 feet of you, can't take reactions, and can only Dash or try to escape."}],
     3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Detect Magic, Magic Missile, Magic Weapon and Nystul's Magic Aura prepared; they don't count against your prepared spells.", spells:["Detect Magic","Magic Missile","Magic Weapon","Nystul's Magic Aura"], spellKind:"prepared"}],

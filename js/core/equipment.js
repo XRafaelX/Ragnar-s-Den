@@ -4,6 +4,7 @@
 import { RACE_DATA } from "../data/race-data.js";
 import { WEAPON_DATA } from "../data/weapons.js";
 import { featProficiencies } from "./feat-picks.js";
+import { characterPickedProfs } from "./class-picks.js";
 import { mod, profBonus } from "./basics.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
 import { classFeatureList, classProficiencies } from "./class-features.js";
@@ -109,9 +110,10 @@ export function isMonkWeapon(item){
   return !/two-handed|heavy/i.test(d.properties || "");
 }
 /* Martial Arts: a monk wearing no armor and holding no shield can use DEX
-   instead of STR with monk weapons. */
+   instead of STR with monk weapons, a Kensei's chosen weapons included. */
 export function martialArtsApplies(c, item){
-  if(!(c.classes||[]).some(function(cl){ return cl.name==="Monk"; }) || !isMonkWeapon(item)) return false;
+  if(!(c.classes||[]).some(function(cl){ return cl.name==="Monk"; })) return false;
+  if(!isMonkWeapon(item) && characterPickedProfs(c).monkWeapons.indexOf(item.name)===-1) return false;
   return !(c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
 }
 export function weaponAbilityMod(c, item){

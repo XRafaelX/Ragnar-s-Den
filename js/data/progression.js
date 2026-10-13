@@ -33,7 +33,10 @@ var STANDARD_ASI = [4, 8, 12, 16, 19];
    13+ (Fighter: STR or DEX; Monk: DEX and WIS).
    casterType: "full" | "half" | "artificer" | "pact" | null. Drives spell
    slots. spellAbility: the class's spellcasting ability.
-   multiclassProfs: what you gain when this is NOT your first class.
+   multiclassProfs: what you gain when this is NOT your first class; its
+   `profs` are the skill, tool and expertise choices that come with it.
+   A feature's `profs`: skills, expertise and languages it gives, and the
+   proficiency choices it asks for (see js/core/class-picks.js).
    fightingStyle: {level, options}: the class level that grants a
    Fighting Style and which styles it may pick (see FIGHTING_STYLES in
    classes.js). Level-up shows a picker for it. */
@@ -82,13 +85,15 @@ export var CLASS_PROGRESSION = {
   "Bard": {
     subclassLevel: 3, subclassLabel: "Bard College",
     prereq: [["cha"]], casterType: "full", spellAbility: "cha", asiLevels: STANDARD_ASI,
-    multiclassProfs: {armor:["Light armor"], weapons:[], tools:["One musical instrument"], note:"Also gain proficiency in one skill of your choice. Tick it on the Abilities & Skills tab."},
+    multiclassProfs: {armor:["Light armor"], weapons:[], tools:[], note:"",
+      profs:{pick:[{kind:"skill"}, {kind:"tool", group:"Musical instruments"}]}},
     features: {
       2: [
         {name:"Jack of All Trades", text:"Add half your proficiency bonus (rounded down) to any ability check that doesn't already include your proficiency bonus. (Already added to your checks, initiative and passive scores.)", halfProficiency:{abilities:"all", round:"down"}},
         {name:"Song of Rest", text:"During a short rest, allies who spend hit dice while hearing you perform regain an extra 1d6 hit points (1d8 at level 9, 1d10 at 13, 1d12 at 17)."}
       ],
-      3: [{name:"Expertise", text:"Pick two skills you're proficient in: your proficiency bonus is doubled for them. Tick the E box next to them on the Abilities & Skills tab."}],
+      3: [{name:"Expertise", text:"Choose two skills you're proficient in: your proficiency bonus is doubled for them. They're marked with expertise on the Abilities & Skills tab.",
+        profs:{pick:[{kind:"expertise", count:2}]}}],
       5: [
         {name:"Bardic Inspiration", replaces:"Bardic Inspiration", text:"Bonus action to give an ally within 60 feet a d8 inspiration die to add to one ability check, attack roll or saving throw within 10 minutes. Uses equal to your Charisma modifier (minimum 1)."},
         {name:"Font of Inspiration", text:"You regain all your Bardic Inspiration uses on a short rest as well as a long rest."}
@@ -96,7 +101,8 @@ export var CLASS_PROGRESSION = {
       6: [{name:"Countercharm", text:"As an action, start a performance lasting until the end of your next turn. You and friendly creatures within 30 feet that can hear you have advantage on saves against being frightened or charmed. It ends early if you are incapacitated or silenced, or you end it."}],
       10: [
         {name:"Bardic Inspiration", replaces:"Bardic Inspiration", text:"Bonus action to give an ally within 60 feet a d10 inspiration die to add to one ability check, attack roll or saving throw within 10 minutes. Uses equal to your Charisma modifier (minimum 1)."},
-        {name:"Expertise", replaces:"Expertise", text:"Pick two more skills you're proficient in (four in total): your proficiency bonus is doubled for them. Tick the E box next to them on the Abilities & Skills tab."},
+        {name:"Expertise", replaces:"Expertise", text:"Choose two more skills you're proficient in (four in total): your proficiency bonus is doubled for them. They're marked with expertise on the Abilities & Skills tab.",
+          profs:{pick:[{kind:"expertise", count:2}]}},
         {name:"Magical Secrets", text:"You learn two spells of your choice from any class (cantrips or spells of a level you can cast). They count as bard spells for you and are included in your spells known. You learn two more at levels 14 and 18."}
       ],
       15: [{name:"Bardic Inspiration", replaces:"Bardic Inspiration", text:"Bonus action to give an ally within 60 feet a d12 inspiration die to add to one ability check, attack roll or saving throw within 10 minutes. Uses equal to your Charisma modifier (minimum 1)."}],
@@ -211,7 +217,8 @@ export var CLASS_PROGRESSION = {
     subclassLevel: 3, subclassLabel: "Ranger Archetype",
     fightingStyle: {level:2, options:["Archery","Defense","Dueling","Two-Weapon Fighting","Blind Fighting","Druidic Warrior","Thrown Weapon Fighting"]},
     prereq: [["dex", "wis"]], casterType: "half", spellAbility: "wis", asiLevels: STANDARD_ASI,
-    multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:"Also gain proficiency in one skill from the ranger list. Tick it on the Abilities & Skills tab."},
+    multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:"",
+      profs:{pick:[{kind:"skill", label:"Gain proficiency in one skill from the ranger's list", options:["Animal Handling","Athletics","Insight","Investigation","Nature","Perception","Stealth","Survival"]}]}},
     features: {
       2: [
         {name:"Fighting Style", text:"Adopt a fighting style: Archery (+2 to ranged weapon attacks), Defense (+1 AC in armor), Dueling (+2 damage one-handed) or Two-Weapon Fighting (add your modifier to the off-hand attack's damage)."},
@@ -233,7 +240,9 @@ export var CLASS_PROGRESSION = {
   "Rogue": {
     subclassLevel: 3, subclassLabel: "Roguish Archetype",
     prereq: [["dex"]], casterType: null, asiLevels: [4, 8, 10, 12, 16, 19],
-    multiclassProfs: {armor:["Light armor"], weapons:[], tools:["Thieves' tools"], note:"Also gain proficiency in one skill from the rogue list. Tick it on the Abilities & Skills tab."},
+    multiclassProfs: {armor:["Light armor"], weapons:[], tools:["Thieves' tools"], note:"",
+      profs:{pick:[{kind:"skill", label:"Gain proficiency in one skill from the rogue's list", options:["Acrobatics","Athletics","Deception","Insight","Intimidation","Investigation","Perception","Performance","Persuasion","Sleight of Hand","Stealth"]},
+        {kind:"expertise", count:2, tools:["Thieves' tools"]}]}},
     features: {
       2: [{name:"Cunning Action", text:"You can Dash, Disengage or Hide as a bonus action on each of your turns."}],
       3: [{name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 2d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage on the attack roll, or if another enemy of the target is within 5 feet of it (and you don't have disadvantage)."}],
@@ -241,7 +250,8 @@ export var CLASS_PROGRESSION = {
         {name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 3d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage on the attack roll, or if another enemy of the target is within 5 feet of it (and you don't have disadvantage)."},
         {name:"Uncanny Dodge", text:"Reaction when an attacker you can see hits you: halve the attack's damage."}
       ],
-      6: [{name:"Expertise", replaces:"Expertise", text:"Your proficiency bonus is doubled for four of your skill proficiencies (or three and thieves' tools): the two from level 1 plus two more. Tick the E box next to them on the Abilities & Skills tab."}],
+      6: [{name:"Expertise", replaces:"Expertise", text:"Your proficiency bonus is doubled for four of your skill proficiencies (or three and thieves' tools): the two from level 1 plus two more you choose now. They're marked with expertise on the Abilities & Skills tab.",
+        profs:{pick:[{kind:"expertise", count:2, tools:["Thieves' tools"]}]}}],
       7: [
         {name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 4d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage on the attack roll, or if another enemy of the target is within 5 feet of it (and you don't have disadvantage)."},
         {name:"Evasion", text:"When an effect lets you make a DEX save to take half damage, you take no damage on a success and half on a failure."}

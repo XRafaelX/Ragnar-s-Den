@@ -21,7 +21,7 @@ export var RANGER_SUBCLASSES = [
       {name:"Umbral Sight", text:"You gain darkvision out to 60 feet (or +30 feet if you already have it). While in darkness, you are invisible to any creature that relies on darkvision to see you there.", darkvision:{range:60, add:30}}
     ],
     5:[{name:"Gloom Stalker Magic", replaces:"Gloom Stalker Magic", text:"You always know Disguise Self and Rope Trick; they don't count against your ranger spells known.", spells:["Disguise Self","Rope Trick"], spellKind:"known"}],
-    7:[{name:"Iron Mind", text:"You gain proficiency in Wisdom saving throws, or in Intelligence or Charisma saves (your choice) if you already have Wisdom."}],
+    7:[{name:"Iron Mind", text:"You gain proficiency in Wisdom saving throws, or in Intelligence or Charisma saves (your choice) if you already have Wisdom.", profs:{pick:[{kind:"save", options:["wis"], fallback:["int","cha"]}]}}],
     9:[{name:"Gloom Stalker Magic", replaces:"Gloom Stalker Magic", text:"You always know Disguise Self, Rope Trick and Fear; they don't count against your ranger spells known.", spells:["Disguise Self","Rope Trick","Fear"], spellKind:"known"}],
     11:[{name:"Stalker's Flurry", text:"Once on each of your turns when you miss with a weapon attack, you can make another weapon attack as part of the same action."}],
     13:[{name:"Gloom Stalker Magic", replaces:"Gloom Stalker Magic", text:"You always know Disguise Self, Rope Trick, Fear and Greater Invisibility; they don't count against your ranger spells known.", spells:["Disguise Self","Rope Trick","Fear","Greater Invisibility"], spellKind:"known"}],
@@ -32,7 +32,7 @@ export var RANGER_SUBCLASSES = [
     3:[
       {name:"Dreadful Strikes", text:"When you hit a creature with a weapon, you can deal an extra 1d4 psychic damage to it; each creature can take this damage only once per turn. It becomes 1d6 at level 11."},
       {name:"Fey Wanderer Magic", text:"You always know Charm Person; it doesn't count against your ranger spells known.", spells:["Charm Person"], spellKind:"known"},
-      {name:"Otherworldly Glamour", text:"Add your WIS modifier (minimum +1) to your Charisma checks, and gain proficiency in Deception, Performance or Persuasion (your choice)."}
+      {name:"Otherworldly Glamour", text:"Add your WIS modifier (minimum +1) to your Charisma checks, and gain proficiency in Deception, Performance or Persuasion (your choice).", profs:{pick:[{kind:"skill", options:["Deception","Performance","Persuasion"]}]}}
     ],
     5:[{name:"Fey Wanderer Magic", replaces:"Fey Wanderer Magic", text:"You always know Charm Person and Misty Step; they don't count against your ranger spells known.", spells:["Charm Person","Misty Step"], spellKind:"known"}],
     7:[{name:"Beguiling Twist", text:"You have advantage on saves against being charmed or frightened. When you or a creature you can see within 120 feet succeeds on a save against being charmed or frightened, you can use your reaction to force a different creature you can see within 120 feet to make a WIS save against your spell save DC or be charmed or frightened by you (your choice) for 1 minute, repeating the save at the end of each of its turns."}],
@@ -58,7 +58,8 @@ export var RANGER_SUBCLASSES = [
   }},
   {name:"Drakewarden", blurb:"Bonds with a drake companion that grows into a fearsome mount.", features:{
     3:[
-      {name:"Draconic Gift", text:"You learn the Thaumaturgy cantrip and to speak, read and write Draconic (or another language if you know it).", spells:["Thaumaturgy"], spellKind:"known"},
+      {name:"Draconic Gift", text:"You learn the Thaumaturgy cantrip, and to speak, read and write Draconic or one other language of your choice.", spells:["Thaumaturgy"], spellKind:"known",
+        profs:{pick:[{kind:"language", label:"Learn Draconic or one other language"}]}},
       {name:"Drake Companion", text:"As an action, summon your drake in an unoccupied space within 30 feet, choosing its Draconic Essence (acid, cold, fire, lightning or poison). Once per long rest, or expend a spell slot of 1st level or higher to summon it again. It lasts until it drops to 0 hit points, you summon it again or you die. It shares your initiative and takes its turn right after yours, moving and reacting on its own but taking only the Dodge action unless you use a bonus action to command it (or you are incapacitated). Drake: Small dragon, AC 14 + your proficiency bonus, HP 5 + five times your ranger level, speed 40 ft; STR 16, DEX 12, CON 15, INT 8, WIS 14, CHA 8; proficient in DEX and WIS saves; immune to its essence's damage type; darkvision 60 ft; understands Draconic. Bite: +3 + your proficiency bonus to hit, 1d6 + your proficiency bonus piercing damage. Infused Strikes (reaction): when another creature within 30 feet of it that it can see hits a target with a weapon attack, the target takes an extra 1d6 damage of the essence's type."}
     ],
     7:[{name:"Bond of Fang and Scale", text:"Your drake grows to Medium size, and you can ride it as a mount if you're Medium or smaller. It sprouts wings when summoned, gaining a flying speed equal to its walking speed, but it can't use that flying speed while you ride it. Its Bite deals an extra 1d6 damage of its essence's type, and you gain resistance to that damage type."}],

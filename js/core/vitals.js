@@ -7,6 +7,7 @@ import { ARMOR_MODELS } from "../data/artificer-extras.js";
 import { ARMOR_DATA } from "../data/armor.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
 import { featDef, featProficiencies } from "./feat-picks.js";
+import { characterPickedProfs } from "./class-picks.js";
 import { invocationSpeedSources, invocationSenses } from "./invocations.js";
 import { optionEffects } from "./class-options.js";
 import { styleSenses } from "./fighting-styles.js";
@@ -289,6 +290,8 @@ export function computeSave(c, key){
       }
     });
   });
+  // A save picked for a feature (Iron Mind, Elegant Courtier).
+  if(!grantedBy) characterPickedProfs(c).saves.forEach(function(s){ if(!grantedBy && s.ability===key) grantedBy = s.name; });
   // Resilient: proficiency in the ability it raised.
   if(!grantedBy) featProficiencies(c).saves.forEach(function(s){ if(!grantedBy && s.ability===key) grantedBy = s.feat; });
   var prof = !!(c.saveProfs && c.saveProfs[key]) || !!grantedBy;

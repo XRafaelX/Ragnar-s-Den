@@ -61,7 +61,7 @@ export var SORCERER_SUBCLASSES = [
   }},
   {name:"Storm Sorcery", blurb:"Innate magic of elemental air that lets you ride the winds and call down lightning and thunder.", features:{
     1:[
-      {name:"Wind Speaker", text:"You can speak, read and write Primordial, which lets you understand and be understood by speakers of its dialects: Aquan, Auran, Ignan and Terran."},
+      {name:"Wind Speaker", text:"You can speak, read and write Primordial, which lets you understand and be understood by speakers of its dialects: Aquan, Auran, Ignan and Terran.", profs:{languages:["Primordial"]}},
       {name:"Tempestuous Magic", text:"Immediately before or after you cast a spell of 1st level or higher, you can use a bonus action to fly up to 10 feet without provoking opportunity attacks."}
     ],
     6:[

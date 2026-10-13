@@ -6,6 +6,7 @@ import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/background
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
 import { classFeatureList, classProficiencies, escapeHtml } from "../../core/helpers.js";
 import { featProficiencies } from "../../core/feat-picks.js";
+import { characterPickedProfs } from "../../core/class-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -200,6 +201,9 @@ export function renderInformationPanel(c){
   });
   profCard.appendChild(chipRow("Armor", armor));
   profCard.appendChild(chipRow("Weapons", weapons));
+  // Expertise picked for a tool (a rogue's thieves' tools).
+  var expertTools = characterPickedProfs(c).toolExpertise.map(function(t){ return t.toLowerCase(); });
+  tools = tools.map(function(t){ return expertTools.indexOf(t.toLowerCase())!==-1 ? t + " (expertise)" : t; });
   profCard.appendChild(chipRow("Tools", tools));
   profCard.appendChild(chipRow("Saving Throws", saves));
   panel.appendChild(profCard);

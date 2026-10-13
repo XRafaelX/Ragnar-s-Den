@@ -12,7 +12,7 @@ export var FIGHTER_SUBCLASSES = [
   {name:"Battle Master", blurb:"A tactician with special combat maneuvers.", features:{
     3:[
       {name:"Combat Superiority", text:"You learn three maneuvers (two more at fighter levels 7, 10 and 15; each time you learn new ones you can also swap one you know) and have four superiority dice, d8s, regained on a short or long rest (five at level 7, six at level 15). Each maneuver uses one die; save DC 8 + proficiency bonus + STR or DEX modifier. The level-up asks you to pick them, and the Maneuvers card on the Features & Feats tab lists them with what they do and your save DC."},
-      {name:"Student of War", text:"Gain proficiency with one type of artisan's tools.", grants:{tools:["One type of artisan's tools"]}}
+      {name:"Student of War", text:"Gain proficiency with one type of artisan's tools.", profs:{pick:[{kind:"tool", group:"Artisan's tools"}]}}
     ],
     7:[{name:"Know Your Enemy", text:"After at least 1 minute observing or talking with a creature outside combat, the DM tells you whether it is your equal, superior or inferior in two of: STR, DEX or CON score, AC, current hit points, total class levels, or fighter levels."}],
     10:[{name:"Improved Combat Superiority", text:"Your superiority dice become d10s (d12s at level 18)."}],
@@ -40,7 +40,7 @@ export var FIGHTER_SUBCLASSES = [
   }},
   {name:"Rune Knight", blurb:"Channels giant magic through runes carved into weapons and armor.", features:{
     3:[
-      {name:"Bonus Proficiencies", text:"You gain proficiency with smith's tools and learn to read, write and speak Giant.", grants:{tools:["Smith's tools"]}},
+      {name:"Bonus Proficiencies", text:"You gain proficiency with smith's tools and learn to read, write and speak Giant.", grants:{tools:["Smith's tools"]}, profs:{languages:["Giant"]}},
       {name:"Rune Carving", text:"You learn two runes (one more at fighter levels 7, 10 and 15; each time you gain a fighter level you can swap one you know). After a long rest, inscribe each rune you know on a different weapon, armor, shield, jewelry or other object you wear or hold: while you wear or hold it you gain the rune's passive benefit, and you can invoke each rune once per short or long rest. Save DC 8 + proficiency bonus + CON modifier. Hill and Storm runes need fighter level 7. The level-up asks you to pick them, and the Runes card on the Features & Feats tab lists them with what they do."},
       {name:"Giant's Might", text:"As a bonus action, for 1 minute: if smaller than Large you become Large (if there's room), you have advantage on STR checks and saves, and once on each of your turns one weapon attack or unarmed strike deals an extra 1d6 damage on a hit. Uses equal to your proficiency bonus per long rest."}
     ],
@@ -51,7 +51,8 @@ export var FIGHTER_SUBCLASSES = [
   }},
   {name:"Cavalier", blurb:"A mounted warrior who excels at protecting allies and controlling enemies.", features:{
     3:[
-      {name:"Bonus Proficiency", text:"Gain proficiency in one of Animal Handling, History, Insight, Performance or Persuasion, or learn one language of your choice."},
+      {name:"Bonus Proficiency", text:"Gain proficiency in one of Animal Handling, History, Insight, Performance or Persuasion, or learn one language of your choice.",
+        profs:{pick:[{kind:"skillOrLanguage", options:["Animal Handling","History","Insight","Performance","Persuasion"]}]}},
       {name:"Born to the Saddle", text:"Mounting or dismounting costs you only 5 feet of movement, you have advantage on saves to avoid falling off your mount, and if you fall off and drop no more than 10 feet you can land on your feet (unless incapacitated)."},
       {name:"Unwavering Mark", text:"When you hit a creature with a melee weapon attack, you mark it until the end of your next turn (ending early if you are incapacitated or die, or someone else marks it). While within 5 feet of you, a marked creature has disadvantage on attack rolls that don't target you. If it deals damage to anyone other than you, you can make a special melee weapon attack against it as a bonus action on your next turn, with advantage, dealing extra damage equal to half your fighter level on a hit. You can make that special attack a number of times equal to your STR modifier (minimum 1) per long rest."}
     ],
@@ -62,17 +63,18 @@ export var FIGHTER_SUBCLASSES = [
   }},
   {name:"Samurai", blurb:"A disciplined warrior whose unyielding will powers devastating strikes.", features:{
     3:[
-      {name:"Bonus Proficiency", text:"Gain proficiency in History, Insight, Performance or Persuasion (your choice), or learn one language of your choice."},
+      {name:"Bonus Proficiency", text:"Gain proficiency in History, Insight, Performance or Persuasion (your choice), or learn one language of your choice.",
+        profs:{pick:[{kind:"skillOrLanguage", options:["History","Insight","Performance","Persuasion"]}]}},
       {name:"Fighting Spirit", text:"As a bonus action, give yourself advantage on weapon attack rolls until the end of the current turn and gain 5 temporary hit points (10 at level 10, 15 at level 15). Three uses per long rest."}
     ],
-    7:[{name:"Elegant Courtier", text:"Add your WIS modifier to CHA (Persuasion) checks. You also gain proficiency in Wisdom saving throws, or in Intelligence or Charisma saves (your choice) if you already have Wisdom."}],
+    7:[{name:"Elegant Courtier", text:"Add your WIS modifier to CHA (Persuasion) checks. You also gain proficiency in Wisdom saving throws, or in Intelligence or Charisma saves (your choice) if you already have Wisdom.", profs:{pick:[{kind:"save", options:["wis"], fallback:["int","cha"]}]}}],
     10:[{name:"Tireless Spirit", text:"When you roll initiative and have no uses of Fighting Spirit left, you regain one."}],
     15:[{name:"Rapid Strike", text:"If you take the Attack action and have advantage on an attack roll against a target, you can forgo that advantage to make an additional weapon attack against the same target as part of the same action. Once per turn."}],
     18:[{name:"Strength Before Death", text:"When damage reduces you to 0 hit points but doesn't kill you outright, you can use your reaction to delay falling unconscious and immediately take an extra turn, interrupting the current one. During it, taking damage still causes death saving throw failures and three failures still kill you. When the extra turn ends, you fall unconscious if you still have 0 hit points. Once per long rest."}]
   }},
   {name:"Arcane Archer", blurb:"Weaves elven magic into arrows for spectacular, magical trick shots.", features:{
     3:[
-      {name:"Arcane Archer Lore", text:"You gain proficiency in Arcana or Nature (tick it on the Abilities & Skills tab), and you learn the Prestidigitation or Druidcraft cantrip."},
+      {name:"Arcane Archer Lore", text:"You gain proficiency in Arcana or Nature (your choice), and you learn the Prestidigitation or Druidcraft cantrip.", profs:{pick:[{kind:"skill", options:["Arcana","Nature"]}]}},
       {name:"Arcane Shot", text:"You learn two Arcane Shot options (one more at fighter levels 7, 10, 15 and 18; each time you learn one you can swap one you know). Once per turn, when you fire an arrow from a shortbow or longbow as part of the Attack action, you can apply one option, deciding after the hit unless the option involves no attack roll. You have two uses, regained on a short or long rest. Save DC 8 + proficiency bonus + INT modifier. Their extra damage doubles at fighter level 18. The level-up asks you to pick them, and the Arcane Shots card on the Features & Feats tab lists them with what they do."}
     ],
     7:[
@@ -92,7 +94,8 @@ export var FIGHTER_SUBCLASSES = [
   }},
   {name:"Banneret (Purple Dragon Knight)", blurb:"A knight-commander whose rallying cries heal and inspire allies.", features:{
     3:[{name:"Rallying Cry", text:"When you use Second Wind, choose up to three allies within 60 feet that can see or hear you. Each regains hit points equal to your fighter level."}],
-    7:[{name:"Royal Envoy", text:"You gain proficiency in Persuasion, or if you already have it, in one of Animal Handling, Insight, Intimidation or Performance (tick it on the Abilities & Skills tab). Your proficiency bonus is doubled for any Persuasion check."}],
+    7:[{name:"Royal Envoy", text:"You gain proficiency in Persuasion, or if you already have it, in one of Animal Handling, Insight, Intimidation or Performance (your choice). Your proficiency bonus is doubled for any Persuasion check.",
+      profs:{expertise:["Persuasion"], pick:[{kind:"skill", options:["Persuasion"], fallback:["Animal Handling","Insight","Intimidation","Performance"]}]}}],
     10:[{name:"Inspiring Surge", text:"When you use Action Surge, choose one ally within 60 feet that can see or hear you. It can use its reaction to make one melee or ranged weapon attack. From level 18 you can choose two allies."}],
     15:[{name:"Bulwark", text:"When you use Indomitable to reroll an INT, WIS or CHA save and aren't incapacitated, choose one ally within 60 feet that failed its save against the same effect and can see or hear you. It can reroll the save and must use the new roll."}]
   }}

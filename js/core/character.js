@@ -3,6 +3,7 @@ import { FEATS_CATALOG } from "../data/feats.js";
 import { uid, featureSpells } from "./helpers.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { syncInfusions } from "./artificer.js";
+import { syncClassPicks } from "./class-picks.js";
 
 /* ---------------- Default character ---------------- */
 export function newCharacter(name){
@@ -177,5 +178,9 @@ export function ensureShape(c){
     c.spells = c.spells.filter(function(sp){ return !(autoNote.test(sp.notes||"") && granted.indexOf(sp.name)!==-1); });
     c.grantedSpellsChecked = true;
   }
+  // Skills and languages a feature gives outright (a Mercy monk's Insight
+  // and Medicine) go on the sheet; ones with a choice wait on the
+  // Features tab's Proficiency choices card.
+  syncClassPicks(c);
   return c;
 }

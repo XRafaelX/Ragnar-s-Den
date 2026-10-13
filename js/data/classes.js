@@ -270,8 +270,9 @@ CLASSES_INFO["Cleric"].features = [
 /* Cleric picks its subclass (Divine Domain) at level 1, so the wizard's
    Class Features step offers it. `grants` is what each domain adds at
    creation: proficiencies that unlock gear (`requires` on an equipment
-   option), always-prepared domain spells, bonus cantrips, and Knowledge's
-   extra expertise pick. Clerics prepare from the whole cleric list, so the
+   option), always-prepared domain spells and bonus cantrips (a domain's
+   skills and languages come from its features' `profs`; see
+   js/core/class-picks.js). Clerics prepare from the whole cleric list, so the
    "spells" count is how many to prepare today (4 at level 1). */
 Object.assign(CLASSES_INFO["Cleric"], {
   available:true,
@@ -285,10 +286,7 @@ Object.assign(CLASSES_INFO["Cleric"], {
         "Life Domain":{profs:["heavy"], spells:["Bless","Cure Wounds"]},
         "Light Domain":{cantrips:["Light"], spells:["Burning Hands","Faerie Fire"]},
         "War Domain":{profs:["heavy","martial"], spells:["Divine Favor","Shield of Faith"]},
-        "Knowledge Domain":{spells:["Command","Identify"],
-          expertise:{id:"knowledgeSkills", label:"Blessings of Knowledge", count:2, options:["Arcana","History","Nature","Religion"],
-            help:"You become proficient in two of these skills, with your proficiency bonus doubled. You also learn two languages (you'll pick them on the Languages step)."},
-          languagePicks:2},
+        "Knowledge Domain":{spells:["Command","Identify"]},
         "Tempest Domain":{profs:["heavy","martial"], spells:["Fog Cloud","Thunderwave"]},
         "Trickery Domain":{spells:["Charm Person","Disguise Self"]}
       }}

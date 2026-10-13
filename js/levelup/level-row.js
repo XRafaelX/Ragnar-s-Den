@@ -173,6 +173,7 @@ export function openSubclassPicker(c, cl){
       if(f.subclass && c.newUnlocks.indexOf(f.id)===-1) c.newUnlocks.push(f.id);
     });
     applySpellSlots(c); // an Eldritch Knight / Arcane Trickster changes slots
+    syncClassPicks(c);  // the old subclass's skills and languages go, the new one's come
     save();
     document.getElementById("info-modal-close").click();
     renderAll();

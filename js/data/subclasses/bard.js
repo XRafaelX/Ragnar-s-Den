@@ -4,7 +4,7 @@
 export var BARD_SUBCLASSES = [
   {name:"College of Lore", blurb:"Collects knowledge and uses words to undermine foes.", features:{
     3:[
-      {name:"Bonus Proficiencies", text:"Gain proficiency with three skills of your choice. Tick them on the Abilities & Skills tab."},
+      {name:"Bonus Proficiencies", text:"Gain proficiency with three skills of your choice.", profs:{pick:[{kind:"skill", count:3}]}},
       {name:"Cutting Words", text:"When a creature you can see within 60 feet makes an attack roll, ability check or damage roll, you can use your reaction to expend a Bardic Inspiration die, roll it and subtract the number from the creature's roll. You can do this after it rolls but before the DM says whether the attack or check succeeds, or before it deals its damage. It has no effect on a creature that can't hear you or is immune to being charmed."}
     ],
     6:[{name:"Additional Magical Secrets", text:"You learn two spells of your choice from any class. Each must be a cantrip or of a level you can cast. They count as bard spells for you but don't count against your spells known."}],

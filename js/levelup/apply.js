@@ -11,6 +11,7 @@ import { syncInfusions } from "../core/artificer.js";
 import { applyLevelUpChoices, undoLevelUpChoices } from "../core/invocations.js";
 import { applyPlan, undoPlan, knownOptions } from "../core/class-options.js";
 import { makeStyleFeature } from "../core/fighting-styles.js";
+import { applyClassPicks, revertEntryPicks, syncClassPicks, classPicksSummary } from "../core/class-picks.js";
 import { renderAll } from "../render/sheet.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { openInfoModal } from "../ui/info-modal.js";
@@ -19,7 +20,7 @@ import { showActionToast } from "../ui/toast.js";
 import { featDef, featHasPicks, applyFeatPicks, revertFeatPicks, featSpellEntries, campaignFeatCopy } from "../core/feat-picks.js";
 import { applyLearn, undoLearn } from "../core/spells-known.js";
 import { preparedAt } from "../data/spells-known.js";
-import { lu, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, close, swapOutStyle, featureAbilityBonus, hpGain } from "./session.js";
+import { lu, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, close, swapOutStyle, featureAbilityBonus, hpGain } from "./session.js";
 
 /* ---------------- Apply & undo ---------------- */
 function slotSnapshot(c){
@@ -62,6 +63,7 @@ export function finish(){
   var learnNow = stepApplicable("learn") ? currentLearnPlan() : null;
   var learnLists = learnNow ? learnSections(learnNow) : [];
   var optPlans = stepApplicable("options") ? optionPlans() : [];
+  var profPicks = profPicksToApply();
   var gain = hpGain();
   var featureBonus = featureAbilityBonus();
   var before = {total: totalLevel(c), pb: profBonus(c), slots: slotSnapshot(c), pact: c.spellcasting.pact ? JSON.parse(JSON.stringify(c.spellcasting.pact)) : null,
@@ -138,6 +140,18 @@ export function finish(){
       return optRec;
     });
   }
+
+  // Skills, expertise, languages and other proficiencies this level's
+  // features give or let the player choose; undo takes them back when the
+  // features go (see syncClassPicks).
+  var profGained = [];
+  profPicks.forEach(function(x){
+    var made = applyClassPicks(c, entry, x.grant, x.slots);
+    var bits = (x.grant.def.skills||[]).concat((x.grant.def.expertise||[]).map(function(s){ return "expertise in "+s; }), x.grant.def.languages||[]);
+    var chosen = classPicksSummary(x.grant, made);
+    if(chosen) bits.push(chosen);
+    profGained = profGained.concat(bits);
+  });
 
   // The picked style becomes a tagged feature (like a starting Fighter's),
   // so Defense/Archery apply and undo can remove it.
@@ -216,7 +230,7 @@ export function finish(){
     className: entry.name, isNewClass: record.isNewClass, newClassLevel: t.newLevel, subclass: subName, currentSubclass: entry.subclass,
     totalBefore: before.total, pbBefore: before.pb, hpGain: maxGain, speedGain: computeSpeed(c).value - before.speed,
     features: gained, feat: feat, bonusFeat: bonusFeat, asi: withFeatAbility(withFeatAbility(record.asi, feat), bonusFeat),
-    slotsBefore: before.slots, pactBefore: before.pact, learned: record.learn ? record.learn.added : [],
+    slotsBefore: before.slots, pactBefore: before.pact, learned: record.learn ? record.learn.added : [], profGained: profGained,
     thirdCaster: classCasterType(entry)==="third"
   });
 }
@@ -236,11 +250,11 @@ export function undoLastLevelUp(c){
   if(!rec) return;
   var entry = c.classes.find(function(cl){ return cl.name===rec.className; });
   var label = rec.className+" "+(entry ? entry.level : "");
-  confirmDialog("Undo last level-up?", "This removes "+label+" and reverts the HP, ability scores, feat, fighting style, spells, invocations, maneuvers or Metamagic, and spell slots it gave.", function(){
+  confirmDialog("Undo last level-up?", "This removes "+label+" and reverts the HP, ability scores, feat, fighting style, proficiencies, spells, invocations, maneuvers or Metamagic, and spell slots it gave.", function(){
     c.levelHistory.pop();
     undoLearn(c, rec.learn);
     if(entry){
-      if(rec.isNewClass) c.classes.splice(c.classes.indexOf(entry), 1);
+      if(rec.isNewClass){ revertEntryPicks(c, entry); c.classes.splice(c.classes.indexOf(entry), 1); }
       else {
         entry.level = Math.max(1, (Number(entry.level)||1)-1); entry.subclass = rec.prevSubclass;
         (rec.spellChoiceIds||[]).forEach(function(id){ if(entry.spellChoices) delete entry.spellChoices[id]; });
@@ -279,6 +293,7 @@ export function undoLastLevelUp(c){
     c.spellcasting.pact = prev.pact ? {max: prev.pact.max, slotLevel: prev.pact.slotLevel,
       used: clamp(pactNow ? (pactNow.used||0) : (prev.pact.used||0), 0, prev.pact.max)} : null;
     c.newUnlocks = c.newUnlocks.filter(function(id){ return rec.unlockIds.indexOf(id)===-1; });
+    syncClassPicks(c); // proficiencies from features the level gave go with them
     syncHitDice(c);
     syncInfusions(c);
     save(); renderAll(); playDelete();
@@ -366,6 +381,7 @@ function showUnlocked(c, s){
         if(m.note) tips.push(m.note);
       }
     }
+    if(s.profGained.length) tips.push("Added to your sheet: "+s.profGained.join(", ")+".");
     // Catalog feats apply their +1 themselves (feat picks); only a custom one needs it added by hand.
     var featData = s.feat && featDef(s.feat.name);
     if(s.feat && !featHasPicks(featData) && /increase your \w+/i.test(s.feat.description||"")) tips.push("Your feat raises an ability score. Add it on the Abilities & Skills tab.");

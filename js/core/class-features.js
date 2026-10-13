@@ -8,6 +8,7 @@ import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from
 import { featDef, featPicksSummary, featPickDetail } from "./feat-picks.js";
 import { uid } from "./basics.js";
 import { halfProficiency } from "./checks.js";
+import { pickedProfs, featurePicksText } from "./class-picks.js";
 
 export function characterIsCaster(c){
   return (c.classes||[]).some(function(cl){
@@ -52,6 +53,9 @@ export function classSpellAbility(cl){
      acHeavyArmor  AC bonus while wearing heavy armor (Soul of the Forge)
      grants        {armor, weapons, tools, savingThrows} proficiencies
                    (Battle Ready; Diamond Soul grants every save)
+     profs         skills, expertise, languages and the proficiency choices
+                   a feature gives (see js/core/class-picks.js, which reads
+                   them straight from the data)
      saveBonus     ability whose modifier (minimum +1) is added to every
                    saving throw (Aura of Protection: "cha")
      magicWeaponAbility  ability usable for attacks with magic weapons
@@ -167,9 +171,12 @@ export function classProficiencies(c, idx){
     base = {armor:m.armor, weapons:m.weapons, tools:m.tools, savingThrows:[], note:m.note};
   }
   // Features tagged `grants` (a subclass's tool or armor proficiency) add
-  // to the class's own list; copies, so the shared data isn't changed.
+  // to the class's own list, and so do the tools, weapons and saves picked
+  // for a feature (a Battle Master's artisan's tools; see class-picks.js);
+  // copies, so the shared data isn't changed.
   var extra = classFeatureList(cl).filter(function(f){ return f.grants; });
-  if(!extra.length) return base;
+  var picked = pickedProfs(cl, idx > 0);
+  if(!extra.length && !picked.tools.length && !picked.weapons.length && !picked.saves.length) return base;
   var p = {armor:(base&&base.armor||[]).slice(), weapons:(base&&base.weapons||[]).slice(), tools:(base&&base.tools||[]).slice(),
     savingThrows:(base&&base.savingThrows||[]).slice(), note:base&&base.note};
   extra.forEach(function(f){
@@ -177,6 +184,9 @@ export function classProficiencies(c, idx){
       (f.grants[k]||[]).forEach(function(v){ if(p[k].indexOf(v)===-1) p[k].push(v); });
     });
   });
+  picked.tools.forEach(function(v){ if(p.tools.indexOf(v)===-1) p.tools.push(v); });
+  picked.weapons.forEach(function(v){ if(p.weapons.indexOf(v)===-1) p.weapons.push(v); });
+  picked.saves.forEach(function(s){ if(p.savingThrows.indexOf(s.ability)===-1) p.savingThrows.push(s.ability); });
   return p;
 }
 export function classLevelOf(c, name, subclass){
@@ -185,13 +195,15 @@ export function classLevelOf(c, name, subclass){
 }
 export function getAllCharacterFeatures(c){
   var list = [];
-  (c.classes||[]).forEach(function(cl){
+  (c.classes||[]).forEach(function(cl, idx){
     classFeatureList(cl).forEach(function(f){
+      // What was picked for it (an Expertise's skills, a tool).
+      var picked = featurePicksText(cl, idx > 0, f.name, f.subclass);
       list.push({
         id: f.id,
         name: f.name,
         source: (f.subclass ? cl.subclass : "Class · " + cl.name) + " · Lv " + f.level,
-        text: f.text,
+        text: f.text + (picked ? "\n\nYour picks: " + picked + "." : ""),
         category: "class",
         isDerived: true
       });

@@ -3,11 +3,12 @@
    dialog is closed). It is set only here; the step screens and the apply
    code read it and change its fields. This module also says which steps
    apply, what each still needs before Next, and draws the dialog shell. */
-import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
+import { ABILITIES, SKILLS, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASS_PROGRESSION, MAX_LEVEL, XP_THRESHOLDS } from "../data/progression.js";
 import { mod, ce, escapeHtml, totalLevel, classFeaturesGainedAt, wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFeat, raceHpPerLevel, classSpellChoices, spellHeldBy } from "../core/helpers.js";
 import { knownInvocations, levelUpPlan, levelUpContext, levelUpProblem } from "../core/invocations.js";
-import { levelUpOptionPlans, planProblem, allKnownOptions } from "../core/class-options.js";
+import { levelUpOptionPlans, planProblem, planSlots, allKnownOptions } from "../core/class-options.js";
+import { levelUpGrants, grantHasChoices, classPickContext, classPicksProblem, fillSlots, slotIsFixed } from "../core/class-picks.js";
 import { styleDueAt, classStyleList, availableStyleNames, versatilityStyleSwap, styleFeatures, stylePicksProblem } from "../core/fighting-styles.js";
 import { showActionToast } from "../ui/toast.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons.js";
@@ -15,7 +16,7 @@ import { featDef, featNeedsChoice, featPicksProblem, featRequiresReason, featSpe
 import { featPicksContext } from "../ui/feat-picks.js";
 import { learnPlan, swapSection, learnProblem } from "../core/spells-known.js";
 import { finish } from "./apply.js";
-import { stepClass, stepStyle, stepSubclass, stepSpells, stepLearn, stepInvocations, stepOptions, stepAsi, stepFeatPicks, stepBonusFeat, stepBonusFeatPicks, stepHp, stepReview } from "./steps.js";
+import { stepClass, stepStyle, stepSubclass, stepSpells, stepLearn, stepInvocations, stepOptions, stepProfs, stepAsi, stepFeatPicks, stepBonusFeat, stepBonusFeatPicks, stepHp, stepReview } from "./steps.js";
 
 /* ---------------- Level-up flow ----------------
    A short guided flow in the same full-screen overlay as the creation
@@ -25,12 +26,14 @@ import { stepClass, stepStyle, stepSubclass, stepSpells, stepLearn, stepInvocati
    invocations (new ones when due, and an optional swap of one known
    invocation every warlock level), the spells and cantrips the class
    learns (New spells, with an optional swap for classes that know a
-   fixed set), an Ability Score Improvement / feat
+   fixed set), the proficiencies a new feature lets you choose
+   (Expertise, a subclass's skills, tools or languages), an Ability Score
+   Improvement / feat
    at class level 4 (a feat's own picks, when it has any, on a Feat
    picks step after it), then hit points. Applying it records what changed in
    c.levelHistory so the last level-up can be undone. */
-var STEP_IDS = ["class","subclass","style","spells","learn","invocations","options","asi","featPicks","bonusFeat","bonusFeatPicks","hp","review"];
-var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Subclass spells", learn:"New spells", invocations:"Invocations", options:"Options", asi:"Abilities", featPicks:"Feat picks", bonusFeat:"Campaign feat", bonusFeatPicks:"Campaign feat picks", hp:"Hit points", review:"Review"};
+var STEP_IDS = ["class","subclass","style","spells","learn","invocations","options","profs","asi","featPicks","bonusFeat","bonusFeatPicks","hp","review"];
+var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Subclass spells", learn:"New spells", invocations:"Invocations", options:"Options", profs:"Proficiencies", asi:"Abilities", featPicks:"Feat picks", bonusFeat:"Campaign feat", bonusFeatPicks:"Campaign feat picks", hp:"Hit points", review:"Review"};
 export var lu = null;
 
 export function abilityName(key){
@@ -89,6 +92,7 @@ export function stepApplicable(id){
   if(id==="learn"){ var lp = currentLearnPlan(); return lp.sections.length > 0 || !!lp.swap || lp.auto.length > 0; }
   if(id==="invocations") return lu.className==="Warlock" && t.newLevel >= 2;
   if(id==="options") return optionPlans().length > 0;
+  if(id==="profs") return profGrantsToChoose().length > 0;
   if(id==="asi") return t.asi;
   if(id==="featPicks") return t.asi && lu.asiMode==="feat" && !!lu.featName && featNeedsChoice(featDef(lu.featName));
   if(id==="bonusFeat") return bonusFeatChoices().length > 0;
@@ -128,6 +132,86 @@ export function optionPlans(){
 }
 export function optChoice(setId){
   return lu.optChoices[setId] = lu.optChoices[setId] || {picks: [], swapOut: ""};
+}
+
+/* ---- Proficiency picks (js/core/class-picks.js) ----
+   lu.profPicks[key]: the picks for each grant this level brings, one
+   list per slot. The grants are worked out from the class entry as this
+   level-up will leave it: its new level, a subclass picked now, and the
+   options picked on the Options step (a Tiger totem's skills). */
+function entryAfter(){
+  var t = target(), options = {};
+  Object.keys((t.existing && t.existing.options) || {}).forEach(function(k){ options[k] = t.existing.options[k].slice(); });
+  optionPlans().forEach(function(plan){
+    var choice = optChoice(plan.set.id), n = planSlots(plan, t.existing, choice);
+    var list = (options[plan.set.id] || []).filter(function(e){ return !(n > plan.fresh && e.id===choice.swapOut); });
+    choice.picks.slice(0, n).filter(Boolean).forEach(function(name){ list.push({name: name}); });
+    options[plan.set.id] = list;
+  });
+  return {name: lu.className, level: t.newLevel, options: options, profPicks: t.existing && t.existing.profPicks,
+    subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : "")};
+}
+/* Every grant gained now, with or without a choice. */
+export function profGrants(){
+  var t = target();
+  return levelUpGrants(t.existing, entryAfter(), t.existing ? lu.c.classes.indexOf(t.existing) > 0 : true);
+}
+/* The ones with something for the player to choose. */
+export function profGrantsToChoose(){
+  return profGrants().filter(function(g){
+    if(!grantHasChoices(g.def)) return false;
+    var slots = fillSlots(g.def, profSlots(g.key), profCtx(g));
+    return g.def.pick.some(function(s, i){ return !slotIsFixed(g.def, slots, i, profCtx(g)); });
+  });
+}
+export function profSlots(key){ return lu.profPicks[key] = lu.profPicks[key] || []; }
+/* The character as this level-up will leave it, for a grant's pickers.
+   What another grant or this level's feat picks is greyed out. */
+export function profCtx(grant){
+  var t = target(), after = entryAfter();
+  var classes = t.existing ? lu.c.classes.map(function(cl){ return cl===t.existing ? after : cl; }) : lu.c.classes.concat([after]);
+  var ctx = classPickContext(Object.assign({}, lu.c, {classes: classes}), after, grant.key);
+  var elsewhere = profPicked(grant.key), doubled = profPicked(grant.key, true);
+  // Expertise only clashes with other expertise; a skill another feature
+  // adds this level can take it.
+  ctx.taken = function(v, kind){
+    if(kind==="expertise") return doubled.indexOf(v)!==-1 ? "picked" : "";
+    if(elsewhere.indexOf(v)!==-1) return "picked";
+    return featPicked().indexOf(v)!==-1 ? "your feat's pick" : "";
+  };
+  ctx.gaining = function(){ return elsewhere; };
+  return ctx;
+}
+/* Skills, tools and languages this level's grants give: fixed ones and
+   picks (leaving out one grant's own). expertise: the skills and tools
+   they double instead. */
+function profPicked(exceptKey, expertise){
+  var out = [];
+  profGrants().forEach(function(g){
+    if(g.key===exceptKey) return;
+    out = out.concat(expertise ? g.def.expertise || [] : (g.def.skills || []).concat(g.def.languages || []));
+    (lu.profPicks[g.key] || []).forEach(function(slot, i){
+      var s = (g.def.pick || [])[i] || {};
+      // An expertise slot doubles; any other adds (Blessings of Knowledge's does both).
+      if(expertise ? s.kind==="expertise" || !!s.expertise : s.kind!=="expertise") out = out.concat(slot || []);
+    });
+  });
+  return out.filter(Boolean);
+}
+/* And what this level's feats pick. */
+function featPicked(){
+  var out = [];
+  [target().asi && lu.asiMode==="feat" && lu.featPicks, stepApplicable("bonusFeat") && lu.bonusFeatName && lu.bonusFeatPicks].forEach(function(p){
+    if(p) out = out.concat(p.skills || [], p.languages || [], p.tools || []);
+  });
+  return out.filter(Boolean);
+}
+/* The grants with their picks tidied, ready to apply: asked before the
+   class entry changes. */
+export function profPicksToApply(){
+  return profGrants().map(function(g){
+    return {grant: g, slots: fillSlots(g.def, profSlots(g.key).map(function(s){ return (s||[]).slice(); }), profCtx(g))};
+  });
 }
 
 export function invChoice(){
@@ -228,6 +312,15 @@ function validate(id){
     }
     return null;
   }
+  if(id==="profs"){
+    var grants = profGrants().filter(function(g){ return grantHasChoices(g.def); });
+    for(var pi=0; pi<grants.length; pi++){
+      var pctx = profCtx(grants[pi]);
+      var pwhy = classPicksProblem(grants[pi], fillSlots(grants[pi].def, profSlots(grants[pi].key), pctx), pctx);
+      if(pwhy) return pwhy;
+    }
+    return null;
+  }
   if(id==="asi"){
     if(lu.asiMode==="feat"){
       if(!lu.featName) return "Pick a feat, or switch to raising ability scores.";
@@ -265,7 +358,7 @@ export function openLevelUp(c){
     className: c.classes.length===1 ? c.classes[0].name : null,
     subclass:"", style:"",
     asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featBlockedOpen:true, featPicks:null, bonusFeatName:"", bonusFeatPicks:null, spellChoices:{},
-    pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{}, learnPicks:{}, learnSwap:"",
+    pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{}, profPicks:{}, learnPicks:{}, learnSwap:"",
     stylePicks:{options:[], spells:[]}, styleSwapOut:"",
     hpMethod:"avg", hpRoll:null
   };
@@ -308,7 +401,7 @@ export function render(){
   var inner = ce("div"); inner.id = "wizard-body-inner";
   body.appendChild(inner);
   overlay.appendChild(body);
-  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, learn:stepLearn, invocations:stepInvocations, options:stepOptions, asi:stepAsi, featPicks:stepFeatPicks, bonusFeat:stepBonusFeat, bonusFeatPicks:stepBonusFeatPicks, hp:stepHp, review:stepReview})[lu.step](inner);
+  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, learn:stepLearn, invocations:stepInvocations, options:stepOptions, profs:stepProfs, asi:stepAsi, featPicks:stepFeatPicks, bonusFeat:stepBonusFeat, bonusFeatPicks:stepBonusFeatPicks, hp:stepHp, review:stepReview})[lu.step](inner);
 
   var errorBox = ce("div","wiz-error");
   overlay.appendChild(errorBox);
@@ -385,7 +478,7 @@ export function resetChoicesFor(name){
   lu.subclass = "";
   lu.style = ""; lu.stylePicks = {options: [], spells: []}; lu.styleSwapOut = "";
   lu.spellChoices = {}; lu.learnPicks = {}; lu.learnSwap = "";
-  lu.pactBoon = ""; lu.pactSpells = []; lu.invPicks = []; lu.invSpells = {}; lu.swapOut = ""; lu.optChoices = {};
+  lu.pactBoon = ""; lu.pactSpells = []; lu.invPicks = []; lu.invSpells = {}; lu.swapOut = ""; lu.optChoices = {}; lu.profPicks = {};
   lu.asi = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; lu.featName = ""; lu.featPicks = null; lu.asiMode = "asi";
   lu.hpRoll = null; lu.hpMethod = "avg";
 }
@@ -411,6 +504,13 @@ export function featCtx(){
   // A spell learned on this level's New spells step isn't also the feat's.
   var learning = learningNow();
   ctx.spellTaken = function(name){ return learning.indexOf(name)!==-1 ? "new this level" : ""; };
+  // Skills and languages this level's class features give count as had.
+  var gained = profPicked();
+  if(gained.length){
+    ctx.skillProfs = Object.assign({}, ctx.skillProfs);
+    gained.forEach(function(v){ if(ctx.skillProfs[v] || SKILLS.some(function(s){ return s[0]===v; })) ctx.skillProfs[v] = Object.assign({}, ctx.skillProfs[v], {prof: true}); });
+    ctx.languages = ctx.languages.concat(gained);
+  }
   return ctx;
 }
 /* Its picks see the other feat taken this level: a spell that one

@@ -49,7 +49,7 @@ export var WIZARD_SUBCLASSES = [
   }},
   {name:"Bladesinging", blurb:"An elven tradition blending arcane magic with fluid, lethal swordplay.", features:{
     2:[
-      {name:"Training in War and Song", text:"You gain proficiency with light armor and one type of one-handed melee weapon of your choice, and in Performance if you don't have it (tick it on the Abilities & Skills tab).", grants:{armor:["Light armor"]}},
+      {name:"Training in War and Song", text:"You gain proficiency with light armor and one type of one-handed melee weapon of your choice, and in Performance if you don't have it.", grants:{armor:["Light armor"]}, profs:{skills:["Performance"], pick:[{kind:"weapon", filter:"oneHandedMelee", label:"Gain proficiency with one type of one-handed melee weapon"}]}},
       {name:"Bladesong", text:"As a bonus action, start the Bladesong for 1 minute. It ends early if you are incapacitated, don medium or heavy armor or a shield, or use two hands to attack with a weapon, and you can dismiss it at any time. While it's active: add your INT modifier (minimum +1) to your AC and to CON saves to maintain concentration, your walking speed increases by 10 feet, and you have advantage on DEX (Acrobatics) checks. Uses equal to your proficiency bonus per long rest."}
     ],
     6:[{name:"Extra Attack", text:"When you take the Attack action, you can attack twice, and you can cast one of your cantrips in place of one of those attacks."}],

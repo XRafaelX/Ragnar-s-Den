@@ -59,7 +59,7 @@ export var ROGUE_SUBCLASSES = [
   {name:"Scout", blurb:"An expert skirmisher and survivalist who strikes from range and keeps moving.", features:{
     3:[
       {name:"Skirmisher", text:"When an enemy ends its turn within 5 feet of you, you can use your reaction to move up to half your speed without provoking opportunity attacks."},
-      {name:"Survivalist", text:"You gain proficiency in Nature and Survival (tick them on the Abilities & Skills tab), and your proficiency bonus is doubled for checks using them."}
+      {name:"Survivalist", text:"You gain proficiency in Nature and Survival, and your proficiency bonus is doubled for checks using them.", profs:{skills:["Nature","Survival"], expertise:["Nature","Survival"]}}
     ],
     9:[{name:"Superior Mobility", text:"Your walking speed increases by 10 feet. (Already added to your speed.) If you have a climbing or swimming speed, those also increase by 10 feet.", speeds:[{type:"climb", bonus:10},{type:"swim", bonus:10}], speed:10}],
     13:[{name:"Ambush Master", text:"You have advantage on initiative rolls. The first creature you hit during the first round of a combat is easier to strike: attack rolls against it by anyone have advantage until the start of your next turn."}],
@@ -77,7 +77,8 @@ export var ROGUE_SUBCLASSES = [
   }},
   {name:"Mastermind", blurb:"A schemer and spymaster who directs allies from the shadows and hides behind lies.", features:{
     3:[
-      {name:"Master of Intrigue", text:"You gain proficiency with the disguise kit, the forgery kit and one gaming set, and learn two languages of your choice. You can also perfectly mimic the speech patterns and accent of a creature you've heard speak for at least 1 minute, passing yourself off as a native speaker of its land.", grants:{tools:["Disguise kit","Forgery kit","One gaming set"]}},
+      {name:"Master of Intrigue", text:"You gain proficiency with the disguise kit, the forgery kit and one gaming set, and learn two languages of your choice. You can also perfectly mimic the speech patterns and accent of a creature you've heard speak for at least 1 minute, passing yourself off as a native speaker of its land.", grants:{tools:["Disguise kit","Forgery kit"]},
+        profs:{pick:[{kind:"tool", options:["Dice set","Playing card set","Dragonchess set","Three-Dragon Ante set"], label:"Gain proficiency with one gaming set"}, {kind:"language", count:2}]}},
       {name:"Master of Tactics", text:"You can take the Help action as a bonus action. When you Help an ally attack a creature, that creature can be up to 30 feet away from you instead of 5, as long as it can see or hear you."}
     ],
     9:[{name:"Insightful Manipulator", text:"If you spend at least 1 minute observing or talking with a creature outside combat, the DM tells you whether it is your equal, superior or inferior in two of the following (your choice): INT score, WIS score, CHA score, or class levels. The DM may also reveal a piece of its history or one of its personality traits."}],

@@ -5,7 +5,9 @@ import { SKILLS } from "../data/abilities-skills.js";
 import { FIGHTING_STYLES } from "../data/classes.js";
 import { escapeHtml, ce, autoEquipLoadout } from "../core/helpers.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
-import { currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills } from "./wizard-core.js";
+import { currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext } from "./wizard-core.js";
+import { renderClassPicks } from "../ui/class-picks.js";
+import { grantHasChoices } from "../core/class-picks.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
 import { styleNeedsPicks } from "../core/fighting-styles.js";
@@ -80,8 +82,8 @@ function choiceSubclass(card, ch){
     card.appendChild(row);
   });
 
-  // Follow-up picks some subclasses need once chosen: Knowledge Domain's
-  // skills, Draconic Bloodline's dragon ancestor.
+  // Follow-up picks some subclasses need once chosen: Draconic
+  // Bloodline's dragon ancestor.
   var g = subclassGrants(currentClassInfo(), wizardState.classChoices);
   if(g.pick){
     var pickTitle = document.createElement("p");
@@ -115,18 +117,19 @@ function choiceSubclass(card, ch){
       renderWizard();
     }, wizardState.classId));
   });
-  var bonus = g.expertise;
-  if(bonus){
+  // Proficiencies its level-1 features let you choose: Knowledge Domain's
+  // skills and languages, an Order or Peace cleric's skill.
+  wizardClassGrants().forEach(function(grant){
+    if(!grantHasChoices(grant.def)) return;
     var title = document.createElement("p");
     title.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
-    title.textContent = bonus.label;
+    title.textContent = grant.name;
     card.appendChild(title);
-    var help = document.createElement("p");
-    help.style.cssText = "font-size:13px;margin:0 0 10px;";
-    help.textContent = bonus.help;
-    card.appendChild(help);
-    choiceExpertise(card, {id:bonus.id, count:bonus.count, fixedOptions:bonus.options});
-  }
+    card.appendChild(renderClassPicks(grant, wizardPickSlots(grant.key), wizardPickContext(grant), function(){
+      var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+      renderWizard();
+    }, "wiz:prof:"+grant.key));
+  });
 }
 
 /* Picks from a long grouped list (a monk's tool, a bard's three
@@ -232,7 +235,7 @@ function choiceFightingStyle(card, ch){
 }
 
 function choiceExpertise(card, ch){
-  var allowed = ch.fixedOptions || expertiseOptions(ch);
+  var allowed = expertiseOptions(ch);
   // Drop picks that are no longer valid (the player went back and
   // changed their skills or background).
   var picked = (wizardState.classChoices[ch.id]||[]).filter(function(x){ return allowed.indexOf(x)!==-1; });

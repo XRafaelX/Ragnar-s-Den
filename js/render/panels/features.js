@@ -9,6 +9,7 @@ import { playAdd, playDelete } from "../../ui/sound.js";
 import { renderInfusionsCard } from "./infusions.js";
 import { renderInvocationsCard } from "./invocations.js";
 import { renderOptionSetCards } from "./class-options.js";
+import { renderClassPicksCard } from "./class-picks.js";
 import { featPicksPending, featAppliedSummary, revertFeatPicks, featHasPicks, featNeedsChoice, applyFeatPicks,
   backgroundFeatMissing, backgroundFeatCopy, backgroundFeatPicks, campaignFeatMissing, campaignFeatCopy, featDef, emptyPicks } from "../../core/feat-picks.js";
 import { openFeatPicksModal } from "../../ui/feat-picks.js";
@@ -357,6 +358,8 @@ export function renderFeaturesPanel(c){
   var invocationsCard = renderInvocationsCard(c);
   if(invocationsCard) panel.appendChild(invocationsCard);
   renderOptionSetCards(c).forEach(function(card){ panel.appendChild(card); });
+  var classPicksCard = renderClassPicksCard(c);
+  if(classPicksCard) panel.appendChild(classPicksCard);
   panel.appendChild(featDirCard);
 
   return panel;

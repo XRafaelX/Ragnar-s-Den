@@ -26,7 +26,9 @@
                 Tasha's optional class features: offered only to characters
                 using them), darkvision (feet), speeds (like class
                 features'; `level` = class level it starts at), rageSpeed
-                (walking speed bonus while raging, not in heavy armor)}] */
+                (walking speed bonus while raging, not in heavy armor),
+                profs (proficiency choices it brings, like a feature's:
+                see js/core/class-picks.js)}] */
 export var OPTION_SETS = [
   {
     id:"metamagic", label:"Metamagic", noun:"Metamagic option", className:"Sorcerer", subclass:null,
@@ -195,7 +197,8 @@ export var OPTION_SETS = [
       {name:"Bear", source:"PHB", text:"Your carrying capacity (including push, drag and lift) doubles, and you have advantage on Strength checks to push, pull, lift or break objects."},
       {name:"Eagle", source:"PHB", text:"You can see up to 1 mile away with no difficulty, discerning fine details as if looking at something 100 feet away, and dim light doesn't impose disadvantage on your Wisdom (Perception) checks."},
       {name:"Elk", source:"SCAG", text:"Your travel pace is doubled, whether mounted or on foot, as is that of up to ten companions within 60 feet of you while you're not incapacitated."},
-      {name:"Tiger", source:"SCAG", text:"You gain proficiency in two skills from Athletics, Acrobatics, Stealth and Survival."},
+      {name:"Tiger", source:"SCAG", text:"You gain proficiency in two skills from Athletics, Acrobatics, Stealth and Survival.",
+        profs:{pick:[{kind:"skill", count:2, options:["Athletics","Acrobatics","Stealth","Survival"]}]}},
       {name:"Wolf", source:"PHB", text:"You can track other creatures while traveling at a fast pace, and you can move stealthily while traveling at a normal pace."}
     ]
   },

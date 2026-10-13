@@ -16,6 +16,8 @@ import { planSlots, planContext, knownOptions, availableOptions } from "../core/
 import { classStyleList, styleFeatures, styleNeedsPicks } from "../core/fighting-styles.js";
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
 import { renderOptionPicker, renderTashaNote } from "../ui/option-picks.js";
+import { renderClassPicks } from "../ui/class-picks.js";
+import { grantHasChoices, classPicksSummary } from "../core/class-picks.js";
 import { logRoll, getDieSvg } from "../dice/dice.js";
 import { makePlusSvg } from "../ui/svg-icons.js";
 import { openCompendium } from "../render/compendium.js";
@@ -24,7 +26,7 @@ import { renderFeatPicks } from "../ui/feat-picks.js";
 import { fillFeatList } from "../ui/feat-list.js";
 import { swapSection } from "../core/spells-known.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
-import { lu, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
+import { lu, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
 
 export function stepClass(container){
   var c = lu.c;
@@ -361,6 +363,20 @@ export function stepOptions(container){
   });
 }
 
+/* Proficiencies: what this level's features let the player choose (a
+   bard's or rogue's Expertise, a subclass's skill, tool, language or
+   saving throw, the skill a second class adds). */
+export function stepProfs(container){
+  var card = stepCard(container, "Proficiencies",
+    "<b>New proficiencies:</b> this level lets you choose some. Skills and expertise show on the Abilities & Skills tab; tools, languages and saving throws on the Information tab. Anything you already have is greyed out.");
+  profGrants().filter(function(g){ return grantHasChoices(g.def); }).forEach(function(g){
+    var title = ce("p","lu-choice-title");
+    title.textContent = g.name;
+    card.appendChild(title);
+    card.appendChild(renderClassPicks(g, profSlots(g.key), profCtx(g), render, "lu:prof:"+g.key));
+  });
+}
+
 export function stepAsi(container){
   var c = lu.c;
   var card = stepCard(container, "Ability Score Improvement",
@@ -589,6 +605,13 @@ export function stepReview(container){
     if(swapped && fresh.length) items.push(plan.set.label+" swap: "+swapped.name+" → "+fresh[fresh.length-1]);
     var added = swapped ? fresh.slice(0, -1) : fresh;
     if(added.length) items.push("New "+(added.length>1 ? plan.set.noun+"s" : plan.set.noun)+": "+added.join(", "));
+  });
+  // What this level's features add: given outright, or picked.
+  profPicksToApply().forEach(function(x){
+    var bits = (x.grant.def.skills||[]).concat((x.grant.def.expertise||[]).map(function(s){ return "expertise in "+s; }), x.grant.def.languages||[]);
+    var chosen = classPicksSummary(x.grant, {slots: x.slots});
+    if(chosen) bits.push(chosen);
+    if(bits.length) items.push(x.grant.name+": "+bits.join(", "));
   });
   if(t.asi){
     if(lu.asiMode==="feat"){

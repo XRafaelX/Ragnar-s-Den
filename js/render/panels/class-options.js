@@ -3,6 +3,7 @@ import { escapeHtml, mod, profBonus, characterResources } from "../../core/helpe
 import { OPTION_SETS, OPTION_SOURCES, optionsKnownAt, optionSetStart } from "../../data/class-options.js";
 import { CLASS_PROGRESSION } from "../../data/progression.js";
 import { entrySets, knownOptions, allKnownOptions, learnOption, forgetOption, optionReason, tashaOn } from "../../core/class-options.js";
+import { syncClassPicks } from "../../core/class-picks.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { meter, sectionTitle, hint } from "../../ui/card-parts.js";
 import { renderOptionPicker, optionMeta, renderTashaNote } from "../../ui/option-picks.js";
@@ -168,6 +169,7 @@ function optionEntry(c, set, entry, k, fixed){
         ? "After a long rest you can swap one " + set.noun + " you know: remove it, then learn another below."
         : "Normally you only swap " + set.noun + "s when the level-up offers it. Remove it to fix a mistake, then learn the right one below.", function(){
         forgetOption(entry, set.id, k.id);
+        syncClassPicks(c); // a Tiger totem's skills go with it
         save(); renderAll(); playDelete();
       });
     });

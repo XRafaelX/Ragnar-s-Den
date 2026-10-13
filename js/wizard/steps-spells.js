@@ -8,9 +8,10 @@ import { TITLE_MAX } from "../ui/char-title.js";
 import { SPELL_DATA, spellDataForClass, tashaAddsSpell, tashaSpellCount } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeDiceSvg } from "../ui/svg-icons.js";
-import { currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills } from "./wizard-core.js";
+import { wizardClassGrants, wizardPickSlots, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills } from "./wizard-core.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { featPicksSummary } from "../core/feat-picks.js";
+import { classPicksSummary } from "../core/class-picks.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { SUBCLASSES } from "../data/progression.js";
 import { tashaSwitchRow, buildEquipmentList } from "./steps-choices.js";
@@ -265,7 +266,13 @@ export function wizardStepReview(container){
   });
   var grants = subclassGrants(info, wizardState.classChoices);
   if(grants.pick) row(grants.pick.label, wizardState.classChoices[grants.pick.id] || "None");
-  if(grants.expertise) row(grants.expertise.label, (wizardState.classChoices[grants.expertise.id]||[]).join(", ") || "None");
+  // What the subclass's features add: given outright, or picked.
+  wizardClassGrants().forEach(function(g){
+    var bits = (g.def.skills||[]).concat((g.def.expertise||[]).map(function(s){ return "expertise in "+s; }), g.def.languages||[]);
+    var chosen = classPicksSummary(g, {slots: wizardPickSlots(g.key)});
+    if(chosen) bits.push(chosen);
+    if(bits.length) row(g.name, bits.join(", "));
+  });
   if(grants.spells) row("Domain spells", grants.spells.join(", ")+" (always prepared)");
   if(info.spellcasting && info.spellcasting.pact) row("Pact Magic", info.spellcasting.pact.max+" × "+info.spellcasting.pact.slotLevel+"st-level slot, back on a short rest");
   if(info.spellcasting){

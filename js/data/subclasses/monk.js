@@ -22,7 +22,7 @@ export var MONK_SUBCLASSES = [
   }},
   {name:"Way of Mercy", blurb:"Heals allies and harvests life force from enemies with mysterious techniques.", features:{
     3:[
-      {name:"Implements of Mercy", text:"You gain proficiency in Insight and Medicine (tick them on the Abilities & Skills tab) and with the herbalism kit, and you gain a special mask that you often wear when using this tradition's features.", grants:{tools:["Herbalism kit"]}},
+      {name:"Implements of Mercy", text:"You gain proficiency in Insight and Medicine and with the herbalism kit, and you gain a special mask that you often wear when using this tradition's features.", grants:{tools:["Herbalism kit"]}, profs:{skills:["Insight","Medicine"]}},
       {name:"Hand of Harm", text:"When you hit a creature with an unarmed strike, you can spend 1 ki to deal extra necrotic damage equal to one roll of your Martial Arts die + your WIS modifier. Once per turn."},
       {name:"Hand of Healing", text:"As an action, spend 1 ki to touch a creature and restore hit points equal to one roll of your Martial Arts die + your WIS modifier. When you use Flurry of Blows, you can replace one of its unarmed strikes with this, without spending ki for the healing."}
     ],
@@ -32,12 +32,13 @@ export var MONK_SUBCLASSES = [
   }},
   {name:"Way of the Kensei", blurb:"Treats weapons as an extension of the body, mastering them as art.", features:{
     3:[
-      {name:"Path of the Kensei", text:"Kensei Weapons: choose one melee and one ranged weapon type (simple or martial without the heavy or special property; longbows are allowed). You gain proficiency with them and they count as monk weapons; choose one more type at levels 6, 11 and 17. Agile Parry: if you make an unarmed strike as part of the Attack action while holding a melee kensei weapon, you gain +2 AC until the start of your next turn (while it's in your hand and you aren't incapacitated). Kensei's Shot: as a bonus action, your ranged kensei weapon attacks deal an extra 1d4 damage on a hit until the end of the turn."},
-      {name:"Way of the Brush", text:"You gain proficiency with calligrapher's supplies or painter's supplies (your choice).", grants:{tools:["Calligrapher's or painter's supplies"]}}
+      {name:"Path of the Kensei", text:"Kensei Weapons: choose one melee and one ranged weapon type (simple or martial without the heavy or special property; longbows are allowed). You gain proficiency with them and they count as monk weapons; choose one more type at levels 6, 11 and 17. Agile Parry: if you make an unarmed strike as part of the Attack action while holding a melee kensei weapon, you gain +2 AC until the start of your next turn (while it's in your hand and you aren't incapacitated). Kensei's Shot: as a bonus action, your ranged kensei weapon attacks deal an extra 1d4 damage on a hit until the end of the turn.",
+        profs:{pick:[{kind:"weapon", filter:"kenseiMelee", monk:true, label:"Kensei weapon: choose a melee weapon"}, {kind:"weapon", filter:"kenseiRanged", monk:true, label:"Kensei weapon: choose a ranged weapon"}]}},
+      {name:"Way of the Brush", text:"You gain proficiency with calligrapher's supplies or painter's supplies (your choice).", profs:{pick:[{kind:"tool", options:["Calligrapher's supplies","Painter's supplies"]}]}}
     ],
-    6:[{name:"One with the Blade", text:"Your kensei weapon attacks count as magical for overcoming resistance and immunity. Deft Strike: when you hit with a kensei weapon, you can spend 1 ki to deal extra damage of the weapon's type equal to your Martial Arts die, once per turn."}],
-    11:[{name:"Sharpen the Blade", text:"As a bonus action, spend up to 3 ki to give a kensei weapon you touch a bonus to attack and damage rolls equal to the ki spent, for 1 minute or until you use this again. It has no effect on a magic weapon that already has a bonus."}],
-    17:[{name:"Unerring Accuracy", text:"If you miss with an attack roll using a monk weapon, you can reroll it. Once on each of your turns."}]
+    6:[{name:"One with the Blade", text:"Your kensei weapon attacks count as magical for overcoming resistance and immunity. Deft Strike: when you hit with a kensei weapon, you can spend 1 ki to deal extra damage of the weapon's type equal to your Martial Arts die, once per turn. You also choose one more kensei weapon.", profs:{pick:[{kind:"weapon", filter:"kensei", monk:true, label:"Choose one more kensei weapon"}]}}],
+    11:[{name:"Sharpen the Blade", text:"As a bonus action, spend up to 3 ki to give a kensei weapon you touch a bonus to attack and damage rolls equal to the ki spent, for 1 minute or until you use this again. It has no effect on a magic weapon that already has a bonus. You also choose one more kensei weapon.", profs:{pick:[{kind:"weapon", filter:"kensei", monk:true, label:"Choose one more kensei weapon"}]}}],
+    17:[{name:"Unerring Accuracy", text:"If you miss with an attack roll using a monk weapon, you can reroll it. Once on each of your turns. You also choose one more kensei weapon.", profs:{pick:[{kind:"weapon", filter:"kensei", monk:true, label:"Choose one more kensei weapon"}]}}]
   }},
   {name:"Way of the Astral Self", blurb:"Manifests a spectral astral form to amplify attacks and awareness.", features:{
     3:[{name:"Arms of the Astral Self", text:"As a bonus action, spend 1 ki to summon spectral arms for 10 minutes (ending early if you are incapacitated or die). When they appear, each creature of your choice you can see within 10 feet makes a DEX save or takes force damage equal to two rolls of your Martial Arts die. While they are present: you can use WIS instead of STR for Strength checks and saves; you can make unarmed strikes with them, with 5 feet more reach on your turn; and those strikes can use WIS instead of STR or DEX for attack and damage and deal force damage."}],
@@ -47,7 +48,8 @@ export var MONK_SUBCLASSES = [
   }},
   {name:"Way of the Ascendant Dragon", blurb:"Channels draconic power to breathe elemental energy and sprout spectral wings.", features:{
     3:[
-      {name:"Draconic Disciple", text:"Draconic Strike: when you damage a target with an unarmed strike, you can change its damage type to acid, cold, fire, lightning or poison. Tongue of Dragons: you learn to speak, read and write Draconic or one other language of your choice. Draconic Presence: when you fail a CHA (Intimidation or Persuasion) check, you can use your reaction to reroll it; once this turns a failure into a success, you can't use it again until you finish a long rest."},
+      {name:"Draconic Disciple", text:"Draconic Strike: when you damage a target with an unarmed strike, you can change its damage type to acid, cold, fire, lightning or poison. Tongue of Dragons: you learn to speak, read and write Draconic or one other language of your choice. Draconic Presence: when you fail a CHA (Intimidation or Persuasion) check, you can use your reaction to reroll it; once this turns a failure into a success, you can't use it again until you finish a long rest.",
+        profs:{pick:[{kind:"language", label:"Tongue of Dragons: learn Draconic or one other language"}]}},
       {name:"Breath of the Dragon", text:"When you take the Attack action, you can replace one attack with a 20-foot cone or a 30-foot line (5 feet wide) of acid, cold, fire, lightning or poison. Each creature in it makes a DEX save against your ki save DC, taking two rolls of your Martial Arts die in damage on a failure, or half on a success (three rolls from level 11). You can use this a number of times equal to your proficiency bonus per long rest; once they're spent, you can spend 2 ki to use it again."}
     ],
     6:[{name:"Wings Unfurled", text:"When you use Step of the Wind, you can unfurl spectral draconic wings and gain a flying speed equal to your walking speed until the end of the turn. You can use this a number of times equal to your proficiency bonus, regained on a long rest.", speeds:[{type:"fly", value:"walk", when:"Step of the Wind, until end of turn"}]}],
@@ -56,7 +58,7 @@ export var MONK_SUBCLASSES = [
   }},
   {name:"Way of the Drunken Master", blurb:"Sways and staggers unpredictably, dodging blows and turning them on others.", features:{
     3:[
-      {name:"Bonus Proficiencies", text:"You gain proficiency in Performance (tick it on the Abilities & Skills tab) and with brewer's supplies.", grants:{tools:["Brewer's supplies"]}},
+      {name:"Bonus Proficiencies", text:"You gain proficiency in Performance and with brewer's supplies.", grants:{tools:["Brewer's supplies"]}, profs:{skills:["Performance"]}},
       {name:"Drunken Technique", text:"Whenever you use Flurry of Blows, you also gain the benefit of the Disengage action, and your walking speed increases by 10 feet until the end of the turn."}
     ],
     6:[{name:"Tipsy Sway", text:"Leap to Your Feet: when you're prone, you can stand up by spending only 5 feet of movement. Redirect Attack: when a creature misses you with a melee attack, you can spend 1 ki as a reaction to make that attack hit another creature of your choice (not the attacker) that you can see within 5 feet of you."}],
