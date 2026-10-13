@@ -35,14 +35,99 @@
   padding:12px 14px;font-size:13px;line-height:1.5;color:var(--text-on-parch);margin-bottom:16px;
 }
 
-/* Background step: the campaign book row (a .lu-custom-note with a picker
-   in place of the button, and the line saying what the pick gives),
-   behind the button that opens it. */
-.wiz-campaign-open{margin-top:14px;}
-.wiz-campaign-note .wiz-campaign-field{flex:0 1 300px;margin-bottom:0;}
-.wiz-campaign-note .wiz-campaign-outcome{
-  flex:1 1 100%;padding-top:10px;border-top:1px dashed var(--rule);color:var(--text-on-parch);
+/* Background step: the campaign books "DLC" tile, the panel it slides
+   open and one card per book. Entrances wait for .moved (opened by hand),
+   so a step redrawn with a book already picked doesn't replay them. */
+.wiz-dlc{margin-top:14px;}
+.wiz-dlc-tile{
+  position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;text-align:left;
+  border:1px solid var(--rule);border-radius:8px;color:var(--text-on-parch);cursor:pointer;
+  background:linear-gradient(110deg, color-mix(in srgb, var(--brass) 16%, transparent), color-mix(in srgb, var(--brass) 4%, transparent) 55%);
+  transition:border-color .2s, transform .15s, box-shadow .25s;
 }
+@media (hover:hover){
+  .wiz-dlc-tile:hover{border-color:var(--brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--brass) 14%, transparent);}
+  .wiz-dlc-tile:hover .wiz-dlc-icon{transform:rotate(-8deg) scale(1.06);}
+}
+.wiz-dlc-tile:active{transform:scale(.995);}
+.wiz-dlc.open .wiz-dlc-tile, .wiz-dlc.has-book .wiz-dlc-tile{border-color:var(--brass);}
+.wiz-dlc-icon{
+  flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:8px;color:var(--brass-bright);
+  background:color-mix(in srgb, var(--brass) 22%, transparent);transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.wiz-dlc-text{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.wiz-dlc-text b{font-size:13.5px;}
+.wiz-dlc-sub{font-size:12px;line-height:1.4;color:var(--text-on-parch-dim);}
+.wiz-dlc.has-book .wiz-dlc-sub{color:var(--brass-bright);}
+.wiz-dlc-badge{
+  position:relative;overflow:hidden;flex:none;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.1em;
+  color:var(--ink-deep);background:linear-gradient(120deg, var(--brass-bright), var(--brass));
+}
+.wiz-dlc-badge::after{
+  content:"";position:absolute;top:0;bottom:0;left:-80%;width:50%;transform:skewX(-20deg);pointer-events:none;
+  background:linear-gradient(100deg, transparent, rgba(255,255,255,.75), transparent);animation:wizDlcGlint 4s ease-in-out infinite;
+}
+.wiz-dlc-chevron{flex:none;display:grid;color:var(--text-on-parch-dim);transition:transform .3s ease;}
+.wiz-dlc.open .wiz-dlc-chevron{transform:rotate(180deg);}
+
+.wiz-dlc-panel{
+  display:grid;grid-template-rows:0fr;visibility:hidden;
+  transition:grid-template-rows .34s cubic-bezier(.2,.8,.2,1), visibility 0s .34s;
+}
+.wiz-dlc.open .wiz-dlc-panel{grid-template-rows:1fr;visibility:visible;transition:grid-template-rows .34s cubic-bezier(.2,.8,.2,1), visibility 0s;}
+.wiz-dlc-inner{min-height:0;overflow:hidden;}
+.wiz-dlc-lead{margin:12px 2px 10px;font-size:12.5px;line-height:1.5;color:var(--text-on-parch-dim);}
+.wiz-dlc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:2px;}
+.wiz-dlc-card{
+  position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:14px;text-align:left;
+  border:1px solid var(--rule);border-radius:8px;color:var(--text-on-parch);cursor:pointer;
+  background:linear-gradient(160deg, color-mix(in srgb, var(--brass) 12%, transparent), rgba(255,255,255,.02) 65%);
+  transition:border-color .2s, background .25s, transform .18s;
+}
+@media (hover:hover){ .wiz-dlc-card:hover{border-color:var(--brass);transform:translateY(-2px);} }
+.wiz-dlc-card:active{transform:scale(.985);}
+.wiz-dlc-card.on{
+  border-color:var(--brass-bright);box-shadow:inset 0 0 0 1px var(--brass-bright);
+  background:linear-gradient(160deg, color-mix(in srgb, var(--brass) 30%, transparent), color-mix(in srgb, var(--brass) 8%, transparent) 70%);
+}
+.wiz-dlc-series{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--brass-bright);padding-right:28px;}
+.wiz-dlc-card strong{font-family:var(--serif);font-weight:normal;font-size:17px;line-height:1.25;padding-right:28px;}
+.wiz-dlc-perks{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.wiz-dlc-perks span{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--text-on-parch-dim);}
+.wiz-dlc-card.on .wiz-dlc-perks span{border-color:var(--brass);color:var(--text-on-parch);}
+.wiz-dlc-state{margin-top:8px;font-size:11.5px;color:var(--text-on-parch-dim);}
+.wiz-dlc-card.on .wiz-dlc-state{color:var(--brass-bright);}
+.wiz-dlc-check{
+  position:absolute;top:10px;right:10px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+  color:var(--ink-deep);background:var(--brass-bright);transform:scale(0);opacity:0;transition:transform .2s, opacity .2s;
+}
+.wiz-dlc-check svg{width:13px;height:13px;}
+.wiz-dlc-card.on .wiz-dlc-check{transform:none;opacity:1;}
+.wiz-dlc-outcome{
+  margin:10px 2px 2px;padding:10px 12px;border-radius:6px;font-size:13px;line-height:1.5;color:var(--text-on-parch);
+  border-left:3px solid var(--brass);background:color-mix(in srgb, var(--brass) 10%, transparent);
+}
+.wiz-dlc-outcome[hidden]{display:none;}
+
+/* The animations: cards deal in one after the other, the used card's
+   check pops and a shine crosses it, the outcome line slides up. */
+.wiz-dlc.moved.open .wiz-dlc-lead{animation:wizDlcRise .3s ease both;}
+.wiz-dlc.moved.open .wiz-dlc-card{animation:wizDlcDeal .42s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:.08s;}
+.wiz-dlc.moved.open .wiz-dlc-card:nth-child(2){animation-delay:.17s;}
+.wiz-dlc.moved.open .wiz-dlc-card:nth-child(3){animation-delay:.26s;}
+.wiz-dlc-card.fresh .wiz-dlc-check{animation:wizDlcPop .4s cubic-bezier(.34,1.56,.64,1);}
+.wiz-dlc-card.fresh::after{
+  content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;transform:skewX(-20deg);pointer-events:none;
+  background:linear-gradient(100deg, transparent, color-mix(in srgb, var(--brass-bright) 45%, transparent), transparent);
+  animation:wizDlcShine .7s ease-out both;
+}
+.wiz-dlc-outcome.fresh{animation:wizDlcRise .32s ease both;}
+@keyframes wizDlcGlint{0%,72%{left:-80%;}100%{left:140%;}}
+@keyframes wizDlcDeal{from{opacity:0;transform:translateY(14px) scale(.96);}to{opacity:1;transform:none;}}
+@keyframes wizDlcRise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+@keyframes wizDlcPop{0%{transform:scale(0) rotate(-45deg);}100%{transform:none;}}
+@keyframes wizDlcShine{from{left:-60%;}to{left:130%;}}
+@media (max-width:560px){ .wiz-dlc-grid{grid-template-columns:1fr;} }
 
 .class-pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
 .class-pick-card{
@@ -228,6 +313,7 @@ button.wiz-feat-group[aria-expanded="true"]::before{transform:rotate(90deg);}
 
 @media (prefers-reduced-motion: reduce){
   .wiz-spell-slot.added{animation:none;}
+  .wiz-dlc *, .wiz-dlc *::after{animation:none !important;transition:none !important;}
 }
 
 @media (max-width:800px){
