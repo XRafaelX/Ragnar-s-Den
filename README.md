@@ -213,7 +213,15 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   │   ├── custom-spells.js           # Custom spell creation and persistence
 │   │   ├── custom-subclasses.js       # Custom subclass creation, persistence, and merge logic
 │   │   ├── feat-picks.js              # Feat pick application, revert, validation, and proficiency derivation
-│   │   ├── helpers.js                 # Math, ability/skill calculations, derived stats, AC, initiative, speed, effects, string helpers
+│   │   ├── helpers.js                 # Gathers the sheet's calculation modules below, so the app imports from one place
+│   │   ├── basics.js                  # Shared tools: ids, ability modifiers, levels, DOM and text helpers
+│   │   ├── class-features.js          # Class and subclass features, spell slots, proficiencies, the Features tab's list
+│   │   ├── character-resources.js     # Limited uses, what a rest restores, rage numbers, hit dice
+│   │   ├── vitals.js                  # Hit points, speed, Armor Class, initiative, saving throws, senses
+│   │   ├── spell-grants.js            # Spells that features, feats, invocations and fighting styles give
+│   │   ├── equipment.js               # Hands and equipping, weapon numbers, weapon and armor proficiency
+│   │   ├── checks.js                  # Ability checks, skills, passive scores, advantage and disadvantage
+│   │   ├── effects.js                 # Active effects (Bladesong, the Astral Self, Symbiotic Entity)
 │   │   └── state.js                   # Application state and localStorage persistence
 │   ├── data/
 │   │   ├── abilities-skills.js        # Ability and skill definitions, class hit dice
@@ -224,7 +232,16 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   │   ├── classes.js                 # Class information, spellcaster classification, and proficiencies
 │   │   ├── companions.js              # Companion definitions and stat-block templates
 │   │   ├── effects.js                 # Toggle effect definitions (Bladesong, Astral Self, Symbiotic Entity)
-│   │   ├── feats.js                   # Feats catalog (all 105 feats of the 2014 rules) and campaign bonus feats
+│   │   ├── feats.js                   # Feats catalog: joins the per-book files below (105 feats); campaign bonus feats
+│   │   ├── feats/                     # Feats by source book
+│   │   │   ├── phb.js                 # Player's Handbook (42)
+│   │   │   ├── tasha.js               # Tasha's Cauldron of Everything (15)
+│   │   │   ├── xanathar.js            # Xanathar's Guide: racial feats (15)
+│   │   │   ├── other-books.js         # Mordenkainen's, Eberron, Fizban's, Strixhaven, Book of Many Things (9)
+│   │   │   ├── dragonlance.js         # Dragonlance: Shadow of the Dragon Queen (9)
+│   │   │   ├── giants.js              # Bigby Presents: Glory of the Giants (8)
+│   │   │   ├── planescape.js          # Planescape: Adventures in the Multiverse (7)
+│   │   │   └── races.js               # Race groups the racial feats refer to
 │   │   ├── infusions.js               # Artificer infusions catalog and prerequisites
 │   │   ├── languages.js               # Standard and exotic language definitions
 │   │   ├── misc.js                    # Point-buy costs and random name generator
@@ -253,10 +270,19 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   │   └── dice.js                    # Dice roller tray, animations, modifier calculation, roll history
 │   ├── levelup/
 │   │   ├── level-row.js               # XP bar and level display on identity card
-│   │   └── levelup.js                 # Level-up wizard, subclass assignment, ASI/feat picker, HP rolling, undo
+│   │   ├── levelup.js                 # Gathers the level-up dialog's three parts below
+│   │   ├── session.js                 # The dialog's state, which steps apply, what each still needs, navigation
+│   │   ├── steps.js                   # One screen per step: class, subclass, style, spells, options, feat, hit points, review
+│   │   └── apply.js                   # Applies the level-up, undoes the last one, shows the unlock popup
 │   ├── render/
 │   │   ├── armory.js                  # Armory overlay and equipment catalog browser
-│   │   ├── compendium.js              # Interactive compendium browser and homebrew creator
+│   │   ├── compendium.js              # Opens the Compendium; its tabs are in compendium/
+│   │   ├── compendium/                # One file per Compendium tab
+│   │   │   ├── shared.js              # What all tabs share: the session, detail view blocks, edit and delete bar
+│   │   │   ├── classes.js             # Classes and Subclasses tabs, the custom subclass form
+│   │   │   ├── races-backgrounds.js   # Races and Backgrounds tabs, their homebrew forms
+│   │   │   ├── feats.js               # Feats and custom features, adding them to a character
+│   │   │   └── companions-alignments.js# Companions and Alignments tabs
 │   │   ├── home.js                    # Home screen hub renderer
 │   │   ├── monsters.js                # Monster browser overlay and stat block renderer
 │   │   ├── sheet.js                   # Character sheet renderer and panel tab dispatcher
@@ -301,7 +327,11 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   │   └── update-prompt.js           # "New version available" PWA update banner
 │   └── wizard/
 │       ├── wizard-core.js             # Character creation wizard controller and state
-│       └── wizard-steps.js            # Wizard steps (Race, Class, Abilities, Background, Equipment, Spells, Review)
+│       ├── wizard-steps.js            # Gathers the wizard's step screens below
+│       ├── steps-basics.js            # Class, race, background and campaign, alignment, ability scores
+│       ├── steps-traits.js            # Skills, race traits, the race's feat, the background's or campaign's feat
+│       ├── steps-choices.js           # Class features, languages, starting equipment
+│       └── steps-spells.js            # Cantrips, spells and the review
 ├── tests/
 │   ├── setup.mjs                      # Browser stub (window, document, localStorage) for Node test runner
 │   ├── bugfixes.test.mjs              # Regression tests for all 8 bugs fixed in v2.0.0

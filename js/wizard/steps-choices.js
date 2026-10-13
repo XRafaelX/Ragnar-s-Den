@@ -1,0 +1,423 @@
+/* ---------------- Creation wizard: class features, languages, equipment ----------------
+   The class's level-1 choices (subclass, fighting style, expertise and
+   the like), the Languages step and the starting equipment. */
+import { SKILLS } from "../data/abilities-skills.js";
+import { FIGHTING_STYLES } from "../data/classes.js";
+import { escapeHtml, ce, autoEquipLoadout } from "../core/helpers.js";
+import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
+import { currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills } from "./wizard-core.js";
+import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
+import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
+import { styleNeedsPicks } from "../core/fighting-styles.js";
+import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
+import { SUBCLASSES } from "../data/progression.js";
+
+/* What a Rogue-style expertise pick can target: every skill the new
+   character is proficient in (class picks + background) plus any tools
+   the choice allows. */
+export function expertiseOptions(choice){
+  var bgSkills = wizardBackgroundSkills();
+  var skills = wizardState.skillChoices.concat(bgSkills.filter(function(sk){ return wizardState.skillChoices.indexOf(sk)===-1; }));
+  // Plus a skill picked on Race Traits (Variant Human).
+  var def = raceChoiceDef();
+  if(def && def.skills) wizardState.raceChoices.skills.slice(0, def.skills).forEach(function(sk){ if(sk && skills.indexOf(sk)===-1) skills.push(sk); });
+  // And skills its feat granted (Skilled, Skill Expert).
+  var fp = def && def.feat && wizardState.raceChoices.featPicks;
+  if(fp) (fp.skills||[]).forEach(function(sk){ if(sk && SKILLS.some(function(x){ return x[0]===sk; }) && skills.indexOf(sk)===-1) skills.push(sk); });
+  // And the background's or campaign's feat (a Dragonlance character's Skilled).
+  var bp = wizardBackgroundFeatPicks();
+  if(bp) (bp.skills||[]).forEach(function(sk){ if(sk && SKILLS.some(function(x){ return x[0]===sk; }) && skills.indexOf(sk)===-1) skills.push(sk); });
+  return skills.concat(choice.tools||[]);
+}
+
+export function wizardStepChoices(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Class Features</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> Some of your level 1 class features come with a choice. These shape what your "+escapeHtml(wizardState.classId)+" is best at.";
+  card.appendChild(explain);
+
+  var info = currentClassInfo();
+  (info.choices||[]).forEach(function(ch){
+    var title = document.createElement("p");
+    title.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    title.textContent = ch.label;
+    card.appendChild(title);
+    if(ch.help){
+      var help = document.createElement("p");
+      help.style.cssText = "font-size:13px;margin:0 0 10px;";
+      help.textContent = ch.help;
+      card.appendChild(help);
+    }
+    if(ch.kind==="subclass") choiceSubclass(card, ch);
+    else if(ch.kind==="fightingStyle") choiceFightingStyle(card, ch);
+    else if(ch.kind==="listPick") choiceListPick(card, ch);
+    else if(ch.kind==="expertise") choiceExpertise(card, ch);
+  });
+  container.appendChild(card);
+}
+
+var PROF_LABELS = {heavy:"heavy armor", martial:"martial weapons"};
+
+function choiceSubclass(card, ch){
+  (SUBCLASSES[wizardState.classId]||[]).forEach(function(sub){
+    var grants = ch.grants && ch.grants[sub.name] || {};
+    var lvl1 = ((sub.features||{})[1]||[]).map(function(f){ return f.name; });
+    var extras = [];
+    if(grants.profs && grants.profs.length) extras.push("Proficient with "+grants.profs.map(function(p){ return PROF_LABELS[p]||p; }).join(" and "));
+    if(grants.spells && grants.spells.length) extras.push("Always prepared: "+grants.spells.join(", "));
+    var expanded = wizardExpandedSpells(sub.name);
+    if(expanded.length) extras.push("Adds to your spell list: "+expanded.join(", "));
+    var row = ce("div","wiz-equip-option");
+    if(wizardState.classChoices[ch.id]===sub.name) row.classList.add("selected");
+    row.innerHTML = "<div><strong>"+escapeHtml(sub.name)+"</strong><br>"+
+      "<span style='font-size:12px'>"+escapeHtml(sub.blurb)+"</span><br>"+
+      "<span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(["Level 1: "+lvl1.join(", ")].concat(extras).join(" · "))+"</span></div>";
+    row.addEventListener("click", function(){
+      wizardState.classChoices[ch.id] = sub.name;
+      renderWizard();
+    });
+    card.appendChild(row);
+  });
+
+  // Follow-up picks some subclasses need once chosen: Knowledge Domain's
+  // skills, Draconic Bloodline's dragon ancestor.
+  var g = subclassGrants(currentClassInfo(), wizardState.classChoices);
+  if(g.pick){
+    var pickTitle = document.createElement("p");
+    pickTitle.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    pickTitle.textContent = g.pick.label;
+    card.appendChild(pickTitle);
+    var pickHelp = document.createElement("p");
+    pickHelp.style.cssText = "font-size:13px;margin:0 0 10px;";
+    pickHelp.textContent = g.pick.help;
+    card.appendChild(pickHelp);
+    g.pick.options.forEach(function(opt){
+      var row = ce("div","wiz-equip-option");
+      if(wizardState.classChoices[g.pick.id]===opt.name) row.classList.add("selected");
+      row.innerHTML = "<div><strong>"+escapeHtml(opt.name)+"</strong><br><span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(opt.text)+"</span></div>";
+      row.addEventListener("click", function(){
+        wizardState.classChoices[g.pick.id] = opt.name;
+        renderWizard();
+      });
+      card.appendChild(row);
+    });
+  }
+  // Spell picks the subclass asks for now: a genie kind, a Divine Soul's affinity.
+  wizardSpellChoices().forEach(function(x){
+    var t = document.createElement("p");
+    t.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    t.textContent = x.feature+": "+x.choice.label;
+    card.appendChild(t);
+    card.appendChild(renderSpellChoiceOptions(x.choice, x.pick, function(v){
+      wizardState.classChoices.spellChoices = Object.assign({}, wizardState.classChoices.spellChoices);
+      wizardState.classChoices.spellChoices[x.choice.id] = v;
+      renderWizard();
+    }, wizardState.classId));
+  });
+  var bonus = g.expertise;
+  if(bonus){
+    var title = document.createElement("p");
+    title.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    title.textContent = bonus.label;
+    card.appendChild(title);
+    var help = document.createElement("p");
+    help.style.cssText = "font-size:13px;margin:0 0 10px;";
+    help.textContent = bonus.help;
+    card.appendChild(help);
+    choiceExpertise(card, {id:bonus.id, count:bonus.count, fixedOptions:bonus.options});
+  }
+}
+
+/* Picks from a long grouped list (a monk's tool, a bard's three
+   instruments, a ranger's favored enemy): dropdowns instead of a wall of
+   option cards. With a `count` above 1 the value is an array, one entry
+   per dropdown. */
+function choiceListPick(card, ch){
+  var count = ch.count || 1;
+  var noun = ch.label.toLowerCase().replace(/s$/, "");
+  if(count===1){
+    card.appendChild(homebrewSelect({
+      key:"pick:"+ch.id, groups:ch.groups, value:wizardState.classChoices[ch.id],
+      placeholder:"Select one", noun:noun,
+      onPick:function(v){ wizardState.classChoices[ch.id] = v; }
+    }));
+    return;
+  }
+  var picks = wizardState.classChoices[ch.id] = (wizardState.classChoices[ch.id] || []).slice(0, count);
+  for(var i=0;i<count;i++){
+    (function(i){
+      card.appendChild(homebrewSelect({
+        key:"pick:"+ch.id+":"+i, groups:ch.groups, value:picks[i],
+        placeholder:"Select one", noun:noun,
+        // Keep multi-picks distinct: what another dropdown holds is greyed out.
+        takenReason:function(name){ return name!==picks[i] && picks.indexOf(name)!==-1 ? "picked" : ""; },
+        onPick:function(v){ picks[i] = v; }
+      }));
+    })(i);
+  }
+}
+
+/* A grouped, themed dropdown with the race picker's "Custom / homebrew…"
+   option (see themedPicker). opts: key, groups, value, placeholder, noun,
+   onPick(value), and optional takenReason(name) -> "known"/"picked" to
+   grey an option out. Re-renders after a pick so sibling dropdowns grey
+   out what's taken; typing a homebrew value doesn't (it would steal
+   focus); validation checks the typed value like any other pick. */
+function homebrewSelect(opts){
+  var f = ce("div","field");
+  f.style.maxWidth = "320px";
+  f.style.marginBottom = "8px";
+  f.appendChild(themedPicker({
+    key:opts.key, groups:opts.groups, value:opts.value, placeholder:opts.placeholder,
+    ariaLabel:opts.noun, homebrew:{noun:opts.noun}, reasonFor:opts.takenReason,
+    onPick:function(v, meta){
+      opts.onPick(v);
+      var errBox = document.getElementById("wizard-error");
+      if(errBox) errBox.classList.remove("show");
+      if(!meta.typing) renderWizard();
+    }
+  }));
+  return f;
+}
+
+/* The "Tasha's optional class features" switch (it carries over to the
+   new character's Optional rules). `what` says what turning it on adds
+   here; `afterToggle` runs before the wizard redraws. */
+export function tashaSwitchRow(what, afterToggle){
+  var tasha = !!wizardState.tashaOptional;
+  var row = ce("div","opt-rule wiz-tasha-switch");
+  row.innerHTML = "<div class='opt-rule-text'><b>Tasha's optional class features</b><span>Your DM decides whether your table uses these. "+escapeHtml(what)+"</span></div>";
+  var sw = document.createElement("button");
+  sw.type = "button";
+  sw.className = "switch" + (tasha ? " on" : "");
+  sw.setAttribute("role", "switch");
+  sw.setAttribute("aria-checked", tasha ? "true" : "false");
+  sw.setAttribute("aria-label", "Use Tasha's optional class features");
+  sw.innerHTML = "<span class='switch-knob'></span>";
+  sw.addEventListener("click", function(){
+    wizardState.tashaOptional = !tasha;
+    if(afterToggle) afterToggle();
+    renderWizard();
+  });
+  row.appendChild(sw);
+  return row;
+}
+
+/* A level 1 Fighting Style. Tasha's optional styles are offered when the
+   switch here is on (it carries over to the new character's Optional
+   rules); a style with its own picks (Superior Technique's maneuver)
+   shows them under the list, kept as classChoices[id + "Picks"]. */
+function choiceFightingStyle(card, ch){
+  var tasha = !!wizardState.tashaOptional;
+  card.appendChild(tashaSwitchRow("Turned on, Tasha's extra fighting styles are listed too.", function(){
+    // A Tasha's style picked before the switch went off no longer applies.
+    var picked = FIGHTING_STYLES[wizardState.classChoices[ch.id]];
+    if(!wizardState.tashaOptional && picked && picked.optional){ delete wizardState.classChoices[ch.id]; delete wizardState.classChoices[ch.id+"Picks"]; }
+  }));
+  var noChar = {features: []};
+  card.appendChild(renderStyleOptions(noChar, ch.options, wizardState.classChoices[ch.id] || "", tasha, function(name){
+    if(name!==wizardState.classChoices[ch.id]) wizardState.classChoices[ch.id+"Picks"] = {options: [], spells: []};
+    wizardState.classChoices[ch.id] = name;
+    renderWizard();
+  }));
+  var chosen = wizardState.classChoices[ch.id];
+  if(chosen && styleNeedsPicks(chosen)){
+    var picks = wizardState.classChoices[ch.id+"Picks"] = wizardState.classChoices[ch.id+"Picks"] || {options: [], spells: []};
+    card.appendChild(renderStylePicks(chosen, picks, tasha, [], function(){
+      var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+      renderWizard();
+    }, "wiz:style"));
+  }
+}
+
+function choiceExpertise(card, ch){
+  var allowed = ch.fixedOptions || expertiseOptions(ch);
+  // Drop picks that are no longer valid (the player went back and
+  // changed their skills or background).
+  var picked = (wizardState.classChoices[ch.id]||[]).filter(function(x){ return allowed.indexOf(x)!==-1; });
+  wizardState.classChoices[ch.id] = picked;
+
+  var rows = ce("div","list-rows");
+  allowed.forEach(function(name){
+    var row = ce("div","list-row wiz-pick-row");
+    var cb = document.createElement("input");
+    cb.type="checkbox"; cb.className="chk";
+    var checked = picked.indexOf(name)!==-1;
+    cb.checked = checked;
+    var full = !checked && picked.length>=ch.count;
+    cb.disabled = full;
+    if(full) row.classList.add("disabled");
+    var label = document.createElement("span"); label.className="row-name"; label.textContent = name;
+    row.appendChild(cb); row.appendChild(label);
+    rows.appendChild(row);
+    row.addEventListener("click", function(e){
+      if(cb.disabled) return;
+      if(e.target!==cb) cb.checked = !cb.checked;
+      var cur = wizardState.classChoices[ch.id];
+      if(cb.checked){
+        if(cur.length>=ch.count){ cb.checked=false; return; }
+        cur.push(name);
+      } else {
+        wizardState.classChoices[ch.id] = cur.filter(function(x){ return x!==name; });
+      }
+      renderWizard();
+    });
+  });
+  card.appendChild(rows);
+}
+
+/* " (Life, Tempest or War Domain)": which subclass picks unlock it. */
+function requiresHint(prof){
+  var info = currentClassInfo();
+  var ch = (info.choices||[]).find(function(x){ return x.kind==="subclass"; });
+  if(!ch) return "";
+  var names = Object.keys(ch.grants||{}).filter(function(n){ return (ch.grants[n].profs||[]).indexOf(prof)!==-1; });
+  if(!names.length) return "";
+  var short = names.map(function(n){ return n.replace(/ Domain$/, ""); });
+  var list = short.length>1 ? short.slice(0,-1).join(", ")+" or "+short[short.length-1] : short[0];
+  return " ("+list+(names[0].indexOf(" Domain")!==-1 ? " Domain" : "")+")";
+}
+
+/* Languages: what the character already knows, then one dropdown per
+   free pick, grouped by where the pick comes from. Known languages and
+   ones picked in another dropdown are greyed out. Secret languages
+   (Druidic, Thieves' Cant) only come from classes, so they aren't offered. */
+export function wizardStepLanguages(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Languages</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> Languages let you talk to (and eavesdrop on) the people and creatures you meet. Your race gives you some automatically; your background and class can add more of your choice.";
+  card.appendChild(explain);
+
+  var plan = languagePlan();
+  var picks = wizardState.languageChoices = wizardState.languageChoices.slice(0, plan.slots.length);
+  // Drop picks you now know anyway (e.g. after changing race).
+  for(var k=0;k<picks.length;k++){ if(plan.fixed.indexOf(picks[k])!==-1) picks[k] = ""; }
+
+  var known = document.createElement("p");
+  known.style.cssText = "font-size:13px;margin:0 0 12px;";
+  known.innerHTML = "You already know: <b>"+escapeHtml(plan.fixed.join(", "))+"</b>.";
+  card.appendChild(known);
+
+  var lastSource = null;
+  plan.slots.forEach(function(slot, i){
+    if(slot.source!==lastSource){
+      lastSource = slot.source;
+      var count = plan.slots.filter(function(s){ return s.source===slot.source; }).length;
+      var title = document.createElement("p");
+      title.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+      title.textContent = "From "+slot.source+": "+count+" language"+(count>1?"s":"");
+      card.appendChild(title);
+      if(slot.help){
+        var help = document.createElement("p");
+        help.style.cssText = "font-size:13px;margin:0 0 8px;";
+        help.textContent = slot.help;
+        card.appendChild(help);
+      }
+    }
+    card.appendChild(homebrewSelect({
+      key:"lang:"+i, groups:(function(){
+        var g = {};
+        if(!slot.exotic) g[LANGUAGE_GROUP_LABELS.Standard] = LANGUAGES.Standard;
+        g[LANGUAGE_GROUP_LABELS.Exotic] = LANGUAGES.Exotic;
+        return g;
+      })(), value:picks[i],
+      placeholder:slot.exotic ? "Select an exotic language" : "Select a language", noun:"language",
+      // Greyed out and labelled so it's clear why it can't be picked.
+      takenReason:function(name){
+        if(plan.fixed.indexOf(name)!==-1) return "known";
+        return name!==picks[i] && picks.indexOf(name)!==-1 ? "picked" : "";
+      },
+      onPick:function(v){ picks[i] = v; }
+    }));
+  });
+  container.appendChild(card);
+}
+
+export function wizardStepEquipment(container){
+  var card = ce("div","card");
+  card.innerHTML = "<h3><span>Starting Equipment</span></h3>";
+  var explain = ce("div","wiz-explain");
+  explain.innerHTML = "<b>Why this matters:</b> Your class gives you a choice of starting gear instead of buying everything piece by piece. Pick what fits how you want to fight.";
+  card.appendChild(explain);
+
+  var info = currentClassInfo();
+  info.equipment.choiceGroups.forEach(function(group, gi){
+    var groupTitle = document.createElement("p");
+    groupTitle.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    groupTitle.textContent = "Choice "+String.fromCharCode(65+gi);
+    card.appendChild(groupTitle);
+    group.options.forEach(function(opt){
+      var row = ce("div","wiz-equip-option");
+      var available = equipmentOptionAvailable(opt);
+      // A pick that a changed subclass no longer allows is cleared.
+      if(!available && wizardState.equipment[gi]===opt.key) delete wizardState.equipment[gi];
+      if(wizardState.equipment[gi]===opt.key) row.classList.add("selected");
+      var lockNote = available ? "" : "<br><span style='font-size:11.5px;color:var(--oxblood)'>Needs "+escapeHtml(PROF_LABELS[opt.requires]||opt.requires)+" proficiency"+escapeHtml(requiresHint(opt.requires))+"</span>";
+      row.innerHTML = "<div><strong>"+escapeHtml(opt.label)+"</strong><br><span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(opt.detail||"")+"</span>"+lockNote+"</div>";
+      if(!available){ row.classList.add("disabled"); row.style.opacity = ".5"; row.style.cursor = "not-allowed"; card.appendChild(row); return; }
+      row.addEventListener("click", function(){
+        wizardState.equipment[gi] = opt.key;
+        renderWizard();
+      });
+      card.appendChild(row);
+    });
+  });
+
+  if(info.equipment.fixed.length){
+    var fixedTitle = document.createElement("p");
+    fixedTitle.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    fixedTitle.textContent = "Always included";
+    card.appendChild(fixedTitle);
+    var fixedP = document.createElement("p");
+    fixedP.style.fontSize = "13px";
+    fixedP.textContent = info.equipment.fixed.map(function(i){ return i.qty>1 ? i.qty+"× "+i.name : i.name; }).join(", ");
+    card.appendChild(fixedP);
+  }
+
+  container.appendChild(card);
+}
+
+/* Carries a starting-equipment entry into an inventory item, keeping the
+   structured weapon/armor fields (type, damage dice, category, etc.) when
+   the class data defines them so it's ready to roll/count toward AC right
+   away, instead of landing as generic untyped Gear. */
+function equipmentItemToInventoryItem(it, equipped){
+  var item = {name:it.name, qty:it.qty, equipped:equipped, notes:it.notes||"", type: it.type||"gear"};
+  if(it.type==="weapon"){
+    item.damageDice = it.damageDice||"";
+    item.damageType = it.damageType||"";
+    item.ability = it.ability||"str";
+    item.proficient = it.proficient!=null ? it.proficient : true;
+    item.magicBonus = it.magicBonus||0;
+  } else if(it.type==="armor"){
+    item.category = it.category||"light";
+    item.baseAC = it.baseAC!=null ? it.baseAC : 10;
+    item.magicBonus = it.magicBonus||0;
+  }
+  return item;
+}
+
+export function buildEquipmentList(info, chosenKeys){
+  var items = [];
+  info.equipment.choiceGroups.forEach(function(group, gi){
+    var opt = group.options.find(function(o){ return o.key===chosenKeys[gi]; });
+    if(opt){
+      opt.items.forEach(function(it){
+        items.push(equipmentItemToInventoryItem(it, it.type==="weapon" || it.type==="armor"));
+      });
+    }
+  });
+  info.equipment.fixed.forEach(function(it){
+    items.push(equipmentItemToInventoryItem(it, it.type==="weapon" || it.type==="armor"));
+  });
+  // Wear one suit of armor and fill the two hands (a shield takes one);
+  // everything else starts in the pack.
+  autoEquipLoadout(items);
+  return items;
+}
+
+
+/* Forget open homebrew boxes when a new character is started. */
+export function resetHomebrewPickers(){ resetThemedPickers(); }

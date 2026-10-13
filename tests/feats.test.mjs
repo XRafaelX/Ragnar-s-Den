@@ -43,7 +43,8 @@ test("feat catalog: 105 feats, well formed, naming only things that exist", () =
   assert.equal(new Set(FEATS_CATALOG.map((f) => f.name)).size, 105);
   const bySource = {};
   for(const f of FEATS_CATALOG){
-    bySource[f.source || "first"] = (bySource[f.source || "first"] || 0) + 1;
+    assert.ok(f.source, f.name + ": source book");
+    bySource[f.source] = (bySource[f.source] || 0) + 1;
     assert.ok(f.summary && f.description && f.prerequisite, f.name + ": summary, description, prerequisite");
     assert.ok(FEAT_CATEGORIES.includes(f.category), f.name + ": category " + f.category);
     assert.ok(!LONG_DASH.test(JSON.stringify(f)), f.name + ": long dash");
@@ -71,7 +72,7 @@ test("feat catalog: 105 feats, well formed, naming only things that exist", () =
     }
     if(f.castAbility && f.castAbility.feat) assert.ok(FP.featDef(f.castAbility.feat), f.name + ": cast ability from " + f.castAbility.feat);
   }
-  assert.deepEqual(bySource, { first: 43, PHB: 1, TCE: 13, XGE: 15, MTF: 1, ERLW: 2, FTD: 3, SCC: 2, DSotDQ: 9, BGG: 8, PAitM: 7, BMT: 1 });
+  assert.deepEqual(bySource, { PHB: 42, TCE: 15, XGE: 15, MTF: 1, ERLW: 2, FTD: 3, SCC: 2, BMT: 1, DSotDQ: 9, BGG: 8, PAitM: 7 });
   for(const name of Object.keys(FEAT_RESOURCES)) assert.ok(FP.featDef(name), "resource for a feat that isn't there: " + name);
 });
 
