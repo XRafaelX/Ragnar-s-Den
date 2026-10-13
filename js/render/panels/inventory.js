@@ -6,7 +6,7 @@ import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEqu
 import { ARMOR_DATA } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
-import { openWeaponPicker, openArmorPicker } from "../armory.js";
+import { openWeaponPicker, openArmorPicker, openGearPicker } from "../armory.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -601,15 +601,23 @@ export function renderInventoryPanel(c){
   }
   gearCard.appendChild(gearList);
 
+  // "+ Add item" opens the gear list (adventuring gear, packs, tools);
+  // "+ Custom item" adds an empty one for anything that isn't on it.
   var addItemBtn = document.createElement("button");
-  addItemBtn.className = "btn small"; addItemBtn.style.marginTop="10px";
-  addItemBtn.style.color="var(--text-on-parch)"; addItemBtn.style.borderColor="var(--rule)";
+  addItemBtn.className = "btn small primary"; addItemBtn.style.marginTop = "12px";
   addItemBtn.textContent = "+ Add item";
-  addItemBtn.addEventListener("click", function(){
+  addItemBtn.addEventListener("click", function(){ openGearPicker(c); });
+  gearCard.appendChild(addItemBtn);
+  var customItemBtn = document.createElement("button");
+  customItemBtn.className = "btn small"; customItemBtn.style.marginTop="8px";
+  customItemBtn.style.color="var(--text-on-parch)"; customItemBtn.style.borderColor="var(--rule)";
+  customItemBtn.textContent = "+ Custom item";
+  customItemBtn.title = "Add an item that isn't on the list, and fill it in yourself";
+  customItemBtn.addEventListener("click", function(){
     c.inventory.push({name:"", type:"gear", qty:1, equipped:false, notes:""});
     save(); renderAll(); playAdd();
   });
-  gearCard.appendChild(addItemBtn);
+  gearCard.appendChild(customItemBtn);
   panel.appendChild(gearCard);
   // An Alchemist's experimental elixirs are carried gear.
   var elixirs = renderElixirCard(c);

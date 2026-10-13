@@ -2,6 +2,7 @@ import { state, save } from "../core/state.js";
 import { openCatalogPicker, showCatalogCustomView, refreshCatalog } from "../ui/catalog-picker.js";
 import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
 import { ARMOR_GROUPS, ARMOR_DATA } from "../data/armor.js";
+import { GEAR_GROUPS, GEAR_DATA } from "../data/gear.js";
 import { isProficientWithWeapon, tryEquip, escapeHtml } from "../core/helpers.js";
 import { getCustomItem, saveCustomItem, deleteCustomItem, itemNameProblem, charactersWithItem, weaponAbility, armorNote } from "../core/custom-items.js";
 import { facts, textField, homebrewShell, numberField, pickerField, previewCard } from "../ui/homebrew-form.js";
@@ -14,10 +15,13 @@ import { showActionToast } from "../ui/toast.js";
 import { playAdd, playDelete } from "../ui/sound.js";
 
 /* ---------------- Grimtooth's Armory ----------------
-   The weapon and armor catalogue. From the sidebar it's a standalone page
-   (every add asks which character it goes to, then confirms with a
-   toast); from a sheet's Add Weapon / Add Armor it opens on that one list
-   for that character, and a tap adds the item straight away.
+   The weapon, armor and gear catalogue. From the sidebar it's a
+   standalone page (every add asks which character it goes to, then
+   confirms with a toast); from a sheet's Add Weapon / Add Armor / Add
+   item it opens on that one list for that character, and a tap adds the
+   item straight away. Gear (adventuring gear, packs, tools: js/data/gear.js)
+   is a plain list with no homebrew form: the sheet's "Custom item" makes
+   anything that isn't on it.
    The + makes a custom (homebrew) weapon or armor, the same way the
    Compendium makes custom subclasses, feats and so on: a form with a live
    preview, saved in this browser (core/custom-items.js) and listed under
@@ -59,7 +63,18 @@ export function addCatalogArmor(c, name, d){
   playAdd();
 }
 
-var ADD = {weapon:addCatalogWeapon, armor:addCatalogArmor};
+/* Gear stacks: another purchase of something already carried (20 more
+   arrows, a second torch) raises its quantity instead of adding a row. */
+export function addCatalogGear(c, name, d){
+  var n = d.qty || 1;
+  var have = (c.inventory||[]).find(function(i){ return i.type!=="weapon" && i.type!=="armor" && (i.name||"").toLowerCase()===name.toLowerCase(); });
+  if(have) have.qty = (Number(have.qty)||0) + n;
+  else c.inventory.push({name: name, type:"gear", qty: n, equipped:false, notes: d.notes||"", weight: d.weight ? d.weight / n : 0});
+  save();
+  playAdd();
+}
+
+var ADD = {weapon:addCatalogWeapon, armor:addCatalogArmor, gear:addCatalogGear};
 
 /* Tap on a row: straight onto the sheet's character, or ask which one. */
 function onAddFor(kind){
@@ -339,12 +354,25 @@ function armorSection(){
   };
 }
 
+function gearSection(){
+  return {
+    key: "gear", label: "Gear", searchPlaceholder: "Search all gear…",
+    groups: GEAR_GROUPS, data: GEAR_DATA,
+    // A pack's contents, or how many a purchase is (20 arrows).
+    renderSub: function(name, d){ return d.qty ? "Comes as " + d.qty : d.notes && d.notes!=="spellcasting focus" ? d.notes : ""; },
+    renderRight: function(name, d){ return [d.cost, d.weight ? d.weight + " lb" : ""]; },
+    searchText: function(name, d){ return name+" "+(d.notes||""); },
+    onAdd: onAddFor("gear")
+  };
+}
+
 /* opts: forCharacter (from a sheet: adds go straight to it) and only
-   ("weapons" | "armor": just that list). */
+   ("weapons" | "armor" | "gear": just that list). */
 export function openArmory(opts){
   opts = opts || {};
   target = opts.forCharacter || null;
-  var sections = opts.only==="weapons" ? [weaponSection()] : opts.only==="armor" ? [armorSection()] : [weaponSection(), armorSection()];
+  var sections = opts.only==="weapons" ? [weaponSection()] : opts.only==="armor" ? [armorSection()] : opts.only==="gear" ? [gearSection()]
+    : [weaponSection(), armorSection(), gearSection()];
   openCatalogPicker({
     sections: sections,
     onClose: function(){ target = null; editing = {weapon:null, armor:null}; renderAll(); }
@@ -352,3 +380,4 @@ export function openArmory(opts){
 }
 export function openWeaponPicker(c){ openArmory({only:"weapons", forCharacter:c}); }
 export function openArmorPicker(c){ openArmory({only:"armor", forCharacter:c}); }
+export function openGearPicker(c){ openArmory({only:"gear", forCharacter:c}); }

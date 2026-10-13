@@ -4,8 +4,9 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
-import { classFeatureList, classProficiencies, escapeHtml } from "../../core/helpers.js";
-import { featProficiencies } from "../../core/feat-picks.js";
+import { classFeatureList, classProficiencies, classVariants, escapeHtml } from "../../core/helpers.js";
+import { featProficiencies, backgroundFeatGrant, campaignFeatMissing } from "../../core/feat-picks.js";
+import { dlcShelf, campaignBookCard } from "../../ui/dlc-shelf.js";
 import { characterPickedProfs } from "../../core/class-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
@@ -319,59 +320,70 @@ export function renderInformationPanel(c){
   return panel;
 }
 
-/* Optional rules the table may use. Tasha's optional class features are
-   off unless the player turns them on (their DM decides): they unlock the
-   options Tasha's adds to class features (marked `optional` in the data)
-   and the Versatility swaps at Ability Score Improvement levels. */
+/* Optional rules the table may use, kept behind a "DLC" tile that slides
+   open onto a card per book (see js/ui/dlc-shelf.js). Tasha's optional
+   class features are off unless the player turns them on (their DM
+   decides): they unlock the options Tasha's adds to class features
+   (marked `optional` in the data), its additional spells, the
+   Versatility swaps at Ability Score Improvement levels and the features
+   that can replace a class's own (a ranger's Favored Foe). The campaign
+   books give every character a feat (see CAMPAIGN_FEATS): none unless
+   one is in use; the Features tab then offers a level 1 feat the
+   character is owed, and the level-up asks for Dragonlance's at level 4.
+   Tapping a card redraws the sheet, so whether the shelf is open, and the
+   card just tapped, are remembered here for the next draw. */
+var rulesOpen = {};   // character id -> the shelf is open
+var rulesTapped = ""; // the card tapped just before this redraw
 function optionalRulesCard(c){
-  var card = makeCard("Optional rules");
-  var row = document.createElement("div");
-  row.className = "opt-rule";
-  var text = document.createElement("div");
-  text.className = "opt-rule-text";
-  text.innerHTML = "<b>Tasha's optional class features</b>"+
-    "<span>Your DM decides whether your table uses these. Turned on, you can pick the extra options Tasha's Cauldron adds to class features (fighting styles, Metamagic, maneuvers, eldritch invocations, Pact of the Talisman) and the spells it adds to each class's spell list, and the level-up lets you swap a fighting style, Metamagic option or maneuver at Ability Score Improvement levels.</span>";
-  var sw = document.createElement("button");
-  sw.type = "button";
-  sw.className = "switch" + (c.tashaOptional ? " on" : "");
-  sw.setAttribute("role", "switch");
-  sw.setAttribute("aria-checked", c.tashaOptional ? "true" : "false");
-  sw.setAttribute("aria-label", "Use Tasha's optional class features");
-  sw.innerHTML = "<span class='switch-knob'></span>";
-  sw.addEventListener("click", function(){
-    c.tashaOptional = !c.tashaOptional;
-    save(); renderAll();
-  });
-  row.appendChild(text);
-  row.appendChild(sw);
-  card.appendChild(row);
-  card.appendChild(campaignRule(c));
+  var books = Object.keys(CAMPAIGN_FEATS);
+  var variants = [];
+  (c.classes||[]).forEach(function(cl){ classVariants(cl.name).forEach(function(v){ variants.push(v); }); });
+  var card = document.createElement("div");
+  card.className = "card opt-rules-card";
+  var tapped = rulesTapped;
+  rulesTapped = "";
+  card.appendChild(dlcShelf({
+    id: "opt-rules-panel", title: "Optional rules", wide: true, open: !!rulesOpen[c.id], fresh: tapped,
+    onToggle: function(open){ rulesOpen[c.id] = open; },
+    lead: "Extra rules from other books. Your DM decides whether your table uses them: tap one to turn it on, and tap it again to turn it off.",
+    sub: function(){
+      var on = (c.tashaOptional ? ["Tasha's optional class features"] : []).concat(CAMPAIGN_FEATS[c.campaign] ? [c.campaign] : []);
+      return on.length ? "Using " + on.join(" and ") : "Tasha's Cauldron and the campaign books are in here. None are in use.";
+    },
+    cards: [{key: "tasha", series: "Tasha's Cauldron of Everything", title: "Optional class features", switchLabel: "Use Tasha's optional class features",
+      perks: ["More class options", "Additional spells", "Swaps at level-up"],
+      text: "The extra options Tasha's Cauldron adds to class features (fighting styles, Metamagic, maneuvers, eldritch invocations, Pact of the Talisman), the spells it adds to each class's spell list, and swapping a fighting style, Metamagic option or maneuver at Ability Score Improvement levels."}]
+      .concat(books.map(function(k){
+        var def = campaignBookCard(k);
+        def.text = "A background with no feat of its own gets Skilled or Tough." + (CAMPAIGN_FEATS[k].level4 ? " You pick another feat from the book's list at level 4." : "");
+        return def;
+      })),
+    isOn: function(k){ return k==="tasha" ? !!c.tashaOptional : c.campaign===k; },
+    onTap: function(k){
+      if(k==="tasha") c.tashaOptional = !c.tashaOptional;
+      else if(c.campaign===k) delete c.campaign;
+      else c.campaign = k;
+      rulesOpen[c.id] = true;
+      rulesTapped = k;
+      save(); renderAll();
+    },
+    outcome: function(){
+      var lines = [];
+      if(c.tashaOptional){
+        lines.push("<b>Tasha's:</b> its options now show in your pickers and level-ups." +
+          (variants.length ? " On the Features tab you can take " + escapeHtml(variants.map(function(v){ return v.name + " in place of " + v.replaces; }).join(" and ")) + "." : ""));
+      }
+      var camp = CAMPAIGN_FEATS[c.campaign];
+      if(camp){
+        var own = backgroundFeatGrant(c.background), owed = campaignFeatMissing(c);
+        lines.push("<b>" + escapeHtml(c.campaign) + ":</b> " +
+          (owed ? "your free feat (" + escapeHtml(owed.choices.join(" or ")) + ") is waiting on the Features tab."
+            : own ? "your " + escapeHtml(c.background) + " background already comes with its own feat (" + escapeHtml(own.def.name) + "), so this adds nothing now."
+            : "your level 1 feat is on the sheet.") +
+          (camp.level4 ? " The level-up to level 4 asks for another." : ""));
+      }
+      return lines.join("<br>");
+    }
+  }).el);
   return card;
 }
-/* Campaign bonus feats: books whose campaigns give every character a
-   feat (see CAMPAIGN_FEATS). None unless the player sets one; the
-   Features tab then offers a level 1 feat the character is owed, and the
-   level-up asks for Dragonlance's at level 4. */
-function campaignRule(c){
-  var row = document.createElement("div");
-  row.className = "opt-rule opt-rule-pick";
-  var text = document.createElement("div");
-  text.className = "opt-rule-note"; // same look as the switch rows' .opt-rule-text
-  text.innerHTML = "<b>Campaign bonus feats</b>"+
-    "<span>Playing "+escapeHtml(Object.keys(CAMPAIGN_FEATS).join(" or "))+"? These books give every character a free feat. If your DM is running one, pick it here: "+
-    "a background with no feat of its own gets Skilled or Tough, offered on the Features tab, and Dragonlance adds another at level 4, picked during that level-up.</span>";
-  var pick = document.createElement("div");
-  pick.className = "field opt-rule-field";
-  pick.appendChild(themedPicker({
-    key:"info-campaign", ariaLabel:"Campaign book", search:false, value:CAMPAIGN_FEATS[c.campaign] ? c.campaign : "",
-    groups:{"":[{value:"", label:"No", muted:true}].concat(Object.keys(CAMPAIGN_FEATS).map(function(k){ return {value:k, label:CAMPAIGN_FEATS[k].label}; }))},
-    onPick:function(v){
-      if(v) c.campaign = v; else delete c.campaign;
-      save(); renderAll();
-    }
-  }));
-  text.appendChild(pick);
-  row.appendChild(text);
-  return row;
-}
-

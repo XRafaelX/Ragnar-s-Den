@@ -35,9 +35,11 @@
   padding:12px 14px;font-size:13px;line-height:1.5;color:var(--text-on-parch);margin-bottom:16px;
 }
 
-/* Background step: the campaign books "DLC" tile, the panel it slides
-   open and one card per book. Entrances wait for .moved (opened by hand),
-   so a step redrawn with a book already picked doesn't replay them. */
+/* The "DLC" shelf (js/ui/dlc-shelf.js): the wizard's campaign books on the
+   Background step and the sheet's Optional rules on the Information tab.
+   A tile, the panel it slides open and one card per book. Entrances wait
+   for .moved (opened by hand), so a redraw with the shelf already open
+   doesn't replay them. */
 .wiz-dlc{margin-top:14px;}
 .wiz-dlc-tile{
   position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;text-align:left;
@@ -95,7 +97,12 @@
 .wiz-dlc-perks{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
 .wiz-dlc-perks span{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--text-on-parch-dim);}
 .wiz-dlc-card.on .wiz-dlc-perks span{border-color:var(--brass);color:var(--text-on-parch);}
-.wiz-dlc-state{margin-top:8px;font-size:11.5px;color:var(--text-on-parch-dim);}
+.wiz-dlc-desc{margin-top:6px;font-size:12px;line-height:1.45;color:var(--text-on-parch-dim);}
+.wiz-dlc-state{margin-top:auto;padding-top:8px;font-size:11.5px;color:var(--text-on-parch-dim);}
+/* Three books in a row where there's room (the sheet's Optional rules). */
+.wiz-dlc-wide .wiz-dlc-grid{grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));}
+.opt-rules-card{padding:12px;}
+.opt-rules-card .wiz-dlc{margin-top:0;}
 .wiz-dlc-card.on .wiz-dlc-state{color:var(--brass-bright);}
 .wiz-dlc-check{
   position:absolute;top:10px;right:10px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;

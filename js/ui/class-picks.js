@@ -46,8 +46,11 @@ export function renderClassPicks(grant, slots, ctx, onChange, keyPrefix, opts){
       var f = field(themedPicker({
         key: keyPrefix + ":" + i + ":" + p, ariaLabel: grant.name + " choice " + (p + 1), placeholder: placeholder(slot) + (slot.optional ? " (optional)" : ""),
         groups: groups, value: slots[i][p] || "", search: opts.length > 12,
-        // Spells open as a sheet on phones, each with what it does.
-        sheet: isSpell, detailFor: isSpell ? function(v){ return (SPELL_DATA[v] || {}).summary || ""; } : details ? function(v){ return details[v] || ""; } : undefined,
+        // On a phone every list opens as a sheet from the bottom of the
+        // screen: under its trigger a long one (favored enemies, skills,
+        // weapons) filled the modal and scrolled inside it. Spells and
+        // dragons also say what they do.
+        sheet: true, detailFor: isSpell ? function(v){ return (SPELL_DATA[v] || {}).summary || ""; } : details ? function(v){ return details[v] || ""; } : undefined,
         // A favored enemy can be two humanoid races of the player's own.
         homebrew: slot.custom ? {noun: slot.noun} : undefined,
         reasonFor: function(v){

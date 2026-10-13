@@ -9,7 +9,8 @@ import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/
 import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/alignments.js";
 import { POINT_BUY_COSTS } from "../data/misc.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
-import { makeStatArrowSvg, makeDicesSvg, makePlusSvg, makeBookSvg, makeChevronDownSvg, makeCheckSvg } from "../ui/svg-icons.js";
+import { makeStatArrowSvg, makeDicesSvg, makePlusSvg } from "../ui/svg-icons.js";
+import { dlcShelf, campaignBookCard } from "../ui/dlc-shelf.js";
 import { getDieSvg } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker } from "../ui/themed-picker.js";
@@ -348,85 +349,28 @@ function campaignOutcomeHtml(){
    character a feat at level 1. Off unless picked; the DM decides. A
    "DLC" tile that slides open onto one card per book (tap one to use
    it, tap it again to stop), with a line saying what the pick gives
-   this character. It starts open when a book is already picked.
-   Returns {el, refresh}. */
+   this character (see js/ui/dlc-shelf.js). It starts open when a book
+   is already picked. Returns {el, refresh}. */
 function campaignNote(onChange){
   var keys = Object.keys(CAMPAIGN_FEATS);
-  var wrap = ce("div","wiz-dlc"+(wizardState.campaign ? " open" : ""));
-  var tile = document.createElement("button");
-  tile.type = "button";
-  tile.className = "wiz-dlc-tile";
-  tile.setAttribute("aria-controls", "wiz-dlc-panel");
-  tile.innerHTML = "<span class='wiz-dlc-icon'>"+makeBookSvg()+"</span>"+
-    "<span class='wiz-dlc-text'><b>Campaign books</b><span class='wiz-dlc-sub'></span></span>"+
-    "<span class='wiz-dlc-badge'>DLC</span><span class='wiz-dlc-chevron'>"+makeChevronDownSvg()+"</span>";
-  var sub = tile.querySelector(".wiz-dlc-sub");
-  var panel = ce("div","wiz-dlc-panel");
-  panel.id = "wiz-dlc-panel";
-  var inner = ce("div","wiz-dlc-inner");
-  var lead = ce("p","wiz-dlc-lead");
-  lead.textContent = "These books give every character a free feat. Turn one on only if your DM is running it. You can change this later on the Information tab.";
-  inner.appendChild(lead);
-  var grid = ce("div","wiz-dlc-grid");
-  var cards = {};
-  keys.forEach(function(k){
-    var camp = CAMPAIGN_FEATS[k], parts = camp.label.split(": ");
-    var card = document.createElement("button");
-    card.type = "button";
-    card.className = "wiz-dlc-card";
-    card.innerHTML = "<span class='wiz-dlc-check'>"+makeCheckSvg()+"</span>"+
-      "<span class='wiz-dlc-series'>"+escapeHtml(parts.length>1 ? parts[0] : "Campaign book")+"</span>"+
-      "<strong>"+escapeHtml(parts[parts.length-1])+"</strong>"+
-      "<span class='wiz-dlc-perks'><span>Free feat at level 1</span>"+(camp.level4 ? "<span>Another feat at level 4</span>" : "")+"</span>"+
-      "<span class='wiz-dlc-state'></span>";
-    card.addEventListener("click", function(){
+  var shelf = dlcShelf({
+    id: "wiz-dlc-panel", title: "Campaign books", open: !!wizardState.campaign,
+    lead: "These books give every character a free feat. Turn one on only if your DM is running it. You can change this later on the Information tab.",
+    sub: function(){
+      var on = wizardState.campaign;
+      return on ? "Using "+CAMPAIGN_FEATS[on].label : "Playing "+keys.join(" or ")+"? Their bonus feats are in here.";
+    },
+    cards: keys.map(campaignBookCard),
+    isOn: function(k){ return wizardState.campaign===k; },
+    onTap: function(k){
       wizardState.campaign = wizardState.campaign===k ? "" : k;
       onChange();
-      refresh(k);
       refreshWizardProgress(); // the campaign's feat adds a step
-    });
-    cards[k] = card;
-    grid.appendChild(card);
+    },
+    outcome: campaignOutcomeHtml
   });
-  inner.appendChild(grid);
-  var outcome = ce("div","wiz-dlc-outcome");
-  outcome.setAttribute("aria-live", "polite");
-  inner.appendChild(outcome);
-  panel.appendChild(inner);
-  /* `tapped` is the card just used, so only it and the outcome animate. */
-  function refresh(tapped){
-    var on = wizardState.campaign;
-    keys.forEach(function(k){
-      cards[k].classList.toggle("on", on===k);
-      cards[k].classList.toggle("fresh", !!tapped && on===k && tapped===k);
-      cards[k].setAttribute("aria-pressed", on===k ? "true" : "false");
-      cards[k].querySelector(".wiz-dlc-state").textContent = on===k ? "In use. Tap to turn off" : "Tap to use";
-    });
-    wrap.classList.toggle("has-book", !!on);
-    sub.textContent = on ? "Using "+CAMPAIGN_FEATS[on].label : "Playing "+keys.join(" or ")+"? Their bonus feats are in here.";
-    outcome.innerHTML = campaignOutcomeHtml();
-    outcome.hidden = !outcome.innerHTML;
-    if(tapped && !outcome.hidden){
-      outcome.classList.remove("fresh");
-      void outcome.offsetWidth; // restart the entrance
-      outcome.classList.add("fresh");
-    }
-  }
-  function setOpen(open){
-    wrap.classList.toggle("open", open);
-    tile.setAttribute("aria-expanded", open ? "true" : "false");
-  }
-  tile.addEventListener("click", function(){
-    wrap.classList.add("moved"); // entrances only play once it has been opened by hand
-    setOpen(!wrap.classList.contains("open"));
-  });
-  wrap.appendChild(tile);
-  wrap.appendChild(panel);
-  setOpen(!!wizardState.campaign);
-  refresh();
-  return {el: wrap, refresh: function(){ refresh(); }};
+  return {el: shelf.el, refresh: function(){ shelf.refresh(); }};
 }
-
 export function wizardStepAlignment(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Choose an Alignment</span></h3>";
