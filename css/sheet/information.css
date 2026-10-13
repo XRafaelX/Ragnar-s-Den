@@ -15,7 +15,7 @@
   padding:11px 14px;margin-bottom:8px;text-align:left;color:inherit;transition:border-color .15s,background .15s;
 }
 .info-link-row:last-child{margin-bottom:0;}
-.info-link-row:hover{background:rgba(255,255,255,0.06);border-color:color-mix(in srgb, var(--brass) 50%, transparent);}
+@media (hover:hover){ .info-link-row:hover{background:rgba(255,255,255,0.06);border-color:color-mix(in srgb, var(--brass) 50%, transparent);} }
 .info-link-left{display:flex;flex-direction:column;gap:3px;}
 .info-link-value{font-size:14px;color:var(--text-on-parch);font-weight:600;}
 .info-link-chevron{font-size:20px;color:var(--text-on-parch-dim);line-height:1;}

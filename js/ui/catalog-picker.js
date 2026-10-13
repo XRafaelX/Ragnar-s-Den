@@ -106,6 +106,7 @@ function renderRow(section, name, d){
     el.textContent = text;
     right.appendChild(el);
   });
+
   // A section can add small buttons to a row (Edit / Delete / Customize on
   // custom items): [{label, title, danger, onClick}].
   // They are hidden behind a ⋯ menu button to keep rows compact.
@@ -191,6 +192,16 @@ function renderList(){
   var section = activeSection();
   var listEl = document.getElementById("catalog-list");
   listEl.innerHTML = "";
+  // A list where some row's right column is too long to sit beside the
+  // name on a phone (a feat's prerequisite, a race's bonuses and speed):
+  // the stylesheet moves it under the name there, for every row of that
+  // list so they all read the same way. Worked out over the whole list,
+  // so a search doesn't flip the layout.
+  listEl.classList.toggle("long-right", !!section.renderRight && Object.keys(section.groups).some(function(g){
+    return section.groups[g].some(function(name){
+      return section.renderRight(name, section.data[name]||{}).filter(Boolean).join(" ").length > 28;
+    });
+  }));
   var q = (state.query||"").toLowerCase().trim();
   var groupNames = Object.keys(section.groups).filter(function(g){
     return state.activeGroup==="all" || state.activeGroup===g;

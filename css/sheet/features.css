@@ -43,7 +43,7 @@
 .ff-item-card{
   background:rgba(255,255,255,0.03);border:1px solid var(--rule);border-radius:6px;padding:12px 14px;transition:border-color .15s,background .15s;
 }
-.ff-item-card:hover{background:rgba(255,255,255,0.05);border-color:color-mix(in srgb, var(--brass) 50%, transparent);}
+@media (hover:hover){ .ff-item-card:hover{background:rgba(255,255,255,0.05);border-color:color-mix(in srgb, var(--brass) 50%, transparent);} }
 .ff-item-top{
   display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
 }

@@ -107,7 +107,7 @@ button.class-chip:hover{border-color:var(--brass);}
   border:1px solid var(--rule);background:rgba(255,255,255,.04);
   transition:border-color .15s, background .15s, box-shadow .15s;
 }
-.lu-hp-card:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);}
+@media (hover:hover){ .lu-hp-card:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);} }
 .lu-hp-card.selected{
   border-color:var(--brass);background:color-mix(in srgb, var(--brass) 16%, transparent);
   box-shadow:0 0 0 1px var(--brass);

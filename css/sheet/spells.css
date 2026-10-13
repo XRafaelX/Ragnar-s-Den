@@ -128,7 +128,7 @@
   display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;
   border:1px solid var(--rule);border-radius:8px;background:rgba(255,255,255,.035);
 }
-.prep-row:hover{border-color:var(--brass);}
+@media (hover:hover){ .prep-row:hover{border-color:var(--brass);} }
 .prep-row.on{border-color:color-mix(in srgb, var(--brass) 70%, transparent);background:color-mix(in srgb, var(--brass) 12%, transparent);}
 .prep-row.disabled{opacity:.5;cursor:not-allowed;}
 .prep-row.disabled:hover{border-color:var(--rule);}

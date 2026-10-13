@@ -40,7 +40,7 @@
   border:1px solid var(--rule);border-radius:6px;padding:14px;cursor:pointer;
   background:rgba(255,255,255,.04);transition:border-color .15s,background .15s;
 }
-.class-pick-card:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);}
+@media (hover:hover){ .class-pick-card:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);} }
 .class-pick-card.selected{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 16%, transparent);}
 .class-pick-card.disabled{opacity:.45;cursor:not-allowed;}
 .class-pick-card.disabled:hover{background:rgba(255,255,255,.04);}
@@ -70,7 +70,7 @@
   border:1px solid var(--rule);border-radius:6px;padding:10px 12px;margin-bottom:8px;cursor:pointer;
   background:rgba(255,255,255,.04);transition:border-color .15s,background .15s;
 }
-.wiz-equip-option:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);}
+@media (hover:hover){ .wiz-equip-option:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);} }
 .wiz-equip-option.selected{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 16%, transparent);}
 .wiz-equip-option.disabled{cursor:not-allowed;opacity:.5;}
 .wiz-equip-option.disabled:hover{background:none;}
@@ -78,7 +78,9 @@
 /* Skill picker: the whole row is the tap target (not just the checkbox),
    with enough padding for a comfortable touch target on phones. */
 .wiz-pick-row{cursor:pointer;padding:10px 8px;border-radius:4px;}
-.wiz-pick-row:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);}
+/* Hover highlights only for a real pointer (see catalog.css); a press highlight for touch. */
+@media (hover:hover){ .wiz-pick-row:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);} }
+.wiz-pick-row:not(.disabled):active{background:color-mix(in srgb, var(--brass) 14%, transparent);}
 .wiz-pick-row .row-name{cursor:pointer;}
 .wiz-pick-row .row-name:hover{color:var(--brass-bright);}
 .wiz-pick-row.disabled{cursor:not-allowed;opacity:.45;}
@@ -168,7 +170,7 @@
   content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 2px 2px 0;
   background:var(--school, var(--brass));
 }
-.wiz-spell-card:hover{background:color-mix(in srgb, var(--brass) 9%, transparent);border-color:color-mix(in srgb, var(--brass) 60%, transparent);}
+@media (hover:hover){ .wiz-spell-card:hover{background:color-mix(in srgb, var(--brass) 9%, transparent);border-color:color-mix(in srgb, var(--brass) 60%, transparent);} }
 .wiz-spell-card.selected{
   border-color:var(--brass);background:color-mix(in srgb, var(--brass) 16%, transparent);
   box-shadow:0 0 0 1px var(--brass) inset;

@@ -206,13 +206,13 @@
   border-bottom:1px solid color-mix(in srgb, var(--brass) 14%, transparent);
   transition:background .15s ease;
 }
-.skill-row:hover{background:color-mix(in srgb, var(--brass) 12%, transparent);}
+@media (hover:hover){ .skill-row:hover{background:color-mix(in srgb, var(--brass) 12%, transparent);} }
 .skill-row .row-name{min-width:0;color:var(--text-on-parch-dim);}
 .skill-row.is-prof .row-name,
 .skill-row.is-exp .row-name{color:var(--text-on-parch);font-weight:600;}
 .skill-list .row-name:hover,
 .save-grid .row-name:hover{color:inherit;}
-.skill-row:hover .row-name{color:var(--text-on-parch);}
+@media (hover:hover){ .skill-row:hover .row-name{color:var(--text-on-parch);} }
 .skill-pips{display:inline-flex;align-items:center;gap:9px;flex:none;}
 .skill-row .abbr{
   width:auto;flex:none;padding:1px 5px;border-radius:4px;

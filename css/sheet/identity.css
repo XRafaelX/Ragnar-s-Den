@@ -88,12 +88,12 @@
   display:block;width:100%;text-align:left;padding:9px 12px;border-radius:6px;
   background:none;border:none;font-size:13px;color:var(--text-on-parch);cursor:pointer;
 }
-.identity-menu-item:hover{background:color-mix(in srgb, var(--brass) 14%, transparent);}
+@media (hover:hover){ .identity-menu-item:hover{background:color-mix(in srgb, var(--brass) 14%, transparent);} }
 .identity-menu-item[role="menuitemcheckbox"]{display:flex;align-items:center;gap:8px;}
 .identity-menu-check{display:inline-flex;width:16px;height:16px;flex:none;color:var(--brass-bright);}
 .identity-menu-sep{height:1px;background:var(--rule);margin:6px 4px;}
 .identity-menu-item.danger{color:#f2a9b6;}
-.identity-menu-item.danger:hover{background:rgba(217,69,95,.18);}
+@media (hover:hover){ .identity-menu-item.danger:hover{background:rgba(217,69,95,.18);} }
 /* keep a long name clear of the ⋮ button */
 .identity:not(.has-banner) .name-row{padding-right:36px;}
 

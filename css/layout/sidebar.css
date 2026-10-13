@@ -43,7 +43,7 @@
   border:1px solid transparent;
   position:relative;
 }
-#char-list li:hover{background:color-mix(in srgb, var(--brass) 12%, transparent);}
+@media (hover:hover){ #char-list li:hover{background:color-mix(in srgb, var(--brass) 12%, transparent);} }
 #char-list li.active{
   background:color-mix(in srgb, var(--brass) 18%, transparent);
   border-color:var(--rule);
