@@ -74,7 +74,7 @@ export var FIGHTER_SUBCLASSES = [
   }},
   {name:"Arcane Archer", blurb:"Weaves elven magic into arrows for spectacular, magical trick shots.", features:{
     3:[
-      {name:"Arcane Archer Lore", text:"You gain proficiency in Arcana or Nature (your choice), and you learn the Prestidigitation or Druidcraft cantrip.", profs:{pick:[{kind:"skill", options:["Arcana","Nature"]}]}},
+      {name:"Arcane Archer Lore", text:"You gain proficiency in Arcana or Nature (your choice), and you learn the Prestidigitation or Druidcraft cantrip.", profs:{pick:[{kind:"skill", options:["Arcana","Nature"]}, {kind:"spell", level:0, options:["Prestidigitation","Druidcraft"]}]}},
       {name:"Arcane Shot", text:"You learn two Arcane Shot options (one more at fighter levels 7, 10, 15 and 18; each time you learn one you can swap one you know). Once per turn, when you fire an arrow from a shortbow or longbow as part of the Attack action, you can apply one option, deciding after the hit unless the option involves no attack roll. You have two uses, regained on a short or long rest. Save DC 8 + proficiency bonus + INT modifier. Their extra damage doubles at fighter level 18. The level-up asks you to pick them, and the Arcane Shots card on the Features & Feats tab lists them with what they do."}
     ],
     7:[

@@ -5,9 +5,9 @@ import { hint } from "../../ui/card-parts.js";
 import { openClassPicksModal } from "../../ui/class-picks.js";
 import { playAdd } from "../../ui/sound.js";
 
-/* ---- Proficiency choices card (Features tab) ----
-   The skills, expertise, tools, languages, saving throws and weapons the
-   character's class features let the player choose (see
+/* ---- Feature choices card (Features tab) ----
+   The skills, expertise, tools, languages, saving throws, weapons and
+   spells the character's class features let the player choose (see
    js/core/class-picks.js): one row per feature with what was picked and a
    button to choose or change it. New ones normally come through the
    level-up; the card catches up older sheets (a rogue who ticked their
@@ -16,9 +16,9 @@ import { playAdd } from "../../ui/sound.js";
 export function renderClassPicksCard(c){
   var grants = classGrants(c).filter(function(g){ return grantHasChoices(g.def); });
   if(!grants.length) return null;
-  var card = makeCard("Proficiency choices");
+  var card = makeCard("Feature choices");
   card.classList.add("inf-card", "eli-card", "cpk-card");
-  card.appendChild(hint("Skills, tools, languages and other proficiencies your class features let you choose. The sheet adds what you pick."));
+  card.appendChild(hint("Skills, tools, languages, spells and other things your class features let you choose. The sheet adds what you pick."));
   grants.forEach(function(g){
     var entry = grantEntry(g.cl, g.key);
     var box = document.createElement("div");

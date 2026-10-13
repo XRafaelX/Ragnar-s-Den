@@ -48,9 +48,13 @@ export function subclassGrants(info, picks){
    Soul affinity), so the sheet's own spell helpers can read it. */
 function wizardClassEntry(subclass){
   var ch = subclassChoice(currentClassInfo());
+  // Picks made for its features (an Arcana cleric's wizard cantrips), in
+  // the sheet's shape.
+  var profPicks = {}, made = wizardState.classChoices.profPicks || {};
+  Object.keys(made).forEach(function(key){ profPicks[key] = {slots: made[key]}; });
   return {name: wizardState.classId, level: 1,
     subclass: subclass!=null ? subclass : (ch && wizardState.classChoices[ch.id]) || "",
-    spellChoices: wizardState.classChoices.spellChoices || {}};
+    spellChoices: wizardState.classChoices.spellChoices || {}, profPicks: profPicks};
 }
 /* What the chosen subclass's level-1 features give beyond armor and
    weapons (see js/core/class-picks.js): an Order cleric's skill, a
@@ -79,7 +83,8 @@ export function wizardPickContext(grant){
     languages = languages.concat((featDef(f.name) || {}).languages || [], f.picks.languages || []);
   });
   (info.savingThrows||[]).forEach(function(k){ saves[k] = true; });
-  var ctx = classPickContext({classes:[entry], skillProfs:profs, saveProfs:saves, languages:languages.filter(Boolean), feats:feats, inventory:[]}, entry, grant.key);
+  var ctx = classPickContext({classes:[entry], skillProfs:profs, saveProfs:saves, languages:languages.filter(Boolean), feats:feats, inventory:[], spells:[],
+    tashaOptional:!!w.tashaOptional}, entry, grant.key);
   ctx.taken = function(v){
     return wizardClassGrants().some(function(g){
       return g.key!==grant.key && ((w.classChoices.profPicks||{})[g.key] || []).some(function(slot){ return (slot||[]).indexOf(v)!==-1; });

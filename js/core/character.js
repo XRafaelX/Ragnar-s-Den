@@ -180,7 +180,7 @@ export function ensureShape(c){
   }
   // Skills and languages a feature gives outright (a Mercy monk's Insight
   // and Medicine) go on the sheet; ones with a choice wait on the
-  // Features tab's Proficiency choices card.
+  // Features tab's Feature choices card.
   syncClassPicks(c);
   return c;
 }

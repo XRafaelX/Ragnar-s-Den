@@ -1,4 +1,5 @@
 import { ABILITIES } from "../data/abilities-skills.js";
+import { SPELL_DATA } from "../data/spells.js";
 import { ce } from "../core/helpers.js";
 import { themedPicker } from "./themed-picker.js";
 import { openInfoModal } from "./info-modal.js";
@@ -6,7 +7,7 @@ import { slotOptions, slotLabel, slotIsFixed, fillSlots, grantFixedLines, grantE
   applyClassPicks, markClassPicksManual } from "../core/class-picks.js";
 
 /* ---------------- Class picks UI ----------------
-   The choices block for a feature's proficiencies (see
+   The choices block for a feature's proficiencies and spells (see
    js/core/class-picks.js), shared by the level-up dialog, the creation
    wizard and the picks modal on the Features tab. It changes `slots` in
    place and calls onChange() after each pick so the caller can re-render
@@ -25,30 +26,44 @@ export function renderClassPicks(grant, slots, ctx, onChange, keyPrefix){
     box.appendChild(label(slotLabel(def, slots, i, ctx)));
     if(slotIsFixed(def, slots, i, ctx)){
       box.appendChild(note(slots[i].length ? "Added for you: " + slots[i].map(function(v){ return shown(slot, v); }).join(", ") + "."
+        : slot.from==="spellbook" ? "You have no spells of that level on the Spells tab yet. Add them there, then choose here from the Feature choices card on the Features & Feats tab."
         : "You already have everything this offers, so there's nothing to pick."));
       return;
     }
+    var isSpell = slot.kind==="spell";
     var groups = {};
     opts.forEach(function(o){ (groups[o.group] = groups[o.group] || []).push(slot.kind==="save" ? {value: o.value, label: abilityName(o.value)} : o.value); });
     for(var p = 0; p < n; p++) (function(p){
       box.appendChild(field(themedPicker({
         key: keyPrefix + ":" + i + ":" + p, ariaLabel: grant.name + " choice " + (p + 1), placeholder: placeholder(slot),
         groups: groups, value: slots[i][p] || "", search: opts.length > 12,
+        // Spells open as a sheet on phones, each with what it does.
+        sheet: isSpell, detailFor: isSpell ? function(v){ return (SPELL_DATA[v] || {}).summary || ""; } : undefined,
         reasonFor: function(v){
           if(v!==slots[i][p] && slots[i].indexOf(v)!==-1) return "picked";
           return (opts.find(function(o){ return o.value===v; }) || {}).reason || "";
         },
         onPick: function(v){ slots[i][p] = v; onChange(); }
       })));
+      if(isSpell && slots[i][p] && SPELL_DATA[slots[i][p]]) box.appendChild(spellNote(slots[i][p]));
     })(p);
   });
   return box;
 }
 function placeholder(slot){
   return {skill: "Choose a skill", expertise: slot.tools ? "Choose a skill or tool" : "Choose a skill", tool: "Choose a tool", language: "Choose a language",
-    save: "Choose a saving throw", weapon: "Choose a weapon", skillOrLanguage: "Choose a skill or language"}[slot.kind];
+    save: "Choose a saving throw", weapon: "Choose a weapon", skillOrLanguage: "Choose a skill or language",
+    spell: slot.level===0 ? "Choose a cantrip" : "Choose a spell"}[slot.kind];
 }
 function note(text){ var n = ce("p", "fp-spell-note"); n.textContent = text; return n; }
+function spellNote(name){
+  var n = ce("p", "fp-spell-note");
+  var b = document.createElement("b");
+  b.textContent = name + ": ";
+  n.appendChild(b);
+  n.appendChild(document.createTextNode(SPELL_DATA[name].summary || ""));
+  return n;
+}
 function label(text){ var l = ce("div", "fp-label"); l.textContent = text; return l; }
 function field(el){ var f = ce("div", "field rt-field fp-field"); f.appendChild(el); return f; }
 

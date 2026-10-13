@@ -94,7 +94,7 @@ export var CLERIC_SUBCLASSES = [
   {name:"Nature Domain", blurb:"Channels the power of nature to command beasts and wield elemental fury.", features:{
     1:[
       {name:"Domain Spells", text:"You always have Animal Friendship and Speak with Animals prepared; they don't count against your prepared spells.", spells:["Animal Friendship","Speak with Animals"], spellKind:"prepared"},
-      {name:"Acolyte of Nature", text:"You learn one druid cantrip (it counts as a cleric cantrip for you) and gain proficiency in one of Animal Handling, Nature or Survival.", profs:{pick:[{kind:"skill", options:["Animal Handling","Nature","Survival"]}]}},
+      {name:"Acolyte of Nature", text:"You learn one druid cantrip (it counts as a cleric cantrip for you) and gain proficiency in one of Animal Handling, Nature or Survival.", profs:{pick:[{kind:"spell", level:0, list:"Druid"}, {kind:"skill", options:["Animal Handling","Nature","Survival"]}]}},
       {name:"Bonus Proficiency", text:"You gain proficiency with heavy armor.", grants:{armor:["Heavy armor"]}}
     ],
     2:[{name:"Channel Divinity: Charm Animals and Plants", text:"As an action, each beast or plant creature within 30 feet that can see you makes a WIS save. On a failure, it is charmed by you for 1 minute or until it takes damage, and is friendly to you and creatures you designate."}],
@@ -171,7 +171,8 @@ export var CLERIC_SUBCLASSES = [
     1:[
       {name:"Domain Spells", text:"You always have False Life and Ray of Sickness prepared; they don't count against your prepared spells.", spells:["False Life","Ray of Sickness"], spellKind:"prepared"},
       {name:"Bonus Proficiency", text:"You gain proficiency with martial weapons.", grants:{weapons:["Martial weapons"]}},
-      {name:"Reaper", text:"You learn one necromancy cantrip of your choice from any class's spell list (e.g. Chill Touch or Toll the Dead). When you cast a necromancy cantrip that normally targets only one creature, it can instead target two creatures within range and within 5 feet of each other."}
+      {name:"Reaper", text:"You learn one necromancy cantrip of your choice from any class's spell list (e.g. Chill Touch or Toll the Dead). When you cast a necromancy cantrip that normally targets only one creature, it can instead target two creatures within range and within 5 feet of each other.",
+        profs:{pick:[{kind:"spell", level:0, schools:["Necromancy"], label:"Choose a necromancy cantrip from any class's list"}]}}
     ],
     2:[{name:"Channel Divinity: Touch of Death", text:"When you hit a creature with a melee attack, you can use Channel Divinity to deal extra necrotic damage equal to 5 + twice your cleric level."}],
     3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have False Life, Ray of Sickness, Blindness/Deafness and Ray of Enfeeblement prepared; they don't count against your prepared spells.", spells:["False Life","Ray of Sickness","Blindness/Deafness","Ray of Enfeeblement"], spellKind:"prepared"}],
@@ -185,7 +186,7 @@ export var CLERIC_SUBCLASSES = [
   {name:"Arcana Domain", blurb:"A scholar-priest of magic who wields wizard spells and banishes otherworldly foes.", features:{
     1:[
       {name:"Domain Spells", text:"You always have Detect Magic and Magic Missile prepared; they don't count against your prepared spells.", spells:["Detect Magic","Magic Missile"], spellKind:"prepared"},
-      {name:"Arcane Initiate", text:"You gain proficiency in Arcana and learn two wizard cantrips of your choice. They count as cleric cantrips for you.", profs:{skills:["Arcana"]}}
+      {name:"Arcane Initiate", text:"You gain proficiency in Arcana and learn two wizard cantrips of your choice. They count as cleric cantrips for you.", profs:{skills:["Arcana"], pick:[{kind:"spell", count:2, level:0, list:"Wizard"}]}}
     ],
     2:[{name:"Channel Divinity: Arcane Abjuration", text:"Action: choose one celestial, elemental, fey or fiend within 30 feet that can see or hear you. It makes a Wisdom save or is turned for 1 minute or until it takes damage: it must spend its turns moving away from you, can't willingly come within 30 feet of you, can't take reactions, and can only Dash or try to escape."}],
     3:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Detect Magic, Magic Missile, Magic Weapon and Nystul's Magic Aura prepared; they don't count against your prepared spells.", spells:["Detect Magic","Magic Missile","Magic Weapon","Nystul's Magic Aura"], spellKind:"prepared"}],
@@ -197,7 +198,8 @@ export var CLERIC_SUBCLASSES = [
     7:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Detect Magic, Magic Missile, Magic Weapon, Nystul's Magic Aura, Dispel Magic, Magic Circle, Arcane Eye and Leomund's Secret Chest prepared; they don't count against your prepared spells.", spells:["Detect Magic","Magic Missile","Magic Weapon","Nystul's Magic Aura","Dispel Magic","Magic Circle","Arcane Eye","Leomund's Secret Chest"], spellKind:"prepared"}],
     8:[{name:"Potent Spellcasting", text:"Add your Wisdom modifier to the damage you deal with any cleric cantrip."}],
     9:[{name:"Domain Spells", replaces:"Domain Spells", text:"You always have Detect Magic, Magic Missile, Magic Weapon, Nystul's Magic Aura, Dispel Magic, Magic Circle, Arcane Eye, Leomund's Secret Chest, Planar Binding and Teleportation Circle prepared; they don't count against your prepared spells.", spells:["Detect Magic","Magic Missile","Magic Weapon","Nystul's Magic Aura","Dispel Magic","Magic Circle","Arcane Eye","Leomund's Secret Chest","Planar Binding","Teleportation Circle"], spellKind:"prepared"}],
-    17:[{name:"Arcane Mastery", text:"Choose four spells from the wizard spell list, one each of 6th, 7th, 8th and 9th level. They become domain spells for you: always prepared and not counted against your prepared spells."}]
+    17:[{name:"Arcane Mastery", text:"Choose four spells from the wizard spell list, one each of 6th, 7th, 8th and 9th level. They become domain spells for you: always prepared and not counted against your prepared spells.",
+      profs:{pick:[6, 7, 8, 9].map(function(lv){ return {kind:"spell", level:lv, list:"Wizard", grant:"prepared", label:"Choose " + (lv===8 ? "an " : "a ") + lv + "th-level wizard spell"}; })}}]
   }},
   {name:"Grave Domain", blurb:"Watches over the line between life and death, sparing the dying and hastening the doomed.", features:{
     1:[

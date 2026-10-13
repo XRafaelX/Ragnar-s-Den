@@ -8,7 +8,7 @@ import { CLASS_PROGRESSION, MAX_LEVEL, XP_THRESHOLDS } from "../data/progression
 import { mod, ce, escapeHtml, totalLevel, classFeaturesGainedAt, wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFeat, raceHpPerLevel, classSpellChoices, spellHeldBy } from "../core/helpers.js";
 import { knownInvocations, levelUpPlan, levelUpContext, levelUpProblem } from "../core/invocations.js";
 import { levelUpOptionPlans, planProblem, planSlots, allKnownOptions } from "../core/class-options.js";
-import { levelUpGrants, grantHasChoices, classPickContext, classPicksProblem, fillSlots, slotIsFixed } from "../core/class-picks.js";
+import { levelUpGrants, grantHasChoices, grantHasSpells, classPickContext, classPicksProblem, fillSlots, slotIsFixed } from "../core/class-picks.js";
 import { styleDueAt, classStyleList, availableStyleNames, versatilityStyleSwap, styleFeatures, stylePicksProblem } from "../core/fighting-styles.js";
 import { showActionToast } from "../ui/toast.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons.js";
@@ -165,6 +165,11 @@ export function profGrantsToChoose(){
   });
 }
 export function profSlots(key){ return lu.profPicks[key] = lu.profPicks[key] || []; }
+/* The step's name: "Proficiencies", or "Feature choices" once a spell is
+   among them (an Arcana cleric's cantrips, a wizard's Spell Mastery). */
+export function profStepLabel(){
+  return profGrantsToChoose().some(function(g){ return grantHasSpells(g.def); }) ? "Feature choices" : STEP_LABELS.profs;
+}
 /* The character as this level-up will leave it, for a grant's pickers.
    What another grant or this level's feat picks is greyed out. */
 export function profCtx(grant){
@@ -177,6 +182,8 @@ export function profCtx(grant){
   ctx.taken = function(v, kind){
     if(kind==="expertise") return doubled.indexOf(v)!==-1 ? "picked" : "";
     if(elsewhere.indexOf(v)!==-1) return "picked";
+    // A spell learned on this level's New spells step.
+    if(kind==="spell" && learningNow().indexOf(v)!==-1) return "new this level";
     return featPicked().indexOf(v)!==-1 ? "your feat's pick" : "";
   };
   ctx.gaining = function(){ return elsewhere; };
@@ -202,7 +209,7 @@ function profPicked(exceptKey, expertise){
 function featPicked(){
   var out = [];
   [target().asi && lu.asiMode==="feat" && lu.featPicks, stepApplicable("bonusFeat") && lu.bonusFeatName && lu.bonusFeatPicks].forEach(function(p){
-    if(p) out = out.concat(p.skills || [], p.languages || [], p.tools || []);
+    if(p) out = out.concat(p.skills || [], p.languages || [], p.tools || [], p.spells || []);
   });
   return out.filter(Boolean);
 }
@@ -439,7 +446,8 @@ function buildProgress(){
     if(i<cur){ dot.classList.add("done"); step.classList.add("done"); }
     if(i===cur){ dot.classList.add("current"); step.classList.add("current"); step.setAttribute("aria-current", "step"); }
     var label = ce("span","lu-step-label");
-    label.textContent = id==="options" ? optionPlans().map(function(p){ return p.set.label; }).join(", ") || STEP_LABELS.options : STEP_LABELS[id];
+    label.textContent = id==="options" ? optionPlans().map(function(p){ return p.set.label; }).join(", ") || STEP_LABELS.options
+      : id==="profs" ? profStepLabel() : STEP_LABELS[id];
     step.appendChild(dot); step.appendChild(label);
     progress.appendChild(step);
   });

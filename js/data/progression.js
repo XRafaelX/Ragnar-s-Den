@@ -307,8 +307,11 @@ export var CLASS_PROGRESSION = {
     prereq: [["int"]], casterType: "full", spellAbility: "int", asiLevels: STANDARD_ASI,
     multiclassProfs: {armor:[], weapons:[], tools:[], note:""},
     features: {
-      18: [{name:"Spell Mastery", text:"Choose a 1st-level and a 2nd-level wizard spell in your spellbook. While you have them prepared, you can cast them at their lowest level without a spell slot. You can swap either choice after 8 hours of study."}],
-      20: [{name:"Signature Spells", text:"Choose two 3rd-level wizard spells in your spellbook. They are always prepared (not counting against your prepared spells), and you can cast each once at 3rd level without a spell slot, regained on a short or long rest."}]
+      18: [{name:"Spell Mastery", text:"Choose a 1st-level and a 2nd-level wizard spell in your spellbook. While you have them prepared, you can cast them at their lowest level without a spell slot. You can swap either choice after 8 hours of study (the Feature choices card on the Features & Feats tab has a Change button).",
+        profs:{pick:[{kind:"spell", from:"spellbook", level:1, grant:"mastery", kindLabel:"Spell Mastery", label:"Choose a 1st-level spell from your spellbook"},
+          {kind:"spell", from:"spellbook", level:2, grant:"mastery", kindLabel:"Spell Mastery", label:"Choose a 2nd-level spell from your spellbook"}]}}],
+      20: [{name:"Signature Spells", text:"Choose two 3rd-level wizard spells in your spellbook. They are always prepared (not counting against your prepared spells), and you can cast each once at 3rd level without a spell slot, regained on a short or long rest.",
+        profs:{pick:[{kind:"spell", from:"spellbook", level:3, count:2, grant:"prepared", label:"Choose two 3rd-level spells from your spellbook"}]}}]
     }
   }
 };

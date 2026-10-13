@@ -71,7 +71,7 @@ export var BARBARIAN_SUBCLASSES = [
   }},
   {name:"Path of the Giant", blurb:"Channels the might of giants to grow huge and hurl elemental weapons.", features:{
     3:[
-      {name:"Giant's Power", text:"You learn to speak, read and write Giant (or another language of your choice if you already know Giant). You also learn the Druidcraft or Thaumaturgy cantrip; Wisdom is your spellcasting ability for it.", profs:{pick:[{kind:"language", options:["Giant"], fallback:"any"}]}},
+      {name:"Giant's Power", text:"You learn to speak, read and write Giant (or another language of your choice if you already know Giant). You also learn the Druidcraft or Thaumaturgy cantrip; Wisdom is your spellcasting ability for it.", profs:{pick:[{kind:"language", options:["Giant"], fallback:"any"}, {kind:"spell", level:0, options:["Druidcraft","Thaumaturgy"], ability:"wis"}]}},
       {name:"Giant's Havoc", text:"While raging: Crushing Throw (when you hit with a ranged attack using a thrown weapon and Strength, add your Rage damage bonus to the damage) and Giant Stature (your reach increases by 5 feet, and if you are smaller than Large you become Large, along with anything you're wearing, if there's room)."}
     ],
     6:[

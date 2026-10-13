@@ -17,6 +17,8 @@ import { OPTION_SETS } from "../js/data/class-options.js";
 import { SKILLS } from "../js/data/abilities-skills.js";
 import { LANGUAGE_LIST } from "../js/data/languages.js";
 import { WEAPON_DATA } from "../js/data/weapons.js";
+import { SPELL_DATA } from "../js/data/spells.js";
+import * as SK from "../js/core/spells-known.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
 import { state } from "../js/core/state.js";
 import { renderClassPicksCard } from "../js/render/panels/class-picks.js";
@@ -69,7 +71,18 @@ test("profs data: real skills, tools, languages, abilities and weapon filters", 
     (def.languages || []).forEach((l) => assert.ok(LANGUAGE_LIST.includes(l), where + ": language " + l));
     assert.ok((def.skills || def.expertise || def.languages || def.pick || []).length, where + ": gives nothing");
     for(const slot of def.pick || []){
-      assert.ok(["skill", "expertise", "tool", "language", "save", "weapon", "skillOrLanguage"].includes(slot.kind), where + ": kind " + slot.kind);
+      assert.ok(["skill", "expertise", "tool", "language", "save", "weapon", "skillOrLanguage", "spell"].includes(slot.kind), where + ": kind " + slot.kind);
+      if(slot.kind === "spell"){
+        assert.ok(Number.isInteger(slot.level) && slot.level >= 0 && slot.level <= 9, where + ": spell level");
+        assert.ok(["known", "prepared", "mastery"].includes(slot.grant || "known"), where + ": grant " + slot.grant);
+        assert.ok(slot.level === 0 || slot.grant, where + ": a levelled spell says how it is had");
+        if(slot.options) slot.options.forEach((n) => assert.ok(SPELL_DATA[n] && SPELL_DATA[n].level === slot.level, where + ": spell " + n));
+        else if(slot.from) assert.equal(slot.from, "spellbook", where + ": from");
+        else assert.ok(Object.values(SPELL_DATA).some((d) => d.level === slot.level && (!slot.list || d.classes.includes(slot.list)) && (!slot.schools || slot.schools.includes(d.school))), where + ": no spell fits");
+        if(slot.list) assert.ok(CLASS_PROGRESSION[slot.list], where + ": list " + slot.list);
+        if(slot.ability) assert.ok(ABILITIES.includes(slot.ability), where + ": ability");
+        continue;
+      }
       if(slot.count != null) assert.ok(Number.isInteger(slot.count) && slot.count > 1, where + ": count");
       const values = (slot.options || []).concat(Array.isArray(slot.fallback) ? slot.fallback : []);
       if(slot.kind === "skill" || slot.kind === "skillOrLanguage") values.forEach((v) => assert.ok(SKILL_NAMES.includes(v), where + ": skill " + v));
@@ -117,7 +130,16 @@ test("the published lists: who gets what", () => {
   assert.deepEqual(picks("Monk", "Way of Mercy", 3, "Implements of Mercy"), { skills: ["Insight", "Medicine"] });
   assert.deepEqual(picks("Cleric", "Order Domain", 1, "Bonus Proficiencies").pick[0].options, ["Intimidation", "Persuasion"]);
   assert.deepEqual(picks("Cleric", "Peace Domain", 1, "Implement of Peace").pick[0].options, ["Insight", "Performance", "Persuasion"]);
-  assert.deepEqual(picks("Cleric", "Nature Domain", 1, "Acolyte of Nature").pick[0].options, ["Animal Handling", "Nature", "Survival"]);
+  assert.deepEqual(picks("Cleric", "Nature Domain", 1, "Acolyte of Nature").pick, [{ kind: "spell", level: 0, list: "Druid" }, { kind: "skill", options: ["Animal Handling", "Nature", "Survival"] }]);
+  // Spells: who chooses what, from which list.
+  assert.deepEqual(picks("Cleric", "Arcana Domain", 1, "Arcane Initiate"), { skills: ["Arcana"], pick: [{ kind: "spell", count: 2, level: 0, list: "Wizard" }] });
+  assert.deepEqual(picks("Cleric", "Arcana Domain", 17, "Arcane Mastery").pick.map((s) => [s.level, s.list, s.grant]), [[6, "Wizard", "prepared"], [7, "Wizard", "prepared"], [8, "Wizard", "prepared"], [9, "Wizard", "prepared"]]);
+  assert.deepEqual(picks("Cleric", "Death Domain", 1, "Reaper").pick.map((s) => [s.level, s.list, s.schools]), [[0, undefined, ["Necromancy"]]]);
+  assert.deepEqual(picks("Druid", "Circle of the Land", 2, "Bonus Cantrip").pick.map((s) => [s.level, s.list]), [[0, "Druid"]]);
+  assert.deepEqual(picks("Fighter", "Arcane Archer", 3, "Arcane Archer Lore").pick[1], { kind: "spell", level: 0, options: ["Prestidigitation", "Druidcraft"] });
+  assert.deepEqual(picks("Barbarian", "Path of the Giant", 3, "Giant's Power").pick[1], { kind: "spell", level: 0, options: ["Druidcraft", "Thaumaturgy"], ability: "wis" });
+  assert.deepEqual(picks("Wizard", null, 18, "Spell Mastery").pick.map((s) => [s.from, s.level, s.grant]), [["spellbook", 1, "mastery"], ["spellbook", 2, "mastery"]]);
+  assert.deepEqual(picks("Wizard", null, 20, "Signature Spells").pick.map((s) => [s.from, s.level, s.count, s.grant]), [["spellbook", 3, 2, "prepared"]]);
   assert.deepEqual(picks("Fighter", "Cavalier", 3, "Bonus Proficiency").pick[0].options, ["Animal Handling", "History", "Insight", "Performance", "Persuasion"]);
   assert.deepEqual(picks("Fighter", "Samurai", 3, "Bonus Proficiency").pick[0].options, ["History", "Insight", "Performance", "Persuasion"]);
   assert.deepEqual(picks("Fighter", "Samurai", 7, "Elegant Courtier").pick[0], { kind: "save", options: ["wis"], fallback: ["int", "cha"] });
@@ -273,7 +295,7 @@ test("tools, languages, saves and weapons", () => {
 
   // Path of the Giant: Giant, or any language once Giant is known.
   const giant = makeChar([{ name: "Barbarian", subclass: "Path of the Giant", level: 3 }]);
-  assert.deepEqual(CP.fillSlots(grant(giant, "Giant's Power").def, [], ctxOf(giant, grant(giant, "Giant's Power"))), [["Giant"]]);
+  assert.deepEqual(CP.fillSlots(grant(giant, "Giant's Power").def, [], ctxOf(giant, grant(giant, "Giant's Power"))), [["Giant"], []]);
   const speaks = makeChar([{ name: "Barbarian", subclass: "Path of the Giant", level: 3 }], { languages: ["Common", "Giant"] });
   const gp = grant(speaks, "Giant's Power");
   assert.equal(open(speaks, gp, 0).length, 14, "the sixteen standard and exotic languages, less Common and Giant");
@@ -617,4 +639,227 @@ test("card: only for characters with a choice, and every state draws", (t) => {
     assert.ok(renderClassPicksCard(c), "picked, marked by hand and pending together");
     assert.deepEqual(CP.pendingClassPicks(c).map((g) => g.name), ["Bard training", "Expertise"]);
   });
+});
+
+/* ================================================================
+   Spells a feature lets you choose
+   ================================================================ */
+const fsOf = (c, feature) => H.featureSpells(c).filter((f) => f.feature === feature);
+const book = (...spells) => spells.map(([name, level, prepared]) => ({ name, level, learnedBy: "Wizard", prepared: !!prepared }));
+
+test("spell picks: an Arcana cleric's wizard cantrips and Arcane Mastery", () => {
+  const c = makeChar([{ name: "Cleric", subclass: "Arcana Domain", level: 17 }],
+    { spells: [{ name: "Light", level: 0, learnedBy: "Cleric" }, { name: "True Seeing", level: 6, learnedBy: "Cleric", prepared: false }] });
+  CP.syncClassPicks(c);
+  assert.deepEqual(CP.pendingClassPicks(c).map((g) => g.name), ["Arcane Initiate", "Arcane Mastery"], "the spells wait for the player; nothing is guessed");
+  assert.ok(!c.skillProfs.Arcana.prof, "and so does the feature's skill, which is applied with them");
+  const init = grant(c, "Arcane Initiate");
+  const offered = CP.slotOptions(init.def, [], 0, ctxOf(c, init));
+  const wizardCantrips = Object.keys(SPELL_DATA).filter((n) => SPELL_DATA[n].level === 0 && SPELL_DATA[n].classes.includes("Wizard")).sort();
+  assert.deepEqual(offered.map((o) => o.value), wizardCantrips);
+  assert.ok(offered.length >= 15 && !offered.some((o) => o.value === "Sacred Flame"), "wizard cantrips only");
+  assert.deepEqual(offered.filter((o) => o.reason).map((o) => [o.value, o.reason]), [["Light", "known"]], "a cantrip already on the sheet is greyed out");
+  assert.equal(CP.slotLabel(init.def, [], 0, ctxOf(c, init)), "Choose 2 wizard cantrips");
+  assert.match(CP.classPicksProblem(init, [["Fire Bolt"]], ctxOf(c, init)), /Choose 2 different cantrips for Arcane Initiate/);
+  pick(c, init, [["Fire Bolt", "Mage Hand"]]);
+  assert.ok(c.skillProfs.Arcana.prof);
+  assert.deepEqual(fsOf(c, "Arcane Initiate").map((f) => [f.name, f.level, f.kind, f.source, f.className]),
+    [["Fire Bolt", 0, "known", "Arcana Domain", "Cleric"], ["Mage Hand", 0, "known", "Arcana Domain", "Cleric"]]);
+  assert.equal(H.spellHeldBy(c, "Fire Bolt"), "from Arcana Domain");
+  assert.equal(SK.classKnownSpells(c, "Cleric").cantrips.length, 1, "they don't count against the cleric's cantrips known");
+  assert.equal(CP.classPicksSummary(init, CP.grantEntry(init.cl, init.key)), "Fire Bolt, Mage Hand");
+  // Changing the picks: its own spells aren't "already had".
+  assert.deepEqual(CP.slotOptions(init.def, [], 0, ctxOf(c, init)).filter((o) => o.reason).map((o) => o.value), ["Light"]);
+  // Tasha's Additional Spells widen the wizard list only with the switch on.
+  const tashaOnly = Object.keys(SPELL_DATA).filter((n) => SPELL_DATA[n].level === 0 && SPELL_DATA[n].tashaClasses.includes("Wizard"));
+  c.tashaOptional = true;
+  assert.equal(CP.slotOptions(init.def, [], 0, ctxOf(c, init)).length, wizardCantrips.length + tashaOnly.length);
+  c.tashaOptional = false;
+
+  // Arcane Mastery: one wizard spell of each level from 6th to 9th, always prepared.
+  const mastery = grant(c, "Arcane Mastery");
+  assert.deepEqual([0, 1, 2, 3].map((i) => CP.slotLabel(mastery.def, [], i, ctxOf(c, mastery))),
+    ["Choose a 6th-level wizard spell", "Choose a 7th-level wizard spell", "Choose an 8th-level wizard spell", "Choose a 9th-level wizard spell"]);
+  [6, 7, 8, 9].forEach((lv, i) => {
+    const opts = CP.slotOptions(mastery.def, [], i, ctxOf(c, mastery));
+    assert.ok(opts.length >= 5 && opts.every((o) => SPELL_DATA[o.value].level === lv && SPELL_DATA[o.value].classes.includes("Wizard")), lv + "th-level wizard spells");
+  });
+  assert.equal(CP.slotOptions(mastery.def, [], 0, ctxOf(c, mastery)).find((o) => o.value === "True Seeing").reason, "", "a spell on the cleric's own list can still be made always prepared");
+  assert.match(CP.classPicksProblem(mastery, [["True Seeing"], [], [], []], ctxOf(c, mastery)), /Choose a spell for Arcane Mastery/);
+  pick(c, mastery, [["True Seeing"], ["Teleport"], ["Maze"], ["Wish"]]);
+  assert.deepEqual(fsOf(c, "Arcane Mastery").map((f) => [f.name, f.level, f.kind]), [["True Seeing", 6, "prepared"], ["Teleport", 7, "prepared"], ["Maze", 8, "prepared"], ["Wish", 9, "prepared"]]);
+  const sheetCopy = c.spells.find((sp) => sp.name === "True Seeing");
+  assert.ok(SK.alwaysPrepared(c, sheetCopy) && !SK.spellNeedsPreparing(c, sheetCopy), "the sheet's copy is now always prepared");
+  // A level lost takes the spells with it.
+  c.classes[0].level = 16;
+  CP.syncClassPicks(c);
+  assert.deepEqual(fsOf(c, "Arcane Mastery"), []);
+  assert.equal(fsOf(c, "Arcane Initiate").length, 2);
+});
+
+test("spell picks: Reaper, Acolyte of Nature, Circle of the Land, Arcane Archer and Path of the Giant", () => {
+  // Death Domain: a necromancy cantrip from any class's list.
+  const death = makeChar([{ name: "Cleric", subclass: "Death Domain", level: 1 }]);
+  const reaper = grant(death, "Reaper");
+  const necro = CP.slotOptions(reaper.def, [], 0, ctxOf(death, reaper)).map((o) => o.value);
+  assert.ok(necro.includes("Chill Touch") && necro.includes("Toll the Dead") && necro.includes("Spare the Dying") && !necro.includes("Sacred Flame"));
+  assert.ok(necro.every((n) => SPELL_DATA[n].level === 0 && SPELL_DATA[n].school === "Necromancy"));
+  assert.ok(!SPELL_DATA["Chill Touch"].classes.includes("Cleric"), "Chill Touch isn't a cleric cantrip: any list means any list");
+  pick(death, reaper, [["Chill Touch"]]);
+  assert.deepEqual(fsOf(death, "Reaper").map((f) => [f.name, f.kind, f.className]), [["Chill Touch", "known", "Cleric"]]);
+
+  // Nature Domain: a druid cantrip and a skill, on one feature.
+  const nature = makeChar([{ name: "Cleric", subclass: "Nature Domain", level: 1 }]);
+  const acolyte = grant(nature, "Acolyte of Nature");
+  assert.ok(CP.slotOptions(acolyte.def, [], 0, ctxOf(nature, acolyte)).every((o) => SPELL_DATA[o.value].classes.includes("Druid")));
+  assert.equal(CP.slotLabel(acolyte.def, [], 0, ctxOf(nature, acolyte)), "Choose a druid cantrip");
+  pick(nature, acolyte, [["Shillelagh"], ["Survival"]]);
+  assert.ok(nature.skillProfs.Survival.prof && fsOf(nature, "Acolyte of Nature")[0].name === "Shillelagh");
+  assert.equal(CP.classPicksSummary(acolyte, CP.grantEntry(acolyte.cl, acolyte.key)), "Shillelagh, Survival");
+
+  // Circle of the Land: one more druid cantrip, never counted, never offered again.
+  const land = makeChar([{ name: "Druid", subclass: "Circle of the Land", level: 3 }],
+    { spells: [{ name: "Guidance", level: 0, learnedBy: "Druid" }, { name: "Druidcraft", level: 0, learnedBy: "Druid" }] });
+  const bonus = grant(land, "Bonus Cantrip");
+  assert.deepEqual(CP.slotOptions(bonus.def, [], 0, ctxOf(land, bonus)).filter((o) => o.reason).map((o) => o.value), ["Druidcraft", "Guidance"]);
+  pick(land, bonus, [["Produce Flame"]]);
+  assert.equal(SK.classKnownSpells(land, "Druid").cantrips.length, 2);
+  const at4 = SK.learnPlan(land, { name: "Druid", subclass: "Circle of the Land", level: 4 }, false);
+  assert.deepEqual(at4.sections.map((s) => [s.id, s.count]), [["cantrips", 1]]);
+  assert.ok(!at4.sections[0].names.includes("Produce Flame") && at4.sections[0].names.includes("Thorn Whip"));
+
+  // Arcane Archer: a skill, and Prestidigitation or Druidcraft. A fighter gets a Spells tab for it.
+  const archer = makeChar([{ name: "Fighter", subclass: "Arcane Archer", level: 3 }]);
+  const lore = grant(archer, "Arcane Archer Lore");
+  assert.equal(CP.slotLabel(lore.def, [], 1, ctxOf(archer, lore)), "Learn Prestidigitation or Druidcraft");
+  assert.deepEqual(open(archer, lore, 1), ["Prestidigitation", "Druidcraft"]);
+  assert.ok(!H.hasSpellsTab(archer));
+  pick(archer, lore, [["Arcana"], ["Prestidigitation"]]);
+  assert.ok(H.hasSpellsTab(archer) && archer.skillProfs.Arcana.prof);
+  assert.deepEqual(fsOf(archer, "Arcane Archer Lore").map((f) => [f.name, f.kind, f.source]), [["Prestidigitation", "known", "Arcane Archer"]]);
+
+  // Path of the Giant: Druidcraft or Thaumaturgy, cast with Wisdom.
+  const giant = makeChar([{ name: "Barbarian", subclass: "Path of the Giant", level: 3 }], { abilities: { str: 16, dex: 14, con: 14, int: 8, wis: 14, cha: 10 } });
+  const power = grant(giant, "Giant's Power");
+  assert.match(CP.classPicksProblem(power, CP.fillSlots(power.def, [], ctxOf(giant, power)), ctxOf(giant, power)), /Choose a cantrip for Giant's Power/);
+  pick(giant, power, [["Giant"], ["Thaumaturgy"]]);
+  const cantrip = fsOf(giant, "Giant's Power")[0];
+  assert.deepEqual([cantrip.name, cantrip.kind, cantrip.note], ["Thaumaturgy", "known", "A cantrip you always know from Giant's Power. Uses Wisdom: save DC 12, spell attack +4."]);
+  assert.ok(giant.languages.includes("Giant"));
+
+  // Lunar Sorcery's Moon Fire simply teaches Sacred Flame.
+  const lunar = makeChar([{ name: "Sorcerer", subclass: "Lunar Sorcery", level: 1 }]);
+  assert.ok(H.featureSpells(lunar).some((f) => f.name === "Sacred Flame" && f.kind === "known" && f.feature === "Moon Fire"));
+});
+
+test("spell picks: a wizard's Spell Mastery and Signature Spells come from the spellbook", () => {
+  const w = makeChar([{ name: "Wizard", subclass: "School of Evocation", level: 20 }], { spells: book(["Shield", 1, true], ["Magic Missile", 1], ["Misty Step", 2, true],
+    ["Fireball", 3, true], ["Counterspell", 3], ["Haste", 3], ["Fire Bolt", 0]) });
+  assert.deepEqual(CP.pendingClassPicks(w).map((g) => g.key), ["class:Spell Mastery@18", "class:Signature Spells@20"]);
+  const mastery = grant(w, "Spell Mastery"), sig = grant(w, "Signature Spells");
+  assert.deepEqual([open(w, mastery, 0), open(w, mastery, 1), open(w, sig, 0)], [["Magic Missile", "Shield"], ["Misty Step"], ["Counterspell", "Fireball", "Haste"]]);
+  assert.deepEqual(CP.fillSlots(mastery.def, [], ctxOf(w, mastery)), [[], ["Misty Step"]], "the only 2nd-level spell in the book is filled in");
+  assert.match(CP.classPicksProblem(sig, [["Fireball"]], ctxOf(w, sig)), /Choose 2 different spells for Signature Spells/);
+  const before = SK.preparedState(w, "Wizard");
+  assert.deepEqual(before, { have: 3, max: 25 });
+  pick(w, mastery, [["Shield"], ["Misty Step"]]);
+  pick(w, sig, [["Fireball", "Counterspell"]]);
+  // Mastered spells are still ordinary spellbook spells: counted, and prepared as usual.
+  assert.deepEqual(fsOf(w, "Spell Mastery").map((f) => [f.name, f.kind, f.kindLabel]), [["Shield", "mastery", "Spell Mastery"], ["Misty Step", "mastery", "Spell Mastery"]]);
+  const shield = w.spells.find((sp) => sp.name === "Shield"), fireball = w.spells.find((sp) => sp.name === "Fireball"), counter = w.spells.find((sp) => sp.name === "Counterspell");
+  assert.ok(SK.spellNeedsPreparing(w, shield) && !SK.alwaysPrepared(w, shield));
+  // Signature spells are always prepared and stop counting against the daily limit.
+  assert.ok(!SK.spellNeedsPreparing(w, fireball) && SK.alwaysPrepared(w, counter).feature === "Signature Spells");
+  assert.deepEqual(SK.preparedState(w, "Wizard"), { have: 2, max: 25 }, "Fireball no longer counts; Shield and Misty Step still do");
+  assert.equal(SK.classKnownSpells(w, "Wizard").spells.length, 4);
+  // A spell taken out of the spellbook is no longer a signature spell.
+  w.spells = w.spells.filter((sp) => sp.name !== "Counterspell");
+  assert.deepEqual(fsOf(w, "Signature Spells").map((f) => f.name), ["Fireball"]);
+  // A wizard with no 2nd-level spells on the sheet has nothing to choose there, and no complaint.
+  const bare = makeChar([{ name: "Wizard", level: 18 }], { spells: book(["Shield", 1]) });
+  const m2 = grant(bare, "Spell Mastery");
+  assert.deepEqual(CP.fillSlots(m2.def, [], ctxOf(bare, m2)), [["Shield"], []]);
+  assert.equal(CP.classPicksProblem(m2, [["Shield"], []], ctxOf(bare, m2)), "");
+  // Another class's spells aren't in the wizard's spellbook.
+  const multi = makeChar([{ name: "Wizard", level: 18 }, { name: "Cleric", subclass: "Life Domain", level: 2 }],
+    { spells: book(["Shield", 1]).concat([{ name: "Bless", level: 1, learnedBy: "Cleric" }, { name: "Sleep", level: 1 }]) });
+  assert.deepEqual(open(multi, grant(multi, "Spell Mastery"), 0), ["Shield"], "an untagged spell can't be told apart with two casting classes");
+});
+
+test("level-up: Circle of the Land's cantrip, a new Nature cleric's cantrip, a wizard's Spell Mastery", (t) => {
+  // Druid 1 to 2, choosing the Land: the step is named for more than proficiencies.
+  const druid = makeChar([{ name: "Druid", level: 1 }], { spells: [{ name: "Guidance", level: 0, learnedBy: "Druid" }, { name: "Druidcraft", level: 0, learnedBy: "Druid" }] });
+  let label, asked;
+  levelUp(t, druid, (lu) => {
+    lu.subclass = "Circle of the Land";
+    asked = LU.profGrantsToChoose().map((g) => g.name);
+    label = LU.profStepLabel();
+    lu.profPicks["sub:Circle of the Land:Bonus Cantrip@2"] = [["Thorn Whip"]];
+  });
+  assert.deepEqual([asked, label], [["Bonus Cantrip"], "Feature choices"]);
+  assert.deepEqual(fsOf(druid, "Bonus Cantrip").map((f) => f.name), ["Thorn Whip"]);
+  assert.equal(druid.spells.length, 2, "nothing is copied onto the spell list");
+  withFakeDom(t, (byId) => { undoLastLevelUp(druid); byId["confirm-ok"].click(); });
+  assert.deepEqual([druid.classes[0].level, fsOf(druid, "Bonus Cantrip")], [1, []]);
+
+  // Multiclassing into a Nature cleric: a cantrip picked on New spells isn't offered again.
+  const c = makeChar([{ name: "Fighter", subclass: "Champion", level: 3 }], { abilities: { str: 15, dex: 10, con: 13, int: 10, wis: 14, cha: 10 } });
+  let greyed;
+  levelUp(t, c, (lu) => {
+    LU.resetChoicesFor("Cleric");
+    lu.subclass = "Nature Domain";
+    lu.learnPicks.cantrips = ["Guidance", "Light", "Sacred Flame"];
+    const g = LU.profGrants().find((x) => x.name === "Acolyte of Nature");
+    greyed = CP.slotOptions(g.def, [], 0, LU.profCtx(g)).filter((o) => o.reason).map((o) => o.value + ": " + o.reason);
+    lu.profPicks[g.key] = [["Shillelagh"], ["Nature"]];
+  });
+  assert.deepEqual(greyed, ["Guidance: new this level"]);
+  assert.deepEqual([fsOf(c, "Acolyte of Nature").map((f) => f.name), c.skillProfs.Nature.prof, c.spells.map((sp) => sp.name)], [["Shillelagh"], true, ["Guidance", "Light", "Sacred Flame"]]);
+  assert.equal(SK.classKnownSpells(c, "Cleric").cantrips.length, 3);
+
+  // Wizard 17 to 18: Spell Mastery, a proficiency-free level otherwise.
+  const w = makeChar([{ name: "Wizard", subclass: "School of Evocation", level: 17 }], { spells: book(["Shield", 1, true], ["Magic Missile", 1], ["Misty Step", 2], ["Web", 2]) });
+  let offered;
+  levelUp(t, w, (lu) => {
+    const g = LU.profGrants()[0];
+    offered = [0, 1].map((i) => CP.slotOptions(g.def, [], i, LU.profCtx(g)).map((o) => o.value));
+    label = LU.profStepLabel();
+    lu.learnPicks.spellbook = ["Thunderwave", "Hold Person"];
+    lu.profPicks["class:Spell Mastery@18"] = [["Shield"], ["Web"]];
+  });
+  assert.deepEqual([offered, label], [[["Magic Missile", "Shield"], ["Misty Step", "Web"]], "Feature choices"]);
+  assert.deepEqual(fsOf(w, "Spell Mastery").map((f) => f.name), ["Shield", "Web"]);
+  assert.equal(CP.classPicksSummary(grant(w, "Spell Mastery"), CP.grantEntry(w.classes[0], "class:Spell Mastery@18")), "Shield, Web");
+  withFakeDom(t, (byId) => { undoLastLevelUp(w); byId["confirm-ok"].click(); });
+  assert.deepEqual([w.classes[0].level, fsOf(w, "Spell Mastery"), w.spells.length], [17, [], 4]);
+});
+
+test("wizard: an Arcana cleric's two wizard cantrips, left out of the Cantrips step", (t) => {
+  const key = "sub:Arcana Domain:Arcane Initiate@1";
+  let err, granted, offered;
+  withFakeDom(t, () => {
+    startWizard({ classChoices: { subclass: "Arcana Domain" } });
+    err = W.validateStep("choices");
+    W.wizardState.classChoices.profPicks = { [key]: [["Light", "Mage Hand"]] };
+    granted = W.wizardGrantedSpells().map((g) => g.name + " (" + g.source + ")");
+    const g = W.wizardClassGrants()[0];
+    offered = CP.slotOptions(g.def, W.wizardPickSlots(key), 0, W.wizardPickContext(g)).filter((o) => o.reason).map((o) => o.value);
+    W.dropGrantedSpellPicks();
+  });
+  assert.match(err, /Choose 2 different cantrips for Arcane Initiate/);
+  assert.ok(granted.includes("Light (Arcana Domain)") && granted.includes("Mage Hand (Arcana Domain)"));
+  assert.deepEqual(offered, [], "its own picks aren't greyed out");
+  // Light was also one of the three cleric cantrips: the Cantrips step asks for another.
+  let cantrips;
+  withFakeDom(t, () => {
+    startWizard({ classChoices: { subclass: "Arcana Domain", profPicks: { [key]: [["Light", "Mage Hand"]] } } });
+    W.dropGrantedSpellPicks();
+    cantrips = W.wizardState.spellChoices.cantrips.slice();
+  });
+  assert.deepEqual(cantrips, ["Guidance", "Sacred Flame"]);
+  const c = create(t, { classChoices: { subclass: "Arcana Domain", profPicks: { [key]: [["Fire Bolt", "Mage Hand"]] } } });
+  assert.ok(c.skillProfs.Arcana.prof);
+  assert.deepEqual(fsOf(c, "Arcane Initiate").map((f) => f.name), ["Fire Bolt", "Mage Hand"]);
+  assert.deepEqual(c.spells.filter((sp) => !sp.level).map((sp) => sp.name), ["Guidance", "Light", "Sacred Flame"]);
+  assert.deepEqual(CP.pendingClassPicks(c), []);
 });

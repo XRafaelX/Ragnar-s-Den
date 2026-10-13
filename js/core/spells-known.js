@@ -41,7 +41,8 @@ function spellKey(name){ return catalogSpellName((name || "").trim()).toLowerCas
    cantrips): they're never picked, and an older copy on the sheet isn't
    counted as learned. */
 function grantedNames(c){
-  return featureSpells(c).filter(function(fs){ return fs.kind!=="expanded"; }).map(function(fs){ return spellKey(fs.name); });
+  // (A Spell Mastery spell is still an ordinary spellbook spell.)
+  return featureSpells(c).filter(function(fs){ return fs.kind!=="expanded" && fs.kind!=="mastery"; }).map(function(fs){ return spellKey(fs.name); });
 }
 /* The character with class entry `entry` as the level-up will leave it
    (new level, a subclass or spell choice picked in the dialog), so the

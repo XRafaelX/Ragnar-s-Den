@@ -5,6 +5,7 @@
 import { featDef, featSpellEntries, featCastAbility } from "./feat-picks.js";
 import { invocationSpells } from "./invocations.js";
 import { styleSpells } from "./fighting-styles.js";
+import { pickedProfs } from "./class-picks.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
 import { mod, fmtMod, profBonus } from "./basics.js";
 import { characterIsCaster, classCasterType, classSpellAbility, classFeatureList } from "./class-features.js";
@@ -36,7 +37,7 @@ export function spellcastingAbilities(c){
    saved, so it follows level-ups and undo. `data` is the catalog entry. */
 export function featureSpells(c){
   var out = [];
-  (c.classes||[]).forEach(function(cl){
+  (c.classes||[]).forEach(function(cl, idx){
     var lv = Number(cl.level)||1;
     classFeatureList(cl).forEach(function(f){
       var names = f.spells ? spellsUpTo(f.spells, lv) : [];
@@ -48,6 +49,20 @@ export function featureSpells(c){
         out.push({ name: name, data: data, level: data ? data.level : 0, kind: f.spellKind || "prepared",
           source: f.subclass ? cl.subclass : cl.name, feature: f.name, className: cl.name });
       });
+    });
+    // Spells picked for a feature (an Arcana cleric's wizard cantrips, a
+    // wizard's Signature Spells; see class-picks.js). One picked from the
+    // spellbook only counts while the spell is still in it.
+    pickedProfs(cl, idx > 0).spells.forEach(function(p){
+      if(out.some(function(x){ return x.name===p.name; })) return;
+      if(p.book && !(c.spells||[]).some(function(sp){ return sp.name===p.name; })) return;
+      var data = SPELL_DATA[catalogSpellName(p.name)] || null;
+      var fs = { name: p.name, data: data, level: data ? data.level : 0, kind: p.grant,
+        source: p.subclass ? cl.subclass : cl.name, feature: p.feature, className: cl.name };
+      if(p.kindLabel) fs.kindLabel = p.kindLabel;
+      if(p.ability) fs.note = spellAbilityNote(c, p.ability, p.note || "A cantrip you always know from " + p.feature + ".");
+      else if(p.note) fs.note = p.note;
+      out.push(fs);
     });
   });
   // Feats that teach spells (Fey Touched: Misty Step and the picked

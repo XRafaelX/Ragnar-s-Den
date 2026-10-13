@@ -26,7 +26,7 @@ import { renderFeatPicks } from "../ui/feat-picks.js";
 import { fillFeatList } from "../ui/feat-list.js";
 import { swapSection } from "../core/spells-known.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
-import { lu, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
+import { lu, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
 
 export function stepClass(container){
   var c = lu.c;
@@ -365,10 +365,13 @@ export function stepOptions(container){
 
 /* Proficiencies: what this level's features let the player choose (a
    bard's or rogue's Expertise, a subclass's skill, tool, language or
-   saving throw, the skill a second class adds). */
+   saving throw, the skill a second class adds), and the spells some of
+   them teach (an Arcana cleric's cantrips, a wizard's Signature Spells). */
 export function stepProfs(container){
-  var card = stepCard(container, "Proficiencies",
-    "<b>New proficiencies:</b> this level lets you choose some. Skills and expertise show on the Abilities & Skills tab; tools, languages and saving throws on the Information tab. Anything you already have is greyed out.");
+  var withSpells = profStepLabel()!=="Proficiencies";
+  var card = stepCard(container, profStepLabel(), withSpells
+    ? "<b>Your new features come with choices.</b> Spells you pick here show on the Spells tab; skills and expertise on the Abilities & Skills tab; tools, languages and saving throws on the Information tab. Anything you already have is greyed out."
+    : "<b>New proficiencies:</b> this level lets you choose some. Skills and expertise show on the Abilities & Skills tab; tools, languages and saving throws on the Information tab. Anything you already have is greyed out.");
   profGrants().filter(function(g){ return grantHasChoices(g.def); }).forEach(function(g){
     var title = ce("p","lu-choice-title");
     title.textContent = g.name;
