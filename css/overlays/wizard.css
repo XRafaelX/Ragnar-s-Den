@@ -35,6 +35,15 @@
   padding:12px 14px;font-size:13px;line-height:1.5;color:var(--text-on-parch);margin-bottom:16px;
 }
 
+/* Background step: the campaign book row (a .lu-custom-note with a picker
+   in place of the button, and the line saying what the pick gives),
+   behind the button that opens it. */
+.wiz-campaign-open{margin-top:14px;}
+.wiz-campaign-note .wiz-campaign-field{flex:0 1 300px;margin-bottom:0;}
+.wiz-campaign-note .wiz-campaign-outcome{
+  flex:1 1 100%;padding-top:10px;border-top:1px dashed var(--rule);color:var(--text-on-parch);
+}
+
 .class-pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
 .class-pick-card{
   border:1px solid var(--rule);border-radius:6px;padding:14px;cursor:pointer;

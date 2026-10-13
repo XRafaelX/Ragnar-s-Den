@@ -319,41 +319,75 @@ export function wizardStepBackground(container){
   explain.innerHTML = backgroundExplainHtml(wizardState.background);
   card.appendChild(explain);
 
+  // The campaign row's outcome line depends on the background too.
+  var campaign = campaignNote(function(){ explain.innerHTML = backgroundExplainHtml(wizardState.background); });
   var dd = wizardDropdown("Background", "background", BACKGROUNDS, wizardState, function(){
     explain.innerHTML = backgroundExplainHtml(wizardState.background);
+    campaign.refresh();
   }, "background");
   dd.firstChild.style.maxWidth = "320px";
   card.appendChild(dd);
+  card.appendChild(campaign.el);
   container.appendChild(card);
-  container.appendChild(campaignCard(function(){ explain.innerHTML = backgroundExplainHtml(wizardState.background); }));
+}
+
+/* What the chosen campaign book gives this character, for the line under
+   its picker: "" with no campaign set. */
+function campaignOutcomeHtml(){
+  var camp = CAMPAIGN_FEATS[wizardState.campaign], bg = wizardState.background;
+  if(!camp) return "";
+  var later = camp.level4 ? " You'll also pick another feat when you reach level 4." : "";
+  if(!bg) return "Choose a background above to see what this gives you."+later;
+  var own = backgroundFeatGrant(bg);
+  if(own) return "Your "+escapeHtml(bg)+" background already comes with its own feat (<b>"+escapeHtml(own.def.name)+"</b>), so this adds nothing now."+later;
+  var names = campaignLevel1Feats(wizardState.campaign, bg).map(function(n){ return "<b>"+escapeHtml(n)+"</b>"; });
+  return "You get a free feat: "+names.join(" or ")+". You'll choose on a later step."+later;
 }
 
 /* Campaign (optional): books whose campaigns give every character a
-   feat at level 1. Off unless picked; the DM decides. */
-function campaignCard(onChange){
-  var card = ce("div","card");
-  card.innerHTML = "<h3><span>Campaign bonus feat (optional)</span></h3>";
-  var note = document.createElement("p");
-  note.className = "lu-note";
-  note.textContent = "Some campaign books give every character a feat at level 1: the background's own feat, or Skilled or Tough when the background has none. "+
-    "Dragonlance gives another at level 4. Leave this on None unless your DM uses one of these rules.";
-  card.appendChild(note);
-  var f = ce("div","field");
-  f.style.maxWidth = "320px";
-  var l = document.createElement("label");
-  l.textContent = "Campaign";
-  f.appendChild(l);
+   feat at level 1. Off unless picked; the DM decides. Kept behind a
+   button until asked for (or a book is already picked), then a dashed
+   row like the homebrew one, with a line saying what the pick gives this
+   character. Returns {el, refresh}. */
+function campaignNote(onChange){
+  var books = Object.keys(CAMPAIGN_FEATS).join(" or ");
+  var wrap = ce("div","wiz-campaign");
+  var note = ce("div","lu-custom-note wiz-campaign-note");
+  var text = document.createElement("div");
+  text.innerHTML = "<b>Playing "+escapeHtml(books)+"?</b> These books give every character a free feat. "+
+    "If your DM is running one, pick it here. You can change this later on the Information tab.";
+  note.appendChild(text);
+  var f = ce("div","field wiz-campaign-field");
+  var outcome = ce("div","wiz-campaign-outcome");
+  function refresh(){
+    outcome.innerHTML = campaignOutcomeHtml();
+    outcome.hidden = !outcome.innerHTML;
+  }
   f.appendChild(themedPicker({
-    key:"field:campaign", ariaLabel:"Campaign", search:false, value:wizardState.campaign || "",
-    groups:{"":[{value:"", label:"None", muted:true}].concat(Object.keys(CAMPAIGN_FEATS).map(function(k){ return {value:k, label:CAMPAIGN_FEATS[k].label}; }))},
+    key:"field:campaign", ariaLabel:"Campaign book", search:false, value:wizardState.campaign || "",
+    groups:{"":[{value:"", label:"No", muted:true}].concat(Object.keys(CAMPAIGN_FEATS).map(function(k){ return {value:k, label:CAMPAIGN_FEATS[k].label}; }))},
     onPick:function(v){
       wizardState.campaign = v;
       onChange();
+      refresh();
       refreshWizardProgress(); // the campaign's feat adds a step
     }
   }));
-  card.appendChild(f);
-  return card;
+  note.appendChild(f);
+  note.appendChild(outcome);
+  refresh();
+  if(wizardState.campaign){ wrap.appendChild(note); return {el: wrap, refresh: refresh}; }
+  var open = document.createElement("button");
+  open.type = "button";
+  open.className = "btn small wiz-campaign-open";
+  open.textContent = "Playing "+books+"?";
+  open.addEventListener("click", function(){
+    wrap.replaceChild(note, open);
+    var pick = note.querySelector("button");
+    if(pick) pick.focus();
+  });
+  wrap.appendChild(open);
+  return {el: wrap, refresh: refresh};
 }
 
 export function wizardStepAlignment(container){

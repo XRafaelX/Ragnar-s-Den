@@ -4,7 +4,7 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
-import { classFeatureList, classProficiencies } from "../../core/helpers.js";
+import { classFeatureList, classProficiencies, escapeHtml } from "../../core/helpers.js";
 import { featProficiencies } from "../../core/feat-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
@@ -354,12 +354,13 @@ function campaignRule(c){
   var text = document.createElement("div");
   text.className = "opt-rule-note"; // same look as the switch rows' .opt-rule-text
   text.innerHTML = "<b>Campaign bonus feats</b>"+
-    "<span>Some campaign books give every character a feat at level 1: the background's own feat, or Skilled or Tough when the background has none. Dragonlance gives another at level 4, picked during that level-up. Your DM decides whether your campaign uses one of these rules.</span>";
+    "<span>Playing "+escapeHtml(Object.keys(CAMPAIGN_FEATS).join(" or "))+"? These books give every character a free feat. If your DM is running one, pick it here: "+
+    "a background with no feat of its own gets Skilled or Tough, offered on the Features tab, and Dragonlance adds another at level 4, picked during that level-up.</span>";
   var pick = document.createElement("div");
   pick.className = "field opt-rule-field";
   pick.appendChild(themedPicker({
-    key:"info-campaign", ariaLabel:"Campaign", search:false, value:CAMPAIGN_FEATS[c.campaign] ? c.campaign : "",
-    groups:{"":[{value:"", label:"None", muted:true}].concat(Object.keys(CAMPAIGN_FEATS).map(function(k){ return {value:k, label:CAMPAIGN_FEATS[k].label}; }))},
+    key:"info-campaign", ariaLabel:"Campaign book", search:false, value:CAMPAIGN_FEATS[c.campaign] ? c.campaign : "",
+    groups:{"":[{value:"", label:"No", muted:true}].concat(Object.keys(CAMPAIGN_FEATS).map(function(k){ return {value:k, label:CAMPAIGN_FEATS[k].label}; }))},
     onPick:function(v){
       if(v) c.campaign = v; else delete c.campaign;
       save(); renderAll();
