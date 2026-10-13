@@ -8,6 +8,7 @@ import { themedPicker } from "../ui/themed-picker.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress } from "./wizard-core.js";
 import { emptyPicks, featNeedsChoice, featHasPicks, featDef, TOOL_GROUPS } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
+import { fillFeatList } from "../ui/feat-list.js";
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
 
 export function wizardStepSkills(container){
@@ -240,15 +241,15 @@ export function wizardStepRaceChoices(container){
 
 /* Feat (a Variant Human's): a searchable list like the level-up's, each
    feat with its prerequisite and summary; ones the character can't take
-   yet are greyed out with the reason. Its own picks come on the next
-   step (Feat Choices), so each screen does one thing. */
+   yet sit folded away at the end, greyed out with the reason. Its own
+   picks come on the next step (Feat Choices), so each screen does one
+   thing. */
 export function wizardStepFeat(container){
   var rc = wizardState.raceChoices;
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Choose a Feat</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>Why this matters:</b> As a <b>"+escapeHtml(wizardState.race)+"</b> you start with a feat, a special talent most characters only get later. "+
-    "Greyed-out feats need something your character doesn't have yet.";
+  explain.innerHTML = "<b>Why this matters:</b> As a <b>"+escapeHtml(wizardState.race)+"</b> you start with a feat, a special talent most characters only get later.";
   card.appendChild(explain);
   var search = document.createElement("input");
   search.type = "text"; search.className = "wiz-spell-search";
@@ -267,35 +268,17 @@ export function wizardStepFeat(container){
     if(f) chosenBox.appendChild(featSummaryBox(f, featPrereqReason(f)));
   }
   function fill(){
-    list.innerHTML = "";
-    var q = (wizardState.featQuery||"").toLowerCase().trim();
-    FEATS_CATALOG.filter(function(f){
-      return !q || f.name.toLowerCase().indexOf(q)!==-1 || (f.summary||"").toLowerCase().indexOf(q)!==-1;
-    }).slice().sort(function(a, b){ return a.name.localeCompare(b.name); }).forEach(function(f){
-      var why = featPrereqReason(f);
-      var r = ce("div","wiz-spell-row wiz-pick-row"+(rc.feat===f.name ? " selected" : "")+(why ? " disabled" : ""));
-      r.setAttribute("role", "button");
-      r.tabIndex = why ? -1 : 0;
-      r.setAttribute("aria-pressed", rc.feat===f.name ? "true" : "false");
-      r.innerHTML = "<div class='wiz-spell-text'><b>"+escapeHtml(f.name)+"</b>"+
-        (f.prerequisite && f.prerequisite!=="None" ? "<span class='wiz-spell-meta'>Requires: "+escapeHtml(f.prerequisite)+(why ? " ("+escapeHtml(why)+")" : "")+"</span>" : "")+
-        "<span class='wiz-spell-desc'>"+escapeHtml(f.summary||"")+"</span></div>";
-      function choose(){
-        if(why) return;
+    fillFeatList(list, {
+      feats: FEATS_CATALOG, query: wizardState.featQuery, selected: rc.feat, reason: featPrereqReason,
+      open: !!wizardState.featBlockedOpen,
+      onToggle: function(){ wizardState.featBlockedOpen = !wizardState.featBlockedOpen; fill(); },
+      onPick: function(f){
         if(rc.feat!==f.name){ rc.feat = f.name; rc.featPicks = emptyPicks(f); }
         var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
         fill(); drawChosen();
         refreshWizardProgress(); // a feat with choices adds a step
       }
-      r.addEventListener("click", choose);
-      r.addEventListener("keydown", function(e){ if(e.key==="Enter" || e.key===" "){ e.preventDefault(); choose(); } });
-      list.appendChild(r);
     });
-    if(!list.children.length){
-      var none = ce("p","wiz-spell-empty");
-      none.textContent = "No feats match \u201c"+wizardState.featQuery+"\u201d.";
-      list.appendChild(none);
-    }
   }
   search.addEventListener("input", function(){ wizardState.featQuery = search.value; fill(); });
   fill();

@@ -21,6 +21,7 @@ import { makePlusSvg } from "../ui/svg-icons.js";
 import { openCompendium } from "../render/compendium.js";
 import { featDef, featNeedsChoice, emptyPicks, featPicksSummary, featRequiresReason } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
+import { fillFeatList } from "../ui/feat-list.js";
 import { swapSection } from "../core/spells-known.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { lu, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
@@ -417,27 +418,19 @@ export function stepAsi(container){
     nextBox.hidden = !def;
   }
   var who = {race: c.race, level: totalLevel(c) + 1, feats: c.feats || []};
+  // A feat for another race, a higher level or after another feat is
+  // greyed out at the end of the list, with why.
   function fill(){
-    list.innerHTML = "";
-    var q = lu.featQuery.toLowerCase().trim();
-    FEATS_CATALOG.filter(function(f){
-      if(!f.repeatable && (c.feats||[]).some(function(x){ return x.name===f.name; })) return false;
-      return !q || f.name.toLowerCase().indexOf(q)!==-1 || (f.summary||"").toLowerCase().indexOf(q)!==-1;
-    }).slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(f){
-      // A feat for another race, a higher level or after another feat
-      // is greyed out, with why.
-      var why = featRequiresReason(f, who);
-      var r = ce("div","wiz-spell-row wiz-pick-row"+(lu.featName===f.name?" selected":"")+(why ? " disabled" : ""));
-      r.innerHTML = "<div class='wiz-spell-text'><b>"+escapeHtml(f.name)+"</b>"+
-        (f.prerequisite && f.prerequisite!=="None" ? "<span class='wiz-spell-meta'>Requires: "+escapeHtml(f.prerequisite)+(why ? " ("+escapeHtml(why)+")" : "")+"</span>" : "")+
-        "<span class='wiz-spell-desc'>"+escapeHtml(f.summary||"")+"</span></div>";
-      if(why) return list.appendChild(r);
-      r.addEventListener("click", function(){
+    fillFeatList(list, {
+      feats: FEATS_CATALOG.filter(function(f){ return f.repeatable || !(c.feats||[]).some(function(x){ return x.name===f.name; }); }),
+      query: lu.featQuery, selected: lu.featName, reason: function(f){ return featRequiresReason(f, who); },
+      open: lu.featBlockedOpen,
+      onToggle: function(){ lu.featBlockedOpen = !lu.featBlockedOpen; fill(); },
+      onPick: function(f){
         if(lu.featName!==f.name){ lu.featName = f.name; lu.featPicks = emptyPicks(f); }
         fill(); drawNext();
         refreshProgress(); // a feat with choices adds the Feat picks step
-      });
-      list.appendChild(r);
+      }
     });
   }
   search.addEventListener("input", function(){ lu.featQuery = search.value; fill(); });

@@ -264,7 +264,7 @@ export function openLevelUp(c){
     c: c, step:"class",
     className: c.classes.length===1 ? c.classes[0].name : null,
     subclass:"", style:"",
-    asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featPicks:null, bonusFeatName:"", bonusFeatPicks:null, spellChoices:{},
+    asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featBlockedOpen:true, featPicks:null, bonusFeatName:"", bonusFeatPicks:null, spellChoices:{},
     pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{}, learnPicks:{}, learnSwap:"",
     stylePicks:{options:[], spells:[]}, styleSwapOut:"",
     hpMethod:"avg", hpRoll:null
