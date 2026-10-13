@@ -150,6 +150,9 @@ button.class-chip:hover{border-color:var(--brass);}
 
 /* "You unlocked" popup (info modal) */
 #info-modal-body{overflow-y:auto;flex:1;}
+/* The popup still scrolls when it's long, just without the bar down its side. */
+#info-modal-body:has(> .lu-hero){scrollbar-width:none;-ms-overflow-style:none;}
+#info-modal-body:has(> .lu-hero)::-webkit-scrollbar{display:none;}
 .lu-hero{display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:5px 0 0 5px;} /* room for the circle's glow ring */
 .lu-hero-level{
   flex:none;width:58px;height:58px;border-radius:50%;
