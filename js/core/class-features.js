@@ -43,6 +43,9 @@ export function classSpellAbility(cl){
 /* Mechanical flags a class or subclass feature can carry; they're copied
    onto classFeatureList items so the sheet can apply them:
      speed         walking speed gained at level-up (Fast Movement)
+     walkSpeed     walking speed the sheet adds itself while the feature is
+                   there (Deft Explorer's Roving: 5), so it follows a
+                   feature that can be swapped in on the sheet
      speedWhen     when that speed counts: "unarmored" (no armor or
                    shield) or "noHeavyArmor" (see computeSpeed)
      halfProficiency  {abilities: "all" or ["str", ...], round: "down" or
@@ -85,7 +88,36 @@ export function classSpellAbility(cl){
                    depend on a choice (Circle of the Land's land, a genie
                    kind), each option shaped like `spells`. The pick is
                    saved on the class entry as spellChoices[id]. */
-var FEATURE_FLAGS = ["speed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice"];
+var FEATURE_FLAGS = ["speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice"];
+
+/* ---- Optional features that replace one of the class's own ----
+   Tasha's Favored Foe for a ranger's Favored Enemy, Deft Explorer for
+   Natural Explorer (CLASS_PROGRESSION's `variants`). A class entry using
+   one keeps it as cl.variants[replaced feature] = variant name. */
+export function classVariants(className){
+  return (CLASS_PROGRESSION[className] || {}).variants || [];
+}
+/* The variants a class entry uses. */
+export function activeVariants(cl){
+  var picked = (cl && cl.variants) || {};
+  return classVariants(cl && cl.name).filter(function(v){ return picked[v.replaces]===v.name; });
+}
+export function usesVariant(cl, name){
+  return activeVariants(cl).some(function(v){ return v.name===name; });
+}
+/* The class's own features gained at class level `lv`, as the data has
+   them: level-1 ones from classes.js, later ones from the progression,
+   with any variant the entry uses in place of the feature it replaces
+   (at every level that feature appears). */
+export function classFeaturesAt(cl, lv){
+  var info = CLASSES_INFO[cl.name], prog = CLASS_PROGRESSION[cl.name];
+  var base = lv===1 ? (info && info.features) || [] : (prog && prog.features[lv]) || [];
+  var variants = activeVariants(cl);
+  if(!variants.length) return base;
+  var out = base.filter(function(f){ return !variants.some(function(v){ return v.replaces===f.name; }); });
+  variants.forEach(function(v){ out = out.concat(v.features[lv] || []); });
+  return out;
+}
 
 /* Class features a class entry has at its current level: level-1 features
    from classes.js, then each level's progression features (a `replaces`
@@ -94,14 +126,9 @@ var FEATURE_FLAGS = ["speed", "speedWhen", "halfProficiency", "initiative", "acH
 export function classFeatureList(cl, uptoLevel){
   var level = uptoLevel!=null ? uptoLevel : (Number(cl.level)||1);
   var list = [];
-  var info = CLASSES_INFO[cl.name];
-  (info && info.features || []).forEach(function(f){
-    list.push({id:"class_"+cl.name+"_"+f.name, name:f.name, text:f.text, level:1, subclass:false});
-  });
-  var prog = CLASS_PROGRESSION[cl.name];
   var sub = findSubclass(cl.name, cl.subclass);
-  for(var lv=2; lv<=level; lv++){
-    ((prog && prog.features[lv]) || []).forEach(function(f){ addFeature(f, lv, false); });
+  for(var lv=1; lv<=level; lv++){
+    classFeaturesAt(cl, lv).forEach(function(f){ addFeature(f, lv, false); });
   }
   if(sub){
     for(var sl=1; sl<=level; sl++){

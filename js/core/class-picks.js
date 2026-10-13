@@ -6,7 +6,7 @@ import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
 import { WEAPON_DATA, WEAPON_GROUPS } from "../data/weapons.js";
 import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
 import { TOOL_GROUPS, featProficiencies } from "./feat-picks.js";
-import { classCasterType } from "./class-features.js";
+import { classCasterType, classFeaturesAt } from "./class-features.js";
 import { spellHeldBy } from "./spell-grants.js";
 
 /* ---------------- Class picks ----------------
@@ -18,15 +18,16 @@ import { spellHeldBy } from "./spell-grants.js";
    adds, an Arcana cleric's wizard cantrips, a wizard's Signature Spells.
 
    A feature says what it gives with `profs` (class features in
-   js/data/progression.js, subclass features in js/data/subclasses, a
-   class's `multiclassProfs`, an option in js/data/class-options.js):
+   js/data/classes.js and js/data/progression.js, a Tasha's variant of
+   one, subclass features in js/data/subclasses, a class's
+   `multiclassProfs`, an option in js/data/class-options.js):
      skills      skills given outright (nothing if already proficient)
      expertise   skills whose proficiency bonus is doubled outright
      languages   languages learned outright
      help        one plain line shown above the pickers
      pick        [slot]: the choices, each
        kind      "skill", "expertise", "tool", "language", "save",
-                 "weapon", "skillOrLanguage" or "spell"
+                 "weapon", "skillOrLanguage", "spell" or "choice"
        count     how many to pick (default 1)
        label     the line above its pickers (else worked out)
        options   what it can be: skill names (none = any skill), tool
@@ -52,6 +53,14 @@ import { spellHeldBy } from "./spell-grants.js";
        ability   (spell) the ability it is cast with, for a class that
                  has none of its own (Giant's Power: "wis")
        kindLabel, note  (spell) its tag and a line for the Spells tab
+       id, options or groups, details, custom, noun  (choice) a pick from
+                 a named list that the sheet only shows (a favored enemy,
+                 a dragon ancestor): `id` ties the same choice across
+                 levels so nothing is chosen twice, `groups` is {heading:
+                 [names]}, `details` {name: what it means}, `custom` lets
+                 the player type their own (two humanoid races)
+       optional  the slot may be left empty (a favored enemy's language,
+                 "if they speak one at all"); `none` words that option
 
    What was picked is kept on the class entry as
    cl.profPicks[key] = {slots: [[values], ...], applied}. `slots` lines up
@@ -85,7 +94,7 @@ export function entryGrants(cl, multiclass, level){
   if(multiclass && prog && prog.multiclassProfs && prog.multiclassProfs.profs){
     out.push({key: "multiclass", name: cl.name + " training", source: "Multiclass · " + cl.name, level: 1, def: prog.multiclassProfs.profs});
   }
-  for(var i = 1; i <= lv; i++) ((prog && prog.features[i]) || []).forEach(function(f){
+  for(var i = 1; i <= lv; i++) classFeaturesAt(cl, i).forEach(function(f){
     if(f.profs) out.push({key: "class:" + f.name + "@" + i, name: f.name, source: cl.name + " · Lv " + i, level: i, feature: f.name, def: f.profs});
   });
   if(sub) for(var j = 1; j <= lv; j++) ((sub.features && sub.features[j]) || []).forEach(function(f){
@@ -135,6 +144,17 @@ export function classPickContext(c, cl, key){
   })});
   var casters = (c.classes||[]).filter(function(x){ return classCasterType(x); });
   return {
+    // What the entry's other features already chose for a `choice` id.
+    chosen: function(id){
+      var out = [];
+      if(!cl) return out;
+      entryGrants(cl, (c.classes||[]).indexOf(cl) > 0).forEach(function(g){
+        var entry = grantEntry(cl, g.key);
+        if(!entry || g.key===key) return;
+        (g.def.pick||[]).forEach(function(s, i){ if(s.kind==="choice" && s.id===id) out = out.concat((entry.slots && entry.slots[i]) || []); });
+      });
+      return out;
+    },
     tasha: !!c.tashaOptional,
     // "known", "from Fey Touched" or "" (see spellHeldBy).
     spellHeld: function(name){ return spellHeldBy(others, name); },
@@ -185,8 +205,8 @@ function allProficiencies(c, exceptCl, exceptKey){
 /* The `grants` of a class entry's features, read from the data (a later
    version of a feature doesn't hide an earlier one's here). */
 function featureGrants(cl){
-  var lv = Number(cl.level)||1, out = [], prog = CLASS_PROGRESSION[cl.name], sub = subclassOf(cl);
-  for(var i = 2; i <= lv; i++) ((prog && prog.features[i]) || []).forEach(function(f){ if(f.grants) out.push(f.grants); });
+  var lv = Number(cl.level)||1, out = [], sub = subclassOf(cl);
+  for(var i = 1; i <= lv; i++) classFeaturesAt(cl, i).forEach(function(f){ if(f.grants) out.push(f.grants); });
   if(sub) for(var j = 1; j <= lv; j++) ((sub.features && sub.features[j]) || []).forEach(function(f){ if(f.grants) out.push(f.grants); });
   return out;
 }
@@ -263,6 +283,16 @@ export function slotOptions(def, slots, i, ctx){
   if(slot.kind==="skillOrLanguage"){
     return entries(slot.options, "Skills", skillWhy).concat(allLanguages());
   }
+  if(slot.kind==="choice"){
+    var had = ctx.chosen ? ctx.chosen(slot.id) : [];
+    var why = function(v){ return had.indexOf(v)!==-1 ? "chosen" : ""; };
+    list = [];
+    if(slot.groups) Object.keys(slot.groups).forEach(function(g){ list = list.concat(entries(slot.groups[g], g, why)); });
+    else list = entries(slot.options, "", why);
+    // Something the player typed in themselves.
+    if(slot.custom) mine.forEach(function(v){ if(v && !list.some(function(o){ return o.value===v; })) list.push({value: v, group: "", reason: why(v), custom: true}); });
+    return list;
+  }
   if(slot.kind==="spell"){
     if(slot.from==="spellbook") return entries(ctx.spellbook ? ctx.spellbook(slot.level) : [], "", function(){ return ""; });
     var pool = slot.list ? spellDataForClass(slot.list, !!ctx.tasha) : SPELL_DATA;
@@ -295,6 +325,7 @@ function weaponFits(filter, name){
 /* How many of a slot's picks can still be made (fewer than its count
    when the character already has most of what it offers). */
 function slotNeed(def, slots, i, ctx){
+  if(def.pick[i].optional) return 0;
   var openCount = slotOptions(def, slots, i, ctx).filter(function(o){ return !o.reason || ((slots && slots[i]) || []).indexOf(o.value)!==-1; }).length;
   return Math.min(def.pick[i].count || 1, openCount);
 }
@@ -310,13 +341,14 @@ export function fillSlots(def, slots, ctx){
       return o && !o.reason && all.indexOf(v)===n;
     }).slice(0, slot.count || 1);
     var openOpts = opts.filter(function(o){ return !o.reason; });
-    slots[i] = openOpts.length <= (slot.count || 1) ? openOpts.map(function(o){ return o.value; }) : cur;
+    slots[i] = !slot.optional && openOpts.length <= (slot.count || 1) ? openOpts.map(function(o){ return o.value; }) : cur;
   });
   slots.length = (def.pick||[]).length;
   return slots;
 }
 /* A slot with nothing to choose: it has only as many options as picks. */
 export function slotIsFixed(def, slots, i, ctx){
+  if(def.pick[i].optional) return false;
   return slotOptions(def, slots, i, ctx).filter(function(o){ return !o.reason; }).length <= (def.pick[i].count || 1);
 }
 /* The line above a slot's pickers. */
@@ -336,6 +368,7 @@ export function slotLabel(def, slots, i, ctx){
   if(slot.kind==="save") return "Gain proficiency in " + listText(opts.map(abilityName), "or") + " saving throws";
   if(slot.kind==="weapon") return "Gain proficiency with " + (n > 1 ? n + " weapons" : "a weapon") + " of your choice";
   if(slot.kind==="skillOrLanguage") return "Gain proficiency in " + listText(slot.options, "or") + ", or learn a language";
+  if(slot.kind==="choice") return "Choose " + (/^[aeiou]/.test(slot.noun) ? "an " : "a ") + slot.noun;
   if(slot.kind==="spell"){
     var what = slot.level===0 ? "cantrip" : "spell";
     if(slot.options) return "Learn " + listText(slot.options, "or");
@@ -357,7 +390,7 @@ export function classPicksProblem(grant, slots, ctx){
     if(got.length < need){
       var kind = def.pick[i].kind;
       var noun = {skill: "skill", expertise: "skill", tool: "tool", language: "language", save: "saving throw", weapon: "weapon", skillOrLanguage: "skill or language",
-        spell: def.pick[i].level===0 ? "cantrip" : "spell"}[kind];
+        spell: def.pick[i].level===0 ? "cantrip" : "spell", choice: def.pick[i].noun}[kind];
       return "Choose " + (need > 1 ? need + " different " + noun + "s" : (/^[aeiou]/.test(noun) ? "an " : "a ") + noun) +
         (kind==="expertise" ? " for your expertise (" + grant.name + ")." : " for " + grant.name + ".");
     }
@@ -425,6 +458,40 @@ export function revertEntryPicks(c, cl){
 export function markClassPicksManual(cl, key){
   if(!cl.profPicks) cl.profPicks = {};
   cl.profPicks[key] = {manual: true};
+}
+/* Use (or stop using) one of a class's optional replacement features
+   (Tasha's Favored Foe for Favored Enemy). The picks of the feature that
+   goes are taken back, and the one that comes asks for its own. */
+export function setClassVariant(c, cl, variant, on){
+  if(!cl.variants) cl.variants = {};
+  if(on) cl.variants[variant.replaces] = variant.name;
+  else delete cl.variants[variant.replaces];
+  syncClassPicks(c);
+}
+
+/* Characters made before these choices were kept with their feature have
+   them as custom features ("Favored Enemy: Beasts", "Dragon Ancestor: Red
+   dragon"). Each becomes the feature's own pick and the custom feature
+   goes; the language that came with it stays on the sheet, unrecorded. */
+var OLD_PICK_FEATURES = [
+  {prefix: "Favored Enemy: ", cls: "Ranger", key: "class:Favored Enemy@1", slots: 2},
+  {prefix: "Favored Terrain: ", cls: "Ranger", key: "class:Natural Explorer@1", slots: 1},
+  {prefix: "Dragon Ancestor: ", cls: "Sorcerer", subclass: "Draconic Bloodline", key: "sub:Draconic Bloodline:Dragon Ancestor@1", slots: 1}
+];
+export function migrateClassPicks(c){
+  var changed = false;
+  OLD_PICK_FEATURES.forEach(function(old){
+    var cl = (c.classes||[]).find(function(x){ return x.name===old.cls && (!old.subclass || x.subclass===old.subclass); });
+    var f = (c.features||[]).find(function(x){ return x && x.source==="Class" && (x.name||"").indexOf(old.prefix)===0; });
+    if(!cl || !f || grantEntry(cl, old.key)) return;
+    var slots = [[f.name.slice(old.prefix.length)]];
+    while(slots.length < old.slots) slots.push([]);
+    if(!cl.profPicks) cl.profPicks = {};
+    cl.profPicks[old.key] = {slots: slots, applied: {skills: [], expertise: [], languages: [], weaponItems: []}};
+    c.features = c.features.filter(function(x){ return x!==f; });
+    changed = true;
+  });
+  return changed;
 }
 /* Keep the sheet in step with its features: picks whose feature is gone
    (a level undone, a subclass changed, a totem removed) are taken back,

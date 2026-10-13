@@ -1,4 +1,5 @@
 import { CLASS_LIST, SKILLS } from "./abilities-skills.js";
+import { favoredEnemyProfs, favoredTerrainProfs } from "./feature-picks.js";
 
 /* ---------------- Character Creation Wizard data ----------------
    Every class has a fully guided creation experience. The other classes appear
@@ -163,8 +164,7 @@ CLASSES_INFO["Rogue"].features = [
   {name:"Thieves' Cant", text:"A secret mix of dialect, jargon, and code that allows you to hide messages in seemingly normal conversation."}
 ];
 
-/* `languages`: known automatically at creation; `languagePicks`: extra
-   languages of the player's choice (see the wizard's Languages step). */
+/* `languages`: known automatically at creation. */
 Object.assign(CLASSES_INFO["Rogue"], {
   available:true,
   languages:["Thieves' Cant"],
@@ -472,17 +472,11 @@ Object.assign(CLASSES_INFO["Monk"], {
 });
 
 /* Ranger: no spells until level 2. Favored Enemy and Natural Explorer
-   are level-1 picks; `featureText` is what lands on the Features tab
-   ({v} is the pick). */
-var FAVORED_ENEMIES = {
-  "Creature types":["Aberrations","Beasts","Celestials","Constructs","Dragons","Elementals","Fey","Fiends","Giants","Monstrosities","Oozes","Plants","Undead"],
-  "Humanoids (pick two races)":["Humanoids: gnolls and orcs","Humanoids: goblins and hobgoblins","Humanoids: humans and elves","Humanoids: dwarves and gnomes","Humanoids: kobolds and lizardfolk","Humanoids: bandits and cultists (humans and half-orcs)"]
-};
-var FAVORED_TERRAINS = ["Arctic","Coast","Desert","Forest","Grassland","Mountain","Swamp","Underdark"];
-
+   come with a choice each (`profs`; the lists are in feature-picks.js),
+   asked on the wizard's Class Features step and again at later levels. */
 CLASSES_INFO["Ranger"].features = [
-  {name:"Favored Enemy", text:"Advantage on Survival checks to track favored enemies, and Intelligence checks to recall information about them."},
-  {name:"Natural Explorer", text:"Benefits when traveling, tracking, and foraging in your chosen favored terrain."}
+  {name:"Favored Enemy", text:"Choose a favored enemy (a type of creature, or two races of humanoid): you have advantage on Wisdom (Survival) checks to track them and on Intelligence checks to recall information about them, and you learn one language they speak, if they speak one. You choose another at ranger levels 6 and 14.", profs:favoredEnemyProfs()},
+  {name:"Natural Explorer", text:"Choose a favored terrain. Your proficiency bonus is doubled for Intelligence and Wisdom checks about it that use a skill you're proficient in. Travelling there for an hour or more: difficult terrain doesn't slow your group, you can't become lost except by magic, you stay alert while doing other things, you can move stealthily at a normal pace when alone, you find twice as much food, and you learn the exact number and sizes of creatures you track and how long ago they passed. You choose another at ranger levels 6 and 10.", profs:favoredTerrainProfs()}
 ];
 
 CLASSES_INFO["Sorcerer"].features = [
@@ -515,16 +509,10 @@ var CROSSBOW_OR_SIMPLE_CHOICE = {options:[
 var TWO_DAGGERS = {name:"Dagger", qty:2, weight:1, notes:"finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true};
 var SCHOLARS_PACK = {name:"Scholar's Pack", qty:1, weight:10, notes:"backpack, book of lore, ink, quill, 10 sheets of parchment, bag of sand, small knife"};
 
-/* Dragon Ancestor options: the type sets your damage type for later
-   Draconic Bloodline features. */
-var DRAGON_ANCESTORS = [
-  ["Black","Acid"],["Blue","Lightning"],["Brass","Fire"],["Bronze","Lightning"],["Copper","Acid"],
-  ["Gold","Fire"],["Green","Poison"],["Red","Fire"],["Silver","Cold"],["White","Cold"]
-].map(function(d){ return {name:d[0]+" dragon", text:d[1]+" damage. Your Elemental Affinity (sorcerer level 6) boosts spells of this type."}; });
-
 /* Sorcerer: Sorcerous Origin at level 1. Draconic Bloodline's Resilience
    (+1 HP per sorcerer level, unarmored AC 13 + DEX) is applied by the
-   sheet itself; `hpPerLevel` covers the level-1 HP here. */
+   sheet itself; `hpPerLevel` covers the level-1 HP here. Its Dragon
+   Ancestor and Draconic come from the feature's `profs`. */
 Object.assign(CLASSES_INFO["Sorcerer"], {
   available:true,
   primaryAbility:"cha",
@@ -534,9 +522,7 @@ Object.assign(CLASSES_INFO["Sorcerer"], {
     {id:"subclass", kind:"subclass", label:"Sorcerous Origin",
       help:"Where your magic comes from. It shapes your extra features as you level.",
       grants:{
-        "Draconic Bloodline":{hpPerLevel:1, languages:["Draconic"],
-          pick:{id:"dragonAncestor", label:"Dragon Ancestor", help:"Pick the kind of dragon in your bloodline. You also learn to speak, read and write Draconic.",
-            options:DRAGON_ANCESTORS}},
+        "Draconic Bloodline":{hpPerLevel:1},
         "Wild Magic":{}
       }}
   ],
@@ -650,21 +636,11 @@ Object.assign(CLASSES_INFO["Bard"], {
 
 Object.assign(CLASSES_INFO["Ranger"], {
   available:true,
-  languagePicks:{count:1, label:"Favored Enemy", help:"One language your favored enemy speaks."},
   primaryAbility:"dex",
   primaryAbilityLabel:"Dexterity and Wisdom",
   savingThrows:["str","dex"],
   skillChoices:{count:3, options:["Animal Handling","Athletics","Insight","Investigation","Nature","Perception","Stealth","Survival"]},
-  choices:[
-    {id:"favoredEnemy", kind:"listPick", label:"Favored Enemy",
-      help:"The kind of creature you've studied and hunted. You get advantage on Survival checks to track them and Intelligence checks to recall lore about them, and you learn one language they speak.",
-      groups:FAVORED_ENEMIES,
-      featureText:"Advantage on Wisdom (Survival) checks to track {v} and on Intelligence checks to recall information about them. You also learn one language they speak."},
-    {id:"favoredTerrain", kind:"listPick", label:"Favored Terrain",
-      help:"The land you know best. Travelling there, your group can't get lost, you stay alert, and you forage and track twice as well.",
-      groups:{"Terrain":FAVORED_TERRAINS},
-      featureText:"In {v} terrain: double proficiency on related INT/WIS checks, difficult terrain doesn't slow your group, you can't get lost, you stay alert while doing other things, you move stealthily at normal pace, you find twice as much food, and you learn exact numbers and sizes of creatures you track."}
-  ],
+  choices:[],
   equipment:{
     choiceGroups:[
       {options:[

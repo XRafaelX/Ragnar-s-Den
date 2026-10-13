@@ -8,6 +8,7 @@ import { invocationResources } from "./invocations.js";
 import { knownOptions as knownClassOptions } from "./class-options.js";
 import { mod, totalLevel, profBonus, clamp } from "./basics.js";
 import { hasFeat } from "./vitals.js";
+import { usesVariant } from "./class-features.js";
 
 /* Limited-use resources this character has right now, from each class
    and its subclass. `key` is unique per character (class + resource id)
@@ -27,6 +28,8 @@ export function characterResources(c){
       if(lv < r.level) return;
       // Armor-model uses (Defensive Field) only for that model.
       if(r.armorModel && cl.armorModel!==r.armorModel) return;
+      // An optional feature's uses (Favored Foe) only for a ranger using it.
+      if(r.variant && !usesVariant(cl, r.variant)) return;
       var key = cl.name+":"+r.id;
       var max = r.max(lv, m);
       // Rune invocations follow the runes actually known (older sheets

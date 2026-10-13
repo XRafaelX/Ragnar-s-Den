@@ -5,7 +5,7 @@ import { ABILITIES, CLASS_LIST } from "../data/abilities-skills.js";
 import { CLASSES_INFO } from "../data/classes.js";
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
 import { SUBCLASSES } from "../data/progression.js";
-import { mod, fmtMod, ce, escapeHtml, totalLevel, profBonus, ordinal, spellHeldBy } from "../core/helpers.js";
+import { mod, fmtMod, ce, escapeHtml, totalLevel, profBonus, ordinal, spellHeldBy, classFeaturesAt } from "../core/helpers.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { invocationsKnownAt, invocationDef, pactBoonDef } from "../data/invocations.js";
 import { optionsKnownAt } from "../data/class-options.js";
@@ -16,7 +16,7 @@ import { planSlots, planContext, knownOptions, availableOptions } from "../core/
 import { classStyleList, styleFeatures, styleNeedsPicks } from "../core/fighting-styles.js";
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
 import { renderOptionPicker, renderTashaNote } from "../ui/option-picks.js";
-import { renderClassPicks } from "../ui/class-picks.js";
+import { renderClassPicks, renderVariantOptions } from "../ui/class-picks.js";
 import { grantHasChoices, classPicksSummary } from "../core/class-picks.js";
 import { logRoll, getDieSvg } from "../dice/dice.js";
 import { makePlusSvg } from "../ui/svg-icons.js";
@@ -26,7 +26,7 @@ import { renderFeatPicks } from "../ui/feat-picks.js";
 import { fillFeatList } from "../ui/feat-list.js";
 import { swapSection } from "../core/spells-known.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
-import { lu, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
+import { lu, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
 
 export function stepClass(container){
   var c = lu.c;
@@ -372,11 +372,33 @@ export function stepProfs(container){
   var card = stepCard(container, profStepLabel(), withSpells
     ? "<b>Your new features come with choices.</b> Spells you pick here show on the Spells tab; skills and expertise on the Abilities & Skills tab; tools, languages and saving throws on the Information tab. Anything you already have is greyed out."
     : "<b>New proficiencies:</b> this level lets you choose some. Skills and expertise show on the Abilities & Skills tab; tools, languages and saving throws on the Information tab. Anything you already have is greyed out.");
-  profGrants().filter(function(g){ return grantHasChoices(g.def); }).forEach(function(g){
+  // A new ranger using Tasha's optional features may take Favored Foe or
+  // Deft Explorer in place of the Player's Handbook feature.
+  // Each choice is followed at once by the picks of whichever is taken.
+  var grants = profGrants().filter(function(g){ return grantHasChoices(g.def); }), shown = [];
+  function picks(g, opts){
+    shown.push(g.key);
+    card.appendChild(renderClassPicks(g, profSlots(g.key), profCtx(g), function(meta){ if(!(meta && meta.typing)) render(); }, "lu:prof:"+g.key, opts));
+  }
+  variantOffers().forEach(function(v){
+    var vt = ce("p","lu-choice-title");
+    vt.textContent = v.replaces;
+    card.appendChild(vt);
+    var on = lu.variants[v.replaces]===v.name;
+    var base = classFeaturesAt({name: lu.className}, 1).find(function(f){ return f.name===v.replaces; });
+    card.appendChild(renderVariantOptions(v, base, on, function(take){
+      if(take) lu.variants[v.replaces] = v.name; else delete lu.variants[v.replaces];
+      render();
+    }, true));
+    var own = grants.find(function(g){ return !g.subclass && g.level===1 && g.feature===(on ? v.name : v.replaces); });
+    if(own) picks(own, {noHelp: !on});
+  });
+  grants.forEach(function(g){
+    if(shown.indexOf(g.key)!==-1) return;
     var title = ce("p","lu-choice-title");
     title.textContent = g.name;
     card.appendChild(title);
-    card.appendChild(renderClassPicks(g, profSlots(g.key), profCtx(g), render, "lu:prof:"+g.key));
+    picks(g);
   });
 }
 

@@ -14,7 +14,7 @@
 .wiz-dot{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.08);}
 .wiz-dot.done{background:var(--brass);}
 .wiz-dot.current{background:var(--brass-bright);}
-#wizard-body{flex:1;overflow-y:auto;padding:20px;display:flex;justify-content:center;}
+#wizard-body{flex:1;overflow-y:auto;scrollbar-gutter:stable;padding:20px;display:flex;justify-content:center;}
 #wizard-body-inner{max-width:720px;width:100%;}
 /* Back/Next line up with the 720px content column instead of the
    screen edges, so they stay near the card on wide screens. */
@@ -431,3 +431,21 @@ button.wiz-feat-group[aria-expanded="true"]::before{transform:rotate(90deg);}
 /* The Tasha's switch above a level 1 Fighting Style list. */
 .wiz-tasha-switch{margin:4px 0 12px;padding:10px 12px;border:1px dashed var(--rule);border-radius:8px;}
 .fs-picks{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+
+/* A class feature's card and, folded under it, the Tasha's feature that
+   can take its place (Favored Enemy / Favored Foe). The fold opens and
+   closes with Tasha's switch, so the step keeps its shape either way. */
+.cpk-variant-source{font-size:11.5px;color:var(--text-on-parch-dim);}
+.cpk-variant-text{font-size:12.5px;color:var(--text-on-parch-dim);line-height:1.45;margin-top:4px;}
+.cpk-variant{margin-bottom:10px;}
+.cpk-variant .wiz-equip-option{margin-bottom:0;}
+.cpk-variant-only{cursor:default;}
+.cpk-variant-alt{display:grid;grid-template-rows:0fr;opacity:0;margin-top:0;pointer-events:none;
+  transition:grid-template-rows .32s ease, opacity .24s ease, margin-top .32s ease;}
+.cpk-variant-alt > .wiz-equip-option{min-height:0;overflow:hidden;border-width:0;padding-top:0;padding-bottom:0;
+  transition:padding .32s ease, border-width .32s ease;}
+.cpk-variant-alt.open{grid-template-rows:1fr;opacity:1;margin-top:8px;pointer-events:auto;}
+.cpk-variant-alt.open > .wiz-equip-option{border-width:1px;padding-top:10px;padding-bottom:10px;}
+@media (prefers-reduced-motion: reduce){
+  .cpk-variant-alt, .cpk-variant-alt > .wiz-equip-option{transition:none;}
+}

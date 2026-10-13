@@ -5,7 +5,7 @@
    apply, what each still needs before Next, and draws the dialog shell. */
 import { ABILITIES, SKILLS, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASS_PROGRESSION, MAX_LEVEL, XP_THRESHOLDS } from "../data/progression.js";
-import { mod, ce, escapeHtml, totalLevel, classFeaturesGainedAt, wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFeat, raceHpPerLevel, classSpellChoices, spellHeldBy } from "../core/helpers.js";
+import { mod, ce, escapeHtml, totalLevel, classFeaturesGainedAt, classVariants, wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFeat, raceHpPerLevel, classSpellChoices, spellHeldBy } from "../core/helpers.js";
 import { knownInvocations, levelUpPlan, levelUpContext, levelUpProblem } from "../core/invocations.js";
 import { levelUpOptionPlans, planProblem, planSlots, allKnownOptions } from "../core/class-options.js";
 import { levelUpGrants, grantHasChoices, grantHasSpells, classPickContext, classPicksProblem, fillSlots, slotIsFixed } from "../core/class-picks.js";
@@ -92,7 +92,7 @@ export function stepApplicable(id){
   if(id==="learn"){ var lp = currentLearnPlan(); return lp.sections.length > 0 || !!lp.swap || lp.auto.length > 0; }
   if(id==="invocations") return lu.className==="Warlock" && t.newLevel >= 2;
   if(id==="options") return optionPlans().length > 0;
-  if(id==="profs") return profGrantsToChoose().length > 0;
+  if(id==="profs") return profGrantsToChoose().length > 0 || variantOffers().length > 0;
   if(id==="asi") return t.asi;
   if(id==="featPicks") return t.asi && lu.asiMode==="feat" && !!lu.featName && featNeedsChoice(featDef(lu.featName));
   if(id==="bonusFeat") return bonusFeatChoices().length > 0;
@@ -139,6 +139,17 @@ export function optChoice(setId){
    list per slot. The grants are worked out from the class entry as this
    level-up will leave it: its new level, a subclass picked now, and the
    options picked on the Options step (a Tiger totem's skills). */
+/* Tasha's replacement features a new class offers (a ranger's Favored
+   Foe and Deft Explorer), for a character using Tasha's optional class
+   features. lu.variants[replaced feature] = the variant taken. */
+export function variantOffers(){
+  return !target().existing && lu.c.tashaOptional ? classVariants(lu.className) : [];
+}
+function entryVariants(){
+  var t = target(), out = Object.assign({}, t.existing && t.existing.variants);
+  variantOffers().forEach(function(v){ if(lu.variants[v.replaces]===v.name) out[v.replaces] = v.name; });
+  return out;
+}
 function entryAfter(){
   var t = target(), options = {};
   Object.keys((t.existing && t.existing.options) || {}).forEach(function(k){ options[k] = t.existing.options[k].slice(); });
@@ -148,7 +159,7 @@ function entryAfter(){
     choice.picks.slice(0, n).filter(Boolean).forEach(function(name){ list.push({name: name}); });
     options[plan.set.id] = list;
   });
-  return {name: lu.className, level: t.newLevel, options: options, profPicks: t.existing && t.existing.profPicks,
+  return {name: lu.className, level: t.newLevel, options: options, profPicks: t.existing && t.existing.profPicks, variants: entryVariants(),
     subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : "")};
 }
 /* Every grant gained now, with or without a choice. */
@@ -168,8 +179,10 @@ export function profSlots(key){ return lu.profPicks[key] = lu.profPicks[key] || 
 /* The step's name: "Proficiencies", or "Feature choices" once a spell is
    among them (an Arcana cleric's cantrips, a wizard's Spell Mastery). */
 export function profStepLabel(){
-  return profGrantsToChoose().some(function(g){ return grantHasSpells(g.def); }) ? "Feature choices" : STEP_LABELS.profs;
+  return variantOffers().length || profGrantsToChoose().some(function(g){ return grantHasSpells(g.def); }) ? "Feature choices" : STEP_LABELS.profs;
 }
+/* The variants picked for a new class, to put on its entry. */
+export function variantsToApply(){ return entryVariants(); }
 /* The character as this level-up will leave it, for a grant's pickers.
    What another grant or this level's feat picks is greyed out. */
 export function profCtx(grant){
@@ -365,7 +378,7 @@ export function openLevelUp(c){
     className: c.classes.length===1 ? c.classes[0].name : null,
     subclass:"", style:"",
     asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featBlockedOpen:true, featPicks:null, bonusFeatName:"", bonusFeatPicks:null, spellChoices:{},
-    pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{}, profPicks:{}, learnPicks:{}, learnSwap:"",
+    pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{}, profPicks:{}, variants:{}, learnPicks:{}, learnSwap:"",
     stylePicks:{options:[], spells:[]}, styleSwapOut:"",
     hpMethod:"avg", hpRoll:null
   };
@@ -474,7 +487,10 @@ export function stepCard(container, title, explainHtml){
 /* What a class would gain at `level`, as short labels for the pick cards. */
 export function gainLabels(className, subclass, level){
   var prog = progFor(className);
-  var labels = classFeaturesGainedAt({name:className, subclass:subclass, level:level}, level).map(function(f){ return f.name; });
+  // (With the optional features the class entry uses: Favored Foe, not Favored Enemy.)
+  var entry = (lu.c.classes||[]).find(function(cl){ return cl.name===className; });
+  var variants = entry ? entry.variants : lu.className===className ? entryVariants() : null;
+  var labels = classFeaturesGainedAt({name:className, subclass:subclass, level:level, variants:variants}, level).map(function(f){ return f.name; });
   if(prog.subclassLevel && level >= prog.subclassLevel && !subclass) labels.unshift("Choose "+prog.subclassLabel);
   if(prog.asiLevels.indexOf(level)!==-1) labels.push("Ability Score Improvement");
   return labels;
@@ -486,7 +502,7 @@ export function resetChoicesFor(name){
   lu.subclass = "";
   lu.style = ""; lu.stylePicks = {options: [], spells: []}; lu.styleSwapOut = "";
   lu.spellChoices = {}; lu.learnPicks = {}; lu.learnSwap = "";
-  lu.pactBoon = ""; lu.pactSpells = []; lu.invPicks = []; lu.invSpells = {}; lu.swapOut = ""; lu.optChoices = {}; lu.profPicks = {};
+  lu.pactBoon = ""; lu.pactSpells = []; lu.invPicks = []; lu.invSpells = {}; lu.swapOut = ""; lu.optChoices = {}; lu.profPicks = {}; lu.variants = {};
   lu.asi = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; lu.featName = ""; lu.featPicks = null; lu.asiMode = "asi";
   lu.hpRoll = null; lu.hpMethod = "avg";
 }

@@ -5,6 +5,7 @@
    feature of that name (e.g. Sneak Attack growing from 1d6 to 2d6), and
    `speed` is a flat walking-speed bonus applied when it's gained. */
 
+import { favoredEnemyProfs, favoredTerrainProfs } from "./feature-picks.js";
 import { ARTIFICER_SUBCLASSES } from "./subclasses/artificer.js";
 import { BARBARIAN_SUBCLASSES } from "./subclasses/barbarian.js";
 import { BARD_SUBCLASSES } from "./subclasses/bard.js";
@@ -37,6 +38,11 @@ var STANDARD_ASI = [4, 8, 12, 16, 19];
    `profs` are the skill, tool and expertise choices that come with it.
    A feature's `profs`: skills, expertise and languages it gives, and the
    proficiency choices it asks for (see js/core/class-picks.js).
+   variants: Tasha's optional features that replace one of the class's
+   own, for characters using Tasha's optional class features:
+   [{name, replaces (the feature it takes the place of, at every level),
+   blurb, features: {classLevel: [feature]}}]. The class entry keeps which
+   it uses as cl.variants[replaces] = name (see classFeaturesAt).
    fightingStyle: {level, options}: the class level that grants a
    Fighting Style and which styles it may pick (see FIGHTING_STYLES in
    classes.js). Level-up shows a picker for it. */
@@ -217,6 +223,20 @@ export var CLASS_PROGRESSION = {
     subclassLevel: 3, subclassLabel: "Ranger Archetype",
     fightingStyle: {level:2, options:["Archery","Defense","Dueling","Two-Weapon Fighting","Blind Fighting","Druidic Warrior","Thrown Weapon Fighting"]},
     prereq: [["dex", "wis"]], casterType: "half", spellAbility: "wis", asiLevels: STANDARD_ASI,
+    variants: [
+      {name:"Favored Foe", replaces:"Favored Enemy", blurb:"Mark a creature you hit and deal extra damage to it each turn, instead of studying set kinds of enemies.",
+        features:{
+          1: [{name:"Favored Foe", text:"When you hit a creature with an attack roll, you can mark it as your favored enemy for 1 minute or until you lose concentration (as if concentrating on a spell). The first time on each of your turns that you hit it and deal damage, including when you mark it, you deal an extra 1d4 damage. You can mark a creature a number of times equal to your proficiency bonus, regained on a long rest. The extra damage is 1d4, 1d6 from ranger level 6 and 1d8 from level 14."}],
+          6: [{name:"Favored Foe", replaces:"Favored Foe", text:"When you hit a creature with an attack roll, you can mark it as your favored enemy for 1 minute or until you lose concentration (as if concentrating on a spell). The first time on each of your turns that you hit it and deal damage, including when you mark it, you deal an extra 1d6 damage. You can mark a creature a number of times equal to your proficiency bonus, regained on a long rest. The extra damage is 1d4, 1d6 from ranger level 6 and 1d8 from level 14."}],
+          14: [{name:"Favored Foe", replaces:"Favored Foe", text:"When you hit a creature with an attack roll, you can mark it as your favored enemy for 1 minute or until you lose concentration (as if concentrating on a spell). The first time on each of your turns that you hit it and deal damage, including when you mark it, you deal an extra 1d8 damage. You can mark a creature a number of times equal to your proficiency bonus, regained on a long rest. The extra damage is 1d4, 1d6 from ranger level 6 and 1d8 from level 14."}]
+        }},
+      {name:"Deft Explorer", replaces:"Natural Explorer", blurb:"Expertise in a skill and two languages now, more speed at level 6 and a way to shrug off weariness at 10, instead of favored terrains.",
+        features:{
+          1: [{name:"Deft Explorer", text:"Canny: your proficiency bonus is doubled for one skill you're proficient in, and you learn two languages of your choice. You gain Roving at ranger level 6 and Tireless at level 10.", profs:{pick:[{kind:"expertise"}, {kind:"language", count:2}]}}],
+          6: [{name:"Deft Explorer", replaces:"Deft Explorer", text:"Canny: your proficiency bonus is doubled for one skill you're proficient in, and you learn two languages of your choice. Roving: your walking speed increases by 5 feet, and you have a climbing speed and a swimming speed equal to your walking speed. You gain Tireless at ranger level 10.", walkSpeed:5, speeds:[{type:"climb", value:"walk"}, {type:"swim", value:"walk"}]}],
+          10: [{name:"Deft Explorer", replaces:"Deft Explorer", text:"Canny: your proficiency bonus is doubled for one skill you're proficient in, and you learn two languages of your choice. Roving: your walking speed increases by 5 feet, and you have a climbing speed and a swimming speed equal to your walking speed. Tireless: as an action, give yourself temporary hit points equal to 1d8 + your WIS modifier (minimum 1), a number of times equal to your proficiency bonus per long rest. Finishing a short rest also lowers your exhaustion level by 1.", walkSpeed:5, speeds:[{type:"climb", value:"walk"}, {type:"swim", value:"walk"}]}]
+        }}
+    ],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:"",
       profs:{pick:[{kind:"skill", label:"Gain proficiency in one skill from the ranger's list", options:["Animal Handling","Athletics","Insight","Investigation","Nature","Perception","Stealth","Survival"]}]}},
     features: {
@@ -227,12 +247,18 @@ export var CLASS_PROGRESSION = {
       3: [{name:"Primeval Awareness", text:"Spend a spell slot to sense for 1 minute per slot level whether aberrations, celestials, dragons, elementals, fey, fiends or undead are within 1 mile (6 in your favored terrain)."}],
       5: [{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}],
       6: [
-        {name:"Favored Enemy", replaces:"Favored Enemy", text:"Choose favored enemies (a type of creature, or two humanoid races): you have advantage on WIS (Survival) checks to track them and INT checks to recall information about them, and you learn a language they speak. You pick a second one at level 6 and a third at level 14."},
-        {name:"Natural Explorer", replaces:"Natural Explorer", text:"Choose favored terrains (arctic, coast, desert, forest, grassland, mountain, swamp or Underdark). When you travel through one, difficult terrain doesn't slow your group, you can't become lost except by magic, you stay alert while doing other activities, you can move stealthily alone at a normal pace, you find twice as much food, and you learn more when tracking. Your proficiency bonus is doubled for INT and WIS checks about them. You pick a second terrain at level 6 and a third at level 10."}
+        {name:"Favored Enemy", replaces:"Favored Enemy", text:"Your favored enemies (each a type of creature, or two humanoid races): you have advantage on WIS (Survival) checks to track them and INT checks to recall information about them, and you learn a language each speaks, if they speak one. You choose your second now and a third at level 14.", profs:favoredEnemyProfs("Choose a second favored enemy")},
+        {name:"Natural Explorer", replaces:"Natural Explorer", text:"Your favored terrains. Travelling through one for an hour or more: difficult terrain doesn't slow your group, you can't become lost except by magic, you stay alert while doing other activities, you can move stealthily alone at a normal pace, you find twice as much food, and you learn more when tracking. Your proficiency bonus is doubled for INT and WIS checks about them that use a skill you're proficient in. You choose your second now and a third at level 10.", profs:favoredTerrainProfs("Choose a second favored terrain")}
       ],
       8: [{name:"Land's Stride", text:"Moving through nonmagical difficult terrain costs you no extra movement, and you can pass through nonmagical plants without being slowed or harmed by thorns, spines or similar hazards. You have advantage on saves against plants that are magically created or manipulated to impede movement."}],
-      10: [{name:"Hide in Plain Sight", text:"Spend 1 minute creating camouflage against a solid surface. While you stay there without moving or taking actions or reactions, you have +10 to DEX (Stealth) checks; once you do, you must camouflage yourself again."}],
-      14: [{name:"Vanish", text:"You can take the Hide action as a bonus action, and you can't be tracked by nonmagical means unless you choose to leave a trail."}],
+      10: [
+        {name:"Natural Explorer", replaces:"Natural Explorer", text:"Your favored terrains. Travelling through one for an hour or more: difficult terrain doesn't slow your group, you can't become lost except by magic, you stay alert while doing other activities, you can move stealthily alone at a normal pace, you find twice as much food, and you learn more when tracking. Your proficiency bonus is doubled for INT and WIS checks about them that use a skill you're proficient in. You choose your third now.", profs:favoredTerrainProfs("Choose a third favored terrain")},
+        {name:"Hide in Plain Sight", text:"Spend 1 minute creating camouflage against a solid surface. While you stay there without moving or taking actions or reactions, you have +10 to DEX (Stealth) checks; once you do, you must camouflage yourself again."}
+      ],
+      14: [
+        {name:"Favored Enemy", replaces:"Favored Enemy", text:"Your favored enemies (each a type of creature, or two humanoid races): you have advantage on WIS (Survival) checks to track them and INT checks to recall information about them, and you learn a language each speaks, if they speak one. You choose your third now.", profs:favoredEnemyProfs("Choose a third favored enemy")},
+        {name:"Vanish", text:"You can take the Hide action as a bonus action, and you can't be tracked by nonmagical means unless you choose to leave a trail."}
+      ],
       18: [{name:"Feral Senses", text:"Attacking a creature you can't see doesn't give you disadvantage, and you know where any invisible creature within 30 feet of you is, as long as it isn't hidden from you and you aren't blinded or deafened."}],
       20: [{name:"Foe Slayer", text:"Once on each of your turns, you can add your WIS modifier to the attack roll or the damage roll of an attack against one of your favored enemies, choosing before or after the roll but before its effects."}]
     }

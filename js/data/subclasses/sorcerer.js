@@ -1,10 +1,12 @@
 /* Sorcerer subclasses: the full feature list for each one, keyed by class
    level. Assembled into SUBCLASSES in ../progression.js; see the comment
    there for the feature fields and flags. */
+import { dragonAncestorProfs } from "../feature-picks.js";
+
 export var SORCERER_SUBCLASSES = [
   {name:"Draconic Bloodline", blurb:"Dragon blood grants toughness and elemental power.", features:{
     1:[
-      {name:"Dragon Ancestor", text:"Choose a dragon type, which sets your damage type: Black or Copper (acid), Blue or Bronze (lightning), Brass, Gold or Red (fire), Green (poison), Silver or White (cold). You speak, read and write Draconic, and your proficiency bonus is doubled for CHA checks when interacting with dragons."},
+      {name:"Dragon Ancestor", text:"Choose a dragon type, which sets your damage type: Black or Copper (acid), Blue or Bronze (lightning), Brass, Gold or Red (fire), Green (poison), Silver or White (cold). You speak, read and write Draconic, and your proficiency bonus is doubled for CHA checks when interacting with dragons.", profs:dragonAncestorProfs()},
       {name:"Draconic Resilience", text:"Your hit point maximum increases by 1 per sorcerer level, and while you wear no armor your AC is 13 + your DEX modifier. (Already added to your max HP and AC.)"}
     ],
     6:[{name:"Elemental Affinity", text:"When you cast a spell that deals your ancestry's damage type, add your CHA modifier to one damage roll of it. At the same time, you can spend 1 sorcery point to gain resistance to that damage type for 1 hour."}],

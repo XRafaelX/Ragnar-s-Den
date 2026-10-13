@@ -5,8 +5,8 @@ import { SKILLS } from "../data/abilities-skills.js";
 import { FIGHTING_STYLES } from "../data/classes.js";
 import { escapeHtml, ce, autoEquipLoadout } from "../core/helpers.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
-import { currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext } from "./wizard-core.js";
-import { renderClassPicks } from "../ui/class-picks.js";
+import { wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext } from "./wizard-core.js";
+import { renderClassPicks, renderVariantOptions } from "../ui/class-picks.js";
 import { grantHasChoices } from "../core/class-picks.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
@@ -32,6 +32,8 @@ export function expertiseOptions(choice){
   return skills.concat(choice.tools||[]);
 }
 
+var variantsJustToggled = false; // Tasha's switch was just flipped on this step: animate the fold
+
 export function wizardStepChoices(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Class Features</span></h3>";
@@ -55,6 +57,54 @@ export function wizardStepChoices(container){
     else if(ch.kind==="fightingStyle") choiceFightingStyle(card, ch);
     else if(ch.kind==="listPick") choiceListPick(card, ch);
     else if(ch.kind==="expertise") choiceExpertise(card, ch);
+  });
+  // What the level-1 features let you choose: a ranger's favored enemy
+  // and terrain, Knowledge Domain's skills and languages, an Order or
+  // Peace cleric's skill, a Draconic sorcerer's dragon.
+  var grants = wizardClassGrants().filter(function(g){ return grantHasChoices(g.def); }), shown = [];
+  function heading(text){
+    var p = document.createElement("p");
+    p.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
+    p.textContent = text;
+    card.appendChild(p);
+  }
+  function picks(grant, opts){
+    shown.push(grant.key);
+    card.appendChild(renderClassPicks(grant, wizardPickSlots(grant.key), wizardPickContext(grant), function(meta){
+      var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+      if(!(meta && meta.typing)) renderWizard();
+    }, "wiz:prof:"+grant.key, opts));
+  }
+  // A feature Tasha's can replace (a ranger's Favored Enemy by Favored
+  // Foe, Natural Explorer by Deft Explorer) is a card followed by its
+  // picks, the same with the switch off or on: turning it on slides the
+  // Tasha's card open under each one, and the picks follow whichever is
+  // taken.
+  var offers = wizardVariantOffers();
+  if(offers.length){
+    var tasha = !!wizardState.tashaOptional;
+    var was = variantsJustToggled ? !tasha : tasha;
+    variantsJustToggled = false;
+    card.appendChild(tashaSwitchRow("Turned on, you can take " + offers.map(function(v){ return v.name + " in place of " + v.replaces; }).join(" and ") + ".",
+      function(){ variantsJustToggled = true; }));
+    offers.forEach(function(v){
+      heading(v.replaces);
+      var picked = wizardState.classChoices.variants = wizardState.classChoices.variants || {};
+      var on = tasha && picked[v.replaces]===v.name;
+      // (The Player's Handbook feature as written, whichever is picked now.)
+      var base = (info.features||[]).find(function(f){ return f.name===v.replaces; });
+      card.appendChild(renderVariantOptions(v, base, on, function(take){
+        if(take) picked[v.replaces] = v.name; else delete picked[v.replaces];
+        renderWizard();
+      }, tasha, was));
+      var own = grants.find(function(g){ return !g.subclass && g.level===1 && g.feature===(on ? v.name : v.replaces); });
+      if(own) picks(own, {noHelp: !on});
+    });
+  }
+  grants.forEach(function(grant){
+    if(shown.indexOf(grant.key)!==-1) return;
+    heading(grant.name);
+    picks(grant);
   });
   container.appendChild(card);
 }
@@ -82,29 +132,6 @@ function choiceSubclass(card, ch){
     card.appendChild(row);
   });
 
-  // Follow-up picks some subclasses need once chosen: Draconic
-  // Bloodline's dragon ancestor.
-  var g = subclassGrants(currentClassInfo(), wizardState.classChoices);
-  if(g.pick){
-    var pickTitle = document.createElement("p");
-    pickTitle.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
-    pickTitle.textContent = g.pick.label;
-    card.appendChild(pickTitle);
-    var pickHelp = document.createElement("p");
-    pickHelp.style.cssText = "font-size:13px;margin:0 0 10px;";
-    pickHelp.textContent = g.pick.help;
-    card.appendChild(pickHelp);
-    g.pick.options.forEach(function(opt){
-      var row = ce("div","wiz-equip-option");
-      if(wizardState.classChoices[g.pick.id]===opt.name) row.classList.add("selected");
-      row.innerHTML = "<div><strong>"+escapeHtml(opt.name)+"</strong><br><span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(opt.text)+"</span></div>";
-      row.addEventListener("click", function(){
-        wizardState.classChoices[g.pick.id] = opt.name;
-        renderWizard();
-      });
-      card.appendChild(row);
-    });
-  }
   // Spell picks the subclass asks for now: a genie kind, a Divine Soul's affinity.
   wizardSpellChoices().forEach(function(x){
     var t = document.createElement("p");
@@ -116,19 +143,6 @@ function choiceSubclass(card, ch){
       wizardState.classChoices.spellChoices[x.choice.id] = v;
       renderWizard();
     }, wizardState.classId));
-  });
-  // Proficiencies its level-1 features let you choose: Knowledge Domain's
-  // skills and languages, an Order or Peace cleric's skill.
-  wizardClassGrants().forEach(function(grant){
-    if(!grantHasChoices(grant.def)) return;
-    var title = document.createElement("p");
-    title.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
-    title.textContent = grant.name;
-    card.appendChild(title);
-    card.appendChild(renderClassPicks(grant, wizardPickSlots(grant.key), wizardPickContext(grant), function(){
-      var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
-      renderWizard();
-    }, "wiz:prof:"+grant.key));
   });
 }
 

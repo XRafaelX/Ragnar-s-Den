@@ -8,7 +8,7 @@ import { TITLE_MAX } from "../ui/char-title.js";
 import { SPELL_DATA, spellDataForClass, tashaAddsSpell, tashaSpellCount } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeDiceSvg } from "../ui/svg-icons.js";
-import { wizardClassGrants, wizardPickSlots, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills } from "./wizard-core.js";
+import { wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills } from "./wizard-core.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { featPicksSummary } from "../core/feat-picks.js";
 import { classPicksSummary } from "../core/class-picks.js";
@@ -265,7 +265,6 @@ export function wizardStepReview(container){
     row(ch.label, Array.isArray(v) ? v.join(", ") : (v || "None"));
   });
   var grants = subclassGrants(info, wizardState.classChoices);
-  if(grants.pick) row(grants.pick.label, wizardState.classChoices[grants.pick.id] || "None");
   // What the subclass's features add: given outright, or picked.
   wizardClassGrants().forEach(function(g){
     var bits = (g.def.skills||[]).concat((g.def.expertise||[]).map(function(s){ return "expertise in "+s; }), g.def.languages||[]);
@@ -286,7 +285,7 @@ export function wizardStepReview(container){
   featTitle.textContent = "Level 1 features";
   card.appendChild(featTitle);
   var sub = (SUBCLASSES[wizardState.classId]||[]).find(function(x){ return x.name===wizardState.classChoices.subclass; });
-  info.features.concat(sub && sub.features && sub.features[1] || []).forEach(function(f){
+  wizardLevel1Features().concat(sub && sub.features && sub.features[1] || []).forEach(function(f){
     var p = document.createElement("p");
     p.style.cssText = "font-size:13px;margin:0 0 8px;";
     p.innerHTML = "<strong>"+escapeHtml(f.name)+":</strong> "+escapeHtml(f.text);

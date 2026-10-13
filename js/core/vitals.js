@@ -100,6 +100,10 @@ export function computeSpeed(c){
   var inArmor = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
   if(model && model.speed && inArmor) parts.push({name: "Powered Steps", value: model.speed});
   if(effectOn(c, "bladesong")) parts.push({name: "Bladesong", value: 10});
+  // Walking speed a feature adds while the character has it (Roving).
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){ if(f.walkSpeed) parts.push({name: f.name, value: f.walkSpeed}); });
+  });
   var worn = (c.inventory||[]).filter(function(i){ return i.type==="armor" && i.equipped; });
   var body = worn.find(function(i){ return i.category!=="shield"; });
   // A totem's speed while raging (Elk: +15 ft), not in heavy armor.

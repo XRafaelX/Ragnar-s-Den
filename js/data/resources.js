@@ -13,7 +13,9 @@
      than pips. max can return Infinity for a feature that becomes
      unlimited (Archdruid's Wild Shape); it then shows as Unlimited.
    armorModel: only while the Armorer has that model (Defensive Field:
-     "Guardian"). */
+     "Guardian").
+   variant: only for a class entry using that optional feature (Tasha's
+     Favored Foe, see CLASS_PROGRESSION's `variants`). */
 
 function atLeastOne(n){ return Math.max(1, n); }
 function always(value){ return function(){ return value; }; }
@@ -64,6 +66,12 @@ export var CLASS_RESOURCES = {
     {id:"cleansing_touch", name:"Cleansing Touch", level:14,
       max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
       hint:"Action: end one spell on yourself or a willing creature you touch."}
+  ],
+  "Ranger": [
+    {id:"favored_foe", name:"Favored Foe", level:1, variant:"Favored Foe", max:function(lv, m){ return m.pb; }, reset:always("long"),
+      hint:"When you hit a creature, mark it for 1 minute (concentration): once on each of your turns, your hit deals an extra 1d4 damage to it (1d6 from level 6, 1d8 from 14)."},
+    {id:"tireless", name:"Tireless", level:10, variant:"Deft Explorer", max:function(lv, m){ return m.pb; }, reset:always("long"),
+      hint:"Action: gain temporary hit points equal to 1d8 + your WIS modifier (minimum 1)."}
   ],
   "Sorcerer": [
     {id:"sorcery_points", name:"Sorcery Points", level:2, pool:true,

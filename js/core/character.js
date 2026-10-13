@@ -3,7 +3,7 @@ import { FEATS_CATALOG } from "../data/feats.js";
 import { uid, featureSpells } from "./helpers.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { syncInfusions } from "./artificer.js";
-import { syncClassPicks } from "./class-picks.js";
+import { syncClassPicks, migrateClassPicks } from "./class-picks.js";
 
 /* ---------------- Default character ---------------- */
 export function newCharacter(name){
@@ -181,6 +181,7 @@ export function ensureShape(c){
   // Skills and languages a feature gives outright (a Mercy monk's Insight
   // and Medicine) go on the sheet; ones with a choice wait on the
   // Features tab's Feature choices card.
+  migrateClassPicks(c); // a ranger's older "Favored Enemy: Beasts" custom feature
   syncClassPicks(c);
   return c;
 }

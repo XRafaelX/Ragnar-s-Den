@@ -5,7 +5,7 @@ import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
 import { LANGUAGES } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
-import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists } from "../core/helpers.js";
+import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, classVariants, classFeaturesAt } from "../core/helpers.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
 import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason, featHasPicks, featDef, emptyPicks, backgroundFeatGrant, backgroundFeatCopy, backgroundFeatPicks, campaignLevel1Feats, campaignFeatCopy } from "../core/feat-picks.js";
@@ -54,11 +54,26 @@ function wizardClassEntry(subclass){
   Object.keys(made).forEach(function(key){ profPicks[key] = {slots: made[key]}; });
   return {name: wizardState.classId, level: 1,
     subclass: subclass!=null ? subclass : (ch && wizardState.classChoices[ch.id]) || "",
-    spellChoices: wizardState.classChoices.spellChoices || {}, profPicks: profPicks};
+    spellChoices: wizardState.classChoices.spellChoices || {}, profPicks: profPicks, variants: wizardVariants()};
 }
-/* What the chosen subclass's level-1 features give beyond armor and
-   weapons (see js/core/class-picks.js): an Order cleric's skill, a
-   Knowledge cleric's skills and languages, a Storm sorcerer's Primordial.
+/* Tasha's replacement features the class offers (a ranger's Favored Foe
+   and Deft Explorer), and the ones taken: only with Tasha's switch on. */
+export function wizardVariantOffers(){
+  return wizardState && wizardState.classId ? classVariants(wizardState.classId) : [];
+}
+export function wizardVariants(){
+  var out = {}, picked = wizardState.classChoices.variants || {};
+  if(wizardState.tashaOptional) wizardVariantOffers().forEach(function(v){ if(picked[v.replaces]===v.name) out[v.replaces] = v.name; });
+  return out;
+}
+/* The class's own level-1 features, with those swapped in. */
+export function wizardLevel1Features(){
+  return classFeaturesAt(wizardClassEntry(), 1);
+}
+/* What the class's and chosen subclass's level-1 features give beyond
+   armor and weapons (see js/core/class-picks.js): a ranger's favored
+   enemy and terrain, an Order cleric's skill, a Knowledge cleric's skills
+   and languages, a Storm sorcerer's Primordial.
    Picks are kept in classChoices.profPicks[key], one list per slot. */
 export function wizardClassGrants(){
   return wizardState && wizardState.classId ? entryGrants(wizardClassEntry(), false) : [];
@@ -250,9 +265,10 @@ export function featPrereqReason(feat){
 
 /* Languages the new character knows: `fixed` ones come automatically
    (race, class, subclass); `slots` are free picks, each tagged with where
-   it comes from (race, background, Ranger's favored enemy). `fromClass`
-   are the fixed ones only a subclass feature gives or picked (Class
-   Features step), which the sheet records with that feature. */
+   it comes from (race, background). `fromClass` are the fixed ones only
+   a class or subclass feature gives or picked (Class Features step: a
+   ranger's favored enemy's language), which the sheet records with that
+   feature. */
 export function languagePlan(){
   var w = wizardState, info = currentClassInfo();
   var race = RACE_LANGUAGES[w.race] || RACE_LANGUAGES_FALLBACK;
@@ -273,7 +289,6 @@ export function languagePlan(){
   var bgExotic = Math.min(bgCount, (BACKGROUND_INFO[w.background]||{}).exoticLanguages || 0);
   addSlots(bgExotic, w.background, bgExotic ? (bgExotic===bgCount ? "These must be exotic languages." : "The first must be an exotic language, such as the tongue of whatever haunts you.") : "", true);
   addSlots(bgCount - bgExotic, w.background);
-  if(info && info.languagePicks) addSlots(info.languagePicks.count, info.languagePicks.label, info.languagePicks.help);
   var fromClass = wizardClassLanguages().filter(function(l, i, all){ return fixed.indexOf(l)===-1 && all.indexOf(l)===i; });
   return {fixed:fixed.concat(fromClass), slots:slots, fromClass:fromClass};
 }
@@ -290,8 +305,10 @@ export function isStepApplicable(id){
     return !!(info && info.spellcasting);
   }
   if(id==="choices"){
+    // A class's own level-1 choices, a feature's proficiency or spell
+    // picks (a ranger's favored enemy), or Tasha's replacement features.
     var ci = currentClassInfo();
-    return !!(ci && ci.choices && ci.choices.length);
+    return !!(ci && ci.choices && ci.choices.length) || wizardClassGrants().some(function(g){ return grantHasChoices(g.def); }) || wizardVariantOffers().length > 0;
   }
   if(id==="languages") return languagePlan().slots.length > 0;
   if(id==="raceChoices") return !!raceChoiceDef();
@@ -470,9 +487,8 @@ export function validateStep(id){
       if(missing.kind==="listPick" && missing.count>1) return "Choose "+missing.count+" different "+missing.label.toLowerCase()+".";
       return missing.kind==="expertise" ? "Choose "+missing.count+" for "+missing.label+"." : "Choose a "+missing.label+".";
     }
-    var g = subclassGrants(info, wizardState.classChoices);
-    if(g.pick && !wizardState.classChoices[g.pick.id]) return "Choose a "+g.pick.label+".";
-    // Proficiencies the subclass lets you choose (a domain's skill).
+    // What the level-1 features let you choose (a domain's skill, a
+    // ranger's favored enemy, a Draconic sorcerer's dragon).
     var grantWhy = "";
     wizardClassGrants().forEach(function(gr){
       if(grantWhy || !grantHasChoices(gr.def)) return;
@@ -571,6 +587,7 @@ export function finishWizard(){
   c.background = w.background;
   c.alignment = w.alignment;
   c.classes = [{name:w.classId, subclass:"", level:1}];
+  if(Object.keys(wizardVariants()).length) c.classes[0].variants = wizardVariants(); // Favored Foe in place of Favored Enemy
   if(w.tashaOptional) c.tashaOptional = true;
   var fa = finalAbilities({withoutFeat:true}); // applyRaceChoices adds the feat's +1
   c.abilities = {str:fa.str, dex:fa.dex, con:fa.con, int:fa.int, wis:fa.wis, cha:fa.cha};
@@ -704,9 +721,6 @@ export function applyClassChoices(c, info, picks){
         c.classes[0].spellChoices = c.classes[0].spellChoices || {};
         c.classes[0].spellChoices[x.choice.id] = x.pick;
       });
-      var g = subclassGrants(info, picks);
-      var picked = g.pick && g.pick.options.find(function(o){ return o.name===picks[g.pick.id]; });
-      if(picked) c.features.push({id:uid(), name:g.pick.label+": "+picked.name, source:"Class", text:picked.text, isPassive:true});
     } else if(ch.kind==="listPick"){
       // A pick from a list (tools, instruments, favored enemy): recorded as
       // a feature; `featureText` overrides the default proficiency wording.

@@ -13,6 +13,8 @@ import * as LU from "../js/levelup/session.js";
 import { finish, undoLastLevelUp } from "../js/levelup/apply.js";
 import { TOOL_GROUPS } from "../js/core/feat-picks.js";
 import { CLASS_PROGRESSION, SUBCLASSES } from "../js/data/progression.js";
+import { CLASSES_INFO } from "../js/data/classes.js";
+import { FAVORED_ENEMIES, FAVORED_TERRAINS, DRAGON_ANCESTORS } from "../js/data/feature-picks.js";
 import { OPTION_SETS } from "../js/data/class-options.js";
 import { SKILLS } from "../js/data/abilities-skills.js";
 import { LANGUAGE_LIST } from "../js/data/languages.js";
@@ -53,6 +55,8 @@ function everyProfs(){
   for(const cls of Object.keys(CLASS_PROGRESSION)){
     const prog = CLASS_PROGRESSION[cls];
     if(prog.multiclassProfs.profs) out.push([cls + " multiclass", prog.multiclassProfs.profs, null]);
+    (CLASSES_INFO[cls].features || []).forEach((f) => { if(f.profs) out.push([cls + " 1 " + f.name, f.profs, f]); });
+    for(const v of prog.variants || []) for(const lv of Object.keys(v.features)) v.features[lv].forEach((f) => { if(f.profs) out.push([v.name + " " + lv, f.profs, f]); });
     for(const lv of Object.keys(prog.features)) prog.features[lv].forEach((f) => { if(f.profs) out.push([cls + " " + lv + " " + f.name, f.profs, f]); });
     for(const sub of SUBCLASSES[cls]) for(const lv of Object.keys(sub.features || {})) sub.features[lv].forEach((f) => {
       if(f.profs) out.push([sub.name + " " + lv + " " + f.name, f.profs, f]);
@@ -71,7 +75,13 @@ test("profs data: real skills, tools, languages, abilities and weapon filters", 
     (def.languages || []).forEach((l) => assert.ok(LANGUAGE_LIST.includes(l), where + ": language " + l));
     assert.ok((def.skills || def.expertise || def.languages || def.pick || []).length, where + ": gives nothing");
     for(const slot of def.pick || []){
-      assert.ok(["skill", "expertise", "tool", "language", "save", "weapon", "skillOrLanguage", "spell"].includes(slot.kind), where + ": kind " + slot.kind);
+      assert.ok(["skill", "expertise", "tool", "language", "save", "weapon", "skillOrLanguage", "spell", "choice"].includes(slot.kind), where + ": kind " + slot.kind);
+      if(slot.kind === "choice"){
+        const names = slot.groups ? Object.values(slot.groups).flat() : slot.options;
+        assert.ok(slot.id && slot.noun && names.length >= 2 && new Set(names).size === names.length, where + ": choice needs an id, a noun and distinct options");
+        Object.keys(slot.details || {}).forEach((n) => assert.ok(names.includes(n), where + ": detail for " + n));
+        continue;
+      }
       if(slot.kind === "spell"){
         assert.ok(Number.isInteger(slot.level) && slot.level >= 0 && slot.level <= 9, where + ": spell level");
         assert.ok(["known", "prepared", "mastery"].includes(slot.grant || "known"), where + ": grant " + slot.grant);
@@ -862,4 +872,260 @@ test("wizard: an Arcana cleric's two wizard cantrips, left out of the Cantrips s
   assert.deepEqual(fsOf(c, "Arcane Initiate").map((f) => f.name), ["Fire Bolt", "Mage Hand"]);
   assert.deepEqual(c.spells.filter((sp) => !sp.level).map((sp) => sp.name), ["Guidance", "Light", "Sacred Flame"]);
   assert.deepEqual(CP.pendingClassPicks(c), []);
+});
+
+/* ================================================================
+   A ranger's favored enemies and terrains, Tasha's replacements,
+   a Draconic sorcerer's dragon
+   ================================================================ */
+const ranger = (level, extra) => makeChar([{ name: "Ranger", subclass: level >= 3 ? "Hunter" : "", level }], extra);
+
+test("ranger data: the Player's Handbook lists, asked at 1, 6 and 14 and at 1, 6 and 10", () => {
+  assert.deepEqual(FAVORED_ENEMIES["Creature types"], ["Aberrations", "Beasts", "Celestials", "Constructs", "Dragons", "Elementals", "Fey", "Fiends", "Giants", "Monstrosities", "Oozes", "Plants", "Undead"]);
+  assert.deepEqual(FAVORED_TERRAINS, ["Arctic", "Coast", "Desert", "Forest", "Grassland", "Mountain", "Swamp", "Underdark"]);
+  assert.deepEqual(DRAGON_ANCESTORS.map((d) => d.name + ": " + d.text.split(" ")[0]), ["Black dragon: Acid", "Blue dragon: Lightning", "Brass dragon: Fire", "Bronze dragon: Lightning",
+    "Copper dragon: Acid", "Gold dragon: Fire", "Green dragon: Poison", "Red dragon: Fire", "Silver dragon: Cold", "White dragon: Cold"]);
+  const keys = (level) => CP.entryGrants({ name: "Ranger", level }, false).map((g) => g.key);
+  assert.deepEqual(keys(1), ["class:Favored Enemy@1", "class:Natural Explorer@1"]);
+  assert.deepEqual(keys(5), keys(1));
+  assert.deepEqual(keys(20), ["class:Favored Enemy@1", "class:Natural Explorer@1", "class:Favored Enemy@6", "class:Natural Explorer@6", "class:Natural Explorer@10", "class:Favored Enemy@14"]);
+  // The Features list still shows each feature once, at its latest level.
+  const list = H.classFeatureList({ name: "Ranger", level: 14 }).filter((f) => /Favored Enemy|Natural Explorer/.test(f.name));
+  assert.deepEqual(list.map((f) => [f.name, f.level, f.id]), [["Favored Enemy", 14, "class_Ranger_Favored Enemy"], ["Natural Explorer", 10, "class_Ranger_Natural Explorer"]]);
+  // A second class gets the level-1 features too, with its multiclass skill.
+  assert.deepEqual(CP.entryGrants({ name: "Ranger", level: 1 }, true).map((g) => g.key), ["multiclass", "class:Favored Enemy@1", "class:Natural Explorer@1"]);
+});
+
+test("favored enemies and terrains: one of each per level, never the same twice, a language only if they speak one", () => {
+  const c = ranger(6, { languages: ["Common", "Elvish"] });
+  assert.deepEqual(CP.pendingClassPicks(c).map((g) => g.key), ["class:Favored Enemy@1", "class:Natural Explorer@1", "class:Favored Enemy@6", "class:Natural Explorer@6"]);
+  const first = grant(c, "Favored Enemy");
+  const offered = CP.slotOptions(first.def, [], 0, ctxOf(c, first));
+  assert.equal(offered.filter((o) => o.group === "Creature types").length, 13);
+  assert.ok(offered.some((o) => o.group === "Humanoids (two races)" && o.value === "Humanoids: gnolls and orcs"));
+  assert.match(CP.classPicksProblem(first, [[], []], ctxOf(c, first)), /Choose a favored enemy for Favored Enemy/);
+  assert.equal(CP.classPicksProblem(first, [["Beasts"], []], ctxOf(c, first)), "", "beasts speak no language: the language may be left empty");
+  assert.ok(!CP.slotIsFixed(first.def, [["Beasts"], []], 1, ctxOf(c, first)));
+  // Two humanoid races of the player's own, typed in.
+  assert.equal(CP.classPicksProblem(first, [["Humanoids: drow and duergar"], ["Undercommon"]], ctxOf(c, first)), "");
+  assert.deepEqual(CP.fillSlots(first.def, [["Humanoids: drow and duergar"], ["Undercommon"]], ctxOf(c, first)), [["Humanoids: drow and duergar"], ["Undercommon"]], "a typed enemy survives the tidy-up");
+  pick(c, first, [["Humanoids: drow and duergar"], ["Undercommon"]]);
+  assert.deepEqual(c.languages, ["Common", "Elvish", "Undercommon"]);
+  // The second, at level 6: the first is spoken for, and so is its language.
+  const second = CP.entryGrants(c.classes[0], false).find((g) => g.key === "class:Favored Enemy@6");
+  second.cl = c.classes[0];
+  assert.equal(CP.slotLabel(second.def, [], 0, ctxOf(c, second)), "Choose a second favored enemy");
+  // (A typed enemy isn't on the list to grey out, but typing it again is refused.)
+  assert.match(CP.classPicksProblem(second, CP.fillSlots(second.def, [["Humanoids: drow and duergar"], []], ctxOf(c, second)), ctxOf(c, second)), /Choose a favored enemy/);
+  assert.equal(CP.slotOptions(second.def, [], 1, ctxOf(c, second)).find((o) => o.value === "Undercommon").reason, "known");
+  pick(c, second, [["Undead"], []]);
+  assert.equal(H.getAllCharacterFeatures(c).find((f) => f.name === "Favored Enemy").text.split("\n\n")[1], "Your picks: Humanoids: drow and duergar, Undercommon, Undead.");
+  // Terrains the same way.
+  const land = grant(c, "Natural Explorer");
+  assert.deepEqual(open(c, land, 0), FAVORED_TERRAINS);
+  pick(c, land, [["Forest"]]);
+  const land6 = CP.entryGrants(c.classes[0], false).find((g) => g.key === "class:Natural Explorer@6");
+  land6.cl = c.classes[0];
+  assert.deepEqual(open(c, land6, 0), FAVORED_TERRAINS.filter((t) => t !== "Forest"));
+  // Changing the first pick doesn't see itself as taken.
+  assert.deepEqual(open(c, land, 0), FAVORED_TERRAINS);
+});
+
+test("older sheets: the wizard's custom features become the feature's own picks", () => {
+  const c = makeChar([{ name: "Ranger", level: 2 }], { languages: ["Common", "Giant"], features: [
+    { id: "a", name: "Favored Enemy: Giants", source: "Class", text: "Advantage on...", isPassive: true },
+    { id: "b", name: "Favored Terrain: Mountain", source: "Class", text: "In mountain terrain...", isPassive: true },
+    { id: "c", name: "Favored Enemy: my homebrew note", source: "Custom", text: "A player's own feature is left alone." }] });
+  ensureShape(c);
+  assert.deepEqual(c.features.map((f) => f.id), ["c"]);
+  assert.deepEqual(c.classes[0].profPicks["class:Favored Enemy@1"].slots, [["Giants"], []]);
+  assert.deepEqual(c.classes[0].profPicks["class:Natural Explorer@1"].slots, [["Mountain"]]);
+  assert.deepEqual([CP.pendingClassPicks(c), c.languages], [[], ["Common", "Giant"]], "nothing is pending and the language stays");
+  assert.match(H.getAllCharacterFeatures(c).find((f) => f.name === "Favored Enemy").text, /Your picks: Giants\./);
+  ensureShape(c);
+  assert.equal(c.features.length, 1, "running it again changes nothing");
+  // A Draconic sorcerer's dragon.
+  const s = makeChar([{ name: "Sorcerer", subclass: "Draconic Bloodline", level: 3 }], { languages: ["Common", "Draconic"],
+    features: [{ id: "d", name: "Dragon Ancestor: Red dragon", source: "Class", text: "Fire damage.", isPassive: true }] });
+  ensureShape(s);
+  assert.deepEqual([s.features, s.classes[0].profPicks["sub:Draconic Bloodline:Dragon Ancestor@1"].slots, CP.pendingClassPicks(s)], [[], [["Red dragon"]], []]);
+});
+
+test("Dragon Ancestor: a new Draconic sorcerer picks the dragon and learns Draconic", (t) => {
+  const c = makeChar([{ name: "Fighter", subclass: "Champion", level: 3 }], { abilities: { str: 15, dex: 10, con: 13, int: 10, wis: 10, cha: 14 } });
+  let asked, options;
+  levelUp(t, c, (lu) => {
+    LU.resetChoicesFor("Sorcerer");
+    lu.subclass = "Draconic Bloodline";
+    lu.learnPicks = { cantrips: ["Fire Bolt", "Light", "Mage Hand", "Prestidigitation"], spells: ["Magic Missile", "Shield"] };
+    const g = LU.profGrants()[0];
+    asked = [g.name, LU.profStepLabel()];
+    options = CP.slotOptions(g.def, [], 0, LU.profCtx(g)).map((o) => o.value);
+    lu.profPicks[g.key] = [["Gold dragon"]];
+  });
+  assert.deepEqual(asked, ["Dragon Ancestor", "Proficiencies"]);
+  assert.deepEqual(options, DRAGON_ANCESTORS.map((d) => d.name));
+  assert.ok(c.languages.includes("Draconic"));
+  assert.equal(CP.classPicksSummary(grant(c, "Dragon Ancestor", 1), CP.grantEntry(c.classes[1], "sub:Draconic Bloodline:Dragon Ancestor@1")), "Gold dragon");
+  withFakeDom(t, (byId) => { undoLastLevelUp(c); byId["confirm-ok"].click(); });
+  assert.deepEqual([c.classes.length, c.languages], [1, ["Common"]]);
+});
+
+test("Tasha's Favored Foe and Deft Explorer: only for a ranger using them", () => {
+  const variants = H.classVariants("Ranger");
+  assert.deepEqual(variants.map((v) => [v.name, v.replaces, Object.keys(v.features).map(Number)]), [["Favored Foe", "Favored Enemy", [1, 6, 14]], ["Deft Explorer", "Natural Explorer", [1, 6, 10]]]);
+  assert.deepEqual(H.classVariants("Fighter"), []);
+  for(const v of variants) for(const lv of Object.keys(v.features)) v.features[lv].forEach((f) => {
+    assert.ok(f.name === v.name && f.text.length > 40 && !/[–—]/.test(f.text), v.name + " " + lv);
+    assert.equal(!!f.replaces, lv !== "1", v.name + " " + lv + ": later versions replace the first");
+  });
+  const names = (c) => H.classFeatureList(c.classes[0]).map((f) => f.name);
+  const plain = ranger(10);
+  assert.ok(names(plain).includes("Favored Enemy") && names(plain).includes("Natural Explorer") && !names(plain).includes("Favored Foe"));
+  assert.deepEqual(H.characterResources(plain).filter((r) => /Favored Foe|Tireless/.test(r.name)), []);
+  assert.equal(H.computeSpeed(plain).value, 30);
+
+  const tasha = ranger(10, { tashaOptional: true, speed: 30, skills: ["Stealth", "Perception"] });
+  tasha.classes[0].variants = { "Favored Enemy": "Favored Foe", "Natural Explorer": "Deft Explorer" };
+  assert.ok(H.usesVariant(tasha.classes[0], "Favored Foe") && !H.usesVariant(plain.classes[0], "Favored Foe"));
+  assert.ok(names(tasha).includes("Favored Foe") && names(tasha).includes("Deft Explorer") && !names(tasha).includes("Favored Enemy") && !names(tasha).includes("Natural Explorer"));
+  // Favored Foe: uses equal to the proficiency bonus, and the die grows.
+  const foe = (lv) => H.classFeatureList({ name: "Ranger", level: lv, variants: tasha.classes[0].variants }).find((f) => f.name === "Favored Foe").text.match(/extra (1d\d) damage/)[1];
+  assert.deepEqual([1, 5, 6, 13, 14, 20].map(foe), ["1d4", "1d4", "1d6", "1d6", "1d8", "1d8"]);
+  const res = (c, name) => H.characterResources(c).find((r) => r.name === name);
+  assert.deepEqual([res(tasha, "Favored Foe").max, res(tasha, "Favored Foe").reset, res(tasha, "Tireless").max], [4, "long", 4]);
+  assert.ok(!res(ranger(9, { classes: [{ name: "Ranger", level: 9, variants: tasha.classes[0].variants }] }), "Tireless"), "Tireless from ranger 10");
+  // Deft Explorer: Canny's expertise and two languages; Roving's speeds at 6.
+  assert.deepEqual(CP.entryGrants(tasha.classes[0], false).map((g) => g.key), ["class:Deft Explorer@1"]);
+  const canny = grant(tasha, "Deft Explorer");
+  assert.deepEqual([canny.def.pick.map((s) => [s.kind, s.count || 1]), open(tasha, canny, 0)], [[["expertise", 1], ["language", 2]], ["Perception", "Stealth"]]);
+  pick(tasha, canny, [["Stealth"], ["Elvish", "Sylvan"]]);
+  assert.ok(tasha.skillProfs.Stealth.expertise && tasha.languages.includes("Sylvan"));
+  const speed = H.computeSpeed(tasha);
+  assert.equal(speed.value, 35);
+  assert.deepEqual(speed.others.map((o) => [o.type, o.value]).sort(), [["climb", 35], ["swim", 35]]);
+  assert.equal(H.computeSpeed(ranger(5, { classes: [{ name: "Ranger", level: 5, variants: tasha.classes[0].variants }] })).value, 30, "Roving from ranger 6");
+
+  // Switching on the sheet: the old feature's picks go, the new one asks for its own.
+  const swap = ranger(6, { tashaOptional: true, languages: ["Common"] });
+  pick(swap, grant(swap, "Favored Enemy"), [["Dragons"], ["Draconic"]]);
+  pick(swap, grant(swap, "Natural Explorer"), [["Forest"]]);
+  CP.setClassVariant(swap, swap.classes[0], variants[0], true);
+  assert.deepEqual([swap.languages, Object.keys(swap.classes[0].profPicks)], [["Common"], ["class:Natural Explorer@1"]], "the favored enemy and its language are gone");
+  assert.deepEqual(CP.pendingClassPicks(swap).map((g) => g.key), ["class:Natural Explorer@6"]);
+  CP.setClassVariant(swap, swap.classes[0], variants[1], true);
+  assert.deepEqual(CP.pendingClassPicks(swap).map((g) => g.key), ["class:Deft Explorer@1"]);
+  CP.setClassVariant(swap, swap.classes[0], variants[0], false);
+  assert.deepEqual(CP.pendingClassPicks(swap).map((g) => g.key), ["class:Favored Enemy@1", "class:Deft Explorer@1", "class:Favored Enemy@6"]);
+});
+
+test("level-up: multiclassing into ranger asks for the enemy, the terrain and, with Tasha's on, which features to use", (t) => {
+  const scores = { str: 10, dex: 15, con: 13, int: 10, wis: 14, cha: 10 };
+  const c = makeChar([{ name: "Fighter", subclass: "Champion", level: 3 }], { abilities: scores, skills: ["Athletics"] });
+  let offers, asked, label;
+  levelUp(t, c, (lu) => {
+    LU.resetChoicesFor("Ranger");
+    offers = LU.variantOffers().length;
+    asked = LU.profGrantsToChoose().map((g) => g.key);
+    label = LU.profStepLabel();
+    lu.profPicks = { multiclass: [["Stealth"]], "class:Favored Enemy@1": [["Giants"], ["Giant"]], "class:Natural Explorer@1": [["Mountain"]] };
+  });
+  assert.deepEqual([offers, asked, label], [0, ["multiclass", "class:Favored Enemy@1", "class:Natural Explorer@1"], "Proficiencies"]);
+  assert.ok(c.skillProfs.Stealth.prof && c.languages.includes("Giant") && !c.classes[1].variants);
+  assert.deepEqual(c.classes[1].profPicks["class:Natural Explorer@1"].slots, [["Mountain"]]);
+  withFakeDom(t, (byId) => { undoLastLevelUp(c); byId["confirm-ok"].click(); });
+  assert.deepEqual([c.classes.length, c.languages, c.skillProfs.Stealth.prof], [1, ["Common"], false]);
+
+  // With Tasha's optional features: Favored Foe instead of Favored Enemy.
+  const d = makeChar([{ name: "Fighter", subclass: "Champion", level: 3 }], { abilities: scores, skills: ["Athletics"], tashaOptional: true });
+  let gains;
+  levelUp(t, d, (lu) => {
+    LU.resetChoicesFor("Ranger");
+    offers = LU.variantOffers().map((v) => v.name);
+    lu.variants = { "Favored Enemy": "Favored Foe" };
+    asked = LU.profGrantsToChoose().map((g) => g.key);
+    label = LU.profStepLabel();
+    gains = LU.gainLabels("Ranger", "", 1);
+    lu.profPicks = { multiclass: [["Stealth"]], "class:Natural Explorer@1": [["Forest"]] };
+  });
+  assert.deepEqual([offers, asked, label], [["Favored Foe", "Deft Explorer"], ["multiclass", "class:Natural Explorer@1"], "Feature choices"]);
+  assert.deepEqual(gains, ["Natural Explorer", "Favored Foe"]);
+  assert.deepEqual(d.classes[1].variants, { "Favored Enemy": "Favored Foe" });
+  assert.ok(H.characterResources(d).some((r) => r.name === "Favored Foe" && r.max === 2));
+  assert.ok(H.getAllCharacterFeatures(d).some((f) => f.name === "Favored Foe") && !H.getAllCharacterFeatures(d).some((f) => f.name === "Favored Enemy"));
+});
+
+test("level-up: a ranger's second enemy and terrain at 6, the third terrain at 10", (t) => {
+  const c = ranger(5, { languages: ["Common"], hp: { max: 40, current: 40, temp: 0 } });
+  pick(c, grant(c, "Favored Enemy"), [["Beasts"], []]);
+  pick(c, grant(c, "Natural Explorer"), [["Forest"]]);
+  let asked, greyed;
+  levelUp(t, c, (lu) => {
+    asked = LU.profGrantsToChoose().map((g) => g.key);
+    const g = LU.profGrants().find((x) => x.key === "class:Favored Enemy@6");
+    greyed = CP.slotOptions(g.def, [], 0, LU.profCtx(g)).filter((o) => o.reason).map((o) => o.value);
+    lu.profPicks = { "class:Favored Enemy@6": [["Fey"], ["Sylvan"]], "class:Natural Explorer@6": [["Swamp"]] };
+  });
+  assert.deepEqual([asked, greyed], [["class:Favored Enemy@6", "class:Natural Explorer@6"], ["Beasts"]]);
+  assert.deepEqual([c.classes[0].level, c.languages], [6, ["Common", "Sylvan"]]);
+  withFakeDom(t, (byId) => { undoLastLevelUp(c); byId["confirm-ok"].click(); });
+  assert.deepEqual([c.classes[0].level, c.languages, Object.keys(c.classes[0].profPicks)], [5, ["Common"], ["class:Favored Enemy@1", "class:Natural Explorer@1"]]);
+});
+
+test("wizard: a ranger's favored enemy, its language and terrain on Class Features; Tasha's features behind the switch", (t) => {
+  const base = { classId: "Ranger", background: "Outlander", skillChoices: ["Stealth", "Perception", "Survival"], languageChoices: ["Elvish", "Dwarvish"], classChoices: {},
+    abilities: { str: 10, dex: 15, con: 13, int: 10, wis: 14, cha: 10 }, equipment: { 0: "leather", 1: "shortswords", 2: "explorer" }, spellChoices: { cantrips: [], spells: [] } };
+  let applicable, err, plan, offers;
+  withFakeDom(t, () => {
+    startWizard(base);
+    applicable = W.isStepApplicable("choices");
+    err = W.validateStep("choices");
+    offers = W.wizardVariantOffers().map((v) => v.name);
+    W.wizardState.classChoices.profPicks = { "class:Favored Enemy@1": [["Giants"], ["Giant"]], "class:Natural Explorer@1": [["Mountain"]] };
+    plan = W.languagePlan();
+  });
+  assert.ok(applicable, "the step shows though the ranger has no listPick choices any more");
+  assert.match(err, /Choose a favored enemy for Favored Enemy/);
+  assert.deepEqual(offers, ["Favored Foe", "Deft Explorer"]);
+  assert.deepEqual(plan.fromClass, ["Giant"]);
+  assert.equal(plan.slots.length, 2, "a human's language and an outlander's: the favored enemy's is asked with the enemy");
+  const c = create(t, Object.assign({}, base, { classChoices: { profPicks: { "class:Favored Enemy@1": [["Giants"], ["Giant"]], "class:Natural Explorer@1": [["Mountain"]] } } }));
+  assert.deepEqual(c.classes[0].profPicks["class:Favored Enemy@1"], { slots: [["Giants"], ["Giant"]], applied: { skills: [], expertise: [], languages: ["Giant"], weaponItems: [] } });
+  assert.ok(c.languages.includes("Giant") && !c.features.some((f) => /^Favored/.test(f.name)) && !c.classes[0].variants);
+  assert.deepEqual(CP.pendingClassPicks(c), []);
+  // With Tasha's switch on and both replacements taken.
+  const picks = { variants: { "Favored Enemy": "Favored Foe", "Natural Explorer": "Deft Explorer" }, profPicks: { "class:Deft Explorer@1": [["Stealth"], ["Giant", "Sylvan"]] } };
+  let level1, grants;
+  withFakeDom(t, () => {
+    startWizard(Object.assign({}, base, { tashaOptional: true, classChoices: JSON.parse(JSON.stringify(picks)) }));
+    level1 = W.wizardLevel1Features().map((f) => f.name);
+    grants = W.wizardClassGrants().map((g) => g.key);
+    W.wizardState.tashaOptional = false;
+    assert.deepEqual(W.wizardLevel1Features().map((f) => f.name), ["Favored Enemy", "Natural Explorer"], "switch off: the picks no longer apply");
+  });
+  assert.deepEqual([level1, grants], [["Favored Foe", "Deft Explorer"], ["class:Deft Explorer@1"]]);
+  const tasha = create(t, Object.assign({}, base, { tashaOptional: true, classChoices: picks }));
+  assert.deepEqual(tasha.classes[0].variants, picks.variants);
+  assert.ok(tasha.skillProfs.Stealth.expertise && tasha.languages.includes("Sylvan") && tasha.tashaOptional);
+  assert.ok(H.characterResources(tasha).some((r) => r.name === "Favored Foe"));
+  // A Draconic sorcerer in the wizard: the dragon, and Draconic.
+  const key = "sub:Draconic Bloodline:Dragon Ancestor@1";
+  const sorc = create(t, { classId: "Sorcerer", classChoices: { subclass: "Draconic Bloodline", profPicks: { [key]: [["Red dragon"]] } }, skillChoices: ["Arcana", "Insight"],
+    equipment: { 0: "crossbow", 1: "component", 2: "dungeoneer" }, spellChoices: { cantrips: ["Fire Bolt", "Light", "Mage Hand", "Prestidigitation"], spells: ["Magic Missile", "Shield"] } });
+  assert.deepEqual([sorc.classes[0].profPicks[key].slots, sorc.languages.includes("Draconic"), sorc.features.filter((f) => /Dragon/.test(f.name))], [[["Red dragon"]], true, []]);
+});
+
+test("card: Tasha's replacement features are listed only with the switch on, or when one is in use", (t) => {
+  withFakeDom(t, () => {
+    const r = ranger(1);
+    assert.ok(renderClassPicksCard(r), "a ranger always has choices");
+    const f = makeChar([{ name: "Fighter", subclass: "Champion", level: 5 }], { tashaOptional: true });
+    assert.equal(renderClassPicksCard(f), null, "a class with no replacement features gets no card from the switch alone");
+    r.tashaOptional = true;
+    assert.ok(renderClassPicksCard(r), "with the switch on: its two replacement features are listed too");
+    r.classes[0].variants = { "Favored Enemy": "Favored Foe", "Natural Explorer": "Deft Explorer" };
+    r.tashaOptional = false;
+    CP.syncClassPicks(r);
+    assert.ok(renderClassPicksCard(r), "one in use stays listed after the switch goes off, so it can be switched back");
+  });
 });

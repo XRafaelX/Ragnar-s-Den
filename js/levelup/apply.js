@@ -20,7 +20,7 @@ import { showActionToast } from "../ui/toast.js";
 import { featDef, featHasPicks, applyFeatPicks, revertFeatPicks, featSpellEntries, campaignFeatCopy } from "../core/feat-picks.js";
 import { applyLearn, undoLearn } from "../core/spells-known.js";
 import { preparedAt } from "../data/spells-known.js";
-import { lu, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, close, swapOutStyle, featureAbilityBonus, hpGain } from "./session.js";
+import { lu, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, close, swapOutStyle, featureAbilityBonus, hpGain } from "./session.js";
 
 /* ---------------- Apply & undo ---------------- */
 function slotSnapshot(c){
@@ -64,6 +64,7 @@ export function finish(){
   var learnLists = learnNow ? learnSections(learnNow) : [];
   var optPlans = stepApplicable("options") ? optionPlans() : [];
   var profPicks = profPicksToApply();
+  var variants = variantsToApply();
   var gain = hpGain();
   var featureBonus = featureAbilityBonus();
   var before = {total: totalLevel(c), pb: profBonus(c), slots: slotSnapshot(c), pact: c.spellcasting.pact ? JSON.parse(JSON.stringify(c.spellcasting.pact)) : null,
@@ -105,7 +106,11 @@ export function finish(){
 
   var entry = t.existing;
   if(entry) entry.level = t.newLevel;
-  else { entry = {name: lu.className, subclass: "", level: 1}; c.classes.push(entry); }
+  else {
+    entry = {name: lu.className, subclass: "", level: 1};
+    if(Object.keys(variants).length) entry.variants = variants; // Favored Foe in place of Favored Enemy
+    c.classes.push(entry);
+  }
   if(subName) entry.subclass = subName;
   // Spell choices made on this level-up; undo clears them again.
   dueChoices.forEach(function(x){
