@@ -429,3 +429,23 @@ test("campaign bonus feats: Skilled or Tough at level 1 without a background fea
   c.campaign = "Glory of the Giants";
   assert.deepEqual(FP.campaignFeatsAt(c, 4), []);
 });
+
+test("feat and spell wording: plain sentences, no semicolons, dashes or shorthand", () => {
+  const banned = /[;–—−]/;
+  // Shorthand the summaries used to lean on: STR/DEX, HP, ft, lb, vs.
+  const shorthand = /\b(STR|DEX|CON|INT|WIS|CHA|HP|ft|lb|vs)\b/;
+  for(const f of FEATS_CATALOG){
+    const text = [f.summary, f.description, f.prerequisite].concat(f.option && f.option.details ? Object.values(f.option.details) : []).join(" ");
+    assert.ok(!banned.test(text), f.name + ": semicolon or dash");
+    assert.ok(!shorthand.test(f.summary), f.name + ": shorthand in the summary");
+    assert.match(f.summary, /^[A-Z].*\.$/, f.name + ": summary is a sentence");
+  }
+  for(const [name, d] of Object.entries(SPELL_DATA)){
+    assert.ok(!banned.test(d.summary + d.material), name + ": semicolon or dash");
+    assert.ok(!shorthand.test(d.summary), name + ": shorthand in the summary");
+    assert.match(d.summary, /^[A-Z].*\.$/, name + ": summary is a sentence");
+  }
+  for(const [name, uses] of Object.entries(FEAT_RESOURCES)){
+    for(const u of uses) assert.ok(!banned.test(u.hint) && !/\bft\b/.test(u.hint), name + ": use hint");
+  }
+});

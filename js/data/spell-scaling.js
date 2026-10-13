@@ -296,7 +296,7 @@ export var SPELL_SCALING = {
     "a celestial of challenge rating 4 or lower", [[9, "a celestial of challenge rating 5 or lower"]]),
   "Conjure Fey": { per: "+1 to the fey's challenge rating",
     at: function(k){ return "a fey of challenge rating " + (6 + k) + " or lower"; } },
-  "Create Undead": steps("4 ghouls with a 7th-level slot; 5 ghouls or 2 ghasts or wights with 8th; 6 ghouls, 3 ghasts or wights, or 2 mummies with 9th",
+  "Create Undead": steps("4 ghouls with a 7th-level slot. 5 ghouls, or 2 ghasts or wights, with an 8th-level slot. 6 ghouls, 3 ghasts or wights, or 2 mummies with a 9th-level slot",
     "up to 3 ghouls", [[9, "up to 6 ghouls, 3 ghasts or wights, or 2 mummies"], [8, "up to 5 ghouls, or 2 ghasts or wights"], [7, "up to 4 ghouls"]]),
   "Crown of Stars": { per: "two more motes",
     at: function(k){ return (7 + 2*k) + " motes"; } },

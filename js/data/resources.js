@@ -693,7 +693,7 @@ function profBonusUses(){ return function(lv, m){ return m.pb; }; }
 export var FEAT_RESOURCES = {
   "Lucky": [
     {id:"luck_points", name:"Luck Points", max:always(3), reset:always("long"),
-      hint:"Spend one to roll an extra d20 on an attack, check or save (or on an attack against you) and choose which d20 counts."}
+      hint:"Spend one to roll an extra d20 on an attack roll, ability check or saving throw, or on an attack against you. You choose which d20 counts."}
   ],
   "Martial Adept": [
     {id:"superiority_dice", name:"Superiority Die", max:always(1), reset:always("short"),
@@ -703,7 +703,7 @@ export var FEAT_RESOURCES = {
   "Magic Initiate": [
     {id:"magic_initiate", name:function(feat){ var sp = feat && feat.picks && (feat.picks.spells||[])[2]; return sp ? sp + " (Magic Initiate)" : "Magic Initiate Spell"; },
       max:always(1), reset:always("long"), freeCast:true,
-      hint:"Cast your Magic Initiate 1st-level spell at its lowest level without a slot. Casting it with a slot doesn't use this."}
+      hint:"Cast your Magic Initiate 1st-level spell once at its lowest level without a spell slot."}
   ],
   // name(feat) names the use after the spell the player picked.
   "Fey Touched": [
@@ -720,7 +720,7 @@ export var FEAT_RESOURCES = {
   ],
   "Fade Away": [
     {id:"fade_away", name:"Fade Away", max:always(1), reset:always("short"),
-      hint:"Reaction after you take damage: turn invisible until the end of your next turn, or until you attack, deal damage or force a saving throw."}
+      hint:"As a reaction after you take damage, you turn invisible until the end of your next turn, or until you attack, deal damage or force a saving throw."}
   ],
   "Orcish Fury": [
     {id:"orcish_fury", name:"Orcish Fury", max:always(1), reset:always("short"),
@@ -728,41 +728,41 @@ export var FEAT_RESOURCES = {
   ],
   "Second Chance": [
     {id:"second_chance", name:"Second Chance", max:always(1), reset:always("short"),
-      hint:"Reaction: make a creature reroll an attack that hit you. Also comes back when you roll initiative."}
+      hint:"As a reaction, make a creature reroll an attack that hit you. You also regain this when you roll initiative."}
   ],
   "Gift of the Chromatic Dragon": [
     {id:"chromatic_infusion", name:"Chromatic Infusion", max:always(1), reset:always("long"),
-      hint:"Bonus action: a simple or martial weapon deals an extra 1d4 acid, cold, fire, lightning or poison damage for 1 minute."},
+      hint:"As a bonus action, touch a simple or martial weapon. For 1 minute it deals an extra 1d4 acid, cold, fire, lightning or poison damage."},
     {id:"reactive_resistance", name:"Reactive Resistance", max:profBonusUses(), reset:always("long"),
-      hint:"Reaction: resistance to one instance of acid, cold, fire, lightning or poison damage."}
+      hint:"As a reaction, gain resistance to one instance of acid, cold, fire, lightning or poison damage."}
   ],
   "Gift of the Gem Dragon": [
     {id:"telekinetic_reprisal", name:"Telekinetic Reprisal", max:profBonusUses(), reset:always("long"),
-      hint:"Reaction when a creature within 10 ft damages you: Strength save or 2d8 force damage and pushed 10 ft (half damage on a success)."}
+      hint:"As a reaction when a creature within 10 feet damages you, it makes a Strength save. On a failure it takes 2d8 force damage and is pushed 10 feet. On a success it takes half damage."}
   ],
   "Gift of the Metallic Dragon": [
     {id:"protective_wings", name:"Protective Wings", max:profBonusUses(), reset:always("long"),
-      hint:"Reaction when you or a creature within 5 ft is hit: add your proficiency bonus to its AC against that attack."}
+      hint:"As a reaction when you or a creature within 5 feet is hit, add your proficiency bonus to the target's AC against that attack."}
   ],
   "Strixhaven Mascot": [
     {id:"mascot_swap", name:"Mascot Swap", max:always(1), reset:always("long"),
-      hint:"Action: teleport, swapping places with your mascot familiar within 60 ft. After this, it costs a spell slot of 2nd level or higher."}
+      hint:"As an action, swap places with your mascot familiar within 60 feet. After this free use, it costs a spell slot of 2nd level or higher."}
   ],
   "Squire of Solamnia": [
     {id:"precise_strike", name:"Precise Strike", max:profBonusUses(), reset:always("long"),
-      hint:"Once per turn, give a weapon attack advantage; on a hit it deals an extra 1d8. A use is spent only if the attack hits."}
+      hint:"Once per turn, give a weapon attack advantage. If it hits, it deals an extra 1d8 damage. A use is spent only if the attack hits."}
   ],
   "Knight of the Crown": [
     {id:"commanding_rally", name:"Commanding Rally", max:profBonusUses(), reset:always("long"),
-      hint:"Bonus action: an ally within 30 ft makes one weapon attack with its reaction, dealing an extra 1d8 on a hit."}
+      hint:"As a bonus action, an ally within 30 feet makes one weapon attack with its reaction and deals an extra 1d8 damage on a hit."}
   ],
   "Knight of the Sword": [
     {id:"demoralizing_strike", name:"Demoralizing Strike", max:profBonusUses(), reset:always("long"),
-      hint:"Once per turn when you hit with a weapon: Wisdom save or the target is frightened of you until the end of your next turn."}
+      hint:"Once per turn when you hit with a weapon, the target makes a Wisdom save or is frightened of you until the end of your next turn."}
   ],
   "Knight of the Rose": [
     {id:"bolstering_rally", name:"Bolstering Rally", max:profBonusUses(), reset:always("long"),
-      hint:"Bonus action: a creature within 30 ft gains temporary hit points equal to 1d8 + your proficiency bonus + the ability this feat raised."}
+      hint:"As a bonus action, a creature within 30 feet gains temporary hit points equal to 1d8 + your proficiency bonus + the modifier of the ability this feat raised."}
   ],
   "Adept of the Red Robes": [
     {id:"magical_balance", name:"Magical Balance", max:profBonusUses(), reset:always("long"),
@@ -775,42 +775,42 @@ export var FEAT_RESOURCES = {
   ],
   "Ember of the Fire Giant": [
     {id:"searing_ignition", name:"Searing Ignition", max:profBonusUses(), reset:always("long"),
-      hint:"Replace one attack: creatures you choose within 15 ft make a Dexterity save or take 1d8 + proficiency bonus fire damage and are blinded (half damage on a success)."}
+      hint:"Replace one attack with a burst of flame. Creatures you choose within 15 feet make a Dexterity save. On a failure they take 1d8 + your proficiency bonus fire damage and are blinded. On a success they take half damage."}
   ],
   "Fury of the Frost Giant": [
     {id:"frigid_retaliation", name:"Frigid Retaliation", max:profBonusUses(), reset:always("long"),
-      hint:"Reaction when a creature within 30 ft hits you: Constitution save or 1d8 + proficiency bonus cold damage and its speed is 0."}
+      hint:"As a reaction when a creature within 30 feet hits you, it makes a Constitution save or takes 1d8 + your proficiency bonus cold damage and its speed becomes 0."}
   ],
   "Guile of the Cloud Giant": [
     {id:"cloudy_escape", name:"Cloudy Escape", max:profBonusUses(), reset:always("long"),
-      hint:"Reaction when you're hit: resistance to that attack's damage, then teleport up to 30 ft."}
+      hint:"As a reaction when you are hit, gain resistance to that attack's damage and then teleport up to 30 feet."}
   ],
   "Keenness of the Stone Giant": [
     {id:"stone_throw", name:"Stone Throw", max:profBonusUses(), reset:always("long"),
-      hint:"Bonus action: ranged spell attack (60 ft) for 1d10 force damage; Strength save or the target is knocked prone."}
+      hint:"As a bonus action, make a ranged spell attack out to 60 feet for 1d10 force damage. The target makes a Strength save or is knocked prone."}
   ],
   "Soul of the Storm Giant": [
     {id:"maelstrom_aura", name:"Maelstrom Aura", max:profBonusUses(), reset:always("long"),
-      hint:"Bonus action: a 10 ft aura until your next turn. Resistance to lightning and thunder, and attacks against you have disadvantage."}
+      hint:"As a bonus action, raise a 10-foot aura until your next turn. You resist lightning and thunder damage, and attacks against you have disadvantage."}
   ],
   "Agent of Order": [
     {id:"stasis_strike", name:"Stasis Strike", max:profBonusUses(), reset:always("long"),
-      hint:"Once per turn when you damage a creature within 60 ft: an extra 1d8 force damage, and a Wisdom save or it is restrained."}
+      hint:"Once per turn when you damage a creature within 60 feet, deal an extra 1d8 force damage. It makes a Wisdom save or is restrained until your next turn."}
   ],
   "Baleful Scion": [
     {id:"grasp_of_avarice", name:"Grasp of Avarice", max:profBonusUses(), reset:always("long"),
-      hint:"Once per turn when you damage a creature within 60 ft: 1d6 + proficiency bonus necrotic damage, and you regain that many hit points."}
+      hint:"Once per turn when you damage a creature within 60 feet, deal 1d6 + your proficiency bonus necrotic damage and regain that many hit points."}
   ],
   "Righteous Heritor": [
     {id:"soothe_pain", name:"Soothe Pain", max:profBonusUses(), reset:always("long"),
-      hint:"Reaction when you or a creature within 30 ft takes damage: reduce it by 1d10 + your proficiency bonus."}
+      hint:"As a reaction when you or a creature within 30 feet takes damage, reduce it by 1d10 + your proficiency bonus."}
   ],
   "Planar Wanderer": [
     {id:"portal_sense", name:"Portal Sense", max:always(1), reset:always("long"),
-      hint:"Action: detect any portals within 30 ft that aren't behind total cover."}
+      hint:"As an action, detect any portals within 30 feet that aren't behind total cover."}
   ],
   "Cartomancer": [
     {id:"hidden_ace", name:"Hidden Ace", max:always(1), reset:always("long"),
-      hint:"Bonus action: flourish the card you imbued after your long rest and cast its spell."}
+      hint:"As a bonus action, flourish the card you imbued after your long rest and cast its spell."}
   ]
 };

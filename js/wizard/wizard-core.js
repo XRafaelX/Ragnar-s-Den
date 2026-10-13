@@ -184,7 +184,7 @@ export function featPrereqReason(feat){
     var keys = m[1].split(" or ").map(function(w){ return ABILITY_WORDS[w.trim()]; });
     return keys.some(function(k){ return (ab[k]||0) >= 13; }) ? "" : "needs "+keys.map(function(k){ return k.toUpperCase(); }).join(" or ")+" 13";
   }
-  if(req==="Spellcasting feature") return info.spellcasting ? "" : "needs spellcasting";
+  if(req==="The ability to cast at least one spell") return info.spellcasting ? "" : "needs spellcasting";
   m = /^Proficiency with (light|medium|heavy) armor$/.exec(req);
   if(m){
     var armor = ((CLASS_PROFICIENCIES[wizardState.classId]||{}).armor||[]).map(function(a){ return a.toLowerCase(); });
