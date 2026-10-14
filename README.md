@@ -52,6 +52,11 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
 - **Monsters Browser**:
   - Searchable monster compendium with full stat blocks.
   - Customize and create your own monsters for encounters.
+- **Encounters** (for the DM):
+  - Named encounters saved in this browser, ready to prepare before a session and run again later with Reset (or Duplicate).
+  - Add monsters from the Monster Catalog (homebrew too); each gets a box with its AC, speed and hit points, and a trail of every HP value it went through, like on paper. Boxes can be renamed.
+  - Type in the players' names, then drag monster boxes into the numbered turn order (mouse or finger) and drag lines to reorder. Next turn moves down the line, skips downed monsters and counts rounds.
+  - Encounters are included in backup export and import.
 - **Compendium & Reference Overlays**:
   - Built-in searchable compendium for Races, Classes, Subclasses, Backgrounds, Alignments, Feats, Spells, Weapons, Armor, and Infusions.
   - All 67 backgrounds have full skill/tool entries and descriptive blurbs. Backgrounds that let you choose skills (Haunted One, Urban Bounty Hunter, Cloistered Scholar...) ask for them on the wizard's Skills step.

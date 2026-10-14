@@ -19,6 +19,7 @@ import { loadCustomFeatures, getCustom, importCustom } from "./core/custom-featu
 import { loadCustomItems, getCustomItems, importCustomItems } from "./core/custom-items.js";
 import { loadCustomMonsters, getCustomMonsters, importCustomMonsters } from "./core/custom-monsters.js";
 import { loadCustomSpells, getCustomSpells, importCustomSpells } from "./core/custom-spells.js";
+import { loadEncounters, getEncounters, importEncounters } from "./core/encounters.js";
 import { APP_VERSION } from "./version.js";
 import { setupUpdates } from "./ui/update-prompt.js";
 
@@ -59,7 +60,7 @@ export function setupTopLevel(){
     // just the characters array; import still accepts those.)
     var backup = {version:2, appVersion:APP_VERSION, characters:state.characters, customSubclasses:getCustomSubclasses(),
       customRaces:getHomebrew("race"), customBackgrounds:getHomebrew("background"), customFeats:getCustom("feat"), customFeatures:getCustom("feature"),
-      customWeapons:getCustomItems("weapon"), customArmor:getCustomItems("armor"), customMonsters:getCustomMonsters(), customSpells:getCustomSpells()};
+      customWeapons:getCustomItems("weapon"), customArmor:getCustomItems("armor"), customMonsters:getCustomMonsters(), customSpells:getCustomSpells(), encounters:getEncounters()};
     var blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
@@ -92,6 +93,7 @@ export function setupTopLevel(){
         var armor = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customArmor) ? parsed.customArmor : [];
         var monsters = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customMonsters) ? parsed.customMonsters : [];
         var spells = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customSpells) ? parsed.customSpells : [];
+        var encounters = !Array.isArray(parsed) && parsed && Array.isArray(parsed.encounters) ? parsed.encounters : [];
         var extras = [];
         if(homebrew.length) extras.push(homebrew.length+" custom subclass(es)");
         if(races.length) extras.push(races.length+" custom race(s)");
@@ -102,6 +104,7 @@ export function setupTopLevel(){
         if(armor.length) extras.push(armor.length+" custom armor");
         if(monsters.length) extras.push(monsters.length+" custom monster(s)");
         if(spells.length) extras.push(spells.length+" custom spell(s)");
+        if(encounters.length) extras.push(encounters.length+" encounter(s)");
         if(!Array.isArray(data)) throw new Error("Invalid format");
         // Shape every character now, on copies, so a broken entry rejects
         // the file before anything is imported.
@@ -124,6 +127,7 @@ export function setupTopLevel(){
             var weaponIds = importCustomItems("weapon", weapons), armorIds = importCustomItems("armor", armor);
             importCustomMonsters(monsters);
             var spellIds = importCustomSpells(spells);
+            importEncounters(encounters);
             data.forEach(function(c){
               c.feats.forEach(function(f){ if(f.homebrewId) f.homebrewId = featIds[f.homebrewId] || null; });
               c.features.forEach(function(f){ if(f.homebrewId) f.homebrewId = featureIds[f.homebrewId] || null; });
@@ -187,6 +191,7 @@ export function init(){
   loadCustomItems();
   loadCustomMonsters();
   loadCustomSpells();
+  loadEncounters();
   state.characters.forEach(ensureShape);
   setupTopLevel();
   setupDiceTray();

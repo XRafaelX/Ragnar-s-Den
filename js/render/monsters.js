@@ -5,7 +5,7 @@ import { showActionToast } from "../ui/toast.js";
 import { playAdd, playDelete } from "../ui/sound.js";
 import { themedPicker } from "../ui/themed-picker.js";
 import { MONSTER_GROUPS, MONSTER_DATA } from "../data/monsters.js";
-import { getCustomMonster, saveCustomMonster, deleteCustomMonster, monsterNameProblem, MONSTER_HOMEBREW_GROUP } from "../core/custom-monsters.js";
+import { getCustomMonster, saveCustomMonster, deleteCustomMonster, monsterNameProblem, MONSTER_HOMEBREW_GROUP, MONSTER_LIMITS, clampMonsterStat } from "../core/custom-monsters.js";
 import { facts, textField, homebrewShell, numberField, pickerField, previewCard } from "../ui/homebrew-form.js";
 import { escapeHtml } from "../core/helpers.js";
 
@@ -42,7 +42,7 @@ var editing = null;
 var copyFrom = null;
 
 /* ---- Info modal: full stat block ---- */
-function openMonsterDetail(name, d){
+export function openMonsterDetail(name, d){
   openInfoModal(name, function(body){
     var tags = document.createElement("div");
     tags.className = "cmp-preview-tags";
@@ -250,6 +250,17 @@ function buildMonsterForm(container){
   spdF.input.step = "5";
   spdF.input.addEventListener("input", function(){ d.speed = parseInt(spdF.input.value,10)||0; update(); });
   combatRow.appendChild(spdF.field);
+  // Kept in range: leaving a field pulls an out-of-range number back.
+  [["hp", hpF, 1], ["ac", acF, 10], ["speed", spdF, 30]].forEach(function(f){
+    var input = f[1].input;
+    input.min = String(MONSTER_LIMITS[f[0]][0]);
+    input.max = String(MONSTER_LIMITS[f[0]][1]);
+    input.addEventListener("change", function(){
+      d[f[0]] = clampMonsterStat(f[0], input.value, f[2]);
+      input.value = String(d[f[0]]);
+      update();
+    });
+  });
   combat.appendChild(combatRow);
 
   /* ── Ability Scores ── */
@@ -322,10 +333,23 @@ function buildMonsterForm(container){
   update();
 }
 
-/* ---- Entry point ---- */
+/* ---- Entry points ---- */
 export function openMonsters(){
   openCatalogPicker({
     sections: [monsterSection()],
     onClose: function(){ editing = null; copyFrom = null; }
+  });
+}
+
+/* The same catalog for picking monsters (an encounter's Add monster): a
+   tap calls onPick(name, data) and flashes "Added", so several can be
+   picked in a row. The + still makes a homebrew monster to pick. */
+export function openMonsterPicker(onPick, onClose){
+  var section = monsterSection();
+  section.searchPlaceholder = "Search monsters to add…";
+  section.onAdd = function(name, d){ onPick(name, d); playAdd(); };
+  openCatalogPicker({
+    sections: [section],
+    onClose: function(){ editing = null; copyFrom = null; if(onClose) onClose(); }
   });
 }

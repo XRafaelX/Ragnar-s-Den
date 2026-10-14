@@ -17,6 +17,16 @@ export var MONSTER_HOMEBREW_GROUP = "Homebrew";
 
 var STORAGE_KEY = "ragnarsDen.customMonsters.v1";
 
+/* Hit points, AC and speed stay in the range a stat block can use (the
+   Tarrasque has 676 HP and AC 25); a typo like AC 129999 would otherwise
+   overflow every box that shows it. */
+export var MONSTER_LIMITS = { hp: [1, 9999], ac: [0, 30], speed: [0, 300] };
+export function clampMonsterStat(key, value, fallback){
+  var n = parseInt(value, 10);
+  if(isNaN(n)) n = fallback;
+  return Math.max(MONSTER_LIMITS[key][0], Math.min(MONSTER_LIMITS[key][1], n));
+}
+
 var list  = [];      // raw entries
 var merged = [];     // names currently injected into MONSTER_DATA/MONSTER_GROUPS
 
@@ -58,9 +68,9 @@ function toData(e){
     cr:        e.cr        || "0",
     size:      e.size      || "Medium",
     alignment: e.alignment || "Unaligned",
-    hp:        Number(e.hp)  || 0,
-    ac:        Number(e.ac)  || 10,
-    speed:     Number(e.speed) || 30,
+    hp:        clampMonsterStat("hp", e.hp, 1),
+    ac:        clampMonsterStat("ac", e.ac, 10),
+    speed:     clampMonsterStat("speed", e.speed, 30),
     str:       Number(e.str) || 10,
     dex:       Number(e.dex) || 10,
     con:       Number(e.con) || 10,
@@ -80,9 +90,9 @@ function clean(e){
     cr:        String(e.cr   || "0"),
     size:      String(e.size || "Medium"),
     alignment: String(e.alignment || "Unaligned"),
-    hp:        Math.max(0, parseInt(e.hp,  10) || 0),
-    ac:        Math.max(0, parseInt(e.ac,  10) || 10),
-    speed:     Math.max(0, parseInt(e.speed,10)|| 30),
+    hp:        clampMonsterStat("hp", e.hp, 1),
+    ac:        clampMonsterStat("ac", e.ac, 10),
+    speed:     clampMonsterStat("speed", e.speed, 30),
     str:       Math.max(1, Math.min(30, parseInt(e.str, 10) || 10)),
     dex:       Math.max(1, Math.min(30, parseInt(e.dex, 10) || 10)),
     con:       Math.max(1, Math.min(30, parseInt(e.con, 10) || 10)),

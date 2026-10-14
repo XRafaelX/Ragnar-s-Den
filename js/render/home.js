@@ -3,9 +3,9 @@ import { openArmory } from "./armory.js";
 import { openSpellbook } from "./spellbook.js";
 import { openCompendium } from "./compendium.js";
 import { openMonsters } from "./monsters.js";
+import { openEncounters } from "./encounters.js";
 import { openInfoModal } from "../ui/info-modal.js";
 import { toggleDiceTray } from "../dice/dice.js";
-import { showActionToast } from "../ui/toast.js";
 
 var SELECT_ANIM_MS = 600;
 var TRANSITION_MS = 450;
@@ -34,7 +34,7 @@ export var RINGS = [
     description: "Preview upcoming tools and features in development.",
     nodes: [
       { id: "home-node-monsters", pos: "top", label: "Monsters", title: "Monster Catalog", action: openMonsters },
-      { id: "home-node-encounters", pos: "upper-right", label: "Encounters", title: "Encounters (Coming Soon)", isPlaceholder: true, toast: "Encounters are coming in a future update!" }
+      { id: "home-node-encounters", pos: "upper-right", label: "Encounters", title: "Encounters", action: openEncounters }
     ]
   }
 ];
@@ -349,7 +349,7 @@ export function setupHomeMenu(){
     selectNode(monstersBtn, openMonsters);
   });
   if(encountersBtn) encountersBtn.addEventListener("click", function(){
-    selectNode(encountersBtn, function(){ showActionToast("Encounters are coming in a future update!"); });
+    selectNode(encountersBtn, openEncounters);
   });
 
   var centerBtn = document.getElementById("home-center");

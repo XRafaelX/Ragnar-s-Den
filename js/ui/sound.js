@@ -3,7 +3,8 @@
    played only for meaningful moments: adding or removing something (a
    weapon, a feat, a character…), rolling a natural 20 or natural 1,
    rolling ability scores, dragging the theme slider, adding or
-   spending coin in the purse, and death saving throws. Never used for routine interaction like
+   spending coin in the purse, death saving throws, and an encounter's
+   hits, slain monsters, new rounds and victory. Never used for routine interaction like
    toggles, typing, or numeric steppers, so it stays a subtle accent
    instead of noise. */
 var audioCtx = null;
@@ -202,6 +203,66 @@ export function playRevive(){
     scheduleTone(ctx, now + 0.42, 659, 659, 0.3, "triangle", 0.12);
     scheduleTone(ctx, now + 0.52, 784, 784, 0.3, "triangle", 0.13);
     scheduleTone(ctx, now + 0.62, 1046, 1318, 0.45, "triangle", 0.14);
+  }catch(e){}
+}
+
+/* ---- Encounters (the DM's tracker) ---- */
+
+/* A soft low thud; a monster takes damage. `heavy` (a quarter of its hit
+   points or more in one go) lands deeper and a little louder. */
+export function playMonsterHit(heavy){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    if(heavy){
+      scheduleTone(ctx, now, 120, 42, 0.26, "sine", 0.3);
+      scheduleTone(ctx, now, 180, 70, 0.14, "triangle", 0.14);
+    }else{
+      scheduleTone(ctx, now, 170, 70, 0.14, "sine", 0.22);
+      scheduleTone(ctx, now, 240, 120, 0.07, "triangle", 0.08);
+    }
+  }catch(e){}
+}
+
+/* A short falling tone; a monster drops to 0. Briefer than a player's
+   death knell (playDeath). */
+export function playMonsterSlain(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    scheduleTone(ctx, now, 140, 50, 0.22, "sine", 0.26);
+    scheduleTone(ctx, now + 0.06, 392, 131, 0.42, "triangle", 0.12);
+    scheduleTone(ctx, now + 0.06, 196, 82, 0.5, "sine", 0.1);
+  }catch(e){}
+}
+
+/* A low gong; Next turn starts a new round. Ordinary turn changes stay
+   silent, they happen too often. */
+export function playNewRound(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    scheduleTone(ctx, now, 70, 60, 0.12, "sine", 0.22);       // the strike
+    scheduleTone(ctx, now, 110, 108, 1.4, "sine", 0.14);      // the body
+    scheduleTone(ctx, now, 220, 217, 1.0, "sine", 0.06);
+    scheduleTone(ctx, now, 331, 326, 0.7, "triangle", 0.035); // shimmer
+  }catch(e){}
+}
+
+/* A short rising fanfare; the last monster standing goes down. */
+export function playVictory(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    scheduleTone(ctx, now, 392, 392, 0.12, "triangle", 0.14);
+    scheduleTone(ctx, now + 0.11, 523, 523, 0.12, "triangle", 0.15);
+    scheduleTone(ctx, now + 0.22, 659, 659, 0.12, "triangle", 0.16);
+    scheduleTone(ctx, now + 0.33, 784, 784, 0.55, "triangle", 0.17);
+    scheduleTone(ctx, now + 0.33, 392, 392, 0.55, "sine", 0.1);
   }catch(e){}
 }
 
