@@ -426,6 +426,8 @@ test("costs name their points", () => {
   assert.equal(optionMeta(optionDef("metamagic", "Twinned Spell"), optionSetDef("metamagic")), "sorcery points equal to the spell level (1 for a cantrip)");
   assert.equal(optionMeta(optionDef("metamagic", "Subtle Spell")), "1 sorcery point", "sorcery points without a set");
   assert.equal(optionMeta(optionDef("arcaneShots", "Banishing Arrow"), optionSetDef("arcaneShots")), "Charisma save");
+  assert.equal(optionMeta(optionDef("maneuvers", "Trip Attack"), optionSetDef("maneuvers"), 14), "DC 14 Strength save", "with the character's save DC");
+  assert.equal(optionMeta(optionDef("disciplines", "Water Whip"), optionSetDef("disciplines"), 13), "2 ki points · DC 13 Dexterity save");
   assert.equal(optionMeta(optionDef("huntersPrey", "Colossus Slayer"), optionSetDef("huntersPrey")), "");
 });
 

@@ -84,20 +84,32 @@ function renderSet(card, c, set, grouped){
   }
 }
 
+/* A set's save DC (8 + proficiency + its ability) with the ability, or
+   null for a set without one. Maneuvers use STR or DEX, whichever is
+   higher; the others count only with the class entry that has them. */
+var SET_DC_ABILITY = {runes: "con", arcaneShots: "int", disciplines: "wis", misfortunes: "cha", stormEnvironment: "con"};
+function setDc(c, set, entry){
+  var ab = set.id==="maneuvers" ? (mod(c.abilities.str) >= mod(c.abilities.dex) ? "str" : "dex") : entry && SET_DC_ABILITY[set.id];
+  return ab ? {ability: ab, dc: 8 + profBonus(c) + mod(c.abilities[ab])} : null;
+}
+
 /* What the sheet works out for a set: save DCs, dice, points, and the
    Storm Aura's numbers for the chosen environment. */
 function setFacts(c, set, entry, all){
   var rows = [];
   var res = characterResources(c);
   var pb = profBonus(c);
-  function dc(label, ab){ rows.push([label, String(8 + pb + mod(c.abilities[ab])), "8 + proficiency + " + ab.toUpperCase()]); }
+  function dc(label){
+    var d = setDc(c, set, entry);
+    if(d) rows.push([label, String(d.dc), "8 + proficiency + " + d.ability.toUpperCase()]);
+  }
   function uses(key, label, rest){
     var r = res.find(function(x){ return x.key===key; });
     if(r) rows.push([label, (r.max - r.used) + " of " + r.max, "back on a " + rest + " rest"]);
   }
   var lv = entry ? Number(entry.level)||1 : 0;
   if(set.id==="maneuvers"){
-    dc("Maneuver save DC", mod(c.abilities.str) >= mod(c.abilities.dex) ? "str" : "dex");
+    dc("Maneuver save DC");
     var dice = res.find(function(r){ return r.key==="Fighter:superiority_dice"; }) || res.find(function(r){ return r.key==="feat:superiority_dice"; }) ||
       res.find(function(r){ return r.key==="style:superiority_dice"; });
     if(dice){
@@ -110,24 +122,24 @@ function setFacts(c, set, entry, all){
     uses("feat:sorcery_points", "Sorcery points", "long"); // Metamagic Adept without sorcerer levels
   }
   if(set.id==="runes" && entry){
-    dc("Rune save DC", "con");
+    dc("Rune save DC");
     uses("Fighter:rune_invocations", "Rune invocations", "short");
   }
   if(set.id==="arcaneShots" && entry){
-    dc("Arcane Shot save DC", "int");
+    dc("Arcane Shot save DC");
     uses("Fighter:arcane_shot", "Arcane Shot uses", "short");
   }
   if(set.id==="disciplines" && entry){
-    dc("Ki save DC", "wis");
+    dc("Ki save DC");
     rows.push(["Most ki per discipline", String(lv>=17 ? 6 : lv>=13 ? 5 : lv>=9 ? 4 : lv>=5 ? 3 : 2), "including extra ki to upcast"]);
     uses("Monk:ki", "Ki points", "short");
   }
   if(set.id==="misfortunes" && entry){
-    dc("Misfortune save DC", "cha");
+    dc("Misfortune save DC");
     uses("Rogue:jinx_points", "Jinx Points", "short");
   }
   if(set.id==="stormEnvironment" && entry){
-    dc("Storm Aura save DC", "con");
+    dc("Storm Aura save DC");
     var env = all[0] && all[0].name;
     var step = lv>=20 ? 6 : lv>=15 ? 5 : lv>=10 ? 4 : lv>=5 ? 3 : 2;
     var dice2 = lv>=20 ? 4 : lv>=15 ? 3 : lv>=10 ? 2 : 1;
@@ -176,7 +188,8 @@ function optionEntry(c, set, entry, k, fixed){
     head.appendChild(rm);
   }
   box.appendChild(head);
-  var meta = optionMeta(o, set);
+  var d = setDc(c, set, entry || entryFor(c, set));
+  var meta = optionMeta(o, set, d && d.dc);
   var src = document.createElement("div");
   src.className = "inf-goes";
   src.innerHTML = (fixed ? "<span>Always known</span>" : "<span>From</span> " + escapeHtml(k.from)) +
