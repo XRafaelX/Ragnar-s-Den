@@ -169,7 +169,17 @@ export function weaponAttackBonus(c, item){
   return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0) + archery - (powerAttackOn(c, item) ? 5 : 0);
 }
 export function weaponDamageBonus(c, item){
-  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item);
+  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item);
+}
+/* Dueling: +2 damage with a melee weapon held in one hand while no other
+   weapon is held (a shield or a free hand is fine). Judged against what
+   is equipped now, so a second weapon in hand turns it off; a stack like
+   "Dagger ×2" is one weapon in hand, as for the hands count. */
+export function duelingBonus(c, item){
+  if(item.type!=="weapon" || isRangedWeapon(item) || isTwoHanded(item)) return 0;
+  if(!hasFightingStyle(c, "Dueling")) return 0;
+  var other = (c.inventory||[]).some(function(i){ return i!==item && i.equipped && i.type==="weapon"; });
+  return other ? 0 : 2;
 }
 /* Rage: + rage damage to melee weapon attacks that use STR, while raging
    and not in heavy armor. */

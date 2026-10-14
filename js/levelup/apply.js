@@ -159,7 +159,7 @@ export function finish(){
   });
 
   // The picked style becomes a tagged feature (like a starting Fighter's),
-  // so Defense/Archery apply and undo can remove it.
+  // so Defense/Archery/Dueling apply and undo can remove it.
   // A Martial Versatility swap takes the old style off first (undo puts
   // it back).
   var styleFeature = null;

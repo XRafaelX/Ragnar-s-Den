@@ -141,6 +141,31 @@ test("what styles do on the sheet", () => {
   assert.ok(CO.planContext(bm, bm.classes[0], plan, {}, 3).known.includes("Riposte"));
 });
 
+test("Dueling: +2 damage with a one-handed melee weapon and no other weapon", () => {
+  const w = (name, dice, extra = {}) => ({ id: name, name, type: "weapon", qty: 1, equipped: true, ability: "str", proficient: true, magicBonus: 0, damageDice: dice, ...extra });
+  const longsword = w("Longsword", "1d8");
+  const shield = { id: "sh", name: "Shield", type: "armor", category: "shield", baseAC: 2, equipped: true };
+  const d = withStyle(makeChar([{ name: "Fighter", level: 1 }], { inventory: [longsword, shield] }), "Dueling");
+  assert.equal(H.weaponDamageBonus(d, longsword), 3 + 2, "STR +3, Dueling +2, a shield is fine");
+  assert.equal(H.weaponAttackBonus(d, longsword), 3 + 2, "attacks are unchanged");
+  assert.equal(H.weaponDamageBonus(makeChar([{ name: "Fighter", level: 1 }], { inventory: [longsword] }), longsword), 3, "no style, no bonus");
+  const greatsword = w("Greatsword", "2d6", { equipped: false });
+  const longbow = w("Longbow", "1d8", { ability: "dex", equipped: false });
+  d.inventory.push(greatsword, longbow);
+  assert.equal(H.duelingBonus(d, greatsword), 0, "two-handed");
+  assert.equal(H.duelingBonus(d, longbow), 0, "ranged");
+  const dagger = w("Dagger", "1d4", { qty: 2, equipped: false });
+  d.inventory.push(dagger);
+  assert.equal(H.duelingBonus(d, dagger), 0, "the longsword is already in hand");
+  longsword.equipped = false;
+  assert.equal(H.duelingBonus(d, dagger), 2, "nothing else in hand; a stack is one weapon");
+  dagger.equipped = true;
+  assert.equal(H.duelingBonus(d, dagger), 2);
+  const hand = w("Handaxe", "1d6");
+  d.inventory.push(hand);
+  assert.deepEqual([H.duelingBonus(d, dagger), H.duelingBonus(d, hand)], [0, 0], "two weapons in hand");
+});
+
 test("Undo last level-up puts a swapped-out style back", (t) => {
   const f = makeChar([{ name: "Fighter", subclass: "Champion", level: 4 }], { tashaOptional: true, hp: { max: 40, current: 40, temp: 0 } });
   const archery = FS.makeStyleFeature("Archery");

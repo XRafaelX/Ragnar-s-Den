@@ -76,7 +76,7 @@ export function stepStyle(container){
   }
   if(t.fightingStyle){
     card = stepCard(container, t.fightingStyle.from==="Fighting Style" ? "Choose a Fighting Style" : t.fightingStyle.from,
-      "<b>Your fighting style</b> is a combat specialty you keep for good. <b>Defense</b> and <b>Archery</b> are added to your AC and attacks automatically, and a few others add a sense, a maneuver or cantrips; the rest are reminders on your Features tab.");
+      "<b>Your fighting style</b> is a combat specialty you keep for good. <b>Defense</b>, <b>Archery</b> and <b>Dueling</b> are added to your AC, attacks and damage automatically, and a few others add a sense, a maneuver or cantrips; the rest are reminders on your Features tab.");
     card.appendChild(renderStyleOptions(lu.c, t.fightingStyle.options, lu.style, tasha, pick));
     if(!availableStyles().length){
       var p = ce("p","lu-note");

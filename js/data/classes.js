@@ -88,11 +88,11 @@ var MARTIAL_WEAPON_CHOICE = {options:[
 ]};
 
 /* Fighting styles a class can pick. `fightingStyle` on the chosen feature
-   lets the sheet apply the ones with a flat bonus (Defense, Archery). */
+   lets the sheet apply the ones with a flat bonus (Defense, Archery, Dueling). */
 export var FIGHTING_STYLES = {
   "Archery":{text:"You gain a +2 bonus to attack rolls you make with ranged weapons. (Already added to your ranged attacks.)"},
   "Defense":{text:"While you are wearing armor, you gain a +1 bonus to AC. (Already added to your AC.)"},
-  "Dueling":{text:"When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon."},
+  "Dueling":{text:"When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon. (Already added to your damage while it's the only weapon you have equipped.)"},
   "Great Weapon Fighting":{text:"When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll."},
   "Protection":{text:"When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield."},
   "Two-Weapon Fighting":{text:"When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack."},
@@ -123,7 +123,7 @@ Object.assign(CLASSES_INFO["Fighter"], {
   skillChoices:{count:2, options:["Acrobatics","Animal Handling","Athletics","History","Insight","Intimidation","Perception","Survival"]},
   choices:[
     {id:"fightingStyle", kind:"fightingStyle", label:"Fighting Style",
-      help:"Pick the style that matches how you'll fight. Defense and Archery are added to your AC and attacks automatically; the others are reminders on your Features tab.",
+      help:"Pick the style that matches how you'll fight. Defense, Archery and Dueling are added to your AC, attacks and damage automatically; the others are reminders on your Features tab.",
       options:["Archery","Defense","Dueling","Great Weapon Fighting","Protection","Two-Weapon Fighting",
         "Blind Fighting","Interception","Superior Technique","Thrown Weapon Fighting","Unarmed Fighting"]}
   ],

@@ -707,7 +707,7 @@ function applyRaceChoices(c){
 
 /* Level-1 class picks from the Class Features step: a fighting style
    becomes a feature on the sheet (its `fightingStyle` tag lets AC/attacks
-   apply Defense and Archery), expertise doubles proficiency on skills. */
+   apply Defense, Archery and Dueling), expertise doubles proficiency on skills. */
 export function applyClassChoices(c, info, picks){
   (info.choices||[]).forEach(function(ch){
     var v = picks[ch.id];
