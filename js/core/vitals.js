@@ -16,6 +16,7 @@ import { halfProficiency, checkAbility } from "./checks.js";
 import { findSubclass, classFeatureList } from "./class-features.js";
 import { effectOn, bladesongBonus } from "./effects.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
+import { holsterSpeedParts } from "./magic-items.js";
 
 /* ---------------- Feats the sheet applies ----------------
    Feats are matched by name. Their bonuses are worked out when shown
@@ -100,6 +101,8 @@ export function computeSpeed(c){
   var inArmor = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
   if(model && model.speed && inArmor) parts.push({name: "Powered Steps", value: model.speed});
   if(effectOn(c, "bladesong")) parts.push({name: "Bladesong", value: 10});
+  // A Heavy Holster with no knives in it: +20 ft.
+  parts = parts.concat(holsterSpeedParts(c));
   // Walking speed a feature adds while the character has it (Roving).
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){ if(f.walkSpeed) parts.push({name: f.name, value: f.walkSpeed}); });

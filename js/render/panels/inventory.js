@@ -12,6 +12,8 @@ import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { renderCurrencyCard } from "./coin-purse.js";
+import { magicItemDef, magicItemActive, holsterKnives, holsterDamageBonus } from "../../core/magic-items.js";
+import { pipChanged, pipsRefilled } from "../../ui/fx.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 var ARMOR_CATEGORIES = [
@@ -26,7 +28,8 @@ var ARMOR_CATEGORIES = [
    happens there instead of inline, so the name text has no invisible
    input hit-box left over to swallow clicks), a qty badge when stacked,
    an Equip switch (weapons and armor only: equipping other gear
-   changes nothing, so it would only be clutter), and an edit control. */
+   changes nothing, so it would only be clutter) or, on a magic item that
+   needs it, an Attune switch, and an edit control. */
 function itemHeader(c, item, idx, onOpenDetails, noEquip){
   var header = document.createElement("div");
   header.className = "inv-card-header";
@@ -71,6 +74,21 @@ function itemHeader(c, item, idx, onOpenDetails, noEquip){
       save(); renderAll();
     });
     actions.appendChild(eqBtn);
+  } else if(magicItemDef(item) && magicItemDef(item).attunement){
+    // Same look as Equip: "Attune", then "Attuned" with a tick.
+    var atBtn = document.createElement("button");
+    atBtn.type = "button";
+    atBtn.className = "inv-equip-btn" + (item.attuned ? " on" : "");
+    atBtn.setAttribute("aria-pressed", item.attuned ? "true" : "false");
+    if(item.attuned) atBtn.innerHTML = makeCheckSvg();
+    atBtn.appendChild(document.createTextNode(item.attuned ? "Attuned" : "Attune"));
+    atBtn.title = item.attuned ? "Attuned: its magic works. Tap to end the attunement." : "Attune to it (a short rest spent with it) so its magic works";
+    atBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      item.attuned = !item.attuned;
+      save(); renderAll();
+    });
+    actions.appendChild(atBtn);
   }
 
   var editBtn = document.createElement("button");
@@ -196,6 +214,14 @@ function openGearSheet(c, item, idx){
     details.appendChild(notesField);
 
     body.appendChild(details);
+
+    var def = magicItemDef(item);
+    if(def){
+      var desc = document.createElement("p");
+      desc.className = "inv-magic-text";
+      desc.textContent = def.text;
+      body.appendChild(desc);
+    }
   });
 }
 
@@ -317,6 +343,8 @@ function renderWeaponCard(c, item, idx){
   var rage = rageDamageBonus(c, item);
   if(rage) subtitleParts.push("Rage +" + rage + " damage");
   if(duelingBonus(c, item)) subtitleParts.push("Dueling +2 damage");
+  var holster = holsterDamageBonus(c);
+  if(holster) subtitleParts.push("Heavy Holster +" + holster + " damage");
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");
@@ -481,7 +509,99 @@ function renderArmorCard(c, item, idx){
   return card;
 }
 
+/* A magic item from the Armory's list: what it is, attunement in the
+   header, and for a Heavy Holster the knives in it. Its description is in
+   the sheet the row opens. */
+function renderMagicItemCard(c, item, idx, def){
+  var card = document.createElement("div");
+  var active = magicItemActive(item);
+  card.className = "ff-item-card inv-item-card" + (def.attunement ? (active ? " is-equipped" : " is-stowed") : "");
+  card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }, true));
+
+  var subtitle = document.createElement("div");
+  subtitle.className = "inv-card-subtitle";
+  subtitle.textContent = [def.kind, def.rarity, def.attunement ? (active ? "attuned" : "requires attunement") : ""].filter(Boolean).join(" · ");
+  card.appendChild(subtitle);
+  if(item.notes){
+    var notesP = document.createElement("p");
+    notesP.className = "inv-armor-note";
+    notesP.textContent = item.notes;
+    card.appendChild(notesP);
+  }
+  if(def.holster) card.appendChild(holsterBlock(c, item, idx, def.holster, active));
+  return card;
+}
+
+/* The Heavy Holster's knives: a pip each, what they're doing for you now,
+   and Throw / Summon buttons. Summoning is the holster's magic, so it
+   needs attunement; taking a knife out doesn't. */
+function holsterBlock(c, item, idx, h, active){
+  var knives = holsterKnives(item);
+  var box = document.createElement("div");
+  box.className = "inv-holster";
+  box.dataset.idx = idx;
+
+  var row = document.createElement("div");
+  row.className = "inv-holster-row";
+  var pips = document.createElement("span");
+  pips.className = "inv-holster-pips";
+  for(var i = 0; i < h.capacity; i++){
+    var pip = document.createElement("span");
+    pip.className = "res-pip" + (i < knives ? " full" : "");
+    pips.appendChild(pip);
+  }
+  row.appendChild(pips);
+  var count = document.createElement("span");
+  count.className = "inv-holster-count";
+  count.textContent = knives + " of " + h.capacity + " knives holstered";
+  row.appendChild(count);
+  box.appendChild(row);
+
+  var effect = document.createElement("p");
+  effect.className = "inv-armor-note" + (active ? " inv-equipped-note" : "");
+  effect.textContent = !active ? "Attune to it to use its magic."
+    : knives ? "+" + knives * h.damagePerKnife + " damage on your attacks, added to your weapons' damage rolls."
+    : "Empty: +" + h.emptySpeed + " ft speed, counted on the Vitals tab.";
+  box.appendChild(effect);
+
+  function setKnives(n){
+    var before = knives;
+    item.knives = n;
+    save(); renderAll();
+    var drawn = document.querySelector('.inv-holster[data-idx="' + idx + '"] .inv-holster-pips');
+    // Thrown: the last full pip empties. Summoned: the empty ones fill.
+    if(n < before) pipChanged(drawn, n, true);
+    else pipsRefilled(drawn, before, n);
+  }
+
+  var actions = document.createElement("div");
+  actions.className = "inv-roll-actions";
+  function button(label, tag, title, enabled, onClick){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn small inv-roll-btn";
+    b.textContent = label;
+    if(tag){
+      var t = document.createElement("span");
+      t.className = "inv-action-tag";
+      t.textContent = tag;
+      b.appendChild(t);
+    }
+    b.title = title;
+    b.disabled = !enabled;
+    b.addEventListener("click", onClick);
+    actions.appendChild(b);
+  }
+  button("Throw a knife", "", knives ? "Take a knife out of the holster to throw it" : "The holster is empty", knives > 0, function(){ setKnives(knives - 1); });
+  var why = !active ? "Attune to the holster to summon knives" : "The holster is full";
+  button("Summon one", "Bonus action", active && knives < h.capacity ? "Summon one knife back into the holster" : why, active && knives < h.capacity, function(){ setKnives(knives + 1); });
+  button("Summon all", "Action", active && knives < h.capacity ? "Summon every knife back into the holster" : why, active && knives < h.capacity, function(){ setKnives(h.capacity); });
+  box.appendChild(actions);
+  return box;
+}
+
 function renderGearCard(c, item, idx){
+  var def = magicItemDef(item);
+  if(def) return renderMagicItemCard(c, item, idx, def);
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card";
   card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }, true));

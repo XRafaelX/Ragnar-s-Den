@@ -3,6 +3,7 @@ import { openCatalogPicker, showCatalogCustomView, refreshCatalog } from "../ui/
 import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
 import { ARMOR_GROUPS, ARMOR_DATA } from "../data/armor.js";
 import { GEAR_GROUPS, GEAR_DATA } from "../data/gear.js";
+import { MAGIC_ITEM_GROUPS, MAGIC_ITEM_DATA } from "../data/magic-items.js";
 import { isProficientWithWeapon, tryEquip, escapeHtml } from "../core/helpers.js";
 import { getCustomItem, saveCustomItem, deleteCustomItem, itemNameProblem, charactersWithItem, weaponAbility, armorNote } from "../core/custom-items.js";
 import { facts, textField, homebrewShell, numberField, pickerField, previewCard } from "../ui/homebrew-form.js";
@@ -20,8 +21,9 @@ import { playAdd, playDelete } from "../ui/sound.js";
    confirms with a toast); from a sheet's Add Weapon / Add Armor / Add
    item it opens on that one list for that character, and a tap adds the
    item straight away. Gear (adventuring gear, packs, tools: js/data/gear.js)
-   is a plain list with no homebrew form: the sheet's "Custom item" makes
-   anything that isn't on it.
+   and magic items (js/data/magic-items.js, also behind the sheet's
+   Add item) are plain lists with no homebrew form: the sheet's "Custom
+   item" makes anything that isn't on them.
    The + makes a custom (homebrew) weapon or armor, the same way the
    Compendium makes custom subclasses, feats and so on: a form with a live
    preview, saved in this browser (core/custom-items.js) and listed under
@@ -74,7 +76,18 @@ export function addCatalogGear(c, name, d){
   playAdd();
 }
 
-var ADD = {weapon:addCatalogWeapon, armor:addCatalogArmor, gear:addCatalogGear};
+/* A magic item is its own row (never stacked): it keeps its own state,
+   attunement and, for a Heavy Holster, the knives in it (it comes full). */
+export function addCatalogMagicItem(c, name, d){
+  var item = {name: name, type:"gear", magicItem: name, qty:1, equipped:false, notes:""};
+  if(d.attunement) item.attuned = false;
+  if(d.holster) item.knives = d.holster.capacity;
+  c.inventory.push(item);
+  save();
+  playAdd();
+}
+
+var ADD = {weapon:addCatalogWeapon, armor:addCatalogArmor, gear:addCatalogGear, magic:addCatalogMagicItem};
 
 /* Tap on a row: straight onto the sheet's character, or ask which one. */
 function onAddFor(kind){
@@ -366,13 +379,24 @@ function gearSection(){
   };
 }
 
+function magicSection(){
+  return {
+    key: "magic", label: "Magic items", searchPlaceholder: "Search magic items…",
+    groups: MAGIC_ITEM_GROUPS, data: MAGIC_ITEM_DATA,
+    renderSub: function(name, d){ return d.kind + (d.attunement ? " (requires attunement)" : ""); },
+    renderRight: function(name, d){ return [d.rarity]; },
+    searchText: function(name, d){ return name+" "+d.kind+" "+d.rarity+" "+d.text; },
+    onAdd: onAddFor("magic")
+  };
+}
+
 /* opts: forCharacter (from a sheet: adds go straight to it) and only
    ("weapons" | "armor" | "gear": just that list). */
 export function openArmory(opts){
   opts = opts || {};
   target = opts.forCharacter || null;
-  var sections = opts.only==="weapons" ? [weaponSection()] : opts.only==="armor" ? [armorSection()] : opts.only==="gear" ? [gearSection()]
-    : [weaponSection(), armorSection(), gearSection()];
+  var sections = opts.only==="weapons" ? [weaponSection()] : opts.only==="armor" ? [armorSection()] : opts.only==="gear" ? [gearSection(), magicSection()]
+    : [weaponSection(), armorSection(), gearSection(), magicSection()];
   openCatalogPicker({
     sections: sections,
     onClose: function(){ target = null; editing = {weapon:null, armor:null}; renderAll(); }
