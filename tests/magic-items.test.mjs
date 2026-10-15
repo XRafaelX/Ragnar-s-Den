@@ -26,9 +26,10 @@ test("magic item data: well formed, grouped by rarity, one group each", () => {
       const d = MAGIC_ITEM_DATA[name];
       assert.equal(d.rarity, group, name + ": listed under its rarity");
       assert.ok(d.kind && d.text, name + ": kind and text");
-      for(const k of Object.keys(d)) assert.ok(["kind", "rarity", "attunement", "text", "holster"].includes(k), name + ": unknown field " + k);
+      for(const k of Object.keys(d)) assert.ok(["kind", "rarity", "attunement", "text", "holster", "weapon", "returning"].includes(k), name + ": unknown field " + k);
       assert.ok(!/[–—]/.test(name + d.kind + d.text), name + ": long dash");
       assert.ok(!GEAR_DATA[name] && !WEAPON_DATA[name] && !ARMOR_DATA[name], name + ": already other gear");
+      if(d.weapon) assert.ok(WEAPON_DATA[d.weapon], name + ": a real weapon");
     }
   }
 });
@@ -102,4 +103,29 @@ test("attunement: 3 items, 4 to 6 for an artificer, never two copies", () => {
   } finally {
     delete MAGIC_ITEM_DATA["Test Ring"]; delete MAGIC_ITEM_DATA["Test Cloak"]; delete MAGIC_ITEM_DATA["Test Ring 2"];
   }
+});
+
+test("Trident of Returning: added under Weapons as a magic trident, readied, not attuned", (t) => {
+  const d = MAGIC_ITEM_DATA["Trident of Returning"];
+  assert.deepEqual([d.kind, d.rarity, d.attunement, d.weapon, d.returning], ["Wondrous weapon (trident)", "Uncommon", true, "Trident", true]);
+  assert.match(d.text, /use an action to call it back to your hand/);
+  assert.match(d.text, /contested Strength check/);
+  assert.match(d.text, /moved 5 feet in a straight line toward you/);
+
+  const fighter = newCharacter("Sea Reaver");
+  fighter.classes = [{ name: "Fighter", subclass: "", level: 1 }];
+  fighter.abilities = { str: 16, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
+  const wizard = newCharacter("Bookworm");
+  wizard.classes = [{ name: "Wizard", subclass: "", level: 1 }];
+  withFakeDom(t, () => {
+    addCatalogMagicItem(fighter, "Trident of Returning", d);
+    addCatalogMagicItem(wizard, "Trident of Returning", d);
+  });
+  const tr = fighter.inventory.find((i) => i.magicItem === "Trident of Returning");
+  assert.deepEqual([tr.name, tr.type, tr.damageDice, tr.damageType, tr.ability, tr.notes, tr.magic, tr.attuned, tr.proficient, tr.equipped],
+    ["Trident of Returning", "weapon", "1d6", "Piercing", "str", "Thrown (20/60), versatile (1d8)", true, false, true, true]);
+  assert.equal(H.itemHands(tr), 1, "one-handed (versatile, not two-handed)");
+  assert.equal(H.isMagicWeapon(fighter, tr), true, "magic even before attuning");
+  assert.deepEqual([H.weaponAttackBonus(fighter, tr), H.weaponDamageBonus(fighter, tr)], [5, 3], "STR +3, proficiency +2, no bonus");
+  assert.equal(wizard.inventory.find((i) => i.magicItem).proficient, false, "a wizard isn't proficient with a trident");
 });

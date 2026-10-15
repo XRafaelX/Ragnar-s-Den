@@ -1,6 +1,6 @@
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg } from "../../ui/svg-icons.js";
+import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
 import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
@@ -12,7 +12,7 @@ import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { renderCurrencyCard } from "./coin-purse.js";
-import { magicItemDef, magicItemActive, holsterKnives, holsterDamageBonus, attuneProblem, attunedItems, attunementLimit } from "../../core/magic-items.js";
+import { magicItemDef, magicItemActive, holsterKnives, holsterDamageBonus, attuneProblem } from "../../core/magic-items.js";
 import { pipChanged, pipsRefilled } from "../../ui/fx.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
@@ -23,13 +23,119 @@ var ARMOR_CATEGORIES = [
   {key:"shield", label:"Shield"}
 ];
 
+/* Saves and redraws the sheet without the tapped card moving on screen.
+   A tap can grow or shrink what's above it (attuning a Heavy Holster adds
+   a line to the Weapons card; equipping changes the hands line), and the
+   redraw would otherwise leave the card a line higher or lower, as if the
+   page scrolled by itself. */
+function redrawKeeping(idx){
+  var before = cardTop(idx);
+  save(); renderAll();
+  var after = cardTop(idx);
+  if(before==null || after==null || after===before) return;
+  var main = document.getElementById("main");
+  if(main && main.scrollHeight > main.clientHeight) main.scrollTop += after - before;
+  else window.scrollBy(0, after - before);
+}
+function cardTop(idx){
+  var el = document.querySelector('.inv-item-card[data-idx="' + idx + '"]');
+  return el ? el.getBoundingClientRect().top : null;
+}
+
+/* A magic item's attunement, in its ⋯ menu: "Attune" or "End
+   attunement". At the attunement limit, or for a second copy, the entry
+   is greyed out and a tap says why. Null for an item without it. */
+function attuneEntry(c, item, idx){
+  var def = magicItemDef(item);
+  if(!def || !def.attunement) return null;
+  var problem = attuneProblem(c, item);
+  return {
+    label: item.attuned ? "End attunement" : "Attune",
+    blocked: problem,
+    title: problem || (item.attuned ? "Its magic stops working until you attune again" : "Attune to it (a short rest spent with it) so its magic works"),
+    onClick: function(){
+      if(problem){ showActionToast(problem, true); return; }
+      item.attuned = !item.attuned;
+      redrawKeeping(idx);
+    }
+  };
+}
+
+/* The line under a magic item's name, the same on weapons and other
+   gear: rarity, kind and attunement ("Uncommon · Wondrous item (knife
+   holster) · attuned"); attuning is in the ⋯ menu. */
+function magicItemLine(item, def){
+  var line = document.createElement("div");
+  line.className = "inv-card-subtitle inv-magic-line";
+  line.appendChild(document.createTextNode(def.rarity + " · " + def.kind));
+  if(def.attunement){
+    var att = document.createElement("span");
+    att.className = "inv-attune-state" + (item.attuned ? " on" : "");
+    att.textContent = item.attuned ? "attuned" : "requires attunement";
+    line.appendChild(document.createTextNode(" · "));
+    line.appendChild(att);
+  }
+  return line;
+}
+
+/* The ⋯ button on an item card and its small menu ([{label, danger,
+   blocked, title, onClick}]; a blocked entry is greyed out but still
+   tapped, to say why). Closes on a pick, a tap elsewhere or Escape; taps on it
+   never reach the header (which opens the item's sheet). */
+function itemMenu(item, entries){
+  var wrap = document.createElement("div");
+  wrap.className = "inv-card-menu";
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "catalog-row-menu-btn inv-menu-btn";
+  btn.innerHTML = makeKebabSvg();
+  btn.title = "More options";
+  btn.setAttribute("aria-label", "More options for " + (item.name || "this item"));
+  btn.setAttribute("aria-haspopup", "menu");
+  btn.setAttribute("aria-expanded", "false");
+  var pop = document.createElement("div");
+  pop.className = "catalog-row-dropdown";
+  pop.setAttribute("role", "menu");
+  entries.forEach(function(en){
+    var it = document.createElement("button");
+    it.type = "button";
+    it.className = "catalog-dropdown-item" + (en.danger ? " danger" : "") + (en.blocked ? " blocked" : "");
+    it.setAttribute("role", "menuitem");
+    if(en.blocked) it.setAttribute("aria-disabled", "true");
+    if(en.title) it.title = en.title;
+    it.textContent = en.label;
+    it.addEventListener("click", function(e){ e.stopPropagation(); close(); en.onClick(); });
+    pop.appendChild(it);
+  });
+  wrap.appendChild(btn);
+  wrap.appendChild(pop);
+  wrap.addEventListener("click", function(e){ e.stopPropagation(); });
+  function onDocClick(e){ if(!wrap.contains(e.target)) close(); }
+  function onKey(e){ if(e.key==="Escape"){ close(); btn.focus(); } }
+  function open(){
+    pop.classList.add("open");
+    btn.setAttribute("aria-expanded", "true");
+    document.addEventListener("click", onDocClick, true);
+    document.addEventListener("keydown", onKey);
+  }
+  function close(){
+    pop.classList.remove("open");
+    btn.setAttribute("aria-expanded", "false");
+    document.removeEventListener("click", onDocClick, true);
+    document.removeEventListener("keydown", onKey);
+  }
+  btn.addEventListener("click", function(){ pop.classList.contains("open") ? close() : open(); });
+  return wrap;
+}
+
 /* Compact header shared by weapon/armor cards: a name (click anywhere on
    the row, including the name itself, to open the edit sheet; renaming
    happens there instead of inline, so the name text has no invisible
    input hit-box left over to swallow clicks), a qty badge when stacked,
    an Equip switch (weapons and armor only: equipping other gear
-   changes nothing, so it would only be clutter) or, on a magic item that
-   needs it, an Attune switch, and an edit control. */
+   changes nothing, so it would only be clutter), and a ⋯ menu with
+   Attune (magic items that need it), Edit details and Remove, so the name
+   keeps the room on a phone. */
 function itemHeader(c, item, idx, onOpenDetails, noEquip){
   var header = document.createElement("div");
   header.className = "inv-card-header";
@@ -66,53 +172,26 @@ function itemHeader(c, item, idx, onOpenDetails, noEquip){
     eqBtn.title = item.equipped ? "Equipped. Tap to unequip." : "Equip";
     eqBtn.addEventListener("click", function(e){
       e.stopPropagation();
-      if(item.equipped){ item.equipped = false; save(); renderAll(); return; }
+      if(item.equipped){ item.equipped = false; redrawKeeping(idx); return; }
       // One suit of armor, one shield, two hands (see tryEquip).
       var res = tryEquip(c, item);
       if(!res.ok){ showActionToast(res.message, true); return; }
+      delete item.thrown; // a returning weapon back in hand
       if(res.message) showActionToast(res.message);
-      save(); renderAll();
+      redrawKeeping(idx);
     });
     actions.appendChild(eqBtn);
-  } else if(magicItemDef(item) && magicItemDef(item).attunement){
-    // Same look as Equip: "Attune", then "Attuned" with a tick. Greyed
-    // out at the attunement limit or for a second copy; a tap says why.
-    var atProblem = attuneProblem(c, item);
-    var atBtn = document.createElement("button");
-    atBtn.type = "button";
-    atBtn.className = "inv-equip-btn" + (item.attuned ? " on" : "") + (atProblem ? " blocked" : "");
-    atBtn.setAttribute("aria-pressed", item.attuned ? "true" : "false");
-    if(atProblem) atBtn.setAttribute("aria-disabled", "true");
-    if(item.attuned) atBtn.innerHTML = makeCheckSvg();
-    atBtn.appendChild(document.createTextNode(item.attuned ? "Attuned" : "Attune"));
-    atBtn.title = atProblem || (item.attuned ? "Attuned: its magic works. Tap to end the attunement." : "Attune to it (a short rest spent with it) so its magic works");
-    atBtn.addEventListener("click", function(e){
-      e.stopPropagation();
-      if(atProblem){ showActionToast(atProblem, true); return; }
-      item.attuned = !item.attuned;
-      save(); renderAll();
-    });
-    actions.appendChild(atBtn);
   }
 
-  var editBtn = document.createElement("button");
-  editBtn.type = "button";
-  editBtn.className = "inv-edit-btn";
-  editBtn.textContent = "✎";
-  editBtn.title = "Edit details";
-  editBtn.setAttribute("aria-label", "Edit details");
-  editBtn.addEventListener("click", function(e){ e.stopPropagation(); onOpenDetails(); });
-  actions.appendChild(editBtn);
-
-  var rmBtn = document.createElement("button");
-  rmBtn.className = "rm-btn"; rmBtn.textContent = "✕"; rmBtn.title = "Remove item";
-  rmBtn.addEventListener("click", function(e){
-    e.stopPropagation();
-    confirmDialog("Remove "+(item.name||"this item")+"?", "This cannot be undone.", function(){
-      c.inventory.splice(idx,1); save(); renderAll(); playDelete();
-    });
-  });
-  actions.appendChild(rmBtn);
+  actions.appendChild(itemMenu(item, [
+    attuneEntry(c, item, idx),
+    {label:"Edit details", onClick:onOpenDetails},
+    {label:"Remove", danger:true, onClick:function(){
+      confirmDialog("Remove "+(item.name||"this item")+"?", "This cannot be undone.", function(){
+        c.inventory.splice(idx,1); save(); renderAll(); playDelete();
+      });
+    }}
+  ].filter(Boolean)));
 
   header.appendChild(actions);
   return header;
@@ -321,6 +400,14 @@ function openWeaponSheet(c, item, idx){
     details.appendChild(magicLbl);
 
     body.appendChild(details);
+
+    var def = magicItemDef(item);
+    if(def){
+      var desc = document.createElement("p");
+      desc.className = "inv-magic-text";
+      desc.textContent = def.text;
+      body.appendChild(desc);
+    }
   });
 }
 
@@ -331,7 +418,13 @@ function renderWeaponCard(c, item, idx){
 
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card" + (item.equipped ? " is-equipped" : " is-stowed");
+  card.dataset.idx = idx;
   card.appendChild(itemHeader(c, item, idx, function(){ openWeaponSheet(c, item, idx); }));
+  // A magic weapon from the Armory's list: its rarity, kind and
+  // attunement first, in the same place as on other magic items.
+  var def = magicItemDef(item);
+  var active = def && magicItemActive(item);
+  if(def) card.appendChild(magicItemLine(item, def));
 
   var abilityLabel = item.ability==="finesse" ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
   // Martial Arts: a monk weapon uses the better of STR and DEX.
@@ -347,8 +440,6 @@ function renderWeaponCard(c, item, idx){
   var rage = rageDamageBonus(c, item);
   if(rage) subtitleParts.push("Rage +" + rage + " damage");
   if(duelingBonus(c, item)) subtitleParts.push("Dueling +2 damage");
-  var holster = holsterDamageBonus(c);
-  if(holster) subtitleParts.push("Heavy Holster +" + holster + " damage");
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");
@@ -359,6 +450,16 @@ function renderWeaponCard(c, item, idx){
     notesP.className = "inv-armor-note";
     notesP.textContent = item.notes;
     card.appendChild(notesP);
+  }
+
+  // A returning weapon out of your hand says so.
+  if(def && def.returning && item.thrown){
+    var thrownNote = document.createElement("p");
+    thrownNote.className = "inv-armor-note inv-thrown-note";
+    thrownNote.textContent = active
+      ? "Thrown: out of your hand. While you can see it, call it back with an action. If it's stuck in a creature, the creature makes a contested Strength check to keep it; if it wins, it keeps the trident but is pulled 5 ft toward you."
+      : "Thrown: out of your hand. Attune to it (⋯ menu) to call it back, or pick it up.";
+    card.appendChild(thrownNote);
   }
 
   var actions = document.createElement("div");
@@ -420,9 +521,46 @@ function renderWeaponCard(c, item, idx){
     power.title = powerFeat + ": " + (on ? "on. Attacks take −5 to hit and deal +10 damage. Tap to turn off." : "take −5 to hit for +10 damage");
     power.addEventListener("click", function(){
       if(on) delete item.powerAttack; else item.powerAttack = true;
-      save(); renderAll();
+      redrawKeeping(idx);
     });
     actions.appendChild(power);
+  }
+
+  // Returning weapon: Throw takes it out of your hand; Call it back (an
+  // action, attuned) or Pick it up puts it back in a free hand.
+  if(def && def.returning){
+    if(!item.thrown){
+      var throwBtn = document.createElement("button");
+      throwBtn.type = "button"; throwBtn.className = "btn small inv-roll-btn";
+      throwBtn.textContent = "Throw";
+      throwBtn.title = "Mark it thrown: out of your hand until you call it back";
+      throwBtn.addEventListener("click", function(){ item.thrown = true; item.equipped = false; redrawKeeping(idx); });
+      actions.appendChild(throwBtn);
+    } else {
+      var back = function(how){
+        delete item.thrown;
+        var res = tryEquip(c, item);
+        redrawKeeping(idx);
+        showActionToast(res.ok ? (item.name || "It") + (how==="call" ? " flies back to your hand." : " is back in your hand.")
+          : (item.name || "It") + " is back, but your hands are full: it's with your gear.", !res.ok);
+      };
+      var callBtn = document.createElement("button");
+      callBtn.type = "button"; callBtn.className = "btn small inv-roll-btn";
+      callBtn.textContent = "Call it back";
+      var tag = document.createElement("span");
+      tag.className = "inv-action-tag"; tag.textContent = "Action";
+      callBtn.appendChild(tag);
+      callBtn.disabled = !active;
+      callBtn.title = active ? "It flies back to your hand" : "Attune to it to call it back";
+      callBtn.addEventListener("click", function(){ back("call"); });
+      actions.appendChild(callBtn);
+      var pickBtn = document.createElement("button");
+      pickBtn.type = "button"; pickBtn.className = "btn small inv-roll-btn";
+      pickBtn.textContent = "Pick it up";
+      pickBtn.title = "You picked it up by hand";
+      pickBtn.addEventListener("click", function(){ back("pick"); });
+      actions.appendChild(pickBtn);
+    }
   }
   card.appendChild(actions);
 
@@ -480,6 +618,7 @@ function renderArmorCard(c, item, idx){
 
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card" + (item.equipped ? " is-equipped" : " is-stowed");
+  card.dataset.idx = idx;
   card.appendChild(itemHeader(c, item, idx, function(){ openArmorSheet(c, item, idx); }));
 
   var catLabel = (ARMOR_CATEGORIES.find(function(cat){ return cat.key===item.category; })||{}).label || item.category;
@@ -496,18 +635,15 @@ function renderArmorCard(c, item, idx){
   subtitle.textContent = subtitleParts.join(" · ");
   card.appendChild(subtitle);
 
-  if(item.notes){
+  // A note that only repeats the line above ("+2 AC", "Disadvantage on
+  // Stealth checks") is left out; anything else the player wrote shows.
+  var note = (item.notes || "").trim();
+  var repeats = note.toLowerCase()===acText.toLowerCase() || (/^disadvantage on stealth( checks)?\.?$/i.test(note) && subtitleParts.indexOf("Stealth disadvantage")!==-1);
+  if(note && !repeats){
     var notesP = document.createElement("p");
     notesP.className = "inv-armor-note";
     notesP.textContent = item.notes;
     card.appendChild(notesP);
-  }
-
-  if(item.equipped){
-    var acNote = document.createElement("p");
-    acNote.className = "inv-armor-note inv-equipped-note";
-    acNote.textContent = "Equipped. Counted toward Armor Class on the Vitals tab.";
-    card.appendChild(acNote);
   }
 
   return card;
@@ -520,14 +656,9 @@ function renderMagicItemCard(c, item, idx, def){
   var card = document.createElement("div");
   var active = magicItemActive(item);
   card.className = "ff-item-card inv-item-card" + (def.attunement ? (active ? " is-equipped" : " is-stowed") : "");
+  card.dataset.idx = idx;
   card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }, true));
-
-  var subtitle = document.createElement("div");
-  subtitle.className = "inv-card-subtitle";
-  // "attuned (1 of 3)" or "requires attunement (3 of 3 attuned)".
-  var slots = attunedItems(c).length + " of " + attunementLimit(c);
-  subtitle.textContent = [def.kind, def.rarity, def.attunement ? (active ? "attuned (" + slots + ")" : "requires attunement (" + slots + " attuned)") : ""].filter(Boolean).join(" · ");
-  card.appendChild(subtitle);
+  card.appendChild(magicItemLine(item, def));
   if(item.notes){
     var notesP = document.createElement("p");
     notesP.className = "inv-armor-note";
@@ -565,7 +696,7 @@ function holsterBlock(c, item, idx, h, active){
 
   var effect = document.createElement("p");
   effect.className = "inv-armor-note" + (active ? " inv-equipped-note" : "");
-  effect.textContent = !active ? "Attune to it to use its magic."
+  effect.textContent = !active ? "Attune to it (⋯ menu) to use its magic."
     : knives ? "+" + knives * h.damagePerKnife + " damage on your attacks, added to your weapons' damage rolls."
     : "Empty: +" + h.emptySpeed + " ft speed, counted on the Vitals tab.";
   box.appendChild(effect);
@@ -573,7 +704,7 @@ function holsterBlock(c, item, idx, h, active){
   function setKnives(n){
     var before = knives;
     item.knives = n;
-    save(); renderAll();
+    redrawKeeping(idx);
     var drawn = document.querySelector('.inv-holster[data-idx="' + idx + '"] .inv-holster-pips');
     // Thrown: the last full pip empties. Summoned: the empty ones fill.
     if(n < before) pipChanged(drawn, n, true);
@@ -610,6 +741,7 @@ function renderGearCard(c, item, idx){
   if(def) return renderMagicItemCard(c, item, idx, def);
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card";
+  card.dataset.idx = idx;
   card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }, true));
 
   var subtitleParts = ["Qty " + (item.qty!=null?item.qty:1)];
@@ -663,6 +795,15 @@ export function renderInventoryPanel(c){
   // Weapons
   var weaponCard = makeCard("Weapons");
   weaponCard.appendChild(handsSummary(c));
+  // A bonus on every weapon is said once here, not on each card (the
+  // damage buttons include it).
+  var holsterBonus = holsterDamageBonus(c);
+  if(holsterBonus){
+    var allBonus = document.createElement("p");
+    allBonus.className = "inv-all-weapons";
+    allBonus.textContent = "Heavy Holster: +" + holsterBonus + " damage on every weapon";
+    weaponCard.appendChild(allBonus);
+  }
   warnings(weaponCard, "hands");
   var weaponList = document.createElement("div");
   weaponList.className = "ff-items-list inv-items-list";

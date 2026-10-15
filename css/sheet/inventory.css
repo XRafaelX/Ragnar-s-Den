@@ -199,7 +199,15 @@
   flex:none;font-size:11px;color:var(--brass-bright);background:color-mix(in srgb, var(--brass) 15%, transparent);
   border-radius:10px;padding:2px 7px;
 }
-.inv-card-header-actions{display:flex;align-items:center;gap:10px;flex:none;}
+.inv-card-header-actions{display:flex;align-items:center;gap:6px;flex:none;}
+/* The ⋯ menu (Edit details, Remove) at the end of the header. */
+.inv-card-menu{position:relative;display:flex;}
+.inv-card-menu:has(.catalog-row-dropdown.open){z-index:30;}
+.inv-menu-btn{color:var(--text-on-parch-dim);}
+/* A menu entry that can't be used now (Attune at the limit): greyed, a
+   tap says why. */
+.catalog-dropdown-item.blocked{opacity:.45;cursor:not-allowed;}
+@media (pointer:coarse){ .inv-menu-btn{padding:7px 8px;} }
 .inv-eq-pill{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-on-parch-dim);cursor:pointer;white-space:nowrap;}
 /* Equip switch on a weapon or armor card: an outlined "Equip" that turns
    into a tinted "Equipped" with a tick. The fixed width keeps the switches
@@ -219,10 +227,6 @@
 }
 .inv-equip-btn:active{transform:scale(.95);}
 .inv-equip-btn:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
-/* An Attune switch at the attunement limit: greyed, a tap says why. */
-.inv-equip-btn.blocked{opacity:.45;cursor:not-allowed;}
-.inv-equip-btn.blocked:hover{color:var(--text-on-parch-dim);border-color:var(--rule);background:transparent;}
-.inv-equip-btn.blocked:active{transform:none;}
 .inv-equip-btn.on{
   color:var(--brass-bright2);border-color:var(--brass);
   background:color-mix(in srgb, var(--brass) 22%, transparent);
@@ -234,7 +238,7 @@
 }
 /* On a phone the item's name needs the room: the switch hugs its label. */
 @media (max-width:560px){
-  .inv-equip-btn{min-width:0;padding:0 9px;margin-right:-4px;}
+  .inv-equip-btn{min-width:0;padding:0 9px;margin-right:0;}
 }
 @media (prefers-reduced-motion: reduce){ .inv-equip-btn{transition:none;} }
 /* The card says it too: an accent edge on what is equipped, a quieter
@@ -267,6 +271,7 @@
 .inv-armor-note{font-size:11.5px;color:var(--text-on-parch-dim);font-style:italic;margin:0;}
 
 /* Hands in use (Weapons card) and equip-rule warnings. */
+.inv-all-weapons{font-size:12.5px;color:var(--brass-bright);margin:-4px 0 10px;}
 .inv-hands{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-on-parch-dim);margin:-4px 0 10px;}
 .inv-hand-pips{display:inline-flex;gap:4px;}
 .inv-hand-pip{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--brass);}
@@ -287,6 +292,9 @@
 .inv-holster-row{display:flex;align-items:center;gap:10px;}
 .inv-holster-pips{display:inline-flex;gap:5px;}
 .inv-holster-count{font-size:12.5px;color:var(--text-on-parch-dim);}
+/* A magic item's line under its name; "attuned" in the accent colour. */
+.inv-attune-state.on{color:var(--brass-bright);}
+.inv-thrown-note{color:var(--brass-bright);}
 .inv-action-tag{margin-left:6px;font-size:10.5px;letter-spacing:.02em;color:var(--text-on-parch-dim);}
 
 /* Great Weapon Master / Sharpshooter switch on a weapon card */

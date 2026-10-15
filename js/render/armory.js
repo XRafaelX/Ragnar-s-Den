@@ -22,7 +22,7 @@ import { playAdd, playDelete } from "../ui/sound.js";
    item it opens on that one list for that character, and a tap adds the
    item straight away. Gear (adventuring gear, packs, tools: js/data/gear.js)
    and magic items (js/data/magic-items.js, also behind the sheet's
-   Add item) are plain lists with no homebrew form: the sheet's "Custom
+   Add item, and its magic weapons behind Add Weapon) are plain lists with no homebrew form: the sheet's "Custom
    item" makes anything that isn't on them.
    The + makes a custom (homebrew) weapon or armor, the same way the
    Compendium makes custom subclasses, feats and so on: a form with a live
@@ -77,12 +77,22 @@ export function addCatalogGear(c, name, d){
 }
 
 /* A magic item is its own row (never stacked): it keeps its own state,
-   attunement and, for a Heavy Holster, the knives in it (it comes full). */
+   attunement and, for a Heavy Holster, the knives in it (it comes full).
+   A magic weapon goes under Weapons with its weapon's numbers, readied
+   if a hand is free; its properties in the notes make the hands and
+   thrown rules see it as that weapon. */
 export function addCatalogMagicItem(c, name, d){
   var item = {name: name, type:"gear", magicItem: name, qty:1, equipped:false, notes:""};
+  var w = d.weapon && WEAPON_DATA[d.weapon];
+  if(w) item = {
+    name: name, type:"weapon", magicItem: name, magic: true, qty:1, equipped:false, notes: w.properties||"",
+    damageDice: w.damageDice||"", damageType: w.damageType||"", ability: w.finesse ? "finesse" : (w.ranged ? "dex" : "str"),
+    proficient: isProficientWithWeapon(c, d.weapon, w.category), magicBonus: 0
+  };
   if(d.attunement) item.attuned = false;
   if(d.holster) item.knives = d.holster.capacity;
   c.inventory.push(item);
+  if(w) tryEquip(c, item);
   save();
   playAdd();
 }
@@ -379,10 +389,21 @@ function gearSection(){
   };
 }
 
-function magicSection(){
+/* The magic items list. `weaponsOnly` keeps just the magic weapons: the
+   Add Weapon list's own tab. */
+function magicSection(weaponsOnly){
+  var groups = MAGIC_ITEM_GROUPS;
+  if(weaponsOnly){
+    groups = {};
+    Object.keys(MAGIC_ITEM_GROUPS).forEach(function(g){
+      var names = MAGIC_ITEM_GROUPS[g].filter(function(n){ return MAGIC_ITEM_DATA[n].weapon; });
+      if(names.length) groups[g] = names;
+    });
+  }
   return {
-    key: "magic", label: "Magic items", searchPlaceholder: "Search magic items…",
-    groups: MAGIC_ITEM_GROUPS, data: MAGIC_ITEM_DATA,
+    key: weaponsOnly ? "magic-weapons" : "magic", label: weaponsOnly ? "Magic weapons" : "Magic items",
+    searchPlaceholder: weaponsOnly ? "Search magic weapons…" : "Search magic items…",
+    groups: groups, data: MAGIC_ITEM_DATA,
     renderSub: function(name, d){ return d.kind + (d.attunement ? " (requires attunement)" : ""); },
     renderRight: function(name, d){ return [d.rarity]; },
     searchText: function(name, d){ return name+" "+d.kind+" "+d.rarity+" "+d.text; },
@@ -395,7 +416,7 @@ function magicSection(){
 export function openArmory(opts){
   opts = opts || {};
   target = opts.forCharacter || null;
-  var sections = opts.only==="weapons" ? [weaponSection()] : opts.only==="armor" ? [armorSection()] : opts.only==="gear" ? [gearSection(), magicSection()]
+  var sections = opts.only==="weapons" ? [weaponSection(), magicSection(true)] : opts.only==="armor" ? [armorSection()] : opts.only==="gear" ? [gearSection(), magicSection()]
     : [weaponSection(), armorSection(), gearSection(), magicSection()];
   openCatalogPicker({
     sections: sections,
