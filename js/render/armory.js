@@ -14,7 +14,7 @@ import { chooseCharacter } from "../ui/character-picker.js";
 import { showActionToast } from "../ui/toast.js";
 import { playAdd, playDelete } from "../ui/sound.js";
 
-/* ---------------- Grimtooth's Armory ----------------
+/* ---------------- Kayn's Armory ----------------
    The weapon, armor and gear catalogue. From the sidebar it's a
    standalone page (every add asks which character it goes to, then
    confirms with a toast); from a sheet's Add Weapon / Add Armor / Add

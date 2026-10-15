@@ -14,27 +14,30 @@ var currentRingIndex = 0;
 var isTransitioning = false;
 
 /* Configurable ring definitions - structured dynamically so adding
-   Ring 3 or Ring 4 later is straightforward. */
+   Ring 3 or Ring 4 later is straightforward. Each ring reads clockwise
+   from the top: the thing you make first, then the reference tools in
+   the order you need them (the player's follow the creation wizard:
+   class, then gear, then spells), and About last. */
 export var RINGS = [
   {
-    id: "ring-core",
-    name: "Core Tools",
-    description: "Create a character, or roll up something quick from the menu above.",
+    id: "ring-player",
+    name: "Player Tools",
+    description: "Create a character, then look up classes, gear and spells while you build.",
     nodes: [
-      { id: "home-node-new", pos: "top", label: "New", title: "New Character", action: openWizard },
-      { id: "home-node-spellbook", pos: "upper-right", label: "Spellbook", title: "Spellbook", action: openSpellbook },
-      { id: "home-node-armory", pos: "lower-right", label: "Armory", title: "Grimtooth's Armory", action: openArmory },
-      { id: "home-node-compendium", pos: "lower-left", label: "Compendium", title: "Compendium: classes, subclasses and feats", action: openCompendium },
+      { id: "home-node-new", pos: "top", label: "New Character", title: "New Character", action: openWizard },
+      { id: "home-node-compendium", pos: "upper-right", label: "Compendium", title: "Compendium: classes, subclasses and feats", action: openCompendium },
+      { id: "home-node-armory", pos: "lower-right", label: "Armory", title: "Kayn's Armory", action: openArmory },
+      { id: "home-node-spellbook", pos: "lower-left", label: "Spellbook", title: "Spellbook", action: openSpellbook },
       { id: "home-node-about", pos: "upper-left", label: "About", title: "About Ragnar's Den", action: openAbout }
     ]
   },
   {
-    id: "ring-upcoming",
-    name: "Upcoming Features",
-    description: "Preview upcoming tools and features in development.",
+    id: "ring-dm",
+    name: "DM Tools",
+    description: "Build an encounter, track turns and hit points, and look up monsters.",
     nodes: [
-      { id: "home-node-monsters", pos: "top", label: "Monsters", title: "Monster Catalog", action: openMonsters },
-      { id: "home-node-encounters", pos: "upper-right", label: "Encounters", title: "Encounters", action: openEncounters }
+      { id: "home-node-encounters", pos: "top", label: "Encounters", title: "Encounters", action: openEncounters },
+      { id: "home-node-monsters", pos: "upper-right", label: "Monsters", title: "Monster Catalog", action: openMonsters }
     ]
   }
 ];
@@ -328,7 +331,7 @@ function setupRingNavigation(){
 export function setupHomeMenu(){
   setupRingNavigation();
 
-  // Ring 1 Actions
+  // Ring 1 (Player) Actions
   var newBtn = document.getElementById("home-node-new");
   var spellbookBtn = document.getElementById("home-node-spellbook");
   var armoryBtn = document.getElementById("home-node-armory");
@@ -341,7 +344,7 @@ export function setupHomeMenu(){
   if(aboutBtn) aboutBtn.addEventListener("click", function(){ selectNode(aboutBtn, openAbout); });
   if(compendiumBtn) compendiumBtn.addEventListener("click", function(){ selectNode(compendiumBtn, openCompendium); });
 
-  // Ring 2 Actions
+  // Ring 2 (DM) Actions
   var monstersBtn = document.getElementById("home-node-monsters");
   var encountersBtn = document.getElementById("home-node-encounters");
 

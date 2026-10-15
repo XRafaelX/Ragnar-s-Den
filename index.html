@@ -128,7 +128,7 @@
       <div id="home-hub">
         <div class="home-ring-wrapper">
           <div id="home-ring" tabindex="0" role="region" aria-label="Radial Menu Rings">
-            <!-- Ring 1 (Core Tools) -->
+            <!-- Ring 1 (Player Tools), clockwise from the top -->
             <div class="home-ring-layer active" data-ring-index="0" id="home-ring-layer-0">
               <button class="home-node" id="home-node-new" data-pos="top" title="New Character">
                 <span class="home-node-circle">
@@ -139,18 +139,20 @@
                     <circle cx="4" cy="20" r="2"/>
                   </svg>
                 </span>
-                <span class="home-node-label">New</span>
+                <span class="home-node-label">New Character</span>
               </button>
-              <button class="home-node" id="home-node-spellbook" data-pos="upper-right" title="Spellbook">
+              <button class="home-node" id="home-node-compendium" data-pos="upper-right" title="Compendium: classes, subclasses and feats">
                 <span class="home-node-circle">
                   <svg class="home-icon-svg" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M12 7v14"/>
-                    <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>
+                    <path d="m16 6 4 14"/>
+                    <path d="M12 6v14"/>
+                    <path d="M8 8v12"/>
+                    <path d="M4 4v16"/>
                   </svg>
                 </span>
-                <span class="home-node-label">Spellbook</span>
+                <span class="home-node-label">Compendium</span>
               </button>
-              <button class="home-node" id="home-node-armory" data-pos="lower-right" title="Grimtooth's Armory">
+              <button class="home-node" id="home-node-armory" data-pos="lower-right" title="Kayn's Armory">
                 <span class="home-node-circle">
                   <svg class="home-icon-svg" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="m13 19 6-6"/>
@@ -165,16 +167,14 @@
                 </span>
                 <span class="home-node-label">Armory</span>
               </button>
-              <button class="home-node" id="home-node-compendium" data-pos="lower-left" title="Compendium: classes, subclasses and feats">
+              <button class="home-node" id="home-node-spellbook" data-pos="lower-left" title="Spellbook">
                 <span class="home-node-circle">
                   <svg class="home-icon-svg" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="m16 6 4 14"/>
-                    <path d="M12 6v14"/>
-                    <path d="M8 8v12"/>
-                    <path d="M4 4v16"/>
+                    <path d="M12 7v14"/>
+                    <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>
                   </svg>
                 </span>
-                <span class="home-node-label">Compendium</span>
+                <span class="home-node-label">Spellbook</span>
               </button>
               <button class="home-node" id="home-node-about" data-pos="upper-left" title="About Ragnar's Den">
                 <span class="home-node-circle">
@@ -188,22 +188,21 @@
               </button>
             </div>
 
-            <!-- Ring 2 (Upcoming Features / Placeholders) -->
+            <!-- Ring 2 (DM Tools), clockwise from the top -->
             <div class="home-ring-layer" data-ring-index="1" id="home-ring-layer-1">
-              <button class="home-node" id="home-node-monsters" data-pos="top" title="Monster Catalog">
-                <span class="home-node-circle">
-                  <img src="images/wolf-solid.png" class="home-icon-svg" alt="Monsters" aria-hidden="true" style="object-fit:contain;"/>
-                </span>
-                <span class="home-node-label">Monsters</span>
-              </button>
-              <!-- Encounters -->
-              <button class="home-node" id="home-node-encounters" data-pos="upper-right" title="Encounters">
+              <button class="home-node" id="home-node-encounters" data-pos="top" title="Encounters">
                 <span class="home-node-circle">
                   <svg class="home-icon-svg" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
                   </svg>
                 </span>
                 <span class="home-node-label">Encounters</span>
+              </button>
+              <button class="home-node" id="home-node-monsters" data-pos="upper-right" title="Monster Catalog">
+                <span class="home-node-circle">
+                  <img src="images/wolf-solid.png" class="home-icon-svg" alt="Monsters" aria-hidden="true" style="object-fit:contain;"/>
+                </span>
+                <span class="home-node-label">Monsters</span>
               </button>
             </div>
 
@@ -229,7 +228,7 @@
         <div class="home-ring-dots" id="home-ring-dots" role="tablist" aria-label="Radial Menu Rings"></div>
 
         <h2>Ragnar's Den</h2>
-        <p id="home-hub-description">Create a character, or roll up something quick from the menu above.</p>
+        <p id="home-hub-description">Create a character, then look up classes, gear and spells while you build.</p>
       </div>
     </div>
     <div id="sheet" style="display:none;"></div>

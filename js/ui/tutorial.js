@@ -4,7 +4,7 @@
    Shown once for brand-new users (no characters, never seen it) and
    replayable from the About modal. */
 
-import { switchHomeRing } from "../render/home.js";
+import { switchHomeRing, getActiveRingIndex } from "../render/home.js";
 
 export var TUTORIAL_STORAGE_KEY = "ragnarsDen.tutorial.v1";
 
@@ -16,7 +16,8 @@ function isMobile(){ return window.innerWidth <= MOBILE_MAX; }
 function byId(id){ return function(){ return document.getElementById(id); }; }
 
 /* On phones the sidebar is off-canvas, so its steps point at the
-   hamburger instead of at buttons the user can't see. */
+   hamburger instead of at buttons the user can't see. A step on another
+   home ring names it (`ring`); every other step shows the first ring. */
 var STEPS = [
   {
     title: "Welcome to Ragnar's Den",
@@ -29,22 +30,29 @@ var STEPS = [
     text: "Start here. The wizard walks you through class, race, background, ability scores, skills, languages, starting gear and spells, explaining each choice as you go."
   },
   {
+    target: byId("home-node-compendium"),
+    spot: function(el){ return el.querySelector(".home-node-circle"); },
+    title: "The Compendium",
+    text: "Read up on every class, subclass and feat: what they're good at, their proficiencies and the features they unlock level by level."
+  },
+  {
+    target: byId("home-node-armory"),
+    spot: function(el){ return el.querySelector(".home-node-circle"); },
+    title: "Kayn's Armory",
+    text: "Browse weapons and armor, then add them straight to any of your characters."
+  },
+  {
     target: byId("home-node-spellbook"),
     spot: function(el){ return el.querySelector(".home-node-circle"); },
     title: "The Spellbook",
     text: "Look up any spell, filter by class, and add it to one of your spellcasters."
   },
   {
-    target: byId("home-node-armory"),
+    target: byId("home-node-encounters"),
     spot: function(el){ return el.querySelector(".home-node-circle"); },
-    title: "Grimtooth's Armory",
-    text: "Browse weapons and armor, then add them straight to any of your characters."
-  },
-  {
-    target: byId("home-node-compendium"),
-    spot: function(el){ return el.querySelector(".home-node-circle"); },
-    title: "The Compendium",
-    text: "Read up on every class, subclass and feat: what they're good at, their proficiencies and the features they unlock level by level."
+    ring: 1,
+    title: "Tools for the DM",
+    text: "Swipe the ring, or tap the dots under it, for the Dungeon Master's tools. Encounters runs a fight's turn order and hit points; Monsters is the full monster catalog."
   },
   {
     target: byId("home-center"),
@@ -176,6 +184,7 @@ function go(i){
   els.pop.classList.add("in");
 
   lastKey = "";
+  showStepRing();
   position();
   els.next.focus({ preventScroll: true });
 }
@@ -271,17 +280,28 @@ function position(){
   }
 }
 
+/* Turns the home ring to the one the current step is on. Also re-checked
+   every frame, since switchHomeRing ignores a call while a slide is still
+   running (e.g. Next pressed twice quickly). */
+function showStepRing(){
+  var want = steps[index].ring || 0;
+  if(getActiveRingIndex() !== want) switchHomeRing(want);
+}
+
 /* Re-checks every frame so the spotlight follows targets that are still
    animating in (the home ring pops), scroll, or move on resize. */
 function track(){
+  showStepRing();
   position();
   frame = requestAnimationFrame(track);
 }
 
+/* Stops the keys here too: arrows reaching the home ring would also
+   turn it, away from the node the step is pointing at. */
 function onKey(e){
-  if(e.key === "Escape"){ e.preventDefault(); finish(); }
-  else if(e.key === "ArrowRight"){ e.preventDefault(); go(index + 1); }
-  else if(e.key === "ArrowLeft"){ e.preventDefault(); go(index - 1); }
+  if(e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); finish(); }
+  else if(e.key === "ArrowRight"){ e.preventDefault(); e.stopPropagation(); go(index + 1); }
+  else if(e.key === "ArrowLeft"){ e.preventDefault(); e.stopPropagation(); go(index - 1); }
 }
 
 function markSeen(){
@@ -297,6 +317,10 @@ function finish(){
   els = null;
   root.classList.add("out");
   setTimeout(function(){ root.remove(); }, 250);
+  // Skipped on the DM step: back to the first ring, where New Character is.
+  // Tried again once a slide still running has settled.
+  switchHomeRing(0);
+  setTimeout(function(){ switchHomeRing(0); }, 500);
 }
 
 export function startTutorial(){
