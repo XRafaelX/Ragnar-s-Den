@@ -6,9 +6,14 @@ import { openMonsters } from "./monsters.js";
 import { openEncounters } from "./encounters.js";
 import { openInfoModal } from "../ui/info-modal.js";
 import { toggleDiceTray } from "../dice/dice.js";
+import { playDiceRattle, playDiceLand } from "../ui/sound.js";
 
 var SELECT_ANIM_MS = 600;
 var TRANSITION_MS = 450;
+var ROLL_MS = 800;        // the centre die's tumble (hc-roll in home.css)
+var ROLL_LAND_MS = 560;   // when it lands: burst, then the tray opens
+var BURST_MS = 800;
+var SPARK_COLORS = ["#f87171", "#fbbf24", "#86efac", "#38bdf8", "#a78bfa", "#f472b6"];
 
 var currentRingIndex = 0;
 var isTransitioning = false;
@@ -73,6 +78,63 @@ function selectNode(node, action){
     allNodes.forEach(function(n){ n.classList.remove("chosen","wiping"); });
     if(ring) ring.classList.remove("selecting");
   }, SELECT_ANIM_MS);
+}
+
+function prefersReducedMotion(){
+  return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
+/* The centre die: a tap tumbles it through a flurry of numbers onto a
+   natural 20 (always a 20, so it never passes for a real roll missing from
+   the tray's history), bursts, and opens the dice tray as it lands, the
+   way the ring options wait for their own animation. It rattles while it
+   tumbles and knocks as it lands; the natural 20 fanfare stays for real
+   rolls. Closing an open tray is instant. */
+function rollCenterDie(btn){
+  var tray = document.getElementById("dice-tray");
+  if(tray && tray.classList.contains("open")){ toggleDiceTray(); return; }
+  if(btn.classList.contains("rolling")) return;
+  if(prefersReducedMotion()){ toggleDiceTray(); return; }
+
+  var num = document.getElementById("home-center-num");
+  btn.classList.add("rolling");
+  playDiceRattle();
+  var flicker = setInterval(function(){
+    if(num) num.textContent = String(1 + Math.floor(Math.random() * 19));
+  }, 50);
+
+  setTimeout(function(){
+    clearInterval(flicker);
+    if(num) num.textContent = "20";
+    playDiceLand(1);
+    landingBurst();
+    toggleDiceTray();
+  }, ROLL_LAND_MS);
+  setTimeout(function(){ btn.classList.remove("rolling"); }, ROLL_MS);
+}
+
+/* A flash, a shockwave and a ring of sparks in the rainbow ring's colours,
+   behind the menu options so they never block a tap. */
+function landingBurst(){
+  var ring = document.getElementById("home-ring");
+  if(!ring) return;
+  var bits = [];
+  ["hc-flash", "hc-shock"].forEach(function(cls){
+    var el = document.createElement("span");
+    el.className = cls;
+    bits.push(el);
+  });
+  var count = 14;
+  for(var i = 0; i < count; i++){
+    var spark = document.createElement("span");
+    spark.className = "hc-spark";
+    spark.style.setProperty("--a", (i * 360 / count + Math.random() * 14 - 7) + "deg");
+    spark.style.setProperty("--d", (0.62 + Math.random() * 0.3).toFixed(2));
+    spark.style.setProperty("--c", SPARK_COLORS[i % SPARK_COLORS.length]);
+    bits.push(spark);
+  }
+  bits.forEach(function(el){ ring.appendChild(el); });
+  setTimeout(function(){ bits.forEach(function(el){ el.remove(); }); }, BURST_MS);
 }
 
 /* About: what the app is and where the data lives. */
@@ -356,5 +418,5 @@ export function setupHomeMenu(){
   });
 
   var centerBtn = document.getElementById("home-center");
-  if(centerBtn) centerBtn.addEventListener("click", toggleDiceTray);
+  if(centerBtn) centerBtn.addEventListener("click", function(){ rollCenterDie(centerBtn); });
 }

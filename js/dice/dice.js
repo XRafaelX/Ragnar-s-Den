@@ -425,7 +425,9 @@ export function setupDiceTray(){
     if(!tray.classList.contains("open")) return;
     var fab = document.getElementById("dice-fab");
     var toast = document.getElementById("floating-roll-toast");
-    if(tray.contains(e.target) || fab.contains(e.target) || (toast && toast.contains(e.target))) return;
+    // The home menu's centre die toggles the tray itself, like the fab
+    var hubDie = document.getElementById("home-center");
+    if(tray.contains(e.target) || fab.contains(e.target) || (hubDie && hubDie.contains(e.target)) || (toast && toast.contains(e.target))) return;
     // Don't close if clicked on a rollable sheet element
     if(e.target.closest && (e.target.closest(".stat-box") || e.target.closest(".skill-row") || e.target.closest(".save-row") || e.target.closest(".feat-item"))) return;
     closeDiceTray();

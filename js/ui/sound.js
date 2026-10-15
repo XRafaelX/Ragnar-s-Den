@@ -2,7 +2,7 @@
    Short, quiet, synthesized tones (no audio files; stays fully offline)
    played only for meaningful moments: adding or removing something (a
    weapon, a feat, a character…), rolling a natural 20 or natural 1,
-   rolling ability scores, dragging the theme slider, adding or
+   rolling ability scores, the home menu's centre die tumbling, dragging the theme slider, adding or
    spending coin in the purse, death saving throws, and an encounter's
    hits, slain monsters, new rounds and victory. Never used for routine interaction like
    toggles, typing, or numeric steppers, so it stays a subtle accent
@@ -74,7 +74,8 @@ export function playInspire(){
 }
 
 /* Dice rattling in a cup: a quick scatter of short, woody clicks at
-   random pitches. Used when rolling ability scores. */
+   random pitches. Used when rolling ability scores and when the home
+   menu's centre die tumbles. */
 export function playDiceRattle(){
   try{
     var ctx = getCtx();

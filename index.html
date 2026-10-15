@@ -209,16 +209,34 @@
             <!-- Central Die Button -->
             <button id="home-center" title="Dice Roller" aria-label="Dice Roller">
               <span id="home-center-ring"></span>
+              <span id="home-center-orbit"></span>
               <span id="home-center-icon">
                 <svg viewBox="0 0 100 100" aria-hidden="true">
-                  <polygon points="50,4 92,28 92,72 50,96 8,72 8,28" fill="url(#dieGradGold)" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
-                  <polygon points="50,24 76,70 24,70" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-                  <line x1="50" y1="4" x2="50" y2="24" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-                  <line x1="92" y1="28" x2="76" y2="70" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-                  <line x1="92" y1="72" x2="50" y2="96" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-                  <line x1="8" y1="72" x2="50" y2="96" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-                  <line x1="8" y1="28" x2="24" y2="70" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-                  <circle cx="50" cy="50" r="3.5" fill="#fff8e1"/>
+                  <defs>
+                    <clipPath id="hcDieClip"><polygon points="50,4 92,28 92,72 50,96 8,72 8,28"/></clipPath>
+                    <linearGradient id="hcGlint" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+                      <stop offset=".5" stop-color="#fff" stop-opacity=".75"/>
+                      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <polygon points="50,4 92,28 92,72 50,96 8,72 8,28" fill="url(#dieGradGold)"/>
+                  <!-- Facets: lit from the top left, darker towards the bottom right -->
+                  <g stroke="rgba(255,255,255,.3)" stroke-width="1" stroke-linejoin="round">
+                    <polygon points="8,28 50,4 50,24" fill="rgba(255,255,255,.22)"/>
+                    <polygon points="50,4 92,28 50,24" fill="rgba(255,255,255,.12)"/>
+                    <polygon points="8,28 50,24 24,70" fill="rgba(255,255,255,.06)"/>
+                    <polygon points="92,28 76,70 50,24" fill="rgba(0,0,0,.04)"/>
+                    <polygon points="8,28 24,70 8,72" fill="rgba(0,0,0,.08)"/>
+                    <polygon points="92,28 92,72 76,70" fill="rgba(0,0,0,.16)"/>
+                    <polygon points="8,72 24,70 50,96" fill="rgba(0,0,0,.18)"/>
+                    <polygon points="92,72 50,96 76,70" fill="rgba(0,0,0,.26)"/>
+                    <polygon points="24,70 76,70 50,96" fill="rgba(0,0,0,.22)"/>
+                    <polygon points="50,24 76,70 24,70" fill="rgba(255,255,255,.14)"/>
+                  </g>
+                  <text id="home-center-num" x="50" y="57" text-anchor="middle" dominant-baseline="middle">20</text>
+                  <g clip-path="url(#hcDieClip)"><rect class="hc-glint" x="-50" y="-10" width="28" height="120" fill="url(#hcGlint)"/></g>
+                  <polygon points="50,4 92,28 92,72 50,96 8,72 8,28" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2" stroke-linejoin="round"/>
                 </svg>
               </span>
             </button>
