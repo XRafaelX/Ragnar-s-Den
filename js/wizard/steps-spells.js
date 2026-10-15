@@ -8,7 +8,7 @@ import { TITLE_MAX } from "../ui/char-title.js";
 import { SPELL_DATA, spellDataForClass, tashaAddsSpell, tashaSpellCount } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeDiceSvg } from "../ui/svg-icons.js";
-import { wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, wizardRaceGrants, wizardRaceSlots, wizardRaceSkills, wizardBackgroundGrants, wizardBgSlots } from "./wizard-core.js";
+import { wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, wizardRaceGrants, wizardRaceSlots, wizardRaceSkills, wizardBackgroundGrants, wizardBgSlots, wizardOverlapGrants, wizardOverlapSlots } from "./wizard-core.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { featPicksSummary } from "../core/feat-picks.js";
 import { classPicksSummary } from "../core/class-picks.js";
@@ -262,6 +262,11 @@ export function wizardStepReview(container){
     if(chosen) bgToolBits.push(chosen);
   });
   if(bgToolBits.length) row("Background tools", bgToolBits.join(", "));
+  // Picks in place of a skill or tool given twice.
+  wizardOverlapGrants().forEach(function(g){
+    var chosen = classPicksSummary(g, {slots: wizardOverlapSlots(g.key)});
+    if(chosen) row("Instead of " + g.dups.join(", "), chosen);
+  });
   if(bgGrant && bgGrant.def){
     var bgPicked = featPicksSummary(bgGrant.def, wizardBackgroundFeatPicks());
     row(bgGrant.campaign ? "Campaign feat" : "Background feat", bgGrant.def.name + (bgPicked ? " ("+bgPicked+")" : ""));

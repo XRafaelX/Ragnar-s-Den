@@ -8,7 +8,8 @@ import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { themedPicker } from "../ui/themed-picker.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
   wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardRaceSkills,
-  wizardBackgroundGrants, wizardBackgroundPickGrants, wizardBgSlots, wizardBgPickContext } from "./wizard-core.js";
+  wizardBackgroundGrants, wizardBackgroundPickGrants, wizardBgSlots, wizardBgPickContext,
+  wizardOverlapGrants, wizardOverlapSlots, wizardOverlapContext } from "./wizard-core.js";
 import { emptyPicks, featNeedsChoice, featHasPicks, featDef } from "../core/feat-picks.js";
 import { fillSlots, classPicksProblem, grantHasChoices } from "../core/class-picks.js";
 import { renderClassPicks } from "../ui/class-picks.js";
@@ -82,6 +83,21 @@ export function wizardStepSkills(container){
       var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
       renderWizard();
     }, "bg:" + g.key));
+  });
+
+  // Anything two sources give outright: a pick of another in its place.
+  wizardOverlapGrants().forEach(function(g){
+    var head = pickLabel("");
+    head.style.marginTop = "16px";
+    head.innerHTML = "<b>Given twice:</b> " + escapeHtml(g.dups.join(", "));
+    card.appendChild(head);
+    var slots = wizardOverlapSlots(g.key), ctx = wizardOverlapContext(g);
+    fillSlots(g.def, slots, ctx);
+    card.appendChild(renderClassPicks(g, slots, ctx, function(meta){
+      if(meta && meta.typing) return;
+      var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+      renderWizard();
+    }, "twice:" + g.key));
   });
   container.appendChild(card);
 }

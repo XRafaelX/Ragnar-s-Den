@@ -2,7 +2,7 @@ import { SKILLS, ABILITIES } from "../data/abilities-skills.js";
 import { CLASS_PROFICIENCIES } from "../data/classes.js";
 import { CLASS_PROGRESSION, SUBCLASSES } from "../data/progression.js";
 import { RACE_DATA } from "../data/race-data.js";
-import { BACKGROUND_PROFS, BACKGROUND_SKILL_FIXES } from "../data/backgrounds.js";
+import { BACKGROUND_PROFS, BACKGROUND_SKILL_FIXES, BACKGROUND_INFO } from "../data/backgrounds.js";
 import { OPTION_SETS, optionSetStart } from "../data/class-options.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
 import { WEAPON_DATA, WEAPON_GROUPS } from "../data/weapons.js";
@@ -223,6 +223,7 @@ function allProficiencies(c, exceptCl, exceptKey){
   race.tools.forEach(function(t){ add(out.tools, t); });
   race.weapons.forEach(function(w){ add(out.weapons, w); });
   backgroundProficiencies(c, exceptCl && exceptCl===c.backgroundPicks ? exceptKey : null).tools.forEach(function(t){ add(out.tools, t); });
+  overlapTools(c, exceptCl && exceptCl===c.overlapPicks ? exceptKey : null).forEach(function(t){ add(out.tools, t); });
   var feats = featProficiencies(c);
   feats.tools.forEach(function(t){ add(out.tools, t.name); });
   feats.weapons.forEach(function(w){ add(out.weapons, w.name); });
@@ -265,6 +266,19 @@ export function slotOptions(def, slots, i, ctx){
     return values.map(function(v){ var o = {value: v, group: group || "", reason: why(v) || taken(v)}; if(kind) o.kind = kind; return o; });
   }
   function open(list){ return list.some(function(o){ return !o.reason; }); }
+  /* The Basic Rules: "If a character would gain the same proficiency
+     from two different sources, he or she can choose a different
+     proficiency of the same kind (skill or tool) instead." A list with
+     fewer open options than picks (a kenku whose background already gave
+     Stealth and Sleight of Hand) adds the rest of that kind, marked
+     `swap`, so no pick is lost. */
+  function withSwaps(list, all, heading, why){
+    if(slot.optional) return list;
+    var openCount = list.filter(function(o){ return !o.reason; }).length;
+    if(openCount >= (slot.count || 1)) return list;
+    var have = list.map(function(o){ return o.value; });
+    return list.concat(entries(all.filter(function(v){ return have.indexOf(v)===-1; }), heading, why).map(function(o){ o.swap = true; return o; }));
+  }
   function skillWhy(v){
     if(slot.expertise) return ctx.skillExpert(v) ? "expertise" : "";
     return ctx.skillProf(v) || (def.skills||[]).indexOf(v)!==-1 ? "known" : "";
@@ -282,7 +296,7 @@ export function slotOptions(def, slots, i, ctx){
     }
     list = entries(slot.options || SKILL_NAMES, "", skillWhy);
     if(!open(list) && slot.fallback) list = entries(slot.fallback, "", skillWhy);
-    return list;
+    return slot.expertise ? list : withSwaps(list, SKILL_NAMES, "Any other skill", skillWhy);
   }
   if(slot.kind==="expertise"){
     var skills = SKILL_NAMES.filter(function(sk){ return ctx.skillProf(sk) || gained.indexOf(sk)!==-1; });
@@ -294,10 +308,11 @@ export function slotOptions(def, slots, i, ctx){
     return Object.keys(TOOL_GROUPS).reduce(function(a, g){ return a.concat(entries(TOOL_GROUPS[g], g, toolWhy)); }, []);
   }
   if(slot.kind==="tool"){
+    var everyTool = Object.keys(TOOL_GROUPS).reduce(function(a, g){ return a.concat(TOOL_GROUPS[g]); }, []);
     // One of each kind listed ("an instrument or artisan's tools").
-    if(slot.kinds) return slot.kinds.reduce(function(a, k){
+    if(slot.kinds) return withSwaps(slot.kinds.reduce(function(a, k){
       return a.concat(TOOL_GROUPS[k] ? entries(TOOL_GROUPS[k], k, toolWhy, k) : entries([k], "", toolWhy, k));
-    }, []);
+    }, []), everyTool, "Any other tool", toolWhy);
     // From the group the grant's choice names (a house's gaming set).
     if(slot.byChoice){
       var picked = ((slots && slots[slot.byChoice.slot]) || [])[0];
@@ -305,7 +320,7 @@ export function slotOptions(def, slots, i, ctx){
       return g ? entries(TOOL_GROUPS[g] || [], "", toolWhy) : [];
     }
     if(!slot.options && !slot.group) return allTools();
-    return entries(slot.options || TOOL_GROUPS[slot.group] || [], "", toolWhy);
+    return withSwaps(entries(slot.options || TOOL_GROUPS[slot.group] || [], "", toolWhy), everyTool, "Any other tool", toolWhy);
   }
   if(slot.kind==="toolOrLanguage"){
     return entries(slot.options, "Tools", toolWhy).concat(allLanguages());
@@ -409,11 +424,21 @@ export function slotIsFixed(def, slots, i, ctx){
   if(def.pick[i].optional) return false;
   return slotOptions(def, slots, i, ctx).filter(function(o){ return !o.reason; }).length <= (def.pick[i].count || 1);
 }
-/* The line above a slot's pickers. */
+/* The line above a slot's pickers; when the list grew because some of it
+   is had already, it says so. */
 export function slotLabel(def, slots, i, ctx){
+  var text = baseLabel(def, slots, i, ctx);
+  var kind = def.pick[i].kind;
+  if(text && (kind==="skill" || kind==="tool") && slotOptions(def, slots, i, ctx).some(function(o){ return o.swap; })){
+    text += " (you have some of these already, so any other " + kind + " can take their place)";
+  }
+  return text;
+}
+function baseLabel(def, slots, i, ctx){
   var slot = def.pick[i], n = slot.count || 1;
   if(slot.label) return slot.label;
-  var opts = slotOptions(def, slots, i, ctx).map(function(o){ return o.value; });
+  // (The list itself, not the skills or tools added in place of ones had.)
+  var opts = slotOptions(def, slots, i, ctx).filter(function(o){ return !o.swap; }).map(function(o){ return o.value; });
   if(slot.kind==="skill"){
     if(slot.byChoice) return opts.length ? "It gives you " + listText(opts) : "";
     var tail = slot.expertise ? ", with your proficiency bonus doubled" : "";
@@ -646,9 +671,10 @@ export function racePicksText(c){
 /* Every grant with a choice, class and race, each with the entry its
    picks are kept on (`cl`): for the Feature choices card. */
 export function characterGrants(c){
-  var holder = raceEntry(c), bgHolder = backgroundEntry(c);
+  var holder = raceEntry(c), bgHolder = backgroundEntry(c), twice = overlapEntry(c);
   return classGrants(c).concat(raceGrants(c).map(function(g){ g.cl = holder; return g; }),
-    backgroundGrants(c).map(function(g){ g.cl = bgHolder; return g; }));
+    backgroundGrants(c).map(function(g){ g.cl = bgHolder; return g; }),
+    overlapGrants(c).map(function(g){ g.cl = twice; return g; }));
 }
 
 /* ---- Background ----
@@ -719,6 +745,74 @@ export function resolveBackgroundSkillFix(c, swap){
   c.backgroundSkillsChecked = c.background;
 }
 
+/* ---- Proficiencies given twice ----
+   Skills and tools two sources give outright (an elf's Perception and a
+   Far Traveler's; a rogue's thieves' tools and a Criminal's). Each one
+   given twice earns a pick of another of that kind, by the same Basic
+   Rules line as above. The picks are kept on c.overlapPicks, which stands
+   in for a class entry like c.racePicks does. */
+var EVERY_TOOL = Object.keys(TOOL_GROUPS).reduce(function(a, g){ return a.concat(TOOL_GROUPS[g]); }, []);
+/* What each source gives outright: {skills: {name: [sources]}, tools: {...}}. */
+export function proficiencySources(c){
+  var out = {skills: {}, tools: {}};
+  function add(kind, names, source){
+    (names||[]).forEach(function(n){
+      if(kind==="tools" && EVERY_TOOL.indexOf(n)===-1) return; // "Three musical instruments of your choice" is a choice, not a tool
+      var list = out[kind][n] = out[kind][n] || [];
+      if(list.indexOf(source)===-1) list.push(source);
+    });
+  }
+  (c.classes||[]).forEach(function(cl, idx){
+    var prog = CLASS_PROGRESSION[cl.name];
+    var base = idx===0 || !prog ? CLASS_PROFICIENCIES[cl.name] : prog.multiclassProfs;
+    add("tools", base && base.tools, cl.name);
+    featureGrants(cl).forEach(function(g){ add("tools", g.tools, cl.subclass || cl.name); });
+    entryGrants(cl, idx > 0).forEach(function(g){ add("skills", g.def.skills, g.subclass ? cl.subclass : cl.name); });
+  });
+  raceGrants(c).forEach(function(g){ add("skills", g.def.skills, c.race); add("tools", g.def.tools, c.race); });
+  if(c.background){
+    add("skills", (BACKGROUND_INFO[c.background] || {}).skills, c.background);
+    backgroundGrants(c).forEach(function(g){ add("tools", g.def.tools, c.background); });
+    // A House Agent's house tools are as good as given.
+    var held = (c.backgroundPicks && c.backgroundPicks.profPicks) || {};
+    backgroundGrants(c).forEach(function(g){
+      var tbc = g.def.toolsByChoice, entry = held[g.key], chosen = tbc && entry && ((entry.slots && entry.slots[tbc.slot]) || [])[0];
+      if(chosen) add("tools", tbc.tools[chosen], c.background);
+    });
+  }
+  return out;
+}
+/* Tools picked in place of ones given twice (skills go straight onto the
+   sheet). */
+export function overlapTools(c, exceptKey){
+  var held = (c.overlapPicks && c.overlapPicks.profPicks) || {}, out = [];
+  Object.keys(held).forEach(function(key){
+    if(key!=="overlap:tools" || key===exceptKey || held[key].manual) return;
+    ((held[key].slots || [])[0] || []).forEach(function(t){ out.push(t); });
+  });
+  return out;
+}
+export function overlapEntry(c){
+  if(!c.overlapPicks || typeof c.overlapPicks!=="object") c.overlapPicks = {profPicks: {}};
+  if(!c.overlapPicks.profPicks) c.overlapPicks.profPicks = {};
+  return c.overlapPicks;
+}
+/* A grant per kind given twice: [{key, name, source, def}] (none when
+   nothing overlaps). */
+export function overlapGrants(c){
+  var src = proficiencySources(c), out = [];
+  [["skills", "skill"], ["tools", "tool"]].forEach(function(k){
+    var dup = Object.keys(src[k[0]]).filter(function(n){ return src[k[0]][n].length > 1; });
+    if(!dup.length) return;
+    var count = dup.reduce(function(n, name){ return n + src[k[0]][name].length - 1; }, 0);
+    var lines = dup.map(function(n){ return n + " (" + src[k[0]][n].join(" and ") + ")"; });
+    out.push({key: "overlap:" + k[0], name: listText(dup) + " given twice", dups: dup, source: "The rules", overlap: true,
+      def: {help: "You get " + listText(lines) + " twice. The rules let you choose a different " + k[1] + " in place of each one you get twice.",
+        pick: [{kind: k[1], count: count, label: "Choose " + (count > 1 ? count + " other " + k[1] + "s" : "another " + k[1])}]}});
+  });
+  return out;
+}
+
 /* "Your picks: ..." for the background on the Features tab ("" for none). */
 export function backgroundPicksText(c){
   var held = (c.backgroundPicks && c.backgroundPicks.profPicks) || {};
@@ -776,6 +870,12 @@ export function syncClassPicks(c){
   rg.forEach(function(g){
     if(grantEntry(holder, g.key) || grantHasChoices(g.def)) return;
     applyClassPicks(c, holder, g, []); changed = true;
+  });
+  // A replacement for something given twice that no longer is comes off.
+  var twice = overlapEntry(c), og = overlapGrants(c);
+  Object.keys(twice.profPicks).forEach(function(key){
+    if(og.some(function(g){ return g.key===key; })) return;
+    revertClassPicks(c, twice, key); changed = true;
   });
   // And the background's (its tools are read from the data; picks for a
   // background it no longer has come off).

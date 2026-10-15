@@ -227,11 +227,15 @@ test("skill slots: known ones greyed, a fallback once every option is had", () =
   assert.deepEqual(smooth.skillProfs.Persuasion, { prof: true, expertise: true });
   assert.deepEqual(smooth.skillProfs.Intimidation, { prof: true, expertise: false });
 
-  // A character who has every option gets nothing to pick, and no complaint.
+  // A character who has every option picks any other skill instead (the
+  // Basic Rules' swap for a proficiency gained twice), with the label saying why.
   const all = makeChar([{ name: "Cleric", subclass: "Order Domain", level: 1 }], { skills: ["Intimidation", "Persuasion"] });
   const order = grant(all, "Bonus Proficiencies");
   assert.deepEqual(CP.fillSlots(order.def, [], ctxOf(all, order)), [[]]);
-  assert.equal(CP.classPicksProblem(order, [[]], ctxOf(all, order)), "");
+  assert.equal(CP.classPicksProblem(order, [[]], ctxOf(all, order)), "Choose a skill for Bonus Proficiencies.");
+  assert.equal(open(all, order, 0).length, 16, "any skill but the two it has");
+  assert.match(CP.slotLabel(order.def, [], 0, ctxOf(all, order)), /\(you have some of these already, so any other skill can take their place\)$/);
+  assert.equal(CP.classPicksProblem(order, [["Arcana"]], ctxOf(all, order)), "");
 
   // Blessings of Knowledge: a skill already proficient can still be picked (it gains the doubling).
   const sage = makeChar([{ name: "Cleric", subclass: "Knowledge Domain", level: 1 }], { skills: ["Arcana", "History"] });
@@ -641,7 +645,8 @@ test("wizard: Knowledge Domain's two skills and two languages, kept off the Lang
 test("card: only for characters with a choice, and every state draws", (t) => {
   withFakeDom(t, () => {
     assert.equal(renderClassPicksCard(makeChar([{ name: "Fighter", subclass: "Champion", level: 20 }])), null);
-    assert.equal(renderClassPicksCard(ensureShape(makeChar([{ name: "Monk", subclass: "Way of Mercy", level: 3 }]))), null, "gifts with no choice need no card");
+    // (A Sage: an Acolyte's Insight would be given twice, which asks for another skill.)
+    assert.equal(renderClassPicksCard(ensureShape(makeChar([{ name: "Monk", subclass: "Way of Mercy", level: 3 }], { background: "Sage" }))), null, "gifts with no choice need no card");
     const c = makeChar([{ name: "Rogue", subclass: "Mastermind", level: 6 }, { name: "Bard", level: 3 }], { skills: ["Stealth", "Perception"] });
     assert.ok(renderClassPicksCard(c), "all pending");
     pick(c, grant(c, "Expertise"), [["Stealth", "Perception"]]);

@@ -11,7 +11,7 @@ import { newCharacter } from "../core/character.js";
 import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason, featHasPicks, featDef, emptyPicks, backgroundFeatGrant, backgroundFeatCopy, backgroundFeatPicks, campaignLevel1Feats, campaignFeatCopy } from "../core/feat-picks.js";
 import { stylePicksProblem, makeStyleFeature } from "../core/fighting-styles.js";
 import { entryGrants, grantHasChoices, classPickContext, classPicksProblem, fillSlots, applyClassPicks, raceGrantsFor, raceGrants, raceEntry,
-  backgroundGrantsFor, backgroundGrants, backgroundEntry } from "../core/class-picks.js";
+  backgroundGrantsFor, backgroundGrants, backgroundEntry, overlapGrants, overlapEntry } from "../core/class-picks.js";
 import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { closeSidebarMobile } from "../ui/mobile-nav.js";
@@ -195,6 +195,38 @@ export function wizardBackgroundPicksProblem(){
   }
   return "";
 }
+/* ---- Given twice ----
+   A skill or tool two sources give outright (an elf's Perception and a
+   Far Traveler's) earns a pick of another (see overlapGrants), asked at
+   the bottom of the Skills step. Picks are kept in overlapPicks[key]. */
+function wizardStandIn(){
+  var w = wizardState, held = {}, raceHeld = {}, twice = {};
+  Object.keys(w.bgPicks || {}).forEach(function(k){ held[k] = {slots: w.bgPicks[k]}; });
+  Object.keys(w.raceChoices.profPicks || {}).forEach(function(k){ raceHeld[k] = {slots: w.raceChoices.profPicks[k]}; });
+  Object.keys(w.overlapPicks || {}).forEach(function(k){ twice[k] = {slots: w.overlapPicks[k]}; });
+  return {race: w.race, racePicks: {profPicks: raceHeld}, background: w.background, backgroundPicks: {profPicks: held}, overlapPicks: {profPicks: twice},
+    classes: w.classId ? [wizardClassEntry()] : [], skillProfs: wizardSkillProfs(null, true), saveProfs: {},
+    languages: (RACE_LANGUAGES[w.race] || RACE_LANGUAGES_FALLBACK).fixed.slice(), feats: [], inventory: [], spells: [], tashaOptional: !!w.tashaOptional};
+}
+export function wizardOverlapGrants(){ return wizardState && wizardState.classId ? overlapGrants(wizardStandIn()) : []; }
+export function wizardOverlapSlots(key){
+  var all = wizardState.overlapPicks = wizardState.overlapPicks || {};
+  return all[key] = all[key] || [];
+}
+export function wizardOverlapContext(grant){
+  var standIn = wizardStandIn();
+  return classPickContext(standIn, standIn.overlapPicks, grant.key);
+}
+export function wizardOverlapProblem(){
+  var grants = wizardOverlapGrants();
+  for(var i = 0; i < grants.length; i++){
+    var ctx = wizardOverlapContext(grants[i]);
+    var why = classPicksProblem(grants[i], fillSlots(grants[i].def, wizardOverlapSlots(grants[i].key), ctx), ctx);
+    if(why) return why;
+  }
+  return "";
+}
+
 /* Languages picked for the background in place of a tool (a Guild
    Merchant's extra language). */
 function wizardBackgroundLanguages(){
@@ -326,10 +358,12 @@ export function wizardBackgroundSkills(){
 /* The new character's skills so far (class picks, background, what the
    race gives and its Race Traits picks), in the sheet's skillProfs shape,
    for feat picks. exceptRaceKey leaves out one race grant's picks. */
-export function wizardSkillProfs(exceptRaceKey){
+export function wizardSkillProfs(exceptRaceKey, noReplacements){
   var out = {};
   var raceSkills = wizardState.race ? wizardRaceSkills(exceptRaceKey) : [];
-  wizardState.skillChoices.concat(wizardBackgroundSkills(), raceSkills).forEach(function(sk){
+  // And skills picked in place of one given twice.
+  var instead = noReplacements ? [] : ((wizardState.overlapPicks || {})["overlap:skills"] || []).reduce(function(a, s){ return a.concat(s || []); }, []);
+  wizardState.skillChoices.concat(wizardBackgroundSkills(), raceSkills, instead).forEach(function(sk){
     if(sk) out[sk] = {prof:true, expertise:false};
   });
   return out;
@@ -535,8 +569,9 @@ export function validateStep(id){
       if(bgPicked.length!==bgPick.count) return "Choose "+(bgPick.count>1 ? bgPick.count+" skills" : "a skill")+" from your "+wizardState.background+" background.";
       if(bgPicked.some(function(sk){ return wizardState.skillChoices.indexOf(sk)!==-1; })) return "Pick different skills for your class and your background.";
     }
-    // Then the background's tools (a Criminal's gaming set).
-    return wizardBackgroundPicksProblem() || null;
+    // Then the background's tools (a Criminal's gaming set), and anything
+    // given twice.
+    return wizardBackgroundPicksProblem() || wizardOverlapProblem() || null;
   }
   if(id==="raceChoices"){
     var def = raceChoiceDef() || {}, rc = wizardState.raceChoices;
@@ -657,7 +692,7 @@ export function openWizard(){
     rolledPool:null,
     skillChoices:[],
     bgSkillChoices:[],
-    bgPicks:{},
+    bgPicks:{}, overlapPicks:{},
     classChoices:{},
     raceChoices:{abilities:[], preset:"", profPicks:{}, feat:"", featPicks:null},
     bgFeat:null, campaign:"", campaignFeat:"",
@@ -743,6 +778,13 @@ export function finishWizard(){
     var slots = wizardRaceSlots(g.key).map(function(s){ return (s||[]).slice(); }), raceCtx = classPickContext(c, raceHolder, g.key);
     fillSlots(g.def, slots, raceCtx);
     if(!classPicksProblem(g, slots, raceCtx)) applyClassPicks(c, raceHolder, g, slots);
+  });
+  // Picks in place of a skill or tool given twice.
+  var twice = overlapEntry(c);
+  overlapGrants(c).forEach(function(g){
+    var slots = wizardOverlapSlots(g.key).map(function(s){ return (s||[]).slice(); }), twiceCtx = classPickContext(c, twice, g.key);
+    fillSlots(g.def, slots, twiceCtx);
+    if(!classPicksProblem(g, slots, twiceCtx)) applyClassPicks(c, twice, g, slots);
   });
   var plan = languagePlan();
   c.languages = plan.fixed.concat(w.languageChoices.slice(0, plan.slots.length).filter(function(l, i, all){

@@ -7,7 +7,7 @@ import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.j
 import { classFeatureList, classProficiencies, classVariants, escapeHtml } from "../../core/helpers.js";
 import { featProficiencies, backgroundFeatGrant, campaignFeatMissing } from "../../core/feat-picks.js";
 import { dlcShelf, campaignBookCard } from "../../ui/dlc-shelf.js";
-import { characterPickedProfs, raceProficiencies, backgroundProficiencies } from "../../core/class-picks.js";
+import { characterPickedProfs, raceProficiencies, backgroundProficiencies, overlapTools } from "../../core/class-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -199,6 +199,8 @@ export function renderInformationPanel(c){
   fromRace.tools.forEach(function(v){ if(tools.indexOf(v)===-1) tools.push(v); });
   // The background's (an Urchin's disguise kit and thieves' tools).
   backgroundProficiencies(c).tools.forEach(function(v){ if(tools.indexOf(v)===-1) tools.push(v); });
+  // And tools picked in place of one given twice.
+  overlapTools(c).forEach(function(v){ if(tools.indexOf(v)===-1) tools.push(v); });
   var fromFeats = featProficiencies(c);
   fromFeats.armor.forEach(function(p){ if(armor.indexOf(p.name)===-1) armor.push(p.name); });
   fromFeats.tools.forEach(function(p){ if(tools.indexOf(p.name)===-1) tools.push(p.name); });
