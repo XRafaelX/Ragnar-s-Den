@@ -3,7 +3,7 @@ import { FEATS_CATALOG } from "../data/feats.js";
 import { uid, featureSpells } from "./helpers.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { syncInfusions } from "./artificer.js";
-import { syncClassPicks, migrateClassPicks } from "./class-picks.js";
+import { syncClassPicks, migrateClassPicks, migrateRacePicks } from "./class-picks.js";
 
 /* ---------------- Default character ---------------- */
 export function newCharacter(name){
@@ -26,6 +26,7 @@ export function newCharacter(name){
     background: "Acolyte",
     alignment: "Neutral Good",
     languages: ["Common"],
+    racePicks: {profPicks: {}},
     classes: [{name:"Fighter", subclass:"", level:1}],
     xp: 0,
     levelHistory: [],
@@ -182,6 +183,10 @@ export function ensureShape(c){
   // and Medicine) go on the sheet; ones with a choice wait on the
   // Features tab's Feature choices card.
   migrateClassPicks(c); // a ranger's older "Favored Enemy: Beasts" custom feature
+  // The race's skills, weapons and tools (an elf's Perception, a dwarf's
+  // weapons) go on the same way; older characters' race picks are moved
+  // over first.
+  migrateRacePicks(c);
   syncClassPicks(c);
   return c;
 }

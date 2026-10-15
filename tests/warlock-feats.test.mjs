@@ -67,6 +67,8 @@ test("background skills: the Skills step needs them, and not the same as the cla
   assert.match(err({ bgSkillChoices: [] }), /Choose 2 skills from your Haunted One background/);
   assert.match(err({ bgSkillChoices: ["Arcana"] }), /Choose 2 skills/);
   assert.match(err({ background: "Inheritor", bgSkillChoices: [] }), /Choose a skill from your Inheritor background/);
+  assert.match(err({ background: "Inheritor", bgSkillChoices: ["Arcana"] }), /^Choose a tool for Inheritor\.$/, "then its gaming set or instrument");
+  assert.equal(err({ background: "Inheritor", bgSkillChoices: ["Arcana"], bgPicks: { "bg:Inheritor:pick": [["Lute"]] } }), null);
   assert.match(err({ skillChoices: ["Arcana", "Deception"] }), /different skills for your class and your background/);
   assert.equal(err({ background: "Acolyte", bgSkillChoices: [] }), null, "a background without picks asks nothing");
 });
@@ -239,7 +241,7 @@ test("Fey Touched: two free casts that come back on a long rest only", () => {
 test("Fey Touched through a Variant Human in the creation wizard", (t) => {
   const vh = (featPicks) => ({ classId: "Fighter", background: "Soldier", skillChoices: ["Athletics", "Perception"], bgSkillChoices: [],
     languageChoices: ["Elvish"], classChoices: { fightingStyle: "Defense" }, equipment: { 0: "chain" }, race: "Variant Human",
-    raceChoices: { abilities: ["str", "con"], preset: "", skills: ["Stealth"], tools: [], feat: "Fey Touched", featPicks } });
+    raceChoices: { abilities: ["str", "con"], preset: "", profPicks: { "race:Skills:pick": [["Stealth"]] }, feat: "Fey Touched", featPicks } });
   assert.match(inWizard(t, vh({ ...FP.emptyPicks(FEY), ability: "wis" }), () => W.validateStep("featPicks")), /1st-level divination or enchantment spell/);
   const picks = { ...FP.emptyPicks(FEY), ability: "wis", spells: ["Hex"] };
   assert.equal(inWizard(t, vh(picks), () => W.validateStep("featPicks")), null);
@@ -253,7 +255,7 @@ test("Fey Touched through a Variant Human in the creation wizard", (t) => {
 test("wizard: a spell the feat already gives isn't picked again as a class spell", (t) => {
   // A Variant Human warlock who took Hex with Fey Touched, then Hex again on the Spells step.
   const lock = (featSpell, spells) => ({ race: "Variant Human", languageChoices: ["Elvish"],
-    raceChoices: { abilities: ["cha", "con"], preset: "", skills: ["Stealth"], tools: [], feat: "Fey Touched",
+    raceChoices: { abilities: ["cha", "con"], preset: "", profPicks: { "race:Skills:pick": [["Stealth"]] }, feat: "Fey Touched",
       featPicks: { ...FP.emptyPicks(FEY), ability: "cha", spells: [featSpell] } },
     spellChoices: { cantrips: ["Eldritch Blast", "Mage Hand"], spells } });
   const granted = inWizard(t, lock("Hex", []), () => W.wizardGrantedSpells());
@@ -294,7 +296,7 @@ test("Fey Touched: a spell being learned this level is refused; a known one is a
    ================================================================ */
 const vhuman = (raceChoices, extra = {}) => ({ classId: "Fighter", background: "Soldier", skillChoices: ["Athletics", "Perception"], bgSkillChoices: [],
   languageChoices: ["Elvish"], classChoices: { fightingStyle: "Defense" }, equipment: { 0: "chain" }, race: "Variant Human",
-  raceChoices: { abilities: ["str", "con"], preset: "", skills: ["Stealth"], tools: [], feat: "", featPicks: null, ...raceChoices }, ...extra });
+  raceChoices: { abilities: ["str", "con"], preset: "", profPicks: { "race:Skills:pick": [["Stealth"]] }, feat: "", featPicks: null, ...raceChoices }, ...extra });
 
 test("wizard: the Feat step only for a race with a feat, Feat Choices only for a feat with picks", (t) => {
   const steps = (choices) => inWizard(t, choices, () => W.WIZARD_STEP_IDS.filter(W.isStepApplicable));

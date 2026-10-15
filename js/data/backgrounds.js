@@ -68,10 +68,10 @@ export var BACKGROUND_INFO = {
   "Azorius Functionary": {skills:["Insight","Intimidation"], blurb:"Grants Insight and Intimidation. You serve the Azorius Senate, Ravnica's lawmakers, enforcers of order and legal authority."},
   "Boros Legionnaire": {skills:["Athletics","Intimidation"], blurb:"Grants Athletics and Intimidation. You are a soldier of the Boros Legion, Ravnica's combined military and police force, devoted to justice."},
   "Dimir Operative": {skills:["Deception","Stealth"], blurb:"Grants Deception and Stealth. You work in the shadows for House Dimir, Ravnica's guild of spies, assassins, and secret brokers."},
-  "Golgari Agent": {skills:["Athletics","Nature"], blurb:"Grants Athletics and Nature. You serve the Golgari Swarm, a guild that embraces the cycle of life, death, and decay beneath Ravnica's streets."},
+  "Golgari Agent": {skills:["Nature","Survival"], blurb:"Grants Nature and Survival, plus a poisoner's kit. You serve the Golgari Swarm, a guild that embraces the cycle of life, death, and decay beneath Ravnica's streets."},
   "Gruul Anarch": {skills:["Animal Handling","Athletics"], blurb:"Grants Animal Handling and Athletics. You run with the Gruul Clans, wild warriors who rage against Ravnica's urban sprawl and the guilds that built it."},
   "Izzet Engineer": {skills:["Arcana","Investigation"], blurb:"Grants Arcana and Investigation. You experiment under the chaotic brilliance of the Izzet League, blending magic and technology in often explosive ways."},
-  "Orzhov Representative": {skills:["Insight","Religion"], blurb:"Grants Insight and Religion. You represent the Orzhov Syndicate, a corrupt church-turned-crime-family that deals in wealth, power, and undying debts."},
+  "Orzhov Representative": {skills:["Intimidation","Religion"], blurb:"Grants Intimidation and Religion. You represent the Orzhov Syndicate, a corrupt church-turned-crime-family that deals in wealth, power, and undying debts."},
   "Rakdos Cultist": {skills:["Acrobatics","Performance"], blurb:"Grants Acrobatics and Performance. You perform with the Cult of Rakdos, a demonic circus that brings brutal, thrilling spectacle to Ravnica's streets."},
   "Selesnya Initiate": {skills:["Nature","Persuasion"], blurb:"Grants Nature and Persuasion. You are a member of the Selesnya Conclave, a guild devoted to community, nature, and the harmony of the Worldsoul."},
   "Simic Scientist": {skills:["Arcana","Medicine"], blurb:"Grants Arcana and Medicine. You conduct research for the Simic Combine, a guild that merges magic with biology to adapt life to an ever-changing world."},
@@ -96,11 +96,11 @@ export var BACKGROUND_INFO = {
   "Athlete": {skills:["Acrobatics","Athletics"], blurb:"Grants Acrobatics and Athletics. You have competed in the great athletic contests of Theros, earning glory, the roar of crowds, and the notice of the gods."},
 
   /* ---- Strixhaven: Curriculum of Chaos ---- */
-  "Lorehold Student": {feat:{name:"Strixhaven Initiate", option:"Lorehold"}, skills:["History","Arcana"], blurb:"Grants History and Arcana. A student of Lorehold College, devoted to exploring the past through magic, archaeology, and communing with spirits of history."},
-  "Prismari Student": {feat:{name:"Strixhaven Initiate", option:"Prismari"}, skills:["Arcana","Performance"], blurb:"Grants Arcana and Performance. A student of Prismari College, merging elemental magic with artistic expression in grand, emotionally charged displays."},
+  "Lorehold Student": {feat:{name:"Strixhaven Initiate", option:"Lorehold"}, skills:["History","Religion"], blurb:"Grants History and Religion, and two languages. A student of Lorehold College, devoted to exploring the past through magic, archaeology, and communing with spirits of history."},
+  "Prismari Student": {feat:{name:"Strixhaven Initiate", option:"Prismari"}, skills:["Acrobatics","Performance"], blurb:"Grants Acrobatics and Performance, plus a musical instrument or artisan's tools. A student of Prismari College, merging elemental magic with artistic expression in grand, emotionally charged displays."},
   "Quandrix Student": {feat:{name:"Strixhaven Initiate", option:"Quandrix"}, skills:["Arcana","Nature"], blurb:"Grants Arcana and Nature. A student of Quandrix College, studying the mathematical and geometric underpinnings of magic and the natural world."},
-  "Silverquill Student": {feat:{name:"Strixhaven Initiate", option:"Silverquill"}, skills:["History","Persuasion"], blurb:"Grants History and Persuasion. A student of Silverquill College, wielding the power of words — inspiring speeches, cutting wit, and ink-forged magic."},
-  "Witherbloom Student": {feat:{name:"Strixhaven Initiate", option:"Witherbloom"}, skills:["Survival","Medicine"], blurb:"Grants Survival and Medicine. A student of Witherbloom College, drawing power from the essence of life and death through biology, herbalism, and dark vitality."},
+  "Silverquill Student": {feat:{name:"Strixhaven Initiate", option:"Silverquill"}, skills:["Intimidation","Persuasion"], blurb:"Grants Intimidation and Persuasion, and two languages. A student of Silverquill College, wielding the power of words: inspiring speeches, cutting wit, and ink-forged magic."},
+  "Witherbloom Student": {feat:{name:"Strixhaven Initiate", option:"Witherbloom"}, skills:["Nature","Survival"], blurb:"Grants Nature and Survival, plus an herbalism kit. A student of Witherbloom College, drawing power from the essence of life and death through biology, herbalism, and dark vitality."},
 
   /* ---- The Wild Beyond the Witchlight ---- */
   "Feylost": {skills:["Deception","Survival"], blurb:"Grants Deception and Survival. You grew up in the Feywild after vanishing from your home plane as a child, returning changed by your time among the fey."},
@@ -111,12 +111,12 @@ export var BACKGROUND_INFO = {
   "Wildspacer": {feat:{name:"Tough"}, skills:["Athletics","Survival"], blurb:"Grants Athletics and Survival. You grew up in Wildspace — on a spelljamming ship or far-flung settlement — and its dangers have made you tough as nails."},
 
   /* ---- Dragonlance: Shadow of the Dragon Queen ---- */
-  "Knight of Solamnia": {feat:{name:"Squire of Solamnia"}, skills:["Athletics","Persuasion"], blurb:"Grants Athletics and Persuasion. You have trained as a Knight of Solamnia, bound by strict codes of honor to defend the weak and oppose evil across Krynn."},
+  "Knight of Solamnia": {feat:{name:"Squire of Solamnia"}, skills:["Athletics","Survival"], blurb:"Grants Athletics and Survival, and two languages. You have trained as a Knight of Solamnia, bound by strict codes of honor to defend the weak and oppose evil across Krynn."},
   "Mage of High Sorcery": {feat:{name:"Initiate of High Sorcery"}, skills:["Arcana","History"], blurb:"Grants Arcana and History. You have studied at the Towers of High Sorcery on Krynn, devoting yourself to the disciplines of magic in one of its three orders."},
 
   /* ---- Planescape: Adventures in the Multiverse ---- */
   "Gate Warden": {feat:{name:"Scion of the Outer Planes"}, skills:["Persuasion","Survival"], blurb:"Grants Persuasion and Survival. You grew up near a permanent planar portal, absorbing the essence of other planes and growing comfortable with the extraordinary."},
-  "Planar Philosopher": {feat:{name:"Scion of the Outer Planes"}, skills:["Arcana"], skillChoice:"plus one skill linked to your Sigil faction (e.g. Religion, History, Nature, Stealth, Perception, Insight, Medicine, Survival, Persuasion, Performance, or Athletics)", skillPick:{count:1, options:["Athletics","History","Insight","Medicine","Nature","Perception","Performance","Persuasion","Religion","Stealth","Survival"]}, blurb:"Grants Arcana plus one faction-linked skill. You subscribe to a philosophy seeking hidden truths of the multiverse, aligned to one of Sigil's great factions."},
+  "Planar Philosopher": {feat:{name:"Scion of the Outer Planes"}, skills:["Arcana"], skillChoice:"plus your Sigil faction's skill, or one skill of your choice", skillPick:{count:1, options:["Acrobatics","Animal Handling","Athletics","Deception","History","Insight","Intimidation","Investigation","Medicine","Nature","Perception","Performance","Persuasion","Religion","Sleight of Hand","Stealth","Survival"]}, blurb:"Grants Arcana plus one faction-linked skill. You subscribe to a philosophy seeking hidden truths of the multiverse, aligned to one of Sigil's great factions."},
 
   /* ---- Glory of the Giants ---- */
   "Giant Foundling": {feat:{name:"Strike of the Giants"}, skills:["Intimidation","Survival"], blurb:"Grants Intimidation and Survival. You were raised among giants and carry their perspective — and their magic — with you into a world that seems small by comparison."},
@@ -148,30 +148,30 @@ export var BACKGROUND_TOOLS = {
   "Investigator":"None", "Pirate":"Navigator's tools, water vehicles",
 
   /* ---- Guildmasters' Guide to Ravnica ---- */
-  "Azorius Functionary":"None", "Boros Legionnaire":"None", "Dimir Operative":"Disguise kit or thieves' tools",
+  "Azorius Functionary":"None", "Boros Legionnaire":"One gaming set", "Dimir Operative":"Disguise kit",
   "Golgari Agent":"Poisoner's kit", "Gruul Anarch":"Herbalism kit", "Izzet Engineer":"One type of artisan's tools",
-  "Orzhov Representative":"None", "Rakdos Cultist":"One musical instrument", "Selesnya Initiate":"Herbalism kit",
+  "Orzhov Representative":"None", "Rakdos Cultist":"One musical instrument", "Selesnya Initiate":"One type of artisan's tools or one musical instrument",
   "Simic Scientist":"None",
 
   /* ---- Ghosts of Saltmarsh ---- */
-  "Fisher":"Fishing tackle", "Marine":"Vehicles (water)", "Shipwright":"Carpenter's tools, vehicles (water)",
+  "Fisher":"None", "Marine":"Vehicles (land and water)", "Shipwright":"Carpenter's tools, vehicles (water)",
   "Smuggler":"Vehicles (water)",
 
   /* ---- Acquisitions Incorporated ---- */
   "Celebrity Adventurer's Scion":"Disguise kit",
   "Failed Merchant":"One type of artisan's tools", "Gambler":"One gaming set",
-  "Plaintiff":"None", "Rival Intern":"None",
+  "Plaintiff":"One type of artisan's tools", "Rival Intern":"One type of artisan's tools",
 
   /* ---- Eberron: Rising from the Last War ---- */
-  "House Agent":"Two from house tool proficiencies table (varies by house)",
+  "House Agent":"Two set by your house (Cannith: alchemist's supplies and tinker's tools; Deneith: a gaming set and land vehicles; and so on)",
 
   /* ---- Mythic Odysseys of Theros ---- */
   "Athlete":"Vehicles (land)",
 
   /* ---- Strixhaven: Curriculum of Chaos ---- */
-  "Lorehold Student":"One type of artisan's tools", "Prismari Student":"One type of artisan's tools",
-  "Quandrix Student":"One type of artisan's tools", "Silverquill Student":"One type of artisan's tools",
-  "Witherbloom Student":"One type of artisan's tools",
+  "Lorehold Student":"None", "Prismari Student":"One musical instrument or artisan's tools",
+  "Quandrix Student":"One type of artisan's tools", "Silverquill Student":"None",
+  "Witherbloom Student":"Herbalism kit",
 
   /* ---- The Wild Beyond the Witchlight ---- */
   "Feylost":"One musical instrument", "Witchlight Hand":"Disguise kit or one musical instrument",
@@ -205,12 +205,15 @@ export var BACKGROUND_TOOLS = {
 export var BACKGROUND_INFO_FALLBACK = "Grants two skill proficiencies of your choice (and usually a tool or language). Pick whatever fits your character's story; you can add them on the sheet's Skills tab afterward.";
 
 /* Languages of your choice each background grants (0 when it gives a
-   tool instead). Drives the Languages step of the creation wizard. */
+   tool instead). Drives the Languages step of the creation wizard.
+   Languages it names (Giant) and short lists to pick from are in
+   BACKGROUND_LANGUAGE_RULES. Checked against the published pages on
+   2026-10-15 (see .claude/research/races-backgrounds.md). */
 export var BACKGROUND_LANGUAGES = {
   "Acolyte":2, "Charlatan":0, "Criminal":0, "Entertainer":0, "Folk Hero":0,
   "Guild Artisan":1, "Guild Merchant":1, "Hermit":1, "Noble":1, "Outlander":1,
   "Sage":2, "Sailor":0, "Soldier":0, "Urchin":0, "Anthropologist":2,
-  "Archaeologist":1, "City Watch":2, "Clan Crafter":1, "Cloistered Scholar":2,
+  "Archaeologist":1, "City Watch":2, "Clan Crafter":0, "Cloistered Scholar":2,
   "Courtier":2, "Faction Agent":2, "Far Traveler":1, "Inheritor":1,
   "Knight of the Order":1, "Mercenary Veteran":0, "Urban Bounty Hunter":0,
   "Uthgardt Tribe Member":1, "Waterdhavian Noble":1,
@@ -219,17 +222,17 @@ export var BACKGROUND_LANGUAGES = {
   "Investigator":2, "Pirate":0,
 
   /* ---- Guildmasters' Guide to Ravnica ---- */
-  "Azorius Functionary":2, "Boros Legionnaire":0, "Dimir Operative":0,
-  "Golgari Agent":1, "Gruul Anarch":0, "Izzet Engineer":0,
-  "Orzhov Representative":2, "Rakdos Cultist":0, "Selesnya Initiate":0,
+  "Azorius Functionary":2, "Boros Legionnaire":1, "Dimir Operative":1,
+  "Golgari Agent":1, "Gruul Anarch":1, "Izzet Engineer":1,
+  "Orzhov Representative":2, "Rakdos Cultist":1, "Selesnya Initiate":1,
   "Simic Scientist":2,
 
   /* ---- Ghosts of Saltmarsh ---- */
   "Fisher":1, "Marine":0, "Shipwright":0, "Smuggler":0,
 
   /* ---- Acquisitions Incorporated ---- */
-  "Celebrity Adventurer's Scion":2, "Failed Merchant":0, "Gambler":0,
-  "Plaintiff":0, "Rival Intern":1,
+  "Celebrity Adventurer's Scion":2, "Failed Merchant":1, "Gambler":1,
+  "Plaintiff":1, "Rival Intern":1,
 
   /* ---- Eberron: Rising from the Last War ---- */
   "House Agent":0,
@@ -238,24 +241,143 @@ export var BACKGROUND_LANGUAGES = {
   "Athlete":1,
 
   /* ---- Strixhaven: Curriculum of Chaos ---- */
-  "Lorehold Student":1, "Prismari Student":1, "Quandrix Student":1,
-  "Silverquill Student":1, "Witherbloom Student":1,
+  "Lorehold Student":2, "Prismari Student":1, "Quandrix Student":1,
+  "Silverquill Student":2, "Witherbloom Student":1,
 
   /* ---- The Wild Beyond the Witchlight ---- */
-  "Feylost":1, "Witchlight Hand":0,
+  "Feylost":1, "Witchlight Hand":1,
 
   /* ---- Spelljammer: Adventures in Space ---- */
   "Astral Drifter":2, "Wildspacer":0,
 
   /* ---- Dragonlance: Shadow of the Dragon Queen ---- */
-  "Knight of Solamnia":0, "Mage of High Sorcery":0,
+  "Knight of Solamnia":2, "Mage of High Sorcery":2,
 
   /* ---- Planescape: Adventures in the Multiverse ---- */
   "Gate Warden":2, "Planar Philosopher":2,
 
   /* ---- Glory of the Giants ---- */
-  "Giant Foundling":2, "Rune Carver":1,
+  "Giant Foundling":1, "Rune Carver":0,
 
   /* ---- Curse of Strahd / Van Richten's Guide to Ravenloft ---- */
   "Haunted One":2
+};
+
+/* ---------------- Tool proficiencies, for the sheet ----------------
+   What each background gives, in the shape class features and race
+   traits use (js/core/class-picks.js): `tools` given outright and `pick`
+   slots for the choices. A tool slot names a TOOL_GROUPS `group` ("one
+   type of gaming set"), `options` or `kinds`: one pick of each kind it
+   lists, a kind being a group or a single tool ("one musical instrument
+   or artisan's tools"; Urban Bounty Hunter's two of three). The creation
+   wizard asks for the picks on its Skills step; older sheets on the
+   Features tab's Feature choices card. Checked against the published
+   pages on 2026-10-15 (.claude/research/races-backgrounds.md).
+   House Agent: the house (a `choice`) sets two tools, from the House
+   Tool Proficiencies table (`toolsByChoice`), and a few houses' "one
+   gaming set" or "one musical instrument" is picked (`byChoice`). */
+var GAMING = {kind:"tool", group:"Gaming sets", noun:"gaming set"};
+var INSTRUMENT = {kind:"tool", group:"Musical instruments", noun:"musical instrument"};
+var ARTISAN = {kind:"tool", group:"Artisan's tools"};
+function either(kinds){ return {kind:"tool", kinds:kinds}; }
+var HOUSE_TOOLS = {
+  "Cannith":["Alchemist's supplies","Tinker's tools"], "Deneith":["Vehicles (land)"],
+  "Ghallanda":["Brewer's supplies","Cook's utensils"], "Jorasco":["Alchemist's supplies","Herbalism kit"],
+  "Kundarak":["Thieves' tools","Tinker's tools"], "Lyrandar":["Navigator's tools","Vehicles (air)","Vehicles (water)"],
+  "Medani":["Disguise kit","Thieves' tools"], "Orien":["Vehicles (land)"], "Phiarlan":["Disguise kit"],
+  "Sivis":["Calligrapher's supplies","Forgery kit"], "Tharashk":["Thieves' tools"], "Thuranni":["Poisoner's kit"],
+  "Vadalis":["Herbalism kit","Vehicles (land)"]
+};
+var HOUSE_PICKS = {"Deneith":"Gaming sets", "Orien":"Gaming sets", "Phiarlan":"Musical instruments", "Tharashk":"Gaming sets", "Thuranni":"Musical instruments"};
+var HOUSE_DETAILS = {
+  "Cannith":"Alchemist's supplies and tinker's tools", "Deneith":"One gaming set and land vehicles",
+  "Ghallanda":"Brewer's supplies and cook's utensils", "Jorasco":"Alchemist's supplies and herbalism kit",
+  "Kundarak":"Thieves' tools and tinker's tools", "Lyrandar":"Navigator's tools and vehicles (air and sea)",
+  "Medani":"Disguise kit and thieves' tools", "Orien":"One gaming set and land vehicles",
+  "Phiarlan":"Disguise kit and one musical instrument", "Sivis":"Calligrapher's supplies and forgery kit",
+  "Tharashk":"One gaming set and thieves' tools", "Thuranni":"One musical instrument and poisoner's kit",
+  "Vadalis":"Herbalism kit and land vehicles"
+};
+export var BACKGROUND_PROFS = {
+  "Charlatan": {tools:["Disguise kit","Forgery kit"]},
+  "Criminal": {tools:["Thieves' tools"], pick:[GAMING]},
+  "Entertainer": {tools:["Disguise kit"], pick:[INSTRUMENT]},
+  "Folk Hero": {tools:["Vehicles (land)"], pick:[ARTISAN]},
+  "Guild Artisan": {pick:[ARTISAN]},
+  // In place of the artisan's tools: navigator's tools or one more language.
+  "Guild Merchant": {pick:[{kind:"toolOrLanguage", options:["Navigator's tools"]}]},
+  "Hermit": {tools:["Herbalism kit"]},
+  "Noble": {pick:[GAMING]},
+  "Outlander": {pick:[INSTRUMENT]},
+  "Sailor": {tools:["Navigator's tools","Vehicles (water)"]},
+  "Soldier": {tools:["Vehicles (land)"], pick:[GAMING]},
+  "Urchin": {tools:["Disguise kit","Thieves' tools"]},
+  "Archaeologist": {pick:[{kind:"tool", options:["Cartographer's tools","Navigator's tools"]}]},
+  "Clan Crafter": {pick:[ARTISAN]},
+  "Far Traveler": {pick:[either(["Musical instruments","Gaming sets"])]},
+  "Inheritor": {pick:[either(["Gaming sets","Musical instruments"])]},
+  "Knight of the Order": {pick:[either(["Gaming sets","Musical instruments"])]},
+  "Mercenary Veteran": {tools:["Vehicles (land)"], pick:[GAMING]},
+  "Urban Bounty Hunter": {pick:[{kind:"tool", count:2, kinds:["Gaming sets","Musical instruments","Thieves' tools"]}]},
+  "Uthgardt Tribe Member": {pick:[either(["Musical instruments","Artisan's tools"])]},
+  "Waterdhavian Noble": {pick:[either(["Gaming sets","Musical instruments"])]},
+  "Pirate": {tools:["Navigator's tools","Vehicles (water)"]},
+  "Boros Legionnaire": {pick:[GAMING]},
+  "Dimir Operative": {tools:["Disguise kit"]},
+  "Golgari Agent": {tools:["Poisoner's kit"]},
+  "Gruul Anarch": {tools:["Herbalism kit"]},
+  "Izzet Engineer": {pick:[ARTISAN]},
+  "Rakdos Cultist": {pick:[INSTRUMENT]},
+  "Selesnya Initiate": {pick:[either(["Artisan's tools","Musical instruments"])]},
+  "Marine": {tools:["Vehicles (land)","Vehicles (water)"]},
+  "Shipwright": {tools:["Carpenter's tools","Vehicles (water)"]},
+  "Smuggler": {tools:["Vehicles (water)"]},
+  "Celebrity Adventurer's Scion": {tools:["Disguise kit"]},
+  "Failed Merchant": {pick:[ARTISAN]},
+  "Gambler": {pick:[GAMING]},
+  "Plaintiff": {pick:[ARTISAN]},
+  "Rival Intern": {pick:[ARTISAN]},
+  "House Agent": {toolsByChoice:{slot:0, tools:HOUSE_TOOLS}, pick:[
+    {kind:"choice", id:"house", noun:"house", label:"Choose your dragonmarked house", options:Object.keys(HOUSE_TOOLS), details:HOUSE_DETAILS},
+    {kind:"tool", byChoice:{slot:0, groups:HOUSE_PICKS}}]},
+  "Athlete": {tools:["Vehicles (land)"]},
+  "Prismari Student": {pick:[either(["Musical instruments","Artisan's tools"])]},
+  "Quandrix Student": {pick:[ARTISAN]},
+  "Witherbloom Student": {tools:["Herbalism kit"]},
+  "Feylost": {pick:[INSTRUMENT]},
+  "Witchlight Hand": {pick:[either(["Disguise kit","Musical instruments"])]},
+  "Wildspacer": {tools:["Navigator's tools","Vehicles (space)"]},
+  "Rune Carver": {pick:[ARTISAN]}
+};
+
+/* Languages a background names (`fixed`: a Rune Carver's Giant; one
+   already known becomes a free pick instead) and short lists its free
+   picks come from (`options`: a Boros Legionnaire's Celestial, Draconic,
+   Goblin or Minotaur). The counts are in BACKGROUND_LANGUAGES. */
+export var BACKGROUND_LANGUAGE_RULES = {
+  "Clan Crafter": {fixed:["Dwarvish"]},
+  "Rune Carver": {fixed:["Giant"]},
+  "Giant Foundling": {fixed:["Giant"]},
+  "Feylost": {options:["Elvish","Gnomish","Goblin","Sylvan"]},
+  "Boros Legionnaire": {options:["Celestial","Draconic","Goblin","Minotaur"]},
+  "Golgari Agent": {options:["Elvish","Giant","Kraul"]},
+  "Gruul Anarch": {options:["Draconic","Giant","Goblin","Sylvan"]},
+  "Izzet Engineer": {options:["Draconic","Goblin","Vedalken"]},
+  "Rakdos Cultist": {options:["Abyssal","Giant"]},
+  "Selesnya Initiate": {options:["Elvish","Loxodon","Sylvan"]}
+};
+
+/* Skills this app's data had wrong before 2026-10-15 (checked then
+   against the published pages): `was` what older sheets got, `now` what
+   the book gives. An older character with the background is offered the
+   swap on the Features tab's Feature choices card; nothing changes until
+   the player says so. */
+export var BACKGROUND_SKILL_FIXES = {
+  "Lorehold Student": {was:["Arcana"], now:["Religion"]},
+  "Prismari Student": {was:["Arcana"], now:["Acrobatics"]},
+  "Silverquill Student": {was:["History"], now:["Intimidation"]},
+  "Witherbloom Student": {was:["Medicine"], now:["Nature"]},
+  "Golgari Agent": {was:["Athletics"], now:["Survival"]},
+  "Orzhov Representative": {was:["Insight"], now:["Intimidation"]},
+  "Knight of Solamnia": {was:["Persuasion"], now:["Survival"]}
 };

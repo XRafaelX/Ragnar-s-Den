@@ -7,7 +7,7 @@ import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.j
 import { classFeatureList, classProficiencies, classVariants, escapeHtml } from "../../core/helpers.js";
 import { featProficiencies, backgroundFeatGrant, campaignFeatMissing } from "../../core/feat-picks.js";
 import { dlcShelf, campaignBookCard } from "../../ui/dlc-shelf.js";
-import { characterPickedProfs } from "../../core/class-picks.js";
+import { characterPickedProfs, raceProficiencies, backgroundProficiencies } from "../../core/class-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -191,7 +191,14 @@ export function renderInformationPanel(c){
       if(saves.indexOf(label)===-1) saves.push(label);
     });
   });
-  // Plus what feats grant (Moderately Armored, Skilled, Weapon Master, Resilient).
+  // Plus what the race gives (an elf's weapons, a dwarf's armor and tool)
+  // and what feats grant (Moderately Armored, Skilled, Weapon Master, Resilient).
+  var fromRace = raceProficiencies(c);
+  fromRace.armor.forEach(function(v){ if(armor.indexOf(v)===-1) armor.push(v); });
+  fromRace.weapons.forEach(function(v){ if(weapons.indexOf(v)===-1) weapons.push(v); });
+  fromRace.tools.forEach(function(v){ if(tools.indexOf(v)===-1) tools.push(v); });
+  // The background's (an Urchin's disguise kit and thieves' tools).
+  backgroundProficiencies(c).tools.forEach(function(v){ if(tools.indexOf(v)===-1) tools.push(v); });
   var fromFeats = featProficiencies(c);
   fromFeats.armor.forEach(function(p){ if(armor.indexOf(p.name)===-1) armor.push(p.name); });
   fromFeats.tools.forEach(function(p){ if(tools.indexOf(p.name)===-1) tools.push(p.name); });

@@ -1074,6 +1074,7 @@ test("level-up: a ranger's second enemy and terrain at 6, the third terrain at 1
 
 test("wizard: a ranger's favored enemy, its language and terrain on Class Features; Tasha's features behind the switch", (t) => {
   const base = { classId: "Ranger", background: "Outlander", skillChoices: ["Stealth", "Perception", "Survival"], languageChoices: ["Elvish", "Dwarvish"], classChoices: {},
+    bgPicks: { "bg:Outlander:pick": [["Lute"]] },
     abilities: { str: 10, dex: 15, con: 13, int: 10, wis: 14, cha: 10 }, equipment: { 0: "leather", 1: "shortswords", 2: "explorer" }, spellChoices: { cantrips: [], spells: [] } };
   let applicable, err, plan, offers;
   withFakeDom(t, () => {

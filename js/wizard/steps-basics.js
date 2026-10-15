@@ -304,7 +304,7 @@ export function wizardStepRace(container){
     explain.innerHTML = raceExplainHtml(wizardState.race);
     if(wizardState.race!==shownRace){
       var rc = wizardState.raceChoices;
-      rc.abilities = []; rc.preset = ""; rc.skills = []; rc.tools = []; rc.feat = ""; rc.featPicks = null;
+      rc.abilities = []; rc.preset = ""; rc.profPicks = {}; rc.feat = ""; rc.featPicks = null;
       shownRace = wizardState.race;
     }
   }, "race");
@@ -322,8 +322,11 @@ export function wizardStepBackground(container){
 
   // The campaign row's outcome line depends on the background too.
   var campaign = campaignNote(function(){ explain.innerHTML = backgroundExplainHtml(wizardState.background); });
+  var shownBackground = wizardState.background;
   var dd = wizardDropdown("Background", "background", BACKGROUNDS, wizardState, function(){
     explain.innerHTML = backgroundExplainHtml(wizardState.background);
+    // Tool picks belong to one background: a different one starts fresh.
+    if(wizardState.background!==shownBackground){ wizardState.bgPicks = {}; shownBackground = wizardState.background; }
     campaign.refresh();
   }, "background");
   dd.firstChild.style.maxWidth = "320px";

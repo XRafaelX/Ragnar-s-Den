@@ -1,7 +1,7 @@
-import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
+import { ABILITIES, SKILLS, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES, FIGHTING_STYLES } from "../data/classes.js";
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
-import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../data/backgrounds.js";
+import { BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_LANGUAGE_RULES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
 import { LANGUAGES } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
@@ -10,7 +10,8 @@ import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
 import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason, featHasPicks, featDef, emptyPicks, backgroundFeatGrant, backgroundFeatCopy, backgroundFeatPicks, campaignLevel1Feats, campaignFeatCopy } from "../core/feat-picks.js";
 import { stylePicksProblem, makeStyleFeature } from "../core/fighting-styles.js";
-import { entryGrants, grantHasChoices, classPickContext, classPicksProblem, fillSlots, applyClassPicks } from "../core/class-picks.js";
+import { entryGrants, grantHasChoices, classPickContext, classPicksProblem, fillSlots, applyClassPicks, raceGrantsFor, raceGrants, raceEntry,
+  backgroundGrantsFor, backgroundGrants, backgroundEntry } from "../core/class-picks.js";
 import { state, save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { closeSidebarMobile } from "../ui/mobile-nav.js";
@@ -108,6 +109,104 @@ export function wizardPickContext(grant){
   };
   return ctx;
 }
+/* ---- Race Traits picks ----
+   What the race's traits give (an elf's Perception, a dwarf's weapons)
+   and the ones that ask for a choice (a dwarf's tool, a kenku's two
+   skills, a hobgoblin's two martial weapons; see raceGrantsFor). Picks
+   are kept in raceChoices.profPicks[key], one list per slot. */
+export function wizardRaceGrants(){
+  var grants = wizardState && wizardState.race ? raceGrantsFor(wizardState.race) : [];
+  // A choice the Race Traits ability picks already make (a shifter's type)
+  // is copied in, not asked for again.
+  grants.forEach(function(g){
+    if(!g.def.presetChoice) return;
+    var slots = wizardRaceSlots(g.key), preset = wizardState.raceChoices.preset;
+    slots[0] = preset ? [preset] : [];
+    slots[1] = preset && g.def.pick[1] && g.def.pick[1].byChoice ? (g.def.pick[1].byChoice.options[preset] || []).slice() : [];
+  });
+  return grants;
+}
+export function wizardRacePickGrants(){ return wizardRaceGrants().filter(function(g){ return grantHasChoices(g.def) && !g.def.presetChoice; }); }
+export function wizardRaceSlots(key){
+  var all = wizardState.raceChoices.profPicks = wizardState.raceChoices.profPicks || {};
+  return all[key] = all[key] || [];
+}
+var SKILL_NAMES = SKILLS.map(function(s){ return s[0]; });
+/* Skills the race gives: outright, and picked so far (leaving out one
+   grant's picks, for its own pickers). fixedOnly: just the given ones. */
+export function wizardRaceSkills(exceptKey, fixedOnly){
+  var out = [], picks = wizardState.raceChoices.profPicks || {};
+  wizardRaceGrants().forEach(function(g){
+    out = out.concat(g.def.skills || []);
+    if(fixedOnly || g.key===exceptKey) return;
+    (picks[g.key] || []).forEach(function(slot){ (slot||[]).forEach(function(v){ if(SKILL_NAMES.indexOf(v)!==-1) out.push(v); }); });
+  });
+  return out.filter(function(sk, i){ return out.indexOf(sk)===i; });
+}
+/* The new character as a race pick's pickers see it: its class, the
+   skills picked so far and what the race's other traits give. */
+export function wizardRacePickContext(grant){
+  var w = wizardState, held = {}, picks = w.raceChoices.profPicks || {};
+  Object.keys(picks).forEach(function(k){ held[k] = {slots: picks[k]}; });
+  var standIn = {race: w.race, racePicks: {profPicks: held}, classes: w.classId ? [wizardClassEntry()] : [], skillProfs: wizardSkillProfs(grant.key),
+    saveProfs: {}, languages: [], feats: [], inventory: [], spells: [], tashaOptional: !!w.tashaOptional};
+  return classPickContext(standIn, standIn.racePicks, grant.key);
+}
+/* What's still missing from the race's picks, or "". */
+export function wizardRacePicksProblem(){
+  var grants = wizardRacePickGrants();
+  for(var i = 0; i < grants.length; i++){
+    var ctx = wizardRacePickContext(grants[i]);
+    var why = classPicksProblem(grants[i], fillSlots(grants[i].def, wizardRaceSlots(grants[i].key), ctx), ctx);
+    if(why) return why;
+  }
+  return "";
+}
+
+/* ---- Background tool picks ----
+   The tools a background gives (BACKGROUND_PROFS: a Criminal's thieves'
+   tools) and the ones it lets you choose (a gaming set, an instrument, a
+   House Agent's house), asked on the Skills step. Picks are kept in
+   bgPicks[key], one list per slot. */
+export function wizardBackgroundGrants(){ return wizardState && wizardState.background ? backgroundGrantsFor(wizardState.background) : []; }
+export function wizardBackgroundPickGrants(){ return wizardBackgroundGrants().filter(function(g){ return grantHasChoices(g.def); }); }
+export function wizardBgSlots(key){
+  var all = wizardState.bgPicks = wizardState.bgPicks || {};
+  return all[key] = all[key] || [];
+}
+/* The new character as a background pick's pickers see it: its class's
+   tools, the race's and the background's own given ones. */
+export function wizardBgPickContext(grant){
+  var w = wizardState, held = {}, picks = w.bgPicks || {}, raceHeld = {};
+  Object.keys(picks).forEach(function(k){ held[k] = {slots: picks[k]}; });
+  Object.keys(w.raceChoices.profPicks || {}).forEach(function(k){ raceHeld[k] = {slots: w.raceChoices.profPicks[k]}; });
+  var standIn = {race: w.race, racePicks: {profPicks: raceHeld}, background: w.background, backgroundPicks: {profPicks: held},
+    classes: w.classId ? [wizardClassEntry()] : [], skillProfs: wizardSkillProfs(), saveProfs: {},
+    languages: (RACE_LANGUAGES[w.race] || RACE_LANGUAGES_FALLBACK).fixed.slice(), feats: [], inventory: [], spells: [], tashaOptional: !!w.tashaOptional};
+  return classPickContext(standIn, standIn.backgroundPicks, grant.key);
+}
+/* What's still missing from the background's picks, or "". */
+export function wizardBackgroundPicksProblem(){
+  var grants = wizardBackgroundPickGrants();
+  for(var i = 0; i < grants.length; i++){
+    var ctx = wizardBgPickContext(grants[i]);
+    var why = classPicksProblem(grants[i], fillSlots(grants[i].def, wizardBgSlots(grants[i].key), ctx), ctx);
+    if(why) return why;
+  }
+  return "";
+}
+/* Languages picked for the background in place of a tool (a Guild
+   Merchant's extra language). */
+function wizardBackgroundLanguages(){
+  var out = [], standard = LANGUAGES.Standard.concat(LANGUAGES.Exotic);
+  wizardBackgroundPickGrants().forEach(function(g){
+    ((wizardState.bgPicks||{})[g.key] || []).forEach(function(slot, i){
+      if(((g.def.pick||[])[i] || {}).kind==="toolOrLanguage") out = out.concat((slot||[]).filter(function(v){ return standard.indexOf(v)!==-1; }));
+    });
+  });
+  return out;
+}
+
 /* Languages those features teach: given outright or picked. */
 function wizardClassLanguages(){
   var out = [], standard = LANGUAGES.Standard.concat(LANGUAGES.Exotic);
@@ -224,12 +323,12 @@ export function wizardBackgroundSkills(){
   return (info.skills||[]).concat(picks);
 }
 
-/* The new character's skills so far (class picks, background, the Race
-   Traits skill), in the sheet's skillProfs shape, for feat picks. */
-export function wizardSkillProfs(){
+/* The new character's skills so far (class picks, background, what the
+   race gives and its Race Traits picks), in the sheet's skillProfs shape,
+   for feat picks. exceptRaceKey leaves out one race grant's picks. */
+export function wizardSkillProfs(exceptRaceKey){
   var out = {};
-  var def = raceChoiceDef();
-  var raceSkills = def && def.skills ? wizardState.raceChoices.skills.slice(0, def.skills) : [];
+  var raceSkills = wizardState.race ? wizardRaceSkills(exceptRaceKey) : [];
   wizardState.skillChoices.concat(wizardBackgroundSkills(), raceSkills).forEach(function(sk){
     if(sk) out[sk] = {prof:true, expertise:false};
   });
@@ -266,10 +365,12 @@ export function featPrereqReason(feat){
 
 /* Languages the new character knows: `fixed` ones come automatically
    (race, class, subclass); `slots` are free picks, each tagged with where
-   it comes from (race, background). `fromClass` are the fixed ones only
-   a class or subclass feature gives or picked (Class Features step: a
-   ranger's favored enemy's language), which the sheet records with that
-   feature. */
+   it comes from (race, background), with `options` when it must come
+   from a short list (a Boros Legionnaire's). `fromClass` are the fixed
+   ones only a class or subclass feature gives or picked (Class Features
+   step: a ranger's favored enemy's language) or the background's picks
+   give (a Guild Merchant's extra language), which the sheet records with
+   that feature. */
 export function languagePlan(){
   var w = wizardState, info = currentClassInfo();
   var race = RACE_LANGUAGES[w.race] || RACE_LANGUAGES_FALLBACK;
@@ -285,12 +386,20 @@ export function languagePlan(){
   var slots = [];
   function addSlots(n, source, help, exotic){ for(var i=0;i<(n||0);i++) slots.push({source:source, help:help||"", exotic:!!exotic}); }
   addSlots(race.choose, w.race || "Race", race.note);
+  // Languages the background names (a Rune Carver's Giant); one already
+  // known becomes a free pick instead.
+  var bgRules = BACKGROUND_LANGUAGE_RULES[w.background] || {};
+  var bgExtra = 0;
+  (bgRules.fixed||[]).forEach(function(l){ if(fixed.indexOf(l)!==-1) bgExtra++; else addFixed(l); });
   // A Haunted One's first pick has to be an exotic language.
-  var bgCount = BACKGROUND_LANGUAGES[w.background]!=null ? BACKGROUND_LANGUAGES[w.background] : 0;
+  var bgCount = (BACKGROUND_LANGUAGES[w.background]!=null ? BACKGROUND_LANGUAGES[w.background] : 0) + bgExtra;
   var bgExotic = Math.min(bgCount, (BACKGROUND_INFO[w.background]||{}).exoticLanguages || 0);
   addSlots(bgExotic, w.background, bgExotic ? (bgExotic===bgCount ? "These must be exotic languages." : "The first must be an exotic language, such as the tongue of whatever haunts you.") : "", true);
-  addSlots(bgCount - bgExotic, w.background);
-  var fromClass = wizardClassLanguages().filter(function(l, i, all){ return fixed.indexOf(l)===-1 && all.indexOf(l)===i; });
+  // A Ravnica guild's language comes from a short list.
+  var before = slots.length;
+  addSlots(bgCount - bgExotic, w.background, bgRules.options ? "Choose from " + bgRules.options.join(", ") + "." : "");
+  if(bgRules.options) slots.slice(before).forEach(function(s){ s.options = bgRules.options; });
+  var fromClass = wizardClassLanguages().concat(wizardBackgroundLanguages()).filter(function(l, i, all){ return fixed.indexOf(l)===-1 && all.indexOf(l)===i; });
   return {fixed:fixed.concat(fromClass), slots:slots, fromClass:fromClass};
 }
 
@@ -312,7 +421,8 @@ export function isStepApplicable(id){
     return !!(ci && ci.choices && ci.choices.length) || wizardClassGrants().some(function(g){ return grantHasChoices(g.def); }) || wizardVariantOffers().length > 0;
   }
   if(id==="languages") return languagePlan().slots.length > 0;
-  if(id==="raceChoices") return !!raceChoiceDef();
+  // (Ability picks, a feat, or a trait's choice: a dwarf's tool, a kenku's skills.)
+  if(id==="raceChoices") return !!raceChoiceDef() || wizardRacePickGrants().length > 0;
   // A race's feat (Variant Human) gets its own step, and the feat's own
   // picks (Fey Touched's spell, Skilled's skills) one more, only when it has any.
   if(id==="feat") return !!(raceChoiceDef() && raceChoiceDef().feat);
@@ -416,15 +526,20 @@ export function validateStep(id){
   if(id==="skills"){
     if(wizardState.skillChoices.length!==info.skillChoices.count) return "Choose "+info.skillChoices.count+" skills from your class list.";
     var bgInfo = BACKGROUND_INFO[wizardState.background] || {}, bgPick = bgInfo.skillPick;
+    // A skill the race gives already (an elf's Perception) is a wasted pick.
+    var fromRace = wizardRaceSkills(null, true);
+    var dup = wizardState.skillChoices.find(function(sk){ return fromRace.indexOf(sk)!==-1; });
+    if(dup) return "Your "+wizardState.race+" race already gives you "+dup+". Pick a different class skill.";
     if(bgPick){
       var bgPicked = wizardBackgroundSkills().slice((bgInfo.skills||[]).length);
       if(bgPicked.length!==bgPick.count) return "Choose "+(bgPick.count>1 ? bgPick.count+" skills" : "a skill")+" from your "+wizardState.background+" background.";
       if(bgPicked.some(function(sk){ return wizardState.skillChoices.indexOf(sk)!==-1; })) return "Pick different skills for your class and your background.";
     }
-    return null;
+    // Then the background's tools (a Criminal's gaming set).
+    return wizardBackgroundPicksProblem() || null;
   }
   if(id==="raceChoices"){
-    var def = raceChoiceDef(), rc = wizardState.raceChoices;
+    var def = raceChoiceDef() || {}, rc = wizardState.raceChoices;
     if(def.abilityBonus){
       var n = def.abilityBonus.amounts.length, exclude = def.abilityBonus.exclude || [];
       var ab = rc.abilities.slice(0, n).filter(Boolean);
@@ -434,19 +549,7 @@ export function validateStep(id){
       }
     }
     if(def.abilityPreset && !def.abilityPreset.options[rc.preset]) return "Pick your "+def.abilityPreset.label.toLowerCase()+".";
-    if(def.skills){
-      var known = wizardState.skillChoices.concat(wizardBackgroundSkills());
-      var sk = rc.skills.slice(0, def.skills).filter(Boolean);
-      var allowed = def.skillOptions || null;
-      if(sk.length!==def.skills || new Set(sk).size!==sk.length || sk.some(function(x){ return known.indexOf(x)!==-1 || (allowed && allowed.indexOf(x)===-1); })){
-        return "Pick "+(def.skills>1 ? def.skills+" different skills" : "a skill")+(allowed ? " from "+allowed.join(", ") : "")+" you're not already proficient in.";
-      }
-    }
-    if(def.tools){
-      var tl = (rc.tools||[]).slice(0, def.tools).filter(Boolean);
-      if(tl.length!==def.tools || new Set(tl).size!==tl.length) return "Pick "+(def.tools>1 ? def.tools+" different tools" : "a tool")+" to be proficient with.";
-    }
-    return null;
+    return wizardRacePicksProblem() || null;
   }
   if(id==="feat"){
     var feat = wizardFeat();
@@ -511,6 +614,8 @@ export function validateStep(id){
     var standardLower = LANGUAGES.Standard.map(function(l){ return l.toLowerCase(); });
     var notExotic = plan.slots.find(function(slot, i){ return slot.exotic && standardLower.indexOf((picks[i]||"").trim().toLowerCase())!==-1; });
     if(notExotic) return "Your "+notExotic.source+" background needs an exotic language (Abyssal, Celestial, Draconic, Infernal...).";
+    var offList = plan.slots.find(function(slot, i){ return slot.options && slot.options.indexOf((picks[i]||"").trim())===-1; });
+    if(offList) return "Your "+offList.source+" background's language is one of "+offList.options.join(", ")+".";
     return null;
   }
   if(id==="equipment"){
@@ -552,8 +657,9 @@ export function openWizard(){
     rolledPool:null,
     skillChoices:[],
     bgSkillChoices:[],
+    bgPicks:{},
     classChoices:{},
-    raceChoices:{abilities:[], preset:"", skills:[], tools:[], feat:"", featPicks:null},
+    raceChoices:{abilities:[], preset:"", profPicks:{}, feat:"", featPicks:null},
     bgFeat:null, campaign:"", campaignFeat:"",
     languageChoices:[],
     equipment:{},
@@ -619,6 +725,25 @@ export function finishWizard(){
   // no armor is equipped yet, so it starts from unarmored / class defense.
   c.inventory = buildEquipmentList(info, w.equipment);
   applyClassChoices(c, info, w.classChoices);
+  // The background's tools: given ones and the Skills step's picks.
+  var bgHolder = backgroundEntry(c);
+  backgroundGrants(c).forEach(function(g){
+    if(!grantHasChoices(g.def)) return; // given outright: read from the data
+    var slots = wizardBgSlots(g.key).map(function(s){ return (s||[]).slice(); }), bgCtx = classPickContext(c, bgHolder, g.key);
+    fillSlots(g.def, slots, bgCtx);
+    // (One left unfinished stays pending on the Feature choices card.)
+    if(!classPicksProblem(g, slots, bgCtx)) applyClassPicks(c, bgHolder, g, slots);
+  });
+  // What the race's traits give and the picks from Race Traits (after the
+  // gear, so a dwarf's handaxe is marked proficient).
+  var raceHolder = raceEntry(c);
+  wizardRaceGrants(); // copies a shifter's type into its choice
+  raceGrants(c).forEach(function(g){
+    if(!grantHasChoices(g.def)){ applyClassPicks(c, raceHolder, g, []); return; }
+    var slots = wizardRaceSlots(g.key).map(function(s){ return (s||[]).slice(); }), raceCtx = classPickContext(c, raceHolder, g.key);
+    fillSlots(g.def, slots, raceCtx);
+    if(!classPicksProblem(g, slots, raceCtx)) applyClassPicks(c, raceHolder, g, slots);
+  });
   var plan = languagePlan();
   c.languages = plan.fixed.concat(w.languageChoices.slice(0, plan.slots.length).filter(function(l, i, all){
     return l && plan.fixed.indexOf(l)===-1 && all.indexOf(l)===i;
@@ -678,24 +803,13 @@ export function finishWizard(){
   else playNewCharacter();
 }
 
-/* Race Traits picks: skills, tools (a feature on the sheet, like the
-   class's tool picks), the feat and its picks. The race's ability
-   increases are already in c.abilities via finalAbilities(); the feat's
-   +1 is added here. */
+/* The Race Traits feat and its picks. The race's ability increases are
+   already in c.abilities via finalAbilities(); the feat's +1 is added
+   here. (Its skills, weapons and tools go on in finishWizard.) */
 function applyRaceChoices(c){
   var def = raceChoiceDef();
   if(!def) return;
   var rc = wizardState.raceChoices;
-  if(def.skills) rc.skills.slice(0, def.skills).forEach(function(sk){
-    if(!sk) return;
-    var entry = c.skillProfs[sk] || {prof:false, expertise:false};
-    entry.prof = true;
-    c.skillProfs[sk] = entry;
-  });
-  if(def.tools) (rc.tools||[]).slice(0, def.tools).filter(Boolean).forEach(function(tool){
-    c.features.push({id:uid(), name:"Tool proficiency: "+tool, source:"Race",
-      text:"From your "+wizardState.race+" traits: you're proficient with "+tool.toLowerCase()+", so add your proficiency bonus to ability checks you make with them.", isPassive:true});
-  });
   if(def.feat){
     var f = FEATS_CATALOG.find(function(x){ return x.name===rc.feat; });
     if(f){

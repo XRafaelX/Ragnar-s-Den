@@ -5,7 +5,7 @@ import { SKILLS } from "../data/abilities-skills.js";
 import { FIGHTING_STYLES } from "../data/classes.js";
 import { escapeHtml, ce, autoEquipLoadout } from "../core/helpers.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
-import { wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext } from "./wizard-core.js";
+import { wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills } from "./wizard-core.js";
 import { renderClassPicks, renderVariantOptions } from "../ui/class-picks.js";
 import { grantHasChoices } from "../core/class-picks.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
@@ -20,9 +20,10 @@ import { SUBCLASSES } from "../data/progression.js";
 export function expertiseOptions(choice){
   var bgSkills = wizardBackgroundSkills();
   var skills = wizardState.skillChoices.concat(bgSkills.filter(function(sk){ return wizardState.skillChoices.indexOf(sk)===-1; }));
-  // Plus a skill picked on Race Traits (Variant Human).
+  // Plus what the race gives and its Race Traits picks (an elf's
+  // Perception, a Variant Human's skill).
+  wizardRaceSkills().forEach(function(sk){ if(skills.indexOf(sk)===-1) skills.push(sk); });
   var def = raceChoiceDef();
-  if(def && def.skills) wizardState.raceChoices.skills.slice(0, def.skills).forEach(function(sk){ if(sk && skills.indexOf(sk)===-1) skills.push(sk); });
   // And skills its feat granted (Skilled, Skill Expert).
   var fp = def && def.feat && wizardState.raceChoices.featPicks;
   if(fp) (fp.skills||[]).forEach(function(sk){ if(sk && SKILLS.some(function(x){ return x[0]===sk; }) && skills.indexOf(sk)===-1) skills.push(sk); });
@@ -187,7 +188,7 @@ function homebrewSelect(opts){
   f.style.marginBottom = "8px";
   f.appendChild(themedPicker({
     key:opts.key, groups:opts.groups, value:opts.value, placeholder:opts.placeholder,
-    ariaLabel:opts.noun, homebrew:{noun:opts.noun}, reasonFor:opts.takenReason,
+    ariaLabel:opts.noun, homebrew:opts.noHomebrew ? undefined : {noun:opts.noun}, reasonFor:opts.takenReason,
     onPick:function(v, meta){
       opts.onPick(v);
       var errBox = document.getElementById("wizard-error");
@@ -336,11 +337,12 @@ export function wizardStepLanguages(container){
     card.appendChild(homebrewSelect({
       key:"lang:"+i, groups:(function(){
         var g = {};
+        if(slot.options){ g[""] = slot.options; return g; } // a guild's short list
         if(!slot.exotic) g[LANGUAGE_GROUP_LABELS.Standard] = LANGUAGES.Standard;
         g[LANGUAGE_GROUP_LABELS.Exotic] = LANGUAGES.Exotic;
         return g;
       })(), value:picks[i],
-      placeholder:slot.exotic ? "Select an exotic language" : "Select a language", noun:"language",
+      placeholder:slot.exotic ? "Select an exotic language" : "Select a language", noun:"language", noHomebrew:!!slot.options,
       // Greyed out and labelled so it's clear why it can't be picked.
       takenReason:function(name){
         if(plan.fixed.indexOf(name)!==-1) return "known";

@@ -15,6 +15,7 @@ import { renderJournalPanel } from "../js/render/panels/journal.js";
 import { state } from "../js/core/state.js";
 import { ensureShape } from "../js/core/character.js";
 import * as W from "../js/wizard/wizard-core.js";
+import * as P from "../js/core/class-picks.js";
 import { importCustomSpells, getCustomSpells } from "../js/core/custom-spells.js";
 import { applySpellSlots } from "../js/levelup/levelup.js";
 import { syncInfusions, infusionBonus } from "../js/core/artificer.js";
@@ -277,7 +278,7 @@ test("armor class: computed from equipment, never from the saved c.ac", () => {
 const BASE_SCORES = { str: 15, dex: 14, con: 13, int: 8, wis: 12, cha: 10 };
 function startWizard(choices){
   W.openWizard();
-  const rc = Object.assign({ abilities: [], preset: "", skills: [], tools: [], feat: "", featPicks: null }, choices.raceChoices);
+  const rc = Object.assign({ abilities: [], preset: "", profPicks: {}, feat: "", featPicks: null }, choices.raceChoices);
   Object.assign(W.wizardState, {
     name: "Wizard test", classId: "Fighter", race: "Human", background: "Soldier", alignment: "Neutral",
     abilityMethod: "pointbuy", abilities: { ...BASE_SCORES }, skillChoices: ["Athletics", "Perception"],
@@ -320,8 +321,8 @@ test("creation: increases stay within 1 to 20", (t) => {
 test("creation: Half-Elf adds +2 CHA and +1 to two other picked scores", (t) => {
   assert.match(raceTraitsError(t, { race: "Half-Elf", raceChoices: { abilities: ["str"] } }), /2 different abilities/);
   assert.match(raceTraitsError(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "cha"] } }), /not Charisma/);
-  assert.equal(raceTraitsError(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "con"], skills: ["Stealth", "History"] } }), null);
-  const c = createThroughWizard(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "con"], skills: ["Stealth", "History"] } });
+  assert.equal(raceTraitsError(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "con"], profPicks: { "race:Skill Versatility:pick": [["Stealth", "History"]] } } }), null);
+  const c = createThroughWizard(t, { race: "Half-Elf", raceChoices: { abilities: ["str", "con"], profPicks: { "race:Skill Versatility:pick": [["Stealth", "History"]] } } });
   assert.deepEqual(c.abilities, { str: 16, dex: 14, con: 14, int: 8, wis: 12, cha: 12 });
 });
 
@@ -343,7 +344,7 @@ test("creation: a Shifter's type sets its increases", (t) => {
 test("creation: Variant Human still picks two +1s", (t) => {
   assert.match(raceTraitsError(t, { race: "Variant Human", raceChoices: { abilities: ["str"] } }), /2 different abilities/);
   const c = createThroughWizard(t, { race: "Variant Human",
-    raceChoices: { abilities: ["str", "con"], skills: ["Stealth"], feat: "Alert", featPicks: { ability: "", skills: [], expertise: [], weapons: [] } } });
+    raceChoices: { abilities: ["str", "con"], profPicks: { "race:Skills:pick": [["Stealth"]] }, feat: "Alert", featPicks: { ability: "", skills: [], expertise: [], weapons: [] } } });
   assert.equal(c.abilities.str, 16);
   assert.equal(c.abilities.con, 14);
   assert.equal(c.abilities.dex, 14);
@@ -631,12 +632,16 @@ test("armor class: Warforged add Integrated Protection's +1", () => {
 
 /* ---------- Race skill and tool picks ---------- */
 test("creation: Changeling skills come from its list, Warforged picks a skill and a tool", (t) => {
-  assert.match(raceTraitsError(t, { race: "Changeling", raceChoices: { abilities: ["dex"], skills: ["Stealth", "Insight"] } }), /from Deception, Insight, Intimidation, Persuasion/);
-  assert.equal(raceTraitsError(t, { race: "Changeling", raceChoices: { abilities: ["dex"], skills: ["Deception", "Insight"] } }), null);
-  assert.match(raceTraitsError(t, { race: "Warforged", raceChoices: { abilities: ["str"], skills: ["Stealth"] } }), /Pick a tool/);
-  const c = createThroughWizard(t, { race: "Warforged", raceChoices: { abilities: ["str"], skills: ["Stealth"], tools: ["Smith's tools"] } });
+  const changeling = (skills) => ({ race: "Changeling", raceChoices: { abilities: ["dex"], profPicks: { "race:Changeling Instincts:pick": [skills] } } });
+  assert.match(raceTraitsError(t, changeling(["Stealth", "Insight"])), /^Choose 2 different skills for Changeling Instincts\.$/, "Stealth isn't on its list");
+  assert.equal(raceTraitsError(t, changeling(["Deception", "Insight"])), null);
+  const warforged = (slots) => ({ race: "Warforged", raceChoices: { abilities: ["str"], profPicks: { "race:Specialized Design:pick": slots } } });
+  assert.match(raceTraitsError(t, warforged([["Stealth"]])), /^Choose a tool for Specialized Design\.$/);
+  const c = createThroughWizard(t, warforged([["Stealth"], ["Smith's tools"]]));
   assert.equal(c.skillProfs.Stealth.prof, true);
-  assert.ok(c.features.some(f => f.name === "Tool proficiency: Smith's tools" && f.source === "Race"));
+  assert.deepEqual(c.racePicks.profPicks["race:Specialized Design:pick"].slots, [["Stealth"], ["Smith's tools"]]);
+  assert.ok(!c.features.some(f => /^Tool proficiency/.test(f.name)), "no custom feature for the tool any more");
+  assert.ok(P.raceProficiencies(c).tools.includes("Smith's tools"));
 });
 
 /* ---------- Expertise needs proficiency ---------- */

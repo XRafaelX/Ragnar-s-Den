@@ -24,8 +24,12 @@ export function renderClassPicks(grant, slots, ctx, onChange, keyPrefix, opts){
   // (Left out under a replacement choice, whose card already says it.)
   if(def.help && !(opts && opts.noHelp)) box.appendChild(note(def.help));
   fillSlots(def, slots, ctx);
+  var shownCount = 0; // pickers numbered across the slots ("choice 2" is the second on screen)
   (def.pick||[]).forEach(function(slot, i){
     var opts = slotOptions(def, slots, i, ctx), n = slot.count || 1;
+    // A pick that depends on another one (a house's gaming set) shows only
+    // when there is something to pick.
+    if(slot.byChoice && !opts.length) return;
     box.appendChild(label(slotLabel(def, slots, i, ctx)));
     if(slotIsFixed(def, slots, i, ctx)){
       box.appendChild(note(slots[i].length ? "Added for you: " + slots[i].map(function(v){ return shown(slot, v); }).join(", ") + "."
@@ -42,9 +46,9 @@ export function renderClassPicks(grant, slots, ctx, onChange, keyPrefix, opts){
       if(o.custom) return; // typed in: the picker's own text box holds it
       (groups[o.group] = groups[o.group] || []).push(slot.kind==="save" ? {value: o.value, label: abilityName(o.value)} : o.value);
     });
-    for(var p = 0; p < n; p++) (function(p){
+    for(var p = 0; p < n; p++) (function(p, number){
       var f = field(themedPicker({
-        key: keyPrefix + ":" + i + ":" + p, ariaLabel: grant.name + " choice " + (p + 1), placeholder: placeholder(slot) + (slot.optional ? " (optional)" : ""),
+        key: keyPrefix + ":" + i + ":" + p, ariaLabel: grant.name + " choice " + number, placeholder: placeholder(slot) + (slot.optional ? " (optional)" : ""),
         groups: groups, value: slots[i][p] || "", search: opts.length > 12,
         // On a phone every list opens as a sheet from the bottom of the
         // screen: under its trigger a long one (favored enemies, skills,
@@ -55,6 +59,10 @@ export function renderClassPicks(grant, slots, ctx, onChange, keyPrefix, opts){
         homebrew: slot.custom ? {noun: slot.noun} : undefined,
         reasonFor: function(v){
           if(v!==slots[i][p] && slots[i].indexOf(v)!==-1) return "picked";
+          if(slot.kinds){
+            var kindOf = function(x){ return (opts.find(function(o){ return o.value===x; }) || {}).kind; };
+            if(slots[i].some(function(x, q){ return q!==p && x && kindOf(x)===kindOf(v); })) return "same kind";
+          }
           return (opts.find(function(o){ return o.value===v; }) || {}).reason || "";
         },
         onPick: function(v, meta){
@@ -66,7 +74,7 @@ export function renderClassPicks(grant, slots, ctx, onChange, keyPrefix, opts){
       box.appendChild(f);
       if(isSpell && slots[i][p] && SPELL_DATA[slots[i][p]]) box.appendChild(spellNote(slots[i][p]));
       if(details && details[slots[i][p]]) box.appendChild(note(slots[i][p] + ": " + details[slots[i][p]]));
-    })(p);
+    })(p, ++shownCount);
   });
   return box;
 }
@@ -115,7 +123,7 @@ export function renderVariantOptions(variant, base, active, onPick, show, from){
 function placeholder(slot){
   return {skill: "Choose a skill", expertise: slot.tools ? "Choose a skill or tool" : "Choose a skill", tool: "Choose a tool", language: "Choose a language",
     save: "Choose a saving throw", weapon: "Choose a weapon", skillOrLanguage: "Choose a skill or language",
-    spell: slot.level===0 ? "Choose a cantrip" : "Choose a spell",
+    toolOrLanguage: "Choose a tool or language", spell: slot.level===0 ? "Choose a cantrip" : "Choose a spell",
     choice: "Choose " + (/^[aeiou]/.test(slot.noun || "") ? "an " : "a ") + slot.noun}[slot.kind];
 }
 function note(text){ var n = ce("p", "fp-spell-note"); n.textContent = text; return n; }

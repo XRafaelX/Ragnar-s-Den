@@ -8,7 +8,7 @@ import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from
 import { featDef, featPicksSummary, featPickDetail } from "./feat-picks.js";
 import { uid } from "./basics.js";
 import { halfProficiency } from "./checks.js";
-import { pickedProfs, featurePicksText } from "./class-picks.js";
+import { pickedProfs, featurePicksText, racePicksText, backgroundPicksText, backgroundGrants } from "./class-picks.js";
 
 export function characterIsCaster(c){
   return (c.classes||[]).some(function(cl){
@@ -239,7 +239,8 @@ export function getAllCharacterFeatures(c){
     });
   });
   if(c.race){
-    var traitText = RACE_TRAITS[c.race] || RACE_TRAIT_FALLBACK;
+    var raceChosen = racePicksText(c);
+    var traitText = (RACE_TRAITS[c.race] || RACE_TRAIT_FALLBACK) + (raceChosen ? "\n\nYour picks: " + raceChosen + "." : "");
     list.push({
       id: "race_"+c.race,
       name: c.race + " Traits",
@@ -251,11 +252,15 @@ export function getAllCharacterFeatures(c){
   }
   if(c.background){
     var bg = BACKGROUND_INFO[c.background];
+    // Its tools: given ones, and what was picked (a gaming set, a house).
+    var bgGiven = backgroundGrants(c).reduce(function(a, g){ return a.concat(g.def.tools || []); }, []);
+    var bgChosen = backgroundPicksText(c);
+    var bgTools = (bgGiven.length ? "\n\nTools: " + bgGiven.join(", ") + "." : "") + (bgChosen ? "\n\nYour picks: " + bgChosen + "." : "");
     list.push({
       id: "bg_"+c.background,
       name: c.background + " Lore & Features",
       source: "Background · " + c.background,
-      text: (bg ? bg.blurb : BACKGROUND_INFO_FALLBACK) + (bg && bg.feature && bg.feature.name ? "\n\n" + bg.feature.name + ": " + (bg.feature.text || "") : ""),
+      text: (bg ? bg.blurb : BACKGROUND_INFO_FALLBACK) + (bg && bg.feature && bg.feature.name ? "\n\n" + bg.feature.name + ": " + (bg.feature.text || "") : "") + bgTools,
       category: "background",
       isDerived: true
     });

@@ -4,7 +4,7 @@
 import { RACE_DATA } from "../data/race-data.js";
 import { WEAPON_DATA } from "../data/weapons.js";
 import { featProficiencies } from "./feat-picks.js";
-import { characterPickedProfs } from "./class-picks.js";
+import { characterPickedProfs, raceProficiencies } from "./class-picks.js";
 import { mod, profBonus } from "./basics.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
 import { classFeatureList, classProficiencies } from "./class-features.js";
@@ -194,10 +194,13 @@ export function rageDamageBonus(c, item){
 }
 /* Best-effort default for a newly added weapon's Proficient checkbox:
    true if any of the character's classes list the weapon's category
-   ("Simple weapons"/"Martial weapons") or name it specifically. */
+   ("Simple weapons"/"Martial weapons") or name it specifically, or the
+   race or a feat gives it. */
 export function isProficientWithWeapon(c, weaponName, category){
   // Weapon Master's picks.
   if(weaponName && featProficiencies(c).weapons.some(function(w){ return w.name===weaponName; })) return true;
+  // The race's weapon training (an elf's longbow, a hobgoblin's picks).
+  if(weaponName && raceProficiencies(c).weapons.indexOf(weaponName)!==-1) return true;
   return (c.classes||[]).some(function(cl, idx){
     var p = classProficiencies(c, idx);
     if(!p || !p.weapons) return false;

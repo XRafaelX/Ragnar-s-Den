@@ -32,9 +32,11 @@ import { classStyleList, styleDef, stylePicksProblem, makeStyleFeature } from ".
 
 export var TOOL_GROUPS = {
   "Artisan's tools": ARTISAN_TOOLS,
+  "Gaming sets": ["Dice set","Dragonchess set","Playing card set","Three-Dragon Ante set"],
   "Musical instruments": MUSICAL_INSTRUMENTS,
-  "Other tools": ["Disguise kit","Forgery kit","Herbalism kit","Navigator's tools","Poisoner's kit","Thieves' tools",
-    "Dice set","Playing card set","Dragonchess set","Three-Dragon Ante set","Vehicles (land)","Vehicles (water)"]
+  // Air and space vehicles: a Lyrandar house agent's, a Wildspacer's.
+  "Vehicles": ["Vehicles (land)","Vehicles (water)","Vehicles (air)","Vehicles (space)"],
+  "Other tools": ["Disguise kit","Forgery kit","Herbalism kit","Navigator's tools","Poisoner's kit","Thieves' tools"]
 };
 var SKILL_NAMES = SKILLS.map(function(s){ return s[0]; });
 function isSkill(name){ return SKILL_NAMES.indexOf(name)!==-1; }

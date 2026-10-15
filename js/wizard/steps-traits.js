@@ -1,12 +1,17 @@
 /* ---------------- Creation wizard: skills, race traits and feats ----------------
    The Skills step, the race's own choices, a race's feat and its picks,
    and the feat a background or campaign gives. */
-import { ABILITIES, SKILLS } from "../data/abilities-skills.js";
+import { ABILITIES } from "../data/abilities-skills.js";
 import { BACKGROUND_INFO } from "../data/backgrounds.js";
+import { RACE_DATA } from "../data/race-data.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { themedPicker } from "../ui/themed-picker.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress } from "./wizard-core.js";
-import { emptyPicks, featNeedsChoice, featHasPicks, featDef, TOOL_GROUPS } from "../core/feat-picks.js";
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
+  wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardRaceSkills,
+  wizardBackgroundGrants, wizardBackgroundPickGrants, wizardBgSlots, wizardBgPickContext } from "./wizard-core.js";
+import { emptyPicks, featNeedsChoice, featHasPicks, featDef } from "../core/feat-picks.js";
+import { fillSlots, classPicksProblem, grantHasChoices } from "../core/class-picks.js";
+import { renderClassPicks } from "../ui/class-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
 import { fillFeatList } from "../ui/feat-list.js";
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
@@ -26,6 +31,14 @@ export function wizardStepSkills(container){
     bgP.innerHTML = "From your <b>"+escapeHtml(wizardState.background)+"</b> background: "+bgInfo.skills.join(", ")+" (automatic)"+(bgPick ? ", plus your pick below" : "")+".";
     card.appendChild(bgP);
   }
+  // Skills the race gives outright (an elf's Perception).
+  var fromRace = wizardRaceSkills(null, true);
+  if(fromRace.length){
+    var raceP = document.createElement("p");
+    raceP.style.cssText = "font-size:13px;color:var(--text-on-parch-dim);margin-bottom:12px;";
+    raceP.innerHTML = "From your <b>"+escapeHtml(wizardState.race)+"</b> race: "+escapeHtml(fromRace.join(", "))+" (automatic).";
+    card.appendChild(raceP);
+  }
   // Picks that no longer fit (the background was changed) are dropped.
   if(!bgPick) wizardState.bgSkillChoices = [];
   else wizardState.bgSkillChoices = (wizardState.bgSkillChoices||[]).filter(function(sk){ return bgPick.options.indexOf(sk)!==-1; });
@@ -33,7 +46,10 @@ export function wizardStepSkills(container){
   var info = currentClassInfo();
   card.appendChild(pickLabel("Choose "+info.skillChoices.count+" from your class list:"));
   card.appendChild(checkList(info.skillChoices.options, wizardState.skillChoices, info.skillChoices.count,
-    function(sk){ return wizardState.bgSkillChoices.indexOf(sk)!==-1 || ((bgInfo && bgInfo.skills)||[]).indexOf(sk)!==-1 ? "from background" : ""; },
+    function(sk){
+      if(fromRace.indexOf(sk)!==-1) return "from race";
+      return wizardState.bgSkillChoices.indexOf(sk)!==-1 || ((bgInfo && bgInfo.skills)||[]).indexOf(sk)!==-1 ? "from background" : "";
+    },
     function(list){ wizardState.skillChoices = list; }));
 
   if(bgPick){
@@ -45,6 +61,28 @@ export function wizardStepSkills(container){
       function(sk){ return wizardState.skillChoices.indexOf(sk)!==-1 ? "from class" : ""; },
       function(list){ wizardState.bgSkillChoices = list; }));
   }
+
+  // The background's tools: the ones it gives, then its choices (a gaming
+  // set, an instrument, a House Agent's house) with the shared pickers.
+  var givenTools = wizardBackgroundGrants().filter(function(g){ return !grantHasChoices(g.def); })
+    .reduce(function(a, g){ return a.concat(g.def.tools || []); }, []);
+  var toolPicks = wizardBackgroundPickGrants();
+  if(givenTools.length || toolPicks.length){
+    var toolHead = pickLabel("");
+    toolHead.style.marginTop = "16px";
+    toolHead.innerHTML = "Tools from your <b>"+escapeHtml(wizardState.background)+"</b> background"+
+      (givenTools.length ? ": "+escapeHtml(givenTools.join(", ").toLowerCase())+" (automatic)"+(toolPicks.length ? ", plus your pick below." : ".") : ":");
+    card.appendChild(toolHead);
+  }
+  toolPicks.forEach(function(g){
+    var slots = wizardBgSlots(g.key), ctx = wizardBgPickContext(g);
+    fillSlots(g.def, slots, ctx);
+    card.appendChild(renderClassPicks(g, slots, ctx, function(meta){
+      if(meta && meta.typing) return;
+      var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+      renderWizard();
+    }, "bg:" + g.key));
+  });
   container.appendChild(card);
 }
 function pickLabel(text){
@@ -94,24 +132,25 @@ function checkList(options, chosen, count, takenReason, onChange){
   return rows;
 }
 
-/* Race Traits: the picks a race leaves to the player (see RACE_CHOICES):
-   ability increases (Variant Human's two +1s, a Half-Elf's, a Fairy's +2
-   and +1, an Aasimar's subrace), a skill and a tool. Each pick is a
-   numbered section that shows a check once it's done. Equal increases are
-   a row of tappable score tiles (pick N), different ones a picker each;
-   skills and tools use themed pickers. A race's feat has its own steps
-   after this one (wizardStepFeat, wizardStepFeatPicks). */
+/* Race Traits: the picks a race leaves to the player: ability increases
+   (RACE_CHOICES: Variant Human's two +1s, a Half-Elf's, a Fairy's +2 and
+   +1, an Aasimar's subrace) and the traits that ask for a choice (`profs`
+   picks in RACE_DATA: a dwarf's tool, a kenku's two skills, a hobgoblin's
+   two martial weapons). Each is a numbered section that shows a check
+   once it's done. Equal increases are a row of tappable score tiles
+   (pick N), different ones a picker each; a trait's choices use the same
+   pickers as class features. A race's feat has its own steps after this
+   one (wizardStepFeat, wizardStepFeatPicks). */
 var CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12.5 10 17.5 19 7"/></svg>';
 
 export function wizardStepRaceChoices(container){
-  var def = raceChoiceDef(), rc = wizardState.raceChoices;
+  var def = raceChoiceDef() || {}, rc = wizardState.raceChoices;
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Race Traits</span></h3>";
   var explain = ce("div","wiz-explain");
   explain.innerHTML = "<b>Why this matters:</b> As a <b>"+escapeHtml(wizardState.race)+"</b> you choose some of your traits yourself instead of getting fixed ones. These picks let you shape exactly the character you want.";
   card.appendChild(explain);
 
-  var known = wizardState.skillChoices.concat(wizardBackgroundSkills());
   var number = 0;
   function section(titleText, helpText, done){
     var sec = ce("div","rt-section"+(done ? " done" : ""));
@@ -199,42 +238,15 @@ export function wizardStepRaceChoices(container){
     })));
   }
 
-  if(def.skills){
-    var skillList = def.skillOptions || SKILLS.map(function(x){ return x[0]; });
-    var skillsPicked = rc.skills.slice(0, def.skills).filter(function(sk, i, all){ return sk && known.indexOf(sk)===-1 && skillList.indexOf(sk)!==-1 && all.indexOf(sk)===i; });
-    var sec2 = section(def.skills>1 ? "Skill proficiencies" : "Skill proficiency",
-      "Become proficient in "+(def.skills>1 ? def.skills+" skills" : "one skill")+(def.skillOptions ? " from "+def.skillOptions.join(", ") : " of your choice")+".", skillsPicked.length===def.skills);
-    for(var s=0;s<def.skills;s++){
-      (function(s){
-        sec2.appendChild(pickerField(themedPicker({
-          key:"race:skill:"+s, placeholder:"Choose a skill", ariaLabel:"Race skill"+(def.skills>1 ? " "+(s+1) : ""),
-          groups:{"":skillList},
-          value:rc.skills[s]||"",
-          reasonFor:function(sk){
-            if(known.indexOf(sk)!==-1) return "known";
-            return sk!==rc.skills[s] && rc.skills.indexOf(sk)!==-1 ? "picked" : "";
-          },
-          onPick:function(v){ rc.skills[s] = v; picked(); }
-        })));
-      })(s);
-    }
-  }
-
-  if(def.tools){
-    rc.tools = rc.tools || [];
-    var toolsPicked = rc.tools.slice(0, def.tools).filter(Boolean);
-    var secT = section("Tool proficiency", "Become proficient with "+(def.tools>1 ? def.tools+" tools" : "one tool")+" of your choice.", toolsPicked.length===def.tools);
-    for(var tIdx=0; tIdx<def.tools; tIdx++){
-      (function(i){
-        secT.appendChild(pickerField(themedPicker({
-          key:"race:tool:"+i, placeholder:"Choose a tool", ariaLabel:"Race tool"+(def.tools>1 ? " "+(i+1) : ""),
-          groups:TOOL_GROUPS, value:rc.tools[i]||"",
-          reasonFor:function(t){ return t!==rc.tools[i] && rc.tools.indexOf(t)!==-1 ? "picked" : ""; },
-          onPick:function(v){ rc.tools[i] = v; picked(); }
-        })));
-      })(tIdx);
-    }
-  }
+  // A trait's choices: its text, then its pickers.
+  var traits = (RACE_DATA[wizardState.race] || {}).traits || [];
+  wizardRacePickGrants().forEach(function(g){
+    var slots = wizardRaceSlots(g.key), ctx = wizardRacePickContext(g);
+    fillSlots(g.def, slots, ctx);
+    var trait = traits.find(function(t){ return t.name===g.name; });
+    var sec = section(g.name, trait ? trait.text : "", !classPicksProblem(g, slots, ctx));
+    sec.appendChild(renderClassPicks(g, slots, ctx, function(meta){ if(!(meta && meta.typing)) picked(); }, "race:" + g.key));
+  });
 
   container.appendChild(card);
 }

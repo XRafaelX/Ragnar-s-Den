@@ -8,7 +8,7 @@ import { TITLE_MAX } from "../ui/char-title.js";
 import { SPELL_DATA, spellDataForClass, tashaAddsSpell, tashaSpellCount } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeDiceSvg } from "../ui/svg-icons.js";
-import { wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills } from "./wizard-core.js";
+import { wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, wizardRaceGrants, wizardRaceSlots, wizardRaceSkills, wizardBackgroundGrants, wizardBgSlots } from "./wizard-core.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { featPicksSummary } from "../core/feat-picks.js";
 import { classPicksSummary } from "../core/class-picks.js";
@@ -242,13 +242,26 @@ export function wizardStepReview(container){
   if(raceDef){
     var rc = wizardState.raceChoices;
     if(raceDef.abilityPreset && rc.preset) row(raceDef.abilityPreset.label, rc.preset);
-    if(raceDef.skills) row(raceDef.skills>1 ? "Race skills" : "Race skill", rc.skills.slice(0, raceDef.skills).filter(Boolean).join(", ") || "None");
-    if(raceDef.tools) row("Race tool", (rc.tools||[]).slice(0, raceDef.tools).filter(Boolean).join(", ") || "None");
     if(raceDef.feat){
       var featPicked = rc.feat && featPicksSummary(FEATS_CATALOG.find(function(f){ return f.name===rc.feat; }), rc.featPicks);
       row("Feat", (rc.feat || "None") + (featPicked ? " ("+featPicked+")" : ""));
     }
   }
+  // What the race's traits give: outright (Keen Senses: Perception) or picked.
+  wizardRaceGrants().forEach(function(g){
+    var bits = (g.def.skills||[]).concat(g.def.weapons||[], g.def.tools||[]);
+    var chosen = classPicksSummary(g, {slots: wizardRaceSlots(g.key)});
+    if(chosen) bits.push(chosen);
+    if(bits.length) row(g.name, bits.join(", "));
+  });
+  // The background's tools: given and picked.
+  var bgToolBits = [];
+  wizardBackgroundGrants().forEach(function(g){
+    bgToolBits = bgToolBits.concat(g.def.tools || []);
+    var chosen = classPicksSummary(g, {slots: wizardBgSlots(g.key)});
+    if(chosen) bgToolBits.push(chosen);
+  });
+  if(bgToolBits.length) row("Background tools", bgToolBits.join(", "));
   if(bgGrant && bgGrant.def){
     var bgPicked = featPicksSummary(bgGrant.def, wizardBackgroundFeatPicks());
     row(bgGrant.campaign ? "Campaign feat" : "Background feat", bgGrant.def.name + (bgPicked ? " ("+bgPicked+")" : ""));
@@ -257,8 +270,7 @@ export function wizardStepReview(container){
     (raceHp ? " + "+raceHp+" "+(race.hpTrait || wizardState.race) : "")+(toughHp ? " + "+toughHp+" Tough" : "")+")");
   row("Armor Class", ac.value + " (" + ac.breakdown + ")");
   row("Saving throws", info.savingThrows.map(function(k){ return k.toUpperCase(); }).join(", "));
-  var allSkills = wizardState.skillChoices.concat(wizardBackgroundSkills(),
-    raceDef && raceDef.skills ? wizardState.raceChoices.skills.slice(0, raceDef.skills).filter(Boolean) : []);
+  var allSkills = wizardState.skillChoices.concat(wizardBackgroundSkills(), wizardRaceSkills());
   row("Skills", allSkills.filter(function(sk, i){ return allSkills.indexOf(sk)===i; }).join(", ") || "None");
   (info.choices||[]).forEach(function(ch){
     var v = wizardState.classChoices[ch.id];

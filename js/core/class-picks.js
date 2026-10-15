@@ -1,6 +1,8 @@
 import { SKILLS, ABILITIES } from "../data/abilities-skills.js";
 import { CLASS_PROFICIENCIES } from "../data/classes.js";
 import { CLASS_PROGRESSION, SUBCLASSES } from "../data/progression.js";
+import { RACE_DATA } from "../data/race-data.js";
+import { BACKGROUND_PROFS, BACKGROUND_SKILL_FIXES } from "../data/backgrounds.js";
 import { OPTION_SETS, optionSetStart } from "../data/class-options.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
 import { WEAPON_DATA, WEAPON_GROUPS } from "../data/weapons.js";
@@ -27,7 +29,8 @@ import { spellHeldBy } from "./spell-grants.js";
      help        one plain line shown above the pickers
      pick        [slot]: the choices, each
        kind      "skill", "expertise", "tool", "language", "save",
-                 "weapon", "skillOrLanguage", "spell" or "choice"
+                 "weapon", "skillOrLanguage", "skillOrTool", "toolOrLanguage",
+                 "spell" or "choice"
        count     how many to pick (default 1)
        label     the line above its pickers (else worked out)
        options   what it can be: skill names (none = any skill), tool
@@ -38,9 +41,20 @@ import { spellHeldBy } from "./spell-grants.js";
        expertise (skill) the picked skills also get expertise, and one
                  already proficient stays pickable (Blessings of Knowledge)
        tools     (expertise) tools it may go to instead of a skill
-       group     (tool) a TOOL_GROUPS key in place of options
-       filter    (weapon) "oneHandedMelee", "kenseiMelee", "kenseiRanged"
-                 or "kensei"
+       group     (tool) a TOOL_GROUPS key in place of options; with
+                 neither, any tool
+       noun      (tool) what one of the group is called ("musical
+                 instrument"), for the label
+       kinds     (tool) in place of a group: one pick of each kind listed,
+                 a kind being a TOOL_GROUPS key or a single tool ("one
+                 musical instrument or artisan's tools"; with count 2 of
+                 three kinds, Urban Bounty Hunter's)
+       byChoice  (tool) {slot, groups}: the group the pick comes from
+                 depends on what the grant's `choice` slot picked (a House
+                 Agent's house: Deneith adds one gaming set); none for a
+                 choice not listed (nothing to pick)
+       filter    (weapon) "oneHandedMelee", "kenseiMelee", "kenseiRanged",
+                 "kensei" or "martial" (a martial weapon not had yet)
        monk      (weapon) the weapon counts as a monk weapon
        level, list, schools  (spell) the spell level, the class list it
                  comes from (none = any class's) and its schools; or
@@ -61,6 +75,15 @@ import { spellHeldBy } from "./spell-grants.js";
                  the player type their own (two humanoid races)
        optional  the slot may be left empty (a favored enemy's language,
                  "if they speak one at all"); `none` words that option
+
+   A grant's `toolsByChoice` {slot, tools: {choice: [tools]}} gives tools
+   outright by what its `choice` slot picked (a House Agent's house).
+   Races give things the same way: a trait's `profs` in RACE_DATA (Keen
+   Senses' Perception, Dwarven Combat Training's weapons, a dwarf's tool
+   choice), which may also list `weapons` and `tools` given outright.
+   Their picks are kept on c.racePicks, which stands in for a class entry
+   (see raceGrants). And so do backgrounds: BACKGROUND_PROFS (a Criminal's
+   thieves' tools and gaming set), kept on c.backgroundPicks.
 
    What was picked is kept on the class entry as
    cl.profPicks[key] = {slots: [[values], ...], applied}. `slots` lines up
@@ -196,6 +219,10 @@ function allProficiencies(c, exceptCl, exceptKey){
     picked.toolExpertise.forEach(function(t){ add(out.toolExpertise, t); });
     picked.monkWeapons.forEach(function(w){ add(out.monkWeapons, w); });
   });
+  var race = raceProficiencies(c, exceptCl && exceptCl===c.racePicks ? exceptKey : null);
+  race.tools.forEach(function(t){ add(out.tools, t); });
+  race.weapons.forEach(function(w){ add(out.weapons, w); });
+  backgroundProficiencies(c, exceptCl && exceptCl===c.backgroundPicks ? exceptKey : null).tools.forEach(function(t){ add(out.tools, t); });
   var feats = featProficiencies(c);
   feats.tools.forEach(function(t){ add(out.tools, t.name); });
   feats.weapons.forEach(function(w){ add(out.weapons, w.name); });
@@ -234,8 +261,8 @@ export function slotOptions(def, slots, i, ctx){
     if(others.indexOf(v)!==-1) return "picked";
     return ctx.taken && mine.indexOf(v)===-1 ? ctx.taken(v, slot.kind) || "" : "";
   }
-  function entries(values, group, why){
-    return values.map(function(v){ return {value: v, group: group || "", reason: why(v) || taken(v)}; });
+  function entries(values, group, why, kind){
+    return values.map(function(v){ var o = {value: v, group: group || "", reason: why(v) || taken(v)}; if(kind) o.kind = kind; return o; });
   }
   function open(list){ return list.some(function(o){ return !o.reason; }); }
   function skillWhy(v){
@@ -248,6 +275,11 @@ export function slotOptions(def, slots, i, ctx){
   }
   var list;
   if(slot.kind==="skill"){
+    // Set by the grant's choice (a shifter's type: Beasthide, Athletics).
+    if(slot.byChoice){
+      var chosenType = ((slots && slots[slot.byChoice.slot]) || [])[0];
+      return entries((chosenType && slot.byChoice.options[chosenType]) || [], "", skillWhy);
+    }
     list = entries(slot.options || SKILL_NAMES, "", skillWhy);
     if(!open(list) && slot.fallback) list = entries(slot.fallback, "", skillWhy);
     return list;
@@ -257,8 +289,29 @@ export function slotOptions(def, slots, i, ctx){
     list = entries(skills, slot.tools ? "Skills" : "", function(v){ return ctx.skillExpert(v) || (def.expertise||[]).indexOf(v)!==-1 ? "expertise" : ""; });
     return list.concat(entries((slot.tools||[]).filter(function(t){ return ctx.hasTool(t); }), "Tools", function(v){ return ctx.toolExpert(v) ? "expertise" : ""; }));
   }
+  function toolWhy(v){ return ctx.hasTool(v) ? "known" : ""; }
+  function allTools(){
+    return Object.keys(TOOL_GROUPS).reduce(function(a, g){ return a.concat(entries(TOOL_GROUPS[g], g, toolWhy)); }, []);
+  }
   if(slot.kind==="tool"){
-    return entries(slot.options || TOOL_GROUPS[slot.group] || [], "", function(v){ return ctx.hasTool(v) ? "known" : ""; });
+    // One of each kind listed ("an instrument or artisan's tools").
+    if(slot.kinds) return slot.kinds.reduce(function(a, k){
+      return a.concat(TOOL_GROUPS[k] ? entries(TOOL_GROUPS[k], k, toolWhy, k) : entries([k], "", toolWhy, k));
+    }, []);
+    // From the group the grant's choice names (a house's gaming set).
+    if(slot.byChoice){
+      var picked = ((slots && slots[slot.byChoice.slot]) || [])[0];
+      var g = picked && slot.byChoice.groups[picked];
+      return g ? entries(TOOL_GROUPS[g] || [], "", toolWhy) : [];
+    }
+    if(!slot.options && !slot.group) return allTools();
+    return entries(slot.options || TOOL_GROUPS[slot.group] || [], "", toolWhy);
+  }
+  if(slot.kind==="toolOrLanguage"){
+    return entries(slot.options, "Tools", toolWhy).concat(allLanguages());
+  }
+  if(slot.kind==="skillOrTool"){
+    return entries(SKILL_NAMES, "Skills", skillWhy).concat(allTools());
   }
   if(slot.kind==="language"){
     if(!slot.options) return allLanguages();
@@ -276,7 +329,11 @@ export function slotOptions(def, slots, i, ctx){
     Object.keys(WEAPON_GROUPS).forEach(function(g){
       // A weapon already known stays pickable; a kensei weapon already chosen doesn't.
       list = list.concat(entries(WEAPON_GROUPS[g].filter(function(n){ return weaponFits(slot.filter, n); }), g,
-        function(v){ return slot.monk && ctx.monkWeapon && ctx.monkWeapon(v) ? "known" : ""; }));
+        function(v){
+          if(slot.monk) return ctx.monkWeapon && ctx.monkWeapon(v) ? "known" : "";
+          // A martial weapon the character can already use is no gain.
+          return slot.filter==="martial" && ctx.knowsWeapon && ctx.knowsWeapon(v) ? "known" : "";
+        }));
     });
     return list;
   }
@@ -315,6 +372,7 @@ function weaponFits(filter, name){
   if(!d) return false;
   var props = d.properties || "";
   if(filter==="oneHandedMelee") return !d.ranged && !/two-handed/i.test(props);
+  if(filter==="martial") return d.category==="martial";
   // A kensei weapon: no heavy or special property; a longbow is allowed.
   var kensei = name==="Longbow" || !/heavy|special/i.test(props);
   if(filter==="kenseiMelee") return kensei && !d.ranged;
@@ -357,16 +415,34 @@ export function slotLabel(def, slots, i, ctx){
   if(slot.label) return slot.label;
   var opts = slotOptions(def, slots, i, ctx).map(function(o){ return o.value; });
   if(slot.kind==="skill"){
+    if(slot.byChoice) return opts.length ? "It gives you " + listText(opts) : "";
     var tail = slot.expertise ? ", with your proficiency bonus doubled" : "";
     if(slot.options || slot.fallback) return "Gain proficiency in " + (n > 1 ? n + " of " : "") + listText(opts, n > 1 ? "and" : "or") + tail;
     return "Gain proficiency in " + (n > 1 ? n + " skills" : "a skill") + " of your choice" + tail;
   }
   if(slot.kind==="expertise") return "Expertise: double your proficiency bonus in " + (n > 1 ? n + " skills" : "a skill") + " you're proficient in" +
     (slot.tools ? " (or " + lower(listText(slot.tools, "or")) + ")" : "");
-  if(slot.kind==="tool") return "Gain proficiency with " + (slot.group ? "one type of " + lower(slot.group) : n > 1 ? n + " tools" : listText(opts.map(lower), "or"));
+  if(slot.kind==="tool"){
+    if(slot.kinds){
+      var kindText = slot.kinds.map(function(k){ return TOOL_GROUPS[k] ? kindNoun(k) : lower(k); });
+      return "Gain proficiency with " + (n > 1 ? n + " of: " + listText(kindText, "and") + " (different kinds)" : listText(kindText, "or"));
+    }
+    if(slot.byChoice){
+      var chosenGroup = slot.byChoice.groups[((slots && slots[slot.byChoice.slot]) || [])[0]];
+      return chosenGroup ? "Your house also gives " + kindNoun(chosenGroup) + " of your choice" : "";
+    }
+    if(slot.noun) return "Gain proficiency with " + (n > 1 ? n + " " + slot.noun + "s" : "one " + slot.noun) + " of your choice";
+    if(!slot.options && !slot.group) return "Gain proficiency with " + (n > 1 ? n + " tools" : "a tool") + " of your choice";
+    return "Gain proficiency with " + (slot.group ? "one type of " + lower(slot.group) : n > 1 ? n + " tools" : listText(opts.map(lower), "or"));
+  }
   if(slot.kind==="language") return "Learn " + (n > 1 ? n + " languages" : "a language") + " of your choice";
   if(slot.kind==="save") return "Gain proficiency in " + listText(opts.map(abilityName), "or") + " saving throws";
-  if(slot.kind==="weapon") return "Gain proficiency with " + (n > 1 ? n + " weapons" : "a weapon") + " of your choice";
+  if(slot.kind==="weapon"){
+    var kind = slot.filter==="martial" ? "martial weapon" : "weapon";
+    return "Gain proficiency with " + (n > 1 ? n + " " + kind + "s" : "a " + kind) + " of your choice";
+  }
+  if(slot.kind==="skillOrTool") return "Gain proficiency in a skill or with a tool of your choice";
+  if(slot.kind==="toolOrLanguage") return "Gain proficiency with " + lower(listText(slot.options, "or")) + ", or learn a language";
   if(slot.kind==="skillOrLanguage") return "Gain proficiency in " + listText(slot.options, "or") + ", or learn a language";
   if(slot.kind==="choice") return "Choose " + (/^[aeiou]/.test(slot.noun) ? "an " : "a ") + slot.noun;
   if(slot.kind==="spell"){
@@ -375,6 +451,15 @@ export function slotLabel(def, slots, i, ctx){
     return "Choose " + (n > 1 ? n + " " : (slot.list && /^[AEIOU]/.test(slot.list) ? "an " : "a ")) + (slot.list ? slot.list.toLowerCase() + " " : "") + what + (n > 1 ? "s" : "");
   }
   return "";
+}
+/* "one musical instrument", "one type of artisan's tools", "one gaming set". */
+function kindNoun(group){
+  return {"Gaming sets": "one gaming set", "Musical instruments": "one musical instrument", "Artisan's tools": "one type of artisan's tools",
+    "Vehicles": "one type of vehicle"}[group] || "one of " + lower(group);
+}
+/* The kind (group or single tool) a `kinds` slot's value belongs to. */
+function toolKind(slot, v){
+  return (slot.kinds || []).find(function(k){ return TOOL_GROUPS[k] ? TOOL_GROUPS[k].indexOf(v)!==-1 : k===v; }) || "";
 }
 /* What's still missing ("" when the picks are complete). */
 export function classPicksProblem(grant, slots, ctx){
@@ -387,9 +472,15 @@ export function classPicksProblem(grant, slots, ctx){
       var o = opts.find(function(x){ return x.value===v; });
       return o && !o.reason && all.indexOf(v)===n;
     });
+    // One of each kind: two instruments for Urban Bounty Hunter won't do.
+    if(def.pick[i].kinds && new Set(got.map(function(v){ return toolKind(def.pick[i], v); })).size < got.length){
+      return "Choose tools of different kinds for " + grant.name + ".";
+    }
     if(got.length < need){
       var kind = def.pick[i].kind;
-      var noun = {skill: "skill", expertise: "skill", tool: "tool", language: "language", save: "saving throw", weapon: "weapon", skillOrLanguage: "skill or language",
+      var houseGroup = def.pick[i].byChoice && def.pick[i].byChoice.groups && def.pick[i].byChoice.groups[((slots && slots[def.pick[i].byChoice.slot]) || [])[0]];
+      var noun = {skill: "skill", expertise: "skill", tool: def.pick[i].noun || (houseGroup ? kindNoun(houseGroup).replace(/^one (type of )?/, "") : "tool"), language: "language", save: "saving throw",
+        weapon: def.pick[i].filter==="martial" ? "martial weapon" : "weapon", skillOrLanguage: "skill or language", skillOrTool: "skill or tool", toolOrLanguage: "tool or language",
         spell: def.pick[i].level===0 ? "cantrip" : "spell", choice: def.pick[i].noun}[kind];
       return "Choose " + (need > 1 ? need + " different " + noun + "s" : (/^[aeiou]/.test(noun) ? "an " : "a ") + noun) +
         (kind==="expertise" ? " for your expertise (" + grant.name + ")." : " for " + grant.name + ".");
@@ -406,7 +497,8 @@ export function applyClassPicks(c, cl, grant, slots){
   revertClassPicks(c, cl, grant.key);
   slots = (def.pick||[]).map(function(s, i){ return ((slots && slots[i]) || []).filter(Boolean).slice(0, s.count || 1); });
   var applied = {skills: [], expertise: [], languages: [], weaponItems: []};
-  var skills = (def.skills||[]).slice(), expertise = (def.expertise||[]).slice(), languages = (def.languages||[]).slice(), weapons = [];
+  // (Weapons given outright: a race's weapon training.)
+  var skills = (def.skills||[]).slice(), expertise = (def.expertise||[]).slice(), languages = (def.languages||[]).slice(), weapons = (def.weapons||[]).slice();
   (def.pick||[]).forEach(function(slot, i){
     slots[i].forEach(function(v){
       if(slot.kind==="skill"){ skills.push(v); if(slot.expertise) expertise.push(v); }
@@ -414,6 +506,8 @@ export function applyClassPicks(c, cl, grant, slots){
       else if(slot.kind==="language") languages.push(v);
       else if(slot.kind==="weapon") weapons.push(v);
       else if(slot.kind==="skillOrLanguage"){ if(isSkill(v)) skills.push(v); else languages.push(v); }
+      else if(slot.kind==="skillOrTool"){ if(isSkill(v)) skills.push(v); }
+      else if(slot.kind==="toolOrLanguage"){ if((slot.options||[]).indexOf(v)===-1) languages.push(v); }
     });
   });
   if(!c.skillProfs) c.skillProfs = {};
@@ -493,6 +587,168 @@ export function migrateClassPicks(c){
   });
   return changed;
 }
+/* ---- Race ----
+   A race's traits give skills, weapons and tools too (`profs` on a trait
+   in RACE_DATA). They go through the same engine: c.racePicks =
+   {profPicks: {key: {slots, applied}}} stands in for a class entry. A
+   trait that gives something outright and asks for a choice (a satyr's
+   Reveler: two skills and an instrument) is two grants, so the given part
+   goes on the sheet without waiting for the pick. */
+export function raceEntry(c){
+  if(!c.racePicks || typeof c.racePicks!=="object") c.racePicks = {profPicks: {}};
+  if(!c.racePicks.profPicks) c.racePicks.profPicks = {};
+  return c.racePicks;
+}
+export function raceGrantsFor(race){
+  var out = [], source = "Race · " + race;
+  ((RACE_DATA[race] && RACE_DATA[race].traits) || []).forEach(function(t){
+    var p = t.profs;
+    if(!p) return;
+    if((p.skills||[]).length || (p.weapons||[]).length || (p.tools||[]).length){
+      out.push({key: "race:" + t.name, name: t.name, source: source, feature: t.name, race: true,
+        def: {skills: p.skills || [], weapons: p.weapons || [], tools: p.tools || []}});
+    }
+    if((p.pick||[]).length) out.push({key: "race:" + t.name + ":pick", name: t.name, source: source, feature: t.name, race: true, def: {pick: p.pick, presetChoice: p.presetChoice}});
+  });
+  return out;
+}
+export function raceGrants(c){ return raceGrantsFor(c.race); }
+/* Skills, weapons, tools and armor the race gives, outright and picked
+   (leaving out the grant `exceptKey`): {skills, weapons, tools, armor}. */
+export function raceProficiencies(c, exceptKey){
+  var out = {skills: [], weapons: [], tools: [], armor: ((RACE_DATA[c.race] || {}).armorProfs || []).slice()};
+  var held = (c.racePicks && c.racePicks.profPicks) || {};
+  raceGrants(c).forEach(function(g){
+    if(g.key===exceptKey) return;
+    out.skills = out.skills.concat(g.def.skills || []);
+    out.weapons = out.weapons.concat(g.def.weapons || []);
+    out.tools = out.tools.concat(g.def.tools || []);
+    var entry = held[g.key];
+    if(!entry || entry.manual) return;
+    (g.def.pick||[]).forEach(function(slot, i){
+      ((entry.slots && entry.slots[i]) || []).forEach(function(v){
+        if(slot.kind==="weapon") out.weapons.push(v);
+        else if(isSkill(v)) out.skills.push(v);
+        else if(slot.kind==="tool" || slot.kind==="skillOrTool") out.tools.push(v);
+      });
+    });
+  });
+  return out;
+}
+/* "Your picks: ..." for the race's traits on the Features tab ("" for none). */
+export function racePicksText(c){
+  var held = (c.racePicks && c.racePicks.profPicks) || {};
+  return raceGrants(c).filter(function(g){ return grantHasChoices(g.def); }).map(function(g){
+    var s = classPicksSummary(g, held[g.key]);
+    return s ? g.name + ": " + s : "";
+  }).filter(Boolean).join("; ");
+}
+/* Every grant with a choice, class and race, each with the entry its
+   picks are kept on (`cl`): for the Feature choices card. */
+export function characterGrants(c){
+  var holder = raceEntry(c), bgHolder = backgroundEntry(c);
+  return classGrants(c).concat(raceGrants(c).map(function(g){ g.cl = holder; return g; }),
+    backgroundGrants(c).map(function(g){ g.cl = bgHolder; return g; }));
+}
+
+/* ---- Background ----
+   A background's tools (BACKGROUND_PROFS: a Criminal's thieves' tools and
+   gaming set) go through the engine too, kept on c.backgroundPicks the
+   way a race's are on c.racePicks. Skills and languages a background
+   gives are still written by the creation wizard. */
+export function backgroundEntry(c){
+  if(!c.backgroundPicks || typeof c.backgroundPicks!=="object") c.backgroundPicks = {profPicks: {}};
+  if(!c.backgroundPicks.profPicks) c.backgroundPicks.profPicks = {};
+  return c.backgroundPicks;
+}
+export function backgroundGrantsFor(background){
+  var p = BACKGROUND_PROFS[background], out = [], source = "Background · " + background;
+  if(!p) return out;
+  if((p.tools||[]).length) out.push({key: "bg:" + background, name: background, source: source, feature: background, background: true, def: {tools: p.tools}});
+  if((p.pick||[]).length) out.push({key: "bg:" + background + ":pick", name: background, source: source, feature: background, background: true,
+    def: {pick: p.pick, toolsByChoice: p.toolsByChoice}});
+  return out;
+}
+export function backgroundGrants(c){ return backgroundGrantsFor(c.background); }
+/* The tools the background gives, outright and picked (leaving out the
+   grant `exceptKey`): {tools}. */
+export function backgroundProficiencies(c, exceptKey){
+  var out = {tools: []}, held = (c.backgroundPicks && c.backgroundPicks.profPicks) || {};
+  backgroundGrants(c).forEach(function(g){
+    if(g.key===exceptKey) return;
+    out.tools = out.tools.concat(g.def.tools || []);
+    var entry = held[g.key];
+    if(!entry || entry.manual) return;
+    var tbc = g.def.toolsByChoice, chosen = tbc && ((entry.slots && entry.slots[tbc.slot]) || [])[0];
+    if(chosen) out.tools = out.tools.concat(tbc.tools[chosen] || []);
+    (g.def.pick||[]).forEach(function(slot, i){
+      ((entry.slots && entry.slots[i]) || []).forEach(function(v){
+        if(slot.kind==="tool" || (slot.kind==="toolOrLanguage" && (slot.options||[]).indexOf(v)!==-1)) out.tools.push(v);
+      });
+    });
+  });
+  out.tools = out.tools.filter(function(t, i, all){ return all.indexOf(t)===i; });
+  return out;
+}
+/* An older character whose background skills this app had wrong (see
+   BACKGROUND_SKILL_FIXES): {background, was, now} where `now` lists the
+   book's skills the sheet is missing and `was` the old ones it still has,
+   or null (nothing missing, or the player chose to keep the sheet). */
+export function backgroundSkillFix(c){
+  var fix = BACKGROUND_SKILL_FIXES[c.background];
+  if(!fix || c.backgroundSkillsChecked===c.background) return null;
+  var has = function(sk){ var e = c.skillProfs && c.skillProfs[sk]; return !!(e && e.prof); };
+  var now = fix.now.filter(function(sk){ return !has(sk); });
+  if(!now.length) return null;
+  return {background: c.background, now: now, was: fix.was.filter(has)};
+}
+/* Swap the old skills for the book's (`swap` true), or keep the sheet as
+   it is; either way the offer goes. An old skill with expertise keeps its
+   expertise on the new one. */
+export function resolveBackgroundSkillFix(c, swap){
+  var fix = backgroundSkillFix(c);
+  if(fix && swap){
+    if(!c.skillProfs) c.skillProfs = {};
+    fix.now.forEach(function(sk, i){
+      var old = fix.was[i] && c.skillProfs[fix.was[i]];
+      var expertise = !!(old && old.expertise);
+      if(old){ old.prof = false; old.expertise = false; }
+      c.skillProfs[sk] = {prof: true, expertise: expertise};
+    });
+  }
+  c.backgroundSkillsChecked = c.background;
+}
+
+/* "Your picks: ..." for the background on the Features tab ("" for none). */
+export function backgroundPicksText(c){
+  var held = (c.backgroundPicks && c.backgroundPicks.profPicks) || {};
+  return backgroundGrants(c).filter(function(g){ return grantHasChoices(g.def); }).map(function(g){ return classPicksSummary(g, held[g.key]); }).filter(Boolean).join(", ");
+}
+/* Characters from before races used the engine: the creation wizard
+   already asked a Variant Human, Half-Elf, Changeling or Warforged for
+   their skills (ticked straight on the sheet) and a Warforged for a tool
+   (kept as a "Tool proficiency: ..." feature). Those choices count as
+   made: the tool moves onto the trait's picks, and a skill pick is marked
+   as already on the sheet. Other races were never asked, so their choices
+   wait on the Feature choices card. Once per character (until it has
+   c.racePicks). */
+var RACE_PICKS_ASKED_BEFORE = ["Variant Human", "Half-Elf", "Changeling", "Warforged"];
+export function migrateRacePicks(c){
+  if(c.racePicks && c.racePicks.profPicks) return false;
+  var holder = raceEntry(c), asked = RACE_PICKS_ASKED_BEFORE.indexOf(c.race)!==-1;
+  var toolFeatures = (c.features||[]).filter(function(f){ return f && f.source==="Race" && /^Tool proficiency: /.test(f.name || ""); });
+  var tools = toolFeatures.map(function(f){ return f.name.replace(/^Tool proficiency: /, ""); });
+  raceGrants(c).forEach(function(g){
+    if(!grantHasChoices(g.def) || !asked) return;
+    var slots = g.def.pick.map(function(slot){ return slot.kind==="tool" ? tools.splice(0, slot.count || 1) : []; });
+    holder.profPicks[g.key] = slots.some(function(s){ return s.length; })
+      ? {slots: slots, applied: {skills: [], expertise: [], languages: [], weaponItems: []}}
+      : {manual: true};
+  });
+  if(asked && toolFeatures.length) c.features = c.features.filter(function(f){ return toolFeatures.indexOf(f)===-1; });
+  return true;
+}
+
 /* Keep the sheet in step with its features: picks whose feature is gone
    (a level undone, a subclass changed, a totem removed) are taken back,
    and a new feature that gives things outright, with nothing to choose,
@@ -510,11 +766,29 @@ export function syncClassPicks(c){
       applyClassPicks(c, cl, g, []); changed = true;
     });
   });
+  // The race's: what it gives outright goes on (an elf's Perception, a
+  // dwarf's weapons), and picks for traits it doesn't have come off.
+  var holder = raceEntry(c), rg = raceGrants(c);
+  Object.keys(holder.profPicks).forEach(function(key){
+    if(rg.some(function(g){ return g.key===key; })) return;
+    revertClassPicks(c, holder, key); changed = true;
+  });
+  rg.forEach(function(g){
+    if(grantEntry(holder, g.key) || grantHasChoices(g.def)) return;
+    applyClassPicks(c, holder, g, []); changed = true;
+  });
+  // And the background's (its tools are read from the data; picks for a
+  // background it no longer has come off).
+  var bgHolder = backgroundEntry(c), bg = backgroundGrants(c);
+  Object.keys(bgHolder.profPicks).forEach(function(key){
+    if(bg.some(function(g){ return g.key===key; })) return;
+    revertClassPicks(c, bgHolder, key); changed = true;
+  });
   return changed;
 }
 /* Choices not made yet, each grant with its class entry. */
 export function pendingClassPicks(c){
-  return classGrants(c).filter(function(g){ return grantHasChoices(g.def) && !grantEntry(g.cl, g.key); });
+  return characterGrants(c).filter(function(g){ return grantHasChoices(g.def) && !grantEntry(g.cl, g.key); });
 }
 
 /* ---- What the picks give ---- */
@@ -555,7 +829,7 @@ export function pickedProfs(cl, multiclass, exceptKey){
     if(!entry || entry.manual || g.key===exceptKey) return;
     (g.def.pick||[]).forEach(function(slot, i){
       ((entry.slots && entry.slots[i]) || []).forEach(function(v){
-        if(slot.kind==="tool") out.tools.push(v);
+        if(slot.kind==="tool" || (slot.kind==="skillOrTool" && !isSkill(v)) || (slot.kind==="toolOrLanguage" && (slot.options||[]).indexOf(v)!==-1)) out.tools.push(v);
         else if(slot.kind==="weapon"){ out.weapons.push(v); if(slot.monk) out.monkWeapons.push(v); }
         else if(slot.kind==="save") out.saves.push({ability: v, name: g.name});
         else if(slot.kind==="expertise" && !isSkill(v)) out.toolExpertise.push(v);
