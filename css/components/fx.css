@@ -1,0 +1,188 @@
+/* Sheet effects (js/ui/fx.js): spell slot and resource pips, rests, and
+   a new character's first appearance. */
+
+/* ---------- Pips spent and got back ----------
+   Spent: the pip flares, a ring breaks outward and a few motes drift
+   up as it empties. Got back: it swells in with a glow and a ring
+   closing in on it. Works for the big slot pips and the small
+   resource ones alike. */
+.slot-pip, .res-pip{position:relative;}
+.fx-spent{animation:fx-pip-spend .6s ease-out var(--fx-delay, 0ms) both;}
+.fx-spent::after, .fx-restored::after{
+  content:"";position:absolute;inset:-3px;border-radius:50%;
+  border:2px solid var(--brass-bright);pointer-events:none;
+}
+.fx-spent::after{animation:fx-ring-out .5s ease-out var(--fx-delay, 0ms) both;}
+.fx-spent::before{
+  content:"";position:absolute;inset:-10px;pointer-events:none;
+  background:
+    radial-gradient(circle at 30% 70%, var(--brass-bright) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 70% 62%, var(--brass-bright) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 50% 45%, #fff 0 1px, transparent 1.5px);
+  animation:fx-motes .6s ease-out var(--fx-delay, 0ms) both;
+}
+.fx-restored{animation:fx-pip-restore .55s cubic-bezier(.3,1.5,.5,1) var(--fx-delay, 0ms) both;}
+.fx-restored::after{animation:fx-ring-in .55s ease-out var(--fx-delay, 0ms) both;}
+
+@keyframes fx-pip-spend{
+  0%{transform:scale(1);background:var(--brass-bright);box-shadow:0 0 16px var(--brass-bright);}
+  35%{transform:scale(1.25);}
+  100%{transform:scale(1);}
+}
+@keyframes fx-pip-restore{
+  0%{transform:scale(.3);opacity:.3;}
+  60%{transform:scale(1.25);opacity:1;box-shadow:0 0 18px var(--brass-bright);}
+  100%{transform:scale(1);}
+}
+@keyframes fx-ring-out{
+  from{transform:scale(.8);opacity:1;}
+  to{transform:scale(2.2);opacity:0;}
+}
+@keyframes fx-ring-in{
+  0%{transform:scale(2.2);opacity:0;}
+  60%{transform:scale(1);opacity:.9;}
+  100%{transform:scale(1);opacity:0;}
+}
+@keyframes fx-motes{
+  from{transform:translateY(0);opacity:1;}
+  to{transform:translateY(-14px);opacity:0;}
+}
+
+/* A point pool's number (Ki, Lay on Hands) going up or down */
+.fx-bump{display:inline-block;animation:fx-bump .45s cubic-bezier(.3,1.6,.5,1) var(--fx-delay, 0ms) both;}
+@keyframes fx-bump{
+  0%{transform:scale(1);}
+  40%{transform:scale(1.3);color:var(--brass-bright);text-shadow:0 0 10px var(--brass-bright);}
+  100%{transform:scale(1);}
+}
+
+/* "−1" / "+5" rising out of a point pool's number */
+.res-count{position:relative;}
+.fx-delta{
+  position:absolute;right:0;top:-12px;z-index:2;
+  font-size:13px;font-weight:800;white-space:nowrap;pointer-events:none;
+  text-shadow:0 1px 3px rgba(0,0,0,.8);
+  animation:fx-delta 1.3s ease-out both;
+}
+.fx-delta.gain{color:var(--brass-bright);}
+.fx-delta.loss{color:#f2a9b6;}
+.fx-delta.still{animation:fx-delta-fade 1.3s ease-out both;}
+@keyframes fx-delta{
+  0%{opacity:0;transform:translateY(6px) scale(.8);}
+  15%{opacity:1;transform:translateY(-4px) scale(1.15);}
+  100%{opacity:0;transform:translateY(-30px) scale(1);}
+}
+@keyframes fx-delta-fade{0%,60%{opacity:1;}100%{opacity:0;}}
+
+/* ---------- Rests ---------- */
+.fx-rest{position:fixed;inset:0;pointer-events:none;z-index:1100;overflow:hidden;}
+
+/* Long rest: night falls with a moon and stars, then a warm dawn */
+.fx-night{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 15%, rgba(55,48,163,.5), rgba(8,10,32,.82) 70%);
+  animation:fx-night 2.4s ease-in-out both;
+}
+.fx-moon{
+  position:absolute;top:12%;left:50%;width:64px;height:64px;margin-left:-32px;border-radius:50%;
+  box-shadow:inset -15px 7px 0 0 #fdf4c9;
+  filter:drop-shadow(0 0 14px rgba(253,244,201,.55));
+  animation:fx-moon 2.4s ease-in-out both;
+}
+.fx-star{
+  position:absolute;width:3px;height:3px;border-radius:50%;
+  background:#fff;box-shadow:0 0 6px #fff;
+  animation:fx-star 2.2s ease-in-out both;
+}
+.fx-dawn{
+  position:absolute;inset:0;
+  background:linear-gradient(to top, rgba(251,191,36,.34), rgba(244,114,182,.12) 45%, transparent 75%);
+  animation:fx-dawn 2.4s ease-in-out both;
+}
+@keyframes fx-night{
+  0%{opacity:0;}
+  25%,55%{opacity:1;}
+  80%,100%{opacity:0;}
+}
+@keyframes fx-moon{
+  0%{opacity:0;transform:translateY(26px) rotate(-12deg);}
+  30%,55%{opacity:1;transform:translateY(0) rotate(0deg);}
+  80%,100%{opacity:0;transform:translateY(-12px) rotate(4deg);}
+}
+@keyframes fx-star{
+  0%,15%{opacity:0;transform:scale(.4);}
+  35%{opacity:1;transform:scale(1);}
+  45%{opacity:.35;}
+  55%{opacity:1;}
+  78%,100%{opacity:0;}
+}
+@keyframes fx-dawn{
+  0%,50%{opacity:0;transform:translateY(20%);}
+  75%{opacity:1;transform:translateY(0);}
+  100%{opacity:0;}
+}
+
+/* Short rest: a campfire's glow from below with embers rising */
+.fx-fire-glow{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 55% at 50% 105%, rgba(251,146,60,.45), rgba(239,68,68,.15) 45%, transparent 70%);
+  animation:fx-fire 1.8s ease-in-out both;
+}
+.fx-ember{
+  position:absolute;bottom:-6px;width:4px;height:4px;border-radius:50%;
+  background:#fdba74;box-shadow:0 0 8px #fb923c, 0 0 2px #fff;
+  animation:fx-ember var(--dur, 1.2s) ease-out both;
+}
+@keyframes fx-fire{
+  0%{opacity:0;}
+  20%{opacity:1;}
+  35%{opacity:.8;}
+  50%{opacity:1;}
+  65%{opacity:.85;}
+  100%{opacity:0;}
+}
+@keyframes fx-ember{
+  0%{opacity:0;transform:translate(0,0) scale(1);}
+  15%{opacity:1;}
+  100%{opacity:0;transform:translate(var(--drift, 0px), -55vh) scale(.3);}
+}
+
+/* ---------- A new character's first appearance ---------- */
+.fx-rise{animation:fx-rise .55s cubic-bezier(.2,.8,.3,1) var(--fx-delay, 0ms) both;}
+.fx-pop{animation:fx-pop .7s cubic-bezier(.3,1.6,.5,1) var(--fx-delay, 0ms) both;}
+@keyframes fx-rise{
+  from{opacity:0;transform:translateY(14px);}
+  to{opacity:1;transform:none;}
+}
+@keyframes fx-pop{
+  0%{opacity:0;transform:scale(.3) rotate(-20deg);}
+  60%{opacity:1;}
+  100%{opacity:1;transform:none;}
+}
+
+.fx-burst{position:fixed;width:0;height:0;pointer-events:none;z-index:1100;}
+.fx-burst-ring{
+  position:absolute;left:-40px;top:-40px;width:80px;height:80px;border-radius:50%;
+  border:2px solid var(--brass-bright);
+  box-shadow:0 0 18px color-mix(in srgb, var(--brass-bright) 70%, transparent);
+  animation:fx-burst-ring .8s cubic-bezier(.2,.7,.3,1) var(--delay, 0ms) both;
+}
+.fx-spark{
+  position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;
+  background:var(--c);box-shadow:0 0 8px var(--c);
+  animation:fx-spark .9s cubic-bezier(.15,.7,.3,1) var(--delay, 0ms) both;
+}
+@keyframes fx-burst-ring{
+  from{transform:scale(.6);opacity:1;}
+  to{transform:scale(2.6);opacity:0;}
+}
+@keyframes fx-spark{
+  from{transform:rotate(var(--a)) translateY(-30px) scale(1);opacity:1;}
+  to{transform:rotate(var(--a)) translateY(calc(var(--dist) * -1)) scale(.2);opacity:0;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .fx-spent, .fx-spent::before, .fx-spent::after, .fx-restored, .fx-restored::after, .fx-bump,
+  .fx-rise, .fx-pop{animation:none !important;}
+  .fx-rest, .fx-burst{display:none;}
+}

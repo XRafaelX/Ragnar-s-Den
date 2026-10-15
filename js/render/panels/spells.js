@@ -11,6 +11,7 @@ import { renderSpellChoiceOptions } from "../../ui/spell-choice.js";
 import { sheetHeader } from "./inventory.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
+import { pipChanged, pipsRefilled } from "../../ui/fx.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner } from "../../core/spells-known.js";
 import { PREPARED_CASTERS } from "../../data/spells-known.js";
@@ -308,8 +309,14 @@ function renderMulticlassCasting(byAbility){
    Edit reveals all nine levels with steppers for items / homebrew. */
 var slotEditOpen = false;
 
+/* The row of pips for one slot level, as drawn now. */
+function slotPipsRow(label){
+  return document.querySelector('.slot-pips[data-slot="'+label+'"]');
+}
+
 function slotPips(total, used, label, onChange){
   var wrap = ce("div","slot-pips");
+  wrap.setAttribute("data-slot", label);
   var left = total - used;
   for(var p=0; p<total; p++){
     var avail = p < left;
@@ -319,7 +326,11 @@ function slotPips(total, used, label, onChange){
     pip.title = avail ? "Available. Tap to spend" : "Spent. Tap to restore";
     pip.setAttribute("aria-label", label+" slot "+(p+1)+(avail ? " (available)" : " (spent)"));
     pip.addEventListener("click", (function(avail){
-      return function(){ onChange(clamp(used + (avail ? 1 : -1), 0, total)); };
+      return function(){
+        onChange(clamp(used + (avail ? 1 : -1), 0, total));
+        // Spent: the last full pip empties. Got back: the first empty one fills.
+        pipChanged(slotPipsRow(label), avail ? left - 1 : left, avail);
+      };
     })(avail));
     wrap.appendChild(pip);
   }
@@ -375,9 +386,18 @@ function renderSlotsCard(c){
   rest.title = "Get all spent slots back";
   rest.disabled = !anySpent;
   rest.addEventListener("click", function(){
-    for(var i=1;i<=9;i++) sc.slots[i].used = 0;
-    if(sc.pact) sc.pact.used = 0;
+    // Each level's spent pips fill back in turn, level after level.
+    var refills = [];
+    for(var i=1;i<=9;i++){
+      if(sc.slots[i].max && sc.slots[i].used) refills.push([ordinal(i)+" level", sc.slots[i].max - sc.slots[i].used, sc.slots[i].max]);
+      sc.slots[i].used = 0;
+    }
+    if(sc.pact){
+      if(sc.pact.max && sc.pact.used) refills.push(["Pact", sc.pact.max - sc.pact.used, sc.pact.max]);
+      sc.pact.used = 0;
+    }
     save(); renderAll();
+    refills.forEach(function(r, n){ pipsRefilled(slotPipsRow(r[0]), r[1], r[2], n * 150); });
     showActionToast("All spell slots restored.");
   });
   var edit = ce("button","btn small ghost"+(slotEditOpen ? " on" : ""));

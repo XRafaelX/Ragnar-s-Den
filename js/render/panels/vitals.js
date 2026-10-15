@@ -12,8 +12,42 @@ import { renderDeathSaves } from "./death-saves.js";
 import { renderEffectsCard } from "./effects.js";
 import { openPrepareSheet } from "./spells.js";
 import { preparedState } from "../../core/spells-known.js";
+import { flash, pipChanged, pipsRefilled, restScene, floatDelta } from "../../ui/fx.js";
+import { playShortRest, playLongRest } from "../../ui/sound.js";
 
 function preparesSpells(c){ return (c.classes||[]).some(function(cl){ return preparedState(c, cl.name); }); }
+
+/* A class resource's row as drawn now. */
+function resourceRow(key){
+  return document.querySelector('.res-row[data-res="'+CSS.escape(key)+'"]');
+}
+
+/* How much of each class resource is used, to see what a rest gave back. */
+function resourceUse(c){
+  var used = {};
+  characterResources(c).forEach(function(r){ used[r.key] = r.used; });
+  return used;
+}
+
+/* After a rest, every resource that came back refills its pips in turn
+   (or bumps its number), one resource after another, from `startDelay` ms. */
+function showRefilled(c, before, startDelay){
+  var n = 0;
+  characterResources(c).forEach(function(r){
+    var was = before[r.key] || 0;
+    if(r.max===Infinity || r.used >= was) return;
+    var row = resourceRow(r.key);
+    if(!row) return;
+    var pips = row.querySelector(".res-pips");
+    if(pips) pipsRefilled(pips, r.max - was, r.max - r.used, startDelay + n*180);
+    else {
+      var num = row.querySelector(".res-count b");
+      flash(num, "fx-bump", startDelay + n*180);
+      floatDelta(num, was - r.used, null, startDelay + n*180);
+    }
+    n++;
+  });
+}
 
 /* ---- Vitals panel ---- */
 export function renderVitalsPanel(c){
@@ -554,6 +588,7 @@ export function renderVitalsPanel(c){
   shortRestBtn.className = "btn small"; shortRestBtn.textContent = "Short rest";
   shortRestBtn.title = "Restores short-rest resources; spend hit dice to heal";
   shortRestBtn.addEventListener("click", function(){
+    var before = resourceUse(c);
     var pactNote = "";
     if(c.spellcasting.pact && c.spellcasting.pact.used){ c.spellcasting.pact.used = 0; pactNote = " Pact slots restored."; }
     var restored = restoreResources(c, "short");
@@ -562,6 +597,9 @@ export function renderVitalsPanel(c){
     if(ended.length) resNote += " Ended: "+ended.join(", ")+".";
     logRoll("Short rest taken", "Spend hit dice as needed to heal."+pactNote+resNote);
     save(); renderAll();
+    restScene("short");
+    playShortRest();
+    showRefilled(c, before, 400);
   });
   restRow.appendChild(shortRestBtn);
 
@@ -573,6 +611,8 @@ export function renderVitalsPanel(c){
       "This resets HP to full, clears temp HP and death saves, restores spell slots, rage and class resources, and recovers hit dice."+
         (preparesSpells(c) ? " Afterwards you can choose today's prepared spells." : ""),
       function(){
+        var before = resourceUse(c);
+        var hpBefore = Number(c.hp.current) || 0;
         c.hp.current = hpMax;
         c.hp.temp = 0;
         c.deathSaves = {success:0, fail:0};
@@ -589,6 +629,11 @@ export function renderVitalsPanel(c){
         logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered."+
           (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : ""));
         save(); renderAll();
+        // Night falls, then at dawn hit points and resources come back.
+        restScene("long");
+        playLongRest();
+        if(hpMax > hpBefore) setTimeout(function(){ flashHpNum("hp-heal"); }, 1300);
+        showRefilled(c, before, 1300);
         // A cleric, druid, paladin, wizard or artificer picks today's
         // spells after a long rest.
         openPrepareSheet(c, true);
@@ -665,6 +710,7 @@ function renderResourcesCard(c, resources){
     var remaining = r.max - r.used;
     var row = document.createElement("div");
     row.className = "res-row" + (remaining===0 ? " spent" : "");
+    row.setAttribute("data-res", r.key);
 
     var info = document.createElement("div");
     info.className = "res-info";
@@ -735,10 +781,23 @@ function renderResourcesCard(c, resources){
 
     function setUsed(n){
       n = clamp(n, 0, r.max);
+      var before = r.used;
       // Using Wild Shape again ends Symbiotic Entity.
       if(r.key==="Druid:wild_shape" && n > r.used) endEffect(c, "symbiotic_entity");
       if(n) c.resourcesUsed[r.key] = n; else delete c.resourcesUsed[r.key];
       save(); renderAll();
+      if(n === before) return;
+      var drawn = resourceRow(r.key);
+      if(!drawn) return;
+      var pips = drawn.querySelector(".res-pips");
+      // Spent: the last full pip empties. Got back: the first empty one fills.
+      if(pips) pipChanged(pips, n > before ? r.max - n : r.max - before, n > before);
+      else {
+        // A point pool: the number pops and the amount floats up from it.
+        var num = drawn.querySelector(".res-count b");
+        flash(num, "fx-bump");
+        floatDelta(num, before - n, r.key);
+      }
     }
     list.appendChild(row);
   });

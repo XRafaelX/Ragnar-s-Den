@@ -2,7 +2,8 @@
    Short, quiet, synthesized tones (no audio files; stays fully offline)
    played only for meaningful moments: adding or removing something (a
    weapon, a feat, a character…), rolling a natural 20 or natural 1,
-   rolling ability scores, the home menu's centre die tumbling, dragging the theme slider, adding or
+   rolling ability scores, the home menu's centre die tumbling, finishing
+   a new character, short and long rests, dragging the theme slider, adding or
    spending coin in the purse, death saving throws, and an encounter's
    hits, slain monsters, new rounds and victory. Never used for routine interaction like
    toggles, typing, or numeric steppers, so it stays a subtle accent
@@ -95,6 +96,55 @@ export function playDiceLand(strength){
   try{
     var s = Math.max(0, Math.min(1, strength||0));
     tone(260 + s*260, 140 + s*120, 0.09, "triangle", 0.14);
+  }catch(e){}
+}
+
+/* A harp-like strum rising into a soft high note; a new character
+   steps out of the creation wizard. */
+export function playNewCharacter(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    [262, 330, 392, 523, 659, 784].forEach(function(f, i){
+      scheduleTone(ctx, now + i*0.05, f, f, 0.7, "triangle", 0.07);
+    });
+    scheduleTone(ctx, now + 0.34, 1046, 1046, 0.9, "sine", 0.08);
+    scheduleTone(ctx, now + 0.34, 523, 523, 0.9, "sine", 0.05);
+  }catch(e){}
+}
+
+/* A campfire: a few soft, low crackles under a warm two-note settle;
+   a short rest. */
+export function playShortRest(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    for(var i=0;i<9;i++){
+      var t = now + i*0.09 + Math.random()*0.05;
+      var f = 320 + Math.random()*420;
+      scheduleTone(ctx, t, f, f*0.5, 0.025, "triangle", 0.04 + Math.random()*0.03);
+    }
+    scheduleTone(ctx, now + 0.15, 294, 294, 0.6, "sine", 0.08);
+    scheduleTone(ctx, now + 0.4, 392, 392, 0.8, "sine", 0.08);
+  }catch(e){}
+}
+
+/* A falling lullaby for the night, then a bright chord for the dawn;
+   a long rest. Timed to the long rest's night and dawn on screen. */
+export function playLongRest(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    scheduleTone(ctx, now, 659, 659, 0.45, "sine", 0.07);
+    scheduleTone(ctx, now + 0.3, 523, 523, 0.45, "sine", 0.07);
+    scheduleTone(ctx, now + 0.6, 392, 392, 0.7, "sine", 0.07);
+    scheduleTone(ctx, now + 1.3, 392, 392, 0.9, "sine", 0.07);
+    scheduleTone(ctx, now + 1.38, 494, 494, 0.9, "sine", 0.07);
+    scheduleTone(ctx, now + 1.46, 587, 587, 0.9, "sine", 0.07);
+    scheduleTone(ctx, now + 1.56, 784, 988, 1.1, "sine", 0.06);
   }catch(e){}
 }
 
