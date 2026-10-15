@@ -13,6 +13,10 @@
                (Dwarven Toughness); hpTrait names it in tooltips.
    acBonus:    added to AC on the sheet (Warforged's Integrated
                Protection); acTrait names it in the breakdown.
+   unarmed:    {name, die, type}: natural weapons the race makes unarmed
+               strikes with (a tabaxi's claws: 1d4 slashing + STR), for
+               the Inventory tab's unarmed strike (checked against the
+               published pages 2026-10-15).
    languages:  {fixed:[…], choose:n}.
    traits:     [{name, text, profs?}] short paraphrases of each trait.
                `profs` is what the trait gives, in the shape class
@@ -118,7 +122,7 @@ export var RACE_DATA = {
       tr("Infernal Legacy", "You know Thaumaturgy; Hellish Rebuke once per long rest from level 3 and Darkness from level 5, cast with Charisma.")]},
 
   /* ---- Expanded ---- */
-  "Aarakocra": {asi:{dex:2,wis:1}, size:"Medium", speed:{walk:25, fly:50}, speedWhen:{fly:"not in medium or heavy armor"}, darkvision:0,
+  "Aarakocra": {asi:{dex:2,wis:1}, unarmed:{name:"Talons", die:4, type:"Slashing"}, size:"Medium", speed:{walk:25, fly:50}, speedWhen:{fly:"not in medium or heavy armor"}, darkvision:0,
     languages:{fixed:["Common","Aarakocra","Auran"]}, source:"Elemental Evil Player's Companion",
     traits:[tr("Flight", "Flying speed of 50 feet, but not while wearing medium or heavy armor."),
       tr("Talons", "Your unarmed strikes deal 1d4 slashing damage.")]},
@@ -133,7 +137,7 @@ export var RACE_DATA = {
     traits:[tr("Long-Limbed", "Your melee attacks on your turn have 5 feet more reach."), POWERFUL_BUILD,
       tr("Sneaky", "Proficiency in the Stealth skill.", {skills:["Stealth"]}),
       tr("Surprise Attack", "In the first round of combat, deal an extra 2d6 damage to a surprised creature you hit.")]},
-  "Centaur": {asi:{str:2,wis:1}, size:"Medium", speed:{walk:40}, darkvision:0,
+  "Centaur": {asi:{str:2,wis:1}, unarmed:{name:"Hooves", die:4, type:"Bludgeoning"}, size:"Medium", speed:{walk:40}, darkvision:0,
     languages:{fixed:["Common","Sylvan"]}, source:"Mythic Odysseys of Theros",
     traits:[tr("Fey", "Your creature type is fey rather than humanoid."),
       tr("Charge", "After moving 30 feet straight toward a target and hitting it with a melee weapon, make a hooves attack as a bonus action."),
@@ -228,7 +232,7 @@ export var RACE_DATA = {
     traits:[tr("Grovel, Cower and Beg", "Action: cower pathetically so allies have advantage on attacks against enemies within 10 feet of you. Once per short or long rest."),
       tr("Pack Tactics", "Advantage on attacks against a creature if an ally is within 5 feet of it."),
       SUNLIGHT]},
-  "Lizardfolk": {asi:{con:2,wis:1}, size:"Medium", speed:{walk:30, swim:30}, darkvision:0,
+  "Lizardfolk": {asi:{con:2,wis:1}, unarmed:{name:"Bite", die:6, type:"Piercing"}, size:"Medium", speed:{walk:30, swim:30}, darkvision:0,
     languages:{fixed:["Common","Draconic"]}, source:"Volo's Guide to Monsters",
     traits:[tr("Bite", "Your bite is a natural weapon dealing 1d6 + STR piercing damage."),
       tr("Cunning Artisan", "During a short rest, craft a shield, club, javelin or darts from a slain creature's bones and hide."),
@@ -244,7 +248,7 @@ export var RACE_DATA = {
       tr("Natural Armor", "Without armor, your AC is 12 + CON. A shield still adds."),
       tr("Trunk", "A prehensile trunk that can grab, lift and manipulate simple objects, and use as a snorkel."),
       tr("Keen Smell", "Advantage on Perception, Survival and Investigation checks that rely on smell.")]},
-  "Minotaur": {asi:{str:2,con:1}, size:"Medium", speed:{walk:30}, darkvision:0,
+  "Minotaur": {asi:{str:2,con:1}, unarmed:{name:"Horns", die:6, type:"Piercing"}, size:"Medium", speed:{walk:30}, darkvision:0,
     languages:{fixed:["Common","Minotaur"]}, source:"Guildmasters' Guide to Ravnica",
     traits:[tr("Horns", "Your horns are a natural weapon dealing 1d6 + STR piercing damage."),
       tr("Goring Rush", "After Dashing and moving 20 feet, make a horns attack as a bonus action."),
@@ -256,7 +260,7 @@ export var RACE_DATA = {
       tr("Primal Intuition", "Proficiency in two of Animal Handling, Insight, Intimidation, Medicine, Nature, Perception and Survival.",
         {pick:[{kind:"skill", count:2, options:["Animal Handling","Insight","Intimidation","Medicine","Nature","Perception","Survival"]}]}),
       POWERFUL_BUILD]},
-  "Satyr": {asi:{cha:2,dex:1}, size:"Medium", speed:{walk:35}, darkvision:0,
+  "Satyr": {asi:{cha:2,dex:1}, unarmed:{name:"Ram", die:4, type:"Bludgeoning"}, size:"Medium", speed:{walk:35}, darkvision:0,
     languages:{fixed:["Common","Sylvan"]}, source:"Mythic Odysseys of Theros",
     traits:[tr("Fey", "Your creature type is fey rather than humanoid."),
       tr("Ram", "Headbutts deal 1d4 + STR bludgeoning damage."),
@@ -288,7 +292,7 @@ export var RACE_DATA = {
   "Simic Hybrid": {asi:{con:2}, asiText:"+2 Constitution, and +1 to one other score of your choice", size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common"], choose:1}, source:"Guildmasters' Guide to Ravnica",
     traits:[tr("Animal Enhancement", "Pick a graft at level 1 (Manta Glide, Nimble Climber or Underwater Adaptation) and another at level 5 (such as Grappling Appendages, Carapace or Acid Spit).")]},
-  "Tabaxi": {asi:{dex:2,cha:1}, size:"Medium", speed:{walk:30, climb:20}, darkvision:60,
+  "Tabaxi": {asi:{dex:2,cha:1}, unarmed:{name:"Claws", die:4, type:"Slashing"}, size:"Medium", speed:{walk:30, climb:20}, darkvision:60,
     languages:{fixed:["Common"], choose:1}, source:"Volo's Guide to Monsters",
     traits:[tr("Feline Agility", "Double your speed until the end of the turn; recharges after a turn where you don't move."),
       tr("Cat's Claws", "Climbing speed of 20 feet, and your claws deal 1d4 + STR slashing damage."),
@@ -299,7 +303,7 @@ export var RACE_DATA = {
       tr("Secondary Arms", "Two smaller arms that can hold light weapons and objects."),
       tr("Sleepless", "You don't need to sleep and can stay conscious during a long rest."),
       tr("Thri-kreen Telepathy", "You can speak telepathically to a creature within 120 feet that shares a language with you.")]},
-  "Tortle": {asi:{str:2,wis:1}, size:"Medium", speed:{walk:30}, darkvision:0,
+  "Tortle": {asi:{str:2,wis:1}, unarmed:{name:"Claws", die:4, type:"Slashing"}, size:"Medium", speed:{walk:30}, darkvision:0,
     languages:{fixed:["Common","Aquan"]}, source:"The Tortle Package",
     traits:[tr("Claws", "Your claws deal 1d4 + STR slashing damage."),
       tr("Hold Breath", "You can hold your breath for up to 1 hour."),

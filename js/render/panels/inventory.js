@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -411,6 +411,48 @@ function openWeaponSheet(c, item, idx){
   });
 }
 
+/* The unarmed strike: always proficient, nothing to equip or edit. */
+function renderUnarmedCard(u){
+  var card = document.createElement("div");
+  card.className = "ff-item-card inv-item-card is-equipped inv-unarmed-card";
+  var header = document.createElement("div");
+  header.className = "inv-card-header";
+  var titleGroup = document.createElement("div");
+  titleGroup.className = "inv-card-title-group";
+  var nameSpan = document.createElement("span");
+  nameSpan.className = "inv-name-inline";
+  nameSpan.textContent = u.name;
+  titleGroup.appendChild(nameSpan);
+  header.appendChild(titleGroup);
+  card.appendChild(header);
+  var subtitle = document.createElement("div");
+  subtitle.className = "inv-card-subtitle";
+  subtitle.textContent = [(u.die ? "1d" + u.die : "1") + " " + u.type, u.ability, "Proficient"].concat(u.parts).join(" · ");
+  card.appendChild(subtitle);
+  var actions = document.createElement("div");
+  actions.className = "inv-roll-actions";
+  var atkBtn = document.createElement("button");
+  atkBtn.type = "button"; atkBtn.className = "btn small inv-roll-btn";
+  atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(u.attack) + (u.roll && u.roll.mode==="dis" ? " (Dis)" : "");
+  if(u.roll && u.roll.reason) atkBtn.title = u.roll.reason;
+  atkBtn.addEventListener("click", function(){ performRoll(20, 1, u.attack, u.roll ? u.roll.mode : "none", u.name + ": Attack"); });
+  actions.appendChild(atkBtn);
+  var dmgBtn = document.createElement("button");
+  dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
+  if(u.die){
+    dmgBtn.innerHTML = makeDicesSvg() + "Damage 1d" + u.die + fmtMod(u.bonus);
+    dmgBtn.addEventListener("click", function(){ performRoll(u.die, 1, u.bonus, "none", u.name + ": Damage (" + u.type + ")"); });
+  } else {
+    // A plain unarmed strike deals a flat 1 + STR: nothing to roll.
+    dmgBtn.innerHTML = makeDicesSvg() + "Damage " + Math.max(0, 1 + u.bonus);
+    dmgBtn.disabled = true;
+    dmgBtn.title = "A plain unarmed strike deals 1 + STR " + u.type.toLowerCase() + " damage, no dice";
+  }
+  actions.appendChild(dmgBtn);
+  card.appendChild(actions);
+  return card;
+}
+
 function renderWeaponCard(c, item, idx){
   if(item.ability==null) item.ability = "str";
   if(item.proficient==null) item.proficient = true;
@@ -427,8 +469,11 @@ function renderWeaponCard(c, item, idx){
   if(def) card.appendChild(magicItemLine(item, def));
 
   var abilityLabel = item.ability==="finesse" ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
-  // Martial Arts: a monk weapon uses the better of STR and DEX.
+  // Martial Arts: a monk weapon uses the better of STR and DEX, and the
+  // Martial Arts die when it's bigger than the weapon's.
   if(martialArtsApplies(c, item)) abilityLabel = "Martial Arts (STR or DEX)";
+  var maDice = weaponDamageDice(c, item);
+  if(maDice && maDice.martialArts) abilityLabel += " · Martial Arts d" + maDice.die;
   var subtitleParts = [];
   if(item.damageDice) subtitleParts.push(item.damageDice + (item.damageType ? " " + item.damageType : ""));
   subtitleParts.push(abilityLabel);
@@ -476,7 +521,8 @@ function renderWeaponCard(c, item, idx){
   });
   actions.appendChild(atkBtn);
 
-  var parsed = parseDiceNotation(item.damageDice);
+  // (A monk weapon rolls the Martial Arts die when it's bigger.)
+  var parsed = weaponDamageDice(c, item);
   var dmgBonus = weaponDamageBonus(c, item);
   var dmgBtn = document.createElement("button");
   dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
@@ -808,6 +854,10 @@ export function renderInventoryPanel(c){
   var weaponList = document.createElement("div");
   weaponList.className = "ff-items-list inv-items-list";
   var anyWeapon = false;
+  // An unarmed strike, for a monk, a race with natural weapons or a
+  // Tavern Brawler.
+  var unarmed = unarmedStrike(c);
+  if(unarmed){ anyWeapon = true; weaponList.appendChild(renderUnarmedCard(unarmed)); }
   (c.inventory||[]).forEach(function(item, idx){
     if(item.type!=="weapon") return;
     anyWeapon = true;

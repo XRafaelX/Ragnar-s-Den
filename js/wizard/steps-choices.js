@@ -3,7 +3,8 @@
    the like), the Languages step and the starting equipment. */
 import { SKILLS } from "../data/abilities-skills.js";
 import { FIGHTING_STYLES } from "../data/classes.js";
-import { escapeHtml, ce, autoEquipLoadout } from "../core/helpers.js";
+import { escapeHtml, ce, autoEquipLoadout, isProficientWithWeapon } from "../core/helpers.js";
+import { WEAPON_DATA, WEAPON_GROUPS } from "../data/weapons.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills } from "./wizard-core.js";
 import { renderClassPicks, renderVariantOptions } from "../ui/class-picks.js";
@@ -381,6 +382,10 @@ export function wizardStepEquipment(container){
         renderWizard();
       });
       card.appendChild(row);
+      // "Any martial melee weapon": choose which, under the picked option.
+      if(wizardState.equipment[gi]===opt.key) opt.items.forEach(function(it, ii){
+        if(it.pick) card.appendChild(weaponPickField(it, gi + ":" + ii));
+      });
     });
   });
 
@@ -391,11 +396,63 @@ export function wizardStepEquipment(container){
     card.appendChild(fixedTitle);
     var fixedP = document.createElement("p");
     fixedP.style.fontSize = "13px";
-    fixedP.textContent = info.equipment.fixed.map(function(i){ return i.qty>1 ? i.qty+"× "+i.name : i.name; }).join(", ");
+    fixedP.textContent = info.equipment.fixed.map(function(i, ii){
+      var name = i.pick ? pickedWeaponName(i, "fixed:" + ii) : i.name;
+      return i.qty>1 ? i.qty+"× "+name : name;
+    }).join(", ");
     card.appendChild(fixedP);
+    info.equipment.fixed.forEach(function(it, ii){ if(it.pick) card.appendChild(weaponPickField(it, "fixed:" + ii)); });
   }
 
   container.appendChild(card);
+}
+
+/* ---- Starting weapons of the player's choice ----
+   An item with `pick` ({category, melee}) is "any weapon of that kind" (a
+   barbarian's "any martial melee weapon", a warlock's "any simple
+   weapon"). wizardState.equipmentPicks[key] holds the weapon chosen
+   ("groupIndex:itemIndex", or "fixed:itemIndex"); the item itself is the
+   default. */
+function weaponFitsPick(pick, name){
+  var d = WEAPON_DATA[name];
+  return !!(d && !d.custom && d.category===pick.category && (!pick.melee || !d.ranged));
+}
+function pickedWeaponName(it, key){
+  var v = ((wizardState && wizardState.equipmentPicks) || {})[key];
+  return v && weaponFitsPick(it.pick, v) ? v : it.name;
+}
+/* The weapon picker under an option: grouped like the Armory, weapons the
+   class can't use greyed out. */
+function weaponPickField(it, key){
+  var groups = {};
+  Object.keys(WEAPON_GROUPS).forEach(function(g){
+    var names = WEAPON_GROUPS[g].filter(function(n){ return weaponFitsPick(it.pick, n); });
+    if(names.length) groups[g] = names;
+  });
+  var who = {classes: [{name: wizardState.classId, subclass: "", level: 1}], race: wizardState.race, feats: [], features: []};
+  var f = ce("div", "field wiz-weapon-pick");
+  f.style.maxWidth = "320px";
+  f.style.margin = "6px 0 10px";
+  f.appendChild(themedPicker({
+    key: "equipWeapon:" + key, groups: groups, value: pickedWeaponName(it, key), search: true, sheet: true,
+    ariaLabel: "Weapon: " + (it.pick.category==="martial" ? "martial" : "simple") + (it.pick.melee ? " melee" : "") + " weapon",
+    detailFor: function(n){ var d = WEAPON_DATA[n]; return d ? d.damageDice + " " + d.damageType.toLowerCase() + (d.properties ? " · " + d.properties : "") : ""; },
+    reasonFor: function(n){ return isProficientWithWeapon(who, n, WEAPON_DATA[n].category) ? "" : "not proficient"; },
+    onPick: function(v){
+      wizardState.equipmentPicks = wizardState.equipmentPicks || {};
+      wizardState.equipmentPicks[key] = v;
+      renderWizard();
+    }
+  }));
+  return f;
+}
+/* The starting item as the weapon picked for it. */
+function pickedItem(it, key){
+  var name = pickedWeaponName(it, key);
+  if(name===it.name) return it;
+  var d = WEAPON_DATA[name];
+  return {name: name, qty: it.qty, weight: d.weight, notes: (d.properties || "").toLowerCase(), type: "weapon", damageDice: d.damageDice,
+    damageType: d.damageType, ability: d.finesse ? "finesse" : d.ranged ? "dex" : "str", proficient: true, picked: true};
 }
 
 /* Carries a starting-equipment entry into an inventory item, keeping the
@@ -410,6 +467,7 @@ function equipmentItemToInventoryItem(it, equipped){
     item.ability = it.ability||"str";
     item.proficient = it.proficient!=null ? it.proficient : true;
     item.magicBonus = it.magicBonus||0;
+    if(it.picked) item.picked = true; // finishWizard works out its proficiency
   } else if(it.type==="armor"){
     item.category = it.category||"light";
     item.baseAC = it.baseAC!=null ? it.baseAC : 10;
@@ -423,13 +481,15 @@ export function buildEquipmentList(info, chosenKeys){
   info.equipment.choiceGroups.forEach(function(group, gi){
     var opt = group.options.find(function(o){ return o.key===chosenKeys[gi]; });
     if(opt){
-      opt.items.forEach(function(it){
-        items.push(equipmentItemToInventoryItem(it, it.type==="weapon" || it.type==="armor"));
+      opt.items.forEach(function(it, ii){
+        var chosen = it.pick ? pickedItem(it, gi + ":" + ii) : it;
+        items.push(equipmentItemToInventoryItem(chosen, chosen.type==="weapon" || chosen.type==="armor"));
       });
     }
   });
-  info.equipment.fixed.forEach(function(it){
-    items.push(equipmentItemToInventoryItem(it, it.type==="weapon" || it.type==="armor"));
+  info.equipment.fixed.forEach(function(it, ii){
+    var chosen = it.pick ? pickedItem(it, "fixed:" + ii) : it;
+    items.push(equipmentItemToInventoryItem(chosen, chosen.type==="weapon" || chosen.type==="armor"));
   });
   // Wear one suit of armor and fill the two hands (a shield takes one);
   // everything else starts in the pack.

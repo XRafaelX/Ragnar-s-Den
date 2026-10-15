@@ -5,7 +5,8 @@ import { BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_LANGUAGE_RULES } from
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
 import { LANGUAGES } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
-import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, classVariants, classFeaturesAt } from "../core/helpers.js";
+import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, classVariants, classFeaturesAt, isProficientWithWeapon } from "../core/helpers.js";
+import { WEAPON_DATA } from "../data/weapons.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
 import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason, featHasPicks, featDef, emptyPicks, backgroundFeatGrant, backgroundFeatCopy, backgroundFeatPicks, campaignLevel1Feats, campaignFeatCopy } from "../core/feat-picks.js";
@@ -759,6 +760,13 @@ export function finishWizard(){
   // AC is derived on the sheet from equipped armor (see computeArmorClass);
   // no armor is equipped yet, so it starts from unarmored / class defense.
   c.inventory = buildEquipmentList(info, w.equipment);
+  // A weapon picked for "any simple weapon" may be one the class can't use
+  // (a druid's light crossbow): say so on its card.
+  c.inventory.forEach(function(item){
+    if(!item.picked) return;
+    item.proficient = isProficientWithWeapon(c, item.name, (WEAPON_DATA[item.name] || {}).category);
+    delete item.picked;
+  });
   applyClassChoices(c, info, w.classChoices);
   // The background's tools: given ones and the Skills step's picks.
   var bgHolder = backgroundEntry(c);

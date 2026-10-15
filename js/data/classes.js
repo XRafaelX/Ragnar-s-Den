@@ -45,16 +45,16 @@ CLASSES_INFO["Barbarian"] = {
         {key:"greataxe", label:"Greataxe", detail:"1d12 slashing damage, heavy, two-handed", items:[
           {name:"Greataxe",qty:1,weight:7,notes:"heavy, two-handed",type:"weapon",damageDice:"1d12",damageType:"Slashing",ability:"str",proficient:true}
         ]},
-        {key:"martial", label:"Any other martial melee weapon", detail:"Pick the specific weapon once you're on the sheet", items:[
-          {name:"Martial melee weapon",qty:1,weight:6,notes:"choose specific weapon, then fill in its damage dice",type:"weapon",ability:"str",proficient:true}
+        {key:"martial", label:"Any other martial melee weapon", detail:"Choose it below (starts as a battleaxe)", items:[
+          {name:"Battleaxe",qty:1,weight:4,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true,pick:{category:"martial", melee:true}}
         ]}
       ]},
       {options:[
         {key:"handaxes", label:"Two handaxes", detail:"1d6 slashing, light, thrown (range 20/60 ft)", items:[
           {name:"Handaxe",qty:2,weight:2,notes:"light, thrown 20/60",type:"weapon",damageDice:"1d6",damageType:"Slashing",ability:"str",proficient:true}
         ]},
-        {key:"simple", label:"Any simple weapon", detail:"Pick the specific weapon once you're on the sheet", items:[
-          {name:"Simple weapon",qty:1,weight:4,notes:"choose specific weapon, then fill in its damage dice",type:"weapon",ability:"str",proficient:true}
+        {key:"simple", label:"Any simple weapon", detail:"Choose it below (starts as a spear)", items:[
+          {name:"Spear",qty:1,weight:3,notes:"thrown 20/60, versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"str",proficient:true,pick:{category:"simple"}}
         ]}
       ]}
     ],
@@ -75,15 +75,17 @@ var BURGLARS_PACK = {name:"Burglar's Pack", qty:1, weight:44.5, notes:"backpack,
 
 /* Fighter and Paladin: "a martial weapon and a shield, or two martial
    weapons". Real weapons rather than placeholders so they can be rolled
-   right away; players swap them on the sheet. */
+   right away. An item with `pick` ({category, melee}) is "any weapon of
+   that kind": the wizard's Equipment step offers the list, starting on the
+   item given. */
 var MARTIAL_WEAPON_CHOICE = {options:[
-  {key:"weapon_shield", label:"A martial weapon and a shield", detail:"Starts as a longsword (1d8, versatile 1d10); swap it on the sheet. Shield gives +2 AC", items:[
-    {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true},
+  {key:"weapon_shield", label:"A martial weapon and a shield", detail:"Choose the weapon below (starts as a longsword). Shield gives +2 AC", items:[
+    {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true,pick:{category:"martial"}},
     {name:"Shield",qty:1,weight:6,notes:"+2 AC",type:"armor",category:"shield",baseAC:2}
   ]},
-  {key:"two_martial", label:"Two martial weapons", detail:"Starts as a greatsword (2d6) and a longsword (1d8); swap them on the sheet", items:[
-    {name:"Greatsword",qty:1,weight:6,notes:"heavy, two-handed",type:"weapon",damageDice:"2d6",damageType:"Slashing",ability:"str",proficient:true},
-    {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true}
+  {key:"two_martial", label:"Two martial weapons", detail:"Choose them below (start as a greatsword and a longsword)", items:[
+    {name:"Greatsword",qty:1,weight:6,notes:"heavy, two-handed",type:"weapon",damageDice:"2d6",damageType:"Slashing",ability:"str",proficient:true,pick:{category:"martial"}},
+    {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true,pick:{category:"martial"}}
   ]}
 ]};
 
@@ -323,8 +325,8 @@ Object.assign(CLASSES_INFO["Cleric"], {
           {name:"Light Crossbow",qty:1,weight:5,notes:"ammunition, loading, two-handed, range 80/320",type:"weapon",damageDice:"1d8",damageType:"Piercing",ability:"dex",proficient:true},
           {name:"Crossbow Bolts",qty:20,weight:0.075,notes:"ammunition"}
         ]},
-        {key:"simple", label:"Any simple weapon", detail:"Starts as a spear (1d6, thrown 20/60, versatile 1d8); swap it on the sheet", items:[
-          {name:"Spear",qty:1,weight:3,notes:"thrown 20/60, versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"str",proficient:true}
+        {key:"simple", label:"Any simple weapon", detail:"Choose it below (starts as a spear)", items:[
+          {name:"Spear",qty:1,weight:3,notes:"thrown 20/60, versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"str",proficient:true,pick:{category:"simple"}}
         ]}
       ]},
       {options:[
@@ -359,8 +361,8 @@ Object.assign(CLASSES_INFO["Paladin"], {
         {key:"javelins", label:"Five javelins", detail:"1d6 piercing, thrown (range 30/120 ft)", items:[
           {name:"Javelin",qty:5,weight:2,notes:"thrown 30/120",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"str",proficient:true}
         ]},
-        {key:"simple_melee", label:"Any simple melee weapon", detail:"Starts as a mace (1d6 bludgeoning); swap it on the sheet", items:[
-          {name:"Mace",qty:1,weight:4,notes:"",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true}
+        {key:"simple_melee", label:"Any simple melee weapon", detail:"Choose it below (starts as a mace)", items:[
+          {name:"Mace",qty:1,weight:4,notes:"",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true,pick:{category:"simple", melee:true}}
         ]}
       ]},
       {options:[
@@ -407,16 +409,16 @@ Object.assign(CLASSES_INFO["Druid"], {
         {key:"shield", label:"Wooden shield", detail:"+2 AC", items:[
           {name:"Wooden Shield",qty:1,weight:6,notes:"+2 AC; no metal",type:"armor",category:"shield",baseAC:2}
         ]},
-        {key:"simple", label:"Any simple weapon", detail:"Starts as a quarterstaff (1d6, versatile 1d8); swap it on the sheet", items:[
-          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true}
+        {key:"simple", label:"Any simple weapon", detail:"Choose it below (starts as a quarterstaff)", items:[
+          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true,pick:{category:"simple"}}
         ]}
       ]},
       {options:[
         {key:"scimitar", label:"Scimitar", detail:"1d6 slashing, finesse, light", items:[
           {name:"Scimitar",qty:1,weight:3,notes:"finesse, light",type:"weapon",damageDice:"1d6",damageType:"Slashing",ability:"finesse",proficient:true}
         ]},
-        {key:"simple_melee", label:"Any simple melee weapon", detail:"Starts as a spear (1d6, thrown 20/60, versatile 1d8); swap it on the sheet", items:[
-          {name:"Spear",qty:1,weight:3,notes:"thrown 20/60, versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"str",proficient:true}
+        {key:"simple_melee", label:"Any simple melee weapon", detail:"Choose it below (starts as a spear)", items:[
+          {name:"Spear",qty:1,weight:3,notes:"thrown 20/60, versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"str",proficient:true,pick:{category:"simple", melee:true}}
         ]}
       ]}
     ],
@@ -456,8 +458,8 @@ Object.assign(CLASSES_INFO["Monk"], {
         {key:"shortsword", label:"Shortsword", detail:"1d6 piercing, finesse, light", items:[
           {name:"Shortsword",qty:1,weight:2,notes:"finesse, light; monk weapon",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"finesse",proficient:true}
         ]},
-        {key:"simple", label:"Any simple weapon", detail:"Starts as a quarterstaff (1d6, versatile 1d8); swap it on the sheet", items:[
-          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8; monk weapon (DEX via Martial Arts)",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"finesse",proficient:true}
+        {key:"simple", label:"Any simple weapon", detail:"Choose it below (starts as a quarterstaff)", items:[
+          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8; monk weapon (DEX via Martial Arts)",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"finesse",proficient:true,pick:{category:"simple"}}
         ]}
       ]},
       {options:[
@@ -502,8 +504,8 @@ var CROSSBOW_OR_SIMPLE_CHOICE = {options:[
     {name:"Light Crossbow",qty:1,weight:5,notes:"ammunition, loading, two-handed, range 80/320",type:"weapon",damageDice:"1d8",damageType:"Piercing",ability:"dex",proficient:true},
     {name:"Crossbow Bolts",qty:20,weight:0.075,notes:"ammunition"}
   ]},
-  {key:"simple", label:"Any simple weapon", detail:"Starts as a quarterstaff (1d6, versatile 1d8); swap it on the sheet", items:[
-    {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true}
+  {key:"simple", label:"Any simple weapon", detail:"Choose it below (starts as a quarterstaff)", items:[
+    {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true,pick:{category:"simple"}}
   ]}
 ]};
 var TWO_DAGGERS = {name:"Dagger", qty:2, weight:1, notes:"finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true};
@@ -573,7 +575,7 @@ Object.assign(CLASSES_INFO["Warlock"], {
     ],
     fixed:[
       {name:"Leather", qty:1, weight:10, notes:"light armor", type:"armor", category:"light", baseAC:11},
-      {name:"Spear", qty:1, weight:3, notes:"any simple weapon; swap it on the sheet. Thrown 20/60, versatile 1d8", type:"weapon", damageDice:"1d6", damageType:"Piercing", ability:"str", proficient:true},
+      {name:"Spear", qty:1, weight:3, notes:"thrown 20/60, versatile 1d8", type:"weapon", damageDice:"1d6", damageType:"Piercing", ability:"str", proficient:true, pick:{category:"simple"}},
       TWO_DAGGERS
     ]
   }
@@ -610,8 +612,8 @@ Object.assign(CLASSES_INFO["Bard"], {
         {key:"longsword", label:"Longsword", detail:"1d8 slashing, versatile (1d10)", items:[
           {name:"Longsword",qty:1,weight:3,notes:"versatile 1d10",type:"weapon",damageDice:"1d8",damageType:"Slashing",ability:"str",proficient:true}
         ]},
-        {key:"simple", label:"Any simple weapon", detail:"Starts as a quarterstaff (1d6, versatile 1d8); swap it on the sheet", items:[
-          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true}
+        {key:"simple", label:"Any simple weapon", detail:"Choose it below (starts as a quarterstaff)", items:[
+          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true,pick:{category:"simple"}}
         ]}
       ]},
       {options:[
@@ -655,8 +657,9 @@ Object.assign(CLASSES_INFO["Ranger"], {
         {key:"shortswords", label:"Two shortswords", detail:"1d6 piercing each, finesse, light (fight with one in each hand)", items:[
           {name:"Shortsword",qty:2,weight:2,notes:"finesse, light",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"finesse",proficient:true}
         ]},
-        {key:"simple_melee", label:"Two simple melee weapons", detail:"Start as two handaxes (1d6, light, thrown 20/60); swap them on the sheet", items:[
-          {name:"Handaxe",qty:2,weight:2,notes:"light, thrown 20/60",type:"weapon",damageDice:"1d6",damageType:"Slashing",ability:"str",proficient:true}
+        {key:"simple_melee", label:"Two simple melee weapons", detail:"Choose them below (start as two handaxes)", items:[
+          {name:"Handaxe",qty:1,weight:2,notes:"light, thrown 20/60",type:"weapon",damageDice:"1d6",damageType:"Slashing",ability:"str",proficient:true,pick:{category:"simple", melee:true}},
+          {name:"Handaxe",qty:1,weight:2,notes:"light, thrown 20/60",type:"weapon",damageDice:"1d6",damageType:"Slashing",ability:"str",proficient:true,pick:{category:"simple", melee:true}}
         ]}
       ]},
       {options:[

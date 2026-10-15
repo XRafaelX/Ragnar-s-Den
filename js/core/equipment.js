@@ -5,10 +5,10 @@ import { RACE_DATA } from "../data/race-data.js";
 import { WEAPON_DATA } from "../data/weapons.js";
 import { featProficiencies } from "./feat-picks.js";
 import { characterPickedProfs, raceProficiencies } from "./class-picks.js";
-import { mod, profBonus } from "./basics.js";
+import { mod, profBonus, parseDiceNotation } from "./basics.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
 import { classFeatureList, classProficiencies } from "./class-features.js";
-import { songOfVictoryBonus } from "./effects.js";
+import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus } from "./magic-items.js";
 
@@ -116,6 +116,52 @@ export function martialArtsApplies(c, item){
   if(!(c.classes||[]).some(function(cl){ return cl.name==="Monk"; })) return false;
   if(!isMonkWeapon(item) && characterPickedProfs(c).monkWeapons.indexOf(item.name)===-1) return false;
   return !(c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
+}
+/* The damage dice a weapon rolls: its own, or the Martial Arts die when
+   that's bigger ("You can roll a d4 in place of the normal damage of your
+   unarmed strike or monk weapon", growing with monk level). {qty, die,
+   martialArts} or null when the item has no dice. */
+export function weaponDamageDice(c, item){
+  var own = parseDiceNotation(item.damageDice);
+  if(!own) return null;
+  if(martialArtsApplies(c, item)){
+    var ma = martialArtsDie(c);
+    if(ma * 1 > own.qty * own.die) return {qty: 1, die: ma, martialArts: true};
+  }
+  return {qty: own.qty, die: own.die, martialArts: false};
+}
+/* An unarmed strike (Basic Rules: you are proficient with it, and it deals
+   1 + STR bludgeoning), shown for characters who make something of it: a
+   race with natural weapons (a tabaxi's claws: 1d4 + STR slashing), Tavern
+   Brawler (a d4), and a monk, whose Martial Arts die and DEX apply while
+   wearing no armor and holding no shield. Null for everyone else.
+   {name, attack, die (0 for the flat 1), bonus, type, ability, roll,
+   parts (what shaped it, for the card)}. */
+export function unarmedStrike(c){
+  var nat = RACE_DATA[c.race] && RACE_DATA[c.race].unarmed;
+  var monk = (c.classes||[]).some(function(cl){ return cl.name==="Monk"; });
+  var brawler = hasFeat(c, "Tavern Brawler");
+  if(!nat && !monk && !brawler) return null;
+  var ab = c.abilities || {}, str = mod(ab.str), dex = mod(ab.dex);
+  var die = 0, name = "Unarmed strike", type = "Bludgeoning", parts = [];
+  if(nat){ die = nat.die; name = nat.name + " (unarmed strike)"; type = nat.type; parts.push(c.race + " " + nat.name.toLowerCase()); }
+  if(brawler && die < 4){ die = 4; parts.push("Tavern Brawler"); }
+  var abilityMod = str, ability = "STR";
+  var armored = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
+  if(monk && !armored){
+    var ma = martialArtsDie(c);
+    if(ma > die){ die = ma; }
+    parts.push("Martial Arts d" + ma);
+    if(dex > str){ abilityMod = dex; ability = "DEX"; }
+  }
+  var bonus = abilityMod + holsterDamageBonus(c);
+  // Rage: melee weapon attacks with STR, not in heavy armor.
+  var barb = barbarianClassEntry(c);
+  var heavy = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
+  if(c.rage && c.rage.active && barb && !heavy && ability==="STR") bonus += barbarianRageDamage(Number(barb.level)||1);
+  bonus += songOfVictoryBonus(c, {name: "Unarmed strike"});
+  return {name: name, attack: abilityMod + profBonus(c), die: die, bonus: bonus, type: type, ability: ability,
+    roll: armorPenalty(c, ability.toLowerCase()), parts: parts};
 }
 export function weaponAbilityMod(c, item){
   var strMod = mod(c.abilities && c.abilities.str);
