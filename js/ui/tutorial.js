@@ -201,10 +201,17 @@ function position(){
   if(key === lastKey) return;
   lastKey = key;
 
+  // No target: center over the content area beside the sidebar, where
+  // the home hub sits, rather than over the whole window.
   if(!el){
+    var main = document.getElementById("main");
+    var m = main ? main.getBoundingClientRect() : null;
+    var areaL = m ? Math.max(0, m.left) : 0;
+    var areaR = m ? Math.min(vw, m.right) : vw;
+    if(areaR - areaL < pw + EDGE * 2){ areaL = 0; areaR = vw; }
     els.spot.classList.add("none");
     els.arrow.style.display = "none";
-    els.pop.style.left = Math.max(EDGE, (vw - pw) / 2) + "px";
+    els.pop.style.left = Math.max(EDGE, areaL + (areaR - areaL - pw) / 2) + "px";
     els.pop.style.top = Math.max(EDGE, (vh - ph) / 2) + "px";
     return;
   }
