@@ -74,3 +74,32 @@ test("Heavy Holster: +1 damage per knife held and +20 ft while empty, only when 
   assert.deepEqual([dmg(), speed()], [3, 50], "a second attuned holster adds nothing");
   assert.equal(MI.holsterKnives({ magicItem: "Heavy Holster", knives: 7 }), 3, "never more than it holds");
 });
+
+test("attunement: 3 items, 4 to 6 for an artificer, never two copies", () => {
+  // Two stand-in items, so three different ones can be attuned.
+  MAGIC_ITEM_DATA["Test Ring"] = { kind: "Ring", rarity: "Rare", attunement: true, text: "x" };
+  MAGIC_ITEM_DATA["Test Cloak"] = { kind: "Wondrous item", rarity: "Rare", attunement: true, text: "x" };
+  try{
+    const item = (name, attuned) => ({ name, type: "gear", magicItem: name, qty: 1, attuned });
+    const c = { classes: [{ name: "Rogue", level: 10 }], inventory: [item("Heavy Holster", true), item("Test Ring", true)] };
+    const limit = (cls, level) => MI.attunementLimit({ classes: [{ name: cls, level }] });
+    assert.deepEqual([limit("Rogue", 20), limit("Artificer", 9), limit("Artificer", 10), limit("Artificer", 14), limit("Artificer", 18)], [3, 3, 4, 5, 6]);
+    assert.equal(MI.attunementLimit({ classes: [{ name: "Fighter", level: 5 }, { name: "Artificer", level: 10 }] }), 4, "a multiclass artificer 10");
+
+    const cloak = item("Test Cloak", false), holster2 = item("Heavy Holster", false);
+    c.inventory.push(cloak, holster2);
+    assert.match(MI.attuneProblem(c, holster2), /already attuned to a Heavy Holster/, "a second copy");
+    assert.equal(MI.attuneProblem(c, cloak), null, "a third item is fine");
+    cloak.attuned = true;
+    const fourth = item("Test Ring", false);
+    fourth.magicItem = "Test Ring 2"; MAGIC_ITEM_DATA["Test Ring 2"] = MAGIC_ITEM_DATA["Test Ring"];
+    c.inventory.push(fourth);
+    assert.match(MI.attuneProblem(c, fourth), /attuned to 3 of 3 items/, "a fourth is over the limit");
+    assert.equal(MI.attuneProblem(c, cloak), null, "ending an attunement is always allowed");
+    c.classes = [{ name: "Artificer", level: 10 }];
+    assert.equal(MI.attuneProblem(c, fourth), null, "an artificer 10 can take a fourth");
+    assert.equal(MI.attunedItems(c).length, 3);
+  } finally {
+    delete MAGIC_ITEM_DATA["Test Ring"]; delete MAGIC_ITEM_DATA["Test Cloak"]; delete MAGIC_ITEM_DATA["Test Ring 2"];
+  }
+});

@@ -219,6 +219,10 @@
 }
 .inv-equip-btn:active{transform:scale(.95);}
 .inv-equip-btn:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+/* An Attune switch at the attunement limit: greyed, a tap says why. */
+.inv-equip-btn.blocked{opacity:.45;cursor:not-allowed;}
+.inv-equip-btn.blocked:hover{color:var(--text-on-parch-dim);border-color:var(--rule);background:transparent;}
+.inv-equip-btn.blocked:active{transform:none;}
 .inv-equip-btn.on{
   color:var(--brass-bright2);border-color:var(--brass);
   background:color-mix(in srgb, var(--brass) 22%, transparent);

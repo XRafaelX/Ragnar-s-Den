@@ -87,8 +87,10 @@ export function classSpellAbility(cl){
      spellChoice   {id, label, options:{name: spells}}: more spells that
                    depend on a choice (Circle of the Land's land, a genie
                    kind), each option shaped like `spells`. The pick is
-                   saved on the class entry as spellChoices[id]. */
-var FEATURE_FLAGS = ["speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice"];
+                   saved on the class entry as spellChoices[id].
+     attuneLimit   how many magic items the character can attune to at
+                   once (an artificer's Magic Item Adept: 4) */
+var FEATURE_FLAGS = ["speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit"];
 
 /* ---- Optional features that replace one of the class's own ----
    Tasha's Favored Foe for a ranger's Favored Enemy, Deft Explorer for

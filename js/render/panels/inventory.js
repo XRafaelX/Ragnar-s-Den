@@ -12,7 +12,7 @@ import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { renderCurrencyCard } from "./coin-purse.js";
-import { magicItemDef, magicItemActive, holsterKnives, holsterDamageBonus } from "../../core/magic-items.js";
+import { magicItemDef, magicItemActive, holsterKnives, holsterDamageBonus, attuneProblem, attunedItems, attunementLimit } from "../../core/magic-items.js";
 import { pipChanged, pipsRefilled } from "../../ui/fx.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
@@ -75,16 +75,20 @@ function itemHeader(c, item, idx, onOpenDetails, noEquip){
     });
     actions.appendChild(eqBtn);
   } else if(magicItemDef(item) && magicItemDef(item).attunement){
-    // Same look as Equip: "Attune", then "Attuned" with a tick.
+    // Same look as Equip: "Attune", then "Attuned" with a tick. Greyed
+    // out at the attunement limit or for a second copy; a tap says why.
+    var atProblem = attuneProblem(c, item);
     var atBtn = document.createElement("button");
     atBtn.type = "button";
-    atBtn.className = "inv-equip-btn" + (item.attuned ? " on" : "");
+    atBtn.className = "inv-equip-btn" + (item.attuned ? " on" : "") + (atProblem ? " blocked" : "");
     atBtn.setAttribute("aria-pressed", item.attuned ? "true" : "false");
+    if(atProblem) atBtn.setAttribute("aria-disabled", "true");
     if(item.attuned) atBtn.innerHTML = makeCheckSvg();
     atBtn.appendChild(document.createTextNode(item.attuned ? "Attuned" : "Attune"));
-    atBtn.title = item.attuned ? "Attuned: its magic works. Tap to end the attunement." : "Attune to it (a short rest spent with it) so its magic works";
+    atBtn.title = atProblem || (item.attuned ? "Attuned: its magic works. Tap to end the attunement." : "Attune to it (a short rest spent with it) so its magic works");
     atBtn.addEventListener("click", function(e){
       e.stopPropagation();
+      if(atProblem){ showActionToast(atProblem, true); return; }
       item.attuned = !item.attuned;
       save(); renderAll();
     });
@@ -520,7 +524,9 @@ function renderMagicItemCard(c, item, idx, def){
 
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
-  subtitle.textContent = [def.kind, def.rarity, def.attunement ? (active ? "attuned" : "requires attunement") : ""].filter(Boolean).join(" · ");
+  // "attuned (1 of 3)" or "requires attunement (3 of 3 attuned)".
+  var slots = attunedItems(c).length + " of " + attunementLimit(c);
+  subtitle.textContent = [def.kind, def.rarity, def.attunement ? (active ? "attuned (" + slots + ")" : "requires attunement (" + slots + " attuned)") : ""].filter(Boolean).join(" · ");
   card.appendChild(subtitle);
   if(item.notes){
     var notesP = document.createElement("p");

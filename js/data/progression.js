@@ -56,10 +56,10 @@ export var CLASS_PROGRESSION = {
       3: [{name:"The Right Tool for the Job", text:"With thieves' or artisan's tools in hand, you can spend 1 hour to magically create one set of artisan's tools."}],
       6: [{name:"Tool Expertise", text:"Your proficiency bonus is doubled for any ability check that uses your proficiency with a tool."}],
       7: [{name:"Flash of Genius", text:"When you or a creature you can see within 30 feet makes an ability check or saving throw, you can use your reaction to add your INT modifier to the roll. Uses equal to your INT modifier (minimum 1) per long rest."}],
-      10: [{name:"Magic Item Adept", text:"You can attune to up to four magic items at once, and crafting a common or uncommon magic item takes you a quarter of the normal time and half the gold."}],
+      10: [{name:"Magic Item Adept", attuneLimit:4, text:"You can attune to up to four magic items at once, and crafting a common or uncommon magic item takes you a quarter of the normal time and half the gold."}],
       11: [{name:"Spell-Storing Item", text:"When you finish a long rest, touch a simple or martial weapon or a spellcasting focus and store a 1st- or 2nd-level artificer spell with a casting time of 1 action in it. A creature holding it can use an action to produce the spell, using your spellcasting ability modifier. It holds twice your INT modifier (minimum 2) uses, until they're spent or you store another spell."}],
-      14: [{name:"Magic Item Savant", text:"You can attune to up to five magic items at once, and you ignore all class, race, spell and level requirements on attuning to or using a magic item."}],
-      18: [{name:"Magic Item Master", text:"You can attune to up to six magic items at once."}],
+      14: [{name:"Magic Item Savant", attuneLimit:5, text:"You can attune to up to five magic items at once, and you ignore all class, race, spell and level requirements on attuning to or using a magic item."}],
+      18: [{name:"Magic Item Master", attuneLimit:6, text:"You can attune to up to six magic items at once."}],
       20: [{name:"Soul of Artifice", text:"You gain a +1 bonus to all saving throws per magic item you are attuned to. When you are reduced to 0 hit points but not killed outright, you can use your reaction to end one of your artifice infusions and drop to 1 hit point instead."}]
     }
   },

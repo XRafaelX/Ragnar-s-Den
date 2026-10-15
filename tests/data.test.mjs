@@ -13,7 +13,7 @@ import { FEATS_CATALOG } from "../js/data/feats.js";
 
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
-const FEATURE_KEYS = new Set(["name", "text", "replaces", "speed", "speedWhen", "initiative", "acHeavyArmor", "grants",
+const FEATURE_KEYS = new Set(["name", "text", "replaces", "attuneLimit", "speed", "speedWhen", "initiative", "acHeavyArmor", "grants",
   "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "halfProficiency", "styleChoice", "profs"]);
 const LONG_DASH = /[–—]/;
 
@@ -32,6 +32,7 @@ function checkFeature(f, where){
   assert.ok(!LONG_DASH.test(f.name + f.text), where + " " + f.name + ": long dash in text");
   for(const k of Object.keys(f)) assert.ok(FEATURE_KEYS.has(k), where + " " + f.name + ": unknown field " + k);
   if(f.speed != null) assert.ok(Number.isInteger(f.speed) && f.speed > 0, where + " " + f.name + ": speed");
+  if(f.attuneLimit != null) assert.equal(f.attuneLimit, { four: 4, five: 5, six: 6 }[(/attune to up to (\w+) magic items/.exec(f.text) || [])[1]], where + " " + f.name + ": attuneLimit matches its text");
   if(f.initiative != null) assert.ok([...ABILITIES, "pb"].includes(f.initiative), where + " " + f.name + ": initiative");
   if(f.saveBonus != null) assert.ok(ABILITIES.includes(f.saveBonus), where + " " + f.name + ": saveBonus");
   for(const k of ["magicWeaponAbility", "chosenWeaponAbility"]) if(f[k] != null) assert.ok(ABILITIES.includes(f[k]), where + " " + f.name + ": " + k);
