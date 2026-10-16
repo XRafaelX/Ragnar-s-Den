@@ -3,10 +3,12 @@
    advantage or disadvantage. */
 import { SKILLS } from "../data/abilities-skills.js";
 import { ARMOR_DATA } from "../data/armor.js";
+import { RACE_DATA, TRAIT_ADVANTAGES } from "../data/race-data.js";
 import { mod, fmtMod, profBonus, combineRolls } from "./basics.js";
+import { barbarianClassEntry } from "./character-resources.js";
 import { classFeatureList } from "./class-features.js";
 import { effectOn } from "./effects.js";
-import { weaponAbilityMod, armorPenalty } from "./equipment.js";
+import { weaponAbility, armorPenalty } from "./equipment.js";
 import { hasFeat } from "./vitals.js";
 
 /* ---------------- Ability checks and skills ---------------- */
@@ -94,20 +96,53 @@ export function stealthCheck(c){
    astral visage out, disadvantage on STR and DEX skills in armor you
    aren't proficient with. {mode: "none"|"dis"|"adv", reason}. */
 export function skillRollMode(c, skill){
-  var list = [armorPenalty(c, SKILL_ABILITY[skill])];
+  var list = [armorPenalty(c, SKILL_ABILITY[skill])].concat(alwaysAdvantage(c, "check", SKILL_ABILITY[skill]));
   if(skill==="Stealth") list.push(stealthCheck(c));
   if(skill==="Acrobatics" && effectOn(c, "bladesong")) list.push({mode: "adv", reason: "Bladesong"});
   if((skill==="Insight" || skill==="Intimidation") && effectOn(c, "astral_visage")) list.push({mode: "adv", reason: "Wisdom of the Spirit (Visage of the Astral Self)"});
   return combineRolls(list);
 }
+/* ---- Advantage from features and traits ----
+   [{on: "save" | "check" | "initiative", abilities: "all" | [keys], when,
+   name}] for this character: race traits (TRAIT_ADVANTAGES), class
+   features tagged `advantage` (Feral Instinct, Danger Sense) and Rage
+   ("advantage on Strength checks and Strength saving throws" while raging
+   and not in heavy armor). One without `when` always applies. */
+export function advantagesFor(c){
+  var out = [];
+  ((RACE_DATA[c.race] && RACE_DATA[c.race].traits) || []).forEach(function(t){
+    var a = TRAIT_ADVANTAGES[t.name];
+    if(a && !out.some(function(x){ return x.name===t.name; })) out.push(Object.assign({name: t.name}, a));
+  });
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){ if(f.advantage) out.push(Object.assign({name: f.name}, f.advantage)); });
+  });
+  var heavy = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
+  if(c.rage && c.rage.active && barbarianClassEntry(c) && !heavy){
+    out.push({name: "Rage", on: "save", abilities: ["str"]}, {name: "Rage", on: "check", abilities: ["str"]});
+  }
+  return out;
+}
+function covers(a, on, key){ return a.on===on && (on==="initiative" || a.abilities==="all" || a.abilities.indexOf(key)!==-1); }
+/* The ones that always apply to this roll, as roll modes. */
+function alwaysAdvantage(c, on, key){
+  return advantagesFor(c).filter(function(a){ return !a.when && covers(a, on, key); }).map(function(a){ return {mode: "adv", reason: a.name}; });
+}
+/* Situational ones for a save, for reminders: [{name, when}]. */
+export function situationalSaveAdvantages(c, key){
+  return advantagesFor(c).filter(function(a){ return a.when && covers(a, "save", key); }).map(function(a){ return {name: a.name, when: a.when}; });
+}
 /* A plain ability check or a saving throw with this ability. */
-export function checkRollMode(c, key){ return combineRolls([armorPenalty(c, key)]); }
-export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)]); }
+export function checkRollMode(c, key){ return combineRolls([armorPenalty(c, key)].concat(alwaysAdvantage(c, "check", key))); }
+export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)].concat(alwaysAdvantage(c, "save", key))); }
+/* Initiative is a DEX check: Feral Instinct's advantage, and armor worn
+   without proficiency's disadvantage. */
+export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex")].concat(alwaysAdvantage(c, "initiative"))); }
 /* A weapon attack: disadvantage in armor you aren't proficient with when
    it uses STR or DEX (not INT from Battle Ready or CHA from Hex Warrior). */
 export function attackRollMode(c, item){
-  var used = weaponAbilityMod(c, item);
-  var ab = c.abilities || {};
-  var physical = used===mod(ab.str) || used===mod(ab.dex);
+  // Only when every best choice is STR or DEX (on a tie with INT from
+  // Battle Ready, the player attacks with INT and avoids it).
+  var physical = weaponAbility(c, item).keys.every(function(k){ return k==="str" || k==="dex"; });
   return combineRolls([physical ? armorPenalty(c, "str") : null]);
 }

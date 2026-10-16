@@ -1,6 +1,6 @@
 import { INVOCATIONS, invocationsKnownAt, invocationDef, pactBoonDef } from "../data/invocations.js";
 import { SPELL_DATA, catalogSpellName, spellsMatching } from "../data/spells.js";
-import { uid, mod, totalLevel } from "./helpers.js";
+import { uid, mod, totalLevel, featureSpells } from "./helpers.js";
 import { featDef } from "./feat-picks.js";
 
 /* ---------------- Eldritch invocations and the Pact Boon ----------------
@@ -47,7 +47,14 @@ export function invocationContext(c, cl, over){
   var known = (over.known || knownInvocations(cl).map(function(e){ return e.name; }))
     .concat(featInvocations(c).map(function(inv){ return inv.name; }));
   var pactSpells = over.pactSpells || (cl && cl.pactSpells) || [];
-  var spells = (c.spells||[]).map(function(sp){ return (sp.name||"").trim(); }).concat(pactSpells);
+  // A spell known from a feat counts too (Eldritch Blast from Magic
+  // Initiate or Spell Sniper, Hex from Fey Touched): the prerequisite asks
+  // only that you know it, and only a warlock gets to use it (Eldritch
+  // Adept offers non-warlocks just the invocations without one). Not ones
+  // the invocations and Pact Boon give themselves.
+  var granted = featureSpells(c).filter(function(fs){ return fs.kind!=="expanded" && fs.source!=="Invocation" && fs.source!=="Pact Boon"; })
+    .map(function(fs){ return catalogSpellName(fs.name); });
+  var spells = (c.spells||[]).map(function(sp){ return (sp.name||"").trim(); }).concat(pactSpells, granted);
   return {
     level: over.level!=null ? over.level : (cl ? Number(cl.level)||1 : 0),
     pactBoon: over.pactBoon!=null ? over.pactBoon : (cl && cl.pactBoon) || "",

@@ -70,13 +70,13 @@ export var CLASS_PROGRESSION = {
     features: {
       2: [
         {name:"Reckless Attack", text:"On your first attack of a turn you can attack recklessly: advantage on your Strength melee attacks this turn, but attacks against you also have advantage until your next turn."},
-        {name:"Danger Sense", text:"Advantage on Dexterity saving throws against effects you can see (traps, spells) as long as you aren't blinded, deafened or incapacitated."}
+        {name:"Danger Sense", text:"Advantage on Dexterity saving throws against effects you can see (traps, spells) as long as you aren't blinded, deafened or incapacitated.", advantage:{on:"save", abilities:["dex"], when:"against effects you can see (not while blinded, deafened or incapacitated)"}}
       ],
       5: [
         {name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."},
         {name:"Fast Movement", text:"Your speed increases by 10 feet while you aren't wearing heavy armor. (Added to your speed while that's true.)", speed:10, speedWhen:"noHeavyArmor"}
       ],
-      7: [{name:"Feral Instinct", text:"You have advantage on initiative rolls. If you are surprised at the start of combat and aren't incapacitated, you can act normally on your first turn, but only if you enter your rage before doing anything else."}],
+      7: [{name:"Feral Instinct", text:"You have advantage on initiative rolls. If you are surprised at the start of combat and aren't incapacitated, you can act normally on your first turn, but only if you enter your rage before doing anything else.", advantage:{on:"initiative"}}],
       9: [
         {name:"Rage", replaces:"Rage", text:"Bonus action to enter a rage for 1 minute: +3 damage on Strength melee weapon attacks, resistance to bludgeoning, piercing and slashing damage, and advantage on Strength checks and saves. You can't cast or concentrate on spells while raging. It ends early if you are knocked unconscious, or if your turn ends without you attacking a hostile creature or taking damage since your last turn."},
         {name:"Brutal Critical", text:"When you score a critical hit with a melee attack, roll one additional weapon damage die for the extra critical damage (two dice from level 13, three from level 17)."}

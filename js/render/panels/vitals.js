@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, characterResources, restoreResources, maxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, restoreResources, maxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect } from "../../core/helpers.js";
 import { CLASSES_INFO } from "../../data/classes.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -451,6 +451,7 @@ export function renderVitalsPanel(c){
   initBox.className = "vital-box vital-mini init-vital-box";
   var initResult = computeInitiative(c);
   var initTotal = initResult.value;
+  var initRoll = initiativeRollMode(c); // Feral Instinct, or armor without proficiency
 
   var initHeader = document.createElement("div");
   initHeader.className = "lbl";
@@ -460,12 +461,12 @@ export function renderVitalsPanel(c){
   var initValDiv = document.createElement("div");
   initValDiv.className = "init-hero-val";
   initValDiv.textContent = fmtMod(initTotal);
-  initValDiv.title = "Click to roll initiative (1d20" + fmtMod(initTotal) + ")";
+  initValDiv.title = "Click to roll initiative (1d20" + fmtMod(initTotal) + ")" + (initRoll.mode!=="none" ? ", with " + (initRoll.mode==="adv" ? "advantage" : "disadvantage") + ": " + initRoll.reason : "");
   initBox.appendChild(initValDiv);
 
   var initHint = document.createElement("div");
   initHint.className = "vital-hint";
-  initHint.textContent = initResult.short;
+  initHint.textContent = initResult.short + (initRoll.mode==="adv" ? " · Adv" : initRoll.mode==="dis" ? " · Dis" : "");
   initHint.title = initResult.breakdown;
   initBox.appendChild(initHint);
 
@@ -516,7 +517,7 @@ export function renderVitalsPanel(c){
   initBox.title = "Click to roll initiative (1d20" + fmtMod(initTotal) + ")";
   initBox.addEventListener("click", function(e){
     if(e.target.closest(".stat-stepper") || e.target.closest("button")) return;
-    performRoll(20,1,initTotal,"none","Initiative");
+    performRoll(20,1,initTotal,initRoll.mode,"Initiative");
   });
   grid.appendChild(initBox);
 

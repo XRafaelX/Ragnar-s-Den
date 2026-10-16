@@ -342,6 +342,26 @@ export var RACE_DATA = {
       tr("Poison Immunity", "Immunity to poison damage and the poisoned condition.")]}
 };
 
+/* Advantage a race trait gives, by trait name (checked against the
+   published pages 2026-10-15): {on: "save", abilities: "all" or [keys],
+   when}. With no `when` it always applies and the sheet rolls the save
+   with advantage (Vedalken Dispassion); with one it is a reminder under
+   the Saving throws card (Dwarven Resilience: against poison). */
+export var TRAIT_ADVANTAGES = {
+  "Dwarven Resilience": {on:"save", abilities:"all", when:"against poison"},
+  "Stout Resilience": {on:"save", abilities:"all", when:"against poison"},
+  "Constructed Resilience": {on:"save", abilities:"all", when:"against being poisoned"},
+  "Duergar Resilience": {on:"save", abilities:"all", when:"against illusions and against being charmed or paralyzed"},
+  "Fey Ancestry": {on:"save", abilities:"all", when:"against being charmed"},
+  "Brave": {on:"save", abilities:"all", when:"against being frightened"},
+  "Gnome Cunning": {on:"save", abilities:["int","wis","cha"], when:"against magic"},
+  "Mental Discipline": {on:"save", abilities:"all", when:"against being charmed or frightened"},
+  "Loxodon Serenity": {on:"save", abilities:"all", when:"against being charmed or frightened"},
+  "Magic Resistance": {on:"save", abilities:"all", when:"against spells and other magical effects"},
+  "Vedalken Dispassion": {on:"save", abilities:["int","wis","cha"]},
+  "Telepathic Insight": {on:"save", abilities:["wis","cha"]}
+};
+
 var ABILITY_SHORT = {str:"STR", dex:"DEX", con:"CON", int:"INT", wis:"WIS", cha:"CHA"};
 
 /* "+2 DEX, +1 WIS" (or the flexible text). */

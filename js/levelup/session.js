@@ -299,6 +299,13 @@ export function learnSections(plan){
 export function asiPointsUsed(){
   return Object.keys(lu.asi).reduce(function(a,k){ return a + lu.asi[k]; }, 0);
 }
+/* How many of the two points can be placed at all: "You can't increase an
+   ability score above 20 using this feature", so scores at or near 20 may
+   leave fewer than two places to put them. */
+export function asiPointsAvailable(){
+  var room = Object.keys(lu.asi).reduce(function(a, k){ return a + Math.max(0, Math.min(2, 20 - (Number(lu.c.abilities[k])||10))); }, 0);
+  return Math.min(2, room);
+}
 
 function validate(id){
   if(id==="class") return lu.className ? null : "Pick a class to gain the level in.";
@@ -347,7 +354,9 @@ function validate(id){
       var blocked = featRequiresReason(featDef(lu.featName), {race: lu.c.race, level: totalLevel(lu.c) + 1, feats: lu.c.feats || []});
       return blocked ? lu.featName+" "+blocked+". Pick another feat." : null;
     }
-    return asiPointsUsed()===2 ? null : "Spend both ability points (you have "+(2-asiPointsUsed())+" left).";
+    var can = asiPointsAvailable();
+    if(!can) return "Every score is already 20. Take a feat instead.";
+    return asiPointsUsed()===can ? null : can===2 ? "Spend both ability points (you have "+(2-asiPointsUsed())+" left)." : "Spend your ability point (only one can go anywhere: the rest of your scores are at 20).";
   }
   if(id==="featPicks") return featPicksProblem(featDef(lu.featName), lu.featPicks, featCtx()) || null;
   if(id==="bonusFeat"){

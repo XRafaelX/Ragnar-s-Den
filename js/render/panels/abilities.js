@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { fmtMod, mod, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, computeDarkvision, checkAbility, abilityCheck, skillCheck, saveRollMode, escapeHtml } from "../../core/helpers.js";
+import { fmtMod, mod, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, computeDarkvision, checkAbility, abilityCheck, skillCheck, saveRollMode, situationalSaveAdvantages, escapeHtml } from "../../core/helpers.js";
 import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeAlertSvg } from "../../ui/svg-icons.js";
@@ -154,6 +154,34 @@ export function renderAbilitiesPanel(c){
     saveRows.appendChild(row);
   });
   saveCard.appendChild(saveRows);
+  // Advantage that depends on the situation (Dwarven Resilience against
+  // poison): a reminder, since the sheet can't know what you're saving against.
+  var situational = [];
+  ABILITIES.forEach(function(a){
+    situationalSaveAdvantages(c, a[0]).forEach(function(s){
+      var line = situational.find(function(x){ return x.name===s.name && x.when===s.when; });
+      if(line) line.abilities.push(a[1].slice(0,3).toUpperCase()); else situational.push({name: s.name, when: s.when, abilities: [a[1].slice(0,3).toUpperCase()]});
+    });
+  });
+  if(situational.length){
+    var notes = document.createElement("div");
+    notes.className = "save-adv-notes";
+    var head = document.createElement("p");
+    head.className = "save-adv-head";
+    head.textContent = "Situational advantage (roll with advantage yourself when it applies):";
+    notes.appendChild(head);
+    var ul = document.createElement("ul");
+    situational.forEach(function(s){
+      var li = document.createElement("li");
+      var b = document.createElement("b");
+      b.textContent = s.name + ": ";
+      li.appendChild(b);
+      li.appendChild(document.createTextNode((s.abilities.length===6 ? "saves " : s.abilities.join(", ") + " saves ") + s.when + "."));
+      ul.appendChild(li);
+    });
+    notes.appendChild(ul);
+    saveCard.appendChild(notes);
+  }
   panel.appendChild(saveCard);
 
   var skillCard = makeCard("Skills");

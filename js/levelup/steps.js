@@ -26,7 +26,7 @@ import { renderFeatPicks } from "../ui/feat-picks.js";
 import { fillFeatList } from "../ui/feat-list.js";
 import { swapSection } from "../core/spells-known.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
-import { lu, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
+import { lu, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
 
 export function stepClass(container){
   var c = lu.c;
@@ -418,7 +418,8 @@ export function stepAsi(container){
 
   if(lu.asiMode==="asi"){
     var left = ce("p","lu-points");
-    left.textContent = "Points left: "+(2-asiPointsUsed())+" / 2";
+    var placeable = asiPointsAvailable();
+    left.textContent = "Points left: "+(placeable-asiPointsUsed())+" / "+placeable + (placeable < 2 ? " (scores can't go above 20)" : "");
     card.appendChild(left);
     ABILITIES.forEach(function(a){
       var k = a[0];

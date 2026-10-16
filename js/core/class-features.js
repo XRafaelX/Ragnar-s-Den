@@ -81,6 +81,10 @@ export function classSpellAbility(cl){
                    (Divine Magic: "Cleric"); the spell pickers include it
      darkvision    {range, add}: darkvision out to `range` feet, or `add`
                    feet more if the character already has it (Umbral Sight)
+     advantage     {on: "save" | "initiative", abilities, when}: advantage the
+                   feature gives (Feral Instinct on initiative; Danger
+                   Sense on DEX saves, `when` against effects you can see);
+                   see advantagesFor in checks.js
      styleChoice   {options}: a Fighting Style the subclass grants, asked
                    for in the level-up ("class" = the class's own list;
                    Champion 10) or from a short list (College of Swords)
@@ -90,7 +94,7 @@ export function classSpellAbility(cl){
                    saved on the class entry as spellChoices[id].
      attuneLimit   how many magic items the character can attune to at
                    once (an artificer's Magic Item Adept: 4) */
-var FEATURE_FLAGS = ["speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit"];
+var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit"];
 
 /* ---- Optional features that replace one of the class's own ----
    Tasha's Favored Foe for a ranger's Favored Enemy, Deft Explorer for

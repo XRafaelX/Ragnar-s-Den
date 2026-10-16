@@ -163,23 +163,28 @@ export function unarmedStrike(c){
   return {name: name, attack: abilityMod + profBonus(c), die: die, bonus: bonus, type: type, ability: ability,
     roll: armorPenalty(c, ability.toLowerCase()), parts: parts};
 }
-export function weaponAbilityMod(c, item){
-  var strMod = mod(c.abilities && c.abilities.str);
-  var dexMod = mod(c.abilities && c.abilities.dex);
-  var best = item.ability==="dex" ? dexMod : item.ability==="finesse" ? Math.max(strMod, dexMod) : strMod;
-  if(martialArtsApplies(c, item)) best = Math.max(best, strMod, dexMod);
+/* The abilities a weapon attack may use and the best modifier among
+   them: {mod, keys}, `keys` being every ability that reaches it (on a tie
+   the player picks, so a Battle Ready artificer with INT equal to STR can
+   attack with INT and dodge armor's STR penalty, or with STR for rage). */
+export function weaponAbility(c, item){
+  var ab = c.abilities || {};
+  var allowed = item.ability==="dex" ? ["dex"] : item.ability==="finesse" ? ["str", "dex"] : ["str"];
+  if(martialArtsApplies(c, item)) allowed = ["str", "dex"];
   // A feature tagged `magicWeaponAbility` lets magic weapons (see
   // isMagicWeapon) use that ability instead, when it's higher; one tagged
   // `chosenWeaponAbility` does the same for the weapon marked `chosenWeapon`.
   var isMagic = isMagicWeapon(c, item);
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
-      if(f.magicWeaponAbility && isMagic) best = Math.max(best, mod(c.abilities && c.abilities[f.magicWeaponAbility]));
-      if(f.chosenWeaponAbility && item.chosenWeapon) best = Math.max(best, mod(c.abilities && c.abilities[f.chosenWeaponAbility]));
+      if(f.magicWeaponAbility && isMagic) allowed.push(f.magicWeaponAbility);
+      if(f.chosenWeaponAbility && item.chosenWeapon) allowed.push(f.chosenWeaponAbility);
     });
   });
-  return best;
+  var best = Math.max.apply(null, allowed.map(function(k){ return mod(ab[k]); }));
+  return {mod: best, keys: allowed.filter(function(k, i){ return allowed.indexOf(k)===i && mod(ab[k])===best; })};
 }
+export function weaponAbilityMod(c, item){ return weaponAbility(c, item).mod; }
 /* The feature (if any) that lets this character mark one weapon to attack
    with a different ability, e.g. Hex Warrior (CHA). */
 export function chosenWeaponFeature(c){
@@ -235,7 +240,7 @@ export function rageDamageBonus(c, item){
   var barb = barbarianClassEntry(c);
   if(!barb) return 0;
   if((c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; })) return 0;
-  if(weaponAbilityMod(c, item)!==mod(c.abilities && c.abilities.str)) return 0;
+  if(weaponAbility(c, item).keys.indexOf("str")===-1) return 0; // rage needs a STR attack
   return barbarianRageDamage(Number(barb.level)||1);
 }
 /* Best-effort default for a newly added weapon's Proficient checkbox:

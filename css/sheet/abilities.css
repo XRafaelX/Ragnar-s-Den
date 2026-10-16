@@ -238,3 +238,11 @@
 .skill-roll-tag.dis{color:var(--oxblood);border:1px solid var(--oxblood);display:inline-flex;align-items:center;gap:3px;}
 .skill-roll-tag .alert-svg{width:11px;height:11px;}
 .skill-roll-tag.adv{color:var(--moss);border:1px solid var(--moss);}
+
+/* Situational advantage on saves (Dwarven Resilience against poison): a
+   short reminder list under the saves. */
+.save-adv-notes{margin-top:12px;font-size:12.5px;line-height:1.45;color:var(--text-on-parch-dim);}
+.save-adv-notes .save-adv-head{margin:0 0 4px;}
+.save-adv-notes ul{margin:0;padding-left:18px;}
+.save-adv-notes li{margin:2px 0;}
+.save-adv-notes b{color:var(--text-on-parch);font-weight:600;}

@@ -1,5 +1,5 @@
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL, XP_THRESHOLDS } from "../data/progression.js";
-import { ce, escapeHtml, totalLevel, classFeatureList } from "../core/helpers.js";
+import { ce, escapeHtml, totalLevel, classFeatureList, maxHp } from "../core/helpers.js";
 import { save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { openInfoModal } from "../ui/info-modal.js";
@@ -7,6 +7,7 @@ import { playAdd } from "../ui/sound.js";
 import { showActionToast } from "../ui/toast.js";
 import { makeLevelUpSvg, makeUndoSvg } from "../ui/svg-icons.js";
 import { openLevelUp, undoLastLevelUp, applySpellSlots } from "./levelup.js";
+import { syncClassPicks } from "../core/class-picks.js";
 
 var QUICK_XP = [50, 100, 250, 500];
 var customXpOpen = false;
@@ -143,6 +144,19 @@ export function subclassEligible(cl){
   return !!(prog && prog.subclassLevel && (Number(cl.level)||1) >= prog.subclassLevel);
 }
 
+/* What a level-up adds for a subclass's features that the sheet keeps as
+   saved numbers: walking speed (a Scout's Superior Mobility, Aura of
+   Alacrity) and a Draconic sorcerer's 1 HP per sorcerer level. Picking or
+   changing a subclass on the sheet adds the new one's and takes back the
+   old one's. {speed, hp} at the class entry's level. */
+export function subclassExtras(cl, subclassName){
+  var sub = (SUBCLASSES[cl.name]||[]).find(function(s){ return s.name===subclassName; });
+  var lv = Number(cl.level)||1, speed = 0;
+  if(sub) for(var l = 1; l <= lv; l++) ((sub.features && sub.features[l]) || []).forEach(function(f){ if(f.speed) speed += f.speed; });
+  var hp = cl.name==="Sorcerer" && subclassName==="Draconic Bloodline" ? lv : 0;
+  return {speed: speed, hp: hp};
+}
+
 export function openSubclassPicker(c, cl){
   var prog = CLASS_PROGRESSION[cl.name];
   openInfoModal(cl.name+": "+prog.subclassLabel, function(body){
@@ -168,7 +182,12 @@ export function openSubclassPicker(c, cl){
   });
 
   function choose(name){
+    // The old subclass's speed and HP off, the new one's on.
+    var was = subclassExtras(cl, cl.subclass), now = subclassExtras(cl, name);
+    c.speed = (Number(c.speed)||30) - was.speed + now.speed;
+    c.hp.max = Math.max(1, (Number(c.hp.max)||1) - was.hp + now.hp);
     cl.subclass = name;
+    c.hp.current = Math.max(0, Math.min((Number(c.hp.current)||0) - was.hp + now.hp, maxHp(c)));
     classFeatureList(cl).forEach(function(f){
       if(f.subclass && c.newUnlocks.indexOf(f.id)===-1) c.newUnlocks.push(f.id);
     });

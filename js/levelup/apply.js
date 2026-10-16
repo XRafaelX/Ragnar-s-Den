@@ -288,15 +288,22 @@ export function undoLastLevelUp(c){
     c.speed = (Number(c.speed)||30) - (rec.speedGain||0);
     var prev = rec.prevSpellcasting;
     c.spellcasting.ability = prev.ability;
-    for(var i=1;i<=9;i++){
-      var s = c.spellcasting.slots[i];
-      s.max = prev.slots[i]||0;
-      s.used = clamp(s.used||0, 0, s.max);
+    if(c.classes.some(function(cl){ return classCasterType(cl); })){
+      // Still a caster: work the slots out from the classes again, keeping
+      // slots added or removed by hand on the Spells tab (s.extra), even
+      // ones changed after this level-up, and the slots spent since.
+      applySpellSlots(c);
+    } else {
+      // No spellcasting class left: back to the numbers from before.
+      for(var i=1;i<=9;i++){
+        var s = c.spellcasting.slots[i];
+        s.max = prev.slots[i]||0;
+        s.used = clamp(s.used||0, 0, s.max);
+      }
+      var pactNow = c.spellcasting.pact;
+      c.spellcasting.pact = prev.pact ? {max: prev.pact.max, slotLevel: prev.pact.slotLevel,
+        used: clamp(pactNow ? (pactNow.used||0) : (prev.pact.used||0), 0, prev.pact.max)} : null;
     }
-    // Restore the old pact slot count but keep the slots spent since.
-    var pactNow = c.spellcasting.pact;
-    c.spellcasting.pact = prev.pact ? {max: prev.pact.max, slotLevel: prev.pact.slotLevel,
-      used: clamp(pactNow ? (pactNow.used||0) : (prev.pact.used||0), 0, prev.pact.max)} : null;
     c.newUnlocks = c.newUnlocks.filter(function(id){ return rec.unlockIds.indexOf(id)===-1; });
     syncClassPicks(c); // proficiencies from features the level gave go with them
     syncHitDice(c);
