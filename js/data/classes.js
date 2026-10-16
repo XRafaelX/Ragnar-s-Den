@@ -100,14 +100,15 @@ export var FIGHTING_STYLES = {
   "Two-Weapon Fighting":{text:"When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack."},
   /* Tasha's Cauldron (optional class features: only for characters using
      them). `optionPick`: options to learn from a class option set;
-     `spellPick`: cantrips from a class's list, cast with `ability`. */
+     `spellPick`: cantrips from a class's list, cast with `ability`; one may be
+     replaced on each level-up in `swapClass`. */
   "Blind Fighting":{optional:true, blindsight:10, text:"You have blindsight with a range of 10 feet: within that range you can effectively see anything that isn't behind total cover, even if you're blinded or in darkness, and you can see an invisible creature unless it successfully hides from you. (Added to your senses.)"},
   "Interception":{optional:true, text:"When a creature you can see hits a target other than you within 5 feet of you with an attack, you can use your reaction to reduce the damage the target takes by 1d10 + your proficiency bonus (to a minimum of 0). You must be wielding a shield or a simple or martial weapon."},
   "Superior Technique":{optional:true, optionPick:{set:"maneuvers", count:1}, text:"You learn one maneuver of your choice from among those available to the Battle Master (save DC 8 + proficiency bonus + Strength or Dexterity modifier), and you gain one superiority die, a d6, regained on a short or long rest; it's added to any superiority dice you have from another source. (Shown on the Maneuvers card.)"},
   "Thrown Weapon Fighting":{optional:true, text:"You can draw a weapon that has the thrown property as part of the attack you make with it. In addition, when you hit with a ranged attack using a thrown weapon, you gain a +2 bonus to the damage roll."},
   "Unarmed Fighting":{optional:true, text:"Your unarmed strikes deal 1d6 + your Strength modifier bludgeoning damage on a hit, or 1d8 if you aren't wielding any weapons or a shield when you make the attack roll. At the start of each of your turns, you can deal 1d4 bludgeoning damage to one creature grappled by you."},
-  "Blessed Warrior":{optional:true, spellPick:{count:2, level:0, list:"Cleric", ability:"cha"}, text:"You learn two cantrips of your choice from the cleric spell list. They count as paladin spells for you, and Charisma is your spellcasting ability for them. Whenever you gain a level in this class, you can replace one of them with another cleric cantrip. (Shown on the Spells tab.)"},
-  "Druidic Warrior":{optional:true, spellPick:{count:2, level:0, list:"Druid", ability:"wis"}, text:"You learn two cantrips of your choice from the druid spell list. They count as ranger spells for you, and Wisdom is your spellcasting ability for them. Whenever you gain a level in this class, you can replace one of them with another druid cantrip. (Shown on the Spells tab.)"}
+  "Blessed Warrior":{optional:true, spellPick:{count:2, level:0, list:"Cleric", ability:"cha", swapClass:"Paladin"}, text:"You learn two cantrips of your choice from the cleric spell list. They count as paladin spells for you, and Charisma is your spellcasting ability for them. Whenever you gain a level in this class, you can replace one of them with another cleric cantrip. (Shown on the Spells tab.)"},
+  "Druidic Warrior":{optional:true, spellPick:{count:2, level:0, list:"Druid", ability:"wis", swapClass:"Ranger"}, text:"You learn two cantrips of your choice from the druid spell list. They count as ranger spells for you, and Wisdom is your spellcasting ability for them. Whenever you gain a level in this class, you can replace one of them with another druid cantrip. (Shown on the Spells tab.)"}
 };
 
 CLASSES_INFO["Fighter"].features = [

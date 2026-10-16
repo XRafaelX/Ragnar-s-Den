@@ -133,19 +133,30 @@ export function weaponDamageDice(c, item){
 /* An unarmed strike (Basic Rules: you are proficient with it, and it deals
    1 + STR bludgeoning), shown for characters who make something of it: a
    race with natural weapons (a tabaxi's claws: 1d4 + STR slashing), Tavern
-   Brawler (a d4), and a monk, whose Martial Arts die and DEX apply while
-   wearing no armor and holding no shield. Null for everyone else.
+   Brawler (a d4), the Unarmed Fighting style (a d6, a d8 with nothing in
+   hand; `grappleDie` its 1d4 to a grappled creature), and a monk, whose
+   Martial Arts die and DEX apply while wearing no armor and holding no
+   shield. Null for everyone else.
    {name, attack, die (0 for the flat 1), bonus, type, ability, roll,
    parts (what shaped it, for the card)}. */
 export function unarmedStrike(c){
   var nat = RACE_DATA[c.race] && RACE_DATA[c.race].unarmed;
   var monk = (c.classes||[]).some(function(cl){ return cl.name==="Monk"; });
   var brawler = hasFeat(c, "Tavern Brawler");
-  if(!nat && !monk && !brawler) return null;
+  var styled = hasFightingStyle(c, "Unarmed Fighting");
+  if(!nat && !monk && !brawler && !styled) return null;
   var ab = c.abilities || {}, str = mod(ab.str), dex = mod(ab.dex);
   var die = 0, name = "Unarmed strike", type = "Bludgeoning", parts = [];
   if(nat){ die = nat.die; name = nat.name + " (unarmed strike)"; type = nat.type; parts.push(c.race + " " + nat.name.toLowerCase()); }
   if(brawler && die < 4){ die = 4; parts.push("Tavern Brawler"); }
+  // Unarmed Fighting: 1d6 bludgeoning, or 1d8 when wielding no weapon
+  // and no shield at the attack roll.
+  if(styled){
+    var holding = (c.inventory||[]).some(function(i){ return i.equipped && (i.type==="weapon" || isShield(i)); });
+    var sd = holding ? 6 : 8;
+    if(sd > die){ die = sd; name = "Unarmed strike"; type = "Bludgeoning"; }
+    parts.push("Unarmed Fighting d" + sd + (holding ? " (d8 with no weapon or shield in hand)" : ""));
+  }
   var abilityMod = str, ability = "STR";
   var armored = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
   if(monk && !armored){
@@ -161,7 +172,7 @@ export function unarmedStrike(c){
   if(c.rage && c.rage.active && barb && !heavy && ability==="STR") bonus += barbarianRageDamage(Number(barb.level)||1);
   bonus += songOfVictoryBonus(c, {name: "Unarmed strike"});
   return {name: name, attack: abilityMod + profBonus(c), die: die, bonus: bonus, type: type, ability: ability,
-    roll: armorPenalty(c, ability.toLowerCase()), parts: parts};
+    roll: armorPenalty(c, ability.toLowerCase()), parts: parts, grappleDie: styled ? 4 : 0};
 }
 /* The abilities a weapon attack may use and the best modifier among
    them: {mod, keys}, `keys` being every ability that reaches it (on a tie
@@ -221,7 +232,53 @@ export function weaponAttackBonus(c, item){
   return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0) + archery - (powerAttackOn(c, item) ? 5 : 0);
 }
 export function weaponDamageBonus(c, item){
-  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + holsterDamageBonus(c);
+  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + holsterDamageBonus(c)
+    + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0);
+}
+/* A weapon with the thrown property (a dagger, a handaxe, a dart). */
+export function isThrownWeapon(item){
+  var d = WEAPON_DATA[item.name];
+  return item.type==="weapon" && /\bthrown\b/i.test(((d && d.properties) || "") + " " + (item.notes || ""));
+}
+/* Thrown Weapon Fighting: +2 damage when you hit with a ranged attack
+   using a thrown weapon. */
+function thrownStyleBonus(c, item){
+  return isThrownWeapon(item) && hasFightingStyle(c, "Thrown Weapon Fighting") ? 2 : 0;
+}
+/* Throwing a melee weapon (a handaxe, a javelin) makes a ranged attack:
+   Archery's +2 to hit and Thrown Weapon Fighting's +2 damage apply, a
+   barbarian's rage damage doesn't (melee only). {attack, damage, parts}
+   when that differs from the melee numbers, else null (a dart, being a
+   ranged weapon, already shows its thrown numbers). */
+export function thrownAttack(c, item){
+  if(!isThrownWeapon(item) || isRangedWeapon(item)) return null;
+  var archery = hasFightingStyle(c, "Archery") ? 2 : 0;
+  var style = thrownStyleBonus(c, item), rage = rageDamageBonus(c, item);
+  if(!archery && !style && !rage) return null;
+  var parts = [];
+  if(archery) parts.push("Archery +2 to hit");
+  if(style) parts.push("Thrown Weapon Fighting +2 damage");
+  if(rage) parts.push("no rage damage (a ranged attack)");
+  return {attack: weaponAttackBonus(c, item) + archery, damage: weaponDamageBonus(c, item) - rage + style, parts: parts};
+}
+/* Two-weapon fighting (Basic Rules): attacking with a light melee weapon
+   in one hand, a bonus action attacks with a different light melee weapon
+   in the other, adding no ability modifier to its damage unless the
+   modifier is negative; the Two-Weapon Fighting style adds it. Dual
+   Wielder lifts "light" (one-handed weapons still). Two separate equipped
+   weapons are needed: a stack ("Dagger ×2") is one weapon in hand. For
+   `item`, when it can be that off-hand weapon: {damage, style}, else null. */
+function offHandCapable(c, item){
+  if(item.type!=="weapon" || !item.equipped || isRangedWeapon(item) || isTwoHanded(item)) return false;
+  var d = WEAPON_DATA[item.name];
+  return /\blight\b/i.test(((d && d.properties) || "") + " " + (item.notes || "")) || hasFeat(c, "Dual Wielder");
+}
+export function offHandAttack(c, item){
+  if(!offHandCapable(c, item)) return null;
+  if(!(c.inventory||[]).some(function(i){ return i!==item && offHandCapable(c, i); })) return null;
+  var ab = weaponAbilityMod(c, item);
+  var style = hasFightingStyle(c, "Two-Weapon Fighting");
+  return {damage: weaponDamageBonus(c, item) - (style || ab < 0 ? 0 : ab), style: style};
 }
 /* Dueling: +2 damage with a melee weapon held in one hand while no other
    weapon is held (a shield or a free hand is fine). Judged against what

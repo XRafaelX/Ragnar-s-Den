@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -449,6 +449,15 @@ function renderUnarmedCard(u){
     dmgBtn.title = "A plain unarmed strike deals 1 + STR " + u.type.toLowerCase() + " damage, no dice";
   }
   actions.appendChild(dmgBtn);
+  // Unarmed Fighting: 1d4 to a creature you're grappling, each turn.
+  if(u.grappleDie){
+    var grapBtn = document.createElement("button");
+    grapBtn.type = "button"; grapBtn.className = "btn small inv-roll-btn inv-grapple-btn";
+    grapBtn.innerHTML = makeDicesSvg() + "Grappled 1d" + u.grappleDie;
+    grapBtn.title = "Unarmed Fighting: at the start of each of your turns, deal 1d4 bludgeoning damage to one creature grappled by you";
+    grapBtn.addEventListener("click", function(){ performRoll(u.grappleDie, 1, 0, "none", "Unarmed Fighting: grappled creature (Bludgeoning)"); });
+    actions.appendChild(grapBtn);
+  }
   card.appendChild(actions);
   return card;
 }
@@ -537,6 +546,47 @@ function renderWeaponCard(c, item, idx){
     dmgBtn.title = "Enter damage dice like \"1d8\" to roll";
   }
   actions.appendChild(dmgBtn);
+
+  // Thrown: a ranged attack, when its numbers differ (Archery, Thrown
+  // Weapon Fighting, rage).
+  var thrown = parsed && thrownAttack(c, item);
+  if(thrown){
+    var dmgLabel = (item.name||"Weapon") + ": Thrown damage" + (item.damageType ? " (" + item.damageType + ")" : "");
+    if(thrown.attack!==atkBonus){
+      var tAtk = document.createElement("button");
+      tAtk.type = "button"; tAtk.className = "btn small inv-roll-btn inv-thrown-btn";
+      tAtk.innerHTML = makeDiceSvg() + "Thrown attack " + fmtMod(thrown.attack) + (atkRoll.mode==="dis" ? " (Dis)" : atkRoll.mode==="adv" ? " (Adv)" : "");
+      tAtk.title = "Thrown, a ranged attack: " + thrown.parts.join(", ");
+      tAtk.addEventListener("click", function(){ performRoll(20, 1, thrown.attack, atkRoll.mode, (item.name||"Weapon") + ": Thrown attack"); });
+      actions.appendChild(tAtk);
+    }
+    if(thrown.damage!==dmgBonus){
+      var tDmg = document.createElement("button");
+      tDmg.type = "button"; tDmg.className = "btn small inv-roll-btn inv-thrown-btn";
+      tDmg.innerHTML = makeDicesSvg() + "Thrown " + parsed.qty + "d" + parsed.die + fmtMod(thrown.damage);
+      tDmg.title = "Thrown, a ranged attack: " + thrown.parts.join(", ");
+      tDmg.addEventListener("click", function(){ performRoll(parsed.die, parsed.qty, thrown.damage, "none", dmgLabel); });
+      actions.appendChild(tDmg);
+    }
+  }
+
+  // Two-weapon fighting: the bonus action attack with the other hand.
+  var off = parsed && offHandAttack(c, item);
+  if(off){
+    var offBtn = document.createElement("button");
+    offBtn.type = "button"; offBtn.className = "btn small inv-roll-btn inv-offhand-btn";
+    offBtn.innerHTML = makeDicesSvg() + "Off-hand " + parsed.qty + "d" + parsed.die + fmtMod(off.damage);
+    var offTag = document.createElement("span");
+    offTag.className = "inv-action-tag"; offTag.textContent = "Bonus action";
+    offBtn.appendChild(offTag);
+    offBtn.title = off.style
+      ? "Two-weapon fighting: after attacking with a weapon in your other hand, a bonus action attack with this one. Two-Weapon Fighting adds your ability modifier to its damage."
+      : "Two-weapon fighting: after attacking with a weapon in your other hand, a bonus action attack with this one. Its damage leaves out your ability modifier (unless it's negative).";
+    offBtn.addEventListener("click", function(){
+      performRoll(parsed.die, parsed.qty, off.damage, "none", (item.name||"Weapon") + ": Off-hand damage" + (item.damageType ? " (" + item.damageType + ")" : ""));
+    });
+    actions.appendChild(offBtn);
+  }
 
   // Symbiotic Entity: melee weapon hits deal an extra 1d6 poison.
   if(effectOn(c, "symbiotic_entity") && !isRangedWeapon(item)){

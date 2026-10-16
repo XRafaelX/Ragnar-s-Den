@@ -10,9 +10,10 @@ import { themedPicker } from "./themed-picker.js";
 
 /* The Pact Boons as tappable cards; onPick(name). Pact of the Talisman
    (Tasha's optional) only when `tasha` is on, or when it's already the pick. */
-export function renderPactBoonOptions(value, onPick, tasha){
+export function renderPactBoonOptions(value, onPick, tasha, exclude){
   var box = ce("div", "eli-boons");
-  PACT_BOONS.filter(function(b){ return !b.optional || tasha || b.name===value; }).forEach(function(b){
+  // `exclude`: the boon being replaced (Eldritch Versatility).
+  PACT_BOONS.filter(function(b){ return (!b.optional || tasha || b.name===value) && b.name!==exclude; }).forEach(function(b){
     var row = ce("div", "wiz-equip-option eli-boon" + (value===b.name ? " selected" : ""));
     row.setAttribute("role", "button");
     row.tabIndex = 0;

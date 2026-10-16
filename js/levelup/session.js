@@ -9,12 +9,12 @@ import { mod, ce, escapeHtml, totalLevel, classFeaturesGainedAt, classVariants, 
 import { knownInvocations, levelUpPlan, levelUpContext, levelUpProblem } from "../core/invocations.js";
 import { levelUpOptionPlans, planProblem, planSlots, allKnownOptions } from "../core/class-options.js";
 import { levelUpGrants, grantHasChoices, grantHasSpells, classPickContext, classPicksProblem, fillSlots, slotIsFixed } from "../core/class-picks.js";
-import { styleDueAt, classStyleList, availableStyleNames, versatilityStyleSwap, styleFeatures, stylePicksProblem } from "../core/fighting-styles.js";
+import { styleDueAt, classStyleList, availableStyleNames, versatilityStyleSwap, styleFeatures, stylePicksProblem, styleCantripSwap } from "../core/fighting-styles.js";
 import { showActionToast } from "../ui/toast.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons.js";
 import { featDef, featNeedsChoice, featPicksProblem, featRequiresReason, featSpellEntries, campaignFeatsAt } from "../core/feat-picks.js";
 import { featPicksContext } from "../ui/feat-picks.js";
-import { learnPlan, swapSection, learnProblem } from "../core/spells-known.js";
+import { learnPlan, swapSection, cantripSwapSection, learnProblem } from "../core/spells-known.js";
 import { finish } from "./apply.js";
 import { stepClass, stepStyle, stepSubclass, stepSpells, stepLearn, stepInvocations, stepOptions, stepProfs, stepAsi, stepFeatPicks, stepBonusFeat, stepBonusFeatPicks, stepHp, stepReview } from "./steps.js";
 
@@ -87,9 +87,9 @@ export function stepApplicable(id){
   if(!lu.className) return id==="class";
   var t = target();
   if(id==="subclass") return t.needsSubclass;
-  if(id==="style") return !!t.fightingStyle || styleSwapOffered();
+  if(id==="style") return !!t.fightingStyle || styleSwapOffered() || !!styleCantripOffer();
   if(id==="spells") return dueSpellChoices().length > 0;
-  if(id==="learn"){ var lp = currentLearnPlan(); return lp.sections.length > 0 || !!lp.swap || lp.auto.length > 0; }
+  if(id==="learn"){ var lp = currentLearnPlan(); return lp.sections.length > 0 || !!lp.swap || !!lp.cantripSwap || lp.auto.length > 0; }
   if(id==="invocations") return lu.className==="Warlock" && t.newLevel >= 2;
   if(id==="options") return optionPlans().length > 0;
   if(id==="profs") return profGrantsToChoose().length > 0 || variantOffers().length > 0;
@@ -235,9 +235,9 @@ export function profPicksToApply(){
 }
 
 export function invChoice(){
-  return {pactBoon: lu.pactBoon, pactSpells: lu.pactSpells, picks: lu.invPicks, pickSpells: lu.invSpells, swapOut: lu.swapOut};
+  return {pactBoon: lu.pactBoon, pactSpells: lu.pactSpells, picks: lu.invPicks, pickSpells: lu.invSpells, swapOut: lu.swapOut, pactChange: pactChange()};
 }
-function invPlan(){ var t = target(); return levelUpPlan(t.existing, t.newLevel, lu.swapOut); }
+function invPlan(){ var t = target(); return levelUpPlan(t.existing, t.newLevel, lu.swapOut, pactChange()); }
 export function pactDue(){ return invPlan().pactDue; }
 export function knownNow(){ return knownInvocations(target().existing); }
 export function newInvocationCount(){ return invPlan().fresh; }
@@ -282,7 +282,14 @@ export function dueSpellChoices(){
 /* ---- New spells ----
    lu.learnPicks[sectionId]: the spells picked in each list of the plan
    (js/core/spells-known.js); lu.learnSwap: a known spell to replace,
-   whose replacement is picked in the extra "swapIn" list. */
+   whose replacement is picked in the extra "swapIn" list.
+   lu.versatilityPick: the one thing a cantrip swap rule changes this
+   level: "cantrip:<name>" (the artificer's every level, Tasha's
+   Versatility at Ability Score Improvement levels; replacement in
+   "cantripIn"), and for Bardic / Eldritch Versatility instead
+   "expertise:<skill>" (its new skill in lu.versatilitySkill),
+   "arcanum:<spell>" (replacement in "arcanumIn") or "pact" (a new Pact
+   Boon, picked on the Invocations step). */
 export function learnEntry(){
   var t = target();
   var choices = Object.assign({}, t.existing && t.existing.spellChoices, lu.spellChoices);
@@ -293,7 +300,76 @@ export function currentLearnPlan(){ return learnPlan(lu.c, learnEntry(), !target
 export function learnSections(plan){
   plan = plan || currentLearnPlan();
   var swap = swapSection(lu.c, learnEntry(), plan, lu.learnSwap);
-  return swap ? plan.sections.concat([swap]) : plan.sections;
+  var cantrip = cantripSwapSection(lu.c, learnEntry(), plan, cantripSwapOut(plan));
+  return plan.sections.concat(swap ? [swap] : [], cantrip ? [cantrip] : []);
+}
+/* What the level's cantrip swap rule may change, or null:
+   {from, cantrips, arcanum, expertise: [skills a Bardic Versatility may
+   move], pact: the Pact Boon an Eldritch Versatility may replace}. */
+export function versatilityChoices(plan){
+  plan = plan || currentLearnPlan();
+  var cs = plan.cantripSwap, cl = target().existing;
+  if(!cs) return null;
+  var out = {from: cs.from, cantrips: cs.known, arcanum: cs.arcanum || [], expertise: [], pact: ""};
+  if(cs.from==="Bardic Versatility" && cl) out.expertise = expertiseSkills(cl).map(function(x){ return x.skill; });
+  if(cs.from==="Eldritch Versatility" && cl && cl.pactBoon) out.pact = cl.pactBoon;
+  return out;
+}
+/* The skills a class's Expertise features gave, with the grant holding
+   each: [{skill, key}]. */
+function expertiseSkills(cl){
+  var out = [];
+  Object.keys(cl.profPicks||{}).forEach(function(key){
+    if(!/^class:Expertise@/.test(key)) return;
+    ((cl.profPicks[key].slots||[])[0]||[]).forEach(function(v){
+      if(SKILLS.some(function(sk){ return sk[0]===v; })) out.push({skill: v, key: key});
+    });
+  });
+  return out;
+}
+/* Sorcerous Versatility changes one thing a level: a Metamagic option
+   (Options step) or a cantrip. The thing it's changing instead, or "". */
+export function cantripSwapBlocked(plan){
+  plan = plan || currentLearnPlan();
+  if(!plan.cantripSwap || plan.cantripSwap.from!=="Sorcerous Versatility") return "";
+  return (lu.optChoices.metamagic||{}).swapOut ? "a Metamagic option" : "";
+}
+/* The picked change, still allowed: {kind, name} or null. */
+export function versatilityPicked(plan){
+  plan = plan || currentLearnPlan();
+  var v = versatilityChoices(plan), pick = lu.versatilityPick || "";
+  if(!v || !pick || cantripSwapBlocked(plan)) return null;
+  var at = pick.indexOf(":"), kind = at===-1 ? pick : pick.slice(0, at), name = at===-1 ? "" : pick.slice(at+1);
+  var ok = kind==="cantrip" ? v.cantrips.indexOf(name)!==-1
+    : kind==="arcanum" ? v.arcanum.indexOf(name)!==-1
+    : kind==="expertise" ? v.expertise.indexOf(name)!==-1
+    : kind==="pact" ? !!v.pact : false;
+  return ok ? {kind: kind, name: name} : null;
+}
+/* The spell a Versatility swap takes off this level (a cantrip or a
+   Mystic Arcanum spell), or "". */
+export function cantripSwapOut(plan){
+  var p = versatilityPicked(plan);
+  return p && (p.kind==="cantrip" || p.kind==="arcanum") ? p.name : "";
+}
+/* Bardic Versatility: {key, from, to} for the Expertise skill moved, or
+   null. `to` may still be "" (not picked yet). */
+export function expertiseSwap(plan){
+  var p = versatilityPicked(plan);
+  if(!p || p.kind!=="expertise") return null;
+  var hit = expertiseSkills(target().existing).find(function(x){ return x.skill===p.name; });
+  return hit ? {key: hit.key, from: p.name, to: lu.versatilitySkill || ""} : null;
+}
+/* Skills a moved Expertise can go to: proficient ones without expertise. */
+export function expertiseTargets(){
+  var sp = lu.c.skillProfs || {};
+  return SKILLS.map(function(sk){ return sk[0]; }).filter(function(n){ return sp[n] && sp[n].prof && !sp[n].expertise; });
+}
+/* Eldritch Versatility picked the Pact Boon. */
+export function pactChange(){
+  if(lu.className!=="Warlock") return false;
+  var p = versatilityPicked();
+  return !!(p && p.kind==="pact");
 }
 
 export function asiPointsUsed(){
@@ -307,11 +383,17 @@ export function asiPointsAvailable(){
   return Math.min(2, room);
 }
 
-function validate(id){
+export function validate(id){
   if(id==="class") return lu.className ? null : "Pick a class to gain the level in.";
   if(id==="subclass") return chosenSubclass() ? null : "Pick a "+(target().prog.subclassLabel||"subclass").toLowerCase()+".";
   if(id==="style"){
     var tS = target();
+    var cOffer = styleCantripOffer();
+    if(cOffer && lu.styleCantripOut){
+      var cList = cOffer.def.spellPick.list.toLowerCase();
+      if(!lu.styleCantripIn) return "Pick the "+cList+" cantrip that replaces "+lu.styleCantripOut+".";
+      if(spellHeldBy(lu.c, lu.styleCantripIn)) return "You already have "+lu.styleCantripIn+" ("+spellHeldBy(lu.c, lu.styleCantripIn)+"). Pick a different cantrip.";
+    }
     if(tS.fightingStyle){
       // Nothing left to pick if the character already has every style
       // this class offers (possible with multiclassing).
@@ -329,7 +411,11 @@ function validate(id){
     var missing = dueSpellChoices().find(function(x){ return !lu.spellChoices[x.choice.id]; });
     return missing ? "Choose your "+missing.choice.label.toLowerCase()+" for "+missing.feature+"." : null;
   }
-  if(id==="learn") return learnProblem(learnSections(), lu.learnPicks);
+  if(id==="learn"){
+    var ex = expertiseSwap();
+    if(ex && !ex.to) return "Pick the skill that gets expertise in place of "+ex.from+".";
+    return learnProblem(learnSections(), lu.learnPicks);
+  }
   if(id==="invocations") return invocationProblem();
   if(id==="options"){
     var t = target(), plans = optionPlans();
@@ -387,8 +473,8 @@ export function openLevelUp(c){
     className: c.classes.length===1 ? c.classes[0].name : null,
     subclass:"", style:"",
     asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featBlockedOpen:true, featPicks:null, bonusFeatName:"", bonusFeatPicks:null, spellChoices:{},
-    pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{}, profPicks:{}, variants:{}, learnPicks:{}, learnSwap:"",
-    stylePicks:{options:[], spells:[]}, styleSwapOut:"",
+    pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{}, profPicks:{}, variants:{}, learnPicks:{}, learnSwap:"", versatilityPick:"", versatilitySkill:"",
+    stylePicks:{options:[], spells:[]}, styleSwapOut:"", styleCantripOut:"", styleCantripIn:"",
     hpMethod:"avg", hpRoll:null
   };
   wizardScrollReset();
@@ -509,8 +595,8 @@ export function resetChoicesFor(name){
   if(lu.className===name) return;
   lu.className = name;
   lu.subclass = "";
-  lu.style = ""; lu.stylePicks = {options: [], spells: []}; lu.styleSwapOut = "";
-  lu.spellChoices = {}; lu.learnPicks = {}; lu.learnSwap = "";
+  lu.style = ""; lu.stylePicks = {options: [], spells: []}; lu.styleSwapOut = ""; lu.styleCantripOut = ""; lu.styleCantripIn = "";
+  lu.spellChoices = {}; lu.learnPicks = {}; lu.learnSwap = ""; lu.versatilityPick = ""; lu.versatilitySkill = "";
   lu.pactBoon = ""; lu.pactSpells = []; lu.invPicks = []; lu.invSpells = {}; lu.swapOut = ""; lu.optChoices = {}; lu.profPicks = {}; lu.variants = {};
   lu.asi = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; lu.featName = ""; lu.featPicks = null; lu.asiMode = "asi";
   lu.hpRoll = null; lu.hpMethod = "avg";
@@ -524,8 +610,16 @@ function styleOptions(){
   return t.fightingStyle ? t.fightingStyle.options : classStyleList(lu.className);
 }
 export function availableStyles(){ return availableStyleNames(lu.c, styleOptions(), !!lu.c.tashaOptional); }
+/* Blessed / Druidic Warrior: a level in the paladin / ranger may change
+   one of the style's cantrips (not when that style is being replaced).
+   {feature, def} or null. */
+export function styleCantripOffer(){
+  if(!lu.className || !target().existing) return null;
+  var offer = styleCantripSwap(lu.c, lu.className);
+  return offer && offer.feature.id!==lu.styleSwapOut ? offer : null;
+}
 /* Martial Versatility: no new style this level, but one may be swapped. */
-function styleSwapOffered(){
+export function styleSwapOffered(){
   var t = target();
   return !t.fightingStyle && versatilityStyleSwap(lu.c, lu.className, t.newLevel);
 }

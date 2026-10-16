@@ -11,7 +11,7 @@ import { syncInfusions } from "../core/artificer.js";
 import { applyLevelUpChoices, undoLevelUpChoices } from "../core/invocations.js";
 import { applyPlan, undoPlan, knownOptions } from "../core/class-options.js";
 import { makeStyleFeature } from "../core/fighting-styles.js";
-import { applyClassPicks, revertEntryPicks, syncClassPicks, classPicksSummary } from "../core/class-picks.js";
+import { applyClassPicks, revertEntryPicks, syncClassPicks, classPicksSummary, entryGrants } from "../core/class-picks.js";
 import { renderAll } from "../render/sheet.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { openInfoModal } from "../ui/info-modal.js";
@@ -20,7 +20,7 @@ import { showActionToast } from "../ui/toast.js";
 import { featDef, featHasPicks, applyFeatPicks, revertFeatPicks, featSpellEntries, campaignFeatCopy } from "../core/feat-picks.js";
 import { applyLearn, undoLearn } from "../core/spells-known.js";
 import { preparedAt } from "../data/spells-known.js";
-import { lu, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, close, swapOutStyle, featureAbilityBonus, hpGain } from "./session.js";
+import { lu, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, cantripSwapOut, expertiseSwap, close, swapOutStyle, styleCantripOffer, featureAbilityBonus, hpGain } from "./session.js";
 
 /* ---------------- Apply & undo ---------------- */
 function slotSnapshot(c){
@@ -62,6 +62,10 @@ export function finish(){
   var doInvocations = stepApplicable("invocations");
   var learnNow = stepApplicable("learn") ? currentLearnPlan() : null;
   var learnLists = learnNow ? learnSections(learnNow) : [];
+  var invNow = doInvocations ? invChoice() : null;
+  var versatilityOut = learnNow ? cantripSwapOut(learnNow) : "";
+  var exSwap = learnNow && expertiseSwap(learnNow);
+  var cOffer = styleCantripOffer();
   var optPlans = stepApplicable("options") ? optionPlans() : [];
   var profPicks = profPicksToApply();
   var variants = variantsToApply();
@@ -122,15 +126,25 @@ export function finish(){
   });
 
   // New spells (and a swapped-out one); undo takes back exactly these.
-  if(learnNow) record.learn = applyLearn(c, lu.className, learnNow, learnLists, lu.learnPicks, lu.learnSwap);
+  if(learnNow) record.learn = applyLearn(c, lu.className, learnNow, learnLists, lu.learnPicks, lu.learnSwap, versatilityOut);
+  // Bardic Versatility: one Expertise skill moves; undo moves it back.
+  if(exSwap && exSwap.to){
+    var exGrant = entryGrants(entry).find(function(g){ return g.key===exSwap.key; });
+    var exOld = ((entry.profPicks||{})[exSwap.key]||{}).slots;
+    if(exGrant && exOld){
+      applyClassPicks(c, entry, exGrant, exOld.map(function(slot){ return slot.map(function(v){ return v===exSwap.from ? exSwap.to : v; }); }));
+      record.expertiseSwap = {key: exSwap.key, slots: exOld, from: exSwap.from, to: exSwap.to};
+    }
+  }
 
   // Pact Boon and invocations; undo takes back exactly these.
   var invGained = [];
   if(doInvocations){
-    var invApplied = applyLevelUpChoices(c, entry, t.newLevel, invChoice());
+    var invApplied = applyLevelUpChoices(c, entry, t.newLevel, invNow);
     record.pactBoonSet = invApplied.pactBoonSet;
     record.invAdded = invApplied.invAdded;
     record.invSwappedOut = invApplied.invSwappedOut;
+    if(invApplied.pactBoonPrev) record.pactBoonPrev = invApplied.pactBoonPrev;
     invGained = invApplied.gained;
   }
   // Class options (Metamagic, maneuvers), recorded for undo.
@@ -172,6 +186,15 @@ export function finish(){
     styleFeature = makeStyleFeature(lu.style, lu.stylePicks);
     c.features.push(styleFeature);
     record.featureId = styleFeature.id;
+  }
+
+  // Blessed / Druidic Warrior: one of the style's cantrips changed.
+  if(cOffer && lu.styleCantripOut && lu.styleCantripIn){
+    var cSpells = cOffer.feature.picks.spells, cAt = cSpells.indexOf(lu.styleCantripOut);
+    if(cAt!==-1){
+      cSpells[cAt] = lu.styleCantripIn;
+      record.styleCantrip = {featureId: cOffer.feature.id, out: lu.styleCantripOut, in: lu.styleCantripIn};
+    }
   }
 
   // New features: whatever this class level grants, plus every subclass
@@ -264,6 +287,10 @@ export function undoLastLevelUp(c){
         entry.level = Math.max(1, (Number(entry.level)||1)-1); entry.subclass = rec.prevSubclass;
         (rec.spellChoiceIds||[]).forEach(function(id){ if(entry.spellChoices) delete entry.spellChoices[id]; });
         undoLevelUpChoices(c, entry, rec);
+        if(rec.expertiseSwap){
+          var exG = entryGrants(entry).find(function(g){ return g.key===rec.expertiseSwap.key; });
+          if(exG) applyClassPicks(c, entry, exG, rec.expertiseSwap.slots);
+        }
         (rec.optionRecs||[]).forEach(function(r){ undoPlan(entry, r); });
       }
     }
@@ -280,6 +307,11 @@ export function undoLastLevelUp(c){
     }
     if(rec.featureId) c.features = c.features.filter(function(f){ return f.id!==rec.featureId; });
     if(rec.styleSwappedOut) c.features.push(rec.styleSwappedOut);
+    if(rec.styleCantrip){
+      var sf = c.features.find(function(f){ return f.id===rec.styleCantrip.featureId; });
+      var sAt = sf && sf.picks ? (sf.picks.spells||[]).indexOf(rec.styleCantrip.in) : -1;
+      if(sAt!==-1) sf.picks.spells[sAt] = rec.styleCantrip.out;
+    }
     c.hp.max = Math.max(1, (Number(c.hp.max)||1) - rec.hpGain);
     // Level-up added the gain to current HP too, so take it back off, but
     // never knock a conscious character down to 0 just by undoing.

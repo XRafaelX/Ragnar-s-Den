@@ -121,6 +121,8 @@
    class, with the daily count. */
 .prep-title{flex:1;margin:0;font-family:var(--serif);font-weight:normal;font-size:18px;color:var(--text-on-parch);}
 .prep-head{display:flex;align-items:center;gap:8px;margin:16px 0 6px;font-size:13px;color:var(--text-on-parch);}
+.prep-formulas{margin-top:18px;padding-top:4px;border-top:1px solid var(--rule);}
+.prep-formulas .field{margin:6px 0 0;}
 .prep-head .spell-count{font-size:12px;}
 .prep-note{font-size:12px;line-height:1.45;color:var(--text-on-parch-dim);margin:0 0 8px;}
 .prep-list{display:flex;flex-direction:column;gap:6px;}

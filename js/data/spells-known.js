@@ -14,6 +14,12 @@
      schools      third casters: most picks must come from these schools
      anySchoolAt  third casters: levels whose new spell may be any school
      autoCantrips cantrips the class learns for free (Mage Hand)
+     cantripSwap  when one cantrip learned from the class's Spellcasting
+                  may be replaced with another from its list: "level"
+                  (each level in the class: the artificer), or the name
+                  of Tasha's optional Versatility feature that allows it
+                  at the class's Ability Score Improvement levels (only
+                  for characters using Tasha's optional features)
    Clerics, druids, paladins and artificers prepare from their whole list,
    so only their cantrips are learned here. */
 
@@ -33,18 +39,18 @@ function pactMax(lv){ return Math.min(5, Math.ceil(lv / 2)); }
 function artificerMax(lv){ return Math.min(5, Math.ceil(Math.ceil(lv / 2) / 2)); }
 
 export var KNOWN_CASTERS = {
-  "Bard": {list: "Bard", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: fullMax, swap: true,
+  "Bard": {list: "Bard", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: fullMax, swap: true, cantripSwap: "Bardic Versatility",
     spells: [0, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22]},
-  "Sorcerer": {list: "Sorcerer", cantrips: byLevel({1: 4, 4: 5, 10: 6}), maxLevel: fullMax, swap: true,
+  "Sorcerer": {list: "Sorcerer", cantrips: byLevel({1: 4, 4: 5, 10: 6}), maxLevel: fullMax, swap: true, cantripSwap: "Sorcerous Versatility",
     spells: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15]},
-  "Warlock": {list: "Warlock", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: pactMax, swap: true,
+  "Warlock": {list: "Warlock", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: pactMax, swap: true, cantripSwap: "Eldritch Versatility",
     spells: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15]},
   "Ranger": {list: "Ranger", cantrips: byLevel({}), maxLevel: halfMax, swap: true,
     spells: [0, 0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11]},
   "Wizard": {list: "Wizard", cantrips: byLevel({1: 3, 4: 4, 10: 5}), maxLevel: fullMax, spellbook: {1: 6, else: 2}},
-  "Cleric": {list: "Cleric", cantrips: byLevel({1: 3, 4: 4, 10: 5}), maxLevel: fullMax},
-  "Druid": {list: "Druid", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: fullMax},
-  "Artificer": {list: "Artificer", cantrips: byLevel({1: 2, 10: 3, 14: 4}), maxLevel: artificerMax},
+  "Cleric": {list: "Cleric", cantrips: byLevel({1: 3, 4: 4, 10: 5}), maxLevel: fullMax, cantripSwap: "Cantrip Versatility"},
+  "Druid": {list: "Druid", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: fullMax, cantripSwap: "Cantrip Versatility"},
+  "Artificer": {list: "Artificer", cantrips: byLevel({1: 2, 10: 3, 14: 4}), maxLevel: artificerMax, cantripSwap: "level"},
   "Paladin": {list: "Paladin", cantrips: byLevel({}), maxLevel: halfMax}
 };
 

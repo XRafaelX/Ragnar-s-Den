@@ -105,6 +105,18 @@ export function styleNeedsPicks(name){
   var def = styleDef(name);
   return !!(def && (def.optionPick || def.spellPick));
 }
+/* Blessed / Druidic Warrior: "Whenever you gain a level in this class,
+   you can replace one of these cantrips with another" from its list. The
+   style feature whose cantrips a level in `className` may change
+   ({feature, def}), or null. */
+export function styleCantripSwap(c, className){
+  var out = null;
+  styleFeatures(c).forEach(function(f){
+    var def = styleDef(f.fightingStyle);
+    if(!out && def && def.spellPick && def.spellPick.swapClass===className && f.picks && (f.picks.spells||[]).length) out = {feature: f, def: def};
+  });
+  return out;
+}
 /* The sheet feature for a style (and its picks). */
 export function makeStyleFeature(name, picks){
   var f = {id: uid(), name: "Fighting Style: " + name, source: "Class", text: (styleDef(name)||{}).text || "", isPassive: true, fightingStyle: name};

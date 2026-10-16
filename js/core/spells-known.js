@@ -13,6 +13,12 @@
                 each; kind "cantrip", "spell", "arcanum" or "bonus"
      swap       {known: [spell names], maxLevel} when the class may
                 replace a spell it knows, else null
+     cantripSwap {known: [cantrip names], from, arcanum} when one cantrip
+                the class learned may be replaced this level ("level": the
+                artificer's every level; else a Tasha's Versatility
+                feature's name), else null. Eldritch Versatility from
+                warlock 12 may replace a Mystic Arcanum spell instead:
+                `arcanum` lists them ([] otherwise)
      auto       cantrips learned for free (an Arcane Trickster's Mage Hand)
      summary    the step's lead text
      tashaNote  how many more spells Tasha's optional Additional Spells
@@ -24,6 +30,7 @@ import { SPELL_DATA, spellDataForClass, spellOnClassList, tashaAddsSpell, tashaS
 import { KNOWN_CASTERS, SUBCLASS_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, PREPARED_CASTERS, preparedAt } from "../data/spells-known.js";
 import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal } from "./helpers.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
+import { CLASS_PROGRESSION } from "../data/progression.js";
 
 /* The casting rules for a class (or its casting subclass), or null. */
 export function casterDef(className, subclass){
@@ -162,7 +169,7 @@ function allSpellsOf(levels){
    spellChoices); `existing` says whether the class was already there. */
 export function learnPlan(c, entry, isNewClass){
   var def = casterDef(entry.name, entry.subclass);
-  var empty = {sections: [], swap: null, auto: [], granted: [], freed: [], summary: "", note: "", tashaNote: ""};
+  var empty = {sections: [], swap: null, cantripSwap: null, auto: [], granted: [], freed: [], summary: "", note: "", tashaNote: ""};
   if(!def) return empty;
   var lv = Number(entry.level)||1;
   // Counted as the level-up will leave the character: a spell learned
@@ -278,6 +285,18 @@ export function learnPlan(c, entry, isNewClass){
   if(def.swap && !isNewClass && maxLevel && known.spells.length){
     swap = {known: known.spells.map(function(sp){ return sp.name; }).sort(), maxLevel: maxLevel};
   }
+  // A cantrip swap: the artificer's each level, or Tasha's Versatility at
+  // the class's Ability Score Improvement levels.
+  var cantripSwap = null;
+  if(def.cantripSwap && !isNewClass && known.cantrips.length){
+    var asiLevel = ((CLASS_PROGRESSION[entry.name]||{}).asiLevels||[]).indexOf(lv)!==-1;
+    if(def.cantripSwap==="level" || (tasha && asiLevel)){
+      var arcanum = def.cantripSwap==="Eldritch Versatility" && lv >= 12 ? (c.spells||[]).filter(function(sp){
+        return sp.arcanum && (sp.learnedBy===entry.name || !sp.learnedBy);
+      }).map(function(sp){ return sp.name; }).sort() : [];
+      cantripSwap = {known: known.cantrips.map(function(sp){ return sp.name; }).sort(), from: def.cantripSwap, arcanum: arcanum};
+    }
+  }
   // What Tasha's Additional Spells would add to this level's lists.
   var tashaNote = "";
   if(!tasha && (sections.length || swap)){
@@ -285,7 +304,7 @@ export function learnPlan(c, entry, isNewClass){
     var more = tashaSpellCount(def.list, pickLevels);
     if(more) tashaNote = "Tasha's Cauldron adds " + more + " more " + cls + " spell" + (more===1 ? "" : "s") + " to choose from if your character uses Tasha's optional class features (Information tab).";
   }
-  return {sections: sections, swap: swap, auto: auto, maxLevel: maxLevel, def: def, known: known, note: note, tashaNote: tashaNote,
+  return {sections: sections, swap: swap, cantripSwap: cantripSwap, auto: auto, maxLevel: maxLevel, def: def, known: known, note: note, tashaNote: tashaNote,
     granted: granted.map(function(g){ return {name: g.name, source: g.source}; }), freed: freed, summary: summaryText(entry, def, known, lv)};
 }
 function firstCastingLevel(def){
@@ -337,6 +356,25 @@ export function swapSection(c, entry, plan, swapOut){
   return {id: "swapIn", kind: "spell", title: "Replacement for " + swapOut, help: "Pick the spell that takes its place.", count: 1, names: names, tags: tags};
 }
 
+/* The replacement for a swapped-out cantrip: the class's cantrips the
+   character doesn't have; for a Mystic Arcanum spell (Eldritch
+   Versatility), a warlock spell of the same level. */
+export function cantripSwapSection(c, entry, plan, cantripOut){
+  if(!plan.cantripSwap || !cantripOut) return null;
+  var arcanum = (plan.cantripSwap.arcanum||[]).indexOf(cantripOut)!==-1;
+  var outData = SPELL_DATA[catalogSpellName(cantripOut)];
+  var level = arcanum && outData ? outData.level : 0;
+  var list = classListNames(entry, plan.def, [level], !!c.tashaOptional);
+  var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c))
+    .concat(comingSpells(c, entry).map(function(g){ return g.key; }));
+  var names = list.names.filter(function(n){ return onSheet.indexOf(spellKey(n))===-1; });
+  var tags = {};
+  names.forEach(function(n){ if(list.extra[n]) tags[n] = [list.extra[n]]; });
+  if(arcanum) return {id: "arcanumIn", kind: "arcanum", title: "Replacement for " + cantripOut,
+    help: "Pick the " + ordinal(level) + "-level warlock spell that takes its place in your Mystic Arcanum.", count: 1, names: names, tags: tags};
+  return {id: "cantripIn", kind: "cantrip", title: "Replacement for " + cantripOut, help: "Pick the cantrip that takes its place.", count: 1, names: names, tags: tags};
+}
+
 /* What's wrong with the picks, or null. picks: {sectionId: [names]}. */
 export function learnProblem(sections, picks){
   var seen = {};
@@ -345,6 +383,8 @@ export function learnProblem(sections, picks){
     if(got.length < s.count){
       var left = s.count - got.length;
       return s.id==="swapIn" ? "Pick the spell that replaces the one you're swapping out."
+        : s.id==="cantripIn" ? "Pick the cantrip that replaces the one you're swapping out."
+        : s.id==="arcanumIn" ? "Pick the spell that replaces the Mystic Arcanum spell you're swapping out."
         : "Pick " + left + " more for " + s.title + ".";
     }
     for(var j = 0; j < got.length; j++){
@@ -355,15 +395,21 @@ export function learnProblem(sections, picks){
   return null;
 }
 
-/* Adds the picks to the sheet; returns {added: [names], swappedOut}
-   for undo. Spells a known caster learns are always ready (prepared);
-   a wizard's new spellbook spells start unprepared. */
-export function applyLearn(c, className, plan, sections, picks, swapOut){
-  var rec = {className: className, added: [], swappedOut: null};
-  if(swapOut){
-    var at = (c.spells||[]).findIndex(function(sp){ return sp.name===swapOut && (sp.learnedBy===className || !sp.learnedBy); });
-    if(at!==-1){ rec.swappedOut = {spell: c.spells[at], index: at}; c.spells.splice(at, 1); }
+/* Adds the picks to the sheet; returns {added: [names], swappedOut,
+   cantripOut} for undo (`cantripOut`: a cantrip or Mystic Arcanum spell
+   a Versatility feature replaces). Spells a known caster learns are always ready
+   (prepared); a wizard's new spellbook spells start unprepared. */
+export function applyLearn(c, className, plan, sections, picks, swapOut, cantripOut){
+  var rec = {className: className, added: [], swappedOut: null, cantripOut: null};
+  function takeOut(name){
+    var at = (c.spells||[]).findIndex(function(sp){ return sp.name===name && (sp.learnedBy===className || !sp.learnedBy); });
+    if(at===-1) return null;
+    var out = {spell: c.spells[at], index: at};
+    c.spells.splice(at, 1);
+    return out;
   }
+  if(swapOut) rec.swappedOut = takeOut(swapOut);
+  if(cantripOut && plan.cantripSwap) rec.cantripOut = takeOut(cantripOut);
   function learn(name, kind, sectionId){
     var d = SPELL_DATA[name];
     if(!d) return;
@@ -387,7 +433,37 @@ export function undoLearn(c, rec){
     var at = c.spells.findIndex(function(sp){ return sp.name===name && sp.learnedBy===rec.className; });
     if(at!==-1) c.spells.splice(at, 1);
   });
+  // Back in reverse order, so each lands where it was.
+  if(rec.cantripOut) c.spells.splice(Math.min(rec.cantripOut.index, c.spells.length), 0, rec.cantripOut.spell);
   if(rec.swappedOut) c.spells.splice(Math.min(rec.swappedOut.index, c.spells.length), 0, rec.swappedOut.spell);
+}
+
+/* Cantrip Formulas (Tasha's optional features, wizard 3): "Whenever you
+   finish a long rest and consult those formulas in your spellbook, you
+   can replace one wizard cantrip you know with another cantrip from the
+   wizard spell list." Offered in the sheet that opens after a long rest.
+   {known: [wizard cantrips], options: [ones to take instead]} or null. */
+export function cantripFormulas(c){
+  var wiz = (c.classes||[]).find(function(cl){ return cl.name==="Wizard"; });
+  if(!wiz || !c.tashaOptional || (Number(wiz.level)||1) < 3) return null;
+  var known = classKnownSpells(c, "Wizard").cantrips.map(function(sp){ return sp.name; }).sort();
+  if(!known.length) return null;
+  var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c));
+  var options = classListNames(wiz, casterDef("Wizard"), [0], true).names.filter(function(n){ return onSheet.indexOf(spellKey(n))===-1; });
+  return {known: known, options: options};
+}
+/* Makes the swap: `out` leaves, `inName` takes its place (ready, as
+   cantrips are). True when done. */
+export function swapCantripFormula(c, out, inName){
+  var cf = cantripFormulas(c);
+  if(!cf || cf.known.indexOf(out)===-1 || cf.options.indexOf(inName)===-1) return false;
+  var at = c.spells.findIndex(function(sp){ return sp.name===out && (sp.learnedBy==="Wizard" || !sp.learnedBy); });
+  if(at===-1) return false;
+  var sp = spellFromCatalog(inName, SPELL_DATA[inName]);
+  sp.learnedBy = "Wizard";
+  sp.prepared = true;
+  c.spells.splice(at, 1, sp);
+  return true;
 }
 
 /* The Spells tab's count for each spellcasting class: [{className,

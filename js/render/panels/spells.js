@@ -13,7 +13,7 @@ import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
 import { pipChanged, pipsRefilled } from "../../ui/fx.js";
 import { themedPicker } from "../../ui/themed-picker.js";
-import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner } from "../../core/spells-known.js";
+import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner, cantripFormulas, swapCantripFormula } from "../../core/spells-known.js";
 import { PREPARED_CASTERS } from "../../data/spells-known.js";
 import { spellScalingLine } from "../../core/spell-scaling.js";
 
@@ -702,7 +702,10 @@ export function openPrepareSheet(c, onlyWithChoices){
   var classes = preparingClasses(c);
   if(!classes.length) return;
   // After a long rest, only when there's a spell the player could tick.
-  if(onlyWithChoices && !(c.spells||[]).some(function(sp){ return preparingClassFor(c, sp) && !prepareLevelProblem(c, sp); })) return;
+  // Cantrip Formulas is offered only right after a long rest.
+  var formulas = onlyWithChoices ? cantripFormulas(c) : null;
+  var formulaOut = "", formulaDone = "";
+  if(onlyWithChoices && !formulas && !(c.spells||[]).some(function(sp){ return preparingClassFor(c, sp) && !prepareLevelProblem(c, sp); })) return;
   openBottomSheet(function(body, refresh, close){
     var header = ce("div", "bs-header");
     var title = ce("h3", "prep-title");
@@ -769,6 +772,47 @@ export function openPrepareSheet(c, onlyWithChoices){
       });
       body.appendChild(list);
     });
+
+    if(formulas) body.appendChild(cantripFormulasBlock());
+    function cantripFormulasBlock(){
+      var box = ce("div", "prep-formulas");
+      var head = ce("div", "prep-head");
+      var name = ce("b"); name.textContent = "Cantrip Formulas";
+      head.appendChild(name);
+      box.appendChild(head);
+      var note = ce("p", "prep-note");
+      if(formulaDone){
+        note.textContent = formulaDone + " Your next chance is after your next long rest.";
+        box.appendChild(note);
+        return box;
+      }
+      note.textContent = "Tasha's optional features: after a long rest you may replace one wizard cantrip you know with another from the wizard spell list. Most players keep theirs.";
+      box.appendChild(note);
+      var cf = cantripFormulas(c);
+      var outField = ce("div", "field rt-field fp-field");
+      outField.appendChild(themedPicker({
+        key: "prep:formula-out", ariaLabel: "Cantrip to replace", placeholder: "Keep them all", search: false,
+        groups: {"": [{value: "", label: "Keep them all", muted: true}].concat(cf.known.map(function(n){ return {value: n, label: "Replace " + n}; }))},
+        value: formulaOut,
+        onPick: function(v){ formulaOut = v; refresh(); }
+      }));
+      box.appendChild(outField);
+      if(formulaOut){
+        var inField = ce("div", "field rt-field fp-field");
+        inField.appendChild(themedPicker({
+          key: "prep:formula-in", ariaLabel: "Replacement for " + formulaOut, placeholder: "Pick a wizard cantrip…", search: cf.options.length > 12,
+          groups: {"": cf.options.map(function(n){ return {value: n, label: n}; })}, value: "",
+          onPick: function(v){
+            if(!swapCantripFormula(c, formulaOut, v)) return;
+            formulaDone = "You replaced " + formulaOut + " with " + v + ".";
+            formulaOut = "";
+            save(); renderAll(); refresh();
+          }
+        }));
+        box.appendChild(inField);
+      }
+      return box;
+    }
 
     var actions = ce("div", "prep-actions");
     var done = ce("button", "btn small primary");

@@ -289,13 +289,16 @@ export function adoptCustomInvocations(c, cl){
    pickSpells: {name: [spells]}, swapOut: id of a known invocation to
    replace}. `cl` is the warlock's class entry before the level-up (null
    for a new multiclass) and `newLevel` the warlock level it reaches. */
-export function levelUpPlan(cl, newLevel, swapOut){
+/* `pactChange`: Eldritch Versatility (Tasha's) replaces the Pact Boon at
+   this level, so it's picked again. */
+export function levelUpPlan(cl, newLevel, swapOut, pactChange){
   var known = knownInvocations(cl);
   var fresh = Math.max(0, invocationsKnownAt(newLevel) - known.length);
   var swapping = !!swapOut && known.some(function(e){ return e.id===swapOut; });
   return {
     applies: newLevel >= 2,
-    pactDue: newLevel >= 3 && !(cl && cl.pactBoon),
+    pactDue: newLevel >= 3 && (!(cl && cl.pactBoon) || !!pactChange),
+    pactChange: !!(pactChange && cl && cl.pactBoon),
     fresh: fresh,
     slots: fresh + (swapping ? 1 : 0)
   };
@@ -303,7 +306,7 @@ export function levelUpPlan(cl, newLevel, swapOut){
 /* Prerequisites as they'll stand after the level-up. The invocation being
    swapped out no longer counts as known. */
 export function levelUpContext(c, cl, newLevel, choice){
-  var plan = levelUpPlan(cl, newLevel, choice.swapOut);
+  var plan = levelUpPlan(cl, newLevel, choice.swapOut, choice.pactChange);
   return invocationContext(c, cl, {
     level: newLevel,
     pactBoon: plan.pactDue ? choice.pactBoon || "" : (cl && cl.pactBoon) || "",
@@ -318,12 +321,23 @@ function picksComplete(pick, values){
 }
 /* What's still missing or wrong, in words, or null when the choices are complete. */
 export function levelUpProblem(c, cl, newLevel, choice){
-  var plan = levelUpPlan(cl, newLevel, choice.swapOut);
+  var plan = levelUpPlan(cl, newLevel, choice.swapOut, choice.pactChange);
   if(!plan.applies) return null;
   if(plan.pactDue){
     var boon = pactBoonDef(choice.pactBoon);
+    if(plan.pactChange && (!boon || boon.name===cl.pactBoon)) return "Choose the Pact Boon that replaces your "+cl.pactBoon+".";
     if(!boon || (boon.optional && !c.tashaOptional)) return "Choose your Pact Boon.";
     if(boon.spellPick && !picksComplete(boon.spellPick, choice.pactSpells)) return "Choose "+boon.spellPick.count+" "+boon.spellPick.label+" for your "+boon.name+".";
+  }
+  // A new Pact Boon leaves invocations that need the old one stranded:
+  // the one swap this level can replace one of them.
+  if(plan.pactChange){
+    var stranded = knownInvocations(cl).filter(function(e){
+      var d = invocationDef(e.name);
+      return e.id!==choice.swapOut && d && d.pact && d.pact!==choice.pactBoon;
+    });
+    if(stranded.length) return stranded.map(function(e){ return e.name; }).join(" and ")+" need"+(stranded.length===1 ? "s" : "")+" your "+cl.pactBoon+
+      (stranded.length===1 ? ". Swap it out below, or keep your Pact Boon." : ". Keep your Pact Boon (you can swap only one invocation a level).");
   }
   var n = plan.slots, ctx = levelUpContext(c, cl, newLevel, choice);
   var picks = (choice.picks||[]).slice(0, n);
@@ -341,10 +355,13 @@ export function levelUpProblem(c, cl, newLevel, choice){
    for the popup ({gained}). Call with the entry's level not yet changed
    or already changed: only `newLevel` is used. */
 export function applyLevelUpChoices(c, cl, newLevel, choice){
-  var plan = levelUpPlan(cl, newLevel, choice.swapOut);
+  var plan = levelUpPlan(cl, newLevel, choice.swapOut, choice.pactChange);
   var out = {pactBoonSet: false, invAdded: [], invSwappedOut: null, gained: []};
   if(!plan.applies) return out;
   if(plan.pactDue && pactBoonDef(choice.pactBoon)){
+    // Eldritch Versatility: undo puts the old boon (and its Book of
+    // Shadows cantrips) back.
+    if(plan.pactChange) out.pactBoonPrev = {pactBoon: cl.pactBoon, pactSpells: (cl.pactSpells||[]).slice()};
     cl.pactBoon = choice.pactBoon;
     cl.pactSpells = (choice.pactSpells||[]).filter(Boolean);
     out.pactBoonSet = true;
@@ -363,7 +380,8 @@ export function applyLevelUpChoices(c, cl, newLevel, choice){
 export function undoLevelUpChoices(c, cl, rec){
   (rec.invAdded||[]).forEach(function(id){ forgetInvocation(c, cl, id); });
   if(rec.invSwappedOut) restoreInvocation(c, cl, rec.invSwappedOut);
-  if(rec.pactBoonSet){ delete cl.pactBoon; delete cl.pactSpells; }
+  if(rec.pactBoonPrev){ cl.pactBoon = rec.pactBoonPrev.pactBoon; cl.pactSpells = rec.pactBoonPrev.pactSpells; }
+  else if(rec.pactBoonSet){ delete cl.pactBoon; delete cl.pactSpells; }
 }
 
 /* ---- What a picker lists ----

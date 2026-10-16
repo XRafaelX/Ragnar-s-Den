@@ -692,9 +692,9 @@ test("Eldritch Blast summary: beams, CHA, range and riders", () => {
    ================================================================ */
 test("level-up plan: what each warlock level asks for", () => {
   const plan = (level, entry, swap) => INV.levelUpPlan(entry, level, swap);
-  assert.deepEqual(plan(1, null), { applies: false, pactDue: false, fresh: 0, slots: 0 }, "a new multiclass warlock");
-  assert.deepEqual(plan(2, { level: 1 }), { applies: true, pactDue: false, fresh: 2, slots: 2 });
-  assert.deepEqual(plan(3, { level: 2, invocations: [{ id: "a" }, { id: "b" }] }), { applies: true, pactDue: true, fresh: 0, slots: 0 });
+  assert.deepEqual(plan(1, null), { applies: false, pactDue: false, pactChange: false, fresh: 0, slots: 0 }, "a new multiclass warlock");
+  assert.deepEqual(plan(2, { level: 1 }), { applies: true, pactDue: false, pactChange: false, fresh: 2, slots: 2 });
+  assert.deepEqual(plan(3, { level: 2, invocations: [{ id: "a" }, { id: "b" }] }), { applies: true, pactDue: true, pactChange: false, fresh: 0, slots: 0 });
   assert.equal(plan(4, { level: 3, pactBoon: "Pact of the Blade" }).pactDue, false, "already chosen");
   assert.equal(plan(5, { level: 4, invocations: [{ id: "a" }, { id: "b" }] }).fresh, 1);
   assert.equal(plan(5, { level: 4 }).fresh, 3, "an older sheet with none catches up");
@@ -702,6 +702,10 @@ test("level-up plan: what each warlock level asks for", () => {
   const two = { level: 3, invocations: [{ id: "a" }, { id: "b" }] };
   assert.equal(plan(4, two, "a").slots, 1, "a swap adds one pick");
   assert.equal(plan(4, two, "zzz").slots, 0, "an unknown swap id adds nothing");
+  // Eldritch Versatility (Tasha's): the Pact Boon is picked again.
+  const blade = { level: 7, pactBoon: "Pact of the Blade", invocations: [{ id: "a" }] };
+  assert.deepEqual([INV.levelUpPlan(blade, 8, "", true).pactDue, INV.levelUpPlan(blade, 8, "", true).pactChange], [true, true]);
+  assert.equal(INV.levelUpPlan({ level: 2 }, 3, "", true).pactChange, false, "a first boon isn't a change");
 });
 
 test("level-up context: the swapped-out one isn't known; the new pact counts", () => {
