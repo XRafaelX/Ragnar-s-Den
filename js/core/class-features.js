@@ -3,10 +3,11 @@
    each level, spell slots, proficiencies, and the Features tab's list. */
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
+import { DRACONIC_ANCESTRIES } from "../data/race-data.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
 import { featDef, featPicksSummary, featPickDetail } from "./feat-picks.js";
-import { uid } from "./basics.js";
+import { uid, mod, totalLevel, profBonus } from "./basics.js";
 import { halfProficiency } from "./checks.js";
 import { pickedProfs, featurePicksText, racePicksText, backgroundPicksText, backgroundGrants } from "./class-picks.js";
 
@@ -226,6 +227,27 @@ export function classLevelOf(c, name, subclass){
   var cl = (c.classes||[]).find(function(x){ return x.name===name && (!subclass || x.subclass===subclass); });
   return cl ? Number(cl.level)||1 : 0;
 }
+/* A dragonborn's breath weapon from the ancestry picked on Race Traits,
+   worked out for the character: {dragon, damage, area, save, dc, dice},
+   or null until one is picked. The dice go by character level. */
+export function draconicBreath(c){
+  if(c.race!=="Dragonborn") return null;
+  var entry = c.racePicks && c.racePicks.profPicks && c.racePicks.profPicks["race:Draconic Ancestry:pick"];
+  var dragon = entry && !entry.manual && ((entry.slots && entry.slots[0]) || [])[0];
+  var a = dragon && DRACONIC_ANCESTRIES[dragon];
+  if(!a) return null;
+  var lv = totalLevel(c);
+  return {dragon: dragon, damage: a.damage, area: a.area, save: a.save,
+    dc: 8 + mod(c.abilities && c.abilities.con) + profBonus(c),
+    dice: lv>=16 ? 5 : lv>=11 ? 4 : lv>=6 ? 3 : 2};
+}
+/* The same as lines for the race's Features entry: "" until picked. */
+export function draconicBreathText(c){
+  var b = draconicBreath(c);
+  if(!b) return "";
+  return "Breath Weapon (" + b.dragon + "): " + b.area + ", " + b.save + " save DC " + b.dc + ", " + b.dice + "d6 " + b.damage.toLowerCase() +
+    " damage (half on a success). Once per short or long rest.\nDamage Resistance: " + b.damage.toLowerCase() + ".";
+}
 export function getAllCharacterFeatures(c){
   var list = [];
   (c.classes||[]).forEach(function(cl, idx){
@@ -243,8 +265,11 @@ export function getAllCharacterFeatures(c){
     });
   });
   if(c.race){
-    var raceChosen = racePicksText(c);
-    var traitText = (RACE_TRAITS[c.race] || RACE_TRAIT_FALLBACK) + (raceChosen ? "\n\nYour picks: " + raceChosen + "." : "");
+    // A dragonborn's breath line names the dragon, so it isn't listed as a pick too.
+    var breath = draconicBreathText(c);
+    var raceChosen = racePicksText(c, breath ? "Draconic Ancestry" : "");
+    var raceExtra = [raceChosen ? "Your picks: " + raceChosen + "." : "", breath].filter(Boolean).join("\n");
+    var traitText = (RACE_TRAITS[c.race] || RACE_TRAIT_FALLBACK) + (raceExtra ? "\n\n" + raceExtra : "");
     list.push({
       id: "race_"+c.race,
       name: c.race + " Traits",

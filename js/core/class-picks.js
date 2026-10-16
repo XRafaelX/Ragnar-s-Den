@@ -660,10 +660,11 @@ export function raceProficiencies(c, exceptKey){
   });
   return out;
 }
-/* "Your picks: ..." for the race's traits on the Features tab ("" for none). */
-export function racePicksText(c){
+/* "Your picks: ..." for the race's traits on the Features tab ("" for
+   none), leaving out the trait named `skipName`. */
+export function racePicksText(c, skipName){
   var held = (c.racePicks && c.racePicks.profPicks) || {};
-  return raceGrants(c).filter(function(g){ return grantHasChoices(g.def); }).map(function(g){
+  return raceGrants(c).filter(function(g){ return grantHasChoices(g.def) && g.name!==skipName; }).map(function(g){
     var s = classPicksSummary(g, held[g.key]);
     return s ? g.name + ": " + s : "";
   }).filter(Boolean).join("; ");
@@ -904,6 +905,17 @@ export function classPicksSummary(grant, entry){
     });
   });
   return bits.join(", ");
+}
+/* The details of what was chosen in a grant's `choice` slots, one line
+   each (a dragonborn's dragon: "Cold: 15 ft cone breath, ..."). */
+export function classPicksDetails(grant, entry){
+  var lines = [];
+  if(!entry || entry.manual) return lines;
+  (grant.def.pick||[]).forEach(function(slot, i){
+    if(slot.kind!=="choice" || !slot.details) return;
+    ((entry.slots && entry.slots[i]) || []).forEach(function(v){ if(slot.details[v]) lines.push(slot.details[v]); });
+  });
+  return lines;
 }
 /* What a grant gives outright, as plain lines for the pickers. */
 export function grantFixedLines(def){

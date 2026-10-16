@@ -8,11 +8,12 @@ import { invocationResources } from "./invocations.js";
 import { knownOptions as knownClassOptions } from "./class-options.js";
 import { mod, totalLevel, profBonus, clamp } from "./basics.js";
 import { hasFeat } from "./vitals.js";
-import { usesVariant } from "./class-features.js";
+import { usesVariant, draconicBreath } from "./class-features.js";
 
 /* Limited-use resources this character has right now, from each class
    and its subclass. `key` is unique per character (class + resource id)
-   and indexes c.resourcesUsed. */
+   and indexes c.resourcesUsed. One with place "inventory" is drawn on the
+   Inventory tab instead of the Vitals tab's resources card. */
 export function characterResources(c){
   var m = {};
   ["str","dex","con","int","wis","cha"].forEach(function(k){ m[k] = mod(c.abilities && c.abilities[k]); });
@@ -83,6 +84,13 @@ export function characterResources(c){
       });
     });
   });
+  // A dragonborn's Breath Weapon, once per short or long rest. Its card is
+  // with the weapons on the Inventory tab.
+  if(draconicBreath(c)){
+    list.push({key: "race:breath_weapon", name: "Breath Weapon", source: "Dragonborn", place: "inventory", pool: false,
+      hint: "Action: exhale your draconic ancestry's damage.", max: 1,
+      used: clamp(Number((c.resourcesUsed||{})["race:breath_weapon"])||0, 0, 1), reset: "short"});
+  }
   // Superior Technique (Tasha's fighting style): one d6 superiority die,
   // added to a pool the character already has (Battle Master, Martial Adept).
   if((c.features||[]).some(function(f){ return f && f.fightingStyle==="Superior Technique"; })){

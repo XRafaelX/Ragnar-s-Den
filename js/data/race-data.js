@@ -53,6 +53,30 @@ var HALFLING_BASE = [
 var GNOME_CUNNING = tr("Gnome Cunning", "Advantage on Intelligence, Wisdom and Charisma saves against magic.");
 var POWERFUL_BUILD = tr("Powerful Build", "You count as one size larger for carrying capacity and what you can push, drag or lift.");
 var SUNLIGHT = tr("Sunlight Sensitivity", "Disadvantage on attack rolls and sight-based Perception checks when you or your target are in direct sunlight.");
+/* A dragonborn's Draconic Ancestry table: the dragon sets the breath
+   weapon's damage type, area and save, and the resistance (checked
+   against the SRD 5.1 / Player's Handbook table 2026-10-16). */
+export var DRACONIC_ANCESTRIES = {
+  "Black dragon":  {damage:"Acid",      area:"5 by 30 ft line", save:"DEX"},
+  "Blue dragon":   {damage:"Lightning", area:"5 by 30 ft line", save:"DEX"},
+  "Brass dragon":  {damage:"Fire",      area:"5 by 30 ft line", save:"DEX"},
+  "Bronze dragon": {damage:"Lightning", area:"5 by 30 ft line", save:"DEX"},
+  "Copper dragon": {damage:"Acid",      area:"5 by 30 ft line", save:"DEX"},
+  "Gold dragon":   {damage:"Fire",      area:"15 ft cone",      save:"DEX"},
+  "Green dragon":  {damage:"Poison",    area:"15 ft cone",      save:"CON"},
+  "Red dragon":    {damage:"Fire",      area:"15 ft cone",      save:"DEX"},
+  "Silver dragon": {damage:"Cold",      area:"15 ft cone",      save:"CON"},
+  "White dragon":  {damage:"Cold",      area:"15 ft cone",      save:"CON"}
+};
+function draconicAncestryPick(){
+  var details = {};
+  Object.keys(DRACONIC_ANCESTRIES).forEach(function(n){
+    var a = DRACONIC_ANCESTRIES[n];
+    details[n] = a.damage + ": " + a.area + " breath, " + a.save + " save, and resistance to " + a.damage.toLowerCase() + " damage";
+  });
+  return {pick:[{kind:"choice", id:"draconicAncestry", noun:"draconic ancestry", label:"Choose your dragon ancestor",
+    options:Object.keys(DRACONIC_ANCESTRIES), details:details}]};
+}
 
 export var RACE_DATA = {
   /* ---- Standard (SRD / Player's Handbook) ---- */
@@ -94,8 +118,8 @@ export var RACE_DATA = {
   "Dragonborn": {asi:{str:2,cha:1}, size:"Medium", speed:{walk:30}, darkvision:0,
     languages:{fixed:["Common","Draconic"]}, source:"Player's Handbook",
     traits:[
-      tr("Draconic Ancestry", "Choose a dragon type; it sets your breath weapon and resistance damage type."),
-      tr("Breath Weapon", "Action: exhale a line or cone of your damage type, 2d6 (more at levels 6, 11 and 16). DEX or CON save for half. Once per short or long rest."),
+      tr("Draconic Ancestry", "Choose a dragon type; it sets your breath weapon and resistance damage type.", draconicAncestryPick()),
+      tr("Breath Weapon", "Action: exhale your ancestry's damage type in its line or cone. Creatures in it make a save (DC 8 + CON + proficiency bonus), taking 2d6 on a fail (3d6 at level 6, 4d6 at 11, 5d6 at 16) or half on a success. Once per short or long rest."),
       tr("Damage Resistance", "Resistance to the damage type of your draconic ancestry.")]},
   "Rock Gnome": {asi:{int:2,con:1}, size:"Small", speed:{walk:25}, darkvision:60,
     languages:{fixed:["Common","Gnomish"]}, source:"Player's Handbook",

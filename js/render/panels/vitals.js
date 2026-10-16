@@ -692,7 +692,8 @@ export function renderVitalsPanel(c){
   var effectsCard = renderEffectsCard(c);
   if(effectsCard) panel.appendChild(effectsCard);
 
-  var resources = characterResources(c);
+  // A use kept with its card elsewhere (a Breath Weapon on Inventory) isn't repeated here.
+  var resources = characterResources(c).filter(function(r){ return r.place!=="inventory"; });
   if(resources.length) panel.appendChild(renderResourcesCard(c, resources));
 
   return panel;

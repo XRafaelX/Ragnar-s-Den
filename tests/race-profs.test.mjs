@@ -9,7 +9,9 @@ import * as H from "../js/core/helpers.js";
 import * as CP from "../js/core/class-picks.js";
 import * as W from "../js/wizard/wizard-core.js";
 import { TOOL_GROUPS } from "../js/core/feat-picks.js";
-import { RACE_DATA } from "../js/data/race-data.js";
+import { RACE_DATA, DRACONIC_ANCESTRIES } from "../js/data/race-data.js";
+import { draconicBreathText, draconicBreath } from "../js/core/class-features.js";
+import { characterResources, restoreResources } from "../js/core/character-resources.js";
 import { RACE_CHOICES } from "../js/data/races.js";
 import { SKILLS } from "../js/data/abilities-skills.js";
 import { WEAPON_DATA } from "../js/data/weapons.js";
@@ -277,4 +279,58 @@ test("wizard: a hill dwarf fighter gets the dwarf's weapons and the picked tool"
   assert.ok(r.tools.includes("Brewer's supplies"));
   assert.ok(r.weapons.includes("Warhammer"));
   assert.ok(!CP.pendingClassPicks(c).length, "nothing left to choose");
+});
+
+test("wizard: a dragonborn picks a draconic ancestry, and the sheet works out the breath weapon", (t) => {
+  const db = (slots) => ({ race: "Dragonborn", abilities: { str: 15, dex: 10, con: 14, int: 8, wis: 12, cha: 13 },
+    raceChoices: { profPicks: { "race:Draconic Ancestry:pick": slots } } });
+  assert.equal(inWizard(t, db([]), () => W.isStepApplicable("raceChoices")), true);
+  assert.match(inWizard(t, db([]), () => W.validateStep("raceChoices")), /Draconic Ancestry/);
+  assert.equal(inWizard(t, db([["Green dragon"]]), () => W.validateStep("raceChoices")), null);
+  const c = inWizard(t, db([["Green dragon"]]), () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
+  assert.deepEqual(c.racePicks.profPicks["race:Draconic Ancestry:pick"].slots, [["Green dragon"]]);
+  assert.deepEqual(CP.raceProficiencies(c), { skills: [], weapons: [], tools: [], armor: [] }, "the choice gives no proficiency");
+  assert.ok(!CP.pendingClassPicks(c).length, "nothing left to choose");
+  assert.match(CP.racePicksText(c), /^Draconic Ancestry: Green dragon$/);
+  // CON 16 (14 + nothing from the race), level 1: DC 8 + 3 + 2.
+  c.abilities.con = 16;
+  assert.equal(draconicBreathText(c), "Breath Weapon (Green dragon): 15 ft cone, CON save DC 13, 2d6 poison damage (half on a success). Once per short or long rest.\nDamage Resistance: poison.");
+  assert.deepEqual(draconicBreath(c), { dragon: "Green dragon", damage: "Poison", area: "15 ft cone", save: "CON", dc: 13, dice: 2 });
+  // The race's Features entry: the breath line names the dragon, so no "Your picks" line repeats it.
+  const entry = H.getAllCharacterFeatures(c).find((f) => f.id === "race_Dragonborn").text;
+  assert.ok(!/Your picks/.test(entry), entry);
+  assert.match(entry, /\n\nBreath Weapon \(Green dragon\): 15 ft cone/);
+  // The Feature choices card's details line.
+  const g = raceGrant(c, "Draconic Ancestry");
+  assert.deepEqual(CP.classPicksDetails(g, g.cl.profPicks[g.key]), ["Poison: 15 ft cone breath, CON save, and resistance to poison damage"]);
+  c.classes[0].level = 11;
+  assert.match(draconicBreathText(c), /CON save DC 15, 4d6 poison/);
+  // Not picked yet (an older dragonborn): nothing to show, and the Feature choices card asks.
+  const old = ensureShape(makeChar("Dragonborn"));
+  assert.equal(draconicBreathText(old), "");
+  assert.ok(!characterResources(old).some((r) => r.key === "race:breath_weapon"), "no use to track before a dragon is picked");
+  assert.ok(CP.pendingClassPicks(old).some((g) => g.name === "Draconic Ancestry"));
+});
+
+test("draconic ancestry: the ten dragons, each line or cone matching its save", () => {
+  assert.deepEqual(Object.keys(DRACONIC_ANCESTRIES).map((n) => n.split(" ")[0]),
+    ["Black", "Blue", "Brass", "Bronze", "Copper", "Gold", "Green", "Red", "Silver", "White"]);
+  for(const [n, a] of Object.entries(DRACONIC_ANCESTRIES)){
+    assert.ok(["Acid", "Cold", "Fire", "Lightning", "Poison"].includes(a.damage), n);
+    assert.equal(a.save, a.damage === "Poison" || a.damage === "Cold" ? "CON" : "DEX", n);
+  }
+});
+
+test("breath weapon use: once per short rest, kept off the Vitals resources card", () => {
+  const c = ensureShape(makeChar("Dragonborn"));
+  CP.raceEntry(c).profPicks["race:Draconic Ancestry:pick"] = { slots: [["Red dragon"]], applied: {} };
+  const res = () => characterResources(c).find((r) => r.key === "race:breath_weapon");
+  assert.deepEqual([res().max, res().used, res().reset, res().place], [1, 0, "short", "inventory"]);
+  c.resourcesUsed["race:breath_weapon"] = 1;
+  assert.equal(res().used, 1);
+  assert.deepEqual(restoreResources(c, "short"), ["Breath Weapon"], "a short rest gives it back");
+  assert.equal(res().used, 0);
+  // Another race keeps no breath weapon, even with an old pick left over.
+  c.race = "Human";
+  assert.equal(res(), undefined);
 });

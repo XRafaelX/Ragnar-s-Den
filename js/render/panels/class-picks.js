@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { characterGrants, grantHasChoices, grantEntry, classPicksSummary, setClassVariant, backgroundSkillFix, resolveBackgroundSkillFix } from "../../core/class-picks.js";
+import { characterGrants, grantHasChoices, grantEntry, classPicksSummary, classPicksDetails, setClassVariant, backgroundSkillFix, resolveBackgroundSkillFix } from "../../core/class-picks.js";
 import { BACKGROUND_INFO } from "../../data/backgrounds.js";
 import { classVariants, usesVariant } from "../../core/helpers.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
@@ -99,14 +99,22 @@ export function renderClassPicksCard(c){
     src.innerHTML = "<span>From</span> ";
     src.appendChild(document.createTextNode(g.source));
     box.appendChild(src);
+    // What was picked, plainly (the card says what it is), and a picked
+    // option's details under it (a dragon's breath and resistance).
     var text = document.createElement("div");
-    text.className = "inf-text";
     var picked = classPicksSummary(g, entry);
+    text.className = "inf-text" + (entry && !entry.manual && picked ? " cpk-picked" : "");
     text.textContent = !entry ? "Not chosen yet."
       : entry.manual ? "Marked as already on your sheet."
-      : picked ? "Your picks: " + picked + "."
+      : picked ? picked
       : "Nothing to add: you already had everything it offers.";
     box.appendChild(text);
+    classPicksDetails(g, entry).forEach(function(line){
+      var detail = document.createElement("div");
+      detail.className = "inf-text cpk-picked-detail";
+      detail.textContent = line;
+      box.appendChild(detail);
+    });
     card.appendChild(box);
   });
   if(variants.length) card.appendChild(sectionTitle("Tasha's optional features"));
