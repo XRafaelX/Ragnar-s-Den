@@ -116,8 +116,12 @@ function setFacts(c, set, entry, all){
     var dice = res.find(function(r){ return r.key==="Fighter:superiority_dice"; }) || res.find(function(r){ return r.key==="feat:superiority_dice"; }) ||
       res.find(function(r){ return r.key==="style:superiority_dice"; });
     if(dice){
+      // Martial Adept's and Superior Technique's dice stay d6s when they
+      // join a Battle Master's pool, so they are counted apart.
+      var extra = dice.key!=="Fighter:superiority_dice" ? 0 :
+        (hasMartialAdept(c) ? 1 : 0) + (hasSuperiorTechnique(c) ? 1 : 0);
       var size = !entry ? "d6" : lv>=18 ? "d12" : lv>=10 ? "d10" : "d8";
-      rows.push(["Superiority dice", dice.max + " × " + size, diceNote(c, entry, lv, dice)]);
+      rows.push(["Superiority dice", (dice.max - extra) + " × " + size + (extra ? " + " + extra + " × d6" : ""), diceNote(c, entry, lv, dice)]);
     }
   }
   if(set.id==="metamagic"){
@@ -170,10 +174,11 @@ function diceNote(c, entry, lv, dice){
     if(lv < 18) return "d12s at fighter level 18";
     return "Regain one on initiative if none left";
   }
-  var style = (c.features||[]).some(function(f){ return f && f.fightingStyle==="Superior Technique"; });
-  var feat = (c.feats||[]).some(function(f){ return f.name==="Martial Adept"; });
+  var feat = hasMartialAdept(c), style = hasSuperiorTechnique(c);
   return "From " + (feat && style ? "Martial Adept and Superior Technique" : dice.key==="feat:superiority_dice" ? "Martial Adept" : "Superior Technique");
 }
+function hasMartialAdept(c){ return (c.feats||[]).some(function(f){ return f.name==="Martial Adept"; }); }
+function hasSuperiorTechnique(c){ return (c.features||[]).some(function(f){ return f && f.fightingStyle==="Superior Technique"; }); }
 
 function optionEntry(c, set, entry, k, fixed){
   var o = fixed || set.options.find(function(x){ return x.name===k.name; }) || {name: k.name, text: "", source: ""};
