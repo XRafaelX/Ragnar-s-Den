@@ -55,18 +55,21 @@ function renderSet(card, c, set, grouped){
   if(grouped) card.appendChild(sectionTitle(set.label + " · " + (entry ? entry.name.toLowerCase() : set.className.toLowerCase()) + " level " + optionSetStart(set)));
   card.appendChild(hint(set.help));
 
-  // A meter only where more than one is ever known.
+  // One row of tiles: the known meter (only where more than one is ever
+  // known) beside the numbers the sheet works out.
   var most = optionsKnownAt(set, 20);
+  var tiles = setFacts(c, set, entry, all);
   if(entry && most > 1){
     var due = optionsKnownAt(set, Number(entry.level)||1), known = knownOptions(entry, set.id);
-    var meters = document.createElement("div");
-    meters.className = "inf-meters eli-meters";
-    meters.appendChild(meter(set.label + " known", known.length, due,
+    tiles.unshift(meter(set.label + " known", known.length, due,
       known.length>due ? "More than your level allows" : known.length<due ? (due-known.length)+" left to learn" : "All learned"));
-    card.appendChild(meters);
   }
-  var facts = setFacts(c, set, entry, all);
-  if(facts) card.appendChild(facts);
+  if(tiles.length){
+    var box = document.createElement("div");
+    box.className = "cos-facts";
+    tiles.forEach(function(t){ box.appendChild(t); });
+    card.appendChild(box);
+  }
 
   if(!grouped) card.appendChild(sectionTitle("Your " + set.label.toLowerCase()));
   (set.always||[]).forEach(function(o){ card.appendChild(optionEntry(c, set, null, {name: o.name, from: "Always known"}, o)); });
@@ -93,8 +96,8 @@ function setDc(c, set, entry){
   return ab ? {ability: ab, dc: 8 + profBonus(c) + mod(c.abilities[ab])} : null;
 }
 
-/* What the sheet works out for a set: save DCs, dice, points, and the
-   Storm Aura's numbers for the chosen environment. */
+/* What the sheet works out for a set, as tiles: save DCs, dice, points,
+   and the Storm Aura's numbers for the chosen environment. */
 function setFacts(c, set, entry, all){
   var rows = [];
   var res = characterResources(c);
@@ -114,7 +117,7 @@ function setFacts(c, set, entry, all){
       res.find(function(r){ return r.key==="style:superiority_dice"; });
     if(dice){
       var size = !entry ? "d6" : lv>=18 ? "d12" : lv>=10 ? "d10" : "d8";
-      rows.push(["Superiority dice", dice.max + " × " + size, (dice.max - dice.used) + " left · back on a short rest"]);
+      rows.push(["Superiority dice", dice.max + " × " + size, diceNote(c, entry, lv, dice)]);
     }
   }
   if(set.id==="metamagic"){
@@ -147,16 +150,29 @@ function setFacts(c, set, entry, all){
     if(env==="Sea") rows.push(["Aura damage", dice2 + "d6 lightning", "one creature, Dexterity save for half"]);
     if(env==="Tundra") rows.push(["Aura temp HP", String(step), "for each creature you choose in it"]);
   }
-  if(!rows.length) return null;
-  var box = document.createElement("div");
-  box.className = "cos-facts";
-  rows.forEach(function(r){
+  return rows.map(function(r){
     var d = document.createElement("div");
     d.className = "cos-fact";
-    d.innerHTML = "<span class='cos-fact-lbl'>" + escapeHtml(r[0]) + "</span><span class='cos-fact-val'>" + escapeHtml(r[1]) + "</span><span class='cos-fact-sub'>" + escapeHtml(r[2]) + "</span>";
-    box.appendChild(d);
+    d.innerHTML = "<span class='cos-fact-lbl'>" + escapeHtml(r[0]) + "</span><span class='cos-fact-val'>" + escapeHtml(r[1]) + "</span>" +
+      (r[2] ? "<span class='cos-fact-sub'>" + escapeHtml(r[2]) + "</span>" : "");
+    return d;
   });
-  return box;
+}
+
+/* The superiority dice tile's note (how many are left is on Vitals): for
+   a Battle Master the next step up (Combat Superiority, Improved Combat
+   Superiority, Relentless), otherwise where the lone d6 comes from. */
+function diceNote(c, entry, lv, dice){
+  if(entry){
+    if(lv < 7) return "5 dice at fighter level 7";
+    if(lv < 10) return "d10s at fighter level 10";
+    if(lv < 15) return "6 dice at fighter level 15";
+    if(lv < 18) return "d12s at fighter level 18";
+    return "Regain one on initiative if none left";
+  }
+  var style = (c.features||[]).some(function(f){ return f && f.fightingStyle==="Superior Technique"; });
+  var feat = (c.feats||[]).some(function(f){ return f.name==="Martial Adept"; });
+  return "From " + (feat && style ? "Martial Adept and Superior Technique" : dice.key==="feat:superiority_dice" ? "Martial Adept" : "Superior Technique");
 }
 
 function optionEntry(c, set, entry, k, fixed){
