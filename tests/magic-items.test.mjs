@@ -26,7 +26,7 @@ test("magic item data: well formed, grouped by rarity, one group each", () => {
       const d = MAGIC_ITEM_DATA[name];
       assert.equal(d.rarity, group, name + ": listed under its rarity");
       assert.ok(d.kind && d.text, name + ": kind and text");
-      for(const k of Object.keys(d)) assert.ok(["kind", "rarity", "attunement", "text", "holster", "weapon", "returning"].includes(k), name + ": unknown field " + k);
+      for(const k of Object.keys(d)) assert.ok(["kind", "rarity", "attunement", "text", "holster", "weapon", "returning", "coin"].includes(k), name + ": unknown field " + k);
       assert.ok(!/[–—]/.test(name + d.kind + d.text), name + ": long dash");
       assert.ok(!GEAR_DATA[name] && !WEAPON_DATA[name] && !ARMOR_DATA[name], name + ": already other gear");
       if(d.weapon) assert.ok(WEAPON_DATA[d.weapon], name + ": a real weapon");
@@ -128,4 +128,72 @@ test("Trident of Returning: added under Weapons as a magic trident, readied, not
   assert.equal(H.isMagicWeapon(fighter, tr), true, "magic even before attuning");
   assert.deepEqual([H.weaponAttackBonus(fighter, tr), H.weaponDamageBonus(fighter, tr)], [5, 3], "STR +3, proficiency +2, no bonus");
   assert.equal(wizard.inventory.find((i) => i.magicItem).proficient, false, "a wizard isn't proficient with a trident");
+});
+
+test("Duality: 2 charges, a flip spends one, then one boon from that side", () => {
+  const d = MAGIC_ITEM_DATA.Duality;
+  assert.deepEqual([d.kind, d.rarity, d.attunement, d.coin.charges], ["Wondrous item (coin)", "Rare", false, 2]);
+  assert.deepEqual(Object.keys(d.coin.sides), ["angel", "demon"]);
+  assert.deepEqual(d.coin.sides.angel.boons.map((b) => b.id), ["angel_check", "angel_ac", "angel_radiant"]);
+  assert.deepEqual(d.coin.sides.demon.boons.map((b) => b.id), ["demon_attack", "demon_damage", "demon_resist"]);
+  assert.match(d.text, /recharge at the end of a long rest/);
+  assert.match(d.text, /2d8 fire or necrotic damage/);
+
+  const coin = { name: "Duality", type: "gear", magicItem: "Duality", qty: 1 };
+  const c = { classes: [{ name: "Fighter", level: 1 }], inventory: [coin] };
+  assert.equal(MI.coinCharges(coin), 2);
+  assert.equal(MI.flipCoin(coin, () => 0.2), "angel", "below 0.5 is angel");
+  assert.equal(MI.coinCharges(coin), 1);
+  assert.equal(MI.flipCoin(coin, () => 0.9), null, "no second flip while a boon is still to be chosen");
+  assert.match(MI.boonProblem(c, coin, "demon_attack"), /Not on the side/);
+  assert.equal(MI.chooseBoon(c, coin, "angel_ac"), true);
+  assert.equal(coin.coin.flip, "", "chosen: the flip is done");
+
+  assert.equal(MI.flipCoin(coin, () => 0.3), "angel");
+  assert.equal(MI.coinCharges(coin), 0);
+  assert.match(MI.boonProblem(c, coin, "angel_ac"), /Already in play/, "the same boon can't be in play twice");
+  assert.equal(MI.chooseBoon(c, coin, "angel_radiant"), true);
+  assert.equal(MI.flipCoin(coin, () => 0.1), null, "out of charges");
+  assert.deepEqual(MI.activeBoons(c).map((b) => b.def.id), ["angel_ac", "angel_radiant"]);
+  assert.deepEqual(MI.nextAttackDamage(c).map((n) => [n.qty, n.die, n.type]), [[2, 8, "Radiant"]]);
+
+  // A long rest brings the charges back; a rest ends the 10-minute boons
+  // and keeps the one waiting for the next attack.
+  assert.deepEqual(MI.magicItemsOnLongRest(c), ["Duality"]);
+  assert.equal(MI.coinCharges(coin), 2);
+  assert.deepEqual(MI.endTimedBoons(c), ["Duality (+1 AC)"]);
+  assert.deepEqual(MI.activeBoons(c).map((b) => b.def.id), ["angel_radiant"]);
+});
+
+test("Duality: the boons on the sheet (AC, attack rolls, next ability check, extra damage, resistance)", () => {
+  const coin = { name: "Duality", type: "gear", magicItem: "Duality", qty: 1, coin: { used: 0, flip: "", boons: [] } };
+  const sword = { name: "Longsword", type: "weapon", ability: "str", proficient: true, magicBonus: 0, damageDice: "1d8" };
+  const c = { abilities: { str: 16, dex: 14, con: 10, int: 10, wis: 10, cha: 10 }, saveProfs: {}, skillProfs: {}, classes: [{ name: "Fighter", level: 1 }],
+    inventory: [sword, coin], feats: [], resourcesUsed: {}, race: "Human", acMisc: 0, initiativeMisc: 0, spellcasting: { ability: "int" } };
+  const ac = () => H.computeArmorClass(c).value;
+  assert.deepEqual([ac(), H.weaponAttackBonus(c, sword), H.checkRollMode(c, "wis").mode], [12, 5, "none"]);
+
+  coin.coin.boons = [{ id: "angel_ac" }];
+  assert.equal(ac(), 13, "+1 AC");
+  assert.match(H.computeArmorClass(c).breakdown, /Duality \(\+1\)/);
+
+  coin.coin.boons = [{ id: "demon_attack" }];
+  assert.equal(H.weaponAttackBonus(c, sword), 6, "+1 to attack rolls");
+  assert.equal(H.spellcastingAbilities({ ...c, classes: [{ name: "Wizard", level: 1 }] })[0].attack, 2 + 0 + 1, "spell attacks too");
+
+  coin.coin.boons = [{ id: "angel_check" }];
+  assert.deepEqual([H.checkRollMode(c, "wis").mode, H.skillRollMode(c, "Perception").mode, H.initiativeRollMode(c).mode], ["adv", "adv", "adv"]);
+  assert.equal(H.passivePerception(c), 10, "not in a passive score");
+  assert.equal(MI.useNextCheck(c), true, "rolling a check uses it");
+  assert.equal(H.checkRollMode(c, "wis").mode, "none");
+  assert.equal(MI.useNextCheck(c), false);
+
+  coin.coin.flip = "demon";
+  assert.equal(MI.chooseBoon(c, coin, "demon_resist"), false, "resistance needs a damage type");
+  assert.equal(MI.chooseBoon(c, coin, "demon_resist", "Fire"), true);
+  assert.deepEqual(MI.coinResistances(c), ["Fire"]);
+  coin.coin.flip = "demon";
+  assert.equal(MI.chooseBoon(c, coin, "demon_damage", "Necrotic"), true);
+  assert.deepEqual(MI.nextAttackDamage(c).map((n) => n.type), ["Necrotic"]);
+  assert.deepEqual(MI.activeBoons(c).map((b) => MI.boonLabel(b)), ["resistance to fire", "next attack +2d8 necrotic"]);
 });

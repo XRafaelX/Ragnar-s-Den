@@ -16,7 +16,7 @@ import { halfProficiency, checkAbility } from "./checks.js";
 import { findSubclass, classFeatureList } from "./class-features.js";
 import { effectOn, bladesongBonus } from "./effects.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
-import { holsterSpeedParts } from "./magic-items.js";
+import { holsterSpeedParts, coinAcBonus } from "./magic-items.js";
 
 /* ---------------- Feats the sheet applies ----------------
    Feats are matched by name. Their bonuses are worked out when shown
@@ -242,6 +242,9 @@ export function computeArmorClass(c){
   if(effectOn(c, "awakened_astral_self")){
     base += 2; breakdown += " + Armor of the Spirit (+2)"; short += " + Astral Self";
   }
+  // A magic item's boon (Duality's angel side: +1 AC for 10 minutes).
+  var coinAc = coinAcBonus(c);
+  if(coinAc){ base += coinAc; breakdown += " + Duality (" + fmtMod(coinAc) + ")"; short += " + Duality"; }
   if(misc){ breakdown += " + misc (" + fmtMod(misc) + ")"; short += " + misc"; }
 
   return { value: base + shieldBonus + misc, breakdown: breakdown, short: short };

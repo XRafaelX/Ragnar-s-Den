@@ -10,6 +10,7 @@ import { classFeatureList } from "./class-features.js";
 import { effectOn } from "./effects.js";
 import { weaponAbility, armorPenalty } from "./equipment.js";
 import { hasFeat } from "./vitals.js";
+import { nextCheckAdvantage } from "./magic-items.js";
 
 /* ---------------- Ability checks and skills ---------------- */
 var SKILL_ABILITY = {};
@@ -41,7 +42,7 @@ export function abilityCheck(c, key){
 }
 /* A skill check: its ability, then proficiency (doubled with expertise)
    or, without proficiency, half proficiency. {value, label, breakdown, roll}. */
-export function skillCheck(c, skill){
+export function skillCheck(c, skill, passive){
   var key = SKILL_ABILITY[skill] || "str";
   var ab = checkAbility(c, key);
   var entry = c.skillProfs && c.skillProfs[skill] || {};
@@ -54,12 +55,12 @@ export function skillCheck(c, skill){
     var half = halfProficiency(c, key);
     if(half){ value += half.value; breakdown += " + " + half.name + " (" + fmtMod(half.value) + ")"; }
   }
-  return {value: value, label: ab.label, breakdown: breakdown, roll: skillRollMode(c, skill)};
+  return {value: value, label: ab.label, breakdown: breakdown, roll: skillRollMode(c, skill, passive)};
 }
 /* 10 + everything the check adds, +5 with advantage or -5 with
    disadvantage on it, and Observant's +5 to Perception and Investigation. */
 function passiveScore(c, skill){
-  var check = skillCheck(c, skill);
+  var check = skillCheck(c, skill, true);
   var score = 10 + check.value + (check.roll.mode==="adv" ? 5 : check.roll.mode==="dis" ? -5 : 0);
   if((skill==="Perception" || skill==="Investigation") && hasFeat(c, "Observant")) score += 5;
   return score;
@@ -95,8 +96,10 @@ export function stealthCheck(c){
    Acrobatics during Bladesong and on Insight and Intimidation with the
    astral visage out, disadvantage on STR and DEX skills in armor you
    aren't proficient with. {mode: "none"|"dis"|"adv", reason}. */
-export function skillRollMode(c, skill){
+export function skillRollMode(c, skill, passive){
   var list = [armorPenalty(c, SKILL_ABILITY[skill])].concat(alwaysAdvantage(c, "check", SKILL_ABILITY[skill]));
+  // A boon for the next roll (Duality) isn't part of a passive score.
+  if(!passive) list.push(nextCheckAdvantage(c));
   if(skill==="Stealth") list.push(stealthCheck(c));
   if(skill==="Acrobatics" && effectOn(c, "bladesong")) list.push({mode: "adv", reason: "Bladesong"});
   if((skill==="Insight" || skill==="Intimidation") && effectOn(c, "astral_visage")) list.push({mode: "adv", reason: "Wisdom of the Spirit (Visage of the Astral Self)"});
@@ -133,11 +136,11 @@ export function situationalSaveAdvantages(c, key){
   return advantagesFor(c).filter(function(a){ return a.when && covers(a, "save", key); }).map(function(a){ return {name: a.name, when: a.when}; });
 }
 /* A plain ability check or a saving throw with this ability. */
-export function checkRollMode(c, key){ return combineRolls([armorPenalty(c, key)].concat(alwaysAdvantage(c, "check", key))); }
+export function checkRollMode(c, key){ return combineRolls([armorPenalty(c, key), nextCheckAdvantage(c)].concat(alwaysAdvantage(c, "check", key))); }
 export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)].concat(alwaysAdvantage(c, "save", key))); }
-/* Initiative is a DEX check: Feral Instinct's advantage, and armor worn
-   without proficiency's disadvantage. */
-export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex")].concat(alwaysAdvantage(c, "initiative"))); }
+/* Initiative is a DEX check: Feral Instinct's advantage, Duality's next
+   ability check, and armor worn without proficiency's disadvantage. */
+export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex"), nextCheckAdvantage(c)].concat(alwaysAdvantage(c, "initiative"))); }
 /* A weapon attack: disadvantage in armor you aren't proficient with when
    it uses STR or DEX (not INT from Battle Ready or CHA from Hex Warrior). */
 export function attackRollMode(c, item){

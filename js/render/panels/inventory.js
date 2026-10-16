@@ -12,8 +12,8 @@ import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { renderCurrencyCard } from "./coin-purse.js";
-import { magicItemDef, magicItemActive, holsterKnives, holsterDamageBonus, attuneProblem } from "../../core/magic-items.js";
-import { pipChanged, pipsRefilled } from "../../ui/fx.js";
+import { magicItemDef, magicItemActive, holsterKnives, holsterDamageBonus, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, skipBoon, endBoon, activeBoons, boonLabel, coinAttackBonus, nextAttackDamage } from "../../core/magic-items.js";
+import { pipChanged, pipsRefilled, flash } from "../../ui/fx.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 var ARMOR_CATEGORIES = [
@@ -872,12 +872,148 @@ function renderMagicItemCard(c, item, idx, def){
     card.appendChild(notesP);
   }
   if(def.holster) card.appendChild(holsterBlock(c, item, idx, def.holster, active));
+  if(def.coin) card.appendChild(coinBlock(c, item, idx, def.coin));
   return card;
 }
 
 /* The Heavy Holster's knives: a pip each, what they're doing for you now,
    and Throw / Summon buttons. Summoning is the holster's magic, so it
    needs attunement; taking a knife out doesn't. */
+/* The Duality coin: its charges, Flip the coin (spends one; the coin
+   spins and lands angel or demon side up), that side's three boons to
+   choose from, and the boons in play with End (and a roll for extra
+   damage, which uses it up). */
+function coinBlock(c, item, idx, coin){
+  var box = document.createElement("div");
+  box.className = "inv-coin";
+  box.dataset.idx = idx;
+  var st = item.coin || {};
+  var charges = coinCharges(item);
+
+  var row = document.createElement("div");
+  row.className = "inv-holster-row";
+  var pips = document.createElement("span");
+  pips.className = "inv-holster-pips inv-coin-pips";
+  for(var i = 0; i < coin.charges; i++){
+    var pip = document.createElement("span");
+    pip.className = "res-pip" + (i < charges ? " full" : "");
+    pips.appendChild(pip);
+  }
+  row.appendChild(pips);
+  var count = document.createElement("span");
+  count.className = "inv-holster-count";
+  count.textContent = charges + " of " + coin.charges + " charges · all back at a long rest";
+  row.appendChild(count);
+  box.appendChild(row);
+
+  if(st.flip){
+    var side = coin.sides[st.flip];
+    var landed = document.createElement("div");
+    landed.className = "inv-coin-landed " + st.flip;
+    var face = document.createElement("span");
+    face.className = "inv-coin-face " + st.flip;
+    face.setAttribute("aria-hidden", "true");
+    landed.appendChild(face);
+    var lt = document.createElement("span");
+    lt.className = "inv-coin-result";
+    lt.textContent = side.name + "! Choose one:";
+    landed.appendChild(lt);
+    box.appendChild(landed);
+
+    var choices = document.createElement("div");
+    choices.className = "inv-coin-choices";
+    side.boons.forEach(function(b){
+      var problem = boonProblem(c, item, b.id);
+      var opt = document.createElement("div");
+      opt.className = "inv-coin-choice" + (problem ? " blocked" : "");
+      var text = document.createElement("span");
+      text.className = "inv-coin-choice-text";
+      text.textContent = b.text + (problem ? " (" + problem.toLowerCase().replace(/\.$/, "") + ")" : "");
+      opt.appendChild(text);
+      var take = function(type){ if(chooseBoon(c, item, b.id, type)){ logRoll(item.name || "Duality", "Took: " + b.text + (type ? " (" + type + ")" : "") + "."); redrawKeeping(idx); } };
+      if(problem){ choices.appendChild(opt); return; }
+      if(b.damage && b.damage.types.length > 1){
+        // Fire or necrotic: one button each.
+        b.damage.types.forEach(function(t){ opt.appendChild(smallButton(t, "Take it as " + t.toLowerCase() + " damage", function(){ take(t); })); });
+      } else if(b.resistance){
+        opt.appendChild(themedPicker({
+          key:"coin:resist:" + idx, search:false, placeholder:"Damage type", ariaLabel:"Resistance to which damage type",
+          groups:{"":DAMAGE_TYPES}, onPick:function(v){ take(v); }
+        }));
+      } else {
+        opt.appendChild(smallButton("Take it", b.text, function(){ take(b.damage ? b.damage.types[0] : ""); }));
+      }
+      choices.appendChild(opt);
+    });
+    box.appendChild(choices);
+    var skip = document.createElement("button");
+    skip.type = "button"; skip.className = "inv-coin-skip";
+    skip.textContent = "Don't take a boon";
+    skip.addEventListener("click", function(){ skipBoon(item); redrawKeeping(idx); });
+    box.appendChild(skip);
+  } else {
+    var actions = document.createElement("div");
+    actions.className = "inv-roll-actions";
+    var flipBtn = smallButton("Flip the coin", charges ? "Spend a charge and flip it, on your turn" : "No charges left: they come back at a long rest", function(){
+      var landedOn = flipCoin(item);
+      if(!landedOn) return;
+      logRoll(item.name || "Duality", "The coin lands " + coin.sides[landedOn].name.toLowerCase() + ".");
+      redrawKeeping(idx);
+      var drawnBox = document.querySelector('.inv-coin[data-idx="' + idx + '"]');
+      if(drawnBox){
+        pipChanged(drawnBox.querySelector(".inv-coin-pips"), coinCharges(item), true);
+        flash(drawnBox.querySelector(".inv-coin-face"), "fx-coin-flip");
+      }
+    });
+    flipBtn.disabled = !charges;
+    actions.appendChild(flipBtn);
+    box.appendChild(actions);
+  }
+
+  // The boons in play from this coin.
+  var mine = activeBoons(c).filter(function(b){ return b.item===item; });
+  if(mine.length){
+    var list = document.createElement("div");
+    list.className = "inv-coin-boons";
+    mine.forEach(function(b){
+      var line = document.createElement("div");
+      line.className = "inv-coin-boon";
+      var t = document.createElement("span");
+      t.className = "inv-coin-boon-text";
+      t.textContent = boonLabel(b).charAt(0).toUpperCase() + boonLabel(b).slice(1) + (b.def.minutes ? " · " + b.def.minutes + " minutes" : " · until used");
+      line.appendChild(t);
+      if(b.def.damage) line.appendChild(damageBoonButton(item, b));
+      line.appendChild(smallButton("End", "End this boon", function(){ endBoon(item, b.def.id); redrawKeeping(idx); }));
+      list.appendChild(line);
+    });
+    box.appendChild(list);
+  }
+  return box;
+}
+/* Roll a boon's extra damage on a hit ("+2d8 radiant"); that uses it up. */
+function damageBoonButton(item, b){
+  var d = b.def.damage, type = b.type || d.types[0];
+  var btn = document.createElement("button");
+  btn.type = "button"; btn.className = "btn small inv-roll-btn";
+  btn.innerHTML = makeDicesSvg();
+  btn.appendChild(document.createTextNode("+" + d.qty + "d" + d.die + " " + type.toLowerCase()));
+  btn.title = "Roll it on a hit with your next attack; that uses it up";
+  btn.addEventListener("click", function(){
+    performRoll(d.die, d.qty, 0, "none", (item.name || "Duality") + ": +" + d.qty + "d" + d.die + " " + type.toLowerCase());
+    endBoon(item, b.def.id);
+    save(); renderAll();
+  });
+  return btn;
+}
+function smallButton(label, title, onClick){
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "btn small inv-roll-btn";
+  b.textContent = label;
+  b.title = title;
+  b.addEventListener("click", onClick);
+  return b;
+}
+
 function holsterBlock(c, item, idx, h, active){
   var knives = holsterKnives(item);
   var box = document.createElement("div");
@@ -1010,6 +1146,24 @@ export function renderInventoryPanel(c){
     allBonus.textContent = "Heavy Holster: +" + holsterBonus + " damage on every weapon";
     weaponCard.appendChild(allBonus);
   }
+  // Duality's boons for attacks: +1 to hit (in the numbers below), and
+  // extra damage on the next attack, rolled from here on a hit.
+  var coinHit = coinAttackBonus(c);
+  if(coinHit){
+    var hitLine = document.createElement("p");
+    hitLine.className = "inv-all-weapons";
+    hitLine.textContent = "Duality: +" + coinHit + " to attack rolls";
+    weaponCard.appendChild(hitLine);
+  }
+  nextAttackDamage(c).forEach(function(n){
+    var dmgLine = document.createElement("div");
+    dmgLine.className = "inv-all-weapons inv-all-weapons-roll";
+    var dt = document.createElement("span");
+    dt.textContent = "Duality: next attack +" + n.qty + "d" + n.die + " " + n.type.toLowerCase();
+    dmgLine.appendChild(dt);
+    dmgLine.appendChild(damageBoonButton(n.item, {def: n.def, type: n.type}));
+    weaponCard.appendChild(dmgLine);
+  });
   warnings(weaponCard, "hands");
   var weaponList = document.createElement("div");
   weaponList.className = "ff-items-list inv-items-list";

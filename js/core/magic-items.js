@@ -4,7 +4,8 @@
    js/data/magic-items.js; one that needs attunement works only while
    `attuned` is set (the Attune switch on its card).
    A Heavy Holster keeps its knife count on the row (`knives`): each knife
-   in it adds damage to your attacks, and an empty one adds speed. */
+   in it adds damage to your attacks, and an empty one adds speed. The
+   Duality coin keeps its charges and boons on the row (`coin`). */
 import { MAGIC_ITEM_DATA } from "../data/magic-items.js";
 import { classFeatureList } from "./class-features.js";
 
@@ -66,4 +67,140 @@ export function holsterDamageBonus(c){
 export function holsterSpeedParts(c){
   var h = activeHolster(c);
   return h && holsterKnives(h)===0 ? [{name: h.name || h.magicItem, value: magicItemDef(h).holster.emptySpeed, why: "holster empty"}] : [];
+}
+
+/* ---- Duality (a coin flipped for a boon) ----
+   The row keeps `coin`: {used (charges spent), flip (the side it landed
+   on while a boon is still to be chosen), boons ([{id, type}] in play;
+   type is the damage type picked, for extra damage or a resistance)}.
+   A boon lasts its minutes (ended by hand or by a rest) or, without
+   minutes, until it's used. The same boon can't be in play twice. */
+function coinOf(item){ return item.coin || {used: 0, flip: "", boons: []}; }
+function coinState(item){
+  if(!item.coin) item.coin = {used: 0, flip: "", boons: []};
+  if(!item.coin.boons) item.coin.boons = [];
+  return item.coin;
+}
+export function coinCharges(item){
+  var d = magicItemDef(item);
+  if(!d || !d.coin) return 0;
+  return Math.max(0, d.coin.charges - (Number(coinOf(item).used)||0));
+}
+/* A boon's rules by id, from any coin in the data. */
+export function coinBoonDef(id){
+  var found = null;
+  Object.keys(MAGIC_ITEM_DATA).forEach(function(n){
+    var coin = MAGIC_ITEM_DATA[n].coin;
+    if(!coin) return;
+    Object.keys(coin.sides).forEach(function(s){
+      coin.sides[s].boons.forEach(function(b){ if(b.id===id) found = b; });
+    });
+  });
+  return found;
+}
+/* Every boon in play on this character: [{item, def, type}]. */
+export function activeBoons(c){
+  var out = [];
+  (c.inventory||[]).forEach(function(i){
+    var d = magicItemDef(i);
+    if(!d || !d.coin || !magicItemActive(i)) return;
+    (coinOf(i).boons||[]).forEach(function(b){
+      var def = coinBoonDef(b.id);
+      if(def) out.push({item: i, def: def, type: b.type || ""});
+    });
+  });
+  return out;
+}
+/* Spend a charge and flip: "angel" or "demon" (rand() below 0.5 is
+   angel). Null when out of charges or a boon from the last flip is still
+   to be chosen. */
+export function flipCoin(item, rand){
+  var d = magicItemDef(item);
+  var st = coinState(item);
+  if(!d || !d.coin || st.flip || coinCharges(item) <= 0) return null;
+  st.used = (Number(st.used)||0) + 1;
+  st.flip = (rand || Math.random)() < 0.5 ? "angel" : "demon";
+  return st.flip;
+}
+/* Why this boon can't be chosen from the coin's last flip now, or "". */
+export function boonProblem(c, item, id){
+  var d = magicItemDef(item);
+  var st = coinOf(item);
+  var side = d && d.coin && st.flip && d.coin.sides[st.flip];
+  if(!side || !side.boons.some(function(b){ return b.id===id; })) return "Not on the side the coin landed on.";
+  if(activeBoons(c).some(function(a){ return a.def.id===id; })) return "Already in play.";
+  return "";
+}
+/* Take a boon from the last flip (`type`: the damage type it needs). */
+export function chooseBoon(c, item, id, type){
+  if(boonProblem(c, item, id)) return false;
+  var def = coinBoonDef(id);
+  if(def.damage && def.damage.types.indexOf(type)===-1) type = def.damage.types[0];
+  if(def.resistance && !type) return false;
+  var st = coinState(item);
+  st.boons.push(type ? {id: id, type: type} : {id: id});
+  st.flip = "";
+  return true;
+}
+/* Let the flip go without taking a boon. */
+export function skipBoon(item){ coinState(item).flip = ""; }
+/* End a boon (its time is up, or it was used). */
+export function endBoon(item, id){
+  var st = coinState(item);
+  st.boons = st.boons.filter(function(b){ return b.id!==id; });
+}
+export function coinAcBonus(c){
+  return activeBoons(c).reduce(function(a, b){ return a + (b.def.ac||0); }, 0);
+}
+export function coinAttackBonus(c){
+  return activeBoons(c).reduce(function(a, b){ return a + (b.def.attack||0); }, 0);
+}
+/* Advantage on the next ability check, as a roll mode, or null. */
+export function nextCheckAdvantage(c){
+  return activeBoons(c).some(function(b){ return b.def.checkAdvantage; })
+    ? {mode: "adv", reason: "Duality: advantage on your next ability check"} : null;
+}
+/* An ability check was rolled with it: it's used up. True if one was. */
+export function useNextCheck(c){
+  var used = false;
+  activeBoons(c).forEach(function(b){ if(b.def.checkAdvantage){ endBoon(b.item, b.def.id); used = true; } });
+  return used;
+}
+/* Extra damage waiting for the next attack: [{item, def, type, qty, die}]. */
+export function nextAttackDamage(c){
+  return activeBoons(c).filter(function(b){ return b.def.damage; }).map(function(b){
+    return {item: b.item, def: b.def, type: b.type || b.def.damage.types[0], qty: b.def.damage.qty, die: b.def.damage.die};
+  });
+}
+export function coinResistances(c){
+  return activeBoons(c).filter(function(b){ return b.def.resistance && b.type; }).map(function(b){ return b.type; });
+}
+/* A long rest (dawn): every coin's charges come back. The names of the
+   items that got charges back. */
+export function magicItemsOnLongRest(c){
+  var names = [];
+  (c.inventory||[]).forEach(function(i){
+    var d = magicItemDef(i);
+    if(!d || !d.coin || !i.coin || !(Number(i.coin.used)||0)) return;
+    i.coin.used = 0;
+    names.push(i.name || i.magicItem);
+  });
+  return names;
+}
+/* A rest outlasts every boon that runs for minutes; the ones waiting for
+   the next roll stay. The boons that ended, by text. */
+export function endTimedBoons(c){
+  var ended = [];
+  activeBoons(c).forEach(function(b){ if(b.def.minutes){ endBoon(b.item, b.def.id); ended.push("Duality (" + boonLabel(b) + ")"); } });
+  return ended;
+}
+/* A short name for a boon in play ("+1 AC", "resistance to fire"). */
+export function boonLabel(b){
+  var d = b.def;
+  if(d.ac) return "+" + d.ac + " AC";
+  if(d.attack) return "+" + d.attack + " to attack rolls";
+  if(d.checkAdvantage) return "advantage on your next ability check";
+  if(d.damage) return "next attack +" + d.damage.qty + "d" + d.damage.die + " " + (b.type || d.damage.types[0]).toLowerCase();
+  if(d.resistance) return "resistance to " + (b.type || "a damage type").toLowerCase();
+  return d.text;
 }

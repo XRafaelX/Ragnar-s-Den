@@ -8,6 +8,7 @@ import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { elixirsOnLongRest } from "../../core/artificer.js";
 import { restoreCompanions } from "../../core/companions.js";
+import { useNextCheck, magicItemsOnLongRest, endTimedBoons } from "../../core/magic-items.js";
 import { renderDeathSaves } from "./death-saves.js";
 import { renderEffectsCard } from "./effects.js";
 import { openPrepareSheet } from "./spells.js";
@@ -518,6 +519,8 @@ export function renderVitalsPanel(c){
   initBox.addEventListener("click", function(e){
     if(e.target.closest(".stat-stepper") || e.target.closest("button")) return;
     performRoll(20,1,initTotal,initRoll.mode,"Initiative");
+    // Initiative is a DEX check: Duality's next-check advantage is used.
+    if(useNextCheck(c)){ save(); renderAll(); }
   });
   grid.appendChild(initBox);
 
@@ -594,7 +597,7 @@ export function renderVitalsPanel(c){
     if(c.spellcasting.pact && c.spellcasting.pact.used){ c.spellcasting.pact.used = 0; pactNote = " Pact slots restored."; }
     var restored = restoreResources(c, "short");
     var resNote = restored.length ? " Restored: "+restored.join(", ")+"." : "";
-    var ended = endAllEffects(c);
+    var ended = endAllEffects(c).concat(endTimedBoons(c));
     if(ended.length) resNote += " Ended: "+ended.join(", ")+".";
     logRoll("Short rest taken", "Spend hit dice as needed to heal."+pactNote+resNote);
     save(); renderAll();
@@ -624,11 +627,14 @@ export function renderVitalsPanel(c){
         if(c.spellcasting.pact) c.spellcasting.pact.used = 0;
         c.rage.used = 0;
         endAllEffects(c); // also ends Rage
+        endTimedBoons(c);
+        var recharged = magicItemsOnLongRest(c);
         restoreResources(c, "long");
         restoreCompanions(c);
         var elixirs = elixirsOnLongRest(c);
         logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered."+
-          (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : ""));
+          (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : "")+
+          (recharged.length ? " Recharged: "+recharged.join(", ")+"." : ""));
         save(); renderAll();
         // Night falls, then at dawn hit points and resources come back.
         restScene("long");

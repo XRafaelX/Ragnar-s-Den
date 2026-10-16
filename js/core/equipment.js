@@ -10,7 +10,7 @@ import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.
 import { classFeatureList, classProficiencies } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
-import { holsterDamageBonus } from "./magic-items.js";
+import { holsterDamageBonus, coinAttackBonus } from "./magic-items.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
    (see applyClassChoices), so deleting the feature removes its bonus. */
@@ -229,7 +229,7 @@ export function powerAttackOn(c, item){
 export function weaponAttackBonus(c, item){
   var pb = item.proficient ? profBonus(c) : 0;
   var archery = isRangedWeapon(item) && hasFightingStyle(c, "Archery") ? 2 : 0;
-  return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0) + archery - (powerAttackOn(c, item) ? 5 : 0);
+  return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0) + archery - (powerAttackOn(c, item) ? 5 : 0) + coinAttackBonus(c);
 }
 export function weaponDamageBonus(c, item){
   return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + holsterDamageBonus(c)

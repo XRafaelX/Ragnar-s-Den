@@ -12,6 +12,7 @@ import { sheetHeader } from "./inventory.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
 import { pipChanged, pipsRefilled } from "../../ui/fx.js";
+import { coinAttackBonus } from "../../core/magic-items.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner, cantripFormulas, swapCantripFormula } from "../../core/spells-known.js";
 import { PREPARED_CASTERS } from "../../data/spells-known.js";
@@ -264,12 +265,14 @@ function renderSpellcastingCard(c){
   dc.val.textContent = 8+pb+scMod;
   grid.appendChild(dc.box);
 
-  var atk = statTile("Spell attack", "Tap to roll");
-  atk.val.textContent = fmtMod(pb+scMod);
+  // A boon to attack rolls (Duality's demon side) counts for spells too.
+  var boon = coinAttackBonus(c);
+  var atk = statTile("Spell attack", boon ? "Tap to roll · Duality " + fmtMod(boon) : "Tap to roll");
+  atk.val.textContent = fmtMod(pb+scMod+boon);
   atk.box.classList.add("sc-roll");
   atk.box.setAttribute("role","button"); atk.box.tabIndex = 0;
   atk.box.title = "Roll a spell attack";
-  function roll(){ performRoll(20,1,pb+scMod,"none","Spell attack"); }
+  function roll(){ performRoll(20,1,pb+scMod+boon,"none","Spell attack"); }
   atk.box.addEventListener("click", roll);
   atk.box.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); roll(); } });
   grid.appendChild(atk.box);
