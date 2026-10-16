@@ -13,6 +13,8 @@ import { renderClassPicksCard } from "./class-picks.js";
 import { featPicksPending, featAppliedSummary, revertFeatPicks, featHasPicks, featNeedsChoice, applyFeatPicks,
   backgroundFeatMissing, backgroundFeatCopy, backgroundFeatPicks, campaignFeatMissing, campaignFeatCopy, featDef, emptyPicks } from "../../core/feat-picks.js";
 import { openFeatPicksModal } from "../../ui/feat-picks.js";
+import { openBottomSheet } from "../../ui/bottom-sheet.js";
+import { makeChevronRightSvg } from "../../ui/svg-icons.js";
 
 /* ---- Features & Feats panel ----
    One list for everything the character has: class, subclass, racial and
@@ -20,9 +22,53 @@ import { openFeatPicksModal } from "../../ui/feat-picks.js";
    category filters. Feats used to have their own card as well, which
    showed each feat twice. Custom feats and features are made in the
    Compendium's Feats tab (so they can be reused); the character holds a
-   linked copy. */
+   linked copy. Each card is kept short (name, source, two lines of
+   description); a tap opens the full text, with Edit and Remove. */
 var featureCategoryFilter = "all";
 var featureSearchQuery = "";
+
+/* A feature's or feat's full description, in a bottom sheet: its name,
+   its source, the whole text, and Edit / Remove where it has them. */
+function openFeatureSheet(item, actions){
+  openBottomSheet(function(body, refresh, close){
+    var header = document.createElement("div");
+    header.className = "bs-header";
+    var title = document.createElement("div");
+    title.className = "bs-title";
+    title.textContent = item.name;
+    header.appendChild(title);
+    var closeBtn = document.createElement("button");
+    closeBtn.className = "bs-close"; closeBtn.textContent = "✕"; closeBtn.title = "Close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.addEventListener("click", close);
+    header.appendChild(closeBtn);
+    body.appendChild(header);
+    var sub = document.createElement("p");
+    sub.className = "bs-subtitle";
+    sub.textContent = item.source || "Feature";
+    body.appendChild(sub);
+    if(item.text){
+      var desc = document.createElement("div");
+      desc.className = "ff-desc ff-sheet-desc";
+      desc.textContent = item.text;
+      body.appendChild(desc);
+    }
+    if(actions.length){
+      var row = document.createElement("div");
+      row.className = "ff-sheet-actions";
+      actions.forEach(function(a){
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "btn small" + (a.danger ? " ff-sheet-danger" : "");
+        b.textContent = a.label;
+        b.title = a.title;
+        b.addEventListener("click", function(){ close(); a.run(); });
+        row.appendChild(b);
+      });
+      body.appendChild(row);
+    }
+  });
+}
 
 export function renderFeaturesPanel(c){
   var panel = document.createElement("div");
@@ -185,85 +231,83 @@ export function renderFeaturesPanel(c){
 
       top.appendChild(titleGrp);
 
+      // Edit and Remove live in the details sheet the card opens.
+      var sheetActions = [];
       if(item.isCustom && item.featureObj){
         var libEntry = item.featureObj.homebrewId ? getCustomEntry("feature", item.featureObj.homebrewId) : null;
-        var actions = document.createElement("div");
-        actions.className = "ff-actions";
-
-        var editBtn = document.createElement("button");
-        editBtn.className = "ff-action-btn";
-        editBtn.textContent = "Edit";
-        editBtn.title = libEntry ? "Edit in the Compendium (every character with it updates)" : "Edit and save it to the Compendium";
-        editBtn.addEventListener("click", function(){
-          // Not in the Compendium (made before it kept them, or deleted
-          // there): the form starts from this copy and links it on save.
-          openCompendium(libEntry ? {edit:{kind:"feature", id:libEntry.id}, forCharacter:c}
-                                  : {create:"feature", forCharacter:c, from:item.featureObj});
-        });
-        actions.appendChild(editBtn);
-
-        var delBtn = document.createElement("button");
-        delBtn.className = "ff-action-btn danger";
-        delBtn.textContent = "Remove";
-        delBtn.title = "Remove from " + (c.name || "this character");
-        delBtn.addEventListener("click", function(){
-          confirmDialog("Remove " + item.name + "?",
-            libEntry ? "It's removed from " + (c.name || "this character") + " but stays in the Compendium."
-                     : "It isn't saved in the Compendium, so it will be gone for good.", function(){
-            c.features = c.features.filter(function(f){ return f.id !== item.featureObj.id; });
-            save();
-            renderAll();
-            playDelete();
-          });
-        });
-        actions.appendChild(delBtn);
-        top.appendChild(actions);
+        sheetActions.push({label: "Edit", title: libEntry ? "Edit in the Compendium (every character with it updates)" : "Edit and save it to the Compendium",
+          run: function(){
+            // Not in the Compendium (made before it kept them, or deleted
+            // there): the form starts from this copy and links it on save.
+            openCompendium(libEntry ? {edit:{kind:"feature", id:libEntry.id}, forCharacter:c}
+                                    : {create:"feature", forCharacter:c, from:item.featureObj});
+          }});
+        sheetActions.push({label: "Remove", danger: true, title: "Remove from " + (c.name || "this character"),
+          run: function(){
+            confirmDialog("Remove " + item.name + "?",
+              libEntry ? "It's removed from " + (c.name || "this character") + " but stays in the Compendium."
+                       : "It isn't saved in the Compendium, so it will be gone for good.", function(){
+              c.features = c.features.filter(function(f){ return f.id !== item.featureObj.id; });
+              save();
+              renderAll();
+              playDelete();
+            });
+          }});
       } else if(item.isFeat && item.featObj){
-        var actions = document.createElement("div");
-        actions.className = "ff-actions";
-        var editFeatBtn = document.createElement("button");
-        editFeatBtn.className = "ff-action-btn";
-        editFeatBtn.textContent = "Edit";
         var featEntry = item.featObj.homebrewId ? getCustomEntry("feat", item.featObj.homebrewId) : null;
         var customFeat = featEntry || item.featObj.source==="Custom";
-        editFeatBtn.title = featEntry ? "Edit in the Compendium (every character with it updates)"
-          : customFeat ? "Edit and save it to the Compendium" : "Edit feat details";
-        editFeatBtn.addEventListener("click", function(){
-          // Custom feats live in the Compendium (one made before it kept
-          // them starts the form from this copy and is linked on save);
-          // built-in feats are edited on this sheet only.
-          if(featEntry) openCompendium({edit:{kind:"feat", id:featEntry.id}, forCharacter:c});
-          else if(customFeat) openCompendium({create:"feat", forCharacter:c, from:item.featObj});
-          else openFeatEditor(c, item.featObj, (c.feats||[]).indexOf(item.featObj));
-        });
-        actions.appendChild(editFeatBtn);
-        var rmFeatBtn = document.createElement("button");
-        rmFeatBtn.className = "ff-action-btn danger";
-        rmFeatBtn.textContent = "Remove";
-        rmFeatBtn.title = "Remove feat";
-        rmFeatBtn.addEventListener("click", function(){
-          var takesBack = featAppliedSummary(item.featObj);
-          confirmDialog("Remove feat " + item.name + "?", "Are you sure you want to remove this feat from " + (c.name || "this character") + "?" +
-            (takesBack ? " This also takes back " + takesBack + "." : ""), function(){
-            revertFeatPicks(c, item.featObj);
-            c.feats = c.feats.filter(function(f){ return f !== item.featObj; });
-            // Without Tough the max may drop below current HP.
-            c.hp.current = Math.min(Number(c.hp.current)||0, maxHp(c));
-            save();
-            renderAll();
-            playDelete();
-          });
-        });
-        actions.appendChild(rmFeatBtn);
-        top.appendChild(actions);
+        sheetActions.push({label: "Edit", title: featEntry ? "Edit in the Compendium (every character with it updates)"
+            : customFeat ? "Edit and save it to the Compendium" : "Edit feat details",
+          run: function(){
+            // Custom feats live in the Compendium (one made before it kept
+            // them starts the form from this copy and is linked on save);
+            // built-in feats are edited on this sheet only.
+            if(featEntry) openCompendium({edit:{kind:"feat", id:featEntry.id}, forCharacter:c});
+            else if(customFeat) openCompendium({create:"feat", forCharacter:c, from:item.featObj});
+            else openFeatEditor(c, item.featObj, (c.feats||[]).indexOf(item.featObj));
+          }});
+        sheetActions.push({label: "Remove", danger: true, title: "Remove feat",
+          run: function(){
+            var takesBack = featAppliedSummary(item.featObj);
+            confirmDialog("Remove feat " + item.name + "?", "Are you sure you want to remove this feat from " + (c.name || "this character") + "?" +
+              (takesBack ? " This also takes back " + takesBack + "." : ""), function(){
+              revertFeatPicks(c, item.featObj);
+              c.feats = c.feats.filter(function(f){ return f !== item.featObj; });
+              // Without Tough the max may drop below current HP.
+              c.hp.current = Math.min(Number(c.hp.current)||0, maxHp(c));
+              save();
+              renderAll();
+              playDelete();
+            });
+          }});
       }
+      // A tap anywhere but a button opens the full description; › says so.
+      var more = document.createElement("span");
+      more.className = "ff-more";
+      more.setAttribute("aria-hidden", "true");
+      more.innerHTML = makeChevronRightSvg();
+      top.appendChild(more);
+      card.classList.add("ff-tappable");
+      card.setAttribute("role", "button");
+      card.tabIndex = 0;
+      card.setAttribute("aria-label", item.name + ": details");
+      (function(item, sheetActions){
+        function open(e){
+          if(e.target.closest("button, a, input, .ff-picks-pending")) return;
+          openFeatureSheet(item, sheetActions);
+        }
+        card.addEventListener("click", open);
+        card.addEventListener("keydown", function(e){ if((e.key==="Enter" || e.key===" ") && e.target===card){ e.preventDefault(); open(e); } });
+      })(item, sheetActions);
 
       card.appendChild(top);
 
+      // The description, cut to two lines (the sheet has it all).
       if(item.text){
         var desc = document.createElement("div");
-        desc.className = "ff-desc";
-        desc.textContent = item.text;
+        desc.className = "ff-desc ff-desc-short";
+        // Its paragraphs run on as one, so the two lines are all text.
+        desc.textContent = item.text.replace(/\s*\n+\s*/g, " ");
         card.appendChild(desc);
       }
 

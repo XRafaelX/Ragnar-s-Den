@@ -73,8 +73,9 @@ export function holsterSpeedParts(c){
    The row keeps `coin`: {used (charges spent), flip (the side it landed
    on while a boon is still to be chosen), boons ([{id, type}] in play;
    type is the damage type picked, for extra damage or a resistance)}.
-   A boon lasts its minutes (ended by hand or by a rest) or, without
-   minutes, until it's used. The same boon can't be in play twice. */
+   A boon lasts its minutes (ended by hand or by any rest) or, without
+   minutes, until it's used or the next long rest. The same boon can't be
+   in play twice. */
 function coinOf(item){ return item.coin || {used: 0, flip: "", boons: []}; }
 function coinState(item){
   if(!item.coin) item.coin = {used: 0, flip: "", boons: []};
@@ -98,7 +99,8 @@ export function coinBoonDef(id){
   });
   return found;
 }
-/* Every boon in play on this character: [{item, def, type}]. */
+/* Every boon in play on this character: [{item, def, type, side}]
+   ("angel" or "demon"). */
 export function activeBoons(c){
   var out = [];
   (c.inventory||[]).forEach(function(i){
@@ -106,7 +108,8 @@ export function activeBoons(c){
     if(!d || !d.coin || !magicItemActive(i)) return;
     (coinOf(i).boons||[]).forEach(function(b){
       var def = coinBoonDef(b.id);
-      if(def) out.push({item: i, def: def, type: b.type || ""});
+      var side = Object.keys(d.coin.sides).find(function(s){ return d.coin.sides[s].boons.indexOf(def)!==-1; }) || "";
+      if(def) out.push({item: i, def: def, type: b.type || "", side: side});
     });
   });
   return out;
@@ -142,8 +145,18 @@ export function chooseBoon(c, item, id, type){
   st.flip = "";
   return true;
 }
-/* Let the flip go without taking a boon. */
-export function skipBoon(item){ coinState(item).flip = ""; }
+/* After a flip: when every boon on that side is already in play,
+   there's nothing to choose, so the flip ends there. True if it did.
+   (With every boon ending at a long rest and two charges a day, it can
+   only come from an older save; kept so the coin can never get stuck.) */
+export function closeEmptyFlip(c, item){
+  var d = magicItemDef(item);
+  var st = coinOf(item);
+  var side = d && d.coin && st.flip && d.coin.sides[st.flip];
+  if(!side || side.boons.some(function(b){ return !boonProblem(c, item, b.id); })) return false;
+  coinState(item).flip = "";
+  return true;
+}
 /* End a boon (its time is up, or it was used). */
 export function endBoon(item, id){
   var st = coinState(item);
@@ -175,23 +188,32 @@ export function nextAttackDamage(c){
 export function coinResistances(c){
   return activeBoons(c).filter(function(b){ return b.def.resistance && b.type; }).map(function(b){ return b.type; });
 }
-/* A long rest (dawn): every coin's charges come back. The names of the
-   items that got charges back. */
+/* A long rest (dawn): every coin's charges come back, and every boon
+   still in play ends, the ones waiting for the next roll too, so unused
+   boons can't pile up from one day to the next. A flip still waiting
+   for its choice is dropped. {recharged: item names, ended: boons}. */
 export function magicItemsOnLongRest(c){
-  var names = [];
+  var ended = endBoons(c, function(){ return true; });
+  var recharged = [];
   (c.inventory||[]).forEach(function(i){
     var d = magicItemDef(i);
-    if(!d || !d.coin || !i.coin || !(Number(i.coin.used)||0)) return;
+    if(!d || !d.coin || !i.coin) return;
+    i.coin.flip = "";
+    if(!(Number(i.coin.used)||0)) return;
     i.coin.used = 0;
-    names.push(i.name || i.magicItem);
+    recharged.push(i.name || i.magicItem);
   });
-  return names;
+  return {recharged: recharged, ended: ended};
 }
-/* A rest outlasts every boon that runs for minutes; the ones waiting for
-   the next roll stay. The boons that ended, by text. */
+/* A short rest (an hour) outlasts every boon that runs for minutes; the
+   ones waiting for the next roll stay until a long rest. The boons that
+   ended, by text. */
 export function endTimedBoons(c){
+  return endBoons(c, function(def){ return !!def.minutes; });
+}
+function endBoons(c, which){
   var ended = [];
-  activeBoons(c).forEach(function(b){ if(b.def.minutes){ endBoon(b.item, b.def.id); ended.push("Duality (" + boonLabel(b) + ")"); } });
+  activeBoons(c).forEach(function(b){ if(which(b.def)){ endBoon(b.item, b.def.id); ended.push("Duality (" + boonLabel(b) + ")"); } });
   return ended;
 }
 /* A short name for a boon in play ("+1 AC", "resistance to fire"). */

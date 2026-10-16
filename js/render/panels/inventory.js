@@ -1,6 +1,6 @@
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg } from "../../ui/svg-icons.js";
+import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, draconicBreath, breathDcFormula, breathUsesText, characterResources } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
@@ -12,7 +12,7 @@ import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { renderCurrencyCard } from "./coin-purse.js";
-import { magicItemDef, magicItemActive, holsterKnives, holsterDamageBonus, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, skipBoon, endBoon, activeBoons, boonLabel, coinAttackBonus, nextAttackDamage } from "../../core/magic-items.js";
+import { magicItemDef, magicItemActive, holsterKnives, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, closeEmptyFlip, endBoon, activeBoons, boonLabel } from "../../core/magic-items.js";
 import { pipChanged, pipsRefilled, flash } from "../../ui/fx.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
@@ -462,11 +462,14 @@ function renderUnarmedCard(u){
   return card;
 }
 
-/* A dragonborn's Breath Weapon, from the ancestry picked: its area, save
-   DC (and how it's made up), damage and the level it grows at, and its
-   uses (the "race:breath_weapon" resource: once per short or long rest,
-   or a Fizban's dragonborn's proficiency bonus per long rest). Rolling
-   the damage spends a use; Get one back undoes one spent by mistake. A
+/* A dragonborn's Breath Weapon, from the ancestry picked, kept to what's
+   needed in play: its uses (the "race:breath_weapon" resource: once per
+   short or long rest, or a Fizban's dragonborn's proficiency bonus per
+   long rest) as pips, one line (damage type, area, save DC, action) and
+   the Damage button. Tapping its name (or ⓘ) opens the full details in a
+   bottom sheet: the dragon, how the save works, the DC's make-up, the
+   uses and the level the damage grows at. Rolling the
+   damage spends a use; Get one back undoes one spent by mistake. A
    Metallic dragonborn of level 5+ also has its second breath here. */
 var SAVE_NAMES = {DEX: "Dexterity", CON: "Constitution", STR: "Strength"};
 function renderBreathCard(c, b){
@@ -475,10 +478,14 @@ function renderBreathCard(c, b){
   card.className = "ff-item-card inv-item-card is-equipped inv-breath-card";
   breathBlock(card, c, res.find(function(r){ return r.key==="race:breath_weapon"; }), {
     name: "Breath Weapon",
-    line: [b.dragon, b.area, b.damage, b.save + " save DC " + b.dc, b.attack ? "In place of one attack" : "Action"],
-    text: "Each creature in the area makes a " + SAVE_NAMES[b.save] + " saving throw: full damage on a fail, half on a success.",
-    dc: b,
-    more: breathUsesText(b) + "." + (b.next ? " Damage grows to " + b.next.dice + "d" + b.die + " at level " + b.next.level + "." : ""),
+    line: [b.damage, b.area, b.save + " save DC " + b.dc, b.attack ? "In place of one attack" : "Action"],
+    about: b.dragon,
+    details: [
+      "Each creature in the area makes a " + SAVE_NAMES[b.save] + " saving throw: it takes " + b.dice + "d" + b.die + " " + b.damage.toLowerCase() + " damage on a fail, half as much on a success.",
+      "Save DC " + b.dc + " = " + breathDcFormula(b) + ".",
+      breathUsesText(b) + ".",
+      b.next ? "The damage grows to " + b.next.dice + "d" + b.die + " at level " + b.next.level + "." : ""
+    ],
     buttons: [{html: makeDicesSvg() + "Damage " + b.dice + "d" + b.die, title: "Roll the damage and use one breath",
       roll: function(){ performRoll(b.die, b.dice, 0, "none", "Breath Weapon: Damage (" + b.damage + ")"); }}]
   });
@@ -489,9 +496,13 @@ function renderBreathCard(c, b){
     breathBlock(card, c, res.find(function(r){ return r.key==="race:metallic_breath"; }), {
       name: "Metallic Breath Weapon",
       line: ["15 ft cone", "Save DC " + b.dc, "In place of one attack"],
-      text: "Enervating: each creature makes a Constitution save or is incapacitated until the start of your next turn. Repulsion: a Strength save or it's pushed 20 feet away and knocked prone.",
-      dc: b,
-      more: "Once per long rest.",
+      about: b.dragon,
+      details: [
+        "Enervating: each creature in the cone makes a Constitution saving throw or is incapacitated until the start of your next turn.",
+        "Repulsion: each creature in the cone makes a Strength saving throw or is pushed 20 feet away from you and knocked prone.",
+        "Save DC " + b.dc + " = " + breathDcFormula(b) + ".",
+        "Once per long rest."
+      ],
       buttons: [
         {html: "Enervating", title: "Use it: Constitution save or incapacitated",
           roll: function(){ logRoll("Metallic Breath: Enervating", "15 ft cone. Constitution save DC " + b.dc + " or incapacitated until the start of your next turn."); }},
@@ -501,8 +512,8 @@ function renderBreathCard(c, b){
   }
   return card;
 }
-/* One breath on the card: name and use pips, its line, what the save
-   does, the DC's make-up, uses and growth, and its buttons. */
+/* One breath on the card: name (with ⓘ; a tap opens its details) and use
+   pips, its line, a note only once it's all used, and its buttons. */
 function breathBlock(card, c, r, o){
   var left = r ? r.max - r.used : 0;
   var block = document.createElement("div");
@@ -510,12 +521,20 @@ function breathBlock(card, c, r, o){
   block.dataset.res = r.key;
   var header = document.createElement("div");
   header.className = "inv-card-header";
+  header.addEventListener("click", function(){ openBreathSheet(o, r); });
   var titleGroup = document.createElement("div");
   titleGroup.className = "inv-card-title-group";
   var nameSpan = document.createElement("span");
-  nameSpan.className = "inv-name-inline";
+  nameSpan.className = "inv-name-inline inv-breath-name";
   nameSpan.textContent = o.name;
   titleGroup.appendChild(nameSpan);
+  var info = document.createElement("button");
+  info.type = "button";
+  info.className = "inv-info-btn";
+  info.innerHTML = makeInfoSvg();
+  info.title = "Details";
+  info.setAttribute("aria-label", o.name + ": details");
+  titleGroup.appendChild(info);
   header.appendChild(titleGroup);
   var pips = document.createElement("span");
   pips.className = "inv-holster-pips inv-breath-pips";
@@ -531,15 +550,14 @@ function breathBlock(card, c, r, o){
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = o.line.join(" · ");
   block.appendChild(subtitle);
-  var note = document.createElement("p");
-  note.className = "inv-armor-note" + (left ? " inv-equipped-note" : "");
-  note.textContent = left ? o.text : r.reset==="short" ? "Used. You get it back after a short or long rest." : "All used. They come back after a long rest.";
-  if(!left && r.max===1 && r.reset==="long") note.textContent = "Used. You get it back after a long rest.";
-  block.appendChild(note);
-  var facts = document.createElement("p");
-  facts.className = "inv-breath-facts";
-  facts.textContent = "Save DC " + o.dc.dc + " = " + breathDcFormula(o.dc) + ". " + o.more;
-  block.appendChild(facts);
+  // Only once it's all used: when it comes back (the greyed-out button
+  // can't say so on a phone).
+  if(!left){
+    var note = document.createElement("p");
+    note.className = "inv-armor-note";
+    note.textContent = r.reset==="short" ? "Used. You get it back after a short or long rest." : r.max===1 ? "Used. You get it back after a long rest." : "All used. They come back after a long rest.";
+    block.appendChild(note);
+  }
 
   function setUsed(n){
     var before = r.used;
@@ -570,6 +588,38 @@ function breathBlock(card, c, r, o){
   }
   block.appendChild(actions);
   card.appendChild(block);
+}
+
+/* A breath's full details, in a bottom sheet: its name, the dragon and
+   its line, then a paragraph each (how the save works, the DC's make-up,
+   uses, how it grows). */
+function openBreathSheet(o, r){
+  openBottomSheet(function(body, refresh, close){
+    var header = document.createElement("div");
+    header.className = "bs-header";
+    var title = document.createElement("div");
+    title.className = "bs-title";
+    title.textContent = o.name;
+    header.appendChild(title);
+    var closeBtn = document.createElement("button");
+    closeBtn.className = "bs-close"; closeBtn.textContent = "✕"; closeBtn.title = "Close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.addEventListener("click", close);
+    header.appendChild(closeBtn);
+    body.appendChild(header);
+    var sub = document.createElement("p");
+    sub.className = "bs-subtitle";
+    sub.textContent = [o.about].concat(o.line).filter(Boolean).join(" · ");
+    body.appendChild(sub);
+    var list = document.createElement("div");
+    list.className = "inv-breath-details";
+    o.details.filter(Boolean).concat(r ? [(r.max - r.used) + " of " + r.max + " left now."] : []).forEach(function(t){
+      var para = document.createElement("p");
+      para.textContent = t;
+      list.appendChild(para);
+    });
+    body.appendChild(list);
+  });
 }
 
 function renderWeaponCard(c, item, idx){
@@ -913,6 +963,7 @@ function coinBlock(c, item, idx, coin){
     var face = document.createElement("span");
     face.className = "inv-coin-face " + st.flip;
     face.setAttribute("aria-hidden", "true");
+    face.innerHTML = makeCoinFaceSvg(st.flip);
     landed.appendChild(face);
     var lt = document.createElement("span");
     lt.className = "inv-coin-result";
@@ -933,8 +984,11 @@ function coinBlock(c, item, idx, coin){
       var take = function(type){ if(chooseBoon(c, item, b.id, type)){ logRoll(item.name || "Duality", "Took: " + b.text + (type ? " (" + type + ")" : "") + "."); redrawKeeping(idx); } };
       if(problem){ choices.appendChild(opt); return; }
       if(b.damage && b.damage.types.length > 1){
-        // Fire or necrotic: one button each.
-        b.damage.types.forEach(function(t){ opt.appendChild(smallButton(t, "Take it as " + t.toLowerCase() + " damage", function(){ take(t); })); });
+        // Fire or necrotic: one button each, kept together.
+        var types = document.createElement("span");
+        types.className = "inv-coin-types";
+        b.damage.types.forEach(function(t){ types.appendChild(smallButton(t, "Take it as " + t.toLowerCase() + " damage", function(){ take(t); })); });
+        opt.appendChild(types);
       } else if(b.resistance){
         opt.appendChild(themedPicker({
           key:"coin:resist:" + idx, search:false, placeholder:"Damage type", ariaLabel:"Resistance to which damage type",
@@ -946,18 +1000,18 @@ function coinBlock(c, item, idx, coin){
       choices.appendChild(opt);
     });
     box.appendChild(choices);
-    var skip = document.createElement("button");
-    skip.type = "button"; skip.className = "inv-coin-skip";
-    skip.textContent = "Don't take a boon";
-    skip.addEventListener("click", function(){ skipBoon(item); redrawKeeping(idx); });
-    box.appendChild(skip);
   } else {
     var actions = document.createElement("div");
     actions.className = "inv-roll-actions";
     var flipBtn = smallButton("Flip the coin", charges ? "Spend a charge and flip it, on your turn" : "No charges left: they come back at a long rest", function(){
       var landedOn = flipCoin(item);
       if(!landedOn) return;
-      logRoll(item.name || "Duality", "The coin lands " + coin.sides[landedOn].name.toLowerCase() + ".");
+      var sideName = coin.sides[landedOn].name.toLowerCase();
+      if(closeEmptyFlip(c, item)){
+        // Nothing new to take: the charge is spent all the same.
+        logRoll(item.name || "Duality", "The coin lands " + sideName + ", but all its boons are already in play.");
+        showActionToast("The coin lands " + sideName + ", but all its boons are already in play.");
+      } else logRoll(item.name || "Duality", "The coin lands " + sideName + ".");
       redrawKeeping(idx);
       var drawnBox = document.querySelector('.inv-coin[data-idx="' + idx + '"]');
       if(drawnBox){
@@ -977,10 +1031,15 @@ function coinBlock(c, item, idx, coin){
     list.className = "inv-coin-boons";
     mine.forEach(function(b){
       var line = document.createElement("div");
-      line.className = "inv-coin-boon";
+      line.className = "inv-coin-boon " + b.side;
+      // A small face says which side it came from.
+      var mini = document.createElement("span");
+      mini.className = "inv-coin-mini";
+      mini.innerHTML = makeCoinFaceSvg(b.side);
+      line.appendChild(mini);
       var t = document.createElement("span");
       t.className = "inv-coin-boon-text";
-      t.textContent = boonLabel(b).charAt(0).toUpperCase() + boonLabel(b).slice(1) + (b.def.minutes ? " · " + b.def.minutes + " minutes" : " · until used");
+      t.textContent = boonLabel(b).charAt(0).toUpperCase() + boonLabel(b).slice(1) + (b.def.minutes ? " · " + b.def.minutes + " minutes" : " · until used or a long rest");
       line.appendChild(t);
       if(b.def.damage) line.appendChild(damageBoonButton(item, b));
       line.appendChild(smallButton("End", "End this boon", function(){ endBoon(item, b.def.id); redrawKeeping(idx); }));
@@ -1137,33 +1196,6 @@ export function renderInventoryPanel(c){
   // Weapons
   var weaponCard = makeCard("Weapons");
   weaponCard.appendChild(handsSummary(c));
-  // A bonus on every weapon is said once here, not on each card (the
-  // damage buttons include it).
-  var holsterBonus = holsterDamageBonus(c);
-  if(holsterBonus){
-    var allBonus = document.createElement("p");
-    allBonus.className = "inv-all-weapons";
-    allBonus.textContent = "Heavy Holster: +" + holsterBonus + " damage on every weapon";
-    weaponCard.appendChild(allBonus);
-  }
-  // Duality's boons for attacks: +1 to hit (in the numbers below), and
-  // extra damage on the next attack, rolled from here on a hit.
-  var coinHit = coinAttackBonus(c);
-  if(coinHit){
-    var hitLine = document.createElement("p");
-    hitLine.className = "inv-all-weapons";
-    hitLine.textContent = "Duality: +" + coinHit + " to attack rolls";
-    weaponCard.appendChild(hitLine);
-  }
-  nextAttackDamage(c).forEach(function(n){
-    var dmgLine = document.createElement("div");
-    dmgLine.className = "inv-all-weapons inv-all-weapons-roll";
-    var dt = document.createElement("span");
-    dt.textContent = "Duality: next attack +" + n.qty + "d" + n.die + " " + n.type.toLowerCase();
-    dmgLine.appendChild(dt);
-    dmgLine.appendChild(damageBoonButton(n.item, {def: n.def, type: n.type}));
-    weaponCard.appendChild(dmgLine);
-  });
   warnings(weaponCard, "hands");
   var weaponList = document.createElement("div");
   weaponList.className = "ff-items-list inv-items-list";

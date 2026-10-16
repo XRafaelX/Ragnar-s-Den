@@ -627,14 +627,15 @@ export function renderVitalsPanel(c){
         if(c.spellcasting.pact) c.spellcasting.pact.used = 0;
         c.rage.used = 0;
         endAllEffects(c); // also ends Rage
-        endTimedBoons(c);
-        var recharged = magicItemsOnLongRest(c);
+        // Magic items: charges back at dawn, the day's boons over.
+        var items = magicItemsOnLongRest(c);
         restoreResources(c, "long");
         restoreCompanions(c);
         var elixirs = elixirsOnLongRest(c);
         logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered."+
           (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : "")+
-          (recharged.length ? " Recharged: "+recharged.join(", ")+"." : ""));
+          (items.recharged.length ? " Recharged: "+items.recharged.join(", ")+"." : "")+
+          (items.ended.length ? " Ended: "+items.ended.join(", ")+"." : ""));
         save(); renderAll();
         // Night falls, then at dawn hit points and resources come back.
         restScene("long");

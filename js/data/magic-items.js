@@ -16,7 +16,7 @@
      coin        a coin flipped for a boon: charges (all back at a long
                  rest) and its sides, each {name, boons}. A boon is {id,
                  text} plus what it does: minutes (lasts that long, else
-                 until used), ac / attack (bonus to AC / attack rolls),
+                 until used or a long rest), ac / attack (bonus to AC / attack rolls),
                  checkAdvantage (on the next ability check), damage
                  {qty, die, types} (extra damage on the next attack, of a
                  type chosen from `types`), resistance (to a damage type

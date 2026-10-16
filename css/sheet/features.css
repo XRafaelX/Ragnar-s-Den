@@ -68,6 +68,15 @@
 .ff-desc{
   font-size:12.5px;line-height:1.45;color:var(--text-on-parch);margin-top:8px;white-space:pre-line;
 }
+/* A card shows two lines of its description; a tap opens the rest. */
+.ff-desc-short{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;}
+.ff-tappable{cursor:pointer;}
+.ff-tappable:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.ff-more{flex:none;display:flex;align-items:center;color:var(--text-on-parch-dim);margin-top:1px;transition:color .15s ease, transform .15s ease;}
+@media (hover:hover){ .ff-tappable:hover .ff-more{color:var(--brass-bright);transform:translateX(2px);} }
+.ff-sheet-desc{margin-top:0;font-size:13px;line-height:1.55;}
+.ff-sheet-actions{display:flex;gap:8px;margin-top:16px;}
+.ff-sheet-danger{color:#fca5a5;border-color:rgba(217,69,95,.45);}
 .ff-actions{
   display:flex;gap:6px;align-items:center;
 }

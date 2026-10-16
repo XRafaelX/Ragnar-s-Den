@@ -271,25 +271,33 @@
 .inv-armor-note{font-size:11.5px;color:var(--text-on-parch-dim);font-style:italic;margin:0;}
 
 /* Hands in use (Weapons card) and equip-rule warnings. */
-.inv-all-weapons{font-size:12.5px;color:var(--brass-bright);margin:-4px 0 10px;}
-.inv-all-weapons-roll{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;}
 
 /* The Duality coin: the side it landed on, its boons to choose from, and
    the ones in play. The face spins when it's flipped (js/ui/fx.js). */
 .inv-coin{display:flex;flex-direction:column;gap:8px;margin-top:2px;}
 .inv-coin-landed{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--text-on-parch);font-weight:600;}
-.inv-coin-face{
-  flex:none;width:30px;height:30px;border-radius:50%;
-  border:2px solid var(--coin-edge, var(--brass));
-  background:radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--coin-tint) 45%, #fff), var(--coin-tint) 62%, color-mix(in srgb, var(--coin-tint) 60%, #000));
-  box-shadow:0 0 10px color-mix(in srgb, var(--coin-tint) 45%, transparent);
+.inv-coin-face{flex:none;width:44px;height:44px;display:block;border-radius:50%;}
+.coin-face-svg{width:100%;height:100%;display:block;}
+/* After it lands: the angel side shimmers gold, the demon side smoulders. */
+.inv-coin-face.angel{animation:coin-shimmer 2.8s ease-in-out infinite;}
+.inv-coin-face.demon{animation:coin-ember 1.9s ease-in-out infinite;}
+@keyframes coin-shimmer{
+  0%,100%{box-shadow:0 0 6px rgba(253,230,138,.35);}
+  50%{box-shadow:0 0 18px rgba(253,230,138,.85), 0 0 30px rgba(242,198,80,.35);}
 }
-.inv-coin-face.angel{--coin-tint:#f5d27a;--coin-edge:#fde68a;}
-.inv-coin-face.demon{--coin-tint:#b4233f;--coin-edge:#f87171;}
-.fx-coin-flip{animation:fx-coin-flip .9s cubic-bezier(.2,.7,.3,1) var(--fx-delay, 0ms) both;}
+@keyframes coin-ember{
+  0%,100%{box-shadow:0 0 6px rgba(248,113,113,.35);}
+  35%{box-shadow:0 0 16px rgba(248,113,113,.8), 0 0 26px rgba(192,38,63,.45);}
+  55%{box-shadow:0 0 9px rgba(248,113,113,.5);}
+  75%{box-shadow:0 0 20px rgba(255,138,122,.85), 0 0 30px rgba(192,38,63,.4);}
+}
+.inv-coin-landed.angel .inv-coin-result{color:#fde68a;}
+.inv-coin-landed.demon .inv-coin-result{color:#fca5a5;}
+.inv-coin-mini{flex:none;width:20px;height:20px;display:block;}
+.inv-coin-face.fx-coin-flip{animation:fx-coin-flip .9s cubic-bezier(.2,.7,.3,1) var(--fx-delay, 0ms) both;}
 @keyframes fx-coin-flip{
   0%{transform:translateY(0) rotateX(0);}
-  45%{transform:translateY(-14px) rotateX(900deg);}
+  45%{transform:translateY(-8px) rotateX(900deg);}
   100%{transform:translateY(0) rotateX(1800deg);}
 }
 .inv-coin-choices{display:flex;flex-direction:column;gap:6px;}
@@ -299,12 +307,12 @@
 }
 .inv-coin-choice .themed-picker, .inv-coin-choice .tp-trigger{min-width:150px;}
 .inv-coin-choice.blocked{opacity:.5;}
+.inv-coin-types{display:flex;gap:6px;flex:none;}
 .inv-coin-choice-text{flex:1 1 200px;font-size:12.5px;color:var(--text-on-parch);line-height:1.4;}
-.inv-coin-skip{align-self:flex-start;background:none;border:none;padding:2px 0;font-size:12px;color:var(--text-on-parch-dim);text-decoration:underline;cursor:pointer;}
 .inv-coin-boons{display:flex;flex-direction:column;gap:6px;}
 .inv-coin-boon{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;font-size:12.5px;color:var(--brass-bright);}
 .inv-coin-boon-text{flex:1 1 180px;}
-@media (prefers-reduced-motion: reduce){ .fx-coin-flip{animation:none;} }
+@media (prefers-reduced-motion: reduce){ .fx-coin-flip, .inv-coin-face.angel, .inv-coin-face.demon{animation:none;} }
 .inv-hands{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-on-parch-dim);margin:-4px 0 10px;}
 .inv-hand-pips{display:inline-flex;gap:4px;}
 .inv-hand-pip{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--brass);}
@@ -331,7 +339,14 @@
 .inv-breath-card .inv-card-header{cursor:default;}
 .inv-breath{display:flex;flex-direction:column;gap:4px;}
 .inv-breath .inv-armor-note{margin:2px 0 0;}
-.inv-breath-facts{font-size:12px;color:var(--text-on-parch-dim);margin:0;line-height:1.45;}
+/* The Breath Weapon's name opens its details: ⓘ says so. */
+.inv-breath .inv-card-header{cursor:pointer;}
+.inv-breath-name{flex:0 1 auto;}
+.inv-info-btn{flex:none;display:inline-flex;align-items:center;justify-content:center;background:none;border:none;padding:2px;margin-left:2px;color:var(--text-on-parch-dim);cursor:pointer;border-radius:50%;}
+.inv-info-btn:hover{color:var(--brass-bright);}
+.inv-info-btn:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+@media (pointer:coarse){ .inv-info-btn{padding:6px;margin:-4px 0;} }
+.inv-breath-details p{font-size:13px;line-height:1.5;color:var(--text-on-parch);margin:0 2px 10px;}
 .inv-breath-sep{border-top:1px solid var(--rule);margin:12px 0 10px;}
 .inv-breath.is-spent .inv-name-inline{color:color-mix(in srgb, var(--text-on-parch) 70%, var(--text-on-parch-dim));}
 /* A magic item's line under its name; "attuned" in the accent colour. */

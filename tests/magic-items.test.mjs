@@ -157,12 +157,28 @@ test("Duality: 2 charges, a flip spends one, then one boon from that side", () =
   assert.deepEqual(MI.activeBoons(c).map((b) => b.def.id), ["angel_ac", "angel_radiant"]);
   assert.deepEqual(MI.nextAttackDamage(c).map((n) => [n.qty, n.die, n.type]), [[2, 8, "Radiant"]]);
 
-  // A long rest brings the charges back; a rest ends the 10-minute boons
-  // and keeps the one waiting for the next attack.
-  assert.deepEqual(MI.magicItemsOnLongRest(c), ["Duality"]);
-  assert.equal(MI.coinCharges(coin), 2);
+  // A short rest ends the 10-minute boons and keeps the one waiting for
+  // the next attack; a long rest brings the charges back and ends that too,
+  // so boons can't stack up from one day to the next.
   assert.deepEqual(MI.endTimedBoons(c), ["Duality (+1 AC)"]);
   assert.deepEqual(MI.activeBoons(c).map((b) => b.def.id), ["angel_radiant"]);
+  assert.deepEqual(MI.magicItemsOnLongRest(c), { recharged: ["Duality"], ended: ["Duality (next attack +2d8 radiant)"] });
+  assert.equal(MI.coinCharges(coin), 2);
+  assert.deepEqual(MI.activeBoons(c), []);
+  MI.flipCoin(coin, () => 0.1);
+  MI.magicItemsOnLongRest(c);
+  assert.deepEqual([coin.coin.flip, MI.coinCharges(coin)], ["", 2], "a flip still waiting for its choice is dropped too");
+
+  // A side whose boons are all in play has nothing to choose: the flip ends
+  // (only from an older save now, but the coin must never get stuck).
+  coin.coin = { used: 0, flip: "", boons: [{ id: "angel_radiant", type: "Radiant" }] };
+  assert.equal(MI.flipCoin(coin, () => 0.1), "angel");
+  assert.equal(MI.closeEmptyFlip(c, coin), false, "two of the angel boons are still open");
+  MI.chooseBoon(c, coin, "angel_check");
+  coin.coin.boons.push({ id: "angel_ac" });
+  assert.equal(MI.flipCoin(coin, () => 0.1), "angel");
+  assert.equal(MI.closeEmptyFlip(c, coin), true, "all three in play");
+  assert.deepEqual([coin.coin.flip, MI.coinCharges(coin)], ["", 0], "the flip is over, its charge spent");
 });
 
 test("Duality: the boons on the sheet (AC, attack rolls, next ability check, extra damage, resistance)", () => {
