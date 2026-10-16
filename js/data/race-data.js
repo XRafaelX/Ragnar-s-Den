@@ -68,15 +68,58 @@ export var DRACONIC_ANCESTRIES = {
   "Silver dragon": {damage:"Cold",      area:"15 ft cone",      save:"CON"},
   "White dragon":  {damage:"Cold",      area:"15 ft cone",      save:"CON"}
 };
-function draconicAncestryPick(){
-  var details = {};
-  Object.keys(DRACONIC_ANCESTRIES).forEach(function(n){
-    var a = DRACONIC_ANCESTRIES[n];
-    details[n] = a.damage + ": " + a.area + " breath, " + a.save + " save, and resistance to " + a.damage.toLowerCase() + " damage";
-  });
-  return {pick:[{kind:"choice", id:"draconicAncestry", noun:"draconic ancestry", label:"Choose your dragon ancestor",
-    options:Object.keys(DRACONIC_ANCESTRIES), details:details}]};
+/* Fizban's ancestries only set the damage type; the race sets the area. */
+function fizbanAncestries(types){
+  var out = {};
+  Object.keys(types).forEach(function(d){ out[d + " dragon"] = {damage:types[d]}; });
+  return out;
 }
+/* Every kind of dragonborn's breath weapon, by race (checked against the
+   Player's Handbook, Fizban's Treasury of Dragons and Explorer's Guide to
+   Wildemount texts 2026-10-16). The save DC is always 8 + CON modifier +
+   proficiency bonus.
+   trait:      the ancestry trait the dragon is picked on.
+   ancestries: {dragon: {damage, area?, save?}}; area and save fall back
+               to the race's own.
+   die, steps: the damage die and [character level, dice] steps.
+   uses:       "once" (once per short or long rest) or "pb" (your
+               proficiency bonus times per long rest).
+   attack:     true when it replaces one attack of the Attack action
+               rather than taking your action.
+   resistance: true when the ancestry also gives resistance (Wildemount's
+               Draconblood and Ravenite trade it away).
+   metallic:   Metallic Breath Weapon, a second breath from level 5. */
+var PHB_BREATH = {trait:"Draconic Ancestry", ancestries:DRACONIC_ANCESTRIES, die:6,
+  steps:[[1, 2], [6, 3], [11, 4], [16, 5]], uses:"once", attack:false, resistance:true};
+var FIZBAN_BREATH = {die:10, steps:[[1, 1], [5, 2], [11, 3], [17, 4]], uses:"pb", attack:true, resistance:true, save:"DEX"};
+export var DRAGONBORN_BREATH = {
+  "Dragonborn": PHB_BREATH,
+  "Dragonborn (Draconblood)": Object.assign({}, PHB_BREATH, {resistance:false}),
+  "Dragonborn (Ravenite)": Object.assign({}, PHB_BREATH, {resistance:false}),
+  "Dragonborn (Chromatic)": Object.assign({}, FIZBAN_BREATH, {trait:"Chromatic Ancestry", area:"5 by 30 ft line",
+    ancestries:fizbanAncestries({Black:"Acid", Blue:"Lightning", Green:"Poison", Red:"Fire", White:"Cold"})}),
+  "Dragonborn (Metallic)": Object.assign({}, FIZBAN_BREATH, {trait:"Metallic Ancestry", area:"15 ft cone", metallic:true,
+    ancestries:fizbanAncestries({Brass:"Fire", Bronze:"Lightning", Copper:"Acid", Gold:"Fire", Silver:"Cold"})}),
+  "Dragonborn (Gem)": Object.assign({}, FIZBAN_BREATH, {trait:"Gem Ancestry", area:"15 ft cone",
+    ancestries:fizbanAncestries({Amethyst:"Force", Crystal:"Radiant", Emerald:"Psychic", Sapphire:"Thunder", Topaz:"Necrotic"})})
+};
+/* The ancestry trait's pick, each dragon with what it gives. */
+function ancestryPick(race){
+  var kind = DRAGONBORN_BREATH[race], details = {};
+  Object.keys(kind.ancestries).forEach(function(n){
+    var a = kind.ancestries[n], type = a.damage.toLowerCase();
+    details[n] = a.damage + ": " + (a.area || kind.area) + " breath, " + (a.save || kind.save) + " save" +
+      (kind.resistance ? ", and resistance to " + type + " damage" : "");
+  });
+  return {pick:[{kind:"choice", id:"draconicAncestry", noun:"dragon ancestor", label:"Choose your dragon ancestor",
+    options:Object.keys(kind.ancestries), details:details}]};
+}
+/* The Player's Handbook breath weapon, shared with Wildemount's variants. */
+var PHB_BREATH_TRAIT = tr("Breath Weapon", "Action: exhale your ancestry's damage type in its line or cone. Creatures in it make a save (DC 8 + CON + proficiency bonus), taking 2d6 on a fail (3d6 at level 6, 4d6 at 11, 5d6 at 16) or half on a success. Once per short or long rest.");
+function fizbanBreathTrait(area){
+  return tr("Breath Weapon", "When you take the Attack action, replace one attack with a " + area + " of your ancestry's damage type. Creatures in it make a DEX save (DC 8 + CON + proficiency bonus), taking 1d10 on a fail (2d10 at level 5, 3d10 at 11, 4d10 at 17) or half on a success. Uses equal to your proficiency bonus, all back after a long rest.");
+}
+var FIZBAN_RESISTANCE = tr("Draconic Resistance", "Resistance to your ancestry's damage type.");
 
 export var RACE_DATA = {
   /* ---- Standard (SRD / Player's Handbook) ---- */
@@ -118,8 +161,8 @@ export var RACE_DATA = {
   "Dragonborn": {asi:{str:2,cha:1}, size:"Medium", speed:{walk:30}, darkvision:0,
     languages:{fixed:["Common","Draconic"]}, source:"Player's Handbook",
     traits:[
-      tr("Draconic Ancestry", "Choose a dragon type; it sets your breath weapon and resistance damage type.", draconicAncestryPick()),
-      tr("Breath Weapon", "Action: exhale your ancestry's damage type in its line or cone. Creatures in it make a save (DC 8 + CON + proficiency bonus), taking 2d6 on a fail (3d6 at level 6, 4d6 at 11, 5d6 at 16) or half on a success. Once per short or long rest."),
+      tr("Draconic Ancestry", "Choose a dragon type; it sets your breath weapon and resistance damage type.", ancestryPick("Dragonborn")),
+      PHB_BREATH_TRAIT,
       tr("Damage Resistance", "Resistance to the damage type of your draconic ancestry.")]},
   "Rock Gnome": {asi:{int:2,con:1}, size:"Small", speed:{walk:25}, darkvision:60,
     languages:{fixed:["Common","Gnomish"]}, source:"Player's Handbook",
@@ -178,6 +221,32 @@ export var RACE_DATA = {
     languages:{fixed:["Common","Gnomish","Undercommon"]}, source:"Mordenkainen's Tome of Foes",
     traits:[tr("Superior Darkvision", "Darkvision out to 120 feet."), GNOME_CUNNING,
       tr("Stone Camouflage", "Advantage on Stealth checks to hide in rocky terrain.")]},
+  "Dragonborn (Chromatic)": {asiText:"+2 to one score and +1 to another (your choice)", size:"Medium", speed:{walk:30}, darkvision:0,
+    languages:{fixed:["Common"], choose:1}, source:"Fizban's Treasury of Dragons",
+    traits:[tr("Chromatic Ancestry", "Choose a chromatic dragon; it sets the damage type of your other traits.", ancestryPick("Dragonborn (Chromatic)")),
+      fizbanBreathTrait("5 by 30 ft line"), FIZBAN_RESISTANCE,
+      tr("Chromatic Warding", "From level 5, action: become immune to your ancestry's damage type for 1 minute. Once per long rest.")]},
+  "Dragonborn (Draconblood)": {asi:{int:2,cha:1}, size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Draconic"]}, source:"Explorer's Guide to Wildemount",
+    traits:[tr("Draconic Ancestry", "Choose a dragon type; it sets your breath weapon's damage type, area and save.", ancestryPick("Dragonborn (Draconblood)")),
+      PHB_BREATH_TRAIT,
+      tr("Forceful Presence", "Make a Charisma (Intimidation or Persuasion) check with advantage. Once per short or long rest.")]},
+  "Dragonborn (Gem)": {asiText:"+2 to one score and +1 to another (your choice)", size:"Medium", speed:{walk:30}, darkvision:0,
+    languages:{fixed:["Common"], choose:1}, source:"Fizban's Treasury of Dragons",
+    traits:[tr("Gem Ancestry", "Choose a gem dragon; it sets the damage type of your other traits.", ancestryPick("Dragonborn (Gem)")),
+      fizbanBreathTrait("15 ft cone"), FIZBAN_RESISTANCE,
+      tr("Psionic Mind", "Send telepathic messages to a creature you can see within 30 feet. It needs no shared language, but must understand at least one."),
+      tr("Gem Flight", "From level 5, bonus action: spectral wings for 1 minute give a flying speed equal to your walking speed, and you can hover. Once per long rest.")]},
+  "Dragonborn (Metallic)": {asiText:"+2 to one score and +1 to another (your choice)", size:"Medium", speed:{walk:30}, darkvision:0,
+    languages:{fixed:["Common"], choose:1}, source:"Fizban's Treasury of Dragons",
+    traits:[tr("Metallic Ancestry", "Choose a metallic dragon; it sets the damage type of your other traits.", ancestryPick("Dragonborn (Metallic)")),
+      fizbanBreathTrait("15 ft cone"), FIZBAN_RESISTANCE,
+      tr("Metallic Breath Weapon", "From level 5, replace one attack with a second breath in a 15 ft cone (DC 8 + CON + proficiency bonus): Enervating Breath (CON save or incapacitated until the start of your next turn) or Repulsion Breath (STR save or pushed 20 feet away and knocked prone). Once per long rest.")]},
+  "Dragonborn (Ravenite)": {asi:{str:2,con:1}, size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Draconic"]}, source:"Explorer's Guide to Wildemount",
+    traits:[tr("Draconic Ancestry", "Choose a dragon type; it sets your breath weapon's damage type, area and save.", ancestryPick("Dragonborn (Ravenite)")),
+      PHB_BREATH_TRAIT,
+      tr("Vengeful Assault", "Reaction when a creature within range of a weapon you're wielding damages you: make one attack with that weapon against it. Once per short or long rest.")]},
   "Duergar": {asi:{con:2,str:1}, size:"Medium", speed:{walk:25}, darkvision:120,
     languages:{fixed:["Common","Dwarvish","Undercommon"]}, source:"Mordenkainen's Tome of Foes",
     // A dwarf subrace: the dwarf's own traits, then the duergar's.
@@ -302,7 +371,7 @@ export var RACE_DATA = {
     languages:{fixed:["Common","Elvish"]}, source:"Mordenkainen's Tome of Foes",
     traits:ELF_BASE.concat([
       tr("Necrotic Resistance", "Resistance to necrotic damage."),
-      tr("Blessing of the Raven Queen", "Bonus action: teleport up to 15 feet (from level 3 you also gain resistance to all damage until your next turn). Once per long rest.")])},
+      tr("Blessing of the Raven Queen", "Bonus action: teleport up to 30 feet (from level 3 you also gain resistance to all damage until your next turn). Once per long rest.")])},
   "Shifter": {asiText:"Depends on your shifter type: Beasthide +2 CON +1 STR, Longtooth +2 STR +1 DEX, Swiftstride +2 DEX +1 CHA, Wildhunt +2 WIS +1 DEX", size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common"]}, source:"Eberron: Rising from the Last War",
     traits:[tr("Keen Senses", "Proficiency in the Perception skill.", {skills:["Perception"]}),

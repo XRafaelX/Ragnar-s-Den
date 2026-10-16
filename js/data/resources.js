@@ -822,3 +822,90 @@ export var FEAT_RESOURCES = {
       hint:"As a bonus action, flourish the card you imbued after your long rest and cast its spell."}
   ]
 };
+
+/* Race traits with uses, keyed by race name: each race's original
+   version, as the rest of the app (checked against the Player's Handbook,
+   Volo's Guide, Mordenkainen's Tome of Foes, Eberron, Ravnica, The Wild
+   Beyond the Witchlight, Fizban's Treasury and Wildemount texts
+   2026-10-16). `level` is the character level it starts at; max(lv, m)
+   and reset(lv) work as for classes, with `lv` the character level. A
+   race's innate spells (Drow Magic, Infernal Legacy) aren't here, and a
+   dragonborn's breath weapons are on the Inventory tab (see
+   draconicBreath). */
+var ONCE = always(1);
+export var RACE_RESOURCES = {
+  "Half-Orc": [
+    {id:"relentless_endurance", name:"Relentless Endurance", max:ONCE, reset:always("long"),
+      hint:"When you drop to 0 HP but aren't killed outright, drop to 1 HP instead."}
+  ],
+  "Aasimar": [
+    {id:"healing_hands", name:"Healing Hands", max:ONCE, reset:always("long"),
+      hint:"Action: touch a creature to restore hit points equal to your level."},
+    {id:"celestial_revelation", name:"Celestial Revelation", level:3, max:ONCE, reset:always("long"),
+      hint:"Action: transform for 1 minute (your subrace's Radiant Soul, Radiant Consumption or Necrotic Shroud); once a turn, extra damage equal to your level."}
+  ],
+  "Dragonborn (Chromatic)": [
+    {id:"chromatic_warding", name:"Chromatic Warding", level:5, max:ONCE, reset:always("long"),
+      hint:"Action: immunity to your ancestry's damage type for 1 minute."}
+  ],
+  "Dragonborn (Draconblood)": [
+    {id:"forceful_presence", name:"Forceful Presence", max:ONCE, reset:always("short"),
+      hint:"Make a Charisma (Intimidation or Persuasion) check with advantage."}
+  ],
+  "Dragonborn (Gem)": [
+    {id:"gem_flight", name:"Gem Flight", level:5, max:ONCE, reset:always("long"),
+      hint:"Bonus action: spectral wings for 1 minute, flying at your walking speed and able to hover."}
+  ],
+  "Dragonborn (Ravenite)": [
+    {id:"vengeful_assault", name:"Vengeful Assault", max:ONCE, reset:always("short"),
+      hint:"Reaction when a creature in range of your weapon damages you: attack it with that weapon."}
+  ],
+  "Eladrin": [
+    {id:"fey_step", name:"Fey Step", max:ONCE, reset:always("short"),
+      hint:"Bonus action: teleport up to 30 ft to a space you can see; from level 3 your season adds an effect."}
+  ],
+  "Firbolg": [
+    {id:"hidden_step", name:"Hidden Step", max:ONCE, reset:always("short"),
+      hint:"Bonus action: turn invisible until the start of your next turn, or until you attack, roll damage or force a save."}
+  ],
+  "Goblin": [
+    {id:"fury_of_the_small", name:"Fury of the Small", max:ONCE, reset:always("short"),
+      hint:"When you damage a larger creature with an attack or spell, deal extra damage equal to your level."}
+  ],
+  "Goliath": [
+    {id:"stones_endurance", name:"Stone's Endurance", max:ONCE, reset:always("short"),
+      hint:"Reaction when you take damage: reduce it by 1d12 + your CON modifier."}
+  ],
+  "Harengon": [
+    {id:"rabbit_hop", name:"Rabbit Hop", max:profBonusUses(), reset:always("long"),
+      hint:"Bonus action: jump 5 × your proficiency bonus in feet without provoking opportunity attacks."}
+  ],
+  "Hobgoblin": [
+    {id:"saving_face", name:"Saving Face", max:ONCE, reset:always("short"),
+      hint:"After a missed attack or failed check or save, add the number of allies you can see within 30 ft (up to +5)."}
+  ],
+  "Kobold": [
+    {id:"grovel_cower_beg", name:"Grovel, Cower and Beg", max:ONCE, reset:always("short"),
+      hint:"Action: until the end of your next turn, allies have advantage on attacks against enemies within 10 ft of you that you can see."}
+  ],
+  "Lizardfolk": [
+    {id:"hungry_jaws", name:"Hungry Jaws", max:ONCE, reset:always("short"),
+      hint:"Bonus action: a bite attack; on a hit, gain temporary HP equal to your CON modifier (at least 1)."}
+  ],
+  "Shadar-kai": [
+    {id:"blessing_raven_queen", name:"Blessing of the Raven Queen", max:ONCE, reset:always("long"),
+      hint:"Bonus action: teleport up to 30 ft to a space you can see; from level 3, resistance to all damage until your next turn."}
+  ],
+  "Shifter": [
+    {id:"shifting", name:"Shifting", max:ONCE, reset:always("short"),
+      hint:"Bonus action: shift for 1 minute, with temporary HP equal to your level + CON modifier and your shifter type's bonus."}
+  ],
+  "Tabaxi": [
+    {id:"feline_agility", name:"Feline Agility", max:ONCE, reset:always("manual"),
+      hint:"When you move on your turn, double your speed until the end of the turn. Regain it after a turn where you move 0 ft."}
+  ],
+  "Vedalken": [
+    {id:"partially_amphibious", name:"Partially Amphibious", max:ONCE, reset:always("long"),
+      hint:"Breathe underwater for up to 1 hour."}
+  ]
+};

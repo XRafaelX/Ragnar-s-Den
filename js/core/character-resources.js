@@ -2,7 +2,7 @@
    The uses a character has right now (class, subclass, feat and
    invocation ones), what a rest restores, rage numbers and hit dice. */
 import { HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
-import { CLASS_RESOURCES, SUBCLASS_RESOURCES, FEAT_RESOURCES } from "../data/resources.js";
+import { CLASS_RESOURCES, SUBCLASS_RESOURCES, FEAT_RESOURCES, RACE_RESOURCES } from "../data/resources.js";
 import { featDef, featSpellEntries } from "./feat-picks.js";
 import { invocationResources } from "./invocations.js";
 import { knownOptions as knownClassOptions } from "./class-options.js";
@@ -42,6 +42,19 @@ export function characterResources(c){
         max: max, used: max===Infinity ? 0 : clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
         reset: r.reset(lv)
       });
+    });
+  });
+  // Race traits with uses (Relentless Endurance, Fey Step), from the
+  // character level they start at.
+  var charLv = totalLevel(c);
+  (RACE_RESOURCES[c.race]||[]).forEach(function(r){
+    if(charLv < (r.level||1)) return;
+    var key = "race:"+r.id, max = r.max(charLv, m);
+    list.push({
+      // "Chromatic Dragonborn", not "Dragonborn (Chromatic)": Vitals puts the source in brackets.
+      key: key, name: r.name, source: c.race.replace(/^(.+) \((.+)\)$/, "$2 $1"), hint: r.hint, pool: false,
+      max: max, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
+      reset: r.reset(charLv)
     });
   });
   // Feats with uses. One that `joins` a class pool adds to it when the
@@ -84,12 +97,18 @@ export function characterResources(c){
       });
     });
   });
-  // A dragonborn's Breath Weapon, once per short or long rest. Its card is
-  // with the weapons on the Inventory tab.
-  if(draconicBreath(c)){
-    list.push({key: "race:breath_weapon", name: "Breath Weapon", source: "Dragonborn", place: "inventory", pool: false,
-      hint: "Action: exhale your draconic ancestry's damage.", max: 1,
-      used: clamp(Number((c.resourcesUsed||{})["race:breath_weapon"])||0, 0, 1), reset: "short"});
+  // A dragonborn's Breath Weapon (once per short or long rest, or a
+  // Fizban's dragonborn's proficiency bonus per long rest) and a Metallic
+  // dragonborn's second breath. Their card is with the weapons on the
+  // Inventory tab.
+  var breath = draconicBreath(c);
+  if(breath){
+    list.push({key: "race:breath_weapon", name: "Breath Weapon", source: c.race, place: "inventory", pool: false,
+      hint: "Exhale your draconic ancestry's damage.", max: breath.uses,
+      used: clamp(Number((c.resourcesUsed||{})["race:breath_weapon"])||0, 0, breath.uses), reset: breath.reset});
+    if(breath.metallic) list.push({key: "race:metallic_breath", name: "Metallic Breath Weapon", source: c.race, place: "inventory", pool: false,
+      hint: "Enervating or Repulsion Breath in a 15 ft cone.", max: 1,
+      used: clamp(Number((c.resourcesUsed||{})["race:metallic_breath"])||0, 0, 1), reset: "long"});
   }
   // Superior Technique (Tasha's fighting style): one d6 superiority die,
   // added to a pool the character already has (Battle Master, Martial Adept).

@@ -292,10 +292,15 @@
 .inv-holster-row{display:flex;align-items:center;gap:10px;}
 .inv-holster-pips{display:inline-flex;gap:5px;}
 .inv-holster-count{font-size:12.5px;color:var(--text-on-parch-dim);}
-/* A dragonborn's Breath Weapon (Weapons card): one use pip at the right;
-   dimmed once used. */
+/* A dragonborn's Breath Weapon (Weapons card): use pips at the right,
+   the DC's make-up and growth in a quiet line, a rule before a Metallic
+   dragonborn's second breath; a spent breath's name is dimmed. */
 .inv-breath-card .inv-card-header{cursor:default;}
-.inv-item-card.inv-breath-card.is-spent .inv-name-inline{color:color-mix(in srgb, var(--text-on-parch) 70%, var(--text-on-parch-dim));}
+.inv-breath{display:flex;flex-direction:column;gap:4px;}
+.inv-breath .inv-armor-note{margin:2px 0 0;}
+.inv-breath-facts{font-size:12px;color:var(--text-on-parch-dim);margin:0;line-height:1.45;}
+.inv-breath-sep{border-top:1px solid var(--rule);margin:12px 0 10px;}
+.inv-breath.is-spent .inv-name-inline{color:color-mix(in srgb, var(--text-on-parch) 70%, var(--text-on-parch-dim));}
 /* A magic item's line under its name; "attuned" in the accent colour. */
 .inv-attune-state.on{color:var(--brass-bright);}
 .inv-thrown-note{color:var(--brass-bright);}

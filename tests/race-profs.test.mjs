@@ -8,11 +8,12 @@ import assert from "node:assert/strict";
 import * as H from "../js/core/helpers.js";
 import * as CP from "../js/core/class-picks.js";
 import * as W from "../js/wizard/wizard-core.js";
-import { TOOL_GROUPS } from "../js/core/feat-picks.js";
+import { TOOL_GROUPS, featDef, featRequiresReason } from "../js/core/feat-picks.js";
 import { RACE_DATA, DRACONIC_ANCESTRIES } from "../js/data/race-data.js";
+import { RACE_RESOURCES } from "../js/data/resources.js";
 import { draconicBreathText, draconicBreath } from "../js/core/class-features.js";
 import { characterResources, restoreResources } from "../js/core/character-resources.js";
-import { RACE_CHOICES } from "../js/data/races.js";
+import { RACE_CHOICES, RACES } from "../js/data/races.js";
 import { SKILLS } from "../js/data/abilities-skills.js";
 import { WEAPON_DATA } from "../js/data/weapons.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
@@ -294,8 +295,9 @@ test("wizard: a dragonborn picks a draconic ancestry, and the sheet works out th
   assert.match(CP.racePicksText(c), /^Draconic Ancestry: Green dragon$/);
   // CON 16 (14 + nothing from the race), level 1: DC 8 + 3 + 2.
   c.abilities.con = 16;
-  assert.equal(draconicBreathText(c), "Breath Weapon (Green dragon): 15 ft cone, CON save DC 13, 2d6 poison damage (half on a success). Once per short or long rest.\nDamage Resistance: poison.");
-  assert.deepEqual(draconicBreath(c), { dragon: "Green dragon", damage: "Poison", area: "15 ft cone", save: "CON", dc: 13, dice: 2 });
+  assert.equal(draconicBreathText(c), "Breath Weapon (Green dragon): 15 ft cone, CON save DC 13 (8 + CON +3 + proficiency +2), 2d6 poison damage (half on a success). Once per short or long rest. 3d6 from level 6.\nDamage Resistance: poison.");
+  assert.deepEqual(draconicBreath(c), { dragon: "Green dragon", damage: "Poison", area: "15 ft cone", save: "CON", die: 6, dice: 2, next: { level: 6, dice: 3 },
+    con: 3, pb: 2, dc: 13, uses: 1, reset: "short", attack: false, resistance: true, metallic: false });
   // The race's Features entry: the breath line names the dragon, so no "Your picks" line repeats it.
   const entry = H.getAllCharacterFeatures(c).find((f) => f.id === "race_Dragonborn").text;
   assert.ok(!/Your picks/.test(entry), entry);
@@ -304,7 +306,9 @@ test("wizard: a dragonborn picks a draconic ancestry, and the sheet works out th
   const g = raceGrant(c, "Draconic Ancestry");
   assert.deepEqual(CP.classPicksDetails(g, g.cl.profPicks[g.key]), ["Poison: 15 ft cone breath, CON save, and resistance to poison damage"]);
   c.classes[0].level = 11;
-  assert.match(draconicBreathText(c), /CON save DC 15, 4d6 poison/);
+  assert.match(draconicBreathText(c), /CON save DC 15 \(8 \+ CON \+3 \+ proficiency \+4\), 4d6 poison damage \(half on a success\)\. Once per short or long rest\. 5d6 from level 16\./);
+  c.classes[0].level = 16;
+  assert.match(draconicBreathText(c), /5d6 poison damage \(half on a success\)\. Once per short or long rest\.\n/, "no next step at the top");
   // Not picked yet (an older dragonborn): nothing to show, and the Feature choices card asks.
   const old = ensureShape(makeChar("Dragonborn"));
   assert.equal(draconicBreathText(old), "");
@@ -333,4 +337,135 @@ test("breath weapon use: once per short rest, kept off the Vitals resources card
   // Another race keeps no breath weapon, even with an old pick left over.
   c.race = "Human";
   assert.equal(res(), undefined);
+});
+
+/* ================================================================
+   Every kind of dragonborn (checked against Fizban's Treasury of
+   Dragons and Explorer's Guide to Wildemount 2026-10-16)
+   ================================================================ */
+const KINDS = {
+  "Dragonborn (Chromatic)": { trait: "Chromatic Ancestry", dragons: ["Black", "Blue", "Green", "Red", "White"], area: "5 by 30 ft line" },
+  "Dragonborn (Metallic)": { trait: "Metallic Ancestry", dragons: ["Brass", "Bronze", "Copper", "Gold", "Silver"], area: "15 ft cone" },
+  "Dragonborn (Gem)": { trait: "Gem Ancestry", dragons: ["Amethyst", "Crystal", "Emerald", "Sapphire", "Topaz"], area: "15 ft cone" },
+  "Dragonborn (Draconblood)": { trait: "Draconic Ancestry", dragons: ["Black", "Blue", "Brass", "Bronze", "Copper", "Gold", "Green", "Red", "Silver", "White"] },
+  "Dragonborn (Ravenite)": { trait: "Draconic Ancestry", dragons: ["Black", "Blue", "Brass", "Bronze", "Copper", "Gold", "Green", "Red", "Silver", "White"] }
+};
+const dragonborn = (race, dragon, level, con = 14) => {
+  const c = ensureShape(makeChar(race, [{ name: "Fighter", subclass: "", level }]));
+  c.abilities.con = con;
+  CP.raceEntry(c).profPicks["race:" + KINDS[race].trait + ":pick"] = { slots: [[dragon + " dragon"]], applied: {} };
+  return c;
+};
+
+test("dragonborn kinds: listed, with their ancestries, increases and languages", () => {
+  for(const [race, k] of Object.entries(KINDS)){
+    assert.ok(RACES.Expanded.includes(race), race + " listed");
+    const g = raceGrant(ensureShape(makeChar(race)), k.trait);
+    assert.deepEqual(g.def.pick[0].options, k.dragons.map((d) => d + " dragon"), race);
+  }
+  assert.deepEqual(RACE_DATA["Dragonborn (Draconblood)"].asi, { int: 2, cha: 1 });
+  assert.deepEqual(RACE_DATA["Dragonborn (Ravenite)"].asi, { str: 2, con: 1 });
+  for(const race of ["Dragonborn (Draconblood)", "Dragonborn (Ravenite)"]){
+    assert.equal(RACE_DATA[race].darkvision, 60, race);
+    assert.deepEqual(RACE_DATA[race].languages, { fixed: ["Common", "Draconic"] }, race);
+  }
+  for(const race of ["Dragonborn (Chromatic)", "Dragonborn (Metallic)", "Dragonborn (Gem)"]){
+    assert.deepEqual(RACE_CHOICES[race], { abilityBonus: { amounts: [2, 1] } }, race + ": +2 and +1 of your choice");
+    assert.equal(RACE_DATA[race].darkvision, 0, race);
+    assert.deepEqual(RACE_DATA[race].languages, { fixed: ["Common"], choose: 1 }, race);
+  }
+  const gem = raceGrant(ensureShape(makeChar("Dragonborn (Gem)")), "Gem Ancestry").def.pick[0].details;
+  assert.equal(gem["Amethyst dragon"], "Force: 15 ft cone breath, DEX save, and resistance to force damage");
+  const blood = raceGrant(ensureShape(makeChar("Dragonborn (Draconblood)")), "Draconic Ancestry").def.pick[0].details;
+  assert.equal(blood["Silver dragon"], "Cold: 15 ft cone breath, CON save", "no resistance for a draconblood");
+});
+
+test("Fizban's breath: 1d10 growing at 5, 11 and 17, DEX save, proficiency bonus uses per long rest", () => {
+  const steps = [[1, 1, 2], [4, 1, 2], [5, 2, 3], [10, 2, 4], [11, 3, 4], [16, 3, 5], [17, 4, 6], [20, 4, 6]];
+  for(const [level, dice, pb] of steps){
+    const b = draconicBreath(dragonborn("Dragonborn (Chromatic)", "Blue", level));
+    assert.deepEqual([b.die, b.dice, b.uses, b.pb], [10, dice, pb, pb], "level " + level);
+  }
+  const b = draconicBreath(dragonborn("Dragonborn (Chromatic)", "Blue", 1));
+  assert.deepEqual([b.damage, b.area, b.save, b.dc, b.reset, b.attack, b.next], ["Lightning", "5 by 30 ft line", "DEX", 12, "long", true, { level: 5, dice: 2 }]);
+  assert.equal(draconicBreathText(dragonborn("Dragonborn (Gem)", "Topaz", 5, 16)),
+    "Breath Weapon (Topaz dragon): 15 ft cone, in place of one attack, DEX save DC 14 (8 + CON +3 + proficiency +3), 2d10 necrotic damage (half on a success). 3 uses per long rest (your proficiency bonus). 3d10 from level 11.\nDamage Resistance: necrotic.");
+  // Uses: the proficiency bonus, all back on a long rest only.
+  const c = dragonborn("Dragonborn (Metallic)", "Gold", 5);
+  const res = (key) => characterResources(c).find((r) => r.key === key);
+  assert.deepEqual([res("race:breath_weapon").max, res("race:breath_weapon").reset], [3, "long"]);
+  c.resourcesUsed["race:breath_weapon"] = 2;
+  restoreResources(c, "short");
+  assert.equal(res("race:breath_weapon").used, 2, "a short rest doesn't give them back");
+  restoreResources(c, "long");
+  assert.equal(res("race:breath_weapon").used, 0);
+});
+
+test("Metallic Breath Weapon from level 5, once per long rest; Wildemount's breath is the Player's Handbook one", () => {
+  const res = (c) => characterResources(c).find((r) => r.key === "race:metallic_breath");
+  assert.equal(res(dragonborn("Dragonborn (Metallic)", "Silver", 4)), undefined, "not before level 5");
+  const c = dragonborn("Dragonborn (Metallic)", "Silver", 5);
+  assert.deepEqual([res(c).max, res(c).reset, res(c).place], [1, "long", "inventory"]);
+  assert.match(draconicBreathText(c), /\nMetallic Breath Weapon: save DC 13\. Once per long rest\.\n/);
+  assert.equal(res(dragonborn("Dragonborn (Chromatic)", "Red", 5)), undefined, "only a metallic dragonborn");
+  // Draconblood: the PHB breath (2d6, by the dragon's area and save, once per short rest) and no resistance.
+  const blood = dragonborn("Dragonborn (Draconblood)", "Silver", 6);
+  const b = draconicBreath(blood);
+  assert.deepEqual([b.die, b.dice, b.area, b.save, b.uses, b.reset, b.attack, b.resistance], [6, 3, "15 ft cone", "CON", 1, "short", false, false]);
+  assert.ok(!/Damage Resistance/.test(draconicBreathText(blood)));
+  const raven = draconicBreath(dragonborn("Dragonborn (Ravenite)", "Black", 1));
+  assert.deepEqual([raven.area, raven.save, raven.damage], ["5 by 30 ft line", "DEX", "Acid"]);
+});
+
+test("Dragon Fear and Dragon Hide: open to every kind of dragonborn", () => {
+  for(const name of ["Dragon Fear", "Dragon Hide"]){
+    for(const race of ["Dragonborn"].concat(Object.keys(KINDS))) assert.equal(featRequiresReason(featDef(name), { race, level: 4 }), "", name + ": " + race);
+    assert.equal(featRequiresReason(featDef(name), { race: "Kobold", level: 4 }), "only for a dragonborn");
+  }
+});
+
+/* ================================================================
+   Race traits with uses (RACE_RESOURCES), on the Vitals tab
+   ================================================================ */
+test("race uses: every entry is a real race and names one of its traits", () => {
+  for(const [race, list] of Object.entries(RACE_RESOURCES)){
+    assert.ok(RACE_DATA[race], race);
+    const names = RACE_DATA[race].traits.map((t) => t.name.replace(/,/g, ""));
+    for(const r of list){
+      assert.ok(names.includes(r.name.replace(/,/g, "")), race + ": " + r.name + " is one of its traits");
+      assert.ok(r.hint && !/[\u2013\u2014]/.test(r.hint), race + ": " + r.name + " hint");
+    }
+  }
+});
+
+test("race uses: by race and level, and what each rest gives back", () => {
+  const uses = (race, level) => {
+    const c = ensureShape(makeChar(race, [{ name: "Fighter", subclass: "", level }]));
+    return [c, Object.fromEntries(characterResources(c).filter((r) => /^race:/.test(r.key) && r.place !== "inventory").map((r) => [r.name, [r.max, r.reset]]))];
+  };
+  assert.deepEqual(uses("Half-Orc", 1)[1], { "Relentless Endurance": [1, "long"] });
+  assert.deepEqual(uses("Aasimar", 2)[1], { "Healing Hands": [1, "long"] }, "Celestial Revelation from level 3");
+  assert.deepEqual(uses("Aasimar", 3)[1], { "Healing Hands": [1, "long"], "Celestial Revelation": [1, "long"] });
+  assert.deepEqual(uses("Dragonborn (Chromatic)", 4)[1], {});
+  assert.deepEqual(uses("Dragonborn (Chromatic)", 5)[1], { "Chromatic Warding": [1, "long"] });
+  assert.deepEqual(uses("Dragonborn (Gem)", 5)[1], { "Gem Flight": [1, "long"] });
+  assert.deepEqual(uses("Dragonborn (Draconblood)", 1)[1], { "Forceful Presence": [1, "short"] });
+  assert.deepEqual(uses("Dragonborn (Ravenite)", 1)[1], { "Vengeful Assault": [1, "short"] });
+  assert.deepEqual(uses("Eladrin", 1)[1], { "Fey Step": [1, "short"] });
+  assert.deepEqual(uses("Shadar-kai", 1)[1], { "Blessing of the Raven Queen": [1, "long"] });
+  assert.deepEqual(uses("Harengon", 1)[1], { "Rabbit Hop": [2, "long"] }, "proficiency bonus uses");
+  assert.deepEqual(uses("Harengon", 17)[1], { "Rabbit Hop": [6, "long"] });
+  assert.deepEqual(uses("Tabaxi", 1)[1], { "Feline Agility": [1, "manual"] });
+  assert.deepEqual(uses("Human", 20)[1], {}, "nothing for a race without one");
+  // Rests: Shifting back on a short rest, Relentless Endurance only on a long one, Feline Agility on neither.
+  const [shifter] = uses("Shifter", 1);
+  shifter.resourcesUsed["race:shifting"] = 1;
+  assert.deepEqual(restoreResources(shifter, "short"), ["Shifting"]);
+  const [orc] = uses("Half-Orc", 1);
+  orc.resourcesUsed["race:relentless_endurance"] = 1;
+  assert.deepEqual(restoreResources(orc, "short"), []);
+  assert.deepEqual(restoreResources(orc, "long"), ["Relentless Endurance"]);
+  const [cat] = uses("Tabaxi", 1);
+  cat.resourcesUsed["race:feline_agility"] = 1;
+  assert.deepEqual(restoreResources(cat, "long"), [], "Feline Agility comes back after a turn without moving");
 });

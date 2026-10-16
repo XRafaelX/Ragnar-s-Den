@@ -704,8 +704,18 @@ export function renderVitalsPanel(c){
    point pools (Ki, Lay on Hands), with use/regain buttons. */
 var RESOURCE_PIP_LIMIT = 10;
 
+/* "Class resources", "Class & feat resources", "Class, race & feat
+   resources", "Race resources" ...: whose uses the card holds. */
+function resourcesTitle(resources){
+  var race = resources.some(function(r){ return r.key.indexOf("race:")===0; });
+  var feat = resources.some(function(r){ return r.key.indexOf("feat:")===0; });
+  var cls = resources.some(function(r){ return !/^(race|feat):/.test(r.key); });
+  var kinds = [cls ? "class" : "", race ? "race" : "", feat ? "feat" : ""].filter(Boolean);
+  var text = kinds.length > 1 ? kinds.slice(0, -1).join(", ") + " & " + kinds[kinds.length-1] : kinds[0];
+  return text.charAt(0).toUpperCase() + text.slice(1) + " resources";
+}
 function renderResourcesCard(c, resources){
-  var card = makeCard(resources.some(function(r){ return r.key.indexOf("feat:")===0; }) ? "Class & feat resources" : "Class resources");
+  var card = makeCard(resourcesTitle(resources));
   var list = document.createElement("div");
   list.className = "res-list";
   resources.forEach(function(r){

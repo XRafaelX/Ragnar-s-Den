@@ -2,7 +2,7 @@
    Xanathar's Guide to Everything: the 15 racial feats. `requires.races`
    keeps each to its race in the pickers.
    The fields are explained at the top of ../feats.js. */
-import { HALFLINGS, DWARVES, GNOMES, ELVES, SMALL_RACES } from "./races.js";
+import { HALFLINGS, DWARVES, GNOMES, ELVES, SMALL_RACES, DRAGONBORN_RACES } from "./races.js";
 
 export var XANATHAR_FEATS = [
   {
@@ -18,7 +18,7 @@ export var XANATHAR_FEATS = [
     name: "Dragon Fear",
     source: "XGE",
     ability:["str","con","cha"],
-    requires:{races:["Dragonborn"], raceLabel:"a dragonborn"},
+    requires:{races:DRAGONBORN_RACES, raceLabel:"a dragonborn"},
     prerequisite: "Dragonborn",
     category: "Combat",
     summary: "Raise Strength, Constitution or Charisma by 1. You can spend a use of your Breath Weapon to roar instead, frightening creatures of your choice within 30 feet.",
@@ -28,7 +28,7 @@ export var XANATHAR_FEATS = [
     name: "Dragon Hide",
     source: "XGE",
     ability:["str","con","cha"], unarmoredAc:13,
-    requires:{races:["Dragonborn"], raceLabel:"a dragonborn"},
+    requires:{races:DRAGONBORN_RACES, raceLabel:"a dragonborn"},
     prerequisite: "Dragonborn",
     category: "Defense",
     summary: "Raise Strength, Constitution or Charisma by 1. Without armor, your AC is 13 + your Dexterity modifier. You grow claws that deal 1d4 + your Strength modifier slashing damage.",

@@ -8,6 +8,7 @@ export var RACES = {
   ],
   "Expanded": [
     "Aarakocra","Aasimar","Bugbear","Centaur","Changeling","Deep Gnome (Svirfneblin)",
+    "Dragonborn (Chromatic)","Dragonborn (Draconblood)","Dragonborn (Gem)","Dragonborn (Metallic)","Dragonborn (Ravenite)",
     "Duergar","Eladrin","Fairy","Firbolg","Genasi (Air)","Genasi (Earth)","Genasi (Fire)",
     "Genasi (Water)","Gith (Githyanki)","Gith (Githzerai)","Goblin","Goliath","Harengon",
     "Hobgoblin","Kenku","Kobold","Lizardfolk","Loxodon","Minotaur","Orc","Satyr",
@@ -97,6 +98,9 @@ export var RACE_CHOICES = {
   "Fairy":{abilityBonus:PLUS_TWO_ONE},
   "Harengon":{abilityBonus:PLUS_TWO_ONE},
   "Thri-kreen":{abilityBonus:PLUS_TWO_ONE},
+  "Dragonborn (Chromatic)":{abilityBonus:PLUS_TWO_ONE},
+  "Dragonborn (Gem)":{abilityBonus:PLUS_TWO_ONE},
+  "Dragonborn (Metallic)":{abilityBonus:PLUS_TWO_ONE},
   "Aasimar":{abilityPreset:{label:"Aasimar subrace", options:{
     "Protector":{wis:1}, "Scourge":{con:1}, "Fallen":{str:1}}}},
   "Shifter":{abilityPreset:{label:"Shifter type", options:{

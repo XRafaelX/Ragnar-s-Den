@@ -1,8 +1,8 @@
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg } from "../../ui/svg-icons.js";
-import { performRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, draconicBreath, characterResources } from "../../core/helpers.js";
+import { performRoll, logRoll } from "../../dice/dice.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, draconicBreath, breathDcFormula, breathUsesText, characterResources } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -462,71 +462,114 @@ function renderUnarmedCard(u){
   return card;
 }
 
-/* A dragonborn's Breath Weapon, from the Draconic Ancestry picked: its
-   area, save DC and damage, and its one use (the "race:breath_weapon"
-   resource, given back by a short or long rest). Rolling the damage
-   spends the use; Get it back undoes one spent by mistake. */
-var SAVE_NAMES = {DEX: "Dexterity", CON: "Constitution"};
+/* A dragonborn's Breath Weapon, from the ancestry picked: its area, save
+   DC (and how it's made up), damage and the level it grows at, and its
+   uses (the "race:breath_weapon" resource: once per short or long rest,
+   or a Fizban's dragonborn's proficiency bonus per long rest). Rolling
+   the damage spends a use; Get one back undoes one spent by mistake. A
+   Metallic dragonborn of level 5+ also has its second breath here. */
+var SAVE_NAMES = {DEX: "Dexterity", CON: "Constitution", STR: "Strength"};
 function renderBreathCard(c, b){
-  var key = "race:breath_weapon";
-  var res = characterResources(c).find(function(r){ return r.key===key; });
-  var used = !!(res && res.used);
+  var res = characterResources(c);
   var card = document.createElement("div");
-  card.className = "ff-item-card inv-item-card is-equipped inv-breath-card" + (used ? " is-spent" : "");
+  card.className = "ff-item-card inv-item-card is-equipped inv-breath-card";
+  breathBlock(card, c, res.find(function(r){ return r.key==="race:breath_weapon"; }), {
+    name: "Breath Weapon",
+    line: [b.dragon, b.area, b.damage, b.save + " save DC " + b.dc, b.attack ? "In place of one attack" : "Action"],
+    text: "Each creature in the area makes a " + SAVE_NAMES[b.save] + " saving throw: full damage on a fail, half on a success.",
+    dc: b,
+    more: breathUsesText(b) + "." + (b.next ? " Damage grows to " + b.next.dice + "d" + b.die + " at level " + b.next.level + "." : ""),
+    buttons: [{html: makeDicesSvg() + "Damage " + b.dice + "d" + b.die, title: "Roll the damage and use one breath",
+      roll: function(){ performRoll(b.die, b.dice, 0, "none", "Breath Weapon: Damage (" + b.damage + ")"); }}]
+  });
+  if(b.metallic){
+    var sep = document.createElement("div");
+    sep.className = "inv-breath-sep";
+    card.appendChild(sep);
+    breathBlock(card, c, res.find(function(r){ return r.key==="race:metallic_breath"; }), {
+      name: "Metallic Breath Weapon",
+      line: ["15 ft cone", "Save DC " + b.dc, "In place of one attack"],
+      text: "Enervating: each creature makes a Constitution save or is incapacitated until the start of your next turn. Repulsion: a Strength save or it's pushed 20 feet away and knocked prone.",
+      dc: b,
+      more: "Once per long rest.",
+      buttons: [
+        {html: "Enervating", title: "Use it: Constitution save or incapacitated",
+          roll: function(){ logRoll("Metallic Breath: Enervating", "15 ft cone. Constitution save DC " + b.dc + " or incapacitated until the start of your next turn."); }},
+        {html: "Repulsion", title: "Use it: Strength save or pushed and prone",
+          roll: function(){ logRoll("Metallic Breath: Repulsion", "15 ft cone. Strength save DC " + b.dc + " or pushed 20 feet away and knocked prone."); }}]
+    });
+  }
+  return card;
+}
+/* One breath on the card: name and use pips, its line, what the save
+   does, the DC's make-up, uses and growth, and its buttons. */
+function breathBlock(card, c, r, o){
+  var left = r ? r.max - r.used : 0;
+  var block = document.createElement("div");
+  block.className = "inv-breath" + (left ? "" : " is-spent");
+  block.dataset.res = r.key;
   var header = document.createElement("div");
   header.className = "inv-card-header";
   var titleGroup = document.createElement("div");
   titleGroup.className = "inv-card-title-group";
   var nameSpan = document.createElement("span");
   nameSpan.className = "inv-name-inline";
-  nameSpan.textContent = "Breath Weapon";
+  nameSpan.textContent = o.name;
   titleGroup.appendChild(nameSpan);
   header.appendChild(titleGroup);
   var pips = document.createElement("span");
   pips.className = "inv-holster-pips inv-breath-pips";
-  pips.setAttribute("aria-label", used ? "Used" : "Ready");
-  var pip = document.createElement("span");
-  pip.className = "res-pip" + (used ? "" : " full");
-  pips.appendChild(pip);
+  pips.setAttribute("aria-label", left + " of " + r.max + " left");
+  for(var i = 0; i < r.max; i++){
+    var pip = document.createElement("span");
+    pip.className = "res-pip" + (i < left ? " full" : "");
+    pips.appendChild(pip);
+  }
   header.appendChild(pips);
-  card.appendChild(header);
+  block.appendChild(header);
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
-  subtitle.textContent = [b.dragon, b.area, b.damage, b.save + " save DC " + b.dc, "Action"].join(" · ");
-  card.appendChild(subtitle);
+  subtitle.textContent = o.line.join(" · ");
+  block.appendChild(subtitle);
   var note = document.createElement("p");
-  note.className = "inv-armor-note" + (used ? "" : " inv-equipped-note");
-  note.textContent = used ? "Used. You get it back after a short or long rest."
-    : "Each creature in the area makes a " + (SAVE_NAMES[b.save] || b.save) + " saving throw: full damage on a fail, half on a success. Once per short or long rest.";
-  card.appendChild(note);
+  note.className = "inv-armor-note" + (left ? " inv-equipped-note" : "");
+  note.textContent = left ? o.text : r.reset==="short" ? "Used. You get it back after a short or long rest." : "All used. They come back after a long rest.";
+  if(!left && r.max===1 && r.reset==="long") note.textContent = "Used. You get it back after a long rest.";
+  block.appendChild(note);
+  var facts = document.createElement("p");
+  facts.className = "inv-breath-facts";
+  facts.textContent = "Save DC " + o.dc.dc + " = " + breathDcFormula(o.dc) + ". " + o.more;
+  block.appendChild(facts);
 
   function setUsed(n){
-    if(n) c.resourcesUsed[key] = n; else delete c.resourcesUsed[key];
+    var before = r.used;
+    if(n) c.resourcesUsed[r.key] = n; else delete c.resourcesUsed[r.key];
     save(); renderAll();
-    pipChanged(document.querySelector(".inv-breath-pips"), 0, !!n);
+    var drawn = document.querySelector('.inv-breath[data-res="' + r.key + '"] .inv-breath-pips');
+    // Spent: the last full pip empties. Got back: the first empty one fills.
+    pipChanged(drawn, n > before ? r.max - n : r.max - before, n > before);
   }
   var actions = document.createElement("div");
   actions.className = "inv-roll-actions";
-  var dmgBtn = document.createElement("button");
-  dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
-  dmgBtn.innerHTML = makeDicesSvg() + "Damage " + b.dice + "d6";
-  dmgBtn.disabled = used;
-  dmgBtn.title = used ? "Used: you get it back after a short or long rest" : "Roll the damage and use your breath weapon";
-  dmgBtn.addEventListener("click", function(){
-    performRoll(6, b.dice, 0, "none", "Breath Weapon: Damage (" + b.damage + ")");
-    setUsed(1);
+  o.buttons.forEach(function(bt){
+    var btn = document.createElement("button");
+    btn.type = "button"; btn.className = "btn small inv-roll-btn";
+    btn.innerHTML = bt.html;
+    btn.disabled = !left;
+    btn.title = left ? bt.title : "None left: " + (r.reset==="short" ? "a short or long rest" : "a long rest") + " gives it back";
+    btn.addEventListener("click", function(){ bt.roll(); setUsed(r.used + 1); });
+    actions.appendChild(btn);
   });
-  actions.appendChild(dmgBtn);
-  if(used){
+  if(r.used){
     var backBtn = document.createElement("button");
     backBtn.type = "button"; backBtn.className = "btn small inv-roll-btn";
-    backBtn.textContent = "Get it back";
-    backBtn.title = "Mark the breath weapon as ready again";
-    backBtn.addEventListener("click", function(){ setUsed(0); });
+    backBtn.textContent = "Get one back";
+    backBtn.title = "Undo a use spent by mistake";
+    backBtn.addEventListener("click", function(){ setUsed(r.used - 1); });
     actions.appendChild(backBtn);
   }
-  card.appendChild(actions);
-  return card;
+  block.appendChild(actions);
+  card.appendChild(block);
 }
 
 function renderWeaponCard(c, item, idx){

@@ -3,11 +3,11 @@
    each level, spell slots, proficiencies, and the Features tab's list. */
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
-import { DRACONIC_ANCESTRIES } from "../data/race-data.js";
+import { DRAGONBORN_BREATH } from "../data/race-data.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
 import { featDef, featPicksSummary, featPickDetail } from "./feat-picks.js";
-import { uid, mod, totalLevel, profBonus } from "./basics.js";
+import { uid, mod, fmtMod, totalLevel, profBonus } from "./basics.js";
 import { halfProficiency } from "./checks.js";
 import { pickedProfs, featurePicksText, racePicksText, backgroundPicksText, backgroundGrants } from "./class-picks.js";
 
@@ -227,26 +227,46 @@ export function classLevelOf(c, name, subclass){
   var cl = (c.classes||[]).find(function(x){ return x.name===name && (!subclass || x.subclass===subclass); });
   return cl ? Number(cl.level)||1 : 0;
 }
-/* A dragonborn's breath weapon from the ancestry picked on Race Traits,
-   worked out for the character: {dragon, damage, area, save, dc, dice},
-   or null until one is picked. The dice go by character level. */
+/* A dragonborn's breath weapon (any kind: DRAGONBORN_BREATH) from the
+   ancestry picked on Race Traits, worked out for the character, or null
+   until one is picked:
+   {dragon, damage, area, save, die, dice, next: {level, dice} or null,
+    con, pb, dc, uses, reset, attack, resistance, metallic}.
+   The dice go by character level; the DC is 8 + CON modifier +
+   proficiency bonus; `metallic` is a Metallic dragonborn of level 5+. */
 export function draconicBreath(c){
-  if(c.race!=="Dragonborn") return null;
-  var entry = c.racePicks && c.racePicks.profPicks && c.racePicks.profPicks["race:Draconic Ancestry:pick"];
+  var kind = DRAGONBORN_BREATH[c.race];
+  if(!kind) return null;
+  var entry = c.racePicks && c.racePicks.profPicks && c.racePicks.profPicks["race:" + kind.trait + ":pick"];
   var dragon = entry && !entry.manual && ((entry.slots && entry.slots[0]) || [])[0];
-  var a = dragon && DRACONIC_ANCESTRIES[dragon];
+  var a = dragon && kind.ancestries[dragon];
   if(!a) return null;
-  var lv = totalLevel(c);
-  return {dragon: dragon, damage: a.damage, area: a.area, save: a.save,
-    dc: 8 + mod(c.abilities && c.abilities.con) + profBonus(c),
-    dice: lv>=16 ? 5 : lv>=11 ? 4 : lv>=6 ? 3 : 2};
+  var lv = totalLevel(c), dice = 0, next = null;
+  kind.steps.forEach(function(st){ if(lv >= st[0]) dice = st[1]; else if(!next) next = {level: st[0], dice: st[1]}; });
+  var con = mod(c.abilities && c.abilities.con), pb = profBonus(c);
+  return {dragon: dragon, damage: a.damage, area: a.area || kind.area, save: a.save || kind.save,
+    die: kind.die, dice: dice, next: next, con: con, pb: pb, dc: 8 + con + pb,
+    uses: kind.uses==="pb" ? pb : 1, reset: kind.uses==="pb" ? "long" : "short",
+    attack: !!kind.attack, resistance: !!kind.resistance, metallic: !!kind.metallic && lv >= 5};
 }
-/* The same as lines for the race's Features entry: "" until picked. */
+/* "8 + CON +2 + proficiency +2": how the breath's save DC is made up. */
+export function breathDcFormula(b){
+  return "8 + CON " + fmtMod(b.con) + " + proficiency " + fmtMod(b.pb);
+}
+/* "Once per short or long rest" or "3 uses per long rest (your proficiency bonus)". */
+export function breathUsesText(b){
+  return b.reset==="short" ? "Once per short or long rest" : b.uses + (b.uses===1 ? " use" : " uses") + " per long rest (your proficiency bonus)";
+}
+/* The breath as lines for the race's Features entry: "" until picked. */
 export function draconicBreathText(c){
   var b = draconicBreath(c);
   if(!b) return "";
-  return "Breath Weapon (" + b.dragon + "): " + b.area + ", " + b.save + " save DC " + b.dc + ", " + b.dice + "d6 " + b.damage.toLowerCase() +
-    " damage (half on a success). Once per short or long rest.\nDamage Resistance: " + b.damage.toLowerCase() + ".";
+  var lines = ["Breath Weapon (" + b.dragon + "): " + b.area + (b.attack ? ", in place of one attack" : "") + ", " + b.save + " save DC " + b.dc +
+    " (" + breathDcFormula(b) + "), " + b.dice + "d" + b.die + " " + b.damage.toLowerCase() + " damage (half on a success). " + breathUsesText(b) + "." +
+    (b.next ? " " + b.next.dice + "d" + b.die + " from level " + b.next.level + "." : "")];
+  if(b.metallic) lines.push("Metallic Breath Weapon: save DC " + b.dc + ". Once per long rest.");
+  if(b.resistance) lines.push("Damage Resistance: " + b.damage.toLowerCase() + ".");
+  return lines.join("\n");
 }
 export function getAllCharacterFeatures(c){
   var list = [];
@@ -267,7 +287,7 @@ export function getAllCharacterFeatures(c){
   if(c.race){
     // A dragonborn's breath line names the dragon, so it isn't listed as a pick too.
     var breath = draconicBreathText(c);
-    var raceChosen = racePicksText(c, breath ? "Draconic Ancestry" : "");
+    var raceChosen = racePicksText(c, breath ? DRAGONBORN_BREATH[c.race].trait : "");
     var raceExtra = [raceChosen ? "Your picks: " + raceChosen + "." : "", breath].filter(Boolean).join("\n");
     var traitText = (RACE_TRAITS[c.race] || RACE_TRAIT_FALLBACK) + (raceExtra ? "\n\n" + raceExtra : "");
     list.push({
