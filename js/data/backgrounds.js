@@ -2,7 +2,8 @@
 export var BACKGROUNDS = {
   "Player's Handbook": [
     "Acolyte","Charlatan","Criminal","Entertainer","Folk Hero","Guild Artisan","Guild Merchant",
-    "Hermit","Noble","Outlander","Sage","Sailor","Soldier","Urchin"
+    "Hermit","Noble","Outlander","Sage","Sailor","Soldier","Urchin",
+    "Gladiator","Knight","Spy"
   ],
   "Forgotten Realms (SCAG / ToA)": [
     "Anthropologist","Archaeologist","City Watch","Clan Crafter","Cloistered Scholar","Courtier",
@@ -19,14 +20,24 @@ export var BACKGROUNDS = {
     "Lorehold Student","Prismari Student","Quandrix Student","Silverquill Student","Witherbloom Student",
     "Knight of Solamnia","Mage of High Sorcery",
     "Gate Warden","Planar Philosopher",
-    "Giant Foundling","Rune Carver"
+    "Giant Foundling","Rune Carver",
+    "Ashari",
+    "Grinner","Volstrucker Agent",
+    "Initiate","Vizier","Inquisitor"
   ],
   "Adventures & Supplements": [
     "Fisher","Marine","Shipwright","Smuggler",
     "Celebrity Adventurer's Scion","Failed Merchant","Gambler","Plaintiff","Rival Intern",
     "Feylost","Witchlight Hand",
     "Astral Drifter","Wildspacer",
-    "Haunted One"
+    "Haunted One","Investigator (Ravenloft)",
+    "Faceless",
+    "Rewarded","Ruined"
+  ],
+  "Adventurers League": [
+    "Black Fist Double Agent","Dragon Casualty","Iron Route Bandit","Phlan Insurgent","Stojanow Prisoner","Ticklebelly Nomad",
+    "Caravan Specialist","Earthspur Miner","Harborfolk","Mulmaster Aristocrat","Phlan Refugee",
+    "Cormanthor Refugee","Gate Urchin","Hillsfar Merchant","Hillsfar Smuggler","Secret Identity","Shade Fanatic","Trade Sheriff"
   ]
 };
 
@@ -61,8 +72,8 @@ export var BACKGROUND_INFO = {
   "Waterdhavian Noble": {skills:["History","Persuasion"], blurb:"Grants History and Persuasion. You were born into a wealthy family of the City of Splendors."},
 
   /* ---- Sword Coast Adventurer's Guide ---- */
-  "Investigator": {skills:["Insight","Investigation"], blurb:"Grants Insight and Investigation. A variant of City Watch — you track down criminals and unravel crimes rather than patrol the streets."},
-  "Pirate": {skills:["Athletics","Perception"], blurb:"Grants Athletics and Perception. A variant of Sailor — you sailed under the black flag, plundering ships and earning a bad reputation in many ports."},
+  "Investigator": {skills:["Insight","Investigation"], blurb:"Grants Insight and Investigation. A variant of City Watch: you track down criminals and unravel crimes rather than patrol the streets."},
+  "Pirate": {skills:["Athletics","Perception"], blurb:"Grants Athletics and Perception. A variant of Sailor: you sailed under the black flag, plundering ships and earning a bad reputation in many ports."},
 
   /* ---- Guildmasters' Guide to Ravnica ---- */
   "Azorius Functionary": {skills:["Insight","Intimidation"], blurb:"Grants Insight and Intimidation. You serve the Azorius Senate, Ravnica's lawmakers, enforcers of order and legal authority."},
@@ -87,7 +98,7 @@ export var BACKGROUND_INFO = {
   "Failed Merchant": {skills:["Investigation","Persuasion"], blurb:"Grants Investigation and Persuasion. Your business venture collapsed, but you emerged with a keen understanding of trade, contracts, and desperate negotiation."},
   "Gambler": {skills:["Deception","Insight"], blurb:"Grants Deception and Insight. You have spent years reading people and playing odds, learning when to bluff and when to fold."},
   "Plaintiff": {skills:["Medicine","Persuasion"], blurb:"Grants Medicine and Persuasion. You were once embroiled in a legal dispute with Acquisitions Incorporated, which left you knowing both the law and your own wounds."},
-  "Rival Intern": {skills:["History","Investigation"], blurb:"Grants History and Investigation. You interned at a rival of Acquisitions Incorporated and gained a healthy — if grudging — respect for how they do business."},
+  "Rival Intern": {skills:["History","Investigation"], blurb:"Grants History and Investigation. You interned at a rival of Acquisitions Incorporated and gained a healthy (if grudging) respect for how they do business."},
 
   /* ---- Eberron: Rising from the Last War ---- */
   "House Agent": {skills:["Investigation","Persuasion"], blurb:"Grants Investigation and Persuasion. You have sworn fealty to one of Eberron's dragonmarked houses, serving as its eyes, hands, and sometimes its blade."},
@@ -108,7 +119,7 @@ export var BACKGROUND_INFO = {
 
   /* ---- Spelljammer: Adventures in Space ---- */
   "Astral Drifter": {feat:{name:"Magic Initiate", option:"Cleric"}, skills:["Insight","Religion"], blurb:"Grants Insight and Religion. You have traversed the Astral Sea for longer than you can remember, camping on dead gods and navigating the Silver Void."},
-  "Wildspacer": {feat:{name:"Tough"}, skills:["Athletics","Survival"], blurb:"Grants Athletics and Survival. You grew up in Wildspace — on a spelljamming ship or far-flung settlement — and its dangers have made you tough as nails."},
+  "Wildspacer": {feat:{name:"Tough"}, skills:["Athletics","Survival"], blurb:"Grants Athletics and Survival. You grew up in Wildspace (on a spelljamming ship or far-flung settlement), and its dangers have made you tough as nails."},
 
   /* ---- Dragonlance: Shadow of the Dragon Queen ---- */
   "Knight of Solamnia": {feat:{name:"Squire of Solamnia"}, skills:["Athletics","Survival"], blurb:"Grants Athletics and Survival, and two languages. You have trained as a Knight of Solamnia, bound by strict codes of honor to defend the weak and oppose evil across Krynn."},
@@ -119,14 +130,97 @@ export var BACKGROUND_INFO = {
   "Planar Philosopher": {feat:{name:"Scion of the Outer Planes"}, skills:["Arcana"], skillChoice:"plus your Sigil faction's skill, or one skill of your choice", skillPick:{count:1, options:["Acrobatics","Animal Handling","Athletics","Deception","History","Insight","Intimidation","Investigation","Medicine","Nature","Perception","Performance","Persuasion","Religion","Sleight of Hand","Stealth","Survival"]}, blurb:"Grants Arcana plus one faction-linked skill. You subscribe to a philosophy seeking hidden truths of the multiverse, aligned to one of Sigil's great factions."},
 
   /* ---- Glory of the Giants ---- */
-  "Giant Foundling": {feat:{name:"Strike of the Giants"}, skills:["Intimidation","Survival"], blurb:"Grants Intimidation and Survival. You were raised among giants and carry their perspective — and their magic — with you into a world that seems small by comparison."},
+  "Giant Foundling": {feat:{name:"Strike of the Giants"}, skills:["Intimidation","Survival"], blurb:"Grants Intimidation and Survival. You were raised among giants and carry their perspective, and their magic, with you into a world that seems small by comparison."},
   "Rune Carver": {feat:{name:"Rune Shaper"}, skills:["History","Perception"], blurb:"Grants History and Perception. You have dedicated your life to studying the ancient runic magic of giants, carving their secrets into objects to wield their power."},
 
   /* ---- Curse of Strahd / Van Richten's Guide to Ravenloft ---- */
   "Haunted One": {skills:[], skillChoice:"two of Arcana, Investigation, Religion or Survival", skillPick:{count:2, options:["Arcana","Investigation","Religion","Survival"]},
     exoticLanguages:1,
     blurb:"Grants two of Arcana, Investigation, Religion or Survival, and two languages (one of them exotic). Something terrible happened to you, and a dark presence still follows you. Starts with a monster hunter's pack (chest, crowbar, hammer, three wooden stakes, holy symbol, holy water, manacles, steel mirror, oil, tinderbox, three torches), one trinket of special significance, a set of common clothes and 1 sp.",
-    feature:{name:"Heart of Darkness", text:"Those who look into your eyes can see that you have faced unimaginable horror and that you are no stranger to darkness. Though they might fear you, commoners will extend you every courtesy and do their utmost to help you. Unless you have shown yourself to be a danger to them, they will even take up arms to fight alongside you, should you find yourself facing an enemy alone."}}
+    feature:{name:"Heart of Darkness", text:"Those who look into your eyes can see that you have faced unimaginable horror and that you are no stranger to darkness. Though they might fear you, commoners will extend you every courtesy and do their utmost to help you. Unless you have shown yourself to be a danger to them, they will even take up arms to fight alongside you, should you find yourself facing an enemy alone."}},
+
+  /* ---- Player's Handbook variants (checked against the published pages
+     on 2026-10-17, see .claude/research/races-backgrounds.md) ---- */
+  "Gladiator": {skills:["Acrobatics","Performance"], blurb:"Grants Acrobatics and Performance, plus a disguise kit and one musical instrument. A variant of Entertainer: you make combat a spectacle for the crowd, and may start with an inexpensive but unusual weapon, such as a trident or net, in place of the instrument.",
+    feature:{name:"By Popular Demand", text:"You can always find a place to perform in any place that features combat for entertainment, perhaps a gladiatorial arena or secret pit fighting club. At such a place, you receive free lodging and food of a modest or comfortable standard (depending on the quality of the establishment), as long as you perform each night. In addition, your performance makes you something of a local figure. When strangers recognize you in a town where you have performed, they typically take a liking to you."}},
+  "Knight": {skills:["History","Persuasion"], blurb:"Grants History and Persuasion, plus one gaming set and one language. A variant of Noble: a knighthood is among the lowest noble titles, but it can be a path to higher status.",
+    feature:{name:"Retainers", text:"You have the service of three retainers loyal to your family. One of them is a noble who serves as your squire, aiding you in exchange for training on their own path to knighthood; the other two might include a groom to care for your horse and a servant who polishes your armor. Your retainers can perform mundane tasks for you, but they do not fight for you, will not follow you into obviously dangerous areas (such as dungeons), and will leave if they are frequently endangered or abused."}},
+  "Spy": {skills:["Deception","Stealth"], blurb:"Grants Deception and Stealth, plus thieves' tools and one gaming set. A variant of Criminal: you learned your skills as an espionage agent, for the crown or for the highest bidder.",
+    feature:{name:"Criminal Contact", text:"You have a reliable and trustworthy contact who acts as your liaison to a network of other criminals. You know how to get messages to and from your contact, even over great distances; specifically, you know the local messengers, corrupt caravan masters, and seedy sailors who can deliver messages for you."}},
+
+  /* ---- Tal'Dorei Campaign Setting Reborn ---- */
+  "Ashari": {skills:["Nature"], skillChoice:"plus one of Arcana or Survival", skillPick:{count:1, options:["Arcana","Survival"]}, blurb:"Grants Nature plus one of Arcana or Survival, an herbalism kit and Primordial. You grew up in an Ashari tribe, guarding one of Exandria's elemental rifts.",
+    feature:{name:"Elemental Harmony", text:"As an action, you channel minor magic involving the element of your Ashari order. Pyrah: you instantly create and control a burst of flame small enough to light a candle, a torch or a small campfire, or snuff out a flame of that size. Terrah: you instantly create a small rock no larger than a gold coin in your hand; it turns to dust after 1 minute. Vesrah: you instantly create enough hot or cold water to fill a small drinking vessel. Zephrah: you create an instant puff of wind strong enough to blow papers off a desk or mess up someone's hair."}},
+
+  /* ---- Explorer's Guide to Wildemount ---- */
+  "Grinner": {skills:["Deception","Performance"], blurb:"Grants Deception and Performance, plus thieves' tools and one musical instrument. You are a spy and rebel of the Golden Grin, hiding secret messages in folk songs.",
+    feature:{name:"Ballad of the Grinning Fool", text:"In any city of 10,000 people or more on the Menagerie Coast or in the lands of the Dwendalian Empire, you can play the \"Ballad of the Grinning Fool\" in a major tavern or inn. A member of the Golden Grin will find you and give shelter to you and any companions you vouch for. This shelter might be discontinued if it becomes too dangerous to hide you, at the DM's discretion. Use it with caution: not all who know the ballad are your friends."}},
+  "Volstrucker Agent": {skills:["Deception","Stealth"], blurb:"Grants Deception and Stealth, plus a poisoner's kit and one language. You are a secret assassin of the Cerberus Assembly, chosen after a tragedy broke you.",
+    feature:{name:"Shadow Network", text:"If you write a letter in special arcane ink (the ink a wizard uses for a spellbook, 10 gp per page), address it to a member of the Volstrucker and cast it into a fire, the letter burns to cinders and materializes whole again on the person of the agent you addressed it to."}},
+
+  /* ---- Plane Shift: Amonkhet and Innistrad ---- */
+  "Initiate": {skills:["Athletics","Intimidation"], blurb:"Grants Athletics and Intimidation, plus one gaming set and land vehicles. You train for the five trials of Amonkhet's gods, hoping to prove worthy of the afterlife.",
+    feature:{name:"Trial of the Five Gods", text:"While you prepare for and undergo the trials, you have constant access to training, and a comfortable place to live and regular meals are provided by servitor mummies under the supervision of viziers. You enjoy these benefits only as long as you obey the norms of Naktamun: training for the trials, obeying the gods and following their viziers. If you break them, you risk being treated as a dissenter."}},
+  "Vizier": {skills:["History","Religion"], blurb:"Grants History and Religion, plus one type of artisan's tools and one musical instrument. You serve one of Amonkhet's five gods, teaching and guiding the initiates.",
+    feature:{name:"Voice of Authority", text:"Your voice is the voice of your god, at least in theory. Your job might include training and instructing initiates, and they are required to obey you. In any circumstance, an initiate is expected to defer to your voice and obey your commands. If you abuse this authority, though, your god might personally punish you."}},
+  "Inquisitor": {skills:["Investigation","Religion"], blurb:"Grants Investigation and Religion, plus thieves' tools and one type of artisan's tools. You hunt heretics and monsters for the church of Innistrad.",
+    feature:{name:"Legal Authority", text:"As an inquisitor of the church, you have the authority to arrest criminals. In the absence of other authorities, you are authorized to pass judgment and even carry out sentencing. If you abuse this power, however, your superiors in the church might strip it from you."}},
+
+  /* ---- Van Richten's Guide to Ravenloft ---- */
+  "Investigator (Ravenloft)": {skills:[], skillChoice:"two of Insight, Investigation or Perception", skillPick:{count:2, options:["Insight","Investigation","Perception"]}, blurb:"Grants two of Insight, Investigation or Perception, plus a disguise kit and thieves' tools. Your first case set you on the path of solving mysteries others leave alone.",
+    feature:{name:"Official Inquiry", text:"Through a combination of fast-talking, determination and official-looking documentation, you can gain access to a place or an individual related to a crime you're investigating. Those who aren't involved in your investigation avoid impeding you or pass along your requests. Additionally, local law enforcement has firm opinions about you, viewing you as either a nuisance or one of their own."}},
+
+  /* ---- Baldur's Gate: Descent into Avernus ---- */
+  "Faceless": {skills:["Deception","Intimidation"], blurb:"Grants Deception and Intimidation, plus a disguise kit and one language. You adventure behind the mask of a public persona that hides your true face.",
+    feature:{name:"Dual Personalities", text:"Most of your fellow adventurers and the world know you as your persona. Upon donning a disguise and behaving as your persona, you are unidentifiable as your true self. By removing your disguise and revealing your true face, you are no longer identifiable as your persona. You can change between your two personalities as often as you wish, using one to hide the other. However, should someone realize the connection between your persona and your true self, your deception might lose its effectiveness."}},
+
+  /* ---- The Book of Many Things ---- */
+  "Rewarded": {feat:{choices:["Lucky","Magic Initiate","Skilled"]}, skills:["Insight","Persuasion"], blurb:"Grants Insight and Persuasion, plus one gaming set and one language. A miraculous turn of good fortune lifted you out of a hard life.",
+    feature:{name:"Fortune's Favor", text:"Your unexpected good fortune is reflected by a minor boon: you gain the Lucky, Magic Initiate or Skilled feat (your choice). Your choice reflects the transformation that changed your life."}},
+  "Ruined": {feat:{choices:["Alert","Skilled","Tough"]}, skills:["Stealth","Survival"], blurb:"Grants Stealth and Survival, plus one gaming set and one language. You had a life of comfort and lost it all, and adventuring is the only path left open.",
+    feature:{name:"Still Standing", text:"You have weathered ruinous misfortune, and you possess hidden reserves others don't expect: you gain the Alert, Skilled or Tough feat (your choice). Your choice reflects how you've dealt with the terrible loss that changed your life forever."}},
+
+  /* ---- Adventurers League: Phlan (Curse of Strahd character options) ---- */
+  "Black Fist Double Agent": {skills:["Deception","Insight"], blurb:"Grants Deception and Insight, plus a disguise kit and one type of artisan's tools or gaming set. You inform for the Tears of Virulence in Phlan while secretly working for the Black Fist.",
+    feature:{name:"Double Agent", text:"You have a reliable and trusty contact within the Tears of Virulence garrison in Phlan to whom you pass information and secrets. In exchange, you can get away with minor criminal offenses within the town of Phlan. In addition, your Black Fist contacts can help you secure an audience with the Lord Regent, the Lord Sage, members of the Black Fist, or deposed nobles and authority figures who are sympathetic to the Phlan refugees and insurgents."}},
+  "Dragon Casualty": {skills:["Intimidation","Survival"], blurb:"Grants Intimidation and Survival, Draconic, and one tool set by your former occupation. You survived torture by the green dragon Vorgansharax, and the scars mark you.",
+    feature:{name:"Dragonscarred", text:"Your disfigurement marks you as a survivor of the Maimed Virulence. Those who know of your ordeal are keen to hear the tale, which makes it hard to disguise your appearance and hide from prying eyes. You can parley this attention into access to people and places you might not otherwise have, for you and your companions: nobles, scholars, mages and those who seek the dragon's secrets want to hear your tale and study your affliction."}},
+  "Iron Route Bandit": {skills:["Animal Handling","Stealth"], blurb:"Grants Animal Handling and Stealth, plus one gaming set and land vehicles. You robbed travelers on the Iron Route and now steal mounts for the underworld.",
+    feature:{name:"Black-Market Breeder", text:"You know how to find people who are always looking for stolen animals and vehicles, whether for animal pit fights or to give desperate rogues a faster getaway. This contact tells you which animals and vehicles are in high demand in the area, and offers favors and information (DM's choice) if you bring such animals and vehicles to them."}},
+  "Phlan Insurgent": {skills:["Stealth","Survival"], blurb:"Grants Stealth and Survival, plus one type of artisan's tools and land vehicles. You escaped the dragon's capture and stayed to fight a guerrilla war for Phlan.",
+    feature:{name:"Guerilla", text:"You've come to know the surrounding forests, streams, caves and other natural features in which you can take refuge or set up ambushes. You can quickly survey your environment for advantageous features. Additionally, you can scavenge your natural surroundings to cobble together simple supplies (such as improvised torches, rope or patches of fabric) that are consumed after use."}},
+  "Stojanow Prisoner": {skills:["Deception","Perception"], blurb:"Grants Deception and Perception, plus one gaming set and thieves' tools. You sold secrets in occupied Phlan until the dragon's soldiers locked you in the cells of Stojanow Gate.",
+    feature:{name:"Ex-Convict", text:"The knowledge gained during your incarceration lets you gain insight into local guards and jailors. You know which will accept bribes, or look the other way for you. You can also seek shelter for yourself from authorities with other criminals in the area."}},
+  "Ticklebelly Nomad": {skills:["Animal Handling","Nature"], blurb:"Grants Animal Handling and Nature, an herbalism kit and Giant. You were born to a nomadic tribe of the Ticklebelly Hills that knows the stone giants of the Giant's Cairn.",
+    feature:{name:"At Home in the Wild", text:"You can find a place to hide, rest or recuperate when out in the wild. This place of rest is secure enough to conceal you from most natural threats. Supernatural or magical threats, or those actively seeking you, might find you with difficulty (as the DM decides). It doesn't shield or conceal you from scrying, mental probing, or threats that don't need the five senses to find you."}},
+
+  /* ---- Adventurers League: Mulmaster Bonds and Backgrounds ---- */
+  "Caravan Specialist": {skills:["Animal Handling","Survival"], blurb:"Grants Animal Handling and Survival, plus land vehicles and one language. You have traveled every major tradeway of the Moonsea, and know its inns, shortcuts and ambush spots.",
+    feature:{name:"Wagonmaster", text:"Others look to you for direction when a situation gets serious. You are able to identify the most defensible locations for camping. If you are part of a caravan outfit, you are able to attract two additional workers who are loyal to you based on your reputation. You have an excellent memory for maps and geography and can always determine your cardinal directions while traveling."}},
+  "Earthspur Miner": {skills:["Athletics","Survival"], blurb:"Grants Athletics and Survival, plus Dwarvish and Undercommon. A down-on-your-luck miner from the Earthspur Mountains, as comfortable underground as above.",
+    feature:{name:"Deep Miner", text:"You never get lost in caves or mines if you have either seen an accurate map of them or have been through them before. Furthermore, you are able to scrounge fresh water and food for yourself and as many as five other people each day if you are in a mine or natural caves."}},
+  "Harborfolk": {skills:["Athletics","Sleight of Hand"], blurb:"Grants Athletics and Sleight of Hand, plus one gaming set and water vehicles. You fished Mulmaster's harbor and still count its dockworkers as friends.",
+    feature:{name:"Harborfolk", text:"The harborfolk of Mulmaster remember you and still treat you as one of them. They welcome you and your companions. While they might charge you for it, they'll always offer what food and shelter they have; they'll even hide you if the City Watch is after you (but not if the Hawks are)."}},
+  "Mulmaster Aristocrat": {skills:["Deception","Performance"], blurb:"Grants Deception and Performance, plus one type of artistic artisan's tools and one musical instrument. You are one of the elite of Mulmaster, the City of Danger.",
+    feature:{name:"Highborn", text:"Every other class of citizen in Mulmaster defers to you, and even the priesthood, Soldiery, Hawks and Cloaks treat you with deference. Other aristocrats and nobles accept you in their circles and likely know you or of you. Your connections can get you the ear of a Zor or Zora under the right circumstances."}},
+  "Phlan Refugee": {skills:["Athletics","Insight"], blurb:"Grants Athletics and Insight, plus one type of artisan's tools and one language. You escaped Phlan's fall with more than the shirt on your back and fled to Mulmaster.",
+    feature:{name:"Phlan Survivor", text:"You are one of the many refugees who have come to Mulmaster. You are able to find refuge with others from Phlan and those who sympathize with your plight. Within Mulmaster this means that you can find a place to bed down, recover, and hide from the watch with either other refugees from Phlan, or the Zhents within the ghettos."}},
+
+  /* ---- Adventurers League: State of Hillsfar ---- */
+  "Cormanthor Refugee": {skills:["Nature","Survival"], blurb:"Grants Nature and Survival, plus Elvish and one type of artisan's tools. You shelter in the hidden refugee camps of the Cormanthor Forest, guests of the elves.",
+    feature:{name:"Shelter of the Elven Clergy", text:"The clerics of Elventree have vowed to care for the Cormanthor refugees. They will help you when they can, including providing you and your companions with free healing and care at temples, shrines, and other established presences in Elventree. They will also provide you (but only you) with a poor lifestyle."}},
+  "Gate Urchin": {skills:["Deception","Sleight of Hand"], blurb:"Grants Deception and Sleight of Hand, plus thieves' tools and one musical instrument. You grew up begging and busking in the shadow of the Hillsfar Gate.",
+    feature:{name:"Red Plume and Mage Guild Contacts", text:"You made friends among the Red Plumes and the Mage's Guild when you lived at the Hillsfar Gate, and they help you in little ways when they can. You can invoke their assistance in and around Hillsfar to obtain food, as well as simple equipment for temporary use, and to gain access to the low-security areas of their garrisons, halls and encampments."}},
+  "Hillsfar Merchant": {skills:["Insight","Persuasion"], blurb:"Grants Insight and Persuasion, plus land and water vehicles. You come from a merchant family of Hillsfar, the City of Trade.",
+    feature:{name:"Factor", text:"Your family has assigned you a loyal retainer from the business: a factor, husbanding agent, seafarer, caravan guard or clerk. This commoner can perform mundane tasks for you such as making purchases, delivering messages and running errands. They will not fight for you, will not follow you into obviously dangerous areas (such as dungeons), and will leave if frequently endangered or abused. If they are killed, the family assigns you another within a few days."}},
+  "Hillsfar Smuggler": {skills:["Perception","Stealth"], blurb:"Grants Perception and Stealth, plus a forgery kit and one racial language. You moved illicit goods and non-humans past the Red Plumes of Hillsfar.",
+    feature:{name:"Secret Passage", text:"You can call on your contacts within the smuggling community to secure secret passage into or out of Hillsfar for yourself and your companions, no questions asked, and no Red Plume entanglements. Because you're calling in a favor, you can't be certain they will help on your timetable or at all; the DM decides. In return, you and your companions may owe the Rogues' Guild a favor or have to pay bribes."}},
+  "Secret Identity": {skills:["Deception","Stealth"], blurb:"Grants Deception and Stealth, plus a disguise kit and forgery kit. You are a non-human living in Hillsfar in secret, despite its Great Law of Humanity.",
+    feature:{name:"Secret Identity", text:"You have created a secret identity that you use to conceal your true race and that offers a covering explanation for your presence in Hillsfar. In addition, you can forge documents, including official papers and personal letters, as long as you have seen an example of the kind of document or the handwriting you are trying to copy."}},
+  "Shade Fanatic": {skills:["Deception","Intimidation"], blurb:"Grants Deception and Intimidation, plus a forgery kit and Netherese. You stay loyal to Netheril and seek other Shade loyalists around Hillsfar.",
+    feature:{name:"Secret Society", text:"You have a special way of communicating with others who feel the same way you do about the Shade. When you enter a village or larger city you can identify contacts who will give you information on those that would hinder your goals and those that would help you, simply because of your desire to see the Shade Enclave return in all its glory."}},
+  "Trade Sheriff": {skills:["Investigation","Persuasion"], blurb:"Grants Investigation and Persuasion, plus thieves' tools and Elvish. You keep Hillsfar's trade routes clear of bandits and enforce the Great Law of Trade.",
+    feature:{name:"Investigative Services", text:"You can invoke your rank to allow you access to a crime scene or to requisition equipment or horses on a temporary basis. When you enter a town or village around Hillsfar you can identify a contact who will give you information on the local rumors and would help you simply because of your desire to get answers and information for anyone wanting to disrupt trade."}}
 };
 
 /* Tool (and vehicle) proficiencies each background grants, for the
@@ -189,7 +283,23 @@ export var BACKGROUND_TOOLS = {
   "Giant Foundling":"None", "Rune Carver":"One type of artisan's tools",
 
   /* ---- Curse of Strahd / Van Richten's Guide to Ravenloft ---- */
-  "Haunted One":"None"
+  "Haunted One":"None",
+
+  /* ---- Added 2026-10-17 ---- */
+  "Gladiator":"Disguise kit, one musical instrument", "Knight":"One gaming set", "Spy":"One gaming set, thieves' tools",
+  "Ashari":"Herbalism kit", "Grinner":"One musical instrument, thieves' tools", "Volstrucker Agent":"Poisoner's kit",
+  "Initiate":"One gaming set, land vehicles", "Vizier":"One type of artisan's tools, one musical instrument",
+  "Inquisitor":"Thieves' tools, one type of artisan's tools", "Investigator (Ravenloft)":"Disguise kit, thieves' tools",
+  "Faceless":"Disguise kit", "Rewarded":"One gaming set", "Ruined":"One gaming set",
+  "Black Fist Double Agent":"Disguise kit, and one type of artisan's tools or gaming set",
+  "Dragon Casualty":"One set by your former occupation: water or land vehicles, artisan's tools, a gaming set, a musical instrument, herbalism kit, thieves' tools, forgery kit or disguise kit",
+  "Iron Route Bandit":"One gaming set, land vehicles", "Phlan Insurgent":"One type of artisan's tools, land vehicles",
+  "Stojanow Prisoner":"One gaming set, thieves' tools", "Ticklebelly Nomad":"Herbalism kit",
+  "Caravan Specialist":"Land vehicles", "Earthspur Miner":"None", "Harborfolk":"One gaming set, water vehicles",
+  "Mulmaster Aristocrat":"One type of artistic artisan's tools, one musical instrument", "Phlan Refugee":"One type of artisan's tools",
+  "Cormanthor Refugee":"One type of artisan's tools", "Gate Urchin":"Thieves' tools, one musical instrument",
+  "Hillsfar Merchant":"Land and water vehicles", "Hillsfar Smuggler":"Forgery kit", "Secret Identity":"Disguise kit, forgery kit",
+  "Shade Fanatic":"Forgery kit", "Trade Sheriff":"Thieves' tools"
 };
 /* Some backgrounds let the player pick skills: `skillChoice` describes it
    (Compendium) and `skillPick` {count, options} is what the creation
@@ -200,7 +310,8 @@ export var BACKGROUND_TOOLS = {
    `feat`: {name, option}: a feat the background gives (Wildspacer: Tough),
    with the choice the book makes for it when it makes one (a Lorehold
    Student's Strixhaven Initiate is Lorehold's; an Astral Drifter's Magic
-   Initiate is the cleric's). The creation wizard grants it; an older
+   Initiate is the cleric's). Or {choices}: the feats the player picks one
+   from (a Rewarded's Lucky, Magic Initiate or Skilled). The creation wizard grants it; an older
    sheet is offered it on the Features tab. */
 export var BACKGROUND_INFO_FALLBACK = "Grants two skill proficiencies of your choice (and usually a tool or language). Pick whatever fits your character's story; you can add them on the sheet's Skills tab afterward.";
 
@@ -260,7 +371,16 @@ export var BACKGROUND_LANGUAGES = {
   "Giant Foundling":1, "Rune Carver":0,
 
   /* ---- Curse of Strahd / Van Richten's Guide to Ravenloft ---- */
-  "Haunted One":2
+  "Haunted One":2,
+
+  /* ---- Added 2026-10-17 (named languages are in BACKGROUND_LANGUAGE_RULES) ---- */
+  "Gladiator":0, "Knight":1, "Spy":0, "Ashari":0, "Grinner":0, "Volstrucker Agent":1,
+  "Initiate":0, "Vizier":0, "Inquisitor":0, "Investigator (Ravenloft)":0, "Faceless":1,
+  "Rewarded":1, "Ruined":1, "Black Fist Double Agent":0, "Dragon Casualty":0, "Iron Route Bandit":0,
+  "Phlan Insurgent":0, "Stojanow Prisoner":0, "Ticklebelly Nomad":0, "Caravan Specialist":1,
+  "Earthspur Miner":0, "Harborfolk":0, "Mulmaster Aristocrat":0, "Phlan Refugee":1,
+  "Cormanthor Refugee":0, "Gate Urchin":0, "Hillsfar Merchant":0, "Hillsfar Smuggler":1,
+  "Secret Identity":0, "Shade Fanatic":0, "Trade Sheriff":0
 };
 
 /* ---------------- Tool proficiencies, for the sheet ----------------
@@ -347,7 +467,38 @@ export var BACKGROUND_PROFS = {
   "Feylost": {pick:[INSTRUMENT]},
   "Witchlight Hand": {pick:[either(["Disguise kit","Musical instruments"])]},
   "Wildspacer": {tools:["Navigator's tools","Vehicles (space)"]},
-  "Rune Carver": {pick:[ARTISAN]}
+  "Rune Carver": {pick:[ARTISAN]},
+  "Gladiator": {tools:["Disguise kit"], pick:[INSTRUMENT]},
+  "Knight": {pick:[GAMING]},
+  "Spy": {tools:["Thieves' tools"], pick:[GAMING]},
+  "Ashari": {tools:["Herbalism kit"]},
+  "Grinner": {tools:["Thieves' tools"], pick:[INSTRUMENT]},
+  "Volstrucker Agent": {tools:["Poisoner's kit"]},
+  "Initiate": {tools:["Vehicles (land)"], pick:[GAMING]},
+  "Vizier": {pick:[ARTISAN, INSTRUMENT]},
+  "Inquisitor": {tools:["Thieves' tools"], pick:[ARTISAN]},
+  "Investigator (Ravenloft)": {tools:["Disguise kit","Thieves' tools"]},
+  "Faceless": {tools:["Disguise kit"]},
+  "Rewarded": {pick:[GAMING]},
+  "Ruined": {pick:[GAMING]},
+  "Black Fist Double Agent": {tools:["Disguise kit"], pick:[either(["Artisan's tools","Gaming sets"])]},
+  // The tool its Origin table gives the former occupation, any of them.
+  "Dragon Casualty": {pick:[either(["Vehicles (water)","Artisan's tools","Gaming sets","Vehicles (land)","Musical instruments","Herbalism kit","Thieves' tools","Forgery kit","Disguise kit"])]},
+  "Iron Route Bandit": {tools:["Vehicles (land)"], pick:[GAMING]},
+  "Phlan Insurgent": {tools:["Vehicles (land)"], pick:[ARTISAN]},
+  "Stojanow Prisoner": {tools:["Thieves' tools"], pick:[GAMING]},
+  "Ticklebelly Nomad": {tools:["Herbalism kit"]},
+  "Caravan Specialist": {tools:["Vehicles (land)"]},
+  "Harborfolk": {tools:["Vehicles (water)"], pick:[GAMING]},
+  "Mulmaster Aristocrat": {pick:[ARTISAN, INSTRUMENT]},
+  "Phlan Refugee": {pick:[ARTISAN]},
+  "Cormanthor Refugee": {pick:[ARTISAN]},
+  "Gate Urchin": {tools:["Thieves' tools"], pick:[INSTRUMENT]},
+  "Hillsfar Merchant": {tools:["Vehicles (land)","Vehicles (water)"]},
+  "Hillsfar Smuggler": {tools:["Forgery kit"]},
+  "Secret Identity": {tools:["Disguise kit","Forgery kit"]},
+  "Shade Fanatic": {tools:["Forgery kit"]},
+  "Trade Sheriff": {tools:["Thieves' tools"]}
 };
 
 /* Languages a background names (`fixed`: a Rune Carver's Giant; one
@@ -364,7 +515,16 @@ export var BACKGROUND_LANGUAGE_RULES = {
   "Gruul Anarch": {options:["Draconic","Giant","Goblin","Sylvan"]},
   "Izzet Engineer": {options:["Draconic","Goblin","Vedalken"]},
   "Rakdos Cultist": {options:["Abyssal","Giant"]},
-  "Selesnya Initiate": {options:["Elvish","Loxodon","Sylvan"]}
+  "Selesnya Initiate": {options:["Elvish","Loxodon","Sylvan"]},
+  "Ashari": {fixed:["Primordial"]},
+  "Dragon Casualty": {fixed:["Draconic"]},
+  "Ticklebelly Nomad": {fixed:["Giant"]},
+  "Earthspur Miner": {fixed:["Dwarvish","Undercommon"]},
+  "Cormanthor Refugee": {fixed:["Elvish"]},
+  "Shade Fanatic": {fixed:["Netherese"]},
+  "Trade Sheriff": {fixed:["Elvish"]},
+  // "One racial language".
+  "Hillsfar Smuggler": {options:["Dwarvish","Elvish","Giant","Gnomish","Goblin","Halfling","Orc"]}
 };
 
 /* Skills this app's data had wrong before 2026-10-15 (checked then

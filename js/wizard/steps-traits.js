@@ -358,7 +358,7 @@ export function wizardStepFeatPicks(container){
    choice, and an option the book fixes (the college) is shown, not asked. */
 export function wizardStepBgFeat(container){
   var grant = wizardBackgroundFeat(), feat = grant.def;
-  if(grant.campaign) return wizardStepCampaignFeat(container, grant);
+  if(grant.choices) return wizardStepFeatChoice(container, grant);
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Background Feat</span></h3>";
   var explain = ce("div","wiz-explain");
@@ -380,15 +380,18 @@ export function wizardStepBgFeat(container){
   container.appendChild(card);
 }
 
-/* Campaign Feat: the same step for a character whose background has no
-   feat in a campaign that gives one. Pick it (Skilled or Tough), then
+/* A feat to choose: a background's (a Rewarded's Lucky, Magic Initiate
+   or Skilled) or, the Campaign Feat, for a character whose background has
+   no feat in a campaign that gives one (Skilled or Tough). Pick it, then
    make its picks. */
-function wizardStepCampaignFeat(container, grant){
+function wizardStepFeatChoice(container, grant){
   var card = ce("div","card");
-  card.innerHTML = "<h3><span>Campaign Feat</span></h3>";
+  card.innerHTML = "<h3><span>"+(grant.campaign ? "Campaign Feat" : "Background Feat")+"</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>From your "+escapeHtml(CAMPAIGN_FEATS[grant.campaign].label)+" campaign:</b> your background doesn't come with a feat, so you choose one of these. "+
-    "Tough is the simple pick: more hit points at every level.";
+  explain.innerHTML = grant.campaign
+    ? "<b>From your "+escapeHtml(CAMPAIGN_FEATS[grant.campaign].label)+" campaign:</b> your background doesn't come with a feat, so you choose one of these. "+
+      "Tough is the simple pick: more hit points at every level."
+    : "<b>From your "+escapeHtml(wizardState.background)+" background:</b> you choose one of these feats.";
   card.appendChild(explain);
   var raceFeat = wizardState.raceChoices.feat;
   var box = ce("div","fs-options");
@@ -402,7 +405,7 @@ function wizardStepCampaignFeat(container, grant){
       (taken ? "<div class='lu-sub-feats'>You already took it as your "+escapeHtml(wizardState.race)+" feat.</div>" : "")+"</div>";
     function choose(){
       if(taken) return;
-      wizardState.campaignFeat = name;
+      wizardState[grant.campaign ? "campaignFeat" : "bgFeatChoice"] = name;
       var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
       renderWizard();
     }

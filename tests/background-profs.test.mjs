@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import * as CP from "../js/core/class-picks.js";
 import * as W from "../js/wizard/wizard-core.js";
 import { TOOL_GROUPS } from "../js/core/feat-picks.js";
-import { BACKGROUND_INFO, BACKGROUND_TOOLS, BACKGROUND_LANGUAGES, BACKGROUND_PROFS, BACKGROUND_LANGUAGE_RULES, BACKGROUND_SKILL_FIXES } from "../js/data/backgrounds.js";
+import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_TOOLS, BACKGROUND_LANGUAGES, BACKGROUND_PROFS, BACKGROUND_LANGUAGE_RULES, BACKGROUND_SKILL_FIXES } from "../js/data/backgrounds.js";
 import { SKILLS } from "../js/data/abilities-skills.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
 import { state } from "../js/core/state.js";
@@ -41,7 +41,15 @@ const open = (c, g, i, slots = []) => CP.slotOptions(g.def, slots, i, ctxOf(c, g
    ================================================================ */
 test("background data: every tool is a real tool, every kind a group or tool, every background covered", () => {
   const names = Object.keys(BACKGROUND_TOOLS);
-  assert.equal(names.length, 67);
+  assert.equal(names.length, 98);
+  // Every background is in a group, has its info and a language count.
+  const grouped = Object.values(BACKGROUNDS).flat();
+  assert.deepEqual([...grouped].sort(), [...names].sort());
+  for(const name of names){
+    assert.ok(BACKGROUND_INFO[name], name + ": info");
+    assert.ok(BACKGROUND_LANGUAGES[name] != null, name + ": language count");
+    (BACKGROUND_INFO[name].skills || []).concat((BACKGROUND_INFO[name].skillPick || {}).options || []).forEach((sk) => assert.ok(SKILL_NAMES.includes(sk), name + ": skill " + sk));
+  }
   for(const name of names){
     const p = BACKGROUND_PROFS[name];
     if(!p){ assert.equal(BACKGROUND_TOOLS[name], "None", name + ": no tools in the data, so none in the text"); continue; }
@@ -88,6 +96,43 @@ test("background data: the corrections from the published pages", () => {
   assert.deepEqual(BACKGROUND_PROFS["Selesnya Initiate"].pick[0].kinds, ["Artisan's tools", "Musical instruments"]);
   assert.equal(BACKGROUND_PROFS["Boros Legionnaire"].pick[0].group, "Gaming sets");
   assert.equal(tools("Acolyte").length, 0);
+});
+
+test("background data: the backgrounds added on 2026-10-17, against the published pages", () => {
+  const skills = (n) => BACKGROUND_INFO[n].skills;
+  // Player's Handbook variants keep their parent's proficiencies.
+  for(const [variant, parent] of [["Gladiator", "Entertainer"], ["Knight", "Noble"], ["Spy", "Criminal"]]){
+    assert.deepEqual(skills(variant), skills(parent), variant);
+    assert.equal(BACKGROUND_LANGUAGES[variant], BACKGROUND_LANGUAGES[parent], variant);
+    assert.equal(BACKGROUND_TOOLS[variant], BACKGROUND_TOOLS[parent], variant);
+  }
+  assert.deepEqual(skills("Grinner"), ["Deception", "Performance"]);
+  assert.deepEqual(skills("Iron Route Bandit"), ["Animal Handling", "Stealth"]);
+  assert.deepEqual(BACKGROUND_INFO["Ashari"].skillPick.options, ["Arcana", "Survival"]);
+  assert.deepEqual(BACKGROUND_INFO["Investigator (Ravenloft)"].skillPick, { count: 2, options: ["Insight", "Investigation", "Perception"] });
+  assert.deepEqual(BACKGROUND_PROFS["Investigator (Ravenloft)"].tools, ["Disguise kit", "Thieves' tools"]);
+  assert.deepEqual(BACKGROUND_PROFS["Hillsfar Merchant"].tools, ["Vehicles (land)", "Vehicles (water)"]);
+  assert.equal(BACKGROUND_PROFS["Earthspur Miner"], undefined, "no tool");
+  assert.deepEqual(BACKGROUND_LANGUAGE_RULES["Earthspur Miner"].fixed, ["Dwarvish", "Undercommon"]);
+  assert.equal(BACKGROUND_LANGUAGES["Earthspur Miner"], 0);
+  assert.deepEqual(BACKGROUND_LANGUAGE_RULES["Shade Fanatic"].fixed, ["Netherese"]);
+  assert.equal(BACKGROUND_LANGUAGES["Hillsfar Smuggler"], 1);
+  // Every new background names its feature.
+  for(const n of ["Gladiator", "Knight", "Spy", "Ashari", "Grinner", "Rewarded", "Trade Sheriff"]) assert.ok(BACKGROUND_INFO[n].feature.name, n);
+});
+
+test("a Dragon Casualty picks one tool from its occupations, a Vizier an artisan's tool and an instrument", () => {
+  const dc = ensureShape(makeChar("Dragon Casualty"));
+  const g = bgGrant(dc);
+  const choices = open(dc, g, 0);
+  for(const t of ["Vehicles (water)", "Herbalism kit", "Forgery kit", "Dice set"]) assert.ok(choices.includes(t), t);
+  assert.ok(!choices.includes("Navigator's tools"));
+  assert.ok(!choices.includes("Poisoner's kit"));
+  const vz = ensureShape(makeChar("Vizier"));
+  assert.equal(BACKGROUND_PROFS["Vizier"].pick.length, 2);
+  const vg = bgGrant(vz);
+  CP.applyClassPicks(vz, vg.cl, vg, [["Calligrapher's supplies"], ["Lute"]]);
+  assert.deepEqual(CP.backgroundProficiencies(vz).tools, ["Calligrapher's supplies", "Lute"]);
 });
 
 /* ================================================================

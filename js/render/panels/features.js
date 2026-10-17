@@ -11,7 +11,7 @@ import { renderInvocationsCard } from "./invocations.js";
 import { renderOptionSetCards } from "./class-options.js";
 import { renderClassPicksCard } from "./class-picks.js";
 import { featPicksPending, featAppliedSummary, revertFeatPicks, featHasPicks, featNeedsChoice, applyFeatPicks,
-  backgroundFeatMissing, backgroundFeatCopy, backgroundFeatPicks, campaignFeatMissing, campaignFeatCopy, featDef, emptyPicks } from "../../core/feat-picks.js";
+  backgroundFeatMissing, backgroundFeatCopy, backgroundFeatPicks, backgroundFeatLabel, campaignFeatMissing, campaignFeatCopy, featDef, emptyPicks } from "../../core/feat-picks.js";
 import { openFeatPicksModal } from "../../ui/feat-picks.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { makeChevronRightSvg } from "../../ui/svg-icons.js";
@@ -317,27 +317,34 @@ export function renderFeaturesPanel(c){
       if(owed){
         var offer = document.createElement("div");
         offer.className = "ff-picks-pending";
-        offer.appendChild(document.createTextNode("This background also gives the " + owed.def.name + " feat" + (owed.option ? " (" + owed.option + ")" : "") + "."));
-        var addBtn2 = document.createElement("button");
-        addBtn2.type = "button";
-        addBtn2.className = "btn small primary";
-        addBtn2.textContent = "Add it";
-        addBtn2.addEventListener("click", function(){
-          var copy = backgroundFeatCopy(c.background);
-          if(!c.feats) c.feats = [];
-          c.feats.push(copy);
-          // Nothing to choose: applied at once. Otherwise its picks are
-          // asked for now; closing the picker leaves the Choose prompt.
-          if(featHasPicks(owed.def) && !featNeedsChoice(owed.def)) applyFeatPicks(c, copy, backgroundFeatPicks(c.background));
-          save(); renderAll(); playAdd();
-          if(featNeedsChoice(owed.def)) openFeatPicksModal(c, copy, function(){ save(); renderAll(); });
+        offer.appendChild(document.createTextNode(owed.choices
+          ? "This background also gives a feat: " + backgroundFeatLabel(c.background) + "."
+          : "This background also gives the " + backgroundFeatLabel(c.background) + " feat."));
+        // One button for its feat, or one per feat to choose from (a
+        // Rewarded's Lucky, Magic Initiate or Skilled).
+        (owed.choices || [owed.def.name]).forEach(function(name){
+          var def = featDef(name);
+          var addBtn2 = document.createElement("button");
+          addBtn2.type = "button";
+          addBtn2.className = "btn small primary";
+          addBtn2.textContent = owed.choices ? "Add " + name : "Add it";
+          addBtn2.addEventListener("click", function(){
+            var copy = backgroundFeatCopy(c.background, name);
+            if(!c.feats) c.feats = [];
+            c.feats.push(copy);
+            // Nothing to choose: applied at once. Otherwise its picks are
+            // asked for now; closing the picker leaves the Choose prompt.
+            if(featHasPicks(def) && !featNeedsChoice(def)) applyFeatPicks(c, copy, backgroundFeatPicks(c.background, name));
+            save(); renderAll(); playAdd();
+            if(featNeedsChoice(def)) openFeatPicksModal(c, copy, function(){ save(); renderAll(); });
+          });
+          offer.appendChild(addBtn2);
         });
         var skipBtn = document.createElement("button");
         skipBtn.type = "button";
         skipBtn.className = "btn small ghost";
         skipBtn.textContent = "Not for this character";
         skipBtn.addEventListener("click", function(){ c.backgroundFeatSkipped = c.background; save(); renderAll(); });
-        offer.appendChild(addBtn2);
         offer.appendChild(skipBtn);
         card.appendChild(offer);
       }

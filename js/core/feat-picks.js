@@ -174,36 +174,51 @@ export function featToolChoices(def){
 
 /* ---- A background's feat ----
    The feat a background gives, as {def, option} (option: the choice the
-   book makes for it, or ""), or null. */
-export function backgroundFeatGrant(background){
+   book makes for it, or ""), or null. A background that lets the player
+   choose (a Rewarded's Lucky, Magic Initiate or Skilled) also has
+   `choices`, and its def is the one `chosen` names (null until then). */
+export function backgroundFeatGrant(background, chosen){
   var grant = (BACKGROUND_INFO[background] || {}).feat;
-  var def = grant && featDef(grant.name);
+  if(!grant) return null;
+  if(grant.choices) return {def: grant.choices.indexOf(chosen)!==-1 ? featDef(chosen) : null, option: "", choices: grant.choices.slice()};
+  var def = featDef(grant.name);
   return def ? {def: def, option: grant.option || ""} : null;
 }
-/* The character's copy of that feat: `from` names the background, and
-   `lockedOption` keeps the book's choice out of the pickers. */
-export function backgroundFeatCopy(background){
+/* That feat in words: "Tough", "Strixhaven Initiate (Lorehold)" or
+   "Lucky, Magic Initiate or Skilled". "" when there is none. */
+export function backgroundFeatLabel(background){
   var g = backgroundFeatGrant(background);
-  if(!g) return null;
+  if(!g) return "";
+  if(g.choices) return g.choices.slice(0, -1).join(", ") + " or " + g.choices[g.choices.length-1];
+  return g.def.name + (g.option ? " (" + g.option + ")" : "");
+}
+/* The character's copy of that feat (`chosen` picks one of its choices):
+   `from` names the background, and `lockedOption` keeps the book's
+   choice out of the pickers. */
+export function backgroundFeatCopy(background, chosen){
+  var g = backgroundFeatGrant(background, chosen);
+  if(!g || !g.def) return null;
   var copy = {id: uid(), name: g.def.name, prerequisite: g.def.prerequisite, category: g.def.category, summary: g.def.summary,
     description: g.def.description, source: "SRD", from: background};
   if(g.option) copy.lockedOption = g.option;
   return copy;
 }
 /* The picks such a feat starts from (its locked option already made). */
-export function backgroundFeatPicks(background){
-  var g = backgroundFeatGrant(background);
-  if(!g) return null;
+export function backgroundFeatPicks(background, chosen){
+  var g = backgroundFeatGrant(background, chosen);
+  if(!g || !g.def) return null;
   var picks = emptyPicks(g.def);
   picks.option = g.option;
   return picks;
 }
 /* The background's feat when the character doesn't have it and wasn't
    told to go without (a sheet from before backgrounds gave feats, or one
-   whose background was changed), else null. */
+   whose background was changed), else null. For a choice of feats: when
+   none of the character's feats came from the background. */
 export function backgroundFeatMissing(c){
   var g = backgroundFeatGrant(c.background);
   if(!g || c.backgroundFeatSkipped===c.background) return null;
+  if(g.choices) return (c.feats||[]).some(function(f){ return f.from===c.background; }) ? null : g;
   return (c.feats||[]).some(function(f){ return f.name===g.def.name; }) ? null : g;
 }
 

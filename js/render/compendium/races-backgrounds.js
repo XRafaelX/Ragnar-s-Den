@@ -16,7 +16,7 @@ import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { getHomebrewEntry, saveHomebrew, deleteHomebrew, homebrewNameProblem, charactersUsingHomebrew } from "../../core/custom-homebrew.js";
 import { escapeHtml } from "../../core/helpers.js";
 import { facts, textField, homebrewShell, numberField, pickerField, previewCard } from "../../ui/homebrew-form.js";
-import { backgroundFeatGrant } from "../../core/feat-picks.js";
+import { backgroundFeatLabel } from "../../core/feat-picks.js";
 import { session, block, featureList, customBar } from "./shared.js";
 
 function showRace(name){
@@ -54,7 +54,7 @@ function showBackground(name){
       ["Skills", info ? backgroundSkills(info) : "Two of your choice"],
       ["Tools", BACKGROUND_TOOLS[name] || "Check your sourcebook"],
       ["Languages", backgroundLanguages(name)]
-    ].concat(backgroundFeatGrant(name) ? [["Feat", backgroundFeatGrant(name).def.name + (backgroundFeatGrant(name).option ? " (" + backgroundFeatGrant(name).option + ")" : "")]] : [])));
+    ].concat(backgroundFeatLabel(name) ? [["Feat", backgroundFeatLabel(name)]] : [])));
     if(info && info.feature && info.feature.name) block(body, "Feature", featureList([info.feature]));
   });
 }

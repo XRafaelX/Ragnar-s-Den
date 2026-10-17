@@ -16,7 +16,7 @@ import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, refreshWizardProgress } from "./wizard-core.js";
-import { backgroundFeatGrant, campaignLevel1Feats } from "../core/feat-picks.js";
+import { backgroundFeatGrant, backgroundFeatLabel, campaignLevel1Feats } from "../core/feat-picks.js";
 import { CAMPAIGN_FEATS } from "../data/feats.js";
 
 export function setAbilityMethod(method){
@@ -256,7 +256,8 @@ export function backgroundExplainHtml(name){
   var info = BACKGROUND_INFO[name];
   // A background that gives a feat says so (and which choice the book makes for it).
   var grant = backgroundFeatGrant(name);
-  var feat = grant ? " <b>Feat:</b> "+escapeHtml(grant.def.name+(grant.option ? " ("+grant.option+")" : ""))+". "+escapeHtml(grant.def.summary) : "";
+  var feat = !grant ? "" : grant.choices ? " <b>Feat:</b> "+escapeHtml(backgroundFeatLabel(name))+", picked on a later step."
+    : " <b>Feat:</b> "+escapeHtml(backgroundFeatLabel(name))+". "+escapeHtml(grant.def.summary);
   // No feat of its own: the campaign's, when one is set below.
   var camp = wizardState && campaignLevel1Feats(wizardState.campaign, name);
   if(!grant && camp && camp.length) feat = " <b>Campaign feat:</b> "+escapeHtml(camp.join(" or "))+", picked on a later step.";
@@ -343,7 +344,7 @@ function campaignOutcomeHtml(){
   var later = camp.level4 ? " You'll also pick another feat when you reach level 4." : "";
   if(!bg) return "Choose a background above to see what this gives you."+later;
   var own = backgroundFeatGrant(bg);
-  if(own) return "Your "+escapeHtml(bg)+" background already comes with its own feat (<b>"+escapeHtml(own.def.name)+"</b>), so this adds nothing now."+later;
+  if(own) return "Your "+escapeHtml(bg)+" background already comes with its own feat (<b>"+escapeHtml(backgroundFeatLabel(bg))+"</b>), so this adds nothing now."+later;
   var names = campaignLevel1Feats(wizardState.campaign, bg).map(function(n){ return "<b>"+escapeHtml(n)+"</b>"; });
   return "You get a free feat: "+names.join(" or ")+". You'll choose on a later step."+later;
 }

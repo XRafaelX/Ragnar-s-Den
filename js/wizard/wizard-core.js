@@ -486,14 +486,16 @@ export function wizardFeatContext(opts){
     }};
 }
 /* The feat the new character starts with besides a race's: the chosen
-   background's, as {def, option}, or, when it gives none and a campaign
+   background's, as {def, option} (with `choices` when the player picks
+   it: def is wizardState.bgFeatChoice's, null until then), or, when it
+   gives none and a campaign
    that hands out feats is set (wizardState.campaign), the campaign's:
    {def, option:"", choices, campaign}, where def is the one picked from
    `choices` (null until then). Null when there is neither. */
 export function wizardBackgroundFeat(){
   var w = wizardState;
   if(!w) return null;
-  var own = backgroundFeatGrant(w.background);
+  var own = backgroundFeatGrant(w.background, w.bgFeatChoice);
   if(own) return own;
   var choices = campaignLevel1Feats(w.campaign, w.background);
   if(!choices.length) return null;
@@ -505,7 +507,7 @@ export function wizardBackgroundFeatPicks(){
   var g = wizardBackgroundFeat(), w = wizardState;
   if(!g || !g.def) return null;
   if(!w.bgFeat || w.bgFeat.background!==w.background || (w.bgFeat.name || g.def.name)!==g.def.name){
-    w.bgFeat = {background: w.background, name: g.def.name, picks: g.campaign ? emptyPicks(g.def) : backgroundFeatPicks(w.background)};
+    w.bgFeat = {background: w.background, name: g.def.name, picks: g.campaign ? emptyPicks(g.def) : backgroundFeatPicks(w.background, g.def.name)};
   }
   return w.bgFeat.picks;
 }
@@ -595,9 +597,9 @@ export function validateStep(id){
   }
   if(id==="bgFeat"){
     var bgf = wizardBackgroundFeat();
-    if(!bgf.def) return "Pick "+bgf.choices.join(" or ")+" as your campaign feat.";
+    if(!bgf.def) return "Pick "+bgf.choices.join(" or ")+" as your "+(bgf.campaign ? "campaign" : "background")+" feat.";
     var raceFeat = isStepApplicable("feat") && wizardFeat();
-    if(bgf.campaign && raceFeat===bgf.def) return "You already took "+bgf.def.name+" as your "+wizardState.race+" feat. Pick the other one.";
+    if(bgf.choices && raceFeat===bgf.def) return "You already took "+bgf.def.name+" as your "+wizardState.race+" feat. Pick another.";
     return featPicksProblem(bgf.def, wizardBackgroundFeatPicks(), wizardFeatContext({forBackgroundFeat:true})) || null;
   }
   if(id==="featPicks"){
@@ -696,7 +698,7 @@ export function openWizard(){
     bgPicks:{}, overlapPicks:{},
     classChoices:{},
     raceChoices:{abilities:[], preset:"", profPicks:{}, feat:"", featPicks:null},
-    bgFeat:null, campaign:"", campaignFeat:"",
+    bgFeat:null, bgFeatChoice:"", campaign:"", campaignFeat:"",
     languageChoices:[],
     equipment:{},
     spellChoices:{cantrips:[], spells:[]}
@@ -750,7 +752,7 @@ export function finishWizard(){
   var grant = wizardBackgroundFeat();
   if(CAMPAIGN_FEATS[w.campaign]) c.campaign = w.campaign;
   if(grant && grant.def){
-    var bgFeat = grant.campaign ? campaignFeatCopy(grant.def, grant.campaign, 1) : backgroundFeatCopy(w.background);
+    var bgFeat = grant.campaign ? campaignFeatCopy(grant.def, grant.campaign, 1) : backgroundFeatCopy(w.background, grant.def.name);
     c.feats.push(bgFeat);
     if(featHasPicks(grant.def)) applyFeatPicks(c, bgFeat, wizardBackgroundFeatPicks());
   }

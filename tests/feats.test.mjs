@@ -361,11 +361,12 @@ test("backgrounds that give a feat: which one, the book's choice for it, and the
   for(const [name, info] of Object.entries(BACKGROUND_INFO)){
     if(!info.feat) continue;
     count++;
+    if(info.feat.choices){ info.feat.choices.forEach((f) => assert.ok(FP.featDef(f), name + ": feat " + f)); continue; }
     const def = FP.featDef(info.feat.name);
     assert.ok(def, name + ": feat " + info.feat.name);
     if(info.feat.option) assert.ok(def.option.options.includes(info.feat.option), name + ": option " + info.feat.option);
   }
-  assert.equal(count, 13);
+  assert.equal(count, 15);
   // The copy remembers where it came from and keeps the book's choice.
   const copy = FP.backgroundFeatCopy("Astral Drifter");
   assert.equal(copy.from, "Astral Drifter");
@@ -385,6 +386,34 @@ test("backgrounds that give a feat: which one, the book's choice for it, and the
   assert.equal(FP.backgroundFeatMissing(c), null);
   c.background = "Rune Carver"; // a new background is a new offer
   assert.equal(FP.backgroundFeatMissing(c).def.name, "Rune Shaper");
+});
+
+test("backgrounds with a choice of feat: Rewarded and Ruined (The Book of Many Things)", () => {
+  assert.equal(FP.backgroundFeatLabel("Rewarded"), "Lucky, Magic Initiate or Skilled");
+  assert.equal(FP.backgroundFeatLabel("Ruined"), "Alert, Skilled or Tough");
+  assert.equal(FP.backgroundFeatLabel("Lorehold Student"), "Strixhaven Initiate (Lorehold)");
+  assert.equal(FP.backgroundFeatLabel("Acolyte"), "");
+  // Nothing picked yet: the choices and no feat; a pick that isn't one of them counts as none.
+  assert.deepEqual(FP.backgroundFeatGrant("Rewarded"), { def: null, option: "", choices: ["Lucky", "Magic Initiate", "Skilled"] });
+  assert.equal(FP.backgroundFeatGrant("Rewarded", "Tough").def, null);
+  assert.equal(FP.backgroundFeatGrant("Rewarded", "Lucky").def.name, "Lucky");
+  assert.equal(FP.backgroundFeatCopy("Ruined"), null);
+  const copy = FP.backgroundFeatCopy("Ruined", "Tough");
+  assert.deepEqual([copy.name, copy.from, copy.lockedOption], ["Tough", "Ruined", undefined]);
+  assert.equal(FP.backgroundFeatPicks("Rewarded", "Magic Initiate").option, "", "the player picks Magic Initiate's class");
+  // A campaign adds nothing: the background has a feat of its own.
+  assert.deepEqual(FP.campaignLevel1Feats("Dragonlance", "Ruined"), []);
+  // The sheet's offer: until one of the feats comes from the background, or the player says no.
+  const c = char([{ name: "Fighter", level: 3 }]);
+  c.background = "Ruined";
+  assert.deepEqual(FP.backgroundFeatMissing(c).choices, ["Alert", "Skilled", "Tough"]);
+  c.feats.push({ id: "t", name: "Tough" }); // Tough taken another way: still owed
+  assert.ok(FP.backgroundFeatMissing(c));
+  c.feats.push(FP.backgroundFeatCopy("Ruined", "Alert"));
+  assert.equal(FP.backgroundFeatMissing(c), null);
+  c.feats = [];
+  c.backgroundFeatSkipped = "Ruined";
+  assert.equal(FP.backgroundFeatMissing(c), null);
 });
 
 test("campaign bonus feats: Skilled or Tough at level 1 without a background feat, Dragonlance's list at level 4", () => {

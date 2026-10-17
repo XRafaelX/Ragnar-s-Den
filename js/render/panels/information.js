@@ -5,7 +5,7 @@ import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
 import { classFeatureList, classProficiencies, classVariants, escapeHtml } from "../../core/helpers.js";
-import { featProficiencies, backgroundFeatGrant, campaignFeatMissing } from "../../core/feat-picks.js";
+import { featProficiencies, backgroundFeatGrant, backgroundFeatLabel, campaignFeatMissing } from "../../core/feat-picks.js";
 import { dlcShelf, campaignBookCard } from "../../ui/dlc-shelf.js";
 import { characterPickedProfs, raceProficiencies, backgroundProficiencies, overlapTools } from "../../core/class-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
@@ -387,7 +387,7 @@ function optionalRulesCard(c){
         var own = backgroundFeatGrant(c.background), owed = campaignFeatMissing(c);
         lines.push("<b>" + escapeHtml(c.campaign) + ":</b> " +
           (owed ? "your free feat (" + escapeHtml(owed.choices.join(" or ")) + ") is waiting on the Features tab."
-            : own ? "your " + escapeHtml(c.background) + " background already comes with its own feat (" + escapeHtml(own.def.name) + "), so this adds nothing now."
+            : own ? "your " + escapeHtml(c.background) + " background already comes with its own feat (" + escapeHtml(backgroundFeatLabel(c.background)) + "), so this adds nothing now."
             : "your level 1 feat is on the sheet.") +
           (camp.level4 ? " The level-up to level 4 asks for another." : ""));
       }
