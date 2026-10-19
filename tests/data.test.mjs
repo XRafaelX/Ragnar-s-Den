@@ -10,6 +10,7 @@ import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_TOOLS } 
 import { SKILLS } from "../js/data/abilities-skills.js";
 import { INVOCATIONS, PACT_BOONS, INVOCATION_SOURCES, invocationsKnownAt } from "../js/data/invocations.js";
 import { FEATS_CATALOG } from "../js/data/feats.js";
+import { MONSTER_GROUPS, MONSTER_DATA } from "../js/data/monsters.js";
 
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
@@ -309,4 +310,25 @@ test("invocations: well formed, spells exist, prerequisites are real", () => {
   }
   assert.equal(INVOCATIONS.length, 54, "PHB 32 + XGE 14 + TCE 8");
   assert.deepEqual([1, 2, 4, 5, 7, 9, 12, 15, 18, 20].map(invocationsKnownAt), [0, 2, 2, 3, 4, 5, 6, 7, 8, 8]);
+});
+
+test("monsters: every SRD 5.1 monster, each in one group sorted by CR, stats in range", () => {
+  const CRS = ["0", "1/8", "1/4", "1/2"].concat(Array.from({ length: 30 }, (_, i) => String(i + 1)));
+  const grouped = Object.values(MONSTER_GROUPS).flat();
+  assert.equal(new Set(grouped).size, grouped.length, "a monster is in two groups");
+  assert.deepEqual([...grouped].sort(), Object.keys(MONSTER_DATA).sort(), "groups and data list the same monsters");
+  for(const [g, names] of Object.entries(MONSTER_GROUPS)){
+    const order = names.map((n) => CRS.indexOf(MONSTER_DATA[n].cr));
+    assert.deepEqual(order, [...order].sort((a, b) => a - b), g + ": sorted by CR");
+  }
+  for(const [name, d] of Object.entries(MONSTER_DATA)){
+    assert.ok(CRS.includes(d.cr), name + ": cr " + d.cr);
+    assert.ok(["Tiny", "Small", "Medium", "Large", "Huge", "Gargantuan"].includes(d.size), name + ": size");
+    assert.ok(d.hp > 0 && d.ac >= 5 && d.ac <= 25 && d.speed >= 0, name + ": hp/ac/speed");
+    ABILITIES.forEach((ab) => assert.ok(d[ab] >= 1 && d[ab] <= 30, name + ": " + ab));
+    assert.ok(d.notes && !LONG_DASH.test(d.notes), name + ": notes");
+  }
+  // 334 SRD entries: the Vampire's three forms are one, the five lycanthropes'
+  // three forms each are one apiece, plus 9 from other books.
+  assert.equal(Object.keys(MONSTER_DATA).length, 334 - 2 - 10 + 9);
 });

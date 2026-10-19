@@ -4,6 +4,7 @@
    and for the standalone Armory reachable from the sidebar (which shows
    both as switchable sections/tabs). */
 import { makeCheckCheckSvg } from "./svg-icons.js";
+import { themedPicker } from "./themed-picker.js";
 
 var state = null;
 
@@ -56,18 +57,79 @@ function renderSectionTabs(){
   });
 }
 
+/* The category pills sit on one line that scrolls sideways (a swipe, or
+   the mouse wheel), faded at an edge with more beyond it. When they don't
+   all fit, a ⋯ button at the end lists every category. Picking one keeps
+   the line where it was and slides the picked pill into view. */
+var pillObserver = null;
+
+function pickGroup(g){
+  state.activeGroup = g;
+  renderPills();
+  renderList();
+}
+
+function updatePillOverflow(){
+  var scroller = document.querySelector("#catalog-pills .catalog-pill-scroll");
+  if(!scroller) return;
+  var max = scroller.scrollWidth - scroller.clientWidth;
+  scroller.classList.toggle("fade-left", scroller.scrollLeft > 1);
+  scroller.classList.toggle("fade-right", scroller.scrollLeft < max - 1);
+  document.getElementById("catalog-pills").classList.toggle("overflowing", max > 1);
+}
+
+function revealActivePill(scroller){
+  var pill = scroller.querySelector(".ff-pill.active");
+  if(!pill) return;
+  var left = pill.offsetLeft - scroller.offsetLeft, right = left + pill.offsetWidth;
+  if(left < scroller.scrollLeft) scroller.scrollLeft = left - 16;
+  else if(right > scroller.scrollLeft + scroller.clientWidth) scroller.scrollLeft = right - scroller.clientWidth + 16;
+}
+
 function renderPills(){
   var section = activeSection();
   var pillRow = document.getElementById("catalog-pills");
+  var old = pillRow.querySelector(".catalog-pill-scroll");
+  var keepScroll = old ? old.scrollLeft : 0;
   pillRow.innerHTML = "";
-  pillRow.appendChild(makePill("All", state.activeGroup==="all", function(){
-    state.activeGroup = "all"; renderPills(); renderList();
-  }));
-  Object.keys(section.groups).forEach(function(g){
-    pillRow.appendChild(makePill(g, state.activeGroup===g, function(){
-      state.activeGroup = g; renderPills(); renderList();
-    }));
+
+  var scroller = document.createElement("div");
+  scroller.className = "catalog-pill-scroll";
+  var groups = Object.keys(section.groups);
+  scroller.appendChild(makePill("All", state.activeGroup==="all", function(){ pickGroup("all"); }));
+  groups.forEach(function(g){
+    scroller.appendChild(makePill(g, state.activeGroup===g, function(){ pickGroup(g); }));
   });
+  scroller.addEventListener("scroll", updatePillOverflow, {passive:true});
+  // A mouse wheel scrolls the line sideways.
+  scroller.addEventListener("wheel", function(e){
+    if(!e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    if(scroller.scrollWidth <= scroller.clientWidth) return;
+    e.preventDefault();
+    scroller.scrollLeft += e.deltaY;
+  }, {passive:false});
+  pillRow.appendChild(scroller);
+
+  var more = themedPicker({
+    variant: "field", search: false, sheet: true,
+    value: state.activeGroup, placeholder: "Categories", ariaLabel: "All categories",
+    triggerClass: "catalog-pill-more-btn",
+    groups: { "": [{value:"all", label:"All"}].concat(groups.map(function(g){ return {value:g, label:g}; })) },
+    onPick: pickGroup
+  });
+  more.classList.add("catalog-pill-more");
+  more.querySelector(".tp-trigger").insertAdjacentHTML("beforeend", '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>');
+  pillRow.appendChild(more);
+
+  scroller.scrollLeft = keepScroll;
+  revealActivePill(scroller);
+  updatePillOverflow();
+  // Sizes are only known once the overlay shows, and change with the window.
+  if(pillObserver) pillObserver.disconnect();
+  if(typeof ResizeObserver !== "undefined"){
+    pillObserver = new ResizeObserver(updatePillOverflow);
+    pillObserver.observe(scroller);
+  }
 }
 
 function renderRow(section, name, d){
