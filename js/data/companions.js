@@ -192,7 +192,7 @@ export var COMPANIONS = [
         attacks:(b.attacks||[]).map(function(a){
           return {name: a.name, toHit: (Number(a.toHit)||0) + x.pb, dice: a.dice || "1d4", bonus: (Number(a.bonus)||0) + x.pb, damageType: a.damageType || "", text: a.text || ""};
         }),
-        traits:(b.traits ? [{name:"Traits", text: b.traits}] : [])
+        traits:(b.traits ? [{text: b.traits}] : [])
           .concat([{name:"Commands", text:"It acts on your initiative but only when you command it: your action has it Attack, Dash, Disengage, Dodge or Help" +
             (x.lv >= 5 ? " (and you make one weapon attack when it attacks)" : "") + "." +
             (x.lv >= 7 ? " A bonus action can command Dash, Disengage, Dodge or Help when it doesn't attack; its attacks are magical." : "") +

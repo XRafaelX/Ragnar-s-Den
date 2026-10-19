@@ -6,20 +6,23 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { showActionToast } from "../../ui/toast.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { performRoll } from "../../dice/dice.js";
-import { makeDiceSvg } from "../../ui/svg-icons.js";
+import { makeDiceSvg, makeStatArrowSvg } from "../../ui/svg-icons.js";
 
 /* ---- Companion cards (Companions tab) ----
    One stat card per companion (js/data/companions.js): its choice (a
-   drake's essence), AC, HP tracker (one per copy, e.g. two cannons),
-   speed, ability scores, then attacks and actions with roll buttons,
-   reactions and traits as text. A Beast Master's card starts with a
+   drake's essence), then a vitals row (AC, an HP tracker per copy, e.g.
+   two cannons, speed), then two columns on a wide card: ability scores
+   and facts beside attacks, actions and reactions with roll buttons;
+   traits run full width under them. A Beast Master's card starts with a
    form for the beast's own stat block. */
 var ABILITY_KEYS = ["str","dex","con","int","wis","cha"];
 
 function rollButton(text, onClick){
   var b = document.createElement("button");
   b.type = "button"; b.className = "btn small inv-roll-btn";
-  b.innerHTML = makeDiceSvg() + text;
+  b.innerHTML = makeDiceSvg();
+  if(typeof text==="string") b.appendChild(document.createTextNode(text));
+  else b.appendChild(text);
   b.addEventListener("click", onClick);
   return b;
 }
@@ -29,27 +32,51 @@ function rollDice(dice, bonus, label){
   if(d) performRoll(d.die, d.qty, bonus||0, "none", label);
 }
 
+/* One HP tracker, laid out like the Vitals HP box: current / max over
+   a fill that shrinks with HP, then damage 1, Full, heal 1. */
 function hpTracker(c, comp, i){
   var max = comp.stats.hp, cur = comp.hp[i];
-  var row = ce("div", "comp-hp");
-  var label = ce("span", "comp-hp-label");
-  label.textContent = (comp.stats.count > 1 ? "#" + (i + 1) + " " : "") + "HP";
-  var value = ce("span", "comp-hp-value" + (cur === 0 ? " down" : ""));
-  value.textContent = cur + " / " + max;
-  row.appendChild(label); row.appendChild(value);
-  [[-5, "danger"], [-1, "danger"], [1, ""], [5, ""]].forEach(function(s){
-    var b = document.createElement("button");
-    b.type = "button"; b.className = "btn small quick-adj-btn " + (s[1] || "quick-heal-btn");
-    b.textContent = (s[0] > 0 ? "+" : "") + s[0];
-    b.setAttribute("aria-label", (s[0] < 0 ? "Damage " : "Heal ") + comp.def.name + " " + Math.abs(s[0]));
-    b.addEventListener("click", function(){ setCompanionHp(c, comp.def.id, i, cur + s[0], max); save(); renderAll(); });
-    row.appendChild(b);
-  });
+  var pct = max ? Math.round(Math.max(0, Math.min(1, cur / max)) * 1000) / 10 : 0;
+  var row = ce("div", "comp-hp" + (pct <= 30 && cur > 0 ? " hp-low" : ""));
+  row.style.setProperty("--hp-pct", pct + "%");
+  var value = ce("div", "hp-hero-display comp-hp-value");
+  if(comp.stats.count > 1){
+    var label = ce("span", "comp-hp-label");
+    label.textContent = "#" + (i + 1);
+    value.appendChild(label);
+  }
+  value.insertAdjacentHTML("beforeend", "<span class='hp-cur-num'></span><span class='hp-slash'>/</span><span class='hp-max-num'></span>");
+  value.querySelector(".hp-cur-num").textContent = cur;
+  value.querySelector(".hp-max-num").textContent = max;
+  if(cur === 0) value.querySelector(".hp-cur-num").classList.add("down");
+  row.appendChild(value);
+
+  function set(to, flash){
+    setCompanionHp(c, comp.def.id, i, to, max); save(); renderAll();
+    requestAnimationFrame(function(){
+      var el = document.querySelectorAll(".comp-card[data-comp='" + comp.def.id + "'] .comp-hp .hp-cur-num")[i];
+      if(el) el.classList.add(flash);
+    });
+  }
+  var btns = ce("div", "hp-actions-row");
+  var dmg = document.createElement("button");
+  dmg.type = "button"; dmg.className = "stat-arrow-btn stat-arrow-down";
+  dmg.title = "Take 1 damage";
+  dmg.setAttribute("aria-label", "Damage " + comp.def.name + " 1");
+  dmg.innerHTML = makeStatArrowSvg("down");
+  dmg.addEventListener("click", function(){ set(cur - 1, "hp-dmg"); });
   var full = document.createElement("button");
-  full.type = "button"; full.className = "btn small quick-adj-btn quick-heal-btn";
+  full.type = "button"; full.className = "btn small quick-heal-btn hp-full-inline";
   full.textContent = "Full";
-  full.addEventListener("click", function(){ setCompanionHp(c, comp.def.id, i, max, max); save(); renderAll(); });
-  row.appendChild(full);
+  full.addEventListener("click", function(){ set(max, "hp-heal"); });
+  var heal = document.createElement("button");
+  heal.type = "button"; heal.className = "stat-arrow-btn stat-arrow-up";
+  heal.title = "Heal 1 HP";
+  heal.setAttribute("aria-label", "Heal " + comp.def.name + " 1");
+  heal.innerHTML = makeStatArrowSvg("up");
+  heal.addEventListener("click", function(){ set(cur + 1, "hp-heal"); });
+  btns.appendChild(dmg); btns.appendChild(full); btns.appendChild(heal);
+  row.appendChild(btns);
   return row;
 }
 
@@ -62,105 +89,157 @@ function entryBlock(title, list, render){
   list.forEach(function(e){ box.appendChild(render(e)); });
   return box;
 }
+/* A reaction or trait; one without a name (a beast's traits as typed in
+   the form) is just its text. */
 function textEntry(e){
   var p = ce("p", "comp-entry");
+  if(!e.name){ p.textContent = e.text; return p; }
   p.innerHTML = "<b></b> <span></span>";
   p.firstChild.textContent = e.name + ".";
   p.lastChild.textContent = e.text;
   return p;
+}
+/* An attack or action: its name with the roll buttons (or, read-only,
+   tags) beside it, and what it does under them. */
+function actEntry(name, side, text){
+  var box = ce("div", "comp-act");
+  var head = ce("div", "comp-act-head");
+  var n = ce("span", "comp-act-name");
+  n.textContent = name;
+  head.appendChild(n);
+  if(side.length){
+    var rolls = ce("div", "comp-act-rolls");
+    side.forEach(function(el){ rolls.appendChild(el); });
+    head.appendChild(rolls);
+  }
+  box.appendChild(head);
+  if(text){
+    var p = ce("p", "comp-act-text");
+    p.textContent = text;
+    box.appendChild(p);
+  }
+  return box;
+}
+function tag(text){
+  var t = ce("span", "comp-tag");
+  t.textContent = text;
+  return t;
 }
 
 function choiceRow(c, comp){
   var ch = comp.def.choice;
   var box = ce("div", "comp-choice" + (comp.choice ? "" : " pending"));
   var label = ce("span", "comp-choice-label");
-  label.textContent = ch.label + ":";
+  label.textContent = ch.label;
   box.appendChild(label);
+  var seg = ce("div", "comp-seg");
+  seg.setAttribute("role", "group");
+  seg.setAttribute("aria-label", ch.label);
   ch.options.forEach(function(o){
     var b = document.createElement("button");
-    b.type = "button"; b.className = "btn small" + (comp.choice===o ? " primary" : "");
+    b.type = "button"; b.className = "comp-seg-btn" + (comp.choice===o ? " active" : "");
     b.setAttribute("aria-pressed", comp.choice===o ? "true" : "false");
     b.textContent = o;
     b.addEventListener("click", function(){ setCompanionChoice(c, comp.def.id, o); save(); renderAll(); });
-    box.appendChild(b);
+    seg.appendChild(b);
   });
+  box.appendChild(seg);
   return box;
 }
 
-/* The stat block itself (AC/HP/speed tiles, abilities, facts, attacks,
-   actions, reactions, traits) into `card`. opts.rolls adds roll buttons
-   (the sheet); opts.afterTiles(card) adds rows under the tiles (HP
-   trackers). The Compendium's Companions list shows it read-only. */
+function statTile(label, value, cls){
+  var tile = ce("div", "comp-tile" + (cls ? " " + cls : ""));
+  tile.innerHTML = "<span class='lbl'></span><span class='val'></span>";
+  tile.firstChild.textContent = label;
+  tile.lastChild.textContent = value;
+  if(String(value).length > 10) tile.lastChild.classList.add("long");   // "40 ft, fly 40 ft (not while ridden)"
+  return tile;
+}
+
+/* The stat block itself (vitals row, abilities, facts, attacks, actions,
+   reactions, traits) into `card`. opts.rolls adds roll buttons (the
+   sheet); opts.hpTile() replaces the Max HP tile (the HP trackers). The
+   Compendium's Companions list shows it read-only. */
 export function renderStatBlock(card, s, name, opts){
   opts = opts || {};
+  var block = ce("div", "comp-block");
   var tiles = ce("div", "comp-tiles");
-  [["AC", s.ac], ["Max HP", s.hp], ["Speed", s.speed]].forEach(function(t){
-    var tile = ce("div", "comp-tile");
-    tile.innerHTML = "<span class='lbl'></span><span class='val'></span>";
-    tile.firstChild.textContent = t[0];
-    tile.lastChild.textContent = t[1];
-    if(String(t[1]).length > 10) tile.lastChild.classList.add("long");   // "40 ft, fly 40 ft (not while ridden)"
-    tiles.appendChild(tile);
-  });
-  card.appendChild(tiles);
-  if(opts.afterTiles) opts.afterTiles(card);
+  tiles.appendChild(statTile("AC", s.ac, "comp-tile-ac"));
+  tiles.appendChild(opts.hpTile ? opts.hpTile() : statTile("Max HP", s.hp, "comp-tile-hp"));
+  tiles.appendChild(statTile("Speed", s.speed, "comp-tile-speed"));
+  block.appendChild(tiles);
 
+  var body = ce("div", "comp-body");
+  var stats = ce("div", "comp-col");
   if(s.abilities){
     var ab = ce("div", "comp-abilities");
     ABILITY_KEYS.forEach(function(k){
-      var cell = ce("div", "comp-ability");
-      cell.innerHTML = "<span class='lbl'></span><span class='val'></span>";
-      cell.firstChild.textContent = k.toUpperCase();
-      cell.lastChild.textContent = s.abilities[k] + " (" + fmtMod(mod(s.abilities[k])) + ")";
+      var m = mod(s.abilities[k]);
+      var cell = ce(opts.rolls ? "button" : "div", "comp-ability");
+      if(opts.rolls){
+        cell.type = "button";
+        cell.title = "Roll a " + k.toUpperCase() + " check";
+        cell.addEventListener("click", function(){ performRoll(20, 1, m, "none", name + ": " + k.toUpperCase() + " check"); });
+      }
+      cell.innerHTML = "<span class='lbl'></span><span class='mod'></span><span class='score'></span>";
+      cell.children[0].textContent = k.toUpperCase();
+      cell.children[1].textContent = fmtMod(m);
+      cell.children[2].textContent = s.abilities[k];
       ab.appendChild(cell);
     });
-    card.appendChild(ab);
+    stats.appendChild(ab);
   }
   var facts = [["Saves", s.saves], ["Skills", s.skills], ["Senses", s.senses], ["Vulnerable", s.vulnerabilities], ["Resist", s.resistances], ["Immune", s.immunities]]
     .filter(function(f){ return f[1]; });
   if(facts.length){
-    var dl = ce("div", "comp-facts");
+    var dl = ce("dl", "comp-facts");
     facts.forEach(function(f){
-      var p = document.createElement("p");
-      p.innerHTML = "<b></b> <span></span>";
-      p.firstChild.textContent = f[0] + ":";
-      p.lastChild.textContent = f[1];
-      dl.appendChild(p);
+      var dt = document.createElement("dt"), dd = document.createElement("dd");
+      dt.textContent = f[0];
+      dd.textContent = f[1];
+      dl.appendChild(dt); dl.appendChild(dd);
     });
-    card.appendChild(dl);
+    stats.appendChild(dl);
   }
+  if(stats.childNodes.length) body.appendChild(stats);
 
+  var acts = ce("div", "comp-col");
   var attacks = entryBlock("Attacks", s.attacks, function(a){
-    var box = ce("div", "comp-entry-box");
-    box.appendChild(textEntry({name: a.name, text: a.text + " Hit: " + diceText(a.dice, a.bonus) + " " + a.damageType + " damage" +
-      (a.extraDice ? " plus " + a.extraDice + " " + a.extraType : "") + "."}));
     if(!opts.rolls){
-      box.appendChild(textEntry({name: "To hit", text: fmtMod(a.toHit)}));
-      return box;
+      return actEntry(a.name, [tag(fmtMod(a.toHit) + " to hit")], a.text + " Hit: " + diceText(a.dice, a.bonus) + " " + a.damageType + " damage" +
+        (a.extraDice ? " plus " + a.extraDice + " " + a.extraType : "") + ".");
     }
-    var rolls = ce("div", "inv-roll-actions");
-    rolls.appendChild(rollButton("Attack " + fmtMod(a.toHit), function(){ performRoll(20, 1, a.toHit, "none", name + ": " + a.name); }));
-    rolls.appendChild(rollButton("Damage " + diceText(a.dice, a.bonus), function(){ rollDice(a.dice, a.bonus, name + ": " + a.name + " damage"); }));
-    if(a.extraDice) rolls.appendChild(rollButton("+" + a.extraDice + " " + a.extraType, function(){ rollDice(a.extraDice, 0, name + ": " + a.name + " " + a.extraType + " damage"); }));
-    box.appendChild(rolls);
-    return box;
+    var dmg = document.createDocumentFragment();
+    dmg.appendChild(document.createTextNode("Damage " + diceText(a.dice, a.bonus)));
+    if(a.damageType){
+      var dt = ce("span", "comp-dmg-type");
+      dt.textContent = " " + a.damageType;
+      dmg.appendChild(dt);
+    }
+    var side = [
+      rollButton("Attack " + fmtMod(a.toHit), function(){ performRoll(20, 1, a.toHit, "none", name + ": " + a.name); }),
+      rollButton(dmg, function(){ rollDice(a.dice, a.bonus, name + ": " + a.name + " damage"); })
+    ];
+    if(a.extraDice) side.push(rollButton("+" + a.extraDice + " " + a.extraType, function(){ rollDice(a.extraDice, 0, name + ": " + a.name + " " + a.extraType + " damage"); }));
+    return actEntry(a.name, side, a.text);
   });
-  if(attacks) card.appendChild(attacks);
+  if(attacks) acts.appendChild(attacks);
   var actions = entryBlock("Actions", s.actions, function(a){
-    var box = ce("div", "comp-entry-box");
-    box.appendChild(textEntry({name: a.name, text: (a.save ? a.save + " save. " : "") + a.text + (a.dice && !opts.rolls ? " (" + diceText(a.dice, a.bonus) + ")" : "")}));
-    if(a.dice && opts.rolls){
-      var rolls = ce("div", "inv-roll-actions");
-      rolls.appendChild(rollButton(diceText(a.dice, a.bonus), function(){ rollDice(a.dice, a.bonus, name + ": " + a.name); }));
-      box.appendChild(rolls);
-    }
-    return box;
+    var side = [];
+    if(a.save) side.push(tag(a.save + " save"));
+    if(a.dice) side.push(opts.rolls ? rollButton(diceText(a.dice, a.bonus), function(){ rollDice(a.dice, a.bonus, name + ": " + a.name); }) : tag(diceText(a.dice, a.bonus)));
+    return actEntry(a.name, side, a.text);
   });
-  if(actions) card.appendChild(actions);
+  if(actions) acts.appendChild(actions);
   var reactions = entryBlock("Reactions", s.reactions, textEntry);
-  if(reactions) card.appendChild(reactions);
+  if(reactions) acts.appendChild(reactions);
+  if(acts.childNodes.length) body.appendChild(acts);
+  if(body.childNodes.length < 2) body.classList.add("single");
+
   var traits = entryBlock("Traits", s.traits, textEntry);
-  if(traits) card.appendChild(traits);
+  if(traits){ traits.classList.add("comp-traits"); body.appendChild(traits); }
+  block.appendChild(body);
+  card.appendChild(block);
 }
 
 function renderCompanion(c, comp){
@@ -168,21 +247,27 @@ function renderCompanion(c, comp){
   if(!s) return renderSetupCard(c, comp);
   var card = makeCard(name + (s.count > 1 ? " ×" + s.count : ""));
   card.classList.add("comp-card");
-  var type = ce("p", "art-intro");
-  type.textContent = s.type + " · from " + (comp.def.source || comp.def.subclass);
-  card.appendChild(type);
-  if(comp.def.choice) card.appendChild(choiceRow(c, comp));
-
-  renderStatBlock(card, s, name, {rolls: true, afterTiles: function(el){
-    comp.hp.forEach(function(_, i){ el.appendChild(hpTracker(c, comp, i)); });
-  }});
+  card.dataset.comp = comp.def.id;
   if(isSetupMode(comp)){
     var edit = document.createElement("button");
     edit.type = "button"; edit.className = "btn small ghost comp-edit";
     edit.textContent = "Edit beast";
     edit.addEventListener("click", function(){ openBeastForm(c, comp); });
-    card.appendChild(edit);
+    card.querySelector("h3").appendChild(edit);
   }
+  var type = ce("p", "comp-sub");
+  type.textContent = s.type + " · from " + (comp.def.source || comp.def.subclass);
+  card.appendChild(type);
+  if(comp.def.choice) card.appendChild(choiceRow(c, comp));
+
+  renderStatBlock(card, s, name, {rolls: true, hpTile: function(){
+    var tile = ce("div", "comp-tile comp-tile-hp");
+    comp.hp.forEach(function(_, i){ tile.appendChild(hpTracker(c, comp, i)); });
+    var lbl = ce("span", "lbl");   // inside the first tracker, so its fill runs behind it as on Vitals
+    lbl.textContent = "Hit Points";
+    tile.firstChild.insertBefore(lbl, tile.firstChild.firstChild);
+    return tile;
+  }});
   return card;
 }
 
