@@ -61,3 +61,10 @@ export function nowStamp(){
   var d = new Date();
   return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})+" · "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
 }
+/* Export file name: local date and time, then the app version, e.g.
+   ragnars-den-backup_2026-10-19_2145_v2.0.0.json. Sorts by time and never
+   repeats within a minute. */
+export function backupFileName(d, version){
+  function p(n){ return String(n).padStart(2,"0"); }
+  return "ragnars-den-backup_"+d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"_"+p(d.getHours())+p(d.getMinutes())+"_v"+version+".json";
+}

@@ -1,5 +1,5 @@
 import { state, save, load } from "./core/state.js";
-import { uid } from "./core/helpers.js";
+import { uid, backupFileName } from "./core/helpers.js";
 import { ensureShape } from "./core/character.js";
 import { confirmDialog } from "./ui/confirm-modal.js";
 import { setupMobileNav, closeSidebarMobile } from "./ui/mobile-nav.js";
@@ -65,7 +65,7 @@ export function setupTopLevel(){
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url;
-    a.download = "ragnars-den-backup-"+new Date().toISOString().slice(0,10)+".json";
+    a.download = backupFileName(new Date(), APP_VERSION);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
