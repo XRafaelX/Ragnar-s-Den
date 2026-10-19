@@ -201,7 +201,7 @@ export var CLASS_PROGRESSION = {
       15: [{name:"Timeless Body", text:"You suffer none of the frailty of old age and can't be aged magically, but still die of old age. You no longer need food or water."}],
       17: [{name:"Martial Arts", replaces:"Martial Arts", text:"Use DEX instead of STR for unarmed strikes and monk weapons, which deal 1d10 damage. When you take the Attack action with them, you can make one unarmed strike as a bonus action."}],
       18: [
-        {name:"Empty Body", text:"As an action, spend 4 ki to become invisible for 1 minute, with resistance to all damage except force. Or spend 8 ki to cast Astral Projection on yourself only, without material components."},
+        {name:"Empty Body", text:"As an action, spend 4 ki to become invisible for 1 minute, with resistance to all damage except force. Or spend 8 ki to cast Astral Projection on yourself only, without material components.", spells:["Astral Projection"], spellKind:"free", spellLabel:"8 ki", spellTip:"Empty Body: spend 8 ki to cast it on yourself only, without material components."},
         {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 30 feet while you wear no armor and no shield. (Added to your speed while that's true.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5, speedWhen:"unarmored"}
       ],
       20: [{name:"Perfect Self", text:"When you roll initiative and have no ki points left, you regain 4 ki points."}]

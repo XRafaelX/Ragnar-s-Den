@@ -33,8 +33,10 @@ export function spellcastingAbilities(c){
 
 /* Spells the character's class and subclass features grant, once each,
    in feature order: always prepared (Domain Spells), always known (Psionic
-   Spells, bonus cantrips), added to the spellbook (Undead Thralls) or
-   ritual-only (Spirit Seeker). Worked out from the current features, not
+   Spells, bonus cantrips), added to the spellbook (Undead Thralls),
+   ritual-only (Spirit Seeker), or cast without a slot: at will (Thousand
+   Forms), free a few times (Visions of the Future) or for ki (Shadow
+   Arts), with the feature's tag and tooltip. Worked out from the current features, not
    saved, so it follows level-ups and undo. `data` is the catalog entry. */
 export function featureSpells(c){
   var out = [];
@@ -45,10 +47,20 @@ export function featureSpells(c){
       var pick = f.spellChoice && (cl.spellChoices||{})[f.spellChoice.id];
       if(pick && f.spellChoice.options[pick]) names = names.concat(spellsUpTo(f.spellChoice.options[pick], lv));
       names.forEach(function(name){
-        if(out.some(function(x){ return x.name===name; })) return;
+        // A spell an earlier feature gives already (a Fey Wanderer's Misty
+        // Step) takes this one's tag (Misty Wanderer's free casts).
+        var had = out.find(function(x){ return x.name===name; });
+        if(had){
+          if(f.spellLabel){ had.kindLabel = f.spellLabel; had.tip = f.spellTip || ""; }
+          return;
+        }
         var data = SPELL_DATA[catalogSpellName(name)] || null;
-        out.push({ name: name, data: data, level: data ? data.level : 0, kind: f.spellKind || "prepared",
-          source: f.subclass ? cl.subclass : cl.name, feature: f.name, className: cl.name });
+        var fs = { name: name, data: data, level: data ? data.level : 0, kind: f.spellKind || "prepared",
+          source: f.subclass ? cl.subclass : cl.name, feature: f.name, className: cl.name };
+        if(f.spellLabel) fs.kindLabel = f.spellLabel;
+        if(f.spellTip) fs.tip = f.spellTip;
+        if(f.spellAbility) fs.note = spellAbilityNote(c, f.spellAbility, "").trim();
+        out.push(fs);
       });
     });
     // Spells picked for a feature (an Arcana cleric's wizard cantrips, a

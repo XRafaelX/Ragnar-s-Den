@@ -91,7 +91,7 @@ export var ROGUE_SUBCLASSES = [
       {name:"Misfortunist", text:"You learn two misfortunes of your choice, and one more at rogue levels 9, 13 and 17; when you finish a long rest you can swap one you know for another. You have 4 Jinx Points to fuel them (6 from level 13), regained on a short or long rest. Each misfortune targets the creature marked by your Evil Eye. The level-up asks you to pick them, and the Misfortunes card on the Features & Feats tab lists them with their costs and your save DC."}
     ],
     9:[{name:"Steal Luck", text:"When a creature within 30 feet makes an attack roll, saving throw or ability check with advantage, you can use your reaction to remove the advantage from that roll and regain 1 expended Jinx Point. Once per short or long rest."}],
-    13:[{name:"Curse Caster", text:"As an action, spend 3 Jinx Points to cast Bestow Curse without a spell slot, using Charisma as your spellcasting ability. You also gain 2 more Jinx Points (already added on the sheet)."}],
+    13:[{name:"Curse Caster", text:"As an action, spend 3 Jinx Points to cast Bestow Curse without a spell slot, using Charisma as your spellcasting ability. You also gain 2 more Jinx Points (already added on the sheet).", spells:["Bestow Curse"], spellKind:"free", spellLabel:"3 Jinx Points", spellTip:"Curse Caster: as an action, spend 3 Jinx Points to cast it without a spell slot.", spellAbility:"cha"}],
     17:[{name:"Improved Steal Luck", text:"You can use Steal Luck three times, regaining all uses when you finish a short or long rest."}]
   }}
 ];

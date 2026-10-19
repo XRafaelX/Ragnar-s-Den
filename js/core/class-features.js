@@ -70,9 +70,13 @@ export function classSpellAbility(cl){
      spells        spells the feature grants: a list (a replacing entry
                    carries the whole list so far, like Domain Spells) or an
                    object keyed by class level (Psionic Spells)
-     spellKind     "prepared", "known", "spellbook", "ritual" or "expanded"
+     spellKind     "prepared", "known", "spellbook", "ritual", "expanded"
                    (added to the spells the class can learn: a warlock
-                   patron's list) (see featureSpells)
+                   patron's list), "free" (cast without a slot, limited)
+                   or "atwill" (see featureSpells)
+     spellLabel    the Spells tab tag for them ("Free 1/long rest", "2 ki");
+     spellTip      its tooltip (the rule); spellAbility: the ability for
+                   their save DC when the class doesn't cast
      speeds        [{type, value, when}]: a fly, swim or climb speed. value
                    is feet, "walk" (equal to walking speed) or "2walk";
                    `when` says when it applies ("while raging (Eagle)"),
@@ -95,7 +99,7 @@ export function classSpellAbility(cl){
                    saved on the class entry as spellChoices[id].
      attuneLimit   how many magic items the character can attune to at
                    once (an artificer's Magic Item Adept: 4) */
-var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit"];
+var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellLabel", "spellTip", "spellAbility", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit"];
 
 /* ---- Optional features that replace one of the class's own ----
    Tasha's Favored Foe for a ranger's Favored Enemy, Deft Explorer for

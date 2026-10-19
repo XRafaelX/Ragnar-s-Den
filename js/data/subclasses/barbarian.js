@@ -34,7 +34,7 @@ export var BARBARIAN_SUBCLASSES = [
       {name:"Spirit Shield", text:"While you're raging, when another creature you can see within 30 feet takes damage, you can use your reaction to reduce that damage by 2d6. This increases to 3d6 at level 10 and 4d6 at level 14."}
     ],
     10:[
-      {name:"Consult the Spirits", text:"You can cast Augury or Clairvoyance without a spell slot or material components (Wisdom is your spellcasting ability for them). Instead of a sensor, this Clairvoyance invisibly summons one of your ancestral spirits to the chosen location. Once per short or long rest."}
+      {name:"Consult the Spirits", text:"You can cast Augury or Clairvoyance without a spell slot or material components (Wisdom is your spellcasting ability for them). Instead of a sensor, this Clairvoyance invisibly summons one of your ancestral spirits to the chosen location. Once per short or long rest.", spells:["Augury","Clairvoyance"], spellKind:"free", spellLabel:"Free 1/short rest", spellTip:"Consult the Spirits: cast one of them without a spell slot or material components, once per short rest (counter on Vitals)."}
     ],
     14:[
       {name:"Vengeful Ancestors", text:"When you use Spirit Shield to reduce the damage of an attack, the attacker takes force damage equal to the damage your Spirit Shield prevents."}

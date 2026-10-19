@@ -14,6 +14,12 @@ import { usesVariant, draconicBreath } from "./class-features.js";
    and its subclass. `key` is unique per character (class + resource id)
    and indexes c.resourcesUsed. One with place "inventory" is drawn on the
    Inventory tab instead of the Vitals tab's resources card. */
+/* The spells picked for a class feature's grant (see class-picks.js). */
+function pickedSpellNames(cl, key){
+  var entry = cl.profPicks && cl.profPicks[key];
+  if(!entry || !entry.slots) return [];
+  return entry.slots.reduce(function(a, s){ return a.concat(s||[]); }, []).filter(Boolean);
+}
 export function characterResources(c){
   var m = {};
   ["str","dex","con","int","wis","cha"].forEach(function(k){ m[k] = mod(c.abilities && c.abilities[k]); });
@@ -32,6 +38,16 @@ export function characterResources(c){
       // An optional feature's uses (Favored Foe) only for a ranger using it.
       if(r.variant && !usesVariant(cl, r.variant)) return;
       var key = cl.name+":"+r.id;
+      // One counter per picked spell (Signature Spells), once they're picked.
+      var perSpell = r.perSpell && pickedSpellNames(cl, r.perSpell.grant);
+      if(perSpell && perSpell.length){
+        perSpell.forEach(function(name){
+          var k = key+":"+slug(name);
+          list.push({key: k, name: r.perSpell.name.replace("{spell}", name), source: d.source, pool: false,
+            hint: r.perSpell.hint.replace("{spell}", name), max: 1, used: clamp(Number((c.resourcesUsed||{})[k])||0, 0, 1), reset: r.reset(lv)});
+        });
+        return;
+      }
       var max = r.max(lv, m);
       // Rune invocations follow the runes actually known (older sheets
       // without picks keep the count for their level).

@@ -542,7 +542,8 @@ function appendGrantTags(actions, fs){
   var kind = document.createElement("span");
   kind.className = "ff-tag source-feat";
   kind.textContent = fs.level === 0 ? "Cantrip" : fs.kindLabel || KIND_LABELS[fs.kind] || KIND_LABELS.prepared;
-  if(fs.kind==="prepared" && fs.level > 0) kind.title = "Doesn't count against your prepared spells";
+  if(fs.tip) kind.title = fs.tip;
+  else if(fs.kind==="prepared" && fs.level > 0) kind.title = "Doesn't count against your prepared spells";
   var source = document.createElement("span");
   source.className = "ff-tag source-class";
   source.textContent = fs.source;

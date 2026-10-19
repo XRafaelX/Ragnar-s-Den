@@ -14,7 +14,8 @@ import { FEATS_CATALOG } from "../js/data/feats.js";
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
 const FEATURE_KEYS = new Set(["name", "text", "replaces", "attuneLimit", "speed", "speedWhen", "initiative", "acHeavyArmor", "grants",
-  "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "halfProficiency", "styleChoice", "profs", "advantage"]);
+  "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "halfProficiency", "styleChoice", "profs", "advantage",
+  "spellLabel", "spellTip", "spellAbility"]);
 const LONG_DASH = /[–—]/;
 
 // Lowest acceptable last-feature level per class: guards against a
@@ -51,7 +52,11 @@ function checkFeature(f, where){
     if(!Array.isArray(spells)) Object.keys(spells).forEach((k) => assert.ok(+k >= 1 && +k <= MAX_LEVEL, where + " " + label + ": spell level key " + k));
   };
   if(f.spells || f.spellChoice){
-    assert.ok(["prepared", "known", "spellbook", "ritual", "expanded"].includes(f.spellKind), where + " " + f.name + ": spellKind " + f.spellKind);
+    assert.ok(["prepared", "known", "spellbook", "ritual", "expanded", "free", "atwill"].includes(f.spellKind), where + " " + f.name + ": spellKind " + f.spellKind);
+    // A spell cast without a slot (or for ki): a short tag, and the rule in its tooltip.
+    if(f.spellLabel != null) assert.ok(typeof f.spellLabel === "string" && f.spellLabel.length <= 24, where + " " + f.name + ": spellLabel short");
+    if(f.spellTip != null) assert.ok(typeof f.spellTip === "string" && f.spellTip.startsWith(f.name.replace(/^Channel Divinity: /, "")), where + " " + f.name + ": spellTip names its feature");
+    if(f.spellAbility != null) assert.ok(["str", "dex", "con", "int", "wis", "cha"].includes(f.spellAbility), where + " " + f.name + ": spellAbility");
     if(f.spells) checkSpells(f.spells, f.name);
     if(f.spellChoice){
       assert.ok(f.spellChoice.id && f.spellChoice.label, where + " " + f.name + ": spellChoice needs id and label");

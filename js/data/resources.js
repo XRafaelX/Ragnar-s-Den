@@ -98,7 +98,10 @@ export var CLASS_RESOURCES = {
     {id:"arcane_recovery", name:"Arcane Recovery", level:1, max:always(1), reset:always("long"),
       hint:"During a short rest, recover spell slots with a combined level up to half your wizard level (rounded up), none 6th level or higher."},
     {id:"signature_spells", name:"Signature Spells", level:20, max:always(2), reset:always("short"),
-      hint:"Cast each of your two signature spells once at 3rd level without a spell slot."}
+      hint:"Cast each of your two signature spells once at 3rd level without a spell slot.",
+      // Once both are picked: a counter for each, named after the spell.
+      perSpell:{grant:"class:Signature Spells@20", name:"{spell} (Signature Spell)",
+        hint:"Cast {spell} once at 3rd level without a spell slot. Casting it with a slot doesn't use this."}}
   ],
   "Artificer": [
     {id:"flash_of_genius", name:"Flash of Genius", level:7, max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),

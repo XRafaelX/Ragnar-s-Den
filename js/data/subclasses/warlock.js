@@ -59,7 +59,7 @@ export var WARLOCK_SUBCLASSES = [
       {name:"Oceanic Soul", text:"You have resistance to cold damage. While fully submerged, you and any other fully submerged creature can understand each other's speech."},
       {name:"Guardian Coil", text:"When you or a creature you can see takes damage within 10 feet of your tentacle, you can use your reaction to reduce the damage to one of them by 1d8 (2d8 from level 10)."}
     ],
-    10:[{name:"Grasping Tentacles", text:"You learn Evard's Black Tentacles (it doesn't count against your spells known) and can cast it once per long rest without a spell slot. Whenever you cast it, you gain temporary hit points equal to your warlock level, and damage can't break your concentration on it.", spells:["Evard's Black Tentacles"], spellKind:"known"}],
+    10:[{name:"Grasping Tentacles", text:"You learn Evard's Black Tentacles (it doesn't count against your spells known) and can cast it once per long rest without a spell slot. Whenever you cast it, you gain temporary hit points equal to your warlock level, and damage can't break your concentration on it.", spells:["Evard's Black Tentacles"], spellKind:"known", spellLabel:"Free 1/long rest", spellTip:"Grasping Tentacles: always known; cast it once per long rest without a spell slot (counter on Vitals)."}],
     14:[{name:"Fathomless Plunge", text:"As an action, teleport yourself and up to five willing creatures you can see within 30 feet up to 1 mile away, to a body of water you've seen (pond-sized or larger) or within 30 feet of it, each appearing within 30 feet of the others. Once per short or long rest."}]
   }},
   {name:"The Genie", blurb:"A pact with one of the noble genies of the four elements.", features:{

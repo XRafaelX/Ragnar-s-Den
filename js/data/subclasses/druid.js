@@ -22,7 +22,7 @@ export var DRUID_SUBCLASSES = [
       {name:"Primal Strike", text:"Your attacks in beast form count as magical for overcoming resistance and immunity to nonmagical attacks and damage."}
     ],
     10:[{name:"Elemental Wild Shape", text:"You can expend two uses of Wild Shape at the same time to transform into an air, earth, fire or water elemental."}],
-    14:[{name:"Thousand Forms", text:"You can cast Alter Self at will."}]
+    14:[{name:"Thousand Forms", text:"You can cast Alter Self at will.", spells:["Alter Self"], spellKind:"atwill", spellTip:"Thousand Forms: cast it at will, without a spell slot."}]
   }},
   {name:"Circle of Stars", blurb:"Charts the stars to gain cosmic boons during Wild Shape and prayer.", features:{
     2:[
@@ -50,7 +50,7 @@ export var DRUID_SUBCLASSES = [
     2:[{name:"Balm of the Summer Court", text:"You have a pool of d6s equal to your druid level, regained on a long rest. As a bonus action, choose a creature you can see within 120 feet and spend up to half your druid level in dice from the pool: it regains hit points equal to their total and gains 1 temporary hit point per die spent."}],
     6:[{name:"Hearth of Moonlight and Shadow", text:"At the start of a short or long rest, touch a point to create an invisible 30-foot-radius sphere around it (blocked by total cover). While in it, you and your allies have a +5 bonus to DEX (Stealth) and WIS (Perception) checks, and light from open flames in it isn't visible outside. It ends when the rest ends or when you leave it."}],
     10:[{name:"Hidden Paths", text:"As a bonus action, teleport up to 60 feet to an unoccupied space you can see. Or, as an action, teleport a willing creature you touch up to 30 feet to an unoccupied space you can see. Uses equal to your WIS modifier (minimum 1) per long rest."}],
-    14:[{name:"Walker in Dreams", text:"When you finish a short rest, you can cast Dream (with you as the messenger), Scrying or Teleportation Circle without a spell slot or material components. This Teleportation Circle opens a portal to the last place you finished a long rest on your current plane (it fails, without being wasted, if you haven't had one there). Once per long rest."}]
+    14:[{name:"Walker in Dreams", text:"When you finish a short rest, you can cast Dream (with you as the messenger), Scrying or Teleportation Circle without a spell slot or material components. This Teleportation Circle opens a portal to the last place you finished a long rest on your current plane (it fails, without being wasted, if you haven't had one there). Once per long rest.", spells:["Dream","Scrying","Teleportation Circle"], spellKind:"free", spellLabel:"Free 1/long rest", spellTip:"Walker in Dreams: after a short rest, cast one of them without a spell slot or material components, once per long rest (counter on Vitals)."}]
   }},
   {name:"Circle of Spores", blurb:"Finds beauty in decay and animates the dead with fungal energy.", features:{
     2:[
