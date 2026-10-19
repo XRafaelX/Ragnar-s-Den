@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -520,7 +520,7 @@ function openWeaponSheet(c, item, idx){
 }
 
 /* The unarmed strike: always proficient, nothing to equip or edit. */
-function renderUnarmedCard(u){
+function renderUnarmedCard(c, u){
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card is-equipped inv-unarmed-card";
   var header = document.createElement("div");
@@ -566,8 +566,26 @@ function renderUnarmedCard(u){
     grapBtn.addEventListener("click", function(){ performRoll(u.grappleDie, 1, 0, "none", "Unarmed Fighting: grappled creature (Bludgeoning)"); });
     actions.appendChild(grapBtn);
   }
+  var furyBtn = divineFuryButton(c, u.name);
+  if(furyBtn) actions.appendChild(furyBtn);
   card.appendChild(actions);
   return card;
+}
+
+/* Divine Fury, while a Zealot rages: its own button rather than part of
+   Damage, since it lands only on the first hit each turn. */
+function divineFuryButton(c, name){
+  var fury = divineFury(c);
+  if(!fury) return null;
+  var btn = document.createElement("button");
+  btn.type = "button"; btn.className = "btn small inv-roll-btn inv-fury-btn";
+  btn.innerHTML = makeDicesSvg() + "+1d6" + fmtMod(fury.bonus) + (fury.type ? " " + fury.type.toLowerCase() : "");
+  btn.title = "Divine Fury: extra damage to the first creature you hit with a weapon attack on each of your turns while raging"
+    + (fury.type ? "" : ". Choose radiant or necrotic on the Features tab");
+  btn.addEventListener("click", function(){
+    performRoll(6, 1, fury.bonus, "none", name + ": Divine Fury" + (fury.type ? " (" + fury.type + ")" : ""));
+  });
+  return btn;
 }
 
 /* A dragonborn's Breath Weapon, from the ancestry picked, kept to what's
@@ -857,6 +875,9 @@ function renderWeaponCard(c, item, idx){
     });
     actions.appendChild(offBtn);
   }
+
+  var furyBtn = divineFuryButton(c, item.name || "Weapon");
+  if(furyBtn) actions.appendChild(furyBtn);
 
   // Symbiotic Entity: melee weapon hits deal an extra 1d6 poison.
   if(effectOn(c, "symbiotic_entity") && !isRangedWeapon(item)){
@@ -1324,13 +1345,13 @@ export function renderInventoryPanel(c){
   // An unarmed strike, for a monk, a race with natural weapons or a
   // Tavern Brawler.
   var unarmed = unarmedStrike(c);
-  if(unarmed){ anyWeapon = true; weaponList.appendChild(renderUnarmedCard(unarmed)); }
+  if(unarmed){ anyWeapon = true; weaponList.appendChild(renderUnarmedCard(c, unarmed)); }
   // Arcane Propulsion Armor's gauntlets, while it's worn.
   var gauntlets = propulsionGauntlets(c);
   if(gauntlets){
     anyWeapon = true;
     gauntlets.roll = armorPenalty(c, "str");
-    weaponList.appendChild(renderUnarmedCard(gauntlets));
+    weaponList.appendChild(renderUnarmedCard(c, gauntlets));
   }
   // A dragonborn's breath weapon.
   var breath = draconicBreath(c);

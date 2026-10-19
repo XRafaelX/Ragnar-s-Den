@@ -4,7 +4,7 @@
 import { RACE_DATA } from "../data/race-data.js";
 import { WEAPON_DATA } from "../data/weapons.js";
 import { featProficiencies } from "./feat-picks.js";
-import { characterPickedProfs, raceProficiencies } from "./class-picks.js";
+import { characterPickedProfs, characterChoices, raceProficiencies } from "./class-picks.js";
 import { mod, profBonus, parseDiceNotation } from "./basics.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
 import { classFeatureList, classProficiencies } from "./class-features.js";
@@ -299,6 +299,17 @@ export function rageDamageBonus(c, item){
   if((c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; })) return 0;
   if(weaponAbility(c, item).keys.indexOf("str")===-1) return 0; // rage needs a STR attack
   return barbarianRageDamage(Number(barb.level)||1);
+}
+/* Divine Fury (Path of the Zealot, barbarian 3): while raging, the first
+   creature you hit with a weapon attack on each of your turns takes an
+   extra 1d6 + half your barbarian level, of the type picked (radiant or
+   necrotic; "" while not picked yet). Any weapon attack, ranged or not,
+   heavy armor or not. {bonus, type} or null. */
+export function divineFury(c){
+  if(!c.rage || !c.rage.active) return null;
+  var barb = barbarianClassEntry(c), lv = barb ? Number(barb.level)||1 : 0;
+  if(!barb || barb.subclass!=="Path of the Zealot" || lv < 3) return null;
+  return {bonus: Math.floor(lv / 2), type: characterChoices(c, "divineFury")[0] || ""};
 }
 /* Best-effort default for a newly added weapon's Proficient checkbox:
    true if any of the character's classes list the weapon's category

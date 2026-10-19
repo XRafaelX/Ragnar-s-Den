@@ -19,7 +19,8 @@ export var BARBARIAN_SUBCLASSES = [
   }},
   {name:"Path of the Zealot", blurb:"A divine warrior powered by a god's fury.", features:{
     3:[
-      {name:"Divine Fury", text:"While raging, the first creature you hit with a weapon attack on each of your turns takes an extra 1d6 + half your barbarian level damage. Choose radiant or necrotic when you gain this feature."},
+      {name:"Divine Fury", text:"While raging, the first creature you hit with a weapon attack on each of your turns takes an extra 1d6 + half your barbarian level damage. Choose radiant or necrotic when you gain this feature.",
+        profs:{help:"The type of the extra damage your Divine Fury deals.", pick:[{kind:"choice", id:"divineFury", noun:"damage type", label:"Choose your Divine Fury's damage type", options:["Radiant","Necrotic"]}]}},
       {name:"Warrior of the Gods", text:"A spell that restores you to life, but not one that makes you undead, needs no material components when cast on you."}
     ],
     6:[{name:"Fanatical Focus", text:"If you fail a saving throw while raging, you can reroll it, and you must use the new roll. You can do this only once per rage."}],

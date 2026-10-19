@@ -1190,3 +1190,28 @@ test("starting tools: an older sheet's custom feature moves onto the pick", () =
   const second = makeChar([{ name: "Fighter", level: 1 }, { name: "Monk", level: 1 }], { features: [{ id: "f", name: "Tool proficiency: Lute", source: "Class", text: "x" }] });
   assert.equal(CP.migrateClassPicks(second), false);
 });
+
+test("Divine Fury: a Zealot picks radiant or necrotic at 3; the extra damage shows only while raging", (t) => {
+  const c = makeChar([{ name: "Barbarian", level: 2 }], { abilities: { str: 16, dex: 12, con: 14, int: 8, wis: 10, cha: 10 } });
+  let asked, options;
+  levelUp(t, c, (lu) => {
+    lu.subclass = "Path of the Zealot";
+    const g = LU.profGrants()[0];
+    asked = g.name;
+    options = CP.slotOptions(g.def, [], 0, LU.profCtx(g)).map((o) => o.value);
+    lu.profPicks[g.key] = [["Necrotic"]];
+  });
+  assert.deepEqual([asked, options], ["Divine Fury", ["Radiant", "Necrotic"]]);
+  assert.deepEqual(CP.characterChoices(c, "divineFury"), ["Necrotic"]);
+  assert.equal(H.divineFury(c), null, "not raging");
+  c.rage = { active: true, used: 1 };
+  assert.deepEqual(H.divineFury(c), { bonus: 1, type: "Necrotic" });
+  c.classes[0].level = 11;
+  assert.equal(H.divineFury(c).bonus, 5, "half the barbarian level, rounded down");
+  c.classes[0].subclass = "Path of the Berserker";
+  assert.equal(H.divineFury(c), null, "another path");
+  // An older Zealot that never picked: the damage still shows, untyped.
+  const old = makeChar([{ name: "Barbarian", subclass: "Path of the Zealot", level: 4 }], { rage: { active: true, used: 1 } });
+  assert.deepEqual(H.divineFury(old), { bonus: 2, type: "" });
+  assert.deepEqual(CP.pendingClassPicks(old).map((g) => g.name), ["Divine Fury"]);
+});

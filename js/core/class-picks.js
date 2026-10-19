@@ -972,6 +972,19 @@ export function characterPickedProfs(c){
   });
   return out;
 }
+/* What the character's `choice` slots with this id picked, across all
+   its classes ([] for none): a Zealot's Divine Fury damage type. */
+export function characterChoices(c, id){
+  var out = [];
+  (c.classes||[]).forEach(function(cl, idx){
+    entryGrants(cl, idx > 0).forEach(function(g){
+      var entry = grantEntry(cl, g.key);
+      if(!entry || entry.manual) return;
+      (g.def.pick||[]).forEach(function(s, i){ if(s.kind==="choice" && s.id===id) out = out.concat((entry.slots && entry.slots[i]) || []); });
+    });
+  });
+  return out;
+}
 /* "Your picks: ..." for a feature on the Features tab ("" for none). */
 export function featurePicksText(cl, multiclass, featureName, isSubclass){
   var bits = [];
