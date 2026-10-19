@@ -210,6 +210,13 @@ export function classProficiencies(c, idx){
   // copies, so the shared data isn't changed.
   var extra = classFeatureList(cl).filter(function(f){ return f.grants; });
   var picked = pickedProfs(cl, idx > 0);
+  // Once the starting tool choices are made, the picks stand in for the
+  // "of your choice" line.
+  var starting = idx===0 && prog && prog.startingProfs;
+  var startEntry = starting && cl.profPicks && cl.profPicks.starting;
+  if(startEntry && (startEntry.manual || (startEntry.slots||[]).some(function(s){ return (s||[]).length; })) && base){
+    base = Object.assign({}, base, {tools: (base.tools||[]).filter(function(t){ return t!==starting.text; })});
+  }
   if(!extra.length && !picked.tools.length && !picked.weapons.length && !picked.saves.length) return base;
   var p = {armor:(base&&base.armor||[]).slice(), weapons:(base&&base.weapons||[]).slice(), tools:(base&&base.tools||[]).slice(),
     savingThrows:(base&&base.savingThrows||[]).slice(), note:base&&base.note};

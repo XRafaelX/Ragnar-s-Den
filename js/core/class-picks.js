@@ -117,6 +117,10 @@ export function entryGrants(cl, multiclass, level){
   if(multiclass && prog && prog.multiclassProfs && prog.multiclassProfs.profs){
     out.push({key: "multiclass", name: cl.name + " training", source: "Multiclass · " + cl.name, level: 1, def: prog.multiclassProfs.profs});
   }
+  // The first class's own tool choices (a bard's three instruments).
+  if(!multiclass && prog && prog.startingProfs){
+    out.push({key: "starting", name: cl.name + " tools", source: cl.name + " · Lv 1", level: 1, def: prog.startingProfs.profs});
+  }
   for(var i = 1; i <= lv; i++) classFeaturesAt(cl, i).forEach(function(f){
     if(f.profs) out.push({key: "class:" + f.name + "@" + i, name: f.name, source: cl.name + " · Lv " + i, level: i, feature: f.name, def: f.profs});
   });
@@ -458,7 +462,8 @@ function baseLabel(def, slots, i, ctx){
     }
     if(slot.noun) return "Gain proficiency with " + (n > 1 ? n + " " + slot.noun + "s" : "one " + slot.noun) + " of your choice";
     if(!slot.options && !slot.group) return "Gain proficiency with " + (n > 1 ? n + " tools" : "a tool") + " of your choice";
-    return "Gain proficiency with " + (slot.group ? "one type of " + lower(slot.group) : n > 1 ? n + " tools" : listText(opts.map(lower), "or"));
+    if(slot.group) return "Gain proficiency with " + (n > 1 ? n + " " + lower(slot.group) : kindNoun(slot.group)) + " of your choice";
+    return "Gain proficiency with " + (n > 1 ? n + " tools" : listText(opts.map(lower), "or"));
   }
   if(slot.kind==="language") return "Learn " + (n > 1 ? n + " languages" : "a language") + " of your choice";
   if(slot.kind==="save") return "Gain proficiency in " + listText(opts.map(abilityName), "or") + " saving throws";
@@ -593,6 +598,11 @@ export function setClassVariant(c, cl, variant, on){
    dragon"). Each becomes the feature's own pick and the custom feature
    goes; the language that came with it stays on the sheet, unrecorded. */
 var OLD_PICK_FEATURES = [
+  // The creation wizard's level-1 tool picks, before they moved onto the
+  // engine (the bard's three in one feature).
+  {prefix: "Artisan's tools: ", cls: "Artificer", key: "starting", slots: 1, first: true},
+  {prefix: "Tool proficiency: ", cls: "Monk", key: "starting", slots: 1, first: true},
+  {prefix: "Musical instruments: ", cls: "Bard", key: "starting", slots: 1, first: true, split: true},
   {prefix: "Favored Enemy: ", cls: "Ranger", key: "class:Favored Enemy@1", slots: 2},
   {prefix: "Favored Terrain: ", cls: "Ranger", key: "class:Natural Explorer@1", slots: 1},
   {prefix: "Dragon Ancestor: ", cls: "Sorcerer", subclass: "Draconic Bloodline", key: "sub:Draconic Bloodline:Dragon Ancestor@1", slots: 1}
@@ -602,8 +612,9 @@ export function migrateClassPicks(c){
   OLD_PICK_FEATURES.forEach(function(old){
     var cl = (c.classes||[]).find(function(x){ return x.name===old.cls && (!old.subclass || x.subclass===old.subclass); });
     var f = (c.features||[]).find(function(x){ return x && x.source==="Class" && (x.name||"").indexOf(old.prefix)===0; });
-    if(!cl || !f || grantEntry(cl, old.key)) return;
-    var slots = [[f.name.slice(old.prefix.length)]];
+    if(!cl || !f || grantEntry(cl, old.key) || (old.first && c.classes.indexOf(cl)!==0)) return;
+    var value = f.name.slice(old.prefix.length);
+    var slots = [old.split ? value.split(", ") : [value]];
     while(slots.length < old.slots) slots.push([]);
     if(!cl.profPicks) cl.profPicks = {};
     cl.profPicks[old.key] = {slots: slots, applied: {skills: [], expertise: [], languages: [], weaponItems: []}};

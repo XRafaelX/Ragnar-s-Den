@@ -36,6 +36,10 @@ var STANDARD_ASI = [4, 8, 12, 16, 19];
    slots. spellAbility: the class's spellcasting ability.
    multiclassProfs: what you gain when this is NOT your first class; its
    `profs` are the skill, tool and expertise choices that come with it.
+   startingProfs: the tool choices of the class's own starting
+   proficiencies (first class only; a multiclass gets `multiclassProfs`):
+   {profs: {pick}, text: the CLASS_PROFICIENCIES line they stand for,
+   dropped from the sheet's list once picked}.
    A feature's `profs`: skills, expertise and languages it gives, and the
    proficiency choices it asks for (see js/core/class-picks.js).
    variants: Tasha's optional features that replace one of the class's
@@ -51,6 +55,7 @@ export var CLASS_PROGRESSION = {
     subclassLevel: 3, subclassLabel: "Artificer Specialist",
     prereq: [["int"]], casterType: "artificer", spellAbility: "int", asiLevels: [4, 8, 12, 16, 19],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:[], tools:["Thieves' tools","Tinker's tools"], note:""},
+    startingProfs: {text: "One type of artisan's tools", profs: {pick:[{kind:"tool", group:"Artisan's tools"}]}},
     features: {
       2: [{name:"Infuse Item", text:"You learn artifice infusions and can turn ordinary items into magic ones after a long rest (e.g. +1 weapons or armor). You know 4 infusions and can have 2 infused items at once (6 and 3 at level 6, 8 and 4 at 10, 10 and 5 at 14, 12 and 6 at 18)."}],
       3: [{name:"The Right Tool for the Job", text:"With thieves' or artisan's tools in hand, you can spend 1 hour to magically create one set of artisan's tools."}],
@@ -93,6 +98,7 @@ export var CLASS_PROGRESSION = {
     prereq: [["cha"]], casterType: "full", spellAbility: "cha", asiLevels: STANDARD_ASI,
     multiclassProfs: {armor:["Light armor"], weapons:[], tools:[], note:"",
       profs:{pick:[{kind:"skill"}, {kind:"tool", group:"Musical instruments"}]}},
+    startingProfs: {text: "Three musical instruments of your choice", profs: {pick:[{kind:"tool", group:"Musical instruments", count:3}]}},
     features: {
       2: [
         {name:"Jack of All Trades", text:"Add half your proficiency bonus (rounded down) to any ability check that doesn't already include your proficiency bonus. (Already added to your checks, initiative and passive scores.)", halfProficiency:{abilities:"all", round:"down"}},
@@ -160,6 +166,7 @@ export var CLASS_PROGRESSION = {
     subclassLevel: 3, subclassLabel: "Monastic Tradition",
     prereq: [["dex", "wis"]], casterType: null, asiLevels: STANDARD_ASI,
     multiclassProfs: {armor:[], weapons:["Simple weapons","Shortswords"], tools:[], note:""},
+    startingProfs: {text: "One type of artisan's tools or musical instrument", profs: {pick:[{kind:"tool", kinds:["Artisan's tools","Musical instruments"]}]}},
     features: {
       2: [
         {name:"Ki", text:"You have ki points equal to your monk level, regained on a short or long rest. Spend 1 ki for: Flurry of Blows (two unarmed strikes as a bonus action), Patient Defense (Dodge as a bonus action) or Step of the Wind (Disengage or Dash as a bonus action, jump distance doubled). Save DC = 8 + proficiency + WIS."},

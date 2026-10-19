@@ -448,11 +448,6 @@ Object.assign(CLASSES_INFO["Monk"], {
   primaryAbilityLabel:"Dexterity and Wisdom",
   savingThrows:["str","dex"],
   skillChoices:{count:2, options:["Acrobatics","Athletics","History","Insight","Religion","Stealth"]},
-  choices:[
-    {id:"tool", kind:"listPick", label:"Tool proficiency",
-      help:"Monks train in one craft or instrument. Pick one type of artisan's tools or a musical instrument.",
-      groups:{"Artisan's tools":ARTISAN_TOOLS, "Musical instruments":MUSICAL_INSTRUMENTS}}
-  ],
   equipment:{
     choiceGroups:[
       {options:[
@@ -594,11 +589,6 @@ Object.assign(CLASSES_INFO["Bard"], {
   primaryAbility:"cha",
   savingThrows:["dex","cha"],
   skillChoices:{count:3, options:SKILLS.map(function(s){ return s[0]; })},
-  choices:[
-    {id:"instruments", kind:"listPick", count:3, label:"Musical instruments",
-      help:"Pick three instruments you can play. Add your proficiency bonus when you perform with them.",
-      groups:{"Musical instruments":MUSICAL_INSTRUMENTS}}
-  ],
   spellcasting:{
     ability:"cha", spellList:"Bard", cantrips:2, spells:4, prepares:false, slots:{1:2},
     spellsLabel:"1st-level spells known",
@@ -683,12 +673,6 @@ Object.assign(CLASSES_INFO["Artificer"], {
   primaryAbility:"int",
   savingThrows:["con","int"],
   skillChoices:{count:2, options:["Arcana","History","Investigation","Medicine","Nature","Perception","Sleight of Hand"]},
-  choices:[
-    {id:"artisanTool", kind:"listPick", label:"Artisan's tools",
-      help:"On top of thieves' tools and tinker's tools, you're proficient with one type of artisan's tools. Your spells can use any tools you're proficient with as their focus.",
-      groups:{"Artisan's tools":ARTISAN_TOOLS.filter(function(t){ return t!=="Tinker's tools"; })},
-      featureText:"You're proficient with thieves' tools, tinker's tools and {v}. You can use any of them as your spellcasting focus."}
-  ],
   spellcasting:{
     ability:"int", spellList:"Artificer", cantrips:2, prepares:true, slots:{1:2},
     spells:2,

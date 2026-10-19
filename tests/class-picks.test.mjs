@@ -175,11 +175,13 @@ test("the published lists: who gets what", () => {
 test("grants: by level, subclass, multiclass and known options", () => {
   const keys = (cl, multi, lv) => CP.entryGrants(cl, multi, lv).map((g) => g.key);
   // Both of a bard's Expertise features count, though the later one replaces the earlier on the Features list.
+  // A first class also has its starting tool choices (a bard's instruments).
   assert.deepEqual(keys({ name: "Bard", subclass: "College of Lore", level: 10 }),
-    ["class:Expertise@3", "class:Expertise@10", "sub:College of Lore:Bonus Proficiencies@3"]);
-  assert.deepEqual(keys({ name: "Bard", subclass: "College of Lore", level: 2 }), []);
+    ["starting", "class:Expertise@3", "class:Expertise@10", "sub:College of Lore:Bonus Proficiencies@3"]);
+  assert.deepEqual(keys({ name: "Bard", subclass: "College of Lore", level: 2 }), ["starting"]);
+  assert.deepEqual(keys({ name: "Bard", subclass: "College of Lore", level: 2 }, true), ["multiclass"], "not for a second class");
   // Valor's Bonus Proficiencies (armor and weapons only) isn't one.
-  assert.deepEqual(keys({ name: "Bard", subclass: "College of Valor", level: 3 }), ["class:Expertise@3"]);
+  assert.deepEqual(keys({ name: "Bard", subclass: "College of Valor", level: 3 }), ["starting", "class:Expertise@3"]);
   // A second class adds its multiclass training; a first class doesn't.
   assert.deepEqual(keys({ name: "Rogue", level: 1 }, true), ["multiclass"]);
   assert.deepEqual(keys({ name: "Rogue", level: 1 }, false), []);
@@ -399,7 +401,7 @@ test("apply records only what changed, and taking it back restores exactly that"
   assert.deepEqual(c.classes[0].profPicks, {});
   // "I've already added it": done, with nothing changed and nothing read from it.
   CP.markClassPicksManual(c.classes[0], g.key);
-  assert.deepEqual(CP.pendingClassPicks(c).map((x) => x.name), ["Expertise"]);
+  assert.deepEqual(CP.pendingClassPicks(c).map((x) => x.name), ["Bard tools", "Expertise"]);
   assert.equal(CP.classPicksSummary(g, CP.grantEntry(c.classes[0], g.key)), "");
 });
 
@@ -646,7 +648,12 @@ test("card: only for characters with a choice, and every state draws", (t) => {
   withFakeDom(t, () => {
     assert.equal(renderClassPicksCard(makeChar([{ name: "Fighter", subclass: "Champion", level: 20 }])), null);
     // (A Sage: an Acolyte's Insight would be given twice, which asks for another skill.)
-    assert.equal(renderClassPicksCard(ensureShape(makeChar([{ name: "Monk", subclass: "Way of Mercy", level: 3 }], { background: "Sage" }))), null, "gifts with no choice need no card");
+    // Mercy's skills are gifts with no choice: once the monk's starting
+    // tool is chosen, nothing waits (the card stays, to change the tool).
+    const mercy = ensureShape(makeChar([{ name: "Monk", subclass: "Way of Mercy", level: 3 }], { background: "Sage" }));
+    assert.deepEqual(CP.pendingClassPicks(mercy).map((g) => g.name), ["Monk tools"]);
+    CP.markClassPicksManual(mercy.classes[0], "starting");
+    assert.deepEqual(CP.pendingClassPicks(mercy), [], "gifts with no choice wait for nothing");
     const c = makeChar([{ name: "Rogue", subclass: "Mastermind", level: 6 }, { name: "Bard", level: 3 }], { skills: ["Stealth", "Perception"] });
     assert.ok(renderClassPicksCard(c), "all pending");
     pick(c, grant(c, "Expertise"), [["Stealth", "Perception"]]);
@@ -1134,4 +1141,52 @@ test("card: Tasha's replacement features are listed only with the switch on, or 
     CP.syncClassPicks(r);
     assert.ok(renderClassPicksCard(r), "one in use stays listed after the switch goes off, so it can be switched back");
   });
+});
+
+/* ---- Starting tool choices (Phase E3, 2026-10-19) ----
+   A first artificer picks one artisan's tools, a bard three musical
+   instruments, a monk artisan's tools or an instrument; a second class
+   gets its multiclass list instead. */
+test("starting tools: asked on Class Features, applied on the engine, listed in place of the placeholder", (t) => {
+  let grants, err, monkOpts;
+  withFakeDom(t, () => {
+    startWizard({ classId: "Bard", classChoices: {} });
+    grants = W.wizardClassGrants().map((g) => [g.key, g.name]);
+    err = W.validateStep("choices");
+    startWizard({ classId: "Monk", classChoices: {} });
+    const g = W.wizardClassGrants().find((x) => x.key === "starting");
+    monkOpts = CP.slotOptions(g.def, [], 0, W.wizardPickContext(g)).map((o) => o.value);
+  });
+  assert.deepEqual(grants, [["starting", "Bard tools"]]);
+  assert.match(err, /Bard tools/);
+  assert.equal(monkOpts.length, TOOL_GROUPS["Artisan's tools"].length + TOOL_GROUPS["Musical instruments"].length, "artisan's tools or an instrument");
+  // On the sheet: picked tools replace the "of your choice" line.
+  const bard = makeChar([{ name: "Bard", level: 1 }]);
+  assert.deepEqual(H.classProficiencies(bard, 0).tools, ["Three musical instruments of your choice"], "not chosen yet: the reminder");
+  CP.applyClassPicks(bard, bard.classes[0], grant(bard, "Bard tools"), [["Lute", "Flute", "Drum"]]);
+  assert.deepEqual(H.classProficiencies(bard, 0).tools, ["Lute", "Flute", "Drum"]);
+  const art = makeChar([{ name: "Artificer", level: 1 }]);
+  CP.applyClassPicks(art, art.classes[0], grant(art, "Artificer tools"), [["Smith's tools"]]);
+  assert.deepEqual(H.classProficiencies(art, 0).tools, ["Thieves' tools", "Tinker's tools", "Smith's tools"]);
+  assert.ok(!open(art, grant(art, "Artificer tools"), 0).includes("Tinker's tools"), "tinker's tools: known already");
+  // A second class: no starting choice (a bard's multiclass instrument instead).
+  const multi = makeChar([{ name: "Fighter", level: 1 }, { name: "Monk", level: 1 }]);
+  assert.ok(!CP.entryGrants(multi.classes[1], true).some((g) => g.key === "starting"));
+});
+
+test("starting tools: an older sheet's custom feature moves onto the pick", () => {
+  const bard = makeChar([{ name: "Bard", level: 2 }], { features: [{ id: "f", name: "Musical instruments: Lute, Flute, Drum", source: "Class", text: "x" }] });
+  assert.ok(CP.migrateClassPicks(bard));
+  assert.deepEqual(bard.classes[0].profPicks.starting.slots, [["Lute", "Flute", "Drum"]]);
+  assert.ok(!bard.features.length, "the custom feature goes");
+  assert.deepEqual(CP.pendingClassPicks(bard), []);
+  const monk = makeChar([{ name: "Monk", level: 1 }], { features: [{ id: "f", name: "Tool proficiency: Brewer's supplies", source: "Class", text: "x" }] });
+  CP.migrateClassPicks(monk);
+  assert.deepEqual(monk.classes[0].profPicks.starting.slots, [["Brewer's supplies"]]);
+  const art = makeChar([{ name: "Artificer", level: 3 }], { features: [{ id: "f", name: "Artisan's tools: Smith's tools", source: "Class", text: "x" }] });
+  CP.migrateClassPicks(art);
+  assert.deepEqual(art.classes[0].profPicks.starting.slots, [["Smith's tools"]]);
+  // A monk as second class keeps whatever it had (not its first class).
+  const second = makeChar([{ name: "Fighter", level: 1 }, { name: "Monk", level: 1 }], { features: [{ id: "f", name: "Tool proficiency: Lute", source: "Class", text: "x" }] });
+  assert.equal(CP.migrateClassPicks(second), false);
 });
