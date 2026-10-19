@@ -329,6 +329,20 @@ export function raceAbilityIncreases(opts){
   return out;
 }
 
+/* How many of the race's ability picks have room: a score already at 20
+   (with the race's fixed increases) can't go up, so scores all at 20
+   need no picks. */
+export function raceAbilityPicksNeeded(){
+  var def = raceChoiceDef();
+  if(!def || !def.abilityBonus) return 0;
+  var fixed = raceAbilityIncreases({fixedOnly:true}), exclude = def.abilityBonus.exclude || [];
+  var room = ABILITIES.filter(function(a){
+    var k = a[0];
+    return exclude.indexOf(k)===-1 && (Number(wizardState.abilities[k])||10) + (fixed[k]||0) < 20;
+  }).length;
+  return Math.min(def.abilityBonus.amounts.length, room);
+}
+
 /* The scores the character will actually have: the base scores from the
    Ability Scores step plus the race's increases (kept within 1 to 20),
    plus the Race Traits feat's +1. Everything downstream (HP, AC, spell
@@ -579,9 +593,9 @@ export function validateStep(id){
   if(id==="raceChoices"){
     var def = raceChoiceDef() || {}, rc = wizardState.raceChoices;
     if(def.abilityBonus){
-      var n = def.abilityBonus.amounts.length, exclude = def.abilityBonus.exclude || [];
-      var ab = rc.abilities.slice(0, n).filter(Boolean);
-      if(ab.length!==n || new Set(ab).size!==ab.length || ab.some(function(k){ return exclude.indexOf(k)!==-1; })){
+      var n = raceAbilityPicksNeeded(), exclude = def.abilityBonus.exclude || [];
+      var ab = rc.abilities.slice(0, def.abilityBonus.amounts.length).filter(Boolean);
+      if(ab.length<n || new Set(ab).size!==ab.length || ab.some(function(k){ return exclude.indexOf(k)!==-1; })){
         return n===1 ? "Pick an ability to increase"+(exclude.length ? " other than "+exclude.map(abilityFullName).join(" or ") : "")+"."
           : "Pick "+n+" different abilities to increase"+(exclude.length ? ", not "+exclude.map(abilityFullName).join(" or ") : "")+".";
       }

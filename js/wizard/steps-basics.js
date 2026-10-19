@@ -217,10 +217,23 @@ function abilityStepperGrid(container, get, set, min, max, canUp){
 /* Manual: set each score to anything from 1 to 20, no budget. For
    players copying an existing character or using their table's rules. */
 export function wizardManualUI(container){
+  var row = ce("div");
+  row.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;";
   var hint = document.createElement("p");
-  hint.style.cssText = "font-size:13px;margin-bottom:10px;color:var(--text-on-parch-dim);";
+  hint.style.cssText = "font-size:13px;margin:0;color:var(--text-on-parch-dim);";
   hint.textContent = "Set each score to whatever you like, from 1 to 20, before your race's increases.";
-  container.appendChild(hint);
+  row.appendChild(hint);
+  // For testing: every score straight to 20.
+  var maxBtn = ce("button", "btn small ghost");
+  maxBtn.type = "button"; maxBtn.textContent = "Max all";
+  maxBtn.title = "Set every score to 20";
+  maxBtn.style.flex = "none";
+  maxBtn.addEventListener("click", function(){
+    ABILITIES.forEach(function(a){ wizardState.abilities[a[0]] = 20; });
+    renderWizard();
+  });
+  row.appendChild(maxBtn);
+  container.appendChild(row);
   abilityStepperGrid(container,
     function(key){ return wizardState.abilities[key]; },
     function(key, v){ wizardState.abilities[key] = v; },

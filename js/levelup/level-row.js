@@ -9,8 +9,18 @@ import { makeLevelUpSvg, makeUndoSvg } from "../ui/svg-icons.js";
 import { openLevelUp, undoLastLevelUp, applySpellSlots } from "./levelup.js";
 import { syncClassPicks } from "../core/class-picks.js";
 
-var QUICK_XP = [50, 100, 250, 500];
 var customXpOpen = false;
+
+/* The one-tap XP awards scale with the level: four steps of the
+   10, 25, 50, 100, 250... ladder, the largest being at most half the XP
+   between this level and the next (level 3: 50, 100, 250, 500). */
+export function quickXpAmounts(gap){
+  var steps = [];
+  for(var p = 10; p <= 100000; p *= 10) steps.push(p, p*2.5, p*5);
+  var top = 3;
+  while(top+1 < steps.length && steps[top+1] <= gap/2) top++;
+  return steps.slice(top-3, top+1);
+}
 
 /* ---------------- Experience strip ----------------
    Level badge, XP progress toward the next level, a quick "+XP" field and
@@ -92,11 +102,13 @@ export function buildLevelRow(c){
     });
     chips.appendChild(input); chips.appendChild(addBtn); chips.appendChild(closeBtn);
   } else {
-    QUICK_XP.forEach(function(n){
+    // At the cap the chips are disabled; size them by the last level's gap.
+    var gap = atCap ? floor - XP_THRESHOLDS[level-1] : next - floor;
+    quickXpAmounts(gap).forEach(function(n){
       var chip = document.createElement("button");
       chip.type = "button"; chip.className = "xp-chip";
-      chip.textContent = "+"+n;
-      chip.title = full ? (atCap ? "Max XP" : "Level up to earn more XP") : "Add "+n+" XP";
+      chip.textContent = "+"+n.toLocaleString();
+      chip.title = full ? (atCap ? "Max XP" : "Level up to earn more XP") : "Add "+n.toLocaleString()+" XP";
       chip.disabled = full;
       chip.addEventListener("click", function(){ setXp(xp + n); });
       chips.appendChild(chip);

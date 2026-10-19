@@ -6,7 +6,7 @@ import { BACKGROUND_INFO } from "../data/backgrounds.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { themedPicker } from "../ui/themed-picker.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, raceAbilityPicksNeeded, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
   wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardRaceSkills,
   wizardBackgroundGrants, wizardBackgroundPickGrants, wizardBgSlots, wizardBgPickContext,
   wizardOverlapGrants, wizardOverlapSlots, wizardOverlapContext } from "./wizard-core.js";
@@ -194,11 +194,14 @@ export function wizardStepRaceChoices(container){
     var notText = exclude.length ? " other than "+exclude.map(abilityFullName).join(" or ") : "";
     var chosen = rc.abilities.slice(0, n).filter(function(k){ return k && exclude.indexOf(k)===-1; });
     var allSame = amounts.every(function(a){ return a===amounts[0]; });
+    // Scores already at 20 can't take a pick; all at 20 needs none.
+    var need = raceAbilityPicksNeeded();
     if(allSame){
       // Same amount for each pick: tap that many score tiles.
       var amt = amounts[0];
       var sec1 = section("Ability score increase",
-        (n===1 ? "Tap a score" : "Tap "+n+" different scores")+notText+" to raise by +"+amt+" (up to 20).", chosen.length===n);
+        need===0 ? "Every score is already at 20, so there's nothing to raise."
+          : (need===1 ? "Tap a score" : "Tap "+need+" different scores")+notText+" to raise by +"+amt+" (up to 20).", chosen.length>=need);
       var grid = ce("div","rt-ab-grid");
       ABILITIES.forEach(function(a){
         var key = a[0], base = baseScore(key);
@@ -223,8 +226,10 @@ export function wizardStepRaceChoices(container){
     } else {
       // Different amounts (+2 to one, +1 to another): one picker each.
       var slots = rc.abilities.slice(0, n);
-      var done = slots.filter(Boolean).length===n && new Set(slots).size===n;
-      var secA = section("Ability score increase", amounts.map(function(a){ return "+"+a; }).join(" to one score and ")+" to another, up to 20.", done);
+      var filled = slots.filter(Boolean);
+      var done = filled.length>=need && new Set(filled).size===filled.length;
+      var secA = section("Ability score increase", need===0 ? "Every score is already at 20, so there's nothing to raise."
+        : amounts.map(function(a){ return "+"+a; }).join(" to one score and ")+" to another, up to 20.", done);
       amounts.forEach(function(amt, i){
         secA.appendChild(pickerField(themedPicker({
           key:"race:ability:"+i, placeholder:"+"+amt+" to…", ariaLabel:"Ability for +"+amt,

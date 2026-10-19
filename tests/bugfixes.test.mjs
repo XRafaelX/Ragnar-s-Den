@@ -350,6 +350,18 @@ test("creation: Variant Human still picks two +1s", (t) => {
   assert.equal(c.abilities.dex, 14);
 });
 
+test("creation: race +1 picks only ask for scores that can still go up", (t) => {
+  const maxed = { str: 20, dex: 20, con: 20, int: 20, wis: 20, cha: 20 };
+  const skills = { "race:Skills:pick": [["Stealth"]] };
+  const vh = (abilities, scores) => raceTraitsError(t, { race: "Variant Human", abilities: scores, raceChoices: { abilities, profPicks: skills } });
+  assert.equal(vh([], maxed), null, "all at 20: nothing to pick");
+  assert.match(vh([], { ...maxed, wis: 18 }), /Pick an ability to increase/, "one score below 20: one pick");
+  assert.equal(vh(["wis"], { ...maxed, wis: 18 }), null);
+  // Half-Elf: CHA is excluded, and its fixed +2 counts toward the cap.
+  assert.equal(raceTraitsError(t, { race: "Half-Elf", abilities: { ...maxed, cha: 10 },
+    raceChoices: { abilities: [], profPicks: { "race:Skill Versatility:pick": [["Stealth", "History"]] } } }), null);
+});
+
 /* ---------- 2. Dwarven Toughness ---------- */
 test("hit points: a new Hill Dwarf includes Dwarven Toughness", (t) => {
   const c = createThroughWizard(t, { race: "Hill Dwarf" });

@@ -15,7 +15,8 @@ import * as H from "../js/core/helpers.js";
 import * as LU from "../js/levelup/session.js";
 import { finish, undoLastLevelUp } from "../js/levelup/apply.js";
 import { applySpellSlots } from "../js/levelup/levelup.js";
-import { subclassExtras } from "../js/levelup/level-row.js";
+import { subclassExtras, quickXpAmounts } from "../js/levelup/level-row.js";
+import { XP_THRESHOLDS } from "../js/data/progression.js";
 import { newCharacter } from "../js/core/character.js";
 import { withFakeDom } from "./fake-dom.mjs";
 import * as INV from "../js/core/invocations.js";
@@ -119,4 +120,17 @@ test("D3: a warlock's Eldritch Blast from a feat meets an invocation's prerequis
   fighter.feats.push(f2);
   FP.applyFeatPicks(fighter, f2, { ...FP.emptyPicks(FP.featDef("Magic Initiate")), option: "Warlock", spells: ["Eldritch Blast", "Minor Illusion", "Hex"] });
   assert.ok(!featPicksContext(fighter).invocationChoices().includes("Agonizing Blast"), "Eldritch Adept: a warlock who meets it, nobody else");
+});
+
+test("quick XP buttons scale with the level", () => {
+  const gap = l => XP_THRESHOLDS[l+1] - XP_THRESHOLDS[l];
+  assert.deepEqual(quickXpAmounts(gap(1)), [10, 25, 50, 100]);
+  assert.deepEqual(quickXpAmounts(gap(3)), [50, 100, 250, 500]);
+  assert.deepEqual(quickXpAmounts(gap(10)), [1000, 2500, 5000, 10000]);
+  assert.deepEqual(quickXpAmounts(gap(19)), [2500, 5000, 10000, 25000]);
+  for(let l = 1; l < 20; l++){
+    const amounts = quickXpAmounts(gap(l));
+    assert.equal(amounts.length, 4);
+    assert.ok(amounts[3] <= gap(l), "level "+l+": the largest award fits in one level");
+  }
 });
