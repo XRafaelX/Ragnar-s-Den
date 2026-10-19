@@ -12,6 +12,7 @@
 }
 #sidebar-header{
   padding:20px 18px 14px;
+  padding-top:calc(20px + env(safe-area-inset-top, 0px));
   border-bottom:1px solid var(--rule);
 }
 #sidebar-header h1{
@@ -75,6 +76,7 @@
 .char-row-info{flex:1;min-width:0;}
 #sidebar-footer{
   padding:14px;
+  padding-bottom:calc(14px + env(safe-area-inset-bottom, 0px));
   border-top:1px solid var(--rule);
   display:flex;
   flex-direction:column;

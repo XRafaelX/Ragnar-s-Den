@@ -2,7 +2,7 @@
 
 /* ---------------- Dice tray & Smooth Animations ---------------- */
 #dice-fab{
-  position:fixed;right:22px;bottom:22px;
+  position:fixed;right:22px;bottom:calc(22px + env(safe-area-inset-bottom, 0px));
   width:54px;height:54px;border-radius:50%;
   background:linear-gradient(135deg, var(--brass) 0%, var(--brass-active) 100%);
   color:#fff;
@@ -15,7 +15,7 @@
 #dice-fab:active{transform:scale(0.92);}
 
 #dice-tray{
-  position:fixed;right:22px;bottom:88px;width:320px;max-width:calc(100vw - 28px);
+  position:fixed;right:22px;bottom:calc(88px + env(safe-area-inset-bottom, 0px));width:320px;max-width:calc(100vw - 28px);
   background:linear-gradient(180deg, #221c32 0%, var(--ink-deep) 100%);
   border:1px solid var(--rule);border-radius:12px;
   box-shadow:0 16px 40px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
@@ -325,6 +325,6 @@
 .die-btn.selected{border-color:var(--brass-bright);background:color-mix(in srgb, var(--brass) 22%, transparent);color:#fff;}
 
 @media (max-width:800px){
-  #dice-tray{right:12px;left:12px;width:auto;max-width:none;bottom:84px;}
-  #dice-fab{right:16px;bottom:16px;}
+  #dice-tray{right:12px;left:12px;width:auto;max-width:none;bottom:calc(84px + env(safe-area-inset-bottom, 0px));}
+  #dice-fab{right:16px;bottom:calc(16px + env(safe-area-inset-bottom, 0px));}
 }
