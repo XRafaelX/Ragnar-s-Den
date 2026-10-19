@@ -1,3 +1,4 @@
+# Editors and AI assistants
 .idea/
 .vscode/
 .claude/
@@ -10,3 +11,6 @@ Thumbs.db
 # Graphify build outputs & local AST cache
 graphify-out/
 .graphify*
+
+# Rulebook PDFs kept locally for checking rules (copyrighted, never commit)
+books/
