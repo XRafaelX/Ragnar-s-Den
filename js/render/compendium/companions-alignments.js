@@ -55,7 +55,7 @@ function showCompanion(e){
   var level = e.def.level;
   openInfoModal(e.key, function(body){
     var lead = ce("p", "cmp-lead");
-    lead.textContent = "From " + e.def.subclass + " (" + e.def.cls + " " + e.def.level + "+). It gets its own card on the sheet's Companions tab, with an HP tracker and roll buttons.";
+    lead.textContent = "From " + (e.def.source ? "the " + e.def.source : e.def.subclass) + " (" + e.def.cls + " " + e.def.level + "+). It gets its own card on the sheet's Companions tab, with an HP tracker and roll buttons.";
     body.appendChild(lead);
     var stepper = ce("div", "cmp-level-stepper");
     var holder = ce("div", "cmp-companion");
@@ -99,9 +99,9 @@ export function companionSection(){
   return {
     key:"companions", label:"Companions", searchPlaceholder:"Search companions…",
     groups:groups, data:data,
-    renderSub:function(name, e){ return e.def.subclass; },
+    renderSub:function(name, e){ return e.def.source || e.def.subclass; },
     renderRight:function(name, e){ return [e.def.cls + " " + e.def.level + "+", ""]; },
-    searchText:function(name, e){ return name + " " + e.def.subclass + " " + e.def.cls; },
+    searchText:function(name, e){ return name + " " + (e.def.source || e.def.subclass) + " " + e.def.cls; },
     onAdd:function(name){ showCompanion(data[name]); return false; }
   };
 }

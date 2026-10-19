@@ -18,7 +18,11 @@ import * as W from "../js/wizard/wizard-core.js";
 import * as P from "../js/core/class-picks.js";
 import { importCustomSpells, getCustomSpells } from "../js/core/custom-spells.js";
 import { applySpellSlots } from "../js/levelup/levelup.js";
-import { syncInfusions, infusionBonus } from "../js/core/artificer.js";
+import { syncInfusions, infusionBonus, infusionTargets, infuseItem, endInfusion, dropOrphanInfusions, infusionCharges, useInfusionCharge, refuelLevels, refuelSlot, infusionsOnLongRest } from "../js/core/artificer.js";
+import { attunedItems, needsAttunement } from "../js/core/magic-items.js";
+import { infusionResistances, propulsionGauntlets } from "../js/core/infusion-effects.js";
+import { characterCompanions } from "../js/core/companions.js";
+import { INFUSIONS, REPLICABLE_ITEMS } from "../js/data/infusions.js";
 import { featDef, featPicksProblem, featPicksSummary, applyFeatPicks } from "../js/core/feat-picks.js";
 import { featPicksContext } from "../js/ui/feat-picks.js";
 import { sink, withFakeDom } from "./fake-dom.mjs";
@@ -586,6 +590,150 @@ test("infusions: an older save at artificer 10 is brought up to +2 on load", () 
   const { c, sword } = artificerWithInfusions(12);
   ensureShape(c);
   assert.equal(sword.magicBonus, 2);
+});
+
+/* ---------- 12b. Every infusion goes on an inventory item ---------- */
+const infData = (name) => INFUSIONS.find((i) => i.name === name);
+function infuser(inventory){
+  const c = char([{ name: "Artificer", level: 6 }], { inventory });
+  c.infusions = { known: [], active: [] };
+  const learn = (name, note) => { const k = { id: "k" + c.infusions.known.length, name, note: note || "" }; c.infusions.known.push(k); return k; };
+  return { c, learn };
+}
+
+test("infusions: every Tasha's infusion names what it goes on (no free text left)", () => {
+  assert.equal(INFUSIONS.length, 16);
+  INFUSIONS.forEach((i) => assert.ok(i.target, i.name + " has a target"));
+  assert.deepEqual(REPLICABLE_ITEMS.map((t) => [t.level, t.items.length]), [[2, 8], [6, 8], [10, 22], [14, 13]]);
+});
+
+test("infusions: targets match by kind, magic and already-infused items greyed with a reason", () => {
+  const { c, learn } = infuser([
+    { id: "a", type: "gear", name: "Arcane Focus (wand)" }, { id: "b", type: "weapon", name: "Quarterstaff" },
+    { id: "c", type: "gear", name: "Wand of Secrets", magicItem: "Wand of Secrets" }, { id: "d", type: "gear", name: "Rope, Hempen (50 feet)" },
+    { id: "e", type: "armor", name: "Chain Mail", category: "heavy" }, { id: "f", type: "gear", name: "Robes" },
+    { id: "g", type: "armor", name: "Shield", category: "shield" }, { id: "h", type: "gear", name: "Signet Ring" }]);
+  const ids = (name) => infusionTargets(c, infData(name)).map((t) => t.item.id + (t.reason ? "!" : ""));
+  assert.deepEqual(ids("Enhanced Arcane Focus"), ["a", "b", "c!"]);
+  assert.deepEqual(ids("Mind Sharpener"), ["e", "f"]);
+  assert.deepEqual(ids("Resistant Armor"), ["e"]);
+  assert.deepEqual(ids("Spell-Refueling Ring"), ["h"]);
+  infuseItem(c, learn("Enhanced Weapon"), { itemId: "b" }, 3);
+  assert.deepEqual(infusionTargets(c, infData("Enhanced Arcane Focus")).find((t) => t.item.id === "b").reason, "has Enhanced Weapon");
+  assert.equal(infuseItem(c, learn("Enhanced Arcane Focus"), { itemId: "b" }, 3), null, "one infusion per object");
+});
+
+test("infusions: a new plain item is added, Resistant Armor keeps its type, Replicate makes and removes its item", () => {
+  const { c, learn } = infuser([{ id: "e", type: "armor", name: "Chain Mail", category: "heavy" }]);
+  const ring = infuseItem(c, learn("Spell-Refueling Ring"), { newItem: "Ring" }, 3);
+  assert.equal(c.inventory.find((i) => i.id === ring.itemId).name, "Ring");
+  const armor = infuseItem(c, learn("Resistant Armor"), { itemId: "e", choice: "Fire" }, 3);
+  assert.equal(armor.choice, "Fire");
+  const bag = infuseItem(c, learn("Replicate Magic Item", "Bag of Holding"), {}, 3);
+  assert.equal(bag.made, true);
+  assert.equal(c.inventory.length, 3);
+  // A fourth ends the oldest (the ring), which stays as a plain ring.
+  infuseItem(c, learn("Replicate Magic Item", "Goggles of Night"), {}, 3);
+  assert.deepEqual(c.infusions.active.map((a) => a.itemName), ["Chain Mail", "Bag of Holding", "Goggles of Night"]);
+  assert.ok(c.inventory.some((i) => i.name === "Ring"));
+  endInfusion(c, c.infusions.active[1]);
+  assert.ok(!c.inventory.some((i) => i.name === "Bag of Holding"), "a replicated item goes when its infusion ends");
+  // Removing an infused item from the inventory ends its infusion.
+  c.inventory = c.inventory.filter((i) => i.name !== "Chain Mail");
+  c.infusions.active.push({ id: "old", name: "Homunculus Servant", itemId: null, itemName: "gem" });
+  assert.equal(dropOrphanInfusions(c), true);
+  assert.deepEqual(c.infusions.active.map((a) => a.itemName), ["Goggles of Night", "gem"]);
+});
+
+test("infusions: attunement on infusing, the limit, and the bonus only while attuned", () => {
+  const { c, learn } = infuser([
+    { id: "s", type: "armor", name: "Shield", category: "shield", baseAC: 2 },
+    { id: "b", type: "weapon", name: "Light Crossbow" }]);
+  c.inventory.push(...["x", "y"].map((id) => ({ id, type: "gear", name: "Stand-in " + id, magicItem: "Heavy Holster", attuned: true })));
+  const shield = infuseItem(c, learn("Repulsion Shield"), { itemId: "s" }, 3);
+  const s = c.inventory.find((i) => i.id === "s");
+  assert.equal(shield.attunement, true);
+  assert.equal(s.attuned, true, "attuned the instant it's infused");
+  assert.equal(s.magicBonus, 1);
+  assert.equal(attunedItems(c).length, 3, "it counts toward the limit");
+  const bow = infuseItem(c, learn("Repeating Shot"), { itemId: "b" }, 3);
+  const b = c.inventory.find((i) => i.id === "b");
+  assert.equal(b.attuned, false, "no room: infused but not attuned");
+  assert.equal(bow.bonus, 0);
+  assert.equal(needsAttunement(c, b), true);
+  // End the shield's attunement: its +1 goes; attune the crossbow: its +1 comes.
+  s.attuned = false; b.attuned = true;
+  syncInfusions(c);
+  assert.deepEqual([s.magicBonus, b.magicBonus], [0, 1]);
+  endInfusion(c, bow);
+  assert.equal(b.attuned, undefined, "a plain crossbow again");
+  // A replicated item needs attunement only if its table says so.
+  assert.equal(infuseItem(c, learn("Replicate Magic Item", "Bag of Holding"), {}, 3).attunement, false);
+});
+
+test("infusions: an older save's attuning infusion counts as attuned and keeps its +1", () => {
+  const { c } = infuser([{ id: "b", type: "weapon", name: "Light Crossbow", magicBonus: 1 }]);
+  c.infusions = { known: [{ id: "k", name: "Repeating Shot" }], active: [{ id: "a", knownId: "k", name: "Repeating Shot", itemId: "b", itemName: "Light Crossbow", bonus: 1 }] };
+  syncInfusions(c);
+  assert.equal(c.infusions.active[0].attunement, true);
+  assert.equal(c.inventory[0].attuned, true);
+  assert.equal(c.inventory[0].magicBonus, 1);
+});
+
+test("infusions: charges spent and regained at dawn, the ring once a day", () => {
+  const { c, learn } = infuser([{ id: "r", type: "gear", name: "Robes" }]);
+  c.spellcasting = { slots: { 1: { max: 4, used: 2 }, 2: { max: 3, used: 0 }, 3: { max: 2, used: 1 }, 4: { max: 1, used: 1 } } };
+  const mind = infuseItem(c, learn("Mind Sharpener"), { itemId: "r" }, 3);
+  assert.deepEqual(infusionCharges(c, mind), { max: 4, left: 4, regain: "1d4" });
+  for(let i = 0; i < 4; i++) assert.equal(useInfusionCharge(c, mind), true);
+  assert.equal(useInfusionCharge(c, mind), false, "none left");
+  const ring = infuseItem(c, learn("Spell-Refueling Ring"), { newItem: "Ring" }, 3);
+  assert.deepEqual(refuelLevels(c, ring), [1, 3], "spent slots of 3rd level or lower");
+  assert.equal(refuelSlot(c, ring, 3), true);
+  assert.equal(c.spellcasting.slots[3].used, 0);
+  assert.deepEqual(refuelLevels(c, ring), [], "once until dawn");
+  assert.deepEqual(infusionsOnLongRest(c, () => 3), ["Robes", "Ring"]);
+  assert.equal(infusionCharges(c, mind).left, 3, "1d4 (a 3) back");
+  assert.deepEqual(refuelLevels(c, ring), [1]);
+});
+
+test("infusions on the sheet: focus spell attack, resistance, helm, propulsion armor, homunculus", () => {
+  const { c, learn } = infuser([
+    { id: "w", type: "gear", name: "Arcane Focus (wand)" },
+    { id: "m", type: "armor", name: "Scale Mail", category: "medium", baseAC: 14, equipped: true }]);
+  c.abilities = { str: 14, dex: 12, con: 14, int: 16, wis: 10, cha: 8 };
+  const atk0 = H.spellcastingAbilities(c)[0].attack;
+  infuseItem(c, learn("Enhanced Arcane Focus"), { itemId: "w" }, 6);
+  assert.equal(H.spellcastingAbilities(c)[0].attack, atk0 + 1, "+1 while attuned");
+  c.inventory.find((i) => i.id === "w").attuned = false;
+  assert.equal(H.spellcastingAbilities(c)[0].attack, atk0, "nothing unattuned");
+  c.classes[0].level = 10;
+  c.inventory.find((i) => i.id === "w").attuned = true;
+  assert.equal(H.spellcastingAbilities(c)[0].attack, atk0 + 4 - 3 + 2, "+2 at artificer 10 (and PB 4)");
+  c.classes[0].level = 14;
+
+  infuseItem(c, learn("Resistant Armor"), { itemId: "m", choice: "Fire" }, 6);
+  assert.deepEqual(infusionResistances(c), [{ type: "Fire", source: "Resistant Armor (Scale Mail)" }]);
+  c.inventory.find((i) => i.id === "m").equipped = false;
+  assert.deepEqual(infusionResistances(c), [], "only while worn");
+  c.inventory.find((i) => i.id === "m").equipped = true;
+
+  assert.equal(H.initiativeRollMode(c).mode, "none");
+  infuseItem(c, learn("Helm of Awareness"), { newItem: "Helmet" }, 6);
+  assert.deepEqual(H.initiativeRollMode(c), { mode: "adv", reason: "Helm of Awareness" });
+
+  // Arcane Propulsion Armor on a second worn suit isn't possible (one infusion each), so swap.
+  endInfusion(c, c.infusions.active.find((a) => a.name === "Resistant Armor"));
+  const speed0 = H.computeSpeed({ ...c, speed: 30 }).value;
+  infuseItem(c, learn("Arcane Propulsion Armor"), { itemId: "m" }, 6);
+  assert.equal(H.computeSpeed({ ...c, speed: 30 }).value, speed0 + 5);
+  const g = propulsionGauntlets(c);
+  assert.deepEqual([g.attack, g.die, g.bonus, g.type], [2 + 5, 8, 2, "Force"]);
+
+  assert.ok(!characterCompanions(c).some((x) => x.def.id === "homunculus_servant"));
+  infuseItem(c, learn("Homunculus Servant"), { newItem: "Gemstone (100 gp)" }, 6);
+  const hom = characterCompanions(c).find((x) => x.def.id === "homunculus_servant");
+  assert.deepEqual([hom.stats.hp, hom.stats.attacks[0].toHit, hom.stats.attacks[0].bonus], [1 + 3 + 14, 5 + 3, 5]);
 });
 
 /* ================================================================

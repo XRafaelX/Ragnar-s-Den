@@ -13,6 +13,7 @@ import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
 import { pipChanged, pipsRefilled } from "../../ui/fx.js";
 import { coinAttackBonus } from "../../core/magic-items.js";
+import { infusionSpellAttack } from "../../core/infusion-effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner, cantripFormulas, swapCantripFormula } from "../../core/spells-known.js";
 import { PREPARED_CASTERS } from "../../data/spells-known.js";
@@ -265,9 +266,12 @@ function renderSpellcastingCard(c){
   dc.val.textContent = 8+pb+scMod;
   grid.appendChild(dc.box);
 
-  // A boon to attack rolls (Duality's demon side) counts for spells too.
-  var boon = coinAttackBonus(c);
-  var atk = statTile("Spell attack", boon ? "Tap to roll · Duality " + fmtMod(boon) : "Tap to roll");
+  // A boon to attack rolls (Duality's demon side) counts for spells too,
+  // and so does an Enhanced Arcane Focus.
+  var coin = coinAttackBonus(c), focus = infusionSpellAttack(c);
+  var boon = coin + (focus ? focus.value : 0);
+  var extras = (coin ? ["Duality " + fmtMod(coin)] : []).concat(focus ? [focus.name + " " + fmtMod(focus.value)] : []);
+  var atk = statTile("Spell attack", extras.length ? "Tap to roll · " + extras.join(" · ") : "Tap to roll");
   atk.val.textContent = fmtMod(pb+scMod+boon);
   atk.box.classList.add("sc-roll");
   atk.box.setAttribute("role","button"); atk.box.tabIndex = 0;

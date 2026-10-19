@@ -3,6 +3,9 @@
    tab (only there when the character has one) as a stat card with an HP tracker and roll buttons (see
    js/render/panels/companions.js). Each entry:
      id, name, cls, subclass, level   who gets it, from which class level
+                  (no subclass: any of the class's)
+     infusion     optional: only while this artificer infusion is active
+                  (Homunculus Servant); `source` then names it on the card
      choice       optional {label, options}: picked on the card and saved
                   (a drake's Draconic Essence); stats get it as ctx.choice
      setup        the choice option (or true when there's no choice) under
@@ -85,6 +88,24 @@ export var COMPANIONS = [
           (x.lv >= 15 ? " The attacker takes 1d4 + " + Math.max(0, x.mods.int) + " force damage." : "")}],
         traits:[{name:"Vigilant", text:"It can't be surprised."},
           {name:"Your turn", text:"It acts right after you and takes the Dodge action unless you use a bonus action to command it."}]
+      };
+    }},
+  {id:"homunculus_servant", name:"Homunculus Servant", cls:"Artificer", level:2,
+    infusion:"Homunculus Servant", source:"Homunculus Servant infusion",
+    stats:function(x){
+      return {
+        type:"Tiny construct", ac:13, hp: 1 + x.mods.int + x.lv, speed:"20 ft, fly 30 ft",
+        abilities:{str:4, dex:15, con:12, int:10, wis:10, cha:7},
+        saves:"DEX " + plus(2 + x.pb),
+        skills:"Perception " + plus(2 * x.pb) + ", Stealth " + plus(2 + x.pb),
+        senses:"darkvision 60 ft, passive Perception " + (10 + 2 * x.pb),
+        immunities:"poison damage; exhaustion, poisoned",
+        attacks:[{name:"Force Strike", toHit: x.spellAttack, dice:"1d4", bonus: x.pb, damageType:"force",
+          text:"Ranged, 30 ft, one target it can see. Needs your bonus action."}],
+        reactions:[{name:"Channel Magic", text:"It delivers a spell you cast that has a range of touch. It must be within 120 ft of you."}],
+        traits:[{name:"Evasion", text:"On a Dexterity save for half damage it takes none on a success and half on a failure (not while incapacitated)."},
+          {name:"Your turn", text:"It acts right after you and takes the Dodge action unless you use a bonus action to command it. If you're incapacitated it acts freely."},
+          {name:"Mending", text:"It regains 2d6 hit points when the mending spell is cast on it. If you or it die, it vanishes and leaves its gem."}]
       };
     }},
   {id:"eldritch_cannon", name:"Eldritch Cannon", cls:"Artificer", subclass:"Artillerist", level:3,

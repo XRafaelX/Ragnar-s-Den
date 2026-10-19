@@ -11,8 +11,9 @@ import { mod, profBonus, classSpellAbility, clamp } from "./helpers.js";
 export function characterCompanions(c){
   var out = [];
   COMPANIONS.forEach(function(def){
-    var cl = (c.classes||[]).find(function(x){ return x.name===def.cls && x.subclass===def.subclass && (Number(x.level)||1) >= def.level; });
+    var cl = (c.classes||[]).find(function(x){ return x.name===def.cls && (!def.subclass || x.subclass===def.subclass) && (Number(x.level)||1) >= def.level; });
     if(!cl) return;
+    if(def.infusion && !infusionActive(c, def.infusion)) return;
     var mods = {};
     ["str","dex","con","int","wis","cha"].forEach(function(k){ mods[k] = mod(c.abilities && c.abilities[k]); });
     var pb = profBonus(c);
@@ -23,6 +24,10 @@ export function characterCompanions(c){
     out.push({def: def, stats: stats, choice: saved.choice || "", hasBeast: !!saved.beast, hp: stats ? companionHp(c, def.id, stats) : []});
   });
   return out;
+}
+/* An artificer infusion of this name is on an item now. */
+function infusionActive(c, name){
+  return ((c.infusions && c.infusions.active) || []).some(function(a){ return String(a.name||"").replace(/:.*$/, "")===name; });
 }
 function companionState(c, id){
   if(!c.companions) c.companions = {};

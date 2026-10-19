@@ -121,19 +121,62 @@
 /* Feature choices card: what was picked, and a picked option's details. */
 .cpk-picked{color:var(--text-on-parch);}
 .inf-text.cpk-picked-detail{margin-top:2px;}
-.inf-status{
-  display:flex;align-items:center;flex-wrap:wrap;gap:8px;
-  margin-top:10px;padding-top:10px;border-top:1px solid var(--rule);font-size:13px;
-}
-.inf-on{color:var(--text-on-parch);}
-.inf-on b{color:var(--brass-bright);font-weight:600;}
-.inf-on::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;background:var(--brass);box-shadow:0 0 6px var(--brass);}
-.inf-off{color:var(--text-on-parch-dim);}
 .inf-act{margin-left:auto;}
 .inf-tag{
   font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:1px 7px;border-radius:8px;
   border:1px solid color-mix(in srgb, var(--brass) 60%, transparent);color:var(--brass-bright);white-space:nowrap;
 }
+.inf-tag-off{border-color:var(--rule);color:var(--text-on-parch-dim);}
+
+/* Artifice infusions card: a count beside a section title, a tile per
+   infusion slot, and a compact row per known infusion (its rules are in a
+   bottom sheet). */
+.inf-count-title{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+.inf-count{text-transform:none;letter-spacing:0;font-size:12px;}
+.inf-count b{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--brass-bright);}
+.inf-count.over, .inf-count.over b{color:var(--oxblood);}
+.inf-slots{display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:8px;}
+.inf-slot{
+  min-width:0;padding:9px 10px 10px 12px;border-radius:8px;
+  border:1px solid color-mix(in srgb, var(--brass) 45%, transparent);border-left:3px solid var(--brass);
+  background:color-mix(in srgb, var(--brass) 7%, transparent);
+}
+.inf-slot-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;}
+.inf-slot-item{font-size:13.5px;font-weight:600;color:var(--brass-bright);min-width:0;overflow-wrap:anywhere;padding-top:2px;}
+.inf-slot-end{flex:none;margin:-2px -4px 0 0;}
+.inf-slot-what{font-size:12px;color:var(--text-on-parch-dim);margin-top:2px;}
+.inf-slot-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.inf-slot-free{
+  display:flex;align-items:center;justify-content:center;min-height:62px;
+  border:1px dashed var(--rule);background:none;font-size:12px;color:var(--text-on-parch-dim);
+}
+.inf-rows{display:flex;flex-direction:column;gap:6px;}
+.inf-row{
+  padding:6px 10px 6px 4px;border-radius:8px;
+  border:1px solid var(--rule);border-left:3px solid var(--rule);background:rgba(255,255,255,.03);
+}
+.inf-row.is-on{border-left-color:var(--brass);}
+.inf-row.is-infusing{border-left-color:var(--brass-bright);}
+.inf-row-main{display:flex;align-items:center;gap:10px;}
+.inf-row-info{
+  flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  padding:4px 8px;border:0;border-radius:6px;background:none;text-align:left;cursor:pointer;color:inherit;font:inherit;
+}
+.inf-row-info:hover, .inf-row-info:focus-visible{background:rgba(255,255,255,.05);}
+.inf-row-name{font-size:14px;font-weight:600;color:var(--text-on-parch);}
+.inf-row-more{margin-left:6px;color:var(--text-on-parch-dim);font-weight:400;}
+.inf-row-goes{font-size:11.5px;color:var(--text-on-parch-dim);}
+.inf-row-chip{flex:none;}
+.inf-row .inf-act{flex:none;margin-left:0;}
+.inf-row .inf-infuse{margin:6px 0 4px 8px;}
+/* No fill mode: a finished animation leaves no transform behind, which
+   would trap the item picker's menu under the content below. */
+.inf-fold-in{animation:inf-fold-in .22s ease-out;transform-origin:top;}
+@keyframes inf-fold-in{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion: reduce){ .inf-fold-in{animation:none;} }
+.inf-sheet-text{margin-top:8px;}
+.inf-sheet-on{font-size:13px;color:var(--text-on-parch);margin:12px 0 0;}
+.inf-sheet-on b{color:var(--brass-bright);}
 
 .inf-form{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
 .inf-infuse{margin-top:10px;padding-top:10px;border-top:1px solid var(--rule);}

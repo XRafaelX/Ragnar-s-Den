@@ -10,6 +10,7 @@ import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
 import { mod, fmtMod, profBonus } from "./basics.js";
 import { characterIsCaster, classCasterType, classSpellAbility, classFeatureList } from "./class-features.js";
 import { coinAttackBonus } from "./magic-items.js";
+import { infusionSpellAttack } from "./infusion-effects.js";
 
 /* The spellcasting abilities of the classes that cast spells now (a
    Paladin or Ranger from level 2, an Eldritch Knight or Arcane Trickster
@@ -23,7 +24,8 @@ export function spellcastingAbilities(c){
     var entry = out.find(function(x){ return x.ability===ability; });
     if(!entry){
       var m = mod(c.abilities && c.abilities[ability]);
-      entry = {ability: ability, classes: [], dc: 8 + profBonus(c) + m, attack: profBonus(c) + m + coinAttackBonus(c)};
+      var focus = infusionSpellAttack(c);
+      entry = {ability: ability, classes: [], dc: 8 + profBonus(c) + m, attack: profBonus(c) + m + coinAttackBonus(c) + (focus ? focus.value : 0)};
       out.push(entry);
     }
     entry.classes.push(cl.name);

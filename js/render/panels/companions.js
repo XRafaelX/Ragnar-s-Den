@@ -169,7 +169,7 @@ function renderCompanion(c, comp){
   var card = makeCard(name + (s.count > 1 ? " ×" + s.count : ""));
   card.classList.add("comp-card");
   var type = ce("p", "art-intro");
-  type.textContent = s.type + " · from " + comp.def.subclass;
+  type.textContent = s.type + " · from " + (comp.def.source || comp.def.subclass);
   card.appendChild(type);
   if(comp.def.choice) card.appendChild(choiceRow(c, comp));
 

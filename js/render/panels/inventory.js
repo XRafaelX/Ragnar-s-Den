@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, draconicBreath, breathDcFormula, breathUsesText, characterResources } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -12,7 +12,9 @@ import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { renderCurrencyCard } from "./coin-purse.js";
-import { magicItemDef, magicItemActive, holsterKnives, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, closeEmptyFlip, endBoon, activeBoons, boonLabel } from "../../core/magic-items.js";
+import { propulsionGauntlets } from "../../core/infusion-effects.js";
+import { infusionOn, infusionWorks, activeInfusionData, infusionCharges, useInfusionCharge, refuelLevels, refuelSlot, endInfusion, syncInfusions } from "../../core/artificer.js";
+import { magicItemDef, magicItemActive, needsAttunement, holsterKnives, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, closeEmptyFlip, endBoon, activeBoons, boonLabel } from "../../core/magic-items.js";
 import { pipChanged, pipsRefilled, flash } from "../../ui/fx.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
@@ -44,10 +46,11 @@ function cardTop(idx){
 
 /* A magic item's attunement, in its ⋯ menu: "Attune" or "End
    attunement". At the attunement limit, or for a second copy, the entry
-   is greyed out and a tap says why. Null for an item without it. */
+   is greyed out and a tap says why. Null for an item without it. An
+   infused item that needs attunement has it too, and its infusion's
+   bonus follows it. */
 function attuneEntry(c, item, idx){
-  var def = magicItemDef(item);
-  if(!def || !def.attunement) return null;
+  if(!needsAttunement(c, item)) return null;
   var problem = attuneProblem(c, item);
   return {
     label: item.attuned ? "End attunement" : "Attune",
@@ -56,9 +59,22 @@ function attuneEntry(c, item, idx){
     onClick: function(){
       if(problem){ showActionToast(problem, true); return; }
       item.attuned = !item.attuned;
+      syncInfusions(c);
       redrawKeeping(idx);
     }
   };
+}
+
+/* "End infusion" in an infused item's ⋯ menu. A replicated item leaves
+   the inventory with it, so that one asks first. */
+function endInfusionEntry(c, item){
+  var a = infusionOn(c, item);
+  if(!a) return null;
+  return {label:"End infusion", title:"End "+a.name+" on it", onClick:function(){
+    var finish = function(){ endInfusion(c, a); save(); renderAll(); playDelete(); };
+    if(!a.made) return finish();
+    confirmDialog("End "+a.name+"?", "The "+a.itemName+" leaves your inventory. Anything inside it lands around it.", finish);
+  }};
 }
 
 /* The line under a magic item's name, the same on weapons and other
@@ -76,6 +92,93 @@ function magicItemLine(item, def){
     line.appendChild(att);
   }
   return line;
+}
+
+/* The line under an infused item's name, like a magic item's: which
+   infusion and its attunement ("Enhanced Defense infusion · attuned"). */
+function infusionLine(c, item){
+  var a = infusionOn(c, item);
+  if(!a) return null;
+  var d = activeInfusionData(c, a);
+  var line = document.createElement("div");
+  line.className = "inv-card-subtitle inv-magic-line inv-infusion-line";
+  line.appendChild(document.createTextNode(a.made ? "Replicated by your infusion"
+    : (d ? d.name : a.name) + " infusion" + (a.choice ? " (" + a.choice.toLowerCase() + ")" : "")));
+  if(a.attunement){
+    var att = document.createElement("span");
+    att.className = "inv-attune-state" + (item.attuned ? " on" : "");
+    att.textContent = item.attuned ? "attuned" : "requires attunement";
+    line.appendChild(document.createTextNode(" · "));
+    line.appendChild(att);
+  }
+  return line;
+}
+
+/* An infusion's charges (a pip each, a button per way to spend one) or
+   the Spell-Refueling Ring's slot, on the infused item's card. Null for
+   an infusion with neither. Off until attuned, when it needs it. */
+var ORDINAL = ["", "1st", "2nd", "3rd"];
+function infusionBlock(c, item, idx){
+  var a = infusionOn(c, item);
+  var d = a && activeInfusionData(c, a);
+  var ch = d && infusionCharges(c, a);
+  if(!ch && !(d && d.refuel)) return null;
+  var off = infusionWorks(item, a) ? "" : "Attune to it (⋯ menu) to use its magic";
+  var box = document.createElement("div");
+  box.className = "inv-holster inv-infusion";
+  box.dataset.idx = idx;
+  if(ch){
+    var row = document.createElement("div");
+    row.className = "inv-holster-row";
+    var pips = document.createElement("span");
+    pips.className = "inv-holster-pips inv-infusion-pips";
+    for(var i = 0; i < ch.max; i++){
+      var pip = document.createElement("span");
+      pip.className = "res-pip" + (i < ch.left ? " full" : "");
+      pips.appendChild(pip);
+    }
+    row.appendChild(pips);
+    var count = document.createElement("span");
+    count.className = "inv-holster-count";
+    count.textContent = ch.left + " of " + ch.max + " charges · " + ch.regain + " back at dawn";
+    row.appendChild(count);
+    box.appendChild(row);
+    var actions = document.createElement("div");
+    actions.className = "inv-roll-actions";
+    d.uses.forEach(function(u){
+      var btn = smallButton(u.label, off || (ch.left ? u.title + " (1 charge)" : "No charges left: " + ch.regain + " come back at dawn"), function(){
+        if(!useInfusionCharge(c, a)) return;
+        logRoll(item.name || d.name, u.label + " (" + d.name + ", 1 charge)");
+        redrawKeeping(idx);
+        var drawn = document.querySelector('.inv-infusion[data-idx="' + idx + '"]');
+        if(drawn) pipChanged(drawn.querySelector(".inv-infusion-pips"), infusionCharges(c, a).left, true);
+      });
+      btn.disabled = !!off || !ch.left;
+      actions.appendChild(btn);
+    });
+    box.appendChild(actions);
+  }
+  if(d.refuel){
+    var levels = refuelLevels(c, a);
+    var ring = document.createElement("div");
+    ring.className = "inv-roll-actions inv-refuel";
+    var label = document.createElement("span");
+    label.className = "inv-holster-count";
+    label.textContent = a.used ? "Used today · back at dawn" : levels.length ? "Recover a spell slot (action):" : "Recover a spell slot: none of 3rd level or lower spent";
+    ring.appendChild(label);
+    levels.forEach(function(l){
+      var btn = smallButton(ORDINAL[l], off || "Get back one spent " + ORDINAL[l] + "-level slot", function(){
+        if(!refuelSlot(c, a, l)) return;
+        logRoll(item.name || d.name, "Recovered a " + ORDINAL[l] + "-level spell slot (" + d.name + ")");
+        showActionToast("A " + ORDINAL[l] + "-level spell slot is back.");
+        redrawKeeping(idx);
+      });
+      btn.disabled = !!off;
+      ring.appendChild(btn);
+    });
+    box.appendChild(ring);
+  }
+  return box;
 }
 
 /* The ⋯ button on an item card and its small menu ([{label, danger,
@@ -185,10 +288,15 @@ function itemHeader(c, item, idx, onOpenDetails, noEquip){
 
   actions.appendChild(itemMenu(item, [
     attuneEntry(c, item, idx),
+    endInfusionEntry(c, item),
     {label:"Edit details", onClick:onOpenDetails},
     {label:"Remove", danger:true, onClick:function(){
       confirmDialog("Remove "+(item.name||"this item")+"?", "This cannot be undone.", function(){
-        c.inventory.splice(idx,1); save(); renderAll(); playDelete();
+        // Its infusion ends with it (a replicated item is removed by that).
+        var a = infusionOn(c, item);
+        if(a) endInfusion(c, a);
+        c.inventory = c.inventory.filter(function(i){ return i!==item; });
+        save(); renderAll(); playDelete();
       });
     }}
   ].filter(Boolean)));
@@ -636,6 +744,8 @@ function renderWeaponCard(c, item, idx){
   var def = magicItemDef(item);
   var active = def && magicItemActive(item);
   if(def) card.appendChild(magicItemLine(item, def));
+  var infLine = infusionLine(c, item);
+  if(infLine) card.appendChild(infLine);
 
   var abilityLabel = item.ability==="finesse" ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
   // Martial Arts: a monk weapon uses the better of STR and DEX, and the
@@ -876,6 +986,8 @@ function renderArmorCard(c, item, idx){
   card.className = "ff-item-card inv-item-card" + (item.equipped ? " is-equipped" : " is-stowed");
   card.dataset.idx = idx;
   card.appendChild(itemHeader(c, item, idx, function(){ openArmorSheet(c, item, idx); }));
+  var infLine = infusionLine(c, item);
+  if(infLine) card.appendChild(infLine);
 
   var catLabel = (ARMOR_CATEGORIES.find(function(cat){ return cat.key===item.category; })||{}).label || item.category;
   var acText = item.category==="shield" ? "+" + item.baseAC + " AC" : "Base AC " + item.baseAC;
@@ -1144,6 +1256,8 @@ function renderGearCard(c, item, idx){
   card.className = "ff-item-card inv-item-card";
   card.dataset.idx = idx;
   card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }, true));
+  var infLine = infusionLine(c, item);
+  if(infLine) card.appendChild(infLine);
 
   var subtitleParts = ["Qty " + (item.qty!=null?item.qty:1)];
   if(item.notes) subtitleParts.push(item.notes);
@@ -1152,6 +1266,13 @@ function renderGearCard(c, item, idx){
   subtitle.textContent = subtitleParts.join(" · ");
   card.appendChild(subtitle);
 
+  return card;
+}
+
+/* An infused item's charges or ring at the foot of its card. */
+function withInfusion(c, card, item, idx){
+  var block = infusionBlock(c, item, idx);
+  if(block) card.appendChild(block);
   return card;
 }
 
@@ -1204,13 +1325,20 @@ export function renderInventoryPanel(c){
   // Tavern Brawler.
   var unarmed = unarmedStrike(c);
   if(unarmed){ anyWeapon = true; weaponList.appendChild(renderUnarmedCard(unarmed)); }
+  // Arcane Propulsion Armor's gauntlets, while it's worn.
+  var gauntlets = propulsionGauntlets(c);
+  if(gauntlets){
+    anyWeapon = true;
+    gauntlets.roll = armorPenalty(c, "str");
+    weaponList.appendChild(renderUnarmedCard(gauntlets));
+  }
   // A dragonborn's breath weapon.
   var breath = draconicBreath(c);
   if(breath){ anyWeapon = true; weaponList.appendChild(renderBreathCard(c, breath)); }
   (c.inventory||[]).forEach(function(item, idx){
     if(item.type!=="weapon") return;
     anyWeapon = true;
-    weaponList.appendChild(renderWeaponCard(c, item, idx));
+    weaponList.appendChild(withInfusion(c, renderWeaponCard(c, item, idx), item, idx));
   });
   if(!anyWeapon){
     var noWeapons = document.createElement("p");
@@ -1235,7 +1363,7 @@ export function renderInventoryPanel(c){
   (c.inventory||[]).forEach(function(item, idx){
     if(item.type!=="armor") return;
     anyArmor = true;
-    armorList.appendChild(renderArmorCard(c, item, idx));
+    armorList.appendChild(withInfusion(c, renderArmorCard(c, item, idx), item, idx));
   });
   if(!anyArmor){
     var noArmor = document.createElement("p");
@@ -1262,7 +1390,7 @@ export function renderInventoryPanel(c){
   (c.inventory||[]).forEach(function(item, idx){
     if(item.type==="weapon" || item.type==="armor") return;
     anyGear = true;
-    gearList.appendChild(renderGearCard(c, item, idx));
+    gearList.appendChild(withInfusion(c, renderGearCard(c, item, idx), item, idx));
   });
   if(!anyGear){
     var noGear = document.createElement("p");

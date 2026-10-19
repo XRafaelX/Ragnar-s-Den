@@ -6,9 +6,10 @@ import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
-import { elixirsOnLongRest } from "../../core/artificer.js";
+import { elixirsOnLongRest, infusionsOnLongRest } from "../../core/artificer.js";
 import { restoreCompanions } from "../../core/companions.js";
-import { useNextCheck, magicItemsOnLongRest, endTimedBoons } from "../../core/magic-items.js";
+import { useNextCheck, magicItemsOnLongRest, endTimedBoons, coinResistances } from "../../core/magic-items.js";
+import { infusionResistances } from "../../core/infusion-effects.js";
 import { renderDeathSaves } from "./death-saves.js";
 import { renderEffectsCard } from "./effects.js";
 import { openPrepareSheet } from "./spells.js";
@@ -175,6 +176,19 @@ export function renderVitalsPanel(c){
   hpActionsRow.appendChild(heal1Btn);
 
   hpBox.appendChild(hpActionsRow);
+
+  // Damage resistances from items (Resistant Armor, Duality), only when
+  // there are any; where each comes from is in the tooltip.
+  var resist = infusionResistances(c).concat(coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }));
+  if(resist.length){
+    var types = [];
+    resist.forEach(function(r){ if(types.indexOf(r.type.toLowerCase())===-1) types.push(r.type.toLowerCase()); });
+    var resistLine = document.createElement("div");
+    resistLine.className = "hp-resist";
+    resistLine.textContent = "Resistant to " + types.join(", ");
+    resistLine.title = resist.map(function(r){ return r.type + ": " + r.source; }).join("\n");
+    hpBox.appendChild(resistLine);
+  }
 
   // ---- Heavy Armor Master ----
   if(heavyArmorMasterActive(c)){
@@ -629,6 +643,7 @@ export function renderVitalsPanel(c){
         endAllEffects(c); // also ends Rage
         // Magic items: charges back at dawn, the day's boons over.
         var items = magicItemsOnLongRest(c);
+        items.recharged = items.recharged.concat(infusionsOnLongRest(c));
         restoreResources(c, "long");
         restoreCompanions(c);
         var elixirs = elixirsOnLongRest(c);

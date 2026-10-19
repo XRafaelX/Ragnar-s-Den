@@ -22,7 +22,14 @@ export function magicItemActive(item){
 /* ---- Attunement ----
    Three items at once, more with a feature tagged `attuneLimit` (an
    artificer's Magic Item Adept, Savant and Master), and never two copies
-   of the same item. */
+   of the same item. An object holding an artificer infusion that needs
+   attunement counts too (its active infusion says so: `attunement`). */
+export function needsAttunement(c, item){
+  var d = magicItemDef(item);
+  if(d) return !!d.attunement;
+  var active = (c && c.infusions && c.infusions.active) || [];
+  return !!item.id && active.some(function(a){ return a.itemId===item.id && a.attunement; });
+}
 export function attunementLimit(c){
   var best = 3;
   (c.classes||[]).forEach(function(cl){
@@ -31,13 +38,13 @@ export function attunementLimit(c){
   return best;
 }
 export function attunedItems(c){
-  return (c.inventory||[]).filter(function(i){ var d = magicItemDef(i); return d && d.attunement && i.attuned; });
+  return (c.inventory||[]).filter(function(i){ return i.attuned && needsAttunement(c, i); });
 }
 /* Why this item can't be attuned to now, or null if it can (or already is). */
 export function attuneProblem(c, item){
   if(item.attuned) return null;
   var attuned = attunedItems(c);
-  if(attuned.some(function(i){ return i.magicItem===item.magicItem; })) return "You're already attuned to a " + item.magicItem + ". You can't attune to two copies of the same item.";
+  if(item.magicItem && attuned.some(function(i){ return i.magicItem===item.magicItem; })) return "You're already attuned to a " + item.magicItem + ". You can't attune to two copies of the same item.";
   var limit = attunementLimit(c);
   if(attuned.length >= limit) return "You're attuned to " + limit + " of " + limit + " items, your limit. End the attunement to one of them first.";
   return null;

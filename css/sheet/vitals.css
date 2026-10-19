@@ -75,6 +75,8 @@
 
 /* ---- Quick HP buttons ---- */
 .hp-actions-row{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-bottom:8px;}
+/* Damage resistances from items, under the HP buttons. */
+.hp-resist{font-size:12px;color:var(--brass-bright);text-align:center;margin:-2px 0 8px;cursor:help;}
 .hp-full-inline{font-size:11px;padding:0 12px;height:28px;display:inline-flex;align-items:center;justify-content:center;}
 
 .quick-heal-btn{color:var(--moss);border-color:var(--moss);}

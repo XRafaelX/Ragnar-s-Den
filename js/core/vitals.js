@@ -17,6 +17,7 @@ import { findSubclass, classFeatureList } from "./class-features.js";
 import { effectOn, bladesongBonus } from "./effects.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus } from "./magic-items.js";
+import { infusionSpeedParts } from "./infusion-effects.js";
 
 /* ---------------- Feats the sheet applies ----------------
    Feats are matched by name. Their bonuses are worked out when shown
@@ -103,6 +104,8 @@ export function computeSpeed(c){
   if(effectOn(c, "bladesong")) parts.push({name: "Bladesong", value: 10});
   // A Heavy Holster with no knives in it: +20 ft.
   parts = parts.concat(holsterSpeedParts(c));
+  // Arcane Propulsion Armor, worn: +5 ft.
+  parts = parts.concat(infusionSpeedParts(c));
   // Walking speed a feature adds while the character has it (Roving).
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){ if(f.walkSpeed) parts.push({name: f.name, value: f.walkSpeed}); });

@@ -11,6 +11,7 @@ import { effectOn } from "./effects.js";
 import { weaponAbility, armorPenalty } from "./equipment.js";
 import { hasFeat } from "./vitals.js";
 import { nextCheckAdvantage } from "./magic-items.js";
+import { infusionInitiative } from "./infusion-effects.js";
 
 /* ---------------- Ability checks and skills ---------------- */
 var SKILL_ABILITY = {};
@@ -138,9 +139,10 @@ export function situationalSaveAdvantages(c, key){
 /* A plain ability check or a saving throw with this ability. */
 export function checkRollMode(c, key){ return combineRolls([armorPenalty(c, key), nextCheckAdvantage(c)].concat(alwaysAdvantage(c, "check", key))); }
 export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)].concat(alwaysAdvantage(c, "save", key))); }
-/* Initiative is a DEX check: Feral Instinct's advantage, Duality's next
-   ability check, and armor worn without proficiency's disadvantage. */
-export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex"), nextCheckAdvantage(c)].concat(alwaysAdvantage(c, "initiative"))); }
+/* Initiative is a DEX check: Feral Instinct's or a Helm of Awareness's
+   advantage, Duality's next ability check, and armor worn without
+   proficiency's disadvantage. */
+export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex"), nextCheckAdvantage(c), infusionInitiative(c)].concat(alwaysAdvantage(c, "initiative"))); }
 /* A weapon attack: disadvantage in armor you aren't proficient with when
    it uses STR or DEX (not INT from Battle Ready or CHA from Hex Warrior). */
 export function attackRollMode(c, item){
