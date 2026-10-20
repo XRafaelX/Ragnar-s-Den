@@ -403,3 +403,7 @@
 .art-brew{margin-top:6px;}
 /* An infused item's Spell-Refueling Ring row: label, then a button per slot level. */
 .inv-refuel{align-items:center;}
+
+/* An older sheet's one-time offer of its background's starting gear. */
+.bgk-offer-text{margin:4px 0 10px;font-size:13.5px;color:var(--text-on-parch);}
+.bgk-offer-actions{display:flex;gap:8px;flex-wrap:wrap;}

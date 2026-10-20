@@ -100,3 +100,17 @@ test("adding a kit: items stack with gear of the same name, coins go in the purs
   const club = s.inventory.find((i) => i.name === "Club");
   assert.deepEqual([club.type, club.damageDice, club.equipped, club.picked], ["weapon", "1d4", false, true]);
 });
+
+test("an older sheet: the offer shows until the kit is added or turned down", async (t) => {
+  const { renderBackgroundKitCard } = await import("../js/render/panels/background-kit.js");
+  const { withFakeDom } = await import("./fake-dom.mjs");
+  const c = newCharacter("Old");
+  c.background = "Sage";
+  withFakeDom(t, () => { assert.ok(renderBackgroundKitCard(c), "offered"); });
+  c.backgroundGear = { background: "Sage", dismissed: true };
+  assert.equal(K.backgroundKitOffered(c), false, "No thanks: not again");
+  withFakeDom(t, () => { assert.equal(renderBackgroundKitCard(c), null); });
+  const none = newCharacter("No background");
+  none.background = "";
+  assert.equal(K.backgroundKitOffered(none), false, "no background, nothing to offer");
+});

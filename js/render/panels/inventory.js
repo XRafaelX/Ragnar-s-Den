@@ -12,6 +12,7 @@ import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { renderCurrencyCard } from "./coin-purse.js";
+import { renderBackgroundKitCard } from "./background-kit.js";
 import { propulsionGauntlets } from "../../core/infusion-effects.js";
 import { infusionOn, infusionWorks, activeInfusionData, infusionCharges, useInfusionCharge, refuelLevels, refuelSlot, endInfusion, syncInfusions } from "../../core/artificer.js";
 import { itemCharges, spendCharges, potionHealing, drinkPotion } from "../../core/magic-items.js";
@@ -1478,6 +1479,9 @@ function handsSummary(c){
 
 export function renderInventoryPanel(c){
   var panel = document.createElement("div");
+  // An older sheet's background starting gear, offered once.
+  var kitOffer = renderBackgroundKitCard(c);
+  if(kitOffer) panel.appendChild(kitOffer);
 
   var problems = equipProblems(c);
   function warnings(card, kind){
