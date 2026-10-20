@@ -177,3 +177,72 @@ export function characterBorn(){
   countUp(sheet.querySelector(".hp-vital-box .hp-cur-num"), delay, 900);
   countUp(sheet.querySelector(".ac-vital-box .init-hero-val"), delay + 90, 900);
 }
+
+/* ---- Conditions ----
+   A condition taking hold, drawn from its chip on the Conditions card:
+   the chip pops in with its own move (a prone chip tips over, a frightened
+   one trembles; css/sheet/conditions.css) and a few particles fly from it
+   in the condition's colour: hearts for Charmed, bubbles for Poisoned, z's
+   for Unconscious, stars round a Stunned chip, sparks, shards or rings. */
+var CONDITION_PARTICLES = {
+  charmed: {kind: "heart", count: 7}, poisoned: {kind: "bubble", count: 9},
+  unconscious: {kind: "zzz", count: 3}, stunned: {kind: "star", count: 5},
+  paralyzed: {kind: "spark", count: 10}, petrified: {kind: "shard", count: 9},
+  deafened: {kind: "ring", count: 3}, restrained: {kind: "ring", count: 2},
+  frightened: {kind: "wisp", count: 5}, invisible: {kind: "glint", count: 8},
+  blinded: {kind: "wisp", count: 6}, grappled: {kind: "ring", count: 1},
+  incapacitated: {kind: "shard", count: 5}, prone: {kind: "dust", count: 8}
+};
+var HEART_SVG = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
+
+export function conditionTakesHold(chip, id, hue){
+  if(!chip || reducedMotion()) return;
+  flash(chip, "cond-in-" + id);
+  var card = chip.closest(".card");
+  if(card){ card.style.setProperty("--cond-wash", hue); flash(card, "cond-wash"); }
+  var spec = CONDITION_PARTICLES[id];
+  if(!spec) return;
+  var r = chip.getBoundingClientRect();
+  var box = document.createElement("div");
+  box.className = "cond-fx";
+  box.setAttribute("aria-hidden", "true");
+  box.style.left = (r.left + r.width / 2) + "px";
+  box.style.top = (r.top + r.height / 2) + "px";
+  box.style.setProperty("--hue", hue);
+  box.style.setProperty("--w", Math.round(r.width) + "px");
+  for(var i = 0; i < spec.count; i++){
+    var p = document.createElement("span");
+    p.className = "cond-p cond-p-" + spec.kind;
+    if(spec.kind === "heart") p.innerHTML = HEART_SVG;
+    else if(spec.kind === "zzz") p.textContent = "z";
+    else if(spec.kind === "star") p.textContent = "✦";
+    var spread = i / Math.max(1, spec.count - 1) - 0.5;
+    p.style.setProperty("--i", i);
+    p.style.setProperty("--x", Math.round(spread * r.width * 0.9 + (Math.random() * 16 - 8)) + "px");
+    p.style.setProperty("--a", Math.round(i * 360 / spec.count + Math.random() * 20) + "deg");
+    p.style.setProperty("--dist", Math.round(28 + Math.random() * 30) + "px");
+    p.style.setProperty("--s", (0.7 + Math.random() * 0.6).toFixed(2));
+    p.style.animationDelay = Math.round(i * (spec.kind === "zzz" ? 260 : spec.kind === "ring" ? 180 : 40) + Math.random() * 60) + "ms";
+    box.appendChild(p);
+  }
+  document.body.appendChild(box);
+  setTimeout(function(){ box.remove(); }, 2400); // the z's, last and slowest, are done by 2.2 s
+}
+
+/* A condition ending: the chip shrinks away before the card redraws
+   without it. `done` runs after (straight away with reduced motion). */
+export function conditionEnds(chip, done){
+  if(!chip || reducedMotion()){ done(); return; }
+  chip.classList.add("cond-out");
+  chip.style.pointerEvents = "none";
+  setTimeout(done, 260);
+}
+
+/* Exhaustion went up (the new segment fills with a heavy drop and the
+   track sags) or down (the segment drains with a lift). `seg` is the
+   segment that changed, as drawn now. */
+export function exhaustionChanged(track, seg, up){
+  if(!track || !seg) return;
+  flash(seg, up ? "cond-ex-fill" : "cond-ex-drain");
+  if(up) flash(track, "cond-ex-heavy");
+}

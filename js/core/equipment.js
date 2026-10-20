@@ -5,13 +5,14 @@ import { RACE_DATA } from "../data/race-data.js";
 import { WEAPON_DATA, weaponDataOf, baseWeaponName } from "../data/weapons.js";
 import { featProficiencies } from "./feat-picks.js";
 import { characterPickedProfs, characterChoices, raceProficiencies } from "./class-picks.js";
-import { mod, profBonus, parseDiceNotation } from "./basics.js";
+import { mod, profBonus, parseDiceNotation, combineRolls } from "./basics.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
 import { classFeatureList, classProficiencies } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
+import { conditionRolls } from "./conditions.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
    (see applyClassChoices), so deleting the feature removes its bonus. */
@@ -175,7 +176,7 @@ export function unarmedStrike(c){
   if(c.rage && c.rage.active && barb && !heavy && ability==="STR") bonus += barbarianRageDamage(Number(barb.level)||1);
   bonus += songOfVictoryBonus(c, {name: "Unarmed strike"});
   return {name: name, attack: abilityMod + profBonus(c), die: die, bonus: bonus, type: type, ability: ability,
-    roll: armorPenalty(c, ability.toLowerCase()), parts: parts, grappleDie: styled ? 4 : 0};
+    roll: combineRolls([armorPenalty(c, ability.toLowerCase())].concat(conditionRolls(c, "attack"))), parts: parts, grappleDie: styled ? 4 : 0};
 }
 /* The abilities a weapon attack may use and the best modifier among
    them: {mod, keys}, `keys` being every ability that reaches it (on a tie

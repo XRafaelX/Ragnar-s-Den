@@ -1,9 +1,9 @@
 import { save } from "../../core/state.js";
-import { fmtMod, mod, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, computeDarkvision, checkAbility, abilityCheck, skillCheck, saveRollMode, situationalSaveAdvantages, escapeHtml } from "../../core/helpers.js";
+import { fmtMod, mod, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, computeDarkvision, checkAbility, abilityCheck, skillCheck, saveRollMode, situationalSaveAdvantages, saveAutoFail, escapeHtml } from "../../core/helpers.js";
 import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeAlertSvg } from "../../ui/svg-icons.js";
-import { performRoll } from "../../dice/dice.js";
+import { performRoll, logRoll } from "../../dice/dice.js";
 import { useNextCheck } from "../../core/magic-items.js";
 import { abilityScore, abilityScoreDetail } from "../../core/ability-scores.js";
 
@@ -154,9 +154,22 @@ export function renderAbilitiesPanel(c){
     cb.addEventListener("change", function(){ c.saveProfs[key]=cb.checked; save(); renderAll(); });
     var name = document.createElement("span");
     name.className = "row-name"; name.textContent = a[1];
-    if(saveRoll.mode!=="none"){ name.appendChild(rollTag(saveRoll)); name.title = saveRoll.reason; }
+    // Paralyzed, Petrified, Stunned or Unconscious: STR and DEX saves fail.
+    var fails = saveAutoFail(c, key);
+    if(fails){
+      row.classList.add("save-fails");
+      var failTag = document.createElement("span");
+      failTag.className = "skill-roll-tag dis";
+      failTag.innerHTML = makeAlertSvg() + "Fails";
+      failTag.title = fails + ": fails automatically";
+      name.appendChild(failTag);
+      name.title = failTag.title;
+    } else if(saveRoll.mode!=="none"){ name.appendChild(rollTag(saveRoll)); name.title = saveRoll.reason; }
     row.appendChild(cb); row.appendChild(name); row.appendChild(rollButton(total, a[1] + " save"));
-    onRowRoll(row, function(){ performRoll(20,1,total,saveRoll.mode, a[1]+" save"); });
+    onRowRoll(row, function(){
+      if(fails) logRoll(a[1]+" save", "Fails automatically ("+fails+").");
+      else performRoll(20,1,total,saveRoll.mode, a[1]+" save");
+    });
     saveRows.appendChild(row);
   });
   saveCard.appendChild(saveRows);

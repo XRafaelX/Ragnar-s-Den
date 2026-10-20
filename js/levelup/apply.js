@@ -5,7 +5,7 @@
 import { ABILITIES } from "../data/abilities-skills.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { MAX_LEVEL, XP_THRESHOLDS, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from "../data/progression.js";
-import { fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus, classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots, maxHp, syncHitDice, computeSpeed, ordinal } from "../core/helpers.js";
+import { fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus, classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots, maxHp, fullMaxHp, syncHitDice, computeSpeed, ordinal } from "../core/helpers.js";
 import { save } from "../core/state.js";
 import { syncInfusions } from "../core/artificer.js";
 import { applyLevelUpChoices, undoLevelUpChoices } from "../core/invocations.js";
@@ -72,7 +72,7 @@ export function finish(){
   var gain = hpGain();
   var featureBonus = featureAbilityBonus();
   var before = {total: totalLevel(c), pb: profBonus(c), slots: slotSnapshot(c), pact: c.spellcasting.pact ? JSON.parse(JSON.stringify(c.spellcasting.pact)) : null,
-    hpMax: maxHp(c), speed: computeSpeed(c).value};
+    hpMax: fullMaxHp(c), speed: computeSpeed(c).value};
   var record = {
     className: lu.className, isNewClass: !t.existing, prevSubclass: t.existing ? (t.existing.subclass||"") : "",
     hpGain: gain, speedGain: 0, asi: null, featId: null, unlockIds: [],
@@ -227,7 +227,7 @@ export function finish(){
   // Current HP rises by the whole max HP change, Tough's part included;
   // the record keeps Tough's part so undo can take it back off.
   c.hp.max = (Number(c.hp.max)||0) + gain;
-  var maxGain = maxHp(c) - before.hpMax;
+  var maxGain = fullMaxHp(c) - before.hpMax;
   record.toughGain = maxGain - gain;
   c.hp.current = (Number(c.hp.current)||0) + maxGain;
 

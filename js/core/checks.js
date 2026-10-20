@@ -13,6 +13,7 @@ import { hasFeat } from "./vitals.js";
 import { nextCheckAdvantage } from "./magic-items.js";
 import { infusionInitiative } from "./infusion-effects.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
+import { conditionRolls } from "./conditions.js";
 
 /* ---------------- Ability checks and skills ---------------- */
 var SKILL_ABILITY = {};
@@ -97,9 +98,10 @@ export function stealthCheck(c){
 /* How a skill check rolls: Stealth as stealthCheck says, advantage on
    Acrobatics during Bladesong and on Insight and Intimidation with the
    astral visage out, disadvantage on STR and DEX skills in armor you
-   aren't proficient with. {mode: "none"|"dis"|"adv", reason}. */
+   aren't proficient with and from conditions (Poisoned, exhaustion).
+   {mode: "none"|"dis"|"adv", reason}. */
 export function skillRollMode(c, skill, passive){
-  var list = [armorPenalty(c, SKILL_ABILITY[skill])].concat(alwaysAdvantage(c, "check", SKILL_ABILITY[skill]), skillAdvantage(c, skill));
+  var list = [armorPenalty(c, SKILL_ABILITY[skill])].concat(alwaysAdvantage(c, "check", SKILL_ABILITY[skill]), skillAdvantage(c, skill), conditionRolls(c, "check"));
   // A boon for the next roll (Duality) isn't part of a passive score.
   if(!passive) list.push(nextCheckAdvantage(c));
   if(skill==="Stealth") list.push(stealthCheck(c));
@@ -145,17 +147,21 @@ export function situationalSaveAdvantages(c, key){
   return advantagesFor(c).filter(function(a){ return a.when && covers(a, "save", key); }).map(function(a){ return {name: a.name, when: a.when}; });
 }
 /* A plain ability check or a saving throw with this ability. */
-export function checkRollMode(c, key){ return combineRolls([armorPenalty(c, key), nextCheckAdvantage(c)].concat(alwaysAdvantage(c, "check", key))); }
-export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)].concat(alwaysAdvantage(c, "save", key))); }
+export function checkRollMode(c, key){ return combineRolls([armorPenalty(c, key), nextCheckAdvantage(c)].concat(alwaysAdvantage(c, "check", key), conditionRolls(c, "check"))); }
+export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)].concat(alwaysAdvantage(c, "save", key), conditionRolls(c, "save", key))); }
 /* Initiative is a DEX check: Feral Instinct's or a Helm of Awareness's
    advantage, Duality's next ability check, and armor worn without
-   proficiency's disadvantage. */
-export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex"), nextCheckAdvantage(c), infusionInitiative(c)].concat(alwaysAdvantage(c, "initiative"))); }
+   proficiency's and conditions' disadvantage. */
+export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex"), nextCheckAdvantage(c), infusionInitiative(c)].concat(alwaysAdvantage(c, "initiative"), conditionRolls(c, "check"))); }
 /* A weapon attack: disadvantage in armor you aren't proficient with when
-   it uses STR or DEX (not INT from Battle Ready or CHA from Hex Warrior). */
+   it uses STR or DEX (not INT from Battle Ready or CHA from Hex Warrior),
+   and what conditions do to attack rolls. */
 export function attackRollMode(c, item){
   // Only when every best choice is STR or DEX (on a tie with INT from
   // Battle Ready, the player attacks with INT and avoids it).
   var physical = weaponAbility(c, item).keys.every(function(k){ return k==="str" || k==="dex"; });
-  return combineRolls([physical ? armorPenalty(c, "str") : null]);
+  return combineRolls([physical ? armorPenalty(c, "str") : null].concat(conditionRolls(c, "attack")));
 }
+/* An attack with no weapon card (a spell attack, the astral arms): only
+   conditions change it (Poisoned, Invisible, exhaustion). */
+export function plainAttackRollMode(c){ return combineRolls(conditionRolls(c, "attack")); }

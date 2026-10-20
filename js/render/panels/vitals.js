@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, restoreResources, maxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, addCondition, longRestExhaustion, exhaustionLevel } from "../../core/helpers.js";
 import { CLASSES_INFO } from "../../data/classes.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -12,6 +12,7 @@ import { useNextCheck, magicItemsOnLongRest, endTimedBoons, coinResistances } fr
 import { infusionResistances } from "../../core/infusion-effects.js";
 import { renderDeathSaves } from "./death-saves.js";
 import { renderEffectsCard } from "./effects.js";
+import { renderConditionsButton, renderConditionsStrip, longRestConditionsChoice } from "./conditions.js";
 import { openPrepareSheet } from "./spells.js";
 import { preparedState } from "../../core/spells-known.js";
 import { flash, pipChanged, pipsRefilled, restScene, floatDelta } from "../../ui/fx.js";
@@ -62,6 +63,8 @@ export function renderVitalsPanel(c){
   if(bonusTitle) bonusTitle = "Includes "+bonusTitle;
 
   var card = makeCard("Hit points & defense");
+  // Conditions and exhaustion open from the header; what's on shows below the grid.
+  card.querySelector("h3").appendChild(renderConditionsButton(c));
   var grid = document.createElement("div");
   grid.className = "vitals-grid";
 
@@ -92,6 +95,11 @@ export function renderVitalsPanel(c){
   maxSpan.className = "hp-max-num";
   maxSpan.textContent = hpMax;
   if(bonusTitle) maxSpan.title = bonusTitle;
+  // Exhaustion 4 halves the maximum; the stepper below keeps the full one.
+  if(hpMaxHalved(c)){
+    maxSpan.classList.add("hp-max-halved");
+    maxSpan.title = "Halved by exhaustion (full maximum " + fullMaxHp(c) + ")";
+  }
 
   heroDisplay.appendChild(curSpan);
   heroDisplay.appendChild(slashSpan);
@@ -115,7 +123,8 @@ export function renderVitalsPanel(c){
     var wasUp = (Number(c.hp.current)||0) > 0;
     c.hp.current = Math.max(0, (Number(c.hp.current)||0) - n);
     var wentDown = wasUp && c.hp.current === 0;
-    if(wentDown){ c.deathSaves = {success:0, fail:0}; endAllEffects(c); }
+    // Dropping to 0 HP: unconscious (worked out from the HP) and prone.
+    if(wentDown){ c.deathSaves = {success:0, fail:0}; endAllEffects(c); addCondition(c, "prone"); }
     save(); renderSidebar(); renderAll();
     flashHpNum("hp-dmg");
     if(wentDown){ var ds = document.querySelector(".death-saves"); if(ds) ds.classList.add("ds-enter"); }
@@ -181,6 +190,8 @@ export function renderVitalsPanel(c){
   // Damage resistances from items (Resistant Armor, Duality), only when
   // there are any; where each comes from is in the tooltip.
   var resist = infusionResistances(c).concat(coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }));
+  var resistAll = resistsAllDamage(c); // Petrified
+  if(resistAll) resist = [{type: "all damage", source: resistAll}];
   if(resist.length){
     var types = [];
     resist.forEach(function(r){ if(types.indexOf(r.type.toLowerCase())===-1) types.push(r.type.toLowerCase()); });
@@ -244,14 +255,14 @@ export function renderVitalsPanel(c){
     var curMax = Number(c.hp.max) || 1;
     if(curMax > 1){
       c.hp.max = curMax - 1;
-      if(c.hp.current > hpMax - 1) c.hp.current = hpMax - 1;
+      c.hp.current = Math.min(Number(c.hp.current)||0, maxHp(c));
       save(); renderSidebar(); renderAll();
     }
   });
 
   var maxValSpan = document.createElement("span");
   maxValSpan.className = "stat-score-val";
-  maxValSpan.textContent = hpMax;
+  maxValSpan.textContent = fullMaxHp(c);
   if(bonusTitle) maxValSpan.title = bonusTitle;
 
   var maxUp = document.createElement("button");
@@ -540,9 +551,13 @@ export function renderVitalsPanel(c){
   grid.appendChild(initBox);
 
   var speed = computeSpeed(c);
-  var speedBox = smallVital("Speed","speed",null,speed.parts.length ? "per turn, incl. "+speed.parts.map(function(p){
+  var speedHint = speed.parts.length ? "per turn, incl. "+speed.parts.map(function(p){
     return p.name+" "+fmtMod(p.value)+(p.why ? " ("+p.why+")" : "");
-  }).join(", ") : "per turn",5," ft",speed.bonus);
+  }).join(", ") : "per turn";
+  // A condition's 0 (named) or exhaustion's half replaces the bonuses line.
+  if(speed.hindered) speedHint = speed.hindered.zero || "Halved (exhaustion)";
+  var speedBox = smallVital("Speed","speed",null,speedHint,5," ft",speed.value - (Number(c.speed)||0));
+  if(speed.hindered) speedBox.classList.add("speed-hindered");
   // Fly, swim and climb speeds under walking speed; conditional ones say when.
   if(speed.others.length){
     var others = document.createElement("div");
@@ -570,6 +585,8 @@ export function renderVitalsPanel(c){
   grid.appendChild(speedBox);
 
   card.appendChild(grid);
+  var conditionChips = renderConditionsStrip(c);
+  if(conditionChips) card.appendChild(conditionChips);
   panel.appendChild(card);
 
   // Hit dice + rest
@@ -625,13 +642,21 @@ export function renderVitalsPanel(c){
   var longRestBtn = document.createElement("button");
   longRestBtn.className = "btn small primary"; longRestBtn.textContent = "Long rest";
   longRestBtn.addEventListener("click", function(){
+    // Conditions still on: offered to end with the rest (ticked).
+    var conditionChoice = longRestConditionsChoice(c);
     confirmDialog(
       "Take a long rest?",
       "This resets HP to full, clears temp HP and death saves, restores spell slots, rage and class resources, and recovers hit dice."+
+        (exhaustionLevel(c) && exhaustionLevel(c) < 6 ? " One level of exhaustion goes too, if you've had food and drink." : "")+
         (preparesSpells(c) ? " Afterwards you can choose today's prepared spells." : ""),
       function(){
         var before = resourceUse(c);
         var hpBefore = Number(c.hp.current) || 0;
+        // One level of exhaustion goes first, so a maximum halved by
+        // level 4 is whole again when the hit points come back.
+        var exhaustionNow = longRestExhaustion(c);
+        var conditionsEnded = conditionChoice ? conditionChoice.apply() : [];
+        hpMax = maxHp(c);
         c.hp.current = hpMax;
         c.hp.temp = 0;
         c.deathSaves = {success:0, fail:0};
@@ -651,7 +676,9 @@ export function renderVitalsPanel(c){
         logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered."+
           (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : "")+
           (items.recharged.length ? " Recharged: "+items.recharged.join(", ")+"." : "")+
-          (items.ended.length ? " Ended: "+items.ended.join(", ")+"." : ""));
+          (items.ended.length ? " Ended: "+items.ended.join(", ")+"." : "")+
+          (exhaustionNow!==null ? " Exhaustion down to level "+exhaustionNow+" (with food and drink)." : "")+
+          (conditionsEnded.length ? " Conditions ended: "+conditionsEnded.join(", ")+"." : ""));
         save(); renderAll();
         // Night falls, then at dawn hit points and resources come back.
         restScene("long");
@@ -661,7 +688,8 @@ export function renderVitalsPanel(c){
         // A cleric, druid, paladin, wizard or artificer picks today's
         // spells after a long rest.
         openPrepareSheet(c, true);
-      }
+      },
+      conditionChoice && conditionChoice.el
     );
   });
   restRow.appendChild(longRestBtn);

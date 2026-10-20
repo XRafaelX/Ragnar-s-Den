@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities } from "../../core/helpers.js";
+import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities, plainAttackRollMode } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { performRoll } from "../../dice/dice.js";
 import { playDelete } from "../../ui/sound.js";
@@ -248,7 +248,7 @@ function renderSpellcastingCard(c){
   // Classes casting with different abilities (a Cleric/Wizard) each get
   // their own save DC and spell attack.
   var byAbility = spellcastingAbilities(c);
-  if(byAbility.length > 1) return renderMulticlassCasting(byAbility);
+  if(byAbility.length > 1) return renderMulticlassCasting(c, byAbility);
   var card = makeCard("Spellcasting");
   var pb = profBonus(c);
   var scMod = mod(abilityScore(c, c.spellcasting.ability));
@@ -272,12 +272,14 @@ function renderSpellcastingCard(c){
   var coin = coinAttackBonus(c), focus = infusionSpellAttack(c);
   var boon = coin + (focus ? focus.value : 0);
   var extras = (coin ? ["Duality " + fmtMod(coin)] : []).concat(focus ? [focus.name + " " + fmtMod(focus.value)] : []);
-  var atk = statTile("Spell attack", extras.length ? "Tap to roll · " + extras.join(" · ") : "Tap to roll");
+  // Conditions that change attack rolls (Poisoned, Invisible, exhaustion).
+  var atkRoll = plainAttackRollMode(c);
+  var atk = statTile("Spell attack", ["Tap to roll"].concat(extras, rollModeTag(atkRoll)).join(" · "));
   atk.val.textContent = fmtMod(pb+scMod+boon);
   atk.box.classList.add("sc-roll");
   atk.box.setAttribute("role","button"); atk.box.tabIndex = 0;
-  atk.box.title = "Roll a spell attack";
-  function roll(){ performRoll(20,1,pb+scMod+boon,"none","Spell attack"); }
+  atk.box.title = "Roll a spell attack" + (atkRoll.reason ? " (" + atkRoll.reason + ")" : "");
+  function roll(){ performRoll(20,1,pb+scMod+boon,atkRoll.mode,"Spell attack"); }
   atk.box.addEventListener("click", roll);
   atk.box.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); roll(); } });
   grid.appendChild(atk.box);
@@ -286,8 +288,14 @@ function renderSpellcastingCard(c){
   return card;
 }
 
-function renderMulticlassCasting(byAbility){
+/* "Dis" or "Adv" for a stat tile's hint, or nothing. */
+function rollModeTag(roll){
+  return roll.mode==="dis" ? ["Dis"] : roll.mode==="adv" ? ["Adv"] : [];
+}
+
+function renderMulticlassCasting(c, byAbility){
   var card = makeCard("Spellcasting");
+  var atkRoll = plainAttackRollMode(c);
   byAbility.forEach(function(x){
     var label = x.classes.join(" / ") + " · " + x.ability.toUpperCase();
     var head = ce("p","sc-class-head"); head.textContent = label;
@@ -296,12 +304,12 @@ function renderMulticlassCasting(byAbility){
     var dc = statTile("Save DC", "8 + prof + " + x.ability.toUpperCase());
     dc.val.textContent = x.dc;
     grid.appendChild(dc.box);
-    var atk = statTile("Spell attack", "Tap to roll");
+    var atk = statTile("Spell attack", ["Tap to roll"].concat(rollModeTag(atkRoll)).join(" · "));
     atk.val.textContent = fmtMod(x.attack);
     atk.box.classList.add("sc-roll");
     atk.box.setAttribute("role","button"); atk.box.tabIndex = 0;
-    atk.box.title = "Roll a " + x.classes.join(" / ") + " spell attack";
-    function roll(){ performRoll(20,1,x.attack,"none", x.classes.join(" / ") + " spell attack"); }
+    atk.box.title = "Roll a " + x.classes.join(" / ") + " spell attack" + (atkRoll.reason ? " (" + atkRoll.reason + ")" : "");
+    function roll(){ performRoll(20,1,x.attack,atkRoll.mode, x.classes.join(" / ") + " spell attack"); }
     atk.box.addEventListener("click", roll);
     atk.box.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); roll(); } });
     grid.appendChild(atk.box);

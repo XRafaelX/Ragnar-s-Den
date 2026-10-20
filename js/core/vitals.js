@@ -19,6 +19,7 @@ import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
 import { infusionSpeedParts } from "./infusion-effects.js";
 import { abilityScore, abilityScores, abilityScoreDetail, baseScore } from "./ability-scores.js";
+import { conditionSpeed, hpMaxHalved } from "./conditions.js";
 
 /* ---------------- Feats the sheet applies ----------------
    Feats are matched by name. Their bonuses are worked out when shown
@@ -56,7 +57,12 @@ export function hpBonuses(c){
   if(item) out.push({name:abilityScoreDetail(c, "con").sources.join(" and "), value:item});
   return out;
 }
+/* The hit point maximum, halved (rounded down) from exhaustion level 4. */
 export function maxHp(c){
+  var full = fullMaxHp(c);
+  return hpMaxHalved(c) ? Math.max(1, Math.floor(full / 2)) : full;
+}
+export function fullMaxHp(c){
   return (Number(c.hp && c.hp.max)||0) + toughBonus(c) + raceHpBonus(c) + itemConHpBonus(c);
 }
 /* Walking speed gained from features that only count out of armor
@@ -170,7 +176,15 @@ export function computeSpeed(c){
   var others = always.concat(list.filter(function(o){
     return o.when && !always.some(function(a){ return a.type===o.type && a.value >= o.value; });
   }));
-  return { value: walk, bonus: mobile, parts: parts, others: others };
+  // Grappled, restrained or unable to move: 0, bonuses and all. Exhaustion
+  // 2 halves every speed (rounded down), 5 takes it to 0.
+  var hindered = conditionSpeed(c);
+  if(hindered){
+    var cut = function(v){ return hindered.zero ? 0 : Math.floor(v / 2); };
+    walk = cut(walk);
+    others.forEach(function(o){ o.value = cut(o.value); });
+  }
+  return { value: walk, bonus: mobile, parts: parts, others: others, hindered: hindered };
 }
 /* ---------------- Armor Class ----------------
    Computed from equipped armor/shield inventory items rather than a raw

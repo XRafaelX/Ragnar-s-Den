@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack } from "../../core/helpers.js";
+import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
@@ -126,7 +126,10 @@ function appendRolls(c, id, info){
   var buttons = [];
   if(id==="astral_arms"){
     var arms = astralArmsAttack(c);
-    buttons.push(rollButton(makeDiceSvg(), "Attack " + fmtMod(arms.attack), function(){ performRoll(20, 1, arms.attack, "none", "Astral arms: Attack"); }));
+    var armsRoll = plainAttackRollMode(c);
+    var armsBtn = rollButton(makeDiceSvg(), "Attack " + fmtMod(arms.attack) + (armsRoll.mode==="dis" ? " (Dis)" : armsRoll.mode==="adv" ? " (Adv)" : ""), function(){ performRoll(20, 1, arms.attack, armsRoll.mode, "Astral arms: Attack"); });
+    if(armsRoll.reason) armsBtn.title = armsRoll.reason;
+    buttons.push(armsBtn);
     buttons.push(rollButton(makeDicesSvg(), "Damage 1d" + arms.die + fmtMod(arms.damage), function(){ performRoll(arms.die, 1, arms.damage, "none", "Astral arms: Damage (force)"); }));
     if(arms.empowered) buttons.push(rollButton(makeDicesSvg(), "Empowered +1d" + arms.die, function(){ performRoll(arms.die, 1, 0, "none", "Empowered Arms (once per turn)"); }));
     buttons.push(rollButton(makeDicesSvg(), "Arrival 2d" + arms.die, function(){ performRoll(arms.die, 2, 0, "none", "Arms of the Astral Self: arrival (force, DEX save)"); }));

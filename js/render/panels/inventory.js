@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, combineRolls, conditionRolls } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -607,7 +607,7 @@ function renderUnarmedCard(c, u){
   actions.className = "inv-roll-actions";
   var atkBtn = document.createElement("button");
   atkBtn.type = "button"; atkBtn.className = "btn small inv-roll-btn";
-  atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(u.attack) + (u.roll && u.roll.mode==="dis" ? " (Dis)" : "");
+  atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(u.attack) + (u.roll && u.roll.mode==="dis" ? " (Dis)" : u.roll && u.roll.mode==="adv" ? " (Adv)" : "");
   if(u.roll && u.roll.reason) atkBtn.title = u.roll.reason;
   atkBtn.addEventListener("click", function(){ performRoll(20, 1, u.attack, u.roll ? u.roll.mode : "none", u.name + ": Attack"); });
   actions.appendChild(atkBtn);
@@ -1509,7 +1509,7 @@ export function renderInventoryPanel(c){
   var gauntlets = propulsionGauntlets(c);
   if(gauntlets){
     anyWeapon = true;
-    gauntlets.roll = armorPenalty(c, "str");
+    gauntlets.roll = combineRolls([armorPenalty(c, "str")].concat(conditionRolls(c, "attack")));
     weaponList.appendChild(renderUnarmedCard(c, gauntlets));
   }
   // A dragonborn's breath weapon.

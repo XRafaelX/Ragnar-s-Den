@@ -43,6 +43,8 @@ export function newCharacter(name){
     deathSaves: {success:0, fail:0},
     rage: {active:false, used:0},
     effects: {},
+    conditions: [],
+    exhaustion: 0,
     resourcesUsed: {},
     infusions: {known:[], active:[]},
     spellcasting: {ability:"int", slots: slots, pact: null},
@@ -61,6 +63,8 @@ export function ensureShape(c){
   if(typeof c.title!=="string") c.title = "";
   if(c.avatar===undefined) c.avatar = null;
   if(c.inspiration===undefined) c.inspiration = c.inspired ? 1 : 0;
+  if(!Array.isArray(c.conditions)) c.conditions = [];
+  if(c.exhaustion==null) c.exhaustion = 0;
   delete c.inspired;
   if(c.backdrop===undefined) c.backdrop = null;
   if(c.backdropPalette===undefined) c.backdropPalette = null;

@@ -4,7 +4,8 @@
    weapon, a feat, a character…), rolling a natural 20 or natural 1,
    rolling ability scores, the home menu's centre die tumbling, finishing
    a new character, short and long rests, dragging the theme slider, adding or
-   spending coin in the purse, death saving throws, and an encounter's
+   spending coin in the purse, death saving throws, gaining or losing a
+   condition or a level of exhaustion, and an encounter's
    hits, slain monsters, new rounds and victory. Never used for routine interaction like
    toggles, typing, or numeric steppers, so it stays a subtle accent
    instead of noise. */
@@ -31,6 +32,30 @@ function scheduleTone(ctx, startTime, freqStart, freqEnd, duration, type, peakGa
   gain.connect(ctx.destination);
   osc.start(startTime);
   osc.stop(startTime + duration + 0.03);
+}
+
+/* A burst of filtered white noise (a breath, grinding stone, a muffled
+   rush); `freq` is the band-pass centre. */
+function scheduleNoise(ctx, startTime, duration, peakGain, freq){
+  var len = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  var buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+  var data = buffer.getChannelData(0);
+  for(var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  var src = ctx.createBufferSource();
+  src.buffer = buffer;
+  var filter = ctx.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.setValueAtTime(freq, startTime);
+  filter.Q.value = 0.9;
+  var gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(peakGain, startTime + duration * 0.3);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  src.start(startTime);
+  src.stop(startTime + duration + 0.03);
 }
 
 function tone(freqStart, freqEnd, duration, type, peakGain){
@@ -323,5 +348,124 @@ export function playToukellienmeli(){
   try{
     var clip = new Audio("sounds/toukellienmeli.mp3");
     clip.play().catch(function(){});
+  }catch(e){}
+}
+
+/* ---- Conditions (the Vitals tab's Conditions card) ---- */
+
+/* Each condition's own cue as it takes hold: (ctx, now) => tones. */
+var CONDITION_CUES = {
+  // The light going out: a falling sweep into a low hum.
+  blinded: function(ctx, now){
+    scheduleTone(ctx, now, 880, 140, 0.55, "sine", 0.1);
+    scheduleTone(ctx, now + 0.2, 98, 92, 0.7, "sine", 0.1);
+  },
+  // A dreamy rising sparkle.
+  charmed: function(ctx, now){
+    [1046, 1318, 1568, 2093].forEach(function(f, i){ scheduleTone(ctx, now + i*0.08, f, f*1.01, 0.32, "sine", 0.08); });
+  },
+  // A muffled thump, then a thin ringing in the ears.
+  deafened: function(ctx, now){
+    scheduleNoise(ctx, now, 0.25, 0.12, 300);
+    scheduleTone(ctx, now + 0.12, 3520, 3500, 0.9, "sine", 0.025);
+  },
+  // A trembling minor second over a low drone.
+  frightened: function(ctx, now){
+    for(var i = 0; i < 6; i++) scheduleTone(ctx, now + i*0.07, i % 2 ? 466 : 494, i % 2 ? 466 : 494, 0.08, "triangle", 0.07);
+    scheduleTone(ctx, now, 73, 69, 0.7, "sawtooth", 0.05);
+  },
+  // Two squeezing tones as something grabs hold.
+  grappled: function(ctx, now){
+    scheduleTone(ctx, now, 110, 165, 0.18, "triangle", 0.15);
+    scheduleTone(ctx, now + 0.16, 123, 98, 0.26, "triangle", 0.15);
+  },
+  // A dull falling tone.
+  incapacitated: function(ctx, now){
+    scheduleTone(ctx, now, 330, 165, 0.4, "triangle", 0.11);
+  },
+  // A shimmer that fades away.
+  invisible: function(ctx, now){
+    [1760, 1480, 1245, 1047].forEach(function(f, i){ scheduleTone(ctx, now + i*0.06, f, f*0.98, 0.3, "sine", 0.07 - i*0.012); });
+  },
+  // A crackle of sparks and a buzz.
+  paralyzed: function(ctx, now){
+    for(var i = 0; i < 10; i++){
+      var f = 2200 + Math.random()*1600;
+      scheduleTone(ctx, now + i*0.035 + Math.random()*0.015, f, f*0.7, 0.025, "square", 0.025);
+    }
+    scheduleTone(ctx, now, 60, 60, 0.45, "square", 0.04);
+  },
+  // Grinding stone settling with a heavy thud.
+  petrified: function(ctx, now){
+    scheduleNoise(ctx, now, 0.5, 0.14, 180);
+    scheduleTone(ctx, now + 0.42, 90, 40, 0.3, "sine", 0.28);
+  },
+  // Bubbles rising.
+  poisoned: function(ctx, now){
+    for(var i = 0; i < 7; i++){
+      var f = 300 + Math.random()*400;
+      scheduleTone(ctx, now + i*0.06 + Math.random()*0.02, f, f*1.9, 0.06, "sine", 0.1);
+    }
+  },
+  // A body hitting the floor.
+  prone: function(ctx, now){
+    scheduleTone(ctx, now, 190, 55, 0.24, "sine", 0.3);
+    scheduleNoise(ctx, now, 0.12, 0.08, 500);
+  },
+  // Chain links clinking, then a clank.
+  restrained: function(ctx, now){
+    [0, 0.07, 0.16].forEach(function(t){
+      var f = 1300 + Math.random()*500;
+      scheduleTone(ctx, now + t, f, f*0.99, 0.12, "triangle", 0.07);
+      scheduleTone(ctx, now + t, f*2.7, f*2.68, 0.06, "sine", 0.025);
+    });
+    scheduleTone(ctx, now + 0.28, 220, 140, 0.2, "triangle", 0.13);
+  },
+  // Little birds circling the head.
+  stunned: function(ctx, now){
+    for(var i = 0; i < 6; i++) scheduleTone(ctx, now + i*0.075, i % 2 ? 2637 : 2093, i % 2 ? 2793 : 2349, 0.06, "sine", 0.05);
+  },
+  // Slow notes falling asleep.
+  unconscious: function(ctx, now){
+    scheduleTone(ctx, now, 523, 523, 0.4, "sine", 0.08);
+    scheduleTone(ctx, now + 0.25, 392, 392, 0.45, "sine", 0.07);
+    scheduleTone(ctx, now + 0.55, 262, 247, 0.8, "sine", 0.07);
+  }
+};
+
+/* A condition takes hold. */
+export function playConditionOn(id){
+  try{
+    var ctx = getCtx();
+    if(!ctx || !CONDITION_CUES[id]) return;
+    CONDITION_CUES[id](ctx, ctx.currentTime);
+  }catch(e){}
+}
+
+/* A condition ends: a light upward release. */
+export function playConditionOff(){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    scheduleTone(ctx, now, 440, 880, 0.16, "sine", 0.1);
+    scheduleTone(ctx, now + 0.09, 1175, 1318, 0.22, "sine", 0.06);
+  }catch(e){}
+}
+
+/* A level of exhaustion: a heavy breath and a thud that sinks lower with
+   each level (`up`), or a lighter breath rising as one goes. */
+export function playExhaustion(level, up){
+  try{
+    var ctx = getCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    if(up){
+      scheduleNoise(ctx, now, 0.55, 0.1, 700 - level*70);
+      scheduleTone(ctx, now + 0.08, 150 - level*14, 70 - level*6, 0.4, "sine", 0.24);
+    } else {
+      scheduleNoise(ctx, now, 0.35, 0.06, 1100);
+      scheduleTone(ctx, now + 0.05, 392, 587, 0.3, "sine", 0.08);
+    }
   }catch(e){}
 }
