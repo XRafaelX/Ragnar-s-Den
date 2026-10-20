@@ -12,6 +12,7 @@ import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { themedPicker } from "../../ui/themed-picker.js";
+import { renderPersonalityCard } from "./personality.js";
 import { CAMPAIGN_FEATS } from "../../data/feats.js";
 
 /* ---- Information panel ----
@@ -176,6 +177,8 @@ export function renderInformationPanel(c){
   }));
 
   panel.appendChild(aboutCard);
+  // Personality traits, ideal, bond, flaw and the background's story tables.
+  panel.appendChild(renderPersonalityCard(c));
 
   // 2. Proficiencies (aggregated across all classes)
   var profCard = makeCard("Proficiencies");

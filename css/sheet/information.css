@@ -84,3 +84,47 @@
 .switch.on .switch-knob{transform:translateX(18px);background:#fff;}
 .switch:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
 @media (prefers-reduced-motion: reduce){ .switch, .switch-knob{transition:none;} }
+
+/* Personality card: tiles of plain text, two columns on wider screens. */
+.story-from{margin:0 0 10px;font-size:12px;color:var(--text-on-parch-dim);}
+.story-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+/* Wider screens: the two traits side by side, then ideal, bond and flaw;
+   story tables two to a row. */
+@media (min-width:700px){
+  .story-grid.is-personality{grid-template-columns:repeat(6,1fr);}
+  .story-grid.is-personality .story-tile{grid-column:span 2;}
+  .story-grid.is-personality .story-tile:nth-child(-n+2){grid-column:span 3;}
+  .story-grid.is-story{grid-template-columns:repeat(2,1fr);}
+}
+.story-section{margin:16px 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);}
+.story-tile{border:1px solid var(--rule);border-radius:8px;padding:8px 10px 10px;background:var(--field-bg, transparent);min-width:0;}
+.story-tile.is-empty{border-style:dashed;background:transparent;}
+/* Chosen: settled and written in, still changeable. */
+.story-tile.is-set{position:relative;border-color:color-mix(in srgb, var(--brass) 55%, transparent);
+  background:color-mix(in srgb, var(--brass) 9%, var(--field-bg));box-shadow:inset 3px 0 0 var(--brass);}
+.story-tile.is-set .story-label{color:var(--brass-bright);display:inline-flex;align-items:center;gap:5px;}
+.story-check{display:inline-flex;width:14px;height:14px;color:var(--brass-bright);}
+.story-check svg{width:14px;height:14px;}
+.story-tile.is-set .story-text{font-family:var(--serif);font-size:15.5px;line-height:1.5;cursor:pointer;border-radius:4px;}
+.story-tile.is-set .story-text:hover,.story-tile.is-set .story-text:focus-visible{outline:none;color:var(--brass-bright2);}
+.story-tile.is-set .story-acts{opacity:.45;transition:opacity .15s;}
+.story-tile.is-set:hover .story-acts,.story-tile.is-set:focus-within .story-acts{opacity:1;}
+@media (hover:none){ .story-tile.is-set .story-acts{opacity:1;} }
+.story-head{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:26px;}
+.story-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);}
+.story-acts{display:flex;gap:2px;}
+.story-icon{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:0;border-radius:6px;background:transparent;color:var(--text-on-parch-dim);cursor:pointer;}
+.story-icon:hover,.story-icon:focus-visible{background:var(--rule);color:var(--text-on-parch);outline:none;}
+.story-icon svg{width:17px;height:17px;margin:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.story-text{margin:2px 0 0;font-size:14px;line-height:1.45;color:var(--text-on-parch);overflow-wrap:anywhere;}
+.story-tile.is-empty .story-text{font-style:italic;color:var(--text-on-parch-dim);}
+.story-tag{display:inline-block;margin-left:6px;padding:0 6px;border:1px solid var(--rule);border-radius:999px;font-size:11px;color:var(--text-on-parch-dim);vertical-align:1px;}
+.story-roll-rest svg{width:14px;height:14px;margin-right:4px;vertical-align:-2px;}
+/* The edit sheet: the table as tappable rows, then your own words. */
+.story-opts{display:flex;flex-direction:column;gap:4px;margin:8px 0 4px;max-height:52vh;overflow:auto;}
+.story-opt{display:flex;gap:10px;align-items:flex-start;text-align:left;padding:8px 10px;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--text-on-parch);font:inherit;font-size:13.5px;line-height:1.4;cursor:pointer;}
+.story-opt:hover,.story-opt:focus-visible{background:var(--rule);outline:none;}
+.story-opt.selected{border-color:var(--brass);}
+.story-opt-roll{flex:0 0 1.6em;color:var(--text-on-parch-dim);font-variant-numeric:tabular-nums;}
+.story-own-label{margin:12px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);}
+.story-own{width:100%;box-sizing:border-box;resize:vertical;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--field-bg, transparent);color:var(--text-on-parch);font:inherit;font-size:14px;}
