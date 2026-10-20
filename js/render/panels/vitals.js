@@ -1,9 +1,8 @@
 import { save } from "../../core/state.js";
 import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, addCondition, longRestExhaustion, exhaustionLevel } from "../../core/helpers.js";
-import { CLASSES_INFO } from "../../data/classes.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
-import { makeStatArrowSvg } from "../../ui/svg-icons.js";
+import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { elixirsOnLongRest, infusionsOnLongRest } from "../../core/artificer.js";
@@ -18,6 +17,7 @@ import { preparedState } from "../../core/spells-known.js";
 import { flash, pipChanged, pipsRefilled, restScene, floatDelta } from "../../ui/fx.js";
 import { playShortRest, playLongRest } from "../../ui/sound.js";
 import { abilityScore, abilityScores } from "../../core/ability-scores.js";
+import { classFeatureList } from "../../core/class-features.js";
 
 function preparesSpells(c){ return (c.classes||[]).some(function(cl){ return preparedState(c, cl.name); }); }
 
@@ -651,6 +651,7 @@ export function renderVitalsPanel(c){
         (preparesSpells(c) ? " Afterwards you can choose today's prepared spells." : ""),
       function(){
         var before = resourceUse(c);
+        var ragesBefore = c.rage.used || 0;
         var hpBefore = Number(c.hp.current) || 0;
         // One level of exhaustion goes first, so a maximum halved by
         // level 4 is whole again when the hit points come back.
@@ -685,6 +686,8 @@ export function renderVitalsPanel(c){
         playLongRest();
         if(hpMax > hpBefore) setTimeout(function(){ flashHpNum("hp-heal"); }, 1300);
         showRefilled(c, before, 1300);
+        var ragePips = document.querySelector(".rage-pips");
+        if(ragePips) pipsRefilled(ragePips, ragePips.children.length - ragesBefore, ragePips.children.length, 1300);
         // A cleric, druid, paladin, wizard or artificer picks today's
         // spells after a long rest.
         openPrepareSheet(c, true);
@@ -698,47 +701,7 @@ export function renderVitalsPanel(c){
   panel.appendChild(restCard);
 
   var barbClass = barbarianClassEntry(c);
-  if(barbClass){
-    var rageCard = makeCard("Rage");
-    var rageMax = barbarianRageMax(barbClass.level||1);
-    var rageMaxLabel = rageMax===Infinity ? "∞" : rageMax;
-    var rageUsed = clamp(c.rage.used||0, 0, rageMax===Infinity ? c.rage.used||0 : rageMax);
-    var rageRemaining = rageMax===Infinity ? "∞" : Math.max(0, rageMax-rageUsed);
-
-    var rageP = document.createElement("p");
-    rageP.style.fontSize="13px"; rageP.style.margin="0 0 10px";
-    rageP.textContent = "Rages remaining: "+rageRemaining+" / "+rageMaxLabel+" · Rage damage +"+barbarianRageDamage(barbClass.level||1);
-    rageCard.appendChild(rageP);
-
-    var rageBtn = document.createElement("button");
-    rageBtn.className = "btn small"+(c.rage.active ? "" : " primary");
-    rageBtn.textContent = c.rage.active ? "End Rage" : "Enter Rage";
-    var atCap = rageMax!==Infinity && rageUsed>=rageMax;
-    rageBtn.disabled = !c.rage.active && atCap;
-    rageBtn.addEventListener("click", function(){
-      if(c.rage.active){
-        c.rage.active = false;
-      } else {
-        if(rageMax!==Infinity && (c.rage.used||0)>=rageMax) return;
-        c.rage.active = true;
-        c.rage.used = (c.rage.used||0)+1;
-      }
-      save(); renderAll();
-    });
-    rageCard.appendChild(rageBtn);
-
-    if(c.rage.active) rageCard.classList.add("raging");
-
-    var rageFeature = CLASSES_INFO["Barbarian"].features.find(function(f){ return f.name==="Rage"; });
-    if(rageFeature){
-      var rageHint = document.createElement("p");
-      rageHint.style.cssText = "font-size:12px;color:var(--text-on-parch-dim);margin:10px 0 0;line-height:1.5;";
-      rageHint.textContent = rageFeature.text;
-      rageCard.appendChild(rageHint);
-    }
-
-    panel.appendChild(rageCard);
-  }
+  if(barbClass) panel.appendChild(renderRageCard(c, barbClass));
 
   var effectsCard = renderEffectsCard(c);
   if(effectsCard) panel.appendChild(effectsCard);
@@ -748,6 +711,113 @@ export function renderVitalsPanel(c){
   if(resources.length) panel.appendChild(renderResourcesCard(c, resources));
 
   return panel;
+}
+
+/* ---- Rage ----
+   Rages left as pips, the damage bonus and the Enter/End button on one
+   row; what rage gives as chips that light up while raging. The full
+   rule is in the info icon's tooltip. */
+function renderRageCard(c, barbClass){
+  var level = barbClass.level||1;
+  var rageMax = barbarianRageMax(level);
+  var rageUsed = rageMax===Infinity ? 0 : clamp(c.rage.used||0, 0, rageMax);
+  var rageLeft = rageMax===Infinity ? Infinity : rageMax-rageUsed;
+  var raging = !!c.rage.active;
+
+  var card = makeCard("Rage");
+  card.classList.add("rage-card");
+  if(raging) card.classList.add("raging");
+  var head = card.querySelector("h3");
+  var tools = document.createElement("span");
+  tools.className = "rage-head";
+  if(raging){
+    var badge = document.createElement("span");
+    badge.className = "rage-badge";
+    badge.textContent = "Raging";
+    tools.appendChild(badge);
+  }
+  var rule = classFeatureList(barbClass).find(function(f){ return f.name==="Rage"; });
+  if(rule){
+    var info = document.createElement("span");
+    info.className = "rage-info";
+    info.title = rule.text;
+    info.setAttribute("aria-label", rule.text);
+    info.setAttribute("role", "img");
+    info.innerHTML = makeInfoSvg();
+    tools.appendChild(info);
+  }
+  head.appendChild(tools);
+
+  var main = document.createElement("div");
+  main.className = "rage-main";
+
+  var left = document.createElement("div");
+  left.className = "rage-stat";
+  left.innerHTML = '<span class="rage-lbl">Rages</span>';
+  if(rageMax===Infinity){
+    var unlimited = document.createElement("span");
+    unlimited.className = "rage-val";
+    unlimited.textContent = "Unlimited";
+    left.appendChild(unlimited);
+  } else {
+    var pips = document.createElement("div");
+    pips.className = "rage-pips";
+    pips.setAttribute("aria-label", rageLeft+" of "+rageMax+" left");
+    for(var i=0;i<rageMax;i++){
+      var pip = document.createElement("span");
+      pip.className = "res-pip rage-pip" + (i < rageLeft ? " full" : "");
+      pips.appendChild(pip);
+    }
+    left.appendChild(pips);
+  }
+  main.appendChild(left);
+
+  var dmg = document.createElement("div");
+  dmg.className = "rage-stat";
+  dmg.innerHTML = '<span class="rage-lbl">Damage</span><span class="rage-val">+'+barbarianRageDamage(level)+'</span>';
+  dmg.title = "Added to Strength melee weapon attacks while raging";
+  main.appendChild(dmg);
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn rage-btn"+(raging ? "" : " primary");
+  btn.innerHTML = makeFlameSvg();
+  btn.appendChild(document.createTextNode(raging ? "End Rage" : "Enter Rage"));
+  btn.disabled = !raging && rageLeft<=0;
+  if(btn.disabled) btn.title = "No rages left until a long rest";
+  btn.addEventListener("click", function(){
+    if(c.rage.active){
+      c.rage.active = false;
+    } else {
+      if(rageLeft<=0) return;
+      c.rage.active = true;
+      if(rageMax!==Infinity) c.rage.used = rageUsed+1;
+    }
+    save(); renderAll();
+    // Entering spends the last full pip.
+    if(c.rage.active && rageMax!==Infinity) pipChanged(document.querySelector(".rage-pips"), rageLeft-1, true);
+  });
+  main.appendChild(btn);
+  card.appendChild(main);
+
+  var perks = ["Resist bludgeoning, piercing & slashing", "Advantage on Strength checks & saves"];
+  if(castsSpells(c)) perks.push("No spellcasting or concentration");
+  var perkRow = document.createElement("div");
+  perkRow.className = "rage-perks";
+  perks.forEach(function(text){
+    var chip = document.createElement("span");
+    chip.className = "rage-perk";
+    chip.textContent = text;
+    perkRow.appendChild(chip);
+  });
+  card.appendChild(perkRow);
+  return card;
+}
+/* Has spell slots or pact slots, so rage's "no spells" matters. */
+function castsSpells(c){
+  var sc = c.spellcasting || {};
+  var slots = sc.slots || {};
+  return Object.keys(slots).some(function(k){ return (slots[k].max||0) > 0; }) || !!(sc.pact && sc.pact.max);
 }
 
 /* ---- Resources ----

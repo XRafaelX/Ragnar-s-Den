@@ -331,6 +331,52 @@
 /* Rest buttons */
 .rest-row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
 
+/* Rage: rages left, damage and the button on one row; perk chips under
+   it light up while raging. */
+.rage-head{display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);}
+.rage-info{display:inline-flex;color:var(--text-on-parch-dim);cursor:help;}
+.rage-info:hover{color:var(--brass-bright);}
+.rage-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  padding:2px 9px;border-radius:999px;color:#fff;
+  background:color-mix(in srgb, var(--oxblood) 75%, var(--brass));
+}
+.rage-badge::before{
+  content:"";width:6px;height:6px;border-radius:50%;background:#fff;
+  animation:rage-pulse 1.4s ease-in-out infinite;
+}
+@keyframes rage-pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.rage-main{
+  display:flex;align-items:center;gap:28px;flex-wrap:wrap;
+  padding:12px 14px;border-radius:6px;background:var(--parchment-dim);
+}
+.rage-stat{display:flex;flex-direction:column;gap:6px;}
+.rage-lbl{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-on-parch-dim);}
+.rage-pips{display:flex;gap:6px;align-items:center;height:26px;flex-wrap:wrap;}
+.rage-pip{width:16px;height:16px;border-width:2px;}
+.rage-val{font-family:var(--serif);font-size:24px;line-height:26px;color:var(--brass-bright);}
+.rage-btn{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;gap:2px;min-width:132px;}
+.rage-btn .btn-icon-svg{width:16px;height:16px;}
+.rage-perks{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.rage-perk{
+  font-size:12px;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--rule);color:var(--text-on-parch-dim);
+  transition:color .2s ease, background .2s ease, border-color .2s ease;
+}
+.card.raging .rage-main{background:color-mix(in srgb, var(--oxblood) 14%, var(--parchment-dim));}
+.card.raging .rage-perk{
+  color:var(--text-on-parch);border-color:var(--brass);
+  background:color-mix(in srgb, var(--brass) 20%, transparent);
+}
+@media (max-width:600px){
+  .rage-main{gap:20px;}
+  .rage-btn{margin-left:0;width:100%;}
+}
+@media (prefers-reduced-motion: reduce){
+  .rage-badge::before{animation:none;}
+}
+
 /* Class resources (Second Wind, Ki, Bardic Inspiration, ...) */
 .res-list{display:flex;flex-direction:column;gap:10px;}
 .res-row{
