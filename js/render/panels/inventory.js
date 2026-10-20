@@ -79,13 +79,48 @@ function endInfusionEntry(c, item){
 }
 
 /* A magic item's description, as printed: paragraphs (blank lines
-   between), **bold** and _italic_ words, and | tables |. Built from
-   escaped text, so nothing in it can add markup of its own. */
+   between), **bold** and _italic_ words, * bullet lists and | tables |.
+   A \* is a plain asterisk (the Deck of Many Things' footnote marks).
+   Built from escaped text, so nothing in it can add markup of its own. */
 function inlineMarks(text){
   return escapeHtml(text)
+    .replace(/\\([*_])/g, function(m, ch){ return ch === "*" ? "&#42;" : "&#95;"; })
     .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
     .replace(/(^|[\s(>])[_*]([^_*\n]+?)[_*](?=[\s.,;:)!?<]|$)/g, "$1<i>$2</i>")
     .replace(/\n/g, "<br>");
+}
+/* A table from the text, in a frame that scrolls sideways if it must.
+   Columns of short entries (a d100 roll, a rarity) stay on one line and
+   take only their own width, so the long column gets the room; a table
+   of only short columns spreads evenly. A die column ("d100") is marked
+   so its rolls read as the key. */
+function magicItemTable(lines){
+  var rows = lines.filter(function(l){ return !/^\s*\|[\s:|-]+\|?\s*$/.test(l); }).map(function(l){
+    return l.trim().replace(/^\||\|$/g, "").split("|").map(function(cell){ return cell.trim(); });
+  });
+  var cols = rows[0].length;
+  var short = [];
+  for(var i = 0; i < cols; i++){
+    short.push(rows.slice(1).every(function(r){ return String(r[i] || "").length <= 14; }));
+  }
+  var anyLong = short.some(function(s){ return !s; });
+  var wrap = document.createElement("div");
+  wrap.className = "inv-magic-table-wrap";
+  var table = document.createElement("table");
+  table.className = "inv-magic-table";
+  rows.forEach(function(cells, r){
+    var tr = document.createElement("tr");
+    cells.forEach(function(cell, i){
+      var td = document.createElement(r===0 ? "th" : "td");
+      if(anyLong && short[i]) td.classList.add("inv-mt-short");
+      if(i === 0 && /^d\d+$/i.test(rows[0][0])) td.classList.add("inv-mt-roll");
+      td.innerHTML = inlineMarks(cell);
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+  wrap.appendChild(table);
+  return wrap;
 }
 function magicItemText(text){
   var box = document.createElement("div");
@@ -94,21 +129,23 @@ function magicItemText(text){
     var lines = block.trim().split("\n");
     if(!lines[0]) return;
     if(lines.every(function(l){ return /^\s*\|/.test(l); })){
-      var table = document.createElement("table");
-      table.className = "inv-magic-table";
-      lines.filter(function(l){ return !/^\s*\|[\s:|-]+\|?\s*$/.test(l); }).forEach(function(l, r){
-        var tr = document.createElement("tr");
-        l.trim().replace(/^\||\|$/g, "").split("|").forEach(function(cell){
-          var td = document.createElement(r===0 ? "th" : "td");
-          td.innerHTML = inlineMarks(cell.trim());
-          tr.appendChild(td);
-        });
-        table.appendChild(tr);
+      box.appendChild(magicItemTable(lines));
+      return;
+    }
+    if(lines.every(function(l){ return /^\s*[*-]\s/.test(l); })){
+      var list = document.createElement("ul");
+      list.className = "inv-magic-list";
+      lines.forEach(function(l){
+        var li = document.createElement("li");
+        li.innerHTML = inlineMarks(l.replace(/^\s*[*-]\s+/, ""));
+        list.appendChild(li);
       });
-      box.appendChild(table);
+      box.appendChild(list);
       return;
     }
     var para = document.createElement("p");
+    // "\*Found only in a deck with twenty-two cards": a table's footnote.
+    if(/^\\\*/.test(lines[0])) para.className = "inv-magic-note";
     para.innerHTML = inlineMarks(lines.join("\n"));
     box.appendChild(para);
   });

@@ -330,10 +330,32 @@
    a Heavy Holster's knives. */
 .inv-magic-text{font-size:13px;line-height:1.5;color:var(--text-on-parch);margin:12px 2px 0;}
 .inv-magic-text p{margin:0 0 8px;}
-/* A table in an item's description (a Bag of Tricks' creatures). */
-.inv-magic-table{border-collapse:collapse;margin:4px 0 12px;font-size:12.5px;max-width:100%;}
-.inv-magic-table th, .inv-magic-table td{border:1px solid var(--rule);padding:4px 8px;text-align:left;vertical-align:top;}
-.inv-magic-table th{color:var(--brass-bright);font-weight:600;background:rgba(255,255,255,0.03);}
+.inv-magic-note{font-size:12px;color:var(--text-on-parch-dim);font-style:italic;margin-top:-4px;}
+.inv-magic-list{margin:0 0 8px;padding-left:20px;}
+.inv-magic-list li{margin:0 0 3px;}
+.inv-magic-list li::marker{color:var(--brass-bright);}
+/* A table in an item's description (a Bag of Tricks' creatures): a
+   framed block with a tinted header band, row rules and light striping.
+   Short columns (rolls, rarities) hug their content; the die column is
+   accent-colored, in even-width figures. */
+.inv-magic-table-wrap{
+  margin:4px 0 12px;border:1px solid var(--rule);border-radius:6px;overflow-x:auto;
+  background:rgba(255,255,255,0.02);
+}
+.inv-magic-table{border-collapse:collapse;width:100%;font-size:12.5px;line-height:1.4;}
+.inv-magic-table th, .inv-magic-table td{padding:6px 10px;text-align:left;vertical-align:top;}
+.inv-magic-table th{
+  font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--brass-bright);background:color-mix(in srgb, var(--brass) 14%, transparent);
+  border-bottom:1px solid var(--rule);
+}
+.inv-magic-table td{border-top:1px solid color-mix(in srgb, var(--brass) 14%, transparent);}
+.inv-magic-table tr:nth-child(2) td{border-top:none;}
+.inv-magic-table tr:nth-child(odd) td{background:rgba(255,255,255,0.025);}
+.inv-magic-table th + th, .inv-magic-table td + td{border-left:1px solid color-mix(in srgb, var(--brass) 14%, transparent);}
+.inv-magic-table .inv-mt-short{width:1%;}
+.inv-magic-table td.inv-mt-short{white-space:nowrap;}
+.inv-magic-table td.inv-mt-roll{color:var(--brass-bright);font-variant-numeric:tabular-nums;font-weight:600;}
 .inv-holster{display:flex;flex-direction:column;gap:8px;margin-top:2px;}
 .inv-holster-row{display:flex;align-items:center;gap:10px;}
 .inv-holster-pips{display:inline-flex;gap:5px;}
