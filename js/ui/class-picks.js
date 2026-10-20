@@ -30,9 +30,14 @@ export function renderClassPicks(grant, slots, ctx, onChange, keyPrefix, opts){
     // A pick that depends on another one (a house's gaming set) shows only
     // when there is something to pick.
     if(slot.byChoice && !opts.length) return;
-    box.appendChild(label(slotLabel(def, slots, i, ctx)));
+    // Each slot's label, then its pickers and notes, stay together (the
+    // wizard lays the slots out side by side, pickers lined up).
+    var slotBox = ce("div", "fp-slot"), sb = ce("div", "fp-slot-body");
+    slotBox.appendChild(label(slotLabel(def, slots, i, ctx)));
+    slotBox.appendChild(sb);
+    box.appendChild(slotBox);
     if(slotIsFixed(def, slots, i, ctx)){
-      box.appendChild(note(slots[i].length ? "Added for you: " + slots[i].map(function(v){ return shown(slot, v); }).join(", ") + "."
+      sb.appendChild(note(slots[i].length ? "Added for you: " + slots[i].map(function(v){ return shown(slot, v); }).join(", ") + "."
         : slot.from==="spellbook" ? "You have no spells of that level on the Spells tab yet. Add them there, then choose here from the Feature choices card on the Features & Feats tab."
         : "You already have everything this offers, so there's nothing to pick."));
       return;
@@ -71,9 +76,9 @@ export function renderClassPicks(grant, slots, ctx, onChange, keyPrefix, opts){
         }
       }));
       if(slot.optional) f.classList.add("fp-optional");
-      box.appendChild(f);
-      if(isSpell && slots[i][p] && SPELL_DATA[slots[i][p]]) box.appendChild(spellNote(slots[i][p]));
-      if(details && details[slots[i][p]]) box.appendChild(note(slots[i][p] + ": " + details[slots[i][p]]));
+      sb.appendChild(f);
+      if(isSpell && slots[i][p] && SPELL_DATA[slots[i][p]]) sb.appendChild(spellNote(slots[i][p]));
+      if(details && details[slots[i][p]]) sb.appendChild(note(slots[i][p] + ": " + details[slots[i][p]]));
     })(p, ++shownCount);
   });
   return box;

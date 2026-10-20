@@ -496,31 +496,36 @@ export function stepProfs(container){
     : "<b>New proficiencies:</b> this level lets you choose some. Skills and expertise show on the Abilities & Skills tab; tools, languages and saving throws on the Information tab. Anything you already have is greyed out.");
   // A new ranger using Tasha's optional features may take Favored Foe or
   // Deft Explorer in place of the Player's Handbook feature.
-  // Each choice is followed at once by the picks of whichever is taken.
+  // Each feature is one panel (as in the creation wizard): the choice,
+  // then under a rule the picks of whichever is taken.
   var grants = profGrants().filter(function(g){ return grantHasChoices(g.def); }), shown = [];
-  function picks(g, opts){
+  function panel(title){
+    var p = ce("div","cf-feature");
+    if(title){
+      var t = ce("div","cf-feature-title");
+      t.textContent = title;
+      p.appendChild(t);
+    }
+    card.appendChild(p);
+    return p;
+  }
+  function picks(into, g, opts){
     shown.push(g.key);
-    card.appendChild(renderClassPicks(g, profSlots(g.key), profCtx(g), function(meta){ if(!(meta && meta.typing)) render(); }, "lu:prof:"+g.key, opts));
+    into.appendChild(renderClassPicks(g, profSlots(g.key), profCtx(g), function(meta){ if(!(meta && meta.typing)) render(); }, "lu:prof:"+g.key, opts));
   }
   variantOffers().forEach(function(v){
-    var vt = ce("p","lu-choice-title");
-    vt.textContent = v.replaces;
-    card.appendChild(vt);
+    var box = panel();
     var on = lu.variants[v.replaces]===v.name;
     var base = classFeaturesAt({name: lu.className}, 1).find(function(f){ return f.name===v.replaces; });
-    card.appendChild(renderVariantOptions(v, base, on, function(take){
+    box.appendChild(renderVariantOptions(v, base, on, function(take){
       if(take) lu.variants[v.replaces] = v.name; else delete lu.variants[v.replaces];
       render();
     }, true));
     var own = grants.find(function(g){ return !g.subclass && g.level===1 && g.feature===(on ? v.name : v.replaces); });
-    if(own) picks(own, {noHelp: !on});
+    if(own) picks(box, own, {noHelp: !on});
   });
   grants.forEach(function(g){
-    if(shown.indexOf(g.key)!==-1) return;
-    var title = ce("p","lu-choice-title");
-    title.textContent = g.name;
-    card.appendChild(title);
-    picks(g);
+    if(shown.indexOf(g.key)===-1) picks(panel(g.name), g);
   });
 }
 

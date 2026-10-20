@@ -45,36 +45,53 @@ export function wizardStepChoices(container){
   explain.innerHTML = "<b>Why this matters:</b> Some of your level 1 class features come with a choice. These shape what your "+escapeHtml(wizardState.classId)+" is best at.";
   card.appendChild(explain);
 
+  // Each choice is one panel: its name and what it's for, then its
+  // options or picks.
+  function panel(title, help){
+    var p = ce("div","cf-feature");
+    if(title){
+      var t = ce("div","cf-feature-title");
+      t.textContent = title;
+      p.appendChild(t);
+    }
+    if(help){
+      var h = ce("p","cf-feature-help");
+      h.textContent = help;
+      p.appendChild(h);
+    }
+    card.appendChild(p);
+    return p;
+  }
+  function panelBody(title, help){
+    var body = ce("div","cf-feature-body");
+    panel(title, help).appendChild(body);
+    return body;
+  }
+
   var info = currentClassInfo();
   (info.choices||[]).forEach(function(ch){
-    var title = document.createElement("p");
-    title.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
-    title.textContent = ch.label;
-    card.appendChild(title);
-    if(ch.help){
-      var help = document.createElement("p");
-      help.style.cssText = "font-size:13px;margin:0 0 10px;";
-      help.textContent = ch.help;
-      card.appendChild(help);
-    }
-    if(ch.kind==="subclass") choiceSubclass(card, ch);
-    else if(ch.kind==="fightingStyle") choiceFightingStyle(card, ch);
-    else if(ch.kind==="listPick") choiceListPick(card, ch);
-    else if(ch.kind==="expertise") choiceExpertise(card, ch);
+    var body = panelBody(ch.label, ch.help);
+    if(ch.kind==="subclass") choiceSubclass(body, ch);
+    else if(ch.kind==="fightingStyle") choiceFightingStyle(body, ch);
+    else if(ch.kind==="listPick") choiceListPick(body, ch);
+    else if(ch.kind==="expertise") choiceExpertise(body, ch);
+    // Spell picks the subclass asks for now: a genie kind, a Divine Soul's affinity.
+    if(ch.kind==="subclass") wizardSpellChoices().forEach(function(x){
+      panelBody(x.feature + ": " + x.choice.label).appendChild(renderSpellChoiceOptions(x.choice, x.pick, function(v){
+        wizardState.classChoices.spellChoices = Object.assign({}, wizardState.classChoices.spellChoices);
+        wizardState.classChoices.spellChoices[x.choice.id] = v;
+        renderWizard();
+      }, wizardState.classId));
+    });
   });
   // What the level-1 features let you choose: a ranger's favored enemy
   // and terrain, Knowledge Domain's skills and languages, an Order or
-  // Peace cleric's skill, a Draconic sorcerer's dragon.
+  // Peace cleric's skill, a Draconic sorcerer's dragon. Their picks sit
+  // under a rule, side by side.
   var grants = wizardClassGrants().filter(function(g){ return grantHasChoices(g.def); }), shown = [];
-  function heading(text){
-    var p = document.createElement("p");
-    p.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
-    p.textContent = text;
-    card.appendChild(p);
-  }
-  function picks(grant, opts){
+  function picks(into, grant, opts){
     shown.push(grant.key);
-    card.appendChild(renderClassPicks(grant, wizardPickSlots(grant.key), wizardPickContext(grant), function(meta){
+    into.appendChild(renderClassPicks(grant, wizardPickSlots(grant.key), wizardPickContext(grant), function(meta){
       var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
       if(!(meta && meta.typing)) renderWizard();
     }, "wiz:prof:"+grant.key, opts));
@@ -92,23 +109,22 @@ export function wizardStepChoices(container){
     card.appendChild(tashaSwitchRow("Turned on, you can take " + offers.map(function(v){ return v.name + " in place of " + v.replaces; }).join(" and ") + ".",
       function(){ variantsJustToggled = true; }));
     offers.forEach(function(v){
-      heading(v.replaces);
+      var box = panel();
       var picked = wizardState.classChoices.variants = wizardState.classChoices.variants || {};
       var on = tasha && picked[v.replaces]===v.name;
       // (The Player's Handbook feature as written, whichever is picked now.)
       var base = (info.features||[]).find(function(f){ return f.name===v.replaces; });
-      card.appendChild(renderVariantOptions(v, base, on, function(take){
+      box.appendChild(renderVariantOptions(v, base, on, function(take){
         if(take) picked[v.replaces] = v.name; else delete picked[v.replaces];
         renderWizard();
       }, tasha, was));
       var own = grants.find(function(g){ return !g.subclass && g.level===1 && g.feature===(on ? v.name : v.replaces); });
-      if(own) picks(own, {noHelp: !on});
+      if(own) picks(box, own, {noHelp: !on});
     });
   }
   grants.forEach(function(grant){
     if(shown.indexOf(grant.key)!==-1) return;
-    heading(grant.name);
-    picks(grant);
+    picks(panel(grant.name), grant);
   });
   container.appendChild(card);
 }
@@ -134,19 +150,6 @@ function choiceSubclass(card, ch){
       renderWizard();
     });
     card.appendChild(row);
-  });
-
-  // Spell picks the subclass asks for now: a genie kind, a Divine Soul's affinity.
-  wizardSpellChoices().forEach(function(x){
-    var t = document.createElement("p");
-    t.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
-    t.textContent = x.feature+": "+x.choice.label;
-    card.appendChild(t);
-    card.appendChild(renderSpellChoiceOptions(x.choice, x.pick, function(v){
-      wizardState.classChoices.spellChoices = Object.assign({}, wizardState.classChoices.spellChoices);
-      wizardState.classChoices.spellChoices[x.choice.id] = v;
-      renderWizard();
-    }, wizardState.classId));
   });
 }
 
