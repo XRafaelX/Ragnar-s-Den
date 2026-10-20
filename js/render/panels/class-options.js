@@ -10,6 +10,7 @@ import { renderOptionPicker, optionMeta, renderTashaNote } from "../../ui/option
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
+import { abilityScore, abilityScores } from "../../core/ability-scores.js";
 
 /* ---- Class option cards (Features tab) ----
    One card per option set the character has (Metamagic, Maneuvers, Runes,
@@ -92,8 +93,8 @@ function renderSet(card, c, set, grouped){
    higher; the others count only with the class entry that has them. */
 var SET_DC_ABILITY = {runes: "con", arcaneShots: "int", disciplines: "wis", misfortunes: "cha", stormEnvironment: "con"};
 function setDc(c, set, entry){
-  var ab = set.id==="maneuvers" ? (mod(c.abilities.str) >= mod(c.abilities.dex) ? "str" : "dex") : entry && SET_DC_ABILITY[set.id];
-  return ab ? {ability: ab, dc: 8 + profBonus(c) + mod(c.abilities[ab])} : null;
+  var ab = set.id==="maneuvers" ? (mod(abilityScore(c, "str")) >= mod(abilityScore(c, "dex")) ? "str" : "dex") : entry && SET_DC_ABILITY[set.id];
+  return ab ? {ability: ab, dc: 8 + profBonus(c) + mod(abilityScore(c, ab))} : null;
 }
 
 /* What the sheet works out for a set, as tiles: save DCs, dice, points,

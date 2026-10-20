@@ -6,6 +6,7 @@ import { mod, profBonus } from "./basics.js";
 import { characterResources } from "./character-resources.js";
 import { classLevelOf } from "./class-features.js";
 import { isRangedWeapon } from "./equipment.js";
+import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* ---------------- Temporary effects ----------------
    Bladesong, the Astral Self and Symbiotic Entity (js/data/effects.js).
@@ -99,7 +100,7 @@ export function pruneEffects(c){
 }
 /* Bladesong's bonus to AC and concentration saves (and Song of Victory's damage). */
 export function bladesongBonus(c){
-  return Math.max(1, mod(c.abilities && c.abilities.int));
+  return Math.max(1, mod(abilityScore(c, "int")));
 }
 export function symbioticTempHp(c){
   return 4 * classLevelOf(c, "Druid", "Circle of Spores");
@@ -118,7 +119,7 @@ export function martialArtsDie(c){
    plus proficiency, Martial Arts die of force damage; Empowered Arms
    (monk 11) adds one more die once per turn. */
 export function astralArmsAttack(c){
-  var ab = c.abilities || {};
+  var ab = abilityScores(c);
   var best = Math.max(mod(ab.str), mod(ab.dex), mod(ab.wis));
   return {attack: best + profBonus(c), damage: best, die: martialArtsDie(c),
     empowered: classLevelOf(c, "Monk", "Way of the Astral Self") >= 11};

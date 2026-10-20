@@ -18,6 +18,7 @@ import { themedPicker } from "../../ui/themed-picker.js";
 import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner, cantripFormulas, swapCantripFormula } from "../../core/spells-known.js";
 import { PREPARED_CASTERS } from "../../data/spells-known.js";
 import { spellScalingLine } from "../../core/spell-scaling.js";
+import { abilityScore, abilityScores } from "../../core/ability-scores.js";
 
 
 var SCHOOLS = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"];
@@ -250,7 +251,7 @@ function renderSpellcastingCard(c){
   if(byAbility.length > 1) return renderMulticlassCasting(byAbility);
   var card = makeCard("Spellcasting");
   var pb = profBonus(c);
-  var scMod = mod(c.abilities[c.spellcasting.ability]);
+  var scMod = mod(abilityScore(c, c.spellcasting.ability));
   var grid = ce("div","vitals-grid");
 
   var ab = statTile("Ability", fmtMod(scMod)+" modifier");

@@ -1,5 +1,6 @@
 import { COMPANIONS } from "../data/companions.js";
 import { mod, profBonus, classSpellAbility, clamp, totalLevel, featureSpells } from "./helpers.js";
+import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* ---------------- Companions ----------------
    The companions the character has now (see js/data/companions.js), with
@@ -16,7 +17,7 @@ export function characterCompanions(c){
     if(!cl && !req) return;
     if(def.infusion && !infusionActive(c, def.infusion)) return;
     var mods = {};
-    ["str","dex","con","int","wis","cha"].forEach(function(k){ mods[k] = mod(c.abilities && c.abilities[k]); });
+    ["str","dex","con","int","wis","cha"].forEach(function(k){ mods[k] = mod(abilityScore(c, k)); });
     var pb = profBonus(c);
     var castMod = mods[(cl && classSpellAbility(cl)) || "int"] || 0;
     var saved = companionState(c, def.id);

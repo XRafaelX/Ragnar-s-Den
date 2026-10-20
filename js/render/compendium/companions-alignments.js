@@ -31,14 +31,23 @@ function showAlignment(name){
 
 /* ---- Companions: the creatures subclasses give (js/data/companions.js) ----
    One entry per creature, grouped by class; a Beast Master lists each of
-   Tasha's primal beasts plus "your own beast". Stats depend on level, so
-   the detail view has a level stepper and shows the numbers for an
-   example +3 spellcasting modifier (the sheet uses the character's own). */
+   Tasha's primal beasts plus "your own beast", and a familiar each of its
+   forms (grouped Find Familiar and Pact of the Chain). Stats depend on
+   level, so the detail view has a level stepper and shows the numbers for
+   an example +3 spellcasting modifier (the sheet uses the character's
+   own); a familiar's don't, so it has none. */
 var EXAMPLE_MOD = 3;
 function companionEntries(){
   var out = [];
   COMPANIONS.forEach(function(def){
-    if(def.requires) return;   // a familiar comes from a spell, not a subclass
+    if(def.requires){
+      // A familiar: each form, the chain's four under Pact of the Chain.
+      def.choice.options.forEach(function(o){
+        var chain = (def.choice.chainOnly||[]).indexOf(o)!==-1;
+        out.push({key: o + " (familiar)", def: def, choice: o, chain: chain, group: chain ? def.requires.pactBoon : def.requires.spell});
+      });
+      return;
+    }
     if(def.id==="beast_companion"){
       def.choice.options.forEach(function(o){
         out.push({key: o===def.setup ? "Ranger's Companion (your own beast)" : o, def: def, choice: o});
@@ -50,9 +59,23 @@ function companionEntries(){
 function exampleStats(e, level){
   var pb = Math.floor((level - 1) / 4) + 2;
   var mods = {str:0, dex:0, con:0, int:EXAMPLE_MOD, wis:EXAMPLE_MOD, cha:EXAMPLE_MOD};
-  return e.def.stats({lv: level, pb: pb, mods: mods, spellAttack: pb + EXAMPLE_MOD, spellDC: 8 + pb + EXAMPLE_MOD, choice: e.choice, beast: null});
+  return e.def.stats({lv: level, pb: pb, mods: mods, spellAttack: pb + EXAMPLE_MOD, spellDC: 8 + pb + EXAMPLE_MOD, choice: e.choice, beast: null, chain: !!e.chain});
+}
+/* A familiar's form: its stat block as the sheet shows it. */
+function showFamiliar(e){
+  openInfoModal(e.key, function(body){
+    var lead = ce("p", "cmp-lead");
+    lead.textContent = e.chain
+      ? "Only with Pact of the Chain (warlock 3+). It gets its own card on the sheet's Companions tab, and it can attack when you give up one of your attacks."
+      : "From the Find Familiar spell (or Pact of the Chain). It gets its own card on the sheet's Companions tab; a Find Familiar familiar can't attack.";
+    body.appendChild(lead);
+    var holder = ce("div", "cmp-companion");
+    renderStatBlock(holder, exampleStats(e, 1), e.key, {rolls: false});
+    body.appendChild(holder);
+  });
 }
 function showCompanion(e){
+  if(e.def.requires) return showFamiliar(e);
   var level = e.def.level;
   openInfoModal(e.key, function(body){
     var lead = ce("p", "cmp-lead");
@@ -94,15 +117,16 @@ function showCompanion(e){
 export function companionSection(){
   var groups = {}, data = {};
   companionEntries().forEach(function(e){
-    (groups[e.def.cls] = groups[e.def.cls] || []).push(e.key);
+    var g = e.group || e.def.cls;
+    (groups[g] = groups[g] || []).push(e.key);
     data[e.key] = e;
   });
   return {
     key:"companions", label:"Companions", searchPlaceholder:"Search companions…",
     groups:groups, data:data,
-    renderSub:function(name, e){ return e.def.source || e.def.subclass; },
-    renderRight:function(name, e){ return [e.def.cls + " " + e.def.level + "+", ""]; },
-    searchText:function(name, e){ return name + " " + (e.def.source || e.def.subclass) + " " + e.def.cls; },
+    renderSub:function(name, e){ return e.group ? (e.chain ? "Pact of the Chain familiar" : "Find Familiar form") : e.def.source || e.def.subclass; },
+    renderRight:function(name, e){ return [e.group ? (e.chain ? "Warlock 3+" : "Spell") : e.def.cls + " " + e.def.level + "+", ""]; },
+    searchText:function(name, e){ return name + " " + (e.group ? e.group + " familiar" : (e.def.source || e.def.subclass) + " " + e.def.cls); },
     onAdd:function(name){ showCompanion(data[name]); return false; }
   };
 }

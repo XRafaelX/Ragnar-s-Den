@@ -8,7 +8,7 @@ import { TITLE_MAX } from "../ui/char-title.js";
 import { SPELL_DATA, spellDataForClass, tashaAddsSpell, tashaSpellCount } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeDiceSvg } from "../ui/svg-icons.js";
-import { wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, wizardRaceGrants, wizardRaceSlots, wizardRaceSkills, wizardBackgroundGrants, wizardBgSlots, wizardOverlapGrants, wizardOverlapSlots } from "./wizard-core.js";
+import { wizardExtraSpellTag, wizardOriginSpells, wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, wizardRaceGrants, wizardRaceSlots, wizardRaceSkills, wizardBackgroundGrants, wizardBgSlots, wizardOverlapGrants, wizardOverlapSlots } from "./wizard-core.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { featPicksSummary } from "../core/feat-picks.js";
 import { classPicksSummary } from "../core/class-picks.js";
@@ -74,7 +74,15 @@ function spellStepCard(title, explainHtml, freebies){
     free.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> also gives you "+escapeHtml(freebies.join(", "))+" for free. "+(freebies.length>1 ? "They're" : "It's")+" added automatically and "+(freebies.length>1 ? "don't" : "doesn't")+" count toward the picks below.";
     card.appendChild(free);
   }
-  if(wizardExtraListSpells().length){
+  // A dragonmark's or a guild background's spells, marked in the list.
+  var origin = wizardOriginSpells();
+  if(origin.length){
+    var from = document.createElement("p");
+    from.style.cssText = "font-size:13px;margin:0 0 12px;";
+    from.innerHTML = "Your <b>" + escapeHtml(origin[0].tag==="Mark spell" ? wizardState.race : wizardState.background) + "</b> adds its " + (origin[0].tag==="Mark spell" ? "Spells of the Mark" : "Guild Spells") + " to your class's list (marked <i>" + escapeHtml(origin[0].tag) + "</i>).";
+    card.appendChild(from);
+  }
+  if(wizardExtraListName()){
     var also = document.createElement("p");
     also.style.cssText = "font-size:13px;margin:0 0 12px;";
     also.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> can also learn "+escapeHtml(wizardExtraListName().toLowerCase())+" spells; they're in the list below.";
@@ -90,7 +98,7 @@ export function wizardStepCantrips(container){
   var card = spellStepCard("Cantrips",
     "<b>Why this matters:</b> Cantrips are spells you can cast at will, as often as you like, without using a spell slot. You can always change or add more from the Spells tab once your character exists.",
     grants.cantrips||[]);
-  var extraTag = function(){ return wizardExtraListName() + " spell"; };
+  var extraTag = wizardExtraSpellTag;
   dropGrantedSpellPicks();
   var have = alreadyGranted(card, 0, sc.spellList, wizardExtraListSpells(), grants.cantrips);
   card.appendChild(spellPickSection("Cantrips known", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList, (grants.cantrips||[]).concat(have), wizardExtraListSpells(), extraTag));
@@ -110,7 +118,7 @@ export function wizardStepSpells(container){
   if(wizardState.spellChoices.spells.length > need) wizardState.spellChoices.spells.length = need;
   var extraList = wizardExtraListSpells();
   var expandedSpells = wizardExpandedSpells().filter(function(n){ return (SPELL_DATA[n]||{}).level===1; });
-  var extraTag = function(name){ return expandedSpells.indexOf(name)!==-1 ? "Patron spell" : wizardExtraListName() + " spell"; };
+  var extraTag = function(name){ return expandedSpells.indexOf(name)!==-1 ? "Patron spell" : wizardExtraSpellTag(name); };
   if(expandedSpells.length){
     var exp = document.createElement("p");
     exp.style.cssText = "font-size:13px;margin:0 0 12px;";

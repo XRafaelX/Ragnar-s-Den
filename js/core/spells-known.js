@@ -31,6 +31,7 @@ import { KNOWN_CASTERS, SUBCLASS_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, 
 import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal } from "./helpers.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
+import { originListSpells } from "./spell-grants.js";
 
 /* The casting rules for a class (or its casting subclass), or null. */
 export function casterDef(className, subclass){
@@ -127,7 +128,7 @@ export function classKnownSpells(c, className){
 /* Spell names (catalog) the class can learn of the given levels: its
    own list (with Tasha's additions when `tasha` is set), a patron's
    expanded list, a Divine Soul's cleric list. */
-function classListNames(entry, def, levels, tasha){
+function classListNames(entry, def, levels, tasha, c){
   var data = spellDataForClass(def.list, tasha);
   var extra = {};
   Object.keys(data).forEach(function(n){ if(tashaAddsSpell(data[n], def.list)) extra[n] = TASHA_TAG; });
@@ -144,6 +145,8 @@ function classListNames(entry, def, levels, tasha){
     classExtraSpellLists(entry).forEach(function(list){
       Object.keys(spellDataForClass(list, tasha)).forEach(function(n){ if(!extra[n]) extra[n] = list + " spell"; });
     });
+    // A dragonmark's or a guild background's spells join every caster's list.
+    if(c) originListSpells(c.race, c.background).forEach(function(o){ if(!extra[o.name]) extra[o.name] = o.tag; });
   }
   // A patron's spells lead the list, so a warlock sees them first.
   var patron = function(n){ return extra[n]==="Patron spell" ? 0 : 1; };
@@ -224,7 +227,7 @@ export function learnPlan(c, entry, isNewClass){
   autoKeys = auto.map(spellKey);
   var cantripNeed = Math.max(0, need(def.cantrips, known.cantrips.length) - auto.length);
   if(cantripNeed){
-    var cl = classListNames(entry, def, [0], tasha);
+    var cl = classListNames(entry, def, [0], tasha, c);
     add("cantrips", "cantrip", "New cantrips", countText(cantripNeed, "cantrip", def.list), cantripNeed,
       {names: cl.names, tags: tagsFor(cl.names, cl.extra)});
   }
@@ -235,7 +238,7 @@ export function learnPlan(c, entry, isNewClass){
     var secrets = entry.name==="Bard" && MAGICAL_SECRETS_LEVELS.indexOf(lv)!==-1 ? Math.min(2, spellNeed) : 0;
     var anySchool = def.schools && def.anySchoolAt.indexOf(lv)!==-1 ? Math.min(1, spellNeed) : 0;
     var normal = spellNeed - secrets - anySchool;
-    var own = classListNames(entry, def, levels, tasha);
+    var own = classListNames(entry, def, levels, tasha, c);
     if(def.schools){
       var inSchool = own.names.filter(function(n){ return def.schools.indexOf(SPELL_DATA[n].school)!==-1; });
       add("spells", "spell", def.schools.join(" or ") + " spells",
@@ -262,14 +265,14 @@ export function learnPlan(c, entry, isNewClass){
   }
   if(def.spellbook && maxLevel){
     var book = lv===1 ? def.spellbook[1] : def.spellbook.else;
-    var bookList = classListNames(entry, def, range(1, maxLevel), tasha);
+    var bookList = classListNames(entry, def, range(1, maxLevel), tasha, c);
     add("spellbook", "spell", "Spells for your spellbook",
       "Copy " + book + " " + cls + " spells into your spellbook" + upToText(maxLevel) + " You prepare from your spellbook each day.", book,
       {names: bookList.names, tags: tagsFor(bookList.names, bookList.extra)});
   }
   if(entry.name==="Warlock" && MYSTIC_ARCANUM[lv]){
     var arc = MYSTIC_ARCANUM[lv];
-    var arcList = classListNames(entry, def, [arc], tasha);
+    var arcList = classListNames(entry, def, [arc], tasha, c);
     add("arcanum", "arcanum", "Mystic Arcanum (" + ordinal(arc) + " level)",
       "Choose one " + ordinal(arc) + "-level warlock spell. You can cast it once per long rest without a spell slot. It doesn't count against your spells known.", 1,
       {names: arcList.names, tags: tagsFor(arcList.names, arcList.extra)});
@@ -344,7 +347,7 @@ export function swapSection(c, entry, plan, swapOut){
   if(!plan.swap || !swapOut) return null;
   var def = plan.def;
   var out = SPELL_DATA[catalogSpellName(swapOut)];
-  var list = classListNames(entry, def, range(1, plan.swap.maxLevel), !!c.tashaOptional);
+  var list = classListNames(entry, def, range(1, plan.swap.maxLevel), !!c.tashaOptional, c);
   var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c))
     .concat(comingSpells(c, entry).map(function(g){ return g.key; }));
   var names = list.names.filter(function(n){ return onSheet.indexOf(spellKey(n))===-1; });
@@ -364,7 +367,7 @@ export function cantripSwapSection(c, entry, plan, cantripOut){
   var arcanum = (plan.cantripSwap.arcanum||[]).indexOf(cantripOut)!==-1;
   var outData = SPELL_DATA[catalogSpellName(cantripOut)];
   var level = arcanum && outData ? outData.level : 0;
-  var list = classListNames(entry, plan.def, [level], !!c.tashaOptional);
+  var list = classListNames(entry, plan.def, [level], !!c.tashaOptional, c);
   var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c))
     .concat(comingSpells(c, entry).map(function(g){ return g.key; }));
   var names = list.names.filter(function(n){ return onSheet.indexOf(spellKey(n))===-1; });
@@ -449,7 +452,7 @@ export function cantripFormulas(c){
   var known = classKnownSpells(c, "Wizard").cantrips.map(function(sp){ return sp.name; }).sort();
   if(!known.length) return null;
   var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c));
-  var options = classListNames(wiz, casterDef("Wizard"), [0], true).names.filter(function(n){ return onSheet.indexOf(spellKey(n))===-1; });
+  var options = classListNames(wiz, casterDef("Wizard"), [0], true, c).names.filter(function(n){ return onSheet.indexOf(spellKey(n))===-1; });
   return {known: known, options: options};
 }
 /* Makes the swap: `out` leaves, `inName` takes its place (ready, as

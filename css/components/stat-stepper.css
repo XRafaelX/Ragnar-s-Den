@@ -66,3 +66,6 @@
   padding:0;
   line-height:20px;
 }
+/* A score an item sets or raises (Gauntlets of Ogre Power): tinted, with
+   the item and the character's own score in its tooltip. */
+.stat-score-val.from-item{color:var(--brass-bright);}

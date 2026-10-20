@@ -25,6 +25,12 @@
      saveBonus   saving throws while it works
      noPenalty   armor without its Strength requirement or Stealth
                  disadvantage (Mithral Armor)
+     setScore    {str: 19}: the score while it works, unless yours is
+                 higher; raiseScore {dex: 2}: added, to a maximum of 20
+                 (see js/core/ability-scores.js)
+     heal        a potion's healing dice ("4d4+4"), rolled by Drink
+     charges     {max, regain}: charges, and the dice they come back by
+                 at dawn (a long rest); none if it doesn't say
      holster     a holster of throwing knives: capacity (knives it holds),
                  damagePerKnife (extra damage on your attacks for each
                  knife in it) and emptySpeed (feet of speed while empty)

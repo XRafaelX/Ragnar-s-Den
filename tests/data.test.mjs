@@ -240,15 +240,16 @@ test("spell catalog: well formed, with the Player's Handbook, Xanathar's, Tasha'
     assert.ok(d.castingTime && d.range && d.components && d.duration, name + ": casting time, range, components, duration");
     assert.equal(d.components.includes("M"), !!d.material, name + ": material component");
     assert.ok(d.summary.length > 15 && !LONG_DASH.test(name + d.summary + d.material), name + ": summary");
-    assert.ok(d.classes.length && d.classes.every((c) => casters.includes(c)), name + ": classes " + d.classes);
+    // Only a guild spell (Encode Thoughts) is on no class list.
+    assert.ok((d.classes.length || d.source === "GGR") && d.classes.every((c) => casters.includes(c)), name + ": classes " + d.classes);
     assert.deepEqual(d.classes, d.classes.slice().sort(), name + ": classes in order");
     d.classes.forEach((c) => { count[c] = (count[c] || 0) + 1; });
   }
-  assert.equal(Object.keys(SPELL_DATA).length, 523, "PHB 361 + XGE 95 + TCE 21 + 46 from other books");
+  assert.equal(Object.keys(SPELL_DATA).length, 524, "PHB 361 + XGE 95 + TCE 21 + 47 from other books");
   assert.deepEqual(count, { Artificer: 100, Bard: 145, Cleric: 119, Druid: 157, Paladin: 50, Ranger: 60, Sorcerer: 214, Warlock: 136, Wizard: 356 });
   // The other books' spells name their book; the core ones don't.
   const fromBooks = Object.entries(SPELL_DATA).filter(([, d]) => d.source);
-  assert.equal(fromBooks.length, 46);
+  assert.equal(fromBooks.length, 47);
   fromBooks.forEach(([n, d]) => assert.ok(SPELL_SOURCES[d.source], n + ": source " + d.source));
   assert.deepEqual([SPELL_DATA["Silvery Barbs"].source, SPELL_DATA["Silvery Barbs"].castingTime, SPELL_DATA["Wristpocket"].ritual], ["SCC", "1 reaction", true]);
   // An artificer has spells to prepare at every level it casts.

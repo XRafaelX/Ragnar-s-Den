@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, escapeHtml, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -14,6 +14,7 @@ import { confirmDialog } from "../../ui/confirm-modal.js";
 import { renderCurrencyCard } from "./coin-purse.js";
 import { propulsionGauntlets } from "../../core/infusion-effects.js";
 import { infusionOn, infusionWorks, activeInfusionData, infusionCharges, useInfusionCharge, refuelLevels, refuelSlot, endInfusion, syncInfusions } from "../../core/artificer.js";
+import { itemCharges, spendCharges, potionHealing, drinkPotion } from "../../core/magic-items.js";
 import { magicItemDef, magicItemActive, needsAttunement, holsterKnives, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, closeEmptyFlip, endBoon, activeBoons, boonLabel } from "../../core/magic-items.js";
 import { pipChanged, pipsRefilled, flash } from "../../ui/fx.js";
 
@@ -83,7 +84,7 @@ function endInfusionEntry(c, item){
 function inlineMarks(text){
   return escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
-    .replace(/(^|[\s(])[_*]([^_*\n]+?)[_*](?=[\s.,;:)!?]|$)/g, "$1<i>$2</i>")
+    .replace(/(^|[\s(>])[_*]([^_*\n]+?)[_*](?=[\s.,;:)!?<]|$)/g, "$1<i>$2</i>")
     .replace(/\n/g, "<br>");
 }
 function magicItemText(text){
@@ -994,6 +995,9 @@ function renderWeaponCard(c, item, idx){
     }
   }
   card.appendChild(actions);
+  // A magic weapon with charges (Hammer of Thunderbolts, Mace of Terror).
+  var charges = chargesBlock(c, item, idx);
+  if(charges) card.appendChild(charges);
 
   return card;
 }
@@ -1105,6 +1109,10 @@ function renderMagicItemCard(c, item, idx, def){
   }
   if(def.holster) card.appendChild(holsterBlock(c, item, idx, def.holster, active));
   if(def.coin) card.appendChild(coinBlock(c, item, idx, def.coin));
+  var charges = chargesBlock(c, item, idx);
+  if(charges) card.appendChild(charges);
+  var drink = drinkButton(c, item);
+  if(drink) card.appendChild(drink);
   return card;
 }
 
@@ -1335,8 +1343,69 @@ function renderGearCard(c, item, idx){
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");
   card.appendChild(subtitle);
+  var drink = drinkButton(c, item);
+  if(drink) card.appendChild(drink);
 
   return card;
+}
+
+/* A magic item's charges (a wand, a staff): a pip each (a count past
+   12), what comes back at dawn, Use a charge and Get one back. Spending
+   needs the item to work (attuned if it needs it). */
+function chargesBlock(c, item, idx){
+  var ch = itemCharges(item);
+  if(!ch) return null;
+  var active = magicItemActive(item);
+  var box = document.createElement("div");
+  box.className = "inv-holster inv-charges";
+  box.dataset.idx = idx;
+  var row = document.createElement("div");
+  row.className = "inv-holster-row";
+  if(ch.max <= 12){
+    var pips = document.createElement("span");
+    pips.className = "inv-holster-pips inv-charge-pips";
+    for(var i = 0; i < ch.max; i++){
+      var pip = document.createElement("span");
+      pip.className = "res-pip" + (i < ch.left ? " full" : "");
+      pips.appendChild(pip);
+    }
+    row.appendChild(pips);
+  }
+  var count = document.createElement("span");
+  count.className = "inv-holster-count";
+  count.textContent = ch.left + " of " + ch.max + " charges" + (ch.regain ? " · " + ch.regain + " back at dawn" : "");
+  row.appendChild(count);
+  box.appendChild(row);
+  var actions = document.createElement("div");
+  actions.className = "inv-roll-actions";
+  var use = smallButton("Use a charge", !active ? "Attune to it (⋯ menu) to use its magic" : ch.left ? "Spend one of its charges" : "No charges left", function(){
+    spendCharges(item, 1);
+    logRoll(item.name || item.magicItem, "Used a charge (" + (ch.left - 1) + " of " + ch.max + " left)");
+    redrawKeeping(idx);
+  });
+  use.disabled = !active || !ch.left;
+  actions.appendChild(use);
+  var back = smallButton("Get one back", "Undo a charge, or one regained another way", function(){ spendCharges(item, -1); redrawKeeping(idx); });
+  back.disabled = !ch.used;
+  actions.appendChild(back);
+  box.appendChild(actions);
+  return box;
+}
+/* A Potion of Healing (any strength): Drink rolls its healing and adds it
+   to current hit points, using one up. */
+function drinkButton(c, item){
+  var heal = potionHealing(item);
+  if(!heal) return null;
+  var actions = document.createElement("div");
+  actions.className = "inv-roll-actions";
+  actions.appendChild(smallButton("Drink (" + heal.replace("+", " + ") + " HP)", "Drink it: an action, or a bonus action under some tables' rules", function(){
+    var name = item.name || item.magicItem;
+    var r = drinkPotion(c, item, maxHp(c));
+    logRoll(name, "Healed " + r.total + " (" + heal + ": " + r.rolls.join(", ") + (r.bonus ? " + " + r.bonus : "") + ")");
+    showActionToast("You regain " + r.total + " hit points.");
+    save(); renderAll();
+  }));
+  return actions;
 }
 
 /* An infused item's charges or ring at the foot of its card. */

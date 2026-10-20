@@ -6,6 +6,7 @@ export { activeInfusionData, infusionWorks };
 import { WEAPON_DATA, weaponDataOf } from "../data/weapons.js";
 import { GEAR_DATA } from "../data/gear.js";
 import { mod, profBonus, parseDiceNotation, uid } from "./helpers.js";
+import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* ---------------- Artificer extras ----------------
    The Armorer's armor model (saved on the class entry as `armorModel`)
@@ -35,7 +36,7 @@ export function armorModelWeapon(c){
   var model = cl && ARMOR_MODELS[cl.armorModel];
   if(!model) return null;
   var w = model.weapon;
-  var ab = c.abilities || {};
+  var ab = abilityScores(c);
   var useInt = mod(ab.int) > mod(ab[w.ability]);
   var abilityMod = useInt ? mod(ab.int) : mod(ab[w.ability]);
   return {
@@ -332,7 +333,7 @@ export function elixirsOnLongRest(c, roll){
    and from level 9 Restorative Reagents' temporary hit points. */
 export function elixirRolls(c, name){
   var cl = alchemistEntry(c);
-  var intMod = mod(c.abilities && c.abilities.int);
+  var intMod = mod(abilityScore(c, "int"));
   var out = [];
   var effect = elixirEffect(name);
   if(effect && effect.heal) out.push({label: "Heal", dice: parseDiceNotation(effect.heal), diceText: effect.heal, bonus: intMod});

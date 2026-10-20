@@ -12,6 +12,7 @@ import { weaponAbility, armorPenalty } from "./equipment.js";
 import { hasFeat } from "./vitals.js";
 import { nextCheckAdvantage } from "./magic-items.js";
 import { infusionInitiative } from "./infusion-effects.js";
+import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* ---------------- Ability checks and skills ---------------- */
 var SKILL_ABILITY = {};
@@ -72,9 +73,9 @@ export function passiveInsight(c){ return passiveScore(c, "Insight"); }
 /* The ability a check or save uses: Arms of the Astral Self lets WIS
    stand in for STR when it's higher. {mod, label}. */
 export function checkAbility(c, key){
-  var m = mod(c.abilities && c.abilities[key]);
+  var m = mod(abilityScore(c, key));
   if(key==="str" && effectOn(c, "astral_arms")){
-    var wis = mod(c.abilities && c.abilities.wis);
+    var wis = mod(abilityScore(c, "wis"));
     if(wis > m) return {mod: wis, label: "WIS (Arms of the Astral Self)"};
   }
   return {mod: m, label: key.toUpperCase()};

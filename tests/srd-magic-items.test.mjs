@@ -10,6 +10,8 @@ import * as H from "../js/core/helpers.js";
 import { MAGIC_ITEM_GROUPS, MAGIC_ITEM_DATA } from "../js/data/magic-items.js";
 import { addCatalogMagicItem, magicItemBases } from "../js/render/armory.js";
 import { newCharacter } from "../js/core/character.js";
+import * as MI from "../js/core/magic-items.js";
+import { abilityScore, abilityScoreDetail } from "../js/core/ability-scores.js";
 import { withFakeDom } from "./fake-dom.mjs";
 
 function char(classes = [{ name: "Fighter", level: 5 }]){
@@ -89,3 +91,61 @@ test("Ring of Protection and Bracers of Defense: AC and saves while they work", 
   c.inventory.push({ id: "s", type: "armor", name: "Shield", category: "shield", baseAC: 2, equipped: true });
   assert.equal(ac(), before + 1 + 2, "with a shield: the bracers stop, the shield adds 2");
 });
+
+test("items that set or raise a score: worn and attuned, the scores everything else uses", (t) => {
+  const c = char();
+  c.abilities.str = 14; c.abilities.con = 12; c.abilities.dex = 19;
+  const gauntlets = add(t, c, "Gauntlets of Ogre Power");
+  assert.equal(abilityScore(c, "str"), 14, "not attuned yet");
+  gauntlets.attuned = true;
+  assert.deepEqual(abilityScoreDetail(c, "str"), { score: 19, base: 14, sources: ["Gauntlets of Ogre Power"] });
+  assert.equal(c.abilities.str, 14, "the character's own score is untouched");
+  const sword = { id: "w", name: "Longsword", type: "weapon", ability: "str", proficient: true, equipped: true, damageDice: "1d8" };
+  c.inventory.push(sword);
+  assert.equal(H.weaponDamageBonus(c, sword), 4, "attacks use STR 19");
+  const belt = add(t, c, "Belt of Hill Giant Strength");
+  belt.attuned = true;
+  assert.equal(abilityScore(c, "str"), 21, "the belt's 21 beats the gauntlets' 19");
+  const stone = add(t, c, "Ioun Stone of Agility");
+  stone.attuned = true;
+  assert.equal(abilityScore(c, "dex"), 20, "+2, to a maximum of 20");
+  // Amulet of Health: CON 19 and the hit point maximum follows.
+  const before = H.maxHp(c);
+  const amulet = add(t, c, "Amulet of Health");
+  amulet.attuned = true;
+  assert.equal(abilityScore(c, "con"), 19);
+  assert.equal(H.maxHp(c), before + (4 - 1) * 5, "CON +1 to +4 over 5 levels");
+  assert.ok(H.hpBonuses(c).some((b) => b.name === "Amulet of Health" && b.value === 15));
+  assert.equal(H.computeSave(c, "con").value, 4, "the CON save uses 19 (+4)");
+});
+
+test("charges: spent while it works, regained by its dice at dawn", (t) => {
+  const c = char([{ name: "Wizard", level: 9 }]);
+  const wand = add(t, c, "Wand of Fireballs");
+  assert.deepEqual(MI.itemCharges(wand), { max: 7, left: 7, used: 0, regain: "1d6+1" });
+  MI.spendCharges(wand, 5);
+  assert.equal(MI.itemCharges(wand).left, 2);
+  MI.spendCharges(wand, 9);
+  assert.equal(MI.itemCharges(wand).left, 0, "never below none");
+  const rest = MI.magicItemsOnLongRest(c, () => 3);
+  assert.equal(MI.itemCharges(wand).left, 4, "1d6 + 1 rolled as 3 + 1");
+  assert.ok(rest.recharged.some((r) => /Wand of Fireballs \(\+4 charges\)/.test(r)));
+  const gem = add(t, c, "Gem of Brightness");
+  assert.deepEqual([MI.itemCharges(gem).max, MI.itemCharges(gem).regain], [50, ""], "no regain: it only counts down");
+  assert.equal(MI.itemCharges(add(t, c, "Bronze Griffon Figurine of Wondrous Power")), null, "figurines left out");
+});
+
+test("potions of healing: Drink rolls the healing and uses one up", (t) => {
+  const c = char();
+  c.hp = { max: 40, current: 10, temp: 0 };
+  c.inventory.push({ id: "p", name: "Potion of Healing", type: "gear", qty: 2 });
+  assert.equal(MI.potionHealing(c.inventory[0]), "2d4+2", "the gear list's potion");
+  const r = MI.drinkPotion(c, c.inventory[0], 40, () => 4);
+  assert.deepEqual([r.total, c.hp.current, c.inventory[0].qty], [10, 20, 1]);
+  const supreme = add(t, c, "Potion of Supreme Healing");
+  assert.equal(MI.potionHealing(supreme), "10d4+20");
+  MI.drinkPotion(c, supreme, 40, () => 4);
+  assert.equal(c.hp.current, 40, "never past the maximum");
+  assert.ok(!c.inventory.includes(supreme), "the last one is used up");
+});
+

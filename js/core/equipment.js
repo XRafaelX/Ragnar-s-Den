@@ -11,6 +11,7 @@ import { classFeatureList, classProficiencies } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
+import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
    (see applyClassChoices), so deleting the feature removes its bonus. */
@@ -145,7 +146,7 @@ export function unarmedStrike(c){
   var brawler = hasFeat(c, "Tavern Brawler");
   var styled = hasFightingStyle(c, "Unarmed Fighting");
   if(!nat && !monk && !brawler && !styled) return null;
-  var ab = c.abilities || {}, str = mod(ab.str), dex = mod(ab.dex);
+  var ab = abilityScores(c), str = mod(ab.str), dex = mod(ab.dex);
   var die = 0, name = "Unarmed strike", type = "Bludgeoning", parts = [];
   if(nat){ die = nat.die; name = nat.name + " (unarmed strike)"; type = nat.type; parts.push(c.race + " " + nat.name.toLowerCase()); }
   if(brawler && die < 4){ die = 4; parts.push("Tavern Brawler"); }
@@ -181,7 +182,7 @@ export function unarmedStrike(c){
    the player picks, so a Battle Ready artificer with INT equal to STR can
    attack with INT and dodge armor's STR penalty, or with STR for rage). */
 export function weaponAbility(c, item){
-  var ab = c.abilities || {};
+  var ab = abilityScores(c);
   var allowed = item.ability==="dex" ? ["dex"] : item.ability==="finesse" ? ["str", "dex"] : ["str"];
   if(martialArtsApplies(c, item) || revenantBladeApplies(c, item)) allowed = ["str", "dex"];
   // A feature tagged `magicWeaponAbility` lets magic weapons (see

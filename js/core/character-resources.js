@@ -9,6 +9,7 @@ import { knownOptions as knownClassOptions } from "./class-options.js";
 import { mod, totalLevel, profBonus, clamp } from "./basics.js";
 import { hasFeat } from "./vitals.js";
 import { usesVariant, draconicBreath } from "./class-features.js";
+import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* Limited-use resources this character has right now, from each class
    and its subclass. `key` is unique per character (class + resource id)
@@ -22,7 +23,7 @@ function pickedSpellNames(cl, key){
 }
 export function characterResources(c){
   var m = {};
-  ["str","dex","con","int","wis","cha"].forEach(function(k){ m[k] = mod(c.abilities && c.abilities[k]); });
+  ["str","dex","con","int","wis","cha"].forEach(function(k){ m[k] = mod(abilityScore(c, k)); });
   m.pb = profBonus(c); // proficiency bonus, available to max() as m.pb
   var list = [];
   (c.classes||[]).forEach(function(cl){
@@ -227,7 +228,7 @@ export function recoverHitDice(c){
 /* HP from one spent hit die: roll + CON (at least 1). Durable raises the
    floor to twice the CON modifier, at least 2. */
 export function hitDieHealing(c, roll){
-  var conMod = mod(c.abilities && c.abilities.con);
+  var conMod = mod(abilityScore(c, "con"));
   var floor = hasFeat(c, "Durable") ? Math.max(2, 2 * conMod) : 1;
   return Math.max(floor, roll + conMod);
 }

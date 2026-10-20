@@ -1,5 +1,6 @@
 import { INFUSIONS } from "../data/infusions.js";
 import { mod, profBonus } from "./basics.js";
+import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* ---------------- What active infusions do on the sheet ----------------
    Worked out when shown, from c.infusions.active (see js/core/artificer.js
@@ -62,7 +63,7 @@ export function infusionSpeedParts(c){
    strike's: proficient, 1d8 force with STR, thrown 20/60 ft and back. */
 export function propulsionGauntlets(c){
   if(!working(c, "Arcane Propulsion Armor", true).length) return null;
-  var str = mod(c.abilities && c.abilities.str);
+  var str = mod(abilityScore(c, "str"));
   return {name: "Propulsion gauntlets", attack: str + profBonus(c), die: 8, bonus: str, type: "Force", ability: "STR",
     parts: ["Arcane Propulsion Armor", "empty hand", "thrown 20/60 ft, flies back"]};
 }

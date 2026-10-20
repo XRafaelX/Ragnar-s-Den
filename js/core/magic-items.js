@@ -72,6 +72,65 @@ export function attuneProblem(c, item){
   return null;
 }
 
+/* ---- Charges (a wand, a staff, a ring) ----
+   The row keeps how many are spent (`chargesUsed`); they work only while
+   the item does (attuned if it needs it), and a long rest (dawn) rolls
+   its `regain` dice. */
+function rollDice(notation, roll){
+  roll = roll || function(sides){ return Math.floor(Math.random()*sides) + 1; };
+  var m = /^(\d+)d(\d+)(?:\+(\d+))?$/.exec(String(notation||"").replace(/\s+/g, "")), rolls = [];
+  if(!m) return {total: Number(notation)||0, rolls: rolls, bonus: Number(notation)||0};
+  for(var i = 0; i < Number(m[1]); i++) rolls.push(roll(Number(m[2])));
+  var bonus = Number(m[3])||0;
+  return {total: rolls.reduce(function(a, r){ return a + r; }, 0) + bonus, rolls: rolls, bonus: bonus};
+}
+export function itemCharges(item){
+  var d = magicItemDef(item);
+  if(!d || !d.charges) return null;
+  var used = Math.max(0, Math.min(d.charges.max, Number(item.chargesUsed)||0));
+  return {max: d.charges.max, left: d.charges.max - used, used: used, regain: d.charges.regain || ""};
+}
+/* Spend n charges (or get them back with a negative n), within 0..max. */
+export function spendCharges(item, n){
+  var ch = itemCharges(item);
+  if(!ch) return;
+  item.chargesUsed = Math.max(0, Math.min(ch.max, ch.used + n));
+}
+/* Dawn: each item that regains charges rolls for them. [{name, got}]. */
+function regainCharges(c, roll){
+  var out = [];
+  (c.inventory||[]).forEach(function(i){
+    var ch = itemCharges(i);
+    if(!ch || !ch.used || !ch.regain) return;
+    var got = rollDice(ch.regain, roll).total;
+    spendCharges(i, -got);
+    out.push({name: i.name || i.magicItem, got: Math.min(got, ch.used)});
+  });
+  return out;
+}
+
+/* ---- Potions of Healing ----
+   The dice a potion heals by: an SRD potion's `heal`, or the gear list's
+   Potion of Healing (2d4 + 2). */
+export function potionHealing(item){
+  var d = magicItemDef(item);
+  if(d && d.heal) return d.heal;
+  return item && /^potion of healing$/i.test(String(item.name||"").trim()) ? "2d4+2" : "";
+}
+/* Drink one: roll its healing, add it to current HP up to `max`, and
+   use up the potion (the row goes at the last one). {total, rolls, bonus}. */
+export function drinkPotion(c, item, max, roll){
+  var heal = potionHealing(item);
+  if(!heal) return null;
+  var r = rollDice(heal, roll);
+  c.hp = c.hp || {};
+  c.hp.current = Math.min(Number(max)||0, (Number(c.hp.current)||0) + r.total);
+  var qty = Number(item.qty) || 1;
+  if(qty > 1) item.qty = qty - 1;
+  else c.inventory = (c.inventory||[]).filter(function(i){ return i!==item; });
+  return r;
+}
+
 /* ---- Heavy Holster ---- */
 export function holsterKnives(item){
   var d = magicItemDef(item);
@@ -217,13 +276,14 @@ export function nextAttackDamage(c){
 export function coinResistances(c){
   return activeBoons(c).filter(function(b){ return b.def.resistance && b.type; }).map(function(b){ return b.type; });
 }
-/* A long rest (dawn): every coin's charges come back, and every boon
-   still in play ends, the ones waiting for the next roll too, so unused
-   boons can't pile up from one day to the next. A flip still waiting
-   for its choice is dropped. {recharged: item names, ended: boons}. */
-export function magicItemsOnLongRest(c){
+/* A long rest (dawn): every coin's charges come back, an item with
+   charges rolls for the ones it regains, and every boon still in play
+   ends, the ones waiting for the next roll too, so unused boons can't
+   pile up from one day to the next. A flip still waiting for its choice
+   is dropped. {recharged: item names, ended: boons}. `roll` is for tests. */
+export function magicItemsOnLongRest(c, roll){
   var ended = endBoons(c, function(){ return true; });
-  var recharged = [];
+  var recharged = regainCharges(c, roll).map(function(r){ return r.name + " (+" + r.got + " charge" + (r.got===1 ? "" : "s") + ")"; });
   (c.inventory||[]).forEach(function(i){
     var d = magicItemDef(i);
     if(!d || !d.coin || !i.coin) return;

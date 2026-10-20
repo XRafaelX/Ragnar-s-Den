@@ -5,6 +5,7 @@ import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll } from "../../dice/dice.js";
 import { useNextCheck } from "../../core/magic-items.js";
+import { abilityScore, abilityScoreDetail } from "../../core/ability-scores.js";
 
 /* "Adv" / "Dis" tag for a check, save or skill that rolls that way. */
 function rollTag(roll){
@@ -44,7 +45,10 @@ export function renderAbilitiesPanel(c){
   grid.className = "abilities-grid";
   ABILITIES.forEach(function(a){
     var key = a[0];
-    var score = Number(c.abilities[key]) || 10;
+    // The score in effect (an item can raise it); the arrows change the
+    // character's own score underneath.
+    var detail = abilityScoreDetail(c, key);
+    var own = detail.base, score = detail.score;
     var m = mod(score);
     // The box shows the modifier (Arms of the Astral Self can swap WIS in
     // for STR); a check also adds Jack of All Trades and can roll with
@@ -84,7 +88,7 @@ export function renderAbilitiesPanel(c){
     downBtn.title = "Decrease " + a[1] + " (Down arrow)";
     downBtn.setAttribute("aria-label", "Decrease " + a[1]);
     downBtn.innerHTML = makeStatArrowSvg("down");
-    downBtn.disabled = score <= 1;
+    downBtn.disabled = own <= 1;
     downBtn.addEventListener("click", function(e){
       e.stopPropagation();
       var cur = Number(c.abilities[key]) || 10;
@@ -99,7 +103,8 @@ export function renderAbilitiesPanel(c){
     val.className = "stat-score-val";
     val.textContent = score;
     val.setAttribute("aria-label", a[1] + " score");
-    val.title = a[1] + " score: " + score;
+    val.title = a[1] + " score: " + score + (detail.sources.length ? " from " + detail.sources.join(" and ") + " (your own is " + own + ")" : "");
+    if(detail.sources.length) val.classList.add("from-item");
 
     var upBtn = document.createElement("button");
     upBtn.type = "button";
@@ -107,7 +112,7 @@ export function renderAbilitiesPanel(c){
     upBtn.title = "Increase " + a[1] + " (Up arrow)";
     upBtn.setAttribute("aria-label", "Increase " + a[1]);
     upBtn.innerHTML = makeStatArrowSvg("up");
-    upBtn.disabled = score >= 30;
+    upBtn.disabled = own >= 30;
     upBtn.addEventListener("click", function(e){
       e.stopPropagation();
       var cur = Number(c.abilities[key]) || 10;
@@ -248,9 +253,9 @@ export function renderAbilitiesPanel(c){
   var senses = getCharacterSenses(c);
 
   [
-    { label: "Passive Perception", val: pPerc, sub: "WIS ("+fmtMod(mod(c.abilities.wis))+")" },
-    { label: "Passive Investigation", val: pInv, sub: "INT ("+fmtMod(mod(c.abilities.int))+")" },
-    { label: "Passive Insight", val: pIns, sub: "WIS ("+fmtMod(mod(c.abilities.wis))+")" },
+    { label: "Passive Perception", val: pPerc, sub: "WIS ("+fmtMod(mod(abilityScore(c, "wis")))+")" },
+    { label: "Passive Investigation", val: pInv, sub: "INT ("+fmtMod(mod(abilityScore(c, "int")))+")" },
+    { label: "Passive Insight", val: pIns, sub: "WIS ("+fmtMod(mod(abilityScore(c, "wis")))+")" },
     { label: "Senses", val: senses, sub: computeDarkvision(c).sources.join(", ") || (c.race || "Base race") }
   ].forEach(function(st){
     var box = document.createElement("div");

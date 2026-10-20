@@ -16,6 +16,7 @@ import { openPrepareSheet } from "./spells.js";
 import { preparedState } from "../../core/spells-known.js";
 import { flash, pipChanged, pipsRefilled, restScene, floatDelta } from "../../ui/fx.js";
 import { playShortRest, playLongRest } from "../../ui/sound.js";
+import { abilityScore, abilityScores } from "../../core/ability-scores.js";
 
 function preparesSpells(c){ return (c.classes||[]).some(function(cl){ return preparedState(c, cl.name); }); }
 
@@ -593,7 +594,7 @@ export function renderVitalsPanel(c){
   spendBtn.addEventListener("click", function(){
     var die = spendHitDie(c);
     if(!die) return;
-    var conMod = mod(c.abilities.con);
+    var conMod = mod(abilityScore(c, "con"));
     var roll = Math.floor(Math.random()*die)+1;
     var healed = hitDieHealing(c, roll);
     c.hp.current = clamp(c.hp.current+healed, 0, hpMax);

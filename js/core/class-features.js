@@ -10,6 +10,7 @@ import { featDef, featPicksSummary, featPickDetail } from "./feat-picks.js";
 import { uid, mod, fmtMod, totalLevel, profBonus } from "./basics.js";
 import { halfProficiency } from "./checks.js";
 import { pickedProfs, featurePicksText, racePicksText, backgroundPicksText, backgroundGrants } from "./class-picks.js";
+import { abilityScore, abilityScores } from "./ability-scores.js";
 
 export function characterIsCaster(c){
   return (c.classes||[]).some(function(cl){
@@ -254,7 +255,7 @@ export function draconicBreath(c){
   if(!a) return null;
   var lv = totalLevel(c), dice = 0, next = null;
   kind.steps.forEach(function(st){ if(lv >= st[0]) dice = st[1]; else if(!next) next = {level: st[0], dice: st[1]}; });
-  var con = mod(c.abilities && c.abilities.con), pb = profBonus(c);
+  var con = mod(abilityScore(c, "con")), pb = profBonus(c);
   return {dragon: dragon, damage: a.damage, area: a.area || kind.area, save: a.save || kind.save,
     die: kind.die, dice: dice, next: next, con: con, pb: pb, dc: 8 + con + pb,
     uses: kind.uses==="pb" ? pb : 1, reset: kind.uses==="pb" ? "long" : "short",

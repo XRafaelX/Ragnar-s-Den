@@ -30,7 +30,7 @@ function s(level, school, castingTime, range, components, duration, classes, sum
     duration: duration,
     concentration: /^Concentration/.test(duration),
     ritual: !!opts.ritual,
-    classes: classes.split(","),
+    classes: classes ? classes.split(",") : [],
     tashaClasses: opts.tasha ? opts.tasha.split(",") : [],
     source: opts.source || "",
     summary: summary
@@ -557,7 +557,9 @@ export var SPELL_DATA = {
   /* ---- Other books (checked against dnd5e.wikidot.com 2026-10-20) ----
      `source` names the book: shown in the spell lists, since a table may
      not use it. Wildemount's dunamancy spells are on the wizard list. */
-  // Cantrips
+  // Cantrips (Encode Thoughts is on no class list: a Dimir Operative's
+  // guild spell, see js/data/origin-spells.js)
+  "Encode Thoughts": s(0,"Enc",A,"Self","S","8 hours","","Turn a memory, idea or message from your mind (or thoughts you are reading with a spell like Detect Thoughts) into a glowing thought strand you can carry. Casting the spell while holding a strand shows you what it holds.",{source:"GGR"}),
   "Sapping Sting": s(0,"Nec",A,"30 feet","V, S","Instantaneous","Wizard","One creature you can see makes a Constitution save or takes 1d4 necrotic damage and falls prone.",{source:"EGW"}),
   // 1st level
   "Distort Value": s(1,"Ill","1 minute","Touch","V","8 hours","Bard,Sorcerer,Warlock,Wizard","An object up to 1 foot on a side looks worth twice as much, or half as much. Anyone examining it makes an Investigation check against your spell save DC to see through it.",{source:"AI"}),
@@ -617,7 +619,7 @@ export var SPELL_DATA = {
 
 /* The books `source` names, as the spell lists show them. */
 export var SPELL_SOURCES = {
-  AI:"Acquisitions Inc.", BMT:"The Book of Many Things", EGW:"Wildemount", FTD:"Fizban's Treasury",
+  AI:"Acquisitions Inc.", BMT:"The Book of Many Things", EGW:"Wildemount", FTD:"Fizban's Treasury", GGR:"Ravnica",
   IDRotF:"Icewind Dale", LLoK:"Lost Laboratory of Kwalish", PAitM:"Planescape", SAiS:"Spelljammer", SCC:"Strixhaven"
 };
 

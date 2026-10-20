@@ -7,10 +7,12 @@ import { invocationSpells } from "./invocations.js";
 import { styleSpells } from "./fighting-styles.js";
 import { pickedProfs } from "./class-picks.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
+import { MARK_SPELLS, GUILD_SPELLS } from "../data/origin-spells.js";
 import { mod, fmtMod, profBonus } from "./basics.js";
 import { characterIsCaster, classCasterType, classSpellAbility, classFeatureList } from "./class-features.js";
 import { coinAttackBonus } from "./magic-items.js";
 import { infusionSpellAttack } from "./infusion-effects.js";
+import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* The spellcasting abilities of the classes that cast spells now (a
    Paladin or Ranger from level 2, an Eldritch Knight or Arcane Trickster
@@ -23,7 +25,7 @@ export function spellcastingAbilities(c){
     if(!type || !ability || (type==="half" && lv < 2) || (type==="third" && lv < 3)) return;
     var entry = out.find(function(x){ return x.ability===ability; });
     if(!entry){
-      var m = mod(c.abilities && c.abilities[ability]);
+      var m = mod(abilityScore(c, ability));
       var focus = infusionSpellAttack(c);
       entry = {ability: ability, classes: [], dc: 8 + profBonus(c) + m, attack: profBonus(c) + m + coinAttackBonus(c) + (focus ? focus.value : 0)};
       out.push(entry);
@@ -129,7 +131,7 @@ export function spellHeldBy(c, name){
    `ability`, after `lead`. Without an ability yet, says where to pick it. */
 export function spellAbilityNote(c, ability, lead){
   if(!ability) return lead + " Choose the feat's ability on the Features & Feats tab to see its save DC.";
-  var m = mod(c.abilities && c.abilities[ability]), pb = profBonus(c);
+  var m = mod(abilityScore(c, ability)), pb = profBonus(c);
   var name = {str:"Strength", dex:"Dexterity", con:"Constitution", int:"Intelligence", wis:"Wisdom", cha:"Charisma"}[ability];
   return lead + " Uses " + name + ": save DC " + (8 + pb + m) + ", spell attack " + fmtMod(pb + m) + ".";
 }
@@ -160,6 +162,19 @@ export function pendingSpellChoices(c){
 export function spellOptionText(spells, className){
   if(Array.isArray(spells)) return spells.join(", ");
   return Object.keys(spells).map(function(k, i){ return spells[k].join(", ") + " (" + (i ? "" : (className || "level") + " ") + k + ")"; }).join("; ");
+}
+/* The spells a race's dragonmark (Spells of the Mark) or a Ravnica guild
+   background (Guild Spells) adds to the list of every spellcasting class
+   the character has: [{name, tag}] with catalog names. */
+export function originListSpells(race, background){
+  var out = [];
+  [[MARK_SPELLS[race], "Mark spell"], [GUILD_SPELLS[background], "Guild spell"]].forEach(function(p){
+    if(!p[0]) return;
+    Object.keys(p[0]).forEach(function(lv){
+      p[0][lv].forEach(function(n){ n = catalogSpellName(n); if(SPELL_DATA[n] && !out.some(function(o){ return o.name===n; })) out.push({name: n, tag: p[1]}); });
+    });
+  });
+  return out;
 }
 /* Other classes' lists this class entry can learn spells from (a Divine
    Soul sorcerer: the cleric list). */

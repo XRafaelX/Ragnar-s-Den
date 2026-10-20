@@ -2,6 +2,7 @@ import { INVOCATIONS, invocationsKnownAt, invocationDef, pactBoonDef } from "../
 import { SPELL_DATA, catalogSpellName, spellsMatching } from "../data/spells.js";
 import { uid, mod, totalLevel, featureSpells } from "./helpers.js";
 import { featDef } from "./feat-picks.js";
+import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* ---------------- Eldritch invocations and the Pact Boon ----------------
    Saved on the warlock's class entry:
@@ -254,7 +255,7 @@ export function eldritchBlastSummary(c){
   knownInvocations(cl).forEach(function(e){
     var inv = invocationDef(e.name);
     if(!inv || !inv.blast) return;
-    if(inv.blast.damage) out.bonus = mod(c.abilities && c.abilities.cha);
+    if(inv.blast.damage) out.bonus = mod(abilityScore(c, "cha"));
     if(inv.blast.range) out.range = inv.blast.range;
     if(inv.blast.rider) out.riders.push(inv.blast.rider);
     out.by.push(inv.name);

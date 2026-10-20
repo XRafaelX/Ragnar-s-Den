@@ -15,6 +15,7 @@ import * as W from "../js/wizard/wizard-core.js";
 import * as H from "../js/core/helpers.js";
 import { state } from "../js/core/state.js";
 import { withFakeDom } from "./fake-dom.mjs";
+import { originListSpells } from "../js/core/spell-grants.js";
 
 function makeChar(classes, spells = [], abilities = {}){
   const c = newCharacter("Test");
@@ -417,4 +418,26 @@ test("freed copies: a wizard's Minor Illusion, a feat's spell; not the limited g
   assert.equal(SK.preparedState(necro, "Wizard").have, 1, "it still takes one of the day's prepared spells");
   const bane = makeChar([{ name: "Warlock", subclass: "The Undead", level: 4, invocations: [{ name: "Thief of Five Fates" }] }], [["Bane", "Warlock"]]);
   assert.equal(SK.classKnownSpells(bane, "Warlock").spells.length, 1);
+});
+
+/* Spells of the Mark and Guild Spells (checked against dnd5e.wikidot.com
+   2026-10-20): for a character with Spellcasting or Pact Magic, they join
+   the list of every spellcasting class it has. */
+test("a dragonmark's and a guild background's spells join a caster's list", () => {
+  assert.deepEqual(originListSpells("Halfling (Mark of Healing)", "").slice(0, 2), [{ name: "Cure Wounds", tag: "Mark spell" }, { name: "Healing Word", tag: "Mark spell" }]);
+  assert.equal(originListSpells("Human", "Dimir Operative")[0].name, "Encode Thoughts", "the Dimir cantrip");
+  assert.equal(originListSpells("Human", "Soldier").length, 0);
+  const c = makeChar([{ name: "Sorcerer", subclass: "Wild Magic", level: 2 }], ["Fire Bolt", "Mage Hand", "Light", "Prestidigitation", "Magic Missile", "Shield", "Sleep"]);
+  c.race = "Halfling (Mark of Healing)";
+  const spells = section(planFor(c, "Sorcerer"), "spells");
+  assert.ok(spells.names.includes("Cure Wounds") && spells.tags["Cure Wounds"].includes("Mark spell"), "Cure Wounds for a sorcerer, as a Mark spell");
+  c.race = "Human";
+  assert.ok(!section(planFor(c, "Sorcerer"), "spells").names.includes("Cure Wounds"), "not for a plain human");
+  // A Dimir fighter taking up sorcery: Encode Thoughts among the cantrips.
+  const spy = makeChar([{ name: "Fighter", subclass: "", level: 1 }]);
+  spy.background = "Dimir Operative";
+  const cantrips = section(planFor(spy, "Sorcerer"), "cantrips");
+  assert.ok(cantrips.names.includes("Encode Thoughts") && cantrips.tags["Encode Thoughts"].includes("Guild spell"), "Encode Thoughts, a Guild spell");
+  spy.background = "Soldier";
+  assert.ok(!section(planFor(spy, "Sorcerer"), "cantrips").names.includes("Encode Thoughts"));
 });

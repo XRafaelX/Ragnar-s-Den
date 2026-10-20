@@ -7,7 +7,7 @@ import { showActionToast } from "../../ui/toast.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { facts, textField, homebrewShell, pickerField, previewCard } from "../../ui/homebrew-form.js";
 import { themedPicker } from "../../ui/themed-picker.js";
-import { escapeHtml, featureSpells, classExtraSpellLists, spellHeldBy } from "../../core/helpers.js";
+import { escapeHtml, featureSpells, classExtraSpellLists, spellHeldBy, originListSpells } from "../../core/helpers.js";
 import {
   getCustomSpell, saveCustomSpell, deleteCustomSpell,
   spellNameProblem, charactersWithSpell, SPELL_HOMEBREW_GROUP
@@ -297,6 +297,8 @@ export function buildSpellSections(c){
     var extra = featureSpells(c).filter(function(fs){ return fs.kind==="expanded" && fs.className===name; })
       .map(function(fs){ return catalogSpellName(fs.name); });
     classExtraSpellLists(cl).forEach(function(list){ extra = extra.concat(Object.keys(spellDataForClass(list, tasha))); });
+    // A dragonmark's or a guild background's spells.
+    extra = extra.concat(originListSpells(c.race, c.background).map(function(o){ return o.name; }));
     extra = extra.filter(function(n, i){ return SPELL_DATA[n] && !data[n] && extra.indexOf(n)===i; });
     if(extra.length){
       extra.forEach(function(n){

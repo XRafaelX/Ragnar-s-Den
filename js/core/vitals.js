@@ -18,6 +18,7 @@ import { effectOn, bladesongBonus } from "./effects.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
 import { infusionSpeedParts } from "./infusion-effects.js";
+import { abilityScore, abilityScores, abilityScoreDetail, baseScore } from "./ability-scores.js";
 
 /* ---------------- Feats the sheet applies ----------------
    Feats are matched by name. Their bonuses are worked out when shown
@@ -40,16 +41,23 @@ export function raceHpPerLevel(c){
 export function raceHpBonus(c){
   return raceHpPerLevel(c) * totalLevel(c);
 }
+/* An item that raises Constitution (an Amulet of Health) raises the hit
+   point maximum by the change in modifier for every level. */
+export function itemConHpBonus(c){
+  var gain = mod(abilityScore(c, "con")) - mod(baseScore(c, "con"));
+  return gain > 0 ? gain * totalLevel(c) : 0;
+}
 /* The bonuses above that apply, as [{name, value}], for tooltips. */
 export function hpBonuses(c){
   var out = [];
-  var tough = toughBonus(c), race = raceHpBonus(c);
+  var tough = toughBonus(c), race = raceHpBonus(c), item = itemConHpBonus(c);
   if(tough) out.push({name:"Tough", value:tough});
   if(race) out.push({name:(RACE_DATA[c.race].hpTrait || c.race), value:race});
+  if(item) out.push({name:abilityScoreDetail(c, "con").sources.join(" and "), value:item});
   return out;
 }
 export function maxHp(c){
-  return (Number(c.hp && c.hp.max)||0) + toughBonus(c) + raceHpBonus(c);
+  return (Number(c.hp && c.hp.max)||0) + toughBonus(c) + raceHpBonus(c) + itemConHpBonus(c);
 }
 /* Walking speed gained from features that only count out of armor
    (`speedWhen`: "unarmored" for Unarmored Movement, "noHeavyArmor" for
@@ -74,7 +82,7 @@ export function armorStrengthShortfall(c, item){
   if(!item || item.category!=="heavy") return 0;
   // The row's own number first (Mithral Armor has none), then its armor's.
   var req = item.strReq!=null ? Number(item.strReq)||0 : ((armorDataOf(item) || {}).strReq || 0);
-  if(!req || (Number(c.abilities && c.abilities.str)||10) >= req) return 0;
+  if(!req || (Number(abilityScore(c, "str"))||10) >= req) return 0;
   var race = RACE_DATA[c.race];
   if(race && (race.traits||[]).some(function(t){ return t.name==="Unslowed"; })) return 0;
   var armorer = (c.classes||[]).some(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer" && (Number(cl.level)||1) >= 3; });
@@ -169,7 +177,7 @@ export function computeSpeed(c){
    manual number, with Barbarian/Monk Unarmored Defense honored when no
    body armor is equipped. c.acMisc covers anything else (rings, feats). */
 export function computeArmorClass(c){
-  var dexMod = mod(c.abilities && c.abilities.dex);
+  var dexMod = mod(abilityScore(c, "dex"));
   var items = (c.inventory||[]).filter(function(i){ return i.type==="armor" && i.equipped; });
   var bodyArmor = items.find(function(i){ return i.category!=="shield"; });
   var shieldBonus = items.filter(function(i){ return i.category==="shield"; })
@@ -194,11 +202,11 @@ export function computeArmorClass(c){
     var hasClass = function(name, sub){ return (c.classes||[]).some(function(cl){ return cl.name===name && (!sub || cl.subclass===sub); }); };
     var options = [{value: 10 + dexMod, breakdown: "Unarmored: 10 + DEX (" + fmtMod(dexMod) + ")", short: "10 + DEX"}];
     if(hasClass("Barbarian")){
-      var conMod = mod(c.abilities && c.abilities.con);
+      var conMod = mod(abilityScore(c, "con"));
       options.push({value: 10 + dexMod + conMod, breakdown: "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + CON (" + fmtMod(conMod) + ")", short: "10 + DEX + CON"});
     }
     if(hasClass("Monk") && !items.some(function(i){ return i.category==="shield"; })){
-      var wisMod = mod(c.abilities && c.abilities.wis);
+      var wisMod = mod(abilityScore(c, "wis"));
       options.push({value: 10 + dexMod + wisMod, breakdown: "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + WIS (" + fmtMod(wisMod) + ")", short: "10 + DEX + WIS"});
     }
     if(hasClass("Sorcerer", "Draconic Bloodline")){
@@ -207,7 +215,7 @@ export function computeArmorClass(c){
     // A race's natural armor (Lizardfolk: 13 + DEX, Tortle: 17).
     var nat = RACE_DATA[c.race] && RACE_DATA[c.race].unarmoredAc;
     if(nat){
-      var natMod = nat.ability ? mod(c.abilities && c.abilities[nat.ability]) : 0, natAb = (nat.ability || "").toUpperCase();
+      var natMod = nat.ability ? mod(abilityScore(c, nat.ability)) : 0, natAb = (nat.ability || "").toUpperCase();
       options.push({value: nat.base + natMod, breakdown: nat.trait + ": " + nat.base + (natAb ? " + " + natAb + " (" + fmtMod(natMod) + ")" : ""), short: nat.base + (natAb ? " + " + natAb : "")});
     }
     // A feat's own formula (Dragon Hide: 13 + DEX).
@@ -280,7 +288,7 @@ export function computeArmorClass(c){
    Same shape as computeArmorClass: `breakdown` for the tooltip, `short`
    for the hint under the value. */
 export function computeInitiative(c){
-  var dexMod = mod(c.abilities && c.abilities.dex);
+  var dexMod = mod(abilityScore(c, "dex"));
   var value = dexMod;
   var breakdown = "DEX (" + fmtMod(dexMod) + ")";
   var short = "DEX";
@@ -290,7 +298,7 @@ export function computeInitiative(c){
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
       if(!f.initiative) return;
-      var bonus = f.initiative==="pb" ? profBonus(c) : mod(c.abilities && c.abilities[f.initiative]);
+      var bonus = f.initiative==="pb" ? profBonus(c) : mod(abilityScore(c, f.initiative));
       value += bonus;
       breakdown += " + " + f.name + " (" + fmtMod(bonus) + ")";
       short += " + " + f.initiative.toUpperCase();
@@ -320,7 +328,7 @@ export function computeSave(c, key){
     classFeatureList(cl).forEach(function(f){
       if(!grantedBy && f.grants && (f.grants.savingThrows||[]).indexOf(key)!==-1) grantedBy = f.name;
       if(f.saveBonus && !bonuses.some(function(b){ return b.name===f.name; })){
-        bonuses.push({name:f.name, value: Math.max(1, mod(c.abilities && c.abilities[f.saveBonus]))});
+        bonuses.push({name:f.name, value: Math.max(1, mod(abilityScore(c, f.saveBonus)))});
       }
     });
   });

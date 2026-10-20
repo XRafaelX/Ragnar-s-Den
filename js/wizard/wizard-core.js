@@ -5,7 +5,7 @@ import { BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_LANGUAGE_RULES } from
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
 import { LANGUAGES, ANY_LANGUAGES } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
-import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, classVariants, classFeaturesAt, isProficientWithWeapon } from "../core/helpers.js";
+import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, originListSpells, classVariants, classFeaturesAt, isProficientWithWeapon } from "../core/helpers.js";
 import { WEAPON_DATA } from "../data/weapons.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
@@ -285,11 +285,22 @@ export function dropGrantedSpellPicks(){
   });
 }
 /* Spells from other classes' lists the chosen subclass opens (a Divine
-   Soul sorcerer can pick cleric spells), as catalog names. */
+   Soul sorcerer can pick cleric spells), and the ones the race's
+   dragonmark or a guild background adds, as catalog names. */
 export function wizardExtraListSpells(){
   var out = [];
   classExtraSpellLists(wizardClassEntry()).forEach(function(list){ out = out.concat(Object.keys(spellDataForClass(list, !!wizardState.tashaOptional))); });
-  return out;
+  return out.concat(wizardOriginSpells().map(function(o){ return o.name; }));
+}
+/* The race's Spells of the Mark and the background's Guild Spells: [{name, tag}]. */
+export function wizardOriginSpells(){
+  return wizardState ? originListSpells(wizardState.race, wizardState.background) : [];
+}
+/* A picker's tag for an extra spell: "Mark spell", "Guild spell", or the
+   other class's list ("Cleric spell"). */
+export function wizardExtraSpellTag(name){
+  var o = wizardOriginSpells().find(function(x){ return x.name===name; });
+  return o ? o.tag : wizardExtraListName() + " spell";
 }
 /* Which list an extra spell comes from, for its tag in the picker. */
 export function wizardExtraListName(){
