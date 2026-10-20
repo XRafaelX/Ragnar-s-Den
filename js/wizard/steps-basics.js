@@ -340,7 +340,7 @@ export function wizardStepBackground(container){
   var dd = wizardDropdown("Background", "background", BACKGROUNDS, wizardState, function(){
     explain.innerHTML = backgroundExplainHtml(wizardState.background);
     // Tool picks belong to one background: a different one starts fresh.
-    if(wizardState.background!==shownBackground){ wizardState.bgPicks = {}; shownBackground = wizardState.background; }
+    if(wizardState.background!==shownBackground){ wizardState.bgPicks = {}; wizardState.bgGear = {}; shownBackground = wizardState.background; }
     campaign.refresh();
   }, "background");
   dd.firstChild.style.maxWidth = "320px";

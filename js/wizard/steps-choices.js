@@ -6,7 +6,9 @@ import { FIGHTING_STYLES } from "../data/classes.js";
 import { escapeHtml, ce, autoEquipLoadout, isProficientWithWeapon } from "../core/helpers.js";
 import { WEAPON_DATA, WEAPON_GROUPS } from "../data/weapons.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
-import { wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills } from "./wizard-core.js";
+import { wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills, wizardKitContext } from "./wizard-core.js";
+import { renderKitPicker, kitIntroHtml } from "../ui/background-gear.js";
+import { backgroundKit } from "../core/background-gear.js";
 import { renderClassPicks, renderVariantOptions } from "../ui/class-picks.js";
 import { grantHasChoices } from "../core/class-picks.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
@@ -402,6 +404,18 @@ export function wizardStepEquipment(container){
   }
 
   container.appendChild(card);
+
+  // The background's starting equipment, with its choices and trinkets.
+  if(wizardState.background && backgroundKit(wizardState.background)){
+    var bgCard = ce("div","card bgk-card");
+    bgCard.innerHTML = "<h3><span>Background Equipment</span></h3>";
+    var bgExplain = ce("div","wiz-explain");
+    bgExplain.innerHTML = kitIntroHtml(wizardState.background);
+    bgCard.appendChild(bgExplain);
+    wizardState.bgGear = wizardState.bgGear || {};
+    bgCard.appendChild(renderKitPicker(wizardState.background, wizardState.bgGear, wizardKitContext(), "wizKit", renderWizard));
+    container.appendChild(bgCard);
+  }
 }
 
 /* ---- Starting weapons of the player's choice ----

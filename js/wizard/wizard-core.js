@@ -7,6 +7,7 @@ import { LANGUAGES, ANY_LANGUAGES } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, originListSpells, classVariants, classFeaturesAt, isProficientWithWeapon } from "../core/helpers.js";
 import { WEAPON_DATA } from "../data/weapons.js";
+import { backgroundKit, addBackgroundKit } from "../core/background-gear.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
 import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason, featHasPicks, featDef, emptyPicks, backgroundFeatGrant, backgroundFeatCopy, backgroundFeatPicks, campaignLevel1Feats, campaignFeatCopy } from "../core/feat-picks.js";
@@ -171,6 +172,16 @@ export function wizardRacePicksProblem(){
    bgPicks[key], one list per slot. */
 export function wizardBackgroundGrants(){ return wizardState && wizardState.background ? backgroundGrantsFor(wizardState.background) : []; }
 export function wizardBackgroundPickGrants(){ return wizardBackgroundGrants().filter(function(g){ return grantHasChoices(g.def); }); }
+/* The background's tools (given and picked), for its starting kit's
+   "artisan's tools of your choice" to start on. */
+export function wizardKitContext(){
+  var tools = [];
+  wizardBackgroundGrants().forEach(function(g){
+    (g.def.tools||[]).forEach(function(t){ tools.push(t); });
+    ((wizardState.bgPicks||{})[g.key] || []).forEach(function(slot){ (slot||[]).forEach(function(v){ if(v) tools.push(v); }); });
+  });
+  return {toolPicks: tools};
+}
 export function wizardBgSlots(key){
   var all = wizardState.bgPicks = wizardState.bgPicks || {};
   return all[key] = all[key] || [];
@@ -727,7 +738,7 @@ export function openWizard(){
     rolledPool:null,
     skillChoices:[],
     bgSkillChoices:[],
-    bgPicks:{}, overlapPicks:{},
+    bgPicks:{}, bgGear:{}, overlapPicks:{},
     classChoices:{},
     raceChoices:{abilities:[], alt:false, preset:"", profPicks:{}, feat:"", featPicks:null},
     bgFeat:null, bgFeatChoice:"", campaign:"", campaignFeat:"",
@@ -821,6 +832,16 @@ export function finishWizard(){
     fillSlots(g.def, slots, raceCtx);
     if(!classPicksProblem(g, slots, raceCtx)) applyClassPicks(c, raceHolder, g, slots);
   });
+  // The background's starting equipment and coins (its weapons checked
+  // for proficiency once everything that gives it is on).
+  if(backgroundKit(w.background)){
+    addBackgroundKit(c, w.background, w.bgGear || {}, wizardKitContext());
+    c.inventory.forEach(function(item){
+      if(!item.picked) return;
+      item.proficient = isProficientWithWeapon(c, item.name, (WEAPON_DATA[item.name] || {}).category);
+      delete item.picked;
+    });
+  }
   // Picks in place of a skill or tool given twice.
   var twice = overlapEntry(c);
   overlapGrants(c).forEach(function(g){

@@ -458,3 +458,12 @@ button.wiz-feat-group[aria-expanded="true"]::before{transform:rotate(90deg);}
 @media (prefers-reduced-motion: reduce){
   .cpk-variant-alt, .cpk-variant-alt > .wiz-equip-option{transition:none;}
 }
+
+/* Background equipment (Equipment step; also the Inventory tab's card). */
+.bgk-items{margin:10px 0 4px;font-size:13.5px;line-height:1.5;color:var(--text-on-parch);}
+.bgk-note{margin:2px 0 6px;font-size:12px;color:var(--text-on-parch-dim);}
+.bgk-slot{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 10px;margin-top:4px;}
+.bgk-slot .lu-choice-title{flex:1 0 100%;margin:10px 0 0;}
+.bgk-field{flex:1 1 260px;min-width:0;max-width:440px;margin:0;}
+.bgk-field .tp-field, .bgk-field .tp-trigger{min-width:0;max-width:100%;}
+.bgk-roll{flex:0 0 auto;}
