@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty } from "../../core/helpers.js";
+import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty } from "../../core/helpers.js";
 import { ARMOR_DATA } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -421,7 +421,7 @@ function openGearSheet(c, item, idx){
    in place. */
 function openWeaponSheet(c, item, idx){
   openBottomSheet(function(body, refresh, close){
-    var abilityLabel = item.ability==="finesse" ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
+    var abilityLabel = item.ability==="finesse" || revenantBladeApplies(c, item) ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
     var subtitleParts = [];
     if(item.damageDice) subtitleParts.push(item.damageDice + (item.damageType ? " " + item.damageType : ""));
     subtitleParts.push(abilityLabel);
@@ -765,7 +765,7 @@ function renderWeaponCard(c, item, idx){
   var infLine = infusionLine(c, item);
   if(infLine) card.appendChild(infLine);
 
-  var abilityLabel = item.ability==="finesse" ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
+  var abilityLabel = item.ability==="finesse" || revenantBladeApplies(c, item) ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
   // Martial Arts: a monk weapon uses the better of STR and DEX, and the
   // Martial Arts die when it's bigger than the weapon's.
   if(martialArtsApplies(c, item)) abilityLabel = "Martial Arts (STR or DEX)";
@@ -874,6 +874,23 @@ function renderWeaponCard(c, item, idx){
       performRoll(parsed.die, parsed.qty, off.damage, "none", (item.name||"Weapon") + ": Off-hand damage" + (item.damageType ? " (" + item.damageType + ")" : ""));
     });
     actions.appendChild(offBtn);
+  }
+
+  // A double-bladed scimitar's other blade: its own bonus action attack.
+  var blade = otherBladeAttack(c, item);
+  var bladeDice = blade && parseDiceNotation(blade.dice);
+  if(bladeDice){
+    var bladeBtn = document.createElement("button");
+    bladeBtn.type = "button"; bladeBtn.className = "btn small inv-roll-btn inv-offhand-btn";
+    bladeBtn.innerHTML = makeDicesSvg() + "Other blade " + blade.dice + fmtMod(blade.damage);
+    var bladeTag = document.createElement("span");
+    bladeTag.className = "inv-action-tag"; bladeTag.textContent = "Bonus action";
+    bladeBtn.appendChild(bladeTag);
+    bladeBtn.title = "After attacking with the double-bladed scimitar as part of the Attack action, a bonus action attack with its other blade: 1d4 slashing in place of 2d4.";
+    bladeBtn.addEventListener("click", function(){
+      performRoll(bladeDice.die, bladeDice.qty, blade.damage, "none", (item.name||"Weapon") + ": Other blade damage (Slashing)");
+    });
+    actions.appendChild(bladeBtn);
   }
 
   var furyBtn = divineFuryButton(c, item.name || "Weapon");

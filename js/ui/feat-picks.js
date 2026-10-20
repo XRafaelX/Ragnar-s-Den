@@ -222,6 +222,9 @@ export function renderFeatPicks(def, picks, ctx, onChange){
   var weaponGroups = {}, known = [];
   Object.keys(WEAPON_GROUPS).forEach(function(g){
     var fresh = WEAPON_GROUPS[g].filter(function(n){
+      // Weapon Master: each one a simple or a martial weapon.
+      var cat = (WEAPON_DATA[n] || {}).category;
+      if(cat!=="simple" && cat!=="martial") return false;
       if(ctx.knowsWeapon && ctx.knowsWeapon(n)){ known.push(n); return false; }
       return true;
     });

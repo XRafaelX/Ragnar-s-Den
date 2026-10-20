@@ -1,12 +1,17 @@
-/* ---------------- Weapon data (SRD) ---------------- */
+/* ---------------- Weapon data (SRD, plus the double-bladed scimitar and firearms) ----------------
+   The Player's Handbook's weapons, Eberron's double-bladed scimitar (for
+   Revenant Blade) and the Dungeon Master's Guide's Renaissance firearms
+   (for Gunner). Firearms are their own category: neither simple nor
+   martial, so only a proficiency in firearms covers them. */
 export var WEAPON_GROUPS = {
   "Simple Melee": ["Club","Dagger","Greatclub","Handaxe","Javelin","Light Hammer","Mace","Quarterstaff","Sickle","Spear"],
   "Simple Ranged": ["Light Crossbow","Dart","Shortbow","Sling"],
-  "Martial Melee": ["Battleaxe","Flail","Glaive","Greataxe","Greatsword","Halberd","Lance","Longsword","Maul","Morningstar","Pike","Rapier","Scimitar","Shortsword","Trident","War Pick","Warhammer","Whip"],
-  "Martial Ranged": ["Blowgun","Hand Crossbow","Heavy Crossbow","Longbow","Net"]
+  "Martial Melee": ["Battleaxe","Double-Bladed Scimitar","Flail","Glaive","Greataxe","Greatsword","Halberd","Lance","Longsword","Maul","Morningstar","Pike","Rapier","Scimitar","Shortsword","Trident","War Pick","Warhammer","Whip"],
+  "Martial Ranged": ["Blowgun","Hand Crossbow","Heavy Crossbow","Longbow","Net"],
+  "Firearms": ["Pistol","Musket"]
 };
 
-/* category: simple|martial; used to auto-detect class weapon proficiency.
+/* category: simple|martial|firearm; used to auto-detect class weapon proficiency.
    finesse/ranged; used to pick a sensible default attack ability. */
 export var WEAPON_DATA = {
   "Club":            {damageDice:"1d4",  damageType:"Bludgeoning", weight:2,  category:"simple",  finesse:false, ranged:false, properties:"Light"},
@@ -24,6 +29,9 @@ export var WEAPON_DATA = {
   "Shortbow":        {damageDice:"1d6",  damageType:"Piercing",    weight:2,  category:"simple",  finesse:false, ranged:true,  properties:"Ammunition, two-handed"},
   "Sling":           {damageDice:"1d4",  damageType:"Bludgeoning", weight:0,  category:"simple",  finesse:false, ranged:true,  properties:"Ammunition"},
   "Battleaxe":       {damageDice:"1d8",  damageType:"Slashing",    weight:4,  category:"martial", finesse:false, ranged:false, properties:"Versatile (1d10)"},
+  // Special: after attacking with it as part of the Attack action, a bonus
+  // action attack with its other blade deals 1d4 slashing instead of 2d4.
+  "Double-Bladed Scimitar": {damageDice:"2d4", damageType:"Slashing", weight:6, category:"martial", finesse:false, ranged:false, properties:"Special, two-handed"},
   "Flail":           {damageDice:"1d8",  damageType:"Bludgeoning", weight:2,  category:"martial", finesse:false, ranged:false, properties:""},
   "Glaive":          {damageDice:"1d10", damageType:"Slashing",    weight:6,  category:"martial", finesse:false, ranged:false, properties:"Heavy, reach, two-handed"},
   "Greataxe":        {damageDice:"1d12", damageType:"Slashing",    weight:7,  category:"martial", finesse:false, ranged:false, properties:"Heavy, two-handed"},
@@ -45,7 +53,9 @@ export var WEAPON_DATA = {
   "Hand Crossbow":   {damageDice:"1d6",  damageType:"Piercing",    weight:3,  category:"martial", finesse:false, ranged:true,  properties:"Ammunition, light, loading"},
   "Heavy Crossbow":  {damageDice:"1d10", damageType:"Piercing",    weight:18, category:"martial", finesse:false, ranged:true,  properties:"Ammunition, heavy, two-handed, loading"},
   "Longbow":         {damageDice:"1d8",  damageType:"Piercing",    weight:2,  category:"martial", finesse:false, ranged:true,  properties:"Ammunition, heavy, two-handed"},
-  "Net":             {damageDice:"",     damageType:"",            weight:3,  category:"martial", finesse:false, ranged:true,  properties:"Thrown (5/15), special"}
+  "Net":             {damageDice:"",     damageType:"",            weight:3,  category:"martial", finesse:false, ranged:true,  properties:"Thrown (5/15), special"},
+  "Pistol":          {damageDice:"1d10", damageType:"Piercing",    weight:3,  category:"firearm", finesse:false, ranged:true,  properties:"Ammunition, loading"},
+  "Musket":          {damageDice:"1d12", damageType:"Piercing",    weight:10, category:"firearm", finesse:false, ranged:true,  properties:"Ammunition, loading, two-handed"}
 };
 
 /* Flat, searchable form of the catalog above; one entry per weapon,

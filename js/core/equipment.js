@@ -181,7 +181,7 @@ export function unarmedStrike(c){
 export function weaponAbility(c, item){
   var ab = c.abilities || {};
   var allowed = item.ability==="dex" ? ["dex"] : item.ability==="finesse" ? ["str", "dex"] : ["str"];
-  if(martialArtsApplies(c, item)) allowed = ["str", "dex"];
+  if(martialArtsApplies(c, item) || revenantBladeApplies(c, item)) allowed = ["str", "dex"];
   // A feature tagged `magicWeaponAbility` lets magic weapons (see
   // isMagicWeapon) use that ability instead, when it's higher; one tagged
   // `chosenWeaponAbility` does the same for the weapon marked `chosenWeapon`.
@@ -196,6 +196,19 @@ export function weaponAbility(c, item){
   return {mod: best, keys: allowed.filter(function(k, i){ return allowed.indexOf(k)===i && mod(ab[k])===best; })};
 }
 export function weaponAbilityMod(c, item){ return weaponAbility(c, item).mod; }
+/* Revenant Blade: a double-bladed scimitar has the finesse property when
+   the character wields it. */
+export function revenantBladeApplies(c, item){
+  return item.type==="weapon" && item.name==="Double-Bladed Scimitar" && hasFeat(c, "Revenant Blade");
+}
+/* A double-bladed scimitar's other blade: after attacking with it as part
+   of the Attack action, a bonus action attack that deals 1d4 slashing in
+   place of 2d4 (the weapon's usual damage bonus still applies; this is
+   not two-weapon fighting). Only while it's equipped. {dice, damage} or null. */
+export function otherBladeAttack(c, item){
+  if(item.type!=="weapon" || item.name!=="Double-Bladed Scimitar" || !item.equipped) return null;
+  return {dice: "1d4", damage: weaponDamageBonus(c, item)};
+}
 /* The feature (if any) that lets this character mark one weapon to attack
    with a different ability, e.g. Hex Warrior (CHA). */
 export function chosenWeaponFeature(c){
@@ -313,11 +326,11 @@ export function divineFury(c){
 }
 /* Best-effort default for a newly added weapon's Proficient checkbox:
    true if any of the character's classes list the weapon's category
-   ("Simple weapons"/"Martial weapons") or name it specifically, or the
-   race or a feat gives it. */
+   ("Simple weapons"/"Martial weapons"/"Firearms") or name it specifically,
+   or the race or a feat gives it. */
 export function isProficientWithWeapon(c, weaponName, category){
-  // Weapon Master's picks.
-  if(weaponName && featProficiencies(c).weapons.some(function(w){ return w.name===weaponName; })) return true;
+  // Weapon Master's picks, and Gunner's firearms.
+  if(featProficiencies(c).weapons.some(function(w){ return (weaponName && w.name===weaponName) || (category==="firearm" && w.name==="Firearms"); })) return true;
   // The race's weapon training (an elf's longbow, a hobgoblin's picks).
   if(weaponName && raceProficiencies(c).weapons.indexOf(weaponName)!==-1) return true;
   return (c.classes||[]).some(function(cl, idx){
@@ -327,6 +340,7 @@ export function isProficientWithWeapon(c, weaponName, category){
       var wl = w.toLowerCase();
       if(category==="simple" && wl==="simple weapons") return true;
       if(category==="martial" && wl==="martial weapons") return true;
+      if(category==="firearm" && wl==="firearms") return true;
       return weaponName && wl.indexOf(weaponName.toLowerCase()) !== -1;
     });
   });

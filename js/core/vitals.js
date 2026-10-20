@@ -225,6 +225,12 @@ export function computeArmorClass(c){
     (c.inventory||[]).filter(function(i){ return i.type==="weapon" && i.equipped && !isRangedWeapon(i); }).length >= 2 ? 1 : 0;
   if(dualWielder){ breakdown += " + Dual Wielder (+1)"; short += " + Dual Wielder"; }
   base += dualWielder;
+  // Revenant Blade: +1 while holding a double-bladed scimitar with two
+  // hands (it's two-handed, so equipped means both hands).
+  var revenant = hasFeat(c, "Revenant Blade") &&
+    (c.inventory||[]).some(function(i){ return i.type==="weapon" && i.equipped && i.name==="Double-Bladed Scimitar"; }) ? 1 : 0;
+  if(revenant){ breakdown += " + Revenant Blade (+1)"; short += " + Revenant Blade"; }
+  base += revenant;
   // Class or subclass features tagged `acHeavyArmor` (Soul of the Forge)
   // add their bonus while the character wears heavy armor.
   if(bodyArmor && bodyArmor.category==="heavy"){

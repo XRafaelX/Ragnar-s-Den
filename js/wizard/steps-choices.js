@@ -12,7 +12,7 @@ import { grantHasChoices } from "../core/class-picks.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
 import { styleNeedsPicks } from "../core/fighting-styles.js";
-import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
+import { languagePickerGroups } from "../data/languages.js";
 import { SUBCLASSES } from "../data/progression.js";
 
 /* What a Rogue-style expertise pick can target: every skill the new
@@ -337,11 +337,8 @@ export function wizardStepLanguages(container){
     }
     card.appendChild(homebrewSelect({
       key:"lang:"+i, groups:(function(){
-        var g = {};
-        if(slot.options){ g[""] = slot.options; return g; } // a guild's short list
-        if(!slot.exotic) g[LANGUAGE_GROUP_LABELS.Standard] = LANGUAGES.Standard;
-        g[LANGUAGE_GROUP_LABELS.Exotic] = LANGUAGES.Exotic;
-        return g;
+        if(slot.options) return {"": slot.options}; // a guild's short list
+        return languagePickerGroups(!!slot.exotic);
       })(), value:picks[i],
       placeholder:slot.exotic ? "Select an exotic language" : "Select a language", noun:"language", noHomebrew:!!slot.options,
       // Greyed out and labelled so it's clear why it can't be picked.

@@ -314,7 +314,7 @@ test("tools, languages, saves and weapons", () => {
   assert.deepEqual(CP.fillSlots(grant(giant, "Giant's Power").def, [], ctxOf(giant, grant(giant, "Giant's Power"))), [["Giant"], []]);
   const speaks = makeChar([{ name: "Barbarian", subclass: "Path of the Giant", level: 3 }], { languages: ["Common", "Giant"] });
   const gp = grant(speaks, "Giant's Power");
-  assert.equal(open(speaks, gp, 0).length, 14, "the sixteen standard and exotic languages, less Common and Giant");
+  assert.equal(open(speaks, gp, 0).length, 25, "the 27 standard, exotic, dialect and setting languages, less Common and Giant");
   // A Drakewarden may take Draconic or any other.
   const drake = makeChar([{ name: "Ranger", subclass: "Drakewarden", level: 3 }]);
   assert.ok(open(drake, grant(drake, "Draconic Gift"), 0).includes("Draconic") && open(drake, grant(drake, "Draconic Gift"), 0).includes("Dwarvish"));
@@ -339,7 +339,7 @@ test("tools, languages, saves and weapons", () => {
   const offered = CP.slotOptions(bonus.def, [], 0, ctxOf(cav, bonus));
   assert.deepEqual(offered.filter((o) => o.group === "Skills").map((o) => [o.value, o.reason]),
     [["Animal Handling", ""], ["History", "known"], ["Insight", ""], ["Performance", ""], ["Persuasion", ""]]);
-  assert.equal(offered.filter((o) => o.group !== "Skills").length, 16);
+  assert.equal(offered.filter((o) => o.group !== "Skills").length, 27, "standard, exotic, dialect and setting languages");
   pick(cav, bonus, [["Sylvan"]]);
   assert.ok(cav.languages.includes("Sylvan") && !cav.skillProfs.Sylvan);
   pick(cav, bonus, [["Insight"]]);

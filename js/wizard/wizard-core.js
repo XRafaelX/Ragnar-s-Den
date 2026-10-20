@@ -3,7 +3,7 @@ import { CLASSES_INFO, CLASS_PROFICIENCIES, FIGHTING_STYLES } from "../data/clas
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
 import { BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_LANGUAGE_RULES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
-import { LANGUAGES } from "../data/languages.js";
+import { LANGUAGES, ANY_LANGUAGES } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, classVariants, classFeaturesAt, isProficientWithWeapon } from "../core/helpers.js";
 import { WEAPON_DATA } from "../data/weapons.js";
@@ -231,10 +231,10 @@ export function wizardOverlapProblem(){
 /* Languages picked for the background in place of a tool (a Guild
    Merchant's extra language). */
 function wizardBackgroundLanguages(){
-  var out = [], standard = LANGUAGES.Standard.concat(LANGUAGES.Exotic);
+  var out = [], pickable = ANY_LANGUAGES;
   wizardBackgroundPickGrants().forEach(function(g){
     ((wizardState.bgPicks||{})[g.key] || []).forEach(function(slot, i){
-      if(((g.def.pick||[])[i] || {}).kind==="toolOrLanguage") out = out.concat((slot||[]).filter(function(v){ return standard.indexOf(v)!==-1; }));
+      if(((g.def.pick||[])[i] || {}).kind==="toolOrLanguage") out = out.concat((slot||[]).filter(function(v){ return pickable.indexOf(v)!==-1; }));
     });
   });
   return out;
@@ -242,12 +242,12 @@ function wizardBackgroundLanguages(){
 
 /* Languages those features teach: given outright or picked. */
 function wizardClassLanguages(){
-  var out = [], standard = LANGUAGES.Standard.concat(LANGUAGES.Exotic);
+  var out = [], pickable = ANY_LANGUAGES;
   wizardClassGrants().forEach(function(g){
     out = out.concat(g.def.languages || []);
     ((wizardState.classChoices.profPicks||{})[g.key] || []).forEach(function(slot, i){
       var kind = ((g.def.pick||[])[i] || {}).kind;
-      if(kind==="language" || kind==="skillOrLanguage") out = out.concat((slot||[]).filter(function(v){ return standard.indexOf(v)!==-1; }));
+      if(kind==="language" || kind==="skillOrLanguage") out = out.concat((slot||[]).filter(function(v){ return pickable.indexOf(v)!==-1; }));
     });
   });
   return out;

@@ -3,7 +3,8 @@
    the Player's Handbook's adventuring gear, ammunition, spellcasting
    focuses, equipment packs and tools, with each one's price and weight.
    From the SRD 5.1 equipment data, cross-checked against the Player's
-   Handbook tables; mounts and vehicles are left out.
+   Handbook tables; mounts and vehicles are left out. Firearm bullets
+   are the Dungeon Master's Guide's, for its pistol and musket.
      cost    the listed price ("2 gp"): shown, never charged
      weight  pounds (none for a weightless item)
      qty     how many one purchase is (20 arrows)
@@ -12,7 +13,7 @@
 export var GEAR_GROUPS = {
   "Equipment packs": ["Burglar's Pack", "Diplomat's Pack", "Dungeoneer's Pack", "Entertainer's Pack", "Explorer's Pack", "Priest's Pack", "Scholar's Pack"],
   "Adventuring gear": ["Abacus", "Acid (vial)", "Alchemist's Fire (flask)", "Antitoxin (vial)", "Backpack", "Ball Bearings (bag of 1,000)", "Barrel", "Basket", "Bedroll", "Bell", "Blanket", "Block and Tackle", "Book", "Bottle, Glass", "Bucket", "Caltrops (bag of 20)", "Candle", "Case, Crossbow Bolt", "Case, Map or Scroll", "Chain (10 feet)", "Chalk (1 piece)", "Chest", "Climber's Kit", "Clothes, Common", "Clothes, Costume", "Clothes, Fine", "Clothes, Traveler's", "Component Pouch", "Crowbar", "Fishing Tackle", "Flask or Tankard", "Grappling Hook", "Hammer", "Hammer, Sledge", "Healer's Kit", "Holy Water (flask)", "Hourglass", "Hunting Trap", "Ink (1 ounce bottle)", "Ink Pen", "Jug or Pitcher", "Ladder (10-foot)", "Lamp", "Lantern, Bullseye", "Lantern, Hooded", "Lock", "Magnifying Glass", "Manacles", "Mess Kit", "Mirror, Steel", "Oil (flask)", "Paper (one sheet)", "Parchment (one sheet)", "Perfume (vial)", "Pick, Miner's", "Piton", "Poison, Basic (vial)", "Pole (10-foot)", "Pot, Iron", "Potion of Healing", "Pouch", "Quiver", "Ram, Portable", "Rations (1 day)", "Robes", "Rope, Hempen (50 feet)", "Rope, Silk (50 feet)", "Sack", "Scale, Merchant's", "Sealing Wax", "Shovel", "Signal Whistle", "Signet Ring", "Soap", "Spellbook", "Spikes, Iron (10)", "Spyglass", "Tent, Two-person", "Tinderbox", "Torch", "Vial", "Waterskin", "Whetstone"],
-  "Ammunition": ["Arrows", "Blowgun Needles", "Crossbow Bolts", "Sling Bullets"],
+  "Ammunition": ["Arrows", "Blowgun Needles", "Crossbow Bolts", "Firearm Bullets", "Sling Bullets"],
   "Spellcasting focuses": ["Arcane Focus (crystal)", "Arcane Focus (orb)", "Arcane Focus (rod)", "Arcane Focus (staff)", "Arcane Focus (wand)", "Druidic Focus (sprig of mistletoe)", "Druidic Focus (totem)", "Druidic Focus (wooden staff)", "Druidic Focus (yew wand)", "Holy Symbol (amulet)", "Holy Symbol (emblem)", "Holy Symbol (reliquary)"],
   "Artisan's tools": ["Alchemist's Supplies", "Brewer's Supplies", "Calligrapher's Supplies", "Carpenter's Tools", "Cartographer's Tools", "Cobbler's Tools", "Cook's Utensils", "Glassblower's Tools", "Jeweler's Tools", "Leatherworker's Tools", "Mason's Tools", "Painter's Supplies", "Potter's Tools", "Smith's Tools", "Tinker's Tools", "Weaver's Tools", "Woodcarver's Tools"],
   "Musical instruments": ["Bagpipes", "Drum", "Dulcimer", "Flute", "Horn", "Lute", "Lyre", "Pan Flute", "Shawm", "Viol"],
@@ -114,6 +115,7 @@ export var GEAR_DATA = {
   "Arrows": {cost:"1 gp", weight:1, qty:20, notes:"ammunition"},
   "Blowgun Needles": {cost:"1 gp", weight:1, qty:50, notes:"ammunition"},
   "Crossbow Bolts": {cost:"1 gp", weight:1.5, qty:20, notes:"ammunition"},
+  "Firearm Bullets": {cost:"3 gp", weight:2, qty:10, notes:"ammunition"},
   "Sling Bullets": {cost:"4 cp", weight:1.5, qty:20, notes:"ammunition"},
   "Arcane Focus (crystal)": {cost:"10 gp", weight:1, notes:"spellcasting focus"},
   "Arcane Focus (orb)": {cost:"20 gp", weight:3, notes:"spellcasting focus"},

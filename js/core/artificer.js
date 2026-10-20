@@ -90,14 +90,19 @@ function weaponProps(item){
   return ((d && d.properties) || "") + " " + (item.notes || "");
 }
 function isBodyArmor(item){ return item.type==="armor" && item.category!=="shield"; }
+/* The weapon infusions go on "a simple or martial weapon": not a firearm
+   (a weapon the catalog doesn't know, typed in by hand, is let through). */
+function simpleOrMartial(item){
+  return item.type==="weapon" && ((WEAPON_DATA[item.name] || {}).category!=="firearm");
+}
 var TARGET_KINDS = {
   armor: function(i){ return i.type==="armor"; },
   bodyArmor: isBodyArmor,
   shield: function(i){ return i.type==="armor" && i.category==="shield"; },
   armorOrRobes: function(i){ return isBodyArmor(i) || /\brobes?\b/i.test(i.name||""); },
-  weapon: function(i){ return i.type==="weapon"; },
-  ammoWeapon: function(i){ return i.type==="weapon" && /ammunition/i.test(weaponProps(i)); },
-  thrownWeapon: function(i){ return i.type==="weapon" && /thrown/i.test(weaponProps(i)); },
+  weapon: simpleOrMartial,
+  ammoWeapon: function(i){ return simpleOrMartial(i) && /ammunition/i.test(weaponProps(i)); },
+  thrownWeapon: function(i){ return simpleOrMartial(i) && /thrown/i.test(weaponProps(i)); },
   focus: function(i){ return /\b(rod|staff|wand)\b|quarterstaff/i.test(i.name||""); },
   gem: function(i){ return /\b(gem|gems|gemstone|diamond|ruby|emerald|sapphire|pearl|jewel)\b/i.test(i.name||""); },
   boots: function(i){ return /\bboots\b/i.test(i.name||""); },

@@ -4,7 +4,7 @@ import { CLASS_PROGRESSION, SUBCLASSES } from "../data/progression.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { BACKGROUND_PROFS, BACKGROUND_SKILL_FIXES, BACKGROUND_INFO } from "../data/backgrounds.js";
 import { OPTION_SETS, optionSetStart } from "../data/class-options.js";
-import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../data/languages.js";
+import { languagePickerGroups } from "../data/languages.js";
 import { WEAPON_DATA, WEAPON_GROUPS } from "../data/weapons.js";
 import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
 import { TOOL_GROUPS, featProficiencies } from "./feat-picks.js";
@@ -289,7 +289,8 @@ export function slotOptions(def, slots, i, ctx){
   }
   function langWhy(v){ return ctx.knowsLanguage(v) || (def.languages||[]).indexOf(v)!==-1 ? "known" : ""; }
   function allLanguages(){
-    return entries(LANGUAGES.Standard, LANGUAGE_GROUP_LABELS.Standard, langWhy).concat(entries(LANGUAGES.Exotic, LANGUAGE_GROUP_LABELS.Exotic, langWhy));
+    var groups = languagePickerGroups(false);
+    return Object.keys(groups).reduce(function(all, g){ return all.concat(entries(groups[g], g, langWhy)); }, []);
   }
   var list;
   if(slot.kind==="skill"){
@@ -388,7 +389,8 @@ export function slotOptions(def, slots, i, ctx){
 function spellGrant(slot){ return slot.grant || "known"; }
 function weaponFits(filter, name){
   var d = WEAPON_DATA[name];
-  if(!d) return false;
+  // Every weapon pick is "a simple or martial weapon": no firearms.
+  if(!d || (d.category!=="simple" && d.category!=="martial")) return false;
   var props = d.properties || "";
   if(filter==="oneHandedMelee") return !d.ranged && !/two-handed/i.test(props);
   if(filter==="martial") return d.category==="martial";
