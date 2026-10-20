@@ -1215,3 +1215,28 @@ test("Divine Fury: a Zealot picks radiant or necrotic at 3; the extra damage sho
   assert.deepEqual(H.divineFury(old), { bonus: 2, type: "" });
   assert.deepEqual(CP.pendingClassPicks(old).map((g) => g.name), ["Divine Fury"]);
 });
+
+/* ---- Optional rules on the creation wizard's Class step (2026-10-20) ----
+   Tasha's is set once there; turning it off drops picks only it allows. */
+test("wizard Optional rules: what Tasha's adds per class, and turning it off drops Tasha's-only picks", async (t) => {
+  const B = await import("../js/wizard/steps-basics.js");
+  assert.equal(B.tashaAddsFor("Fighter"), "a Fighter gets 5 more fighting styles, 7 more Battle Master maneuvers and swaps at Ability Score Improvement levels.");
+  assert.equal(B.tashaAddsFor("Rogue"), "nothing extra for a Rogue in this app yet.", "no Versatility for a rogue");
+  assert.match(B.tashaAddsFor("Wizard"), /a cantrip swap after a long rest from level 3\.$/);
+  assert.match(B.tashaAddsFor("Warlock"), /8 more eldritch invocations, the Pact of the Talisman/);
+  assert.match(B.tashaAddsFor("Ranger"), /^a Ranger gets Favored Foe in place of Favored Enemy, Deft Explorer in place of Natural Explorer, \d+ more fighting styles?, \d+ more spells on the ranger list and swaps/);
+  assert.equal(B.tashaAddsFor("Artificer"), "nothing extra for an Artificer in this app yet.", "\"an\" before a vowel");
+  withFakeDom(t, () => {
+    startWizard({ classId: "Fighter", classChoices: { fightingStyle: "Superior Technique", fightingStylePicks: { options: ["Riposte"], spells: [] }, variants: { x: "y" } },
+      spellChoices: { cantrips: [], spells: [] } });
+    B.setWizardTasha(true);
+    assert.equal(W.wizardState.classChoices.fightingStyle, "Superior Technique", "on: kept");
+    B.setWizardTasha(false);
+    assert.equal(W.wizardState.classChoices.fightingStyle, undefined, "off: a Tasha's style goes");
+    assert.equal(W.wizardState.classChoices.fightingStylePicks, undefined);
+    assert.deepEqual(W.wizardState.classChoices.variants, {});
+    startWizard({ classId: "Bard", tashaOptional: true, spellChoices: { cantrips: [], spells: ["Command", "Healing Word"] } });
+    B.setWizardTasha(false);
+    assert.deepEqual(W.wizardState.spellChoices.spells, ["Healing Word"], "an added spell goes, the bard's own stays");
+  });
+});

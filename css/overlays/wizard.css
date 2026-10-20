@@ -493,3 +493,8 @@ button.wiz-feat-group[aria-expanded="true"]::before{transform:rotate(90deg);}
 .bgk-field{flex:1 1 260px;min-width:0;max-width:440px;margin:0;}
 .bgk-field .tp-field, .bgk-field .tp-trigger{min-width:0;max-width:100%;}
 .bgk-roll{flex:0 0 auto;}
+
+/* Tasha's options a step is hiding while they're off. */
+.wiz-tasha-note{margin:6px 0 12px;font-size:12px;color:var(--text-on-parch-dim);}
+.wiz-campaign-note{margin:12px 0 0;font-size:13px;color:var(--text-on-parch);}
+.wiz-opt-rules{margin-top:14px;}

@@ -36,7 +36,6 @@ export function expertiseOptions(choice){
   return skills.concat(choice.tools||[]);
 }
 
-var variantsJustToggled = false; // Tasha's switch was just flipped on this step: animate the fold
 
 export function wizardStepChoices(container){
   var card = ce("div","card");
@@ -98,16 +97,13 @@ export function wizardStepChoices(container){
   }
   // A feature Tasha's can replace (a ranger's Favored Enemy by Favored
   // Foe, Natural Explorer by Deft Explorer) is a card followed by its
-  // picks, the same with the switch off or on: turning it on slides the
-  // Tasha's card open under each one, and the picks follow whichever is
-  // taken.
+  // picks; with Tasha's on (Optional rules, Class step) its card shows
+  // under each one, and the picks follow whichever is taken.
   var offers = wizardVariantOffers();
   if(offers.length){
     var tasha = !!wizardState.tashaOptional;
-    var was = variantsJustToggled ? !tasha : tasha;
-    variantsJustToggled = false;
-    card.appendChild(tashaSwitchRow("Turned on, you can take " + offers.map(function(v){ return v.name + " in place of " + v.replaces; }).join(" and ") + ".",
-      function(){ variantsJustToggled = true; }));
+    var vNote = tashaHiddenNote("Tasha's Cauldron offers " + offers.map(function(v){ return v.name + " in place of " + v.replaces; }).join(" and ") + ".");
+    if(vNote) card.appendChild(vNote);
     offers.forEach(function(v){
       var box = panel();
       var picked = wizardState.classChoices.variants = wizardState.classChoices.variants || {};
@@ -117,7 +113,7 @@ export function wizardStepChoices(container){
       box.appendChild(renderVariantOptions(v, base, on, function(take){
         if(take) picked[v.replaces] = v.name; else delete picked[v.replaces];
         renderWizard();
-      }, tasha, was));
+      }, tasha, tasha));
       var own = grants.find(function(g){ return !g.subclass && g.level===1 && g.feature===(on ? v.name : v.replaces); });
       if(own) picks(box, own, {noHelp: !on});
     });
@@ -205,27 +201,14 @@ function homebrewSelect(opts){
   return f;
 }
 
-/* The "Tasha's optional class features" switch (it carries over to the
-   new character's Optional rules). `what` says what turning it on adds
-   here; `afterToggle` runs before the wizard redraws. */
-export function tashaSwitchRow(what, afterToggle){
-  var tasha = !!wizardState.tashaOptional;
-  var row = ce("div","opt-rule wiz-tasha-switch");
-  row.innerHTML = "<div class='opt-rule-text'><b>Tasha's optional class features</b><span>Your DM decides whether your table uses these. "+escapeHtml(what)+"</span></div>";
-  var sw = document.createElement("button");
-  sw.type = "button";
-  sw.className = "switch" + (tasha ? " on" : "");
-  sw.setAttribute("role", "switch");
-  sw.setAttribute("aria-checked", tasha ? "true" : "false");
-  sw.setAttribute("aria-label", "Use Tasha's optional class features");
-  sw.innerHTML = "<span class='switch-knob'></span>";
-  sw.addEventListener("click", function(){
-    wizardState.tashaOptional = !tasha;
-    if(afterToggle) afterToggle();
-    renderWizard();
-  });
-  row.appendChild(sw);
-  return row;
+/* What Tasha's optional class features would add here, while they're
+   off: one dim line pointing back to Optional rules on the Class step
+   (where they're turned on), or null when they're on. */
+export function tashaHiddenNote(what){
+  if(wizardState.tashaOptional) return null;
+  var p = ce("p","wiz-tasha-note");
+  p.textContent = what + " Turn on Tasha's optional class features under Optional rules on the Class step if your DM uses them.";
+  return p;
 }
 
 /* A level 1 Fighting Style. Tasha's optional styles are offered when the
@@ -234,11 +217,9 @@ export function tashaSwitchRow(what, afterToggle){
    shows them under the list, kept as classChoices[id + "Picks"]. */
 function choiceFightingStyle(card, ch){
   var tasha = !!wizardState.tashaOptional;
-  card.appendChild(tashaSwitchRow("Turned on, Tasha's extra fighting styles are listed too.", function(){
-    // A Tasha's style picked before the switch went off no longer applies.
-    var picked = FIGHTING_STYLES[wizardState.classChoices[ch.id]];
-    if(!wizardState.tashaOptional && picked && picked.optional){ delete wizardState.classChoices[ch.id]; delete wizardState.classChoices[ch.id+"Picks"]; }
-  }));
+  var extra = ch.options.filter(function(n){ return (FIGHTING_STYLES[n]||{}).optional; }).length;
+  var sNote = extra && tashaHiddenNote("Tasha's Cauldron adds " + extra + " more fighting style" + (extra===1 ? "" : "s") + ".");
+  if(sNote) card.appendChild(sNote);
   var noChar = {features: []};
   card.appendChild(renderStyleOptions(noChar, ch.options, wizardState.classChoices[ch.id] || "", tasha, function(name){
     if(name!==wizardState.classChoices[ch.id]) wizardState.classChoices[ch.id+"Picks"] = {options: [], spells: []};

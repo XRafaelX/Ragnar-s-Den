@@ -18,6 +18,14 @@ import { openCompendium } from "../render/compendium.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, refreshWizardProgress } from "./wizard-core.js";
 import { backgroundFeatGrant, backgroundFeatLabel, campaignLevel1Feats } from "../core/feat-picks.js";
 import { CAMPAIGN_FEATS } from "../data/feats.js";
+import { FIGHTING_STYLES } from "../data/classes.js";
+import { SPELL_DATA, tashaAddsSpell, tashaSpellCount } from "../data/spells.js";
+import { classVariants } from "../core/class-features.js";
+import { classStyleList } from "../core/fighting-styles.js";
+import { CLASS_PROGRESSION } from "../data/progression.js";
+import { OPTION_SETS } from "../data/class-options.js";
+import { INVOCATIONS, PACT_BOONS } from "../data/invocations.js";
+import { KNOWN_CASTERS } from "../data/spells-known.js";
 
 export function setAbilityMethod(method){
   wizardState.abilityMethod = method;
@@ -303,6 +311,97 @@ export function wizardStepClass(container){
   });
   card.appendChild(grid);
   container.appendChild(card);
+  // The table's optional rules, decided once here (they carry over to
+  // the sheet's Optional rules card on the Information tab).
+  container.appendChild(optionalRulesShelf());
+}
+
+/* ---- Optional rules ----
+   Tasha's optional class features and the campaign books, asked once at
+   the start (the DM's call for the whole table), the same shelf as the
+   sheet's Optional rules card. Later steps only say when Tasha's would
+   add something they're hiding. */
+var rulesShelfOpen = false, rulesShelfTapped = "";
+function optionalRulesShelf(){
+  var books = Object.keys(CAMPAIGN_FEATS);
+  var wrap = ce("div", "card opt-rules-card wiz-opt-rules");
+  var tapped = rulesShelfTapped;
+  rulesShelfTapped = "";
+  wrap.appendChild(dlcShelf({
+    id: "wiz-dlc-panel", title: "Optional rules", wide: true, open: rulesShelfOpen || !!wizardState.tashaOptional || !!wizardState.campaign, fresh: tapped,
+    onToggle: function(open){ rulesShelfOpen = open; },
+    lead: "Extra rules from other books. Ask your DM whether your table uses them, then tap one to turn it on. You can change this later on the Information tab.",
+    sub: function(){
+      var on = (wizardState.tashaOptional ? ["Tasha's optional class features"] : []).concat(CAMPAIGN_FEATS[wizardState.campaign] ? [wizardState.campaign] : []);
+      return on.length ? "Using " + on.join(" and ") : "Tasha's Cauldron and the campaign books. Most new players leave these off.";
+    },
+    cards: [{key: "tasha", series: "Tasha's Cauldron of Everything", title: "Optional class features", switchLabel: "Use Tasha's optional class features",
+      perks: ["More class options", "Additional spells", "Swaps at level-up"]}].concat(books.map(campaignBookCard)),
+    isOn: function(k){ return k==="tasha" ? !!wizardState.tashaOptional : wizardState.campaign===k; },
+    onTap: function(k){
+      if(k==="tasha") setWizardTasha(!wizardState.tashaOptional);
+      else wizardState.campaign = wizardState.campaign===k ? "" : k;
+      rulesShelfOpen = true;
+      rulesShelfTapped = k;
+      refreshWizardProgress(); // a campaign's feat adds a step
+      renderWizard();
+    },
+    outcome: function(){
+      var lines = [];
+      if(wizardState.tashaOptional) lines.push("<b>Tasha's:</b> " + escapeHtml(tashaAddsFor(wizardState.classId)));
+      if(CAMPAIGN_FEATS[wizardState.campaign]) lines.push("<b>" + escapeHtml(wizardState.campaign) + ":</b> a free feat if your background has none of its own (see the Background step)." +
+        (CAMPAIGN_FEATS[wizardState.campaign].level4 ? " Another at level 4." : ""));
+      return lines.join("<br>");
+    }
+  }).el);
+  return wrap;
+}
+/* What Tasha's adds for a class, in a sentence, from what the app
+   unlocks with it: replacement features, fighting styles, class options
+   (Metamagic, maneuvers, invocations and Pact of the Talisman), added
+   spells, the Versatility swaps and Cantrip Formulas. */
+export function tashaAddsFor(className){
+  if(!className) return "pick a class above to see what it adds.";
+  var bits = [], prog = CLASS_PROGRESSION[className] || {};
+  classVariants(className).forEach(function(v){ bits.push(v.name + " in place of " + v.replaces); });
+  var styles = classStyleList(className).filter(function(n){ return (FIGHTING_STYLES[n]||{}).optional; }).length;
+  if(styles) bits.push(plural(styles, "more fighting style"));
+  OPTION_SETS.forEach(function(set){
+    if(set.className!==className) return;
+    var n = set.options.filter(function(o){ return o.optional; }).length;
+    if(n) bits.push(plural(n, "more " + (set.subclass ? set.subclass + " " : "") + set.noun));
+  });
+  if(className==="Warlock"){
+    bits.push(plural(INVOCATIONS.filter(function(i){ return i.optional; }).length, "more eldritch invocation"));
+    if(PACT_BOONS.some(function(b){ return b.optional; })) bits.push("the Pact of the Talisman");
+  }
+  var sc = (CLASSES_INFO[className]||{}).spellcasting, list = sc ? sc.spellList : className; // (a ranger casts from level 2)
+  var spells = tashaSpellCount(list);
+  if(spells) bits.push(plural(spells, "more spell") + " on the " + list.toLowerCase() + " list");
+  var caster = KNOWN_CASTERS[className] || {};
+  if(prog.fightingStyle || (caster.cantripSwap && caster.cantripSwap!=="level") || OPTION_SETS.some(function(set){ return set.className===className && set.versatility; })){
+    bits.push("swaps at Ability Score Improvement levels");
+  }
+  if(className==="Wizard") bits.push("a cantrip swap after a long rest from level 3");
+  var article = /^[AEIOU]/.test(className) ? "an " : "a ";
+  if(!bits.length) return "nothing extra for " + article + className + " in this app yet.";
+  return article + className + " gets " + bits.join(", ").replace(/, ([^,]*)$/, " and $1") + ".";
+}
+function plural(n, noun){ return n + " " + noun + (n===1 ? "" : "s"); }
+/* Turn Tasha's on or off. Off: picks only Tasha's allows go (a Tasha's
+   fighting style, Favored Foe or Deft Explorer, an added spell). */
+export function setWizardTasha(on){
+  wizardState.tashaOptional = !!on;
+  if(on) return;
+  var ch = wizardState.classChoices || {};
+  Object.keys(ch).forEach(function(k){
+    if(typeof ch[k]==="string" && (FIGHTING_STYLES[ch[k]]||{}).optional){ delete ch[k]; delete ch[k + "Picks"]; }
+  });
+  if(ch.variants) ch.variants = {};
+  var sc = (CLASSES_INFO[wizardState.classId]||{}).spellcasting, picks = wizardState.spellChoices || {};
+  if(sc) ["cantrips", "spells"].forEach(function(k){
+    if(Array.isArray(picks[k])) picks[k] = picks[k].filter(function(n){ return !tashaAddsSpell(SPELL_DATA[n], sc.spellList); });
+  });
 }
 
 export function wizardStepRace(container){
@@ -334,8 +433,9 @@ export function wizardStepBackground(container){
   explain.innerHTML = backgroundExplainHtml(wizardState.background);
   card.appendChild(explain);
 
-  // The campaign row's outcome line depends on the background too.
-  var campaign = campaignNote(function(){ explain.innerHTML = backgroundExplainHtml(wizardState.background); });
+  // A campaign book in use (set under Optional rules on the Class step):
+  // what it gives this background, in a line.
+  var campaign = campaignNote();
   var shownBackground = wizardState.background;
   var dd = wizardDropdown("Background", "background", BACKGROUNDS, wizardState, function(){
     explain.innerHTML = backgroundExplainHtml(wizardState.background);
@@ -362,31 +462,18 @@ function campaignOutcomeHtml(){
   return "You get a free feat: "+names.join(" or ")+". You'll choose on a later step."+later;
 }
 
-/* Campaign books (optional): the books whose campaigns give every
-   character a feat at level 1. Off unless picked; the DM decides. A
-   "DLC" tile that slides open onto one card per book (tap one to use
-   it, tap it again to stop), with a line saying what the pick gives
-   this character (see js/ui/dlc-shelf.js). It starts open when a book
-   is already picked. Returns {el, refresh}. */
-function campaignNote(onChange){
-  var keys = Object.keys(CAMPAIGN_FEATS);
-  var shelf = dlcShelf({
-    id: "wiz-dlc-panel", title: "Campaign books", open: !!wizardState.campaign,
-    lead: "These books give every character a free feat. Turn one on only if your DM is running it. You can change this later on the Information tab.",
-    sub: function(){
-      var on = wizardState.campaign;
-      return on ? "Using "+CAMPAIGN_FEATS[on].label : "Playing "+keys.join(" or ")+"? Their bonus feats are in here.";
-    },
-    cards: keys.map(campaignBookCard),
-    isOn: function(k){ return wizardState.campaign===k; },
-    onTap: function(k){
-      wizardState.campaign = wizardState.campaign===k ? "" : k;
-      onChange();
-      refreshWizardProgress(); // the campaign's feat adds a step
-    },
-    outcome: campaignOutcomeHtml
-  });
-  return {el: shelf.el, refresh: function(){ shelf.refresh(); }};
+/* The campaign book in use (picked under Optional rules on the Class
+   step): a line saying what it gives this background, or nothing.
+   Returns {el, refresh}. */
+function campaignNote(){
+  var el = ce("p", "wiz-campaign-note");
+  function refresh(){
+    var html = campaignOutcomeHtml();
+    el.hidden = !html;
+    el.innerHTML = html ? "<b>" + escapeHtml(CAMPAIGN_FEATS[wizardState.campaign].label) + ":</b> " + html : "";
+  }
+  refresh();
+  return {el: el, refresh: refresh};
 }
 export function wizardStepAlignment(container){
   var card = ce("div","card");

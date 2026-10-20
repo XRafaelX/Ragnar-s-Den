@@ -14,7 +14,7 @@ import { featPicksSummary } from "../core/feat-picks.js";
 import { classPicksSummary } from "../core/class-picks.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { SUBCLASSES } from "../data/progression.js";
-import { tashaSwitchRow, buildEquipmentList } from "./steps-choices.js";
+import { tashaHiddenNote, buildEquipmentList } from "./steps-choices.js";
 
 /* One pick-N-from-a-list block (cantrips or 1st-level spells): a tray
    with a slot per pick (tap a picked spell's × to drop it), search and
@@ -127,7 +127,8 @@ export function wizardStepSpells(container){
   }
   // Tasha's Additional Spells: offered when the switch here is on.
   var tashaMore = tashaSpellCount(sc.spellList, [1]);
-  if(tashaMore) card.appendChild(tashaSwitchRow("Turned on, the " + tashaMore + " 1st-level spell" + (tashaMore===1 ? "" : "s") + " Tasha's Cauldron adds to the " + sc.spellList.toLowerCase() + " list " + (tashaMore===1 ? "is" : "are") + " listed too (more at higher levels)."));
+  var tNote = tashaMore && tashaHiddenNote("Tasha's Cauldron adds " + tashaMore + " more 1st-level spell" + (tashaMore===1 ? "" : "s") + " to the " + sc.spellList.toLowerCase() + " list.");
+  if(tNote) card.appendChild(tNote);
   var have = alreadyGranted(card, 1, sc.spellList, expandedSpells.concat(extraList), grants.spells);
   card.appendChild(spellPickSection(sc.spellsLabel || "1st-level spells", sc.spellsHelp || "", need, 1, wizardState.spellChoices.spells, sc.spellList, (grants.spells||[]).concat(have), expandedSpells.concat(extraList), extraTag));
   container.appendChild(card);
