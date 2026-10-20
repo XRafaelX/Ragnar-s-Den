@@ -3,7 +3,7 @@ import { INFUSIONS, REPLICABLE_ITEMS } from "../data/infusions.js";
 import { attuneProblem } from "./magic-items.js";
 import { activeInfusionData, infusionWorks } from "./infusion-effects.js";
 export { activeInfusionData, infusionWorks };
-import { WEAPON_DATA } from "../data/weapons.js";
+import { WEAPON_DATA, weaponDataOf } from "../data/weapons.js";
 import { GEAR_DATA } from "../data/gear.js";
 import { mod, profBonus, parseDiceNotation, uid } from "./helpers.js";
 
@@ -86,14 +86,14 @@ export function endInfusion(c, active){
    Infusions go on nonmagical objects of a certain kind, one infusion per
    object. Each kind matches inventory rows by type or by name. */
 function weaponProps(item){
-  var d = WEAPON_DATA[item.name];
+  var d = weaponDataOf(item);
   return ((d && d.properties) || "") + " " + (item.notes || "");
 }
 function isBodyArmor(item){ return item.type==="armor" && item.category!=="shield"; }
 /* The weapon infusions go on "a simple or martial weapon": not a firearm
    (a weapon the catalog doesn't know, typed in by hand, is let through). */
 function simpleOrMartial(item){
-  return item.type==="weapon" && ((WEAPON_DATA[item.name] || {}).category!=="firearm");
+  return item.type==="weapon" && ((weaponDataOf(item) || {}).category!=="firearm");
 }
 var TARGET_KINDS = {
   armor: function(i){ return i.type==="armor"; },

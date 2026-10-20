@@ -18,6 +18,28 @@ export function magicItemActive(item){
   var d = magicItemDef(item);
   return !!d && (!d.attunement || !!item.attuned);
 }
+/* A weapon's or armor's magic bonus in effect: none while a magic item
+   that needs attunement isn't attuned (a Holy Avenger's +3), else the
+   row's own number (which the player can change). */
+export function magicBonusOf(item){
+  var d = magicItemDef(item);
+  if(d && d.attunement && !item.attuned) return 0;
+  return Number(item.magicBonus) || 0;
+}
+/* AC and saving throw bonuses from carried magic items that work (a Ring
+   of Protection's +1 to both): [{name, value}]. Bracers of Defense need
+   no armor and no shield. */
+export function magicItemAcBonuses(c){
+  var worn = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
+  return (c.inventory||[]).filter(function(i){
+    var d = magicItemDef(i);
+    return d && d.acBonus && magicItemActive(i) && !(d.acWhen==="unarmored" && worn);
+  }).map(function(i){ return {name: i.magicItem, value: magicItemDef(i).acBonus}; });
+}
+export function magicItemSaveBonuses(c){
+  return (c.inventory||[]).filter(function(i){ var d = magicItemDef(i); return d && d.saveBonus && magicItemActive(i); })
+    .map(function(i){ return {name: i.magicItem, value: magicItemDef(i).saveBonus}; });
+}
 
 /* ---- Attunement ----
    Three items at once, more with a feature tagged `attuneLimit` (an

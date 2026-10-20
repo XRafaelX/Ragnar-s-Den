@@ -1,5 +1,5 @@
 import { COMPANIONS } from "../data/companions.js";
-import { mod, profBonus, classSpellAbility, clamp } from "./helpers.js";
+import { mod, profBonus, classSpellAbility, clamp, totalLevel, featureSpells } from "./helpers.js";
 
 /* ---------------- Companions ----------------
    The companions the character has now (see js/data/companions.js), with
@@ -11,19 +11,37 @@ import { mod, profBonus, classSpellAbility, clamp } from "./helpers.js";
 export function characterCompanions(c){
   var out = [];
   COMPANIONS.forEach(function(def){
-    var cl = (c.classes||[]).find(function(x){ return x.name===def.cls && (!def.subclass || x.subclass===def.subclass) && (Number(x.level)||1) >= def.level; });
-    if(!cl) return;
+    var req = def.requires && companionRequirement(c, def.requires);
+    var cl = req ? null : (c.classes||[]).find(function(x){ return x.name===def.cls && (!def.subclass || x.subclass===def.subclass) && (Number(x.level)||1) >= def.level; });
+    if(!cl && !req) return;
     if(def.infusion && !infusionActive(c, def.infusion)) return;
     var mods = {};
     ["str","dex","con","int","wis","cha"].forEach(function(k){ mods[k] = mod(c.abilities && c.abilities[k]); });
     var pb = profBonus(c);
-    var castMod = mods[classSpellAbility(cl) || "int"] || 0;
+    var castMod = mods[(cl && classSpellAbility(cl)) || "int"] || 0;
     var saved = companionState(c, def.id);
-    var stats = def.stats({lv: Number(cl.level)||1, pb: pb, mods: mods, spellAttack: pb + castMod, spellDC: 8 + pb + castMod,
-      choice: saved.choice || "", beast: saved.beast || null});
-    out.push({def: def, stats: stats, choice: saved.choice || "", hasBeast: !!saved.beast, hp: stats ? companionHp(c, def.id, stats) : []});
+    var stats = def.stats({lv: cl ? Number(cl.level)||1 : totalLevel(c), pb: pb, mods: mods, spellAttack: pb + castMod, spellDC: 8 + pb + castMod,
+      choice: saved.choice || "", beast: saved.beast || null, chain: !!(req && req.chain)});
+    out.push({def: def, stats: stats, choice: saved.choice || "", hasBeast: !!saved.beast, hp: stats ? companionHp(c, def.id, stats) : [],
+      source: req ? req.source : "", options: companionOptions(def, req)});
   });
   return out;
+}
+/* A companion that comes from a spell or a Pact Boon (a familiar):
+   {source, chain} when the character has either, else null. */
+function companionRequirement(c, r){
+  var chain = !!r.pactBoon && (c.classes||[]).some(function(cl){ return cl.name==="Warlock" && cl.pactBoon===r.pactBoon; });
+  if(chain) return {source: r.pactBoon, chain: true};
+  var knows = !!r.spell && ((c.spells||[]).some(function(s){ return s.name===r.spell; }) ||
+    featureSpells(c).some(function(s){ return s.name===r.spell; }));
+  return knows ? {source: r.spell, chain: false} : null;
+}
+/* The choice's options for this character: a familiar's chain-only forms
+   need Pact of the Chain. */
+function companionOptions(def, req){
+  if(!def.choice) return [];
+  var only = def.choice.chainOnly || [];
+  return def.choice.options.filter(function(o){ return !(only.indexOf(o)!==-1 && !(req && req.chain)); });
 }
 /* An artificer infusion of this name is on an item now. */
 function infusionActive(c, name){

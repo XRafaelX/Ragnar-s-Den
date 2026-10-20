@@ -28,7 +28,15 @@
    source:     where it's from. Expanded races use their original
                (2014-era) versions, matching the rest of the app. */
 
-function tr(name, text, profs){ var t = {name:name, text:text}; if(profs) t.profs = profs; return t; }
+/* advantage (optional): what the trait gives advantage on, in the
+   TRAIT_ADVANTAGES shape (one or a list), for a trait whose name another
+   race uses for something else; false: none, whatever its name. */
+function tr(name, text, profs, advantage){
+  var t = {name:name, text:text};
+  if(profs) t.profs = profs;
+  if(advantage!==undefined) t.advantage = advantage;
+  return t;
+}
 var ELF_BASE = [
   tr("Keen Senses", "Proficiency in the Perception skill.", {skills:["Perception"]}),
   tr("Fey Ancestry", "Advantage on saves against being charmed, and magic can't put you to sleep."),
@@ -52,6 +60,40 @@ var HALFLING_BASE = [
 ];
 var GNOME_CUNNING = tr("Gnome Cunning", "Advantage on Intelligence, Wisdom and Charisma saves against magic.");
 var POWERFUL_BUILD = tr("Powerful Build", "You count as one size larger for carrying capacity and what you can push, drag or lift.");
+// Van Richten's lineages, taken at character creation: two skills.
+var LINEAGE_SKILLS = tr("Ancestral Legacy", "Proficiency in two skills of your choice.", {pick:[{kind:"skill", count:2}]});
+var ARTISAN_TOOL_NAMES = ["Alchemist's supplies","Brewer's supplies","Calligrapher's supplies","Carpenter's tools","Cartographer's tools","Cobbler's tools","Cook's utensils","Glassblower's tools","Jeweler's tools","Leatherworker's tools","Mason's tools","Painter's supplies","Potter's tools","Smith's tools","Tinker's tools","Weaver's tools","Woodcarver's tools"];
+/* A dragonmark's traits: its intuition (a d4 on two kinds of checks), its
+   spells, and its Spells of the Mark (added to a spellcaster's class list). */
+function markTraits(intuition, checks, magic, spells){
+  return [tr(intuition, "Roll a d4 and add it to " + checks + "."), magic,
+    tr("Spells of the Mark", "If you have Spellcasting or Pact Magic, these are added to your class's spell list: " + spells + ".")];
+}
+/* Mark of Finding replaces the human's or half-orc's traits (but size and speed). */
+function markOfFinding(){
+  return {asi:{wis:2,con:1}, size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Goblin"]}, source:"Eberron: Rising from the Last War",
+    traits:markTraits("Hunter's Intuition", "Perception and Survival checks",
+      tr("Finder's Magic", "Cast Hunter's Mark, and from level 3 Locate Object, each once per long rest, using Wisdom."),
+      "Faerie Fire, Longstrider (1st); Locate Animals or Plants, Locate Object (2nd); Clairvoyance, Speak with Plants (3rd); Divination, Locate Creature (4th); Commune with Nature (5th)")};
+}
+/* Mordenkainen's tiefling bloodlines: the tiefling's +2 Charisma, the
+   bloodline's +1, and its legacy in place of Infernal Legacy. */
+function tieflingBloodline(plusOne, legacy, cantrip, third, fifth){
+  return {asi:Object.assign({cha:2}, plusOne), size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Infernal"]}, source:"Mordenkainen's Tome of Foes",
+    traits:[tr("Hellish Resistance", "Resistance to fire damage."),
+      tr(legacy, "You know " + cantrip + "; " + third + " once per long rest from level 3 and " + fifth + " from level 5, using Charisma.")]};
+}
+var AVEN_FLIGHT = tr("Flight", "A flying speed of 30 feet, but not while wearing medium or heavy armor.");
+var VAMPIRE_BLOODTHIRST = tr("Bloodthirst", "Bite a willing, grappled, incapacitated or restrained creature with a melee attack: 1 piercing and 1d6 necrotic damage. Its hit point maximum drops by the necrotic damage until a long rest, and you regain that many hit points.");
+/* Plane Shift's merfolk: +1 Charisma, swimming, amphibious, plus the
+   subrace's (Ixalan) or creed's (Zendikar) scores and traits. */
+function merfolk(source, plus, traits){
+  return {asi:Object.assign({cha:1}, plus, plus.cha ? {cha:1 + plus.cha} : {}), size:"Medium", speed:{walk:30, swim:30}, darkvision:0,
+    languages:{fixed:["Common","Merfolk"], choose:1}, source:source,
+    traits:[tr("Amphibious", "You can breathe air and water.")].concat(traits)};
+}
 var SUNLIGHT = tr("Sunlight Sensitivity", "Disadvantage on attack rolls and sight-based Perception checks when you or your target are in direct sunlight.");
 /* A dragonborn's Draconic Ancestry table: the dragon sets the breath
    weapon's damage type, area and save, and the resistance (checked
@@ -178,6 +220,25 @@ export var RACE_DATA = {
     languages:{fixed:["Common","Elvish"], choose:1}, source:"Player's Handbook",
     traits:[tr("Fey Ancestry", "Advantage on saves against being charmed, and magic can't put you to sleep."),
       tr("Skill Versatility", "Proficiency in two skills of your choice.", {pick:[{kind:"skill", count:2}]})]},
+  // Sword Coast's variant: one heritage trait in place of Skill Versatility.
+  "Half-Elf (Variant)": {asi:{cha:2}, asiText:"+2 Charisma, and +1 to two other scores of your choice", size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Elvish"], choose:1}, source:"Sword Coast Adventurer's Guide",
+    choiceEffects:{halfElfVersatility:{
+      "Elf Weapon Training":{weapons:["Longsword","Shortsword","Shortbow","Longbow"]},
+      "Fleet of Foot":{walk:35},
+      "Swim Speed":{swim:30}}},
+    traits:[tr("Fey Ancestry", "Advantage on saves against being charmed, and magic can't put you to sleep."),
+      tr("Half-Elf Versatility", "Choose one trait: two skills, elf weapon training, a wizard cantrip, Fleet of Foot, Mask of the Wild, Drow Magic or a swimming speed.",
+        {pick:[{kind:"choice", id:"halfElfVersatility", noun:"trait", label:"Choose your half-elf trait",
+          options:["Skill Versatility","Elf Weapon Training","Cantrip","Fleet of Foot","Mask of the Wild","Drow Magic","Swim Speed"], details:{
+            "Skill Versatility":"Proficiency in two skills of your choice.",
+            "Elf Weapon Training":"Proficiency with longswords, shortswords, shortbows and longbows (high or wood elf heritage).",
+            "Cantrip":"You know one wizard cantrip of your choice, cast with Intelligence (high elf heritage).",
+            "Fleet of Foot":"Your base walking speed is 35 feet (wood elf heritage).",
+            "Mask of the Wild":"You can try to hide when only lightly obscured by foliage, rain, snow, mist or similar (wood elf heritage).",
+            "Drow Magic":"You know Dancing Lights; Faerie Fire once per long rest from level 3 and Darkness from level 5, cast with Charisma (dark elf heritage).",
+            "Swim Speed":"A swimming speed of 30 feet (aquatic elf heritage)."}},
+          {kind:"skill", count:2, byChoice:{slot:0, options:{"Skill Versatility":["Acrobatics","Animal Handling","Arcana","Athletics","Deception","History","Insight","Intimidation","Investigation","Medicine","Nature","Perception","Performance","Persuasion","Religion","Sleight of Hand","Stealth","Survival"]}}}]})]},
   "Half-Orc": {asi:{str:2,con:1}, size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Orc"]}, source:"Player's Handbook",
     traits:[tr("Menacing", "Proficiency in the Intimidation skill.", {skills:["Intimidation"]}),
@@ -325,7 +386,7 @@ export var RACE_DATA = {
     traits:[tr("Grovel, Cower and Beg", "Action: cower pathetically so allies have advantage on attacks against enemies within 10 feet of you. Once per short or long rest."),
       tr("Pack Tactics", "Advantage on attacks against a creature if an ally is within 5 feet of it."),
       SUNLIGHT]},
-  "Lizardfolk": {asi:{con:2,wis:1}, unarmed:{name:"Bite", die:6, type:"Piercing"}, size:"Medium", speed:{walk:30, swim:30}, darkvision:0,
+  "Lizardfolk": {asi:{con:2,wis:1}, unarmed:{name:"Bite", die:6, type:"Piercing"}, size:"Medium", speed:{walk:30, swim:30}, darkvision:0, unarmoredAc:{base:13, ability:"dex", trait:"Natural Armor"},
     languages:{fixed:["Common","Draconic"]}, source:"Volo's Guide to Monsters",
     traits:[tr("Bite", "Your bite is a natural weapon dealing 1d6 + STR piercing damage."),
       tr("Cunning Artisan", "During a short rest, craft a shield, club, javelin or darts from a slain creature's bones and hide."),
@@ -334,7 +395,7 @@ export var RACE_DATA = {
         {pick:[{kind:"skill", count:2, options:["Animal Handling","Nature","Perception","Stealth","Survival"]}]}),
       tr("Natural Armor", "Without armor, your AC is 13 + DEX. A shield still adds."),
       tr("Hungry Jaws", "Bonus action: bite a creature and gain temporary HP equal to your CON modifier on a hit. Once per short or long rest.")]},
-  "Loxodon": {asi:{con:2,wis:1}, size:"Medium", speed:{walk:30}, darkvision:0,
+  "Loxodon": {asi:{con:2,wis:1}, size:"Medium", speed:{walk:30}, darkvision:0, unarmoredAc:{base:12, ability:"con", trait:"Natural Armor"},
     languages:{fixed:["Common","Loxodon"]}, source:"Guildmasters' Guide to Ravnica",
     traits:[POWERFUL_BUILD,
       tr("Loxodon Serenity", "Advantage on saves against being charmed or frightened."),
@@ -396,7 +457,7 @@ export var RACE_DATA = {
       tr("Secondary Arms", "Two smaller arms that can hold light weapons and objects."),
       tr("Sleepless", "You don't need to sleep and can stay conscious during a long rest."),
       tr("Thri-kreen Telepathy", "You can speak telepathically to a creature within 120 feet that shares a language with you.")]},
-  "Tortle": {asi:{str:2,wis:1}, unarmed:{name:"Claws", die:4, type:"Slashing"}, size:"Medium", speed:{walk:30}, darkvision:0,
+  "Tortle": {asi:{str:2,wis:1}, unarmed:{name:"Claws", die:4, type:"Slashing"}, size:"Medium", speed:{walk:30}, darkvision:0, unarmoredAc:{base:17, trait:"Natural Armor"},
     languages:{fixed:["Common","Aquan"]}, source:"The Tortle Package",
     traits:[tr("Claws", "Your claws deal 1d4 + STR slashing damage."),
       tr("Hold Breath", "You can hold your breath for up to 1 hour."),
@@ -432,7 +493,260 @@ export var RACE_DATA = {
     languages:{fixed:["Common","Abyssal","Draconic"]}, source:"Volo's Guide to Monsters",
     traits:[tr("Innate Spellcasting", "You know Poison Spray; cast Animal Friendship on snakes at will, and from level 3 Suggestion once per long rest, using Charisma."),
       tr("Magic Resistance", "Advantage on saving throws against spells and other magical effects."),
-      tr("Poison Immunity", "Immunity to poison damage and the poisoned condition.")]}
+      tr("Poison Immunity", "Immunity to poison damage and the poisoned condition.")]},
+
+  /* ---- Subraces and bloodlines (checked against the published pages
+     on dnd5e.wikidot.com 2026-10-20) ---- */
+  "Pallid Elf": {asi:{dex:2,wis:1}, size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Elvish"]}, source:"Explorer's Guide to Wildemount",
+    traits:ELF_BASE.concat([
+      tr("Incisive Sense", "Advantage on Intelligence (Investigation) and Wisdom (Insight) checks.", null, {on:"skill", skills:["Investigation","Insight"]}),
+      tr("Blessing of the Moonweaver", "You know Light; Sleep once per long rest from level 3 and Invisibility (self only) from level 5, with no material components, using Wisdom.")])},
+  "Ghostwise Halfling": {asi:{dex:2,wis:1}, size:"Small", speed:{walk:25}, darkvision:0,
+    languages:{fixed:["Common","Halfling"]}, source:"Sword Coast Adventurer's Guide",
+    traits:HALFLING_BASE.concat([tr("Silent Speech", "Speak telepathically to one creature within 30 feet. It understands you only if you share a language.")])},
+  "Lotusden Halfling": {asi:{dex:2,wis:1}, size:"Small", speed:{walk:25}, darkvision:0,
+    languages:{fixed:["Common","Halfling"]}, source:"Explorer's Guide to Wildemount",
+    traits:HALFLING_BASE.concat([
+      tr("Children of the Woods", "You know Druidcraft; Entangle once per long rest from level 3 and Spike Growth from level 5, with no material components, using Wisdom."),
+      tr("Timberwalk", "Checks to track you have disadvantage, and difficult terrain of nonmagical plants and overgrowth costs no extra movement.")])},
+  "Tiefling (Baalzebul)": tieflingBloodline({int:1}, "Legacy of Maladomini", "Thaumaturgy", "Ray of Sickness (as a 2nd-level spell)", "Crown of Madness"),
+  "Tiefling (Dispater)": tieflingBloodline({dex:1}, "Legacy of Dis", "Thaumaturgy", "Disguise Self (as a 2nd-level spell)", "Detect Thoughts"),
+  "Tiefling (Fierna)": tieflingBloodline({wis:1}, "Legacy of Phlegethos", "Friends", "Charm Person (as a 2nd-level spell)", "Suggestion"),
+  "Tiefling (Glasya)": tieflingBloodline({dex:1}, "Legacy of Malbolge", "Minor Illusion", "Disguise Self (as a 2nd-level spell)", "Invisibility (as a 2nd-level spell)"),
+  "Tiefling (Levistus)": tieflingBloodline({con:1}, "Legacy of Stygia", "Ray of Frost", "Armor of Agathys (as a 2nd-level spell)", "Darkness"),
+  "Tiefling (Mammon)": tieflingBloodline({int:1}, "Legacy of Minauros", "Mage Hand", "Tenser's Floating Disk (as a 2nd-level spell)", "Arcane Lock"),
+  "Tiefling (Mephistopheles)": tieflingBloodline({int:1}, "Legacy of Cania", "Mage Hand", "Burning Hands (as a 2nd-level spell)", "Flame Blade (as a 3rd-level spell)"),
+  "Tiefling (Zariel)": tieflingBloodline({str:1}, "Legacy of Avernus", "Thaumaturgy", "Searing Smite (as a 2nd-level spell)", "Branding Smite (as a 3rd-level spell)"),
+  // Sword Coast's variant tiefling: Feral (+2 DEX, +1 INT) or the usual
+  // scores, and one of Infernal Legacy, Devil's Tongue or Hellfire; Winged
+  // replaces Infernal Legacy, so it has its own entry for its fly speed.
+  "Tiefling (Variant)": {asiText:"+2 Charisma and +1 Intelligence, or Feral: +2 Dexterity and +1 Intelligence", size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Infernal"]}, source:"Sword Coast Adventurer's Guide",
+    traits:[tr("Hellish Resistance", "Resistance to fire damage."),
+      tr("Infernal Gift", "Choose your tiefling's magic.", {pick:[{kind:"choice", id:"tieflingVariant", noun:"gift", label:"Choose your tiefling's magic",
+        options:["Infernal Legacy","Devil's Tongue","Hellfire"], details:{
+          "Infernal Legacy":"You know Thaumaturgy; Hellish Rebuke (as a 2nd-level spell) once per long rest from level 3 and Darkness from level 5, using Charisma.",
+          "Devil's Tongue":"You know Vicious Mockery; Charm Person (as a 2nd-level spell) once per long rest from level 3 and Enthrall from level 5, using Charisma.",
+          "Hellfire":"You know Thaumaturgy; Burning Hands (as a 2nd-level spell) once per long rest from level 3 and Darkness from level 5, using Charisma."}}]})]},
+  "Tiefling (Winged)": {asiText:"+2 Charisma and +1 Intelligence, or Feral: +2 Dexterity and +1 Intelligence", size:"Medium", speed:{walk:30, fly:30}, speedWhen:{fly:"not in heavy armor"}, darkvision:60,
+    languages:{fixed:["Common","Infernal"]}, source:"Sword Coast Adventurer's Guide",
+    traits:[tr("Hellish Resistance", "Resistance to fire damage."),
+      tr("Winged", "Bat-like wings give you a flying speed of 30 feet while you aren't wearing heavy armor. This replaces Infernal Legacy.")]},
+
+  /* ---- Eberron's dragonmarks ---- */
+  "Dwarf (Mark of Warding)": {asi:{con:2,int:1}, size:"Medium", speed:{walk:25}, darkvision:60,
+    languages:{fixed:["Common","Dwarvish"]}, source:"Eberron: Rising from the Last War",
+    traits:DWARF_BASE.concat(markTraits("Warder's Intuition", "Investigation checks and checks with thieves' tools",
+      tr("Wards and Seals", "Cast Alarm and Mage Armor, and from level 3 Arcane Lock, each once per long rest with no material components, using Intelligence."),
+      "Alarm, Armor of Agathys (1st); Arcane Lock, Knock (2nd); Glyph of Warding, Magic Circle (3rd); Leomund's Secret Chest, Mordenkainen's Faithful Hound (4th); Antilife Shell (5th)"))},
+  "Elf (Mark of Shadow)": {asi:{dex:2,cha:1}, size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Elvish"]}, source:"Eberron: Rising from the Last War",
+    traits:ELF_BASE.concat(markTraits("Cunning Intuition", "Stealth and Performance checks",
+      tr("Shape Shadows", "You know Minor Illusion; from level 3, Invisibility once per long rest, using Charisma."),
+      "Disguise Self, Silent Image (1st); Darkness, Pass without Trace (2nd); Clairvoyance, Major Image (3rd); Greater Invisibility, Hallucinatory Terrain (4th); Mislead (5th)"))},
+  "Gnome (Mark of Scribing)": {asi:{int:2,cha:1}, size:"Small", speed:{walk:25}, darkvision:60,
+    languages:{fixed:["Common","Gnomish"]}, source:"Eberron: Rising from the Last War",
+    traits:[GNOME_CUNNING].concat(markTraits("Gifted Scribe", "History checks and checks with calligrapher's supplies",
+      tr("Scribe's Insight", "You know Message; cast Comprehend Languages, and from level 3 Magic Mouth, each once per long rest, using Intelligence."),
+      "Comprehend Languages, Illusory Script (1st); Animal Messenger, Silence (2nd); Sending, Tongues (3rd); Arcane Eye, Divination (4th); Dream (5th)"))},
+  "Halfling (Mark of Healing)": {asi:{dex:2,wis:1}, size:"Small", speed:{walk:25}, darkvision:0,
+    languages:{fixed:["Common","Halfling"]}, source:"Eberron: Rising from the Last War",
+    traits:HALFLING_BASE.concat(markTraits("Medical Intuition", "Medicine checks and checks with an herbalism kit",
+      tr("Healing Touch", "Cast Cure Wounds, and from level 3 Lesser Restoration, each once per long rest, using Wisdom."),
+      "Cure Wounds, Healing Word (1st); Lesser Restoration, Prayer of Healing (2nd); Aura of Vitality, Mass Healing Word (3rd); Aura of Purity, Aura of Life (4th); Greater Restoration (5th)"))},
+  "Halfling (Mark of Hospitality)": {asi:{dex:2,cha:1}, size:"Small", speed:{walk:25}, darkvision:0,
+    languages:{fixed:["Common","Halfling"]}, source:"Eberron: Rising from the Last War",
+    traits:HALFLING_BASE.concat(markTraits("Ever Hospitable", "Persuasion checks and checks with brewer's supplies or cook's utensils",
+      tr("Innkeeper's Magic", "You know Prestidigitation; cast Purify Food and Drink and Unseen Servant, each once per long rest, using Charisma."),
+      "Goodberry, Sleep (1st); Aid, Calm Emotions (2nd); Create Food and Water, Leomund's Tiny Hut (3rd); Aura of Purity, Mordenkainen's Private Sanctum (4th); Hallow (5th)"))},
+  "Half-Elf (Mark of Detection)": {asi:{wis:2}, asiText:"+2 Wisdom, and +1 to one other score of your choice", size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Elvish"], choose:1}, source:"Eberron: Rising from the Last War",
+    traits:[tr("Fey Ancestry", "Advantage on saves against being charmed, and magic can't put you to sleep.")].concat(markTraits("Deductive Intuition", "Investigation and Insight checks",
+      tr("Magical Detection", "Cast Detect Magic and Detect Poison and Disease, and from level 3 See Invisibility, each once per long rest, using Intelligence."),
+      "Detect Magic, Detect Poison and Disease (1st); Detect Thoughts, Find Traps (2nd); Clairvoyance, Nondetection (3rd); Arcane Eye, Divination (4th); Legend Lore (5th)"))},
+  "Half-Elf (Mark of Storm)": {asi:{cha:2,dex:1}, size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Elvish"], choose:1}, source:"Eberron: Rising from the Last War",
+    traits:[tr("Fey Ancestry", "Advantage on saves against being charmed, and magic can't put you to sleep."),
+      tr("Storm's Boon", "Resistance to lightning damage.")].concat(markTraits("Windwright's Intuition", "Acrobatics checks and checks with navigator's tools",
+      tr("Headwinds", "You know Gust; from level 3, Gust of Wind once per long rest, using Charisma."),
+      "Feather Fall, Fog Cloud (1st); Gust of Wind, Levitate (2nd); Sleet Storm, Wind Wall (3rd); Conjure Minor Elementals, Control Water (4th); Conjure Elemental (5th)"))},
+  "Half-Orc (Mark of Finding)": markOfFinding(),
+  "Human (Mark of Finding)": markOfFinding(),
+  "Human (Mark of Handling)": {asi:{wis:2}, asiText:"+2 Wisdom, and +1 to one other score of your choice", size:"Medium", speed:{walk:30}, darkvision:0,
+    languages:{fixed:["Common"], choose:1}, source:"Eberron: Rising from the Last War",
+    traits:markTraits("Wild Intuition", "Animal Handling and Nature checks",
+      tr("Primal Connection", "Cast Animal Friendship and Speak with Animals, each once per long rest with no material components, using Wisdom. From level 3 they can target a beast or monstrosity with Intelligence 3 or lower."),
+      "Animal Friendship, Speak with Animals (1st); Beast Sense, Calm Emotions (2nd); Beacon of Hope, Conjure Animals (3rd); Aura of Life, Dominate Beast (4th); Awaken (5th)")},
+  "Human (Mark of Making)": {asi:{int:2}, asiText:"+2 Intelligence, and +1 to one other score of your choice", size:"Medium", speed:{walk:30}, darkvision:0,
+    languages:{fixed:["Common"], choose:1}, source:"Eberron: Rising from the Last War",
+    traits:[tr("Artisan's Gift", "Proficiency with one type of artisan's tools of your choice.", {pick:[{kind:"tool", options:ARTISAN_TOOL_NAMES}]})].concat(markTraits("Artisan's Intuition", "Arcana checks and checks with artisan's tools",
+      tr("Spellsmith", "You know Mending; cast Magic Weapon once per long rest, lasting 1 hour without concentration, using Intelligence."),
+      "Identify, Tenser's Floating Disk (1st); Continual Flame, Magic Weapon (2nd); Conjure Barrage, Elemental Weapon (3rd); Fabricate, Stone Shape (4th); Creation (5th)"))},
+  "Human (Mark of Passage)": {asi:{dex:2}, asiText:"+2 Dexterity, and +1 to one other score of your choice", size:"Medium", speed:{walk:35}, darkvision:0,
+    languages:{fixed:["Common"], choose:1}, source:"Eberron: Rising from the Last War",
+    traits:[tr("Courier's Speed", "Your base walking speed is 35 feet.")].concat(markTraits("Intuitive Motion", "Acrobatics checks and checks to operate or maintain a land vehicle",
+      tr("Magical Passage", "Cast Misty Step once per long rest, using Dexterity."),
+      "Expeditious Retreat, Jump (1st); Misty Step, Pass without Trace (2nd); Blink, Phantom Steed (3rd); Dimension Door, Freedom of Movement (4th); Teleportation Circle (5th)"))},
+  "Human (Mark of Sentinel)": {asi:{con:2,wis:1}, size:"Medium", speed:{walk:30}, darkvision:0,
+    languages:{fixed:["Common"], choose:1}, source:"Eberron: Rising from the Last War",
+    traits:markTraits("Sentinel's Intuition", "Insight and Perception checks",
+      tr("Guardian's Shield", "Cast Shield once per long rest, using Wisdom."),
+      "Compelled Duel, Shield of Faith (1st); Warding Bond, Zone of Truth (2nd); Counterspell, Protection from Energy (3rd); Death Ward, Guardian of Faith (4th); Bigby's Hand (5th)").concat([
+      tr("Vigilant Guardian", "Reaction when a creature you can see within 5 feet is hit by an attack: swap places with it and take the hit instead. Once per long rest.")])},
+
+  /* ---- More races ---- */
+  "Astral Elf": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common"], choose:1}, source:"Spelljammer: Astral Adventurer's Guide",
+    traits:[tr("Astral Fire", "You know Dancing Lights, Light or Sacred Flame (your choice), using Intelligence, Wisdom or Charisma (chosen with this race)."),
+      tr("Fey Ancestry", "Advantage on saves to avoid or end being charmed."),
+      tr("Keen Senses", "Proficiency in the Perception skill.", {skills:["Perception"]}),
+      tr("Starlight Step", "Bonus action: teleport up to 30 feet to a space you can see. Uses equal to your proficiency bonus per long rest."),
+      tr("Astral Trance", "You don't sleep, and magic can't put you to sleep; a long rest is 4 hours of trance, after which you gain one skill and one weapon or tool proficiency until your next long rest.")]},
+  "Autognome": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small", speed:{walk:30}, darkvision:0,
+    unarmoredAc:{base:13, ability:"dex", trait:"Armored Casing"},
+    languages:{fixed:["Common"], choose:1}, source:"Spelljammer: Astral Adventurer's Guide",
+    traits:[tr("Armored Casing", "While you aren't wearing armor, your base AC is 13 + your Dexterity modifier."),
+      tr("Built for Success", "Add a d4 to an attack roll, ability check or saving throw after seeing the d20. Uses equal to your proficiency bonus per long rest."),
+      tr("Healing Machine", "Mending lets you spend and roll a Hit Die to heal, and Cure Wounds, Healing Word, Mass Cure Wounds, Mass Healing Word and Spare the Dying work on you."),
+      tr("Mechanical Nature", "Resistance to poison damage, immunity to disease, advantage on saves against being paralyzed or poisoned, and no need to eat, drink or breathe.", null,
+        {on:"save", abilities:"all", when:"against being paralyzed or poisoned"}),
+      tr("Sentry's Rest", "A long rest is 6 hours of inactivity, during which you stay conscious."),
+      tr("Specialized Design", "Proficiency with two tools of your choice.", {pick:[{kind:"tool", count:2}]})]},
+  "Giff": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Medium", speed:{walk:30, swim:30}, darkvision:0,
+    languages:{fixed:["Common"], choose:1}, source:"Spelljammer: Astral Adventurer's Guide",
+    traits:[tr("Astral Spark", "When you hit with a simple or martial weapon, deal extra force damage equal to your proficiency bonus, no more than once a turn. Uses equal to your proficiency bonus per long rest."),
+      tr("Firearms Mastery", "Proficiency with all firearms; you ignore their loading property and long range doesn't give disadvantage.", {weapons:["Firearms"]}),
+      tr("Hippo Build", "Advantage on Strength checks and Strength saves, and you count as one size larger for carrying, pushing, dragging and lifting.", null,
+        [{on:"check", abilities:["str"]}, {on:"save", abilities:["str"]}])]},
+  "Grung": {asi:{dex:2,con:1}, size:"Small", speed:{walk:25, climb:25}, darkvision:0,
+    languages:{fixed:["Grung"]}, source:"One Grung Above",
+    traits:[tr("Arboreal Alertness", "Proficiency in the Perception skill.", {skills:["Perception"]}),
+      tr("Amphibious", "You can breathe air and water."),
+      tr("Poison Immunity", "Immunity to poison damage and the poisoned condition."),
+      tr("Poisonous Skin", "A creature that grapples you or touches your skin makes a DC 12 CON save or is poisoned for 1 minute. You can coat a piercing weapon as part of an attack: on a hit, DC 12 CON save or 2d4 poison damage."),
+      tr("Standing Leap", "Your long jump is up to 25 feet and your high jump up to 15 feet, with or without a running start."),
+      tr("Water Dependency", "Without at least 1 hour immersed in water in a day, you gain a level of exhaustion at the end of it, removed only by magic or an hour in water.")]},
+  "Hadozee": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small or Medium", speed:{walk:30, climb:30}, darkvision:0,
+    languages:{fixed:["Common"], choose:1}, source:"Spelljammer: Astral Adventurer's Guide",
+    traits:[tr("Dexterous Feet", "Bonus action: use your feet to manipulate an object, open or close a door or container, or pick up or set down a Tiny object."),
+      tr("Glide", "Reaction when you fall at least 10 feet: glide horizontally up to your walking speed and take no falling damage."),
+      tr("Hadozee Dodge", "Reaction when you take damage: reduce it by 1d6 + your proficiency bonus. Uses equal to your proficiency bonus per long rest.")]},
+  "Kalashtar": {asi:{wis:2,cha:1}, size:"Medium", speed:{walk:30}, darkvision:0,
+    languages:{fixed:["Common","Quori"], choose:1}, source:"Eberron: Rising from the Last War",
+    traits:[tr("Dual Mind", "Advantage on all Wisdom saving throws.", null, {on:"save", abilities:["wis"]}),
+      // Not the githzerai's Mental Discipline (charm and fear): no advantage.
+      tr("Mental Discipline", "Resistance to psychic damage.", null, false),
+      tr("Mind Link", "Speak telepathically to a creature you can see within 10 × your level feet; as an action, let one such creature reply telepathically for 1 hour."),
+      tr("Severed from Dreams", "Immune to spells and effects that need you to dream (like Dream), though not to ones that put you to sleep.")]},
+  "Kender": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small", speed:{walk:30}, darkvision:0,
+    languages:{fixed:["Common"], choose:1}, source:"Dragonlance: Shadow of the Dragon Queen",
+    traits:[tr("Fearless", "Advantage on saves to avoid or end being frightened. Once per long rest, turn a failed one into a success.", null,
+        {on:"save", abilities:"all", when:"to avoid or end being frightened"}),
+      tr("Kender Aptitude", "Proficiency in one of Insight, Investigation, Sleight of Hand, Stealth or Survival.",
+        {pick:[{kind:"skill", options:["Insight","Investigation","Sleight of Hand","Stealth","Survival"]}]}),
+      tr("Taunt", "Bonus action: a creature within 60 feet that hears and understands you makes a WIS save (DC 8 + proficiency bonus + your INT, WIS or CHA modifier, chosen with this race) or has disadvantage on attacks against anyone but you until your next turn. Uses equal to your proficiency bonus per long rest.")]},
+  "Leonin": {asi:{con:2,str:1}, unarmed:{name:"Claws", die:4, type:"Slashing"}, size:"Medium", speed:{walk:35}, darkvision:60,
+    languages:{fixed:["Common","Leonin"]}, source:"Mythic Odysseys of Theros",
+    traits:[tr("Claws", "Your claws are natural weapons dealing 1d4 + STR slashing damage."),
+      tr("Hunter's Instincts", "Proficiency in one of Athletics, Intimidation, Perception or Survival.",
+        {pick:[{kind:"skill", options:["Athletics","Intimidation","Perception","Survival"]}]}),
+      tr("Daunting Roar", "Bonus action: creatures of your choice within 10 feet that hear you make a WIS save (DC 8 + proficiency bonus + CON modifier) or are frightened of you until the end of your next turn. Once per short or long rest.")]},
+  "Locathah": {asi:{str:2,dex:1}, size:"Medium", speed:{walk:30, swim:30}, darkvision:0,
+    unarmoredAc:{base:12, ability:"dex", trait:"Natural Armor"},
+    languages:{fixed:["Aquan","Common"]}, source:"Locathah Rising",
+    traits:[tr("Natural Armor", "Without armor, your AC is 12 + DEX (and you can use it if your armor would give less). A shield still adds."),
+      tr("Observant and Athletic", "Proficiency in the Athletics and Perception skills.", {skills:["Athletics","Perception"]}),
+      tr("Leviathan Will", "Advantage on saves against being charmed, frightened, paralyzed, poisoned, stunned or put to sleep.", null,
+        {on:"save", abilities:"all", when:"against being charmed, frightened, paralyzed, poisoned, stunned or put to sleep"}),
+      tr("Limited Amphibiousness", "You can breathe air and water, but must be submerged at least once every 4 hours or you begin to suffocate.")]},
+  "Owlin": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small or Medium", speed:{walk:30, fly:30}, speedWhen:{fly:"not in medium or heavy armor"}, darkvision:120,
+    languages:{fixed:["Common"], choose:1}, source:"Strixhaven: A Curriculum of Chaos",
+    traits:[tr("Flight", "A flying speed equal to your walking speed, but not while wearing medium or heavy armor."),
+      tr("Silent Feathers", "Proficiency in the Stealth skill.", {skills:["Stealth"]})]},
+  "Plasmoid": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small or Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common"], choose:1}, source:"Spelljammer: Astral Adventurer's Guide",
+    traits:[tr("Amorphous", "Squeeze through a space 1 inch wide while wearing and carrying nothing; advantage on checks to start or escape a grapple."),
+      tr("Hold Breath", "You can hold your breath for 1 hour."),
+      tr("Natural Resilience", "Resistance to acid and poison damage, and advantage on saves against being poisoned.", null,
+        {on:"save", abilities:"all", when:"against being poisoned"}),
+      tr("Shape Self", "Action: grow a head, arms and legs (to wear clothes and armor) or become a blob. Bonus action: extrude a 10-foot pseudopod that can handle objects up to 10 pounds but can't attack.")]},
+
+  /* ---- Plane Shift (Magic: The Gathering) ----
+     Wizards' free Plane Shift guides (Kaladesh, Amonkhet, Zendikar,
+     Ixalan), checked against dnd5e.wikidot.com 2026-10-20. */
+  "Aetherborn": {asi:{cha:2}, asiText:"+2 Charisma, and +1 to two other scores of your choice", size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common"], choose:2}, source:"Plane Shift: Kaladesh",
+    traits:[tr("Born of Aether", "Resistance to necrotic damage."),
+      tr("Menacing", "Proficiency in the Intimidation skill.", {skills:["Intimidation"]})]},
+  "Aven (Hawk-Headed)": {asi:{dex:2,wis:2}, size:"Medium", speed:{walk:25, fly:30}, speedWhen:{fly:"not in medium or heavy armor"}, darkvision:0,
+    languages:{fixed:["Common","Aven"]}, source:"Plane Shift: Amonkhet",
+    traits:[AVEN_FLIGHT,
+      tr("Hawkeyed", "Proficiency in the Perception skill, and attacking at long range doesn't give your ranged weapon attacks disadvantage.", {skills:["Perception"]})]},
+  "Aven (Ibis-Headed)": {asi:{dex:2,int:1}, size:"Medium", speed:{walk:25, fly:30}, speedWhen:{fly:"not in medium or heavy armor"}, darkvision:0,
+    languages:{fixed:["Common","Aven"]}, source:"Plane Shift: Amonkhet",
+    traits:[AVEN_FLIGHT,
+      tr("Kefnet's Blessing", "Add half your proficiency bonus (rounded down) to Intelligence checks that don't already include it.")]},
+  "Khenra": {asi:{dex:2,str:1}, size:"Medium", speed:{walk:35}, darkvision:0,
+    languages:{fixed:["Common","Khenra"]}, source:"Plane Shift: Amonkhet",
+    traits:[tr("Khenra Weapon Training", "Proficiency with the khopesh, spear and javelin.", {weapons:["Spear","Javelin"]}),
+      tr("Khenra Twins", "While your living twin is in sight, you can reroll a 1 on an attack roll, ability check or saving throw (and must use the new roll). If your twin is dead, or you had none, you can't be frightened.")]},
+  "Kor": {asi:{dex:2,wis:1}, size:"Medium", speed:{walk:30, climb:30}, speedWhen:{climb:"not encumbered or in heavy armor"}, darkvision:0,
+    languages:{fixed:["Common"]}, source:"Plane Shift: Zendikar",
+    traits:[tr("Kor Climbing", "Proficiency in the Athletics and Acrobatics skills, and a climbing speed of 30 feet while not encumbered or in heavy armor.", {skills:["Athletics","Acrobatics"]}),
+      HALFLING_BASE[0], HALFLING_BASE[1],
+      tr("Silent Speech", "You can communicate in the kor's silent speech of hand signs.")]},
+  "Merfolk (Blue)": merfolk("Plane Shift: Ixalan", {int:2}, [tr("Lore of the Waters", "Proficiency in the History and Nature skills.", {skills:["History","Nature"]}),
+    tr("Cantrip", "You know one wizard cantrip of your choice, cast with Intelligence.")]),
+  "Merfolk (Green)": merfolk("Plane Shift: Ixalan", {wis:2}, [tr("Mask of the Wild", "You can try to hide when only lightly obscured by foliage, rain, snow, mist or similar."),
+    tr("Cantrip", "You know one druid cantrip of your choice, cast with Wisdom.")]),
+  "Merfolk (Cosi)": merfolk("Plane Shift: Zendikar", {cha:1,int:1}, [tr("Creed of the Trickster", "Proficiency in the Sleight of Hand and Stealth skills.", {skills:["Sleight of Hand","Stealth"]}),
+    tr("Cantrip", "You know one bard cantrip of your choice, cast with Charisma.")]),
+  "Merfolk (Emeria)": merfolk("Plane Shift: Zendikar", {wis:2}, [tr("Wind Creed Manipulation", "Proficiency in the Deception and Persuasion skills.", {skills:["Deception","Persuasion"]}),
+    tr("Cantrip", "You know one druid cantrip of your choice, cast with Wisdom.")]),
+  "Merfolk (Ula)": merfolk("Plane Shift: Zendikar", {int:2}, [tr("Water Creed Navigation", "Proficiency with navigator's tools and in the Survival skill.", {skills:["Survival"], tools:["Navigator's tools"]}),
+    tr("Cantrip", "You know one wizard cantrip of your choice, cast with Intelligence.")]),
+  "Naga": {asi:{con:2,int:1}, unarmed:{name:"Bite", die:4, type:"Piercing"}, size:"Medium", speed:{walk:30}, darkvision:0,
+    languages:{fixed:["Common","Naga"]}, source:"Plane Shift: Amonkhet",
+    traits:[tr("Speed Burst", "Bonus action, with both hands free: +5 feet of walking speed until the end of your turn."),
+      tr("Natural Weapons", "Your bite deals 1d4 + STR piercing damage, and the target makes a CON save (DC 8 + proficiency bonus + CON modifier) or takes 1d4 poison damage. Your constrict deals 1d6 + STR bludgeoning damage and grapples and restrains the target."),
+      tr("Poison Immunity", "Immunity to poison damage and the poisoned condition."),
+      tr("Poison Affinity", "Proficiency with the poisoner's kit.", {tools:["Poisoner's kit"]})]},
+  "Siren": {asi:{cha:2}, size:"Medium", speed:{walk:25, fly:30}, speedWhen:{fly:"not in medium or heavy armor"}, darkvision:0,
+    languages:{fixed:["Common","Siren"]}, source:"Plane Shift: Ixalan",
+    traits:[tr("Flight", "A flying speed of 30 feet, but not while wearing medium or heavy armor."),
+      tr("Siren's Song", "You know the Friends cantrip and cast it without material components.")]},
+  "Vampire (Ixalan)": {asi:{cha:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Vampire"]}, source:"Plane Shift: Ixalan",
+    traits:[tr("Vampiric Resistance", "Resistance to necrotic damage."), VAMPIRE_BLOODTHIRST,
+      tr("Feast of Blood", "After you drain blood, your speed increases by 10 feet and you have advantage on Strength and Dexterity checks and saves for 1 minute.")]},
+  "Vampire (Zendikar)": {asi:{cha:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common","Vampire"]}, source:"Plane Shift: Zendikar",
+    traits:[tr("Vampiric Resistance", "Resistance to necrotic damage."), VAMPIRE_BLOODTHIRST]},
+
+  /* ---- Lineages ---- */
+  "Custom Lineage": {asiText:"+2 to one score of your choice", size:"Small or Medium", speed:{walk:30}, darkvision:60, darkvisionUnlessPicked:"Variable Trait",
+    languages:{fixed:["Common"], choose:1}, source:"Tasha's Cauldron of Everything",
+    traits:[tr("Feat", "You gain one feat of your choice that you qualify for."),
+      tr("Variable Trait", "Darkvision out to 60 feet, or proficiency in one skill of your choice instead.",
+        {pick:[{kind:"skill", optional:true, label:"Or take a skill instead of darkvision (leave empty to keep darkvision)"}]})]},
+  "Dhampir": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", unarmed:{name:"Vampiric Bite", die:4, type:"Piercing", ability:"con"}, size:"Small or Medium", speed:{walk:35, climb:35}, darkvision:60,
+    languages:{fixed:["Common"], choose:1}, source:"Van Richten's Guide to Ravenloft",
+    traits:[LINEAGE_SKILLS,
+      tr("Deathless Nature", "You don't need to breathe."),
+      tr("Spider Climb", "A climbing speed equal to your walking speed; from level 3 you can move on walls and ceilings with your hands free."),
+      tr("Vampiric Bite", "Your bite deals 1d4 piercing damage with CON for attack and damage, with advantage while you have half your hit points or fewer. On a hit against a living creature, regain hit points equal to the damage, or add it to your next check or attack. Uses equal to your proficiency bonus per long rest.")]},
+  "Hexblood": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small or Medium", speed:{walk:30}, darkvision:60,
+    languages:{fixed:["Common"], choose:1}, source:"Van Richten's Guide to Ravenloft",
+    traits:[LINEAGE_SKILLS,
+      tr("Eerie Token", "Bonus action: make a token of hair, nail or tooth. While it lasts (until your long rest), send a 25-word message to its holder or see and hear through it, within 10 miles. Once per long rest."),
+      tr("Hex Magic", "Cast Disguise Self and Hex, each once per long rest (or with spell slots), using Intelligence, Wisdom or Charisma (chosen with this lineage).")]},
+  "Reborn": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small or Medium", speed:{walk:30}, darkvision:0,
+    languages:{fixed:["Common"], choose:1}, source:"Van Richten's Guide to Ravenloft",
+    traits:[LINEAGE_SKILLS,
+      tr("Deathless Nature", "Advantage on saves against disease and being poisoned, and on death saves; resistance to poison damage; no need to eat, drink, breathe or sleep (a long rest is 4 hours, awake).", null,
+        {on:"save", abilities:"all", when:"against disease and being poisoned, and death saving throws"}),
+      tr("Knowledge from a Past Life", "Add a d6 to a skill check after seeing the d20. Uses equal to your proficiency bonus per long rest.")]}
 };
 
 /* Advantage a race trait gives, by trait name (checked against the

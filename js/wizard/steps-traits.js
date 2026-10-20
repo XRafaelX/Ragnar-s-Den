@@ -6,7 +6,7 @@ import { BACKGROUND_INFO } from "../data/backgrounds.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { themedPicker } from "../ui/themed-picker.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, raceAbilityPicksNeeded, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityAmounts, raceAbilityIncreases, raceAbilityPicksNeeded, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
   wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardRaceSkills,
   wizardBackgroundGrants, wizardBackgroundPickGrants, wizardBgSlots, wizardBgPickContext,
   wizardOverlapGrants, wizardOverlapSlots, wizardOverlapContext } from "./wizard-core.js";
@@ -190,10 +190,12 @@ export function wizardStepRaceChoices(container){
   function baseScore(key){ return Math.max(1, Math.min(20, (Number(wizardState.abilities[key])||10) + (fixedInc[key]||0))); }
 
   if(def.abilityBonus){
-    var amounts = def.abilityBonus.amounts, n = amounts.length, exclude = def.abilityBonus.exclude || [];
+    var amounts = raceAbilityAmounts(), n = amounts.length, exclude = def.abilityBonus.exclude || [];
     var notText = exclude.length ? " other than "+exclude.map(abilityFullName).join(" or ") : "";
     var chosen = rc.abilities.slice(0, n).filter(function(k){ return k && exclude.indexOf(k)===-1; });
-    var allSame = amounts.every(function(a){ return a===amounts[0]; });
+    // A race with an `alt` set (+1 to three) keeps one picker per amount
+    // either way, so the switch only adds or takes away a row.
+    var allSame = !def.abilityBonus.alt && amounts.every(function(a){ return a===amounts[0]; });
     // Scores already at 20 can't take a pick; all at 20 needs none.
     var need = raceAbilityPicksNeeded();
     if(allSame){
@@ -229,7 +231,9 @@ export function wizardStepRaceChoices(container){
       var filled = slots.filter(Boolean);
       var done = filled.length>=need && new Set(filled).size===filled.length;
       var secA = section("Ability score increase", need===0 ? "Every score is already at 20, so there's nothing to raise."
+        : rc.alt && def.abilityBonus.alt ? "+1 to three different scores, up to 20."
         : amounts.map(function(a){ return "+"+a; }).join(" to one score and ")+" to another, up to 20.", done);
+      if(def.abilityBonus.alt) secA.appendChild(altSwitchRow());
       amounts.forEach(function(amt, i){
         secA.appendChild(pickerField(themedPicker({
           key:"race:ability:"+i, placeholder:"+"+amt+" to…", ariaLabel:"Ability for +"+amt,
@@ -243,6 +247,23 @@ export function wizardStepRaceChoices(container){
         })));
       });
     }
+  }
+
+  /* "+1 to three different scores instead": the race's other option. */
+  function altSwitchRow(){
+    var on = !!rc.alt;
+    var row = ce("div","opt-rule rt-alt-switch");
+    row.innerHTML = "<div class='opt-rule-text'><b>Increase three scores by 1 instead</b><span>The other way this race can raise its scores.</span></div>";
+    var sw = document.createElement("button");
+    sw.type = "button";
+    sw.className = "switch" + (on ? " on" : "");
+    sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-checked", on ? "true" : "false");
+    sw.setAttribute("aria-label", "Increase three scores by 1 instead");
+    sw.innerHTML = "<span class='switch-knob'></span>";
+    sw.addEventListener("click", function(){ rc.alt = !on; rc.abilities = []; picked(); });
+    row.appendChild(sw);
+    return row;
   }
 
   if(def.abilityPreset){

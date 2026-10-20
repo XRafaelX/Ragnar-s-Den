@@ -15,18 +15,25 @@ import { withFakeDom } from "./fake-dom.mjs";
 
 const RARITIES = ["Common", "Uncommon", "Rare", "Very rare", "Legendary", "Artifact"];
 
-test("magic item data: well formed, grouped by rarity, one group each", () => {
+test("magic item data: well formed, our DM's items first, then by rarity, one group each", () => {
   const listed = Object.values(MAGIC_ITEM_GROUPS).flat();
   assert.equal(new Set(listed).size, listed.length, "no item is listed twice");
   assert.deepEqual(listed.slice().sort(), Object.keys(MAGIC_ITEM_DATA).sort(), "the groups and the data name the same items");
+  assert.deepEqual(Object.keys(MAGIC_ITEM_GROUPS), ["Panais Magic Items"].concat(RARITIES), "the DM's items, then each rarity");
+  assert.deepEqual(MAGIC_ITEM_GROUPS["Panais Magic Items"], ["Duality", "Heavy Holster", "Trident of Returning"]);
+  const FIELDS = ["kind", "rarity", "attunement", "attuneBy", "text", "holster", "weapon", "weaponAny", "armor", "armorAny", "bonus",
+    "ammunition", "acBonus", "acWhen", "saveBonus", "noPenalty", "returning", "coin"];
   for(const [group, names] of Object.entries(MAGIC_ITEM_GROUPS)){
-    assert.ok(RARITIES.includes(group), group + ": a rarity");
     assert.deepEqual(names, names.slice().sort(), group + ": alphabetical");
     for(const name of names){
       const d = MAGIC_ITEM_DATA[name];
-      assert.equal(d.rarity, group, name + ": listed under its rarity");
+      assert.ok(RARITIES.includes(d.rarity), name + ": rarity " + d.rarity);
+      if(group !== "Panais Magic Items") assert.equal(d.rarity, group, name + ": listed under its rarity");
       assert.ok(d.kind && d.text, name + ": kind and text");
-      for(const k of Object.keys(d)) assert.ok(["kind", "rarity", "attunement", "text", "holster", "weapon", "returning", "coin"].includes(k), name + ": unknown field " + k);
+      for(const k of Object.keys(d)) assert.ok(FIELDS.includes(k), name + ": unknown field " + k);
+      if(d.armor) assert.ok(ARMOR_DATA[d.armor], name + ": a real armor");
+      if(d.weaponAny) assert.ok(["any", "sword", "slashingSword", "axe", "axeOrSword"].includes(d.weaponAny), name + ": weaponAny");
+      if(d.armorAny) assert.ok(["any", "mediumHeavy", "mediumHeavyNotHide"].includes(d.armorAny), name + ": armorAny");
       assert.ok(!/[–—]/.test(name + d.kind + d.text), name + ": long dash");
       assert.ok(!GEAR_DATA[name] && !WEAPON_DATA[name] && !ARMOR_DATA[name], name + ": already other gear");
       if(d.weapon) assert.ok(WEAPON_DATA[d.weapon], name + ": a real weapon");

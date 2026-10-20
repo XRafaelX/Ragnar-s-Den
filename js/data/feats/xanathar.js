@@ -2,7 +2,7 @@
    Xanathar's Guide to Everything: the 15 racial feats. `requires.races`
    keeps each to its race in the pickers.
    The fields are explained at the top of ../feats.js. */
-import { HALFLINGS, DWARVES, GNOMES, ELVES, SMALL_RACES, DRAGONBORN_RACES } from "./races.js";
+import { HALFLINGS, DWARVES, GNOMES, ELVES, HALF_ELVES, HALF_ORCS, HUMANS, TIEFLINGS, SMALL_RACES, DRAGONBORN_RACES } from "./races.js";
 
 export var XANATHAR_FEATS = [
   {
@@ -59,7 +59,7 @@ export var XANATHAR_FEATS = [
     name: "Elven Accuracy",
     source: "XGE",
     ability:["dex","int","wis","cha"],
-    requires:{races:ELVES.concat(["Half-Elf"]), raceLabel:"an elf or half-elf"},
+    requires:{races:ELVES.concat(HALF_ELVES), raceLabel:"an elf or half-elf"},
     prerequisite: "Elf or half-elf",
     category: "Combat",
     summary: "Raise Dexterity, Intelligence, Wisdom or Charisma by 1. When you attack with advantage using one of those abilities, you can reroll one of the dice.",
@@ -91,7 +91,7 @@ export var XANATHAR_FEATS = [
     name: "Flames of Phlegethos",
     source: "XGE",
     ability:["int","cha"],
-    requires:{races:["Tiefling"], raceLabel:"a tiefling"},
+    requires:{races:TIEFLINGS, raceLabel:"a tiefling"},
     prerequisite: "Tiefling",
     category: "Magic",
     summary: "Raise Intelligence or Charisma by 1. You reroll any 1 on the fire damage dice of your spells. When you cast a fire spell, flames can wreathe you and burn creatures that hit you in melee for 1d4.",
@@ -101,7 +101,7 @@ export var XANATHAR_FEATS = [
     name: "Infernal Constitution",
     source: "XGE",
     ability:["con"],
-    requires:{races:["Tiefling"], raceLabel:"a tiefling"},
+    requires:{races:TIEFLINGS, raceLabel:"a tiefling"},
     prerequisite: "Tiefling",
     category: "Defense",
     summary: "Raise Constitution by 1. You have resistance to cold and poison damage and advantage on saves against being poisoned.",
@@ -111,7 +111,7 @@ export var XANATHAR_FEATS = [
     name: "Orcish Fury",
     source: "XGE",
     ability:["str","con"],
-    requires:{races:["Half-Orc"], raceLabel:"a half-orc"},
+    requires:{races:HALF_ORCS, raceLabel:"a half-orc"},
     prerequisite: "Half-orc",
     category: "Combat",
     summary: "Raise Strength or Constitution by 1. Once per short or long rest, a weapon hit deals one extra damage die. After you use Relentless Endurance, you can use your reaction to make a weapon attack.",
@@ -121,7 +121,7 @@ export var XANATHAR_FEATS = [
     name: "Prodigy",
     source: "XGE",
     skills:1, toolPicks:{count:1}, languagePicks:1, expertise:1,
-    requires:{races:["Half-Elf","Half-Orc","Human","Variant Human"], raceLabel:"a half-elf, half-orc or human"},
+    requires:{races:HALF_ELVES.concat(HALF_ORCS, HUMANS), raceLabel:"a half-elf, half-orc or human"},
     prerequisite: "Half-elf, half-orc, or human",
     category: "Utility",
     summary: "You gain proficiency in one skill and one tool, learn one language, and gain expertise in one skill you are proficient in.",

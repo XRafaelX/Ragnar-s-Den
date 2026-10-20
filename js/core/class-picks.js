@@ -651,6 +651,27 @@ export function raceGrantsFor(race){
   return out;
 }
 export function raceGrants(c){ return raceGrantsFor(c.race); }
+/* What the character picked for a race trait's `choice` slot with this id
+   ("" if not yet): a Half-Elf (Variant)'s Half-Elf Versatility. */
+export function raceChoiceValue(c, id){
+  var held = (c.racePicks && c.racePicks.profPicks) || {}, out = "";
+  raceGrants(c).forEach(function(g){
+    var entry = held[g.key];
+    if(out || !entry || entry.manual) return;
+    (g.def.pick||[]).forEach(function(s, i){ if(!out && s.kind==="choice" && s.id===id) out = ((entry.slots && entry.slots[i]) || [])[0] || ""; });
+  });
+  return out;
+}
+/* What the race's choices give on the sheet (its `choiceEffects` for each
+   picked option): [{name, weapons, walk, swim}]. */
+export function raceChoiceEffects(c){
+  var fx = (RACE_DATA[c.race] || {}).choiceEffects || {}, out = [];
+  Object.keys(fx).forEach(function(id){
+    var picked = raceChoiceValue(c, id);
+    if(picked && fx[id][picked]) out.push(Object.assign({name: picked}, fx[id][picked]));
+  });
+  return out;
+}
 /* Skills, weapons, tools and armor the race gives, outright and picked
    (leaving out the grant `exceptKey`): {skills, weapons, tools, armor}. */
 export function raceProficiencies(c, exceptKey){
@@ -671,6 +692,8 @@ export function raceProficiencies(c, exceptKey){
       });
     });
   });
+  // A choice that gives weapons (a Half-Elf (Variant)'s Elf Weapon Training).
+  raceChoiceEffects(c).forEach(function(e){ out.weapons = out.weapons.concat(e.weapons || []); });
   return out;
 }
 /* "Your picks: ..." for the race's traits on the Features tab ("" for

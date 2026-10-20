@@ -2,6 +2,7 @@ import { save } from "../../core/state.js";
 import { fmtMod, mod, ce, parseDiceNotation } from "../../core/helpers.js";
 import { characterCompanions, setCompanionHp, setCompanionChoice, setCompanionBeast } from "../../core/companions.js";
 import { BEAST_PRESETS } from "../../data/companions.js";
+import { themedPicker } from "../../ui/themed-picker.js";
 import { openInfoModal } from "../../ui/info-modal.js";
 import { showActionToast } from "../../ui/toast.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -128,14 +129,24 @@ function tag(text){
 
 function choiceRow(c, comp){
   var ch = comp.def.choice;
+  var options = comp.options && comp.options.length ? comp.options : ch.options;
   var box = ce("div", "comp-choice" + (comp.choice ? "" : " pending"));
   var label = ce("span", "comp-choice-label");
   label.textContent = ch.label;
   box.appendChild(label);
+  // A long list (a familiar's forms) is a dropdown rather than buttons.
+  if(options.length > 6){
+    box.appendChild(themedPicker({
+      key: "comp:" + comp.def.id, ariaLabel: ch.label, placeholder: "Choose a " + ch.label.toLowerCase(), search: true, sheet: true,
+      groups: {"": options}, value: comp.choice || "",
+      onPick: function(v){ setCompanionChoice(c, comp.def.id, v); save(); renderAll(); }
+    }));
+    return box;
+  }
   var seg = ce("div", "comp-seg");
   seg.setAttribute("role", "group");
   seg.setAttribute("aria-label", ch.label);
-  ch.options.forEach(function(o){
+  options.forEach(function(o){
     var b = document.createElement("button");
     b.type = "button"; b.className = "comp-seg-btn" + (comp.choice===o ? " active" : "");
     b.setAttribute("aria-pressed", comp.choice===o ? "true" : "false");
@@ -256,7 +267,7 @@ function renderCompanion(c, comp){
     card.querySelector("h3").appendChild(edit);
   }
   var type = ce("p", "comp-sub");
-  type.textContent = s.type + " · from " + (comp.def.source || comp.def.subclass);
+  type.textContent = s.type + " · from " + (comp.source || comp.def.source || comp.def.subclass);
   card.appendChild(type);
   if(comp.def.choice) card.appendChild(choiceRow(c, comp));
 
@@ -291,7 +302,7 @@ function renderSetupCard(c, comp){
   card.classList.add("comp-card");
   var intro = ce("p", "art-intro");
   if(comp.def.choice){
-    intro.textContent = "Choose your companion: one of Tasha's primal beasts (it uses your spell attack and grows with your level), or your own beast from the PHB rules.";
+    intro.textContent = comp.def.choice.intro || "Choose your companion: one of Tasha's primal beasts (it uses your spell attack and grows with your level), or your own beast from the PHB rules.";
     card.appendChild(intro);
     card.appendChild(choiceRow(c, comp));
   }
@@ -332,15 +343,15 @@ function openBeastForm(c, comp){
     }
     function draw(){
       holder.innerHTML = "";
+      // Start from an SRD beast (every one a Beast Master can take).
       var presets = ce("div", "art-switch");
       var pl = ce("span", "comp-choice-label"); pl.textContent = "Start from:";
       presets.appendChild(pl);
-      Object.keys(BEAST_PRESETS).forEach(function(k){
-        var b = document.createElement("button");
-        b.type = "button"; b.className = "btn small"; b.textContent = k;
-        b.addEventListener("click", function(){ draft = JSON.parse(JSON.stringify(BEAST_PRESETS[k])); draw(); });
-        presets.appendChild(b);
-      });
+      presets.appendChild(themedPicker({
+        key: "beast-preset", ariaLabel: "Start from a beast", placeholder: "Choose a beast", search: true, sheet: true,
+        groups: {"": Object.keys(BEAST_PRESETS)}, value: BEAST_PRESETS[draft.name] ? draft.name : "",
+        onPick: function(k){ draft = JSON.parse(JSON.stringify(BEAST_PRESETS[k])); draw(); }
+      }));
       holder.appendChild(presets);
       var grid = ce("div", "beast-grid");
       grid.appendChild(input("Name", draft.name, "text", function(v){ draft.name = v; }));

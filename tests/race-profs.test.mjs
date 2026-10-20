@@ -57,7 +57,8 @@ test("race profs data: real skills, weapons and tools; known pick kinds", () => 
       const where = race + ": " + t.name;
       for(const k of Object.keys(t.profs)) assert.ok(["skills", "weapons", "tools", "pick", "presetChoice"].includes(k), where + ": unknown field " + k);
       (t.profs.skills || []).forEach((s) => assert.ok(SKILL_NAMES.includes(s), where + ": skill " + s));
-      (t.profs.weapons || []).forEach((w) => assert.ok(WEAPON_DATA[w], where + ": weapon " + w));
+      // A weapon, or "Firearms" for all of them (a giff's Firearms Mastery).
+      (t.profs.weapons || []).forEach((w) => assert.ok(WEAPON_DATA[w] || w === "Firearms", where + ": weapon " + w));
       (t.profs.tools || []).forEach((v) => assert.ok(ALL_TOOLS.includes(v), where + ": tool " + v));
       for(const slot of t.profs.pick || []){
         assert.ok(["skill", "tool", "weapon", "skillOrTool", "choice"].includes(slot.kind), where + ": kind " + slot.kind);
@@ -370,7 +371,7 @@ test("dragonborn kinds: listed, with their ancestries, increases and languages",
     assert.deepEqual(RACE_DATA[race].languages, { fixed: ["Common", "Draconic"] }, race);
   }
   for(const race of ["Dragonborn (Chromatic)", "Dragonborn (Metallic)", "Dragonborn (Gem)"]){
-    assert.deepEqual(RACE_CHOICES[race], { abilityBonus: { amounts: [2, 1] } }, race + ": +2 and +1 of your choice");
+    assert.deepEqual(RACE_CHOICES[race], { abilityBonus: { amounts: [2, 1], alt: [1, 1, 1] } }, race + ": +2 and +1, or +1 to three, of your choice");
     assert.equal(RACE_DATA[race].darkvision, 0, race);
     assert.deepEqual(RACE_DATA[race].languages, { fixed: ["Common"], choose: 1 }, race);
   }

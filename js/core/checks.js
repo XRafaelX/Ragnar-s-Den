@@ -98,7 +98,7 @@ export function stealthCheck(c){
    astral visage out, disadvantage on STR and DEX skills in armor you
    aren't proficient with. {mode: "none"|"dis"|"adv", reason}. */
 export function skillRollMode(c, skill, passive){
-  var list = [armorPenalty(c, SKILL_ABILITY[skill])].concat(alwaysAdvantage(c, "check", SKILL_ABILITY[skill]));
+  var list = [armorPenalty(c, SKILL_ABILITY[skill])].concat(alwaysAdvantage(c, "check", SKILL_ABILITY[skill]), skillAdvantage(c, skill));
   // A boon for the next roll (Duality) isn't part of a passive score.
   if(!passive) list.push(nextCheckAdvantage(c));
   if(skill==="Stealth") list.push(stealthCheck(c));
@@ -107,16 +107,18 @@ export function skillRollMode(c, skill, passive){
   return combineRolls(list);
 }
 /* ---- Advantage from features and traits ----
-   [{on: "save" | "check" | "initiative", abilities: "all" | [keys], when,
-   name}] for this character: race traits (TRAIT_ADVANTAGES), class
+   [{on: "save" | "check" | "initiative" | "skill", abilities: "all" | [keys],
+   skills (for "skill"), when, name}] for this character: race traits (their
+   own `advantage`, else TRAIT_ADVANTAGES by name; false for none), class
    features tagged `advantage` (Feral Instinct, Danger Sense) and Rage
    ("advantage on Strength checks and Strength saving throws" while raging
    and not in heavy armor). One without `when` always applies. */
 export function advantagesFor(c){
   var out = [];
   ((RACE_DATA[c.race] && RACE_DATA[c.race].traits) || []).forEach(function(t){
-    var a = TRAIT_ADVANTAGES[t.name];
-    if(a && !out.some(function(x){ return x.name===t.name; })) out.push(Object.assign({name: t.name}, a));
+    var a = t.advantage!==undefined ? t.advantage : TRAIT_ADVANTAGES[t.name];
+    if(!a || out.some(function(x){ return x.name===t.name; })) return;
+    [].concat(a).forEach(function(one){ out.push(Object.assign({name: t.name}, one)); });
   });
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){ if(f.advantage) out.push(Object.assign({name: f.name}, f.advantage)); });
@@ -128,6 +130,11 @@ export function advantagesFor(c){
   return out;
 }
 function covers(a, on, key){ return a.on===on && (on==="initiative" || a.abilities==="all" || a.abilities.indexOf(key)!==-1); }
+/* Advantage on checks with one skill (a Pallid Elf's Investigation and Insight). */
+function skillAdvantage(c, skill){
+  return advantagesFor(c).filter(function(a){ return a.on==="skill" && !a.when && (a.skills||[]).indexOf(skill)!==-1; })
+    .map(function(a){ return {mode: "adv", reason: a.name}; });
+}
 /* The ones that always apply to this roll, as roll modes. */
 function alwaysAdvantage(c, on, key){
   return advantagesFor(c).filter(function(a){ return !a.when && covers(a, on, key); }).map(function(a){ return {mode: "adv", reason: a.name}; });

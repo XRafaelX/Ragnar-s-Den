@@ -26,3 +26,9 @@ export var ARMOR_DATA = {
   "Plate":          {category:"heavy",  baseAC:18, weight:65, stealthDisadvantage:true, strReq:15},
   "Shield":         {category:"shield", baseAC:2,  weight:6,  stealthDisadvantage:false}
 };
+
+/* An armor row's catalog entry: its own name's, or the base armor magic
+   armor is ("Plate, +1": `baseArmor`). */
+export function armorDataOf(item){
+  return (item && (ARMOR_DATA[item.name] || ARMOR_DATA[item.baseArmor])) || null;
+}

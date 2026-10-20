@@ -1,4 +1,4 @@
-import { SPELL_DATA, SPELL_LEVEL_LABELS, buildSpellGroups, spellDataForClass, spellLevelLabel, catalogSpellName, tashaAddsSpell } from "../../data/spells.js";
+import { SPELL_DATA, SPELL_LEVEL_LABELS, SPELL_SOURCES, buildSpellGroups, spellDataForClass, spellLevelLabel, catalogSpellName, tashaAddsSpell } from "../../data/spells.js";
 import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { openCatalogPicker, showCatalogCustomView, refreshCatalog } from "../../ui/catalog-picker.js";
@@ -247,10 +247,12 @@ export function spellSection(key, label, groups, data, onAdd, onCustomSaved, lis
     data: data,
     searchText: function(name, d){
       return [name, d.school, (d.classes||[]).concat(d.tashaClasses||[]).join(" "), d.summary,
-              d.concentration ? "concentration" : "", d.ritual ? "ritual" : ""].join(" ");
+              d.concentration ? "concentration" : "", d.ritual ? "ritual" : "", SPELL_SOURCES[d.source] || ""].join(" ");
     },
     renderSub: function(name, d){
-      return (d.school || "") + " · " + (d.castingTime || "") + " · " + (d.range || "") + (listClass && tashaAddsSpell(d, listClass) ? " · Tasha's optional" : "");
+      // A spell from a campaign book says which, so a table can skip it.
+      return (d.school || "") + " · " + (d.castingTime || "") + " · " + (d.range || "") + (listClass && tashaAddsSpell(d, listClass) ? " · Tasha's optional" : "") +
+        (SPELL_SOURCES[d.source] ? " · " + SPELL_SOURCES[d.source] : "");
     },
     renderDetail: function(name, d){ return d.summary; },
     renderRight: function(name, d){

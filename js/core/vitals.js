@@ -4,10 +4,10 @@
    and senses. */
 import { RACE_DATA } from "../data/race-data.js";
 import { ARMOR_MODELS } from "../data/artificer-extras.js";
-import { ARMOR_DATA } from "../data/armor.js";
+import { ARMOR_DATA, armorDataOf } from "../data/armor.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
 import { featDef, featProficiencies } from "./feat-picks.js";
-import { characterPickedProfs } from "./class-picks.js";
+import { characterPickedProfs, raceChoiceEffects } from "./class-picks.js";
 import { invocationSpeedSources, invocationSenses } from "./invocations.js";
 import { optionEffects } from "./class-options.js";
 import { styleSenses } from "./fighting-styles.js";
@@ -16,7 +16,7 @@ import { halfProficiency, checkAbility } from "./checks.js";
 import { findSubclass, classFeatureList } from "./class-features.js";
 import { effectOn, bladesongBonus } from "./effects.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
-import { holsterSpeedParts, coinAcBonus } from "./magic-items.js";
+import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
 import { infusionSpeedParts } from "./infusion-effects.js";
 
 /* ---------------- Feats the sheet applies ----------------
@@ -72,7 +72,8 @@ function conditionalSpeeds(cl){
    whose armor is Arcane Armor with no Strength requirement. */
 export function armorStrengthShortfall(c, item){
   if(!item || item.category!=="heavy") return 0;
-  var req = Number(item.strReq) || (ARMOR_DATA[item.name] && ARMOR_DATA[item.name].strReq) || 0;
+  // The row's own number first (Mithral Armor has none), then its armor's.
+  var req = item.strReq!=null ? Number(item.strReq)||0 : ((armorDataOf(item) || {}).strReq || 0);
   if(!req || (Number(c.abilities && c.abilities.str)||10) >= req) return 0;
   var race = RACE_DATA[c.race];
   if(race && (race.traits||[]).some(function(t){ return t.name==="Unslowed"; })) return 0;
@@ -106,6 +107,10 @@ export function computeSpeed(c){
   parts = parts.concat(holsterSpeedParts(c));
   // Arcane Propulsion Armor, worn: +5 ft.
   parts = parts.concat(infusionSpeedParts(c));
+  // A race choice that sets the walking speed (Fleet of Foot: 35 ft): the
+  // difference from the race's own.
+  var raceWalk = ((RACE_DATA[c.race] || {}).speed || {}).walk || 30;
+  raceChoiceEffects(c).forEach(function(e){ if(e.walk && e.walk > raceWalk) parts.push({name: e.name, value: e.walk - raceWalk}); });
   // Walking speed a feature adds while the character has it (Roving).
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){ if(f.walkSpeed) parts.push({name: f.name, value: f.walkSpeed}); });
@@ -135,6 +140,8 @@ export function computeSpeed(c){
   ["fly", "swim", "climb"].forEach(function(t){
     if(rs[t]) list.push({type: t, value: rs[t], when: (race.speedWhen||{})[t] || "", source: c.race});
   });
+  // A race choice's speed (a Half-Elf (Variant)'s Swim Speed).
+  raceChoiceEffects(c).forEach(function(e){ ["fly", "swim", "climb"].forEach(function(t){ if(e[t]) list.push({type: t, value: e[t], when: "", source: e.name}); }); });
   var speedSources = [];
   (c.classes||[]).forEach(function(cl){ speedSources = speedSources.concat(classFeatureList(cl)); });
   speedSources.concat(invocationSpeedSources(c), optionEffects(c)).forEach(function(f){
@@ -166,7 +173,7 @@ export function computeArmorClass(c){
   var items = (c.inventory||[]).filter(function(i){ return i.type==="armor" && i.equipped; });
   var bodyArmor = items.find(function(i){ return i.category!=="shield"; });
   var shieldBonus = items.filter(function(i){ return i.category==="shield"; })
-    .reduce(function(a,i){ return a + (Number(i.baseAC)||0) + (Number(i.magicBonus)||0); }, 0);
+    .reduce(function(a,i){ return a + (Number(i.baseAC)||0) + magicBonusOf(i); }, 0);
   var misc = Number(c.acMisc)||0;
   var base, breakdown, short;
 
@@ -175,7 +182,7 @@ export function computeArmorClass(c){
     if(bodyArmor.category==="light") dexContribution = dexMod;
     else if(bodyArmor.category==="medium") dexContribution = Math.min(dexMod, hasFeat(c, "Medium Armor Master") ? 3 : 2);
     var armorAC = Number(bodyArmor.baseAC)||10;
-    var magic = Number(bodyArmor.magicBonus)||0;
+    var magic = magicBonusOf(bodyArmor);
     base = armorAC + dexContribution + magic;
     breakdown = (bodyArmor.name||"Armor") + " (" + armorAC + ")" +
       (bodyArmor.category!=="heavy" ? " + DEX (" + fmtMod(dexContribution) + ")" : "") +
@@ -196,6 +203,12 @@ export function computeArmorClass(c){
     }
     if(hasClass("Sorcerer", "Draconic Bloodline")){
       options.push({value: 13 + dexMod, breakdown: "Draconic Resilience: 13 + DEX (" + fmtMod(dexMod) + ")", short: "13 + DEX"});
+    }
+    // A race's natural armor (Lizardfolk: 13 + DEX, Tortle: 17).
+    var nat = RACE_DATA[c.race] && RACE_DATA[c.race].unarmoredAc;
+    if(nat){
+      var natMod = nat.ability ? mod(c.abilities && c.abilities[nat.ability]) : 0, natAb = (nat.ability || "").toUpperCase();
+      options.push({value: nat.base + natMod, breakdown: nat.trait + ": " + nat.base + (natAb ? " + " + natAb + " (" + fmtMod(natMod) + ")" : ""), short: nat.base + (natAb ? " + " + natAb : "")});
     }
     // A feat's own formula (Dragon Hide: 13 + DEX).
     (c.feats||[]).forEach(function(f){
@@ -254,6 +267,8 @@ export function computeArmorClass(c){
   // A magic item's boon (Duality's angel side: +1 AC for 10 minutes).
   var coinAc = coinAcBonus(c);
   if(coinAc){ base += coinAc; breakdown += " + Duality (" + fmtMod(coinAc) + ")"; short += " + Duality"; }
+  // Magic items that add to AC (a Ring of Protection, Bracers of Defense).
+  magicItemAcBonuses(c).forEach(function(b){ base += b.value; breakdown += " + " + b.name + " (" + fmtMod(b.value) + ")"; short += " + " + b.name; });
   if(misc){ breakdown += " + misc (" + fmtMod(misc) + ")"; short += " + misc"; }
 
   return { value: base + shieldBonus + misc, breakdown: breakdown, short: short };
@@ -309,6 +324,8 @@ export function computeSave(c, key){
       }
     });
   });
+  // Magic items that add to every save (a Cloak of Protection).
+  magicItemSaveBonuses(c).forEach(function(b){ bonuses.push(b); });
   // A save picked for a feature (Iron Mind, Elegant Courtier).
   if(!grantedBy) characterPickedProfs(c).saves.forEach(function(s){ if(!grantedBy && s.ability===key) grantedBy = s.name; });
   // Resilient: proficiency in the ability it raised.
@@ -326,6 +343,11 @@ export function computeSave(c, key){
 export function computeDarkvision(c){
   var race = RACE_DATA[c.race];
   var range = race && Number(race.darkvision) || 0;
+  // Custom Lineage: darkvision, unless its Variable Trait took a skill instead.
+  if(range && race.darkvisionUnlessPicked){
+    var held = ((c.racePicks && c.racePicks.profPicks) || {})["race:" + race.darkvisionUnlessPicked + ":pick"];
+    if(held && (held.slots || []).some(function(s){ return (s || []).length; })) range = 0;
+  }
   var sources = range ? [c.race] : [];
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){

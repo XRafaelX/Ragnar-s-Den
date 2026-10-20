@@ -15,7 +15,7 @@ export var LANGUAGES = {
     "Aquan","Auran","Ignan","Terran"
   ],
   "Setting": [
-    "Aarakocra","Gith","Kraul","Loxodon","Minotaur","Netherese","Vedalken"
+    "Aarakocra","Aven","Gith","Grung","Khenra","Kraul","Leonin","Loxodon","Merfolk","Minotaur","Naga","Netherese","Quori","Siren","Vampire","Vedalken"
   ],
   "Secret": [
     "Druidic","Thieves' Cant"

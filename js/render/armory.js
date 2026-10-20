@@ -4,6 +4,7 @@ import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
 import { ARMOR_GROUPS, ARMOR_DATA } from "../data/armor.js";
 import { GEAR_GROUPS, GEAR_DATA } from "../data/gear.js";
 import { MAGIC_ITEM_GROUPS, MAGIC_ITEM_DATA } from "../data/magic-items.js";
+import { openBottomSheet } from "../ui/bottom-sheet.js";
 import { isProficientWithWeapon, tryEquip, escapeHtml } from "../core/helpers.js";
 import { getCustomItem, saveCustomItem, deleteCustomItem, itemNameProblem, charactersWithItem, weaponAbility, armorNote } from "../core/custom-items.js";
 import { facts, textField, homebrewShell, numberField, pickerField, previewCard } from "../ui/homebrew-form.js";
@@ -76,18 +77,57 @@ export function addCatalogGear(c, name, d){
   playAdd();
 }
 
+/* The weapons or armor a magic item of a kind can be ("any sword"), by
+   catalog name, homebrew left out. */
+var SWORDS = ["Double-Bladed Scimitar","Greatsword","Longsword","Rapier","Scimitar","Shortsword"];
+var AXES = ["Battleaxe","Greataxe","Handaxe"];
+export function magicItemBases(d){
+  if(d.weaponAny){
+    var all = Object.keys(WEAPON_DATA).filter(function(n){ var w = WEAPON_DATA[n]; return !w.custom && (w.category==="simple" || w.category==="martial"); });
+    var pick = {any: all, sword: SWORDS, axe: AXES, axeOrSword: AXES.concat(SWORDS),
+      slashingSword: SWORDS.filter(function(n){ return WEAPON_DATA[n].damageType==="Slashing"; })}[d.weaponAny] || [];
+    return pick.filter(function(n){ return WEAPON_DATA[n]; }).sort();
+  }
+  if(d.armorAny){
+    return Object.keys(ARMOR_DATA).filter(function(n){
+      var a = ARMOR_DATA[n];
+      if(a.custom || a.category==="shield") return false;
+      if(d.armorAny==="any") return true;
+      return (a.category==="medium" || a.category==="heavy") && !(d.armorAny==="mediumHeavyNotHide" && n==="Hide");
+    });
+  }
+  return [];
+}
+/* The row's name once its weapon or armor is known: "Longsword, +1" for
+   the SRD's "Weapon, +1", else "Flame Tongue (Longsword)". */
+function magicRowName(name, base){
+  var plus = /^(Weapon|Armor), (\+\d)$/.exec(name);
+  if(plus) return base + ", " + plus[2];
+  return base ? name + " (" + base + ")" : name;
+}
+
 /* A magic item is its own row (never stacked): it keeps its own state,
    attunement and, for a Heavy Holster, the knives in it (it comes full).
-   A magic weapon goes under Weapons with its weapon's numbers, readied
-   if a hand is free; its properties in the notes make the hands and
-   thrown rules see it as that weapon. */
-export function addCatalogMagicItem(c, name, d){
-  var item = {name: name, type:"gear", magicItem: name, qty:1, equipped:false, notes:""};
-  var w = d.weapon && WEAPON_DATA[d.weapon];
+   A magic weapon goes under Weapons with its weapon's numbers (readied
+   if a hand is free) and its bonus, magic armor under Armor; for one of
+   a kind ("any sword") `base` says which. Their properties in the notes
+   and `baseWeapon` / `baseArmor` make the rules see the weapon or armor
+   it is. Magic ammunition is gear, like arrows. */
+export function addCatalogMagicItem(c, name, d, base){
+  var item = {name: name, type:"gear", magicItem: name, qty:1, equipped:false, notes: d.ammunition ? "ammunition" : ""};
+  var wName = d.weapon || (d.weaponAny && base), w = wName && WEAPON_DATA[wName];
+  var aName = d.armor || (d.armorAny && base), a = aName && ARMOR_DATA[aName];
   if(w) item = {
-    name: name, type:"weapon", magicItem: name, magic: true, qty:1, equipped:false, notes: w.properties||"",
+    name: magicRowName(name, d.weaponAny ? wName : ""), type:"weapon", magicItem: name, magic: true, baseWeapon: wName,
+    qty:1, equipped:false, notes: w.properties||"",
     damageDice: w.damageDice||"", damageType: w.damageType||"", ability: w.finesse ? "finesse" : (w.ranged ? "dex" : "str"),
-    proficient: isProficientWithWeapon(c, d.weapon, w.category), magicBonus: 0
+    proficient: isProficientWithWeapon(c, wName, w.category), magicBonus: d.bonus || 0
+  };
+  if(a) item = {
+    name: magicRowName(name, d.armorAny ? aName : ""), type:"armor", magicItem: name, magic: true, baseArmor: aName,
+    qty:1, equipped:false, category: a.category, baseAC: a.baseAC, magicBonus: d.bonus || 0,
+    strReq: d.noPenalty ? 0 : (a.strReq || 0), stealthDisadvantage: d.noPenalty ? false : !!a.stealthDisadvantage,
+    notes: d.noPenalty ? "" : armorNote(a)
   };
   if(d.attunement) item.attuned = false;
   if(d.holster) item.knives = d.holster.capacity;
@@ -95,6 +135,36 @@ export function addCatalogMagicItem(c, name, d){
   if(w) tryEquip(c, item);
   save();
   playAdd();
+  return item;
+}
+
+/* Which weapon or armor a magic item of a kind is: a list in a bottom
+   sheet (over the catalog), then onPick(base). */
+function chooseMagicBase(name, d, onPick){
+  var bases = magicItemBases(d);
+  openBottomSheet(function(body, refresh, close){
+    var head = document.createElement("div");
+    head.className = "bs-header";
+    head.innerHTML = "<div class='bs-title'>" + escapeHtml(name) + "</div>";
+    body.appendChild(head);
+    var p = document.createElement("p");
+    p.className = "armory-base-help";
+    p.textContent = "Which " + (d.weaponAny ? "weapon" : "armor") + " is it? (" + d.kind.replace(/^(Weapon|Armor) \((.+)\)$/, "$2") + ")";
+    body.appendChild(p);
+    var list = document.createElement("div");
+    list.className = "armory-base-list";
+    bases.forEach(function(b){
+      var row = document.createElement("button");
+      row.type = "button";
+      row.className = "armory-base-row";
+      var info = d.weaponAny ? (WEAPON_DATA[b].damageDice + " " + WEAPON_DATA[b].damageType.toLowerCase())
+        : (ARMOR_CATEGORY_LABEL[ARMOR_DATA[b].category] + " · AC " + ARMOR_DATA[b].baseAC);
+      row.innerHTML = "<span class='armory-base-name'>" + escapeHtml(b) + "</span><span class='armory-base-info'>" + escapeHtml(info) + "</span>";
+      row.addEventListener("click", function(){ close(); onPick(b); });
+      list.appendChild(row);
+    });
+    body.appendChild(list);
+  });
 }
 
 var ADD = {weapon:addCatalogWeapon, armor:addCatalogArmor, gear:addCatalogGear, magic:addCatalogMagicItem};
@@ -102,6 +172,19 @@ var ADD = {weapon:addCatalogWeapon, armor:addCatalogArmor, gear:addCatalogGear, 
 /* Tap on a row: straight onto the sheet's character, or ask which one. */
 function onAddFor(kind){
   return function(name, d){
+    // A magic item of a kind ("any sword") asks which one first.
+    if(kind==="magic" && (d.weaponAny || d.armorAny) && (target || state.characters.length)){
+      chooseMagicBase(name, d, function(base){
+        var add = function(c){
+          var item = addCatalogMagicItem(c, name, d, base);
+          renderAll();
+          showActionToast('Added "' + item.name + '" to ' + (c.name||"Unnamed") + "’s inventory.");
+        };
+        if(target) add(target);
+        else if(state.characters.length) chooseCharacter(add);
+      });
+      return false;
+    }
     if(target){ ADD[kind](target, name, d); renderAll(); return; }
     if(!state.characters.length){
       confirmDialog("No characters yet", "The Armory adds items to one of your characters. Create one now?", function(){
@@ -389,22 +472,26 @@ function gearSection(){
   };
 }
 
-/* The magic items list. `weaponsOnly` keeps just the magic weapons: the
-   Add Weapon list's own tab. */
-function magicSection(weaponsOnly){
-  var groups = MAGIC_ITEM_GROUPS;
-  if(weaponsOnly){
+/* The magic items list. `only` keeps just the magic weapons or armor:
+   the Add Weapon and Add Armor lists' own tab. */
+var MAGIC_ONLY = {
+  weapons: {key:"magic-weapons", label:"Magic weapons", fits:function(d){ return d.weapon || d.weaponAny; }},
+  armor: {key:"magic-armor", label:"Magic armor", fits:function(d){ return d.armor || d.armorAny; }}
+};
+function magicSection(only){
+  var groups = MAGIC_ITEM_GROUPS, kind = MAGIC_ONLY[only];
+  if(kind){
     groups = {};
     Object.keys(MAGIC_ITEM_GROUPS).forEach(function(g){
-      var names = MAGIC_ITEM_GROUPS[g].filter(function(n){ return MAGIC_ITEM_DATA[n].weapon; });
+      var names = MAGIC_ITEM_GROUPS[g].filter(function(n){ return kind.fits(MAGIC_ITEM_DATA[n]); });
       if(names.length) groups[g] = names;
     });
   }
   return {
-    key: weaponsOnly ? "magic-weapons" : "magic", label: weaponsOnly ? "Magic weapons" : "Magic items",
-    searchPlaceholder: weaponsOnly ? "Search magic weapons…" : "Search magic items…",
+    key: kind ? kind.key : "magic", label: kind ? kind.label : "Magic items",
+    searchPlaceholder: "Search " + (kind ? kind.label.toLowerCase() : "magic items") + "…",
     groups: groups, data: MAGIC_ITEM_DATA,
-    renderSub: function(name, d){ return d.kind + (d.attunement ? " (requires attunement)" : ""); },
+    renderSub: function(name, d){ return d.kind + (d.attunement ? " (requires attunement" + (d.attuneBy ? " by " + d.attuneBy : "") + ")" : ""); },
     renderRight: function(name, d){ return [d.rarity]; },
     searchText: function(name, d){ return name+" "+d.kind+" "+d.rarity+" "+d.text; },
     onAdd: onAddFor("magic")
@@ -416,7 +503,7 @@ function magicSection(weaponsOnly){
 export function openArmory(opts){
   opts = opts || {};
   target = opts.forCharacter || null;
-  var sections = opts.only==="weapons" ? [weaponSection(), magicSection(true)] : opts.only==="armor" ? [armorSection()] : opts.only==="gear" ? [gearSection(), magicSection()]
+  var sections = opts.only==="weapons" ? [weaponSection(), magicSection("weapons")] : opts.only==="armor" ? [armorSection(), magicSection("armor")] : opts.only==="gear" ? [gearSection(), magicSection()]
     : [weaponSection(), armorSection(), gearSection(), magicSection()];
   openCatalogPicker({
     sections: sections,

@@ -15,7 +15,7 @@
      onChange      called after each pick or drop
    The returned element has refresh() to redraw after another list
    changes. */
-import { SPELL_DATA, spellLevelLabel } from "../data/spells.js";
+import { SPELL_DATA, SPELL_SOURCES, spellLevelLabel } from "../data/spells.js";
 import { escapeHtml, ce } from "../core/helpers.js";
 import { makeCheckSvg } from "./svg-icons.js";
 
@@ -89,7 +89,8 @@ export function spellPickGrid(opts){
     var tagHtml = (tags[name]||[]).map(function(t){ return "<span class='wiz-spell-tag extra'>" + escapeHtml(t) + "</span>"; });
     if(d.concentration) tagHtml.push("<span class='wiz-spell-tag'>Concentration</span>");
     if(d.ritual) tagHtml.push("<span class='wiz-spell-tag'>Ritual</span>");
-    var schoolLine = (levels.length > 1 ? spellLevelLabel(d.level) + " · " : "") + (d.school || "");
+    // A campaign book's spell says which book.
+    var schoolLine = (levels.length > 1 ? spellLevelLabel(d.level) + " · " : "") + (d.school || "") + (SPELL_SOURCES[d.source] ? " · " + SPELL_SOURCES[d.source] : "");
     var body = ce("span","wiz-spell-body");
     body.innerHTML =
       '<span class="wiz-spell-top"><span class="wiz-spell-name">' + escapeHtml(name) + '</span><span class="wiz-spell-tick" aria-hidden="true">' + makeCheckSvg() + '</span></span>' +

@@ -2,7 +2,7 @@
    Hands and equipping, weapon attack and damage numbers, and weapon and
    armor proficiency. */
 import { RACE_DATA } from "../data/race-data.js";
-import { WEAPON_DATA } from "../data/weapons.js";
+import { WEAPON_DATA, weaponDataOf, baseWeaponName } from "../data/weapons.js";
 import { featProficiencies } from "./feat-picks.js";
 import { characterPickedProfs, characterChoices, raceProficiencies } from "./class-picks.js";
 import { mod, profBonus, parseDiceNotation } from "./basics.js";
@@ -10,7 +10,7 @@ import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.
 import { classFeatureList, classProficiencies } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
-import { holsterDamageBonus, coinAttackBonus } from "./magic-items.js";
+import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
    (see applyClassChoices), so deleting the feature removes its bonus. */
@@ -18,7 +18,7 @@ export function hasFightingStyle(c, style){
   return (c.features||[]).some(function(f){ return f.fightingStyle===style; });
 }
 export function isRangedWeapon(item){
-  var d = WEAPON_DATA[item.name];
+  var d = weaponDataOf(item);
   return !!(d && d.ranged);
 }
 
@@ -30,7 +30,7 @@ export function isRangedWeapon(item){
 function isBodyArmor(i){ return i.type==="armor" && i.category!=="shield"; }
 function isShield(i){ return i.type==="armor" && i.category==="shield"; }
 function isTwoHanded(item){
-  var d = WEAPON_DATA[item.name];
+  var d = weaponDataOf(item);
   return /two-handed/i.test(((d && d.properties) || "") + " " + (item.notes || ""));
 }
 export function itemHands(item){
@@ -105,8 +105,8 @@ export function autoEquipLoadout(items){
 /* A monk weapon: a shortsword, or a simple melee weapon that isn't
    two-handed or heavy. */
 export function isMonkWeapon(item){
-  if(item.name==="Shortsword") return true;
-  var d = WEAPON_DATA[item.name];
+  if(baseWeaponName(item)==="Shortsword") return true;
+  var d = weaponDataOf(item);
   if(!d || d.category!=="simple" || d.ranged) return false;
   return !/two-handed|heavy/i.test(d.properties || "");
 }
@@ -114,7 +114,7 @@ export function isMonkWeapon(item){
    instead of STR with monk weapons, a Kensei's chosen weapons included. */
 export function martialArtsApplies(c, item){
   if(!(c.classes||[]).some(function(cl){ return cl.name==="Monk"; })) return false;
-  if(!isMonkWeapon(item) && characterPickedProfs(c).monkWeapons.indexOf(item.name)===-1) return false;
+  if(!isMonkWeapon(item) && characterPickedProfs(c).monkWeapons.indexOf(baseWeaponName(item))===-1) return false;
   return !(c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
 }
 /* The damage dice a weapon rolls: its own, or the Martial Arts die when
@@ -158,12 +158,14 @@ export function unarmedStrike(c){
     parts.push("Unarmed Fighting d" + sd + (holding ? " (d8 with no weapon or shield in hand)" : ""));
   }
   var abilityMod = str, ability = "STR";
+  // A dhampir's bite uses Constitution in place of Strength.
+  if(nat && nat.ability==="con" && die===nat.die){ abilityMod = mod(ab.con); ability = "CON"; }
   var armored = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
   if(monk && !armored){
     var ma = martialArtsDie(c);
     if(ma > die){ die = ma; }
     parts.push("Martial Arts d" + ma);
-    if(dex > str){ abilityMod = dex; ability = "DEX"; }
+    if(dex > abilityMod){ abilityMod = dex; ability = "DEX"; }
   }
   var bonus = abilityMod + holsterDamageBonus(c);
   // Rage: melee weapon attacks with STR, not in heavy armor.
@@ -199,14 +201,14 @@ export function weaponAbilityMod(c, item){ return weaponAbility(c, item).mod; }
 /* Revenant Blade: a double-bladed scimitar has the finesse property when
    the character wields it. */
 export function revenantBladeApplies(c, item){
-  return item.type==="weapon" && item.name==="Double-Bladed Scimitar" && hasFeat(c, "Revenant Blade");
+  return item.type==="weapon" && baseWeaponName(item)==="Double-Bladed Scimitar" && hasFeat(c, "Revenant Blade");
 }
 /* A double-bladed scimitar's other blade: after attacking with it as part
    of the Attack action, a bonus action attack that deals 1d4 slashing in
    place of 2d4 (the weapon's usual damage bonus still applies; this is
    not two-weapon fighting). Only while it's equipped. {dice, damage} or null. */
 export function otherBladeAttack(c, item){
-  if(item.type!=="weapon" || item.name!=="Double-Bladed Scimitar" || !item.equipped) return null;
+  if(item.type!=="weapon" || baseWeaponName(item)!=="Double-Bladed Scimitar" || !item.equipped) return null;
   return {dice: "1d4", damage: weaponDamageBonus(c, item)};
 }
 /* The feature (if any) that lets this character mark one weapon to attack
@@ -221,7 +223,7 @@ export function chosenWeaponFeature(c){
 /* A magic weapon: marked magic on the sheet (a Flame Tongue, a +0
    weapon), with a magic bonus, or holding an active artificer infusion. */
 export function isMagicWeapon(c, item){
-  if(item.magic || (Number(item.magicBonus)||0) > 0) return true;
+  if(item.magic || magicBonusOf(item) > 0) return true;
   var active = c.infusions && c.infusions.active || [];
   return !!item.id && active.some(function(a){ return a.itemId===item.id; });
 }
@@ -231,7 +233,7 @@ export function isMagicWeapon(c, item){
 export function powerAttackFeat(c, item){
   if(!item.proficient) return null;
   if(isRangedWeapon(item)) return hasFeat(c, "Sharpshooter") ? "Sharpshooter" : null;
-  var d = WEAPON_DATA[item.name];
+  var d = weaponDataOf(item);
   var heavy = /\bheavy\b/i.test(((d && d.properties) || "") + " " + (item.notes || ""));
   return heavy && hasFeat(c, "Great Weapon Master") ? "Great Weapon Master" : null;
 }
@@ -242,15 +244,15 @@ export function powerAttackOn(c, item){
 export function weaponAttackBonus(c, item){
   var pb = item.proficient ? profBonus(c) : 0;
   var archery = isRangedWeapon(item) && hasFightingStyle(c, "Archery") ? 2 : 0;
-  return weaponAbilityMod(c, item) + pb + (Number(item.magicBonus)||0) + archery - (powerAttackOn(c, item) ? 5 : 0) + coinAttackBonus(c);
+  return weaponAbilityMod(c, item) + pb + magicBonusOf(item) + archery - (powerAttackOn(c, item) ? 5 : 0) + coinAttackBonus(c);
 }
 export function weaponDamageBonus(c, item){
-  return weaponAbilityMod(c, item) + (Number(item.magicBonus)||0) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + holsterDamageBonus(c)
+  return weaponAbilityMod(c, item) + magicBonusOf(item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + holsterDamageBonus(c)
     + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0);
 }
 /* A weapon with the thrown property (a dagger, a handaxe, a dart). */
 export function isThrownWeapon(item){
-  var d = WEAPON_DATA[item.name];
+  var d = weaponDataOf(item);
   return item.type==="weapon" && /\bthrown\b/i.test(((d && d.properties) || "") + " " + (item.notes || ""));
 }
 /* Thrown Weapon Fighting: +2 damage when you hit with a ranged attack
@@ -283,7 +285,7 @@ export function thrownAttack(c, item){
    `item`, when it can be that off-hand weapon: {damage, style}, else null. */
 function offHandCapable(c, item){
   if(item.type!=="weapon" || !item.equipped || isRangedWeapon(item) || isTwoHanded(item)) return false;
-  var d = WEAPON_DATA[item.name];
+  var d = weaponDataOf(item);
   return /\blight\b/i.test(((d && d.properties) || "") + " " + (item.notes || "")) || hasFeat(c, "Dual Wielder");
 }
 export function offHandAttack(c, item){
@@ -331,8 +333,11 @@ export function divineFury(c){
 export function isProficientWithWeapon(c, weaponName, category){
   // Weapon Master's picks, and Gunner's firearms.
   if(featProficiencies(c).weapons.some(function(w){ return (weaponName && w.name===weaponName) || (category==="firearm" && w.name==="Firearms"); })) return true;
-  // The race's weapon training (an elf's longbow, a hobgoblin's picks).
-  if(weaponName && raceProficiencies(c).weapons.indexOf(weaponName)!==-1) return true;
+  // The race's weapon training (an elf's longbow, a hobgoblin's picks, a
+  // giff's firearms).
+  var raceWeapons = raceProficiencies(c).weapons;
+  if(weaponName && raceWeapons.indexOf(weaponName)!==-1) return true;
+  if(category==="firearm" && raceWeapons.indexOf("Firearms")!==-1) return true;
   return (c.classes||[]).some(function(cl, idx){
     var p = classProficiencies(c, idx);
     if(!p || !p.weapons) return false;

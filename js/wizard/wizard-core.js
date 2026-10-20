@@ -304,6 +304,13 @@ export function equipmentOptionAvailable(opt){
 }
 /* Race picks (Variant Human): what the race lets you choose, if anything. */
 export function raceChoiceDef(){ return wizardState && RACE_CHOICES[wizardState.race] || null; }
+/* The race's flexible increases in use: its amounts, or its `alt` set
+   (+1 to three scores) once the player switches to it. */
+export function raceAbilityAmounts(){
+  var def = raceChoiceDef(), ab = def && def.abilityBonus;
+  if(!ab) return [];
+  return ab.alt && wizardState.raceChoices.alt ? ab.alt : ab.amounts;
+}
 
 /* The race's ability increases as {ability: amount}: its fixed ones
    (Hill Dwarf +2 CON, +1 WIS) plus what's picked on Race Traits, either
@@ -318,7 +325,7 @@ export function raceAbilityIncreases(opts){
   if(opts && opts.fixedOnly) return out;
   var def = raceChoiceDef(), rc = wizardState.raceChoices;
   if(def && def.abilityBonus){
-    var amounts = def.abilityBonus.amounts, exclude = def.abilityBonus.exclude || [];
+    var amounts = raceAbilityAmounts(), exclude = def.abilityBonus.exclude || [];
     var picks = rc.abilities.slice(0, amounts.length);
     picks.forEach(function(k, i){
       if(k && picks.indexOf(k)===i && exclude.indexOf(k)===-1) add(k, amounts[i]);
@@ -340,7 +347,7 @@ export function raceAbilityPicksNeeded(){
     var k = a[0];
     return exclude.indexOf(k)===-1 && (Number(wizardState.abilities[k])||10) + (fixed[k]||0) < 20;
   }).length;
-  return Math.min(def.abilityBonus.amounts.length, room);
+  return Math.min(raceAbilityAmounts().length, room);
 }
 
 /* The scores the character will actually have: the base scores from the
@@ -594,7 +601,7 @@ export function validateStep(id){
     var def = raceChoiceDef() || {}, rc = wizardState.raceChoices;
     if(def.abilityBonus){
       var n = raceAbilityPicksNeeded(), exclude = def.abilityBonus.exclude || [];
-      var ab = rc.abilities.slice(0, def.abilityBonus.amounts.length).filter(Boolean);
+      var ab = rc.abilities.slice(0, raceAbilityAmounts().length).filter(Boolean);
       if(ab.length<n || new Set(ab).size!==ab.length || ab.some(function(k){ return exclude.indexOf(k)!==-1; })){
         return n===1 ? "Pick an ability to increase"+(exclude.length ? " other than "+exclude.map(abilityFullName).join(" or ") : "")+"."
           : "Pick "+n+" different abilities to increase"+(exclude.length ? ", not "+exclude.map(abilityFullName).join(" or ") : "")+".";
@@ -711,7 +718,7 @@ export function openWizard(){
     bgSkillChoices:[],
     bgPicks:{}, overlapPicks:{},
     classChoices:{},
-    raceChoices:{abilities:[], preset:"", profPicks:{}, feat:"", featPicks:null},
+    raceChoices:{abilities:[], alt:false, preset:"", profPicks:{}, feat:"", featPicks:null},
     bgFeat:null, bgFeatChoice:"", campaign:"", campaignFeat:"",
     languageChoices:[],
     equipment:{},

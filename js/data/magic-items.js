@@ -1,17 +1,33 @@
 /* ---------------- Magic items ----------------
-   The Armory's "Magic items" list (see js/render/armory.js), grouped by
-   rarity. Adding one puts it in Other Equipment, where a magic item that
-   needs attunement gets an Attune switch: its magic works only while
+   The Armory's "Magic items" list (see js/render/armory.js): the items
+   our DM made, in their own "Panais Magic Items" group, then the SRD's
+   (./magic-items-srd.js) by rarity. Adding one puts it in Other Equipment
+   (a magic weapon under Weapons, magic armor under Armor), where one that
+   needs attunement gets Attune in its ⋯ menu: its magic works only while
    attuned (see js/core/magic-items.js).
      kind        the item line ("Wondrous item (knife holster)")
-     rarity      "Common" to "Legendary"
-     attunement  requires attunement
-     text        the item's description, as printed
+     rarity      "Common" to "Artifact"
+     attunement  requires attunement; attuneBy who can ("a paladin")
+     text        the item's description, as printed (markdown tables,
+                 **bold** and _italics_ are drawn as such)
+     weapon      a magic weapon: the weapon it is (js/data/weapons.js),
+                 added under Weapons with that weapon's numbers
+     weaponAny   a magic weapon of any weapon of a kind, picked when it's
+                 added: "any", "sword", "slashingSword", "axe", "axeOrSword"
+     armor       magic armor: the armor it is (js/data/armor.js)
+     armorAny    magic armor of a kind, picked when it's added: "any",
+                 "mediumHeavy", "mediumHeavyNotHide"
+     bonus       a weapon's bonus to attack and damage rolls, or armor's
+                 to AC (only while attuned, if it needs attunement)
+     ammunition  magic ammunition (kept as gear, like arrows)
+     acBonus     AC while it works (Ring of Protection); acWhen
+                 "unarmored": only with no armor and no shield
+     saveBonus   saving throws while it works
+     noPenalty   armor without its Strength requirement or Stealth
+                 disadvantage (Mithral Armor)
      holster     a holster of throwing knives: capacity (knives it holds),
                  damagePerKnife (extra damage on your attacks for each
                  knife in it) and emptySpeed (feet of speed while empty)
-     weapon      a magic weapon: the weapon it is (js/data/weapons.js),
-                 added under Weapons with that weapon's numbers
      returning   can be thrown and called back to your hand
      coin        a coin flipped for a boon: charges (all back at a long
                  rest) and its sides, each {name, boons}. A boon is {id,
@@ -21,12 +37,15 @@
                  {qty, die, types} (extra damage on the next attack, of a
                  type chosen from `types`), resistance (to a damage type
                  chosen when it's picked) */
-export var MAGIC_ITEM_GROUPS = {
-  "Uncommon": ["Heavy Holster", "Trident of Returning"],
-  "Rare": ["Duality"]
-};
+import { SRD_MAGIC_ITEM_GROUPS, SRD_MAGIC_ITEM_DATA } from "./magic-items-srd.js";
 
-export var MAGIC_ITEM_DATA = {
+export var PANAIS_GROUP = "Panais Magic Items";
+export var MAGIC_ITEM_GROUPS = Object.assign({
+  "Panais Magic Items": ["Duality", "Heavy Holster", "Trident of Returning"]
+}, SRD_MAGIC_ITEM_GROUPS);
+
+/* Our DM's items. */
+var PANAIS_ITEMS = {
   "Heavy Holster": {
     kind: "Wondrous item (knife holster)", rarity: "Uncommon", attunement: true,
     text: "This holster can hold up to 3 throwing knives. For each knife holstered in the holster, your attacks deal an additional 1 damage. When no knives are holstered, your movement speed increases by 20 feet. You can use a bonus action to summon back one knife or an action to summon all of them back into the holster.",
@@ -54,3 +73,4 @@ export var MAGIC_ITEM_DATA = {
     }}
   }
 };
+export var MAGIC_ITEM_DATA = Object.assign({}, PANAIS_ITEMS, SRD_MAGIC_ITEM_DATA);

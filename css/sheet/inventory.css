@@ -328,7 +328,12 @@
 
 /* Magic items (Other Equipment): the description in the item's sheet, and
    a Heavy Holster's knives. */
-.inv-magic-text{font-size:13px;line-height:1.5;color:var(--text-on-parch);margin:12px 2px 0;white-space:pre-line;}
+.inv-magic-text{font-size:13px;line-height:1.5;color:var(--text-on-parch);margin:12px 2px 0;}
+.inv-magic-text p{margin:0 0 8px;}
+/* A table in an item's description (a Bag of Tricks' creatures). */
+.inv-magic-table{border-collapse:collapse;margin:4px 0 12px;font-size:12.5px;max-width:100%;}
+.inv-magic-table th, .inv-magic-table td{border:1px solid var(--rule);padding:4px 8px;text-align:left;vertical-align:top;}
+.inv-magic-table th{color:var(--brass-bright);font-weight:600;background:rgba(255,255,255,0.03);}
 .inv-holster{display:flex;flex-direction:column;gap:8px;margin-top:2px;}
 .inv-holster-row{display:flex;align-items:center;gap:10px;}
 .inv-holster-pips{display:inline-flex;gap:5px;}

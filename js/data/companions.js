@@ -22,22 +22,25 @@
      actions  [{name, text, dice, bonus, save}]: dice to roll (damage or
               healing), save "DEX 15" for the target
      reactions, traits  [{name, text}]
+     requires     in place of cls: {spell, pactBoon}, either one (a familiar:
+                  Find Familiar known, or Pact of the Chain); stats get
+                  ctx.chain then. choice.chainOnly lists the options only
+                  Pact of the Chain allows.
    A new companion is one more entry here; the card draws any of them. */
+import { SRD_STAT_BLOCKS, BEAST_MASTER_BEASTS, FAMILIAR_FORMS, CHAIN_FAMILIARS } from "./beast-blocks.js";
+
 function plus(n){ return (n >= 0 ? "+" : "") + n; }
 
-/* Common beasts for a Beast Master to start from (SRD stat blocks, before
-   the ranger's bonuses); the form fills in from one, then it can be edited. */
-export var BEAST_PRESETS = {
-  "Wolf": {name:"Wolf", size:"Medium", ac:13, hp:11, speed:"40 ft", abilities:{str:12, dex:15, con:12, int:3, wis:12, cha:6},
-    skills:"Perception +3, Stealth +4", senses:"passive Perception 13",
-    attacks:[{name:"Bite", toHit:4, dice:"2d4", bonus:2, damageType:"piercing", text:"Reach 5 ft. A creature hit must succeed on a DC 11 STR save or be knocked prone."}],
-    traits:"Keen Hearing and Smell: advantage on Perception checks that rely on hearing or smell. Pack Tactics: advantage on an attack roll against a creature if an ally is within 5 ft of it and isn't incapacitated."},
-  "Panther": {name:"Panther", size:"Medium", ac:12, hp:13, speed:"50 ft, climb 40 ft", abilities:{str:14, dex:15, con:10, int:3, wis:14, cha:7},
-    skills:"Perception +4, Stealth +6", senses:"passive Perception 14",
-    attacks:[{name:"Bite", toHit:4, dice:"1d6", bonus:2, damageType:"piercing", text:"Reach 5 ft."},
-      {name:"Claw", toHit:4, dice:"1d4", bonus:2, damageType:"slashing", text:"Reach 5 ft."}],
-    traits:"Keen Smell: advantage on Perception checks that rely on smell. Pounce: if it moves at least 20 ft straight toward a creature and hits it with a claw, the target must succeed on a DC 12 STR save or be knocked prone; if it is, the panther can bite it as a bonus action."}
-};
+/* The beasts a Beast Master can start from: every SRD beast no larger
+   than Medium with a challenge rating of 1/4 or lower (./beast-blocks.js,
+   before the ranger's bonuses); the form fills in from one, then it can be
+   edited. */
+export var BEAST_PRESETS = {};
+BEAST_MASTER_BEASTS.forEach(function(n){
+  var b = Object.assign({}, SRD_STAT_BLOCKS[n]);
+  delete b.type; delete b.cr;
+  BEAST_PRESETS[n] = b;
+});
 /* Tasha's Primal Companion: a primal beast summoned by the ranger. Its
    attack uses the ranger's spell attack; `bonus` is the flat part of the
    damage before the proficiency bonus. */
@@ -197,6 +200,26 @@ export var COMPANIONS = [
             (x.lv >= 5 ? " (and you make one weapon attack when it attacks)" : "") + "." +
             (x.lv >= 7 ? " A bonus action can command Dash, Disengage, Dodge or Help when it doesn't attack; its attacks are magical." : "") +
             (x.lv >= 11 ? " It makes two attacks when you command it to Attack." : "")}])
+      };
+    }},
+  // Find Familiar (PHB) and Pact of the Chain: the familiar's own stat
+  // block, as a celestial, fey or fiend; it attacks only for a chain pact.
+  {id:"familiar", name:"Familiar", requires:{spell:"Find Familiar", pactBoon:"Pact of the Chain"},
+    choice:{label:"Form", options:FAMILIAR_FORMS.concat(CHAIN_FAMILIARS), chainOnly:CHAIN_FAMILIARS,
+      intro:"Choose your familiar's form. It is a celestial, fey or fiend spirit in that shape."},
+    stats:function(x){
+      var b = SRD_STAT_BLOCKS[x.choice];
+      if(!b || (!x.chain && CHAIN_FAMILIARS.indexOf(x.choice)!==-1)) return null;
+      var rules = [
+        {name:"Familiar", text:"It acts on its own initiative and obeys your commands." + (x.chain ? "" : " It can't attack, but it can take other actions.")},
+        {name:"Shared senses", text:"Within 100 feet you can talk with it telepathically, and as an action see through its eyes and hear what it hears until the start of your next turn. It can deliver your touch spells with its reaction."},
+        {name:"Dismiss", text:"As an action you can send it to a pocket dimension and later recall it within 30 feet. At 0 hit points it vanishes until you cast Find Familiar again."}];
+      if(x.chain) rules.push({name:"Pact of the Chain", text:"When you take the Attack action, you can forgo one of your attacks so that it attacks once with its reaction."});
+      return {
+        type: b.size + " " + (b.type==="beast" ? "celestial, fey or fiend" : b.type) + ": " + x.choice.toLowerCase(),
+        ac: b.ac, hp: b.hp, speed: b.speed, abilities: b.abilities, skills: b.skills, senses: b.senses,
+        attacks: x.chain ? b.attacks : [],
+        traits: (b.traits ? [{text: b.traits}] : []).concat(rules)
       };
     }}
 ];

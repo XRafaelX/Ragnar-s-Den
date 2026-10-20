@@ -72,7 +72,10 @@ test("unarmed strike: natural weapons, Tavern Brawler, a monk's die over its cla
   // Every race with natural weapons in the data, as published.
   const nat = Object.fromEntries(Object.entries(RACE_DATA).filter(([, d]) => d.unarmed).map(([n, d]) => [n, d.unarmed.name + " " + d.unarmed.die + " " + d.unarmed.type]));
   assert.deepEqual(nat, { Aarakocra: "Talons 4 Slashing", Centaur: "Hooves 4 Bludgeoning", Lizardfolk: "Bite 6 Piercing", Minotaur: "Horns 6 Piercing",
-    Satyr: "Ram 4 Bludgeoning", Tabaxi: "Claws 4 Slashing", Tortle: "Claws 4 Slashing" });
+    Satyr: "Ram 4 Bludgeoning", Tabaxi: "Claws 4 Slashing", Tortle: "Claws 4 Slashing", Leonin: "Claws 4 Slashing", Dhampir: "Vampiric Bite 4 Piercing", Naga: "Bite 4 Piercing" });
+  // A dhampir's bite uses Constitution.
+  const fang = H.unarmedStrike(char([{ name: "Fighter", level: 1 }], { race: "Dhampir", abilities: { str: 10, con: 16 } }));
+  assert.deepEqual([fang.ability, fang.bonus, fang.attack], ["CON", 3, 5]);
 });
 
 /* ---- Starting weapons ---- */

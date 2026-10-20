@@ -180,3 +180,17 @@
   #catalog-list.long-right .catalog-row-right:empty{display:none;}
   #catalog-list.long-right .catalog-row-primary{font-size:12px;}
 }
+
+/* Which weapon or armor a magic item of a kind is ("any sword"): a list
+   in the bottom sheet the Armory opens over the catalog. */
+.armory-base-help{font-size:13px;color:var(--text-on-parch-dim);margin:2px 0 12px;}
+.armory-base-list{display:flex;flex-direction:column;gap:6px;}
+.armory-base-row{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;width:100%;text-align:left;
+  padding:10px 12px;border:1px solid var(--rule);border-radius:6px;background:rgba(255,255,255,0.03);
+  color:var(--text-on-parch);cursor:pointer;
+}
+@media (hover:hover){ .armory-base-row:hover{background:color-mix(in srgb, var(--brass) 14%, transparent);border-color:var(--brass);} }
+.armory-base-row:active{background:color-mix(in srgb, var(--brass) 18%, transparent);}
+.armory-base-name{font-family:var(--serif);font-size:15px;}
+.armory-base-info{font-size:12px;color:var(--text-on-parch-dim);white-space:nowrap;}

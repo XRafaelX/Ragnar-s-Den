@@ -7,13 +7,31 @@ export var RACES = {
     "Half-Elf","Half-Orc","Tiefling"
   ],
   "Expanded": [
-    "Aarakocra","Aasimar","Bugbear","Centaur","Changeling","Deep Gnome (Svirfneblin)",
+    "Aarakocra","Aasimar","Astral Elf","Autognome","Bugbear","Centaur","Changeling","Deep Gnome (Svirfneblin)",
     "Dragonborn (Chromatic)","Dragonborn (Draconblood)","Dragonborn (Gem)","Dragonborn (Metallic)","Dragonborn (Ravenite)",
     "Duergar","Eladrin","Fairy","Firbolg","Genasi (Air)","Genasi (Earth)","Genasi (Fire)",
-    "Genasi (Water)","Gith (Githyanki)","Gith (Githzerai)","Goblin","Goliath","Harengon",
-    "Hobgoblin","Kenku","Kobold","Lizardfolk","Loxodon","Minotaur","Orc","Satyr",
-    "Sea Elf","Shadar-kai","Shifter","Simic Hybrid","Tabaxi","Thri-kreen","Tortle",
-    "Triton","Vedalken","Verdan","Warforged","Yuan-ti Pureblood"
+    "Genasi (Water)","Ghostwise Halfling","Giff","Gith (Githyanki)","Gith (Githzerai)","Goblin","Goliath","Grung",
+    "Hadozee","Half-Elf (Variant)","Harengon","Hobgoblin","Kalashtar","Kender","Kenku","Kobold","Leonin","Lizardfolk","Locathah",
+    "Lotusden Halfling","Loxodon","Minotaur","Orc","Owlin","Pallid Elf","Plasmoid","Satyr",
+    "Sea Elf","Shadar-kai","Shifter","Simic Hybrid","Tabaxi","Thri-kreen",
+    "Tiefling (Baalzebul)","Tiefling (Dispater)","Tiefling (Fierna)","Tiefling (Glasya)","Tiefling (Levistus)",
+    "Tiefling (Mammon)","Tiefling (Mephistopheles)","Tiefling (Zariel)","Tiefling (Variant)","Tiefling (Winged)",
+    "Tortle","Triton","Vedalken","Verdan","Warforged","Yuan-ti Pureblood"
+  ],
+  "Dragonmarks (Eberron)": [
+    "Dwarf (Mark of Warding)","Elf (Mark of Shadow)","Gnome (Mark of Scribing)",
+    "Halfling (Mark of Healing)","Halfling (Mark of Hospitality)",
+    "Half-Elf (Mark of Detection)","Half-Elf (Mark of Storm)","Half-Orc (Mark of Finding)",
+    "Human (Mark of Finding)","Human (Mark of Handling)","Human (Mark of Making)",
+    "Human (Mark of Passage)","Human (Mark of Sentinel)"
+  ],
+  "Plane Shift (Magic: The Gathering)": [
+    "Aetherborn","Aven (Hawk-Headed)","Aven (Ibis-Headed)","Khenra","Kor",
+    "Merfolk (Blue)","Merfolk (Cosi)","Merfolk (Emeria)","Merfolk (Green)","Merfolk (Ula)",
+    "Naga","Siren","Vampire (Ixalan)","Vampire (Zendikar)"
+  ],
+  "Lineages": [
+    "Custom Lineage","Dhampir","Hexblood","Reborn"
   ]
 };
 
@@ -80,24 +98,45 @@ export var RACE_LANGUAGES_FALLBACK = {fixed:["Common"], choose:1,
 
 /* Level-1 picks a race makes in the creation wizard's Race Traits step,
    on top of its fixed increases (RACE_DATA asi, added automatically).
-   abilityBonus: {amounts, exclude}: one different ability per amount
+   abilityBonus: {amounts, exclude, alt}: one different ability per amount
      (Fairy: +2 to one, +1 to another), none from `exclude` (a Half-Elf's
-     +1s go to scores other than Charisma).
+     +1s go to scores other than Charisma). `alt` is a second set of
+     amounts the player can switch to (+1 to three scores instead).
    abilityPreset: {label, options:{name: {asi}}}: a fixed set of increases
      picked by subrace or type (Aasimar, Shifter).
    feat: a feat.
    Skills, tools and weapons a race lets you choose are on its traits
    (`profs` in RACE_DATA), like class features' (see js/core/class-picks.js). */
-var PLUS_TWO_ONE = {amounts:[2, 1]};
+var PLUS_TWO_ONE = {amounts:[2, 1], alt:[1, 1, 1]};
+var FERAL = {label:"Ability scores", options:{"Standard":{cha:2, int:1}, "Feral":{dex:2, int:1}}};
 export var RACE_CHOICES = {
   "Variant Human":{abilityBonus:{amounts:[1, 1]}, feat:true},
   "Half-Elf":{abilityBonus:{amounts:[1, 1], exclude:["cha"]}},
+  "Half-Elf (Variant)":{abilityBonus:{amounts:[1, 1], exclude:["cha"]}},
+  "Aetherborn":{abilityBonus:{amounts:[1, 1], exclude:["cha"]}},
   "Changeling":{abilityBonus:{amounts:[1], exclude:["cha"]}},
   "Simic Hybrid":{abilityBonus:{amounts:[1], exclude:["con"]}},
   "Warforged":{abilityBonus:{amounts:[1], exclude:["con"]}},
   "Fairy":{abilityBonus:PLUS_TWO_ONE},
   "Harengon":{abilityBonus:PLUS_TWO_ONE},
   "Thri-kreen":{abilityBonus:PLUS_TWO_ONE},
+  "Astral Elf":{abilityBonus:PLUS_TWO_ONE},
+  "Autognome":{abilityBonus:PLUS_TWO_ONE},
+  "Giff":{abilityBonus:PLUS_TWO_ONE},
+  "Hadozee":{abilityBonus:PLUS_TWO_ONE},
+  "Kender":{abilityBonus:PLUS_TWO_ONE},
+  "Owlin":{abilityBonus:PLUS_TWO_ONE},
+  "Plasmoid":{abilityBonus:PLUS_TWO_ONE},
+  "Dhampir":{abilityBonus:PLUS_TWO_ONE},
+  "Hexblood":{abilityBonus:PLUS_TWO_ONE},
+  "Reborn":{abilityBonus:PLUS_TWO_ONE},
+  "Custom Lineage":{abilityBonus:{amounts:[2]}, feat:true},
+  "Half-Elf (Mark of Detection)":{abilityBonus:{amounts:[1], exclude:["wis"]}},
+  "Human (Mark of Handling)":{abilityBonus:{amounts:[1], exclude:["wis"]}},
+  "Human (Mark of Making)":{abilityBonus:{amounts:[1], exclude:["int"]}},
+  "Human (Mark of Passage)":{abilityBonus:{amounts:[1], exclude:["dex"]}},
+  "Tiefling (Variant)":{abilityPreset:FERAL},
+  "Tiefling (Winged)":{abilityPreset:FERAL},
   "Dragonborn (Chromatic)":{abilityBonus:PLUS_TWO_ONE},
   "Dragonborn (Gem)":{abilityBonus:PLUS_TWO_ONE},
   "Dragonborn (Metallic)":{abilityBonus:PLUS_TWO_ONE},

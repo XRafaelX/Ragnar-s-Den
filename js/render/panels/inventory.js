@@ -2,8 +2,8 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty } from "../../core/helpers.js";
-import { ARMOR_DATA } from "../../data/armor.js";
+import { fmtMod, escapeHtml, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty } from "../../core/helpers.js";
+import { ARMOR_DATA, armorDataOf } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker, openArmorPicker, openGearPicker } from "../armory.js";
@@ -75,6 +75,43 @@ function endInfusionEntry(c, item){
     if(!a.made) return finish();
     confirmDialog("End "+a.name+"?", "The "+a.itemName+" leaves your inventory. Anything inside it lands around it.", finish);
   }};
+}
+
+/* A magic item's description, as printed: paragraphs (blank lines
+   between), **bold** and _italic_ words, and | tables |. Built from
+   escaped text, so nothing in it can add markup of its own. */
+function inlineMarks(text){
+  return escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+    .replace(/(^|[\s(])[_*]([^_*\n]+?)[_*](?=[\s.,;:)!?]|$)/g, "$1<i>$2</i>")
+    .replace(/\n/g, "<br>");
+}
+function magicItemText(text){
+  var box = document.createElement("div");
+  box.className = "inv-magic-text";
+  String(text || "").split(/\n\s*\n/).forEach(function(block){
+    var lines = block.trim().split("\n");
+    if(!lines[0]) return;
+    if(lines.every(function(l){ return /^\s*\|/.test(l); })){
+      var table = document.createElement("table");
+      table.className = "inv-magic-table";
+      lines.filter(function(l){ return !/^\s*\|[\s:|-]+\|?\s*$/.test(l); }).forEach(function(l, r){
+        var tr = document.createElement("tr");
+        l.trim().replace(/^\||\|$/g, "").split("|").forEach(function(cell){
+          var td = document.createElement(r===0 ? "th" : "td");
+          td.innerHTML = inlineMarks(cell.trim());
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+      box.appendChild(table);
+      return;
+    }
+    var para = document.createElement("p");
+    para.innerHTML = inlineMarks(lines.join("\n"));
+    box.appendChild(para);
+  });
+  return box;
 }
 
 /* The line under a magic item's name, the same on weapons and other
@@ -407,12 +444,7 @@ function openGearSheet(c, item, idx){
     body.appendChild(details);
 
     var def = magicItemDef(item);
-    if(def){
-      var desc = document.createElement("p");
-      desc.className = "inv-magic-text";
-      desc.textContent = def.text;
-      body.appendChild(desc);
-    }
+    if(def) body.appendChild(magicItemText(def.text));
   });
 }
 
@@ -510,12 +542,7 @@ function openWeaponSheet(c, item, idx){
     body.appendChild(details);
 
     var def = magicItemDef(item);
-    if(def){
-      var desc = document.createElement("p");
-      desc.className = "inv-magic-text";
-      desc.textContent = def.text;
-      body.appendChild(desc);
-    }
+    if(def) body.appendChild(magicItemText(def.text));
   });
 }
 
@@ -1012,6 +1039,8 @@ function openArmorSheet(c, item, idx){
     }));
 
     body.appendChild(details);
+    var def = magicItemDef(item);
+    if(def) body.appendChild(magicItemText(def.text));
   });
 }
 
@@ -1024,6 +1053,8 @@ function renderArmorCard(c, item, idx){
   card.className = "ff-item-card inv-item-card" + (item.equipped ? " is-equipped" : " is-stowed");
   card.dataset.idx = idx;
   card.appendChild(itemHeader(c, item, idx, function(){ openArmorSheet(c, item, idx); }));
+  var def = magicItemDef(item);
+  if(def) card.appendChild(magicItemLine(item, def));
   var infLine = infusionLine(c, item);
   if(infLine) card.appendChild(infLine);
 
@@ -1031,8 +1062,9 @@ function renderArmorCard(c, item, idx){
   var acText = item.category==="shield" ? "+" + item.baseAC + " AC" : "Base AC " + item.baseAC;
   var subtitleParts = [acText, catLabel];
   if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
-  var armorData = ARMOR_DATA[item.name];
-  if(item.stealthDisadvantage || (armorData && armorData.stealthDisadvantage)) subtitleParts.push("Stealth disadvantage");
+  // The row's own say first (Mithral Armor has none), then its armor's.
+  var armorData = armorDataOf(item);
+  if(item.stealthDisadvantage!=null ? item.stealthDisadvantage : (armorData && armorData.stealthDisadvantage)) subtitleParts.push("Stealth disadvantage");
   if(!isProficientWithArmor(c, item)) subtitleParts.push("Not proficient");
   var strShort = armorStrengthShortfall(c, item);
   if(strShort) subtitleParts.push("Needs STR "+strShort+" (speed -10 ft)");

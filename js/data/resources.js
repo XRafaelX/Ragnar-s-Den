@@ -830,7 +830,8 @@ export var FEAT_RESOURCES = {
    version, as the rest of the app (checked against the Player's Handbook,
    Volo's Guide, Mordenkainen's Tome of Foes, Eberron, Ravnica, The Wild
    Beyond the Witchlight, Fizban's Treasury and Wildemount texts
-   2026-10-16). `level` is the character level it starts at; max(lv, m)
+   2026-10-16; Spelljammer, Van Richten's, Dragonlance, Theros and
+   Eberron's dragonmarks on dnd5e.wikidot.com 2026-10-20). `level` is the character level it starts at; max(lv, m)
    and reset(lv) work as for classes, with `lv` the character level. A
    race's innate spells (Drow Magic, Infernal Legacy) aren't here, and a
    dragonborn's breath weapons are on the Inventory tab (see
@@ -910,5 +911,47 @@ export var RACE_RESOURCES = {
   "Vedalken": [
     {id:"partially_amphibious", name:"Partially Amphibious", max:ONCE, reset:always("long"),
       hint:"Breathe underwater for up to 1 hour."}
+  ],
+  "Astral Elf": [
+    {id:"starlight_step", name:"Starlight Step", max:profBonusUses(), reset:always("long"),
+      hint:"Bonus action: teleport up to 30 ft to an unoccupied space you can see."}
+  ],
+  "Autognome": [
+    {id:"built_for_success", name:"Built for Success", max:profBonusUses(), reset:always("long"),
+      hint:"Add a d4 to an attack roll, ability check or saving throw after seeing the d20."}
+  ],
+  "Giff": [
+    {id:"astral_spark", name:"Astral Spark", max:profBonusUses(), reset:always("long"),
+      hint:"When you hit with a simple or martial weapon: extra force damage equal to your proficiency bonus (once a turn)."}
+  ],
+  "Hadozee": [
+    {id:"hadozee_dodge", name:"Hadozee Dodge", max:profBonusUses(), reset:always("long"),
+      hint:"Reaction when you take damage: reduce it by 1d6 + your proficiency bonus."}
+  ],
+  "Kender": [
+    {id:"fearless", name:"Fearless", max:ONCE, reset:always("long"),
+      hint:"Turn a failed save to avoid or end being frightened into a success."},
+    {id:"taunt", name:"Taunt", max:profBonusUses(), reset:always("long"),
+      hint:"Bonus action: a creature within 60 ft makes a WIS save or has disadvantage on attacks against anyone but you until your next turn."}
+  ],
+  "Leonin": [
+    {id:"daunting_roar", name:"Daunting Roar", max:ONCE, reset:always("short"),
+      hint:"Bonus action: creatures of your choice within 10 ft make a WIS save or are frightened of you until the end of your next turn."}
+  ],
+  "Human (Mark of Sentinel)": [
+    {id:"vigilant_guardian", name:"Vigilant Guardian", max:ONCE, reset:always("long"),
+      hint:"Reaction when a creature within 5 ft is hit: swap places and take the hit instead."}
+  ],
+  "Dhampir": [
+    {id:"vampiric_bite", name:"Vampiric Bite", max:profBonusUses(), reset:always("long"),
+      hint:"On a bite hit against a living creature: regain HP equal to the piercing damage, or add it to your next check or attack."}
+  ],
+  "Hexblood": [
+    {id:"eerie_token", name:"Eerie Token", max:ONCE, reset:always("long"),
+      hint:"Bonus action: make a token to send a message to its holder or see and hear through it, within 10 miles."}
+  ],
+  "Reborn": [
+    {id:"knowledge_past_life", name:"Knowledge from a Past Life", max:profBonusUses(), reset:always("long"),
+      hint:"Add a d6 to a skill check after seeing the d20."}
   ]
 };

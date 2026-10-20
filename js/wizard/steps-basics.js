@@ -318,7 +318,7 @@ export function wizardStepRace(container){
     explain.innerHTML = raceExplainHtml(wizardState.race);
     if(wizardState.race!==shownRace){
       var rc = wizardState.raceChoices;
-      rc.abilities = []; rc.preset = ""; rc.profPicks = {}; rc.feat = ""; rc.featPicks = null;
+      rc.abilities = []; rc.alt = false; rc.preset = ""; rc.profPicks = {}; rc.feat = ""; rc.featPicks = null;
       shownRace = wizardState.race;
     }
   }, "race");

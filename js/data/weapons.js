@@ -67,3 +67,12 @@ export var WEAPON_LIST = Object.keys(WEAPON_GROUPS).reduce(function(all, group){
   }));
 }, []);
 
+/* A weapon row's catalog entry: its own name's, or the base weapon a
+   magic weapon is ("Longsword, +1" is a longsword: `baseWeapon`). */
+export function weaponDataOf(item){
+  return (item && (WEAPON_DATA[item.name] || WEAPON_DATA[item.baseWeapon])) || null;
+}
+/* The weapon it is, by catalog name ("Longsword" for "Flame Tongue (Longsword)"). */
+export function baseWeaponName(item){
+  return item && (WEAPON_DATA[item.name] ? item.name : (item.baseWeapon || item.name));
+}

@@ -38,6 +38,7 @@ var EXAMPLE_MOD = 3;
 function companionEntries(){
   var out = [];
   COMPANIONS.forEach(function(def){
+    if(def.requires) return;   // a familiar comes from a spell, not a subclass
     if(def.id==="beast_companion"){
       def.choice.options.forEach(function(o){
         out.push({key: o===def.setup ? "Ranger's Companion (your own beast)" : o, def: def, choice: o});
@@ -82,7 +83,7 @@ function showCompanion(e){
         note.textContent = "Shown with a +" + EXAMPLE_MOD + " spellcasting modifier" + (e.def.id==="steel_defender" ? " (and INT)" : "") + "." +
           (e.def.choice && e.def.id!=="beast_companion" ? " Its " + e.def.choice.label.toLowerCase() + " (" + e.def.choice.options.join(", ") + ") is picked on the sheet." : "");
       } else {
-        holder.innerHTML = "<p>Choose a beast no larger than Medium with a challenge rating of 1/4 or lower (for example: " + escapeHtml(Object.keys(BEAST_PRESETS).join(", ")) +
+        holder.innerHTML = "<p>Choose a beast no larger than Medium with a challenge rating of 1/4 or lower (for example: " + escapeHtml(Object.keys(BEAST_PRESETS).slice(0, 8).join(", ")) + " and " + (Object.keys(BEAST_PRESETS).length - 8) + " more" +
           "). On the sheet you enter its stat block as printed, and the sheet adds your proficiency bonus to its AC, attack and damage rolls and proficient saves and skills; its hit point maximum becomes four times your ranger level when that's higher.</p>";
         note.textContent = "";
       }
