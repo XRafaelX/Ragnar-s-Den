@@ -7,7 +7,7 @@ import { featProficiencies } from "./feat-picks.js";
 import { characterPickedProfs, characterChoices, raceProficiencies } from "./class-picks.js";
 import { mod, profBonus, parseDiceNotation, combineRolls } from "./basics.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
-import { classFeatureList, classProficiencies } from "./class-features.js";
+import { classFeatureList, classProficiencies, classLevelOf } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
@@ -327,6 +327,28 @@ export function divineFury(c){
   var barb = barbarianClassEntry(c), lv = barb ? Number(barb.level)||1 : 0;
   if(!barb || barb.subclass!=="Path of the Zealot" || lv < 3) return null;
   return {bonus: Math.floor(lv / 2), type: characterChoices(c, "divineFury")[0] || ""};
+}
+/* Unwavering Mark (Cavalier, fighter 3): the bonus action attack against
+   a marked creature that damaged someone else, with a melee weapon in
+   hand. Advantage on the attack and + half the fighter level to its
+   damage. {extra} or null. */
+export function unwaveringMark(c, item){
+  if(item.type!=="weapon" || !item.equipped || isRangedWeapon(item)) return null;
+  var lv = classLevelOf(c, "Fighter", "Cavalier");
+  return lv >= 3 ? {extra: Math.floor(lv / 2)} : null;
+}
+/* Ferocious Charger (Cavalier, fighter 15): the STR save DC against being
+   knocked prone, or 0 without it. STR or DEX, whichever is higher, is a
+   DM-approved change (the book says STR). */
+export function ferociousChargerDc(c){
+  if(classLevelOf(c, "Fighter", "Cavalier") < 15) return 0;
+  return 8 + profBonus(c) + Math.max(mod(abilityScore(c, "str")), mod(abilityScore(c, "dex")));
+}
+/* A melee weapon or a shield in hand (Warding Maneuver needs one). */
+export function wieldsMeleeWeaponOrShield(c){
+  return (c.inventory||[]).some(function(i){
+    return i.equipped && ((i.type==="weapon" && !isRangedWeapon(i)) || (i.type==="armor" && i.category==="shield"));
+  });
 }
 /* Best-effort default for a newly added weapon's Proficient checkbox:
    true if any of the character's classes list the weapon's category

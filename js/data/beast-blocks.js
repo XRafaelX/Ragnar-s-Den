@@ -2,11 +2,14 @@
    Generated from the System Reference Document 5.1 (Wizards of the Coast,
    CC BY 4.0, via dnd5eapi.co, 2026-10-20), in BEAST_PRESETS' shape (see
    ./companions.js): every beast a Beast Master can take (Medium or
-   smaller, challenge rating 1/4 or lower), every Find Familiar form and
-   Pact of the Chain's four. */
+   smaller, challenge rating 1/4 or lower), every Find Familiar form,
+   Pact of the Chain's four, and the PHB's mounts (MOUNTS, a Cavalier's
+   Mount card; added 2026-10-21). */
 export var BEAST_MASTER_BEASTS = ["Baboon", "Badger", "Bat", "Blood Hawk", "Boar", "Cat", "Crab", "Deer", "Eagle", "Flying Snake", "Frog", "Giant Badger", "Giant Centipede", "Giant Crab", "Giant Fire Beetle", "Giant Frog", "Giant Poisonous Snake", "Giant Rat", "Giant Rat (Diseased)", "Giant Weasel", "Giant Wolf Spider", "Goat", "Hawk", "Hyena", "Jackal", "Lizard", "Mastiff", "Mule", "Octopus", "Owl", "Panther", "Poisonous Snake", "Pony", "Quipper", "Rat", "Raven", "Scorpion", "Sea Horse", "Spider", "Stirge", "Vulture", "Weasel", "Wolf"];
 export var FAMILIAR_FORMS = ["Bat", "Cat", "Crab", "Frog", "Hawk", "Lizard", "Octopus", "Owl", "Poisonous Snake", "Quipper", "Rat", "Raven", "Sea Horse", "Spider", "Weasel"];
 export var CHAIN_FAMILIARS = ["Imp", "Pseudodragon", "Quasit", "Sprite"];
+/* The PHB's Mounts and Vehicles table, in its order. */
+export var MOUNTS = ["Camel", "Mule", "Draft Horse", "Elephant", "Mastiff", "Pony", "Riding Horse", "Warhorse"];
 
 export var SRD_STAT_BLOCKS = {
  "Baboon": {
@@ -159,6 +162,36 @@ export var SRD_STAT_BLOCKS = {
   ],
   "traits": "Charge: If the boar moves at least 20 ft. straight toward a target and then hits it with a tusk attack on the same turn, the target takes an extra 3 (1d6) slashing damage. If the target is a creature, it must succeed on a DC 11 Strength saving throw or be knocked prone. Relentless: If the boar takes 7 damage or less that would reduce it to 0 hit points, it is reduced to 1 hit point instead."
  },
+ "Camel": {
+  "name": "Camel",
+  "size": "Large",
+  "type": "beast",
+  "cr": 0.125,
+  "ac": 9,
+  "hp": 15,
+  "speed": "50 ft",
+  "abilities": {
+   "str": 16,
+   "dex": 8,
+   "con": 14,
+   "int": 2,
+   "wis": 8,
+   "cha": 5
+  },
+  "skills": "",
+  "senses": "passive Perception 9",
+  "attacks": [
+   {
+    "name": "Bite",
+    "toHit": 5,
+    "dice": "1d4",
+    "bonus": 0,
+    "damageType": "bludgeoning",
+    "text": "Reach 5 ft."
+   }
+  ],
+  "traits": ""
+ },
  "Cat": {
   "name": "Cat",
   "size": "Tiny",
@@ -249,6 +282,36 @@ export var SRD_STAT_BLOCKS = {
   ],
   "traits": ""
  },
+ "Draft Horse": {
+  "name": "Draft Horse",
+  "size": "Large",
+  "type": "beast",
+  "cr": 0.25,
+  "ac": 10,
+  "hp": 19,
+  "speed": "40 ft",
+  "abilities": {
+   "str": 18,
+   "dex": 10,
+   "con": 12,
+   "int": 2,
+   "wis": 11,
+   "cha": 7
+  },
+  "skills": "",
+  "senses": "passive Perception 10",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "toHit": 6,
+    "dice": "2d4",
+    "bonus": 4,
+    "damageType": "bludgeoning",
+    "text": "Reach 5 ft."
+   }
+  ],
+  "traits": ""
+ },
  "Eagle": {
   "name": "Eagle",
   "size": "Small",
@@ -278,6 +341,44 @@ export var SRD_STAT_BLOCKS = {
    }
   ],
   "traits": "Keen Sight: The eagle has advantage on Wisdom (Perception) checks that rely on sight."
+ },
+ "Elephant": {
+  "name": "Elephant",
+  "size": "Huge",
+  "type": "beast",
+  "cr": 4,
+  "ac": 12,
+  "hp": 76,
+  "speed": "40 ft",
+  "abilities": {
+   "str": 22,
+   "dex": 9,
+   "con": 17,
+   "int": 3,
+   "wis": 11,
+   "cha": 6
+  },
+  "skills": "",
+  "senses": "passive Perception 10",
+  "attacks": [
+   {
+    "name": "Gore",
+    "toHit": 8,
+    "dice": "3d8",
+    "bonus": 6,
+    "damageType": "piercing",
+    "text": "Reach 5 ft."
+   },
+   {
+    "name": "Stomp",
+    "toHit": 8,
+    "dice": "3d10",
+    "bonus": 6,
+    "damageType": "bludgeoning",
+    "text": "Reach 5 ft, one prone creature."
+   }
+  ],
+  "traits": "Trampling Charge: If the elephant moves at least 20 ft. straight toward a creature and then hits it with a gore attack on the same turn, that target must succeed on a DC 12 Strength saving throw or be knocked prone. If the target is prone, the elephant can make one stomp attack against it as a bonus action."
  },
  "Flying Snake": {
   "name": "Flying Snake",
@@ -1194,6 +1295,36 @@ export var SRD_STAT_BLOCKS = {
   ],
   "traits": "Mimicry: The raven can mimic simple sounds it has heard, such as a person whispering, a baby crying, or an animal chittering. A creature that hears the sounds can tell they are imitations with a successful DC 10 Wisdom (Insight) check."
  },
+ "Riding Horse": {
+  "name": "Riding Horse",
+  "size": "Large",
+  "type": "beast",
+  "cr": 0.25,
+  "ac": 10,
+  "hp": 13,
+  "speed": "60 ft",
+  "abilities": {
+   "str": 16,
+   "dex": 10,
+   "con": 12,
+   "int": 2,
+   "wis": 11,
+   "cha": 7
+  },
+  "skills": "",
+  "senses": "passive Perception 10",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "toHit": 5,
+    "dice": "2d4",
+    "bonus": 3,
+    "damageType": "bludgeoning",
+    "text": "Reach 5 ft."
+   }
+  ],
+  "traits": ""
+ },
  "Scorpion": {
   "name": "Scorpion",
   "size": "Tiny",
@@ -1372,6 +1503,36 @@ export var SRD_STAT_BLOCKS = {
    }
   ],
   "traits": "Keen Sight and Smell: The vulture has advantage on Wisdom (Perception) checks that rely on sight or smell. Pack Tactics: The vulture has advantage on an attack roll against a creature if at least one of the vulture's allies is within 5 ft. of the creature and the ally isn't incapacitated."
+ },
+ "Warhorse": {
+  "name": "Warhorse",
+  "size": "Large",
+  "type": "beast",
+  "cr": 0.5,
+  "ac": 11,
+  "hp": 19,
+  "speed": "60 ft",
+  "abilities": {
+   "str": 18,
+   "dex": 12,
+   "con": 13,
+   "int": 2,
+   "wis": 12,
+   "cha": 7
+  },
+  "skills": "",
+  "senses": "passive Perception 11",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "toHit": 6,
+    "dice": "2d6",
+    "bonus": 4,
+    "damageType": "bludgeoning",
+    "text": "Reach 5 ft."
+   }
+  ],
+  "traits": "Trampling Charge: If the horse moves at least 20 ft. straight toward a creature and then hits it with a hooves attack on the same turn, that target must succeed on a DC 14 Strength saving throw or be knocked prone. If the target is prone, the horse can make another attack with its hooves against it as a bonus action."
  },
  "Weasel": {
   "name": "Weasel",

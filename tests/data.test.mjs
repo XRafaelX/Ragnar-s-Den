@@ -338,3 +338,22 @@ test("monsters: every SRD 5.1 monster, each in one group sorted by CR, stats in 
   // three forms each are one apiece, plus 9 from other books.
   assert.equal(Object.keys(MONSTER_DATA).length, 334 - 2 - 10 + 9);
 });
+
+test("companion cards split a block of traits into named ones", async () => {
+  const { splitTraits } = await import("../js/render/panels/companions.js");
+  const { SRD_STAT_BLOCKS } = await import("../js/data/beast-blocks.js");
+  const names = (t) => splitTraits([{ text: t }]).map((x) => x.name);
+  assert.deepEqual(names(SRD_STAT_BLOCKS.Goat.traits), ["Charge", "Sure-Footed"]);
+  assert.deepEqual(names(SRD_STAT_BLOCKS.Wolf.traits), ["Keen Hearing and Smell", "Pack Tactics"]);
+  assert.deepEqual(names(SRD_STAT_BLOCKS.Imp.traits), ["Shapechanger", "Devil's Sight", "Magic Resistance"]);
+  // Every SRD block's traits split cleanly: each part named, nothing lost.
+  for(const b of Object.values(SRD_STAT_BLOCKS)){
+    if(!b.traits) continue;
+    const parts = splitTraits([{ text: b.traits }]);
+    assert.ok(parts.every((p) => p.name), b.name);
+    assert.ok(parts.reduce((n, p) => n + p.name.length + p.text.length, 0) >= b.traits.length - parts.length * 3, b.name);
+  }
+  // Text typed without a "Name:" stays as it is; named entries pass through.
+  assert.deepEqual(splitTraits([{ text: "Loyal to a fault." }, { name: "Vigilant", text: "It can't be surprised." }]),
+    [{ text: "Loyal to a fault." }, { name: "Vigilant", text: "It can't be surprised." }]);
+});

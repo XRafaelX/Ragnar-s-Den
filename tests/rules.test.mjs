@@ -12,6 +12,7 @@ import * as INV from "../js/core/invocations.js";
 import * as COMP from "../js/core/companions.js";
 import { BEAST_PRESETS } from "../js/data/companions.js";
 import { INVOCATIONS } from "../js/data/invocations.js";
+import { characterCompanions, setCompanionChoice } from "../js/core/companions.js";
 
 const AB = { str: 10, dex: 14, con: 14, int: 10, wis: 10, cha: 10 };
 function char(classes, extra = {}){
@@ -149,6 +150,9 @@ test("resources: counts scale and rests restore the right ones", () => {
   // Rune Knight: one invocation per rune known (2/3/4/5 at 3/7/10/15), twice each from 15.
   const runes = (lv) => res(char([{ name: "Fighter", level: lv, subclass: "Rune Knight" }]))["Rune Invocations"];
   assert.deepEqual([runes(3), runes(7), runes(10), runes(14), runes(15)], [2, 3, 4, 4, 10]);
+  // Cavalier (DM-approved): Unwavering Mark uses the higher of STR or DEX, minimum 1.
+  const mark = (abilities) => res(char([{ name: "Fighter", level: 3, subclass: "Cavalier" }], { abilities }))["Unwavering Mark (Special Attack)"];
+  assert.deepEqual([mark({ str: 10, dex: 18 }), mark({ str: 16, dex: 12 }), mark({ str: 8, dex: 8 })], [4, 3, 1]);
   assert.equal(res(char([{ name: "Wizard", level: 13, subclass: "School of Transmutation" }]))["Master Transmuter"], undefined);
   assert.equal(res(char([{ name: "Wizard", level: 14, subclass: "School of Transmutation" }]))["Master Transmuter"], 1);
 
@@ -814,4 +818,45 @@ test("invocations: custom features from older sheets move onto the card", () => 
   assert.deepEqual(INV.adoptCustomInvocations(c, c.classes[0]), ["Agonizing Blast", "Devil's Sight"]);
   assert.deepEqual(c.features.map((f) => f.id), ["c"]);
   assert.deepEqual(INV.knownInvocations(c.classes[0]).map((e) => e.name), ["Agonizing Blast", "Devil's Sight"]);
+});
+
+test("Cavalier: Unwavering Mark, Ferocious Charger, Warding Maneuver, Born to the Saddle and the mount", () => {
+  const sword = { id: "w1", name: "Longsword", type: "weapon", damage: "1d8", equipped: true };
+  const bow = { id: "w2", name: "Longbow", type: "weapon", damage: "1d8", equipped: true };
+  const shield = { id: "a1", type: "armor", equipped: true, name: "Shield", category: "shield", baseAC: 2 };
+  const cav = (lv, inventory = [], abilities = {}) => char([{ name: "Fighter", level: lv, subclass: "Cavalier" }], { inventory, abilities });
+  // The mark's special attack: a melee weapon in hand, + half the fighter level.
+  assert.deepEqual(H.unwaveringMark(cav(15, [sword]), sword), { extra: 7 });
+  assert.equal(H.unwaveringMark(cav(15, [bow]), bow), null);
+  assert.equal(H.unwaveringMark(cav(15, [{ ...sword, equipped: false }]), { ...sword, equipped: false }), null);
+  assert.equal(H.unwaveringMark(char([{ name: "Fighter", level: 15, subclass: "Champion" }], { inventory: [sword] }), sword), null);
+  // Ferocious Charger from 15: 8 + 5 + the higher of STR or DEX (DEX 18 here).
+  assert.equal(H.ferociousChargerDc(cav(14, [], { dex: 18 })), 0);
+  assert.equal(H.ferociousChargerDc(cav(15, [], { dex: 18 })), 17);
+  // Warding Maneuver rolls a d8 and needs a melee weapon or a shield in hand.
+  const ward = H.characterResources(cav(7)).find((r) => r.name === "Warding Maneuver");
+  assert.equal(ward.roll.die, 8);
+  assert.equal(H.wieldsMeleeWeaponOrShield(cav(7, [bow])), false);
+  assert.equal(H.wieldsMeleeWeaponOrShield(cav(7, [bow, shield])), true);
+  assert.equal(H.wieldsMeleeWeaponOrShield(cav(7, [sword])), true);
+  // Born to the Saddle: a reminder on every save.
+  assert.deepEqual(H.situationalSaveAdvantages(cav(3), "dex"), [{ name: "Born to the Saddle", when: "to avoid falling off your mount" }]);
+  // The mount: chosen on its card, the SRD warhorse with the riding rules.
+  const c = cav(3);
+  const mount = () => characterCompanions(c).find((x) => x.def.id === "mount");
+  assert.equal(mount().stats, null);
+  assert.equal(mount().def.choice.options.length, 9);   // the PHB's eight and the DM's War Camel
+  setCompanionChoice(c, "mount", "War Camel");
+  const camel = mount().stats;
+  assert.deepEqual([camel.type, camel.ac, camel.hp, camel.actions[1].save], ["Large beast: war camel (homebrew)", 13, 38, "CON 14"]);
+  assert.deepEqual(camel.attacks.map((a) => a.name), ["Hooves", "Bite"]);
+  assert.match(camel.traits.find((t) => t.name === "Sure-Footed").text, /advantage on Strength and Dexterity saves against effects that would knock it prone/);
+  assert.match(camel.riding.find((t) => t.name === "Controlled mount").text, /Attack action \(it's war-trained\)/);
+  setCompanionChoice(c, "mount", "Warhorse");
+  const s = mount().stats;
+  assert.deepEqual([s.ac, s.hp, s.speed, s.attacks[0].dice, s.attacks[0].bonus], [11, 19, "60 ft", "2d6", 4]);
+  assert.match(s.riding.find((t) => t.name === "Controlled mount").text, /Dodge actions\.$/);
+  setCompanionChoice(c, "mount", "Pony");
+  assert.equal(mount().stats.riding[0].name, "Rider");   // a Medium mount carries only a Small rider
+  assert.ok(!characterCompanions(char([{ name: "Fighter", level: 3, subclass: "Champion" }])).some((x) => x.def.id === "mount"));
 });

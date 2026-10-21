@@ -1,8 +1,8 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, addCondition, longRestExhaustion, exhaustionLevel } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
-import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg } from "../../ui/svg-icons.js";
+import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { elixirsOnLongRest, infusionsOnLongRest } from "../../core/artificer.js";
@@ -859,6 +859,24 @@ function renderResourcesCard(c, resources){
     hint.className = "res-hint";
     hint.textContent = r.hint + (r.source ? " ("+r.source+")" : "");
     info.appendChild(hint);
+    // A use that rolls a die (Warding Maneuver's d8): spends one and rolls.
+    if(r.roll && r.max!==Infinity){
+      var rolls = document.createElement("div");
+      rolls.className = "inv-roll-actions fx-rolls";
+      var rollBtn = document.createElement("button");
+      rollBtn.type = "button"; rollBtn.className = "btn small inv-roll-btn res-roll-btn";
+      rollBtn.innerHTML = makeDiceSvg();
+      rollBtn.appendChild(document.createTextNode("Use · 1d" + r.roll.die));
+      var unarmed = r.roll.needs==="meleeOrShield" && !wieldsMeleeWeaponOrShield(c);
+      rollBtn.disabled = remaining<=0 || unarmed;
+      rollBtn.title = remaining<=0 ? "None left" : unarmed ? "Needs a melee weapon or a shield in hand" : "Spend one and roll 1d" + r.roll.die;
+      rollBtn.addEventListener("click", function(){
+        setUsed(r.used+1);
+        performRoll(r.roll.die, 1, 0, "none", r.roll.label);
+      });
+      rolls.appendChild(rollBtn);
+      info.appendChild(rolls);
+    }
     row.appendChild(info);
 
     var ctrl = document.createElement("div");

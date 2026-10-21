@@ -15,7 +15,10 @@
    armorModel: only while the Armorer has that model (Defensive Field:
      "Guardian").
    variant: only for a class entry using that optional feature (Tasha's
-     Favored Foe, see CLASS_PROGRESSION's `variants`). */
+     Favored Foe, see CLASS_PROGRESSION's `variants`).
+   roll: {die, label, needs}: a button on its row that spends one and rolls
+     the die (Warding Maneuver's d8). needs "meleeOrShield" turns it off
+     without a melee weapon or a shield in hand. */
 
 function atLeastOne(n){ return Math.max(1, n); }
 function always(value){ return function(){ return value; }; }
@@ -233,10 +236,12 @@ export var SUBCLASS_RESOURCES = {
     ],
     "Cavalier": [
       {id:"unwavering_mark", name:"Unwavering Mark (Special Attack)", level:3,
-        max:function(lv, m){ return atLeastOne(m.str); }, reset:always("long"),
+        // DM-approved: STR or DEX modifier, whichever is higher.
+        max:function(lv, m){ return atLeastOne(Math.max(m.str, m.dex)); }, reset:always("long"),
         hint:"Bonus action: attack a marked creature that damaged someone else, with advantage and + half your fighter level damage."},
       {id:"warding_maneuver", name:"Warding Maneuver", level:7,
         max:function(lv, m){ return atLeastOne(m.con); }, reset:always("long"),
+        roll:{die:8, label:"Warding Maneuver: added to AC", needs:"meleeOrShield"},
         hint:"Reaction: add 1d8 to the AC of you or an adjacent creature against a hit; resistance if it still hits."}
     ],
     "Samurai": [

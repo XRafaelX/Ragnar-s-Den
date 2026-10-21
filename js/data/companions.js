@@ -21,13 +21,15 @@
      attacks  [{name, toHit, dice, bonus, damageType, extraDice, extraType, text}]
      actions  [{name, text, dice, bonus, save}]: dice to roll (damage or
               healing), save "DEX 15" for the target
-     reactions, traits  [{name, text}]
+     reactions, traits  [{name, text}]; an unnamed trait's text may hold
+              several "Name: text" traits, which the card splits
+     riding   a mount's riding rules [{name, text}], their own tiles
      requires     in place of cls: {spell, pactBoon}, either one (a familiar:
                   Find Familiar known, or Pact of the Chain); stats get
                   ctx.chain then. choice.chainOnly lists the options only
                   Pact of the Chain allows.
    A new companion is one more entry here; the card draws any of them. */
-import { SRD_STAT_BLOCKS, BEAST_MASTER_BEASTS, FAMILIAR_FORMS, CHAIN_FAMILIARS } from "./beast-blocks.js";
+import { SRD_STAT_BLOCKS, BEAST_MASTER_BEASTS, FAMILIAR_FORMS, CHAIN_FAMILIARS, MOUNTS } from "./beast-blocks.js";
 
 function plus(n){ return (n >= 0 ? "+" : "") + n; }
 
@@ -68,6 +70,30 @@ function primalBeast(kind, x){
       {name:"Revive", text:"If it died within the last hour, use your action and a spell slot of 1st level or higher to bring it back after 1 minute with full HP; after a long rest you can summon a new one."}]
   };
 }
+
+/* Mounts the DM added for this table (not in the SRD). The War Camel is
+   D&D 3.5's (Sandstorm: 4 HD, Str 18 Dex 16 Con 18, two hooves and a
+   bite, Sure Feet, Endurance, scent, fights while ridden) brought to 5e,
+   with the spit camels have in older material and the SRD mule's
+   advantage against being knocked prone folded into Sure-Footed. About CR 1: a step above
+   the warhorse, on purpose. warTrained lets it attack as a controlled
+   mount. */
+var HOMEBREW_MOUNTS = {
+  "War Camel": {name:"War Camel", size:"Large", type:"beast", homebrew:true, warTrained:true, ac:13, hp:38, speed:"50 ft",
+    abilities:{str:18, dex:16, con:18, int:2, wis:13, cha:5},
+    skills:"Perception +3", senses:"passive Perception 13",
+    attacks:[
+      {name:"Hooves", toHit:6, dice:"1d6", bonus:4, damageType:"bludgeoning", text:"Reach 5 ft."},
+      {name:"Bite", toHit:6, dice:"1d4", bonus:4, damageType:"piercing", text:"Reach 5 ft."}],
+    actions:[
+      {name:"Multiattack", text:"It makes one Hooves attack and one Bite attack."},
+      {name:"Spit (recharge 5–6)", save:"CON 14", text:"One creature within 15 ft that it can see is blinded until the end of its next turn on a failed save."}],
+    traits:[
+      {name:"War-Trained", text:"Bred and trained to fight with a rider on its back."},
+      {name:"Keen Smell", text:"It has advantage on Wisdom (Perception) checks that rely on smell."},
+      {name:"Sure-Footed", text:"Sand and other loose ground aren't difficult terrain for it, and it has advantage on Strength and Dexterity saves against effects that would knock it prone."},
+      {name:"Desert Endurance", text:"It can go a week without water, and it has advantage on Constitution saves against extreme heat and forced marches."}]}
+};
 
 /* "Perception +3, Stealth +4" with `add` added to each bonus. */
 function addToSkills(text, add){
@@ -200,6 +226,27 @@ export var COMPANIONS = [
             (x.lv >= 5 ? " (and you make one weapon attack when it attacks)" : "") + "." +
             (x.lv >= 7 ? " A bonus action can command Dash, Disengage, Dodge or Help when it doesn't attack; its attacks are magical." : "") +
             (x.lv >= 11 ? " It makes two attacks when you command it to Attack." : "")}])
+      };
+    }},
+  // A Cavalier's mount: one of the PHB's mounts, bought or found in play
+  // (the subclass doesn't give one), with the mounted combat rules.
+  {id:"mount", name:"Mount", cls:"Fighter", subclass:"Cavalier", level:3,
+    choice:{label:"Mount", options:MOUNTS.concat(Object.keys(HOMEBREW_MOUNTS)),
+      intro:"Choose your mount. The Cavalier doesn't come with one: buy it or find it in play, then track it here."},
+    stats:function(x){
+      var b = SRD_STAT_BLOCKS[x.choice] || HOMEBREW_MOUNTS[x.choice];
+      if(!b) return null;
+      var rules = [
+        {name:"Controlled mount", text:"While you ride it, it acts on your initiative and moves as you direct. It can take only the Dash, Disengage and Dodge actions" +
+          (b.warTrained ? ", and the Attack action (it's war-trained)." : ".")},
+        {name:"Born to the Saddle", text:"Mounting or dismounting costs you 5 ft of movement. If it is moved against its will or you are knocked prone, you make a DEX save (DC 10) with advantage or fall off; a fall of 10 ft or less lands you on your feet (unless you are incapacitated)."}];
+      if(b.size==="Medium") rules.unshift({name:"Rider", text:"Only a Small rider can ride it."});
+      return {
+        type: b.size + " beast: " + x.choice.toLowerCase() + (b.homebrew ? " (homebrew)" : ""),
+        ac: b.ac, hp: b.hp, speed: b.speed, abilities: b.abilities, skills: b.skills, senses: b.senses,
+        attacks: b.attacks, actions: b.actions || [],
+        traits: b.traits ? [].concat(b.traits).map(function(t){ return typeof t==="string" ? {text: t} : t; }) : [],
+        riding: rules
       };
     }},
   // Find Familiar (PHB) and Pact of the Chain: the familiar's own stat

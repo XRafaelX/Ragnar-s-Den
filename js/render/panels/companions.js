@@ -7,15 +7,17 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { showActionToast } from "../../ui/toast.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { performRoll } from "../../dice/dice.js";
-import { makeDiceSvg, makeStatArrowSvg } from "../../ui/svg-icons.js";
+import { makeDiceSvg, makeStatArrowSvg, makeChevronRightSvg } from "../../ui/svg-icons.js";
+import { openBottomSheet } from "../../ui/bottom-sheet.js";
 
 /* ---- Companion cards (Companions tab) ----
    One stat card per companion (js/data/companions.js): its choice (a
    drake's essence), then a vitals row (AC, an HP tracker per copy, e.g.
    two cannons, speed), then two columns on a wide card: ability scores
    and facts beside attacks, actions and reactions with roll buttons;
-   traits run full width under them. A Beast Master's card starts with a
-   form for the beast's own stat block. */
+   traits (and a mount's riding rules) run full width under them as tiles
+   that open their whole text. A Beast Master's card starts with a form
+   for the beast's own stat block. */
 var ABILITY_KEYS = ["str","dex","con","int","wis","cha"];
 
 function rollButton(text, onClick){
@@ -90,15 +92,82 @@ function entryBlock(title, list, render){
   list.forEach(function(e){ box.appendChild(render(e)); });
   return box;
 }
-/* A reaction or trait; one without a name (a beast's traits as typed in
-   the form) is just its text. */
-function textEntry(e){
-  var p = ce("p", "comp-entry");
-  if(!e.name){ p.textContent = e.text; return p; }
-  p.innerHTML = "<b></b> <span></span>";
-  p.firstChild.textContent = e.name + ".";
-  p.lastChild.textContent = e.text;
-  return p;
+/* A block of traits as one string, as the SRD blocks and the beast form
+   keep them ("Keen Smell: ... Pack Tactics: ..."), split into named
+   traits; text with no "Name:" at its start stays one unnamed entry. */
+var TRAIT_NAME = /(?:^|\s)([A-Z][a-z']+(?:-[A-Za-z][a-z']+)*(?: (?:[A-Z][a-z'()]+(?:-[A-Za-z][a-z']+)*|and|of|the))*): /g;
+export function splitTraits(list){
+  var out = [];
+  (list||[]).forEach(function(e){
+    if(e.name || !e.text){ out.push(e); return; }
+    var text = String(e.text).trim(), marks = [], m;
+    TRAIT_NAME.lastIndex = 0;
+    while((m = TRAIT_NAME.exec(text))) marks.push({at: m.index + (m[0].charAt(0)===" " ? 1 : 0), name: m[1], body: m.index + m[0].length});
+    if(!marks.length || marks[0].at!==0){ out.push({text: text}); return; }
+    marks.forEach(function(k, i){
+      var body = text.slice(k.body, i + 1 < marks.length ? marks[i + 1].at : text.length).trim();
+      out.push({name: k.name, text: /[.!?)]$/.test(body) ? body : body + "."});
+    });
+  });
+  return out;
+}
+/* A trait as a tile: its name and two lines of text; a tap opens it all
+   in a bottom sheet. One without a name is plain text. */
+function traitTile(e, owner, kind){
+  if(!e.name){
+    var p = ce("p", "comp-entry");
+    p.textContent = e.text;
+    return p;
+  }
+  var tile = ce("div", "comp-trait");
+  tile.setAttribute("role", "button");
+  tile.tabIndex = 0;
+  tile.setAttribute("aria-label", e.name + ": details");
+  var head = ce("div", "comp-trait-head");
+  var n = ce("span", "comp-trait-name");
+  n.textContent = e.name;
+  head.appendChild(n);
+  var more = ce("span", "ff-more");
+  more.setAttribute("aria-hidden", "true");
+  more.innerHTML = makeChevronRightSvg();
+  head.appendChild(more);
+  tile.appendChild(head);
+  var t = ce("p", "comp-trait-text");
+  t.textContent = e.text;
+  tile.appendChild(t);
+  function open(){
+    openBottomSheet(function(body, refresh, close){
+      var header = ce("div", "bs-header");
+      var title = ce("div", "bs-title");
+      title.textContent = e.name;
+      header.appendChild(title);
+      var x = document.createElement("button");
+      x.className = "bs-close"; x.textContent = "✕"; x.title = "Close";
+      x.setAttribute("aria-label", "Close");
+      x.addEventListener("click", close);
+      header.appendChild(x);
+      body.appendChild(header);
+      var sub = ce("p", "bs-subtitle");
+      sub.textContent = kind + " · " + owner;
+      body.appendChild(sub);
+      var d = ce("div", "ff-desc ff-sheet-desc");
+      d.textContent = e.text;
+      body.appendChild(d);
+    });
+  }
+  tile.addEventListener("click", open);
+  tile.addEventListener("keydown", function(ev){ if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); open(); } });
+  return tile;
+}
+/* Traits or riding rules: a titled grid of tiles. */
+function traitBlock(title, list, owner, kind){
+  var box = entryBlock(title, splitTraits(list), function(e){ return traitTile(e, owner, kind); });
+  if(!box) return null;
+  box.classList.add("comp-traits");
+  var grid = ce("div", "comp-trait-grid");
+  Array.prototype.slice.call(box.children, 1).forEach(function(el){ grid.appendChild(el); });
+  box.appendChild(grid);
+  return box;
 }
 /* An attack or action: its name with the roll buttons (or, read-only,
    tags) beside it, and what it does under them. */
@@ -242,13 +311,15 @@ export function renderStatBlock(card, s, name, opts){
     return actEntry(a.name, side, a.text);
   });
   if(actions) acts.appendChild(actions);
-  var reactions = entryBlock("Reactions", s.reactions, textEntry);
+  var reactions = entryBlock("Reactions", splitTraits(s.reactions), function(r){ return actEntry(r.name || "Reaction", [], r.text); });
   if(reactions) acts.appendChild(reactions);
   if(acts.childNodes.length) body.appendChild(acts);
   if(body.childNodes.length < 2) body.classList.add("single");
 
-  var traits = entryBlock("Traits", s.traits, textEntry);
-  if(traits){ traits.classList.add("comp-traits"); body.appendChild(traits); }
+  var traits = traitBlock("Traits", s.traits, name, "Trait");
+  if(traits) body.appendChild(traits);
+  var riding = traitBlock("Riding", s.riding, name, "Riding");
+  if(riding) body.appendChild(riding);
   block.appendChild(body);
   card.appendChild(block);
 }

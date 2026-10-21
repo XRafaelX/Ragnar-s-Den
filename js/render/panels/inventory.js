@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, combineRolls, conditionRolls } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, combineRolls, conditionRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -638,6 +638,55 @@ function renderUnarmedCard(c, u){
   return card;
 }
 
+/* A Cavalier's weapon in hand: Unwavering Mark's special attack (a bonus
+   action with advantage that spends a use; its damage adds half the
+   fighter level) and, from fighter 15, Ferocious Charger's save DC. */
+function cavalierButtons(c, item, atkBonus, atkRoll, parsed, dmgBonus){
+  var mark = unwaveringMark(c, item);
+  if(!mark) return [];
+  var name = item.name || "Weapon";
+  var res = characterResources(c).find(function(r){ return r.key==="Fighter:unwavering_mark"; });
+  var left = res ? res.max - res.used : 0;
+  var roll = combineRolls([{mode: "adv", reason: "Unwavering Mark"}, atkRoll]);
+  var atk = document.createElement("button");
+  atk.type = "button"; atk.className = "btn small inv-roll-btn inv-mark-btn";
+  atk.innerHTML = makeDiceSvg() + "Mark attack " + fmtMod(atkBonus) + (roll.mode==="adv" ? " (Adv)" : roll.mode==="dis" ? " (Dis)" : "");
+  var tag = document.createElement("span");
+  tag.className = "inv-action-tag"; tag.textContent = "Bonus action";
+  atk.appendChild(tag);
+  atk.disabled = left <= 0;
+  atk.title = left > 0
+    ? "Unwavering Mark: when a creature you marked deals damage to anyone else, attack it as a bonus action on your next turn. Spends one of " + left + " left."
+    : "No special attacks left until a long rest";
+  atk.addEventListener("click", function(){
+    c.resourcesUsed[res.key] = res.used + 1;
+    save(); renderAll();
+    performRoll(20, 1, atkBonus, roll.mode, name + ": Unwavering Mark attack");
+  });
+  var dmg = document.createElement("button");
+  dmg.type = "button"; dmg.className = "btn small inv-roll-btn inv-mark-btn";
+  dmg.innerHTML = makeDicesSvg() + "Mark damage " + parsed.qty + "d" + parsed.die + fmtMod(dmgBonus + mark.extra);
+  dmg.title = "Unwavering Mark: a hit with the special attack adds half your fighter level (+" + mark.extra + ")";
+  dmg.addEventListener("click", function(){
+    performRoll(parsed.die, parsed.qty, dmgBonus + mark.extra, "none", name + ": Unwavering Mark damage" + (item.damageType ? " (" + item.damageType + ")" : ""));
+  });
+  var out = [atk, dmg];
+  var dc = ferociousChargerDc(c);
+  if(dc){
+    var charge = document.createElement("button");
+    charge.type = "button"; charge.className = "btn small inv-roll-btn inv-mark-btn";
+    charge.textContent = "Charge DC " + dc;
+    charge.title = "Ferocious Charger: move at least 10 ft straight toward a creature, then hit it: it makes a STR save or is knocked prone. Once on each of your turns.";
+    charge.addEventListener("click", function(){
+      var text = "The target makes a STR save (DC " + dc + ") or is knocked prone.";
+      logRoll(name + ": Ferocious Charger", text);
+      showActionToast("Ferocious Charger: " + text);
+    });
+    out.push(charge);
+  }
+  return out;
+}
+
 /* Divine Fury, while a Zealot rages: its own button rather than part of
    Damage, since it lands only on the first hit each turn. */
 function divineFuryButton(c, name){
@@ -961,6 +1010,8 @@ function renderWeaponCard(c, item, idx){
 
   var furyBtn = divineFuryButton(c, item.name || "Weapon");
   if(furyBtn) actions.appendChild(furyBtn);
+
+  if(parsed) cavalierButtons(c, item, atkBonus, atkRoll, parsed, dmgBonus).forEach(function(b){ actions.appendChild(b); });
 
   // Symbiotic Entity: melee weapon hits deal an extra 1d6 poison.
   if(effectOn(c, "symbiotic_entity") && !isRangedWeapon(item)){
