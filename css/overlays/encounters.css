@@ -307,3 +307,22 @@
   .enc-create-icon{width:34px;height:34px;}
   .enc-badge{width:30px;height:30px;}
 }
+
+/* ---- Stat block, large (opened from a monster box) ---- */
+.rd-modal:has(.mon-detail--large){max-width:880px;}
+.rd-modal:has(.mon-detail--large) #info-modal-title{font-size:26px;}
+.mon-detail--large .cmp-preview-tags span{font-size:13px;padding:4px 12px;}
+.mon-detail--large .mon-stat-row{gap:12px;margin:14px 0;}
+.mon-detail--large .mon-stat{padding:12px 6px;border-radius:8px;}
+.mon-detail--large .mon-stat-label{font-size:13px;}
+.mon-detail--large .mon-stat-value{font-size:32px;margin-top:4px;}
+.mon-detail--large .mon-ability-row{gap:8px;margin:12px 0;}
+.mon-detail--large .mon-ability{padding:10px 4px;border-radius:8px;}
+.mon-detail--large .mon-ab-label{font-size:12px;}
+.mon-detail--large .mon-ab-score{font-size:26px;}
+.mon-detail--large .mon-ab-mod{font-size:16px;}
+.mon-detail--large .mon-notes{font-size:16px;line-height:1.6;margin-top:14px;padding-top:12px;color:var(--text-on-ink);}
+@media (max-width:560px){
+  .mon-detail--large .mon-ability-row{display:grid;grid-template-columns:repeat(3,1fr);}
+  .mon-detail--large .mon-stat-value{font-size:24px;}
+}

@@ -42,8 +42,13 @@ var editing = null;
 var copyFrom = null;
 
 /* ---- Info modal: full stat block ---- */
-export function openMonsterDetail(name, d){
-  openInfoModal(name, function(body){
+export function openMonsterDetail(name, d, large){
+  openInfoModal(name, function(modalBody){
+    // The encounter shows it large, to read at a glance mid-fight.
+    var body = document.createElement("div");
+    body.className = "mon-detail" + (large ? " mon-detail--large" : "");
+    modalBody.appendChild(body);
+
     var tags = document.createElement("div");
     tags.className = "cmp-preview-tags";
     tags.innerHTML =
