@@ -1,4 +1,4 @@
-# Ragnar's Den · Character Creator — v2.0.0
+# Ragnar's Den · Character Creator v3.0.0
 
 An offline-first, browser-based D&D 5e character creator and interactive character sheet. No accounts, no ads, and no internet connection required after initial load.
 
@@ -28,7 +28,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
 ## Features
 
 - **Character Creation Wizard**: Guided character creation workflow with SRD and expanded options:
-  - Step-by-step selection for Races (with subraces, detailed trait summaries, and Variant Human custom feats/ASIs), Classes, Backgrounds, Alignments, and starting Equipment.
+  - Step-by-step selection for 115 Races (SRD, expanded, Eberron dragonmarks, Plane Shift and lineages, with subraces, detailed trait summaries, and Variant Human custom feats/ASIs), Classes, Backgrounds, Alignments, and starting Equipment.
   - Flexible ability score generation supporting Standard Array, Point Buy (with real-time budget calculator), Manual entry, and Rolling stats with re-roll options.
   - Integrated spell selection for spellcasting classes (cantrips and leveled spells), including always-prepared class spells and domain spell choices.
 - **Interactive Character Sheet**:
@@ -37,11 +37,16 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Abilities & Skills**: Ability scores, modifiers, saving throws, and skill proficiencies with proficiency and expertise markers.
   - **Features & Traits**: Class features, racial traits, feats, and custom feature creation with "NEW" indicator badges on level-up.
   - **Spellbook & Slots**: Track cantrips and prepared spells, filter by spell level, manage spell slot usage (including multiclassing and Warlock Pact Magic), and toggle prepared state on long rest.
+  - **Spells known and prepared**: The level-up's New spells step teaches each class the spells its table allows (and offers the swap the class gets), with counts per class on the Spells tab. Preparing classes get the prepared limit and a Prepare today sheet after a long rest. Bard's Magical Secrets, Mystic Arcanum, a third caster's school limits, and the spells a dragonmark or Ravnica guild adds to a caster's list are all included.
+  - **Spells that grow**: A spell's card shows what it does at the character's level: cantrip dice by character level, Eldritch Blast's beams with the warlock's invocations, a warlock's spells at its pact slot level, and the Higher slots rule for other casters.
   - **Inventory & Armory**: Currency tracker (cp/sp/ep/gp/pp) with smart coin breaking, equipment list with item weights, equipped weapon/armor management with hand-to-hand logic.
   - **Coin Purse**: Full copper/silver/electrum/gold/platinum tracking with change-giving when spending.
+  - **Magic items**: All 340 magic items of the SRD 5.1 plus the DM's own (grouped as Panais Magic Items), added from the Inventory tab. Attunement follows the rules (3 items, 4 to 6 for an artificer, never two copies), and what an item does works on the sheet while it should: weapon and armor bonuses, Ring of Protection, items that set or raise an ability score, charges regained at dawn, potions that roll their healing, Flame Tongue lit while held.
+  - **Firearms and new weapons**: The DMG's pistol and musket in their own category (proficiency from the Gunner feat), the double-bladed scimitar and Revenant Blade.
+  - **Conditions**: The fourteen conditions and six levels of exhaustion, behind a button on the Hit points card. What they do is applied by itself: disadvantage on attacks or checks, automatic STR and DEX save failures, speed 0, lower passive scores, and a long rest that takes off a level of exhaustion.
   - **Active Effects**: Toggle on/off effects like Bladesong, the Astral Self, and Symbiotic Entity — each costs the appropriate class resource.
   - **Death Saves**: Track successes and failures with automatic stabilization.
-  - **Companions**: Full companion panel for Steel Defender, Eldritch Cannon, Drake Companion, Wildfire Spirit, Beast Master beast, Tasha's primal beasts and Blighted Sapling — with HP tracking, beast form entry, and long rest restoration.
+  - **Companions**: Full companion panel for Steel Defender, Eldritch Cannon, Drake Companion, Wildfire Spirit, Beast Master beast, Tasha's primal beasts and Blighted Sapling, with HP tracking, beast form entry, and long rest restoration. Find Familiar's forms and Pact of the Chain's familiars use the SRD's stat blocks, a Cavalier gets a Mount card, and a new companion shows a NEW dot on the Companions tab until it's opened.
   - **Artificer Infusions**: Dedicated infusions tab and picker for Artificer characters.
   - **Warlock Invocations**: An Eldritch invocations card for Warlocks with all 54 invocations (PHB, Xanathar's, Tasha's) and the four Pact Boons. The level-up asks for new invocations when due (and offers a swap every warlock level), greys out ones whose prerequisites aren't met, and the sheet applies what they do: at-will and once-a-day spells on the Spells tab, uses on Vitals, Beguiling Influence's skills, Gift of the Depths' swim speed, Devil's Sight in senses and an Eldritch Blast summary.
   - **Class options**: Picked on the level-up's Options step and listed in their own Features-tab cards with costs, save DCs and dice: a sorcerer's Metamagic, a Battle Master's maneuvers (also Martial Adept's and Superior Technique's), a Rune Knight's runes (Stone rune darkvision, invocation uses by runes known), Arcane Shots, a Four Elements monk's disciplines, the Hunter's four choices, Totem Warrior animals (Elk and Eagle speeds while raging), the Storm Herald's environment and the Misfortune Bringer's misfortunes, each with the book's rules for when one can be swapped.
@@ -49,7 +54,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Class tool choices**: A first artificer's artisan's tools, a bard's three instruments and a monk's tool or instrument are picked on the creation wizard's Class Features step (or on the Feature choices card for an older sheet), and the Information tab lists them in place of the "of your choice" line. A sheet from before keeps its earlier picks.
   - **Background equipment**: The creation wizard's Equipment step shows what the background starts with (every one of the 98 checked against its published page) and asks for its choices: a prayer book or a prayer wheel, which artisan's tools (starting on the ones the background's proficiency picked), a Dimir Operative's secondary guild. Trinkets are rolled on their own table, with Roll again or a pick from the list: the Player's Handbook's, Curse of Strahd's Gothic Trinkets (Haunted One), Van Richten's Horror Trinkets (Ravenloft Investigator) and the Feywild Trinkets (Feylost, Witchlight Hand). The new character carries it all and has its coins in the purse; a belaying pin arrives as a club to attack with. A character made before this gets a one-time card at the top of the Inventory tab: Add it (with the same choices and rolls) or No thanks, and the card doesn't come back.
   - **Personality and background story**: A Personality card on the Information tab with two personality traits, an ideal, a bond and a flaw, and the background's own story tables (a Haunted One's Harrowing Event, a Criminal's Specialty, a Feylost's Fey Mark, Ravnica contacts...), from each background's published page. Each tile rolls on its table or opens a sheet to pick an entry or write your own; Roll all fills the empty ones. Sword Coast backgrounds use the Player's Handbook tables their page names; nothing asks for these at creation.
-  - **Background proficiencies**: A background's tools go on the sheet (an Urchin's disguise kit and thieves' tools), and its choices are picked on the wizard's Skills step: a gaming set, an instrument, artisan's tools, "an instrument or artisan's tools", an Urban Bounty Hunter's two different kinds, a Guild Merchant's navigator's tools or extra language, and a House Agent's house, which sets its two tools from the House Tool Proficiencies table. A background's own language (a Rune Carver's Giant) is added for you, and a Ravnica guild's language comes from its short list. Older characters pick their background's tools on the Features tab's Feature choices card, which also offers to correct skills this app once had wrong (a Lorehold Student's Arcana for Religion). All 67 backgrounds were checked against the published pages.
+  - **Background proficiencies**: A background's tools go on the sheet (an Urchin's disguise kit and thieves' tools), and its choices are picked on the wizard's Skills step: a gaming set, an instrument, artisan's tools, "an instrument or artisan's tools", an Urban Bounty Hunter's two different kinds, a Guild Merchant's navigator's tools or extra language, and a House Agent's house, which sets its two tools from the House Tool Proficiencies table. A background's own language (a Rune Carver's Giant) is added for you, and a Ravnica guild's language comes from its short list. Older characters pick their background's tools on the Features tab's Feature choices card, which also offers to correct skills this app once had wrong (a Lorehold Student's Arcana for Religion). All 98 backgrounds were checked against the published pages.
   - **Proficiencies gained twice**: As the Basic Rules allow, a skill or tool two sources give (an elf's Perception and a Far Traveler's, a rogue's thieves' tools and an Urchin's) earns a pick of another of the same kind, asked on the wizard's Skills step or the Feature choices card, and a pick list that runs short (a kenku whose class and background already cover its skills) offers any other skill or tool so no pick is lost.
   - **Unarmed strikes and monk weapons**: An unarmed strike card on the Inventory tab for characters who use one: a monk (the Martial Arts die and DEX while unarmored), a race with natural weapons (a tabaxi's claws, a minotaur's horns, a lizardfolk's bite) and a Tavern Brawler; rage and Song of Victory add to it. A monk weapon rolls the Martial Arts die once it's bigger than its own. Starting equipment that says "any simple weapon" or "any martial melee weapon" is a weapon picker in the creation wizard (weapons the class can't use greyed out), so the new character starts with a real weapon.
   - **Advantage from features**: Rolls that always have advantage roll that way, with an "Adv" tag: initiative for a barbarian's Feral Instinct, STR checks, Athletics and STR saves while raging, a vedalken's INT, WIS and CHA saves and a verdan's WIS and CHA saves. Advantage that depends on the situation (Dwarven Resilience against poison, Fey Ancestry against being charmed, Gnome Cunning against magic, Danger Sense against effects you can see) is listed under the Saving throws card as a reminder. Initiative also takes the disadvantage of armor worn without proficiency.
@@ -60,7 +65,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Optional rules**: Set once at the start of character creation, on the Class step's Optional rules card (Tasha's optional class features and the campaign books, with a line saying what Tasha's adds for the chosen class), and changed later on the Information tab's card. Later wizard steps only note what Tasha's would add while it's off; turning it off drops the picks only it allows. Tasha's optional class features: Tasha's extra fighting styles, Metamagic, maneuvers, invocations and Pact of the Talisman, the 65 spells Tasha's Additional Spells adds to the class lists (marked "Tasha's optional" in the spell pickers, the level-up and the wizard's Spells step, which has the switch too), plus swapping a style, Metamagic option or maneuver at Ability Score Improvement levels.
   - **Journal & Information**: Rich notes, backstory, physical characteristics, proficiencies (languages, weapons, armor, tools), and custom notes.
 - **Monsters Browser**:
-  - Searchable monster compendium with full stat blocks.
+  - Searchable monster compendium of 331 monsters in 13 categories, with full stat blocks.
   - Customize and create your own monsters for encounters.
 - **Encounters** (for the DM):
   - Named encounters saved in this browser, ready to prepare before a session and run again later with Reset (or Duplicate).
@@ -69,7 +74,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - Encounters are included in backup export and import.
 - **Compendium & Reference Overlays**:
   - Built-in searchable compendium for Races, Classes, Subclasses, Backgrounds, Alignments, Feats, Spells, Weapons, Armor, and Infusions.
-  - All 67 backgrounds have full skill/tool entries and descriptive blurbs. Backgrounds that let you choose skills (Haunted One, Urban Bounty Hunter, Cloistered Scholar...) ask for them on the wizard's Skills step.
+  - All 98 backgrounds have full skill/tool entries and descriptive blurbs. Backgrounds that let you choose skills (Haunted One, Urban Bounty Hunter, Cloistered Scholar...) ask for them on the wizard's Skills step.
   - Inspect full trait descriptions, spell requirements, and item properties without leaving the app.
 - **Custom Homebrew Builder**:
   - Create and manage custom Subclasses, Races, Backgrounds, Spells, Items, Features, and Monsters directly in the Compendium.
@@ -91,7 +96,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Responsive Design**: Mobile-friendly layout with slide-out sidebar navigation, bottom sheets, and desktop-optimized panel grids.
 - **Offline & Local Storage**:
   - Stores character sheets and custom homebrew in browser `localStorage`.
-  - Export and import full vault backups as JSON files.
+  - Export and import full vault backups as JSON files, named by date, time and app version (`ragnars-den-backup_2026-10-19_2145_v3.0.0.json`).
   - PWA installable on desktop and mobile devices with Service Worker offline caching (`sw.js`).
 
 ---
@@ -166,10 +171,10 @@ The app needs no build step. `package.json` exists only to run the tests and has
 
 ## Testing
 
-Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/` and completes in well under a second. **244 tests, 0 failures.**
+Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/` and completes in well under a second. **452 tests, 0 failures.**
 
 - `coins.test.mjs` — coin parsing, spending, change-giving, and formatting.
-- `data.test.mjs`: class, subclass and resource data is complete and well-formed. Every subclass reaches its top level, `replaces` points at a real earlier feature, feature flags use known names and valid values, every Resources card entry belongs to a subclass that exists, counters stay sane at every level, the spell catalog is well formed (477 spells, every class's count, artificer spells at every level, Tasha's Additional Spells kept off the class lists until the switch is on), and text has no long dashes.
+- `data.test.mjs`: class, subclass and resource data is complete and well-formed. Every subclass reaches its top level, `replaces` points at a real earlier feature, feature flags use known names and valid values, every Resources card entry belongs to a subclass that exists, counters stay sane at every level, the spell catalog is well formed (524 spells, every class's count, artificer spells at every level, Tasha's Additional Spells kept off the class lists until the switch is on), and text has no long dashes.
 - `rules.test.mjs` — sheet calculations against hand-worked 2014 rules numbers: proficiency bonus, Sneak Attack and Martial Arts scaling, speed bonuses, rage, initiative, Armor Class (unarmored defenses, Dual Wielder, Defense style, Soul of the Forge), saving throws (Aura of Protection, Diamond Soul, Resilient), Battle Ready and Hex Warrior attacks, proficiency grants, rests, spell slots, feat resources, feat picks, spell choices, speeds, artificer weapons and elixirs, and companions.
 - `smoke.test.mjs` — every class and subclass at every level from 1 to 20, plus multiclass builds, runs through every sheet calculation without errors.
 - `project.test.mjs` — every file in the service worker's offline list exists, every relative `import` resolves, and `index.html`'s local scripts and stylesheets exist.
@@ -191,6 +196,16 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 - `styles-combat.test.mjs`: Thrown Weapon Fighting (thrown ranged damage only, a dart always), throwing as a ranged attack (Archery to hit, no rage), Unarmed Fighting (d6, d8 with nothing in hand, the grapple die, natural weapons and Martial Arts), and two-weapon fighting's off-hand damage with and without the style, Dual Wielder and what doesn't qualify.
 - `edge-cases.test.mjs`: the level-up's ability step when fewer than two points fit under 20, the ability a weapon attack uses on a tie (armor's penalty, rage), a subclass's speed and HP extras when picked on the sheet, a warlock's Eldritch Blast from a feat meeting an invocation's prerequisite (a non-warlock's Eldritch Adept still can't), and undo keeping spell slots added by hand.
 - `gear.test.mjs`: the gear list behind the Inventory tab's "+ Add item" (143 items in eight groups, prices, weights and bundles against the Player's Handbook tables) and adding from it: a new row, a bundle's quantity, stacking on what is already carried.
+- `conditions.test.mjs`: the fourteen conditions and exhaustion: older saves, what each condition does to rolls, saves and speed, exhaustion's levels and passive scores, the long rest, and the panels drawn with conditions on.
+- `encounters.test.mjs`: adding monsters, damage and healing trails, the turn order (dragging, rearranging, skipping downed monsters, rounds), reset, saving and duplicating, and backup import.
+- `familiars.test.mjs`: beast and familiar stat blocks against the bestiary, Find Familiar and Pact of the Chain, and the Companions tab's NEW dot.
+- `magic-items.test.mjs`: the DM's items (Heavy Holster, Trident of Returning, Duality) and attunement limits.
+- `srd-magic-items.test.mjs`: the SRD's 340 items: magic weapons and armor, bonuses that need attunement, AC and save items, items that set or raise a score, charges and potions of healing, Flame Tongue.
+- `new-races.test.mjs`: every race's data and choices, the published numbers, natural armor, trait advantage, Custom Lineage, racial feats for subraces, race resources, and Half-Elf (Variant).
+- `spells-known.test.mjs`: spells-known tables, the New spells step (patron spells, Tasha's, catching up, multiclassing, Magical Secrets, third casters, Mystic Arcanum), apply and undo, the prepared limit and preparing, and spells a feature or origin grants.
+- `spell-scaling.test.mjs`: every scaling entry, cantrip dice by level, Eldritch Blast's beams, a warlock's spells at pact slot level, and the Higher slots rule.
+- `weapons-languages.test.mjs`: firearms and Gunner, infusion targets, the double-bladed scimitar and Revenant Blade, and every language a race or background teaches.
+- `backup-name.test.mjs`: the backup file's name (local date, time and app version).
 - `feats.test.mjs`: the feat catalog (105 feats; every spell, option set, race and feat an entry names exists) and what the newer feats do: Linguist's languages, tool and weapon proficiencies, spell feats with their kinds, casting ability and free casts, Strixhaven Initiate's college, the Dragonlance, giant and Planescape chains and who can take them, racial feats, Squat Nimbleness, Dragon Hide, darkvision, proficiency-bonus uses, Rune Shaper's runes, Fighting Initiate, Eldritch Adept, Metamagic Adept, Magic Initiate's class, cantrips and spell, the backgrounds that give a feat, campaign bonus feats, and the wording rules for feat and spell text (plain sentences, no semicolons, dashes or shorthand).
 
 `tests/setup.mjs` gives the browser modules just enough of `window`, `document` and `localStorage` to load in Node. The tests check data and calculations, not rendering — use the checklist below for the screens.
@@ -229,7 +244,7 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 ├── js/
 │   ├── app.js                         # Application entry point: event listeners, import/export, init()
 │   ├── bootstrap.bundle.min.js        # Bootstrap 5 JavaScript bundle
-│   ├── version.js                     # App release version (APP_VERSION = "2.0.0")
+│   ├── version.js                     # App release version (APP_VERSION = "3.0.0")
 │   ├── core/
 │   │   ├── artificer.js               # Armor model weapons, elixir brewing and rolling
 │   │   ├── character.js               # Character factory and schema migration (ensureShape)
@@ -251,13 +266,40 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   │   ├── equipment.js               # Hands and equipping, weapon numbers, weapon and armor proficiency
 │   │   ├── checks.js                  # Ability checks, skills, passive scores, advantage and disadvantage
 │   │   ├── effects.js                 # Active effects (Bladesong, the Astral Self, Symbiotic Entity)
+│   │   ├── ability-scores.js          # Ability scores in effect (magic items that set or raise a score)
+│   │   ├── background-gear.js         # A background's starting kit, its choices and trinket rolls
+│   │   ├── background-story.js        # Personality and background story tables, rolls
+│   │   ├── class-options.js           # Metamagic, maneuvers, runes and other class options: learning and swapping
+│   │   ├── class-picks.js             # Proficiencies and spells class features give or let you choose
+│   │   ├── conditions.js              # Conditions and exhaustion
+│   │   ├── encounters.js              # Encounters: monsters, HP trails, turn order, saving
+│   │   ├── fighting-styles.js         # Fighting styles: when due, picks and effects
+│   │   ├── infusion-effects.js        # What active infusions do on the sheet
+│   │   ├── invocations.js             # Eldritch invocations and Pact Boons
+│   │   ├── magic-items.js             # What a carried magic item does, attunement
+│   │   ├── spell-scaling.js           # What a spell does at the character's level
+│   │   ├── spells-known.js            # Spells a class learns on a level-up, prepared limits
 │   │   └── state.js                   # Application state and localStorage persistence
 │   ├── data/
 │   │   ├── abilities-skills.js        # Ability and skill definitions, class hit dice
 │   │   ├── alignments.js              # Alignment definitions and blurbs
 │   │   ├── armor.js                   # Armor catalog, AC calculations, and stealth penalties
 │   │   ├── artificer-extras.js        # Artificer armor models, elixir types, and infusion prerequisites
-│   │   ├── backgrounds.js             # All 66 backgrounds: skill proficiencies, tools, languages, and blurbs
+│   │   ├── background-equipment.js    # Each background's starting kit
+│   │   ├── background-stories.js      # Personality and story tables per background
+│   │   ├── beast-blocks.js            # SRD stat blocks: Beast Master beasts, familiars, mounts
+│   │   ├── class-options.js           # Metamagic, maneuvers, runes and other class option data
+│   │   ├── conditions.js              # The fourteen conditions and exhaustion levels
+│   │   ├── feature-picks.js           # Favored enemies, terrains, Dragon Ancestor lists
+│   │   ├── gear.js                    # Adventuring gear list behind "+ Add item"
+│   │   ├── invocations.js             # Eldritch invocations and Pact Boons
+│   │   ├── magic-items.js             # The DM's magic items, joined with the SRD's
+│   │   ├── magic-items-srd.js         # The SRD 5.1's 340 magic items
+│   │   ├── origin-spells.js           # Spells a dragonmark or guild adds to class lists
+│   │   ├── spell-scaling.js           # How spells grow with level or slot
+│   │   ├── spells-known.js            # Spells-known tables per class
+│   │   ├── trinkets.js                # Trinket tables
+│   │   ├── backgrounds.js             # All 98 backgrounds: skill proficiencies, tools, languages, and blurbs
 │   │   ├── classes.js                 # Class information, spellcaster classification, and proficiencies
 │   │   ├── companions.js              # Companion definitions and stat-block templates
 │   │   ├── effects.js                 # Toggle effect definitions (Bladesong, Astral Self, Symbiotic Entity)
@@ -279,7 +321,7 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   │   ├── race-data.js               # Detailed racial traits, speeds, sizes, and darkvision
 │   │   ├── races.js                   # Race definitions and summary blurbs
 │   │   ├── resources.js               # Class and subclass resource pools (Ki, Rages, Sorcery Points, etc.)
-│   │   ├── spells.js                  # Spells catalog: all 477 spells of the Player's Handbook, Xanathar's and Tasha's, with components and summaries
+│   │   ├── spells.js                  # Spells catalog: 524 spells (Player's Handbook, Xanathar's, Tasha's and other books), with components and summaries
 │   │   ├── subclasses/                # Per-class subclass feature data (one file per class)
 │   │   │   ├── artificer.js
 │   │   │   ├── barbarian.js
@@ -306,6 +348,7 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   ├── render/
 │   │   ├── armory.js                  # Armory overlay and equipment catalog browser
 │   │   ├── compendium.js              # Opens the Compendium; its tabs are in compendium/
+│   │   ├── encounters.js              # Encounters overlay for the DM
 │   │   ├── compendium/                # One file per Compendium tab
 │   │   │   ├── shared.js              # What all tabs share: the session, detail view blocks, edit and delete bar
 │   │   │   ├── classes.js             # Classes and Subclasses tabs, the custom subclass form
@@ -320,6 +363,12 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   │   └── panels/                    # Character sheet tab panels:
 │   │       ├── abilities.js           # Ability scores, modifiers, saving throws, skills
 │   │       ├── artificer.js           # Artificer armor model selection and active infusions
+│   │       ├── background-kit.js      # One-time background equipment offer for older sheets
+│   │       ├── class-options.js       # Class options cards (Metamagic, maneuvers, runes...)
+│   │       ├── class-picks.js         # Feature choices card
+│   │       ├── conditions.js          # Conditions and exhaustion card
+│   │       ├── invocations.js         # Eldritch invocations card
+│   │       ├── personality.js         # Personality and background story card
 │   │       ├── coin-purse.js          # Coin purse panel (cp/sp/ep/gp/pp)
 │   │       ├── companions.js          # Companion HP tracking and beast form panel
 │   │       ├── death-saves.js         # Death saving throw tracker
@@ -338,7 +387,17 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   │   ├── avatar.js                  # Avatar image upload handling
 │   │   ├── backdrop.js                # Custom sheet backdrop/banner upload handling
 │   │   ├── bottom-sheet.js            # Mobile bottom sheet component
+│   │   ├── background-gear.js         # Background equipment choices and trinket rolls
+│   │   ├── card-parts.js              # Shared pieces of the Features tab's choice cards
 │   │   ├── catalog-picker.js          # Generic catalog picker overlay
+│   │   ├── class-picks.js             # Pickers for class feature choices
+│   │   ├── dlc-shelf.js               # Optional books shelf (wizard and Information tab)
+│   │   ├── feat-list.js               # Feat list with prerequisites
+│   │   ├── fx.js                      # Short sheet animations (slots, resources, rests)
+│   │   ├── invocation-picks.js        # Invocation pickers
+│   │   ├── option-picks.js            # Class option pickers
+│   │   ├── spell-pick-grid.js         # Spell picking grid
+│   │   ├── style-picks.js             # Fighting style pickers
 │   │   ├── char-title.js              # Character title generation and display
 │   │   ├── character-picker.js        # Quick character switcher picker
 │   │   ├── confirm-modal.js           # Reusable confirmation modal dialog
