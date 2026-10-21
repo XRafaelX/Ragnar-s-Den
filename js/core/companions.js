@@ -6,7 +6,8 @@ import { abilityScore, abilityScores } from "./ability-scores.js";
    The companions the character has now (see js/data/companions.js), with
    their stat blocks worked out, and what's saved for each in
    c.companions[id] = {hp: [one number per copy], choice (a drake's
-   essence), beast (a Beast Master's stat block)}. A companion whose
+   essence), beast (a Beast Master's stat block), and the player's own
+   name, title and image (a data URL)}. A companion whose
    beast isn't entered yet comes back with stats null. */
 
 export function characterCompanions(c){
@@ -24,7 +25,8 @@ export function characterCompanions(c){
     var stats = def.stats({lv: cl ? Number(cl.level)||1 : totalLevel(c), pb: pb, mods: mods, spellAttack: pb + castMod, spellDC: 8 + pb + castMod,
       choice: saved.choice || "", beast: saved.beast || null, chain: !!(req && req.chain)});
     out.push({def: def, stats: stats, choice: saved.choice || "", hasBeast: !!saved.beast, hp: stats ? companionHp(c, def.id, stats) : [],
-      source: req ? req.source : "", options: companionOptions(def, req)});
+      source: req ? req.source : "", options: companionOptions(def, req),
+      name: saved.name || "", title: saved.title || "", image: saved.image || ""});
   });
   return out;
 }
@@ -76,6 +78,18 @@ export function setCompanionBeast(c, id, beast){
   var st = companionState(c, id);
   st.beast = beast;
   st.hp = [];
+}
+/* The player's own touches, kept through a change of form: {name, title,
+   image}; an empty value clears that one. */
+export var COMPANION_NAME_MAX = 40, COMPANION_TITLE_MAX = 48;
+export function setCompanionLook(c, id, look){
+  var st = companionState(c, id);
+  Object.keys(look).forEach(function(k){
+    var v = typeof look[k]==="string" ? look[k].trim() : "";
+    if(k==="name") v = v.slice(0, COMPANION_NAME_MAX);
+    if(k==="title") v = v.slice(0, COMPANION_TITLE_MAX);
+    if(v) st[k] = v; else delete st[k];
+  });
 }
 /* A long rest: companions are back at full (a new defender or cannon). */
 export function restoreCompanions(c){

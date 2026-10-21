@@ -2,7 +2,34 @@
    primal beast...), plus the Beast Master setup form in the info modal.
    The Compendium's Companions list reuses the card classes. */
 .comp-sub{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text-on-parch-dim);margin:-6px 0 12px;}
-.comp-edit{font-family:var(--sans);}
+/* Header: the player's image, name, title and type, with the ⋮ menu. */
+.comp-head{display:flex;align-items:flex-start;gap:12px;}
+.comp-head-text{flex:1;min-width:0;}
+.comp-head-text h3{overflow-wrap:anywhere;}
+.comp-head .comp-sub{margin-top:-8px;}
+.comp-title{font-family:var(--serif);font-variant:small-caps;letter-spacing:.06em;font-size:14px;color:var(--brass-bright);margin:-10px 0 10px;overflow-wrap:anywhere;}
+.comp-title + .comp-sub{margin-top:-6px;}
+.comp-portrait{flex:none;width:60px;height:60px;padding:0;border-radius:50%;overflow:hidden;cursor:pointer;
+  border:2px solid color-mix(in srgb, var(--brass) 60%, transparent);background:rgba(0,0,0,.2);
+  box-shadow:0 2px 8px rgba(0,0,0,.35);transition:border-color .15s ease;}
+.comp-portrait:hover{border-color:var(--brass-bright);}
+.comp-portrait img{width:100%;height:100%;object-fit:cover;display:block;}
+.comp-menu{flex:none;margin:-4px -6px 0 0;}
+/* The Change dialog: every option as a tile, the current one lit. */
+.comp-change-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
+.comp-change-opt{border:1px solid var(--rule);border-radius:8px;background:rgba(0,0,0,.15);color:var(--text-on-parch);font:inherit;font-size:13px;padding:10px 12px;text-align:left;cursor:pointer;transition:background .15s ease, border-color .15s ease;}
+@media (hover:hover){ .comp-change-opt:hover{background:color-mix(in srgb, var(--brass) 14%, transparent);border-color:color-mix(in srgb, var(--brass) 50%, transparent);} }
+.comp-change-opt.active{background:var(--brass);border-color:var(--brass);color:#fff;font-weight:600;}
+.comp-change-opt:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.comp-change-opt[hidden],.comp-change-section[hidden]{display:none;}
+.comp-change-section + .comp-change-section{margin-top:14px;}
+/* A long list's search box stays at the top while the tiles scroll under it. */
+.comp-change-search{position:sticky;top:0;z-index:1;display:block;width:100%;box-sizing:border-box;margin-bottom:12px;
+  padding:9px 12px;font:inherit;font-size:13.5px;color:var(--text-on-parch);
+  background:var(--parchment-dim);border:1px solid var(--rule);border-radius:8px;
+  box-shadow:0 6px 10px -6px var(--parchment-dim);}
+.comp-change-search:focus{outline:none;border-color:var(--brass);}
+.comp-change-none{font-size:13px;color:var(--text-on-parch-dim);margin:4px 0 0;}
 .comp-block{container-type:inline-size;}
 
 /* Vitals row: AC, hit points (one tracker per copy), speed. Narrow: AC and

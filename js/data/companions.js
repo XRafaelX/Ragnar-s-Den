@@ -6,8 +6,9 @@
                   (no subclass: any of the class's)
      infusion     optional: only while this artificer infusion is active
                   (Homunculus Servant); `source` then names it on the card
-     choice       optional {label, options}: picked on the card and saved
-                  (a drake's Draconic Essence); stats get it as ctx.choice
+     choice       optional {label, options, noun}: picked on the card and saved
+                  (a drake's Draconic Essence); stats get it as ctx.choice.
+                  noun follows the pick in the card's subtitle ("Fire essence")
      setup        the choice option (or true when there's no choice) under
                   which the player enters the creature's own stat block (a
                   Beast Master's PHB beast, see BEAST_PRESETS); stats get
@@ -154,7 +155,7 @@ export var COMPANIONS = [
       };
     }},
   {id:"drake", name:"Drake", cls:"Ranger", subclass:"Drakewarden", level:3,
-    choice:{label:"Draconic Essence", options:["Acid","Cold","Fire","Lightning","Poison"]},
+    choice:{label:"Draconic Essence", options:["Acid","Cold","Fire","Lightning","Poison"], noun:"essence"},
     stats:function(x){
       var essence = x.choice ? x.choice.toLowerCase() : "essence";
       var size = x.lv >= 15 ? "Large" : x.lv >= 7 ? "Medium" : "Small";

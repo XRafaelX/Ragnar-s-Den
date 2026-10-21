@@ -1,6 +1,6 @@
 import { save } from "../../core/state.js";
 import { fmtMod, mod, ce, parseDiceNotation } from "../../core/helpers.js";
-import { characterCompanions, setCompanionHp, setCompanionChoice, setCompanionBeast } from "../../core/companions.js";
+import { characterCompanions, setCompanionHp, setCompanionChoice, setCompanionBeast, setCompanionLook, COMPANION_NAME_MAX, COMPANION_TITLE_MAX } from "../../core/companions.js";
 import { BEAST_PRESETS } from "../../data/companions.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { openInfoModal } from "../../ui/info-modal.js";
@@ -9,10 +9,14 @@ import { makeCard, renderAll } from "../sheet.js";
 import { performRoll } from "../../dice/dice.js";
 import { makeDiceSvg, makeStatArrowSvg, makeChevronRightSvg } from "../../ui/svg-icons.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
+import { cardMenu } from "../../ui/card-menu.js";
+import { openImageCropper } from "../../ui/avatar-crop.js";
 
 /* ---- Companion cards (Companions tab) ----
-   One stat card per companion (js/data/companions.js): its choice (a
-   drake's essence), then a vitals row (AC, an HP tracker per copy, e.g.
+   One stat card per companion (js/data/companions.js): a header with the
+   player's own image, name and title and a ⋮ menu (change the companion,
+   name it, add an image), its choice (a drake's essence) until it's
+   made, then a vitals row (AC, an HP tracker per copy, e.g.
    two cannons, speed), then two columns on a wide card: ability scores
    and facts beside attacks, actions and reactions with roll buttons;
    traits (and a mount's riding rules) run full width under them as tiles
@@ -65,7 +69,7 @@ function hpTracker(c, comp, i){
   var dmg = document.createElement("button");
   dmg.type = "button"; dmg.className = "stat-arrow-btn stat-arrow-down";
   dmg.title = "Take 1 damage";
-  dmg.setAttribute("aria-label", "Damage " + comp.def.name + " 1");
+  dmg.setAttribute("aria-label", "Damage " + shownName(comp) + " 1");
   dmg.innerHTML = makeStatArrowSvg("down");
   dmg.addEventListener("click", function(){ set(cur - 1, "hp-dmg"); });
   var full = document.createElement("button");
@@ -75,7 +79,7 @@ function hpTracker(c, comp, i){
   var heal = document.createElement("button");
   heal.type = "button"; heal.className = "stat-arrow-btn stat-arrow-up";
   heal.title = "Heal 1 HP";
-  heal.setAttribute("aria-label", "Heal " + comp.def.name + " 1");
+  heal.setAttribute("aria-label", "Heal " + shownName(comp) + " 1");
   heal.innerHTML = makeStatArrowSvg("up");
   heal.addEventListener("click", function(){ set(cur + 1, "hp-heal"); });
   btns.appendChild(dmg); btns.appendChild(full); btns.appendChild(heal);
@@ -200,6 +204,10 @@ function choiceRow(c, comp){
   var ch = comp.def.choice;
   var options = comp.options && comp.options.length ? comp.options : ch.options;
   var box = ce("div", "comp-choice" + (comp.choice ? "" : " pending"));
+  function pick(v){
+    setCompanionChoice(c, comp.def.id, v);
+    save(); renderAll();
+  }
   var label = ce("span", "comp-choice-label");
   label.textContent = ch.label;
   box.appendChild(label);
@@ -208,7 +216,7 @@ function choiceRow(c, comp){
     box.appendChild(themedPicker({
       key: "comp:" + comp.def.id, ariaLabel: ch.label, placeholder: "Choose a " + ch.label.toLowerCase(), search: true, sheet: true,
       groups: {"": options}, value: comp.choice || "",
-      onPick: function(v){ setCompanionChoice(c, comp.def.id, v); save(); renderAll(); }
+      onPick: function(v){ pick(v); }
     }));
     return box;
   }
@@ -220,7 +228,7 @@ function choiceRow(c, comp){
     b.type = "button"; b.className = "comp-seg-btn" + (comp.choice===o ? " active" : "");
     b.setAttribute("aria-pressed", comp.choice===o ? "true" : "false");
     b.textContent = o;
-    b.addEventListener("click", function(){ setCompanionChoice(c, comp.def.id, o); save(); renderAll(); });
+    b.addEventListener("click", function(){ pick(o); });
     seg.appendChild(b);
   });
   box.appendChild(seg);
@@ -324,23 +332,206 @@ export function renderStatBlock(card, s, name, opts){
   card.appendChild(block);
 }
 
+/* The name on the card: the player's own, else the kind ("Mount"). */
+function shownName(comp){ return comp.name || comp.def.name; }
+
+/* "Large beast: warhorse · from Cavalier"; a named companion leads with
+   its kind, and a choice the type doesn't show (a drake's essence, a
+   primal beast) is added. */
+function subLine(comp){
+  var s = comp.stats, ch = comp.def.choice, bits = [];
+  if(comp.name) bits.push(comp.def.name);
+  bits.push(s.type);
+  if(ch && comp.choice && !isSetupMode(comp) && s.type.toLowerCase().indexOf(comp.choice.toLowerCase())===-1)
+    bits.push(comp.choice + (ch.noun ? " " + ch.noun : ""));
+  return bits.join(" · ") + " · from " + (comp.source || comp.def.source || comp.def.subclass);
+}
+
+/* The card's header: image (when there is one; a tap changes it), name,
+   title and type, and the ⋮ menu. */
+function companionHead(c, comp, card){
+  var head = ce("div", "comp-head");
+  if(comp.image){
+    var pic = document.createElement("button");
+    pic.type = "button"; pic.className = "comp-portrait";
+    pic.title = "Change image";
+    pic.setAttribute("aria-label", "Change " + shownName(comp) + "'s image");
+    var img = document.createElement("img");
+    img.src = comp.image; img.alt = ""; img.draggable = false;
+    pic.appendChild(img);
+    pic.addEventListener("click", function(){ pickImage(c, comp); });
+    head.appendChild(pic);
+  }
+  var text = ce("div", "comp-head-text");
+  text.appendChild(card.querySelector("h3"));
+  if(comp.title){
+    var t = ce("div", "comp-title");
+    t.textContent = comp.title;
+    text.appendChild(t);
+  }
+  var sub = ce("p", "comp-sub");
+  sub.textContent = subLine(comp);
+  text.appendChild(sub);
+  head.appendChild(text);
+  head.appendChild(companionMenu(c, comp));
+  card.insertBefore(head, card.firstChild);
+}
+
+function companionMenu(c, comp){
+  var entries = [];
+  var ch = comp.def.choice;
+  if(ch) entries.push({label: "Change " + ch.label.toLowerCase(), onClick: function(){ openChangeDialog(c, comp); }});
+  if(isSetupMode(comp)) entries.push({label: "Edit beast", onClick: function(){ openBeastForm(c, comp); }});
+  entries.push({label: comp.name || comp.title ? "Edit name and title" : "Add name and title", onClick: function(){ openNameDialog(c, comp); }});
+  entries.push({label: comp.image ? "Change image" : "Add image", onClick: function(){ pickImage(c, comp); }});
+  if(comp.image) entries.push({label: "Remove image", danger: true, onClick: function(){
+    setCompanionLook(c, comp.def.id, {image: ""}); save(); renderAll();
+  }});
+  var menu = cardMenu("More options for " + shownName(comp), entries);
+  menu.classList.add("comp-menu");
+  return menu;
+}
+
+/* Change the companion (a mount, a familiar's form, a drake's essence):
+   every option as a tile in a dialog, the current one lit. A dropdown
+   there would open inside the dialog's scroll box and get cut off. A long
+   list (a familiar's forms) gets a search box pinned above the tiles, as
+   the dropdowns do past 12, and Pact of the Chain forms their own section. */
+var CHANGE_SEARCH_OVER = 12;
+function openChangeDialog(c, comp){
+  var ch = comp.def.choice;
+  var options = comp.options && comp.options.length ? comp.options : ch.options;
+  var chainOnly = ch.chainOnly || [];
+  openInfoModal("Change " + ch.label.toLowerCase(), function(body){
+    var p = ce("p", "art-intro");
+    p.textContent = "A new " + ch.label.toLowerCase() + " starts at full hit points. Its name, title and image stay.";
+    body.appendChild(p);
+    function tile(o){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "comp-change-opt" + (comp.choice===o ? " active" : "");
+      b.setAttribute("aria-pressed", comp.choice===o ? "true" : "false");
+      b.textContent = o;
+      b.addEventListener("click", function(){
+        document.getElementById("info-modal-close").click();
+        if(comp.choice===o) return;
+        setCompanionChoice(c, comp.def.id, o); save(); renderAll();
+      });
+      return b;
+    }
+    var sections = [];
+    function section(title, list){
+      if(!list.length) return;
+      var box = ce("div", "comp-change-section");
+      if(title){
+        var h = ce("div", "comp-section-title");
+        h.textContent = title;
+        box.appendChild(h);
+      }
+      var grid = ce("div", "comp-change-grid");
+      grid.setAttribute("role", "group");
+      grid.setAttribute("aria-label", title || ch.label);
+      list.forEach(function(o){ grid.appendChild(tile(o)); });
+      box.appendChild(grid);
+      body.appendChild(box);
+      sections.push(box);
+    }
+    var search = null, none = null;
+    if(options.length > CHANGE_SEARCH_OVER){
+      search = document.createElement("input");
+      search.type = "search"; search.className = "comp-change-search";
+      search.placeholder = "Search…";
+      search.setAttribute("aria-label", "Search " + ch.label.toLowerCase() + "s");
+      body.appendChild(search);
+    }
+    var chain = options.filter(function(o){ return chainOnly.indexOf(o)!==-1; });
+    section(chain.length ? ch.label + "s" : "", options.filter(function(o){ return chainOnly.indexOf(o)===-1; }));
+    section("Pact of the Chain", chain);
+    if(!search) return;
+    none = ce("p", "comp-change-none");
+    none.textContent = "No match.";
+    none.hidden = true;
+    body.appendChild(none);
+    search.addEventListener("input", function(){
+      var q = search.value.trim().toLowerCase(), any = false;
+      sections.forEach(function(box){
+        var shown = 0;
+        box.querySelectorAll(".comp-change-opt").forEach(function(b){
+          var hit = !q || b.textContent.toLowerCase().indexOf(q)!==-1;
+          b.hidden = !hit;
+          if(hit) shown++;
+        });
+        box.hidden = !shown;
+        if(shown) any = true;
+      });
+      none.hidden = any;
+    });
+    // Enter picks the only match left.
+    search.addEventListener("keydown", function(e){
+      if(e.key!=="Enter") return;
+      var left = body.querySelectorAll(".comp-change-opt:not([hidden])");
+      if(left.length===1){ e.preventDefault(); left[0].click(); }
+    });
+    // Straight to typing with a keyboard; a phone keeps its keyboard down.
+    if(window.matchMedia("(hover:hover) and (pointer:fine)").matches) search.focus();
+  });
+}
+
+function openNameDialog(c, comp){
+  openInfoModal(comp.def.name, function(body){
+    var form = document.createElement("form");
+    form.className = "beast-form";
+    function field(label, value, max, placeholder){
+      var f = ce("label", "beast-field wide");
+      var span = ce("span"); span.textContent = label;
+      var el = document.createElement("input");
+      el.type = "text"; el.value = value; el.maxLength = max; el.placeholder = placeholder;
+      f.appendChild(span); f.appendChild(el);
+      form.appendChild(f);
+      return el;
+    }
+    var nameIn = field("Name (optional)", comp.name, COMPANION_NAME_MAX, comp.def.name);
+    var titleIn = field("Title (optional)", comp.title, COMPANION_TITLE_MAX, "e.g. the Swift");
+    var row = ce("div", "cmp-give-row fp-modal-row");
+    var saveBtn = document.createElement("button");
+    saveBtn.type = "submit"; saveBtn.className = "btn primary"; saveBtn.textContent = "Save";
+    row.appendChild(saveBtn);
+    form.appendChild(row);
+    form.addEventListener("submit", function(e){
+      e.preventDefault();
+      setCompanionLook(c, comp.def.id, {name: nameIn.value, title: titleIn.value});
+      document.getElementById("info-modal-close").click();
+      save(); renderAll();
+    });
+    body.appendChild(form);
+    nameIn.focus();
+  });
+}
+
+/* Pick a picture, crop it to a circle and keep it on the companion. */
+function pickImage(c, comp){
+  var input = document.createElement("input");
+  input.type = "file"; input.accept = "image/*";
+  input.addEventListener("change", function(){
+    var file = input.files[0];
+    if(!file) return;
+    openImageCropper(file, {
+      title: "Adjust Image", hint: "Drag to reposition, scroll or use the slider to zoom.",
+      aspect: [1, 1], outW: 240, outH: 240, circle: true, quality: 0.85,
+      onSave: function(url){ setCompanionLook(c, comp.def.id, {image: url}); save(); renderAll(); }
+    });
+  });
+  input.click();
+}
+
 function renderCompanion(c, comp){
-  var s = comp.stats, name = comp.def.name;
+  var s = comp.stats, name = shownName(comp);
   if(!s) return renderSetupCard(c, comp);
   var card = makeCard(name + (s.count > 1 ? " ×" + s.count : ""));
   card.classList.add("comp-card");
   card.dataset.comp = comp.def.id;
-  if(isSetupMode(comp)){
-    var edit = document.createElement("button");
-    edit.type = "button"; edit.className = "btn small ghost comp-edit";
-    edit.textContent = "Edit beast";
-    edit.addEventListener("click", function(){ openBeastForm(c, comp); });
-    card.querySelector("h3").appendChild(edit);
-  }
-  var type = ce("p", "comp-sub");
-  type.textContent = s.type + " · from " + (comp.source || comp.def.source || comp.def.subclass);
-  card.appendChild(type);
-  if(comp.def.choice) card.appendChild(choiceRow(c, comp));
+  companionHead(c, comp, card);
+  // Once made, the choice moves to the ⋮ menu (Change ...).
+  if(comp.def.choice && !comp.choice) card.appendChild(choiceRow(c, comp));
 
   renderStatBlock(card, s, name, {rolls: true, hpTile: function(){
     var tile = ce("div", "comp-tile comp-tile-hp");
@@ -371,6 +562,7 @@ function isSetupMode(comp){
 function renderSetupCard(c, comp){
   var card = makeCard(comp.def.name);
   card.classList.add("comp-card");
+  card.dataset.comp = comp.def.id;
   var intro = ce("p", "art-intro");
   if(comp.def.choice){
     intro.textContent = comp.def.choice.intro || "Choose your companion: one of Tasha's primal beasts (it uses your spell attack and grows with your level), or your own beast from the PHB rules.";
