@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -976,8 +976,7 @@ function renderWeaponCard(c, item, idx){
     }
   }
 
-  // Two-weapon fighting: the bonus action attack with the other hand, and
-  // a swap for a turn the other weapon takes the Attack action.
+  // Two-weapon fighting: the bonus action attack with the other hand.
   if(off){
     var offBtn = document.createElement("button");
     offBtn.type = "button"; offBtn.className = "btn small inv-roll-btn inv-offhand-btn";
@@ -992,13 +991,6 @@ function renderWeaponCard(c, item, idx){
       performRoll(parsed.die, parsed.qty, off.damage, "none", (item.name||"Weapon") + ": Off-hand damage" + (item.damageType ? " (" + item.damageType + ")" : ""));
     });
     actions.appendChild(offBtn);
-    var swapBtn = document.createElement("button");
-    swapBtn.type = "button"; swapBtn.className = "btn small inv-roll-btn inv-swap-hands-btn";
-    swapBtn.innerHTML = makeSwapSvg();
-    swapBtn.title = "Swap hands: make this your main-hand weapon";
-    swapBtn.setAttribute("aria-label", swapBtn.title);
-    swapBtn.addEventListener("click", function(){ swapHands(c); redrawKeeping(idx); });
-    actions.appendChild(swapBtn);
   }
 
   // A double-bladed scimitar's other blade: its own bonus action attack.
@@ -1551,7 +1543,8 @@ function withInfusion(c, card, item, idx){
 
 /* ---- Inventory panel ---- */
 /* "Hands 2/2 · Longsword, Shield": what's held, as two hand pips. A
-   shield (listed under Armor) counts too. */
+   shield (listed under Armor) counts too. Two-weapon fighting names the
+   main hand and the off-hand, with a Swap hands button. */
 function handsSummary(c){
   var h = handsInUse(c);
   var row = document.createElement("div");
@@ -1566,10 +1559,20 @@ function handsSummary(c){
   row.appendChild(pips);
   var txt = document.createElement("span");
   txt.className = "inv-hands-text";
-  txt.textContent = "Hands "+Math.min(h.used, 9)+"/2" + (h.items.length ? " · "+h.items.map(function(i){
+  var dual = dualWieldHands(c);
+  txt.textContent = "Hands "+Math.min(h.used, 9)+"/2" + (dual ? " · Main: "+dual.main.name+" · Off-hand: "+dual.off.name
+    : h.items.length ? " · "+h.items.map(function(i){
     return i.name + (itemHands(i)===2 ? " (two-handed)" : "");
   }).join(", ") : " · nothing in hand");
   row.appendChild(txt);
+  if(dual){
+    var swapBtn = document.createElement("button");
+    swapBtn.type = "button"; swapBtn.className = "btn small inv-swap-hands-btn";
+    swapBtn.innerHTML = makeSwapSvg() + "Swap hands";
+    swapBtn.title = "Make " + dual.off.name + " your main hand and " + dual.main.name + " your off-hand";
+    swapBtn.addEventListener("click", function(){ swapHands(c); save(); renderAll(); });
+    row.appendChild(swapBtn);
+  }
   return row;
 }
 
