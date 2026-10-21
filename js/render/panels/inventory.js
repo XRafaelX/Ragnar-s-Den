@@ -16,7 +16,7 @@ import { renderBackgroundKitCard } from "./background-kit.js";
 import { propulsionGauntlets } from "../../core/infusion-effects.js";
 import { infusionOn, infusionWorks, activeInfusionData, infusionCharges, useInfusionCharge, refuelLevels, refuelSlot, endInfusion, syncInfusions } from "../../core/artificer.js";
 import { itemCharges, spendCharges, potionHealing, drinkPotion } from "../../core/magic-items.js";
-import { magicItemDef, magicItemActive, needsAttunement, holsterKnives, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, closeEmptyFlip, endBoon, activeBoons, boonLabel } from "../../core/magic-items.js";
+import { magicItemDef, magicItemActive, needsAttunement, holsterKnives, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, closeEmptyFlip, endBoon, activeBoons, boonLabel, weaponFlames, flamesOn } from "../../core/magic-items.js";
 import { pipChanged, pipsRefilled, flash } from "../../ui/fx.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
@@ -1023,6 +1023,41 @@ function renderWeaponCard(c, item, idx){
       performRoll(6, 1, 0, "none", (item.name||"Weapon") + ": Symbiotic Entity (poison)");
     });
     actions.appendChild(sporeBtn);
+  }
+
+  // Flame Tongue: a bonus action lights it while it's in hand; while it
+  // burns, every hit deals extra fire damage. (Asked even when it isn't
+  // in hand, so sheathing it puts the flames out.)
+  var lit = flamesOn(item);
+  var flames = parsed && item.equipped && weaponFlames(item);
+  if(flames){
+    var fireDice = flames.qty + "d" + flames.die + " " + flames.type.toLowerCase();
+    var igniteBtn = document.createElement("button");
+    igniteBtn.type = "button";
+    igniteBtn.className = "btn small inv-roll-btn" + (lit ? " primary" : "");
+    igniteBtn.setAttribute("aria-pressed", lit ? "true" : "false");
+    igniteBtn.textContent = lit ? "Ablaze" : "Ignite";
+    var igniteTag = document.createElement("span");
+    igniteTag.className = "inv-action-tag"; igniteTag.textContent = "Bonus action";
+    igniteBtn.appendChild(igniteTag);
+    igniteBtn.title = lit
+      ? "Ablaze: hits deal an extra " + fireDice + " damage. Tap to put the flames out (speak the command word again). They also go out if you drop or sheathe it."
+      : "Speak the command word: flames burst from the blade (bright light 40 ft, dim 40 ft more) and hits deal an extra " + fireDice + " damage";
+    igniteBtn.addEventListener("click", function(){
+      if(lit) delete item.ablaze; else item.ablaze = true;
+      redrawKeeping(idx);
+    });
+    actions.appendChild(igniteBtn);
+    if(lit){
+      var fireBtn = document.createElement("button");
+      fireBtn.type = "button"; fireBtn.className = "btn small inv-roll-btn";
+      fireBtn.innerHTML = makeDicesSvg() + "+" + escapeHtml(fireDice);
+      fireBtn.title = item.magicItem + ": extra " + flames.type.toLowerCase() + " damage on a hit";
+      fireBtn.addEventListener("click", function(){
+        performRoll(flames.die, flames.qty, 0, "none", (item.name||"Weapon") + ": " + item.magicItem + " (" + flames.type + ")");
+      });
+      actions.appendChild(fireBtn);
+    }
   }
 
   // Great Weapon Master / Sharpshooter: -5 to hit, +10 damage while on.

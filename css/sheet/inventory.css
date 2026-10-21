@@ -376,6 +376,7 @@
 .inv-attune-state.on{color:var(--brass-bright);}
 .inv-thrown-note{color:var(--brass-bright);}
 .inv-action-tag{margin-left:6px;font-size:10.5px;letter-spacing:.02em;color:var(--text-on-parch-dim);}
+.btn.primary .inv-action-tag{color:inherit;opacity:.75;}
 
 /* Great Weapon Master / Sharpshooter switch on a weapon card */
 .inv-power-btn{margin-left:auto;}

@@ -149,3 +149,23 @@ test("potions of healing: Drink rolls the healing and uses one up", (t) => {
   assert.ok(!c.inventory.includes(supreme), "the last one is used up");
 });
 
+
+test("Flame Tongue: a Scimitar lit while held and attuned, out when sheathed or unattuned", (t) => {
+  const c = char();
+  assert.ok(magicItemBases(MAGIC_ITEM_DATA["Flame Tongue"]).includes("Scimitar"), "a scimitar is a sword");
+  const sword = add(t, c, "Flame Tongue", "Scimitar");
+  assert.deepEqual([sword.name, sword.type, sword.baseWeapon, sword.damageDice], ["Flame Tongue (Scimitar)", "weapon", "Scimitar", "1d6"]);
+  assert.equal(MI.weaponFlames(sword), null, "no magic until attuned");
+  sword.attuned = true;
+  assert.deepEqual(MI.weaponFlames(sword), { qty: 2, die: 6, type: "Fire" });
+  sword.equipped = true;
+  sword.ablaze = true;
+  assert.equal(MI.flamesOn(sword), true);
+  sword.equipped = false;
+  assert.equal(MI.flamesOn(sword), false, "sheathed: the flames go out");
+  assert.equal(sword.ablaze, undefined, "and stay out when drawn again");
+  sword.equipped = true;
+  sword.ablaze = true;
+  sword.attuned = false;
+  assert.equal(MI.flamesOn(sword), false, "attunement ended");
+});

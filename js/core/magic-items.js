@@ -315,3 +315,17 @@ export function boonLabel(b){
   if(d.resistance) return "resistance to " + (b.type || "a damage type").toLowerCase();
   return d.text;
 }
+
+/* ---- Flame Tongue ----
+   A bonus action lights the blade (`ablaze` on the row) for extra damage
+   on every hit. The flames go out when it's dropped or sheathed (no
+   longer held) or its magic stops (attunement ended), so they're cleared
+   here the next time they're looked at. */
+export function weaponFlames(item){
+  var d = magicItemDef(item);
+  return d && d.ablaze && magicItemActive(item) ? d.ablaze : null;
+}
+export function flamesOn(item){
+  if(item.ablaze && !(item.equipped && weaponFlames(item))) delete item.ablaze;
+  return !!item.ablaze;
+}

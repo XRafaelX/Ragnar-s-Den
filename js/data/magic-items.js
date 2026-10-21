@@ -35,6 +35,8 @@
                  damagePerKnife (extra damage on your attacks for each
                  knife in it) and emptySpeed (feet of speed while empty)
      returning   can be thrown and called back to your hand
+     ablaze      a sword lit by a bonus action (Flame Tongue): {qty, die,
+                 type}, its extra damage on a hit while the flames last
      coin        a coin flipped for a boon: charges (all back at a long
                  rest) and its sides, each {name, boons}. A boon is {id,
                  text} plus what it does: minutes (lasts that long, else

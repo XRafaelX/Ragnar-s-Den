@@ -22,7 +22,7 @@ test("magic item data: well formed, our DM's items first, then by rarity, one gr
   assert.deepEqual(Object.keys(MAGIC_ITEM_GROUPS), ["Panais Magic Items"].concat(RARITIES), "the DM's items, then each rarity");
   assert.deepEqual(MAGIC_ITEM_GROUPS["Panais Magic Items"], ["Duality", "Heavy Holster", "Trident of Returning"]);
   const FIELDS = ["kind", "rarity", "attunement", "attuneBy", "text", "holster", "weapon", "weaponAny", "armor", "armorAny", "bonus",
-    "ammunition", "acBonus", "acWhen", "saveBonus", "noPenalty", "setScore", "raiseScore", "heal", "charges", "returning", "coin"];
+    "ammunition", "acBonus", "acWhen", "saveBonus", "noPenalty", "setScore", "raiseScore", "heal", "charges", "returning", "coin", "ablaze"];
   for(const [group, names] of Object.entries(MAGIC_ITEM_GROUPS)){
     assert.deepEqual(names, names.slice().sort(), group + ": alphabetical");
     for(const name of names){
