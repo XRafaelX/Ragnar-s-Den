@@ -12,7 +12,8 @@ import { applyLevelUpChoices, undoLevelUpChoices } from "../core/invocations.js"
 import { applyPlan, undoPlan, knownOptions } from "../core/class-options.js";
 import { makeStyleFeature } from "../core/fighting-styles.js";
 import { applyClassPicks, revertEntryPicks, syncClassPicks, classPicksSummary, entryGrants } from "../core/class-picks.js";
-import { renderAll } from "../render/sheet.js";
+import { renderAll, noteCompanions } from "../render/sheet.js";
+import { characterCompanions, newCompanionsText } from "../core/companions.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { openInfoModal } from "../ui/info-modal.js";
 import { playAdd, playDelete } from "../ui/sound.js";
@@ -72,7 +73,7 @@ export function finish(){
   var gain = hpGain();
   var featureBonus = featureAbilityBonus();
   var before = {total: totalLevel(c), pb: profBonus(c), slots: slotSnapshot(c), pact: c.spellcasting.pact ? JSON.parse(JSON.stringify(c.spellcasting.pact)) : null,
-    hpMax: fullMaxHp(c), speed: computeSpeed(c).value};
+    hpMax: fullMaxHp(c), speed: computeSpeed(c).value, companions: characterCompanions(c).map(function(x){ return x.def.id; })};
   var record = {
     className: lu.className, isNewClass: !t.existing, prevSubclass: t.existing ? (t.existing.subclass||"") : "",
     hpGain: gain, speedGain: 0, asi: null, featId: null, unlockIds: [],
@@ -251,6 +252,7 @@ export function finish(){
 
   save();
   close();
+  noteCompanions(c); // the popup below names a new companion, so no toast
   renderAll();
   playAdd();
 
@@ -259,7 +261,8 @@ export function finish(){
     totalBefore: before.total, pbBefore: before.pb, hpGain: maxGain, speedGain: computeSpeed(c).value - before.speed,
     features: gained, feat: feat, bonusFeat: bonusFeat, asi: withFeatAbility(withFeatAbility(record.asi, feat), bonusFeat),
     slotsBefore: before.slots, pactBefore: before.pact, learned: record.learn ? record.learn.added : [], profGained: profGained,
-    thirdCaster: classCasterType(entry)==="third"
+    thirdCaster: classCasterType(entry)==="third",
+    companions: characterCompanions(c).filter(function(x){ return before.companions.indexOf(x.def.id)===-1; })
   });
 }
 
@@ -433,6 +436,7 @@ function showUnlocked(c, s){
     if(featSpells.some(function(e){ return e.use==="long" || e.use==="short"; })) tips.push("Your feat's spells are on the Spells tab, with a free cast of each on the Vitals tab.");
     else if(featSpells.length) tips.push("Your feat's spells are on the Spells tab.");
     if(unlocked.length) tips.push("These are marked NEW on the Features & Feats tab. Tap one to clear its badge.");
+    if(s.companions.length) tips.push(newCompanionsText(s.companions));
     var optTags = s.features.filter(function(f){ return f.id && f.id.indexOf("opt_")===0; });
     if(optTags.length) tips.push("Your new "+optTags[0].tag.toLowerCase()+(optTags.length>1 ? "s are listed in their" : " is listed in its")+" card on the Features & Feats tab.");
     if(s.features.some(function(f){ return f.tag==="Invocation" || f.tag==="Pact Boon"; })) tips.push("Your Pact Boon and invocations are in the Eldritch invocations card on the Features & Feats tab; their spells are on the Spells tab.");

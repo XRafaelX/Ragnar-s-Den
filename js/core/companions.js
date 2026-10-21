@@ -81,3 +81,27 @@ export function setCompanionBeast(c, id, beast){
 export function restoreCompanions(c){
   if(c.companions) Object.keys(c.companions).forEach(function(id){ c.companions[id].hp = []; });
 }
+/* Companions the player hasn't looked at on the Companions tab yet (ids
+   not in c.seenCompanions); the tab carries a NEW dot meanwhile. */
+export function unseenCompanions(c){
+  var seen = c.seenCompanions||[];
+  return characterCompanions(c).filter(function(x){ return seen.indexOf(x.def.id)===-1; });
+}
+/* The Companions tab is open: every companion on it counts as seen.
+   True when that changed anything, so the caller saves. */
+export function markCompanionsSeen(c){
+  var fresh = unseenCompanions(c);
+  if(!fresh.length) return false;
+  c.seenCompanions = (c.seenCompanions||[]).concat(fresh.map(function(x){ return x.def.id; }));
+  return true;
+}
+/* "New companion: Drake. It's on the Companions tab, set it up on its
+   card." for a toast or the level-up popup. */
+export function newCompanionsText(list){
+  var one = list.length===1;
+  var names = list.map(function(x){ return x.def.name; });
+  var named = names.length > 1 ? names.slice(0, -1).join(", ")+" and "+names[names.length-1] : names[0];
+  var setup = list.some(function(x){ return x.def.choice && !x.choice; });
+  return "New companion"+(one ? "" : "s")+": "+named+". "+(one ? "It's" : "They're")+" on the Companions tab"+
+    (setup ? ", set "+(one ? "it up on its card" : "them up on their cards") : "")+".";
+}

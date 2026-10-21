@@ -4,6 +4,7 @@ import { uid, featureSpells } from "./helpers.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { syncInfusions } from "./artificer.js";
 import { syncClassPicks, migrateClassPicks, migrateRacePicks } from "./class-picks.js";
+import { characterCompanions } from "./companions.js";
 
 /* ---------------- Default character ---------------- */
 export function newCharacter(name){
@@ -31,6 +32,7 @@ export function newCharacter(name){
     xp: 0,
     levelHistory: [],
     newUnlocks: [],
+    seenCompanions: [],
     abilities: abilities,
     saveProfs: saveProfs,
     skillProfs: skillProfs,
@@ -192,5 +194,8 @@ export function ensureShape(c){
   // over first.
   migrateRacePicks(c);
   syncClassPicks(c);
+  // Companions an older save already had aren't news; only ones gained
+  // from now on get the Companions tab's NEW dot.
+  if(!Array.isArray(c.seenCompanions)) c.seenCompanions = characterCompanions(c).map(function(x){ return x.def.id; });
   return c;
 }

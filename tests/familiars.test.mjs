@@ -10,7 +10,7 @@ import * as COMP from "../js/core/companions.js";
 import { BEAST_PRESETS } from "../js/data/companions.js";
 import { SRD_STAT_BLOCKS, FAMILIAR_FORMS, CHAIN_FAMILIARS, BEAST_MASTER_BEASTS } from "../js/data/beast-blocks.js";
 import { MONSTER_DATA } from "../js/data/monsters.js";
-import { newCharacter } from "../js/core/character.js";
+import { newCharacter, ensureShape } from "../js/core/character.js";
 
 function char(classes, extra = {}){
   const c = newCharacter("Test");
@@ -67,4 +67,27 @@ test("Pact of the Chain: an imp, which can attack", () => {
   // Without the pact (and without Find Familiar), no familiar.
   lock.classes[0].pactBoon = "Pact of the Blade";
   assert.equal(familiar(lock), undefined);
+});
+
+test("a new companion is unseen (the tab's NEW dot) until the Companions tab is opened", () => {
+  const wiz = char([{ name: "Wizard", subclass: "", level: 3 }], { spells: [] });
+  assert.deepEqual(COMP.unseenCompanions(wiz), []);
+  wiz.spells = [{ name: "Find Familiar", level: 1 }];
+  assert.deepEqual(COMP.unseenCompanions(wiz).map((x) => x.def.id), ["familiar"]);
+  assert.equal(COMP.newCompanionsText(COMP.unseenCompanions(wiz)),
+    "New companion: Familiar. It's on the Companions tab, set it up on its card.");
+  assert.equal(COMP.markCompanionsSeen(wiz), true);
+  assert.equal(COMP.markCompanionsSeen(wiz), false, "nothing new the second time");
+  assert.deepEqual(COMP.unseenCompanions(wiz), []);
+  COMP.setCompanionChoice(wiz, "familiar", "Owl");
+  assert.equal(COMP.newCompanionsText(COMP.characterCompanions(wiz)), "New companion: Familiar. It's on the Companions tab.");
+});
+
+test("an older save's companions count as seen; one gained later doesn't", () => {
+  const old = char([{ name: "Artificer", subclass: "Battle Smith", level: 3 }]);
+  delete old.seenCompanions;
+  ensureShape(old);
+  assert.deepEqual(old.seenCompanions, ["steel_defender"]);
+  old.spells = [{ name: "Find Familiar", level: 1 }];
+  assert.deepEqual(COMP.unseenCompanions(old).map((x) => x.def.id), ["familiar"]);
 });

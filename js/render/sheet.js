@@ -9,7 +9,8 @@ import { renderSpellsPanel } from "./panels/spells.js";
 import { renderInventoryPanel } from "./panels/inventory.js";
 import { renderJournalPanel } from "./panels/journal.js";
 import { renderCompanionsPanel } from "./panels/companions.js";
-import { characterCompanions } from "../core/companions.js";
+import { characterCompanions, unseenCompanions, markCompanionsSeen, newCompanionsText } from "../core/companions.js";
+import { showActionToast } from "../ui/toast.js";
 import { renderRollLog } from "../dice/dice.js";
 import { confirmDeleteCharacter, duplicateCharacter } from "../app.js";
 import { makeKebabSvg, makeCheckSvg } from "../ui/svg-icons.js";
@@ -40,6 +41,22 @@ export function visibleTabs(c){
 
 var lastTabsActive = null;
 var lastTabsCharId = null;
+
+/* The companions each character had at its last render, so one that
+   turns up later (Find Familiar learned, an infusion switched on) gets a
+   toast. A character's first render only takes note, and a level-up
+   calls noteCompanions first since its own popup says it. */
+var companionsAtRender = {};
+export function noteCompanions(c){
+  companionsAtRender[c.id] = characterCompanions(c).map(function(x){ return x.def.id; });
+}
+function announceNewCompanions(c){
+  var before = companionsAtRender[c.id];
+  noteCompanions(c);
+  if(!before) return;
+  var fresh = unseenCompanions(c).filter(function(x){ return before.indexOf(x.def.id)===-1; });
+  if(fresh.length) showActionToast(newCompanionsText(fresh));
+}
 
 /* Glide the active tab to the middle of the bar, so the neighbouring
    sections on both sides stay in view and the next tap is easy. */
@@ -85,6 +102,9 @@ export function renderAll(){
     return;
   }
   if(!visibleTabs(c).some(function(t){ return t[0]===state.activeTab; })) state.activeTab = "vitals";
+  // Open on the Companions tab, they're all seen (and need no toast).
+  if(state.activeTab==="companions" && markCompanionsSeen(c)) save();
+  announceNewCompanions(c);
   // The tab bar is rebuilt below; remember where it was scrolled so the new
   // one starts from the same spot instead of snapping back to the far left.
   var oldTabsBar = document.getElementById("tabs");
@@ -115,10 +135,12 @@ export function renderAll(){
     var b = document.createElement("button");
     b.textContent = t[1];
     b.dataset.tab = t[0];
-    if(t[0]==="features" && unseenUnlockCount(c)){
+    var newTitle = t[0]==="features" && unseenUnlockCount(c) ? "New features unlocked" :
+      t[0]==="companions" && unseenCompanions(c).length ? "New companion" : "";
+    if(newTitle){
       var dot = document.createElement("span");
       dot.className = "tab-new-dot";
-      dot.title = "New features unlocked";
+      dot.title = newTitle;
       b.appendChild(dot);
     }
     if(state.activeTab===t[0]) b.className = "active";
