@@ -1,7 +1,7 @@
 import { state, save } from "../core/state.js";
 import { openCatalogPicker, showCatalogCustomView, refreshCatalog } from "../ui/catalog-picker.js";
 import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
-import { ARMOR_GROUPS, ARMOR_DATA } from "../data/armor.js";
+import { ARMOR_GROUPS, ARMOR_DATA, armorAcText } from "../data/armor.js";
 import { GEAR_GROUPS, GEAR_DATA } from "../data/gear.js";
 import { MAGIC_ITEM_GROUPS, MAGIC_ITEM_DATA } from "../data/magic-items.js";
 import { openBottomSheet } from "../ui/bottom-sheet.js";
@@ -158,7 +158,7 @@ function chooseMagicBase(name, d, onPick){
       row.type = "button";
       row.className = "armory-base-row";
       var info = d.weaponAny ? (WEAPON_DATA[b].damageDice + " " + WEAPON_DATA[b].damageType.toLowerCase())
-        : (ARMOR_CATEGORY_LABEL[ARMOR_DATA[b].category] + " · AC " + ARMOR_DATA[b].baseAC);
+        : (ARMOR_CATEGORY_LABEL[ARMOR_DATA[b].category] + " · " + armorAcText(ARMOR_DATA[b]));
       row.innerHTML = "<span class='armory-base-name'>" + escapeHtml(b) + "</span><span class='armory-base-info'>" + escapeHtml(info) + "</span>";
       row.addEventListener("click", function(){ close(); onPick(b); });
       list.appendChild(row);
@@ -451,7 +451,7 @@ function armorSection(){
     groups: ARMOR_GROUPS, data: ARMOR_DATA,
     renderSub: function(name, d){ return d.stealthDisadvantage ? "Disadvantage on Stealth checks" : ""; },
     renderRight: function(name, d){
-      return [d.category==="shield" ? "+" + d.baseAC + " AC" : "AC " + d.baseAC, ARMOR_CATEGORY_LABEL[d.category]||""];
+      return [armorAcText(d), ARMOR_CATEGORY_LABEL[d.category]||""];
     },
     searchText: function(name, d){ return name+" "+(ARMOR_CATEGORY_LABEL[d.category]||"")+(d.custom ? " custom homebrew" : ""); },
     onAdd: onAddFor("armor"),

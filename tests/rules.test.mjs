@@ -4,6 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as H from "../js/core/helpers.js";
+import { ARMOR_DATA, armorAcText } from "../js/data/armor.js";
 import { ensureShape } from "../js/core/character.js";
 import { CLASS_PROFICIENCIES } from "../js/data/classes.js";
 import * as FP from "../js/core/feat-picks.js";
@@ -84,6 +85,27 @@ test("armor class: armor, unarmored defense and feature bonuses", () => {
   assert.equal(H.computeArmorClass(char([{ name: "Cleric", level: 5, subclass: "Forge Domain" }], { inventory: [plate] })).value, 18);
   assert.equal(H.computeArmorClass(char([{ name: "Cleric", level: 6, subclass: "Forge Domain" }], { inventory: [plate, shield] })).value, 21);
   assert.equal(H.computeArmorClass(char([{ name: "Cleric", level: 6, subclass: "Life Domain" }], { inventory: [plate] })).value, 18);
+});
+
+test("armor class: every armor adds DEX the way the PHB table says", () => {
+  // Base AC and DEX cap (null: all of it, 0: none, not even a penalty) from
+  // the PHB armor table.
+  const PHB = { "Padded": [11, null], "Leather": [11, null], "Studded Leather": [12, null], "Hide": [12, 2], "Chain Shirt": [13, 2],
+    "Scale Mail": [14, 2], "Spiked Armor": [14, 2], "Breastplate": [14, 2], "Half Plate": [15, 2],
+    "Ring Mail": [14, 0], "Chain Mail": [16, 0], "Splint": [17, 0], "Plate": [18, 0] };
+  for(const [name, [base, cap]] of Object.entries(PHB)){
+    const d = ARMOR_DATA[name];
+    for(const dex of [8, 16]){
+      const m = Math.floor((dex - 10) / 2), want = base + (cap === null ? m : cap === 0 ? 0 : Math.min(m, cap));
+      const worn = { type: "armor", equipped: true, name, category: d.category, baseAC: d.baseAC };
+      assert.equal(H.computeArmorClass(char([{ name: "Fighter", level: 1 }], { abilities: { dex }, inventory: [worn] })).value, want, name + " at DEX " + dex);
+    }
+  }
+  assert.equal(armorAcText(ARMOR_DATA["Studded Leather"]), "AC 12 + Dex");
+  assert.equal(armorAcText(ARMOR_DATA["Breastplate"]), "AC 14 + Dex (max 2)");
+  assert.equal(armorAcText(ARMOR_DATA["Breastplate"], 3), "AC 14 + Dex (max 3)");
+  assert.equal(armorAcText(ARMOR_DATA["Plate"]), "AC 18");
+  assert.equal(armorAcText(ARMOR_DATA["Shield"]), "+2 AC");
 });
 
 test("armor class: Dual Wielder needs a melee weapon in each hand", () => {

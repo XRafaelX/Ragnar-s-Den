@@ -2,8 +2,8 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, combineRolls, conditionRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
-import { ARMOR_DATA, armorDataOf } from "../../data/armor.js";
+import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
+import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker, openArmorPicker, openGearPicker } from "../armory.js";
@@ -1106,7 +1106,7 @@ function inlinePicker(label, items, value, onPick){
 function openArmorSheet(c, item, idx){
   openBottomSheet(function(body, refresh, close){
     var catLabel = (ARMOR_CATEGORIES.find(function(cat){ return cat.key===item.category; })||{}).label || item.category;
-    var acText = item.category==="shield" ? "+" + item.baseAC + " AC" : "Base AC " + item.baseAC;
+    var acText = armorAcText(item, hasFeat(c, "Medium Armor Master") ? 3 : 2);
     var subtitleParts = [acText, catLabel];
     if(item.notes) subtitleParts.push(item.notes);
     sheetHeader(body, item, "Armor name", subtitleParts.join(" · "), close);
@@ -1152,7 +1152,7 @@ function renderArmorCard(c, item, idx){
   if(infLine) card.appendChild(infLine);
 
   var catLabel = (ARMOR_CATEGORIES.find(function(cat){ return cat.key===item.category; })||{}).label || item.category;
-  var acText = item.category==="shield" ? "+" + item.baseAC + " AC" : "Base AC " + item.baseAC;
+  var acText = armorAcText(item, hasFeat(c, "Medium Armor Master") ? 3 : 2);
   var subtitleParts = [acText, catLabel];
   if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
   // The row's own say first (Mithral Armor has none), then its armor's.

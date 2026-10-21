@@ -27,6 +27,16 @@ export var ARMOR_DATA = {
   "Shield":         {category:"shield", baseAC:2,  weight:6,  stealthDisadvantage:false}
 };
 
+/* The AC an armor gives, as a player reads it: "AC 12 + Dex", "AC 14 +
+   Dex (max 2)", "AC 18", "+2 AC". `dexCap` is the medium armor cap
+   (3 with Medium Armor Master). */
+export function armorAcText(d, dexCap){
+  var ac = Number(d.baseAC)||0;
+  if(d.category==="shield") return "+" + ac + " AC";
+  if(d.category==="heavy") return "AC " + ac;
+  return "AC " + ac + " + Dex" + (d.category==="medium" ? " (max " + (dexCap || 2) + ")" : "");
+}
+
 /* An armor row's catalog entry: its own name's, or the base armor magic
    armor is ("Plate, +1": `baseArmor`). */
 export function armorDataOf(item){
