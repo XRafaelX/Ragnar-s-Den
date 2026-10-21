@@ -1,8 +1,8 @@
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg } from "../../ui/svg-icons.js";
+import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeKebabSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -936,6 +936,9 @@ function renderWeaponCard(c, item, idx){
   // (A monk weapon rolls the Martial Arts die when it's bigger.)
   var parsed = weaponDamageDice(c, item);
   var dmgBonus = weaponDamageBonus(c, item);
+  // Two-weapon fighting: the off-hand weapon's card rolls the bonus
+  // action's damage in place of the Attack action's.
+  var off = parsed && offHandAttack(c, item);
   var dmgBtn = document.createElement("button");
   dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
   if(parsed){
@@ -948,7 +951,7 @@ function renderWeaponCard(c, item, idx){
     dmgBtn.disabled = true;
     dmgBtn.title = "Enter damage dice like \"1d8\" to roll";
   }
-  actions.appendChild(dmgBtn);
+  if(!off) actions.appendChild(dmgBtn);
 
   // Thrown: a ranged attack, when its numbers differ (Archery, Thrown
   // Weapon Fighting, rage).
@@ -973,8 +976,8 @@ function renderWeaponCard(c, item, idx){
     }
   }
 
-  // Two-weapon fighting: the bonus action attack with the other hand.
-  var off = parsed && offHandAttack(c, item);
+  // Two-weapon fighting: the bonus action attack with the other hand, and
+  // a swap for a turn the other weapon takes the Attack action.
   if(off){
     var offBtn = document.createElement("button");
     offBtn.type = "button"; offBtn.className = "btn small inv-roll-btn inv-offhand-btn";
@@ -989,6 +992,13 @@ function renderWeaponCard(c, item, idx){
       performRoll(parsed.die, parsed.qty, off.damage, "none", (item.name||"Weapon") + ": Off-hand damage" + (item.damageType ? " (" + item.damageType + ")" : ""));
     });
     actions.appendChild(offBtn);
+    var swapBtn = document.createElement("button");
+    swapBtn.type = "button"; swapBtn.className = "btn small inv-roll-btn inv-swap-hands-btn";
+    swapBtn.innerHTML = makeSwapSvg();
+    swapBtn.title = "Swap hands: make this your main-hand weapon";
+    swapBtn.setAttribute("aria-label", swapBtn.title);
+    swapBtn.addEventListener("click", function(){ swapHands(c); redrawKeeping(idx); });
+    actions.appendChild(swapBtn);
   }
 
   // A double-bladed scimitar's other blade: its own bonus action attack.

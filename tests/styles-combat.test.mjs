@@ -79,16 +79,34 @@ test("two-weapon fighting: the off-hand's damage leaves out the modifier unless 
   const a = weapon("Shortsword"), b = weapon("Handaxe");
   const c = fighter([], [a, b]);
   assert.equal(H.weaponDamageBonus(c, a), 3, "the main attack: STR 16");
-  assert.deepEqual(H.offHandAttack(c, a), { damage: 0, style: false });
-  assert.deepEqual(H.offHandAttack(c, b), { damage: 0, style: false }, "either can be the off-hand one");
+  assert.equal(H.offHandAttack(c, a), null, "the shortsword (d6) is the main hand");
+  assert.deepEqual(H.offHandAttack(c, b), { damage: 0, style: false }, "the handaxe (d6) the off-hand: the first listed keeps the main hand on a tie");
   const twf = fighter(["Two-Weapon Fighting"], [a, b]);
-  assert.deepEqual(H.offHandAttack(twf, a), { damage: 3, style: true });
+  assert.deepEqual(H.offHandAttack(twf, b), { damage: 3, style: true });
   // A negative modifier still counts.
   const weak = fighter([], [a, b], { abilities: { str: 8, dex: 8, con: 14, int: 10, wis: 10, cha: 8 } });
-  assert.equal(H.offHandAttack(weak, a).damage, -1);
+  assert.equal(H.offHandAttack(weak, b).damage, -1);
   // A magic bonus stays.
   const magic = weapon("Shortsword", { magicBonus: 1 });
-  assert.equal(H.offHandAttack(fighter([], [magic, b]), magic).damage, 1);
+  const mc = fighter([], [b, magic]);
+  H.swapHands(mc);
+  assert.equal(H.offHandAttack(mc, magic).damage, 1);
+});
+
+test("two-weapon fighting: the bigger weapon is the main hand until the player swaps", () => {
+  const dagger = weapon("Dagger"), sword = weapon("Shortsword");
+  const c = fighter([], [dagger, sword]);
+  let hands = H.dualWieldHands(c);
+  assert.deepEqual([hands.main.name, hands.off.name], ["Shortsword", "Dagger"], "a d6 over a d4");
+  H.swapHands(c);
+  hands = H.dualWieldHands(c);
+  assert.deepEqual([hands.main.name, hands.off.name], ["Dagger", "Shortsword"]);
+  assert.equal(H.offHandAttack(c, dagger), null, "one damage roll per card");
+  assert.ok(H.offHandAttack(c, sword));
+  H.swapHands(c);
+  assert.equal(H.dualWieldHands(c).off.name, "Dagger", "and back");
+  sword.equipped = false;
+  assert.equal(H.dualWieldHands(c), null, "one weapon: no hands to pick");
 });
 
 test("two-weapon fighting needs two light melee weapons in hand (Dual Wielder: any one-handed)", () => {
@@ -100,7 +118,7 @@ test("two-weapon fighting needs two light melee weapons in hand (Dual Wielder: a
   assert.equal(H.offHandAttack(fighter([], [a, long]), a), null, "a longsword isn't light");
   assert.equal(H.offHandAttack(fighter([], [a, weapon("Hand Crossbow")]), a), null, "a ranged weapon doesn't count");
   const dw = fighter([], [a, long], { feats: [{ id: "dw", name: "Dual Wielder" }] });
-  assert.deepEqual(H.offHandAttack(dw, long), { damage: 0, style: false }, "Dual Wielder");
+  assert.deepEqual(H.offHandAttack(dw, a), { damage: 0, style: false }, "Dual Wielder: the longsword in the main hand");
   const great = weapon("Greatsword");
   assert.equal(H.offHandAttack(fighter([], [great, a], { feats: [{ id: "dw", name: "Dual Wielder" }] }), great), null, "never a two-handed one");
 });

@@ -62,6 +62,11 @@ export function makeMoveRightSvg(){
   return '<svg class="btn-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>';
 }
 
+/* Swap hands on a weapon card (Lucide "arrow-left-right", ISC license). */
+export function makeSwapSvg(){
+  return '<svg class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3L4 7l4 4"/><path d="M4 7h16"/><path d="M16 21l4-4-4-4"/><path d="M20 17H4"/></svg>';
+}
+
 /* Open book (Lucide "book-open") and chevron (Lucide "chevron-down") for
    the creation wizard's campaign books tile. */
 export function makeBookSvg(){

@@ -284,15 +284,35 @@ export function thrownAttack(c, item){
    modifier is negative; the Two-Weapon Fighting style adds it. Dual
    Wielder lifts "light" (one-handed weapons still). Two separate equipped
    weapons are needed: a stack ("Dagger ×2") is one weapon in hand. For
-   `item`, when it can be that off-hand weapon: {damage, style}, else null. */
+   `item`, when it's the off-hand weapon (see dualWieldHands): {damage,
+   style}, else null. */
 function offHandCapable(c, item){
   if(item.type!=="weapon" || !item.equipped || isRangedWeapon(item) || isTwoHanded(item)) return false;
   var d = weaponDataOf(item);
   return /\blight\b/i.test(((d && d.properties) || "") + " " + (item.notes || "")) || hasFeat(c, "Dual Wielder");
 }
+/* With two such weapons in hand, one is the main hand (its card rolls the
+   Attack action's damage) and the other the off-hand (its card rolls the
+   bonus action's). The player's pick is kept as `offHand` on the item;
+   until they pick, the weapon with less average damage is the off-hand.
+   {main, off} or null when not wielding two. */
+export function dualWieldHands(c){
+  var pair = (c.inventory||[]).filter(function(i){ return offHandCapable(c, i); });
+  if(pair.length!==2) return null;
+  if(pair[0].offHand!==pair[1].offHand) return pair[0].offHand ? {main: pair[1], off: pair[0]} : {main: pair[0], off: pair[1]};
+  function avg(i){ var d = weaponDamageDice(c, i); return (d ? d.qty * (d.die + 1) / 2 : 0) + weaponDamageBonus(c, i); }
+  return avg(pair[1]) > avg(pair[0]) ? {main: pair[1], off: pair[0]} : {main: pair[0], off: pair[1]};
+}
+/* Swap which weapon is in the off-hand. */
+export function swapHands(c){
+  var hands = dualWieldHands(c);
+  if(!hands) return;
+  delete hands.off.offHand;
+  hands.main.offHand = true;
+}
 export function offHandAttack(c, item){
-  if(!offHandCapable(c, item)) return null;
-  if(!(c.inventory||[]).some(function(i){ return i!==item && offHandCapable(c, i); })) return null;
+  var hands = dualWieldHands(c);
+  if(!hands || hands.off!==item) return null;
   var ab = weaponAbilityMod(c, item);
   var style = hasFightingStyle(c, "Two-Weapon Fighting");
   return {damage: weaponDamageBonus(c, item) - (style || ab < 0 ? 0 : ab), style: style};

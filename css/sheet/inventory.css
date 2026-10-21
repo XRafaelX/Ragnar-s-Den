@@ -264,6 +264,9 @@
 .inv-roll-actions{display:flex;gap:8px;flex-wrap:wrap;}
 .inv-roll-btn{color:var(--text-on-parch);border-color:var(--rule);}
 .inv-roll-btn:disabled{opacity:.4;cursor:not-allowed;}
+/* Swap hands, beside the off-hand damage: an icon only. */
+.inv-swap-hands-btn{color:var(--text-on-parch-dim);}
+.inv-swap-hands-btn .btn-icon-svg{margin-right:0;}
 .inv-armor-note{font-size:11.5px;color:var(--text-on-parch-dim);font-style:italic;margin:0;}
 
 /* Hands in use (Weapons card) and equip-rule warnings. */
