@@ -12,7 +12,8 @@ var CANTRIP_STEPS = [5, 11, 17];
    warlock casts, "Higher slots: +1d10 fire damage per slot level above
    1st." otherwise, or "" for a spell that doesn't grow. `how.pact`: cast
    with a pact slot; `how.fixed`: always cast at its own level (at will,
-   as a ritual, a Mystic Arcanum). */
+   as a ritual, a Mystic Arcanum); `how.castAt`: cast at that higher level
+   ("As a 2nd-level spell: 3d10 fire damage."). */
 export function spellScalingLine(c, name, level, how){
   var entry = SPELL_SCALING[catalogSpellName((name||"").trim())];
   if(!entry) return "";
@@ -23,6 +24,8 @@ export function spellScalingLine(c, name, level, how){
     var next = CANTRIP_STEPS[n-1];
     return "At level " + lv + ": " + cantripEffect(c, name, entry, n) + "." + (next ? " More at level " + next + "." : "");
   }
+  // A spell a feature casts at a set higher level (Infernal Legacy's Hellish Rebuke at 2nd).
+  if(how.castAt > level) return "As a " + ordinal(how.castAt) + "-level spell: " + entry.at(how.castAt - level, how.castAt) + ".";
   if(how.fixed) return "";
   var pact = how.pact && computeSpellSlots(c.classes).pact;
   if(pact && pact.slotLevel < level) return "";

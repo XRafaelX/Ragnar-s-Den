@@ -281,7 +281,10 @@ export function wizardExpandedSpells(subclass){
    them out, so a class pick isn't spent on a spell the character has. */
 export function wizardGrantedSpells(){
   var feat = isStepApplicable("feat") && wizardFeat(), bg = wizardBackgroundFeat();
-  var standIn = {classes: [wizardClassEntry()], abilities: finalAbilities(),
+  // The race and its picks too (a High Elf's cantrip, Drow Magic's Dancing Lights).
+  var held = {}, picks = wizardState.raceChoices.profPicks || {};
+  Object.keys(picks).forEach(function(k){ held[k] = {slots: picks[k]}; });
+  var standIn = {classes: [wizardClassEntry()], abilities: finalAbilities(), race: wizardState.race, racePicks: {profPicks: held},
     feats: (feat ? [{name: feat.name, picks: wizardState.raceChoices.featPicks || {}}] : [])
       .concat(bg && bg.def ? [{name: bg.def.name, picks: wizardBackgroundFeatPicks()}] : [])};
   return featureSpells(standIn).filter(function(fs){ return fs.kind!=="expanded"; })

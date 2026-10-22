@@ -110,7 +110,8 @@ test("several given twice: one pick each, and nothing given twice means no grant
 /* ---- Creation wizard ---- */
 function startWizard(choices){
   W.openWizard();
-  const rc = Object.assign({ abilities: [], preset: "", profPicks: {}, feat: "", featPicks: null }, choices.raceChoices);
+  // (The high elf's wizard cantrip is picked on Race Traits.)
+  const rc = Object.assign({ abilities: [], preset: "", profPicks: { "race:Cantrip:pick": [["Fire Bolt"]] }, feat: "", featPicks: null }, choices.raceChoices);
   Object.assign(W.wizardState, {
     name: "Twice test", classId: "Fighter", race: "High Elf", background: "Far Traveler", alignment: "Neutral",
     abilityMethod: "pointbuy", abilities: { str: 15, dex: 14, con: 13, int: 8, wis: 12, cha: 10 }, skillChoices: ["Athletics", "Survival"],

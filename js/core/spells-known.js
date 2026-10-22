@@ -50,7 +50,8 @@ function spellKey(name){ return catalogSpellName((name || "").trim()).toLowerCas
    counted as learned. */
 function grantedNames(c){
   // (A Spell Mastery spell is still an ordinary spellbook spell.)
-  return featureSpells(c).filter(function(fs){ return fs.kind!=="expanded" && fs.kind!=="mastery"; }).map(function(fs){ return spellKey(fs.name); });
+  // (Nor a race's once-a-day spell cast without a slot: a class can learn it too.)
+  return featureSpells(c).filter(function(fs){ return fs.kind!=="expanded" && fs.kind!=="mastery" && !fs.limited; }).map(function(fs){ return spellKey(fs.name); });
 }
 /* The character with class entry `entry` as the level-up will leave it
    (new level, a subclass or spell choice picked in the dialog), so the
@@ -72,7 +73,7 @@ function afterLevelUp(c, entry){
    grants: an invocation's once-a-day or at-will spell, a ritual-only
    copy, a spell added to a wizard's spellbook (still prepared normally). */
 function freeNames(c){
-  return featureSpells(c).filter(function(fs){ return fs.kind==="prepared" || fs.kind==="known" || (fs.kind==="free" && !fs.className); })
+  return featureSpells(c).filter(function(fs){ return fs.kind==="prepared" || fs.kind==="known" || (fs.kind==="free" && !fs.className && !fs.limited); })
     .map(function(fs){ return spellKey(fs.name); });
 }
 /* Spells the level-up itself grants (an Aberrant Mind's Detect Thoughts
@@ -80,7 +81,7 @@ function freeNames(c){
    yet: [{name, key, source}]. They aren't offered as picks. */
 function comingSpells(c, entry){
   var have = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c));
-  return featureSpells(afterLevelUp(c, entry)).filter(function(fs){ return fs.kind!=="expanded" && have.indexOf(spellKey(fs.name))===-1; })
+  return featureSpells(afterLevelUp(c, entry)).filter(function(fs){ return fs.kind!=="expanded" && !fs.limited && have.indexOf(spellKey(fs.name))===-1; })
     .map(function(fs){ return {name: catalogSpellName(fs.name), key: spellKey(fs.name), source: fs.source}; });
 }
 

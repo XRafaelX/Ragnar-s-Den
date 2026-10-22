@@ -52,7 +52,9 @@ import { spellHeldBy } from "./spell-grants.js";
        byChoice  (tool) {slot, groups}: the group the pick comes from
                  depends on what the grant's `choice` slot picked (a House
                  Agent's house: Deneith adds one gaming set); none for a
-                 choice not listed (nothing to pick)
+                 choice not listed (nothing to pick); (skill) {slot, options}: the skills
+                 each choice gives; (spell) {slot, when}: only asked when
+                 the choice picked `when` (a Half-Elf (Variant)'s Cantrip)
        filter    (weapon) "oneHandedMelee", "kenseiMelee", "kenseiRanged",
                  "kensei" or "martial" (a martial weapon not had yet)
        monk      (weapon) the weapon counts as a monk weapon
@@ -169,6 +171,11 @@ export function classPickContext(c, cl, key){
     var rest = Object.assign({}, x.profPicks); delete rest[key];
     return Object.assign({}, x, {profPicks: rest});
   })});
+  // (A race's picks: a high elf's cantrip isn't "had" because it is picked here.)
+  if(cl && cl===c.racePicks && cl.profPicks && cl.profPicks[key]){
+    var raceRest = Object.assign({}, cl.profPicks); delete raceRest[key];
+    others.racePicks = Object.assign({}, cl, {profPicks: raceRest});
+  }
   var casters = (c.classes||[]).filter(function(x){ return classCasterType(x); });
   return {
     // What the entry's other features already chose for a `choice` id.
@@ -371,6 +378,8 @@ export function slotOptions(def, slots, i, ctx){
     return list;
   }
   if(slot.kind==="spell"){
+    // Only when the grant's choice picked this option (a Half-Elf (Variant)'s Cantrip).
+    if(slot.byChoice && ((slots && slots[slot.byChoice.slot]) || [])[0]!==slot.byChoice.when) return [];
     if(slot.from==="spellbook") return entries(ctx.spellbook ? ctx.spellbook(slot.level) : [], "", function(){ return ""; });
     var pool = slot.list ? spellDataForClass(slot.list, !!ctx.tasha) : SPELL_DATA;
     var names = slot.options || Object.keys(pool).filter(function(n){

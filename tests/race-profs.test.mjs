@@ -61,8 +61,14 @@ test("race profs data: real skills, weapons and tools; known pick kinds", () => 
       (t.profs.weapons || []).forEach((w) => assert.ok(WEAPON_DATA[w] || w === "Firearms", where + ": weapon " + w));
       (t.profs.tools || []).forEach((v) => assert.ok(ALL_TOOLS.includes(v), where + ": tool " + v));
       for(const slot of t.profs.pick || []){
-        assert.ok(["skill", "tool", "weapon", "skillOrTool", "choice"].includes(slot.kind), where + ": kind " + slot.kind);
+        assert.ok(["skill", "tool", "weapon", "skillOrTool", "choice", "spell"].includes(slot.kind), where + ": kind " + slot.kind);
         if(slot.kind === "choice"){ assert.ok(slot.id && slot.noun && slot.options.length >= 2, where + ": choice"); continue; }
+        if(slot.kind === "spell"){
+          // A cantrip from a class list or named ones; asked only for one choice (a Half-Elf (Variant)'s Cantrip).
+          assert.ok(slot.level === 0 && (slot.list || slot.options.length >= 2), where + ": spell");
+          if(slot.byChoice) assert.ok(t.profs.pick[slot.byChoice.slot].options.includes(slot.byChoice.when), where + ": byChoice " + slot.byChoice.when);
+          continue;
+        }
         if(slot.byChoice){
           const choice = t.profs.pick[slot.byChoice.slot];
           assert.equal(choice.kind, "choice", where + ": byChoice points at a choice");
@@ -285,7 +291,8 @@ test("wizard: Race Traits only for a race with something to choose", (t) => {
   const has = (race) => inWizard(t, { race }, () => W.isStepApplicable("raceChoices"));
   assert.equal(has("Kenku"), true);
   assert.equal(has("Hill Dwarf"), true, "the dwarf's tool");
-  assert.equal(has("High Elf"), false, "an elf's traits are all given");
+  assert.equal(has("Wood Elf"), false, "a wood elf's traits are all given");
+  assert.equal(has("High Elf"), true, "a high elf's wizard cantrip");
   assert.equal(has("Human"), false);
 });
 

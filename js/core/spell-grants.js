@@ -5,10 +5,11 @@
 import { featDef, featSpellEntries, featCastAbility } from "./feat-picks.js";
 import { invocationSpells } from "./invocations.js";
 import { styleSpells } from "./fighting-styles.js";
-import { pickedProfs } from "./class-picks.js";
+import { pickedProfs, raceChoiceEffects } from "./class-picks.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
 import { MARK_SPELLS, GUILD_SPELLS } from "../data/origin-spells.js";
-import { mod, fmtMod, profBonus } from "./basics.js";
+import { mod, fmtMod, profBonus, totalLevel, ordinal } from "./basics.js";
+import { RACE_DATA } from "../data/race-data.js";
 import { characterIsCaster, classCasterType, classSpellAbility, classFeatureList } from "./class-features.js";
 import { coinAttackBonus } from "./magic-items.js";
 import { infusionSpellAttack } from "./infusion-effects.js";
@@ -100,6 +101,24 @@ export function featureSpells(c){
         note: hasAbility ? spellAbilityNote(c, ability, lead) : lead, kindLabel: e.use==="short" ? "Free 1/short rest" : undefined });
     });
   });
+  // The race's innate spells (Drow Magic, a High Elf's cantrip). Most of
+  // the free ones can't be cast with a slot (`limited`), so they don't
+  // stop a class from learning the same spell.
+  raceSpellEntries(c).forEach(function(e){
+    if(out.some(function(x){ return x.name===e.name; })) return;
+    var data = SPELL_DATA[catalogSpellName(e.name)] || null;
+    var kind = e.use==="known" ? "known" : e.use==="atwill" ? "atwill" : "free";
+    var lead = raceSpellLead(e);
+    var fs = { name: e.name, data: data, level: data ? data.level : 0, kind: kind, source: c.race, feature: e.feature,
+      note: e.ability==="pick" ? lead + " Choose its spellcasting ability on the Features & Feats tab to see its save DC."
+        : e.ability ? spellAbilityNote(c, e.ability, lead) : lead };
+    if(kind==="free"){
+      fs.kindLabel = e.use==="short" ? "Free 1/short rest" : "Free 1/long rest";
+      if(!e.slots) fs.limited = true;
+    }
+    if(e.at) fs.castAt = e.at;
+    out.push(fs);
+  });
   // The Pact Boon's and invocations' spells (Armor of Shadows' Mage Armor),
   // and Blessed / Druidic Warrior's cantrips.
   invocationSpells(c).concat(styleSpells(c)).forEach(function(fs){
@@ -116,6 +135,55 @@ var FEAT_SPELL_LEADS = {
   ritual: "Cast it as a ritual.",
   known: "A cantrip you always know from this feat."
 };
+var ABILITY_KEYS = {Intelligence: "int", Wisdom: "wis", Charisma: "cha"};
+/* The race's innate spells the character has at their level: [{name,
+   use ("known", "long", "short" or "atwill"), at, note, ability ("int"...,
+   "pick" while its choice is still to make, or ""), slots, components,
+   feature}], from its traits' `spells` (and the cantrips picked for
+   them) and its choices' (a Tiefling (Variant)'s Hellfire). */
+export function raceSpellEntries(c){
+  var d = RACE_DATA[c.race];
+  if(!d) return [];
+  var lv = totalLevel(c), held = (c.racePicks && c.racePicks.profPicks) || {}, out = [];
+  function add(spec, feature, ability, extra){
+    if(out.some(function(x){ return x.name===extra.name; })) return;
+    out.push(Object.assign({use: "known", ability: ability, slots: !!spec.slots, components: spec.components || "", feature: feature}, extra));
+  }
+  function addList(spec, feature, ability){
+    (spec.list || []).forEach(function(x){
+      var e = typeof x==="string" ? {name: x} : x;
+      if((e.from || 1) > lv) return;
+      var data = SPELL_DATA[catalogSpellName(e.name)];
+      add(spec, feature, ability, {name: e.name, use: e.use || (data && data.level===0 ? "known" : "long"), at: e.at || 0, note: e.note || ""});
+    });
+  }
+  (d.traits || []).forEach(function(t){
+    var pick = (t.profs && t.profs.pick) || [], entry = held["race:" + t.name + ":pick"];
+    var slots = entry && !entry.manual ? entry.slots || [] : [];
+    var chosen = "";
+    pick.forEach(function(slot, i){ if(slot.id==="spellAbility") chosen = ABILITY_KEYS[(slots[i] || [])[0]] || ""; });
+    var spec = t.spells || {}, ability = spec.ability==="pick" ? chosen || "pick" : spec.ability || "";
+    if(t.spells) addList(spec, t.name, ability);
+    pick.forEach(function(slot, i){
+      if(slot.kind!=="spell") return;
+      (slots[i] || []).forEach(function(v){ add(spec, t.name, slot.ability || ability, {name: v, note: ""}); });
+    });
+  });
+  raceChoiceEffects(c).forEach(function(e){ if(e.spells) addList(e.spells, e.name, e.spells.ability || ""); });
+  return out;
+}
+/* What a race spell's card says before its DC: "Once per long rest
+   without a spell slot. Cast as a 2nd-level spell." */
+function raceSpellLead(e){
+  var lead = e.use==="known" ? "A cantrip you always know from " + e.feature + "."
+    : e.use==="atwill" ? "At will, without a spell slot."
+    : e.slots ? "Free once per " + (e.use==="short" ? "short or long" : "long") + " rest, or cast it with a spell slot."
+    : "Once per " + (e.use==="short" ? "short or long" : "long") + " rest without a spell slot.";
+  if(e.at) lead += " Cast as a " + ordinal(e.at) + "-level spell.";
+  if(e.components==="none") lead += " No components needed.";
+  else if(e.components==="no material") lead += " No material components needed.";
+  return lead + (e.note ? " " + e.note : "");
+}
 /* Where the character already has this spell: "known" for one on the
    sheet, "from Fey Touched" (the granting feature's source) for a granted
    one, "" for neither. The pickers grey such a spell out with it. */
@@ -124,7 +192,8 @@ export function spellHeldBy(c, name){
   var want = key(name);
   if(!want) return "";
   if((c.spells||[]).some(function(sp){ return key(sp.name)===want; })) return "known";
-  var fs = featureSpells(c).find(function(f){ return f.kind!=="expanded" && key(f.name)===want; });
+  // (A race's once-a-day spell that can't use a slot doesn't count: Drow Magic's Darkness.)
+  var fs = featureSpells(c).find(function(f){ return f.kind!=="expanded" && !f.limited && key(f.name)===want; });
   return fs ? "from " + fs.source : "";
 }
 /* "Uses Wisdom: save DC 13, spell attack +5." for a spell cast with

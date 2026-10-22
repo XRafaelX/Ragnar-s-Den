@@ -10,6 +10,7 @@ import { mod, totalLevel, profBonus, clamp } from "./basics.js";
 import { hasFeat } from "./vitals.js";
 import { usesVariant, draconicBreath } from "./class-features.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
+import { raceSpellEntries } from "./spell-grants.js";
 
 /* Limited-use resources this character has right now, from each class
    and its subclass. `key` is unique per character (class + resource id)
@@ -112,6 +113,18 @@ export function characterResources(c){
         hint: "Cast " + e.name + " once without a spell slot. Casting it with a slot you have doesn't use this.",
         max: 1, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, 1), reset: e.use
       });
+    });
+  });
+  // A free cast of each of the race's once-a-rest spells (Drow Magic's
+  // Darkness, Firbolg Magic's Detect Magic), from the level it arrives.
+  raceSpellEntries(c).forEach(function(e){
+    if(e.use!=="long" && e.use!=="short") return;
+    var key = "race:spell:" + slug(e.name);
+    if(list.some(function(x){ return x.key===key; })) return;
+    list.push({
+      key: key, name: e.name + " (" + e.feature + ")", source: c.race.replace(/^(.+) \((.+)\)$/, "$2 $1"), pool: false,
+      hint: "Cast " + e.name + " once without a spell slot." + (e.slots ? " Casting it with a slot you have doesn't use this." : ""),
+      max: 1, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, 1), reset: e.use
     });
   });
   // A dragonborn's Breath Weapon (once per short or long rest, or a

@@ -538,8 +538,9 @@ function renderFeatureSpellCard(c, fs, canLearn){
   }
   // At will and as a ritual it's cast at its own level, like an
   // invocation's free cast; other warlock spells use the pact slots.
-  var fixed = fs.kind==="atwill" || fs.kind==="ritual" || (fs.kind==="free" && fs.className==="Warlock");
-  appendScaling(card, spellScalingLine(c, fs.name, fs.level, {pact: fs.className==="Warlock" && !fixed, fixed: fixed}));
+  // A race's once-a-day spell is cast at its own level (or the one it names), never with a slot.
+  var fixed = fs.kind==="atwill" || fs.kind==="ritual" || (fs.kind==="free" && fs.className==="Warlock") || !!fs.limited;
+  appendScaling(card, spellScalingLine(c, fs.name, fs.level, {pact: fs.className==="Warlock" && !fixed, fixed: fixed, castAt: fs.castAt}));
   if(fs.note){
     var noteP = document.createElement("p");
     noteP.className = "inv-armor-note feature-spell-note";
