@@ -16,7 +16,7 @@ import { featDef, featNeedsChoice, featPicksProblem, featRequiresReason, featSpe
 import { featPicksContext } from "../ui/feat-picks.js";
 import { learnPlan, swapSection, cantripSwapSection, learnProblem } from "../core/spells-known.js";
 import { finish } from "./apply.js";
-import { stepClass, stepStyle, stepSubclass, stepSpells, stepLearn, stepInvocations, stepOptions, stepProfs, stepAsi, stepFeatPicks, stepBonusFeat, stepBonusFeatPicks, stepHp, stepReview } from "./steps.js";
+import { stepClass, stepStyle, stepSubclass, stepSpells, stepCantrips, stepLearn, stepInvocations, stepOptions, stepProfs, stepAsi, stepFeatPicks, stepBonusFeat, stepBonusFeatPicks, stepHp, stepReview } from "./steps.js";
 
 /* ---------------- Level-up flow ----------------
    A short guided flow in the same full-screen overlay as the creation
@@ -32,8 +32,8 @@ import { stepClass, stepStyle, stepSubclass, stepSpells, stepLearn, stepInvocati
    at class level 4 (a feat's own picks, when it has any, on a Feat
    picks step after it), then hit points. Applying it records what changed in
    c.levelHistory so the last level-up can be undone. */
-var STEP_IDS = ["class","subclass","style","spells","learn","invocations","options","profs","asi","featPicks","bonusFeat","bonusFeatPicks","hp","review"];
-var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Subclass spells", learn:"New spells", invocations:"Invocations", options:"Options", profs:"Proficiencies", asi:"Abilities", featPicks:"Feat picks", bonusFeat:"Campaign feat", bonusFeatPicks:"Campaign feat picks", hp:"Hit points", review:"Review"};
+var STEP_IDS = ["class","subclass","style","spells","cantrips","learn","invocations","options","profs","asi","featPicks","bonusFeat","bonusFeatPicks","hp","review"];
+var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Subclass spells", cantrips:"Cantrips", learn:"New spells", invocations:"Invocations", options:"Options", profs:"Proficiencies", asi:"Abilities", featPicks:"Feat picks", bonusFeat:"Campaign feat", bonusFeatPicks:"Campaign feat picks", hp:"Hit points", review:"Review"};
 export var lu = null;
 
 export function abilityName(key){
@@ -83,13 +83,19 @@ export function target(){
   };
 }
 
+/* Cantrips and a cantrip swap (with Mystic Arcanum, which the same swap
+   may change) have a step of their own; every other list is on New spells. */
+export function onCantripStep(section){ return section.kind==="cantrip" || section.id==="arcanumIn"; }
+/* True when either spell step has something to do. */
+export function learnActive(){ return stepApplicable("cantrips") || stepApplicable("learn"); }
 export function stepApplicable(id){
   if(!lu.className) return id==="class";
   var t = target();
   if(id==="subclass") return t.needsSubclass;
   if(id==="style") return !!t.fightingStyle || styleSwapOffered() || !!styleCantripOffer();
   if(id==="spells") return dueSpellChoices().length > 0;
-  if(id==="learn"){ var lp = currentLearnPlan(); return lp.sections.length > 0 || !!lp.swap || !!lp.cantripSwap || lp.auto.length > 0; }
+  if(id==="cantrips"){ var cp = currentLearnPlan(); return cp.sections.some(onCantripStep) || !!cp.cantripSwap || cp.auto.length > 0; }
+  if(id==="learn"){ var lp = currentLearnPlan(); return lp.sections.some(function(x){ return !onCantripStep(x); }) || !!lp.swap; }
   if(id==="invocations") return lu.className==="Warlock" && t.newLevel >= 2;
   if(id==="options") return optionPlans().length > 0;
   if(id==="profs") return profGrantsToChoose().length > 0 || variantOffers().length > 0;
@@ -411,11 +417,12 @@ export function validate(id){
     var missing = dueSpellChoices().find(function(x){ return !lu.spellChoices[x.choice.id]; });
     return missing ? "Choose your "+missing.choice.label.toLowerCase()+" for "+missing.feature+"." : null;
   }
-  if(id==="learn"){
+  if(id==="cantrips"){
     var ex = expertiseSwap();
     if(ex && !ex.to) return "Pick the skill that gets expertise in place of "+ex.from+".";
-    return learnProblem(learnSections(), lu.learnPicks);
+    return learnProblem(learnSections().filter(onCantripStep), lu.learnPicks);
   }
+  if(id==="learn") return learnProblem(learnSections().filter(function(x){ return !onCantripStep(x); }), lu.learnPicks);
   if(id==="invocations") return invocationProblem();
   if(id==="options"){
     var t = target(), plans = optionPlans();
@@ -516,7 +523,7 @@ export function render(){
   var inner = ce("div"); inner.id = "wizard-body-inner";
   body.appendChild(inner);
   overlay.appendChild(body);
-  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, learn:stepLearn, invocations:stepInvocations, options:stepOptions, profs:stepProfs, asi:stepAsi, featPicks:stepFeatPicks, bonusFeat:stepBonusFeat, bonusFeatPicks:stepBonusFeatPicks, hp:stepHp, review:stepReview})[lu.step](inner);
+  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, cantrips:stepCantrips, learn:stepLearn, invocations:stepInvocations, options:stepOptions, profs:stepProfs, asi:stepAsi, featPicks:stepFeatPicks, bonusFeat:stepBonusFeat, bonusFeatPicks:stepBonusFeatPicks, hp:stepHp, review:stepReview})[lu.step](inner);
 
   var errorBox = ce("div","wiz-error");
   overlay.appendChild(errorBox);

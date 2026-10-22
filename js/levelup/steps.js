@@ -25,7 +25,7 @@ import { featDef, featNeedsChoice, emptyPicks, featPicksSummary, featRequiresRea
 import { renderFeatPicks } from "../ui/feat-picks.js";
 import { fillFeatList } from "../ui/feat-list.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
-import { lu, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
+import { lu, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
 
 export function stepClass(container){
   var c = lu.c;
@@ -182,39 +182,47 @@ export function stepSpells(container){
   });
 }
 
-/* New spells: a pick list per kind of spell the class learns this level
-   (cantrips, spells, a third caster's any-school spell, Magical Secrets,
-   a wizard's spellbook, Mystic Arcanum), then the optional swap. */
-export function stepLearn(container){
+/* The spell steps: Cantrips (the class's cantrips, the free ones and a
+   cantrip swap) and New spells (a pick list per other kind the class
+   learns this level: spells, a third caster's any-school spell, Magical
+   Secrets, a wizard's spellbook, Mystic Arcanum, then the optional swap).
+   Each is a pick list for the kind of spell, so a long cantrip list never
+   buries the spells. */
+export function stepCantrips(container){ renderLearn(container, true); }
+export function stepLearn(container){ renderLearn(container, false); }
+function renderLearn(container, cantripsStep){
   var plan = currentLearnPlan();
   var cls = lu.className.toLowerCase();
-  var lead = plan.summary ? "<b>Spells you know:</b> "+escapeHtml(plan.summary)+" " : "";
-  var patron = plan.sections.some(function(s){ return Object.keys(s.tags).some(function(n){ return s.tags[n].indexOf("Patron spell")!==-1; }); });
-  var card = stepCard(container, "New spells", lead +
+  var mine = plan.sections.filter(function(x){ return onCantripStep(x)===cantripsStep; });
+  // The notes about the whole level go on the first of the two steps shown.
+  var firstStep = cantripsStep || !stepApplicable("cantrips");
+  var lead = firstStep && plan.summary ? "<b>Spells you know:</b> "+escapeHtml(plan.summary)+" " : "";
+  var patron = mine.some(function(s){ return Object.keys(s.tags).some(function(n){ return s.tags[n].indexOf("Patron spell")!==-1; }); });
+  var card = stepCard(container, cantripsStep ? "Cantrips" : "New spells", lead +
     (patron ? "Your patron's spells are mixed in and marked <i>Patron spell</i>; each one you take counts as one of your spells known. " : "") +
     "Each card says what the spell does; tap one to pick it.");
-  if(plan.note){
+  if(plan.note && !cantripsStep){
     var note = ce("p","lu-note"); note.textContent = plan.note;
     card.appendChild(note);
   }
-  if(plan.tashaNote){
+  if(plan.tashaNote && !cantripsStep){
     var tashaNote = ce("p","lu-note"); tashaNote.textContent = plan.tashaNote;
     card.appendChild(tashaNote);
   }
-  if(plan.granted.length){
+  if(plan.granted.length && firstStep){
     var free = ce("p","lu-note lu-granted-note");
     free.textContent = "This level also gives you " + plan.granted.map(function(g){ return g.name + " (from " + g.source + ")"; }).join(", ").replace(/, ([^,]*)$/, " and $1") +
       " for free, so " + (plan.granted.length>1 ? "they aren't" : "it isn't") + " in the list" + (plan.sections.length>1 ? "s" : "") + " below.";
     card.appendChild(free);
   }
-  if(plan.freed.length){
+  if(plan.freed.length && firstStep){
     var back = ce("p","lu-note lu-freed-note");
     var many = plan.freed.length>1;
     back.textContent = "You already know " + plan.freed.join(", ").replace(/, ([^,]*)$/, " and $1") + ", and this level gives " + (many ? "them" : "it") + " to you for free. " +
       (many ? "They no longer count" : "It no longer counts") + " against the " + cls + " spells you know, so you learn " + (many ? "others in their place." : "another in its place.");
     card.appendChild(back);
   }
-  if(plan.auto.length){
+  if(plan.auto.length && cantripsStep){
     var auto = ce("p","lu-note");
     auto.textContent = "You learn "+plan.auto.join(" and ")+" for free; "+(plan.auto.length>1 ? "they're" : "it's")+" added automatically.";
     card.appendChild(auto);
@@ -230,12 +238,9 @@ export function stepLearn(container){
     return g;
   }
   var sections = learnSections(plan);
-  sections.forEach(function(s){
-    if(s.id==="swapIn" || s.id==="cantripIn" || s.id==="arcanumIn") return;
-    card.appendChild(grid(s));
-  });
-  if(plan.swap) renderSpellSwap();
-  if(plan.cantripSwap) renderCantripSwap();
+  mine.forEach(function(s){ card.appendChild(grid(s)); });
+  if(plan.swap && !cantripsStep) renderSpellSwap();
+  if(plan.cantripSwap && cantripsStep) renderCantripSwap();
 
   // A cantrip swap: the artificer's each level, or Tasha's Versatility
   // (Bardic and Eldritch Versatility may change something else instead).
@@ -334,7 +339,7 @@ export function stepInvocations(container){
     var pc = oldBoon
       ? stepCard(container, "Replace your Pact Boon",
         "<b>Eldritch Versatility</b> (Tasha's optional features): you chose to replace your <b>"+escapeHtml(oldBoon)+"</b> with another Pact Boon. "+
-        "An invocation that needs your old pact has to go (swap it out below). You can still keep your pact: choose <i>Keep everything</i> on the New spells step.")
+        "An invocation that needs your old pact has to go (swap it out below). You can still keep your pact: choose <i>Keep everything</i> on the Cantrips step.")
       : stepCard(container, "Choose your Pact Boon",
       "<b>Your patron's gift:</b> at warlock level 3 you choose a Pact Boon. It's yours for good, and some invocations need a particular pact. "+
       "Blade suits a warlock who fights up close, Chain gives you a clever familiar, Tome gives you extra cantrips, and Talisman helps an ally.");
@@ -448,12 +453,12 @@ export function stepOptions(container){
     }
     for(var i=0;i<plan.fresh;i++) picker(i, single ? "Your "+set.noun : plan.fresh>1 ? "New "+set.noun+" "+(i+1) : "New "+set.noun);
     // Sorcerous Versatility changes one thing a level: a cantrip swapped
-    // on the New spells step uses it.
+    // on the Cantrips step uses it.
     var cantripTaken = plan.canSwap && plan.why==="versatility" && set.id==="metamagic" && cantripSwapOut();
     if(cantripTaken){
       choice.swapOut = "";
       var used = ce("p","lu-note lu-versatility-used");
-      used.textContent = "Sorcerous Versatility: you're replacing "+cantripTaken+" on the New spells step this level, so no Metamagic option changes. Keep that cantrip there to change one here instead.";
+      used.textContent = "Sorcerous Versatility: you're replacing "+cantripTaken+" on the Cantrips step this level, so no Metamagic option changes. Keep that cantrip there to change one here instead.";
       card.appendChild(used);
     }
     if(plan.canSwap && !cantripTaken){
@@ -735,7 +740,7 @@ export function stepReview(container){
   var cOffer = styleCantripOffer();
   if(cOffer && lu.styleCantripOut && lu.styleCantripIn) items.push(cOffer.feature.fightingStyle+" cantrip swap: "+lu.styleCantripOut+" → "+lu.styleCantripIn);
   dueSpellChoices().forEach(function(x){ if(lu.spellChoices[x.choice.id]) items.push(x.choice.label+": "+lu.spellChoices[x.choice.id]); });
-  if(stepApplicable("learn")){
+  if(learnActive()){
     var lp = currentLearnPlan();
     learnSections(lp).forEach(function(s){
       var got = (lu.learnPicks[s.id]||[]).slice(0, s.count).filter(Boolean);

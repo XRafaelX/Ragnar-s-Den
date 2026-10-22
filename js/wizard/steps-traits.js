@@ -32,8 +32,9 @@ export function wizardStepSkills(container){
     bgP.innerHTML = "From your <b>"+escapeHtml(wizardState.background)+"</b> background: "+bgInfo.skills.join(", ")+" (automatic)"+(bgPick ? ", plus your pick below" : "")+".";
     card.appendChild(bgP);
   }
-  // Skills the race gives outright (an elf's Perception).
-  var fromRace = wizardRaceSkills(null, true);
+  // Skills the race gives (an elf's Perception) or let you pick on the
+  // Race Traits step, which comes first.
+  var fromRace = wizardRaceSkills();
   if(fromRace.length){
     var raceP = document.createElement("p");
     raceP.style.cssText = "font-size:13px;color:var(--text-on-parch-dim);margin-bottom:12px;";

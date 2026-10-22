@@ -32,7 +32,7 @@ import {
 import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons.js";
 
 /* ---------------- Character Creation Wizard ---------------- */
-export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","skills","raceChoices","feat","featPicks","bgFeat","choices","languages","equipment","cantrips","spells","review"];
+export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","raceChoices","skills","feat","featPicks","bgFeat","choices","languages","cantrips","spells","equipment","review"];
 export var wizardState = null;
 
 export function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardState.classId]; }
@@ -610,7 +610,7 @@ export function validateStep(id){
     if(wizardState.skillChoices.length!==info.skillChoices.count) return "Choose "+info.skillChoices.count+" skills from your class list.";
     var bgInfo = BACKGROUND_INFO[wizardState.background] || {}, bgPick = bgInfo.skillPick;
     // A skill the race gives already (an elf's Perception) is a wasted pick.
-    var fromRace = wizardRaceSkills(null, true);
+    var fromRace = wizardRaceSkills();
     var dup = wizardState.skillChoices.find(function(sk){ return fromRace.indexOf(sk)!==-1; });
     if(dup) return "Your "+wizardState.race+" race already gives you "+dup+". Pick a different class skill.";
     if(bgPick){

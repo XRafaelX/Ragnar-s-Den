@@ -21,7 +21,7 @@ import { showActionToast } from "../ui/toast.js";
 import { featDef, featHasPicks, applyFeatPicks, revertFeatPicks, featSpellEntries, campaignFeatCopy } from "../core/feat-picks.js";
 import { applyLearn, undoLearn } from "../core/spells-known.js";
 import { preparedAt } from "../data/spells-known.js";
-import { lu, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, cantripSwapOut, expertiseSwap, close, swapOutStyle, styleCantripOffer, featureAbilityBonus, hpGain } from "./session.js";
+import { lu, learnActive, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, cantripSwapOut, expertiseSwap, close, swapOutStyle, styleCantripOffer, featureAbilityBonus, hpGain } from "./session.js";
 
 /* ---------------- Apply & undo ---------------- */
 function slotSnapshot(c){
@@ -61,7 +61,7 @@ export function finish(){
   var dueChoices = dueSpellChoices();
   // Asked before the class entry's level changes (target() reads it).
   var doInvocations = stepApplicable("invocations");
-  var learnNow = stepApplicable("learn") ? currentLearnPlan() : null;
+  var learnNow = learnActive() ? currentLearnPlan() : null;
   var learnLists = learnNow ? learnSections(learnNow) : [];
   var invNow = doInvocations ? invChoice() : null;
   var versatilityOut = learnNow ? cantripSwapOut(learnNow) : "";

@@ -300,9 +300,9 @@ const vhuman = (raceChoices, extra = {}) => ({ classId: "Fighter", background: "
 
 test("wizard: the Feat step only for a race with a feat, Feat Choices only for a feat with picks", (t) => {
   const steps = (choices) => inWizard(t, choices, () => W.WIZARD_STEP_IDS.filter(W.isStepApplicable));
-  const around = (list) => list.slice(list.indexOf("raceChoices"), list.indexOf("raceChoices") + 3);
-  assert.deepEqual(around(steps(vhuman({}))), ["raceChoices", "feat", "choices"], "no feat yet: no Feat Choices");
-  assert.deepEqual(around(steps(vhuman({ feat: "Fey Touched" }))), ["raceChoices", "feat", "featPicks"]);
+  const around = (list) => list.slice(list.indexOf("skills"), list.indexOf("skills") + 3);
+  assert.deepEqual(around(steps(vhuman({}))), ["skills", "feat", "choices"], "no feat yet: no Feat Choices");
+  assert.deepEqual(around(steps(vhuman({ feat: "Fey Touched" }))), ["skills", "feat", "featPicks"]);
   for(const [feat, has] of [["Alert", false], ["Tough", false], ["Actor", false], ["Athlete", true], ["Skilled", true], ["Weapon Master", true], ["Elemental Adept", true]]){
     assert.equal(steps(vhuman({ feat })).includes("featPicks"), has, feat);
   }
