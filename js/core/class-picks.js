@@ -1,7 +1,7 @@
 import { SKILLS, ABILITIES } from "../data/abilities-skills.js";
 import { CLASS_PROFICIENCIES } from "../data/classes.js";
 import { CLASS_PROGRESSION, SUBCLASSES } from "../data/progression.js";
-import { RACE_DATA } from "../data/race-data.js";
+import { RACE_DATA, RACE_TRAIT_RENAMES } from "../data/race-data.js";
 import { BACKGROUND_PROFS, BACKGROUND_SKILL_FIXES, BACKGROUND_INFO } from "../data/backgrounds.js";
 import { OPTION_SETS, optionSetStart } from "../data/class-options.js";
 import { languagePickerGroups } from "../data/languages.js";
@@ -916,6 +916,13 @@ export function syncClassPicks(c){
   // The race's: what it gives outright goes on (an elf's Perception, a
   // dwarf's weapons), and picks for traits it doesn't have come off.
   var holder = raceEntry(c), rg = raceGrants(c);
+  // (Picks saved under a trait's old name move to its new one.)
+  Object.keys(holder.profPicks).forEach(function(key){
+    var m = /^race:(.+?)(:pick)?$/.exec(key), to = m && RACE_TRAIT_RENAMES[m[1]];
+    if(!to || holder.profPicks["race:" + to + (m[2] || "")]) return;
+    holder.profPicks["race:" + to + (m[2] || "")] = holder.profPicks[key];
+    delete holder.profPicks[key]; changed = true;
+  });
   Object.keys(holder.profPicks).forEach(function(key){
     if(rg.some(function(g){ return g.key===key; })) return;
     revertClassPicks(c, holder, key); changed = true;

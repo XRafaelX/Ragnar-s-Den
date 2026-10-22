@@ -154,7 +154,7 @@ export function renderInformationPanel(c){
     // Each trait with its text; a race with no trait data, its summary.
     var cards = raceTraitFeatures(c), whole = !cards.length || cards[0].id === "race_" + c.race;
     body.appendChild(bulletList(whole ? splitIntoTraits(cards.length ? cards[0].text : RACE_TRAIT_FALLBACK)
-      : cards.map(function(f){ return {name: f.name, text: f.text.replace(/\s*\n+\s*/g, " ")}; })));
+      : cards.map(function(f){ return {name: f.name, text: f.text.replace(/\s*\n+\s*(•\s*)?/g, " ")}; })));
   }));
 
   var classSummary = (c.classes||[]).map(function(cl){ return cl.name + " " + (cl.level||1); }).join(" / ");

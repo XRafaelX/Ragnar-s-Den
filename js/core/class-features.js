@@ -288,8 +288,9 @@ export function draconicBreathText(c){
   var l = draconicBreathLines(c);
   return l ? [l.breath, l.metallic, l.resistance].filter(Boolean).join("\n") : "";
 }
-/* The race's Features cards: one per trait, with what was picked for it
-   and a dragonborn's breath worked out on the trait it belongs to. A race
+/* The race's Features cards: one per trait (Darkvision first, from its
+   range), with what was picked for it and a dragonborn's breath worked
+   out on the trait it belongs to. A race
    with no trait data (typed in, or homebrew without traits) is one card
    with its summary. */
 export function raceTraitFeatures(c){
@@ -299,7 +300,11 @@ export function raceTraitFeatures(c){
     return [{id: "race_"+c.race, name: c.race + " Traits", source: source, text: RACE_TRAITS[c.race] || RACE_TRAIT_FALLBACK, category: "race", isDerived: true}];
   }
   var breath = draconicBreathLines(c) || {};
-  return traits.map(function(t){
+  // Darkvision is a trait in the book; the data keeps only its range.
+  var d = RACE_DATA[c.race], dark = d.darkvision && !d.darkvisionUnlessPicked && !traits.some(function(t){ return /Darkvision/.test(t.name); })
+    ? [{id: "race_" + c.race + "_Darkvision", name: "Darkvision", source: source, category: "race", isDerived: true,
+      text: "You can see in dim light within " + d.darkvision + " feet of you as if it were bright light, and in darkness as if it were dim light. In darkness you see only shades of gray, not color."}] : [];
+  return dark.concat(traits.map(function(t){
     var picked = raceTraitPicksText(c, t.name);
     var worked = t.name==="Breath Weapon" ? breath.breath
       : t.name==="Metallic Breath Weapon" ? breath.metallic
@@ -307,7 +312,7 @@ export function raceTraitFeatures(c){
     var extra = [picked ? "Your picks: " + picked + "." : "", worked || ""].filter(Boolean).join("\n");
     return {id: "race_" + c.race + "_" + t.name, name: t.name, source: source,
       text: t.text + (extra ? "\n\n" + extra : ""), category: "race", isDerived: true};
-  });
+  }));
 }
 /* What the race's traits protect against: {resist, immune,
    conditionImmune}, each [{type, source}] with the trait's name as the
