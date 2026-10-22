@@ -1,0 +1,37 @@
+Copyright (c) 2026 Hunter & Kayn. All rights reserved.
+
+Ragnar's Den (the "Software") is proprietary. This license covers the
+original source code, design, text and other original work in this
+repository, and nothing else (see "Third-party material" below).
+
+No permission is granted to copy, modify, merge, publish, distribute,
+sublicense, sell or host the Software, or to create derivative works from
+it, in whole or in part, without the prior written permission of the
+copyright holders. Viewing the source code does not grant any of these
+permissions.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Third-party material
+--------------------
+Material that belongs to others keeps its own owner and license, and is not
+covered by the grant above:
+
+- Dungeons & Dragons rules content belongs to Wizards of the Coast. This
+  work includes material from the System Reference Document 5.1 by Wizards
+  of the Coast LLC, available at https://www.dndbeyond.com/srd, licensed
+  under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Other
+  game content belongs to its respective publishers. Ragnar's Den is an
+  unofficial fan tool and is not affiliated with or endorsed by Wizards of
+  the Coast.
+- Bootstrap 5.3.3, copyright The Bootstrap Authors, MIT license.
+- Lucide icons, ISC license.
+- "Daemon skull" by Lorc, game-icons.net, CC BY 3.0.
+
+The full list of credits is in the app's About dialog.

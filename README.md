@@ -449,4 +449,11 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 
 ## License
 
-`TODO`: Specify open-source license (e.g. MIT License). Note that D&D 5e SRD content may be subject to the Open Game License (OGL) or Creative Commons Attribution 4.0 International (CC-BY-4.0).
+Copyright (c) 2026 Hunter & Kayn. All rights reserved. The original code, design and text in this repository may not be copied, modified, distributed or hosted without written permission. See [LICENSE](LICENSE).
+
+Third-party material keeps its own license:
+
+- D&D rules content belongs to Wizards of the Coast. The SRD 5.1 material is used under CC BY 4.0. Ragnar's Den is an unofficial fan tool, not affiliated with or endorsed by Wizards of the Coast.
+- Bootstrap (MIT), Lucide icons (ISC) and the Lorc "Daemon skull" icon (CC BY 3.0).
+
+The full credits are in the app's About dialog.
