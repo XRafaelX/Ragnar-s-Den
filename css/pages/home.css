@@ -305,36 +305,36 @@
   #home-center-orbit{display:none;}
 }
 
-/* About dialog: the credits and licenses fold (render/home.js buildCredits).
+/* About dialog: the credits and privacy folds (render/home.js buildFold).
    A tile like the DLC shelf's, a panel that slides open, one card per credit. */
-.about-credits{margin-top:16px;}
-.about-credits-tile{
+.about-fold{margin-top:10px;}
+.about-fold:first-of-type{margin-top:16px;}
+.about-fold-tile{
   position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;text-align:left;
   border:1px solid var(--rule);border-radius:8px;color:var(--text-on-parch);cursor:pointer;
   background:linear-gradient(110deg, color-mix(in srgb, var(--brass) 16%, transparent), color-mix(in srgb, var(--brass) 4%, transparent) 55%);
   transition:border-color .2s, transform .15s, box-shadow .25s;
 }
 @media (hover:hover){
-  .about-credits-tile:hover{border-color:var(--brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--brass) 14%, transparent);}
+  .about-fold-tile:hover{border-color:var(--brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--brass) 14%, transparent);}
 }
-.about-credits-tile:active{transform:scale(.995);}
-.about-privacy{margin-top:10px;text-decoration:none;}
-.about-credits.open .about-credits-tile{border-color:var(--brass);}
-.about-credits-icon{
+.about-fold-tile:active{transform:scale(.995);}
+.about-fold.open .about-fold-tile{border-color:var(--brass);}
+.about-fold-icon{
   flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:8px;color:var(--brass-bright);
   background:color-mix(in srgb, var(--brass) 22%, transparent);
 }
-.about-credits-text{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;}
-.about-credits-text b{font-size:13.5px;}
-.about-credits-text span{font-size:12px;line-height:1.4;color:var(--text-on-parch-dim);}
-.about-credits-chevron{flex:none;display:grid;color:var(--text-on-parch-dim);transition:transform .3s ease;}
-.about-credits.open .about-credits-chevron{transform:rotate(180deg);}
-.about-credits-panel{
+.about-fold-text{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.about-fold-text b{font-size:13.5px;}
+.about-fold-text span{font-size:12px;line-height:1.4;color:var(--text-on-parch-dim);}
+.about-fold-chevron{flex:none;display:grid;color:var(--text-on-parch-dim);transition:transform .3s ease;}
+.about-fold.open .about-fold-chevron{transform:rotate(180deg);}
+.about-fold-panel{
   display:grid;grid-template-rows:0fr;visibility:hidden;
   transition:grid-template-rows .34s cubic-bezier(.2,.8,.2,1), visibility 0s .34s;
 }
-.about-credits.open .about-credits-panel{grid-template-rows:1fr;visibility:visible;transition:grid-template-rows .34s cubic-bezier(.2,.8,.2,1), visibility 0s;}
-.about-credits-inner{min-height:0;overflow:hidden;}
+.about-fold.open .about-fold-panel{grid-template-rows:1fr;visibility:visible;transition:grid-template-rows .34s cubic-bezier(.2,.8,.2,1), visibility 0s;}
+.about-fold-inner{min-height:0;overflow:hidden;}
 .about-credits-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 0 0;}
 .about-credit{
   display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px 14px;
@@ -346,7 +346,18 @@
 .about-credit strong{font-family:var(--serif);font-weight:normal;font-size:15.5px;line-height:1.25;color:var(--text-on-parch);}
 .about-credit p{margin:0;font-size:12px;line-height:1.5;color:var(--text-on-parch-dim);overflow-wrap:anywhere;}
 .about-credit a{margin-top:2px;font-size:12px;color:var(--brass-bright);}
+/* The privacy fold: a short list and a button to the full page. */
+.about-privacy-card{margin-top:12px;gap:10px;}
+.about-privacy-list{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;}
+.about-privacy-list li{font-size:12.5px;line-height:1.5;color:var(--text-on-parch);}
+.about-credit a.about-privacy-link{
+  display:inline-flex;align-items:center;gap:6px;margin-top:2px;padding:7px 12px 7px 14px;min-height:36px;
+  border:1px solid var(--rule);border-radius:999px;font-size:12.5px;font-weight:600;text-decoration:none;color:var(--text-on-parch);
+  background:color-mix(in srgb, var(--brass) 14%, transparent);transition:border-color .2s, box-shadow .25s;
+}
+.about-privacy-link svg{width:16px;height:16px;color:var(--brass-bright);}
+@media (hover:hover){ .about-privacy-link:hover{border-color:var(--brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--brass) 14%, transparent);} }
 @media (max-width:560px){ .about-credits-grid{grid-template-columns:minmax(0,1fr);} }
 @media (prefers-reduced-motion: reduce){
-  .about-credits *{transition:none !important;}
+  .about-fold *{transition:none !important;}
 }

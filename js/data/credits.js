@@ -47,3 +47,12 @@ export var CREDITS = [
     text: "Hunter & Kayn."
   }
 ];
+
+/* The privacy summary in About's fold. The full policy is privacy.html:
+   change both together. */
+export var PRIVACY_SUMMARY = [
+  "Your characters and settings stay in this browser, on your device.",
+  "No accounts, no ads, no tracking and no cookies.",
+  "Nothing is sent to us or to anyone else.",
+  "Export is the only way your data leaves, and only where you save the file."
+];

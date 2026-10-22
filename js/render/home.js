@@ -5,7 +5,7 @@ import { openCompendium } from "./compendium.js";
 import { openMonsters } from "./monsters.js";
 import { openEncounters } from "./encounters.js";
 import { openInfoModal } from "../ui/info-modal.js";
-import { CREDITS } from "../data/credits.js";
+import { CREDITS, PRIVACY_SUMMARY } from "../data/credits.js";
 import { makeBookSvg, makeChevronDownSvg, makeChevronRightSvg, makeShieldCheckSvg } from "../ui/svg-icons.js";
 import { toggleDiceTray } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand } from "../ui/sound.js";
@@ -154,22 +154,23 @@ export function openAbout(openCredits){
     body.appendChild(p2);
 
     body.appendChild(buildCredits(openCredits));
-    body.appendChild(buildPrivacyLink());
+    body.appendChild(buildPrivacy());
   });
 }
 
-/* The credits and licenses, folded behind a tile so About stays short. */
-function buildCredits(open){
+/* A tile that unfolds a panel in place (About's credits and privacy).
+   `fill(inner)` builds the panel's content. */
+function buildFold(id, icon, title, sub, open, fill){
   var wrap = document.createElement("div");
-  wrap.className = "about-credits" + (open ? " open" : "");
+  wrap.className = "about-fold" + (open ? " open" : "");
   var tile = document.createElement("button");
   tile.type = "button";
-  tile.className = "about-credits-tile";
-  tile.setAttribute("aria-controls", "about-credits-panel");
+  tile.className = "about-fold-tile";
+  tile.setAttribute("aria-controls", id);
   tile.setAttribute("aria-expanded", open ? "true" : "false");
-  tile.innerHTML = "<span class='about-credits-icon'>" + makeBookSvg() + "</span>" +
-    "<span class='about-credits-text'><b>Credits and licenses</b><span>Who made what this app uses</span></span>" +
-    "<span class='about-credits-chevron'>" + makeChevronDownSvg() + "</span>";
+  tile.innerHTML = "<span class='about-fold-icon'>" + icon + "</span>" +
+    "<span class='about-fold-text'><b>" + title + "</b><span>" + sub + "</span></span>" +
+    "<span class='about-fold-chevron'>" + makeChevronDownSvg() + "</span>";
   tile.addEventListener("click", function(){
     var now = wrap.classList.toggle("open");
     tile.setAttribute("aria-expanded", now ? "true" : "false");
@@ -177,52 +178,70 @@ function buildCredits(open){
   wrap.appendChild(tile);
 
   var panel = document.createElement("div");
-  panel.className = "about-credits-panel";
-  panel.id = "about-credits-panel";
+  panel.className = "about-fold-panel";
+  panel.id = id;
   var inner = document.createElement("div");
-  inner.className = "about-credits-inner";
-  var grid = document.createElement("div");
-  grid.className = "about-credits-grid";
-  CREDITS.forEach(function(entry){
-    var card = document.createElement("div");
-    card.className = "about-credit" + (entry.wide ? " wide" : "");
-    var tag = document.createElement("span");
-    tag.className = "about-credit-tag";
-    tag.textContent = entry.tag;
-    var name = document.createElement("strong");
-    name.textContent = entry.label;
-    var text = document.createElement("p");
-    text.textContent = entry.text;
-    card.appendChild(tag);
-    card.appendChild(name);
-    card.appendChild(text);
-    if(entry.link){
-      var a = document.createElement("a");
-      a.href = entry.link.href;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.textContent = entry.link.text;
-      card.appendChild(a);
-    }
-    grid.appendChild(card);
-  });
-  inner.appendChild(grid);
+  inner.className = "about-fold-inner";
+  fill(inner);
   panel.appendChild(inner);
   wrap.appendChild(panel);
   return wrap;
 }
 
-/* The privacy policy page (privacy.html) opens in its own tab. */
-function buildPrivacyLink(){
-  var a = document.createElement("a");
-  a.className = "about-credits-tile about-privacy";
-  a.href = "privacy.html";
-  a.target = "_blank";
-  a.rel = "noopener";
-  a.innerHTML = "<span class='about-credits-icon'>" + makeShieldCheckSvg() + "</span>" +
-    "<span class='about-credits-text'><b>Privacy policy</b><span>Everything stays on your device</span></span>" +
-    "<span class='about-credits-chevron'>" + makeChevronRightSvg() + "</span>";
-  return a;
+/* The credits and licenses: one card per credit. */
+function buildCredits(open){
+  return buildFold("about-credits-panel", makeBookSvg(), "Credits and licenses", "Who made what this app uses", open, function(inner){
+    var grid = document.createElement("div");
+    grid.className = "about-credits-grid";
+    CREDITS.forEach(function(entry){
+      var card = document.createElement("div");
+      card.className = "about-credit" + (entry.wide ? " wide" : "");
+      var tag = document.createElement("span");
+      tag.className = "about-credit-tag";
+      tag.textContent = entry.tag;
+      var name = document.createElement("strong");
+      name.textContent = entry.label;
+      var text = document.createElement("p");
+      text.textContent = entry.text;
+      card.appendChild(tag);
+      card.appendChild(name);
+      card.appendChild(text);
+      if(entry.link){
+        var a = document.createElement("a");
+        a.href = entry.link.href;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = entry.link.text;
+        card.appendChild(a);
+      }
+      grid.appendChild(card);
+    });
+    inner.appendChild(grid);
+  });
+}
+
+/* The privacy summary, with a button to the full page (privacy.html). */
+function buildPrivacy(){
+  return buildFold("about-privacy-panel", makeShieldCheckSvg(), "Privacy policy", "Everything stays on your device", false, function(inner){
+    var card = document.createElement("div");
+    card.className = "about-credit about-privacy-card";
+    var list = document.createElement("ul");
+    list.className = "about-privacy-list";
+    PRIVACY_SUMMARY.forEach(function(line){
+      var li = document.createElement("li");
+      li.textContent = line;
+      list.appendChild(li);
+    });
+    card.appendChild(list);
+    var a = document.createElement("a");
+    a.className = "about-privacy-link";
+    a.href = "privacy.html";
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.innerHTML = "<span>Read the full policy</span>" + makeChevronRightSvg();
+    card.appendChild(a);
+    inner.appendChild(card);
+  });
 }
 
 /* Places a ring layer at a horizontal offset. The further it is from
