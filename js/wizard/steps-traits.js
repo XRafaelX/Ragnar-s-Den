@@ -153,9 +153,9 @@ function checkList(options, chosen, count, takenReason, onChange){
    +1, an Aasimar's subrace) and the traits that ask for a choice (`profs`
    picks in RACE_DATA: a dwarf's tool, a kenku's two skills, a hobgoblin's
    two martial weapons). Each is a numbered section that shows a check
-   once it's done. Equal increases are a row of tappable score tiles
-   (pick N), different ones a picker each; a trait's choices use the same
-   pickers as class features. A race's feat has its own steps after this
+   once it's done. Ability increases are a row of tappable score tiles,
+   each tap giving the next amount (+2, then +1); a trait's choices use
+   the same pickers as class features. A race's feat has its own steps after this
    one (wizardStepFeat, wizardStepFeatPicks). */
 var CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12.5 10 17.5 19 7"/></svg>';
 
@@ -192,61 +192,49 @@ export function wizardStepRaceChoices(container){
   if(def.abilityBonus){
     var amounts = raceAbilityAmounts(), n = amounts.length, exclude = def.abilityBonus.exclude || [];
     var notText = exclude.length ? " other than "+exclude.map(abilityFullName).join(" or ") : "";
-    var chosen = rc.abilities.slice(0, n).filter(function(k){ return k && exclude.indexOf(k)===-1; });
-    // A race with an `alt` set (+1 to three) keeps one picker per amount
-    // either way, so the switch only adds or takes away a row.
-    var allSame = !def.abilityBonus.alt && amounts.every(function(a){ return a===amounts[0]; });
+    // One slot per amount; a tap fills the first empty slot (the +2
+    // before the +1), so taking a tile back frees its own amount.
+    var slots = [];
+    rc.abilities.slice(0, n).forEach(function(k, i){
+      slots[i] = k && exclude.indexOf(k)===-1 && slots.indexOf(k)===-1 ? k : "";
+    });
+    for(var s = slots.length; s<n; s++) slots[s] = "";
+    var filledCount = slots.filter(Boolean).length;
+    var allSame = amounts.every(function(a){ return a===amounts[0]; });
     // Scores already at 20 can't take a pick; all at 20 needs none.
     var need = raceAbilityPicksNeeded();
-    if(allSame){
-      // Same amount for each pick: tap that many score tiles.
-      var amt = amounts[0];
-      var sec1 = section("Ability score increase",
-        need===0 ? "Every score is already at 20, so there's nothing to raise."
-          : (need===1 ? "Tap a score" : "Tap "+need+" different scores")+notText+" to raise by +"+amt+" (up to 20).", chosen.length>=need);
-      var grid = ce("div","rt-ab-grid");
-      ABILITIES.forEach(function(a){
-        var key = a[0], base = baseScore(key);
-        var isOn = chosen.indexOf(key)!==-1, atMax = base>=20, excluded = exclude.indexOf(key)!==-1;
-        var full = !isOn && chosen.length>=n;
-        var tile = document.createElement("button");
-        tile.type = "button";
-        tile.className = "rt-ab"+(isOn ? " on" : "")+(full || atMax || excluded ? " off" : "");
-        tile.disabled = !isOn && (full || atMax || excluded);
-        tile.setAttribute("aria-pressed", isOn ? "true" : "false");
-        tile.setAttribute("aria-label", a[1]+" "+base+(isOn ? ", raised to "+Math.min(20, base+amt) : ""));
-        tile.innerHTML = "<span class='rt-ab-lbl'>"+a[1].slice(0,3).toUpperCase()+"</span>"+
-          "<span class='rt-ab-score'>"+(isOn ? "<s>"+base+"</s> "+Math.min(20, base+amt) : base)+"</span>"+
-          "<span class='rt-ab-mod'>"+(isOn ? "+"+amt : (excluded ? "racial" : atMax ? "max" : fmtMod(mod(base))))+"</span>";
-        tile.addEventListener("click", function(){
-          rc.abilities = isOn ? chosen.filter(function(k){ return k!==key; }) : chosen.concat([key]);
-          picked();
-        });
-        grid.appendChild(tile);
+    var help = need===0 ? "Every score is already at 20, so there's nothing to raise."
+      : allSame ? (need===1 ? "Tap a score" : "Tap "+need+" different scores")+notText+" to raise by +"+amounts[0]+" (up to 20)."
+      : "Tap a score"+notText+" for "+amounts.map(function(a){ return "+"+a; }).join(", then another for ")+" (up to 20).";
+    var sec1 = section("Ability score increase", help, filledCount>=need);
+    // A race with an `alt` set (+1 to three) keeps the same grid either
+    // way, so the switch only changes what a tap gives.
+    if(def.abilityBonus.alt) sec1.appendChild(altSwitchRow());
+    var grid = ce("div","rt-ab-grid");
+    ABILITIES.forEach(function(a){
+      var key = a[0], base = baseScore(key), slot = slots.indexOf(key);
+      var isOn = slot!==-1, atMax = base>=20, excluded = exclude.indexOf(key)!==-1;
+      var full = !isOn && filledCount>=n;
+      var amt = isOn ? amounts[slot] : 0;
+      var tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "rt-ab"+(isOn ? " on" : "")+(full || atMax || excluded ? " off" : "");
+      tile.disabled = !isOn && (full || atMax || excluded);
+      tile.setAttribute("aria-pressed", isOn ? "true" : "false");
+      tile.setAttribute("aria-label", a[1]+" "+base+(isOn ? ", raised by "+amt+" to "+Math.min(20, base+amt) : ""));
+      tile.innerHTML = "<span class='rt-ab-lbl'>"+a[1].slice(0,3).toUpperCase()+"</span>"+
+        "<span class='rt-ab-score'>"+(isOn ? "<s>"+base+"</s> "+Math.min(20, base+amt) : base)+"</span>"+
+        "<span class='rt-ab-mod'>"+(isOn ? "+"+amt : (excluded ? "racial" : atMax ? "max" : fmtMod(mod(base))))+"</span>";
+      tile.addEventListener("click", function(){
+        var next = slots.slice();
+        if(isOn) next[slot] = "";
+        else next[next.indexOf("")] = key;
+        rc.abilities = next;
+        picked();
       });
-      sec1.appendChild(grid);
-    } else {
-      // Different amounts (+2 to one, +1 to another): one picker each.
-      var slots = rc.abilities.slice(0, n);
-      var filled = slots.filter(Boolean);
-      var done = filled.length>=need && new Set(filled).size===filled.length;
-      var secA = section("Ability score increase", need===0 ? "Every score is already at 20, so there's nothing to raise."
-        : rc.alt && def.abilityBonus.alt ? "+1 to three different scores, up to 20."
-        : amounts.map(function(a){ return "+"+a; }).join(" to one score and ")+" to another, up to 20.", done);
-      if(def.abilityBonus.alt) secA.appendChild(altSwitchRow());
-      amounts.forEach(function(amt, i){
-        secA.appendChild(pickerField(themedPicker({
-          key:"race:ability:"+i, placeholder:"+"+amt+" to…", ariaLabel:"Ability for +"+amt,
-          groups:{"":ABILITIES.map(function(a){ return {value:a[0], label:"+"+amt+" "+a[1]+" ("+baseScore(a[0])+")"}; })},
-          value:slots[i]||"", search:false,
-          reasonFor:function(k){
-            if(baseScore(k)>=20) return "max";
-            return slots.some(function(x, j){ return j!==i && x===k; }) ? "picked" : "";
-          },
-          onPick:function(v){ var next = rc.abilities.slice(0, n); next[i] = v; rc.abilities = next; picked(); }
-        })));
-      });
-    }
+      grid.appendChild(tile);
+    });
+    sec1.appendChild(grid);
   }
 
   /* "+1 to three different scores instead": the race's other option. */
