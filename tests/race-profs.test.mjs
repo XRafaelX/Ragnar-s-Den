@@ -142,6 +142,15 @@ test("weapon proficiency: armor and the Information tab's lists see the race", (
 /* ================================================================
    Choices
    ================================================================ */
+test("the Features tab has a card per race trait, with its text; a race with no trait data, one summary card", () => {
+  const cards = H.getAllCharacterFeatures(ensureShape(makeChar("Goliath"))).filter((f) => f.category === "race");
+  assert.deepEqual(cards.map((f) => f.name), ["Natural Athlete", "Stone's Endurance", "Powerful Build", "Mountain Born"]);
+  assert.ok(cards.every((f) => f.source === "Race · Goliath" && f.isDerived && f.text.length > 20));
+  assert.equal(new Set(cards.map((f) => f.id)).size, 4, "each card has its own id");
+  const typed = H.getAllCharacterFeatures(ensureShape(makeChar("Sky Folk"))).filter((f) => f.category === "race");
+  assert.deepEqual(typed.map((f) => f.name), ["Sky Folk Traits"]);
+});
+
 test("a dwarf's tool: three to pick from, one already had greyed, applied and taken back", () => {
   const c = ensureShape(makeChar("Hill Dwarf"));
   const g = raceGrant(c, "Tool Proficiency");
@@ -150,7 +159,10 @@ test("a dwarf's tool: three to pick from, one already had greyed, applied and ta
   assert.ok(CP.pendingClassPicks(c).some((x) => x.key === g.key), "waits on the Feature choices card");
   CP.applyClassPicks(c, g.cl, g, [["Mason's tools"]]);
   assert.ok(CP.raceProficiencies(c).tools.includes("Mason's tools"));
-  assert.match(H.getAllCharacterFeatures(c).find((f) => f.id === "race_Hill Dwarf").text, /Your picks: Tool Proficiency: Mason's tools\./);
+  // The pick sits on its own trait's card, not on the others.
+  const cards = H.getAllCharacterFeatures(c).filter((f) => f.category === "race");
+  assert.match(cards.find((f) => f.name === "Tool Proficiency").text, /\n\nYour picks: Mason's tools\.$/);
+  assert.ok(cards.filter((f) => /Your picks/.test(f.text)).length === 1);
   assert.ok(!CP.pendingClassPicks(c).some((x) => x.key === g.key));
   CP.revertClassPicks(c, g.cl, g.key);
   assert.ok(!CP.raceProficiencies(c).tools.includes("Mason's tools"));
@@ -299,10 +311,11 @@ test("wizard: a dragonborn picks a draconic ancestry, and the sheet works out th
   assert.equal(draconicBreathText(c), "Breath Weapon (Green dragon): 15 ft cone, CON save DC 13 (8 + CON +3 + proficiency +2), 2d6 poison damage (half on a success). Once per short or long rest. 3d6 from level 6.\nDamage Resistance: poison.");
   assert.deepEqual(draconicBreath(c), { dragon: "Green dragon", damage: "Poison", area: "15 ft cone", save: "CON", die: 6, dice: 2, next: { level: 6, dice: 3 },
     con: 3, pb: 2, dc: 13, uses: 1, reset: "short", attack: false, resistance: true, metallic: false });
-  // The race's Features entry: the breath line names the dragon, so no "Your picks" line repeats it.
-  const entry = H.getAllCharacterFeatures(c).find((f) => f.id === "race_Dragonborn").text;
-  assert.ok(!/Your picks/.test(entry), entry);
-  assert.match(entry, /\n\nBreath Weapon \(Green dragon\): 15 ft cone/);
+  // The race's Features cards: the dragon on the ancestry's, the breath and resistance worked out on theirs.
+  const card = (n) => H.getAllCharacterFeatures(c).find((f) => f.category === "race" && f.name === n).text;
+  assert.match(card("Draconic Ancestry"), /\n\nYour picks: Green dragon\.$/);
+  assert.match(card("Breath Weapon"), /\n\nBreath Weapon \(Green dragon\): 15 ft cone/);
+  assert.match(card("Damage Resistance"), /\n\nDamage Resistance: poison\.$/);
   // The Feature choices card's details line.
   const g = raceGrant(c, "Draconic Ancestry");
   assert.deepEqual(CP.classPicksDetails(g, g.cl.profPicks[g.key]), ["Poison: 15 ft cone breath, CON save, and resistance to poison damage"]);

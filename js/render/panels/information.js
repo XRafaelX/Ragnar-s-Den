@@ -1,10 +1,10 @@
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { openInfoModal } from "../../ui/info-modal.js";
-import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../../data/races.js";
+import { RACE_TRAIT_FALLBACK } from "../../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
-import { classFeatureList, classProficiencies, classVariants, escapeHtml } from "../../core/helpers.js";
+import { classFeatureList, classProficiencies, classVariants, escapeHtml, raceTraitFeatures } from "../../core/helpers.js";
 import { featProficiencies, backgroundFeatGrant, backgroundFeatLabel, campaignFeatMissing } from "../../core/feat-picks.js";
 import { dlcShelf, campaignBookCard } from "../../ui/dlc-shelf.js";
 import { characterPickedProfs, raceProficiencies, backgroundProficiencies, overlapTools } from "../../core/class-picks.js";
@@ -151,8 +151,10 @@ export function renderInformationPanel(c){
   }));
 
   aboutCard.appendChild(linkRow("Racial Traits", c.race, "Racial Traits · " + (c.race || ""), function(body){
-    var traits = splitIntoTraits(RACE_TRAITS[c.race] || RACE_TRAIT_FALLBACK);
-    body.appendChild(bulletList(traits));
+    // Each trait with its text; a race with no trait data, its summary.
+    var cards = raceTraitFeatures(c), whole = !cards.length || cards[0].id === "race_" + c.race;
+    body.appendChild(bulletList(whole ? splitIntoTraits(cards.length ? cards[0].text : RACE_TRAIT_FALLBACK)
+      : cards.map(function(f){ return {name: f.name, text: f.text.replace(/\s*\n+\s*/g, " ")}; })));
   }));
 
   var classSummary = (c.classes||[]).map(function(cl){ return cl.name + " " + (cl.level||1); }).join(" / ");

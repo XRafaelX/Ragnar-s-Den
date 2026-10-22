@@ -705,6 +705,13 @@ export function racePicksText(c, skipName){
     return s ? g.name + ": " + s : "";
   }).filter(Boolean).join("; ");
 }
+/* What was picked for one race trait ("Mason's tools"; "" for none yet
+   or a trait with no choice): for that trait's Features card. */
+export function raceTraitPicksText(c, traitName){
+  var held = (c.racePicks && c.racePicks.profPicks) || {};
+  var g = raceGrants(c).find(function(x){ return x.name===traitName && grantHasChoices(x.def); });
+  return g ? classPicksSummary(g, held[g.key]) : "";
+}
 /* Every grant with a choice, class and race, each with the entry its
    picks are kept on (`cl`): for the Feature choices card. */
 export function characterGrants(c){
