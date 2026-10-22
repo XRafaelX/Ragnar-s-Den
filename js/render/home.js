@@ -6,7 +6,7 @@ import { openMonsters } from "./monsters.js";
 import { openEncounters } from "./encounters.js";
 import { openInfoModal } from "../ui/info-modal.js";
 import { CREDITS } from "../data/credits.js";
-import { makeBookSvg, makeChevronDownSvg } from "../ui/svg-icons.js";
+import { makeBookSvg, makeChevronDownSvg, makeChevronRightSvg, makeShieldCheckSvg } from "../ui/svg-icons.js";
 import { toggleDiceTray } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand } from "../ui/sound.js";
 
@@ -154,6 +154,7 @@ export function openAbout(openCredits){
     body.appendChild(p2);
 
     body.appendChild(buildCredits(openCredits));
+    body.appendChild(buildPrivacyLink());
   });
 }
 
@@ -209,6 +210,19 @@ function buildCredits(open){
   panel.appendChild(inner);
   wrap.appendChild(panel);
   return wrap;
+}
+
+/* The privacy policy page (privacy.html) opens in its own tab. */
+function buildPrivacyLink(){
+  var a = document.createElement("a");
+  a.className = "about-credits-tile about-privacy";
+  a.href = "privacy.html";
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.innerHTML = "<span class='about-credits-icon'>" + makeShieldCheckSvg() + "</span>" +
+    "<span class='about-credits-text'><b>Privacy policy</b><span>Everything stays on your device</span></span>" +
+    "<span class='about-credits-chevron'>" + makeChevronRightSvg() + "</span>";
+  return a;
 }
 
 /* Places a ring layer at a horizontal offset. The further it is from

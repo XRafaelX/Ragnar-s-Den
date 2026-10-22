@@ -318,6 +318,7 @@
   .about-credits-tile:hover{border-color:var(--brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--brass) 14%, transparent);}
 }
 .about-credits-tile:active{transform:scale(.995);}
+.about-privacy{margin-top:10px;text-decoration:none;}
 .about-credits.open .about-credits-tile{border-color:var(--brass);}
 .about-credits-icon{
   flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:8px;color:var(--brass-bright);
