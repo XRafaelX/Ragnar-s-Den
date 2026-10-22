@@ -5,6 +5,8 @@ import { openCompendium } from "./compendium.js";
 import { openMonsters } from "./monsters.js";
 import { openEncounters } from "./encounters.js";
 import { openInfoModal } from "../ui/info-modal.js";
+import { CREDITS } from "../data/credits.js";
+import { makeBookSvg, makeChevronDownSvg } from "../ui/svg-icons.js";
 import { toggleDiceTray } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand } from "../ui/sound.js";
 
@@ -138,7 +140,8 @@ function landingBurst(){
 }
 
 /* About: what the app is and where the data lives. */
-function openAbout(){
+/* `openCredits` unfolds the credits tile on arrival (the sidebar link). */
+export function openAbout(openCredits){
   openInfoModal("About Ragnar's Den", function(body){
     var p1 = document.createElement("p");
     p1.className = "info-blurb";
@@ -149,7 +152,63 @@ function openAbout(){
     p2.className = "info-blurb";
     p2.textContent = "Ragnar's Den follows the standard D&D 5th Edition rules, but it can also include any extra content, homebrew or house rules, basically whatever i want.";
     body.appendChild(p2);
+
+    body.appendChild(buildCredits(openCredits));
   });
+}
+
+/* The credits and licenses, folded behind a tile so About stays short. */
+function buildCredits(open){
+  var wrap = document.createElement("div");
+  wrap.className = "about-credits" + (open ? " open" : "");
+  var tile = document.createElement("button");
+  tile.type = "button";
+  tile.className = "about-credits-tile";
+  tile.setAttribute("aria-controls", "about-credits-panel");
+  tile.setAttribute("aria-expanded", open ? "true" : "false");
+  tile.innerHTML = "<span class='about-credits-icon'>" + makeBookSvg() + "</span>" +
+    "<span class='about-credits-text'><b>Credits and licenses</b><span>Who made what this app uses</span></span>" +
+    "<span class='about-credits-chevron'>" + makeChevronDownSvg() + "</span>";
+  tile.addEventListener("click", function(){
+    var now = wrap.classList.toggle("open");
+    tile.setAttribute("aria-expanded", now ? "true" : "false");
+  });
+  wrap.appendChild(tile);
+
+  var panel = document.createElement("div");
+  panel.className = "about-credits-panel";
+  panel.id = "about-credits-panel";
+  var inner = document.createElement("div");
+  inner.className = "about-credits-inner";
+  var grid = document.createElement("div");
+  grid.className = "about-credits-grid";
+  CREDITS.forEach(function(entry){
+    var card = document.createElement("div");
+    card.className = "about-credit" + (entry.wide ? " wide" : "");
+    var tag = document.createElement("span");
+    tag.className = "about-credit-tag";
+    tag.textContent = entry.tag;
+    var name = document.createElement("strong");
+    name.textContent = entry.label;
+    var text = document.createElement("p");
+    text.textContent = entry.text;
+    card.appendChild(tag);
+    card.appendChild(name);
+    card.appendChild(text);
+    if(entry.link){
+      var a = document.createElement("a");
+      a.href = entry.link.href;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = entry.link.text;
+      card.appendChild(a);
+    }
+    grid.appendChild(card);
+  });
+  inner.appendChild(grid);
+  panel.appendChild(inner);
+  wrap.appendChild(panel);
+  return wrap;
 }
 
 /* Places a ring layer at a horizontal offset. The further it is from

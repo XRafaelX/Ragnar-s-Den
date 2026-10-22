@@ -6,7 +6,7 @@ import { setupMobileNav, closeSidebarMobile } from "./ui/mobile-nav.js";
 import { openWizard } from "./wizard/wizard-core.js";
 import { renderAll } from "./render/sheet.js";
 import { setupDiceTray } from "./dice/dice.js";
-import { setupHomeMenu } from "./render/home.js";
+import { setupHomeMenu, openAbout } from "./render/home.js";
 import { playAdd, playDelete } from "./ui/sound.js";
 import { initTheme, openThemeModal } from "./ui/theme.js";
 import { setupAvatarUpload } from "./ui/avatar.js";
@@ -26,6 +26,10 @@ import { setupUpdates } from "./ui/update-prompt.js";
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
   document.getElementById("app-version").textContent = " · v" + APP_VERSION;
+  document.getElementById("credits-link").addEventListener("click", function(){
+    closeSidebarMobile();
+    openAbout(true);
+  });
   document.getElementById("new-char-btn").addEventListener("click", openWizard);
   document.getElementById("theme-btn").addEventListener("click", openThemeModal);
   document.getElementById("tutorial-btn").addEventListener("click", function(){

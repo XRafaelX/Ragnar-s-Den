@@ -304,3 +304,48 @@
   #home-center-ring::before, #home-center-ring::after{animation:none !important;}
   #home-center-orbit{display:none;}
 }
+
+/* About dialog: the credits and licenses fold (render/home.js buildCredits).
+   A tile like the DLC shelf's, a panel that slides open, one card per credit. */
+.about-credits{margin-top:16px;}
+.about-credits-tile{
+  position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;text-align:left;
+  border:1px solid var(--rule);border-radius:8px;color:var(--text-on-parch);cursor:pointer;
+  background:linear-gradient(110deg, color-mix(in srgb, var(--brass) 16%, transparent), color-mix(in srgb, var(--brass) 4%, transparent) 55%);
+  transition:border-color .2s, transform .15s, box-shadow .25s;
+}
+@media (hover:hover){
+  .about-credits-tile:hover{border-color:var(--brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--brass) 14%, transparent);}
+}
+.about-credits-tile:active{transform:scale(.995);}
+.about-credits.open .about-credits-tile{border-color:var(--brass);}
+.about-credits-icon{
+  flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:8px;color:var(--brass-bright);
+  background:color-mix(in srgb, var(--brass) 22%, transparent);
+}
+.about-credits-text{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.about-credits-text b{font-size:13.5px;}
+.about-credits-text span{font-size:12px;line-height:1.4;color:var(--text-on-parch-dim);}
+.about-credits-chevron{flex:none;display:grid;color:var(--text-on-parch-dim);transition:transform .3s ease;}
+.about-credits.open .about-credits-chevron{transform:rotate(180deg);}
+.about-credits-panel{
+  display:grid;grid-template-rows:0fr;visibility:hidden;
+  transition:grid-template-rows .34s cubic-bezier(.2,.8,.2,1), visibility 0s .34s;
+}
+.about-credits.open .about-credits-panel{grid-template-rows:1fr;visibility:visible;transition:grid-template-rows .34s cubic-bezier(.2,.8,.2,1), visibility 0s;}
+.about-credits-inner{min-height:0;overflow:hidden;}
+.about-credits-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 0 0;}
+.about-credit{
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px 14px;
+  border:1px solid var(--rule);border-radius:8px;
+  background:linear-gradient(160deg, color-mix(in srgb, var(--brass) 10%, transparent), rgba(255,255,255,.02) 65%);
+}
+.about-credit.wide{grid-column:1 / -1;}
+.about-credit-tag{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--brass-bright);}
+.about-credit strong{font-family:var(--serif);font-weight:normal;font-size:15.5px;line-height:1.25;color:var(--text-on-parch);}
+.about-credit p{margin:0;font-size:12px;line-height:1.5;color:var(--text-on-parch-dim);overflow-wrap:anywhere;}
+.about-credit a{margin-top:2px;font-size:12px;color:var(--brass-bright);}
+@media (max-width:560px){ .about-credits-grid{grid-template-columns:minmax(0,1fr);} }
+@media (prefers-reduced-motion: reduce){
+  .about-credits *{transition:none !important;}
+}
