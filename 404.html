@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a1625">
+<meta name="robots" content="noindex">
+<title>Page Not Found · Ragnar's Den</title>
+<script>
+  /* GitHub Pages serves this file for any missing address, at any depth,
+     so relative links need a base: the site root. On a project site that
+     is the first path segment (/Ragnar-s-Den/); on a custom domain, /.
+     The saved theme is applied here too, before the first paint. */
+  (function(){
+    var seg = location.hostname.slice(-10) === ".github.io" ? "/" + location.pathname.split("/")[1] + "/" : "/";
+    document.write('<base href="' + seg + '">');
+    try{
+      var theme = localStorage.getItem("ragnarsDen.theme.v1");
+      if(theme && /^[a-z]+$/.test(theme) && theme !== "purple") document.documentElement.setAttribute("data-theme", theme);
+    }catch(e){}
+  })();
+</script>
+<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+<link rel="stylesheet" href="css/base/tokens.css">
+<style>
+  *{box-sizing:border-box;}
+  html{background:var(--ink-deep);}
+  body{
+    margin:0;min-height:100vh;display:grid;place-items:center;overflow-x:hidden;
+    color:var(--text-on-ink);font-family:var(--sans);line-height:1.6;
+    padding:32px max(16px, env(safe-area-inset-right)) 32px max(16px, env(safe-area-inset-left));
+    background:
+      radial-gradient(60% 50% at 50% 28%, color-mix(in srgb, var(--brass) 22%, transparent), transparent 70%),
+      radial-gradient(40% 35% at 85% 90%, color-mix(in srgb, var(--brass) 10%, transparent), transparent 70%),
+      var(--ink-deep);
+  }
+  main{width:100%;max-width:520px;text-align:center;}
+
+  .die{
+    position:relative;width:min(240px, 62vw);aspect-ratio:1;margin:0 auto 8px;
+    filter:drop-shadow(0 14px 28px color-mix(in srgb, var(--brass) 38%, transparent));
+  }
+  .die svg{width:100%;height:100%;overflow:visible;}
+  .die-body{fill:url(#dieFill);stroke:var(--brass-bright);stroke-width:3;stroke-linejoin:round;}
+  .die-edges{fill:none;stroke:var(--brass-bright);stroke-width:2;stroke-linejoin:round;opacity:.6;}
+  .die-face{fill:color-mix(in srgb, var(--brass-bright) 10%, transparent);}
+  .die-num{
+    fill:var(--text-on-ink);font-family:var(--serif);font-size:52px;font-weight:bold;
+    text-anchor:middle;dominant-baseline:central;
+  }
+  .die-spin{transform-origin:50% 50%;animation:float 5s ease-in-out infinite;}
+  .die.rolling .die-spin{animation:tumble .9s cubic-bezier(.3,.7,.4,1);}
+  .die.nat1 .die-body, .die.nat1 .die-edges{stroke:var(--oxblood);}
+  .die.nat1 .die-num{fill:var(--oxblood);}
+  .die.nat20 .die-num{fill:#f5c542;}
+  @keyframes float{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-8px) rotate(4deg);}}
+  @keyframes tumble{
+    0%{transform:translateY(0) rotate(0);}
+    35%{transform:translateY(-34px) rotate(200deg) scale(1.06);}
+    70%{transform:translateY(0) rotate(340deg);}
+    85%{transform:translateY(-8px) rotate(356deg);}
+    100%{transform:translateY(0) rotate(360deg);}
+  }
+
+  .code{
+    margin:6px 0 2px;font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--text-on-ink-dim);
+  }
+  h1{
+    margin:0 0 12px;font-family:var(--serif);font-weight:normal;font-size:clamp(34px, 9vw, 46px);line-height:1.1;
+    color:var(--brass-bright);
+  }
+  .lead{margin:0 auto 22px;max-width:44ch;color:var(--text-on-ink);}
+  .actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:18px;}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 20px;
+    border-radius:999px;font:inherit;font-size:15px;font-weight:600;text-decoration:none;cursor:pointer;
+    border:1px solid var(--rule);color:var(--text-on-ink);
+    background:linear-gradient(110deg, color-mix(in srgb, var(--brass) 16%, transparent), color-mix(in srgb, var(--brass) 4%, transparent) 70%);
+    transition:border-color .2s, box-shadow .25s, transform .15s;
+  }
+  .btn.primary{
+    border-color:var(--brass);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45);
+    background:linear-gradient(120deg, var(--brass), var(--brass-hover));
+  }
+  .btn svg{flex:none;}
+  .btn:active{transform:scale(.97);}
+  .btn:disabled{opacity:.6;cursor:default;}
+  .btn:focus-visible{outline:2px solid var(--brass-bright);outline-offset:3px;}
+  @media (hover:hover){ .btn:hover:not(:disabled){border-color:var(--brass-bright);box-shadow:0 0 0 3px color-mix(in srgb, var(--brass) 18%, transparent);} }
+
+  .result{
+    min-height:3.2em;margin:0 auto;max-width:44ch;font-size:14px;color:var(--text-on-ink-dim);
+  }
+  .result b{color:var(--text-on-ink);}
+  .foot{margin:26px 0 0;font-size:12px;color:var(--text-on-ink-dim);}
+
+  @media (prefers-reduced-motion: reduce){
+    .die-spin, .die.rolling .die-spin{animation:none;}
+    .btn{transition:none;}
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="die nat1" id="die" aria-hidden="true">
+    <svg viewBox="0 0 200 200">
+      <defs>
+        <linearGradient id="dieFill" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#3b2b5a"/>
+          <stop offset="55%" stop-color="#281e3f"/>
+          <stop offset="100%" stop-color="#191328"/>
+        </linearGradient>
+      </defs>
+      <g class="die-spin">
+        <polygon class="die-body" points="100,8 180,54 180,146 100,192 20,146 20,54"/>
+        <polygon class="die-face" points="100,46 154,140 46,140"/>
+        <path class="die-edges" d="M100 8 L100 46 M180 54 L100 46 M180 54 L154 140 M180 146 L154 140 M100 192 L154 140 M100 192 L46 140 M20 146 L46 140 M20 54 L46 140 M20 54 L100 46 M46 140 L154 140 M100 46 L154 140 M100 46 L46 140"/>
+        <text class="die-num" id="die-num" x="100" y="108">1</text>
+      </g>
+    </svg>
+  </div>
+
+  <p class="code">Error 404</p>
+  <h1 id="title">Critical fail!</h1>
+  <p class="lead" id="lead">You rolled a natural 1. The page you were looking for has wandered off the map, been eaten by a mimic, or was never in this dungeon at all.</p>
+
+  <div class="actions">
+    <a class="btn primary" id="home" href="./">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      Return to the Den
+    </a>
+    <button class="btn" id="roll" type="button">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M16 8h.01"/><path d="M16 12h.01"/><path d="M16 16h.01"/><path d="M8 8h.01"/><path d="M8 12h.01"/><path d="M8 16h.01"/></svg>
+      Roll Perception
+    </button>
+  </div>
+
+  <p class="result" id="result" role="status" aria-live="polite">Perception check, DC 404. Care to try?</p>
+  <p class="foot">Ragnar's Den</p>
+</main>
+<script>
+  (function(){
+    var die = document.getElementById("die");
+    var num = document.getElementById("die-num");
+    var title = document.getElementById("title");
+    var result = document.getElementById("result");
+    var btn = document.getElementById("roll");
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var BONUS = 3, DC = 404;
+
+    function pick(list){ return list[Math.floor(Math.random() * list.length)]; }
+    var MISS = [
+      "You search every corner. Dust, a bent torch and one very smug mimic.",
+      "You find a door. It leads to the home page.",
+      "The DM shrugs. \"That room is not on my map.\"",
+      "You follow the footprints. They end at a wall.",
+      "A passing bard swears she saw it. She is a bard."
+    ];
+
+    function show(roll){
+      num.textContent = roll;
+      die.classList.toggle("nat1", roll === 1);
+      die.classList.toggle("nat20", roll === 20);
+    }
+
+    function land(roll){
+      show(roll);
+      var total = roll + BONUS;
+      if(roll === 1){
+        title.textContent = "Critical fail!";
+        result.innerHTML = "<b>Natural 1.</b> You walk straight into a wall. Still a 404.";
+      }else if(roll === 20){
+        title.textContent = "Natural 20!";
+        result.innerHTML = "<b>Natural 20.</b> Glorious, and it changes nothing: the page is simply not here.";
+      }else{
+        title.textContent = "Still lost";
+        result.innerHTML = "<b>" + roll + " + " + BONUS + " = " + total + "</b> against DC " + DC + ". " + pick(MISS);
+      }
+      btn.disabled = false;
+    }
+
+    btn.addEventListener("click", function(){
+      var final = 1 + Math.floor(Math.random() * 20);
+      btn.disabled = true;
+      result.textContent = "Rolling...";
+      if(reduce){ land(final); return; }
+      die.classList.remove("rolling");
+      void die.offsetWidth;
+      die.classList.add("rolling");
+      var frames = 0;
+      var timer = setInterval(function(){
+        frames++;
+        if(frames < 9){ show(1 + Math.floor(Math.random() * 20)); return; }
+        clearInterval(timer);
+        land(final);
+      }, 90);
+    });
+  })();
+</script>
+</body>
+</html>
