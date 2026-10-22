@@ -3,11 +3,11 @@
    advantage or disadvantage. */
 import { SKILLS } from "../data/abilities-skills.js";
 import { ARMOR_DATA } from "../data/armor.js";
-import { RACE_DATA, TRAIT_ADVANTAGES } from "../data/race-data.js";
+import { RACE_DATA, TRAIT_ADVANTAGES, TRAIT_HALF_PROFICIENCY } from "../data/race-data.js";
 import { mod, fmtMod, profBonus, combineRolls } from "./basics.js";
 import { barbarianClassEntry } from "./character-resources.js";
 import { classFeatureList } from "./class-features.js";
-import { effectOn } from "./effects.js";
+import { effectOn, raceEffectRolls } from "./effects.js";
 import { weaponAbility, armorPenalty } from "./equipment.js";
 import { hasFeat } from "./vitals.js";
 import { nextCheckAdvantage } from "./magic-items.js";
@@ -20,10 +20,15 @@ var SKILL_ABILITY = {};
 SKILLS.forEach(function(s){ SKILL_ABILITY[s[0]] = s[1]; });
 /* Half the proficiency bonus on checks of this ability that don't use it
    already: Jack of All Trades (any check, rounded down) or Remarkable
-   Athlete (STR, DEX, CON, rounded up). They don't stack; the larger
-   counts. {value, name} or null. */
+   Athlete (STR, DEX, CON, rounded up), or a race trait's (an ibis-headed
+   aven's Kefnet's Blessing: INT, rounded down). They don't stack; the
+   larger counts. {value, name} or null. */
 export function halfProficiency(c, ability){
   var best = null, pb = profBonus(c);
+  ((RACE_DATA[c.race] && RACE_DATA[c.race].traits) || []).forEach(function(t){
+    var h = TRAIT_HALF_PROFICIENCY[t.name];
+    if(h && h.indexOf(ability)!==-1) best = {value: Math.floor(pb/2), name: t.name};
+  });
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
       var h = f.halfProficiency;
@@ -107,6 +112,7 @@ export function skillRollMode(c, skill, passive){
   if(skill==="Stealth") list.push(stealthCheck(c));
   if(skill==="Acrobatics" && effectOn(c, "bladesong")) list.push({mode: "adv", reason: "Bladesong"});
   if((skill==="Insight" || skill==="Intimidation") && effectOn(c, "astral_visage")) list.push({mode: "adv", reason: "Wisdom of the Spirit (Visage of the Astral Self)"});
+  if(skill==="Perception") list = list.concat(raceEffectRolls(c, "perception"));
   return combineRolls(list);
 }
 /* ---- Advantage from features and traits ----
@@ -148,7 +154,7 @@ export function situationalSaveAdvantages(c, key){
 }
 /* A plain ability check or a saving throw with this ability. */
 export function checkRollMode(c, key){ return combineRolls([armorPenalty(c, key), nextCheckAdvantage(c)].concat(alwaysAdvantage(c, "check", key), conditionRolls(c, "check"))); }
-export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)].concat(alwaysAdvantage(c, "save", key), conditionRolls(c, "save", key))); }
+export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)].concat(alwaysAdvantage(c, "save", key), conditionRolls(c, "save", key), raceEffectRolls(c, "save", key))); }
 /* Initiative is a DEX check: Feral Instinct's or a Helm of Awareness's
    advantage, Duality's next ability check, and armor worn without
    proficiency's and conditions' disadvantage. */
@@ -160,8 +166,8 @@ export function attackRollMode(c, item){
   // Only when every best choice is STR or DEX (on a tie with INT from
   // Battle Ready, the player attacks with INT and avoids it).
   var physical = weaponAbility(c, item).keys.every(function(k){ return k==="str" || k==="dex"; });
-  return combineRolls([physical ? armorPenalty(c, "str") : null].concat(conditionRolls(c, "attack")));
+  return combineRolls([physical ? armorPenalty(c, "str") : null].concat(conditionRolls(c, "attack"), raceEffectRolls(c, "attack")));
 }
 /* An attack with no weapon card (a spell attack, the astral arms): only
    conditions change it (Poisoned, Invisible, exhaustion). */
-export function plainAttackRollMode(c){ return combineRolls(conditionRolls(c, "attack")); }
+export function plainAttackRollMode(c){ return combineRolls(conditionRolls(c, "attack").concat(raceEffectRolls(c, "attack"))); }

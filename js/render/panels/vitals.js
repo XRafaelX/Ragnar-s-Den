@@ -197,6 +197,9 @@ export function renderVitalsPanel(c){
     .filter(function(r){ return immuneTypes.indexOf(r.type.toLowerCase())===-1; });
   var resistAll = resistsAllDamage(c); // Petrified
   if(resistAll) resist = [{type: "all damage", source: resistAll}];
+  // (Resistance to all damage covers the rest: the Raven Queen's blessing.)
+  var toAll = resist.find(function(r){ return r.type==="all damage"; });
+  if(toAll) resist = [toAll];
   var wardTip = function(list){
     return list.map(function(r){ return r.type.charAt(0).toUpperCase() + r.type.slice(1) + ": " + r.source; }).join("\n");
   };

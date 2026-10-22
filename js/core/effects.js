@@ -2,7 +2,7 @@
    Effects switched on from the Vitals tab (Bladesong, the Astral Self,
    Symbiotic Entity) and the numbers they change. */
 import { TOGGLE_EFFECTS } from "../data/effects.js";
-import { mod, profBonus } from "./basics.js";
+import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
 import { classLevelOf } from "./class-features.js";
 import { isRangedWeapon } from "./equipment.js";
@@ -17,7 +17,10 @@ import { abilityScore, abilityScores } from "./ability-scores.js";
 function effectDef(id){
   return TOGGLE_EFFECTS.find(function(d){ return d.id===id; });
 }
+/* Who has it: the class entry, or for a race's effect the race (from
+   the character level it starts at). */
 function effectClass(c, def){
+  if(def.race) return def.race.indexOf(c.race)!==-1 && totalLevel(c) >= def.level;
   return (c.classes||[]).find(function(cl){
     return cl.name===def.className && cl.subclass===def.subclass && (Number(cl.level)||1) >= def.level;
   });
@@ -45,13 +48,13 @@ export function characterEffects(c){
   var resources = characterResources(c);
   var flags = c.effects || {};
   return TOGGLE_EFFECTS.filter(function(def){ return effectClass(c, def); }).map(function(def){
-    var res = resources.find(function(r){ return r.key===def.className+":"+def.cost.resource; });
+    var res = def.cost && resources.find(function(r){ return r.key===(def.race ? "race" : def.className)+":"+def.cost.resource; });
     var on = !!flags[def.id];
     var why = "";
     if(!on){
       var missing = (def.requires||[]).filter(function(r){ return !flags[r]; });
       if(missing.length) why = "Needs " + missing.map(function(r){ return effectDef(r).name; }).join(" and ") + " first.";
-      else if(!res || res.max - res.used < def.cost.amount) why = "Not enough " + (res ? res.name : def.cost.resource) + " left.";
+      else if(def.cost && (!res || res.max - res.used < def.cost.amount)) why = "Not enough " + (res ? res.name : def.cost.resource) + " left.";
     }
     return {def: def, on: on, blocked: on ? effectBlocked(c, def.id) : "", resource: res, why: why};
   });
@@ -97,6 +100,19 @@ export function pruneEffects(c){
     if(gone){ endEffect(c, id); changed = true; }
   });
   return changed;
+}
+/* How the race effects change rolls: Shell Defense's saves (advantage
+   on STR and CON, disadvantage on DEX) and Sunlight Sensitivity's
+   attacks and Perception, as roll modes. kind: "save" (with its
+   ability), "attack" or "perception". */
+export function raceEffectRolls(c, kind, ability){
+  var out = [];
+  if(kind==="save" && effectOn(c, "shell_defense")){
+    if(ability==="str" || ability==="con") out.push({mode: "adv", reason: "Shell Defense"});
+    if(ability==="dex") out.push({mode: "dis", reason: "Shell Defense"});
+  }
+  if((kind==="attack" || kind==="perception") && effectOn(c, "sunlight")) out.push({mode: "dis", reason: "Sunlight Sensitivity"});
+  return out;
 }
 /* Bladesong's bonus to AC and concentration saves (and Song of Victory's damage). */
 export function bladesongBonus(c){

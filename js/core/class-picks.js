@@ -10,6 +10,7 @@ import { SPELL_DATA, spellDataForClass } from "../data/spells.js";
 import { TOOL_GROUPS, featProficiencies } from "./feat-picks.js";
 import { classCasterType, classFeaturesAt } from "./class-features.js";
 import { spellHeldBy } from "./spell-grants.js";
+import { totalLevel } from "./basics.js";
 
 /* ---------------- Class picks ----------------
    Skills, expertise, tools, languages, saving throws, weapons and spells
@@ -182,7 +183,8 @@ export function classPickContext(c, cl, key){
     chosen: function(id){
       var out = [];
       if(!cl) return out;
-      entryGrants(cl, (c.classes||[]).indexOf(cl) > 0).forEach(function(g){
+      // A race's other traits (a Simic Hybrid's 1st-level enhancement, for its 5th-level pick).
+      (cl===c.racePicks ? raceGrants(c) : entryGrants(cl, (c.classes||[]).indexOf(cl) > 0)).forEach(function(g){
         var entry = grantEntry(cl, g.key);
         if(!entry || g.key===key) return;
         (g.def.pick||[]).forEach(function(s, i){ if(s.kind==="choice" && s.id===id) out = out.concat((entry.slots && entry.slots[i]) || []); });
@@ -646,11 +648,13 @@ export function raceEntry(c){
   if(!c.racePicks.profPicks) c.racePicks.profPicks = {};
   return c.racePicks;
 }
-export function raceGrantsFor(race){
+/* `level`: the character level (default 1); a trait with a `level`
+   only gives from then (a Simic Hybrid's 5th-level enhancement). */
+export function raceGrantsFor(race, level){
   var out = [], source = "Race · " + race;
   ((RACE_DATA[race] && RACE_DATA[race].traits) || []).forEach(function(t){
     var p = t.profs;
-    if(!p) return;
+    if(!p || (t.level || 1) > (level || 1)) return;
     if((p.skills||[]).length || (p.weapons||[]).length || (p.tools||[]).length){
       out.push({key: "race:" + t.name, name: t.name, source: source, feature: t.name, race: true,
         def: {skills: p.skills || [], weapons: p.weapons || [], tools: p.tools || []}});
@@ -659,25 +663,32 @@ export function raceGrantsFor(race){
   });
   return out;
 }
-export function raceGrants(c){ return raceGrantsFor(c.race); }
-/* What the character picked for a race trait's `choice` slot with this id
-   ("" if not yet): a Half-Elf (Variant)'s Half-Elf Versatility. */
-export function raceChoiceValue(c, id){
-  var held = (c.racePicks && c.racePicks.profPicks) || {}, out = "";
+export function raceGrants(c){ return raceGrantsFor(c.race, totalLevel(c)); }
+/* Everything picked for a race's `choice` slots with this id, in trait
+   order: a Half-Elf (Variant)'s Half-Elf Versatility, a Simic Hybrid's
+   two enhancements. */
+export function raceChoiceValues(c, id){
+  var held = (c.racePicks && c.racePicks.profPicks) || {}, out = [];
   raceGrants(c).forEach(function(g){
     var entry = held[g.key];
-    if(out || !entry || entry.manual) return;
-    (g.def.pick||[]).forEach(function(s, i){ if(!out && s.kind==="choice" && s.id===id) out = ((entry.slots && entry.slots[i]) || [])[0] || ""; });
+    if(!entry || entry.manual) return;
+    (g.def.pick||[]).forEach(function(s, i){
+      var v = s.kind==="choice" && s.id===id && ((entry.slots && entry.slots[i]) || [])[0];
+      if(v && out.indexOf(v)===-1) out.push(v);
+    });
   });
   return out;
 }
+/* The first one ("" if not yet). */
+export function raceChoiceValue(c, id){ return raceChoiceValues(c, id)[0] || ""; }
 /* What the race's choices give on the sheet (its `choiceEffects` for each
-   picked option): [{name, weapons, walk, swim}]. */
+   picked option): [{name, weapons, walk, swim, climb, ac, acWhen, spells}]. */
 export function raceChoiceEffects(c){
   var fx = (RACE_DATA[c.race] || {}).choiceEffects || {}, out = [];
   Object.keys(fx).forEach(function(id){
-    var picked = raceChoiceValue(c, id);
-    if(picked && fx[id][picked]) out.push(Object.assign({name: picked}, fx[id][picked]));
+    raceChoiceValues(c, id).forEach(function(picked){
+      if(fx[id][picked]) out.push(Object.assign({name: picked}, fx[id][picked]));
+    });
   });
   return out;
 }

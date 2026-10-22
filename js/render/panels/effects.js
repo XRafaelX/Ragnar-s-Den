@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode } from "../../core/helpers.js";
+import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
@@ -7,7 +7,7 @@ import { performRoll, logRoll } from "../../dice/dice.js";
 /* ---------------- Active effects ----------------
    On the Vitals tab, only for characters with a feature they switch on
    for a while (js/data/effects.js): Bladesong, the Astral Self, Symbiotic
-   Entity. Start pays the cost from Class resources; the bonuses then show
+   Entity, and race traits (a tortle's Shell Defense, a drow in sunlight). Start pays the cost from Class resources; the bonuses then show
    where they apply (AC, speed, skills, saves, senses, weapon damage), so
    the card itself only says what's on and rolls what has no other home. */
 export function renderEffectsCard(c){
@@ -68,8 +68,8 @@ function effectRow(c, e){
   var btn = document.createElement("button");
   btn.type = "button";
   btn.className = "btn small" + (e.on ? "" : " primary");
-  btn.textContent = e.on ? "End" : "Start";
-  btn.setAttribute("aria-label", (e.on ? "End " : "Start ") + def.name);
+  btn.textContent = e.on ? def.endLabel || "End" : def.startLabel || "Start";
+  btn.setAttribute("aria-label", btn.textContent + " " + def.name);
   btn.disabled = !e.on && !!e.why;
   if(btn.disabled) btn.title = e.why;
   btn.addEventListener("click", function(){
@@ -78,7 +78,7 @@ function effectRow(c, e){
     } else {
       if(!startEffect(c, def.id)) return;
       var gain = def.id==="symbiotic_entity" ? " Temporary HP: " + c.hp.temp + "." : "";
-      logRoll(def.name, "Started (" + costText(e) + ")." + gain);
+      logRoll(def.name, (def.startLabel ? def.startLabel : "Started") + " (" + costText(e) + ")." + gain);
     }
     save(); renderAll();
   });
@@ -88,7 +88,7 @@ function effectRow(c, e){
 }
 
 function costText(e){
-  if(e.resource && e.resource.max===Infinity) return "Free";
+  if(!e.def.cost || (e.resource && e.resource.max===Infinity)) return "Free";
   var n = e.def.cost.amount;
   if(e.def.cost.resource==="ki") return n + " ki";
   if(e.def.cost.resource==="wild_shape") return n + " Wild Shape";
@@ -113,6 +113,13 @@ function effectSummary(c, id){
     var halo = haloOfSporesDie(c);
     return "+" + symbioticTempHp(c) + " temporary HP · Halo of Spores 2d" + halo + " necrotic · melee weapon attacks +1d6 poison";
   }
+  if(id==="shell_defense") return "+4 AC · advantage on STR and CON saves · disadvantage on DEX saves · speed 0";
+  if(id==="chromatic_warding"){
+    var b = draconicBreath(c);
+    return "Immune to " + (b ? b.damage.toLowerCase() : "your ancestry's") + " damage";
+  }
+  if(id==="raven_queen_resistance") return "Resistance to all damage";
+  if(id==="sunlight") return "Disadvantage on attack rolls and Perception checks";
   return "";
 }
 function hasSongOfVictory(c){

@@ -836,7 +836,8 @@ export var FEAT_RESOURCES = {
    Volo's Guide, Mordenkainen's Tome of Foes, Eberron, Ravnica, The Wild
    Beyond the Witchlight, Fizban's Treasury and Wildemount texts
    2026-10-16; Spelljammer, Van Richten's, Dragonlance, Theros and
-   Eberron's dragonmarks on dnd5e.wikidot.com 2026-10-20). `level` is the character level it starts at; max(lv, m)
+   Eberron's dragonmarks on dnd5e.wikidot.com 2026-10-20). `level` is the character level it starts at; `choice`
+   {id, value} only gives it once that option is picked; max(lv, m)
    and reset(lv) work as for classes, with `lv` the character level. A
    race's innate spells (Drow Magic, Infernal Legacy) aren't here, and a
    dragonborn's breath weapons are on the Inventory tab (see
@@ -904,6 +905,11 @@ export var RACE_RESOURCES = {
   "Shadar-kai": [
     {id:"blessing_raven_queen", name:"Blessing of the Raven Queen", max:ONCE, reset:always("long"),
       hint:"Bonus action: teleport up to 30 ft to a space you can see; from level 3, resistance to all damage until your next turn."}
+  ],
+  "Simic Hybrid": [
+    {id:"acid_spit", name:"Acid Spit", level:5, choice:{id:"simicEnhancement", value:"Acid Spit"},
+      max:function(lv, m){ return Math.max(1, m.con); }, reset:always("long"),
+      hint:"Action: a creature or object you can see within 30 ft makes a DEX save or takes 2d10 acid damage (3d10 from 11th level, 4d10 from 17th)."}
   ],
   "Shifter": [
     {id:"shifting", name:"Shifting", max:ONCE, reset:always("short"),

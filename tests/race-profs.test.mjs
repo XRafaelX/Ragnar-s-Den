@@ -476,7 +476,8 @@ test("race uses: every entry is a real race and names one of its traits", () => 
     assert.ok(RACE_DATA[race], race);
     const names = RACE_DATA[race].traits.map((t) => t.name.replace(/,/g, ""));
     for(const r of list){
-      assert.ok(names.includes(r.name.replace(/,/g, "")), race + ": " + r.name + " is one of its traits");
+      // (Or, for a use a choice gives, that option: a Simic Hybrid's Acid Spit.)
+      assert.ok(names.includes(r.name.replace(/,/g, "")) || (r.choice && r.choice.value === r.name), race + ": " + r.name + " is one of its traits");
       assert.ok(r.hint && !/[\u2013\u2014]/.test(r.hint), race + ": " + r.name + " hint");
     }
   }

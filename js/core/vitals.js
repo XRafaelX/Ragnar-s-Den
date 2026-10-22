@@ -154,8 +154,9 @@ export function computeSpeed(c){
   ["fly", "swim", "climb"].forEach(function(t){
     if(rs[t]) list.push({type: t, value: rs[t], when: (race.speedWhen||{})[t] || "", source: c.race});
   });
-  // A race choice's speed (a Half-Elf (Variant)'s Swim Speed).
-  raceChoiceEffects(c).forEach(function(e){ ["fly", "swim", "climb"].forEach(function(t){ if(e[t]) list.push({type: t, value: e[t], when: "", source: e.name}); }); });
+  // A race choice's speed (a Half-Elf (Variant)'s Swim Speed; "walk" for
+  // one equal to the walking speed, a Simic Hybrid's Nimble Climber).
+  raceChoiceEffects(c).forEach(function(e){ ["fly", "swim", "climb"].forEach(function(t){ if(e[t]) list.push({type: t, value: e[t]==="walk" ? walk : e[t], when: "", source: e.name}); }); });
   var speedSources = [];
   (c.classes||[]).forEach(function(cl){ speedSources = speedSources.concat(classFeatureList(cl)); });
   speedSources.concat(invocationSpeedSources(c), optionEffects(c)).forEach(function(f){
@@ -178,7 +179,8 @@ export function computeSpeed(c){
   }));
   // Grappled, restrained or unable to move: 0, bonuses and all. Exhaustion
   // 2 halves every speed (rounded down), 5 takes it to 0.
-  var hindered = conditionSpeed(c);
+  // In a tortle's shell: 0, and it can't increase.
+  var hindered = conditionSpeed(c) || (effectOn(c, "shell_defense") ? {zero: "Shell Defense"} : null);
   if(hindered){
     var cut = function(v){ return hindered.zero ? 0 : Math.floor(v / 2); };
     walk = cut(walk);
@@ -254,6 +256,11 @@ export function computeArmorClass(c){
     breakdown += " + " + acTrait + " (" + fmtMod(raceAc) + ")"; short += " + " + acTrait;
     base += raceAc;
   }
+  // A race choice's (a Simic Hybrid's Carapace: +1 unless in heavy armor).
+  raceChoiceEffects(c).forEach(function(e){
+    if(!e.ac || (e.acWhen==="noHeavyArmor" && bodyArmor && bodyArmor.category==="heavy")) return;
+    base += e.ac; breakdown += " + " + e.name + " (" + fmtMod(e.ac) + ")"; short += " + " + e.name;
+  });
   // Dual Wielder: +1 while wielding a separate melee weapon in each hand
   // (two equipped melee weapon items; a "Dagger ×2" stack is one weapon).
   var dualWielder = hasFeat(c, "Dual Wielder") &&
@@ -285,6 +292,9 @@ export function computeArmorClass(c){
   }
   if(effectOn(c, "awakened_astral_self")){
     base += 2; breakdown += " + Armor of the Spirit (+2)"; short += " + Astral Self";
+  }
+  if(effectOn(c, "shell_defense")){
+    base += 4; breakdown += " + Shell Defense (+4)"; short += " + Shell Defense";
   }
   // A magic item's boon (Duality's angel side: +1 AC for 10 minutes).
   var coinAc = coinAcBonus(c);

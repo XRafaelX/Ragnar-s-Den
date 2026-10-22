@@ -47,7 +47,7 @@ test("traits renamed to the book's names keep a character's saved picks", () => 
   CP.syncClassPicks(c);
   assert.deepEqual(Object.keys(c.racePicks.profPicks), ["race:Kender Curiosity:pick"]);
   assert.equal(c.skillProfs.Stealth.prof, true, "the skill stays");
-  assert.ok(!CP.pendingClassPicks(c).length, "nothing asked again");
+  assert.ok(!CP.pendingClassPicks(c).some((g) => g.name === "Kender Curiosity"), "not asked again");
   // A tabaxi's given skills move too (no pick to lose, but no stale key either).
   const cat = makeChar("Tabaxi");
   cat.racePicks = { profPicks: { "race:Cat's Talent": { slots: [], applied: { skills: ["Perception", "Stealth"], expertise: [], languages: [], weaponItems: [] } } } };

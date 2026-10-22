@@ -11,6 +11,7 @@ import { hasFeat } from "./vitals.js";
 import { usesVariant, draconicBreath } from "./class-features.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { raceSpellEntries } from "./spell-grants.js";
+import { raceChoiceValues } from "./class-picks.js";
 
 /* Limited-use resources this character has right now, from each class
    and its subclass. `key` is unique per character (class + resource id)
@@ -67,6 +68,8 @@ export function characterResources(c){
   var charLv = totalLevel(c);
   (RACE_RESOURCES[c.race]||[]).forEach(function(r){
     if(charLv < (r.level||1)) return;
+    // One a choice gives (a Simic Hybrid's Acid Spit) once it's picked.
+    if(r.choice && raceChoiceValues(c, r.choice.id).indexOf(r.choice.value)===-1) return;
     var key = "race:"+r.id, max = r.max(charLv, m);
     list.push({
       // "Chromatic Dragonborn", not "Dragonborn (Chromatic)": Vitals puts the source in brackets.

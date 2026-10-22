@@ -3,7 +3,7 @@
    each level, spell slots, proficiencies, and the Features tab's list. */
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
-import { RACE_DATA, DRAGONBORN_BREATH } from "../data/race-data.js";
+import { RACE_DATA, DRAGONBORN_BREATH, TRAIT_DCS } from "../data/race-data.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
 import { featDef, featPicksSummary, featPickDetail } from "./feat-picks.js";
@@ -11,6 +11,7 @@ import { uid, mod, fmtMod, totalLevel, profBonus } from "./basics.js";
 import { halfProficiency } from "./checks.js";
 import { pickedProfs, featurePicksText, raceTraitPicksText, backgroundPicksText, backgroundGrants } from "./class-picks.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
+import { effectOn } from "./effects.js";
 
 export function characterIsCaster(c){
   return (c.classes||[]).some(function(cl){
@@ -305,18 +306,63 @@ export function raceTraitFeatures(c){
     ? [{id: "race_" + c.race + "_Darkvision", name: "Darkvision", source: source, category: "race", isDerived: true,
       text: "You can see in dim light within " + d.darkvision + " feet of you as if it were bright light, and in darkness as if it were dim light. In darkness you see only shades of gray, not color."}] : [];
   return dark.concat(traits.map(function(t){
-    var picked = raceTraitPicksText(c, t.name);
+    var picked = raceTraitPicksText(c, t.name), values = raceTraitPickValues(c, t);
     var worked = t.name==="Breath Weapon" ? breath.breath
       : t.name==="Metallic Breath Weapon" ? breath.metallic
       : (t.name==="Damage Resistance" || t.name==="Draconic Resistance") ? breath.resistance : "";
-    var extra = [picked ? "Your picks: " + picked + "." : "", worked || ""].filter(Boolean).join("\n");
+    // (A card showing only the chosen option already says what was picked.)
+    var text = pickedOptionText(t, values);
+    var extra = [picked && text===t.text ? "Your picks: " + picked + "." : "", worked || ""].concat(traitDcLines(c, t, values)).filter(Boolean).join("\n");
     return {id: "race_" + c.race + "_" + t.name, name: t.name, source: source,
-      text: t.text + (extra ? "\n\n" + extra : ""), category: "race", isDerived: true};
+      text: text + (extra ? "\n\n" + extra : ""), category: "race", isDerived: true};
   }));
+}
+/* Every value picked for a race trait's pick slots ([] for none yet). */
+function raceTraitPickValues(c, t){
+  var entry = c.racePicks && c.racePicks.profPicks && c.racePicks.profPicks["race:" + t.name + ":pick"];
+  if(!entry || entry.manual) return [];
+  return (entry.slots || []).reduce(function(a, s){ return a.concat(s || []); }, []).filter(Boolean);
+}
+/* A trait that lists its options as "• " lines (Shifter Type, Celestial
+   Revelation, a Simic Hybrid's enhancements): once one is picked, only
+   that option's line stays, or its details when the trait doesn't list
+   it (a 5th-level enhancement that was a 1st-level option), and a
+   choosing prompt ending in ":" goes. */
+function pickedOptionText(t, values){
+  var slot = ((t.profs && t.profs.pick) || []).find(function(s){ return s.kind==="choice"; });
+  var v = slot && values.find(function(x){ return slot.options.indexOf(x)!==-1; });
+  if(!v || t.text.indexOf("\n\u2022 ")===-1) return t.text;
+  var lines = t.text.split("\n").filter(function(l){ return l.indexOf("\u2022 ")!==0 || l.indexOf("\u2022 " + v)===0; });
+  if(!lines.some(function(l){ return l.indexOf("\u2022 " + v)===0; }) && slot.details && slot.details[v]){
+    lines.splice(1, 0, "\u2022 " + v + ": " + slot.details[v]);
+  }
+  // A prompt to choose ("...or one of these:") has done its job: the
+  // option then reads as its own paragraph.
+  if(/:$/.test(lines[0])){
+    lines.shift();
+    lines[0] = lines[0].replace(/^\u2022 /, "");
+  }
+  return lines.join("\n");
+}
+var ABILITY_OF = {Intelligence: "int", Wisdom: "wis", Charisma: "cha", Strength: "str", Dexterity: "dex", Constitution: "con"};
+/* The save DCs a trait sets (TRAIT_DCS), worked out: "Taunt save DC 13
+   (8 + proficiency +2 + Charisma +3)." Waits for an ability still to be
+   picked, or for the option the DC belongs to. */
+function traitDcLines(c, t, values){
+  return [].concat(TRAIT_DCS[t.name] || []).map(function(dc){
+    if(dc.when && values.indexOf(dc.when)===-1) return "";
+    var ability = dc.ability==="pick" ? values.map(function(v){ return ABILITY_OF[v]; }).filter(Boolean)[0] : dc.ability;
+    if(!ability) return "";
+    var m = mod(abilityScore(c, ability)), pb = profBonus(c);
+    var name = Object.keys(ABILITY_OF).find(function(k){ return ABILITY_OF[k]===ability; });
+    return dc.label + " " + (8 + pb + m) + " (8 + proficiency " + fmtMod(pb) + " + " + name + " " + fmtMod(m) + ").";
+  });
 }
 /* What the race's traits protect against: {resist, immune,
    conditionImmune}, each [{type, source}] with the trait's name as the
-   source. A dragonborn's resistance comes from the dragon picked. */
+   source. A dragonborn's resistance comes from the dragon picked; the
+   Active effects add Chromatic Warding's immunity and the Raven Queen's
+   resistance to "all damage". */
 export function raceWards(c){
   var out = {resist: [], immune: [], conditionImmune: []};
   var traits = (RACE_DATA[c.race] || {}).traits || [];
@@ -330,6 +376,9 @@ export function raceWards(c){
     var rt = traits.find(function(t){ return t.name==="Damage Resistance" || t.name==="Draconic Resistance"; });
     out.resist.push({type: b.damage.toLowerCase(), source: rt ? rt.name : c.race});
   }
+  // Switched on from the Active effects card.
+  if(b && effectOn(c, "chromatic_warding")) out.immune.push({type: b.damage.toLowerCase(), source: "Chromatic Warding"});
+  if(effectOn(c, "raven_queen_resistance")) out.resist.push({type: "all damage", source: "Blessing of the Raven Queen"});
   return out;
 }
 /* The race trait that makes the character immune to a condition

@@ -129,6 +129,17 @@ function merfolk(source, plus, traits){
     languages:{fixed:["Common","Merfolk"], choose:1}, source:source,
     traits:[tr("Amphibious", "You can breathe air and water.")].concat(traits)};
 }
+/* A Simic Hybrid's animal enhancements (Guildmasters' Guide to Ravnica). */
+var SIMIC = {
+  manta: "When you fall and aren't incapacitated, you can subtract up to 100 feet from the fall when working out its damage, and you can move up to 2 feet sideways for every 1 foot you drop.",
+  climber: "You have a climbing speed equal to your walking speed.",
+  water: "You can breathe air and water, and you have a swimming speed equal to your walking speed.",
+  grapple: "Two extra appendages, claws or tentacles (your choice). As an action, you can use one to try to grapple a creature. Each is a natural weapon for unarmed strikes, dealing bludgeoning damage equal to 1d6 + your Strength modifier, and right after a hit you can try to grapple the target as a bonus action. They can't wield weapons or do anything that needs precision.",
+  carapace: "A thick shell covers parts of your skin: +1 AC while you aren't wearing heavy armor.",
+  acid: "As an action, spray acid at a creature or object you can see within 30 feet. It must succeed on a Dexterity saving throw (DC 8 + your Constitution modifier + your proficiency bonus) or take 2d10 acid damage (3d10 from 11th level, 4d10 from 17th). You can do this a number of times equal to your Constitution modifier (minimum 1), and you regain all uses when you finish a long rest."
+};
+var SIMIC_DETAILS = {"Manta Glide": SIMIC.manta, "Nimble Climber": SIMIC.climber, "Underwater Adaptation": SIMIC.water,
+  "Grappling Appendage": SIMIC.grapple, "Carapace": SIMIC.carapace, "Acid Spit": SIMIC.acid};
 var SUNLIGHT = tr("Sunlight Sensitivity", "You have disadvantage on attack rolls, and on Wisdom (Perception) checks that rely on sight, when you, the target of your attack or whatever you're trying to perceive is in direct sunlight.");
 /* A dragonborn's Draconic Ancestry table: the dragon sets the breath
    weapon's damage type, area and save, and the resistance (checked
@@ -298,7 +309,10 @@ export var RACE_DATA = {
     traits:[wards(tr("Celestial Resistance", "You have resistance to necrotic and radiant damage."), {resist:["necrotic","radiant"]}),
       tr("Healing Hands", "As an action, you can touch a creature and it regains hit points equal to your level. Once you use this, you can't again until you finish a long rest."),
       innate(tr("Light Bearer", "You know the Light cantrip. Charisma is your spellcasting ability for it."), "cha", ["Light"]),
-      tr("Celestial Revelation", "From 3rd level, you can use your action to transform for 1 minute, or until you end it as a bonus action. Your subrace sets the form.\n• Protector (Radiant Soul): luminous wings give you a flying speed of 30 feet.\n• Scourge (Radiant Consumption): you shed bright light in a 10-foot radius and dim light 10 feet beyond, and at the end of each of your turns you and each creature within 10 feet of you take radiant damage equal to half your level (rounded up).\n• Fallen (Necrotic Shroud): each other creature within 10 feet of you that can see you must succeed on a Charisma saving throw (DC 8 + your proficiency bonus + your Charisma modifier) or be frightened of you until the end of your next turn.\n\nIn every form, once on each of your turns you can deal extra damage equal to your level to one target you damage with an attack or a spell (radiant, or necrotic for Fallen). Once you use this, you can't again until you finish a long rest.")]},
+      tr("Celestial Revelation", "From 3rd level, you can use your action to transform for 1 minute, or until you end it as a bonus action. Your subrace sets the form.\n• Protector (Radiant Soul): luminous wings give you a flying speed of 30 feet.\n• Scourge (Radiant Consumption): you shed bright light in a 10-foot radius and dim light 10 feet beyond, and at the end of each of your turns you and each creature within 10 feet of you take radiant damage equal to half your level (rounded up).\n• Fallen (Necrotic Shroud): each other creature within 10 feet of you that can see you must succeed on a Charisma saving throw (DC 8 + your proficiency bonus + your Charisma modifier) or be frightened of you until the end of your next turn.\n\nIn every form, once on each of your turns you can deal extra damage equal to your level to one target you damage with an attack or a spell (radiant, or necrotic for Fallen). Once you use this, you can't again until you finish a long rest.",
+        {presetChoice:true, pick:[{kind:"choice", id:"aasimarSubrace", noun:"aasimar subrace", options:["Protector","Scourge","Fallen"],
+          details:{"Protector":"Radiant Soul: luminous wings, a flying speed of 30 feet.", "Scourge":"Radiant Consumption: searing light that burns you and those near you.",
+            "Fallen":"Necrotic Shroud: frightens creatures near you."}}]})]},
   "Bugbear": {asi:{str:2,dex:1}, size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Goblin"]}, source:"Volo's Guide to Monsters",
     traits:[tr("Long-Limbed", "When you make a melee attack on your turn, your reach for it is 5 feet greater than normal."), POWERFUL_BUILD,
@@ -491,7 +505,16 @@ export var RACE_DATA = {
       tr("Shifting", "As a bonus action, you can take on a more bestial appearance for 1 minute, until you die, or until you change back as a bonus action. When you shift, you gain temporary hit points equal to your level + your Constitution modifier (minimum 1), plus your shifter type's benefit. Once you use this, you can't again until you finish a short or long rest.")]},
   "Simic Hybrid": {asi:{con:2}, asiText:"+2 Constitution, and +1 to one other score of your choice", size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common"], choose:1}, source:"Guildmasters' Guide to Ravnica",
-    traits:[tr("Animal Enhancement", "You choose one enhancement at 1st level and a second at 5th level. At 1st level:\n• Manta Glide (when you fall and aren't incapacitated, subtract up to 100 feet from the fall for its damage, and move up to 2 feet sideways for every 1 foot you drop)\n• Nimble Climber (a climbing speed equal to your walking speed)\n• Underwater Adaptation (you can breathe air and water, and have a swimming speed equal to your walking speed).\n\nAt 5th level, one you didn't take, or:\n• Grappling Appendage (two claws or tentacles; as an action, try to grapple a creature with one; each is a natural weapon dealing 1d6 + your Strength modifier bludgeoning damage, and right after a hit you can try to grapple the target as a bonus action; they can't wield weapons or do anything precise)\n• Carapace (+1 AC while you aren't wearing heavy armor)\n• Acid Spit (as an action, a creature or object you can see within 30 feet must succeed on a Dexterity saving throw, DC 8 + your Constitution modifier + your proficiency bonus, or take 2d10 acid damage, 3d10 from 11th level and 4d10 from 17th; uses equal to your Constitution modifier, minimum 1, back after a long rest).")]},
+    choiceEffects:{simicEnhancement:{
+      "Nimble Climber":{climb:"walk"},
+      "Underwater Adaptation":{swim:"walk"},
+      "Carapace":{ac:1, acWhen:"noHeavyArmor"}}},
+    traits:[tr("Animal Enhancement", "Your body has animal traits: choose one enhancement at 1st level and a second at 5th level. At 1st level:\n• Manta Glide: " + SIMIC.manta + "\n• Nimble Climber: " + SIMIC.climber + "\n• Underwater Adaptation: " + SIMIC.water,
+        {pick:[{kind:"choice", id:"simicEnhancement", noun:"enhancement", label:"Choose your 1st-level enhancement",
+          options:["Manta Glide","Nimble Climber","Underwater Adaptation"], details:SIMIC_DETAILS}]}),
+      Object.assign(tr("Animal Enhancement (5th Level)", "At 5th level, choose a second enhancement: one you didn't take at 1st level, or one of these:\n• Grappling Appendage: " + SIMIC.grapple + "\n• Carapace: " + SIMIC.carapace + "\n• Acid Spit: " + SIMIC.acid,
+        {pick:[{kind:"choice", id:"simicEnhancement", noun:"enhancement", label:"Choose your 5th-level enhancement",
+          options:["Manta Glide","Nimble Climber","Underwater Adaptation","Grappling Appendage","Carapace","Acid Spit"], details:SIMIC_DETAILS}]}), {level:5})]},
   "Tabaxi": {asi:{dex:2,cha:1}, unarmed:{name:"Claws", die:4, type:"Slashing"}, size:"Medium", speed:{walk:30, climb:20}, darkvision:60,
     languages:{fixed:["Common"], choose:1}, source:"Volo's Guide to Monsters",
     traits:[tr("Feline Agility", "When you move on your turn in combat, you can double your speed until the end of the turn. Once you use this, you can't again until you move 0 feet on one of your turns."),
@@ -710,7 +733,8 @@ export var RACE_DATA = {
         {on:"save", abilities:"all", when:"to avoid or end being frightened"}),
       tr("Kender Curiosity", "You have proficiency in one of these skills of your choice: Insight, Investigation, Sleight of Hand, Stealth or Survival.",
         {pick:[{kind:"skill", options:["Insight","Investigation","Sleight of Hand","Stealth","Survival"]}]}),
-      tr("Taunt", "As a bonus action, you can hurl provoking words at a creature within 60 feet of you that can hear and understand you. It must succeed on a Wisdom saving throw (DC 8 + your proficiency bonus + your Intelligence, Wisdom or Charisma modifier, chosen with this race) or have disadvantage on attack rolls against anyone but you until the start of your next turn. You can do this a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest.")]},
+      tr("Taunt", "As a bonus action, you can hurl provoking words at a creature within 60 feet of you that can hear and understand you. It must succeed on a Wisdom saving throw (DC 8 + your proficiency bonus + your Intelligence, Wisdom or Charisma modifier, chosen with this race) or have disadvantage on attack rolls against anyone but you until the start of your next turn. You can do this a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest.",
+        {pick:[{kind:"choice", id:"tauntAbility", noun:"ability for Taunt", label:"Choose the ability your Taunt's save DC uses", options:["Intelligence","Wisdom","Charisma"]}]})]},
   "Leonin": {asi:{con:2,str:1}, unarmed:{name:"Claws", die:4, type:"Slashing"}, size:"Medium", speed:{walk:35}, darkvision:60,
     languages:{fixed:["Common","Leonin"]}, source:"Mythic Odysseys of Theros",
     traits:[tr("Claws", "Your claws are natural weapons for your unarmed strikes. On a hit they deal slashing damage equal to 1d4 + your Strength modifier, instead of the usual unarmed strike damage."),
@@ -838,6 +862,22 @@ export var TRAIT_ADVANTAGES = {
   "Vedalken Dispassion": {on:"save", abilities:["int","wis","cha"]},
   "Telepathic Insight": {on:"save", abilities:["wis","cha"]}
 };
+
+/* Save DCs a trait sets, worked out on its Features card: {ability
+   ("pick" for the ability chosen on the trait), label, when (only once
+   this option is picked)}, or a list of them. */
+export var TRAIT_DCS = {
+  "Taunt": {ability:"pick", label:"Taunt save DC"},
+  "Daunting Roar": {ability:"con", label:"Daunting Roar save DC"},
+  "Hammering Horns": {ability:"str", label:"Shove save DC"},
+  "Fey Step": {ability:"cha", label:"Season save DC"},
+  "Celestial Revelation": {ability:"cha", label:"Necrotic Shroud save DC", when:"Fallen"},
+  "Natural Weapons": [{ability:"con", label:"Bite poison save DC"}, {ability:"str", label:"Constrict escape DC"}],
+  "Animal Enhancement (5th Level)": {ability:"con", label:"Acid Spit save DC", when:"Acid Spit"}
+};
+/* Half the proficiency bonus on checks that don't already include it,
+   like Jack of All Trades (rounded down): {trait name: [abilities]}. */
+export var TRAIT_HALF_PROFICIENCY = {"Kefnet's Blessing": ["int"]};
 
 var ABILITY_SHORT = {str:"STR", dex:"DEX", con:"CON", int:"INT", wis:"WIS", cha:"CHA"};
 

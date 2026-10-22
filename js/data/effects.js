@@ -6,8 +6,11 @@
    dropping to 0 HP ends them all.
 
    className / subclass / level: who has it (class level, not total).
+   race / level: or a race's (character level): [race names].
    cost: {resource, amount}, a resource id from resources.js on the same
-     class ("bladesong", "ki", "wild_shape"); unlimited uses cost nothing.
+     class or race ("bladesong", "ki", "chromatic_warding"); unlimited
+     uses cost nothing, and an effect with no cost is free (Shell Defense).
+   startLabel / endLabel: the button's words in place of Start / End.
    requires: other effects that must be on first; ending one of those
      ends this too (Awakened Astral Self needs the arms and the visage).
    duration: shown on the card.
@@ -27,5 +30,18 @@ export var TOGGLE_EFFECTS = [
     hint:"Astral Barrage: when you use Extra Attack, attack three times instead of twice if every attack uses your astral arms."},
   {id:"symbiotic_entity", name:"Symbiotic Entity", className:"Druid", subclass:"Circle of Spores", level:2,
     cost:{resource:"wild_shape", amount:1}, duration:"10 minutes",
-    hint:"Ends early when these temporary hit points are gone or you use Wild Shape again."}
+    hint:"Ends early when these temporary hit points are gone or you use Wild Shape again."},
+  // Race traits (checked against the books' wording on 5etools' data 2026-10-22).
+  {id:"shell_defense", name:"Shell Defense", race:["Tortle"], level:1, duration:"Until you come out",
+    startLabel:"Withdraw", endLabel:"Come out",
+    hint:"Withdrawing takes your action. While in your shell you're prone, you can't take reactions, and your only action is a bonus action to come out."},
+  {id:"chromatic_warding", name:"Chromatic Warding", race:["Dragonborn (Chromatic)"], level:5,
+    cost:{resource:"chromatic_warding", amount:1}, duration:"1 minute",
+    hint:"Takes your action."},
+  {id:"raven_queen_resistance", name:"Blessing of the Raven Queen", race:["Shadar-kai"], level:3,
+    cost:{resource:"blessing_raven_queen", amount:1}, duration:"Until the start of your next turn",
+    hint:"Bonus action: teleport up to 30 feet to an unoccupied space you can see, looking ghostly and translucent until the resistance ends."},
+  {id:"sunlight", name:"Sunlight Sensitivity", race:["Dark Elf (Drow)", "Duergar", "Kobold"], level:1, duration:"While in direct sunlight",
+    startLabel:"In sunlight", endLabel:"Out of it",
+    hint:"Also when your target, or whatever you're trying to see, is in direct sunlight."}
 ];
