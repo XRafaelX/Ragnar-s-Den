@@ -332,6 +332,10 @@
   box-shadow:0 0 12px color-mix(in srgb, var(--hue) 22%, transparent);
 }
 .cond-tile:disabled{cursor:default;opacity:.85;}
+/* One the race is immune to: greyed, and no hover or press. */
+.cond-tile:disabled:not(.on){opacity:.5;}
+.cond-tile:disabled:not(.on):hover{border-color:var(--rule);background:rgba(255,255,255,.03);}
+.cond-tile:disabled:active{transform:none;}
 
 /* ---- Where conditions show elsewhere on the sheet ---- */
 .speed-hindered .init-hero-val{color:var(--oxblood);}

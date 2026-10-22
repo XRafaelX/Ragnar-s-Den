@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { maxHp, activeConditions, exhaustionLevel, exhaustionSummary, addCondition, removeCondition, conditionDef } from "../../core/helpers.js";
+import { maxHp, activeConditions, exhaustionLevel, exhaustionSummary, addCondition, removeCondition, conditionDef, raceConditionImmunity } from "../../core/helpers.js";
 import { CONDITIONS, EXHAUSTION_LEVELS, EXHAUSTION_RULES } from "../../data/conditions.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -366,10 +366,12 @@ function openConditionsSheet(c){
       text.className = "cond-tile-text";
       text.innerHTML = '<b></b><small></small>';
       text.firstChild.textContent = d.name;
-      text.lastChild.textContent = cur && cur.auto ? "From 0 HP. Heal to wake up." : d.short;
+      // A race immune to it (a yuan-ti's Poison Immunity) can't have it put on.
+      var immune = !cur && raceConditionImmunity(c, d.id);
+      text.lastChild.textContent = cur && cur.auto ? "From 0 HP. Heal to wake up." : immune ? "Immune (" + immune + ")" : d.short;
       tile.appendChild(text);
       tile.setAttribute("aria-pressed", cur ? "true" : "false");
-      if(cur && cur.auto) tile.disabled = true;
+      if((cur && cur.auto) || immune) tile.disabled = true;
       tile.addEventListener("click", function(){
         if(cur){
           removeCondition(c, d.id);

@@ -309,6 +309,30 @@ export function raceTraitFeatures(c){
       text: t.text + (extra ? "\n\n" + extra : ""), category: "race", isDerived: true};
   });
 }
+/* What the race's traits protect against: {resist, immune,
+   conditionImmune}, each [{type, source}] with the trait's name as the
+   source. A dragonborn's resistance comes from the dragon picked. */
+export function raceWards(c){
+  var out = {resist: [], immune: [], conditionImmune: []};
+  var traits = (RACE_DATA[c.race] || {}).traits || [];
+  traits.forEach(function(t){
+    Object.keys(out).forEach(function(k){
+      (t[k] || []).forEach(function(v){ out[k].push({type: v, source: t.name}); });
+    });
+  });
+  var b = draconicBreath(c);
+  if(b && b.resistance){
+    var rt = traits.find(function(t){ return t.name==="Damage Resistance" || t.name==="Draconic Resistance"; });
+    out.resist.push({type: b.damage.toLowerCase(), source: rt ? rt.name : c.race});
+  }
+  return out;
+}
+/* The race trait that makes the character immune to a condition
+   (a yuan-ti's Poison Immunity: "poisoned"), or "". */
+export function raceConditionImmunity(c, id){
+  var x = raceWards(c).conditionImmune.find(function(w){ return w.type===id; });
+  return x ? x.source : "";
+}
 export function getAllCharacterFeatures(c){
   var list = [];
   (c.classes||[]).forEach(function(cl, idx){

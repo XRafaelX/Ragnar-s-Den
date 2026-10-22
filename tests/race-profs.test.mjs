@@ -151,6 +151,29 @@ test("the Features tab has a card per race trait, with its text; a race with no 
   assert.deepEqual(typed.map((f) => f.name), ["Sky Folk Traits"]);
 });
 
+test("race resistances and immunities, each named by its trait", () => {
+  const wards = (race, extra) => H.raceWards(ensureShape(makeChar(race, undefined, extra)));
+  assert.deepEqual(wards("Goliath").resist, [{ type: "cold", source: "Mountain Born" }]);
+  assert.deepEqual(wards("Aasimar").resist.map((r) => r.type), ["necrotic", "radiant"]);
+  assert.deepEqual(wards("Tiefling (Zariel)").resist, [{ type: "fire", source: "Hellish Resistance" }]);
+  assert.deepEqual(wards("Duergar").resist, [{ type: "poison", source: "Dwarven Resilience" }]);
+  assert.deepEqual(wards("Yuan-ti Pureblood"), { resist: [], immune: [{ type: "poison", source: "Poison Immunity" }],
+    conditionImmune: [{ type: "poisoned", source: "Poison Immunity" }] });
+  assert.equal(H.raceConditionImmunity(ensureShape(makeChar("Grung")), "poisoned"), "Poison Immunity");
+  assert.equal(H.raceConditionImmunity(ensureShape(makeChar("Goliath")), "poisoned"), "");
+  // The Tome of Foes sea elf has none (cold resistance came with the 2022 reprint).
+  assert.deepEqual(wards("Sea Elf").resist, []);
+  assert.doesNotMatch(RACE_DATA["Sea Elf"].traits.find((t) => t.name === "Child of the Sea").text, /resistance/);
+  // A dragonborn's from the dragon picked; none before, and none for Wildemount's Draconblood.
+  const red = { racePicks: { profPicks: { "race:Draconic Ancestry:pick": { slots: [["Red dragon"]], applied: {} } } } };
+  assert.deepEqual(wards("Dragonborn", red).resist, [{ type: "fire", source: "Damage Resistance" }]);
+  assert.deepEqual(wards("Dragonborn").resist, []);
+  assert.deepEqual(wards("Dragonborn (Draconblood)", red).resist, []);
+  const gem = { racePicks: { profPicks: { "race:Gem Ancestry:pick": { slots: [["Amethyst dragon"]], applied: {} } } } };
+  assert.deepEqual(wards("Dragonborn (Gem)", gem).resist, [{ type: "force", source: "Draconic Resistance" }]);
+  assert.deepEqual(wards("Human"), { resist: [], immune: [], conditionImmune: [] });
+});
+
 test("a dwarf's tool: three to pick from, one already had greyed, applied and taken back", () => {
   const c = ensureShape(makeChar("Hill Dwarf"));
   const g = raceGrant(c, "Tool Proficiency");

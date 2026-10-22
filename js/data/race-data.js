@@ -26,7 +26,10 @@
                them; the creation wizard's Race Traits step and the
                Features tab's Feature choices card ask for the picks.
    source:     where it's from. Expanded races use their original
-               (2014-era) versions, matching the rest of the app. */
+               (2014-era) versions, matching the rest of the app.
+   A trait's resist / immune / conditionImmune (set with wards()) are the
+   damage types and conditions it protects against, shown under the HP
+   (checked against the books' wording on 5etools' data 2026-10-22). */
 
 /* advantage (optional): what the trait gives advantage on, in the
    TRAIT_ADVANTAGES shape (one or a list), for a trait whose name another
@@ -37,6 +40,11 @@ function tr(name, text, profs, advantage){
   if(advantage!==undefined) t.advantage = advantage;
   return t;
 }
+/* A trait that gives damage resistances or immunities:
+   {resist:[types], immune:[types], conditionImmune:[condition ids]}. */
+function wards(t, w){ return Object.assign(t, w); }
+var POISON_IMMUNITY = {immune:["poison"], conditionImmune:["poisoned"]};
+var HELLISH_RESISTANCE = wards(tr("Hellish Resistance", "Resistance to fire damage."), {resist:["fire"]});
 var ELF_BASE = [
   tr("Keen Senses", "Proficiency in the Perception skill.", {skills:["Perception"]}),
   tr("Fey Ancestry", "Advantage on saves against being charmed, and magic can't put you to sleep."),
@@ -47,7 +55,7 @@ var DWARF_COMBAT = tr("Dwarven Combat Training", "Proficiency with battleaxes, h
 var DWARF_TOOL = tr("Tool Proficiency", "Proficiency with smith's tools, brewer's supplies or mason's tools (your choice).",
   {pick:[{kind:"tool", options:["Smith's tools","Brewer's supplies","Mason's tools"]}]});
 var DWARF_BASE = [
-  tr("Dwarven Resilience", "Advantage on saves against poison, and resistance to poison damage."),
+  wards(tr("Dwarven Resilience", "Advantage on saves against poison, and resistance to poison damage."), {resist:["poison"]}),
   DWARF_COMBAT,
   DWARF_TOOL,
   tr("Stonecunning", "Double proficiency on History checks about the origin of stonework."),
@@ -82,7 +90,7 @@ function markOfFinding(){
 function tieflingBloodline(plusOne, legacy, cantrip, third, fifth){
   return {asi:Object.assign({cha:2}, plusOne), size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Infernal"]}, source:"Mordenkainen's Tome of Foes",
-    traits:[tr("Hellish Resistance", "Resistance to fire damage."),
+    traits:[HELLISH_RESISTANCE,
       tr(legacy, "You know " + cantrip + "; " + third + " once per long rest from level 3 and " + fifth + " from level 5, using Charisma.")]};
 }
 var AVEN_FLIGHT = tr("Flight", "A flying speed of 30 feet, but not while wearing medium or heavy armor.");
@@ -199,7 +207,7 @@ export var RACE_DATA = {
     traits:HALFLING_BASE.concat([tr("Naturally Stealthy", "You can try to hide even when only obscured by a creature at least one size larger than you.")])},
   "Stout Halfling": {asi:{dex:2,con:1}, size:"Small", speed:{walk:25}, darkvision:0,
     languages:{fixed:["Common","Halfling"]}, source:"Player's Handbook",
-    traits:HALFLING_BASE.concat([tr("Stout Resilience", "Advantage on saves against poison, and resistance to poison damage.")])},
+    traits:HALFLING_BASE.concat([wards(tr("Stout Resilience", "Advantage on saves against poison, and resistance to poison damage."), {resist:["poison"]})])},
   "Dragonborn": {asi:{str:2,cha:1}, size:"Medium", speed:{walk:30}, darkvision:0,
     languages:{fixed:["Common","Draconic"]}, source:"Player's Handbook",
     traits:[
@@ -246,7 +254,7 @@ export var RACE_DATA = {
       tr("Savage Attacks", "On a melee weapon critical hit, roll one of the weapon's damage dice one more time and add it.")]},
   "Tiefling": {asi:{cha:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Infernal"]}, source:"Player's Handbook",
-    traits:[tr("Hellish Resistance", "Resistance to fire damage."),
+    traits:[HELLISH_RESISTANCE,
       tr("Infernal Legacy", "You know Thaumaturgy; Hellish Rebuke once per long rest from level 3 and Darkness from level 5, cast with Charisma.")]},
 
   /* ---- Expanded ---- */
@@ -256,7 +264,7 @@ export var RACE_DATA = {
       tr("Talons", "Your unarmed strikes deal 1d4 slashing damage.")]},
   "Aasimar": {asi:{cha:2}, asiText:"+2 Charisma, plus +1 from your subrace (Protector: WIS, Scourge: CON, Fallen: STR)", size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Celestial"]}, source:"Volo's Guide to Monsters",
-    traits:[tr("Celestial Resistance", "Resistance to necrotic and radiant damage."),
+    traits:[wards(tr("Celestial Resistance", "Resistance to necrotic and radiant damage."), {resist:["necrotic","radiant"]}),
       tr("Healing Hands", "Action: touch a creature to restore hit points equal to your level. Once per long rest."),
       tr("Light Bearer", "You know the Light cantrip, cast with Charisma."),
       tr("Celestial Revelation", "From level 3, transform once per long rest for 1 minute (radiant wings, radiant aura or necrotic shroud, by subrace).")]},
@@ -339,11 +347,11 @@ export var RACE_DATA = {
       tr("Merge with Stone", "Cast Pass without Trace once per long rest, using Constitution.")]},
   "Genasi (Fire)": {asi:{con:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Primordial"]}, source:"Elemental Evil Player's Companion",
-    traits:[tr("Fire Resistance", "Resistance to fire damage."),
+    traits:[wards(tr("Fire Resistance", "Resistance to fire damage."), {resist:["fire"]}),
       tr("Reach to the Blaze", "You know Produce Flame; from level 3 cast Burning Hands once per long rest, using Constitution.")]},
   "Genasi (Water)": {asi:{con:2,wis:1}, size:"Medium", speed:{walk:30, swim:30}, darkvision:0,
     languages:{fixed:["Common","Primordial"]}, source:"Elemental Evil Player's Companion",
-    traits:[tr("Acid Resistance", "Resistance to acid damage."),
+    traits:[wards(tr("Acid Resistance", "Resistance to acid damage."), {resist:["acid"]}),
       tr("Amphibious", "You can breathe air and water."),
       tr("Call to the Wave", "You know Shape Water; from level 3 cast Create or Destroy Water as a 2nd-level spell once per long rest, using Constitution.")]},
   "Gith (Githyanki)": {asi:{str:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:0, armorProfs:["Light armor","Medium armor"],
@@ -364,7 +372,7 @@ export var RACE_DATA = {
     traits:[tr("Natural Athlete", "Proficiency in the Athletics skill.", {skills:["Athletics"]}),
       tr("Stone's Endurance", "Reaction when you take damage: reduce it by 1d12 + CON. Once per short or long rest."),
       POWERFUL_BUILD,
-      tr("Mountain Born", "Resistance to cold damage, and you're used to high altitude.")]},
+      wards(tr("Mountain Born", "Resistance to cold damage, and you're used to high altitude."), {resist:["cold"]})]},
   "Harengon": {asiText:"+2 to one score and +1 to another (your choice)", size:"Small or Medium", speed:{walk:30}, darkvision:0,
     languages:{fixed:["Common"], choose:1}, source:"The Wild Beyond the Witchlight",
     traits:[tr("Hare-Trigger", "Add your proficiency bonus to initiative rolls."),
@@ -425,13 +433,13 @@ export var RACE_DATA = {
   "Sea Elf": {asi:{dex:2,con:1}, size:"Medium", speed:{walk:30, swim:30}, darkvision:60,
     languages:{fixed:["Common","Elvish","Aquan"]}, source:"Mordenkainen's Tome of Foes",
     traits:ELF_BASE.concat([
-      tr("Child of the Sea", "You can breathe air and water, and have resistance to cold damage."),
+      tr("Child of the Sea", "A swimming speed of 30 feet, and you can breathe air and water."),
       tr("Friend of the Sea", "You can communicate simple ideas with beasts that have a swimming speed."),
       tr("Sea Elf Training", "Proficiency with spears, tridents, light crossbows and nets.", {weapons:["Spear","Trident","Light Crossbow","Net"]})])},
   "Shadar-kai": {asi:{dex:2,con:1}, size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Elvish"]}, source:"Mordenkainen's Tome of Foes",
     traits:ELF_BASE.concat([
-      tr("Necrotic Resistance", "Resistance to necrotic damage."),
+      wards(tr("Necrotic Resistance", "Resistance to necrotic damage."), {resist:["necrotic"]}),
       tr("Blessing of the Raven Queen", "Bonus action: teleport up to 30 feet (from level 3 you also gain resistance to all damage until your next turn). Once per long rest.")])},
   "Shifter": {asiText:"Depends on your shifter type: Beasthide +2 CON +1 STR, Longtooth +2 STR +1 DEX, Swiftstride +2 DEX +1 CHA, Wildhunt +2 WIS +1 DEX", size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common"]}, source:"Eberron: Rising from the Last War",
@@ -469,7 +477,7 @@ export var RACE_DATA = {
     traits:[tr("Amphibious", "You can breathe air and water."),
       tr("Control Air and Water", "Cast Fog Cloud; from level 3 Gust of Wind and from level 5 Wall of Water, each once per long rest, using Charisma."),
       tr("Emissary of the Sea", "Aquatic beasts understand your speech, and you can communicate simple ideas with them."),
-      tr("Guardians of the Depths", "Resistance to cold damage, and you ignore the drawbacks of deep water.")]},
+      wards(tr("Guardians of the Depths", "Resistance to cold damage, and you ignore the drawbacks of deep water."), {resist:["cold"]})]},
   "Vedalken": {asi:{int:2,wis:1}, size:"Medium", speed:{walk:30}, darkvision:0,
     languages:{fixed:["Common","Vedalken"], choose:1}, source:"Guildmasters' Guide to Ravnica",
     traits:[tr("Vedalken Dispassion", "Advantage on Intelligence, Wisdom and Charisma saves."),
@@ -485,7 +493,7 @@ export var RACE_DATA = {
       tr("Growth", "You grow from Small to Medium at level 5.")]},
   "Warforged": {asi:{con:2}, asiText:"+2 Constitution, and +1 to one other score of your choice", size:"Medium", speed:{walk:30}, darkvision:0, acBonus:1, acTrait:"Integrated Protection",
     languages:{fixed:["Common"], choose:1}, source:"Eberron: Rising from the Last War",
-    traits:[tr("Constructed Resilience", "Advantage on saves against poison, resistance to poison damage, immune to disease, and no need to eat, drink or breathe."),
+    traits:[wards(tr("Constructed Resilience", "Advantage on saves against poison, resistance to poison damage, immune to disease, and no need to eat, drink or breathe."), {resist:["poison"]}),
       tr("Sentry's Rest", "A long rest is 6 hours of inactivity, during which you stay aware of your surroundings."),
       tr("Integrated Protection", "+1 to AC; armor you're proficient with is part of your body and takes 1 hour to don or doff."),
       tr("Specialized Design", "Proficiency in one skill and one tool of your choice.", {pick:[{kind:"skill"}, {kind:"tool"}]})]},
@@ -493,7 +501,7 @@ export var RACE_DATA = {
     languages:{fixed:["Common","Abyssal","Draconic"]}, source:"Volo's Guide to Monsters",
     traits:[tr("Innate Spellcasting", "You know Poison Spray; cast Animal Friendship on snakes at will, and from level 3 Suggestion once per long rest, using Charisma."),
       tr("Magic Resistance", "Advantage on saving throws against spells and other magical effects."),
-      tr("Poison Immunity", "Immunity to poison damage and the poisoned condition.")]},
+      wards(tr("Poison Immunity", "Immunity to poison damage and the poisoned condition."), POISON_IMMUNITY)]},
 
   /* ---- Subraces and bloodlines (checked against the published pages
      on dnd5e.wikidot.com 2026-10-20) ---- */
@@ -523,7 +531,7 @@ export var RACE_DATA = {
   // replaces Infernal Legacy, so it has its own entry for its fly speed.
   "Tiefling (Variant)": {asiText:"+2 Charisma and +1 Intelligence, or Feral: +2 Dexterity and +1 Intelligence", size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Infernal"]}, source:"Sword Coast Adventurer's Guide",
-    traits:[tr("Hellish Resistance", "Resistance to fire damage."),
+    traits:[HELLISH_RESISTANCE,
       tr("Infernal Gift", "Choose your tiefling's magic.", {pick:[{kind:"choice", id:"tieflingVariant", noun:"gift", label:"Choose your tiefling's magic",
         options:["Infernal Legacy","Devil's Tongue","Hellfire"], details:{
           "Infernal Legacy":"You know Thaumaturgy; Hellish Rebuke (as a 2nd-level spell) once per long rest from level 3 and Darkness from level 5, using Charisma.",
@@ -531,7 +539,7 @@ export var RACE_DATA = {
           "Hellfire":"You know Thaumaturgy; Burning Hands (as a 2nd-level spell) once per long rest from level 3 and Darkness from level 5, using Charisma."}}]})]},
   "Tiefling (Winged)": {asiText:"+2 Charisma and +1 Intelligence, or Feral: +2 Dexterity and +1 Intelligence", size:"Medium", speed:{walk:30, fly:30}, speedWhen:{fly:"not in heavy armor"}, darkvision:60,
     languages:{fixed:["Common","Infernal"]}, source:"Sword Coast Adventurer's Guide",
-    traits:[tr("Hellish Resistance", "Resistance to fire damage."),
+    traits:[HELLISH_RESISTANCE,
       tr("Winged", "Bat-like wings give you a flying speed of 30 feet while you aren't wearing heavy armor. This replaces Infernal Legacy.")]},
 
   /* ---- Eberron's dragonmarks ---- */
@@ -568,7 +576,7 @@ export var RACE_DATA = {
   "Half-Elf (Mark of Storm)": {asi:{cha:2,dex:1}, size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Elvish"], choose:1}, source:"Eberron: Rising from the Last War",
     traits:[tr("Fey Ancestry", "Advantage on saves against being charmed, and magic can't put you to sleep."),
-      tr("Storm's Boon", "Resistance to lightning damage.")].concat(markTraits("Windwright's Intuition", "Acrobatics checks and checks with navigator's tools",
+      wards(tr("Storm's Boon", "Resistance to lightning damage."), {resist:["lightning"]})].concat(markTraits("Windwright's Intuition", "Acrobatics checks and checks with navigator's tools",
       tr("Headwinds", "You know Gust; from level 3, Gust of Wind once per long rest, using Charisma."),
       "Feather Fall, Fog Cloud (1st); Gust of Wind, Levitate (2nd); Sleet Storm, Wind Wall (3rd); Conjure Minor Elementals, Control Water (4th); Conjure Elemental (5th)"))},
   "Half-Orc (Mark of Finding)": markOfFinding(),
@@ -609,8 +617,8 @@ export var RACE_DATA = {
     traits:[tr("Armored Casing", "While you aren't wearing armor, your base AC is 13 + your Dexterity modifier."),
       tr("Built for Success", "Add a d4 to an attack roll, ability check or saving throw after seeing the d20. Uses equal to your proficiency bonus per long rest."),
       tr("Healing Machine", "Mending lets you spend and roll a Hit Die to heal, and Cure Wounds, Healing Word, Mass Cure Wounds, Mass Healing Word and Spare the Dying work on you."),
-      tr("Mechanical Nature", "Resistance to poison damage, immunity to disease, advantage on saves against being paralyzed or poisoned, and no need to eat, drink or breathe.", null,
-        {on:"save", abilities:"all", when:"against being paralyzed or poisoned"}),
+      wards(tr("Mechanical Nature", "Resistance to poison damage, immunity to disease, advantage on saves against being paralyzed or poisoned, and no need to eat, drink or breathe.", null,
+        {on:"save", abilities:"all", when:"against being paralyzed or poisoned"}), {resist:["poison"]}),
       tr("Sentry's Rest", "A long rest is 6 hours of inactivity, during which you stay conscious."),
       tr("Specialized Design", "Proficiency with two tools of your choice.", {pick:[{kind:"tool", count:2}]})]},
   "Giff": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Medium", speed:{walk:30, swim:30}, darkvision:0,
@@ -623,7 +631,7 @@ export var RACE_DATA = {
     languages:{fixed:["Grung"]}, source:"One Grung Above",
     traits:[tr("Arboreal Alertness", "Proficiency in the Perception skill.", {skills:["Perception"]}),
       tr("Amphibious", "You can breathe air and water."),
-      tr("Poison Immunity", "Immunity to poison damage and the poisoned condition."),
+      wards(tr("Poison Immunity", "Immunity to poison damage and the poisoned condition."), POISON_IMMUNITY),
       tr("Poisonous Skin", "A creature that grapples you or touches your skin makes a DC 12 CON save or is poisoned for 1 minute. You can coat a piercing weapon as part of an attack: on a hit, DC 12 CON save or 2d4 poison damage."),
       tr("Standing Leap", "Your long jump is up to 25 feet and your high jump up to 15 feet, with or without a running start."),
       tr("Water Dependency", "Without at least 1 hour immersed in water in a day, you gain a level of exhaustion at the end of it, removed only by magic or an hour in water.")]},
@@ -636,7 +644,7 @@ export var RACE_DATA = {
     languages:{fixed:["Common","Quori"], choose:1}, source:"Eberron: Rising from the Last War",
     traits:[tr("Dual Mind", "Advantage on all Wisdom saving throws.", null, {on:"save", abilities:["wis"]}),
       // Not the githzerai's Mental Discipline (charm and fear): no advantage.
-      tr("Mental Discipline", "Resistance to psychic damage.", null, false),
+      wards(tr("Mental Discipline", "Resistance to psychic damage.", null, false), {resist:["psychic"]}),
       tr("Mind Link", "Speak telepathically to a creature you can see within 10 × your level feet; as an action, let one such creature reply telepathically for 1 hour."),
       tr("Severed from Dreams", "Immune to spells and effects that need you to dream (like Dream), though not to ones that put you to sleep.")]},
   "Kender": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small", speed:{walk:30}, darkvision:0,
@@ -668,8 +676,8 @@ export var RACE_DATA = {
     languages:{fixed:["Common"], choose:1}, source:"Spelljammer: Astral Adventurer's Guide",
     traits:[tr("Amorphous", "Squeeze through a space 1 inch wide while wearing and carrying nothing; advantage on checks to start or escape a grapple."),
       tr("Hold Breath", "You can hold your breath for 1 hour."),
-      tr("Natural Resilience", "Resistance to acid and poison damage, and advantage on saves against being poisoned.", null,
-        {on:"save", abilities:"all", when:"against being poisoned"}),
+      wards(tr("Natural Resilience", "Resistance to acid and poison damage, and advantage on saves against being poisoned.", null,
+        {on:"save", abilities:"all", when:"against being poisoned"}), {resist:["acid","poison"]}),
       tr("Shape Self", "Action: grow a head, arms and legs (to wear clothes and armor) or become a blob. Bonus action: extrude a 10-foot pseudopod that can handle objects up to 10 pounds but can't attack.")]},
 
   /* ---- Plane Shift (Magic: The Gathering) ----
@@ -677,7 +685,7 @@ export var RACE_DATA = {
      Ixalan), checked against dnd5e.wikidot.com 2026-10-20. */
   "Aetherborn": {asi:{cha:2}, asiText:"+2 Charisma, and +1 to two other scores of your choice", size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common"], choose:2}, source:"Plane Shift: Kaladesh",
-    traits:[tr("Born of Aether", "Resistance to necrotic damage."),
+    traits:[wards(tr("Born of Aether", "Resistance to necrotic damage."), {resist:["necrotic"]}),
       tr("Menacing", "Proficiency in the Intimidation skill.", {skills:["Intimidation"]})]},
   "Aven (Hawk-Headed)": {asi:{dex:2,wis:2}, size:"Medium", speed:{walk:25, fly:30}, speedWhen:{fly:"not in medium or heavy armor"}, darkvision:0,
     languages:{fixed:["Common","Aven"]}, source:"Plane Shift: Amonkhet",
@@ -710,7 +718,7 @@ export var RACE_DATA = {
     languages:{fixed:["Common","Naga"]}, source:"Plane Shift: Amonkhet",
     traits:[tr("Speed Burst", "Bonus action, with both hands free: +5 feet of walking speed until the end of your turn."),
       tr("Natural Weapons", "Your bite deals 1d4 + STR piercing damage, and the target makes a CON save (DC 8 + proficiency bonus + CON modifier) or takes 1d4 poison damage. Your constrict deals 1d6 + STR bludgeoning damage and grapples and restrains the target."),
-      tr("Poison Immunity", "Immunity to poison damage and the poisoned condition."),
+      wards(tr("Poison Immunity", "Immunity to poison damage and the poisoned condition."), POISON_IMMUNITY),
       tr("Poison Affinity", "Proficiency with the poisoner's kit.", {tools:["Poisoner's kit"]})]},
   "Siren": {asi:{cha:2}, size:"Medium", speed:{walk:25, fly:30}, speedWhen:{fly:"not in medium or heavy armor"}, darkvision:0,
     languages:{fixed:["Common","Siren"]}, source:"Plane Shift: Ixalan",
@@ -718,11 +726,11 @@ export var RACE_DATA = {
       tr("Siren's Song", "You know the Friends cantrip and cast it without material components.")]},
   "Vampire (Ixalan)": {asi:{cha:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Vampire"]}, source:"Plane Shift: Ixalan",
-    traits:[tr("Vampiric Resistance", "Resistance to necrotic damage."), VAMPIRE_BLOODTHIRST,
+    traits:[wards(tr("Vampiric Resistance", "Resistance to necrotic damage."), {resist:["necrotic"]}), VAMPIRE_BLOODTHIRST,
       tr("Feast of Blood", "After you drain blood, your speed increases by 10 feet and you have advantage on Strength and Dexterity checks and saves for 1 minute.")]},
   "Vampire (Zendikar)": {asi:{cha:2,int:1}, size:"Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common","Vampire"]}, source:"Plane Shift: Zendikar",
-    traits:[tr("Vampiric Resistance", "Resistance to necrotic damage."), VAMPIRE_BLOODTHIRST]},
+    traits:[wards(tr("Vampiric Resistance", "Resistance to necrotic damage."), {resist:["necrotic"]}), VAMPIRE_BLOODTHIRST]},
 
   /* ---- Lineages ---- */
   "Custom Lineage": {asiText:"+2 to one score of your choice", size:"Small or Medium", speed:{walk:30}, darkvision:60, darkvisionUnlessPicked:"Variable Trait",
@@ -744,8 +752,8 @@ export var RACE_DATA = {
   "Reborn": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small or Medium", speed:{walk:30}, darkvision:0,
     languages:{fixed:["Common"], choose:1}, source:"Van Richten's Guide to Ravenloft",
     traits:[LINEAGE_SKILLS,
-      tr("Deathless Nature", "Advantage on saves against disease and being poisoned, and on death saves; resistance to poison damage; no need to eat, drink, breathe or sleep (a long rest is 4 hours, awake).", null,
-        {on:"save", abilities:"all", when:"against disease and being poisoned, and death saving throws"}),
+      wards(tr("Deathless Nature", "Advantage on saves against disease and being poisoned, and on death saves; resistance to poison damage; no need to eat, drink, breathe or sleep (a long rest is 4 hours, awake).", null,
+        {on:"save", abilities:"all", when:"against disease and being poisoned, and death saving throws"}), {resist:["poison"]}),
       tr("Knowledge from a Past Life", "Add a d6 to a skill check after seeing the d20. Uses equal to your proficiency bonus per long rest.")]}
 };
 

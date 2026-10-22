@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -187,19 +187,36 @@ export function renderVitalsPanel(c){
 
   hpBox.appendChild(hpActionsRow);
 
-  // Damage resistances from items (Resistant Armor, Duality), only when
-  // there are any; where each comes from is in the tooltip.
-  var resist = infusionResistances(c).concat(coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }));
+  // Damage resistances and immunities from the race (Mountain Born, Poison
+  // Immunity) and items (Resistant Armor, Duality), only when there are
+  // any; where each comes from is in the tooltip. A type the character is
+  // immune to isn't listed as resisted too.
+  var wards = raceWards(c);
+  var immuneTypes = wards.immune.map(function(r){ return r.type; });
+  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }))
+    .filter(function(r){ return immuneTypes.indexOf(r.type.toLowerCase())===-1; });
   var resistAll = resistsAllDamage(c); // Petrified
   if(resistAll) resist = [{type: "all damage", source: resistAll}];
+  var wardTip = function(list){
+    return list.map(function(r){ return r.type.charAt(0).toUpperCase() + r.type.slice(1) + ": " + r.source; }).join("\n");
+  };
   if(resist.length){
     var types = [];
     resist.forEach(function(r){ if(types.indexOf(r.type.toLowerCase())===-1) types.push(r.type.toLowerCase()); });
     var resistLine = document.createElement("div");
     resistLine.className = "hp-resist";
     resistLine.textContent = "Resistant to " + types.join(", ");
-    resistLine.title = resist.map(function(r){ return r.type + ": " + r.source; }).join("\n");
+    resistLine.title = wardTip(resist);
     hpBox.appendChild(resistLine);
+  }
+  // "Immune to poison and the poisoned condition".
+  var immuneConds = wards.conditionImmune.map(function(r){ return r.type; });
+  if(immuneTypes.length || immuneConds.length){
+    var immuneLine = document.createElement("div");
+    immuneLine.className = "hp-resist";
+    immuneLine.textContent = "Immune to " + [immuneTypes.join(", "), immuneConds.length ? "the " + immuneConds.join(", ") + " condition" : ""].filter(Boolean).join(" and ");
+    immuneLine.title = wardTip(wards.immune.concat(wards.conditionImmune.map(function(r){ return {type: r.type + " condition", source: r.source}; })));
+    hpBox.appendChild(immuneLine);
   }
 
   // ---- Heavy Armor Master ----
