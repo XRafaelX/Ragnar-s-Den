@@ -441,3 +441,36 @@ test("a dragonmark's and a guild background's spells join a caster's list", () =
   spy.background = "Soldier";
   assert.ok(!section(planFor(spy, "Sorcerer"), "cantrips").names.includes("Encode Thoughts"));
 });
+
+test("Wildemount's dunamancy spells: a list of their own, opened by the Chronurgy and Graviturgy subclasses", async () => {
+  const { spellDataForClass } = await import("../js/data/spells.js");
+  const book = ["Sapping Sting", "Gift of Alacrity", "Magnify Gravity", "Fortune's Favor", "Immovable Object", "Wristpocket", "Pulse Wave", "Gravity Sinkhole",
+    "Temporal Shunt", "Gravity Fissure", "Tether Essence", "Dark Star", "Reality Break", "Ravenous Void", "Time Ravage"];
+  // The book's Dunamancy Spell List has these 15, none on the plain wizard list.
+  assert.deepEqual(Object.keys(spellDataForClass("Dunamancy")).sort(), book.slice().sort());
+  for(const n of book){
+    assert.deepEqual(SPELL_DATA[n].classes, ["Dunamancy"], n);
+    assert.equal(SPELL_DATA[n].source, "EGW", n);
+    assert.ok(!(n in spellDataForClass("Wizard")) && !(n in spellDataForClass("Sorcerer", true)), n + " isn't on the wizard or sorcerer list");
+  }
+  assert.deepEqual(H.classExtraSpellLists({ name: "Wizard", subclass: "Chronurgy Magic", level: 2 }), ["Dunamancy"]);
+  assert.deepEqual(H.classExtraSpellLists({ name: "Wizard", subclass: "Graviturgy Magic", level: 2 }), ["Dunamancy"]);
+  assert.deepEqual(H.classExtraSpellLists({ name: "Wizard", subclass: "School of Evocation", level: 2 }), []);
+  assert.deepEqual(H.classExtraSpellLists({ name: "Wizard", subclass: "Chronurgy Magic", level: 1 }), [], "not before the subclass is chosen at 2");
+
+  // The spellbook step at wizard 3 (up to 2nd-level spells): only those two subclasses see them, tagged.
+  const offered = (subclass) => {
+    const c = makeChar([{ name: "Wizard", subclass, level: 2 }]);
+    const sec = section(planFor(c, "Wizard"), "spellbook");
+    return { names: sec.names, tags: sec.tags };
+  };
+  const evoker = offered("School of Evocation");
+  assert.ok(!book.some((n) => evoker.names.includes(n)), "an Evoker is not offered any");
+  for(const sub of ["Chronurgy Magic", "Graviturgy Magic"]){
+    const o = offered(sub);
+    for(const n of ["Gift of Alacrity", "Magnify Gravity", "Fortune's Favor", "Immovable Object", "Wristpocket"]) assert.ok(o.names.includes(n), sub + ": " + n);
+    for(const n of ["Pulse Wave", "Gravity Fissure"]) assert.ok(!o.names.includes(n), sub + ": " + n + " is above 2nd level");
+    assert.ok(o.names.includes("Fireball") === false && o.names.includes("Shield"), sub + " still gets the ordinary wizard list");
+    assert.deepEqual(o.tags["Wristpocket"], ["Dunamancy spell"], sub + ": tagged as a Dunamancy spell");
+  }
+});

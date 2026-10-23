@@ -161,9 +161,9 @@ export var SPELL_SCALING = {
   /* ---- 3rd level ---- */
   "Animate Dead": { per: "two more undead",
     at: function(k){ return "animate " + (1 + 2*k) + " undead, or keep control of up to " + (4 + 2*k); } },
-  "Bestow Curse": steps("no concentration from a 4th-level slot: 10 minutes (4th), 8 hours (5th), 24 hours (7th), until dispelled (9th)",
+  "Bestow Curse": steps("concentration for up to 10 minutes with a 4th-level slot. No concentration from a 5th-level slot: 8 hours (5th), 24 hours (7th), until dispelled (9th)",
     "concentration, up to 1 minute", [[9, "lasts until dispelled, no concentration"], [7, "lasts 24 hours, no concentration"],
-      [5, "lasts 8 hours, no concentration"], [4, "lasts 10 minutes, no concentration"]]),
+      [5, "lasts 8 hours, no concentration"], [4, "lasts up to 10 minutes, with concentration"]]),
   "Call Lightning": dmg(3, 10, 1, "lightning damage"),
   "Catnap": targets(3, "creature", "creatures"),
   "Conjure Animals": steps("twice as many beasts with a 5th- or 6th-level slot, three times as many with 7th or 8th, four times as many with 9th",

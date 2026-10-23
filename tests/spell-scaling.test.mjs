@@ -79,6 +79,10 @@ test("the other casters' spells that grow have an entry too", () => {
   assert.equal(line(wiz, "Magic Missile"), "Higher slots: one more dart per slot level above 1st.");
   assert.equal(line(wiz, "Spiritual Weapon"), "Higher slots: +1d8 force damage for every two slot levels above 2nd.");
   assert.equal(line(wiz, "Magic Weapon"), "Higher slots: +2 with a 4th- or 5th-level slot, +3 with 6th or higher.");
+  // Bestow Curse: a 4th-level slot still needs concentration, 5th and up does not.
+  assert.equal(SPELL_SCALING["Bestow Curse"].at(1, 4), "lasts up to 10 minutes, with concentration");
+  assert.equal(SPELL_SCALING["Bestow Curse"].at(2, 5), "lasts 8 hours, no concentration");
+  assert.equal(SPELL_SCALING["Bestow Curse"].at(6, 9), "lasts until dispelled, no concentration");
   assert.equal(line(wiz, "Etherealness"), "Higher slots: up to three willing creatures (you included) per slot level above 7th.");
   assert.equal(SPELL_SCALING["Spiritual Weapon"].at(4, 6), "3d8 + your spellcasting modifier force damage");
   assert.equal(SPELL_SCALING["Hail of Thorns"].at(8, 9), "6d10 piercing damage");
@@ -180,6 +184,12 @@ test("a saved spell with the old catalog summary gets the corrected one, a playe
       assert.equal(currentSpellSummary(name, old), SPELL_DATA[name].summary, name);
     }
   }
+  const { currentSpellRange, SPELL_OLD_RANGES } = await import("../js/data/spells.js");
+  for(const [name, olds] of Object.entries(SPELL_OLD_RANGES)) for(const old of olds){
+    assert.notEqual(old, SPELL_DATA[name].range, name);
+    assert.equal(currentSpellRange(name, old), SPELL_DATA[name].range, name);
+  }
+  assert.equal(currentSpellRange("Crusader's Mantle", "Self (my house rule)"), "Self (my house rule)");
   assert.equal(currentSpellSummary("Chill Touch", "My own note about it."), "My own note about it.");
   assert.equal(currentSpellSummary("Chill Touch", SPELL_DATA["Chill Touch"].summary), SPELL_DATA["Chill Touch"].summary);
   assert.equal(currentSpellSummary("Not A Spell", "x"), "x");
