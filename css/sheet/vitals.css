@@ -384,6 +384,8 @@
   padding:10px 12px;border-radius:6px;background:var(--parchment-dim);
 }
 .res-row.spent .res-name{color:var(--text-on-parch-dim);}
+/* Between the counts of uses (pips) and the point pools (numbers). */
+.res-divider{height:1px;background:var(--rule);margin:2px 0;}
 .res-info{min-width:0;flex:1;}
 .res-name{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .res-reset{

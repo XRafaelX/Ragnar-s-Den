@@ -9,8 +9,9 @@
    reset(lv): "short" or "long"; the rest that restores it (a short rest
      also counts as covered by a long rest). "manual" for the odd one no
      rest restores on its own (Necrotic Husk); the player regains it.
-   pool: true for point pools (Ki, Lay on Hands) shown as a number rather
-     than pips. max can return Infinity for a feature that becomes
+   pool: true for point pools you spend in variable amounts or that grow
+     with level (Ki, Lay on Hands), shown as a number below the pips (see
+     resourceIsNumber in js/core/character-resources.js). max can return Infinity for a feature that becomes
      unlimited (Archdruid's Wild Shape); it then shows as Unlimited.
    armorModel: only while the Armorer has that model (Defensive Field:
      "Guardian").
@@ -256,7 +257,7 @@ export var SUBCLASS_RESOURCES = {
         hint:"Once per turn, apply an Arcane Shot option to an arrow fired as part of the Attack action. Regain one on initiative if empty (level 15)."}
     ],
     "Gunslinger": [
-      {id:"grit_points", name:"Grit Points", level:3, pool:true,
+      {id:"grit_points", name:"Grit Points", level:3,
         max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("short"),
         hint:"Fuel your trick shots and Rapid Repair. Regain one on a natural 20 with a firearm or a killing blow to a significant threat, and all of them after a short or long rest."}
     ],
@@ -507,7 +508,7 @@ export var SUBCLASS_RESOURCES = {
         hint:"Bonus action for 1 minute: +INT to AC and concentration saves, +10 ft speed, advantage on Acrobatics."}
     ],
     "War Magic": [
-      {id:"power_surges", name:"Power Surges", level:6, pool:true, max:function(lv, m){ return atLeastOne(m.int); }, reset:always("manual"),
+      {id:"power_surges", name:"Power Surges", level:6, max:function(lv, m){ return atLeastOne(m.int); }, reset:always("manual"),
         hint:"Spend one (once per turn) for + half your wizard level force damage with a wizard spell. Resets to 1 after a long rest, with +1 from Dispel Magic, Counterspell or a short rest with none."}
     ],
     "Order of Scribes": [

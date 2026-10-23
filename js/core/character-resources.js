@@ -23,6 +23,16 @@ function pickedSpellNames(cl, key){
   if(!entry || !entry.slots) return [];
   return entry.slots.reduce(function(a, s){ return a.concat(s||[]); }, []).filter(Boolean);
 }
+/* How a resource is counted on the sheet, decided in one place. Points
+   you spend in variable amounts or that grow with level (Ki, Lay on Hands,
+   Sorcery Points) show as a number, flagged `pool` in js/data/resources.js.
+   Anything else is a count of uses shown as pips, up to RESOURCE_PIP_LIMIT,
+   and a number beyond that. Unlimited is never a number. */
+export var RESOURCE_PIP_LIMIT = 10;
+export function resourceIsNumber(r){
+  if(r.max===Infinity) return false;
+  return !!r.pool || r.max > RESOURCE_PIP_LIMIT;
+}
 export function characterResources(c){
   var m = {};
   ["str","dex","con","int","wis","cha"].forEach(function(k){ m[k] = mod(abilityScore(c, k)); });

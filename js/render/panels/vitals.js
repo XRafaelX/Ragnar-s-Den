@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -841,9 +841,9 @@ function castsSpells(c){
 }
 
 /* ---- Resources ----
-   One row per limited-use class feature or feat: pips for small counts, a number for
-   point pools (Ki, Lay on Hands), with use/regain buttons. */
-var RESOURCE_PIP_LIMIT = 10;
+   One row per limited-use class feature or feat, with use/regain buttons. Counts of
+   uses (pips) come first, then the point pools (a number: Ki, Lay on Hands) under a
+   thin divider. See resourceIsNumber for which is which. */
 
 /* "Class resources", "Class & feat resources", "Class, race & feat
    resources", "Race resources" ...: whose uses the card holds. */
@@ -859,7 +859,16 @@ function renderResourcesCard(c, resources){
   var card = makeCard(resourcesTitle(resources));
   var list = document.createElement("div");
   list.className = "res-list";
-  resources.forEach(function(r){
+  // Uses first, then points, each keeping its order (the sort is stable).
+  var ordered = resources.filter(function(r){ return !resourceIsNumber(r); }).concat(resources.filter(resourceIsNumber));
+  var dividerAt = ordered.findIndex(resourceIsNumber);
+  ordered.forEach(function(r, index){
+    if(index===dividerAt && index>0){
+      var divider = document.createElement("div");
+      divider.className = "res-divider";
+      divider.setAttribute("role", "separator");
+      list.appendChild(divider);
+    }
     var remaining = r.max - r.used;
     var row = document.createElement("div");
     row.className = "res-row" + (remaining===0 ? " spent" : "");
@@ -911,7 +920,7 @@ function renderResourcesCard(c, resources){
       list.appendChild(row);
       return;
     }
-    if(!r.pool && r.max <= RESOURCE_PIP_LIMIT){
+    if(!resourceIsNumber(r)){
       var pips = document.createElement("div");
       pips.className = "res-pips";
       pips.setAttribute("aria-label", remaining+" of "+r.max+" left");
