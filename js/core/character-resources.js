@@ -229,10 +229,12 @@ function saveHitDice(c, pools){
 /* Brings c.hitDiceSpent and c.hitDiceUsed in line with the classes (after
    a level-up is undone). */
 export function syncHitDice(c){ saveHitDice(c, hitDicePools(c)); }
-/* Spend the largest die left. Returns its size, or 0 if none are left. */
-export function spendHitDie(c){
+/* Spend a die of the given size, or the largest left when none is given.
+   Returns its size, or 0 if none of that size are left. */
+export function spendHitDie(c, die){
   var pools = hitDicePools(c);
-  var pool = pools.find(function(p){ return p.used < p.total; });
+  // The size the player picked, or the largest left when none is given.
+  var pool = pools.find(function(p){ return p.used < p.total && (!die || p.die===die); });
   if(!pool) return 0;
   pool.used++;
   saveHitDice(c, pools);

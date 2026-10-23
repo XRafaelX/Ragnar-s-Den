@@ -612,24 +612,14 @@ export function renderVitalsPanel(c){
   // Hit dice + rest
   var restCard = makeCard("Hit dice & rest");
   var hd = totalLevel(c);
-  // Multiclassed characters have a mix of dice (e.g. 3d12 + 2d6), counted
-  // per size; spending rolls the largest die left.
+  // Hit dice are counted per size (a multiclass character has a mix, e.g.
+  // 3d12 + 2d6). One tile each, and the tile is the button: the player picks
+  // which size to spend, and a single class has one tile.
   var pools = hitDicePools(c);
   var hdRemaining = pools.reduce(function(n, p){ return n + p.total - p.used; }, 0);
-  var hdP = document.createElement("p");
-  hdP.style.fontSize="13px"; hdP.style.margin="0 0 8px";
-  hdP.textContent = "Hit dice remaining: "+hdRemaining+" / "+hd+
-    (pools.length > 1 ? "  ("+pools.map(function(p){ return (p.total-p.used)+"/"+p.total+" d"+p.die; }).join(", ")+")" : "  (d"+pools[0].die+")");
-  restCard.appendChild(hdP);
-
-  var restRow = document.createElement("div");
-  restRow.className = "rest-row";
-
-  var spendBtn = document.createElement("button");
-  spendBtn.className = "btn small"; spendBtn.textContent = "Spend 1 hit die";
-  spendBtn.disabled = hdRemaining<=0;
-  spendBtn.addEventListener("click", function(){
-    var die = spendHitDie(c);
+  // Spends a die of that size and rolls it.
+  function spendDie(size){
+    var die = spendHitDie(c, size);
     if(!die) return;
     var conMod = mod(abilityScore(c, "con"));
     var roll = Math.floor(Math.random()*die)+1;
@@ -637,8 +627,36 @@ export function renderVitalsPanel(c){
     c.hp.current = clamp(c.hp.current+healed, 0, hpMax);
     logRoll("Hit die (d"+die+fmtMod(conMod)+")", roll+" "+fmtMod(conMod)+" = "+healed+" HP healed"+(healed > Math.max(1, roll+conMod) ? " (Durable minimum)" : ""));
     save(); renderAll();
+  }
+  // The total only when there are several sizes: with one, its tile says the same.
+  if(pools.length > 1){
+    var hdHead = document.createElement("div");
+    hdHead.className = "hd-head";
+    hdHead.innerHTML = "<span class='hd-title'>Hit dice left</span><span class='hd-total"+(hdRemaining===0 ? " spent" : "")+"'><b>"+hdRemaining+"</b> / "+hd+"</span>";
+    restCard.appendChild(hdHead);
+  }
+  var hdTiles = document.createElement("div");
+  hdTiles.className = "hd-tiles";
+  pools.forEach(function(p){
+    var left = p.total - p.used;
+    var tile = document.createElement("button");
+    tile.type = "button";
+    tile.className = "hd-tile" + (left===0 ? " spent" : "");
+    tile.disabled = left===0;
+    tile.title = left===0 ? "No d"+p.die+" left" : "Spend a d"+p.die+" and roll it";
+    tile.setAttribute("aria-label", "Spend a d"+p.die+" hit die, "+left+" of "+p.total+" left");
+    tile.innerHTML = "<span class='hd-die'>d"+p.die+"</span><span class='hd-count'><b>"+left+"</b> / "+p.total+"</span>";
+    tile.addEventListener("click", function(){ spendDie(p.die); });
+    hdTiles.appendChild(tile);
   });
-  restRow.appendChild(spendBtn);
+  restCard.appendChild(hdTiles);
+  var hdHint = document.createElement("p");
+  hdHint.className = "hd-hint";
+  hdHint.textContent = hdRemaining===0 ? "No hit dice left. A long rest gives some back." : pools.length > 1 ? "Tap a die to roll it and heal." : "Tap the die to roll it and heal.";
+  restCard.appendChild(hdHint);
+
+  var restRow = document.createElement("div");
+  restRow.className = "rest-row";
 
   var shortRestBtn = document.createElement("button");
   shortRestBtn.className = "btn small"; shortRestBtn.textContent = "Short rest";

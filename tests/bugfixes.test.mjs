@@ -394,6 +394,16 @@ test("hit dice: a multiclass character spends its largest dice first", () => {
   assert.deepEqual(c.hitDiceSpent, { 12: 3, 6: 2 });
 });
 
+test("hit dice: the player can pick which size to spend", () => {
+  const c = char([{ name: "Wizard", level: 2 }, { name: "Barbarian", level: 3 }]);
+  assert.equal(H.spendHitDie(c, 6), 6, "a d6 first, though a d12 is larger");
+  assert.deepEqual(H.hitDicePools(c).map(p => [p.die, p.used]), [[12, 0], [6, 1]]);
+  assert.deepEqual([H.spendHitDie(c, 6), H.spendHitDie(c, 6)], [6, 0], "none of that size left");
+  assert.equal(H.hitDicePools(c).reduce((n, p) => n + p.used, 0), 2, "a failed pick spends nothing");
+  assert.equal(H.spendHitDie(c, 8), 0, "a size the character doesn't have");
+  assert.equal(H.spendHitDie(c), 12, "no size given: the largest left");
+});
+
 test("hit dice: a long rest gives back half, largest first", () => {
   const c = char([{ name: "Wizard", level: 2 }, { name: "Barbarian", level: 3 }]);
   c.hitDiceSpent = { 12: 3, 6: 2 }; c.hitDiceUsed = 5;
