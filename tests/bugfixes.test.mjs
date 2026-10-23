@@ -11,7 +11,7 @@ import { revertFeatPicks } from "../js/core/feat-picks.js";
 import { newCharacter } from "../js/core/character.js";
 import { undoLastLevelUp } from "../js/levelup/levelup.js";
 import { renderVitalsPanel } from "../js/render/panels/vitals.js";
-import { renderJournalPanel } from "../js/render/panels/journal.js";
+import { renderJournalPanel, journalOrder, moveJournalEntry, reorderJournalEntry, setJournalPinned } from "../js/render/panels/journal.js";
 import { state } from "../js/core/state.js";
 import { ensureShape } from "../js/core/character.js";
 import * as W from "../js/wizard/wizard-core.js";
@@ -481,6 +481,36 @@ test("journal: an empty entry is deleted at once", (t) => {
   const r = journalDelete(t, "  ");
   assert.equal(r.asked, false);
   assert.equal(r.c.notes.length, 0);
+});
+
+test("journal: pinned entries show first and moves stay inside their group", () => {
+  const [a, b, c, d] = ["a", "b", "c", "d"].map(text => ({ ts: "t", text }));
+  const notes = [a, b, c, d];
+  setJournalPinned(notes, c, true);
+  assert.deepEqual(journalOrder(notes).map(n => n.text), ["c", "a", "b", "d"]);
+  setJournalPinned(notes, d, true);
+  assert.deepEqual(journalOrder(notes).map(n => n.text), ["d", "c", "a", "b"], "the newest pin goes on top");
+  assert.equal(moveJournalEntry(notes, c, -1), true);
+  assert.deepEqual(journalOrder(notes).map(n => n.text), ["c", "d", "a", "b"]);
+  assert.equal(moveJournalEntry(notes, d, 1), false, "a pinned entry can't drop below the pin line");
+  assert.equal(moveJournalEntry(notes, a, -1), false, "an unpinned entry can't climb above it");
+  assert.equal(moveJournalEntry(notes, a, 1), true);
+  assert.deepEqual(journalOrder(notes).map(n => n.text), ["c", "d", "b", "a"]);
+  setJournalPinned(notes, c, false);
+  assert.deepEqual(journalOrder(notes).map(n => n.text), ["d", "c", "b", "a"]);
+});
+
+test("journal: dragging an entry to a place keeps the rest in order", () => {
+  const [a, b, c, d] = ["a", "b", "c", "d"].map(text => ({ ts: "t", text }));
+  const notes = [a, b, c, d];
+  assert.equal(reorderJournalEntry(notes, d, 0), true);
+  assert.deepEqual(notes.map(n => n.text), ["d", "a", "b", "c"]);
+  assert.equal(reorderJournalEntry(notes, d, 2), true);
+  assert.deepEqual(notes.map(n => n.text), ["a", "b", "d", "c"]);
+  assert.equal(reorderJournalEntry(notes, d, 2), false, "same place changes nothing");
+  assert.equal(reorderJournalEntry(notes, d, 9), false, "a place past the end changes nothing");
+  b.pinned = true;
+  assert.equal(reorderJournalEntry(notes, b, 1), false, "a pinned entry only has pinned places");
 });
 
 /* ---------- 7. Cosmetic ---------- */
