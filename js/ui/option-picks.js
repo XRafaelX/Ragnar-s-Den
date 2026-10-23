@@ -39,14 +39,14 @@ export function renderTashaNote(set, ctx){
   p.textContent = "Tasha's Cauldron adds " + n + " more " + set.noun + (n>1 ? "s" : "") + " if your character uses Tasha's optional class features (Information tab).";
   return p;
 }
-/* "2 sorcery points" / "3 ki points" / "Strength save" ahead of the text,
-   when there is one. The set's costUnit names the points (sorcery points
-   when it has none). With the character's save DC the save reads
-   "DC 14 Strength save". */
+/* "2 sorcery points" / "3 ki points" / "1 or more grit points" (cost "1+") /
+   "Strength save" ahead of the text, when there is one. The set's costUnit
+   names the points (sorcery points when it has none). With the character's
+   save DC the save reads "DC 14 Strength save". */
 export function optionMeta(o, set, dc){
   var bits = [];
   var unit = (set && set.costUnit) || ["sorcery point", "sorcery points"];
-  if(o.cost) bits.push(o.cost==="1" ? "1 " + unit[0] : /^\d+$/.test(o.cost) ? o.cost + " " + unit[1] : unit[1] + " equal to the " + o.cost);
+  if(o.cost) bits.push(o.cost==="1" ? "1 " + unit[0] : /^\d+$/.test(o.cost) ? o.cost + " " + unit[1] : /^\d+\+$/.test(o.cost) ? o.cost.slice(0, -1) + " or more " + unit[1] : unit[1] + " equal to the " + o.cost);
   if(o.save) bits.push((dc ? "DC " + dc + " " : "") + {str:"Strength", dex:"Dexterity", con:"Constitution", int:"Intelligence", wis:"Wisdom", cha:"Charisma"}[o.save] + " save");
   return bits.join(" · ");
 }

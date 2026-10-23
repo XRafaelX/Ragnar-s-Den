@@ -358,7 +358,7 @@ export function wizardStepFeatPicks(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Feat Choices</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>"+escapeHtml(feat.name)+":</b> "+escapeHtml(feat.summary || "")+" Choose what it gives you; the sheet applies it for you.";
+  explain.innerHTML = "<b>"+escapeHtml(feat.name)+":</b> "+escapeHtml(feat.summary || "")+" Choose what it gives you. The sheet applies it for you.";
   card.appendChild(explain);
   if(!rc.featPicks) rc.featPicks = emptyPicks(feat);
   card.appendChild(renderFeatPicks(feat, rc.featPicks, wizardFeatContext(), function(){
@@ -378,7 +378,7 @@ export function wizardStepBgFeat(container){
   card.innerHTML = "<h3><span>Background Feat</span></h3>";
   var explain = ce("div","wiz-explain");
   explain.innerHTML = "<b>From your "+escapeHtml(wizardState.background)+" background:</b> you start with the <b>"+escapeHtml(feat.name)+"</b> feat. "+
-    escapeHtml(feat.summary || "")+" Choose what it gives you; the sheet applies it for you.";
+    escapeHtml(feat.summary || "")+" Choose what it gives you. The sheet applies it for you.";
   card.appendChild(explain);
   var ctx = wizardFeatContext({forBackgroundFeat:true});
   if(grant.option) ctx.lockedOption = grant.option;

@@ -24,7 +24,7 @@ export var ARMOR_MODELS = {
     speed: 5,
     perks: [
       {level:3, text:"Powered Steps: +5 ft walking speed."},
-      {level:3, text:"Dampening Field: advantage on Dexterity (Stealth) checks; the armor's Stealth disadvantage doesn't apply."},
+      {level:3, text:"Dampening Field: advantage on Dexterity (Stealth) checks. The armor's Stealth disadvantage doesn't apply."},
       {level:15, text:"Perfected Armor: a creature your Lightning Launcher damages glimmers until your next turn: attacks against you have disadvantage, and the next attack against it has advantage and deals an extra 1d6 lightning."}
     ]
   }

@@ -334,7 +334,7 @@ export var SPELL_SCALING = {
     at: function(k){ return (1 + 2*k) + " globe" + (k ? "s" : "") + " of air"; } },
   "Flock of Familiars": targets(3, "familiar", "familiars"),
   "Fortune's Favor": targets(1, "creature", "creatures"),
-  "Immovable Object": steps("4th or 5th level: DC +5, holds 8,000 pounds, lasts 24 hours; 6th or higher: DC +10, holds 20,000 pounds, lasts until dispelled",
+  "Immovable Object": steps("4th or 5th level: DC +5, holds 8,000 pounds, lasts 24 hours. 6th or higher: DC +10, holds 20,000 pounds, lasts until dispelled",
     "holds 4,000 pounds for 1 hour", [[6, "DC +10 to move it, holds 20,000 pounds, lasts until dispelled"], [4, "DC +5 to move it, holds 8,000 pounds, lasts 24 hours"]]),
   "Rime's Binding Ice": dmg(3, 8, 1, "cold damage"),
   "Spray of Cards": dmg(2, 10, 1, "force damage"),

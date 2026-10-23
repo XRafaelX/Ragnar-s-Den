@@ -447,7 +447,7 @@ function renderSlotsCard(c){
   }
   if(!list.children.length){
     var empty = ce("p","slot-empty");
-    empty.textContent = "No spell slots. Spellcasting classes get them automatically as they level; use Edit to add slots from items or homebrew.";
+    empty.textContent = "No spell slots. Spellcasting classes get them automatically as they level. Use Edit to add slots from items or homebrew.";
     card.appendChild(empty);
   }
   card.appendChild(list);
@@ -602,7 +602,7 @@ function renderPatronSpellsCard(c, list){
     ? "You know every " + patron + " spell open to you at this level. They're under Known spells with the " + patron + " tag."
     : patron + " adds these to the warlock spells you can learn. You pick them like any other warlock spell when you level up (the New spells step), and each one counts as one of your spells known." +
       (room > 0 ? " You still have " + room + " spell" + (room===1 ? "" : "s") + " to learn, so you can take " + (room===1 ? "one" : "them") + " here."
-        : room===0 ? " You know all the warlock spells your level allows; swap one for a patron spell on your next level-up." : "");
+        : room===0 ? " You know all the warlock spells your level allows. Swap one for a patron spell on your next level-up." : "");
   card.appendChild(intro);
   if(learned.length){
     var chips = ce("div", "patron-spell-chips");

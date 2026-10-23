@@ -50,7 +50,7 @@ export function stepClass(container){
   var blockers = c.classes.filter(function(cl){ return !meetsPrereq(c, cl.name); });
   if(blockers.length){
     var warn = ce("p","lu-note");
-    warn.textContent = "You can't multiclass yet: your "+blockers.map(function(cl){ return cl.name+" needs "+prereqText(cl.name); }).join("; ")+".";
+    warn.textContent = "You can't multiclass yet: your "+blockers.map(function(cl){ return cl.name+" needs "+prereqText(cl.name); }).join(", and your ")+".";
     mcCard.appendChild(warn);
   }
   var mcGrid = ce("div","class-pick-grid");
@@ -75,7 +75,7 @@ export function stepStyle(container){
   }
   if(t.fightingStyle){
     card = stepCard(container, t.fightingStyle.from==="Fighting Style" ? "Choose a Fighting Style" : t.fightingStyle.from,
-      "<b>Your fighting style</b> is a combat specialty you keep for good. <b>Defense</b>, <b>Archery</b> and <b>Dueling</b> are added to your AC, attacks and damage automatically, and a few others add a sense, a maneuver or cantrips; the rest are reminders on your Features tab.");
+      "<b>Your fighting style</b> is a combat specialty you keep for good. <b>Defense</b>, <b>Archery</b> and <b>Dueling</b> are added to your AC, attacks and damage automatically, and a few others add a sense, a maneuver or cantrips. The rest are reminders on your Features tab.");
     card.appendChild(renderStyleOptions(lu.c, t.fightingStyle.options, lu.style, tasha, pick));
     if(!availableStyles().length){
       var p = ce("p","lu-note");
@@ -199,8 +199,8 @@ function renderLearn(container, cantripsStep){
   var lead = firstStep && plan.summary ? "<b>Spells you know:</b> "+escapeHtml(plan.summary)+" " : "";
   var patron = mine.some(function(s){ return Object.keys(s.tags).some(function(n){ return s.tags[n].indexOf("Patron spell")!==-1; }); });
   var card = stepCard(container, cantripsStep ? "Cantrips" : "New spells", lead +
-    (patron ? "Your patron's spells are mixed in and marked <i>Patron spell</i>; each one you take counts as one of your spells known. " : "") +
-    "Each card says what the spell does; tap one to pick it.");
+    (patron ? "Your patron's spells are mixed in and marked <i>Patron spell</i>. Each one you take counts as one of your spells known. " : "") +
+    "Each card says what the spell does. Tap one to pick it.");
   if(plan.note && !cantripsStep){
     var note = ce("p","lu-note"); note.textContent = plan.note;
     card.appendChild(note);
@@ -224,7 +224,7 @@ function renderLearn(container, cantripsStep){
   }
   if(plan.auto.length && cantripsStep){
     var auto = ce("p","lu-note");
-    auto.textContent = "You learn "+plan.auto.join(" and ")+" for free; "+(plan.auto.length>1 ? "they're" : "it's")+" added automatically.";
+    auto.textContent = "You learn "+plan.auto.join(" and ")+" for free. "+(plan.auto.length>1 ? "They're" : "It's")+" added automatically.";
     card.appendChild(auto);
   }
   // A spell picked in one list is greyed out in the others.
@@ -497,8 +497,8 @@ export function stepOptions(container){
 export function stepProfs(container){
   var withSpells = profStepLabel()!=="Proficiencies";
   var card = stepCard(container, profStepLabel(), withSpells
-    ? "<b>Your new features come with choices.</b> Spells you pick here show on the Spells tab; skills and expertise on the Abilities & Skills tab; tools, languages and saving throws on the Information tab. Anything you already have is greyed out."
-    : "<b>New proficiencies:</b> this level lets you choose some. Skills and expertise show on the Abilities & Skills tab; tools, languages and saving throws on the Information tab. Anything you already have is greyed out.");
+    ? "<b>Your new features come with choices.</b> Spells you pick here show on the Spells tab, skills and expertise on the Abilities & Skills tab, and tools, languages and saving throws on the Information tab. Anything you already have is greyed out."
+    : "<b>New proficiencies:</b> this level lets you choose some. Skills and expertise show on the Abilities & Skills tab, and tools, languages and saving throws on the Information tab. Anything you already have is greyed out.");
   // A new ranger using Tasha's optional features may take Favored Foe or
   // Deft Explorer in place of the Player's Handbook feature.
   // Each feature is one panel (as in the creation wizard): the choice,
@@ -617,7 +617,7 @@ export function stepAsi(container){
 export function stepFeatPicks(container){
   var def = featDef(lu.featName);
   var card = stepCard(container, def.name,
-    "<b>Your new feat:</b> "+escapeHtml(def.summary || "")+" Choose what it gives you; the sheet applies it, and undoing the level-up takes it back.");
+    "<b>Your new feat:</b> "+escapeHtml(def.summary || "")+" Choose what it gives you. The sheet applies it, and undoing the level-up takes it back.");
   if(!lu.featPicks) lu.featPicks = emptyPicks(def);
   card.appendChild(renderFeatPicks(def, lu.featPicks, featCtx(), render));
 }
@@ -652,7 +652,7 @@ export function stepBonusFeat(container){
 export function stepBonusFeatPicks(container){
   var def = featDef(lu.bonusFeatName);
   var card = stepCard(container, def.name,
-    "<b>Your campaign feat:</b> "+escapeHtml(def.summary || "")+" Choose what it gives you; the sheet applies it, and undoing the level-up takes it back.");
+    "<b>Your campaign feat:</b> "+escapeHtml(def.summary || "")+" Choose what it gives you. The sheet applies it, and undoing the level-up takes it back.");
   if(!lu.bonusFeatPicks) lu.bonusFeatPicks = emptyPicks(def);
   card.appendChild(renderFeatPicks(def, lu.bonusFeatPicks, bonusFeatCtx(), render));
 }
@@ -662,7 +662,7 @@ export function stepHp(container){
   var avg = t.hitDie/2 + 1;
   var card = stepCard(container, "Hit points",
     "<b>More health:</b> each level adds your "+escapeHtml(lu.className)+" hit die (d"+t.hitDie+") plus your Constitution modifier ("+fmtMod(conMod)+") to your max HP. "+
-    "Taking the average is the safe choice; rolling can go higher or lower.");
+    "Taking the average is the safe choice. Rolling can go higher or lower.");
   var grid = ce("div","lu-hp-grid");
 
   function hpCard(method, title, badge){

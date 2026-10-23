@@ -778,7 +778,7 @@ test("rolls: advantage and disadvantage cancel out; reasons of one kind add up",
   const wiz = char([{ name: "Wizard", level: 1 }], { inventory: [CHAIN] });
   const stealth = H.skillRollMode(wiz, "Stealth");
   assert.equal(stealth.mode, "dis");
-  assert.match(stealth.reason, /Not proficient with Chain Mail; Chain Mail gives disadvantage/);
+  assert.match(stealth.reason, /Not proficient with Chain Mail · Chain Mail gives disadvantage/);
 });
 
 /* ---------- Warforged ---------- */

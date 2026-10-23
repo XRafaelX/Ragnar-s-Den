@@ -94,7 +94,7 @@ Object.keys(RACE_DATA).forEach(function(name){
   if(!RACE_LANGUAGES[name]) RACE_LANGUAGES[name] = RACE_DATA[name].languages;
 });
 export var RACE_LANGUAGES_FALLBACK = {fixed:["Common"], choose:1,
-  note:"Homebrew races usually speak Common plus one more language; check with your DM."};
+  note:"Homebrew races usually speak Common plus one more language. Check with your DM."};
 
 /* Level-1 picks a race makes in the creation wizard's Race Traits step,
    on top of its fixed increases (RACE_DATA asi, added automatically).

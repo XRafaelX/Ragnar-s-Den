@@ -3,7 +3,7 @@ import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg } from "../../ui/svg-icons.js";
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, raceEffectRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, raceEffectRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -853,6 +853,7 @@ function renderWeaponCard(c, item, idx){
   var rage = rageDamageBonus(c, item);
   if(rage) subtitleParts.push("Rage +" + rage + " damage");
   if(duelingBonus(c, item)) subtitleParts.push("Dueling +2 damage");
+  if(sidearmMasteryBonus(c, item)) subtitleParts.push("Sidearm Mastery +2 damage");
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");
@@ -870,7 +871,7 @@ function renderWeaponCard(c, item, idx){
     var thrownNote = document.createElement("p");
     thrownNote.className = "inv-armor-note inv-thrown-note";
     thrownNote.textContent = active
-      ? "Thrown: out of your hand. While you can see it, call it back with an action. If it's stuck in a creature, the creature makes a contested Strength check to keep it; if it wins, it keeps the trident but is pulled 5 ft toward you."
+      ? "Thrown: out of your hand. While you can see it, call it back with an action. If it's stuck in a creature, the creature makes a contested Strength check to keep it. If it wins, it keeps the trident but is pulled 5 ft toward you."
       : "Thrown: out of your hand. Attune to it (⋯ menu) to call it back, or pick it up.";
     card.appendChild(thrownNote);
   }
@@ -1328,7 +1329,7 @@ function damageBoonButton(item, b){
   btn.type = "button"; btn.className = "btn small inv-roll-btn";
   btn.innerHTML = makeDicesSvg();
   btn.appendChild(document.createTextNode("+" + d.qty + "d" + d.die + " " + type.toLowerCase()));
-  btn.title = "Roll it on a hit with your next attack; that uses it up";
+  btn.title = "Roll it on a hit with your next attack. That uses it up";
   btn.addEventListener("click", function(){
     performRoll(d.die, d.qty, 0, "none", (item.name || "Duality") + ": +" + d.qty + "d" + d.die + " " + type.toLowerCase());
     endBoon(item, b.def.id);

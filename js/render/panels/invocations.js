@@ -74,7 +74,7 @@ function pactSection(c, cl){
   box.appendChild(sectionTitle("Pact Boon"));
   var boon = pactBoonDef(cl.pactBoon);
   if(!boon || changingBoon){
-    box.appendChild(hint(boon ? "Pick your new Pact Boon." : "At warlock level 3 your patron grants you a Pact Boon. Pick one; some invocations need a particular pact."));
+    box.appendChild(hint(boon ? "Pick your new Pact Boon." : "At warlock level 3 your patron grants you a Pact Boon. Pick one. Some invocations need a particular pact."));
     box.appendChild(renderPactBoonOptions(cl.pactBoon || "", function(name){
       if(name!==cl.pactBoon) cl.pactSpells = [];
       cl.pactBoon = name;
@@ -161,7 +161,7 @@ function invocationEntry(c, cl, e){
   if(tags.length) entry.appendChild(tagRow(tags));
   var broken = invocationBroken(c, cl, e);
   if(broken){
-    var warn = hint(broken + ". It stays on your sheet; check with your DM.");
+    var warn = hint(broken + ". It stays on your sheet. Check with your DM.");
     warn.classList.add("inf-warn");
     entry.appendChild(warn);
   }
@@ -188,7 +188,7 @@ function blastBox(b){
   var dmg = b.dice + (b.bonus ? (b.bonus > 0 ? " + " : " - ") + Math.abs(b.bonus) : "") + " force";
   var parts = [b.beams + " beam" + (b.beams>1 ? "s" : ""), dmg + (b.beams>1 ? " each" : ""), b.range + " ft"].concat(b.riders);
   box.innerHTML = "<div class='eli-blast-name'>Your Eldritch Blast</div><div class='eli-blast-line'>" + escapeHtml(parts.join(" · ")) + "</div>" +
-    "<div class='eli-blast-sub'>" + escapeHtml(b.beams>1 ? "Make a separate spell attack for each beam." : "One spell attack; more beams at levels 5, 11 and 17.") +
+    "<div class='eli-blast-sub'>" + escapeHtml(b.beams>1 ? "Make a separate spell attack for each beam." : "One spell attack, with more beams at levels 5, 11 and 17.") +
     (b.by.length ? " Includes " + escapeHtml(b.by.join(", ")) + "." : "") + "</div>";
   return box;
 }

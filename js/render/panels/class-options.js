@@ -14,7 +14,7 @@ import { abilityScore, abilityScores } from "../../core/ability-scores.js";
 
 /* ---- Class option cards (Features tab) ----
    One card per option set the character has (Metamagic, Maneuvers, Runes,
-   Arcane Shots, Elemental Disciplines, Storm Aura, Misfortunes), from a
+   Arcane Shots, Trick Shots, Elemental Disciplines, Storm Aura, Misfortunes), from a
    class entry or a feat (Martial Adept's maneuvers). Sets that share a
    `card` (the Hunter's four tiers, the Totem Warrior's three animals) are
    sections of one card, each shown once its level is reached. A card lists
@@ -91,7 +91,7 @@ function renderSet(card, c, set, grouped){
 /* A set's save DC (8 + proficiency + its ability) with the ability, or
    null for a set without one. Maneuvers use STR or DEX, whichever is
    higher; the others count only with the class entry that has them. */
-var SET_DC_ABILITY = {runes: "con", arcaneShots: "int", disciplines: "wis", misfortunes: "cha", stormEnvironment: "con"};
+var SET_DC_ABILITY = {runes: "con", arcaneShots: "int", disciplines: "wis", misfortunes: "cha", stormEnvironment: "con", trickShots: "dex"};
 function setDc(c, set, entry){
   var ab = set.id==="maneuvers" ? (mod(abilityScore(c, "str")) >= mod(abilityScore(c, "dex")) ? "str" : "dex") : entry && SET_DC_ABILITY[set.id];
   return ab ? {ability: ab, dc: 8 + profBonus(c) + mod(abilityScore(c, ab))} : null;
@@ -136,6 +136,10 @@ function setFacts(c, set, entry, all){
   if(set.id==="arcaneShots" && entry){
     dc("Arcane Shot save DC");
     uses("Fighter:arcane_shot", "Arcane Shot uses", "short");
+  }
+  if(set.id==="trickShots" && entry){
+    dc("Trick shot save DC");
+    uses("Fighter:grit_points", "Grit points", "short");
   }
   if(set.id==="disciplines" && entry){
     dc("Ki save DC");

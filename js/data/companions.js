@@ -50,9 +50,9 @@ BEAST_MASTER_BEASTS.forEach(function(n){
 var PRIMAL_BEASTS = {
   "Beast of the Land": {size:"Medium", hpBase:5, hpPer:5, speed:"40 ft, climb 40 ft", abilities:{str:14, dex:14, con:15, int:8, wis:14, cha:11},
     attack:{name:"Maul", dice:"1d8", bonus:2, damageType:"slashing", text:"Melee, reach 5 ft, one target."},
-    trait:{name:"Charge", text:"If it moves at least 20 ft straight toward a target and then hits it with Maul on the same turn, the target takes an extra 1d6 slashing damage; a creature must succeed on a STR save against your spell save DC or be knocked prone."}},
+    trait:{name:"Charge", text:"If it moves at least 20 ft straight toward a target and then hits it with Maul on the same turn, the target takes an extra 1d6 slashing damage. A creature must succeed on a STR save against your spell save DC or be knocked prone."}},
   "Beast of the Sea": {size:"Medium", hpBase:5, hpPer:5, speed:"5 ft, swim 60 ft", abilities:{str:14, dex:14, con:15, int:8, wis:14, cha:11},
-    attack:{name:"Binding Strike", dice:"1d6", bonus:2, damageType:"piercing or bludgeoning", text:"Melee, reach 5 ft, one target. A creature hit is grappled (escape DC your spell save DC); until the grapple ends, it can't use this attack on another target."},
+    attack:{name:"Binding Strike", dice:"1d6", bonus:2, damageType:"piercing or bludgeoning", text:"Melee, reach 5 ft, one target. A creature hit is grappled (escape DC your spell save DC). Until the grapple ends, it can't use this attack on another target."},
     trait:{name:"Amphibious", text:"It can breathe air and water."}},
   "Beast of the Sky": {size:"Small", hpBase:4, hpPer:4, speed:"10 ft, fly 60 ft", abilities:{str:6, dex:16, con:13, int:8, wis:14, cha:11},
     attack:{name:"Shred", dice:"1d4", bonus:3, damageType:"slashing", text:"Melee, reach 5 ft, one target."},
@@ -66,9 +66,9 @@ function primalBeast(kind, x){
     attacks:[{name: p.attack.name, toHit: x.spellAttack, dice: p.attack.dice, bonus: p.attack.bonus + x.pb, damageType: p.attack.damageType, text: p.attack.text}],
     traits:[p.trait,
       {name:"Primal Bond", text:"Add your proficiency bonus (" + plus(x.pb) + ") to any ability check or saving throw it makes. It understands the languages you speak."},
-      {name:"Commands", text:"It acts on your turn and takes the Dodge action unless you use a bonus action to command another action; when you take the Attack action, you can give up one attack to command it to Attack." +
+      {name:"Commands", text:"It acts on your turn and takes the Dodge action unless you use a bonus action to command another action. When you take the Attack action, you can give up one attack to command it to Attack." +
         (x.lv >= 7 ? " Its attacks are magical." : "") + (x.lv >= 11 ? " It makes two attacks when you command it to Attack." : "")},
-      {name:"Revive", text:"If it died within the last hour, use your action and a spell slot of 1st level or higher to bring it back after 1 minute with full HP; after a long rest you can summon a new one."}]
+      {name:"Revive", text:"If it died within the last hour, use your action and a spell slot of 1st level or higher to bring it back after 1 minute with full HP. After a long rest you can summon a new one."}]
   };
 }
 
@@ -110,7 +110,7 @@ export var COMPANIONS = [
         saves:"DEX " + plus(1 + x.pb) + ", CON " + plus(2 + x.pb),
         skills:"Athletics " + plus(2 + x.pb) + ", Perception " + plus(2 * x.pb),
         senses:"darkvision 60 ft, passive Perception " + (10 + 2 * x.pb),
-        immunities:"poison damage; charmed, exhaustion, poisoned",
+        immunities:"poison damage · charmed, exhaustion, poisoned",
         attacks:[{name:"Force-Empowered Rend", toHit: x.spellAttack, dice:"1d8", bonus: x.pb, damageType:"force",
           text:"Melee, reach 5 ft, one target it can see." + (x.lv >= 9 ? " A hit can trigger your Arcane Jolt." : "")}],
         actions:[{name:"Repair (3/day)", text:"Restores hit points to itself or a construct or object within 5 ft.", dice:"2d8", bonus: x.pb}],
@@ -129,7 +129,7 @@ export var COMPANIONS = [
         saves:"DEX " + plus(2 + x.pb),
         skills:"Perception " + plus(2 * x.pb) + ", Stealth " + plus(2 + x.pb),
         senses:"darkvision 60 ft, passive Perception " + (10 + 2 * x.pb),
-        immunities:"poison damage; exhaustion, poisoned",
+        immunities:"poison damage · exhaustion, poisoned",
         attacks:[{name:"Force Strike", toHit: x.spellAttack, dice:"1d4", bonus: x.pb, damageType:"force",
           text:"Ranged, 30 ft, one target it can see. Needs your bonus action."}],
         reactions:[{name:"Channel Magic", text:"It delivers a spell you cast that has a range of touch. It must be within 120 ft of you."}],
@@ -143,11 +143,11 @@ export var COMPANIONS = [
       var boom = x.lv >= 9 ? "3d8" : "2d8";      // Explosive Cannon: +1d8 to its damage
       return {
         type:"Small or Tiny object", ac:18, hp: 5 * x.lv, speed:"15 ft (if it has legs)", count: x.lv >= 15 ? 2 : 1,
-        immunities:"poison and psychic damage; +0 to all checks and saves",
+        immunities:"poison and psychic damage · +0 to all checks and saves",
         attacks:[{name:"Force Ballista", toHit: x.spellAttack, dice: boom, bonus:0, damageType:"force",
-          text:"Ranged spell attack, 120 ft, one creature or object; it's pushed 5 ft away."}],
+          text:"Ranged spell attack, 120 ft, one creature or object. It's pushed 5 ft away."}],
         actions:[
-          {name:"Flamethrower", text:"15-ft cone: fire damage on a failed save, half on a success; ignites unattended flammable objects.", dice: boom, bonus:0, save:"DEX " + x.spellDC},
+          {name:"Flamethrower", text:"15-ft cone: fire damage on a failed save, half on a success. It ignites unattended flammable objects.", dice: boom, bonus:0, save:"DEX " + x.spellDC},
           {name:"Protector", text:"It and each creature of your choice within 10 ft gain temporary hit points.", dice:"1d8", bonus: Math.max(1, x.mods.int)}
         ].concat(x.lv >= 9 ? [{name:"Detonate (Explosive Cannon)", text:"Your action within 60 ft: the cannon is destroyed and each creature within 20 ft takes force damage (half on a success).", dice:"3d8", bonus:0, save:"DEX " + x.spellDC}] : []),
         traits:[{name:"Activate", text:"Bonus action within 60 ft: it uses one of its actions" + (x.lv >= 15 ? " (both cannons with one bonus action)" : "") + ". It lasts 1 hour, until 0 HP or until you dismiss it."}]
@@ -167,7 +167,7 @@ export var COMPANIONS = [
         saves:"DEX " + plus(1 + x.pb) + ", WIS " + plus(2 + x.pb),
         senses:"darkvision 60 ft, passive Perception 12", immunities: essence + " damage",
         attacks:[{name:"Bite", toHit: 3 + x.pb, dice:"1d6", bonus: x.pb, damageType:"piercing", extraDice: extra, extraType: essence, text:"Melee, reach 5 ft, one target."}],
-        actions: x.lv >= 11 ? [{name:"Drake's Breath", text:"You or your drake exhale a 30-ft cone; " + essence + " damage on a failed save, half on a success. Once per long rest, or a 3rd-level or higher slot.",
+        actions: x.lv >= 11 ? [{name:"Drake's Breath", text:"You or your drake exhale a 30-ft cone of " + essence + " damage. A creature takes full damage on a failed save and half on a success. Once per long rest, or a 3rd-level or higher slot.",
           dice: x.lv >= 15 ? "10d6" : "8d6", bonus:0, save:"DEX " + x.spellDC}] : [],
         reactions:[{name:"Infused Strikes", text:"When another creature within 30 ft that it can see hits a target with a weapon attack, the target takes an extra 1d6 " + essence + " damage."}],
         traits:[{name:"Your turn", text:"It acts right after you and takes the Dodge action unless you use a bonus action to command it. It understands Draconic."}]
@@ -179,10 +179,10 @@ export var COMPANIONS = [
       return {
         type:"Small elemental", ac:13, hp: 5 + 5 * x.lv, speed:"30 ft, fly 30 ft (hover)",
         abilities:{str:10, dex:14, con:14, int:13, wis:15, cha:11},
-        senses:"darkvision 60 ft, passive Perception 12", immunities:"fire damage; charmed, frightened, grappled, prone, restrained",
+        senses:"darkvision 60 ft, passive Perception 12", immunities:"fire damage · charmed, frightened, grappled, prone, restrained",
         attacks:[{name:"Flame Seed", toHit: x.spellAttack, dice:"1d6", bonus: x.pb, damageType:"fire", text:"Ranged spell attack, 60 ft, one target."}],
         actions:[
-          {name:"Fiery Teleportation", text:"It and each willing creature of your choice within 5 ft teleport up to 15 ft; each creature within 5 ft of the space it left takes fire damage on a failed save.", dice:"1d6", bonus: x.pb, save:"DEX " + x.spellDC},
+          {name:"Fiery Teleportation", text:"It and each willing creature of your choice within 5 ft teleport up to 15 ft. Each creature within 5 ft of the space it left takes fire damage on a failed save.", dice:"1d6", bonus: x.pb, save:"DEX " + x.spellDC},
           {name:"Summoning flare", text:"When it appears, each creature other than you within 10 ft takes fire damage on a failed save.", dice:"2d6", bonus:0, save:"DEX " + x.spellDC}
         ],
         traits:[{name:"Your turn", text:"It acts right after you and takes the Dodge action unless you use a bonus action to command it. It lasts 1 hour (summoned with a use of Wild Shape) and understands your languages."}]
@@ -197,12 +197,12 @@ export var COMPANIONS = [
         senses:"blindsight 60 ft (blind beyond this radius), passive Perception 9",
         vulnerabilities:"fire",
         resistances: x.lv >= 10 ? "" : "necrotic, poison",
-        immunities: x.lv >= 10 ? "necrotic and poison damage; blinded, deafened, poisoned" : "blinded, deafened, poisoned",
+        immunities: x.lv >= 10 ? "necrotic and poison damage · blinded, deafened, poisoned" : "blinded, deafened, poisoned",
         attacks:[{name:"Claws", toHit: x.spellAttack, dice:"2d4", bonus: x.pb, damageType:"piercing",
           text:"Melee, reach 5 ft, one target." + (x.lv >= 14 ? " It makes two Claws attacks (Multiattack)." : "")}],
         actions: x.lv >= 10 ? [{name:"Explode (Foul Conjuration)", text:"When it dies, or you use your action to detonate it, each creature within 5 ft takes necrotic damage on a failed save.",
           dice: x.pb + "d6", bonus:0, save:"CON " + x.spellDC}] : [],
-        traits:[{name:"Call of the Shadowseeds", text:"Your reaction raises it next to a creature that takes damage in your Defile Ground; it attacks at once, then obeys your verbal commands on your turn. It lasts until 0 HP, your long rest, or you summon another. It understands your languages."}]
+        traits:[{name:"Call of the Shadowseeds", text:"Your reaction raises it next to a creature that takes damage in your Defile Ground. It attacks at once, then obeys your verbal commands on your turn. It lasts until 0 HP, your long rest, or you summon another. It understands your languages."}]
       };
     }},
   {id:"beast_companion", name:"Ranger's Companion", cls:"Ranger", subclass:"Beast Master", level:3,
@@ -225,7 +225,7 @@ export var COMPANIONS = [
         traits:(b.traits ? [{text: b.traits}] : [])
           .concat([{name:"Commands", text:"It acts on your initiative but only when you command it: your action has it Attack, Dash, Disengage, Dodge or Help" +
             (x.lv >= 5 ? " (and you make one weapon attack when it attacks)" : "") + "." +
-            (x.lv >= 7 ? " A bonus action can command Dash, Disengage, Dodge or Help when it doesn't attack; its attacks are magical." : "") +
+            (x.lv >= 7 ? " A bonus action can command Dash, Disengage, Dodge or Help when it doesn't attack. Its attacks are magical." : "") +
             (x.lv >= 11 ? " It makes two attacks when you command it to Attack." : "")}])
       };
     }},
@@ -240,7 +240,7 @@ export var COMPANIONS = [
       var rules = [
         {name:"Controlled mount", text:"While you ride it, it acts on your initiative and moves as you direct. It can take only the Dash, Disengage and Dodge actions" +
           (b.warTrained ? ", and the Attack action (it's war-trained)." : ".")},
-        {name:"Born to the Saddle", text:"Mounting or dismounting costs you 5 ft of movement. If it is moved against its will or you are knocked prone, you make a DEX save (DC 10) with advantage or fall off; a fall of 10 ft or less lands you on your feet (unless you are incapacitated)."}];
+        {name:"Born to the Saddle", text:"Mounting or dismounting costs you 5 ft of movement. If it is moved against its will or you are knocked prone, you make a DEX save (DC 10) with advantage or fall off. A fall of 10 ft or less lands you on your feet (unless you are incapacitated)."}];
       if(b.size==="Medium") rules.unshift({name:"Rider", text:"Only a Small rider can ride it."});
       return {
         type: b.size + " beast: " + x.choice.toLowerCase() + (b.homebrew ? " (homebrew)" : ""),

@@ -4,8 +4,8 @@
 export var PALADIN_SUBCLASSES = [
   {name:"Oath of Devotion", blurb:"The classic knight in shining armor.", features:{
     3:[
-      {name:"Oath Spells", text:"You always have Protection from Evil and Good and Sanctuary prepared; they don't count against your prepared spells.", spells:["Protection from Evil and Good","Sanctuary"], spellKind:"prepared"},
-      {name:"Channel Divinity", text:"Once per short or long rest: Sacred Weapon (action: for 1 minute, add your CHA modifier (minimum +1) to attack rolls with a weapon you hold; it sheds bright light for 20 feet and dim light for 20 more, and becomes magical if it isn't. It ends if you drop the weapon or fall unconscious, or as part of another action on your turn) or Turn the Unholy (action: each fiend or undead within 30 feet that can see or hear you makes a WIS save or is turned for 1 minute or until it takes damage)."}
+      {name:"Oath Spells", text:"You always have Protection from Evil and Good and Sanctuary prepared. They don't count against your prepared spells.", spells:["Protection from Evil and Good","Sanctuary"], spellKind:"prepared"},
+      {name:"Channel Divinity", text:"Once per short or long rest: Sacred Weapon (action: for 1 minute, add your CHA modifier (minimum +1) to attack rolls with a weapon you hold. It sheds bright light for 20 feet and dim light for 20 more, and becomes magical if it isn't. It ends if you drop the weapon or fall unconscious, or as part of another action on your turn) or Turn the Unholy (action: each fiend or undead within 30 feet that can see or hear you makes a WIS save or is turned for 1 minute or until it takes damage)."}
     ],
     5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Protection from Evil and Good, Sanctuary, Lesser Restoration and Zone of Truth prepared.", spells:["Protection from Evil and Good","Sanctuary","Lesser Restoration","Zone of Truth"], spellKind:"prepared"}],
     7:[{name:"Aura of Devotion", text:"While you're conscious, you and friendly creatures within 10 feet of you can't be charmed. The range becomes 30 feet at level 18."}],
@@ -17,8 +17,8 @@ export var PALADIN_SUBCLASSES = [
   }},
   {name:"Oath of the Ancients", blurb:"Protects light and life in the world.", features:{
     3:[
-      {name:"Oath Spells", text:"You always have Ensnaring Strike and Speak with Animals prepared; they don't count against your prepared spells.", spells:["Ensnaring Strike","Speak with Animals"], spellKind:"prepared"},
-      {name:"Channel Divinity", text:"Once per short or long rest: Nature's Wrath (action: spectral vines reach for a creature you can see within 10 feet, which makes a STR or DEX save (its choice) or is restrained, repeating the save at the end of each of its turns) or Turn the Faithless (action: each fey or fiend within 30 feet that can hear you makes a WIS save or is turned for 1 minute or until it takes damage; a turned creature's true form is revealed if an illusion or shapeshift hides it)."}
+      {name:"Oath Spells", text:"You always have Ensnaring Strike and Speak with Animals prepared. They don't count against your prepared spells.", spells:["Ensnaring Strike","Speak with Animals"], spellKind:"prepared"},
+      {name:"Channel Divinity", text:"Once per short or long rest: Nature's Wrath (action: spectral vines reach for a creature you can see within 10 feet, which makes a STR or DEX save (its choice) or is restrained, repeating the save at the end of each of its turns) or Turn the Faithless (action: each fey or fiend within 30 feet that can hear you makes a WIS save or is turned for 1 minute or until it takes damage. A turned creature's true form is revealed if an illusion or shapeshift hides it)."}
     ],
     5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Ensnaring Strike, Speak with Animals, Moonbeam and Misty Step prepared.", spells:["Ensnaring Strike","Speak with Animals","Moonbeam","Misty Step"], spellKind:"prepared"}],
     7:[{name:"Aura of Warding", text:"You and friendly creatures within 10 feet of you have resistance to damage from spells. The range becomes 30 feet at level 18."}],
@@ -30,7 +30,7 @@ export var PALADIN_SUBCLASSES = [
   }},
   {name:"Oath of Vengeance", blurb:"Punishes wrongdoers at any cost.", features:{
     3:[
-      {name:"Oath Spells", text:"You always have Bane and Hunter's Mark prepared; they don't count against your prepared spells.", spells:["Bane","Hunter's Mark"], spellKind:"prepared"},
+      {name:"Oath Spells", text:"You always have Bane and Hunter's Mark prepared. They don't count against your prepared spells.", spells:["Bane","Hunter's Mark"], spellKind:"prepared"},
       {name:"Channel Divinity", text:"Once per short or long rest: Abjure Enemy (action: a creature you can see within 60 feet makes a WIS save, with disadvantage if it's a fiend or undead, unless it can't be frightened. On a failure it is frightened for 1 minute or until it takes damage, and its speed is 0. On a success its speed is halved for 1 minute or until it takes damage) or Vow of Enmity (bonus action: advantage on attack rolls against a creature you can see within 10 feet for 1 minute, or until it drops to 0 hit points or falls unconscious)."}
     ],
     5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Bane, Hunter's Mark, Hold Person and Misty Step prepared.", spells:["Bane","Hunter's Mark","Hold Person","Misty Step"], spellKind:"prepared"}],
@@ -43,7 +43,7 @@ export var PALADIN_SUBCLASSES = [
   }},
   {name:"Oath of Conquest", blurb:"Rules through fear and iron will, breaking the enemy's spirit.", features:{
     3:[
-      {name:"Oath Spells", text:"You always have Armor of Agathys and Command prepared; they don't count against your prepared spells.", spells:["Armor of Agathys","Command"], spellKind:"prepared"},
+      {name:"Oath Spells", text:"You always have Armor of Agathys and Command prepared. They don't count against your prepared spells.", spells:["Armor of Agathys","Command"], spellKind:"prepared"},
       {name:"Channel Divinity", text:"Once per short or long rest: Conquering Presence (action: each creature of your choice within 30 feet makes a WIS save or is frightened of you for 1 minute, repeating the save at the end of each of its turns) or Guided Strike (+10 to one attack roll, declared after seeing the roll but before knowing the result)."}
     ],
     5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Armor of Agathys, Command, Hold Person and Spiritual Weapon prepared.", spells:["Armor of Agathys","Command","Hold Person","Spiritual Weapon"], spellKind:"prepared"}],
@@ -56,8 +56,8 @@ export var PALADIN_SUBCLASSES = [
   }},
   {name:"Oathbreaker", blurb:"A fallen paladin who abandoned their oath and turned to darkness.", features:{
     3:[
-      {name:"Oathbreaker Spells", text:"You always have Hellish Rebuke and Inflict Wounds prepared; they don't count against your prepared spells.", spells:["Hellish Rebuke","Inflict Wounds"], spellKind:"prepared"},
-      {name:"Channel Divinity", text:"Once per short or long rest: Control Undead (action: an undead you can see within 30 feet makes a WIS save or obeys your commands for 24 hours, or until you use this again; undead with a challenge rating equal to or higher than your paladin level are immune) or Dreadful Aspect (action: each creature of your choice within 30 feet that can see you makes a WIS save or is frightened of you for 1 minute; one that ends its turn more than 30 feet away from you can repeat the save)."}
+      {name:"Oathbreaker Spells", text:"You always have Hellish Rebuke and Inflict Wounds prepared. They don't count against your prepared spells.", spells:["Hellish Rebuke","Inflict Wounds"], spellKind:"prepared"},
+      {name:"Channel Divinity", text:"Once per short or long rest: Control Undead (action: an undead you can see within 30 feet makes a WIS save or obeys your commands for 24 hours, or until you use this again. Undead with a challenge rating equal to or higher than your paladin level are immune) or Dreadful Aspect (action: each creature of your choice within 30 feet that can see you makes a WIS save or is frightened of you for 1 minute. One that ends its turn more than 30 feet away from you can repeat the save)."}
     ],
     5:[{name:"Oathbreaker Spells", replaces:"Oathbreaker Spells", text:"You always have Hellish Rebuke, Inflict Wounds, Crown of Madness and Darkness prepared.", spells:["Hellish Rebuke","Inflict Wounds","Crown of Madness","Darkness"], spellKind:"prepared"}],
     7:[{name:"Aura of Hate", text:"You, and any fiends and undead within 10 feet of you, gain a bonus to melee weapon damage rolls equal to your CHA modifier (minimum +1). A creature can benefit from only one paladin's aura at a time. The range becomes 30 feet at level 18."}],
@@ -69,7 +69,7 @@ export var PALADIN_SUBCLASSES = [
   }},
   {name:"Oath of Redemption", blurb:"Seeks to reform the wicked through peace, mercy and patience.", features:{
     3:[
-      {name:"Oath Spells", text:"You always have Sanctuary and Sleep prepared; they don't count against your prepared spells.", spells:["Sanctuary","Sleep"], spellKind:"prepared"},
+      {name:"Oath Spells", text:"You always have Sanctuary and Sleep prepared. They don't count against your prepared spells.", spells:["Sanctuary","Sleep"], spellKind:"prepared"},
       {name:"Channel Divinity", text:"Once per short or long rest: Emissary of Peace (bonus action: +5 to CHA (Persuasion) checks for 10 minutes) or Rebuke the Violent (reaction, right after a creature within 30 feet deals damage with an attack to someone other than you: it makes a WIS save, taking radiant damage equal to the damage it dealt on a failure, or half on a success)."}
     ],
     5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Sanctuary, Sleep, Calm Emotions and Hold Person prepared.", spells:["Sanctuary","Sleep","Calm Emotions","Hold Person"], spellKind:"prepared"}],
@@ -82,7 +82,7 @@ export var PALADIN_SUBCLASSES = [
   }},
   {name:"Oath of Glory", blurb:"A heroic athlete destined for legend who inspires allies to greatness.", features:{
     3:[
-      {name:"Oath Spells", text:"You always have Guiding Bolt and Heroism prepared; they don't count against your prepared spells.", spells:["Guiding Bolt","Heroism"], spellKind:"prepared"},
+      {name:"Oath Spells", text:"You always have Guiding Bolt and Heroism prepared. They don't count against your prepared spells.", spells:["Guiding Bolt","Heroism"], spellKind:"prepared"},
       {name:"Channel Divinity", text:"Once per short or long rest: Peerless Athlete (bonus action: for 10 minutes, advantage on STR (Athletics) and DEX (Acrobatics) checks, double your carrying, pushing, dragging and lifting capacity, and +10 feet to your long and high jumps) or Inspiring Smite (right after you deal damage with Divine Smite, use a bonus action to split 2d8 + your paladin level temporary HP among creatures of your choice within 30 feet, including you)."}
     ],
     5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Guiding Bolt, Heroism, Enhance Ability and Magic Weapon prepared.", spells:["Guiding Bolt","Heroism","Enhance Ability","Magic Weapon"], spellKind:"prepared"}],
@@ -91,15 +91,15 @@ export var PALADIN_SUBCLASSES = [
     13:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Guiding Bolt, Heroism, Enhance Ability, Magic Weapon, Haste, Protection from Energy, Compulsion and Freedom of Movement prepared.", spells:["Guiding Bolt","Heroism","Enhance Ability","Magic Weapon","Haste","Protection from Energy","Compulsion","Freedom of Movement"], spellKind:"prepared"}],
     15:[{name:"Glorious Defense", text:"When you or another creature you can see within 10 feet is hit by an attack roll, use your reaction to add your CHA modifier (minimum +1) to the target's AC against that attack, possibly making it miss. If it misses, you can make one weapon attack against the attacker as part of this reaction, if it's within range. You can use this a number of times equal to your CHA modifier (minimum 1), regained on a long rest."}],
     17:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Guiding Bolt, Heroism, Enhance Ability, Magic Weapon, Haste, Protection from Energy, Compulsion, Freedom of Movement, Commune and Flame Strike prepared.", spells:["Guiding Bolt","Heroism","Enhance Ability","Magic Weapon","Haste","Protection from Energy","Compulsion","Freedom of Movement","Commune","Flame Strike"], spellKind:"prepared"}],
-    20:[{name:"Living Legend", text:"As a bonus action, for 1 minute: you have advantage on CHA checks; once on each of your turns when you miss with a weapon attack, you can make it hit instead; and when you fail a saving throw, you can use your reaction to reroll it (using the new roll). Once per long rest, or expend a 5th-level spell slot to use it again."}]
+    20:[{name:"Living Legend", text:"As a bonus action, for 1 minute: you have advantage on CHA checks. Once on each of your turns when you miss with a weapon attack, you can make it hit instead. When you fail a saving throw, you can use your reaction to reroll it (using the new roll). Once per long rest, or expend a 5th-level spell slot to use it again."}]
   }},
   {name:"Oath of the Crown", blurb:"Sworn to civilization and the rule of law, a guardian who shields others and holds the line.", features:{
     3:[
-      {name:"Oath Spells", text:"You always have Command and Compelled Duel prepared; they don't count against your prepared spells.", spells:["Command","Compelled Duel"], spellKind:"prepared"},
-      {name:"Channel Divinity", text:"Once per short or long rest: Champion Challenge (bonus action: each creature of your choice you can see within 30 feet makes a WIS save or can't willingly move more than 30 feet away from you; it ends if you are incapacitated or die, or the creature is moved more than 30 feet away) or Turn the Tide (bonus action: each creature of your choice within 30 feet that can hear you and has no more than half its hit points regains 1d6 + your CHA modifier (minimum 1) hit points)."}
+      {name:"Oath Spells", text:"You always have Command and Compelled Duel prepared. They don't count against your prepared spells.", spells:["Command","Compelled Duel"], spellKind:"prepared"},
+      {name:"Channel Divinity", text:"Once per short or long rest: Champion Challenge (bonus action: each creature of your choice you can see within 30 feet makes a WIS save or can't willingly move more than 30 feet away from you. It ends if you are incapacitated or die, or the creature is moved more than 30 feet away) or Turn the Tide (bonus action: each creature of your choice within 30 feet that can hear you and has no more than half its hit points regains 1d6 + your CHA modifier (minimum 1) hit points)."}
     ],
     5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Command, Compelled Duel, Warding Bond and Zone of Truth prepared.", spells:["Command","Compelled Duel","Warding Bond","Zone of Truth"], spellKind:"prepared"}],
-    7:[{name:"Divine Allegiance", text:"When a creature within 5 feet of you takes damage, you can use your reaction to take that damage instead; the creature takes none. The damage you take can't be reduced or prevented in any way."}],
+    7:[{name:"Divine Allegiance", text:"When a creature within 5 feet of you takes damage, you can use your reaction to take that damage instead. The creature takes none. The damage you take can't be reduced or prevented in any way."}],
     9:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Command, Compelled Duel, Warding Bond, Zone of Truth, Aura of Vitality and Spirit Guardians prepared.", spells:["Command","Compelled Duel","Warding Bond","Zone of Truth","Aura of Vitality","Spirit Guardians"], spellKind:"prepared"}],
     13:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Command, Compelled Duel, Warding Bond, Zone of Truth, Aura of Vitality, Spirit Guardians, Banishment and Guardian of Faith prepared.", spells:["Command","Compelled Duel","Warding Bond","Zone of Truth","Aura of Vitality","Spirit Guardians","Banishment","Guardian of Faith"], spellKind:"prepared"}],
     15:[{name:"Unyielding Spirit", text:"You have advantage on saving throws to avoid becoming paralyzed or stunned."}],
@@ -108,8 +108,8 @@ export var PALADIN_SUBCLASSES = [
   }},
   {name:"Oath of the Watchers", blurb:"Guards the mortal realm against extraplanar threats, banishing fiends, aberrations, and extraplanar invaders.", features:{
     3:[
-      {name:"Oath Spells", text:"You always have Alarm and Detect Magic prepared; they don't count against your prepared spells.", spells:["Alarm","Detect Magic"], spellKind:"prepared"},
-      {name:"Channel Divinity", text:"Once per short or long rest: Watcher's Will (action: choose up to your CHA modifier (minimum 1) creatures you can see within 30 feet; for 1 minute, you and they have advantage on INT, WIS and CHA saves) or Abjure the Extraplanar (action: each aberration, celestial, elemental, fey or fiend within 30 feet that can hear you makes a WIS save or is turned for 1 minute or until it takes damage)."}
+      {name:"Oath Spells", text:"You always have Alarm and Detect Magic prepared. They don't count against your prepared spells.", spells:["Alarm","Detect Magic"], spellKind:"prepared"},
+      {name:"Channel Divinity", text:"Once per short or long rest: Watcher's Will (action: choose up to your CHA modifier (minimum 1) creatures you can see within 30 feet. For 1 minute, you and they have advantage on INT, WIS and CHA saves) or Abjure the Extraplanar (action: each aberration, celestial, elemental, fey or fiend within 30 feet that can hear you makes a WIS save or is turned for 1 minute or until it takes damage)."}
     ],
     5:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Alarm, Detect Magic, Moonbeam and See Invisibility prepared.", spells:["Alarm","Detect Magic","Moonbeam","See Invisibility"], spellKind:"prepared"}],
     7:[{name:"Aura of the Sentinel", text:"While you aren't incapacitated, you and creatures of your choice within 10 feet of you add your proficiency bonus to initiative rolls (already added to yours on the sheet). The aura's range becomes 30 feet at level 18.", initiative:"pb"}],
@@ -117,6 +117,6 @@ export var PALADIN_SUBCLASSES = [
     13:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Alarm, Detect Magic, Moonbeam, See Invisibility, Counterspell, Nondetection, Aura of Purity and Banishment prepared.", spells:["Alarm","Detect Magic","Moonbeam","See Invisibility","Counterspell","Nondetection","Aura of Purity","Banishment"], spellKind:"prepared"}],
     15:[{name:"Vigilant Rebuke", text:"Whenever you or a creature you can see within 30 feet succeeds on an INT, WIS or CHA saving throw, you can use your reaction to deal 2d8 + your CHA modifier force damage to the creature that forced the save."}],
     17:[{name:"Oath Spells", replaces:"Oath Spells", text:"You always have Alarm, Detect Magic, Moonbeam, See Invisibility, Counterspell, Nondetection, Aura of Purity, Banishment, Hold Monster and Scrying prepared.", spells:["Alarm","Detect Magic","Moonbeam","See Invisibility","Counterspell","Nondetection","Aura of Purity","Banishment","Hold Monster","Scrying"], spellKind:"prepared"}],
-    20:[{name:"Mortal Bulwark", text:"As a bonus action, for 1 minute: you gain truesight out to 120 feet; you have advantage on attack rolls against aberrations, celestials, elementals, fey and fiends; and when you hit any creature with an attack roll and deal damage, you can force it to make a CHA save against your spell save DC or be banished to its native plane if it isn't there now (on a success it can't be banished this way for 24 hours). Once per long rest, or expend a 5th-level spell slot to use it again."}]
+    20:[{name:"Mortal Bulwark", text:"As a bonus action, for 1 minute: you gain truesight out to 120 feet. You have advantage on attack rolls against aberrations, celestials, elementals, fey and fiends. When you hit any creature with an attack roll and deal damage, you can force it to make a CHA save against your spell save DC or be banished to its native plane if it isn't there now (on a success it can't be banished this way for 24 hours). Once per long rest, or expend a 5th-level spell slot to use it again."}]
   }}
 ];

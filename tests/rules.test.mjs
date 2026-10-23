@@ -363,7 +363,7 @@ test("spell choices: Circle of the Land, the Genie, Divine Soul, patron lists", 
 
   // Option text for the pickers.
   assert.equal(H.spellOptionText(["Bless"]), "Bless");
-  assert.equal(H.spellOptionText({ 3: ["Hold Person", "Spike Growth"], 5: ["Sleet Storm", "Slow"] }, "Druid"), "Hold Person, Spike Growth (Druid 3); Sleet Storm, Slow (5)");
+  assert.equal(H.spellOptionText({ 3: ["Hold Person", "Spike Growth"], 5: ["Sleet Storm", "Slow"] }, "Druid"), "Hold Person, Spike Growth (Druid 3) · Sleet Storm, Slow (5)");
 });
 
 test("speeds: race fly/swim/climb, feature speeds, conditions, Superior Mobility", () => {

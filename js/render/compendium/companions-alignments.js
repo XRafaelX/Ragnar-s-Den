@@ -67,7 +67,7 @@ function showFamiliar(e){
     var lead = ce("p", "cmp-lead");
     lead.textContent = e.chain
       ? "Only with Pact of the Chain (warlock 3+). It gets its own card on the sheet's Companions tab, and it can attack when you give up one of your attacks."
-      : "From the Find Familiar spell (or Pact of the Chain). It gets its own card on the sheet's Companions tab; a Find Familiar familiar can't attack.";
+      : "From the Find Familiar spell (or Pact of the Chain). It gets its own card on the sheet's Companions tab. A Find Familiar familiar can't attack.";
     body.appendChild(lead);
     var holder = ce("div", "cmp-companion");
     renderStatBlock(holder, exampleStats(e, 1), e.key, {rolls: false});
@@ -107,7 +107,7 @@ function showCompanion(e){
           (e.def.choice && e.def.id!=="beast_companion" ? " Its " + e.def.choice.label.toLowerCase() + " (" + e.def.choice.options.join(", ") + ") is picked on the sheet." : "");
       } else {
         holder.innerHTML = "<p>Choose a beast no larger than Medium with a challenge rating of 1/4 or lower (for example: " + escapeHtml(Object.keys(BEAST_PRESETS).slice(0, 8).join(", ")) + " and " + (Object.keys(BEAST_PRESETS).length - 8) + " more" +
-          "). On the sheet you enter its stat block as printed, and the sheet adds your proficiency bonus to its AC, attack and damage rolls and proficient saves and skills; its hit point maximum becomes four times your ranger level when that's higher.</p>";
+          "). On the sheet you enter its stat block as printed, and the sheet adds your proficiency bonus to its AC, attack and damage rolls and proficient saves and skills. Its hit point maximum becomes four times your ranger level when that's higher.</p>";
         note.textContent = "";
       }
     }

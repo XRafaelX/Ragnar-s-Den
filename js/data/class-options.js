@@ -53,23 +53,23 @@ export var OPTION_SETS = [
     help:"Special combat moves, each fuelled by a superiority die: an extra effect on a hit, a reaction, or a bonus to a check.",
     options:[
       {name:"Commander's Strike", source:"PHB", text:"When you take the Attack action, forgo one of your attacks and use a bonus action to direct an ally who can see or hear you: it can use its reaction to make one weapon attack, adding the superiority die to its damage."},
-      {name:"Disarming Attack", source:"PHB", save:"str", text:"When you hit with a weapon attack, add the superiority die to the damage; the target makes a Strength save or drops one item it's holding (your choice), which lands at its feet."},
-      {name:"Distracting Strike", source:"PHB", text:"When you hit with a weapon attack, add the superiority die to the damage; the next attack roll against the target by someone other than you has advantage, if made before the start of your next turn."},
+      {name:"Disarming Attack", source:"PHB", save:"str", text:"When you hit with a weapon attack, add the superiority die to the damage. The target makes a Strength save or drops one item it's holding (your choice), which lands at its feet."},
+      {name:"Distracting Strike", source:"PHB", text:"When you hit with a weapon attack, add the superiority die to the damage. The next attack roll against the target by someone other than you has advantage, if made before the start of your next turn."},
       {name:"Evasive Footwork", source:"PHB", text:"When you move, add the superiority die to your AC until you stop moving."},
       {name:"Feinting Attack", source:"PHB", text:"As a bonus action, feint at a creature within 5 feet: you have advantage on your next attack roll against it this turn, and add the superiority die to the damage if it hits."},
-      {name:"Goading Attack", source:"PHB", save:"wis", text:"When you hit with a weapon attack, add the superiority die to the damage; the target makes a Wisdom save or has disadvantage on attacks against anyone but you until the end of your next turn."},
-      {name:"Lunging Attack", source:"PHB", text:"When you make a melee weapon attack on your turn, increase your reach for it by 5 feet; add the superiority die to the damage if it hits."},
-      {name:"Maneuvering Attack", source:"PHB", text:"When you hit with a weapon attack, add the superiority die to the damage; an ally who can see or hear you can use its reaction to move up to half its speed without provoking an opportunity attack from the target."},
-      {name:"Menacing Attack", source:"PHB", save:"wis", text:"When you hit with a weapon attack, add the superiority die to the damage; the target makes a Wisdom save or is frightened of you until the end of your next turn."},
+      {name:"Goading Attack", source:"PHB", save:"wis", text:"When you hit with a weapon attack, add the superiority die to the damage. The target makes a Wisdom save or has disadvantage on attacks against anyone but you until the end of your next turn."},
+      {name:"Lunging Attack", source:"PHB", text:"When you make a melee weapon attack on your turn, increase your reach for it by 5 feet. Add the superiority die to the damage if it hits."},
+      {name:"Maneuvering Attack", source:"PHB", text:"When you hit with a weapon attack, add the superiority die to the damage. An ally who can see or hear you can use its reaction to move up to half its speed without provoking an opportunity attack from the target."},
+      {name:"Menacing Attack", source:"PHB", save:"wis", text:"When you hit with a weapon attack, add the superiority die to the damage. The target makes a Wisdom save or is frightened of you until the end of your next turn."},
       {name:"Parry", source:"PHB", text:"When another creature damages you with a melee attack, use your reaction to reduce the damage by the superiority die + your Dexterity modifier."},
       {name:"Precision Attack", source:"PHB", text:"When you make a weapon attack roll, add the superiority die to it, before or after rolling but before the result is known."},
-      {name:"Pushing Attack", source:"PHB", save:"str", text:"When you hit with a weapon attack, add the superiority die to the damage; a Large or smaller target makes a Strength save or is pushed up to 15 feet away from you."},
+      {name:"Pushing Attack", source:"PHB", save:"str", text:"When you hit with a weapon attack, add the superiority die to the damage. A Large or smaller target makes a Strength save or is pushed up to 15 feet away from you."},
       {name:"Rally", source:"PHB", text:"On your turn, use a bonus action to bolster an ally who can see or hear you: it gains temporary hit points equal to the superiority die + your Charisma modifier."},
       {name:"Riposte", source:"PHB", text:"When a creature misses you with a melee attack, use your reaction to make a melee weapon attack against it, adding the superiority die to the damage if it hits."},
       {name:"Sweeping Attack", source:"PHB", text:"When you hit a creature with a melee weapon attack, choose another creature within 5 feet of it and within your reach: if your attack roll would hit it, it takes the superiority die in damage of the same type."},
-      {name:"Trip Attack", source:"PHB", save:"str", text:"When you hit with a weapon attack, add the superiority die to the damage; a Large or smaller target makes a Strength save or is knocked prone."},
+      {name:"Trip Attack", source:"PHB", save:"str", text:"When you hit with a weapon attack, add the superiority die to the damage. A Large or smaller target makes a Strength save or is knocked prone."},
       {name:"Ambush", source:"TCE", optional:true, text:"When you make a Dexterity (Stealth) check or an initiative roll, add the superiority die to it, unless you're incapacitated."},
-      {name:"Bait and Switch", source:"TCE", optional:true, text:"On your turn, spend at least 5 feet of movement to swap places with a willing creature within 5 feet (no opportunity attacks); you or it (your choice) adds the superiority die to AC until the start of your next turn."},
+      {name:"Bait and Switch", source:"TCE", optional:true, text:"On your turn, spend at least 5 feet of movement to swap places with a willing creature within 5 feet (no opportunity attacks). You or it (your choice) adds the superiority die to AC until the start of your next turn."},
       {name:"Brace", source:"TCE", optional:true, text:"When a creature you can see moves into the reach of the melee weapon you're wielding, use your reaction to make one attack against it with that weapon, adding the superiority die to the damage if it hits."},
       {name:"Commanding Presence", source:"TCE", optional:true, text:"When you make a Charisma (Intimidation), (Performance) or (Persuasion) check, add the superiority die to it."},
       {name:"Grappling Strike", source:"TCE", optional:true, text:"Right after you hit a creature with a melee attack on your turn, try to grapple it as a bonus action, adding the superiority die to your Strength (Athletics) check."},
@@ -96,7 +96,7 @@ export var OPTION_SETS = [
   {
     id:"arcaneShots", label:"Arcane Shots", noun:"Arcane Shot option", className:"Fighter", subclass:"Arcane Archer",
     known:{3:2, 7:3, 10:4, 15:5, 18:6}, swap:"learn",
-    help:"Magic you weave into an arrow fired from a shortbow or longbow, once per turn as part of the Attack action. You have two uses per short or long rest; the extra damage doubles at fighter level 18.",
+    help:"Magic you weave into an arrow fired from a shortbow or longbow, once per turn as part of the Attack action. You have two uses per short or long rest. The extra damage doubles at fighter level 18.",
     options:[
       {name:"Banishing Arrow", source:"XGE", save:"cha", text:"On a hit, the target makes a Charisma save or is banished to the Feywild until the end of its next turn (speed 0, incapacitated), returning to its space or the nearest free one. From fighter level 18 it also takes 2d6 force damage."},
       {name:"Beguiling Arrow", source:"XGE", save:"wis", text:"On a hit, +2d6 psychic damage, and you choose one of your allies within 30 feet of the target: it makes a Wisdom save or is charmed by that ally until the start of your next turn."},
@@ -104,7 +104,7 @@ export var OPTION_SETS = [
       {name:"Enfeebling Arrow", source:"XGE", save:"con", text:"On a hit, +2d6 necrotic damage, and the target makes a Constitution save or deals only half damage with weapon attacks until the start of your next turn."},
       {name:"Grasping Arrow", source:"XGE", text:"On a hit, +2d6 poison damage, and brambles wrap the target for 1 minute: its speed drops by 10 feet and it takes 2d6 slashing damage the first time on each turn it moves 1 foot or more without teleporting. A creature can use its action to pull them free with a Strength (Athletics) check against your Arcane Shot save DC."},
       {name:"Piercing Arrow", source:"XGE", save:"dex", text:"No attack roll: the arrow flies in a 30-foot line, passing through objects and ignoring cover. Each creature in the line makes a Dexterity save, taking the arrow's damage + 1d6 piercing on a failure, or half on a success."},
-      {name:"Seeking Arrow", source:"XGE", save:"dex", text:"No attack roll: aim at a creature you've seen in the past minute; the arrow flies around obstacles to it. It makes a Dexterity save, taking the arrow's damage + 1d6 force on a failure (and you learn where it is), or half on a success."},
+      {name:"Seeking Arrow", source:"XGE", save:"dex", text:"No attack roll: aim at a creature you've seen in the past minute. The arrow flies around obstacles to it. It makes a Dexterity save, taking the arrow's damage + 1d6 force on a failure (and you learn where it is), or half on a success."},
       {name:"Shadow Arrow", source:"XGE", save:"wis", text:"On a hit, +2d6 psychic damage, and the target makes a Wisdom save or can't see anything farther than 5 feet away until the start of your next turn."}
     ]
   },
@@ -114,15 +114,15 @@ export var OPTION_SETS = [
     id:"disciplines", label:"Elemental Disciplines", noun:"elemental discipline", className:"Monk", subclass:"Way of the Four Elements",
     known:{3:1, 6:2, 11:3, 17:4}, swap:"learn", costUnit:["ki point", "ki points"],
     always:[{name:"Elemental Attunement", source:"PHB", text:"As an action, briefly control elemental forces nearby: a harmless sensory effect, light or snuff out a small flame, chill or warm up to 1 pound of nonliving material for 1 hour, or shape earth, fire, water or mist that fits in a 1-foot cube for 1 minute."}],
-    help:"Elemental magic fuelled by ki. You always know Elemental Attunement; the others are your picks, with stronger ones unlocking at monk levels 6, 11 and 17.",
+    help:"Elemental magic fuelled by ki. You always know Elemental Attunement. The others are your picks, with stronger ones unlocking at monk levels 6, 11 and 17.",
     options:[
       {name:"Fangs of the Fire Snake", source:"PHB", cost:"1", text:"When you take the Attack action, your unarmed strikes this turn have 10 extra feet of reach and deal fire damage. Spend 1 more ki on a hit to deal an extra 1d10 fire damage."},
       {name:"Fist of Four Thunders", source:"PHB", cost:"2", text:"Cast Thunderwave: a 15-foot cube of thunder from you (Constitution save: 2d8 thunder damage and pushed 10 feet, or half damage and no push on a success)."},
-      {name:"Fist of Unbroken Air", source:"PHB", cost:"2", save:"str", text:"As an action, a creature within 30 feet makes a Strength save or takes 3d10 bludgeoning damage (+1d10 per extra ki spent), is pushed up to 20 feet away and knocked prone; on a success, half damage only."},
+      {name:"Fist of Unbroken Air", source:"PHB", cost:"2", save:"str", text:"As an action, a creature within 30 feet makes a Strength save or takes 3d10 bludgeoning damage (+1d10 per extra ki spent), is pushed up to 20 feet away and knocked prone. On a success, half damage only."},
       {name:"Rush of the Gale Spirits", source:"PHB", cost:"2", text:"Cast Gust of Wind: a 60-foot line of strong wind for up to 1 minute (concentration) that pushes creatures 15 feet away (Strength save) and makes moving toward you cost double."},
       {name:"Shape the Flowing River", source:"PHB", cost:"1", text:"As an action, shape, freeze or melt water and ice in a 30-foot cube within 120 feet (raise or lower it, make trenches or walls, but nothing that traps or damages a creature)."},
       {name:"Sweeping Cinder Strike", source:"PHB", cost:"2", text:"Cast Burning Hands: a 15-foot cone of flame (Dexterity save: 3d6 fire damage, half on a success)."},
-      {name:"Water Whip", source:"PHB", cost:"2", save:"dex", text:"As an action, a creature within 30 feet makes a Dexterity save or takes 3d10 bludgeoning damage (+1d10 per extra ki spent) and is pulled up to 25 feet closer or knocked prone (your choice); on a success, half damage only."},
+      {name:"Water Whip", source:"PHB", cost:"2", save:"dex", text:"As an action, a creature within 30 feet makes a Dexterity save or takes 3d10 bludgeoning damage (+1d10 per extra ki spent) and is pulled up to 25 feet closer or knocked prone (your choice). On a success, half damage only."},
       {name:"Clench of the North Wind", source:"PHB", cost:"3", level:6, text:"Cast Hold Person: a humanoid you can see within 60 feet makes a Wisdom save or is paralyzed for up to 1 minute (concentration), repeating the save at the end of each of its turns."},
       {name:"Gong of the Summit", source:"PHB", cost:"3", level:6, text:"Cast Shatter: a 10-foot-radius burst of sound within 60 feet (Constitution save: 3d8 thunder damage, half on a success)."},
       {name:"Eternal Mountain Defense", source:"PHB", cost:"5", level:11, text:"Cast Stoneskin on yourself: resistance to nonmagical bludgeoning, piercing and slashing damage for up to 1 hour (concentration)."},
@@ -130,7 +130,7 @@ export var OPTION_SETS = [
       {name:"Mist Stance", source:"PHB", cost:"4", level:11, text:"Cast Gaseous Form on yourself: become a misty cloud that can fly 10 feet and slip through small gaps, with resistance to nonmagical damage, for up to 1 hour (concentration)."},
       {name:"Ride the Wind", source:"PHB", cost:"4", level:11, text:"Cast Fly on yourself: a flying speed of 60 feet for up to 10 minutes (concentration)."},
       {name:"Breath of Winter", source:"PHB", cost:"6", level:17, text:"Cast Cone of Cold: a 60-foot cone of cold air (Constitution save: 8d8 cold damage, half on a success)."},
-      {name:"River of Hungry Flame", source:"PHB", cost:"5", level:17, text:"Cast Wall of Fire: a wall of flame up to 60 feet long for up to 1 minute (concentration); creatures caught in it or ending a turn near its hot side take 5d8 fire damage (Dexterity save for half when it appears)."},
+      {name:"River of Hungry Flame", source:"PHB", cost:"5", level:17, text:"Cast Wall of Fire: a wall of flame up to 60 feet long for up to 1 minute (concentration). Creatures caught in it or ending a turn near its hot side take 5d8 fire damage (Dexterity save for half when it appears)."},
       {name:"Wave of Rolling Earth", source:"PHB", cost:"6", level:17, text:"Cast Wall of Stone: a wall of ten 10-by-10-foot stone panels for up to 10 minutes (concentration), permanent if you keep concentrating the whole time."}
     ]
   },
@@ -209,7 +209,7 @@ export var OPTION_SETS = [
     options:[
       {name:"Bear", source:"PHB", text:"While raging, any hostile creature within 5 feet of you that can see or hear you has disadvantage on attack rolls against targets other than you or another character with this feature (unless it can't be frightened)."},
       {name:"Eagle", source:"PHB", speeds:[{type:"fly", value:"walk", when:"while raging"}], text:"While raging, you have a flying speed equal to your walking speed, but you fall if you end your turn in the air with nothing else holding you aloft."},
-      {name:"Elk", source:"SCAG", save:"str", text:"While raging, you can use a bonus action to move through the space of a Large or smaller creature; it makes a Strength save (DC 8 + Strength modifier + proficiency bonus) or is knocked prone and takes 1d12 + your Strength modifier bludgeoning damage."},
+      {name:"Elk", source:"SCAG", save:"str", text:"While raging, you can use a bonus action to move through the space of a Large or smaller creature. It makes a Strength save (DC 8 + Strength modifier + proficiency bonus) or is knocked prone and takes 1d12 + your Strength modifier bludgeoning damage."},
       {name:"Tiger", source:"SCAG", text:"While raging, if you move at least 20 feet in a straight line toward a Large or smaller target right before making a melee weapon attack against it, you can use a bonus action to make an additional melee weapon attack against it."},
       {name:"Wolf", source:"PHB", text:"While raging, you can use a bonus action on your turn to knock a Large or smaller creature prone when you hit it with a melee weapon attack."}
     ]
@@ -223,7 +223,7 @@ export var OPTION_SETS = [
     options:[
       {name:"Desert", source:"XGE", text:"Aura: every other creature in it takes fire damage when it activates (2, rising to 3 at barbarian level 5, 4 at 10, 5 at 15, 6 at 20). Storm Soul: resistance to fire damage, no ill effects from extreme heat, and as an action you can set fire to a flammable object you touch that no one is wearing or carrying. Raging Storm: when a creature in your aura hits you, use your reaction to make it take fire damage equal to half your barbarian level unless it succeeds on a Dexterity save."},
       {name:"Sea", source:"XGE", speeds:[{type:"swim", value:30, level:6}], text:"Aura: one other creature in it makes a Dexterity save or takes 1d6 lightning damage, half on a success (2d6 at barbarian level 10, 3d6 at 15, 4d6 at 20). Storm Soul: resistance to lightning damage, you can breathe underwater, and you gain a swimming speed of 30 feet. Raging Storm: when you hit a creature in your aura, use your reaction to make it succeed on a Strength save or be knocked prone."},
-      {name:"Tundra", source:"XGE", text:"Aura: each creature of your choice in it gains temporary hit points (2, rising to 3 at barbarian level 5, 4 at 10, 5 at 15, 6 at 20). Storm Soul: resistance to cold damage, no ill effects from extreme cold, and as an action you can touch water and turn a 5-foot cube of it into ice that melts after 1 minute. Raging Storm: whenever your aura activates, choose one creature in it; it makes a Strength save or its speed becomes 0 until the start of your next turn."}
+      {name:"Tundra", source:"XGE", text:"Aura: each creature of your choice in it gains temporary hit points (2, rising to 3 at barbarian level 5, 4 at 10, 5 at 15, 6 at 20). Storm Soul: resistance to cold damage, no ill effects from extreme cold, and as an action you can touch water and turn a 5-foot cube of it into ice that melts after 1 minute. Raging Storm: whenever your aura activates, choose one creature in it. It makes a Strength save or its speed becomes 0 until the start of your next turn."}
     ]
   },
 
@@ -233,9 +233,9 @@ export var OPTION_SETS = [
     known:{3:2, 9:3, 13:4, 17:5}, swap:"rest", costUnit:["Jinx Point", "Jinx Points"],
     help:"Curses you lay on the creature marked by your Evil Eye, paid for with Jinx Points. After a long rest you can swap one you know for another.",
     options:[
-      {name:"Befuddled", source:"GHPG", cost:"2", text:"Action: the marked creature is charmed for 10 minutes, ending if it takes damage or must make a saving throw; afterwards it knows it was magically charmed."},
+      {name:"Befuddled", source:"GHPG", cost:"2", text:"Action: the marked creature is charmed for 10 minutes, ending if it takes damage or must make a saving throw. Afterwards it knows it was magically charmed."},
       {name:"Clumsy", source:"GHPG", cost:"3", text:"Reaction when it moves 5 feet or more: it falls prone and its speed becomes 0 until the end of the turn."},
-      {name:"Debilitated", source:"GHPG", cost:"1", text:"Reaction when it takes damage: roll 1d12; it takes that much extra necrotic damage and its hit point maximum drops by the same amount."},
+      {name:"Debilitated", source:"GHPG", cost:"1", text:"Reaction when it takes damage: roll 1d12. It takes that much extra necrotic damage and its hit point maximum drops by the same amount."},
       {name:"Doomed", source:"GHPG", cost:"1", text:"Reaction when you miss it with a weapon attack: make another weapon attack."},
       {name:"Fearful", source:"GHPG", cost:"2", text:"Action: it's frightened for 1 minute (Wisdom save at the end of each of its turns)."},
       {name:"Inept", source:"GHPG", cost:"1", text:"Reaction when it makes an attack roll or ability check: it rerolls and uses the lower result."},
@@ -244,14 +244,30 @@ export var OPTION_SETS = [
       {name:"Marked", source:"GHPG", cost:"2", text:"Bonus action: your Evil Eye lasts 24 hours instead and lets you track the creature."},
       {name:"Plagued", source:"GHPG", cost:"1", text:"Reaction when it regains hit points: the healing is halved and it can't regain more until the start of your next turn."},
       {name:"Ruined", source:"GHPG", cost:"2", text:"Reaction when it makes a saving throw: it rerolls and uses the lower result."},
-      {name:"Somnolent", source:"GHPG", cost:"3", text:"Action: roll a number of d10s equal to your rogue level and add 15; if its current hit points are equal to or lower than the total, it falls unconscious for 10 minutes, or until it takes damage or another creature uses an action to wake it."},
+      {name:"Somnolent", source:"GHPG", cost:"3", text:"Action: roll a number of d10s equal to your rogue level and add 15. If its current hit points are equal to or lower than the total, it falls unconscious for 10 minutes, or until it takes damage or another creature uses an action to wake it."},
       {name:"Unlucky", source:"GHPG", cost:"2", text:"Bonus action: it subtracts 1d4 from its attack rolls and saving throws while it stays marked."}
+    ]
+  },
+  /* ---- Gunslinger (fighter archetype, fan content) ---- */
+  {
+    id:"trickShots", label:"Trick Shots", noun:"trick shot", className:"Fighter", subclass:"Gunslinger",
+    known:{3:2, 7:3, 10:4, 15:5, 18:6}, swap:"learn", costUnit:["grit point", "grit points"],
+    help:"Special shots with a firearm, paid for with grit points. Say which one you are using before you roll the attack, and use only one per attack. You regain a grit point on a natural 20 with a firearm, and all of them after a short or long rest.",
+    options:[
+      {name:"Bullying Shot", source:"GUN", cost:"1", text:"Spend a grit point when you make a Charisma (Intimidation) check to have advantage on the roll."},
+      {name:"Dazing Shot", source:"GUN", cost:"1", save:"con", text:"When you make a firearm attack, you can try to dizzy your target. On a hit, it takes normal damage and makes a Constitution save. On a failure, it has disadvantage on attacks until the end of its next turn."},
+      {name:"Deadeye Shot", source:"GUN", cost:"1", text:"When you make a firearm attack, you have advantage on the attack roll."},
+      {name:"Disarming Shot", source:"GUN", cost:"1", save:"str", text:"When you make a firearm attack, you can try to shoot an object out of your target's hands. On a hit, it takes normal damage and makes a Strength save. On a failure, it drops one held object of your choice, and the object is pushed 10 feet away from you."},
+      {name:"Forceful Shot", source:"GUN", cost:"1", save:"str", text:"When you make a firearm attack, you can try to trip your target up and force it back. On a hit, it takes normal damage and makes a Strength save. On a failure, it is pushed 15 feet away from you."},
+      {name:"Piercing Shot", source:"GUN", cost:"1", text:"When you make a firearm attack, you can try to shoot through several enemies. This first attack adds 1 to the firearm's Misfire score. On a hit, the target takes normal damage. You then make an attack roll with disadvantage against every creature in a straight line behind the target, within the weapon's normal range. Only the first attack can misfire."},
+      {name:"Violent Shot", source:"GUN", cost:"1+", text:"When you make a firearm attack, you can spend one or more grit points to make the shot more volatile. Each grit point you spend adds 2 to the firearm's Misfire score. If the attack hits, you roll one extra weapon damage die for each grit point spent."},
+      {name:"Winging Shot", source:"GUN", cost:"1", save:"str", text:"When you make a firearm attack, you can try to topple a moving target. On a hit, it takes normal damage and makes a Strength save. On a failure, it is knocked prone."}
     ]
   }
 ];
 
 export var OPTION_SOURCES = {PHB:"Player's Handbook", XGE:"Xanathar's Guide", TCE:"Tasha's Cauldron",
-  SCAG:"Sword Coast Adventurer's Guide", GHPG:"Grim Hollow Player's Guide"};
+  SCAG:"Sword Coast Adventurer's Guide", GHPG:"Grim Hollow Player's Guide", GUN:"Gunslinger (fan content)"};
 
 export function optionSetDef(id){
   return OPTION_SETS.find(function(s){ return s.id===id; }) || null;

@@ -130,7 +130,7 @@ export function renderElixirCard(c){
 
   var brew = ce("div", "art-brew");
   var brewLbl = ce("p", "art-note");
-  brewLbl.textContent = "Brew another with a spell slot (you choose the effect; uses your lowest slot left):";
+  brewLbl.textContent = "Brew another with a spell slot (you choose the effect, and it uses your lowest slot left):";
   brew.appendChild(brewLbl);
   var effects = ce("div", "art-switch");
   ELIXIR_EFFECTS.forEach(function(ef){

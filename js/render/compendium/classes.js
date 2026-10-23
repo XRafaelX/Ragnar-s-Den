@@ -242,7 +242,7 @@ function buildSubclassForm(container){
   var featCount = featSec.querySelector(".cmp-count");
   var featHint = document.createElement("p");
   featHint.className = "cmp-form-hint";
-  featHint.textContent = "Add them in any order; they're sorted by level when you save.";
+  featHint.textContent = "Add them in any order. They're sorted by level when you save.";
   featSec.appendChild(featHint);
   var featList = document.createElement("div");
   featList.className = "cmp-feat-edits";

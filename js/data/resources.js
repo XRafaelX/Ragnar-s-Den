@@ -28,14 +28,14 @@ export var CLASS_RESOURCES = {
     {id:"bardic_inspiration", name:"Bardic Inspiration", level:1,
       max:function(lv, m){ return atLeastOne(m.cha); },
       reset:function(lv){ return lv>=5 ? "short" : "long"; },
-      hint:"Bonus action: give an ally within 60 ft an inspiration die (d6; d8 from level 5, d10 from 10, d12 from 15) to add to one check, attack or save."}
+      hint:"Bonus action: give an ally within 60 ft an inspiration die (d6, d8 from level 5, d10 from 10, d12 from 15) to add to one check, attack or save."}
   ],
   "Cleric": [
     {id:"channel_divinity", name:"Channel Divinity", level:2,
       max:function(lv){ return lv>=18 ? 3 : lv>=6 ? 2 : 1; }, reset:always("short"),
       hint:"Turn Undead or your domain's Channel Divinity option."},
     {id:"divine_intervention", name:"Divine Intervention", level:10, max:always(1), reset:always("manual"),
-      hint:"Action: roll d100; at or under your cleric level (always from level 20), your deity helps. Regain after 7 days if it worked, or after a long rest if it didn't."}
+      hint:"Action: roll d100. At or under your cleric level (always from level 20), your deity helps. Regain after 7 days if it worked, or after a long rest if it didn't."}
   ],
   "Druid": [
     {id:"wild_shape", name:"Wild Shape", level:2,
@@ -50,7 +50,7 @@ export var CLASS_RESOURCES = {
       hint:"Take one additional action on your turn (only once per turn)."},
     {id:"indomitable", name:"Indomitable", level:9,
       max:function(lv){ return lv>=17 ? 3 : lv>=13 ? 2 : 1; }, reset:always("long"),
-      hint:"Reroll a failed saving throw; you must use the new roll."}
+      hint:"Reroll a failed saving throw. You must use the new roll."}
   ],
   "Monk": [
     {id:"ki", name:"Ki Points", level:2, pool:true,
@@ -110,7 +110,7 @@ export var CLASS_RESOURCES = {
     {id:"flash_of_genius", name:"Flash of Genius", level:7, max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
       hint:"Reaction: add your INT modifier to an ability check or save by you or a creature within 30 ft."},
     {id:"spell_storing_item", name:"Spell-Storing Item (Uses)", level:11, pool:true, max:function(lv, m){ return Math.max(2, m.int * 2); }, reset:always("long"),
-      hint:"Uses of the spell stored in your item; storing a new spell after a long rest resets them."}
+      hint:"Uses of the spell stored in your item. Storing a new spell after a long rest resets them."}
   ]
 };
 
@@ -139,7 +139,7 @@ export var SUBCLASS_RESOURCES = {
         hint:"On a natural-weapon hit while raging: WIS save or it attacks a creature you choose, or takes 2d12 psychic."},
       {id:"call_the_hunt", name:"Call the Hunt", level:14,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"When you rage: allies (up to CON mod) add 1d6 to one hit each turn; you gain 5 temp HP per ally."}
+        hint:"When you rage: allies (up to CON mod) add 1d6 to one hit each turn. You gain 5 temp HP per ally."}
     ]
   },
   "Artificer": {
@@ -218,7 +218,7 @@ export var SUBCLASS_RESOURCES = {
         max:function(lv, m){ return atLeastOne(m.con); }, reset:always("long"),
         hint:"When you take the Attack action, make one additional melee attack from your echo's position."},
       {id:"shadow_martyr", name:"Shadow Martyr", level:10, max:always(1), reset:always("short"),
-        hint:"Reaction: teleport your echo next to a creature about to be attacked; the attack targets the echo instead."},
+        hint:"Reaction: teleport your echo next to a creature about to be attacked. The attack targets the echo instead."},
       {id:"reclaim_potential", name:"Reclaim Potential", level:15,
         max:function(lv, m){ return atLeastOne(m.con); }, reset:always("long"),
         hint:"When your echo is destroyed by damage: gain 2d6 + CON mod temporary HP (if you have none)."}
@@ -242,7 +242,7 @@ export var SUBCLASS_RESOURCES = {
       {id:"warding_maneuver", name:"Warding Maneuver", level:7,
         max:function(lv, m){ return atLeastOne(m.con); }, reset:always("long"),
         roll:{die:8, label:"Warding Maneuver: added to AC", needs:"meleeOrShield"},
-        hint:"Reaction: add 1d8 to the AC of you or an adjacent creature against a hit; resistance if it still hits."}
+        hint:"Reaction: add 1d8 to the AC of you or an adjacent creature against a hit, with resistance if it still hits."}
     ],
     "Samurai": [
       {id:"fighting_spirit", name:"Fighting Spirit", level:3,
@@ -255,6 +255,11 @@ export var SUBCLASS_RESOURCES = {
       {id:"arcane_shot", name:"Arcane Shot", level:3, max:always(2), reset:always("short"),
         hint:"Once per turn, apply an Arcane Shot option to an arrow fired as part of the Attack action. Regain one on initiative if empty (level 15)."}
     ],
+    "Gunslinger": [
+      {id:"grit_points", name:"Grit Points", level:3, pool:true,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("short"),
+        hint:"Fuel your trick shots and Rapid Repair. Regain one on a natural 20 with a firearm or a killing blow to a significant threat, and all of them after a short or long rest."}
+    ],
     "Psi Warrior": [
       {id:"psionic_energy_dice", name:"Psionic Energy Dice", level:3, pool:true,
         max:function(lv, m){ return m.pb * 2; }, reset:always("long"),
@@ -266,7 +271,7 @@ export var SUBCLASS_RESOURCES = {
       {id:"bulwark_of_force", name:"Bulwark of Force", level:15, max:always(1), reset:always("long"),
         hint:"Bonus action: up to INT mod creatures within 30 ft (you included) gain half cover for 1 minute. More uses cost a Psionic Energy die."},
       {id:"telekinetic_master", name:"Telekinetic Master", level:18, max:always(1), reset:always("long"),
-        hint:"Cast Telekinesis without a slot; make a weapon attack as a bonus action each turn you concentrate on it. More uses cost a Psionic Energy die."}
+        hint:"Cast Telekinesis without a slot. Make a weapon attack as a bonus action each turn you concentrate on it. More uses cost a Psionic Energy die."}
     ]
   },
   "Monk": {
@@ -315,18 +320,18 @@ export var SUBCLASS_RESOURCES = {
     ],
     "Oathbreaker": [
       {id:"dread_lord", name:"Dread Lord", level:20, max:always(1), reset:always("long"),
-        hint:"Action for 1 minute: 30-ft aura of gloom; frightened enemies take 4d10 psychic, bonus action shadow attack for 3d10 + CHA."}
+        hint:"Action for 1 minute: 30-ft aura of gloom. Frightened enemies take 4d10 psychic, bonus action shadow attack for 3d10 + CHA."}
     ],
     "Oath of Glory": [
       {id:"glorious_defense", name:"Glorious Defense", level:15,
         max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
-        hint:"Reaction when you or a creature within 10 ft is hit: add CHA mod to its AC; if the attack misses, make a weapon attack against the attacker."},
+        hint:"Reaction when you or a creature within 10 ft is hit: add CHA mod to its AC. If the attack misses, make a weapon attack against the attacker."},
       {id:"living_legend", name:"Living Legend", level:20, max:always(1), reset:always("long"),
         hint:"Bonus action for 1 minute: advantage on CHA checks, turn one miss per turn into a hit, reroll failed saves. More uses cost a 5th-level slot."}
     ],
     "Oath of the Crown": [
       {id:"exalted_champion", name:"Exalted Champion", level:20, max:always(1), reset:always("long"),
-        hint:"Action for 1 hour: resist nonmagical weapon damage; allies within 30 ft get advantage on death saves, and you all get advantage on WIS saves."}
+        hint:"Action for 1 hour: resist nonmagical weapon damage. Allies within 30 ft get advantage on death saves, and you all get advantage on WIS saves."}
     ],
     "Oath of the Watchers": [
       {id:"mortal_bulwark", name:"Mortal Bulwark", level:20, max:always(1), reset:always("long"),
@@ -336,7 +341,7 @@ export var SUBCLASS_RESOURCES = {
   "Ranger": {
     "Fey Wanderer": [
       {id:"fey_reinforcements", name:"Fey Reinforcements (Free Summon Fey)", level:11, max:always(1), reset:always("long"),
-        hint:"Cast Summon Fey without a spell slot; it can skip concentration and last 1 minute."},
+        hint:"Cast Summon Fey without a spell slot. It can skip concentration and last 1 minute."},
       {id:"misty_wanderer", name:"Misty Wanderer", level:15, max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
         hint:"Cast Misty Step without a spell slot, bringing one willing creature within 5 ft."}
     ],
@@ -390,7 +395,7 @@ export var SUBCLASS_RESOURCES = {
     ],
     "Aberrant Mind": [
       {id:"warping_implosion", name:"Warping Implosion", level:18, max:always(1), reset:always("long"),
-        hint:"Action: teleport 120 ft; creatures near your old space take 3d10 force and are pulled (STR save). More uses cost 5 sorcery points."}
+        hint:"Action: teleport 120 ft. Creatures near your old space take 3d10 force and are pulled (STR save). More uses cost 5 sorcery points."}
     ],
     "Divine Soul": [
       {id:"favored_by_the_gods", name:"Favored by the Gods", level:1, max:always(1), reset:always("short"),
@@ -429,7 +434,7 @@ export var SUBCLASS_RESOURCES = {
     ],
     "The Great Old One": [
       {id:"entropic_ward", name:"Entropic Ward", level:6, max:always(1), reset:always("short"),
-        hint:"Reaction: impose disadvantage on an attack against you; if it misses, advantage on your next attack against it."}
+        hint:"Reaction: impose disadvantage on an attack against you. If it misses, advantage on your next attack against it."}
     ],
     "The Hexblade": [
       {id:"hexblades_curse", name:"Hexblade's Curse", level:1, max:always(1), reset:always("short"),
@@ -442,13 +447,13 @@ export var SUBCLASS_RESOURCES = {
         max:function(lv){ return 1 + lv; }, reset:always("long"),
         hint:"Bonus action: spend d6s from this pool (max CHA mod at once) to heal a creature within 60 ft."},
       {id:"searing_vengeance", name:"Searing Vengeance", level:14, max:always(1), reset:always("long"),
-        hint:"Instead of a death save: regain half your max HP and stand; creatures of your choice within 30 ft take 2d8 + CHA radiant and are blinded."}
+        hint:"Instead of a death save: regain half your max HP and stand. Creatures of your choice within 30 ft take 2d8 + CHA radiant and are blinded."}
     ],
     "The Fathomless": [
       {id:"tentacle_of_the_deeps", name:"Tentacle of the Deeps", level:1, max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Bonus action: a 1-minute spectral tentacle within 60 ft that strikes for 1d8 cold (2d8 from level 10) and slows."},
       {id:"grasping_tentacles", name:"Grasping Tentacles (Free Casting)", level:10, max:always(1), reset:always("long"),
-        hint:"Cast Evard's Black Tentacles without a spell slot; gain temp HP equal to your warlock level."},
+        hint:"Cast Evard's Black Tentacles without a spell slot. Gain temp HP equal to your warlock level."},
       {id:"fathomless_plunge", name:"Fathomless Plunge", level:14, max:always(1), reset:always("short"),
         hint:"Action: teleport you and up to five willing creatures within 30 ft up to 1 mile, to water you've seen."}
     ],
@@ -503,7 +508,7 @@ export var SUBCLASS_RESOURCES = {
     ],
     "War Magic": [
       {id:"power_surges", name:"Power Surges", level:6, pool:true, max:function(lv, m){ return atLeastOne(m.int); }, reset:always("manual"),
-        hint:"Spend one (once per turn) for + half your wizard level force damage with a wizard spell. Resets to 1 after a long rest; +1 from Dispel Magic, Counterspell or a short rest with none."}
+        hint:"Spend one (once per turn) for + half your wizard level force damage with a wizard spell. Resets to 1 after a long rest, with +1 from Dispel Magic, Counterspell or a short rest with none."}
     ],
     "Order of Scribes": [
       {id:"fast_ritual", name:"Awakened Spellbook (Fast Ritual)", level:2, max:always(1), reset:always("long"),
@@ -513,7 +518,7 @@ export var SUBCLASS_RESOURCES = {
       {id:"manifest_mind_casting", name:"Manifest Mind (Cast from It)", level:6, max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Cast a wizard spell on your turn as if you were in the mind's space."},
       {id:"one_with_the_word", name:"One with the Word", level:14, max:always(1), reset:always("long"),
-        hint:"Reaction while the mind is manifested: dismiss it to prevent all damage you take; your book loses 3d6 levels of spells for 1d6 long rests."}
+        hint:"Reaction while the mind is manifested: dismiss it to prevent all damage you take. Your book loses 3d6 levels of spells for 1d6 long rests."}
     ],
     "School of Conjuration": [
       {id:"benign_transposition", name:"Benign Transposition", level:6, max:always(1), reset:always("long"),
@@ -532,14 +537,14 @@ export var SUBCLASS_RESOURCES = {
         max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
         hint:"Action: a Large or smaller creature within 60 ft makes a CON save or is incapacitated with speed 0 until the end of your next turn."},
       {id:"arcane_abeyance", name:"Arcane Abeyance", level:10, max:always(1), reset:always("short"),
-        hint:"Freeze a spell of 4th level or lower in a bead for 1 hour; whoever holds it can release the spell as an action."}
+        hint:"Freeze a spell of 4th level or lower in a bead for 1 hour. Whoever holds it can release the spell as an action."}
     ],
     "Graviturgy Magic": [
       {id:"violent_attraction", name:"Violent Attraction", level:10,
         max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
         hint:"Reaction: add 1d10 to a weapon hit within 60 ft, or 2d10 to falling damage."},
       {id:"event_horizon", name:"Event Horizon", level:14, max:always(1), reset:always("long"),
-        hint:"Action: 1-minute gravity field; hostile creatures starting within 30 ft take 2d10 force and are stopped (STR save). More uses cost a 3rd-level slot."}
+        hint:"Action: 1-minute gravity field. Hostile creatures starting within 30 ft take 2d10 force and are stopped (STR save). More uses cost a 3rd-level slot."}
     ]
   },
   "Cleric": {
@@ -577,7 +582,7 @@ export var SUBCLASS_RESOURCES = {
     "Peace Domain": [
       {id:"emboldening_bond", name:"Emboldening Bond", level:1,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Action: bond up to proficiency-bonus creatures; each adds 1d4 to attacks, checks and saves while a bonded ally is within 30 ft."}
+        hint:"Action: bond up to proficiency-bonus creatures. Each adds 1d4 to attacks, checks and saves while a bonded ally is within 30 ft."}
     ],
     "Knowledge Domain": [
       {id:"visions_of_the_past", name:"Visions of the Past", level:17, max:always(1), reset:always("short"),
@@ -596,12 +601,12 @@ export var SUBCLASS_RESOURCES = {
         hint:"Cast Augury without a spell slot or components."},
       {id:"ties_that_bind", name:"Ties That Bind", level:1,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Action: bind a creature's fate for 1 hour; track it and add 1d6 to your spell damage or healing on it once per turn."},
+        hint:"Action: bind a creature's fate for 1 hour. Track it and add 1d6 to your spell damage or healing on it once per turn."},
       {id:"insightful_striking", name:"Insightful Striking", level:6,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Bonus action: +1d6 to your next attack roll against a target within 30 ft, or -1d6 to its next save against your spell."},
       {id:"visions_of_the_future", name:"Visions of the Future", level:17, max:always(1), reset:always("long"),
-        hint:"Action: cast Foresight without a spell slot; it lasts 1 minute."}
+        hint:"Action: cast Foresight without a spell slot. It lasts 1 minute."}
     ]
   },
   "Druid": {
@@ -647,7 +652,7 @@ export var SUBCLASS_RESOURCES = {
     ],
     "Circle of the Blighted": [
       {id:"defile_ground", name:"Defile Ground", level:2, max:always(1), reset:always("short"),
-        hint:"Bonus action: 1-minute defiled area within 60 ft; difficult terrain for enemies and extra necrotic damage (1d4, 1d6 from level 10, 1d8 from 14)."},
+        hint:"Bonus action: 1-minute defiled area within 60 ft, with difficult terrain for enemies and extra necrotic damage (1d4, 1d6 from level 10, 1d8 from 14)."},
       {id:"call_of_the_shadowseeds", name:"Call of the Shadowseeds", level:6,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Reaction when a creature takes damage in your Defile Ground: raise a Blighted Sapling next to it that attacks at once."}
@@ -852,7 +857,7 @@ export var RACE_RESOURCES = {
     {id:"healing_hands", name:"Healing Hands", max:ONCE, reset:always("long"),
       hint:"Action: touch a creature to restore hit points equal to your level."},
     {id:"celestial_revelation", name:"Celestial Revelation", level:3, max:ONCE, reset:always("long"),
-      hint:"Action: transform for 1 minute (your subrace's Radiant Soul, Radiant Consumption or Necrotic Shroud); once a turn, extra damage equal to your level."}
+      hint:"Action: transform for 1 minute (your subrace's Radiant Soul, Radiant Consumption or Necrotic Shroud). Once a turn, extra damage equal to your level."}
   ],
   "Dragonborn (Chromatic)": [
     {id:"chromatic_warding", name:"Chromatic Warding", level:5, max:ONCE, reset:always("long"),
@@ -872,7 +877,7 @@ export var RACE_RESOURCES = {
   ],
   "Eladrin": [
     {id:"fey_step", name:"Fey Step", max:ONCE, reset:always("short"),
-      hint:"Bonus action: teleport up to 30 ft to a space you can see; from level 3 your season adds an effect."}
+      hint:"Bonus action: teleport up to 30 ft to a space you can see. From level 3 your season adds an effect."}
   ],
   "Firbolg": [
     {id:"hidden_step", name:"Hidden Step", max:ONCE, reset:always("short"),
@@ -900,11 +905,11 @@ export var RACE_RESOURCES = {
   ],
   "Lizardfolk": [
     {id:"hungry_jaws", name:"Hungry Jaws", max:ONCE, reset:always("short"),
-      hint:"Bonus action: a bite attack; on a hit, gain temporary HP equal to your CON modifier (at least 1)."}
+      hint:"Bonus action: a bite attack. On a hit, gain temporary HP equal to your CON modifier (at least 1)."}
   ],
   "Shadar-kai": [
     {id:"blessing_raven_queen", name:"Blessing of the Raven Queen", max:ONCE, reset:always("long"),
-      hint:"Bonus action: teleport up to 30 ft to a space you can see; from level 3, resistance to all damage until your next turn."}
+      hint:"Bonus action: teleport up to 30 ft to a space you can see. From level 3, resistance to all damage until your next turn."}
   ],
   "Simic Hybrid": [
     {id:"acid_spit", name:"Acid Spit", level:5, choice:{id:"simicEnhancement", value:"Acid Spit"},

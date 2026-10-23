@@ -225,12 +225,12 @@ export function pendingSpellChoices(c){
   });
   return out;
 }
-/* One option's spells as text: "Hold Person, Spike Growth (Druid 3);
-   Sleet Storm, Slow (5); ..." (the class level each pair arrives at), or
+/* One option's spells as text: "Hold Person, Spike Growth (Druid 3) ·
+   Sleet Storm, Slow (5) · ..." (the class level each pair arrives at), or
    just the names for a flat list. */
 export function spellOptionText(spells, className){
   if(Array.isArray(spells)) return spells.join(", ");
-  return Object.keys(spells).map(function(k, i){ return spells[k].join(", ") + " (" + (i ? "" : (className || "level") + " ") + k + ")"; }).join("; ");
+  return Object.keys(spells).map(function(k, i){ return spells[k].join(", ") + " (" + (i ? "" : (className || "level") + " ") + k + ")"; }).join(" · ");
 }
 /* The spells a race's dragonmark (Spells of the Mark) or a Ravnica guild
    background (Guild Spells) adds to the list of every spellcasting class

@@ -292,7 +292,7 @@ export function wizardStepLanguages(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Languages</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>Why this matters:</b> Languages let you talk to (and eavesdrop on) the people and creatures you meet. Your race gives you some automatically; your background and class can add more of your choice.";
+  explain.innerHTML = "<b>Why this matters:</b> Languages let you talk to (and eavesdrop on) the people and creatures you meet. Your race gives you some automatically. Your background and class can add more of your choice.";
   card.appendChild(explain);
 
   var plan = languagePlan();

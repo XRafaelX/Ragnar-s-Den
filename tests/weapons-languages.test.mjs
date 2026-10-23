@@ -29,12 +29,12 @@ function char(classes, extra = {}){
 const scimitar = (equipped = true) => ({ id: "dbs", name: "Double-Bladed Scimitar", type: "weapon", damageDice: "2d4", damageType: "Slashing", ability: "str", proficient: true, equipped });
 const pistol = () => ({ id: "p", name: "Pistol", type: "weapon", damageDice: "1d10", damageType: "Piercing", ability: "dex", proficient: false });
 
-test("firearms: the DMG's pistol and musket, their own category, with bullets in the gear list", () => {
-  assert.deepEqual(WEAPON_GROUPS.Firearms, ["Pistol", "Musket"]);
-  assert.deepEqual([WEAPON_DATA.Pistol.damageDice, WEAPON_DATA.Pistol.weight, WEAPON_DATA.Pistol.category], ["1d10", 3, "firearm"]);
+test("firearms: pistol, revolver, pepperbox and musket, their own category, with bullets in the gear list", () => {
+  assert.deepEqual(WEAPON_GROUPS.Firearms, ["Pistol", "Revolver", "Pepperbox", "Musket"]);
+  assert.deepEqual([WEAPON_DATA.Pistol.damageDice, WEAPON_DATA.Pistol.weight, WEAPON_DATA.Pistol.category], ["1d10", 1, "firearm"]);
   assert.deepEqual([WEAPON_DATA.Musket.damageDice, WEAPON_DATA.Musket.weight], ["1d12", 10]);
   assert.match(WEAPON_DATA.Musket.properties, /two-handed/i);
-  assert.ok(WEAPON_DATA.Pistol.ranged && /loading/i.test(WEAPON_DATA.Pistol.properties));
+  assert.ok(WEAPON_DATA.Pistol.ranged && /reload 1/i.test(WEAPON_DATA.Pistol.properties) && /misfire 1/i.test(WEAPON_DATA.Pistol.properties));
   assert.deepEqual(GEAR_DATA["Firearm Bullets"], { cost: "3 gp", weight: 2, qty: 10, notes: "ammunition" });
 });
 

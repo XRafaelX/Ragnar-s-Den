@@ -24,9 +24,9 @@ export function parseDiceNotation(str){
 export function combineRolls(list){
   list = list.filter(function(r){ return r && r.mode!=="none"; });
   var adv = list.filter(function(r){ return r.mode==="adv"; }), dis = list.filter(function(r){ return r.mode==="dis"; });
-  if(adv.length && dis.length) return {mode: "none", reason: "Advantage and disadvantage cancel out (" + list.map(function(r){ return r.reason; }).join("; ") + ")"};
+  if(adv.length && dis.length) return {mode: "none", reason: "Advantage and disadvantage cancel out (" + list.map(function(r){ return r.reason; }).join(" · ") + ")"};
   var on = adv.length ? adv : dis;
-  return on.length ? {mode: on[0].mode, reason: on.map(function(r){ return r.reason; }).join("; ")} : {mode: "none", reason: ""};
+  return on.length ? {mode: on[0].mode, reason: on.map(function(r){ return r.reason; }).join(" · ")} : {mode: "none", reason: ""};
 }
 /* The creation wizard and level-up rebuild the whole overlay on every
    tap, which snaps #wizard-body back to the top. Call before clearing the

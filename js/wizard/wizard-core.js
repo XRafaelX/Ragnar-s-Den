@@ -959,7 +959,7 @@ export function applyClassChoices(c, info, picks){
       v.forEach(function(name){
         if((ch.tools||[]).indexOf(name)!==-1){
           var tools = c.inventory.find(function(i){ return i.name.toLowerCase()===name.toLowerCase(); });
-          if(tools) tools.notes = (tools.notes ? tools.notes+"; " : "")+"expertise: double proficiency bonus";
+          if(tools) tools.notes = (tools.notes ? tools.notes+", " : "")+"expertise: double proficiency bonus";
           c.features.push({id:uid(), name:"Expertise: "+name, source:"Class", text:"Your proficiency bonus is doubled for ability checks you make with "+name.toLowerCase()+".", isPassive:true});
           return;
         }

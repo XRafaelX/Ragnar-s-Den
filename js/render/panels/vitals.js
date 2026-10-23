@@ -642,7 +642,7 @@ export function renderVitalsPanel(c){
 
   var shortRestBtn = document.createElement("button");
   shortRestBtn.className = "btn small"; shortRestBtn.textContent = "Short rest";
-  shortRestBtn.title = "Restores short-rest resources; spend hit dice to heal";
+  shortRestBtn.title = "Restores short-rest resources. Spend hit dice to heal.";
   shortRestBtn.addEventListener("click", function(){
     var before = resourceUse(c);
     var pactNote = "";
@@ -694,7 +694,7 @@ export function renderVitalsPanel(c){
         restoreResources(c, "long");
         restoreCompanions(c);
         var elixirs = elixirsOnLongRest(c);
-        logRoll("Long rest taken", "HP and spell slots restored; "+recovered+" hit dice recovered."+
+        logRoll("Long rest taken", "HP and spell slots restored. "+recovered+" hit dice recovered."+
           (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : "")+
           (items.recharged.length ? " Recharged: "+items.recharged.join(", ")+"." : "")+
           (items.ended.length ? " Ended: "+items.ended.join(", ")+"." : "")+

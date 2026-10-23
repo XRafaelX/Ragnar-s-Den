@@ -439,7 +439,7 @@ function showUnlocked(c, s){
     if(s.companions.length) tips.push(newCompanionsText(s.companions));
     var optTags = s.features.filter(function(f){ return f.id && f.id.indexOf("opt_")===0; });
     if(optTags.length) tips.push("Your new "+optTags[0].tag.toLowerCase()+(optTags.length>1 ? "s are listed in their" : " is listed in its")+" card on the Features & Feats tab.");
-    if(s.features.some(function(f){ return f.tag==="Invocation" || f.tag==="Pact Boon"; })) tips.push("Your Pact Boon and invocations are in the Eldritch invocations card on the Features & Feats tab; their spells are on the Spells tab.");
+    if(s.features.some(function(f){ return f.tag==="Invocation" || f.tag==="Pact Boon"; })) tips.push("Your Pact Boon and invocations are in the Eldritch invocations card on the Features & Feats tab. Their spells are on the Spells tab.");
     if(total < MAX_LEVEL) tips.push("Next level at "+XP_THRESHOLDS[total+1].toLocaleString()+" XP.");
     else tips.push("You've reached level "+MAX_LEVEL+", the highest level. Congratulations!");
     var th = ce("h5","info-modal-subhead"); th.textContent = "What to do next";

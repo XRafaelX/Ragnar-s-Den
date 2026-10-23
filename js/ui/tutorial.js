@@ -52,7 +52,7 @@ var STEPS = [
     spot: function(el){ return el.querySelector(".home-node-circle"); },
     ring: 1,
     title: "Tools for the DM",
-    text: "Swipe the ring, or tap the dots under it, for the Dungeon Master's tools. Encounters runs a fight's turn order and hit points; Monsters is the full monster catalog."
+    text: "Swipe the ring, or tap the dots under it, for the Dungeon Master's tools. Encounters runs a fight's turn order and hit points. Monsters is the full monster catalog."
   },
   {
     target: byId("home-center"),

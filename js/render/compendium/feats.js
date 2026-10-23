@@ -40,7 +40,8 @@ var FEAT_SOURCES = {
   PHB:"Player's Handbook", TCE:"Tasha's Cauldron of Everything", XGE:"Xanathar's Guide to Everything",
   MTF:"Mordenkainen's Tome of Foes", ERLW:"Eberron: Rising from the Last War", FTD:"Fizban's Treasury of Dragons",
   SCC:"Strixhaven: A Curriculum of Chaos", DSotDQ:"Dragonlance: Shadow of the Dragon Queen",
-  BGG:"Bigby Presents: Glory of the Giants", PAitM:"Planescape: Adventures in the Multiverse", BMT:"The Book of Many Things"
+  BGG:"Bigby Presents: Glory of the Giants", PAitM:"Planescape: Adventures in the Multiverse", BMT:"The Book of Many Things",
+  GUN:"Gunslinger (fan content)"
 };
 
 function fillFeatSection(section){
@@ -104,7 +105,7 @@ function confirmDeleteCustom(kind, id){
   if(!entry) return;
   var users = charactersWithCustom(kind, entry);
   confirmDialog("Delete "+entry.name+"?",
-    users.length ? users.map(function(c){ return c.name||"A character"; }).join(", ")+(users.length>1 ? " have" : " has")+" it and will keep their copy; it just won't be in the Compendium anymore."
+    users.length ? users.map(function(c){ return c.name||"A character"; }).join(", ")+(users.length>1 ? " have" : " has")+" it and will keep their copy. It just won't be in the Compendium anymore."
                  : "This custom "+kind+" will be removed from the Compendium.",
     function(){
       deleteCustom(kind, id);
@@ -275,7 +276,7 @@ function buildCustomForm(container){
 
     var descSec = shell.section("Description");
     if(kind==="feat"){
-      var sumF = textField("Summary (optional)", d.summary, "One line for the feat lists; the description's start is used if empty");
+      var sumF = textField("Summary (optional)", d.summary, "One line for the feat lists. The description's start is used if empty");
       sumF.input.addEventListener("input", function(){ d.summary = sumF.input.value; update(); });
       descSec.appendChild(sumF.field);
     }

@@ -723,7 +723,7 @@ export function racePicksText(c, skipName){
   return raceGrants(c).filter(function(g){ return grantHasChoices(g.def) && g.name!==skipName; }).map(function(g){
     var s = classPicksSummary(g, held[g.key]);
     return s ? g.name + ": " + s : "";
-  }).filter(Boolean).join("; ");
+  }).filter(Boolean).join(" · ");
 }
 /* What was picked for one race trait ("Mason's tools"; "" for none yet
    or a trait with no choice): for that trait's Features card. */

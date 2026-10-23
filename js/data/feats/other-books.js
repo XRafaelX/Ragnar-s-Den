@@ -1,7 +1,7 @@
 /* ---------------- Feats: other books ----------------
    Books with only a few feats each: Mordenkainen's Tome of Foes, Eberron:
    Rising from the Last War, Fizban's Treasury of Dragons, Strixhaven: A
-   Curriculum of Chaos and The Book of Many Things.
+   Curriculum of Chaos, The Book of Many Things and the Gunslinger fan content.
    The fields are explained at the top of ../feats.js. */
 import { ELVES } from "./races.js";
 
@@ -115,5 +115,15 @@ export var OTHER_BOOK_FEATS = [
     category: "Magic",
     summary: "You learn Prestidigitation and can use it for card tricks. After a long rest you can store a spell in a card and cast it later as a bonus action.",
     description: "You have learned to channel your magic through a deck of cards, which you can use as a spellcasting focus. You gain the following benefits:\n• Card Tricks. You learn the prestidigitation cantrip and can use it to create illusions that duplicate the effects of stage magic. When you use a card deck as your focus, you can conceal the verbal and somatic components of the cantrip in ordinary conversation and card handling.\n• Hidden Ace. When you finish a long rest, you can choose one spell from your class's spell list and imbue that spell into a card. The spell must have a casting time of 1 action, and it must be of a level for which you have spell slots. The card stays imbued for 8 hours. While you hold it, you can use a bonus action to flourish the card and cast the spell within. The card then loses its magic."
+  },
+  /* ---- Gunslinger (fan content) ---- */
+  {
+    name: "Sidearm Mastery",
+    source: "GUN",
+    ability:["dex"],
+    prerequisite: "Proficiency in firearms",
+    category: "Combat",
+    summary: "Raise Dexterity by 1. You gain +2 to damage rolls with a firearm held in one hand while you wield no other weapon.",
+    description: "You have mastered the use of small firearms and gain the following benefits:\n• Increase your Dexterity score by 1, to a maximum of 20.\n• When you are wielding a firearm in one hand and no other weapons, you gain a +2 bonus to damage rolls with that firearm. (Already added to your damage on the Inventory tab.)"
   }
 ];

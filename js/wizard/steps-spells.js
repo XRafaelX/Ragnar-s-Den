@@ -85,7 +85,7 @@ function spellStepCard(title, explainHtml, freebies){
   if(wizardExtraListName()){
     var also = document.createElement("p");
     also.style.cssText = "font-size:13px;margin:0 0 12px;";
-    also.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> can also learn "+escapeHtml(wizardExtraListName().toLowerCase())+" spells; they're in the list below.";
+    also.innerHTML = "Your <b>"+escapeHtml(wizardState.classChoices.subclass)+"</b> can also learn "+escapeHtml(wizardExtraListName().toLowerCase())+" spells. They're in the list below.";
     card.appendChild(also);
   }
   return card;

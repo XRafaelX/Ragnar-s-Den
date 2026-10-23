@@ -218,7 +218,7 @@ function confirmDelete(kind, id){
   if(!entry) return;
   var users = charactersWithItem(entry);
   confirmDialog("Delete "+entry.name+"?",
-    users.length ? users.map(function(c){ return c.name||"A character"; }).join(", ")+(users.length>1 ? " have" : " has")+" it and will keep their copy; it just won't be in the Armory anymore."
+    users.length ? users.map(function(c){ return c.name||"A character"; }).join(", ")+(users.length>1 ? " have" : " has")+" it and will keep their copy. It just won't be in the Armory anymore."
                  : "This custom "+(kind==="weapon" ? "weapon" : "armor")+" will be removed from the Armory.",
     function(){
       deleteCustomItem(kind, id);
@@ -323,7 +323,7 @@ function buildWeaponForm(container){
   });
   propSec.appendChild(pills);
   var hint = document.createElement("p"); hint.className = "cmp-form-hint";
-  hint.textContent = "Finesse lets the wielder use Dexterity; Two-handed takes both hands.";
+  hint.textContent = "Finesse lets the wielder use Dexterity. Two-handed takes both hands.";
   propSec.appendChild(hint);
   var extraF = textField("Range and other details", props.extra, "e.g. thrown (20/60), versatile (1d10), returns when thrown");
   extraF.input.addEventListener("input", function(){ props.extra = extraF.input.value; update(); });

@@ -118,7 +118,7 @@ function gearItem(name, over){
 function weaponItem(e){
   var d = WEAPON_DATA[e.weapon] || {};
   var props = (d.properties || "").toLowerCase();
-  return {name: e.weapon, type: "weapon", qty: 1, equipped: false, notes: e.name ? e.name + (props ? "; " + props : "") : props,
+  return {name: e.weapon, type: "weapon", qty: 1, equipped: false, notes: e.name ? e.name + (props ? ", " + props : "") : props,
     damageDice: d.damageDice || "", damageType: d.damageType || "", ability: d.finesse ? "finesse" : d.ranged ? "dex" : "str",
     proficient: true, magicBonus: 0, weight: d.weight || 0, picked: true};
 }

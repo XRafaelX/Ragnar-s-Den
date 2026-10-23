@@ -202,7 +202,7 @@ export function invocationResources(c, m){
     (inv.spells||[]).forEach(function(s){
       if(s.kind!=="free" && s.kind!=="slot") return;
       add("inv:" + inv.name + ":" + s.name, s.name + " (" + inv.name + ")", "Invocation",
-        s.kind==="slot" ? "Cast " + s.name + " once with a warlock spell slot; back on a long rest." : "Cast " + s.name + " once without a spell slot; back on a long rest.",
+        s.kind==="slot" ? "Cast " + s.name + " once with a warlock spell slot. It comes back on a long rest." : "Cast " + s.name + " once without a spell slot. It comes back on a long rest.",
         1, "long");
     });
   }

@@ -76,7 +76,7 @@ function customRowActions(name, d){
           users.length
             ? users.map(function(c){ return c.name || "A character"; }).join(", ") +
               (users.length > 1 ? " have" : " has") +
-              " it and will keep their copy; it just won't be in the Spellbook anymore."
+              " it and will keep their copy. It just won't be in the Spellbook anymore."
             : "This custom spell will be removed from the catalog.",
           function(){
             deleteCustomSpell(d.id);

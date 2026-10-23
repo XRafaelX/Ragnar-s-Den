@@ -61,7 +61,7 @@ test("the rewrite's corrections from the books", () => {
   assert.match(text("Bugbear", "Surprise Attack"), /only once per combat/);
   assert.match(text("Hobgoblin", "Saving Face"), /within 30 feet of you/);
   assert.match(text("Kobold", "Pack Tactics"), /that ally isn't incapacitated/);
-  assert.match(text("Warforged", "Constructed Resilience"), /against being poisoned.*magic can't put you to sleep/);
+  assert.match(text("Warforged", "Constructed Resilience"), /against being poisoned.*Magic can't put you to sleep/);
   assert.match(text("Thri-kreen", "Thri-kreen Telepathy"), /willing creatures.*doesn't need to share a language/);
   assert.match(text("Aarakocra", "Talons"), /1d4 \+ your Strength modifier/);
   assert.match(text("Human (Mark of Handling)", "Primal Connection"), /these two spells can target a beast or a monstrosity with an Intelligence of 3 or lower/);

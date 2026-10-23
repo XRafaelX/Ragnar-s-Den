@@ -250,7 +250,7 @@ export function weaponAttackBonus(c, item){
   return weaponAbilityMod(c, item) + pb + magicBonusOf(item) + archery - (powerAttackOn(c, item) ? 5 : 0) + coinAttackBonus(c);
 }
 export function weaponDamageBonus(c, item){
-  return weaponAbilityMod(c, item) + magicBonusOf(item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + holsterDamageBonus(c)
+  return weaponAbilityMod(c, item) + magicBonusOf(item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
     + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0);
 }
 /* A weapon with the thrown property (a dagger, a handaxe, a dart). */
@@ -325,6 +325,15 @@ export function offHandAttack(c, item){
 export function duelingBonus(c, item){
   if(item.type!=="weapon" || isRangedWeapon(item) || isTwoHanded(item)) return 0;
   if(!hasFightingStyle(c, "Dueling")) return 0;
+  var other = (c.inventory||[]).some(function(i){ return i!==item && i.equipped && i.type==="weapon"; });
+  return other ? 0 : 2;
+}
+/* Sidearm Mastery: +2 damage with a firearm held in one hand while no other
+   weapon is held, judged like Dueling's. */
+export function sidearmMasteryBonus(c, item){
+  var d = weaponDataOf(item);
+  if(item.type!=="weapon" || !d || d.category!=="firearm" || isTwoHanded(item)) return 0;
+  if(!hasFeat(c, "Sidearm Mastery")) return 0;
   var other = (c.inventory||[]).some(function(i){ return i!==item && i.equipped && i.type==="weapon"; });
   return other ? 0 : 2;
 }

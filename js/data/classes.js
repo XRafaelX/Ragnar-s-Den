@@ -104,7 +104,7 @@ export var FIGHTING_STYLES = {
      replaced on each level-up in `swapClass`. */
   "Blind Fighting":{optional:true, blindsight:10, text:"You have blindsight with a range of 10 feet: within that range you can effectively see anything that isn't behind total cover, even if you're blinded or in darkness, and you can see an invisible creature unless it successfully hides from you. (Added to your senses.)"},
   "Interception":{optional:true, text:"When a creature you can see hits a target other than you within 5 feet of you with an attack, you can use your reaction to reduce the damage the target takes by 1d10 + your proficiency bonus (to a minimum of 0). You must be wielding a shield or a simple or martial weapon."},
-  "Superior Technique":{optional:true, optionPick:{set:"maneuvers", count:1}, text:"You learn one maneuver of your choice from among those available to the Battle Master (save DC 8 + proficiency bonus + Strength or Dexterity modifier), and you gain one superiority die, a d6, regained on a short or long rest; it's added to any superiority dice you have from another source. (Shown on the Maneuvers card.)"},
+  "Superior Technique":{optional:true, optionPick:{set:"maneuvers", count:1}, text:"You learn one maneuver of your choice from among those available to the Battle Master (save DC 8 + proficiency bonus + Strength or Dexterity modifier), and you gain one superiority die, a d6, regained on a short or long rest. It's added to any superiority dice you have from another source. (Shown on the Maneuvers card.)"},
   "Thrown Weapon Fighting":{optional:true, text:"You can draw a weapon that has the thrown property as part of the attack you make with it. In addition, when you hit with a ranged attack using a thrown weapon, you gain a +2 bonus to the damage roll."},
   "Unarmed Fighting":{optional:true, text:"Your unarmed strikes deal 1d6 + your Strength modifier bludgeoning damage on a hit, or 1d8 if you aren't wielding any weapons or a shield when you make the attack roll. At the start of each of your turns, you can deal 1d4 bludgeoning damage to one creature grappled by you."},
   "Blessed Warrior":{optional:true, spellPick:{count:2, level:0, list:"Cleric", ability:"cha", swapClass:"Paladin"}, text:"You learn two cantrips of your choice from the cleric spell list. They count as paladin spells for you, and Charisma is your spellcasting ability for them. Whenever you gain a level in this class, you can replace one of them with another cleric cantrip. (Shown on the Spells tab.)"},
@@ -126,15 +126,15 @@ Object.assign(CLASSES_INFO["Fighter"], {
   skillChoices:{count:2, options:["Acrobatics","Animal Handling","Athletics","History","Insight","Intimidation","Perception","Survival"]},
   choices:[
     {id:"fightingStyle", kind:"fightingStyle", label:"Fighting Style",
-      help:"Pick the style that matches how you'll fight. Defense, Archery and Dueling are added to your AC, attacks and damage automatically; the others are reminders on your Features tab.",
+      help:"Pick the style that matches how you'll fight. Defense, Archery and Dueling are added to your AC, attacks and damage automatically. The others are reminders on your Features tab.",
       options:["Archery","Defense","Dueling","Great Weapon Fighting","Protection","Two-Weapon Fighting",
         "Blind Fighting","Interception","Superior Technique","Thrown Weapon Fighting","Unarmed Fighting"]}
   ],
   equipment:{
     choiceGroups:[
       {options:[
-        {key:"chain", label:"Chain mail", detail:"Heavy armor, AC 16. Needs 13 Strength or your speed drops by 10 ft; disadvantage on Stealth", items:[
-          {name:"Chain Mail",qty:1,weight:55,notes:"heavy; Str 13; stealth disadvantage",type:"armor",category:"heavy",baseAC:16}
+        {key:"chain", label:"Chain mail", detail:"Heavy armor, AC 16. Needs 13 Strength or your speed drops by 10 ft, and you have disadvantage on Stealth", items:[
+          {name:"Chain Mail",qty:1,weight:55,notes:"heavy, Str 13, stealth disadvantage",type:"armor",category:"heavy",baseAC:16}
         ]},
         {key:"leather_bow", label:"Leather armor, longbow and 20 arrows", detail:"Light armor, AC 11 + DEX, plus a 1d8 bow with range 150/600 ft", items:[
           {name:"Leather",qty:1,weight:10,notes:"light armor",type:"armor",category:"light",baseAC:11},
@@ -230,7 +230,7 @@ Object.assign(CLASSES_INFO["Wizard"], {
   spellcasting:{
     ability:"int", spellList:"Wizard", cantrips:3, spells:6, prepares:true, slots:{1:2},
     spellsLabel:"Spellbook spells",
-    spellsHelp:"Your spellbook starts with six 1st-level wizard spells. Each day you prepare 4 of them (more as you level); the rest stay in the book for later. You can change which after a long rest."
+    spellsHelp:"Your spellbook starts with six 1st-level wizard spells. Each day you prepare 4 of them (more as you level). The rest stay in the book for later. You can change which after a long rest."
   },
   equipment:{
     choiceGroups:[
@@ -244,7 +244,7 @@ Object.assign(CLASSES_INFO["Wizard"], {
       ]},
       {options:[
         {key:"pouch", label:"Component pouch", detail:"Holds the material components your spells need", items:[
-          {name:"Component Pouch",qty:1,weight:2,notes:"spellcasting focus; holds material components"}
+          {name:"Component Pouch",qty:1,weight:2,notes:"spellcasting focus, holds material components"}
         ]},
         {key:"focus", label:"Arcane focus", detail:"A crystal, orb, rod, staff, or wand to channel your spells", items:[
           {name:"Arcane Focus",qty:1,weight:1,notes:"spellcasting focus"}
@@ -298,7 +298,7 @@ Object.assign(CLASSES_INFO["Cleric"], {
     ability:"wis", spellList:"Cleric", cantrips:3, prepares:true, slots:{1:2},
     spells:4,
     spellsLabel:"Prepared spells",
-    spellsHelp:"You know every cleric spell. Each day you prepare 4 of them (more as you level); pick today's here and change them on the Spells tab after a long rest. Your domain spells are always prepared on top of these."
+    spellsHelp:"You know every cleric spell. Each day you prepare 4 of them (more as you level). Pick today's here and change them on the Spells tab after a long rest. Your domain spells are always prepared on top of these."
   },
   equipment:{
     choiceGroups:[
@@ -311,14 +311,14 @@ Object.assign(CLASSES_INFO["Cleric"], {
         ]}
       ]},
       {options:[
-        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2); disadvantage on Stealth", items:[
-          {name:"Scale Mail",qty:1,weight:45,notes:"medium; stealth disadvantage",type:"armor",category:"medium",baseAC:14}
+        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2), disadvantage on Stealth", items:[
+          {name:"Scale Mail",qty:1,weight:45,notes:"medium, stealth disadvantage",type:"armor",category:"medium",baseAC:14}
         ]},
         {key:"leather", label:"Leather armor", detail:"Light armor, AC 11 + DEX", items:[
           {name:"Leather",qty:1,weight:10,notes:"light armor",type:"armor",category:"light",baseAC:11}
         ]},
-        {key:"chain", label:"Chain mail", detail:"Heavy armor, AC 16. Needs 13 Strength or your speed drops by 10 ft; disadvantage on Stealth", requires:"heavy", items:[
-          {name:"Chain Mail",qty:1,weight:55,notes:"heavy; Str 13; stealth disadvantage",type:"armor",category:"heavy",baseAC:16}
+        {key:"chain", label:"Chain mail", detail:"Heavy armor, AC 16. Needs 13 Strength or your speed drops by 10 ft, and you have disadvantage on Stealth", requires:"heavy", items:[
+          {name:"Chain Mail",qty:1,weight:55,notes:"heavy, Str 13, stealth disadvantage",type:"armor",category:"heavy",baseAC:16}
         ]}
       ]},
       {options:[
@@ -372,7 +372,7 @@ Object.assign(CLASSES_INFO["Paladin"], {
       ]}
     ],
     fixed:[
-      {name:"Chain Mail", qty:1, weight:55, notes:"heavy; Str 13; stealth disadvantage", type:"armor", category:"heavy", baseAC:16},
+      {name:"Chain Mail", qty:1, weight:55, notes:"heavy, Str 13, stealth disadvantage", type:"armor", category:"heavy", baseAC:16},
       {name:"Holy Symbol", qty:1, weight:1, notes:"spellcasting focus (from level 2)"}
     ]
   }
@@ -402,13 +402,13 @@ Object.assign(CLASSES_INFO["Druid"], {
     ability:"wis", spellList:"Druid", cantrips:2, prepares:true, slots:{1:2},
     spells:4,
     spellsLabel:"Prepared spells",
-    spellsHelp:"You know every druid spell. Each day you prepare 4 of them (more as you level); pick today's here and change them on the Spells tab after a long rest."
+    spellsHelp:"You know every druid spell. Each day you prepare 4 of them (more as you level). Pick today's here and change them on the Spells tab after a long rest."
   },
   equipment:{
     choiceGroups:[
       {options:[
         {key:"shield", label:"Wooden shield", detail:"+2 AC", items:[
-          {name:"Wooden Shield",qty:1,weight:6,notes:"+2 AC; no metal",type:"armor",category:"shield",baseAC:2}
+          {name:"Wooden Shield",qty:1,weight:6,notes:"+2 AC, no metal",type:"armor",category:"shield",baseAC:2}
         ]},
         {key:"simple", label:"Any simple weapon", detail:"Choose it below (starts as a quarterstaff)", items:[
           {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"str",proficient:true,pick:{category:"simple"}}
@@ -452,10 +452,10 @@ Object.assign(CLASSES_INFO["Monk"], {
     choiceGroups:[
       {options:[
         {key:"shortsword", label:"Shortsword", detail:"1d6 piercing, finesse, light", items:[
-          {name:"Shortsword",qty:1,weight:2,notes:"finesse, light; monk weapon",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"finesse",proficient:true}
+          {name:"Shortsword",qty:1,weight:2,notes:"finesse, light, monk weapon",type:"weapon",damageDice:"1d6",damageType:"Piercing",ability:"finesse",proficient:true}
         ]},
         {key:"simple", label:"Any simple weapon", detail:"Choose it below (starts as a quarterstaff)", items:[
-          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8; monk weapon (DEX via Martial Arts)",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"finesse",proficient:true,pick:{category:"simple"}}
+          {name:"Quarterstaff",qty:1,weight:4,notes:"versatile 1d8, monk weapon (DEX via Martial Arts)",type:"weapon",damageDice:"1d6",damageType:"Bludgeoning",ability:"finesse",proficient:true,pick:{category:"simple"}}
         ]}
       ]},
       {options:[
@@ -489,7 +489,7 @@ CLASSES_INFO["Warlock"].features = [
 
 var ARCANE_FOCUS_CHOICE = {options:[
   {key:"pouch", label:"Component pouch", detail:"Holds the material components your spells need", items:[
-    {name:"Component Pouch",qty:1,weight:2,notes:"spellcasting focus; holds material components"}
+    {name:"Component Pouch",qty:1,weight:2,notes:"spellcasting focus, holds material components"}
   ]},
   {key:"focus", label:"Arcane focus", detail:"A crystal, orb, rod, staff, or wand to channel your spells", items:[
     {name:"Arcane Focus",qty:1,weight:1,notes:"spellcasting focus"}
@@ -637,10 +637,10 @@ Object.assign(CLASSES_INFO["Ranger"], {
   equipment:{
     choiceGroups:[
       {options:[
-        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2); disadvantage on Stealth", items:[
-          {name:"Scale Mail",qty:1,weight:45,notes:"medium; stealth disadvantage",type:"armor",category:"medium",baseAC:14}
+        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2), disadvantage on Stealth", items:[
+          {name:"Scale Mail",qty:1,weight:45,notes:"medium, stealth disadvantage",type:"armor",category:"medium",baseAC:14}
         ]},
-        {key:"leather", label:"Leather armor", detail:"Light armor, AC 11 + DEX; quiet", items:[
+        {key:"leather", label:"Leather armor", detail:"Light armor, AC 11 + DEX, quiet", items:[
           {name:"Leather",qty:1,weight:10,notes:"light armor",type:"armor",category:"light",baseAC:11}
         ]}
       ]},
@@ -677,7 +677,7 @@ Object.assign(CLASSES_INFO["Artificer"], {
     ability:"int", spellList:"Artificer", cantrips:2, prepares:true, slots:{1:2},
     spells:2,
     spellsLabel:"Prepared spells",
-    spellsHelp:"You know every artificer spell. Each day you prepare 2 of them (more as you level); pick today's here and change them on the Spells tab after a long rest."
+    spellsHelp:"You know every artificer spell. Each day you prepare 2 of them (more as you level). Pick today's here and change them on the Spells tab after a long rest."
   },
   equipment:{
     choiceGroups:[
@@ -685,14 +685,14 @@ Object.assign(CLASSES_INFO["Artificer"], {
         {key:"studded", label:"Studded leather armor", detail:"Light armor, AC 12 + DEX", items:[
           {name:"Studded Leather",qty:1,weight:13,notes:"light armor",type:"armor",category:"light",baseAC:12}
         ]},
-        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2); disadvantage on Stealth", items:[
-          {name:"Scale Mail",qty:1,weight:45,notes:"medium; stealth disadvantage",type:"armor",category:"medium",baseAC:14}
+        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2), disadvantage on Stealth", items:[
+          {name:"Scale Mail",qty:1,weight:45,notes:"medium, stealth disadvantage",type:"armor",category:"medium",baseAC:14}
         ]}
       ]}
     ],
     fixed:[
-      {name:"Light Hammer", qty:1, weight:2, notes:"simple weapon; light, thrown 20/60. Swap it on the sheet", type:"weapon", damageDice:"1d4", damageType:"Bludgeoning", ability:"str", proficient:true},
-      {name:"Dagger", qty:1, weight:1, notes:"simple weapon; finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true},
+      {name:"Light Hammer", qty:1, weight:2, notes:"simple weapon, light, thrown 20/60. Swap it on the sheet", type:"weapon", damageDice:"1d4", damageType:"Bludgeoning", ability:"str", proficient:true},
+      {name:"Dagger", qty:1, weight:1, notes:"simple weapon, finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true},
       {name:"Light Crossbow", qty:1, weight:5, notes:"ammunition, loading, two-handed, range 80/320", type:"weapon", damageDice:"1d8", damageType:"Piercing", ability:"dex", proficient:true},
       {name:"Crossbow Bolts", qty:20, weight:0.075, notes:"ammunition"},
       {name:"Thieves' Tools", qty:1, weight:1, notes:"pick locks and disarm traps"},
