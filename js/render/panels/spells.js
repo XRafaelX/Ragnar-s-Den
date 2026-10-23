@@ -131,7 +131,7 @@ function renderSpellCard(c, sp, idx, patron, granted){
     summaryP.textContent = sp.summary;
     card.appendChild(summaryP);
   }
-  appendScaling(card, spellScalingLine(c, sp.name, sp.level||0, {pact: spellOwner(c, sp)==="Warlock", fixed: !!sp.arcanum}));
+  appendScaling(card, spellScalingLine(c, sp.name, sp.level||0, {pact: spellOwner(c, sp)==="Warlock", owner: spellOwner(c, sp), fixed: !!sp.arcanum}));
   if(granted && granted.note){
     var grantP = document.createElement("p");
     grantP.className = "inv-armor-note feature-spell-note";
@@ -540,7 +540,7 @@ function renderFeatureSpellCard(c, fs, canLearn){
   // invocation's free cast; other warlock spells use the pact slots.
   // A race's once-a-day spell is cast at its own level (or the one it names), never with a slot.
   var fixed = fs.kind==="atwill" || fs.kind==="ritual" || (fs.kind==="free" && fs.className==="Warlock") || !!fs.limited;
-  appendScaling(card, spellScalingLine(c, fs.name, fs.level, {pact: fs.className==="Warlock" && !fixed, fixed: fixed, castAt: fs.castAt}));
+  appendScaling(card, spellScalingLine(c, fs.name, fs.level, {pact: fs.className==="Warlock" && !fixed, owner: fs.className, fixed: fixed, castAt: fs.castAt}));
   if(fs.note){
     var noteP = document.createElement("p");
     noteP.className = "inv-armor-note feature-spell-note";

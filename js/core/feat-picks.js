@@ -85,8 +85,12 @@ export function featSpellGroups(def, picks, ctx){
   });
 }
 function spellChoices(g, src){
-  if(src.names) return src.names.slice().sort();
   var lists = src.list ? [].concat(src.list) : null;
+  // Names with a list: just those names that are on the list (Spell Sniper).
+  if(src.names) return src.names.filter(function(n){
+    var d = SPELL_DATA[n];
+    return !lists || (d && lists.some(function(l){ return (d.classes||[]).indexOf(l)!==-1; }));
+  }).sort();
   return Object.keys(SPELL_DATA).filter(function(n){
     var d = SPELL_DATA[n];
     return d.level===g.level && (!g.schools || g.schools.indexOf(d.school)!==-1) &&

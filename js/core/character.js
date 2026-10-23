@@ -2,6 +2,7 @@ import { SKILLS } from "../data/abilities-skills.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { uid, featureSpells } from "./helpers.js";
 import { RACE_DATA } from "../data/race-data.js";
+import { currentSpellSummary } from "../data/spells.js";
 import { syncInfusions } from "./artificer.js";
 import { syncClassPicks, migrateClassPicks, migrateRacePicks } from "./class-picks.js";
 import { characterCompanions } from "./companions.js";
@@ -185,6 +186,11 @@ export function ensureShape(c){
     c.spells = c.spells.filter(function(sp){ return !(autoNote.test(sp.notes||"") && granted.indexOf(sp.name)!==-1); });
     c.grantedSpellsChecked = true;
   }
+  // A spell keeps its own copy of the catalog summary. One that still
+  // reads the old catalog text gets the corrected text (see SPELL_OLD_SUMMARIES).
+  c.spells.forEach(function(sp){
+    if(sp && !sp.homebrewId && typeof sp.summary==="string") sp.summary = currentSpellSummary(sp.name, sp.summary);
+  });
   // Skills and languages a feature gives outright (a Mercy monk's Insight
   // and Medicine) go on the sheet; ones with a choice wait on the
   // Features tab's Feature choices card.

@@ -104,6 +104,34 @@ test("cantrips: dice by character level, the next step named", () => {
   assert.equal(spellScalingLine(lock(5), "Mage Hand", 0), "");
 });
 
+test("Potent Spellcasting and Empowered Evocation add their modifier to a cantrip's line", () => {
+  const cleric = (level, wis = 18) => { const c = char([{ name: "Cleric", subclass: "Light Domain", level }]); c.abilities.wis = wis; return c; };
+  const evoker = (level, int = 18, sub = "School of Evocation") => { const c = char([{ name: "Wizard", subclass: sub, level }]); c.abilities.int = int; return c; };
+  // Cleric 8: Wisdom (+4) on cleric cantrips that deal damage, from level 8 only.
+  assert.equal(line(cleric(8), "Sacred Flame"), "At level 8: 2d8 radiant damage, plus 4 from Potent Spellcasting. More at level 11.");
+  assert.equal(line(cleric(8), "Toll the Dead", { owner: "Cleric" }), "At level 8: 2d8 necrotic damage, or 2d12 if the target is missing any hit points, plus 4 from Potent Spellcasting. More at level 11.");
+  assert.equal(line(cleric(7), "Sacred Flame"), "At level 7: 2d8 radiant damage. More at level 11.");
+  assert.equal(line(cleric(8, 8), "Sacred Flame"), "At level 8: 2d8 radiant damage, minus 1 from Potent Spellcasting. More at level 11.");
+  // Not a cleric cantrip, or cast by another class: nothing added.
+  assert.equal(line(cleric(8), "Fire Bolt"), "At level 8: 2d10 fire damage. More at level 11.");
+  assert.equal(line(cleric(8), "Toll the Dead", { owner: "Wizard" }), "At level 8: 2d8 necrotic damage, or 2d12 if the target is missing any hit points. More at level 11.");
+  // Evoker 10: Intelligence (+4) on a wizard evocation cantrip, one damage roll.
+  assert.equal(line(evoker(10), "Fire Bolt"), "At level 10: 2d10 fire damage, plus 4 from Empowered Evocation on one damage roll. More at level 11.");
+  assert.match(line(evoker(10), "Booming Blade"), /thunder damage if the target willingly moves, plus 4 from Empowered Evocation on one damage roll\./);
+  assert.equal(line(evoker(9), "Fire Bolt"), "At level 9: 2d10 fire damage. More at level 11.");
+  // Other schools, other subclasses and non-wizard casters don't get it.
+  assert.equal(line(evoker(10), "Chill Touch"), "At level 10: 2d8 necrotic damage. More at level 11.");
+  assert.equal(line(evoker(10, 18, "School of Abjuration"), "Fire Bolt"), "At level 10: 2d10 fire damage. More at level 11.");
+  assert.equal(line(evoker(10), "Fire Bolt", { owner: "Sorcerer" }), "At level 10: 2d10 fire damage. More at level 11.");
+  // A Cleric 8 / Evoker 10: each cantrip gets its own class's bonus only.
+  const both = char([{ name: "Cleric", subclass: "Light Domain", level: 8 }, { name: "Wizard", subclass: "School of Evocation", level: 10 }]);
+  both.abilities.wis = 14; both.abilities.int = 18;
+  assert.match(line(both, "Sacred Flame"), /, plus 2 from Potent Spellcasting\./);
+  assert.match(line(both, "Fire Bolt"), /, plus 4 from Empowered Evocation on one damage roll\./);
+  assert.doesNotMatch(line(both, "Fire Bolt"), /Potent/);
+  assert.doesNotMatch(line(both, "Sacred Flame"), /Empowered/);
+});
+
 test("Eldritch Blast: beams by level, with the warlock's invocations", () => {
   const c = lock(5, { invocations: [{ name: "Agonizing Blast" }, { name: "Eldritch Spear" }] });
   c.spells = [{ name: "Eldritch Blast", level: 0 }];
@@ -141,4 +169,18 @@ test("other casters see the Higher slots rule; fixed-level casts see nothing", (
   assert.equal(line(wiz, "Hex"), "Higher slots: lasts up to 8 hours with a 3rd- or 4th-level slot, 24 hours with 5th or higher.");
   assert.equal(line(lock(9), "False Life", { fixed: true }), "");
   assert.equal(line(lock(9), "Misty Step", { pact: true }), "");
+});
+
+test("a saved spell with the old catalog summary gets the corrected one, a player's own wording stays", async () => {
+  const { currentSpellSummary, SPELL_OLD_SUMMARIES } = await import("../js/data/spells.js");
+  for(const [name, olds] of Object.entries(SPELL_OLD_SUMMARIES)){
+    assert.ok(SPELL_DATA[name], name + " is in the catalog");
+    for(const old of olds){
+      assert.notEqual(old, SPELL_DATA[name].summary, name + ": the old text differs from the current one");
+      assert.equal(currentSpellSummary(name, old), SPELL_DATA[name].summary, name);
+    }
+  }
+  assert.equal(currentSpellSummary("Chill Touch", "My own note about it."), "My own note about it.");
+  assert.equal(currentSpellSummary("Chill Touch", SPELL_DATA["Chill Touch"].summary), SPELL_DATA["Chill Touch"].summary);
+  assert.equal(currentSpellSummary("Not A Spell", "x"), "x");
 });

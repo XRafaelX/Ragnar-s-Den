@@ -35,7 +35,8 @@
      spellPick      {count, level, schools, list, names, byOption, label,
                     plural, use, tags}, or a list of them: spells to pick at that
                     spell level, from those schools, from a class's list
-                    (`list`: a class or several) or from `names`.
+                    (`list`: a class or several) or from `names` (with `list`, only the names on that list: Spell
+                    Sniper's attack-roll cantrips).
                     `byOption` gives the list or names per `option`
                     (Strixhaven Initiate's college). count "halfPb" is
                     half the proficiency bonus (Rune Shaper's runes);

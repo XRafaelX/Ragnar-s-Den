@@ -315,6 +315,16 @@ export var PHB_FEATS = [
   {
     name: "Spell Sniper",
     source: "PHB",
+    // Bard and cleric have no attack-roll cantrip, so only these lists are offered.
+    option:{label:"Spell list", options:["Druid","Sorcerer","Warlock","Wizard"]},
+    castAbilityByOption:{"Druid":"wis", "Sorcerer":"cha", "Warlock":"cha", "Wizard":"int"},
+    spellPick:[
+      {count:1, level:0, label:"attack-roll cantrip from that list", plural:"attack-roll cantrips from that list", byOption:
+        ["Druid","Sorcerer","Warlock","Wizard"].reduce(function(o, cls){
+          o[cls] = {list:cls, names:["Booming Blade","Chill Touch","Eldritch Blast","Fire Bolt","Green-Flame Blade","Magic Stone","Primal Savagery","Produce Flame","Ray of Frost","Shocking Grasp","Thorn Whip"]};
+          return o;
+        }, {})}
+    ],
     prerequisite: "The ability to cast at least one spell",
     category: "Magic",
     summary: "Your spells that need an attack roll have double range and ignore half and three-quarters cover. You learn one cantrip that requires an attack roll.",

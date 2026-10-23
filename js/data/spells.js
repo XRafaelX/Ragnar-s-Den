@@ -44,31 +44,31 @@ export var SPELL_DATA = {
   /* ---- Cantrips ---- */
   "Acid Splash": s(0,"Con",A,"60 feet","V, S","Instantaneous","Artificer,Sorcerer,Wizard","Hurl acid at one creature, or at two creatures within 5 feet of each other. Each makes a Dexterity save or takes 1d6 acid damage."),
   "Blade Ward": s(0,"Abj",A,"Self","V, S","1 round","Bard,Sorcerer,Warlock,Wizard","Until the end of your next turn, you have resistance to bludgeoning, piercing and slashing damage from weapon attacks."),
-  "Chill Touch": s(0,"Nec",A,"120 feet","V, S","1 round","Sorcerer,Warlock,Wizard","Make a ranged spell attack. On a hit, the target takes 1d8 necrotic damage and can't regain hit points until the start of your next turn."),
-  "Dancing Lights": s(0,"Evo",A,"120 feet","V, S, M",CONC1M,"Artificer,Bard,Sorcerer,Wizard","Create up to four torch-sized lights that hover in the air. As a bonus action you can move them up to 60 feet.",{material:"a bit of phosphorus or wychwood, or a glowworm"}),
+  "Chill Touch": s(0,"Nec",A,"120 feet","V, S","1 round","Sorcerer,Warlock,Wizard","Make a ranged spell attack. On a hit, the target takes 1d8 necrotic damage and can't regain hit points until the start of your next turn. An undead target also has disadvantage on attack rolls against you until the end of your next turn."),
+  "Dancing Lights": s(0,"Evo",A,"120 feet","V, S, M",CONC1M,"Artificer,Bard,Sorcerer,Wizard","Create up to four torch-sized lights that hover in the air, each shedding dim light in a 10-foot radius. As a bonus action you can move them up to 60 feet.",{material:"a bit of phosphorus or wychwood, or a glowworm"}),
   "Druidcraft": s(0,"Tra",A,"30 feet","V, S","Instantaneous","Druid","Create a small nature effect. Predict the weather, make a flower bloom, create a harmless sensory effect, or light or snuff out a small flame."),
-  "Eldritch Blast": s(0,"Evo",A,"120 feet","V, S","Instantaneous","Warlock","Make a ranged spell attack. On a hit, the beam deals 1d10 force damage. You fire more beams at levels 5, 11 and 17."),
+  "Eldritch Blast": s(0,"Evo",A,"120 feet","V, S","Instantaneous","Warlock","Make a ranged spell attack. On a hit, the beam deals 1d10 force damage. At levels 5, 11 and 17 you fire more beams, each with its own attack roll, at the same target or different ones."),
   "Fire Bolt": s(0,"Evo",A,"120 feet","V, S","Instantaneous","Artificer,Sorcerer,Wizard","Make a ranged spell attack. On a hit, the target takes 1d10 fire damage. A flammable object that isn't being worn or carried catches fire."),
   "Friends": s(0,"Enc",A,"Self","S, M",CONC1M,"Bard,Sorcerer,Warlock,Wizard","You have advantage on Charisma checks against one creature that isn't hostile to you. When the spell ends, the creature knows you used magic on it and becomes hostile.",{material:"a small amount of makeup"}),
-  "Guidance": s(0,"Div",A,"Touch","V, S",CONC1M,"Artificer,Cleric,Druid","The target can roll a d4 and add it to one ability check of its choice. The spell then ends."),
-  "Light": s(0,"Evo",A,"Touch","V, M","1 hour","Artificer,Bard,Cleric,Sorcerer,Wizard","An object you touch sheds bright light in a 20-foot radius and dim light for another 20 feet.",{material:"a firefly or phosphorescent moss"}),
-  "Mage Hand": s(0,"Con",A,"30 feet","V, S","1 minute","Artificer,Bard,Sorcerer,Warlock,Wizard","A spectral hand appears within range. It can handle objects, open doors and containers, and carry up to 10 pounds. It can't attack or use magic items."),
+  "Guidance": s(0,"Div",A,"Touch","V, S",CONC1M,"Artificer,Cleric,Druid","A willing creature you touch can roll a d4 and add it to one ability check of its choice. The spell then ends."),
+  "Light": s(0,"Evo",A,"Touch","V, M","1 hour","Artificer,Bard,Cleric,Sorcerer,Wizard","An object you touch sheds bright light in a 20-foot radius and dim light for another 20 feet. If a hostile creature holds or wears the object, it makes a Dexterity save to avoid the spell.",{material:"a firefly or phosphorescent moss"}),
+  "Mage Hand": s(0,"Con",A,"30 feet","V, S","1 minute","Artificer,Bard,Sorcerer,Warlock,Wizard","A spectral hand appears within range. You control it with your action and it moves up to 30 feet each time. It can handle objects, open unlocked doors and containers, and carry up to 10 pounds. It can't attack or use magic items, and it vanishes if it gets more than 30 feet from you."),
   "Mending": s(0,"Tra","1 minute","Touch","V, S, M","Instantaneous","Artificer,Bard,Cleric,Druid,Sorcerer,Wizard","Repair a single break or tear in an object, as long as it is no longer than 1 foot.",{material:"two lodestones"}),
   "Message": s(0,"Tra",A,"120 feet","V, S, M","1 round","Artificer,Bard,Sorcerer,Wizard","Whisper a message to a creature within range. Only it hears you, and it can whisper a reply.",{material:"a short piece of copper wire"}),
   "Minor Illusion": s(0,"Ill",A,"30 feet","S, M","1 minute","Bard,Sorcerer,Warlock,Wizard","Create a sound, or an image of an object no larger than a 5-foot cube. A creature that examines it can see through it with an Investigation check.",{material:"a bit of fleece"}),
   "Poison Spray": s(0,"Con",A,"10 feet","V, S","Instantaneous","Artificer,Druid,Sorcerer,Warlock,Wizard","The target makes a Constitution save or takes 1d12 poison damage."),
   "Prestidigitation": s(0,"Tra",A,"10 feet","V, S","Up to 1 hour","Artificer,Bard,Sorcerer,Warlock,Wizard","Perform a minor magical trick. Create a harmless sensory effect, light or snuff out a small flame, clean or soil an object, chill, warm or flavor food, or make a small mark or trinket."),
-  "Produce Flame": s(0,"Con",A,"Self","V, S","10 minutes","Druid","A flame appears in your hand and sheds light. You can hurl it as a ranged spell attack that deals 1d8 fire damage."),
+  "Produce Flame": s(0,"Con",A,"Self","V, S","10 minutes","Druid","A flame appears in your hand and sheds light. When you cast the spell, or as an action on a later turn, you can hurl it at a creature within 30 feet as a ranged spell attack that deals 1d8 fire damage. Hurling it ends the spell."),
   "Ray of Frost": s(0,"Evo",A,"60 feet","V, S","Instantaneous","Artificer,Sorcerer,Wizard","Make a ranged spell attack. On a hit, the target takes 1d8 cold damage and its speed is reduced by 10 feet until the start of your next turn."),
-  "Resistance": s(0,"Abj",A,"Touch","V, S, M",CONC1M,"Artificer,Cleric,Druid","The target can roll a d4 and add it to one saving throw of its choice. The spell then ends.",{material:"a miniature cloak"}),
+  "Resistance": s(0,"Abj",A,"Touch","V, S, M",CONC1M,"Artificer,Cleric,Druid","A willing creature you touch can roll a d4 and add it to one saving throw of its choice. The spell then ends.",{material:"a miniature cloak"}),
   "Sacred Flame": s(0,"Evo",A,"60 feet","V, S","Instantaneous","Cleric","The target makes a Dexterity save or takes 1d8 radiant damage. Cover doesn't help it on this save."),
-  "Shillelagh": s(0,"Tra",B,"Touch","V, S, M","1 minute","Druid","A club or quarterstaff you hold becomes magical. You use your spellcasting ability for its attack and damage rolls, and its damage die becomes a d8.",{material:"mistletoe, a shamrock leaf, and a club or quarterstaff"}),
+  "Shillelagh": s(0,"Tra",B,"Touch","V, S, M","1 minute","Druid","A club or quarterstaff you hold becomes magical. For melee attacks with it you use your spellcasting ability for the attack and damage rolls, and its damage die becomes a d8. The spell ends if you let go of the weapon.",{material:"mistletoe, a shamrock leaf, and a club or quarterstaff"}),
   "Shocking Grasp": s(0,"Evo",A,"Touch","V, S","Instantaneous","Artificer,Sorcerer,Wizard","Make a melee spell attack, with advantage if the target wears metal armor. On a hit it takes 1d8 lightning damage and can't take reactions until its next turn."),
   "Spare the Dying": s(0,"Nec",A,"Touch","V, S","Instantaneous","Artificer,Cleric","A living creature at 0 hit points that you touch becomes stable."),
   "Thaumaturgy": s(0,"Tra",A,"30 feet","V","Up to 1 minute","Cleric","Create a minor wonder. Make your voice boom, flames flicker, the ground tremble, your eyes change, or a door fly open."),
   "Thorn Whip": s(0,"Tra",A,"30 feet","V, S, M","Instantaneous","Artificer,Druid","Make a melee spell attack with a thorny vine. On a hit, the target takes 1d6 piercing damage, and if it is Large or smaller you pull it up to 10 feet closer.",{material:"the stem of a plant with thorns"}),
   "True Strike": s(0,"Div",A,"30 feet","S","Concentration, up to 1 round","Bard,Sorcerer,Warlock,Wizard","On your next turn, you have advantage on your first attack roll against the target."),
-  "Vicious Mockery": s(0,"Enc",A,"60 feet","V","Instantaneous","Bard","The target makes a Wisdom save. On a failure it takes 1d4 psychic damage and has disadvantage on its next attack roll before the end of its next turn."),
+  "Vicious Mockery": s(0,"Enc",A,"60 feet","V","Instantaneous","Bard","If the target can hear you, it makes a Wisdom save. On a failure it takes 1d4 psychic damage and has disadvantage on its next attack roll before the end of its next turn."),
 
   /* ---- 1st level ---- */
   "Alarm": s(1,"Abj","1 minute","30 feet","V, S, M","8 hours","Artificer,Ranger,Wizard","Ward a door, a window or an area up to a 20-foot cube. A mental or audible alarm alerts you when a creature touches or enters it.",{ritual:true,material:"a tiny bell and a piece of fine silver wire"}),
@@ -622,6 +622,29 @@ export var SPELL_SOURCES = {
   AI:"Acquisitions Inc.", BMT:"The Book of Many Things", EGW:"Wildemount", FTD:"Fizban's Treasury", GGR:"Ravnica",
   IDRotF:"Icewind Dale", LLoK:"Lost Laboratory of Kwalish", PAitM:"Planescape", SAiS:"Spelljammer", SCC:"Strixhaven"
 };
+
+/* Summaries the catalog used to have for a spell, before they were
+   corrected. A character's spell keeps its own copy of the summary (the
+   player can edit it), so on load a copy that still matches one of these
+   exactly is replaced with the current text, and a player's own wording is
+   left alone. Add the old text here whenever a summary above is corrected. */
+export var SPELL_OLD_SUMMARIES = {
+  "Chill Touch": ["Make a ranged spell attack. On a hit, the target takes 1d8 necrotic damage and can't regain hit points until the start of your next turn."],
+  "Dancing Lights": ["Create up to four torch-sized lights that hover in the air. As a bonus action you can move them up to 60 feet."],
+  "Eldritch Blast": ["Make a ranged spell attack. On a hit, the beam deals 1d10 force damage. You fire more beams at levels 5, 11 and 17."],
+  "Guidance": ["The target can roll a d4 and add it to one ability check of its choice. The spell then ends."],
+  "Light": ["An object you touch sheds bright light in a 20-foot radius and dim light for another 20 feet."],
+  "Mage Hand": ["A spectral hand appears within range. It can handle objects, open doors and containers, and carry up to 10 pounds. It can't attack or use magic items."],
+  "Produce Flame": ["A flame appears in your hand and sheds light. You can hurl it as a ranged spell attack that deals 1d8 fire damage."],
+  "Resistance": ["The target can roll a d4 and add it to one saving throw of its choice. The spell then ends."],
+  "Shillelagh": ["A club or quarterstaff you hold becomes magical. You use your spellcasting ability for its attack and damage rolls, and its damage die becomes a d8."],
+  "Vicious Mockery": ["The target makes a Wisdom save. On a failure it takes 1d4 psychic damage and has disadvantage on its next attack roll before the end of its next turn."]
+};
+export function currentSpellSummary(name, summary){
+  var d = SPELL_DATA[catalogSpellName(name)];
+  var old = SPELL_OLD_SUMMARIES[catalogSpellName(name)];
+  return d && old && old.indexOf(summary) !== -1 ? d.summary : summary;
+}
 
 /* Book names that the catalog lists under their SRD name. */
 export var SPELL_ALIASES = { "Melf's Acid Arrow": "Acid Arrow" };

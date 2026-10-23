@@ -479,3 +479,23 @@ test("feat and spell wording: plain sentences, no semicolons, dashes or shorthan
     for(const u of uses) assert.ok(!banned.test(u.hint) && !/\bft\b/.test(u.hint), name + ": use hint");
   }
 });
+
+test("Spell Sniper: one attack-roll cantrip from a list that has one, cast with that list's ability", () => {
+  const def = FP.featDef("Spell Sniper");
+  assert.deepEqual(def.option.options, ["Druid", "Sorcerer", "Warlock", "Wizard"], "bard and cleric have no attack-roll cantrip");
+  const offered = (option) => FP.featSpellGroups(def, { option })[0].options;
+  assert.deepEqual(FP.featSpellGroups(def, {}).map((g) => g.options.length), [0], "nothing to pick before the list");
+  assert.deepEqual(offered("Wizard"), ["Booming Blade", "Chill Touch", "Fire Bolt", "Green-Flame Blade", "Ray of Frost", "Shocking Grasp"]);
+  assert.deepEqual(offered("Druid"), ["Magic Stone", "Primal Savagery", "Produce Flame", "Thorn Whip"]);
+  assert.ok(offered("Warlock").includes("Eldritch Blast") && !offered("Wizard").includes("Eldritch Blast"));
+  for(const o of def.option.options){
+    assert.ok(offered(o).length > 0, o + " has something to pick");
+    for(const n of offered(o)) assert.equal(SPELL_DATA[n].level, 0, n + " is a cantrip");
+  }
+  // Only cantrips that need an attack roll: never a save or utility one.
+  for(const n of ["Mage Hand", "Frostbite", "Sacred Flame", "Guidance", "Vicious Mockery"]) assert.ok(!offered("Wizard").concat(offered("Druid"), offered("Warlock"), offered("Sorcerer")).includes(n), n);
+  assert.deepEqual(FP.featSpellEntries(def, { option: "Wizard", spells: ["Fire Bolt"] }), [{ name: "Fire Bolt", use: "known" }]);
+  assert.equal(FP.featCastAbility({}, def, { option: "Wizard" }), "int");
+  assert.equal(FP.featCastAbility({}, def, { option: "Sorcerer" }), "cha");
+  assert.equal(FP.featCastAbility({}, def, { option: "Druid" }), "wis");
+});
