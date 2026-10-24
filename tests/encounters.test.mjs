@@ -8,7 +8,8 @@ import {
   loadEncounters, getEncounters, getEncounter, createEncounter, saveEncounter, deleteEncounter, duplicateEncounter,
   importEncounters, encounterNameProblem, knownPlayerNames, addMonster, getMonster, moveMonster, removeMonster, changeHp,
   isDead, orderEntryFor, unplacedMonsters, addPlayer, placeMonster, moveInOrder, removeFromOrder, currentEntry,
-  nextTurn, previousTurn, resetEncounter, encounterStarted
+  nextTurn, previousTurn, resetEncounter, encounterStarted,
+  setMonsterColor, groupName, renameGroup, colorGroups
 } from "../js/core/encounters.js";
 
 const GOBLIN = { hp: 7, ac: 15, speed: 30 };
@@ -89,6 +90,38 @@ test("monster boxes are sorted by hand without touching the turn line", () => {
   moveMonster(e, g.id, 99);
   assert.deepEqual(boxes(), ["Ogre", "Wolf", "Goblin"], "past the end lands last");
   assert.deepEqual(names(e), ["Goblin", "Ogre"], "the turn order stays as it was");
+});
+
+test("monsters are grouped by color, and a group can be named", () => {
+  fresh();
+  const e = createEncounter("Colors");
+  const g = addMonster(e, "Goblin", GOBLIN);
+  const g2 = addMonster(e, "Goblin", GOBLIN);
+  const o = addMonster(e, "Ogre", OGRE);
+  assert.equal(g.color, "", "a new monster has no color");
+  setMonsterColor(e, g.id, "blue");
+  setMonsterColor(e, g2.id, "blue");
+  setMonsterColor(e, o.id, "green");
+  assert.deepEqual(colorGroups(e), [{ color: "blue", name: "Blue", count: 2 }, { color: "green", name: "Green", count: 1 }]);
+  setMonsterColor(e, o.id, "purple");
+  assert.equal(o.color, "", "an unknown color is no color");
+  renameGroup(e, "blue", "  Archers on the ridge ");
+  assert.equal(groupName(e, "blue"), "Archers on the ridge");
+  renameGroup(e, "blue", "");
+  assert.equal(groupName(e, "blue"), "Blue", "an empty name goes back to the color's");
+  renameGroup(e, "blue", "Archers");
+  saveEncounter(e);
+  loadEncounters();
+  const back = getEncounter(e.id);
+  assert.deepEqual(back.monsters.map((m) => m.color), ["blue", "blue", ""], "colors survive a reload");
+  assert.equal(groupName(back, "blue"), "Archers", "and so do group names");
+  const copy = duplicateEncounter(e.id);
+  assert.equal(groupName(copy, "blue"), "Archers", "a duplicate keeps them");
+  assert.equal(copy.monsters[0].color, "blue");
+  importEncounters([{ name: "Odd", monsters: [{ id: "x", name: "Bat", hp: 1, color: "plaid" }], groupNames: { plaid: "Nope", teal: 5 } }]);
+  const odd = getEncounters().find((x) => x.name === "Odd");
+  assert.equal(odd.monsters[0].color, "", "an imported unknown color is dropped");
+  assert.deepEqual(odd.groupNames, { teal: "5" });
 });
 
 test("the turn stays with its entry when the line is rearranged", () => {

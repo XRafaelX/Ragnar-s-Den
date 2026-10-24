@@ -7,8 +7,9 @@ import { clampMonsterStat } from "./custom-monsters.js";
 
    Encounter shape:
      { id, name, round, current, updated,
-       monsters: [{ id, name, kind, ac, speed, maxHp, hp, log }],
-       order:    [{ id, type:"player", name } | { id, type:"monster", monsterId }] }
+       monsters: [{ id, name, kind, ac, speed, maxHp, hp, log, color }],
+       order:    [{ id, type:"player", name } | { id, type:"monster", monsterId }],
+       groupNames: { blue: "Archers", ... } }
 
    A monster keeps its own copy of the stats it was added with, so the
    encounter still works if a homebrew monster is later edited or deleted.
@@ -18,7 +19,13 @@ import { clampMonsterStat } from "./custom-monsters.js";
    `order` is the turn line, top goes first. Players only exist there (just
    a name); a monster can sit in the encounter before it is placed in it.
    `current` is the id of the order entry whose turn it is, not an index,
-   so dragging entries around never moves the turn to someone else. */
+   so dragging entries around never moves the turn to someone else.
+   `color` groups monsters the DM's own way: one of MONSTER_COLORS, or ""
+   for none. A color's group is called by its name ("Blue") unless the DM
+   renamed it in `groupNames`. */
+
+export var MONSTER_COLORS = ["blue", "green", "yellow", "orange", "teal", "pink"];
+var COLOR_NAMES = { blue: "Blue", green: "Green", yellow: "Yellow", orange: "Orange", teal: "Teal", pink: "Pink" };
 
 var STORAGE_KEY = "ragnarsDen.encounters.v1";
 
@@ -57,7 +64,8 @@ function clean(e){
       speed: clampMonsterStat("speed", m.speed, 30),
       maxHp: maxHp,
       hp: hp,
-      log: log.length ? log : [hp]
+      log: log.length ? log : [hp],
+      color: MONSTER_COLORS.indexOf(m.color) === -1 ? "" : m.color
     };
   });
   var ids = {};
@@ -76,6 +84,12 @@ function clean(e){
       : { id: String(o.id), type: "monster", monsterId: String(o.monsterId) };
   });
   var current = order.some(function(o){ return o.id === e.current; }) ? e.current : (order[0] ? order[0].id : null);
+  var groupNames = {};
+  var names = e.groupNames && typeof e.groupNames === "object" ? e.groupNames : {};
+  MONSTER_COLORS.forEach(function(c){
+    var n = String(names[c] || "").trim().slice(0, 30);
+    if(n) groupNames[c] = n;
+  });
   return {
     id: String(e.id || uid()),
     name: String(e.name || "").trim() || "Encounter",
@@ -83,7 +97,8 @@ function clean(e){
     current: current,
     updated: int(e.updated, Date.now()),
     monsters: monsters,
-    order: order
+    order: order,
+    groupNames: groupNames
   };
 }
 
@@ -200,7 +215,8 @@ export function addMonster(e, kind, data){
     speed: clampMonsterStat("speed", data && data.speed, 30),
     maxHp: maxHp,
     hp: maxHp,
-    log: [maxHp]
+    log: [maxHp],
+    color: ""
   };
   e.monsters.push(m);
   return m;
@@ -224,6 +240,34 @@ export function moveMonster(e, monsterId, index){
   var m = e.monsters.splice(at, 1)[0];
   var to = typeof index === "number" ? Math.max(0, Math.min(e.monsters.length, index)) : e.monsters.length;
   e.monsters.splice(to, 0, m);
+}
+
+/* Puts a monster in a color's group, or none with "". */
+export function setMonsterColor(e, monsterId, color){
+  var m = getMonster(e, monsterId);
+  if(m) m.color = MONSTER_COLORS.indexOf(color) === -1 ? "" : color;
+}
+
+/* "Blue", or the name the DM gave the blue group. */
+export function groupName(e, color){
+  return (e.groupNames && e.groupNames[color]) || COLOR_NAMES[color] || "";
+}
+
+/* An empty name, or the color's own, goes back to the color's name. */
+export function renameGroup(e, color, name){
+  if(MONSTER_COLORS.indexOf(color) === -1) return;
+  var n = String(name || "").trim().slice(0, 30);
+  if(!e.groupNames) e.groupNames = {};
+  if(n && n !== COLOR_NAMES[color]) e.groupNames[color] = n;
+  else delete e.groupNames[color];
+}
+
+/* The groups in use, in palette order: [{ color, name, count }]. */
+export function colorGroups(e){
+  return MONSTER_COLORS.map(function(c){
+    var count = e.monsters.filter(function(m){ return m.color === c; }).length;
+    return { color: c, name: groupName(e, c), count: count };
+  }).filter(function(g){ return g.count; });
 }
 
 /* Takes the monster out of the encounter and the turn line. */

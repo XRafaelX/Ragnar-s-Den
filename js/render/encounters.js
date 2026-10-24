@@ -8,7 +8,8 @@ import {
   getEncounters, getEncounter, createEncounter, saveEncounter, deleteEncounter, duplicateEncounter,
   encounterNameProblem, knownPlayerNames, addMonster, getMonster, moveMonster, renameMonster, removeMonster, changeHp,
   isDead, orderEntryFor, unplacedMonsters, addPlayer, hasPlayer, placeMonster, moveInOrder, removeFromOrder,
-  currentEntry, nextTurn, previousTurn, resetEncounter, encounterStarted
+  currentEntry, nextTurn, previousTurn, resetEncounter, encounterStarted,
+  MONSTER_COLORS, setMonsterColor, groupName, renameGroup, colorGroups
 } from "../core/encounters.js";
 
 /* ---------------- Encounters ----------------
@@ -19,6 +20,10 @@ import {
    are typed in. Encounters are named and saved as they change, so one
    can be set up ahead of the session and Reset to run it again.
 
+   The DM can color monsters to group them (a tinted box, a colored dot
+   in the turn line) and show one color's boxes at a time with the chips
+   above them.
+
    Two views in one full-page overlay: the saved list, and one encounter's
    board. Dragging uses pointer events (not HTML drag and drop) so it
    works with a finger too. */
@@ -26,6 +31,7 @@ import {
 var overlay = null;
 var openId = null;       // the encounter on the board, null = the list
 var dragging = null;     // the drag in progress, see startDrag()
+var filter = { id: null, color: null };  // the color chip picked, per encounter
 
 function ce(tag, cls, text){
   var el = document.createElement(tag);
@@ -45,7 +51,8 @@ function button(cls, text, onClick, title){
 var GRIP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
 var SHIELD_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>';
 
-/* A ⋯ button with a small menu: items are [{label, danger, onClick}]. */
+/* A ⋯ button with a small menu: items are [{label, danger, onClick}],
+   or {el} for something of its own (a row of color swatches). */
 function menu(items, title){
   var wrap = ce("div", "enc-menu");
   var btn = button("catalog-row-menu-btn", "", function(e){
@@ -57,6 +64,7 @@ function menu(items, title){
   btn.innerHTML = makeKebabSvg();
   var dropdown = ce("div", "catalog-row-dropdown");
   items.forEach(function(it){
+    if(it.el){ dropdown.appendChild(it.el); return; }
     dropdown.appendChild(button("catalog-dropdown-item" + (it.danger ? " danger" : ""), it.label, function(e){
       e.stopPropagation();
       closeMenus();
@@ -125,7 +133,8 @@ var ICON = {
   skull: '<circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/>',
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
-  chevron: '<path d="m9 18 6-6-6-6"/>'
+  chevron: '<path d="m9 18 6-6-6-6"/>',
+  pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>'
 };
 function icon(name, cls){
   var span = ce("span", "enc-icon" + (cls ? " " + cls : ""));
@@ -349,11 +358,106 @@ function monstersPanel(enc){
     panel.appendChild(ce("div", "enc-empty", "No monsters yet. Add them from the catalog, then drag their boxes into the turn order."));
     return panel;
   }
+  var groups = colorGroups(enc);
+  var shown = shownColor(enc);
+  if(groups.length) panel.appendChild(filterChips(enc, groups, shown));
   var grid = ce("div", "enc-cards");
   var cur = currentEntry(enc);
-  enc.monsters.forEach(function(m){ grid.appendChild(monsterCard(enc, m, cur)); });
+  enc.monsters.forEach(function(m){
+    if(!shown || m.color === shown) grid.appendChild(monsterCard(enc, m, cur));
+  });
   panel.appendChild(grid);
   return panel;
+}
+
+/* The color whose boxes alone are shown, or null for all of them. A
+   color with no monsters left (or another encounter's pick) is all. */
+function shownColor(enc){
+  if(filter.id !== enc.id || !enc.monsters.some(function(m){ return m.color === filter.color; })) filter = { id: enc.id, color: null };
+  return filter.color;
+}
+
+/* When the turn moves to a monster the chips are hiding, show them all. */
+function revealTurn(enc){
+  var cur = currentEntry(enc);
+  var m = cur && cur.type === "monster" ? getMonster(enc, cur.monsterId) : null;
+  if(m && filter.color && m.color !== filter.color) filter.color = null;
+}
+
+/* "All 5", then a chip per color in use. The picked color's chip has a
+   pencil beside it to rename its group. */
+function filterChips(enc, groups, shown){
+  var bar = ce("div", "enc-filter");
+  bar.setAttribute("role", "group");
+  bar.setAttribute("aria-label", "Show monsters by color");
+  function chip(color, label, count){
+    var b = button("enc-filter-chip" + (shown === color ? " on" : ""), "", function(){
+      filter = { id: enc.id, color: color };
+      render();
+    });
+    b.setAttribute("aria-pressed", shown === color ? "true" : "false");
+    if(color){
+      b.dataset.color = color;
+      b.appendChild(ce("span", "enc-filter-dot"));
+    }
+    b.appendChild(ce("span", "enc-filter-name", label));
+    b.appendChild(ce("span", "enc-filter-count", String(count)));
+    return b;
+  }
+  bar.appendChild(chip(null, "All", enc.monsters.length));
+  groups.forEach(function(g){
+    var c = chip(g.color, g.name, g.count);
+    bar.appendChild(c);
+    if(shown !== g.color) return;
+    var pen = button("enc-filter-edit", "", function(){
+      var input = ce("input", "enc-input enc-filter-input");
+      input.type = "text";
+      input.value = g.name;
+      input.maxLength = 30;
+      input.setAttribute("aria-label", "Name of the " + g.name + " group");
+      var done = false;
+      function finish(keep){
+        if(done) return;
+        done = true;
+        if(keep && input.value.trim() !== g.name){ renameGroup(enc, g.color, input.value); commit(enc); }
+        else render();
+      }
+      input.addEventListener("keydown", function(e){
+        if(e.key === "Enter"){ e.preventDefault(); finish(true); }
+        else if(e.key === "Escape"){ e.preventDefault(); finish(false); }
+      });
+      input.addEventListener("blur", function(){ finish(true); });
+      bar.replaceChild(input, c);
+      pen.remove();
+      input.focus();
+      input.select();
+    }, "Rename the " + g.name + " group");
+    pen.appendChild(icon("pencil"));
+    bar.appendChild(pen);
+  });
+  return bar;
+}
+
+/* The ⋯ menu's color row: no color, then the palette. Each swatch's
+   tooltip is its group's name. */
+function colorRow(enc, m){
+  var row = ce("div", "enc-swatches");
+  row.appendChild(ce("div", "enc-swatches-label", "Color"));
+  var dots = ce("div", "enc-swatch-row");
+  [""].concat(MONSTER_COLORS).forEach(function(c){
+    var b = button("enc-swatch" + (c ? "" : " none") + (m.color === c ? " on" : ""), "", function(e){
+      e.stopPropagation();
+      closeMenus();
+      if(c === m.color) return;
+      setMonsterColor(enc, m.id, c);
+      commit(enc);
+    }, c ? groupName(enc, c) : "No color");
+    b.setAttribute("aria-pressed", m.color === c ? "true" : "false");
+    if(c) b.dataset.color = c;
+    dots.appendChild(b);
+  });
+  row.appendChild(dots);
+  return row;
 }
 
 function monsterCard(enc, m, cur){
@@ -363,6 +467,7 @@ function monsterCard(enc, m, cur){
     (cur && entry && cur.id === entry.id ? " active" : ""));
   card.dataset.monsterId = m.id;
   card.dataset.name = m.name;
+  if(m.color) card.dataset.color = m.color;
 
   var top = ce("div", "enc-card-top");
   var grip = ce("span", "enc-grip");
@@ -411,6 +516,7 @@ function monsterCard(enc, m, cur){
   top.appendChild(menu([
     { label: "Stat block", onClick: function(){ showStatBlock(m); } },
     { label: "Rename", onClick: editName },
+    { el: colorRow(enc, m) },
     entry
       ? { label: "Take out of turn order", onClick: function(){ removeFromOrder(enc, entry.id); commit(enc); } }
       : { label: "Add to turn order", onClick: function(){ placeMonster(enc, m.id); playAdd(); commit(enc); } },
@@ -477,17 +583,17 @@ function monsterCard(enc, m, cur){
   ctrl.addEventListener("submit", function(e){ e.preventDefault(); apply(-1); });
   card.appendChild(ctrl);
 
-  if(!entry){
-    var foot = ce("div", "enc-card-foot");
-    foot.appendChild(ce("span", "enc-card-hint", "Not in the turn order yet. Drag this box there, or"));
-    foot.appendChild(button("enc-link", "add it at the end", function(){ placeMonster(enc, m.id); playAdd(); commit(enc); }));
-    card.appendChild(foot);
-  }
-
   dragSource(card, grip, function(){
     return { label: m.name, entryId: entry ? entry.id : null, monsterId: m.id,
       drop: function(index){ placeMonster(enc, m.id, index); if(!entry) playAdd(); commit(enc); },
-      moveBox: function(index){ moveMonster(enc, m.id, index); commit(enc); } };
+      // Where it lands among every box, not just the ones a chip shows.
+      moveBox: function(beforeId, afterId){
+        var others = enc.monsters.filter(function(x){ return x.id !== m.id; });
+        var at = others.findIndex(function(x){ return x.id === beforeId; });
+        if(at === -1) at = others.findIndex(function(x){ return x.id === afterId; }) + 1;
+        moveMonster(enc, m.id, at);
+        commit(enc);
+      } };
   });
   return card;
 }
@@ -544,10 +650,11 @@ function turnsPanel(enc){
   var cur = currentEntry(enc);
   if(enc.order.length){
     var ctrls = ce("div", "enc-turn-ctrls");
-    ctrls.appendChild(button("btn small ghost", "‹ Back", function(){ previousTurn(enc); commit(enc); }, "Back one turn"));
+    ctrls.appendChild(button("btn small ghost", "‹ Back", function(){ previousTurn(enc); revealTurn(enc); commit(enc); }, "Back one turn"));
     ctrls.appendChild(button("btn primary enc-next", "Next turn ›", function(){
       var round = enc.round;
       nextTurn(enc);
+      revealTurn(enc);
       commit(enc);
       if(enc.round > round) playNewRound();
     }));
@@ -561,6 +668,7 @@ function turnsPanel(enc){
     var dead = m && isDead(m);
     var li = ce("li", "enc-turn " + o.type + (dead ? " dead" : "") + (cur && cur.id === o.id ? " current" : ""));
     li.dataset.entryId = o.id;
+    if(m && m.color) li.dataset.color = m.color;
     var grip = ce("span", "enc-grip");
     grip.innerHTML = GRIP_SVG;
     grip.title = "Drag to change the order";
@@ -581,6 +689,7 @@ function turnsPanel(enc){
     // the boxes are below the line).
     if(m) li.addEventListener("click", function(e){
       if(e.target.closest("button")) return;
+      if(filter.color && m.color !== filter.color){ filter.color = null; render(); }
       var card = overlay.querySelector('.enc-card[data-monster-id="' + m.id + '"]');
       if(!card) return;
       card.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -677,7 +786,7 @@ function startDrag(e, el, info){
     var d = dragging;
     finish();
     if(!d.active || ev.type !== "pointerup" || d.index === null) return;
-    if(d.target === "boxes") d.info.moveBox(d.index);
+    if(d.target === "boxes") d.info.moveBox(d.before, d.after);
     else d.info.drop(d.index);
   }
   function activate(){
@@ -775,9 +884,11 @@ function trackBoxes(grid){
       : d.y > b.bottom || (d.y >= b.top && d.x > b.left + b.width / 2);
     if(passed) index++;
   });
+  var before = items[index], after = items[index - 1];
   d.target = "boxes";
   d.index = index;
-  var before = items[index], after = items[index - 1];
+  d.before = before ? before.dataset.monsterId : null;
+  d.after = after ? after.dataset.monsterId : null;
   var s = d.boxMarker.style;
   d.boxMarker.classList.toggle("upright", !oneColumn);
   if(oneColumn){
