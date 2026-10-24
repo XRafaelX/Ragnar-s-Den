@@ -216,6 +216,16 @@ export function renameMonster(e, monsterId, name){
   if(m && n) m.name = n;
 }
 
+/* Moves a monster's box so it ends up at `index` among the other boxes.
+   The DM's own arrangement, separate from the turn line. */
+export function moveMonster(e, monsterId, index){
+  var at = e.monsters.findIndex(function(m){ return m.id === monsterId; });
+  if(at === -1) return;
+  var m = e.monsters.splice(at, 1)[0];
+  var to = typeof index === "number" ? Math.max(0, Math.min(e.monsters.length, index)) : e.monsters.length;
+  e.monsters.splice(to, 0, m);
+}
+
 /* Takes the monster out of the encounter and the turn line. */
 export function removeMonster(e, monsterId){
   var entry = orderEntryFor(e, monsterId);

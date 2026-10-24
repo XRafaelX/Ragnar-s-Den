@@ -153,7 +153,7 @@
 .enc-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;}
 .enc-panel-title{font-family:var(--serif);font-size:16px;color:var(--brass-bright);margin:0;}
 
-.enc-cards{display:grid;grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:12px;}
+.enc-cards{position:relative;display:grid;grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:12px;}
 .enc-card{
   position:relative;background:var(--parchment);border:1px solid var(--rule);border-radius:8px;
   padding:10px 10px 12px;display:flex;flex-direction:column;gap:8px;
@@ -283,6 +283,7 @@
 
 /* ---- Dragging ---- */
 .enc-drop-marker{position:absolute;left:0;right:0;height:4px;border-radius:2px;background:var(--brass);box-shadow:0 0 8px var(--brass);pointer-events:none;}
+.enc-drop-marker.upright{right:auto;width:4px;}
 .enc-drag-source{opacity:.4;}
 .enc-drag-ghost{
   position:fixed;top:0;left:0;z-index:2000;pointer-events:none;

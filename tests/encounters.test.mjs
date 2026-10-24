@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   loadEncounters, getEncounters, getEncounter, createEncounter, saveEncounter, deleteEncounter, duplicateEncounter,
-  importEncounters, encounterNameProblem, knownPlayerNames, addMonster, getMonster, removeMonster, changeHp,
+  importEncounters, encounterNameProblem, knownPlayerNames, addMonster, getMonster, moveMonster, removeMonster, changeHp,
   isDead, orderEntryFor, unplacedMonsters, addPlayer, placeMonster, moveInOrder, removeFromOrder, currentEntry,
   nextTurn, previousTurn, resetEncounter, encounterStarted
 } from "../js/core/encounters.js";
@@ -71,6 +71,24 @@ test("monsters are dragged into the line between players, and moved within it", 
   moveInOrder(e, e.order[4].id, 0);
   assert.deepEqual(names(e), ["Ogre", "Leonidas", "Adonis", "Athos", "Goblin"]);
   assert.equal(unplacedMonsters(e).length, 0);
+});
+
+test("monster boxes are sorted by hand without touching the turn line", () => {
+  fresh();
+  const e = createEncounter("Boxes");
+  const g = addMonster(e, "Goblin", GOBLIN);
+  const o = addMonster(e, "Ogre", OGRE);
+  const w = addMonster(e, "Wolf", GOBLIN);
+  placeMonster(e, g.id);
+  placeMonster(e, o.id);
+  const boxes = () => e.monsters.map((m) => m.name);
+  moveMonster(e, w.id, 0);
+  assert.deepEqual(boxes(), ["Wolf", "Goblin", "Ogre"]);
+  moveMonster(e, w.id, 2);
+  assert.deepEqual(boxes(), ["Goblin", "Ogre", "Wolf"]);
+  moveMonster(e, g.id, 99);
+  assert.deepEqual(boxes(), ["Ogre", "Wolf", "Goblin"], "past the end lands last");
+  assert.deepEqual(names(e), ["Goblin", "Ogre"], "the turn order stays as it was");
 });
 
 test("the turn stays with its entry when the line is rearranged", () => {

@@ -6,7 +6,7 @@ import { playAdd, playDelete, playMonsterHit, playMonsterSlain, playNewRound, pl
 import { makeKebabSvg } from "../ui/svg-icons.js";
 import {
   getEncounters, getEncounter, createEncounter, saveEncounter, deleteEncounter, duplicateEncounter,
-  encounterNameProblem, knownPlayerNames, addMonster, getMonster, renameMonster, removeMonster, changeHp,
+  encounterNameProblem, knownPlayerNames, addMonster, getMonster, moveMonster, renameMonster, removeMonster, changeHp,
   isDead, orderEntryFor, unplacedMonsters, addPlayer, hasPlayer, placeMonster, moveInOrder, removeFromOrder,
   currentEntry, nextTurn, previousTurn, resetEncounter, encounterStarted
 } from "../core/encounters.js";
@@ -367,7 +367,7 @@ function monsterCard(enc, m, cur){
   var top = ce("div", "enc-card-top");
   var grip = ce("span", "enc-grip");
   grip.innerHTML = GRIP_SVG;
-  grip.title = "Drag into the turn order";
+  grip.title = "Drag to move this box or put it in the turn order";
   top.appendChild(grip);
 
   var ac = ce("span", "enc-ac");
@@ -485,8 +485,9 @@ function monsterCard(enc, m, cur){
   }
 
   dragSource(card, grip, function(){
-    return { label: m.name, entryId: entry ? entry.id : null,
-      drop: function(index){ placeMonster(enc, m.id, index); if(!entry) playAdd(); commit(enc); } };
+    return { label: m.name, entryId: entry ? entry.id : null, monsterId: m.id,
+      drop: function(index){ placeMonster(enc, m.id, index); if(!entry) playAdd(); commit(enc); },
+      moveBox: function(index){ moveMonster(enc, m.id, index); commit(enc); } };
   });
   return card;
 }
@@ -639,12 +640,13 @@ function playerForm(enc){
   return box;
 }
 
-/* ---- Dragging into the turn line ----
+/* ---- Dragging into the turn line and among the boxes ----
    `el` is what moves: a monster box or a line of the turn order. A finger
    drags by the grip (so the boxes still scroll), a mouse from anywhere
    that isn't a field or button. While dragging, a marker shows where it
    will land; letting go over the line calls drop(index), the place among
-   the line's other entries. */
+   the line's other entries. A box let go over the other boxes calls
+   moveBox(index) instead, so the DM can arrange them as they like. */
 function dragSource(el, grip, describe){
   el.addEventListener("pointerdown", function(e){
     if(e.button !== 0 || dragging) return;
@@ -657,7 +659,7 @@ function dragSource(el, grip, describe){
 
 function startDrag(e, el, info){
   dragging = { x: e.clientX, y: e.clientY, pointerId: e.pointerId, el: el, info: info, active: false,
-    ghost: null, marker: null, index: null, raf: 0 };
+    ghost: null, marker: null, boxMarker: null, target: null, index: null, raf: 0 };
 
   function onMove(ev){
     if(!dragging || ev.pointerId !== dragging.pointerId) return;
@@ -674,7 +676,9 @@ function startDrag(e, el, info){
     if(!dragging || ev.pointerId !== dragging.pointerId) return;
     var d = dragging;
     finish();
-    if(d.active && ev.type === "pointerup" && d.index !== null) d.info.drop(d.index);
+    if(!d.active || ev.type !== "pointerup" || d.index === null) return;
+    if(d.target === "boxes") d.info.moveBox(d.index);
+    else d.info.drop(d.index);
   }
   function activate(){
     dragging.active = true;
@@ -682,6 +686,7 @@ function startDrag(e, el, info){
     document.body.appendChild(ghost);
     dragging.ghost = ghost;
     dragging.marker = ce("li", "enc-drop-marker");
+    dragging.boxMarker = ce("div", "enc-drop-marker");
     el.classList.add("enc-drag-source");
     overlay.classList.add("enc-dragging");
     window.getSelection && window.getSelection().removeAllRanges();
@@ -697,6 +702,7 @@ function startDrag(e, el, info){
     cancelAnimationFrame(d.raf);
     d.ghost.remove();
     d.marker.remove();
+    d.boxMarker.remove();
     el.classList.remove("enc-drag-source");
     overlay.classList.remove("enc-dragging");
     var listEl = overlay.querySelector(".enc-turn-list");
@@ -707,21 +713,31 @@ function startDrag(e, el, info){
   window.addEventListener("pointercancel", onUp);
 }
 
-/* Moves the ghost and works out where in the line it would land. */
+/* Moves the ghost and works out where it would land: in the turn line,
+   or for a monster box, among the other boxes. */
 function track(){
   var d = dragging;
   d.ghost.style.transform = "translate(" + (d.x + 14) + "px," + (d.y + 10) + "px)";
+  d.target = null;
+  d.index = null;
   var listEl = overlay.querySelector(".enc-turn-list");
-  if(!listEl) return;
-  var r = listEl.getBoundingClientRect();
-  var slack = 36;
-  var over = d.x >= r.left - slack && d.x <= r.right + slack && d.y >= r.top - slack && d.y <= r.bottom + slack;
-  listEl.classList.toggle("drop-here", over);
-  if(!over){
-    d.marker.remove();
-    d.index = null;
-    return;
-  }
+  var over = !!listEl && near(listEl, 36);
+  if(listEl) listEl.classList.toggle("drop-here", over);
+  if(over) trackLine(listEl);
+  else d.marker.remove();
+  var grid = d.info.moveBox && !over ? overlay.querySelector(".enc-cards") : null;
+  if(grid && near(grid, 12)) trackBoxes(grid);
+  else d.boxMarker.remove();
+}
+
+function near(el, slack){
+  var d = dragging;
+  var r = el.getBoundingClientRect();
+  return d.x >= r.left - slack && d.x <= r.right + slack && d.y >= r.top - slack && d.y <= r.bottom + slack;
+}
+
+function trackLine(listEl){
+  var d = dragging;
   var items = Array.prototype.filter.call(listEl.querySelectorAll(".enc-turn"), function(li){
     return li.dataset.entryId !== d.info.entryId;
   });
@@ -730,6 +746,7 @@ function track(){
     var b = li.getBoundingClientRect();
     if(d.y > b.top + b.height / 2) index++;
   });
+  d.target = "line";
   d.index = index;
   // The marker is laid over the gap rather than put in the line, so the
   // lines don't shift under the pointer as it moves.
@@ -738,6 +755,45 @@ function track(){
   else if(items.length){ var last = items[items.length - 1]; top = last.offsetTop + last.offsetHeight; }
   d.marker.style.top = top + "px";
   if(d.marker.parentNode !== listEl) listEl.appendChild(d.marker);
+}
+
+/* The boxes sit in rows, so a box goes before the first one the pointer
+   hasn't passed yet: a row above it, or one to its left in its own row.
+   When the boxes are stacked in one column (a phone) the marker lies
+   across the gap; otherwise it stands up between two boxes. */
+function trackBoxes(grid){
+  var d = dragging;
+  var items = Array.prototype.filter.call(grid.querySelectorAll(".enc-card"), function(c){
+    return c.dataset.monsterId !== d.info.monsterId;
+  });
+  if(!items.length){ d.boxMarker.remove(); return; }
+  var oneColumn = getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length === 1;
+  var index = 0;
+  items.forEach(function(c){
+    var b = c.getBoundingClientRect();
+    var passed = oneColumn ? d.y > b.top + b.height / 2
+      : d.y > b.bottom || (d.y >= b.top && d.x > b.left + b.width / 2);
+    if(passed) index++;
+  });
+  d.target = "boxes";
+  d.index = index;
+  var before = items[index], after = items[index - 1];
+  var s = d.boxMarker.style;
+  d.boxMarker.classList.toggle("upright", !oneColumn);
+  if(oneColumn){
+    s.left = s.height = "";
+    s.top = (before ? before.offsetTop - 8 : after.offsetTop + after.offsetHeight + 4) + "px";
+  }else{
+    // At the end of a row the marker stays beside the box the pointer is
+    // next to, not at the start of the row below.
+    var a = after && after.getBoundingClientRect();
+    var useAfter = !before || (a && d.y >= a.top && d.y <= a.bottom);
+    var c = useAfter ? after : before;
+    s.left = (useAfter ? c.offsetLeft + c.offsetWidth + 4 : c.offsetLeft - 8) + "px";
+    s.top = c.offsetTop + "px";
+    s.height = c.offsetHeight + "px";
+  }
+  if(d.boxMarker.parentNode !== grid) grid.appendChild(d.boxMarker);
 }
 
 /* Near the top or bottom edge the page scrolls, so a box can be carried
