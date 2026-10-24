@@ -1,5 +1,6 @@
 import { openMonsterPicker, openMonsterDetail } from "./monsters.js";
 import { MONSTER_DATA } from "../data/monsters.js";
+import { ENCOUNTER_QUIPS } from "../data/encounter-quips.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { showActionToast } from "../ui/toast.js";
 import { playAdd, playDelete, playMonsterHit, playMonsterSlain, playNewRound, playVictory } from "../ui/sound.js";
@@ -229,6 +230,7 @@ function savedCard(enc){
         deleteEncounter(enc.id);
         playDelete();
         render();
+        showActionToast(quip("deleted", { enc: enc.name }));
       });
     } }
   ], "Options for " + enc.name));
@@ -332,7 +334,7 @@ function renderBoard(enc){
     confirmDialog("Reset " + enc.name + "?", "Every monster goes back to full hit points and the fight starts again from round 1. The monsters, players and turn order stay.", function(){
       resetEncounter(enc);
       commit(enc);
-      showActionToast(enc.name + " is ready to run again.");
+      showActionToast(quip("reset", { enc: enc.name }));
     });
   }, "Reset the fight to run it again"));
 
@@ -352,6 +354,8 @@ function monstersPanel(enc){
     openMonsterPicker(function(kind, data){
       addMonster(enc, kind, data);
       saveEncounter(enc);
+      var count = enc.monsters.length;
+      if(count === 10 || count === 20 || count === 50) showActionToast(quip("many" + count));
     }, function(){ render(); });
   }));
   panel.appendChild(head);
@@ -589,21 +593,32 @@ function monsterCard(enc, m, cur){
   function apply(sign){
     var n = parseInt(amount.value, 10);
     if(!(n > 0)){ amount.focus(); return; }
-    if(sign < 0 && isDead(m)){
+    var vars = monsterVars(m);
+    // Nothing to do: a joke instead.
+    if((sign < 0 && isDead(m)) || (sign > 0 && m.hp === m.maxHp)){
       amount.value = "";
-      showActionToast(deadJoke(m));
+      showActionToast(quip(sign < 0 ? "dead" : "fullHeal", vars));
       return;
     }
     var before = m.hp;
     changeHp(enc, m.id, sign * n);
     commit(enc);
-    if(m.hp >= before) return;
+    vars.dmg = n; vars.left = before; vars.over = n - before; vars.hp = m.hp;
+    if(sign > 0){
+      if(!before) showActionToast(quip("revive", vars));
+      else if(chance(0.25)) showActionToast(quip("heal", vars));
+      return;
+    }
     if(isDead(m)){
       // The last one standing going down ends the fight.
       var allDown = enc.monsters.every(isDead);
       if(allDown) playVictory(); else playMonsterSlain();
-      showActionToast(allDown ? "Victory! Every monster is down." : m.name + " is down.");
-    }else playMonsterHit(before - m.hp >= m.maxHp / 4);
+      showActionToast(allDown ? quip("victory") : downQuip(m, n, before, vars));
+    }else{
+      playMonsterHit(before - m.hp >= m.maxHp / 4);
+      if(m.hp === 1) showActionToast(quip("low", vars));
+      else if(m.hp >= 150 && chance(0.25)) showActionToast(quip("big", vars));
+    }
   }
   var dmg = ce("button", "btn small danger", "Damage");
   dmg.type = "submit";
@@ -629,29 +644,37 @@ function monsterCard(enc, m, cur){
   return card;
 }
 
-/* Damage on a monster that's already down: nothing happens, and the DM
-   gets a joke instead. Never the same one twice in a row. */
-var DEAD_JOKES = [
-  "{name} is already dead. Let it rest in pieces.",
-  "{name} can't get any deader than this.",
-  "That's beating a dead {kind}.",
-  "Overkill noted. {name} was already dead.",
-  "You hit the corpse of {name}. The corpse doesn't mind.",
-  "{name} has left the fight. Spiritually and physically.",
-  "The bard is writing a song about how you kept hitting {name} after it died.",
-  "{name} is dead, Panai.",
-  "Even the necromancer says {name} has had enough.",
-  "{name} files a complaint from the afterlife."
-];
-var lastJoke = -1;
-function deadJoke(m){
-  var count = DEAD_JOKES.length;
+/* The DM's jokes (data/encounter-quips.js): a line from one moment's
+   list, never the same one twice in a row, with its fill-ins. */
+var lastQuip = {};
+function quip(moment, vars){
+  var lines = ENCOUNTER_QUIPS[moment];
+  var last = moment in lastQuip ? lastQuip[moment] : -1;
   // Pick among the others, then step over the last one shown.
-  var i = Math.floor(Math.random() * (lastJoke === -1 ? count : count - 1));
-  if(lastJoke !== -1 && i >= lastJoke) i++;
-  lastJoke = i;
-  var kind = (m.kind || m.name).replace(/\s*\(.*\)$/, "").toLowerCase();
-  return DEAD_JOKES[i].replace("{name}", m.name).replace("{kind}", kind);
+  var i = Math.floor(Math.random() * (last === -1 || lines.length < 2 ? lines.length : lines.length - 1));
+  if(last !== -1 && lines.length > 1 && i >= last) i++;
+  lastQuip[moment] = i;
+  return lines[i].replace(/\{(\w+)\}/g, function(all, key){ return vars && key in vars ? String(vars[key]) : all; });
+}
+function chance(p){ return Math.random() < p; }
+
+function monsterVars(m){
+  return { name: m.name, kind: (m.kind || m.name).replace(/\s*\(.*\)$/, "").toLowerCase() };
+}
+
+/* A monster going down: a joke for a kill worth one (exact, overkill, one
+   hit from full), now and then one anyway, otherwise just the news. */
+function downQuip(m, dmg, before, vars){
+  if(dmg === before && before >= 5) return quip("exact", vars);
+  if(dmg - before >= 10 && dmg >= before * 3) return quip("overkill", vars);
+  if(before === m.maxHp && m.maxHp >= 10) return quip("oneShot", vars);
+  return chance(0.4) ? quip("slain", vars) : m.name + " is down.";
+}
+
+/* Rounds 5, 10, 20, then every 10th. */
+function roundQuip(round){
+  if(round === 5 || round === 10 || round === 20) return quip("round" + round);
+  return round > 20 && round % 10 === 0 ? quip("roundLong", { round: round }) : null;
 }
 
 /* What the monster is, under a name the DM gave it. Not for the catalog
@@ -681,13 +704,23 @@ function turnsPanel(enc){
   var cur = currentEntry(enc);
   if(enc.order.length){
     var ctrls = ce("div", "enc-turn-ctrls");
-    ctrls.appendChild(button("btn small ghost", "‹ Back", function(){ previousTurn(enc); revealTurn(enc); commit(enc); }, "Back one turn"));
+    ctrls.appendChild(button("btn small ghost", "‹ Back", function(){
+      var was = enc.current, round = enc.round;
+      previousTurn(enc);
+      revealTurn(enc);
+      commit(enc);
+      if(enc.current === was && enc.round === round) showActionToast(quip("back"));
+    }, "Back one turn"));
     ctrls.appendChild(button("btn primary enc-next", "Next turn ›", function(){
       var round = enc.round;
       nextTurn(enc);
       revealTurn(enc);
       commit(enc);
-      if(enc.round > round) playNewRound();
+      if(enc.round > round){
+        playNewRound();
+        var line = roundQuip(enc.round);
+        if(line) showActionToast(line);
+      }
     }));
     panel.appendChild(ctrls);
   }
