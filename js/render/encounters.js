@@ -32,6 +32,7 @@ var overlay = null;
 var openId = null;       // the encounter on the board, null = the list
 var dragging = null;     // the drag in progress, see startDrag()
 var filter = { id: null, color: null };  // the color chip picked, per encounter
+var fx = null;           // a one-off effect for the next render: { paint: monsterId } or { picked: color }
 
 function ce(tag, cls, text){
   var el = document.createElement(tag);
@@ -107,6 +108,7 @@ function render(){
   var keep = scroller && enc && scroller.dataset.view === enc.id ? scroller.scrollTop : 0;
   overlay.innerHTML = "";
   if(enc) renderBoard(enc); else renderList();
+  fx = null;
   scroller = overlay.querySelector(".enc-scroll");
   if(scroller) scroller.scrollTop = keep;
 }
@@ -361,10 +363,15 @@ function monstersPanel(enc){
   var groups = colorGroups(enc);
   var shown = shownColor(enc);
   if(groups.length) panel.appendChild(filterChips(enc, groups, shown));
-  var grid = ce("div", "enc-cards");
+  // Picking a chip deals the boxes back in, one after another.
+  var grid = ce("div", "enc-cards" + (fx && "picked" in fx ? " reveal" : ""));
   var cur = currentEntry(enc);
+  var n = 0;
   enc.monsters.forEach(function(m){
-    if(!shown || m.color === shown) grid.appendChild(monsterCard(enc, m, cur));
+    if(shown && m.color !== shown) return;
+    var card = monsterCard(enc, m, cur);
+    card.style.setProperty("--i", String(n++));
+    grid.appendChild(card);
   });
   panel.appendChild(grid);
   return panel;
@@ -391,10 +398,17 @@ function filterChips(enc, groups, shown){
   bar.setAttribute("role", "group");
   bar.setAttribute("aria-label", "Show monsters by color");
   function chip(color, label, count){
-    var b = button("enc-filter-chip" + (shown === color ? " on" : ""), "", function(){
+    var b = button("enc-filter-chip" + (shown === color ? " on" : "") + (fx && fx.picked === color ? " picked" : ""), "", function(){
+      if(filter.color === color) return;
       filter = { id: enc.id, color: color };
+      fx = { picked: color };
       render();
     });
+    // Pointing at a color lights its boxes and turn lines, dimming the rest.
+    if(color){
+      b.addEventListener("pointerenter", function(e){ if(e.pointerType === "mouse") peek(color); });
+      b.addEventListener("pointerleave", function(){ peek(null); });
+    }
     b.setAttribute("aria-pressed", shown === color ? "true" : "false");
     if(color){
       b.dataset.color = color;
@@ -438,6 +452,15 @@ function filterChips(enc, groups, shown){
   return bar;
 }
 
+function peek(color){
+  var board = overlay.querySelector(".enc-board");
+  if(!board) return;
+  board.classList.toggle("peek", !!color);
+  board.querySelectorAll(".enc-card, .enc-turn").forEach(function(el){
+    el.classList.toggle("lit", !!color && el.dataset.color === color);
+  });
+}
+
 /* The ⋯ menu's color row: no color, then the palette. Each swatch's
    tooltip is its group's name. */
 function colorRow(enc, m){
@@ -450,6 +473,7 @@ function colorRow(enc, m){
       closeMenus();
       if(c === m.color) return;
       setMonsterColor(enc, m.id, c);
+      if(c) fx = { paint: m.id };
       commit(enc);
     }, c ? groupName(enc, c) : "No color");
     b.setAttribute("aria-pressed", m.color === c ? "true" : "false");
@@ -468,6 +492,13 @@ function monsterCard(enc, m, cur){
   card.dataset.monsterId = m.id;
   card.dataset.name = m.name;
   if(m.color) card.dataset.color = m.color;
+  // Just colored: the stripe runs down, a sheen of the color sweeps across.
+  if(m.color && fx && fx.paint === m.id){
+    card.classList.add("painted");
+    var sheen = ce("span", "enc-sheen");
+    sheen.addEventListener("animationend", function(){ sheen.remove(); card.classList.remove("painted"); });
+    card.appendChild(sheen);
+  }
 
   var top = ce("div", "enc-card-top");
   var grip = ce("span", "enc-grip");
@@ -584,7 +615,7 @@ function monsterCard(enc, m, cur){
   card.appendChild(ctrl);
 
   dragSource(card, grip, function(){
-    return { label: m.name, entryId: entry ? entry.id : null, monsterId: m.id,
+    return { label: m.name, entryId: entry ? entry.id : null, monsterId: m.id, color: m.color,
       drop: function(index){ placeMonster(enc, m.id, index); if(!entry) playAdd(); commit(enc); },
       // Where it lands among every box, not just the ones a chip shows.
       moveBox: function(beforeId, afterId){
@@ -698,7 +729,7 @@ function turnsPanel(enc){
       card.classList.add("flash");
     });
     dragSource(li, grip, function(){
-      return { label: label, entryId: o.id, drop: function(index){ moveInOrder(enc, o.id, index); commit(enc); } };
+      return { label: label, entryId: o.id, color: m ? m.color : "", drop: function(index){ moveInOrder(enc, o.id, index); commit(enc); } };
     });
     listEl.appendChild(li);
   });
@@ -792,6 +823,7 @@ function startDrag(e, el, info){
   function activate(){
     dragging.active = true;
     var ghost = ce("div", "enc-drag-ghost", info.label);
+    if(info.color) ghost.dataset.color = info.color;
     document.body.appendChild(ghost);
     dragging.ghost = ghost;
     dragging.marker = ce("li", "enc-drop-marker");

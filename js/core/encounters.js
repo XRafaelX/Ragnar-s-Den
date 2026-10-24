@@ -24,8 +24,8 @@ import { clampMonsterStat } from "./custom-monsters.js";
    for none. A color's group is called by its name ("Blue") unless the DM
    renamed it in `groupNames`. */
 
-export var MONSTER_COLORS = ["blue", "green", "yellow", "orange", "teal", "pink"];
-var COLOR_NAMES = { blue: "Blue", green: "Green", yellow: "Yellow", orange: "Orange", teal: "Teal", pink: "Pink" };
+export var MONSTER_COLORS = ["blue", "green", "yellow", "orange", "teal", "pink", "silver"];
+var COLOR_NAMES = { blue: "Blue", green: "Green", yellow: "Yellow", orange: "Orange", teal: "Teal", pink: "Pink", silver: "Silver" };
 
 var STORAGE_KEY = "ragnarsDen.encounters.v1";
 
