@@ -159,11 +159,13 @@
   padding:10px 10px 12px;display:flex;flex-direction:column;gap:8px;
   transition:border-color .2s ease, box-shadow .2s ease, opacity .2s ease;
 }
-/* Boxes side by side share their rows (name, hit points, controls),
-   so a wrapped name or a type line under it doesn't push one box's HP
-   and buttons lower than its neighbours'. */
+/* Boxes side by side share their rows (name, hit points, buttons,
+   condition chips), so a wrapped name or a type line under it doesn't
+   push one box's HP and buttons lower than its neighbours'. Every box
+   has the chips row, one line tall and empty without conditions, so
+   the boxes all match. */
 @supports (grid-template-rows:subgrid){
-  .enc-card{display:grid;grid-template-rows:subgrid;grid-row:span 3;row-gap:8px;align-content:start;}
+  .enc-card{display:grid;grid-template-rows:subgrid;grid-template-columns:minmax(0,1fr);grid-row:span 4;row-gap:8px;align-content:start;}
 }
 .enc-card.unplaced{border-style:dashed;}
 /* A colored group: a glowing stripe down the left edge, the color's
@@ -203,7 +205,12 @@
   content:"";position:absolute;inset:0;border-radius:8px;pointer-events:none;
   background:linear-gradient(to top right, transparent calc(50% - 1.5px), color-mix(in srgb, var(--oxblood) 75%, transparent) calc(50% - 1.5px), color-mix(in srgb, var(--oxblood) 75%, transparent) calc(50% + 1.5px), transparent calc(50% + 1.5px));
 }
-.enc-card.dead .enc-card-top, .enc-card.dead .enc-hp{opacity:.55;}
+/* Everything but the ⋯ menu fades: faded, its dropdown would be see-through
+   and drawn under the hit points and the strike. */
+.enc-card.dead .enc-card-top > :not(.enc-menu), .enc-card.dead .enc-hp{opacity:.55;}
+/* An open menu sits above the strike, the box's own rows and the boxes below. */
+.enc-card:has(.catalog-row-dropdown.open){z-index:3;}
+.enc-card:has(.catalog-row-dropdown.open) .enc-menu{z-index:2;}
 .enc-card.flash{animation:encFlash 1s ease-out;}
 @keyframes encFlash{0%,40%{box-shadow:0 0 0 2px var(--brass-bright);}100%{box-shadow:none;}}
 
@@ -252,6 +259,48 @@
 .enc-hp-trail{display:flex;flex-wrap:wrap;align-items:center;gap:2px 0;margin-top:5px;font-size:12.5px;color:var(--text-on-parch-dim);}
 .enc-hp-step + .enc-hp-step::before{content:"›";margin:0 6px;opacity:.6;}
 .enc-hp-step.last{color:var(--text-on-parch);font-weight:600;}
+
+/* Conditions: the button beside the speed, the chips under the hit
+   points, and AC or speed that a condition changed (Slow, speed 0). */
+.enc-cond-open{
+  flex:none;align-self:center;display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:10px;
+  border:1px solid var(--rule);background:transparent;color:var(--text-on-parch-dim);cursor:pointer;line-height:1;
+  transition:border-color .2s, color .2s;
+}
+.enc-cond-open .cond-icon{width:14px;height:14px;color:inherit;}
+.enc-cond-open:hover{border-color:var(--brass);color:var(--brass-bright);}
+.enc-cond-open:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.enc-cond-open.on{border-color:color-mix(in srgb, #fb923c 60%, transparent);color:#fdba74;}
+/* The chips row: one line, as tall as a chip even when empty.
+   fitChips (js/render/encounter-conditions.js) moves the chips that don't
+   fit into the "+3" pop-up. Only a lone chip too wide for the box gives
+   up width, its name cut with "…". While measuring, nothing shrinks, so
+   an overflow shows. */
+.enc-cond-chips{position:relative;gap:5px;flex-wrap:nowrap;min-height:22px;}
+.enc-cond-chips > .cond-chip{flex:0 1 auto;min-width:0;}
+.enc-cond-chips > .cond-chip .cond-chip-main{min-width:0;}
+.enc-cond-chips > .cond-chip .cond-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.enc-cond-chips .cond-icon,.enc-cond-chips .cond-why,.enc-cond-chips .cond-chip-x,.enc-cond-more{flex:none;}
+.enc-cond-chips.measuring > .cond-chip,.enc-cond-chips.measuring > .cond-chip .cond-chip-main,.enc-cond-chips.measuring > .cond-chip .cond-name{flex-shrink:0;min-width:auto;}
+/* "+3" when a box has more than fit on its row: a plain pill that opens
+   the rest in a pop-up under the row (styled and closed like ⋯ menus). */
+.enc-cond-more{
+  padding:3px 8px;border-radius:999px;border:1px dashed var(--rule);background:transparent;white-space:nowrap;
+  color:var(--text-on-parch-dim);font:inherit;font-size:11.5px;font-weight:600;line-height:14px;cursor:pointer;
+}
+.enc-cond-more:hover,.enc-cond-more[aria-expanded="true"]{border-color:var(--brass);color:var(--brass-bright);}
+.enc-cond-more:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.enc-cond-more[class*="cond-in-"]{animation:cond-pop .55s cubic-bezier(.2,1.5,.4,1) both;}
+.enc-cond-pop{left:0;right:auto;top:calc(100% + 6px);min-width:0;width:max-content;max-width:100%;
+  flex-direction:row;flex-wrap:wrap;gap:5px;padding:8px;overflow:visible;}
+.enc-cond-pop.open{display:flex;animation:encIn .18s cubic-bezier(.2,.8,.2,1) both;}
+/* Compact, so two usually fit on one row beside "+3". */
+.enc-cond-chips .cond-chip-main{font-size:11.5px;line-height:14px;gap:4px;padding:3px 1px 3px 6px;}
+.enc-cond-chips .cond-icon{width:13px;height:13px;}
+.enc-cond-chips .cond-why{font-size:9.5px;padding:1px 4px;}
+.enc-cond-chips .cond-chip-x{width:18px;height:18px;margin-right:2px;font-size:9.5px;}
+.enc-ac.changed .enc-ac-num{color:#5eead4;}
+.enc-speed.changed{color:#fca5a5;border-color:color-mix(in srgb, var(--oxblood) 70%, var(--rule));}
 
 .enc-hp-ctrl{display:flex;gap:6px;align-items:center;}
 .enc-amount{width:88px;flex:1 1 88px;max-width:120px;}
@@ -435,5 +484,30 @@
 
 @media (prefers-reduced-motion: reduce){
   .enc-card.painted, .enc-card.painted::before, .enc-sheen::before, .enc-cards.reveal .enc-card,
-  .enc-filter-chip.picked, .enc-filter-chip.picked .enc-filter-dot, .enc-turn.current .enc-turn-name::before{animation:none !important;}
+  .enc-filter-chip.picked, .enc-filter-chip.picked .enc-filter-dot, .enc-turn.current .enc-turn-name::before,
+  .enc-cond-pop.open{animation:none !important;}
 }
+
+/* ---- A monster's conditions sheet ---- */
+.enc-cond-label{
+  margin:14px 0 8px;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-on-parch-dim);
+}
+.bs-subtitle + .enc-cond-label{margin-top:4px;}
+.enc-cond-group{margin:10px 0 6px;font-size:12px;color:var(--text-on-parch-dim);}
+.enc-cond-picks{display:flex;flex-direction:column;gap:6px;margin:0 0 6px;}
+.enc-cond-picks.short{display:grid;grid-template-columns:repeat(3, minmax(0,1fr));}
+.enc-cond-pick{
+  padding:8px 10px;border-radius:8px;border:1px solid var(--rule);background:rgba(255,255,255,.03);
+  color:var(--text-on-parch);font:inherit;font-size:13px;line-height:1.35;text-align:left;cursor:pointer;
+  transition:border-color .2s, background .2s, transform .15s;
+}
+.enc-cond-picks.short .enc-cond-pick{text-align:center;font-weight:600;}
+.enc-cond-pick:hover{border-color:color-mix(in srgb, var(--hue) 70%, transparent);background:color-mix(in srgb, var(--hue) 8%, transparent);}
+.enc-cond-pick:active{transform:scale(.97);}
+.enc-cond-pick:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.enc-cond-pick.on{
+  border-color:color-mix(in srgb, var(--hue) 75%, transparent);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--hue) 22%, transparent), color-mix(in srgb, var(--hue) 10%, transparent));
+}
+.enc-cond-pick:disabled{opacity:.5;cursor:default;}
+.enc-cond-picks + .cond-rules{margin-top:12px;}

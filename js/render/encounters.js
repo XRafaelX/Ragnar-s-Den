@@ -5,11 +5,12 @@ import { confirmDialog } from "../ui/confirm-modal.js";
 import { showActionToast } from "../ui/toast.js";
 import { playAdd, playDelete, playMonsterHit, playMonsterSlain, playNewRound, playVictory } from "../ui/sound.js";
 import { makeKebabSvg } from "../ui/svg-icons.js";
+import { conditionsButton, conditionChips, fitChips } from "./encounter-conditions.js";
 import {
   getEncounters, getEncounter, createEncounter, saveEncounter, deleteEncounter, duplicateEncounter,
   encounterNameProblem, knownPlayerNames, addMonster, getMonster, moveMonster, renameMonster, removeMonster, changeHp,
   isDead, orderEntryFor, unplacedMonsters, addPlayer, hasPlayer, placeMonster, moveInOrder, removeFromOrder,
-  currentEntry, nextTurn, previousTurn, resetEncounter, encounterStarted,
+  currentEntry, nextTurn, previousTurn, resetEncounter, encounterStarted, monsterAc, monsterSpeed,
   MONSTER_COLORS, setMonsterColor, groupName, renameGroup, colorGroups
 } from "../core/encounters.js";
 
@@ -20,6 +21,9 @@ import {
    their boxes are dragged into the line between the players, whose names
    are typed in. Encounters are named and saved as they change, so one
    can be set up ahead of the session and Reset to run it again.
+
+   Conditions (and spells like Hex and Slow) go on a monster from the
+   button on its box, see encounter-conditions.js.
 
    The DM can color monsters to group them (a tinted box, a colored dot
    in the turn line) and show one color's boxes at a time with the chips
@@ -34,6 +38,7 @@ var openId = null;       // the encounter on the board, null = the list
 var dragging = null;     // the drag in progress, see startDrag()
 var filter = { id: null, color: null };  // the color chip picked, per encounter
 var fx = null;           // a one-off effect for the next render: { paint: monsterId } or { picked: color }
+var boxWatch = null;     // redoes fitChips when the boxes' width changes
 
 function ce(tag, cls, text){
   var el = document.createElement(tag);
@@ -80,6 +85,8 @@ function menu(items, title){
 function closeMenus(){
   if(!overlay) return;
   overlay.querySelectorAll(".catalog-row-dropdown.open").forEach(function(d){ d.classList.remove("open"); });
+  // The chips' "+3" pop-ups close with the menus.
+  overlay.querySelectorAll('.enc-cond-more[aria-expanded="true"]').forEach(function(b){ b.setAttribute("aria-expanded", "false"); });
 }
 
 /* ---- Shell ---- */
@@ -97,6 +104,7 @@ export function openEncounters(){
 }
 
 function close(){
+  watchBoxes(null);
   overlay.classList.remove("open");
   overlay.innerHTML = "";
   openId = null;
@@ -112,6 +120,25 @@ function render(){
   fx = null;
   scroller = overlay.querySelector(".enc-scroll");
   if(scroller) scroller.scrollTop = keep;
+  watchBoxes(overlay.querySelector(".enc-cards"));
+}
+
+/* Fits the boxes' chips on one row, now and again whenever the boxes
+   change width. */
+function watchBoxes(grid){
+  if(boxWatch) boxWatch.disconnect();
+  boxWatch = null;
+  if(!grid) return;
+  var fit = function(){ grid.querySelectorAll(".enc-cond-chips").forEach(fitChips); };
+  fit();
+  // Measured before the web fonts arrive, the chips would be the wrong width.
+  if(document.fonts && document.fonts.status !== "loaded") document.fonts.ready.then(function(){ if(grid.isConnected) fit(); });
+  if(!window.ResizeObserver) return;
+  var width = 0;
+  boxWatch = new ResizeObserver(function(){
+    if(grid.clientWidth !== width){ width = grid.clientWidth; fit(); }
+  });
+  boxWatch.observe(grid);
 }
 
 function header(onBack, backLabel){
@@ -331,7 +358,7 @@ function renderBoard(enc){
   });
   head.appendChild(name);
   head.appendChild(button("btn small ghost enc-reset", "Reset", function(){
-    confirmDialog("Reset " + enc.name + "?", "Every monster goes back to full hit points and the fight starts again from round 1. The monsters, players and turn order stay.", function(){
+    confirmDialog("Reset " + enc.name + "?", "Every monster goes back to full hit points with no conditions, and the fight starts again from round 1. The monsters, players and turn order stay.", function(){
       resetEncounter(enc);
       commit(enc);
       showActionToast(quip("reset", { enc: enc.name }));
@@ -510,10 +537,12 @@ function monsterCard(enc, m, cur){
   grip.title = "Drag to move this box or put it in the turn order";
   top.appendChild(grip);
 
-  var ac = ce("span", "enc-ac");
-  ac.title = "Armor Class " + m.ac;
+  // AC and speed as conditions leave them, the tooltip says why.
+  var acNow = monsterAc(m);
+  var ac = ce("span", "enc-ac" + (acNow.reasons.length ? " changed" : ""));
+  ac.title = "Armor Class " + acNow.value + (acNow.reasons.length ? " (" + m.ac + ", " + acNow.reasons.join(", ") + ")" : "");
   ac.innerHTML = SHIELD_SVG;
-  ac.appendChild(ce("span", "enc-ac-num", String(m.ac)));
+  ac.appendChild(ce("span", "enc-ac-num", String(acNow.value)));
   top.appendChild(ac);
 
   // The name wraps instead of being cut off; tapping it edits it in place.
@@ -568,9 +597,11 @@ function monsterCard(enc, m, cur){
   now.appendChild(ce("span", "enc-hp-cur", String(m.hp)));
   now.appendChild(ce("span", "enc-hp-max", "/ " + m.maxHp + " HP"));
   if(dead) now.appendChild(ce("span", "enc-dead-tag", "Down"));
-  var speed = ce("span", "enc-speed", m.speed + " ft");
-  speed.title = "Speed " + m.speed + " ft";
+  var speedNow = monsterSpeed(m);
+  var speed = ce("span", "enc-speed" + (speedNow.reasons.length ? " changed" : ""), speedNow.value + " ft");
+  speed.title = "Speed " + speedNow.value + " ft" + (speedNow.reasons.length ? " (" + m.speed + " ft, " + speedNow.reasons.join(", ") + ")" : "");
   now.appendChild(speed);
+  if(!dead) now.appendChild(conditionsButton(enc, m, function(){ commit(enc); }));
   hp.appendChild(now);
   // The trail, like the paper: every value the monster went through.
   if(m.log.length > 1){
@@ -601,7 +632,7 @@ function monsterCard(enc, m, cur){
       return;
     }
     var before = m.hp;
-    changeHp(enc, m.id, sign * n);
+    var woke = changeHp(enc, m.id, sign * n);
     commit(enc);
     vars.dmg = n; vars.left = before; vars.over = n - before; vars.hp = m.hp;
     if(sign > 0){
@@ -616,7 +647,8 @@ function monsterCard(enc, m, cur){
       showActionToast(allDown ? quip("victory") : downQuip(m, n, before, vars));
     }else{
       playMonsterHit(before - m.hp >= m.maxHp / 4);
-      if(m.hp === 1) showActionToast(quip("low", vars));
+      if(woke.length) showActionToast(m.name + " wakes up.");
+      else if(m.hp === 1) showActionToast(quip("low", vars));
       else if(m.hp >= 150 && chance(0.25)) showActionToast(quip("big", vars));
     }
   }
@@ -628,6 +660,8 @@ function monsterCard(enc, m, cur){
   // Enter in the box is damage, by far the more common.
   ctrl.addEventListener("submit", function(e){ e.preventDefault(); apply(-1); });
   card.appendChild(ctrl);
+  // Every box has its chips row under the buttons, empty or not.
+  card.appendChild(conditionChips(enc, m, function(){ commit(enc); }));
 
   dragSource(card, grip, function(){
     return { label: m.name, entryId: entry ? entry.id : null, monsterId: m.id, color: m.color,

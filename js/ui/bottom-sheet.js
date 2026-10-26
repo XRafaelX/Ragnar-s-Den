@@ -20,6 +20,8 @@ export function openBottomSheet(buildFn){
     buildFn(body, render, close);
   }
   render();
+  // A new sheet starts at its top, not where the last one was scrolled.
+  sheet.scrollTop = 0;
 
   scrim.classList.add("open");
   sheet.classList.add("open");

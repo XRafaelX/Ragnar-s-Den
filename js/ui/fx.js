@@ -191,14 +191,17 @@ var CONDITION_PARTICLES = {
   deafened: {kind: "ring", count: 3}, restrained: {kind: "ring", count: 2},
   frightened: {kind: "wisp", count: 5}, invisible: {kind: "glint", count: 8},
   blinded: {kind: "wisp", count: 6}, grappled: {kind: "ring", count: 1},
-  incapacitated: {kind: "shard", count: 5}, prone: {kind: "dust", count: 8}
+  incapacitated: {kind: "shard", count: 5}, prone: {kind: "dust", count: 8},
+  hexed: {kind: "wisp", count: 6}, cursed: {kind: "shard", count: 7},
+  slowed: {kind: "ring", count: 3}, asleep: {kind: "zzz", count: 3},
+  blessed: {kind: "glint", count: 10}
 };
 var HEART_SVG = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
 
 export function conditionTakesHold(chip, id, hue){
   if(!chip || reducedMotion()) return;
   flash(chip, "cond-in-" + id);
-  var card = chip.closest(".card");
+  var card = chip.closest(".card, .enc-card");
   if(card){ card.style.setProperty("--cond-wash", hue); flash(card, "cond-wash"); }
   var spec = CONDITION_PARTICLES[id];
   if(!spec) return;

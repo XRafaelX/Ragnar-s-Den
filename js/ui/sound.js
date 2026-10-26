@@ -430,6 +430,31 @@ var CONDITION_CUES = {
     scheduleTone(ctx, now, 523, 523, 0.4, "sine", 0.08);
     scheduleTone(ctx, now + 0.25, 392, 392, 0.45, "sine", 0.07);
     scheduleTone(ctx, now + 0.55, 262, 247, 0.8, "sine", 0.07);
+  },
+  // A sour tritone whispered over a low drone.
+  hexed: function(ctx, now){
+    scheduleTone(ctx, now, 110, 104, 0.8, "sawtooth", 0.04);
+    scheduleTone(ctx, now + 0.05, 622, 600, 0.45, "triangle", 0.07);
+    scheduleTone(ctx, now + 0.2, 440, 415, 0.55, "triangle", 0.07);
+  },
+  // A dark falling chord settling into a rumble.
+  cursed: function(ctx, now){
+    [392, 311, 233].forEach(function(f, i){ scheduleTone(ctx, now + i*0.12, f, f*0.94, 0.5, "triangle", 0.08); });
+    scheduleNoise(ctx, now + 0.3, 0.5, 0.06, 220);
+  },
+  // A tone that drags lower and lower, like time stretching.
+  slowed: function(ctx, now){
+    scheduleTone(ctx, now, 660, 220, 1.1, "sine", 0.09);
+    scheduleTone(ctx, now + 0.1, 990, 330, 1.0, "sine", 0.04);
+  },
+  // A soft lullaby falling asleep.
+  asleep: function(ctx, now){
+    [784, 659, 523, 392].forEach(function(f, i){ scheduleTone(ctx, now + i*0.22, f, f, 0.4, "sine", 0.07 - i*0.01); });
+  },
+  // A bright rising chime.
+  blessed: function(ctx, now){
+    [523, 659, 784, 1046].forEach(function(f, i){ scheduleTone(ctx, now + i*0.07, f, f, 0.5, "sine", 0.07); });
+    scheduleTone(ctx, now + 0.3, 2093, 2093, 0.6, "sine", 0.03);
   }
 };
 

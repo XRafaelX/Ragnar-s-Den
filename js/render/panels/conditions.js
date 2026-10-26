@@ -390,14 +390,14 @@ function openConditionsSheet(c){
 }
 
 /* ---- Sheet parts ---- */
-function closeButton(close){
+export function closeButton(close){
   var b = document.createElement("button");
   b.className = "bs-close"; b.textContent = "✕"; b.title = "Close";
   b.setAttribute("aria-label", "Close");
   b.addEventListener("click", close);
   return b;
 }
-function sheetHeader(icon, name, hue, close){
+export function sheetHeader(icon, name, hue, close){
   var header = document.createElement("div");
   header.className = "bs-header cond-sheet-head";
   header.style.setProperty("--hue", hue);
@@ -409,7 +409,7 @@ function sheetHeader(icon, name, hue, close){
   header.appendChild(closeButton(close));
   return header;
 }
-function rulesList(rules){
+export function rulesList(rules){
   var ul = document.createElement("ul");
   ul.className = "cond-rules";
   rules.forEach(function(r){

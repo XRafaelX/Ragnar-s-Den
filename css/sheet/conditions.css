@@ -131,6 +131,10 @@
 .cond-chip.cond-in-blinded{animation-name:cond-dark;animation-duration:.9s;animation-timing-function:ease-out;}
 .cond-chip.cond-in-unconscious{animation-name:cond-sink;animation-duration:.9s;animation-timing-function:ease-out;}
 .cond-chip.cond-in-stunned{animation-name:cond-reel;animation-duration:.8s;animation-timing-function:ease-out;}
+.cond-chip.cond-in-asleep{animation-name:cond-sink;animation-duration:1.1s;animation-timing-function:ease-out;}
+.cond-chip.cond-in-hexed{animation-name:cond-shake;animation-duration:.6s;animation-timing-function:linear;}
+.cond-chip.cond-in-cursed{animation-name:cond-dark;animation-duration:1s;animation-timing-function:ease-out;}
+.cond-chip.cond-in-slowed{animation-duration:1.5s;animation-timing-function:cubic-bezier(.1,.9,.2,1);}
 @keyframes cond-pop{
   0%{transform:scale(.3);opacity:0;}
   60%{transform:scale(1.12);opacity:1;box-shadow:0 0 26px var(--hue);}
@@ -192,7 +196,7 @@
 }
 
 /* The card glows in the condition's colour as it lands. */
-.card.cond-wash{animation:cond-wash .9s ease-out both;}
+.card.cond-wash,.enc-card.cond-wash{animation:cond-wash .9s ease-out both;}
 @keyframes cond-wash{
   0%{box-shadow:0 0 0 1px var(--cond-wash), 0 0 28px color-mix(in srgb, var(--cond-wash) 45%, transparent);}
   100%{}
@@ -278,6 +282,10 @@
   .cond-chip.cond-unconscious .cond-icon{animation:cond-sway 3.4s ease-in-out infinite;}
   .cond-chip.cond-paralyzed .cond-icon{animation:cond-flicker 3s steps(1,end) infinite;}
   .cond-chip.cond-charmed .cond-icon{animation:cond-beat 1.6s ease-in-out infinite;}
+  .cond-chip.cond-asleep .cond-icon{animation:cond-sway 3.4s ease-in-out infinite;}
+  .cond-chip.cond-hexed .cond-icon{animation:cond-turn 9s linear infinite;}
+  .cond-chip.cond-slowed .cond-icon{animation:cond-turn 6s steps(2,jump-none) infinite;}
+  .cond-chip.cond-blessed .cond-chip-main{animation:cond-shimmer 3.2s ease-in-out infinite;}
 }
 @keyframes cond-tremble{0%,70%,100%{transform:none;}74%{transform:translateX(-1px);}78%{transform:translateX(1px);}82%{transform:translateX(-1px);}86%{transform:translateX(1px);}}
 @keyframes cond-bob{0%,100%{transform:none;}50%{transform:translateY(-1.5px);}}

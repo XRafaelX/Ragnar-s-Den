@@ -9,8 +9,10 @@ import {
   importEncounters, encounterNameProblem, knownPlayerNames, addMonster, getMonster, moveMonster, removeMonster, changeHp,
   isDead, orderEntryFor, unplacedMonsters, addPlayer, placeMonster, moveInOrder, removeFromOrder, currentEntry,
   nextTurn, previousTurn, resetEncounter, encounterStarted,
-  setMonsterColor, groupName, renameGroup, colorGroups
+  setMonsterColor, groupName, renameGroup, colorGroups,
+  addMonsterCondition, removeMonsterCondition, monsterConditions, hasMonsterCondition, monsterAc, monsterSpeed
 } from "../js/core/encounters.js";
+import { SPELL_CONDITIONS } from "../js/data/conditions.js";
 
 const GOBLIN = { hp: 7, ac: 15, speed: 30 };
 const OGRE = { hp: 59, ac: 11, speed: 40 };
@@ -246,4 +248,84 @@ test("backup import adds encounters, renames clashes and drops broken entries", 
   assert.equal(imported.monsters[0].hp, 22, "hit points kept within max");
   assert.equal(imported.order.length, 1, "entries pointing at missing monsters or blank players are dropped");
   assert.equal(imported.current, "o1");
+});
+
+/* ---- Conditions on monsters ---- */
+const conds = (m) => monsterConditions(m).map((x) => x.def.id + (x.pick ? ":" + x.pick.id : ""));
+
+test("the five spells tracked like conditions have the book's effects, in plain text", () => {
+  assert.deepEqual(SPELL_CONDITIONS.map((d) => [d.name, d.spell]),
+    [["Hexed", "Hex"], ["Cursed", "Bestow Curse"], ["Slowed", "Slow"], ["Asleep", "Sleep"], ["Blessed", "Bless"]]);
+  for(const d of SPELL_CONDITIONS){
+    const text = [d.short].concat(d.rules, (d.picks || []).map((p) => p.text));
+    for(const t of text) assert.ok(!/[;\u2013\u2014]/.test(t), d.name + ": no semicolons or long dashes in " + t);
+  }
+  const hex = SPELL_CONDITIONS.find((d) => d.id === "hexed");
+  assert.deepEqual(hex.picks.map((p) => p.label), ["STR", "DEX", "CON", "INT", "WIS", "CHA"]);
+  assert.equal(SPELL_CONDITIONS.find((d) => d.id === "cursed").picks.length, 10, "six abilities and four other curses");
+});
+
+test("conditions go on a monster once, spells first, with what the caster chose", () => {
+  fresh();
+  const e = createEncounter("Crypt");
+  const m = addMonster(e, "Ogre", OGRE);
+  assert.deepEqual(addMonsterCondition(e, m.id, "poisoned"), ["poisoned"]);
+  assert.deepEqual(addMonsterCondition(e, m.id, "hexed", "wis"), ["hexed"]);
+  assert.deepEqual(addMonsterCondition(e, m.id, "blessed", "nonsense"), ["blessed"]);
+  assert.deepEqual(conds(m), ["hexed:wis", "blessed", "poisoned"]);
+  assert.deepEqual(addMonsterCondition(e, m.id, "hexed", "str"), [], "already on: only the pick changes");
+  assert.deepEqual(conds(m), ["hexed:str", "blessed", "poisoned"]);
+  assert.deepEqual(addMonsterCondition(e, m.id, "made-up"), []);
+  removeMonsterCondition(e, m.id, "blessed");
+  assert.ok(!hasMonsterCondition(m, "blessed"));
+});
+
+test("unconscious and asleep knock a monster prone, and damage wakes a sleeper", () => {
+  fresh();
+  const e = createEncounter("Crypt");
+  const m = addMonster(e, "Ogre", OGRE);
+  assert.deepEqual(addMonsterCondition(e, m.id, "asleep"), ["asleep", "prone"]);
+  assert.deepEqual(changeHp(e, m.id, 5), [], "healing doesn't wake it (it's at full anyway)");
+  assert.deepEqual(changeHp(e, m.id, -3), ["Asleep"]);
+  assert.deepEqual(conds(m), ["prone"], "awake but still lying down");
+  assert.deepEqual(addMonsterCondition(e, m.id, "unconscious"), ["unconscious"], "already prone");
+  assert.deepEqual(changeHp(e, m.id, -3), [], "damage doesn't end Unconscious");
+});
+
+test("Slow lowers the AC and halves the speed, and conditions that stop movement make it 0", () => {
+  fresh();
+  const e = createEncounter("Crypt");
+  const m = addMonster(e, "Ogre", OGRE);
+  assert.deepEqual(monsterAc(m), { value: 11, reasons: [] });
+  addMonsterCondition(e, m.id, "slowed");
+  assert.deepEqual(monsterAc(m), { value: 9, reasons: ["Slowed -2"] });
+  assert.deepEqual(monsterSpeed(m), { value: 20, reasons: ["Slowed"] });
+  addMonsterCondition(e, m.id, "grappled");
+  assert.deepEqual(monsterSpeed(m), { value: 0, reasons: ["Grappled"] });
+  assert.equal(m.ac, 11, "the box's own AC is kept");
+});
+
+test("going down, a reset and a broken save all clear conditions the right way", () => {
+  fresh();
+  const e = createEncounter("Crypt");
+  const m = addMonster(e, "Goblin", GOBLIN);
+  const ogre = addMonster(e, "Ogre", OGRE);
+  addMonsterCondition(e, m.id, "blessed");
+  addMonsterCondition(e, ogre.id, "cursed", "attacks");
+  assert.ok(encounterStarted(e), "a condition counts as the fight having started");
+  changeHp(e, m.id, -7);
+  assert.deepEqual(m.conditions, [], "a downed monster loses its conditions");
+  assert.deepEqual(addMonsterCondition(e, m.id, "prone"), [], "and gets none while down");
+  saveEncounter(e);
+  loadEncounters();
+  const back = getEncounter(e.id);
+  assert.deepEqual(conds(back.monsters[1]), ["cursed:attacks"], "conditions are saved");
+  resetEncounter(back);
+  assert.deepEqual(back.monsters[1].conditions, []);
+
+  importEncounters([{ name: "Odd", monsters: [{ id: "m1", name: "Zombie", maxHp: 22, hp: 22,
+    conditions: [{ id: "hexed", pick: "luck" }, { id: "hexed", pick: "wis" }, { id: "fake" }, "prone", { id: "prone" }] }] }]);
+  const odd = getEncounters().find((x) => x.name === "Odd");
+  assert.deepEqual(odd.monsters[0].conditions, [{ id: "hexed", pick: "" }, { id: "prone", pick: "" }],
+    "unknown ids and picks dropped, each condition once");
 });

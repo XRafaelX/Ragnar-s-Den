@@ -82,6 +82,68 @@ export var CONDITIONS = [
       "Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature."]}
 ];
 
+/* Spells a DM tracks on monsters in an encounter like conditions, from
+   the Player's Handbook's spell descriptions (Bestow Curse p. 218, Bless
+   p. 219, Hex p. 251, Sleep p. 276, Slow p. 277), checked against the
+   book on 2026-10-26. `rules` is what the spell does to the creature,
+   in plain words. Besides the fields above:
+     spell      the spell it comes from
+     ac         added to the AC shown on the monster's box
+     halfSpeed  speed shown halved
+     wakes      ends by itself when the monster takes damage
+     picks      what the caster chose: [{id, label, button, text, group}],
+                `label` is the chip's short tag, `button` the choice's
+                button, `text` what it does and `group` a caption over
+                a set of buttons */
+var ABILITY_PICKS = [["str", "Strength"], ["dex", "Dexterity"], ["con", "Constitution"],
+  ["int", "Intelligence"], ["wis", "Wisdom"], ["cha", "Charisma"]];
+
+export var SPELL_CONDITIONS = [
+  {id: "hexed", name: "Hexed", spell: "Hex", hue: "#c026d3",
+    short: "Extra 1d6 necrotic from the caster's hits. Disadvantage on checks with one ability.",
+    pickTitle: "Which ability did the caster choose?",
+    picks: ABILITY_PICKS.map(function(a){
+      return {id: a[0], label: a[0].toUpperCase(), button: a[1], text: "Disadvantage on " + a[1] + " checks."};
+    }),
+    rules: ["Whenever the caster hits the creature with an attack, they deal an extra 1d6 necrotic damage.",
+      "The creature has disadvantage on ability checks with the ability the caster chose.",
+      "If the creature drops to 0 hit points before the spell ends, the caster can use a bonus action on a later turn to curse a new creature.",
+      "It lasts up to 1 hour while the caster concentrates, or longer with a higher spell slot. A remove curse spell ends it early."]},
+  {id: "cursed", name: "Cursed", spell: "Bestow Curse", hue: "#7e22ce",
+    short: "Cursed by the caster. What it does depends on the curse chosen.",
+    pickTitle: "Which curse did the caster choose?",
+    picks: ABILITY_PICKS.map(function(a){
+      return {id: a[0], label: a[0].toUpperCase(), button: a[1], group: "Disadvantage on checks and saves with one ability",
+        text: "Disadvantage on " + a[1] + " checks and saving throws."};
+    }).concat([
+      {id: "attacks", label: "vs caster", group: "Or another curse", text: "Disadvantage on attack rolls against the caster."},
+      {id: "action", label: "action", group: "Or another curse", text: "At the start of each of its turns it makes a Wisdom saving throw. If it fails, it wastes its action that turn."},
+      {id: "damage", label: "+1d8", group: "Or another curse", text: "The caster's attacks and spells deal an extra 1d8 necrotic damage to it."},
+      {id: "other", label: "", group: "Or another curse", text: "A different curse the DM allowed, no stronger than the others."}
+    ]).map(function(p){ p.button = p.button || p.text; return p; }),
+    rules: ["The creature failed a Wisdom saving throw and is cursed while the spell lasts.",
+      "The caster chose one curse: disadvantage on checks and saves with one ability, disadvantage on attacks against the caster, a Wisdom save at the start of each turn or it wastes its action, or an extra 1d8 necrotic damage from the caster's attacks and spells.",
+      "It lasts up to 1 minute while the caster concentrates, or longer with a higher spell slot. A remove curse spell ends it."]},
+  {id: "slowed", name: "Slowed", spell: "Slow", hue: "#14b8a6", ac: -2, halfSpeed: true,
+    short: "Half speed, -2 to AC and DEX saves. No reactions, an action or a bonus action.",
+    rules: ["The creature's speed is halved, and it takes a -2 penalty to AC and Dexterity saving throws.",
+      "It can't use reactions. On its turn it can use either an action or a bonus action, not both.",
+      "It can't make more than one melee or ranged attack during its turn, whatever its abilities or magic items.",
+      "If it casts a spell that takes 1 action, roll a d20. On an 11 or higher, the spell doesn't take effect until its next turn, and it must use its action then to finish it. If it can't, the spell is wasted.",
+      "At the end of each of its turns it makes another Wisdom saving throw. On a success, the spell ends for it."]},
+  {id: "asleep", name: "Asleep", spell: "Sleep", hue: "#818cf8", noMove: true, incapacitated: true, autoFail: ["str", "dex"], wakes: true,
+    short: "Unconscious until it takes damage or someone wakes it.",
+    rules: ["The creature is unconscious until the spell ends after 1 minute, it takes damage, or someone uses an action to shake or slap it awake.",
+      "While unconscious it can't act, move or speak, and it is unaware of its surroundings. It drops what it holds and falls prone.",
+      "It automatically fails Strength and Dexterity saving throws.",
+      "Attack rolls against it have advantage. Any attack that hits it is a critical hit if the attacker is within 5 feet.",
+      "Undead and creatures immune to being charmed can't be put to sleep by this spell."]},
+  {id: "blessed", name: "Blessed", spell: "Bless", hue: "#fbbf24",
+    short: "Adds 1d4 to its attack rolls and saving throws.",
+    rules: ["Whenever the creature makes an attack roll or a saving throw, it rolls a d4 and adds the number to the roll.",
+      "It lasts up to 1 minute while the caster concentrates."]}
+];
+
 /* Exhaustion's six levels; a creature suffers its level's effect and
    every lower one. `short` is the card's wording of the same effect. */
 export var EXHAUSTION_LEVELS = [

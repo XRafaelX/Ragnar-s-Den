@@ -1,5 +1,6 @@
 import { uid } from "./basics.js";
 import { clampMonsterStat } from "./custom-monsters.js";
+import { CONDITIONS, SPELL_CONDITIONS } from "../data/conditions.js";
 
 /* ---------------- Encounters ----------------
    A DM's named fights, saved in this browser apart from any character so
@@ -7,7 +8,7 @@ import { clampMonsterStat } from "./custom-monsters.js";
 
    Encounter shape:
      { id, name, round, current, updated,
-       monsters: [{ id, name, kind, ac, speed, maxHp, hp, log, color }],
+       monsters: [{ id, name, kind, ac, speed, maxHp, hp, log, color, conditions }],
        order:    [{ id, type:"player", name } | { id, type:"monster", monsterId }],
        groupNames: { blue: "Archers", ... } }
 
@@ -22,7 +23,10 @@ import { clampMonsterStat } from "./custom-monsters.js";
    so dragging entries around never moves the turn to someone else.
    `color` groups monsters the DM's own way: one of MONSTER_COLORS, or ""
    for none. A color's group is called by its name ("Blue") unless the DM
-   renamed it in `groupNames`. */
+   renamed it in `groupNames`.
+   `conditions` are what's on the monster: [{ id, pick }], ids from the
+   book's conditions or the spells tracked like them (SPELL_CONDITIONS),
+   `pick` what the caster chose for Hex or Bestow Curse ("" if nothing). */
 
 export var MONSTER_COLORS = ["blue", "green", "yellow", "orange", "teal", "pink", "silver"];
 var COLOR_NAMES = { blue: "Blue", green: "Green", yellow: "Yellow", orange: "Orange", teal: "Teal", pink: "Pink", silver: "Silver" };
@@ -65,7 +69,8 @@ function clean(e){
       maxHp: maxHp,
       hp: hp,
       log: log.length ? log : [hp],
-      color: MONSTER_COLORS.indexOf(m.color) === -1 ? "" : m.color
+      color: MONSTER_COLORS.indexOf(m.color) === -1 ? "" : m.color,
+      conditions: hp > 0 ? cleanConditions(m.conditions) : []
     };
   });
   var ids = {};
@@ -100,6 +105,21 @@ function clean(e){
     order: order,
     groupNames: groupNames
   };
+}
+
+/* Known ids once each, with a pick the condition offers or "". */
+function cleanConditions(raw){
+  var seen = {};
+  return (Array.isArray(raw) ? raw : []).filter(function(x){
+    var def = x && monsterConditionDef(x.id);
+    if(!def || seen[def.id]) return false;
+    seen[def.id] = true;
+    return true;
+  }).map(function(x){
+    var def = monsterConditionDef(x.id);
+    var pick = def.picks && def.picks.some(function(p){ return p.id === x.pick; }) ? x.pick : "";
+    return { id: def.id, pick: pick };
+  });
 }
 
 /* ---- public API: the saved list ---- */
@@ -216,7 +236,8 @@ export function addMonster(e, kind, data){
     maxHp: maxHp,
     hp: maxHp,
     log: [maxHp],
-    color: ""
+    color: "",
+    conditions: []
   };
   e.monsters.push(m);
   return m;
@@ -277,17 +298,90 @@ export function removeMonster(e, monsterId){
   e.monsters = e.monsters.filter(function(m){ return m.id !== monsterId; });
 }
 
-/* Damage (negative) or healing (positive), kept between 0 and max. */
+/* Damage (negative) or healing (positive), kept between 0 and max.
+   Going down clears the monster's conditions. Damage wakes a sleeper:
+   returns the names of the conditions that ended that way. */
 export function changeHp(e, monsterId, delta){
   var m = getMonster(e, monsterId);
-  if(!m || !delta) return;
+  if(!m || !delta) return [];
   var hp = Math.max(0, Math.min(m.maxHp, m.hp + delta));
-  if(hp === m.hp) return;
+  if(hp === m.hp) return [];
   m.hp = hp;
   m.log.push(hp);
+  if(!hp){ m.conditions = []; return []; }
+  if(delta > 0) return [];
+  var woke = monsterConditions(m).filter(function(x){ return x.def.wakes; });
+  woke.forEach(function(x){ removeMonsterCondition(e, monsterId, x.def.id); });
+  return woke.map(function(x){ return x.def.name; });
 }
 
 export function isDead(m){ return !!m && m.hp <= 0; }
+
+/* ---- Conditions on a monster ---- */
+export function monsterConditionDef(id){
+  return SPELL_CONDITIONS.find(function(d){ return d.id === id; }) ||
+    CONDITIONS.find(function(d){ return d.id === id; }) || null;
+}
+
+/* What's on, spells first and then the book's order: [{def, pick}],
+   `pick` the caster's choice from the condition's picks, or null. */
+export function monsterConditions(m){
+  var on = m && Array.isArray(m.conditions) ? m.conditions : [];
+  return SPELL_CONDITIONS.concat(CONDITIONS).map(function(d){
+    var x = on.find(function(c){ return c.id === d.id; });
+    if(!x) return null;
+    var pick = d.picks ? d.picks.find(function(p){ return p.id === x.pick; }) || null : null;
+    return { def: d, pick: pick };
+  }).filter(Boolean);
+}
+
+export function hasMonsterCondition(m, id){
+  return !!m && Array.isArray(m.conditions) && m.conditions.some(function(x){ return x.id === id; });
+}
+
+/* Puts a condition on (or changes its pick). Unconscious and Asleep also
+   knock the monster prone. Returns the ids newly added. */
+export function addMonsterCondition(e, monsterId, id, pick){
+  var m = getMonster(e, monsterId);
+  var def = monsterConditionDef(id);
+  if(!m || !def || isDead(m)) return [];
+  var p = def.picks && def.picks.some(function(x){ return x.id === pick; }) ? pick : "";
+  var added = [];
+  [id].concat(id === "unconscious" || id === "asleep" ? ["prone"] : []).forEach(function(x){
+    var have = m.conditions.find(function(c){ return c.id === x; });
+    if(have){ if(x === id) have.pick = p; return; }
+    m.conditions.push({ id: x, pick: x === id ? p : "" });
+    added.push(x);
+  });
+  return added;
+}
+
+export function removeMonsterCondition(e, monsterId, id){
+  var m = getMonster(e, monsterId);
+  if(m) m.conditions = m.conditions.filter(function(x){ return x.id !== id; });
+}
+
+/* The AC to show, with what changed it: { value, reasons: ["Slowed -2"] }. */
+export function monsterAc(m){
+  var value = m.ac, reasons = [];
+  monsterConditions(m).forEach(function(x){
+    if(!x.def.ac) return;
+    value += x.def.ac;
+    reasons.push(x.def.name + " " + (x.def.ac > 0 ? "+" : "") + x.def.ac);
+  });
+  return { value: Math.max(0, value), reasons: reasons };
+}
+
+/* The speed to show: 0 for a condition that stops movement, halved by
+   Slow, with the names of what changed it. */
+export function monsterSpeed(m){
+  var list = monsterConditions(m);
+  var stop = list.filter(function(x){ return x.def.noMove; });
+  if(stop.length) return { value: 0, reasons: stop.map(function(x){ return x.def.name; }) };
+  var half = list.filter(function(x){ return x.def.halfSpeed; });
+  if(half.length) return { value: Math.floor(m.speed / 2), reasons: half.map(function(x){ return x.def.name; }) };
+  return { value: m.speed, reasons: [] };
+}
 
 export function orderEntryFor(e, monsterId){
   return e.order.find(function(o){ return o.type === "monster" && o.monsterId === monsterId; }) || null;
@@ -408,12 +502,14 @@ function stepTurn(e, dir){
   }
 }
 
-/* Ready to run again: every monster at full hit points, round 1, the top
-   of the turn line goes first. The monsters, players and order stay. */
+/* Ready to run again: every monster at full hit points with no
+   conditions, round 1, the top of the turn line goes first. The
+   monsters, players and order stay. */
 export function resetEncounter(e){
   e.monsters.forEach(function(m){
     m.hp = m.maxHp;
     m.log = [m.maxHp];
+    m.conditions = [];
   });
   e.round = 1;
   e.current = e.order[0] ? e.order[0].id : null;
@@ -422,5 +518,5 @@ export function resetEncounter(e){
 /* Has anything happened since the encounter was set up or reset? */
 export function encounterStarted(e){
   return e.round > 1 || (e.order[0] && e.current !== e.order[0].id) ||
-    e.monsters.some(function(m){ return m.log.length > 1; });
+    e.monsters.some(function(m){ return m.log.length > 1 || m.conditions.length; });
 }
