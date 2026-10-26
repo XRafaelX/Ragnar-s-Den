@@ -358,3 +358,34 @@ test("companion cards split a block of traits into named ones", async () => {
   assert.deepEqual(splitTraits([{ text: "Loyal to a fault." }, { name: "Vigilant", text: "It can't be surprised." }]),
     [{ text: "Loyal to a fault." }, { name: "Vigilant", text: "It can't be surprised." }]);
 });
+
+test("spell summaries: rules a full review against the books corrected", () => {
+  const sum = (n) => SPELL_DATA[n].summary;
+  // 2014 Glibness replaces any Charisma roll with a 15 (the 14-or-lower wording is the 2024 spell).
+  assert.match(sum("Glibness"), /replace the number you roll with a 15/);
+  assert.doesNotMatch(sum("Glibness"), /14 or lower/);
+  // Creation: precious metals last an hour, only adamantine and mithral a minute.
+  assert.match(sum("Creation"), /1 minute for adamantine or mithral/);
+  assert.doesNotMatch(sum("Creation"), /precious metals/);
+  // Investiture of Stone moves you through earth as if it were air.
+  assert.match(sum("Investiture of Stone"), /as if it were air/);
+  // Haste's extra action is limited.
+  assert.match(sum("Haste"), /Attack \(one weapon attack\), Dash, Disengage, Hide or Use an Object/);
+  // Healing spells that do nothing for undead and constructs say so.
+  for(const n of ["Cure Wounds", "Healing Word", "Mass Healing Word", "Prayer of Healing", "Mass Cure Wounds", "Heal", "Mass Heal", "Power Word Heal", "Healing Spirit", "Blight", "Phantasmal Force"])
+    assert.match(sum(n), /undead or constructs|constructs or undead/, n);
+  // Banishment and Banishing Smite: incapacitated in the demiplane.
+  assert.match(sum("Banishment"), /incapacitated/);
+  assert.match(sum("Banishing Smite"), /incapacitated/);
+  // Rules that were missing or mistimed.
+  assert.match(sum("Create Undead"), /only cast it at night/);
+  assert.match(sum("Slow"), /only one attack/);
+  assert.match(sum("Gust of Wind"), /starts its turn/);
+  assert.match(sum("Compulsion"), /After it moves/);
+  assert.match(sum("Sanctuary"), /ends if the warded creature attacks/);
+  assert.match(sum("Sleet Storm"), /concentrating on a spell/);
+  assert.match(sum("Sunburst"), /repeats the save/);
+  assert.match(sum("Blinding Smite"), /repeats the save/);
+  assert.match(sum("Shadow Blade"), /thrown/);
+  assert.match(sum("Antagonize"), /melee attack/);
+});
