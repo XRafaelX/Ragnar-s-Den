@@ -602,12 +602,12 @@ export var SUBCLASS_RESOURCES = {
         hint:"Cast Augury without a spell slot or components."},
       {id:"ties_that_bind", name:"Ties That Bind", level:1,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Action: bind a creature's fate for 1 hour. Track it and add 1d6 to your spell damage or healing on it once per turn."},
+        hint:"Action: bind a creature's fate for 1 hour. Sense its direction, and add 1d6 to your spell damage or healing on it once per turn."},
       {id:"insightful_striking", name:"Insightful Striking", level:6,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Bonus action: +1d6 to your next attack roll against a target within 30 ft, or -1d6 to its next save against your spell."},
       {id:"visions_of_the_future", name:"Visions of the Future", level:17, max:always(1), reset:always("long"),
-        hint:"Action: cast Foresight without a spell slot. It lasts 1 minute."}
+        hint:"Cast Foresight without a spell slot (it still takes 1 minute to cast). It lasts 1 minute."}
     ]
   },
   "Druid": {
