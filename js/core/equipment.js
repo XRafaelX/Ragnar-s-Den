@@ -3,11 +3,11 @@
    armor proficiency. */
 import { RACE_DATA } from "../data/race-data.js";
 import { WEAPON_DATA, weaponDataOf, baseWeaponName } from "../data/weapons.js";
-import { featProficiencies } from "./feat-picks.js";
+import { featProficiencies, featDef, featSpellEntries, featCastAbility } from "./feat-picks.js";
 import { characterPickedProfs, characterChoices, raceProficiencies } from "./class-picks.js";
 import { mod, profBonus, parseDiceNotation, combineRolls } from "./basics.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
-import { classFeatureList, classProficiencies, classLevelOf } from "./class-features.js";
+import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
@@ -67,7 +67,7 @@ export function tryEquip(c, item){
         : "Your hands are full ("+names+"). Unequip something first."};
     }
   }
-  swapped.forEach(function(i){ i.equipped = false; });
+  swapped.forEach(function(i){ i.equipped = false; delete i.shillelagh; });
   item.equipped = true;
   return {ok:true, message: swapped.length ? "Took off "+swapped.map(function(i){ return i.name; }).join(", ")+"." : ""};
 }
@@ -127,6 +127,8 @@ export function martialArtsApplies(c, item){
 export function weaponDamageDice(c, item){
   var own = parseDiceNotation(item.damageDice);
   if(!own) return null;
+  // Shillelagh: the weapon's damage die becomes a d8.
+  if(own.qty===1 && own.die < 8 && shillelaghOn(c, item)) own = {qty: 1, die: 8};
   if(martialArtsApplies(c, item)){
     var ma = martialArtsDie(c);
     if(ma * 1 > own.qty * own.die) return {qty: 1, die: ma, martialArts: true};
@@ -179,6 +181,55 @@ export function unarmedStrike(c){
   return {name: name, attack: abilityMod + profBonus(c), die: die, bonus: bonus, type: type, ability: ability,
     roll: combineRolls([armorPenalty(c, ability.toLowerCase())].concat(conditionRolls(c, "attack"), raceEffectRolls(c, "attack"))), parts: parts, grappleDie: styled ? 4 : 0};
 }
+/* ---------------- Shillelagh ----------------
+   A club or quarterstaff you hold becomes magical, uses your spellcasting
+   ability for its attack and damage rolls and has a d8 damage die. It
+   lasts a minute, ends if you let go of the weapon, and a rest or dropping
+   to 0 hit points ends it too (see endAllEffects). `shillelagh` on the item
+   is the player's switch. */
+/* The spellcasting abilities the character has for Shillelagh (the
+   cantrip on the sheet, from its class, or one a feat teaches), [] if they
+   don't know it. */
+export function shillelaghAbilities(c){
+  var out = [];
+  var sp = (c.spells||[]).find(function(x){ return (x.name||"").trim().toLowerCase()==="shillelagh"; });
+  if(sp){
+    var cls = null;
+    if(sp.learnedBy) cls = (c.classes||[]).find(function(x){ return x.name===sp.learnedBy; });
+    if(!cls){
+      var casters = (c.classes||[]).filter(function(x){ return classCasterType(x); });
+      cls = casters.find(function(x){ return x.name==="Druid"; }) || casters[0];
+    }
+    var ab = cls && classSpellAbility(cls);
+    if(ab && out.indexOf(ab)===-1) out.push(ab);
+  }
+  (c.feats||[]).forEach(function(feat){
+    var def = featDef(feat.name);
+    if(!def || !featSpellEntries(def, feat.picks||{}).some(function(e){ return e.name==="Shillelagh"; })) return;
+    var ab = featCastAbility(c, def, feat.picks||{});
+    if(ab && out.indexOf(ab)===-1) out.push(ab);
+  });
+  return out;
+}
+/* A club or quarterstaff the character can cast Shillelagh on. */
+export function canShillelagh(c, item){
+  if(!item || item.type!=="weapon") return false;
+  var base = baseWeaponName(item);
+  return (base==="Club" || base==="Quarterstaff") && shillelaghAbilities(c).length > 0;
+}
+/* Shillelagh is on this weapon: it's in hand and the spell is still known.
+   (Letting go of it, or forgetting the cantrip, ends it.) */
+export function shillelaghOn(c, item){
+  if(!item || !item.shillelagh) return false;
+  if(!(item.equipped && canShillelagh(c, item))){ delete item.shillelagh; return false; }
+  return true;
+}
+/* Cast Shillelagh on this weapon, or end it. It only lasts on one weapon. */
+export function setShillelagh(c, item, on){
+  (c.inventory||[]).forEach(function(i){ delete i.shillelagh; });
+  if(on && canShillelagh(c, item)) item.shillelagh = true;
+}
+
 /* The abilities a weapon attack may use and the best modifier among
    them: {mod, keys}, `keys` being every ability that reaches it (on a tie
    the player picks, so a Battle Ready artificer with INT equal to STR can
@@ -187,6 +238,8 @@ export function weaponAbility(c, item){
   var ab = abilityScores(c);
   var allowed = item.ability==="dex" ? ["dex"] : item.ability==="finesse" ? ["str", "dex"] : ["str"];
   if(martialArtsApplies(c, item) || revenantBladeApplies(c, item)) allowed = ["str", "dex"];
+  // Shillelagh: the spellcasting ability can stand in for Strength.
+  if(shillelaghOn(c, item)) shillelaghAbilities(c).forEach(function(k){ if(allowed.indexOf(k)===-1) allowed.push(k); });
   // A feature tagged `magicWeaponAbility` lets magic weapons (see
   // isMagicWeapon) use that ability instead, when it's higher; one tagged
   // `chosenWeaponAbility` does the same for the weapon marked `chosenWeapon`.
@@ -226,7 +279,7 @@ export function chosenWeaponFeature(c){
 /* A magic weapon: marked magic on the sheet (a Flame Tongue, a +0
    weapon), with a magic bonus, or holding an active artificer infusion. */
 export function isMagicWeapon(c, item){
-  if(item.magic || magicBonusOf(item) > 0) return true;
+  if(item.magic || magicBonusOf(item) > 0 || shillelaghOn(c, item)) return true;
   var active = c.infusions && c.infusions.active || [];
   return !!item.id && active.some(function(a){ return a.itemId===item.id; });
 }

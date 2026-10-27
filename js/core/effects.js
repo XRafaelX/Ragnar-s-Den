@@ -88,6 +88,9 @@ export function endAllEffects(c){
   var ended = TOGGLE_EFFECTS.filter(function(d){ return c.effects && c.effects[d.id]; }).map(function(d){ return d.name; });
   c.effects = {};
   if(c.rage && c.rage.active){ c.rage.active = false; ended.push("Rage"); }
+  // Shillelagh lasts a minute: a rest or dropping to 0 hit points ends it.
+  var lit = (c.inventory||[]).filter(function(i){ return i.shillelagh; });
+  if(lit.length){ lit.forEach(function(i){ delete i.shillelagh; }); ended.push("Shillelagh"); }
   return ended;
 }
 /* Drop flags that can't come back on their own: the feature is gone

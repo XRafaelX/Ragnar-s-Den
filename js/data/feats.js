@@ -32,13 +32,14 @@
                     or "known" (the default for a cantrip)
      grantsByOption {option: [spells]}: spells that depend on `option`
                     (Scion of the Outer Planes' cantrip)
-     spellPick      {count, level, schools, list, names, byOption, label,
+     spellPick      {count, level, schools, ritual, list, names, byOption, label,
                     plural, use, tags}, or a list of them: spells to pick at that
                     spell level, from those schools, from a class's list
                     (`list`: a class or several) or from `names` (with `list`, only the names on that list: Spell
                     Sniper's attack-roll cantrips).
                     `byOption` gives the list or names per `option`
-                    (Strixhaven Initiate's college). count "halfPb" is
+                    (Strixhaven Initiate's college). `ritual`: only spells with
+                    the ritual tag (Ritual Caster). count "halfPb" is
                     half the proficiency bonus (Rune Shaper's runes);
                     `tags` names each spell in the picker (its rune).
      castAbility    what the feat's spells are cast with when that isn't

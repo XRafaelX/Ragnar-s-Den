@@ -130,7 +130,7 @@ test("Potent Spellcasting and Empowered Evocation add their modifier to a cantri
   // A Cleric 8 / Evoker 10: each cantrip gets its own class's bonus only.
   const both = char([{ name: "Cleric", subclass: "Light Domain", level: 8 }, { name: "Wizard", subclass: "School of Evocation", level: 10 }]);
   both.abilities.wis = 14; both.abilities.int = 18;
-  assert.match(line(both, "Sacred Flame"), /, plus 2 from Potent Spellcasting\./);
+  assert.match(line(both, "Sacred Flame"), /, plus 2 from Potent Spellcasting/);
   assert.match(line(both, "Fire Bolt"), /, plus 4 from Empowered Evocation on one damage roll\./);
   assert.doesNotMatch(line(both, "Fire Bolt"), /Potent/);
   assert.doesNotMatch(line(both, "Sacred Flame"), /Empowered/);
@@ -193,4 +193,33 @@ test("a saved spell with the old catalog summary gets the corrected one, a playe
   assert.equal(currentSpellSummary("Chill Touch", "My own note about it."), "My own note about it.");
   assert.equal(currentSpellSummary("Chill Touch", SPELL_DATA["Chill Touch"].summary), SPELL_DATA["Chill Touch"].summary);
   assert.equal(currentSpellSummary("Not A Spell", "x"), "x");
+});
+
+test("an Evoker's Potent Cantrip and Empowered Evocation, and Spell Sniper's range", async () => {
+  const { spellRangeText } = await import("../js/core/spell-scaling.js");
+  const evoker = (level, extra = {}) => { const c = char([{ name: "Wizard", subclass: "School of Evocation", level }]); c.abilities.int = 18; Object.assign(c, extra); return c; };
+  // Potent Cantrip (6): half damage on a save, only for a damaging cantrip that allows a save.
+  assert.match(line(evoker(6), "Acid Splash"), /half damage even when the target saves \(Potent Cantrip\)\.$|half damage even when the target saves \(Potent Cantrip\)\. More/);
+  assert.doesNotMatch(line(evoker(5), "Acid Splash"), /Potent Cantrip/, "not before level 6");
+  assert.doesNotMatch(line(evoker(6), "Fire Bolt"), /Potent Cantrip/, "an attack roll cantrip has no save");
+  assert.doesNotMatch(line(char([{ name: "Wizard", subclass: "School of Abjuration", level: 6 }]), "Acid Splash"), /Potent Cantrip/, "not another school");
+  // Empowered Evocation on a leveled evocation spell (10).
+  assert.equal(line(evoker(10), "Fireball"), "Higher slots: +1d6 fire damage per slot level above 3rd. Empowered Evocation: plus 4 to one damage roll.");
+  assert.match(line(evoker(10), "Magic Missile"), /Empowered Evocation: plus 4 to one damage roll\.$/);
+  assert.doesNotMatch(line(evoker(9), "Fireball"), /Empowered/, "not before level 10");
+  assert.doesNotMatch(line(evoker(10), "Cure Wounds"), /Empowered/, "not a wizard spell");
+  assert.doesNotMatch(line(evoker(10), "Shield"), /Empowered/, "no damage");
+  assert.equal(line(evoker(10), "Fireball", { owner: "Sorcerer" }), "Higher slots: +1d6 fire damage per slot level above 3rd.");
+  // Spell Sniper doubles the range of a spell that needs an attack roll, when it has a distance.
+  const sniper = evoker(4, { feats: [{ id: "ss", name: "Spell Sniper", picks: { option: "Wizard", spells: ["Fire Bolt"] } }] });
+  assert.equal(spellRangeText(sniper, "Fire Bolt", "120 feet"), "240 feet (doubled by Spell Sniper)");
+  assert.equal(spellRangeText(sniper, "Thorn Whip", "30 feet"), "60 feet (doubled by Spell Sniper)");
+  assert.equal(spellRangeText(sniper, "Acid Arrow", "90 feet"), "180 feet (doubled by Spell Sniper)");
+  assert.equal(spellRangeText(sniper, "Fireball", "150 feet"), "150 feet", "a save spell isn't doubled");
+  assert.equal(spellRangeText(sniper, "Shocking Grasp", "Touch"), "Touch", "no distance, no doubling");
+  assert.equal(spellRangeText(evoker(4), "Fire Bolt", "120 feet"), "120 feet", "without the feat");
+  const warlock = lock(5, { invocations: [{ name: "Eldritch Spear" }] });
+  warlock.feats = [{ id: "ss", name: "Spell Sniper", picks: { option: "Warlock", spells: ["Eldritch Blast"] } }];
+  warlock.spells = [{ name: "Eldritch Blast", level: 0 }];
+  assert.match(line(warlock, "Eldritch Blast"), /, 600 ft\./, "Eldritch Spear's 300 ft doubles too");
 });

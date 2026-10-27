@@ -2,7 +2,7 @@
    data/spell-scaling.js). */
 import { SPELL_SCALING } from "../data/spell-scaling.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
-import { totalLevel, computeSpellSlots, ordinal, mod } from "./helpers.js";
+import { totalLevel, computeSpellSlots, ordinal, mod, hasFeat } from "./helpers.js";
 import { eldritchBlastSummary } from "./invocations.js";
 import { classFeatureList } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
@@ -17,9 +17,14 @@ var CANTRIP_STEPS = [5, 11, 17];
    as a ritual, a Mystic Arcanum); `how.castAt`: cast at that higher level
    ("As a 2nd-level spell: 3d10 fire damage."). */
 export function spellScalingLine(c, name, level, how){
+  var base = scalingBody(c, name, level, how || {});
+  // An Evoker's Empowered Evocation also adds to a leveled evocation spell's damage.
+  var note = level ? empoweredNote(c, name, (how||{}).owner) : "";
+  return base && note ? base + " " + note : base || note;
+}
+function scalingBody(c, name, level, how){
   var entry = SPELL_SCALING[catalogSpellName((name||"").trim())];
   if(!entry) return "";
-  how = how || {};
   if(!level){
     var lv = totalLevel(c);
     var n = 1 + CANTRIP_STEPS.filter(function(x){ return lv >= x; }).length;
@@ -62,5 +67,32 @@ function cantripBonus(c, name, owner){
   }
   add("Cleric", "Potent Spellcasting", "wis", "");
   if(d.school==="Evocation") add("Wizard", "Empowered Evocation", "int", " on one damage roll");
+  // An Evoker's Potent Cantrip: half damage even when the target saves.
+  if((!owner || owner==="Wizard") && /\bsave\b/i.test(d.summary) && /\d+d\d+/.test(d.summary) && hasWizardFeature(c, "Potent Cantrip"))
+    out += ", and half damage even when the target saves (Potent Cantrip)";
   return out;
+}
+function hasWizardFeature(c, feature){
+  return (c.classes||[]).some(function(cl){ return cl.name==="Wizard" && classFeatureList(cl).some(function(f){ return f.name===feature; }); });
+}
+/* "Empowered Evocation: plus 4 to one damage roll." for a damaging
+   evocation spell on the wizard list that the wizard casts. */
+function empoweredNote(c, name, owner){
+  var d = SPELL_DATA[catalogSpellName((name||"").trim())];
+  if(!d || !d.level || d.school!=="Evocation" || d.classes.indexOf("Wizard")===-1) return "";
+  if(owner && owner!=="Wizard") return "";
+  if(!/damage/i.test(d.summary) || !/\d+d\d+/.test(d.summary) || !hasWizardFeature(c, "Empowered Evocation")) return "";
+  var m = mod(abilityScore(c, "int"));
+  return m ? "Empowered Evocation: " + (m>0 ? "plus " + m : "minus " + (-m)) + " to one damage roll." : "";
+}
+
+/* A spell's range as the character has it. Spell Sniper doubles the range
+   of a spell that needs an attack roll (a spell attack in the summary),
+   when that range is a distance. */
+export function spellRangeText(c, name, range){
+  var d = SPELL_DATA[catalogSpellName((name||"").trim())];
+  var m = /^([\d,]+) feet$/.exec(range||"");
+  if(!m || !d || !/spell attack/i.test(d.summary) || !hasFeat(c, "Spell Sniper")) return range;
+  var ft = String(Number(m[1].replace(/,/g, "")) * 2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return ft + " feet (doubled by Spell Sniper)";
 }

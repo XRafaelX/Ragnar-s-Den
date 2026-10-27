@@ -93,7 +93,7 @@ function spellChoices(g, src){
   }).sort();
   return Object.keys(SPELL_DATA).filter(function(n){
     var d = SPELL_DATA[n];
-    return d.level===g.level && (!g.schools || g.schools.indexOf(d.school)!==-1) &&
+    return d.level===g.level && (!g.schools || g.schools.indexOf(d.school)!==-1) && (!g.ritual || d.ritual) &&
       (!lists || lists.some(function(l){ return (d.classes||[]).indexOf(l)!==-1; }));
   }).sort();
 }

@@ -3,7 +3,7 @@ import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg } from "../../ui/svg-icons.js";
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, raceEffectRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, raceEffectRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -307,7 +307,7 @@ function itemHeader(c, item, idx, onOpenDetails, noEquip){
     eqBtn.title = item.equipped ? "Equipped. Tap to unequip." : "Equip";
     eqBtn.addEventListener("click", function(e){
       e.stopPropagation();
-      if(item.equipped){ item.equipped = false; redrawKeeping(idx); return; }
+      if(item.equipped){ item.equipped = false; delete item.shillelagh; redrawKeeping(idx); return; }
       // One suit of armor, one shield, two hands (see tryEquip).
       var res = tryEquip(c, item);
       if(!res.ok){ showActionToast(res.message, true); return; }
@@ -525,7 +525,7 @@ function openWeaponSheet(c, item, idx){
     var magicCb = document.createElement("input"); magicCb.type="checkbox"; magicCb.className="chk";
     magicCb.checked = isMagicWeapon(c, item);
     magicCb.disabled = alreadyMagic;
-    if(alreadyMagic) magicLbl.title = (Number(item.magicBonus)||0) > 0 ? "Magic because of its bonus" : "Magic because it's infused";
+    if(alreadyMagic) magicLbl.title = (Number(item.magicBonus)||0) > 0 ? "Magic because of its bonus" : shillelaghOn(c, item) ? "Magic because of Shillelagh" : "Magic because it's infused";
     magicCb.addEventListener("change", function(){
       if(magicCb.checked) item.magic = true; else delete item.magic;
       save(); renderAll();
@@ -842,8 +842,11 @@ function renderWeaponCard(c, item, idx){
   if(martialArtsApplies(c, item)) abilityLabel = "Martial Arts (STR or DEX)";
   var maDice = weaponDamageDice(c, item);
   if(maDice && maDice.martialArts) abilityLabel += " · Martial Arts d" + maDice.die;
+  // Shillelagh: the spellcasting ability can replace Strength, and the die is a d8.
+  var shil = shillelaghOn(c, item);
+  if(shil) abilityLabel = "Shillelagh (STR or " + shillelaghAbilities(c).map(function(k){ return k.toUpperCase(); }).join(" or ") + ")";
   var subtitleParts = [];
-  if(item.damageDice) subtitleParts.push(item.damageDice + (item.damageType ? " " + item.damageType : ""));
+  if(item.damageDice) subtitleParts.push((shil && maDice ? maDice.qty + "d" + maDice.die : item.damageDice) + (item.damageType ? " " + item.damageType : ""));
   subtitleParts.push(abilityLabel);
   subtitleParts.push(item.proficient ? "Proficient" : "Not proficient");
   if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
@@ -1041,6 +1044,29 @@ function renderWeaponCard(c, item, idx){
     actions.appendChild(power);
   }
 
+  // Shillelagh: a club or quarterstaff in hand becomes magical, uses the
+  // spellcasting ability and rolls a d8, until the minute is up or you let go.
+  if(canShillelagh(c, item)){
+    var shilOn = shillelaghOn(c, item);
+    var shilBtn = document.createElement("button");
+    shilBtn.type = "button";
+    shilBtn.className = "btn small inv-roll-btn" + (shilOn ? " primary" : "");
+    shilBtn.setAttribute("aria-pressed", shilOn ? "true" : "false");
+    shilBtn.appendChild(document.createTextNode("Shillelagh"));
+    var shilTag = document.createElement("span");
+    shilTag.className = "inv-action-tag"; shilTag.textContent = "Bonus action";
+    shilBtn.appendChild(shilTag);
+    var shilAb = shillelaghAbilities(c).map(function(k){ return k.toUpperCase(); }).join(" or ");
+    shilBtn.title = shilOn
+      ? "Shillelagh is on: this weapon is magical, can use " + shilAb + " in place of Strength and rolls a d8. Tap to end it. It also ends when you let go of the weapon, after a minute or at a rest."
+      : "Cast Shillelagh on this weapon (the spell lasts 1 minute): it becomes magical, can use " + shilAb + " in place of Strength and rolls a d8";
+    shilBtn.addEventListener("click", function(){
+      setShillelagh(c, item, !shilOn);
+      redrawKeeping(idx);
+    });
+    actions.appendChild(shilBtn);
+  }
+
   // Returning weapon: Throw takes it out of your hand; Call it back (an
   // action, attuned) or Pick it up puts it back in a free hand.
   if(def && def.returning){
@@ -1049,7 +1075,7 @@ function renderWeaponCard(c, item, idx){
       throwBtn.type = "button"; throwBtn.className = "btn small inv-roll-btn";
       throwBtn.textContent = "Throw";
       throwBtn.title = "Mark it thrown: out of your hand until you call it back";
-      throwBtn.addEventListener("click", function(){ item.thrown = true; item.equipped = false; redrawKeeping(idx); });
+      throwBtn.addEventListener("click", function(){ item.thrown = true; item.equipped = false; delete item.shillelagh; redrawKeeping(idx); });
       actions.appendChild(throwBtn);
     } else {
       var back = function(how){

@@ -258,6 +258,12 @@ export var PHB_FEATS = [
   {
     name: "Ritual Caster",
     source: "PHB",
+    option:{label:"Spell list", options:["Bard","Cleric","Druid","Sorcerer","Warlock","Wizard"]},
+    castAbilityByOption:{"Bard":"cha", "Cleric":"wis", "Druid":"wis", "Sorcerer":"cha", "Warlock":"cha", "Wizard":"int"},
+    spellPick:[
+      {count:2, level:1, ritual:true, use:"ritual", label:"1st-level ritual spell from that list", plural:"1st-level ritual spells from that list", byOption:
+        ["Bard","Cleric","Druid","Sorcerer","Warlock","Wizard"].reduce(function(o, cls){ o[cls] = {list:cls}; return o; }, {})}
+    ],
     prerequisite: "Intelligence or Wisdom 13 or higher",
     category: "Magic",
     summary: "You gain a ritual book with two 1st-level ritual spells from one class's list. You can cast them as rituals and copy other ritual spells you find into the book.",

@@ -499,3 +499,23 @@ test("Spell Sniper: one attack-roll cantrip from a list that has one, cast with 
   assert.equal(FP.featCastAbility({}, def, { option: "Sorcerer" }), "cha");
   assert.equal(FP.featCastAbility({}, def, { option: "Druid" }), "wis");
 });
+
+test("Ritual Caster: two 1st-level ritual spells from one class's list, cast only as rituals", () => {
+  const def = FP.featDef("Ritual Caster");
+  assert.deepEqual(def.option.options, ["Bard", "Cleric", "Druid", "Sorcerer", "Warlock", "Wizard"]);
+  const offered = (option) => FP.featSpellGroups(def, { option })[0].options;
+  assert.deepEqual(FP.featSpellGroups(def, {}).map((g) => g.options.length), [0], "nothing to pick before the list");
+  assert.equal(FP.featSpellGroups(def, { option: "Wizard" })[0].count, 2);
+  assert.deepEqual(offered("Wizard"), ["Alarm", "Comprehend Languages", "Detect Magic", "Find Familiar", "Identify", "Illusory Script", "Tenser's Floating Disk", "Unseen Servant"]);
+  assert.deepEqual(offered("Sorcerer"), ["Comprehend Languages", "Detect Magic"]);
+  assert.ok(offered("Cleric").includes("Ceremony") && !offered("Cleric").includes("Bless"));
+  for(const o of def.option.options) for(const n of offered(o)){
+    assert.equal(SPELL_DATA[n].level, 1, n);
+    assert.ok(SPELL_DATA[n].ritual, n + " has the ritual tag");
+    assert.ok(SPELL_DATA[n].classes.includes(o), n + " is on the " + o + " list");
+  }
+  assert.deepEqual(FP.featSpellEntries(def, { option: "Wizard", spells: ["Alarm", "Find Familiar"] }), [{ name: "Alarm", use: "ritual" }, { name: "Find Familiar", use: "ritual" }]);
+  assert.equal(FP.featCastAbility({}, def, { option: "Wizard" }), "int");
+  assert.equal(FP.featCastAbility({}, def, { option: "Cleric" }), "wis");
+  assert.equal(FP.featCastAbility({}, def, { option: "Warlock" }), "cha");
+});

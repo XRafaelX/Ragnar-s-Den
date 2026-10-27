@@ -260,6 +260,8 @@ export function eldritchBlastSummary(c){
     if(inv.blast.rider) out.riders.push(inv.blast.rider);
     out.by.push(inv.name);
   });
+  // Spell Sniper doubles the range of a spell that needs an attack roll.
+  if((c.feats||[]).some(function(f){ return f.name==="Spell Sniper"; })) out.range *= 2;
   return out;
 }
 

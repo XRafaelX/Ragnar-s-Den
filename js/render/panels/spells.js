@@ -17,14 +17,14 @@ import { infusionSpellAttack } from "../../core/infusion-effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner, cantripFormulas, swapCantripFormula } from "../../core/spells-known.js";
 import { PREPARED_CASTERS } from "../../data/spells-known.js";
-import { spellScalingLine } from "../../core/spell-scaling.js";
+import { spellScalingLine, spellRangeText } from "../../core/spell-scaling.js";
 import { abilityScore, abilityScores } from "../../core/ability-scores.js";
 
 
 var SCHOOLS = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"];
 
-function spellSubtitle(sp){
-  return [sp.school, sp.castingTime, sp.range, sp.components, sp.duration].filter(Boolean).join(" · ");
+function spellSubtitle(sp, c){
+  return [sp.school, sp.castingTime, c ? spellRangeText(c, sp.name, sp.range) : sp.range, sp.components, sp.duration].filter(Boolean).join(" · ");
 }
 
 /* Compact header: name + concentration/ritual tags, the patron's name
@@ -118,7 +118,7 @@ function renderSpellCard(c, sp, idx, patron, granted){
   card.className = "ff-item-card inv-item-card" + (granted ? " feature-spell-card" : "");
   card.appendChild(spellHeader(c, sp, idx, patron, granted));
 
-  var sub = spellSubtitle(sp);
+  var sub = spellSubtitle(sp, c);
   if(sub){
     var subEl = document.createElement("div");
     subEl.className = "inv-card-subtitle";
@@ -152,7 +152,7 @@ function renderSpellCard(c, sp, idx, patron, granted){
    spells (and corrections to catalog ones) are first-class. */
 function openSpellSheet(c, sp){
   openBottomSheet(function(body, refresh, close){
-    sheetHeader(body, sp, "Spell name", spellSubtitle(sp), close);
+    sheetHeader(body, sp, "Spell name", spellSubtitle(sp, c), close);
 
     var details = document.createElement("div");
     details.className = "inv-type-fields";
@@ -523,7 +523,7 @@ function renderFeatureSpellCard(c, fs, canLearn){
   }
   header.appendChild(actions);
   card.appendChild(header);
-  var sub = spellSubtitle(d);
+  var sub = spellSubtitle(d, c);
   if(sub){
     var subEl = document.createElement("div");
     subEl.className = "inv-card-subtitle";
