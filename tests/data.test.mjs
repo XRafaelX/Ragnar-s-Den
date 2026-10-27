@@ -246,11 +246,11 @@ test("spell catalog: well formed, with the Player's Handbook, Xanathar's, Tasha'
     assert.deepEqual(d.classes, d.classes.slice().sort(), name + ": classes in order");
     d.classes.forEach((c) => { count[c] = (count[c] || 0) + 1; });
   }
-  assert.equal(Object.keys(SPELL_DATA).length, 524, "PHB 361 + XGE 95 + TCE 21 + 47 from other books");
-  assert.deepEqual(count, { Artificer: 100, Bard: 145, Cleric: 119, Druid: 157, Paladin: 50, Ranger: 60, Sorcerer: 214, Warlock: 136, Wizard: 341, Dunamancy: 15 });
+  assert.equal(Object.keys(SPELL_DATA).length, 544, "PHB 361 + XGE 95 + TCE 21 + 67 from other books");
+  assert.deepEqual(count, { Artificer: 102, Bard: 152, Cleric: 126, Druid: 161, Paladin: 51, Ranger: 61, Sorcerer: 223, Warlock: 138, Wizard: 358, Dunamancy: 15 });
   // The other books' spells name their book; the core ones don't.
   const fromBooks = Object.entries(SPELL_DATA).filter(([, d]) => d.source);
-  assert.equal(fromBooks.length, 47);
+  assert.equal(fromBooks.length, 67);
   fromBooks.forEach(([n, d]) => assert.ok(SPELL_SOURCES[d.source], n + ": source " + d.source));
   assert.deepEqual([SPELL_DATA["Silvery Barbs"].source, SPELL_DATA["Silvery Barbs"].castingTime, SPELL_DATA["Wristpocket"].ritual], ["SCC", "1 reaction", true]);
   // An artificer has spells to prepare at every level it casts.
@@ -289,8 +289,8 @@ test("Tasha's Additional Spells: 65 class entries, off the class list until the 
     .forEach(([n, c]) => assert.ok(!SPELL_DATA[n].classes.includes(c) && SPELL_DATA[n].tashaClasses.includes(c), n + " for " + c));
 
   const plain = spellDataForClass("Bard"), withTasha = spellDataForClass("Bard", true);
-  assert.equal(Object.keys(plain).length, 145);
-  assert.equal(Object.keys(withTasha).length, 158);
+  assert.equal(Object.keys(plain).length, 152);
+  assert.equal(Object.keys(withTasha).length, 165);
   assert.ok(!plain["Slow"] && withTasha["Slow"] === SPELL_DATA["Slow"]);
   assert.ok(!buildSpellGroups("Ranger")["1st Level"].includes("Entangle") && buildSpellGroups("Ranger", true)["1st Level"].includes("Entangle"));
   assert.deepEqual(Object.keys(spellDataForClass("Artificer", true)), Object.keys(spellDataForClass("Artificer")), "Tasha's adds nothing to the artificer");
@@ -388,4 +388,24 @@ test("spell summaries: rules a full review against the books corrected", () => {
   assert.match(sum("Blinding Smite"), /repeats the save/);
   assert.match(sum("Shadow Blade"), /thrown/);
   assert.match(sum("Antagonize"), /melee attack/);
+});
+
+test("spells from Heroes of Faerûn, Forge of the Artificer and A Verdant Tomb", () => {
+  const added = ["Alustriel's Mooncloak", "Backlash", "Cacophonic Shield", "Conjure Constructs", "Death Armor", "Deryan's Helpful Homunculi", "Dirge", "Doomtide",
+    "Elminster's Effulgent Spheres", "Elminster's Elusion", "Holy Star of Mystra", "Laeral's Silver Lance", "Simbul's Synostodweomer", "Songal's Elemental Suffusion",
+    "Spellfire Flare", "Spellfire Storm", "Syluné's Viper", "Wardaway", "Homunculus Servant", "Linked Glyphs"];
+  for(const n of added){
+    const d = SPELL_DATA[n];
+    assert.ok(d, n);
+    assert.ok(["FRHoF", "EFA", "AitFR-AVT"].includes(d.source) && SPELL_SOURCES[d.source], n + ": tagged with its book");
+    assert.doesNotMatch(d.summary, /;|Emanation|Magic action|Hit Point Dice|Bloodied/, n + ": in the app's 2014 wording");
+  }
+  assert.deepEqual([SPELL_DATA["Backlash"].castingTime, SPELL_DATA["Holy Star of Mystra"].castingTime, SPELL_DATA["Linked Glyphs"].castingTime], ["1 reaction", "1 bonus action", "1 hour"]);
+  assert.deepEqual(SPELL_DATA["Wardaway"].classes, ["Bard", "Cleric", "Paladin", "Wizard"]);
+  assert.deepEqual(SPELL_DATA["Linked Glyphs"].classes, ["Artificer", "Bard", "Cleric", "Wizard"]);
+  // On the artificer list (the user's choice, 2026-10-27), next to Tasha's Homunculus Servant infusion.
+  assert.deepEqual(SPELL_DATA["Homunculus Servant"].classes, ["Artificer"]);
+  assert.ok(SPELL_DATA["Deryan's Helpful Homunculi"].ritual && SPELL_DATA["Homunculus Servant"].ritual);
+  assert.match(SPELL_DATA["Alustriel's Mooncloak"].summary, /half cover/);
+  assert.match(SPELL_DATA["Holy Star of Mystra"].summary, /three-quarters cover/);
 });

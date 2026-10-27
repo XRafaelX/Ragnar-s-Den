@@ -361,5 +361,25 @@ export var SPELL_SCALING = {
   "Summon Draconic Spirit": { per: "a stronger spirit",
     at: function(k, slot){ return "spirit with AC " + (14 + slot) + ", " + (50 + 10*k) + " hit points, " + Math.floor(slot/2) + " rend attacks a turn (1d6 + " + (4 + slot) + " piercing)"; } },
   "Temporal Shunt": targets(1, "creature", "creatures"),
-  "Gravity Fissure": dmg(8, 8, 1, "force damage")
+  "Gravity Fissure": dmg(8, 8, 1, "force damage"),
+  /* Heroes of Faerûn, Forge of the Artificer and A Verdant Tomb (2026-10-27). */
+  "Spellfire Flare": { per: "one more blast",
+    at: function(k){ return (1 + k) + " blasts, 2d10 radiant damage each"; } },
+  "Wardaway": dmg(2, 4, 2, "force damage"),
+  "Homunculus Servant": { per: "a stronger homunculus",
+    at: function(k, slot){ return "a homunculus of spell level " + slot; } },
+  "Cacophonic Shield": dmg(3, 6, 1, "thunder damage"),
+  "Conjure Constructs": { per: "+1d6 force damage and +1d6 temporary hit points",
+    at: function(k){ return (3 + k) + "d6 force damage, or " + (1 + k) + "d6 + your spellcasting modifier temporary hit points"; } },
+  "Laeral's Silver Lance": dmg(3, 10, 1, "force damage"),
+  "Syluné's Viper": { per: "+5 temporary hit points and +1d6 bite damage",
+    at: function(k){ return (15 + 5*k) + " temporary hit points, a " + (1 + k) + "d6 force damage bite"; } },
+  "Linked Glyphs": steps("a spell glyph holds a spell of up to the slot's level from a 5th-level slot", "a spell glyph holds a spell of up to 4th level",
+    [[9, "a spell glyph holds a spell of up to 9th level"], [8, "a spell glyph holds a spell of up to 8th level"], [7, "a spell glyph holds a spell of up to 7th level"],
+     [6, "a spell glyph holds a spell of up to 6th level"], [5, "a spell glyph holds a spell of up to 5th level"]]),
+  "Backlash": { per: "+1d6 to the damage you reduce and +1d6 force damage",
+    at: function(k){ return "reduce the damage by " + (4 + k) + "d6 + your spellcasting modifier, and " + (4 + k) + "d6 force damage"; } },
+  "Spellfire Storm": dmg(4, 10, 1, "radiant damage"),
+  "Elminster's Effulgent Spheres": { per: "one more sphere",
+    at: function(k){ return (6 + k) + " spheres"; } }
 };
