@@ -1,7 +1,7 @@
 import { save } from "../../core/state.js";
 import { characterGrants, grantHasChoices, grantEntry, classPicksSummary, classPicksDetails, setClassVariant, backgroundSkillFix, resolveBackgroundSkillFix } from "../../core/class-picks.js";
 import { BACKGROUND_INFO } from "../../data/backgrounds.js";
-import { classVariants, usesVariant } from "../../core/helpers.js";
+import { classVariantSwaps, usesVariant } from "../../core/helpers.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { sectionTitle } from "../../ui/card-parts.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -62,11 +62,14 @@ function skillFixEntry(c, fix){
 export function renderClassPicksCard(c){
   // (A race's choices too: a dwarf's tool, a kenku's skills.)
   var grants = characterGrants(c).filter(function(g){ return grantHasChoices(g.def); });
-  // Replacement features: offered with Tasha's switch on; one already in
-  // use stays listed (so it can be switched back) after the switch goes off.
+  // Replacement features: offered with Tasha's switch on once the class
+  // has reached the feature's level; one already in use stays listed (so
+  // it can be switched back) after the switch goes off.
   var variants = [];
   (c.classes||[]).forEach(function(cl){
-    classVariants(cl.name).forEach(function(v){ if(c.tashaOptional || usesVariant(cl, v.name)) variants.push({cl: cl, def: v}); });
+    classVariantSwaps(cl.name).forEach(function(v){
+      if((c.tashaOptional && (Number(cl.level)||1) >= (v.level||1)) || usesVariant(cl, v.name)) variants.push({cl: cl, def: v});
+    });
   });
   var skillFix = backgroundSkillFix(c);
   if(!grants.length && !variants.length && !skillFix) return null;

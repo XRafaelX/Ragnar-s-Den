@@ -6,6 +6,7 @@
    dropping to 0 HP ends them all.
 
    className / subclass / level: who has it (class level, not total).
+   variant: only for a class entry using that Tasha's feature (Steady Aim).
    race / level: or a race's (character level): [race names].
    cost: {resource, amount}, a resource id from resources.js on the same
      class or race ("bladesong", "ki", "chromatic_warding"); unlimited
@@ -31,6 +32,16 @@ export var TOGGLE_EFFECTS = [
   {id:"symbiotic_entity", name:"Symbiotic Entity", className:"Druid", subclass:"Circle of Spores", level:2,
     cost:{resource:"wild_shape", amount:1}, duration:"10 minutes",
     hint:"Ends early when these temporary hit points are gone or you use Wild Shape again."},
+  // Tasha's Cauldron (p. 62), checked on 5etools' data 2026-10-29. The
+  // advantage goes with the next attack roll, the speed stays 0 until End turn.
+  {id:"steady_aim", name:"Steady Aim", className:"Rogue", level:3, variant:"Steady Aim", duration:"Until the end of your turn",
+    startLabel:"Take aim", endLabel:"End turn",
+    hint:"Bonus action. Only if you haven't moved this turn."},
+  // Tasha's Cauldron (p. 57), checked on 5etools' data 2026-10-29.
+  {id:"natures_veil", name:"Nature's Veil", className:"Ranger", level:10, variant:"Nature's Veil",
+    cost:{resource:"natures_veil", amount:1}, duration:"Until the start of your next turn",
+    startLabel:"Turn invisible",
+    hint:"Bonus action. Everything you're wearing or carrying turns invisible with you."},
   // Race traits (checked against the books' wording on 5etools' data 2026-10-22).
   {id:"shell_defense", name:"Shell Defense", race:["Tortle"], level:1, duration:"Until you come out",
     startLabel:"Withdraw", endLabel:"Come out",

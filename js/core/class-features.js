@@ -106,14 +106,38 @@ var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProfic
 /* ---- Optional features that replace one of the class's own ----
    Tasha's Favored Foe for a ranger's Favored Enemy, Deft Explorer for
    Natural Explorer (CLASS_PROGRESSION's `variants`). A class entry using
-   one keeps it as cl.variants[replaced feature] = variant name. */
+   one keeps it as cl.variants[replaced feature] = variant name. An
+   addition (a rogue's Steady Aim) replaces nothing and is kept under its
+   own name. */
 export function classVariants(className){
   return (CLASS_PROGRESSION[className] || {}).variants || [];
 }
+/* The swaps the player chooses (not the additions), only the ones
+   offered at class level `level` when it's given. */
+export function classVariantSwaps(className, level){
+  return classVariants(className).filter(function(v){ return !v.adds && (level==null || (v.level||1)===level); });
+}
+function variantKey(v){ return v.adds ? v.name : v.replaces; }
 /* The variants a class entry uses. */
 export function activeVariants(cl){
   var picked = (cl && cl.variants) || {};
-  return classVariants(cl && cl.name).filter(function(v){ return picked[v.replaces]===v.name; });
+  return classVariants(cl && cl.name).filter(function(v){ return picked[variantKey(v)]===v.name; });
+}
+/* Tasha's additions follow the switch: every class entry at the level
+   gets them while it's on, and none while it's off. True if any changed. */
+export function syncTashaAdditions(c){
+  var changed = false;
+  (c.classes||[]).forEach(function(cl){
+    classVariants(cl.name).forEach(function(v){
+      if(!v.adds) return;
+      var want = !!c.tashaOptional && (Number(cl.level)||1) >= (v.level||1);
+      if(want===!!(cl.variants && cl.variants[v.name])) return;
+      if(want){ cl.variants = cl.variants || {}; cl.variants[v.name] = v.name; }
+      else delete cl.variants[v.name];
+      changed = true;
+    });
+  });
+  return changed;
 }
 export function usesVariant(cl, name){
   return activeVariants(cl).some(function(v){ return v.name===name; });

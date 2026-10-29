@@ -985,11 +985,11 @@ test("Dragon Ancestor: a new Draconic sorcerer picks the dragon and learns Draco
 
 test("Tasha's Favored Foe and Deft Explorer: only for a ranger using them", () => {
   const variants = H.classVariants("Ranger");
-  assert.deepEqual(variants.map((v) => [v.name, v.replaces, Object.keys(v.features).map(Number)]), [["Favored Foe", "Favored Enemy", [1, 6, 14]], ["Deft Explorer", "Natural Explorer", [1, 6, 10]]]);
+  assert.deepEqual(variants.map((v) => [v.name, v.replaces, Object.keys(v.features).map(Number)]), [["Favored Foe", "Favored Enemy", [1, 6, 14]], ["Deft Explorer", "Natural Explorer", [1, 6, 10]], ["Primal Awareness", "Primeval Awareness", [3, 5, 9, 13, 17]], ["Nature's Veil", "Hide in Plain Sight", [10]]]);
   assert.deepEqual(H.classVariants("Fighter"), []);
   for(const v of variants) for(const lv of Object.keys(v.features)) v.features[lv].forEach((f) => {
     assert.ok(f.name === v.name && f.text.length > 40 && !/[–—]/.test(f.text), v.name + " " + lv);
-    assert.equal(!!f.replaces, lv !== "1", v.name + " " + lv + ": later versions replace the first");
+    assert.equal(!!f.replaces, lv !== String(v.level || 1), v.name + " " + lv + ": later versions replace the first");
   });
   const names = (c) => H.classFeatureList(c.classes[0]).map((f) => f.name);
   const plain = ranger(10);
@@ -1221,10 +1221,10 @@ test("Divine Fury: a Zealot picks radiant or necrotic at 3; the extra damage sho
 test("wizard Optional rules: what Tasha's adds per class, and turning it off drops Tasha's-only picks", async (t) => {
   const B = await import("../js/wizard/steps-basics.js");
   assert.equal(B.tashaAddsFor("Fighter"), "a Fighter gets 5 more fighting styles, 7 more Battle Master maneuvers and swaps at Ability Score Improvement levels.");
-  assert.equal(B.tashaAddsFor("Rogue"), "nothing extra for a Rogue in this app yet.", "no Versatility for a rogue");
+  assert.equal(B.tashaAddsFor("Rogue"), "a Rogue gets Steady Aim at level 3.", "no Versatility for a rogue, but Steady Aim");
   assert.match(B.tashaAddsFor("Wizard"), /a cantrip swap after a long rest from level 3\.$/);
   assert.match(B.tashaAddsFor("Warlock"), /8 more eldritch invocations, the Pact of the Talisman/);
-  assert.match(B.tashaAddsFor("Ranger"), /^a Ranger gets Favored Foe in place of Favored Enemy, Deft Explorer in place of Natural Explorer, \d+ more fighting styles?, \d+ more spells on the ranger list and swaps/);
+  assert.match(B.tashaAddsFor("Ranger"), /^a Ranger gets Favored Foe in place of Favored Enemy, Deft Explorer in place of Natural Explorer, Primal Awareness in place of Primeval Awareness, Nature.s Veil in place of Hide in Plain Sight, \d+ more fighting styles?, \d+ more spells on the ranger list and swaps/);
   assert.equal(B.tashaAddsFor("Artificer"), "nothing extra for an Artificer in this app yet.", "\"an\" before a vowel");
   withFakeDom(t, () => {
     startWizard({ classId: "Fighter", classChoices: { fightingStyle: "Superior Technique", fightingStylePicks: { options: ["Riposte"], spells: [] }, variants: { x: "y" } },

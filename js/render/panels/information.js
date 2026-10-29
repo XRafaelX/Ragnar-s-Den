@@ -4,10 +4,10 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { RACE_TRAIT_FALLBACK } from "../../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
-import { classFeatureList, classProficiencies, classVariants, escapeHtml, raceTraitFeatures } from "../../core/helpers.js";
+import { classFeatureList, classProficiencies, classVariants, syncTashaAdditions, escapeHtml, raceTraitFeatures } from "../../core/helpers.js";
 import { featProficiencies, backgroundFeatGrant, backgroundFeatLabel, campaignFeatMissing } from "../../core/feat-picks.js";
 import { dlcShelf, campaignBookCard } from "../../ui/dlc-shelf.js";
-import { characterPickedProfs, raceProficiencies, backgroundProficiencies, overlapTools } from "../../core/class-picks.js";
+import { characterPickedProfs, raceProficiencies, backgroundProficiencies, overlapTools, syncClassPicks } from "../../core/class-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -350,8 +350,14 @@ var rulesOpen = {};   // character id -> the shelf is open
 var rulesTapped = ""; // the card tapped just before this redraw
 function optionalRulesCard(c){
   var books = Object.keys(CAMPAIGN_FEATS);
-  var variants = [];
-  (c.classes||[]).forEach(function(cl){ classVariants(cl.name).forEach(function(v){ variants.push(v); }); });
+  // Swaps the class levels have reached, and the additions the switch gives.
+  var variants = [], additions = [];
+  (c.classes||[]).forEach(function(cl){
+    classVariants(cl.name).forEach(function(v){
+      if((Number(cl.level)||1) < (v.level||1)) return;
+      (v.adds ? additions : variants).push(v);
+    });
+  });
   var card = document.createElement("div");
   card.className = "card opt-rules-card";
   var tapped = rulesTapped;
@@ -374,7 +380,8 @@ function optionalRulesCard(c){
       })),
     isOn: function(k){ return k==="tasha" ? !!c.tashaOptional : c.campaign===k; },
     onTap: function(k){
-      if(k==="tasha") c.tashaOptional = !c.tashaOptional;
+      // Steady Aim and Primal Knowledge come and go with it (and the skill picked for that).
+      if(k==="tasha"){ c.tashaOptional = !c.tashaOptional; if(syncTashaAdditions(c)) syncClassPicks(c); }
       else if(c.campaign===k) delete c.campaign;
       else c.campaign = k;
       rulesOpen[c.id] = true;
@@ -385,7 +392,8 @@ function optionalRulesCard(c){
       var lines = [];
       if(c.tashaOptional){
         lines.push("<b>Tasha's:</b> its options now show in your pickers and level-ups." +
-          (variants.length ? " On the Features tab you can take " + escapeHtml(variants.map(function(v){ return v.name + " in place of " + v.replaces; }).join(" and ")) + "." : ""));
+          (variants.length ? " On the Features tab you can take " + escapeHtml(variants.map(function(v){ return v.name + " in place of " + v.replaces; }).join(" and ")) + "." : "") +
+          (additions.length ? " You also gain " + escapeHtml(additions.map(function(v){ return v.name; }).join(" and ")) + "." : ""));
       }
       var camp = CAMPAIGN_FEATS[c.campaign];
       if(camp){

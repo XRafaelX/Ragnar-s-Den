@@ -179,8 +179,8 @@ export function computeSpeed(c){
   }));
   // Grappled, restrained or unable to move: 0, bonuses and all. Exhaustion
   // 2 halves every speed (rounded down), 5 takes it to 0.
-  // In a tortle's shell: 0, and it can't increase.
-  var hindered = conditionSpeed(c) || (effectOn(c, "shell_defense") ? {zero: "Shell Defense"} : null);
+  // In a tortle's shell, or after Steady Aim: 0, and it can't increase.
+  var hindered = conditionSpeed(c) || (effectOn(c, "shell_defense") ? {zero: "Shell Defense"} : effectOn(c, "steady_aim") ? {zero: "Steady Aim"} : null);
   if(hindered){
     var cut = function(v){ return hindered.zero ? 0 : Math.floor(v / 2); };
     walk = cut(walk);

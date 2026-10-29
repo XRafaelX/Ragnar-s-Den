@@ -3,7 +3,7 @@ import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg } from "../../ui/svg-icons.js";
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, raceEffectRolls, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, useSteadyAim, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -565,7 +565,7 @@ function renderUnarmedCard(c, u){
   atkBtn.type = "button"; atkBtn.className = "btn small inv-roll-btn";
   atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(u.attack) + (u.roll && u.roll.mode==="dis" ? " (Dis)" : u.roll && u.roll.mode==="adv" ? " (Adv)" : "");
   if(u.roll && u.roll.reason) atkBtn.title = u.roll.reason;
-  atkBtn.addEventListener("click", function(){ performRoll(20, 1, u.attack, u.roll ? u.roll.mode : "none", u.name + ": Attack"); });
+  atkBtn.addEventListener("click", function(){ performRoll(20, 1, u.attack, u.roll ? u.roll.mode : "none", u.name + ": Attack"); aimSpent(c); });
   actions.appendChild(atkBtn);
   var dmgBtn = document.createElement("button");
   dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
@@ -618,6 +618,7 @@ function cavalierButtons(c, item, atkBonus, atkRoll, parsed, dmgBonus){
     c.resourcesUsed[res.key] = res.used + 1;
     save(); renderAll();
     performRoll(20, 1, atkBonus, roll.mode, name + ": Unwavering Mark attack");
+    aimSpent(c);
   });
   var dmg = document.createElement("button");
   dmg.type = "button"; dmg.className = "btn small inv-roll-btn inv-mark-btn";
@@ -890,6 +891,7 @@ function renderWeaponCard(c, item, idx){
   if(atkRoll.reason) atkBtn.title = atkRoll.reason;
   atkBtn.addEventListener("click", function(){
     performRoll(20, 1, atkBonus, atkRoll.mode, (item.name||"Weapon") + ": Attack");
+    aimSpent(c);
   });
   actions.appendChild(atkBtn);
 
@@ -923,7 +925,7 @@ function renderWeaponCard(c, item, idx){
       tAtk.type = "button"; tAtk.className = "btn small inv-roll-btn inv-thrown-btn";
       tAtk.innerHTML = makeDiceSvg() + "Thrown attack " + fmtMod(thrown.attack) + (atkRoll.mode==="dis" ? " (Dis)" : atkRoll.mode==="adv" ? " (Adv)" : "");
       tAtk.title = "Thrown, a ranged attack: " + thrown.parts.join(", ");
-      tAtk.addEventListener("click", function(){ performRoll(20, 1, thrown.attack, atkRoll.mode, (item.name||"Weapon") + ": Thrown attack"); });
+      tAtk.addEventListener("click", function(){ performRoll(20, 1, thrown.attack, atkRoll.mode, (item.name||"Weapon") + ": Thrown attack"); aimSpent(c); });
       actions.appendChild(tAtk);
     }
     if(thrown.damage!==dmgBonus){
@@ -1591,7 +1593,7 @@ export function renderInventoryPanel(c){
   var gauntlets = propulsionGauntlets(c);
   if(gauntlets){
     anyWeapon = true;
-    gauntlets.roll = combineRolls([armorPenalty(c, "str")].concat(conditionRolls(c, "attack"), raceEffectRolls(c, "attack")));
+    gauntlets.roll = combineRolls([armorPenalty(c, "str")].concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
     weaponList.appendChild(renderUnarmedCard(c, gauntlets));
   }
   // A dragonborn's breath weapon.
@@ -1687,4 +1689,9 @@ export function renderInventoryPanel(c){
   panel.appendChild(renderCurrencyCard(c));
 
   return panel;
+}
+
+/* An attack rolled with Steady Aim's advantage uses it up. */
+function aimSpent(c){
+  if(useSteadyAim(c)){ save(); renderAll(); }
 }

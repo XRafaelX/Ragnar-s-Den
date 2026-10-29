@@ -4,7 +4,7 @@
 import { TOGGLE_EFFECTS } from "../data/effects.js";
 import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
-import { classLevelOf } from "./class-features.js";
+import { classLevelOf, usesVariant } from "./class-features.js";
 import { isRangedWeapon } from "./equipment.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 
@@ -22,7 +22,8 @@ function effectDef(id){
 function effectClass(c, def){
   if(def.race) return def.race.indexOf(c.race)!==-1 && totalLevel(c) >= def.level;
   return (c.classes||[]).find(function(cl){
-    return cl.name===def.className && cl.subclass===def.subclass && (Number(cl.level)||1) >= def.level;
+    return cl.name===def.className && (!def.subclass || cl.subclass===def.subclass) && (Number(cl.level)||1) >= def.level &&
+      (!def.variant || usesVariant(cl, def.variant));
   });
 }
 /* Why an effect that's switched on gives nothing right now, or "". */
@@ -104,18 +105,32 @@ export function pruneEffects(c){
   });
   return changed;
 }
-/* How the race effects change rolls: Shell Defense's saves (advantage
-   on STR and CON, disadvantage on DEX) and Sunlight Sensitivity's
-   attacks and Perception, as roll modes. kind: "save" (with its
-   ability), "attack" or "perception". */
-export function raceEffectRolls(c, kind, ability){
+/* How the effects change rolls: Shell Defense's saves (advantage on STR
+   and CON, disadvantage on DEX), Sunlight Sensitivity's attacks and
+   Perception, Steady Aim's next attack and attacking while invisible
+   (Nature's Veil), as roll modes. kind: "save"
+   (with its ability), "attack" or "perception". */
+export function effectRolls(c, kind, ability){
   var out = [];
   if(kind==="save" && effectOn(c, "shell_defense")){
     if(ability==="str" || ability==="con") out.push({mode: "adv", reason: "Shell Defense"});
     if(ability==="dex") out.push({mode: "dis", reason: "Shell Defense"});
   }
   if((kind==="attack" || kind==="perception") && effectOn(c, "sunlight")) out.push({mode: "dis", reason: "Sunlight Sensitivity"});
+  if(kind==="attack" && steadyAimReady(c)) out.push({mode: "adv", reason: "Steady Aim"});
+  if(kind==="attack" && effectOn(c, "natures_veil")) out.push({mode: "adv", reason: "Nature's Veil: you're invisible"});
   return out;
+}
+/* Steady Aim: on, with its advantage not yet used ("used" once an
+   attack is rolled, while the speed stays 0 until the turn ends). */
+export function steadyAimReady(c){
+  return effectOn(c, "steady_aim") && c.effects.steady_aim!=="used";
+}
+/* An attack was rolled: Steady Aim's advantage is used up. True if it was. */
+export function useSteadyAim(c){
+  if(!steadyAimReady(c)) return false;
+  c.effects.steady_aim = "used";
+  return true;
 }
 /* Bladesong's bonus to AC and concentration saves (and Song of Victory's damage). */
 export function bladesongBonus(c){

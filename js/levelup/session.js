@@ -5,7 +5,7 @@
    apply, what each still needs before Next, and draws the dialog shell. */
 import { ABILITIES, SKILLS, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASS_PROGRESSION, MAX_LEVEL, XP_THRESHOLDS } from "../data/progression.js";
-import { mod, ce, escapeHtml, totalLevel, classFeaturesGainedAt, classVariants, wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFeat, raceHpPerLevel, classSpellChoices, spellHeldBy } from "../core/helpers.js";
+import { mod, ce, escapeHtml, totalLevel, classFeaturesGainedAt, classVariantSwaps, syncTashaAdditions, wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFeat, raceHpPerLevel, classSpellChoices, spellHeldBy } from "../core/helpers.js";
 import { knownInvocations, levelUpPlan, levelUpContext, levelUpProblem } from "../core/invocations.js";
 import { levelUpOptionPlans, planProblem, planSlots, allKnownOptions } from "../core/class-options.js";
 import { levelUpGrants, grantHasChoices, grantHasSpells, classPickContext, classPicksProblem, fillSlots, slotIsFixed } from "../core/class-picks.js";
@@ -145,15 +145,24 @@ export function optChoice(setId){
    list per slot. The grants are worked out from the class entry as this
    level-up will leave it: its new level, a subclass picked now, and the
    options picked on the Options step (a Tiger totem's skills). */
-/* Tasha's replacement features a new class offers (a ranger's Favored
-   Foe and Deft Explorer), for a character using Tasha's optional class
-   features. lu.variants[replaced feature] = the variant taken. */
+/* Tasha's replacement features the class offers at this level (a new
+   ranger's Favored Foe and Deft Explorer, a ranger 3's Primal
+   Awareness), for a character using Tasha's optional class features.
+   lu.variants[replaced feature] = the variant taken. */
 export function variantOffers(){
-  return !target().existing && lu.c.tashaOptional ? classVariants(lu.className) : [];
+  return lu.c.tashaOptional ? classVariantSwaps(lu.className, target().newLevel) : [];
 }
+/* The class entry's variants after this level: the ones it had, the
+   offers as picked now (an older pick for the same feature, from a level
+   that was undone, gives way), and Tasha's additions it reaches (a rogue
+   3's Steady Aim). */
 function entryVariants(){
   var t = target(), out = Object.assign({}, t.existing && t.existing.variants);
-  variantOffers().forEach(function(v){ if(lu.variants[v.replaces]===v.name) out[v.replaces] = v.name; });
+  variantOffers().forEach(function(v){
+    delete out[v.replaces];
+    if(lu.variants[v.replaces]===v.name) out[v.replaces] = v.name;
+  });
+  syncTashaAdditions({tashaOptional: lu.c.tashaOptional, classes: [{name: lu.className, level: t.newLevel, variants: out}]});
   return out;
 }
 function entryAfter(){
@@ -187,7 +196,7 @@ export function profSlots(key){ return lu.profPicks[key] = lu.profPicks[key] || 
 export function profStepLabel(){
   return variantOffers().length || profGrantsToChoose().some(function(g){ return grantHasSpells(g.def); }) ? "Feature choices" : STEP_LABELS.profs;
 }
-/* The variants picked for a new class, to put on its entry. */
+/* The class entry's variants after this level, to put on it. */
 export function variantsToApply(){ return entryVariants(); }
 /* The character as this level-up will leave it, for a grant's pickers.
    What another grant or this level's feat picks is greyed out. */
@@ -589,9 +598,10 @@ export function stepCard(container, title, explainHtml){
 /* What a class would gain at `level`, as short labels for the pick cards. */
 export function gainLabels(className, subclass, level){
   var prog = progFor(className);
-  // (With the optional features the class entry uses: Favored Foe, not Favored Enemy.)
+  // (With the optional features the class entry uses: Favored Foe, not
+  // Favored Enemy. For the class levelling now, as picked on this level-up.)
   var entry = (lu.c.classes||[]).find(function(cl){ return cl.name===className; });
-  var variants = entry ? entry.variants : lu.className===className ? entryVariants() : null;
+  var variants = lu.className===className ? entryVariants() : entry ? entry.variants : null;
   var labels = classFeaturesGainedAt({name:className, subclass:subclass, level:level, variants:variants}, level).map(function(f){ return f.name; });
   if(prog.subclassLevel && level >= prog.subclassLevel && !subclass) labels.unshift("Choose "+prog.subclassLabel);
   if(prog.asiLevels.indexOf(level)!==-1) labels.push("Ability Score Improvement");

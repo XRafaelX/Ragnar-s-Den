@@ -23,6 +23,12 @@
 
 function atLeastOne(n){ return Math.max(1, n); }
 function always(value){ return function(){ return value; }; }
+/* Primal Awareness (Tasha's, in place of Primeval Awareness): one free
+   cast of each of its spells per long rest, from the ranger level it's learned. */
+function primalCast(spell, level){
+  return {id:"primal_" + spell.toLowerCase().replace(/ /g, "_"), name:spell + " (Primal Awareness)", level:level, variant:"Primal Awareness",
+    max:always(1), reset:always("long"), hint:"Cast " + spell + " once without a spell slot. Casting it with a slot doesn't use this."};
+}
 
 export var CLASS_RESOURCES = {
   "Bard": [
@@ -75,7 +81,11 @@ export var CLASS_RESOURCES = {
     {id:"favored_foe", name:"Favored Foe", level:1, variant:"Favored Foe", max:function(lv, m){ return m.pb; }, reset:always("long"),
       hint:"When you hit a creature, mark it for 1 minute (concentration): once on each of your turns, your hit deals an extra 1d4 damage to it (1d6 from level 6, 1d8 from 14)."},
     {id:"tireless", name:"Tireless", level:10, variant:"Deft Explorer", max:function(lv, m){ return m.pb; }, reset:always("long"),
-      hint:"Action: gain temporary hit points equal to 1d8 + your WIS modifier (minimum 1)."}
+      hint:"Action: gain temporary hit points equal to 1d8 + your WIS modifier (minimum 1)."},
+    {id:"natures_veil", name:"Nature's Veil", level:10, variant:"Nature's Veil", max:function(lv, m){ return m.pb; }, reset:always("long"),
+      hint:"Bonus action: turn invisible until the start of your next turn."},
+    primalCast("Speak with Animals", 3), primalCast("Beast Sense", 5), primalCast("Speak with Plants", 9),
+    primalCast("Locate Creature", 13), primalCast("Commune with Nature", 17)
   ],
   "Sorcerer": [
     {id:"sorcery_points", name:"Sorcery Points", level:2, pool:true,

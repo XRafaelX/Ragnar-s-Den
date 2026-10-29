@@ -45,8 +45,12 @@ var STANDARD_ASI = [4, 8, 12, 16, 19];
    variants: Tasha's optional features that replace one of the class's
    own, for characters using Tasha's optional class features:
    [{name, replaces (the feature it takes the place of, at every level),
-   blurb, features: {classLevel: [feature]}}]. The class entry keeps which
+   level (the class level it's offered at, 1 if left out), blurb,
+   features: {classLevel: [feature]}}]. The class entry keeps which
    it uses as cl.variants[replaces] = name (see classFeaturesAt).
+   One with `adds` instead of `replaces` is a new feature, not a swap
+   (a rogue's Steady Aim): every class entry at its level gets it while
+   Tasha's is on, kept as cl.variants[name] = name (syncTashaAdditions).
    fightingStyle: {level, options}: the class level that grants a
    Fighting Style and which styles it may pick (see FIGHTING_STYLES in
    classes.js). Level-up shows a picker for it. */
@@ -71,6 +75,20 @@ export var CLASS_PROGRESSION = {
   "Barbarian": {
     subclassLevel: 3, subclassLabel: "Primal Path",
     prereq: [["str"]], casterType: null, asiLevels: STANDARD_ASI,
+    // Tasha's Cauldron (p. 24), checked on 5etools' data 2026-10-29.
+    variants: [
+      {name:"Primal Knowledge", adds:true, level:3, blurb:"A skill from the barbarian's list at level 3, and another at level 10.",
+        features:{
+          3: [{name:"Primal Knowledge", text:"You gain proficiency in one skill of your choice from the barbarian's list: Animal Handling, Athletics, Intimidation, Nature, Perception or Survival. You choose another at barbarian level 10.",
+            profs:{pick:[{kind:"skill", label:"Choose a skill from the barbarian's list", options:["Animal Handling","Athletics","Intimidation","Nature","Perception","Survival"]}]}}],
+          10: [{name:"Primal Knowledge", replaces:"Primal Knowledge", text:"You gain proficiency in one skill of your choice from the barbarian's list (Animal Handling, Athletics, Intimidation, Nature, Perception or Survival) at barbarian level 3, and another now.",
+            profs:{pick:[{kind:"skill", label:"Choose a second skill from the barbarian's list", options:["Animal Handling","Athletics","Intimidation","Nature","Perception","Survival"]}]}}]
+        }},
+      {name:"Instinctive Pounce", adds:true, level:7, blurb:"Move up to half your speed as part of the bonus action you take to enter your rage.",
+        features:{
+          7: [{name:"Instinctive Pounce", text:"As part of the bonus action you take to enter your rage, you can move up to half your speed."}]
+        }}
+    ],
     multiclassProfs: {armor:["Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:""},
     features: {
       2: [
@@ -242,6 +260,20 @@ export var CLASS_PROGRESSION = {
           1: [{name:"Deft Explorer", text:"Canny: your proficiency bonus is doubled for one skill you're proficient in, and you learn two languages of your choice. You gain Roving at ranger level 6 and Tireless at level 10.", profs:{pick:[{kind:"expertise"}, {kind:"language", count:2}]}}],
           6: [{name:"Deft Explorer", replaces:"Deft Explorer", text:"Canny: your proficiency bonus is doubled for one skill you're proficient in, and you learn two languages of your choice. Roving: your walking speed increases by 5 feet, and you have a climbing speed and a swimming speed equal to your walking speed. You gain Tireless at ranger level 10.", walkSpeed:5, speeds:[{type:"climb", value:"walk"}, {type:"swim", value:"walk"}]}],
           10: [{name:"Deft Explorer", replaces:"Deft Explorer", text:"Canny: your proficiency bonus is doubled for one skill you're proficient in, and you learn two languages of your choice. Roving: your walking speed increases by 5 feet, and you have a climbing speed and a swimming speed equal to your walking speed. Tireless: as an action, give yourself temporary hit points equal to 1d8 + your WIS modifier (minimum 1), a number of times equal to your proficiency bonus per long rest. Finishing a short rest also lowers your exhaustion level by 1.", walkSpeed:5, speeds:[{type:"climb", value:"walk"}, {type:"swim", value:"walk"}]}]
+        }},
+      // Checked against Tasha's Cauldron (p. 56) on 5etools' data 2026-10-29.
+      {name:"Primal Awareness", replaces:"Primeval Awareness", level:3, blurb:"Always know Speak with Animals, and more nature spells as you level, each free once per long rest, instead of spending spell slots to sense creature types.",
+        features:{
+          3: [{name:"Primal Awareness", text:"You always know Speak with Animals. It doesn't count against your ranger spells known. You can cast it once without a spell slot, and you get that free cast back when you finish a long rest. You can also cast it with a spell slot as normal. You learn Beast Sense at ranger level 5, Speak with Plants at 9, Locate Creature at 13 and Commune with Nature at 17.", spells:["Speak with Animals"], spellKind:"known", spellLabel:"Free 1/long rest", spellTip:"Primal Awareness: always known. Cast it once per long rest without a spell slot (counter on Vitals), or with a spell slot."}],
+          5: [{name:"Primal Awareness", replaces:"Primal Awareness", text:"You always know Speak with Animals and Beast Sense. They don't count against your ranger spells known. You can cast each of them once without a spell slot, and you get those free casts back when you finish a long rest. You can also cast them with a spell slot as normal. You learn Speak with Plants at ranger level 9, Locate Creature at 13 and Commune with Nature at 17.", spells:["Speak with Animals","Beast Sense"], spellKind:"known", spellLabel:"Free 1/long rest", spellTip:"Primal Awareness: always known. Cast it once per long rest without a spell slot (counter on Vitals), or with a spell slot."}],
+          9: [{name:"Primal Awareness", replaces:"Primal Awareness", text:"You always know Speak with Animals, Beast Sense and Speak with Plants. They don't count against your ranger spells known. You can cast each of them once without a spell slot, and you get those free casts back when you finish a long rest. You can also cast them with a spell slot as normal. You learn Locate Creature at ranger level 13 and Commune with Nature at 17.", spells:["Speak with Animals","Beast Sense","Speak with Plants"], spellKind:"known", spellLabel:"Free 1/long rest", spellTip:"Primal Awareness: always known. Cast it once per long rest without a spell slot (counter on Vitals), or with a spell slot."}],
+          13: [{name:"Primal Awareness", replaces:"Primal Awareness", text:"You always know Speak with Animals, Beast Sense, Speak with Plants and Locate Creature. They don't count against your ranger spells known. You can cast each of them once without a spell slot, and you get those free casts back when you finish a long rest. You can also cast them with a spell slot as normal. You learn Commune with Nature at ranger level 17.", spells:["Speak with Animals","Beast Sense","Speak with Plants","Locate Creature"], spellKind:"known", spellLabel:"Free 1/long rest", spellTip:"Primal Awareness: always known. Cast it once per long rest without a spell slot (counter on Vitals), or with a spell slot."}],
+          17: [{name:"Primal Awareness", replaces:"Primal Awareness", text:"You always know Speak with Animals, Beast Sense, Speak with Plants, Locate Creature and Commune with Nature. They don't count against your ranger spells known. You can cast each of them once without a spell slot, and you get those free casts back when you finish a long rest. You can also cast them with a spell slot as normal.", spells:["Speak with Animals","Beast Sense","Speak with Plants","Locate Creature","Commune with Nature"], spellKind:"known", spellLabel:"Free 1/long rest", spellTip:"Primal Awareness: always known. Cast it once per long rest without a spell slot (counter on Vitals), or with a spell slot."}]
+        }},
+      // Tasha's Cauldron (p. 57), checked on 5etools' data 2026-10-29.
+      {name:"Nature's Veil", replaces:"Hide in Plain Sight", level:10, blurb:"Turn invisible until the start of your next turn as a bonus action, a few times a day, instead of camouflaging yourself for a minute.",
+        features:{
+          10: [{name:"Nature's Veil", text:"As a bonus action, you magically turn invisible, along with everything you're wearing or carrying, until the start of your next turn. You can do this a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest. Turn invisible from the Active effects card on the Vitals tab."}]
         }}
     ],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:"",
@@ -273,6 +305,13 @@ export var CLASS_PROGRESSION = {
   "Rogue": {
     subclassLevel: 3, subclassLabel: "Roguish Archetype",
     prereq: [["dex"]], casterType: null, asiLevels: [4, 8, 10, 12, 16, 19],
+    variants: [
+      // Checked against Tasha's Cauldron (p. 62) on 5etools' data 2026-10-29.
+      {name:"Steady Aim", adds:true, level:3, blurb:"A bonus action that gives you advantage on your next attack roll this turn, if you haven't moved.",
+        features:{
+          3: [{name:"Steady Aim", text:"As a bonus action, give yourself advantage on your next attack roll this turn. You can only do this if you haven't moved during this turn, and afterwards your speed is 0 until the end of the turn. Take aim from the Active effects card on the Vitals tab."}]
+        }}
+    ],
     multiclassProfs: {armor:["Light armor"], weapons:[], tools:["Thieves' tools"], note:"",
       profs:{pick:[{kind:"skill", label:"Gain proficiency in one skill from the rogue's list", options:["Acrobatics","Athletics","Deception","Insight","Intimidation","Investigation","Perception","Performance","Persuasion","Sleight of Hand","Stealth"]},
         {kind:"expertise", count:2, tools:["Thieves' tools"]}]}},

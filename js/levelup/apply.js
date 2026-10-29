@@ -110,12 +110,15 @@ export function finish(){
   }
 
   var entry = t.existing;
-  if(entry) entry.level = t.newLevel;
-  else {
+  if(entry){
+    entry.level = t.newLevel;
+    record.prevVariants = entry.variants ? Object.assign({}, entry.variants) : null; // undo puts them back
+  } else {
     entry = {name: lu.className, subclass: "", level: 1};
-    if(Object.keys(variants).length) entry.variants = variants; // Favored Foe in place of Favored Enemy
     c.classes.push(entry);
   }
+  // Favored Foe in place of Favored Enemy, Primal Awareness, Steady Aim.
+  if(Object.keys(variants).length) entry.variants = variants;
   if(subName) entry.subclass = subName;
   // Spell choices made on this level-up; undo clears them again.
   dueChoices.forEach(function(x){
@@ -288,6 +291,10 @@ export function undoLastLevelUp(c){
       if(rec.isNewClass){ revertEntryPicks(c, entry); c.classes.splice(c.classes.indexOf(entry), 1); }
       else {
         entry.level = Math.max(1, (Number(entry.level)||1)-1); entry.subclass = rec.prevSubclass;
+        // (Older records didn't keep them: the variants stay as they are.)
+        if(rec.prevVariants!==undefined){
+          if(rec.prevVariants) entry.variants = rec.prevVariants; else delete entry.variants;
+        }
         (rec.spellChoiceIds||[]).forEach(function(id){ if(entry.spellChoices) delete entry.spellChoices[id]; });
         undoLevelUpChoices(c, entry, rec);
         if(rec.expertiseSwap){

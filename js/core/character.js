@@ -1,6 +1,6 @@
 import { SKILLS } from "../data/abilities-skills.js";
 import { FEATS_CATALOG } from "../data/feats.js";
-import { uid, featureSpells } from "./helpers.js";
+import { uid, featureSpells, syncTashaAdditions } from "./helpers.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { currentSpellSummary, currentSpellRange } from "../data/spells.js";
 import { syncInfusions } from "./artificer.js";
@@ -202,6 +202,7 @@ export function ensureShape(c){
   // weapons) go on the same way; older characters' race picks are moved
   // over first.
   migrateRacePicks(c);
+  syncTashaAdditions(c); // Tasha's Steady Aim for a rogue 3 using it
   syncClassPicks(c);
   // Companions an older save already had aren't news; only ones gained
   // from now on get the Companions tab's NEW dot.

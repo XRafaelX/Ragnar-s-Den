@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath } from "../../core/helpers.js";
+import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, useSteadyAim, draconicBreath } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
@@ -7,7 +7,7 @@ import { performRoll, logRoll } from "../../dice/dice.js";
 /* ---------------- Active effects ----------------
    On the Vitals tab, only for characters with a feature they switch on
    for a while (js/data/effects.js): Bladesong, the Astral Self, Symbiotic
-   Entity, and race traits (a tortle's Shell Defense, a drow in sunlight). Start pays the cost from Class resources; the bonuses then show
+   Entity, Steady Aim, Nature's Veil, and race traits (a tortle's Shell Defense, a drow in sunlight). Start pays the cost from Class resources; the bonuses then show
    where they apply (AC, speed, skills, saves, senses, weapon damage), so
    the card itself only says what's on and rolls what has no other home. */
 export function renderEffectsCard(c){
@@ -120,6 +120,8 @@ function effectSummary(c, id){
   }
   if(id==="raven_queen_resistance") return "Resistance to all damage";
   if(id==="sunlight") return "Disadvantage on attack rolls and Perception checks";
+  if(id==="natures_veil") return "Invisible · advantage on your attack rolls · attacks against you have disadvantage";
+  if(id==="steady_aim") return c.effects.steady_aim==="used" ? "Advantage used · speed 0" : "Advantage on your next attack roll · speed 0";
   return "";
 }
 function hasSongOfVictory(c){
@@ -134,7 +136,10 @@ function appendRolls(c, id, info){
   if(id==="astral_arms"){
     var arms = astralArmsAttack(c);
     var armsRoll = plainAttackRollMode(c);
-    var armsBtn = rollButton(makeDiceSvg(), "Attack " + fmtMod(arms.attack) + (armsRoll.mode==="dis" ? " (Dis)" : armsRoll.mode==="adv" ? " (Adv)" : ""), function(){ performRoll(20, 1, arms.attack, armsRoll.mode, "Astral arms: Attack"); });
+    var armsBtn = rollButton(makeDiceSvg(), "Attack " + fmtMod(arms.attack) + (armsRoll.mode==="dis" ? " (Dis)" : armsRoll.mode==="adv" ? " (Adv)" : ""), function(){
+      performRoll(20, 1, arms.attack, armsRoll.mode, "Astral arms: Attack");
+      if(useSteadyAim(c)){ save(); renderAll(); }
+    });
     if(armsRoll.reason) armsBtn.title = armsRoll.reason;
     buttons.push(armsBtn);
     buttons.push(rollButton(makeDicesSvg(), "Damage 1d" + arms.die + fmtMod(arms.damage), function(){ performRoll(arms.die, 1, arms.damage, "none", "Astral arms: Damage (force)"); }));

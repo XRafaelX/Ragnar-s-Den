@@ -363,7 +363,7 @@ function optionalRulesShelf(){
 export function tashaAddsFor(className){
   if(!className) return "pick a class above to see what it adds.";
   var bits = [], prog = CLASS_PROGRESSION[className] || {};
-  classVariants(className).forEach(function(v){ bits.push(v.name + " in place of " + v.replaces); });
+  classVariants(className).forEach(function(v){ bits.push(v.adds ? v.name + " at level " + v.level : v.name + " in place of " + v.replaces); });
   var styles = classStyleList(className).filter(function(n){ return (FIGHTING_STYLES[n]||{}).optional; }).length;
   if(styles) bits.push(plural(styles, "more fighting style"));
   OPTION_SETS.forEach(function(set){

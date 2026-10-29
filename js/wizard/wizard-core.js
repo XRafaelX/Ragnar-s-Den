@@ -5,7 +5,7 @@ import { BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_LANGUAGE_RULES } from
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
 import { LANGUAGES, ANY_LANGUAGES } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
-import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, originListSpells, classVariants, classFeaturesAt, isProficientWithWeapon } from "../core/helpers.js";
+import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, originListSpells, classVariantSwaps, classFeaturesAt, isProficientWithWeapon } from "../core/helpers.js";
 import { WEAPON_DATA } from "../data/weapons.js";
 import { backgroundKit, addBackgroundKit } from "../core/background-gear.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
@@ -63,7 +63,7 @@ function wizardClassEntry(subclass){
 /* Tasha's replacement features the class offers (a ranger's Favored Foe
    and Deft Explorer), and the ones taken: only with Tasha's switch on. */
 export function wizardVariantOffers(){
-  return wizardState && wizardState.classId ? classVariants(wizardState.classId) : [];
+  return wizardState && wizardState.classId ? classVariantSwaps(wizardState.classId, 1) : [];
 }
 export function wizardVariants(){
   var out = {}, picked = wizardState.classChoices.variants || {};

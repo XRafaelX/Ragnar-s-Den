@@ -521,12 +521,12 @@ export function stepProfs(container){
   variantOffers().forEach(function(v){
     var box = panel();
     var on = lu.variants[v.replaces]===v.name;
-    var base = classFeaturesAt({name: lu.className}, 1).find(function(f){ return f.name===v.replaces; });
+    var base = classFeaturesAt({name: lu.className}, v.level || 1).find(function(f){ return f.name===v.replaces; });
     box.appendChild(renderVariantOptions(v, base, on, function(take){
       if(take) lu.variants[v.replaces] = v.name; else delete lu.variants[v.replaces];
       render();
     }, true));
-    var own = grants.find(function(g){ return !g.subclass && g.level===1 && g.feature===(on ? v.name : v.replaces); });
+    var own = grants.find(function(g){ return !g.subclass && g.level===(v.level || 1) && g.feature===(on ? v.name : v.replaces); });
     if(own) picks(box, own, {noHelp: !on});
   });
   grants.forEach(function(g){
