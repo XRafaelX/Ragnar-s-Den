@@ -38,7 +38,7 @@ var openId = null;       // the encounter on the board, null = the list
 var dragging = null;     // the drag in progress, see startDrag()
 var filter = { id: null, color: null };  // the color chip picked, per encounter
 var fx = null;           // a one-off effect for the next render: { paint: monsterId } or { picked: color }
-var boxWatch = null;     // redoes fitChips when the boxes' width changes
+var boxWatch = null;     // redoes fitChips when a chips row changes width
 
 function ce(tag, cls, text){
   var el = document.createElement(tag);
@@ -123,22 +123,28 @@ function render(){
   watchBoxes(overlay.querySelector(".enc-cards"));
 }
 
-/* Fits the boxes' chips on one row, now and again whenever the boxes
-   change width. */
+/* Fits the boxes' chips on one row, now and again whenever a chips row
+   changes width (the window, a scrollbar coming or going, a phone
+   turning). Each row is watched itself, so a change of a few pixels is
+   caught too. */
 function watchBoxes(grid){
   if(boxWatch) boxWatch.disconnect();
   boxWatch = null;
   if(!grid) return;
-  var fit = function(){ grid.querySelectorAll(".enc-cond-chips").forEach(fitChips); };
-  fit();
+  var rows = grid.querySelectorAll(".enc-cond-chips:not(.empty)");
+  rows.forEach(fitChips);
   // Measured before the web fonts arrive, the chips would be the wrong width.
-  if(document.fonts && document.fonts.status !== "loaded") document.fonts.ready.then(function(){ if(grid.isConnected) fit(); });
+  if(document.fonts && document.fonts.status !== "loaded") document.fonts.ready.then(function(){ if(grid.isConnected) rows.forEach(fitChips); });
   if(!window.ResizeObserver) return;
-  var width = 0;
-  boxWatch = new ResizeObserver(function(){
-    if(grid.clientWidth !== width){ width = grid.clientWidth; fit(); }
+  boxWatch = new ResizeObserver(function(entries){
+    entries.forEach(function(e){
+      var w = e.contentRect.width;
+      if(e.target.dataset.fitWidth === String(w)) return;
+      e.target.dataset.fitWidth = String(w);
+      fitChips(e.target);
+    });
   });
-  boxWatch.observe(grid);
+  rows.forEach(function(r){ boxWatch.observe(r); });
 }
 
 function header(onBack, backLabel){

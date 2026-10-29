@@ -38,9 +38,12 @@ export function conditionsButton(enc, m, onChange){
 }
 
 /* Every box has one row for its chips, empty or not, so the boxes all
-   match. As many chips as fit go in it, and a "+3" pill opens the rest
-   in a small pop-up under the row, so a box never grows. How many fit
-   is measured once the box is on screen, see fitChips. */
+   match. As many chips as fit go in it, and a "+3" pill shows the rest
+   without the box growing: a small pop-up under the row, or on a phone
+   a bottom sheet listing every condition on the monster (PHONE, the
+   width where the boxes stack). How many fit is measured once the box
+   is on screen, see fitChips. */
+var PHONE = "(max-width: 640px)";
 
 /* The chips row: every chip, the "+3" pill and its pop-up. fitChips then
    moves the chips that don't fit into the pop-up. */
@@ -92,6 +95,7 @@ export function conditionChips(enc, m, onChange){
   pop.className = "catalog-row-dropdown enc-cond-pop cond-chips";
   more.addEventListener("click", function(e){
     e.stopPropagation();
+    if(window.matchMedia && window.matchMedia(PHONE).matches){ openOnSheet(enc, m, onChange); return; }
     var open = pop.classList.contains("open");
     document.querySelectorAll(".catalog-row-dropdown.open").forEach(function(d){ d.classList.remove("open"); });
     document.querySelectorAll('.enc-cond-more[aria-expanded="true"]').forEach(function(b){ b.setAttribute("aria-expanded", "false"); });
@@ -106,7 +110,7 @@ export function conditionChips(enc, m, onChange){
 
 /* Fits a chips row on one line: the chips that don't fit go into the
    "+3" pop-up, in order. Run once the row is on screen and again
-   whenever the boxes change width. With every chip fitting there's no
+   whenever the row changes width. With every chip fitting there's no
    pill, and a lone chip too wide for the box has its name cut with "…". */
 export function fitChips(row){
   var more = row.querySelector(":scope > .enc-cond-more");
@@ -116,7 +120,16 @@ export function fitChips(row){
   var chips = Array.prototype.slice.call(row.querySelectorAll(":scope > .cond-chip"));
   more.style.display = "none";
   row.classList.add("measuring");
-  var over = function(){ return row.scrollWidth > row.clientWidth + 1; };
+  // Too wide when the last chip or pill ends past the row's inner edge.
+  // Measured in fractions of a pixel: a row over by even a little would
+  // squeeze the chips and cut their names.
+  var cs = getComputedStyle(row);
+  var edge = row.getBoundingClientRect().right - parseFloat(cs.paddingRight) - parseFloat(cs.borderRightWidth);
+  var over = function(){
+    var kids = row.querySelectorAll(":scope > .cond-chip");
+    var last = more.style.display === "none" ? kids[kids.length - 1] : more;
+    return !!last && last.getBoundingClientRect().right > edge - 0.5;
+  };
   if(!over()){ row.classList.remove("measuring"); return; }
   more.style.display = "";
   more.textContent = "+" + chips.length;  // the widest it can be, while measuring
@@ -131,6 +144,76 @@ export function fitChips(row){
   more.title = "Show " + hidden.length + " more: " + hidden.join(", ");
   more.setAttribute("aria-expanded", pop.classList.contains("open") ? "true" : "false");
   more.setAttribute("aria-label", "Show " + hidden.length + " more conditions on " + name + ": " + hidden.join(", "));
+}
+
+/* On a phone, "+3" opens every condition on the monster as a list in a
+   bottom sheet: a row each with what it does and End. A row opens its
+   rules, and "Add a condition" the sheet with every tile. */
+function openOnSheet(enc, m, onChange){
+  openBottomSheet(function(body, refresh, close){
+    var list = monsterConditions(m);
+    if(!list.length){ close(); return; }
+    var header = document.createElement("div");
+    header.className = "bs-header";
+    var title = document.createElement("div");
+    title.className = "bs-title";
+    title.textContent = m.name;
+    header.appendChild(title);
+    header.appendChild(closeButton(close));
+    body.appendChild(header);
+    var sub = document.createElement("p");
+    sub.className = "bs-subtitle";
+    sub.textContent = list.length + " conditions on it. Tap one for its rules.";
+    body.appendChild(sub);
+    var ul = document.createElement("div");
+    ul.className = "enc-cond-list";
+    list.forEach(function(x){
+      var d = x.def;
+      var item = document.createElement("div");
+      item.className = "enc-cond-item";
+      item.dataset.cond = d.id;
+      item.style.setProperty("--hue", d.hue);
+      var main = document.createElement("button");
+      main.type = "button";
+      main.className = "enc-cond-item-main";
+      main.innerHTML = '<span class="cond-icon">' + makeConditionSvg(d.id) + '</span><span class="cond-tile-text"><b></b><small></small></span>';
+      var name = main.querySelector("b");
+      name.textContent = d.name;
+      if(x.pick && x.pick.label){
+        var tag = document.createElement("span");
+        tag.className = "cond-why";
+        tag.textContent = x.pick.label;
+        name.appendChild(tag);
+      }
+      main.querySelector("small").textContent = x.pick ? x.pick.text : d.short;
+      main.setAttribute("aria-label", d.name + (x.pick ? ": " + x.pick.text : "") + ". Show the rules");
+      main.addEventListener("click", function(){ openMonsterConditions(enc, m, onChange, d.id); });
+      item.appendChild(main);
+      var stop = document.createElement("button");
+      stop.type = "button";
+      stop.className = "btn small ghost enc-cond-item-end";
+      stop.textContent = d.id === "prone" ? "Stand up" : "End";
+      stop.setAttribute("aria-label", (d.id === "prone" ? "Stand up" : "End " + d.name) + " on " + m.name);
+      stop.addEventListener("click", function(){
+        removeMonsterCondition(enc, m.id, d.id);
+        onChange();
+        playConditionOff();
+        refresh();
+      });
+      item.appendChild(stop);
+      ul.appendChild(item);
+    });
+    body.appendChild(ul);
+    var row = document.createElement("div");
+    row.className = "cond-sheet-actions";
+    var add = document.createElement("button");
+    add.type = "button";
+    add.className = "btn small primary";
+    add.textContent = "Add a condition";
+    add.addEventListener("click", function(){ openMonsterConditions(enc, m, onChange); });
+    row.appendChild(add);
+    body.appendChild(row);
+  });
 }
 
 function start(enc, m, id, pick, onChange){

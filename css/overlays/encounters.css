@@ -291,7 +291,8 @@
 .enc-cond-more:hover,.enc-cond-more[aria-expanded="true"]{border-color:var(--brass);color:var(--brass-bright);}
 .enc-cond-more:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
 .enc-cond-more[class*="cond-in-"]{animation:cond-pop .55s cubic-bezier(.2,1.5,.4,1) both;}
-.enc-cond-pop{left:0;right:auto;top:calc(100% + 6px);min-width:0;width:max-content;max-width:100%;
+/* As wide as the row, chips from the left. */
+.enc-cond-pop{left:0;right:0;top:calc(100% + 6px);min-width:0;width:auto;justify-content:flex-start;
   flex-direction:row;flex-wrap:wrap;gap:5px;padding:8px;overflow:visible;}
 .enc-cond-pop.open{display:flex;animation:encIn .18s cubic-bezier(.2,.8,.2,1) both;}
 /* Compact, so two usually fit on one row beside "+3". */
@@ -489,6 +490,21 @@
 }
 
 /* ---- A monster's conditions sheet ---- */
+/* On a phone, "+3" lists every condition on the monster: a row each. */
+.enc-cond-list{display:flex;flex-direction:column;gap:8px;margin:0 0 14px;}
+.enc-cond-item{
+  display:flex;align-items:center;gap:6px;padding:0 8px 0 0;border-radius:10px;
+  border:1px solid color-mix(in srgb, var(--hue) 70%, transparent);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--hue) 20%, transparent), color-mix(in srgb, var(--hue) 8%, transparent));
+}
+.enc-cond-item-main{
+  flex:1;min-width:0;display:flex;align-items:flex-start;gap:9px;padding:9px 4px 9px 10px;border:none;background:none;
+  color:var(--text-on-parch);font:inherit;text-align:left;cursor:pointer;border-radius:10px;
+}
+.enc-cond-item-main .cond-icon{width:18px;height:18px;}
+.enc-cond-item-main .cond-tile-text b{display:flex;align-items:center;gap:6px;}
+.enc-cond-item-main:focus-visible{outline:2px solid var(--brass-bright);outline-offset:-2px;}
+.enc-cond-item-end{flex:none;}
 .enc-cond-label{
   margin:14px 0 8px;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-on-parch-dim);
 }
