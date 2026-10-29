@@ -1,8 +1,9 @@
 import { save } from "../../core/state.js";
-import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, useSteadyAim, draconicBreath } from "../../core/helpers.js";
+import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
+import { rollAttack } from "./attack-roll.js";
 
 /* ---------------- Active effects ----------------
    On the Vitals tab, only for characters with a feature they switch on
@@ -136,10 +137,7 @@ function appendRolls(c, id, info){
   if(id==="astral_arms"){
     var arms = astralArmsAttack(c);
     var armsRoll = plainAttackRollMode(c);
-    var armsBtn = rollButton(makeDiceSvg(), "Attack " + fmtMod(arms.attack) + (armsRoll.mode==="dis" ? " (Dis)" : armsRoll.mode==="adv" ? " (Adv)" : ""), function(){
-      performRoll(20, 1, arms.attack, armsRoll.mode, "Astral arms: Attack");
-      if(useSteadyAim(c)){ save(); renderAll(); }
-    });
+    var armsBtn = rollButton(makeDiceSvg(), "Attack " + fmtMod(arms.attack) + (armsRoll.mode==="dis" ? " (Dis)" : armsRoll.mode==="adv" ? " (Adv)" : ""), function(){ rollAttack(c, arms.attack, armsRoll.mode, "Astral arms: Attack"); });
     if(armsRoll.reason) armsBtn.title = armsRoll.reason;
     buttons.push(armsBtn);
     buttons.push(rollButton(makeDicesSvg(), "Damage 1d" + arms.die + fmtMod(arms.damage), function(){ performRoll(arms.die, 1, arms.damage, "none", "Astral arms: Damage (force)"); }));

@@ -183,6 +183,25 @@ export var CLASS_PROGRESSION = {
   "Monk": {
     subclassLevel: 3, subclassLabel: "Monastic Tradition",
     prereq: [["dex", "wis"]], casterType: null, asiLevels: STANDARD_ASI,
+    // Tasha's Cauldron (pp. 48 to 49), checked on 5etools' data 2026-10-29.
+    variants: [
+      {name:"Dedicated Weapon", adds:true, level:2, blurb:"Count one weapon of your choice as a monk weapon, chosen after a rest.",
+        features:{
+          2: [{name:"Dedicated Weapon", text:"You can use other weapons as monk weapons, not just simple melee weapons and shortswords. Whenever you finish a short or long rest, you can touch one weapon, focus your ki on it, and count it as a monk weapon until you use this feature again. It must be a simple or martial weapon you're proficient with, without the heavy or special property. Choose it from the weapon's ⋯ menu on the Inventory tab."}]
+        }},
+      {name:"Ki-Fueled Attack", adds:true, level:3, blurb:"A bonus action attack after you spend ki as part of your action.",
+        features:{
+          3: [{name:"Ki-Fueled Attack", text:"If you spend 1 ki point or more as part of your action on your turn, you can make one attack with an unarmed strike or a monk weapon as a bonus action before the end of the turn."}]
+        }},
+      {name:"Quickened Healing", adds:true, level:4, blurb:"Spend 2 ki to heal a Martial Arts die plus your proficiency bonus.",
+        features:{
+          4: [{name:"Quickened Healing", text:"As an action, you can spend 2 ki points and roll a Martial Arts die. You regain hit points equal to the number rolled plus your proficiency bonus. Heal from Ki Points on the Vitals tab."}]
+        }},
+      {name:"Focused Aim", adds:true, level:5, blurb:"Spend 1 to 3 ki after a miss to add 2 to the attack roll for each.",
+        features:{
+          5: [{name:"Focused Aim", text:"When you miss with an attack roll, you can spend 1 to 3 ki points to add 2 to the roll for each ki point you spend, which can turn the miss into a hit. After you roll an attack, the dice tray offers it."}]
+        }}
+    ],
     multiclassProfs: {armor:[], weapons:["Simple weapons","Shortswords"], tools:[], note:""},
     startingProfs: {text: "One type of artisan's tools or musical instrument", profs: {pick:[{kind:"tool", kinds:["Artisan's tools","Musical instruments"]}]}},
     features: {

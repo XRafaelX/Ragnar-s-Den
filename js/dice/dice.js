@@ -103,7 +103,7 @@ function readTrayMod(){
 function rollAgain(){
   if(!lastRollConfig) return;
   if(lastRollConfig.label === null) rollFromTray(lastRollConfig.die);
-  else performRoll(lastRollConfig.die, lastRollConfig.qty, lastRollConfig.modifier, lastRollConfig.adv, lastRollConfig.label);
+  else performRoll(lastRollConfig.die, lastRollConfig.qty, lastRollConfig.modifier, lastRollConfig.adv, lastRollConfig.label, lastRollConfig.followUp);
 }
 
 /* Rolls the die with the tray's current Qty / Mod / advantage settings
@@ -202,8 +202,14 @@ export function renderDicePreview(){
   markSelectedDie();
 }
 
-export function performRoll(die, qty, modifier, adv, label){
-  lastRollConfig = { die: die, qty: qty, modifier: modifier, adv: adv, label: label };
+/* followUp (optional): a function called once the dice settle, returning
+   {lead, hint, options: [{label, title, disabled, use}]} or null: what the
+   player can still do with this roll (Focused Aim's ki after a missed
+   attack). They show under the result in the tray; use() pays for it and
+   returns {bonus, log} (or null when it can't), and the total grows by
+   the bonus. One per roll. */
+export function performRoll(die, qty, modifier, adv, label, followUp){
+  lastRollConfig = { die: die, qty: qty, modifier: modifier, adv: adv, label: label, followUp: followUp || null };
   previewDie = die;
   rolling = true;
   markSelectedDie();
@@ -274,6 +280,8 @@ export function performRoll(die, qty, modifier, adv, label){
   resultEl.textContent = "…";
   resultEl.classList.remove("result-pop");
   badgeSlot.innerHTML = "";
+  var followEl = followUpSlot();
+  followEl.innerHTML = "";
   detailEl.textContent = (label ? label + ": " : "") + "Rolling…";
   rollAgainBtn.style.display = "none";
 
@@ -357,6 +365,13 @@ export function performRoll(die, qty, modifier, adv, label){
     rollAgainBtn.style.display = "inline-flex";
 
     logRoll(label || ("d" + die), full);
+    var follow = followUp && followUp();
+    if(follow) renderFollowUp(followEl, follow, function(res){
+      finalTotal += res.bonus;
+      resultEl.textContent = finalTotal;
+      detailEl.textContent += " " + fmtMod(res.bonus) + " = " + finalTotal;
+      logRoll(label || ("d" + die), res.log + ": " + fmtMod(res.bonus) + ", now " + finalTotal);
+    });
   }, totalDelay);
   rollAnimationTimers.push(finalTimer);
 
@@ -364,9 +379,44 @@ export function performRoll(die, qty, modifier, adv, label){
   if(tray.classList.contains("open")){
     // already open, rolls inside tray seamlessly
   } else {
-    // Show smooth floating toast on screen
-    showFloatingToast(die, finalTotal, summary, label, isCrit, isFail);
+    // Show smooth floating toast on screen (it says where a follow-up is:
+    // tapping the toast opens the tray).
+    var ahead = followUp && followUp();
+    showFloatingToast(die, finalTotal, summary + (ahead && ahead.hint ? " · " + ahead.hint : ""), label, isCrit, isFail);
   }
+}
+
+/* The follow-up row under the result, made the first time it's needed. */
+function followUpSlot(){
+  var el = document.getElementById("roll-follow-up");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "roll-follow-up";
+    var detail = document.getElementById("roll-detail");
+    detail.parentNode.insertBefore(el, detail.nextSibling);
+  }
+  return el;
+}
+function renderFollowUp(el, follow, onUsed){
+  var lead = document.createElement("span");
+  lead.className = "roll-follow-lead";
+  lead.textContent = follow.lead;
+  el.appendChild(lead);
+  follow.options.forEach(function(opt){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn-roll-again btn-roll-follow";
+    b.textContent = opt.label;
+    if(opt.title) b.title = opt.title;
+    b.disabled = !!opt.disabled;
+    b.addEventListener("click", function(){
+      var res = opt.use();
+      if(!res) return;
+      el.innerHTML = "";
+      onUsed(res);
+    });
+    el.appendChild(b);
+  });
 }
 
 export function logRoll(label, detail){
@@ -401,6 +451,9 @@ export function renderRollLog(){
 export function openDiceTray(){
   var tray = document.getElementById("dice-tray");
   tray.classList.add("open");
+  // The tray shows the roll now, so the toast for it would only cover it.
+  var toast = document.getElementById("floating-roll-toast");
+  if(toast) toast.classList.remove("show");
   renderRollLog();
 }
 export function closeDiceTray(){

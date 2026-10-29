@@ -263,6 +263,13 @@
   text-align:center;min-height:16px;line-height:1.3;
 }
 .roll-actions-row{margin-top:4px;}
+/* What can still be done with the roll (Focused Aim's ki after a miss). */
+#roll-follow-up{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;margin-top:6px;}
+#roll-follow-up:empty{display:none;}
+.roll-follow-lead{font-size:11.5px;color:var(--text-on-ink-dim);}
+.btn-roll-follow{padding:4px 10px;}
+.btn-roll-follow:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-roll-follow:disabled:hover{background:color-mix(in srgb, var(--brass) 18%, transparent);color:var(--brass-bright);}
 .btn-roll-again{
   background:color-mix(in srgb, var(--brass) 18%, transparent);border:1px solid var(--brass);
   color:var(--brass-bright);border-radius:6px;padding:5px 12px;

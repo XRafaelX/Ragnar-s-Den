@@ -3,7 +3,8 @@ import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg } from "../../ui/svg-icons.js";
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, useSteadyAim, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
+import { rollAttack } from "./attack-roll.js";
+import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -52,6 +53,24 @@ function cardTop(idx){
    is greyed out and a tap says why. Null for an item without it. An
    infused item that needs attunement has it too, and its infusion's
    bonus follows it. */
+/* Dedicated Weapon (Tasha's, monk 2): make this the weapon that counts
+   as a monk weapon, or stop. Only on a monk's weapons. */
+function dedicateEntry(c, item, idx){
+  if(item.type!=="weapon" || !hasDedicatedWeapon(c) || isMonkWeapon(item)) return null;
+  var problem = item.dedicated ? "" : dedicateProblem(item);
+  return {
+    label: item.dedicated ? "Stop using it as a monk weapon" : "Make it your monk weapon",
+    blocked: problem,
+    title: problem || (item.dedicated ? "It goes back to being an ordinary weapon for you" : "Dedicated Weapon: after a short or long rest, focus your ki on it so it counts as a monk weapon (only one at a time)"),
+    onClick: function(){
+      if(problem){ showActionToast(problem, true); return; }
+      var on = !item.dedicated;
+      setDedicatedWeapon(c, item, on);
+      showActionToast(on ? (item.name || "It") + " now counts as a monk weapon." : (item.name || "It") + " is an ordinary weapon again.");
+      redrawKeeping(idx);
+    }
+  };
+}
 function attuneEntry(c, item, idx){
   if(!needsAttunement(c, item)) return null;
   var problem = attuneProblem(c, item);
@@ -321,6 +340,7 @@ function itemHeader(c, item, idx, onOpenDetails, noEquip){
   actions.appendChild(itemMenu(item, [
     attuneEntry(c, item, idx),
     endInfusionEntry(c, item),
+    dedicateEntry(c, item, idx),
     {label:"Edit details", onClick:onOpenDetails},
     {label:"Remove", danger:true, onClick:function(){
       confirmDialog("Remove "+(item.name||"this item")+"?", "This cannot be undone.", function(){
@@ -565,7 +585,7 @@ function renderUnarmedCard(c, u){
   atkBtn.type = "button"; atkBtn.className = "btn small inv-roll-btn";
   atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(u.attack) + (u.roll && u.roll.mode==="dis" ? " (Dis)" : u.roll && u.roll.mode==="adv" ? " (Adv)" : "");
   if(u.roll && u.roll.reason) atkBtn.title = u.roll.reason;
-  atkBtn.addEventListener("click", function(){ performRoll(20, 1, u.attack, u.roll ? u.roll.mode : "none", u.name + ": Attack"); aimSpent(c); });
+  atkBtn.addEventListener("click", function(){ rollAttack(c, u.attack, u.roll ? u.roll.mode : "none", u.name + ": Attack"); });
   actions.appendChild(atkBtn);
   var dmgBtn = document.createElement("button");
   dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
@@ -617,8 +637,7 @@ function cavalierButtons(c, item, atkBonus, atkRoll, parsed, dmgBonus){
   atk.addEventListener("click", function(){
     c.resourcesUsed[res.key] = res.used + 1;
     save(); renderAll();
-    performRoll(20, 1, atkBonus, roll.mode, name + ": Unwavering Mark attack");
-    aimSpent(c);
+    rollAttack(c, atkBonus, roll.mode, name + ": Unwavering Mark attack");
   });
   var dmg = document.createElement("button");
   dmg.type = "button"; dmg.className = "btn small inv-roll-btn inv-mark-btn";
@@ -890,8 +909,7 @@ function renderWeaponCard(c, item, idx){
   atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(atkBonus) + (atkRoll.mode==="dis" ? " (Dis)" : atkRoll.mode==="adv" ? " (Adv)" : "");
   if(atkRoll.reason) atkBtn.title = atkRoll.reason;
   atkBtn.addEventListener("click", function(){
-    performRoll(20, 1, atkBonus, atkRoll.mode, (item.name||"Weapon") + ": Attack");
-    aimSpent(c);
+    rollAttack(c, atkBonus, atkRoll.mode, (item.name||"Weapon") + ": Attack");
   });
   actions.appendChild(atkBtn);
 
@@ -925,7 +943,7 @@ function renderWeaponCard(c, item, idx){
       tAtk.type = "button"; tAtk.className = "btn small inv-roll-btn inv-thrown-btn";
       tAtk.innerHTML = makeDiceSvg() + "Thrown attack " + fmtMod(thrown.attack) + (atkRoll.mode==="dis" ? " (Dis)" : atkRoll.mode==="adv" ? " (Adv)" : "");
       tAtk.title = "Thrown, a ranged attack: " + thrown.parts.join(", ");
-      tAtk.addEventListener("click", function(){ performRoll(20, 1, thrown.attack, atkRoll.mode, (item.name||"Weapon") + ": Thrown attack"); aimSpent(c); });
+      tAtk.addEventListener("click", function(){ rollAttack(c, thrown.attack, atkRoll.mode, (item.name||"Weapon") + ": Thrown attack"); });
       actions.appendChild(tAtk);
     }
     if(thrown.damage!==dmgBonus){
@@ -1689,9 +1707,4 @@ export function renderInventoryPanel(c){
   panel.appendChild(renderCurrencyCard(c));
 
   return panel;
-}
-
-/* An attack rolled with Steady Aim's advantage uses it up. */
-function aimSpent(c){
-  if(useSteadyAim(c)){ save(); renderAll(); }
 }

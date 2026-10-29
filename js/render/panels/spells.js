@@ -1,7 +1,7 @@
 import { save } from "../../core/state.js";
-import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities, plainAttackRollMode, useSteadyAim } from "../../core/helpers.js";
+import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities, plainAttackRollMode } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { performRoll } from "../../dice/dice.js";
+import { rollAttack } from "./attack-roll.js";
 import { playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
@@ -279,7 +279,7 @@ function renderSpellcastingCard(c){
   atk.box.classList.add("sc-roll");
   atk.box.setAttribute("role","button"); atk.box.tabIndex = 0;
   atk.box.title = "Roll a spell attack" + (atkRoll.reason ? " (" + atkRoll.reason + ")" : "");
-  function roll(){ performRoll(20,1,pb+scMod+boon,atkRoll.mode,"Spell attack"); aimSpent(c); }
+  function roll(){ rollAttack(c, pb+scMod+boon, atkRoll.mode, "Spell attack"); }
   atk.box.addEventListener("click", roll);
   atk.box.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); roll(); } });
   grid.appendChild(atk.box);
@@ -309,7 +309,7 @@ function renderMulticlassCasting(c, byAbility){
     atk.box.classList.add("sc-roll");
     atk.box.setAttribute("role","button"); atk.box.tabIndex = 0;
     atk.box.title = "Roll a " + x.classes.join(" / ") + " spell attack" + (atkRoll.reason ? " (" + atkRoll.reason + ")" : "");
-    function roll(){ performRoll(20,1,x.attack,atkRoll.mode, x.classes.join(" / ") + " spell attack"); aimSpent(c); }
+    function roll(){ rollAttack(c, x.attack, atkRoll.mode, x.classes.join(" / ") + " spell attack"); }
     atk.box.addEventListener("click", roll);
     atk.box.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); roll(); } });
     grid.appendChild(atk.box);
@@ -917,9 +917,4 @@ export function renderSpellsPanel(c){
   panel.appendChild(spellCard);
 
   return panel;
-}
-
-/* A spell attack rolled with Steady Aim's advantage uses it up. */
-function aimSpent(c){
-  if(useSteadyAim(c)){ save(); renderAll(); }
 }

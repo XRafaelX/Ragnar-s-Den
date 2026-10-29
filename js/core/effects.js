@@ -164,3 +164,34 @@ export function songOfVictoryBonus(c, item){
   if(isRangedWeapon(item) || !effectOn(c, "bladesong")) return 0;
   return classLevelOf(c, "Wizard", "Bladesinging") >= 14 ? bladesongBonus(c) : 0;
 }
+
+/* ---- Tasha's monk ki features ----
+   Quickened Healing (monk 4): 2 ki for a Martial Arts die plus the
+   proficiency bonus of healing. Focused Aim (monk 5): after a missed
+   attack roll, 1 to 3 ki for +2 to the roll each. */
+function monkUses(c, name){
+  return (c.classes||[]).some(function(cl){ return cl.name==="Monk" && usesVariant(cl, name); });
+}
+function kiPool(c){
+  return characterResources(c).find(function(r){ return r.key==="Monk:ki"; }) || null;
+}
+/* The ki points left, or -1 without a ki pool. */
+export function kiLeft(c){
+  var ki = kiPool(c);
+  return ki ? ki.max - ki.used : -1;
+}
+/* Spend `n` ki. False when there isn't enough. */
+export function spendKi(c, n){
+  var ki = kiPool(c);
+  if(!ki || ki.max - ki.used < n) return false;
+  if(!c.resourcesUsed) c.resourcesUsed = {};
+  c.resourcesUsed[ki.key] = ki.used + n;
+  return true;
+}
+/* {cost, die, bonus} for Quickened Healing, or null without it. */
+export function quickenedHealing(c){
+  return monkUses(c, "Quickened Healing") && kiPool(c) ? {cost: 2, die: martialArtsDie(c), bonus: profBonus(c)} : null;
+}
+export function hasFocusedAim(c){
+  return monkUses(c, "Focused Aim") && !!kiPool(c);
+}

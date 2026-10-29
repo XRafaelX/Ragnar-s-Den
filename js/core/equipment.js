@@ -7,7 +7,7 @@ import { featProficiencies, featDef, featSpellEntries, featCastAbility } from ".
 import { characterPickedProfs, characterChoices, raceProficiencies } from "./class-picks.js";
 import { mod, profBonus, parseDiceNotation, combineRolls } from "./basics.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
-import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType } from "./class-features.js";
+import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
@@ -113,11 +113,33 @@ export function isMonkWeapon(item){
   if(!d || d.category!=="simple" || d.ranged) return false;
   return !/two-handed|heavy/i.test(d.properties || "");
 }
+/* Dedicated Weapon (Tasha's, monk 2): one weapon the monk has chosen
+   (item.dedicated) counts as a monk weapon. */
+export function hasDedicatedWeapon(c){
+  return (c.classes||[]).some(function(cl){ return cl.name==="Monk" && usesVariant(cl, "Dedicated Weapon"); });
+}
+/* Why this weapon can't be the dedicated one, or "": it must be a simple
+   or martial weapon you're proficient with, without heavy or special. */
+export function dedicateProblem(item){
+  var d = weaponDataOf(item);
+  if(!d || (d.category!=="simple" && d.category!=="martial")) return "It must be a simple or martial weapon.";
+  if(!item.proficient) return "You must be proficient with it.";
+  var heavy = /heavy/i.test(d.properties || ""), special = /special/i.test(d.properties || "");
+  if(heavy || special) return "It can't have the " + (heavy ? "heavy" : "special") + " property.";
+  return "";
+}
+/* Make `item` the dedicated weapon (only one at a time), or stop. */
+export function setDedicatedWeapon(c, item, on){
+  (c.inventory||[]).forEach(function(i){ if(i.dedicated) delete i.dedicated; });
+  if(on) item.dedicated = true;
+}
 /* Martial Arts: a monk wearing no armor and holding no shield can use DEX
-   instead of STR with monk weapons, a Kensei's chosen weapons included. */
+   instead of STR with monk weapons, a Kensei's chosen weapons and a
+   Dedicated Weapon included. */
 export function martialArtsApplies(c, item){
   if(!(c.classes||[]).some(function(cl){ return cl.name==="Monk"; })) return false;
-  if(!isMonkWeapon(item) && characterPickedProfs(c).monkWeapons.indexOf(baseWeaponName(item))===-1) return false;
+  var dedicated = item.dedicated && hasDedicatedWeapon(c) && !dedicateProblem(item);
+  if(!isMonkWeapon(item) && !dedicated && characterPickedProfs(c).monkWeapons.indexOf(baseWeaponName(item))===-1) return false;
   return !(c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
 }
 /* The damage dice a weapon rolls: its own, or the Martial Arts die when

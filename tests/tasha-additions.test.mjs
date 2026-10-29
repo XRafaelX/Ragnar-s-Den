@@ -210,3 +210,49 @@ test("Nature's Veil: ranger 10's swap for Hide in Plain Sight, invisible until y
   const plain = makeChar([{ name: "Ranger", subclass: "Hunter", level: 10 }]);
   assert.ok(!H.characterEffects(plain).some((e) => e.def.id === "natures_veil") && names(plain.classes[0]).includes("Hide in Plain Sight"));
 });
+
+/* ---- Phase 2 (2026-10-29): Dedicated Weapon, Ki-Fueled Attack, Quickened Healing, Focused Aim ---- */
+const monk = (lv, extra = {}) => ensureShape(makeChar([{ name: "Monk", subclass: lv >= 3 ? "Way of the Open Hand" : "", level: lv }], Object.assign({ tashaOptional: true }, extra)));
+const weapon = (name, extra = {}) => Object.assign({ id: name, name, type: "weapon", qty: 1, ability: "str", proficient: true, magicBonus: 0, equipped: true, damageDice: "1d8", damageType: "Slashing", notes: "" }, extra);
+
+test("the monk's Tasha's features arrive at levels 2 to 5", () => {
+  assert.deepEqual(["Dedicated Weapon", "Ki-Fueled Attack", "Quickened Healing", "Focused Aim"].map((n) => [2, 3, 4, 5].find((lv) => names(monk(lv).classes[0]).includes(n))), [2, 3, 4, 5]);
+  assert.ok(!names(monk(5, { tashaOptional: false }).classes[0]).some((n) => /Dedicated|Ki-Fueled|Quickened|Focused/.test(n)));
+});
+
+test("Dedicated Weapon: one proficient simple or martial weapon without heavy or special counts as a monk weapon", () => {
+  const sword = weapon("Longsword");
+  const c = monk(5, { inventory: [sword, weapon("Greatsword", { damageDice: "2d6" }), weapon("Lance", { damageDice: "1d12" }), weapon("Rapier", { proficient: false })] });
+  assert.equal(H.dedicateProblem(sword), "");
+  assert.equal(H.dedicateProblem(c.inventory[1]), "It can't have the heavy property.");
+  assert.equal(H.dedicateProblem(c.inventory[2]), "It can't have the special property.");
+  assert.equal(H.dedicateProblem(c.inventory[3]), "You must be proficient with it.");
+  assert.equal(H.martialArtsApplies(c, sword), false);
+  H.setDedicatedWeapon(c, sword, true);
+  assert.equal(H.martialArtsApplies(c, sword), true, "a dedicated longsword uses Martial Arts");
+  assert.ok(H.weaponAttackBonus(c, sword) > 0 && H.weaponAbility(c, sword).keys.includes("dex"), "with DEX");
+  // Only one at a time; stopping takes it back.
+  const rapier = c.inventory[3];
+  rapier.proficient = true;
+  H.setDedicatedWeapon(c, rapier, true);
+  assert.deepEqual([sword.dedicated, rapier.dedicated], [undefined, true]);
+  H.setDedicatedWeapon(c, rapier, false);
+  assert.equal(rapier.dedicated, undefined);
+  // Without Tasha's the flag does nothing.
+  H.setDedicatedWeapon(c, sword, true);
+  c.tashaOptional = false; H.syncTashaAdditions(c);
+  assert.equal(H.martialArtsApplies(c, sword), false);
+});
+
+test("Quickened Healing and Focused Aim spend ki", () => {
+  const c = monk(5);
+  assert.deepEqual(H.quickenedHealing(c), { cost: 2, die: 6, bonus: 3 });
+  assert.equal(H.quickenedHealing(monk(3)), null, "from monk 4");
+  assert.equal(H.hasFocusedAim(c), true);
+  assert.equal(H.hasFocusedAim(monk(4)), false, "from monk 5");
+  assert.equal(H.kiLeft(c), 5);
+  assert.ok(H.spendKi(c, 3));
+  assert.equal(H.kiLeft(c), 2);
+  assert.equal(H.spendKi(c, 3), false, "not enough left");
+  assert.equal(H.kiLeft(makeChar([{ name: "Fighter", subclass: "", level: 5 }])), -1);
+});

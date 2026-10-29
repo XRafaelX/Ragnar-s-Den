@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -925,6 +925,30 @@ function renderResourcesCard(c, resources){
       });
       rolls.appendChild(rollBtn);
       info.appendChild(rolls);
+    }
+    // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
+    // plus the proficiency bonus of healing.
+    var qh = r.key==="Monk:ki" && quickenedHealing(c);
+    if(qh){
+      var heals = document.createElement("div");
+      heals.className = "inv-roll-actions fx-rolls";
+      var healBtn = document.createElement("button");
+      healBtn.type = "button"; healBtn.className = "btn small inv-roll-btn res-roll-btn";
+      healBtn.innerHTML = makeDiceSvg();
+      healBtn.appendChild(document.createTextNode("Quickened Healing · " + qh.cost + " ki"));
+      var atFull = (Number(c.hp.current)||0) >= maxHp(c);
+      healBtn.disabled = remaining < qh.cost || atFull;
+      healBtn.title = remaining < qh.cost ? "Not enough ki left" : atFull ? "You're at full hit points"
+        : "Action: spend " + qh.cost + " ki and heal 1d" + qh.die + " + " + qh.bonus;
+      healBtn.addEventListener("click", function(){
+        var roll = Math.floor(Math.random()*qh.die)+1, healed = roll + qh.bonus;
+        c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, maxHp(c));
+        c.resourcesUsed[r.key] = r.used + qh.cost;
+        logRoll("Quickened Healing (1d" + qh.die + fmtMod(qh.bonus) + ")", roll + " " + fmtMod(qh.bonus) + " = " + healed + " HP healed (" + qh.cost + " ki)");
+        save(); renderAll();
+      });
+      heals.appendChild(healBtn);
+      info.appendChild(heals);
     }
     row.appendChild(info);
 
