@@ -89,7 +89,8 @@ export function renderClassPicks(grant, slots, ctx, onChange, keyPrefix, opts){
    on; the Tasha's card sits folded away under it and slides open when
    `show` is true (`from`: whether it was showing before this redraw, so
    the fold animates both ways). `base` is the class's own feature ({name,
-   text, profs}), described by its picks' help line when it has one;
+   text, profs, source when it's a subclass's}), described by its picks'
+   help line when it has one;
    onPick(true) takes the variant. */
 export function renderVariantOptions(variant, base, active, onPick, show, from){
   var box = ce("div", "cpk-variant");
@@ -114,7 +115,8 @@ export function renderVariantOptions(variant, base, active, onPick, show, from){
     row.appendChild(inner);
     return row;
   }
-  box.appendChild(option(false, variant.replaces, "Player's Handbook", (base && ((base.profs && base.profs.help) || base.text)) || ""));
+  // (A subclass's own feature names its subclass: Blessed Strikes stands in for a Life Domain's Divine Strike.)
+  box.appendChild(option(false, variant.replaces, (base && base.source) || "Player's Handbook", (base && ((base.profs && base.profs.help) || base.text)) || ""));
   var alt = ce("div", "cpk-variant-alt");
   alt.appendChild(option(true, variant.name, "Tasha's Cauldron of Everything", variant.blurb));
   var was = from==null ? show : from;

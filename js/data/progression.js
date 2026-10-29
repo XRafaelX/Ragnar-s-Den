@@ -48,6 +48,10 @@ var STANDARD_ASI = [4, 8, 12, 16, 19];
    level (the class level it's offered at, 1 if left out), blurb,
    features: {classLevel: [feature]}}]. The class entry keeps which
    it uses as cl.variants[replaces] = name (see classFeaturesAt).
+   One with `subclassReplaces` swaps a subclass feature instead, the one
+   of those names the subclass has at its level (a cleric's Blessed
+   Strikes for the domain's Divine Strike or Potent Spellcasting); its
+   `replaces` is then only a label, and variantFor() resolves it.
    One with `adds` instead of `replaces` is a new feature, not a swap
    (a rogue's Steady Aim): every class entry at its level gets it while
    Tasha's is on, kept as cl.variants[name] = name (syncTashaAdditions).
@@ -154,6 +158,12 @@ export var CLASS_PROGRESSION = {
       {name:"Harness Divine Power", adds:true, level:2, blurb:"Spend a Channel Divinity to get back a spent spell slot.",
         features:{
           2: [{name:"Harness Divine Power", text:"As a bonus action, you can spend a use of your Channel Divinity to regain one spent spell slot, of a level no higher than half your proficiency bonus (rounded up). You can do this once, twice from cleric level 6 and three times from cleric level 18, and you regain all uses when you finish a long rest. Use it from Harness Divine Power on the Vitals tab."}]
+        }},
+      // A swap for the domain's own 8th-level feature, whichever it has.
+      {name:"Blessed Strikes", replaces:"Divine Strike or Potent Spellcasting", subclassReplaces:["Divine Strike", "Potent Spellcasting"], level:8,
+        blurb:"Deal an extra 1d8 radiant damage once per turn with a cantrip or a weapon attack.",
+        features:{
+          8: [{name:"Blessed Strikes", text:"When a creature takes damage from one of your cantrips or weapon attacks, you can also deal 1d8 radiant damage to that creature. Once you deal this damage, you can't use this feature again until the start of your next turn. The extra die is on your weapon cards and in your damaging cantrips' lines on the Spells tab."}]
         }}
     ],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:[], tools:[], note:""},

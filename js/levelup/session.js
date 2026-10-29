@@ -150,7 +150,13 @@ export function optChoice(setId){
    Awareness), for a character using Tasha's optional class features.
    lu.variants[replaced feature] = the variant taken. */
 export function variantOffers(){
-  return lu.c.tashaOptional ? classVariantSwaps(lu.className, target().newLevel) : [];
+  return lu.c.tashaOptional ? classVariantSwaps(lu.className, target().newLevel, offerEntry()) : [];
+}
+/* The class entry the offers are for (its subclass decides a cleric 8's
+   Blessed Strikes: in place of Divine Strike or Potent Spellcasting). */
+export function offerEntry(){
+  var t = target();
+  return {name: lu.className, subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : "")};
 }
 /* The class entry's variants after this level: the ones it had, the
    offers as picked now (an older pick for the same feature, from a level

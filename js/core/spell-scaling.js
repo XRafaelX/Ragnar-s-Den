@@ -2,7 +2,7 @@
    data/spell-scaling.js). */
 import { SPELL_SCALING } from "../data/spell-scaling.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
-import { totalLevel, computeSpellSlots, ordinal, mod, hasFeat } from "./helpers.js";
+import { totalLevel, computeSpellSlots, ordinal, mod, hasFeat, hasBlessedStrikes } from "./helpers.js";
 import { eldritchBlastSummary } from "./invocations.js";
 import { classFeatureList } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
@@ -50,7 +50,8 @@ function cantripEffect(c, name, entry, n){
     (b.range!==120 ? ", " + b.range + " ft" : "");
 }
 
-/* A cleric's Potent Spellcasting (Wisdom to a cleric cantrip's damage) and
+/* A cleric's Potent Spellcasting (Wisdom to a cleric cantrip's damage) or
+   Blessed Strikes (1d8 radiant once per turn, any cantrip), and
    an Evoker's Empowered Evocation (Intelligence to one damage roll of a
    wizard evocation spell), as text for the end of a cantrip's line. Only
    for a cantrip on that class's list that the class casts. */
@@ -67,6 +68,8 @@ function cantripBonus(c, name, owner){
   }
   add("Cleric", "Potent Spellcasting", "wis", "");
   if(d.school==="Evocation") add("Wizard", "Empowered Evocation", "int", " on one damage roll");
+  // Blessed Strikes (Tasha's, cleric 8): any damaging cantrip, once per turn.
+  if(/damage/i.test(d.summary) && /\d+d\d+/.test(d.summary) && hasBlessedStrikes(c)) out += ", plus 1d8 radiant to one creature it damages, once per turn (Blessed Strikes)";
   // An Evoker's Potent Cantrip: half damage even when the target saves.
   if((!owner || owner==="Wizard") && /\bsave\b/i.test(d.summary) && /\d+d\d+/.test(d.summary) && hasWizardFeature(c, "Potent Cantrip"))
     out += ", and half damage even when the target saves (Potent Cantrip)";

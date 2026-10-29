@@ -12,6 +12,7 @@ import * as W from "../js/wizard/wizard-core.js";
 import { finish, undoLastLevelUp } from "../js/levelup/apply.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
 import * as COMP from "../js/core/companions.js";
+import { spellScalingLine } from "../js/core/spell-scaling.js";
 import { withFakeDom } from "./fake-dom.mjs";
 
 function makeChar(classes, extra = {}){
@@ -315,4 +316,39 @@ test("Wild Companion: a Wild Shape use casts Find Familiar, a fey that lasts hal
   const f2 = COMP.characterCompanions(both).find((x) => x.def.id === "familiar");
   assert.deepEqual([f2.source, f2.stats.type], ["Find Familiar", "Tiny celestial, fey or fiend: owl"]);
   assert.ok(f2.stats.traits.some((t) => t.name === "Wild Companion" && /2 hours/.test(t.text)));
+});
+
+/* ---- Phase 5 (2026-10-29): Blessed Strikes ---- */
+test("Blessed Strikes: offered at cleric 8 in place of the domain's Divine Strike or Potent Spellcasting", (t) => {
+  const v = H.classVariants("Cleric").find((x) => x.name === "Blessed Strikes");
+  assert.equal(H.variantFor({ name: "Cleric", subclass: "Life Domain" }, v).replaces, "Divine Strike");
+  assert.equal(H.variantFor({ name: "Cleric", subclass: "Light Domain" }, v).replaces, "Potent Spellcasting");
+  assert.equal(H.variantFor({ name: "Cleric", subclass: "" }, v), null, "no domain, nothing to swap");
+  assert.deepEqual(H.variantBase({ name: "Cleric", subclass: "Life Domain" }, H.variantFor({ name: "Cleric", subclass: "Life Domain" }, v)).source, "Life Domain");
+
+  // A Life cleric 7 levelling to 8 takes it.
+  const c = caster("Cleric", "Life Domain", 7, { hp: { max: 50, current: 50, temp: 0 } });
+  let offers, gains;
+  levelUp(t, c, (lu) => {
+    offers = LU.variantOffers().map((x) => x.name + " for " + x.replaces);
+    lu.variants = { "Divine Strike": "Blessed Strikes" };
+    gains = LU.gainLabels("Cleric", "Life Domain", 8);
+  });
+  assert.deepEqual(offers, ["Blessed Strikes for Divine Strike"]);
+  assert.ok(gains.includes("Blessed Strikes") && !gains.includes("Divine Strike"), gains.join());
+  assert.equal(c.classes[0].variants["Divine Strike"], "Blessed Strikes");
+  assert.ok(names(c.classes[0]).includes("Blessed Strikes") && !names(c.classes[0]).includes("Divine Strike"));
+  assert.ok(!H.classFeatureList(Object.assign({}, c.classes[0], { level: 14 })).some((f) => f.name === "Divine Strike"), "nor the 2d8 version at 14");
+  assert.equal(H.hasBlessedStrikes(c), true);
+  withFakeDom(t, (byId) => { undoLastLevelUp(c); byId["confirm-ok"].click(); });
+  assert.ok(!H.hasBlessedStrikes(c) && !(c.classes[0].variants || {})["Divine Strike"]);
+
+  // A Light cleric 8 with it: its cantrips say Blessed Strikes, not Potent Spellcasting.
+  const light = caster("Cleric", "Light Domain", 8, { abilities: { str: 10, dex: 12, con: 14, int: 10, wis: 18, cha: 10 } });
+  const sacred = () => spellScalingLine(light, "Sacred Flame", 0, { owner: "Cleric" });
+  assert.match(sacred(), /plus 4 from Potent Spellcasting/);
+  light.classes[0].variants = { "Potent Spellcasting": "Blessed Strikes" };
+  assert.match(sacred(), /plus 1d8 radiant to one creature it damages, once per turn \(Blessed Strikes\)/);
+  assert.doesNotMatch(sacred(), /Potent Spellcasting/);
+  assert.doesNotMatch(spellScalingLine(light, "Guidance", 0, { owner: "Cleric" }) || "", /Blessed/, "not on a cantrip that deals no damage");
 });

@@ -113,15 +113,41 @@ export function classVariants(className){
   return (CLASS_PROGRESSION[className] || {}).variants || [];
 }
 /* The swaps the player chooses (not the additions), only the ones
-   offered at class level `level` when it's given. */
-export function classVariantSwaps(className, level){
-  return classVariants(className).filter(function(v){ return !v.adds && (level==null || (v.level||1)===level); });
+   offered at class level `level` when it's given. With a class entry `cl`,
+   a swap for a subclass feature comes resolved for it (and is left out
+   when its subclass has none of those features). */
+export function classVariantSwaps(className, level, cl){
+  return classVariants(className).filter(function(v){ return !v.adds && (level==null || (v.level||1)===level); })
+    .map(function(v){ return cl ? variantFor(cl, v) : v; }).filter(Boolean);
+}
+/* A swap for a subclass feature (Blessed Strikes for a domain's Divine
+   Strike or Potent Spellcasting) for this class entry: a copy whose
+   `replaces` names the one its subclass has at the swap's level, or null
+   when it has neither (or no subclass yet). Any other variant as it is. */
+export function variantFor(cl, v){
+  if(!v.subclassReplaces) return v;
+  var sub = cl && findSubclass(cl.name, cl.subclass);
+  var at = (sub && sub.features && sub.features[v.level||1]) || [];
+  var hit = v.subclassReplaces.find(function(n){ return at.some(function(f){ return f.name===n; }); });
+  return hit ? Object.assign({}, v, {replaces: hit}) : null;
+}
+/* The feature a swap takes the place of, as the class or subclass has it
+   at the swap's level ({name, text, profs, source}), or null. */
+export function variantBase(cl, v){
+  var lv = v.level || 1, f;
+  if(v.subclassReplaces){
+    var sub = findSubclass(cl.name, cl.subclass);
+    f = sub && ((sub.features && sub.features[lv]) || []).find(function(x){ return x.name===v.replaces; });
+    return f ? Object.assign({source: sub.name}, f) : null;
+  }
+  return classFeaturesAt({name: cl.name}, lv).find(function(x){ return x.name===v.replaces; }) || null;
 }
 function variantKey(v){ return v.adds ? v.name : v.replaces; }
 /* The variants a class entry uses. */
 export function activeVariants(cl){
   var picked = (cl && cl.variants) || {};
-  return classVariants(cl && cl.name).filter(function(v){ return picked[variantKey(v)]===v.name; });
+  return classVariants(cl && cl.name).map(function(v){ return variantFor(cl, v); })
+    .filter(function(v){ return v && picked[variantKey(v)]===v.name; });
 }
 /* Tasha's additions follow the switch: every class entry at the level
    gets them while it's on, and none while it's off. True if any changed. */
@@ -168,8 +194,10 @@ export function classFeatureList(cl, uptoLevel){
     classFeaturesAt(cl, lv).forEach(function(f){ addFeature(f, lv, false); });
   }
   if(sub){
+    // (A subclass feature a Tasha's swap stands in for, at every level, is left out.)
+    var swapped = activeVariants(cl).filter(function(v){ return v.subclassReplaces; }).map(function(v){ return v.replaces; });
     for(var sl=1; sl<=level; sl++){
-      ((sub.features && sub.features[sl]) || []).forEach(function(f){ addFeature(f, sl, true); });
+      ((sub.features && sub.features[sl]) || []).forEach(function(f){ if(swapped.indexOf(f.name)===-1) addFeature(f, sl, true); });
     }
   }
   function addFeature(f, atLevel, isSub){

@@ -4,7 +4,7 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { RACE_TRAIT_FALLBACK } from "../../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
-import { classFeatureList, classProficiencies, classVariants, syncTashaAdditions, escapeHtml, raceTraitFeatures } from "../../core/helpers.js";
+import { classFeatureList, classProficiencies, classVariants, variantFor, syncTashaAdditions, escapeHtml, raceTraitFeatures } from "../../core/helpers.js";
 import { featProficiencies, backgroundFeatGrant, backgroundFeatLabel, campaignFeatMissing } from "../../core/feat-picks.js";
 import { dlcShelf, campaignBookCard } from "../../ui/dlc-shelf.js";
 import { characterPickedProfs, raceProficiencies, backgroundProficiencies, overlapTools, syncClassPicks } from "../../core/class-picks.js";
@@ -354,7 +354,8 @@ function optionalRulesCard(c){
   var variants = [], additions = [];
   (c.classes||[]).forEach(function(cl){
     classVariants(cl.name).forEach(function(v){
-      if((Number(cl.level)||1) < (v.level||1)) return;
+      v = variantFor(cl, v);
+      if(!v || (Number(cl.level)||1) < (v.level||1)) return;
       (v.adds ? additions : variants).push(v);
     });
   });

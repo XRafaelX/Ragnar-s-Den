@@ -4,7 +4,7 @@ import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
-import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -610,6 +610,8 @@ function renderUnarmedCard(c, u){
   }
   var furyBtn = divineFuryButton(c, u.name);
   if(furyBtn) actions.appendChild(furyBtn);
+  var blessBtn = blessedStrikesButton(c, u.name);
+  if(blessBtn) actions.appendChild(blessBtn);
   card.appendChild(actions);
   return card;
 }
@@ -676,6 +678,18 @@ function divineFuryButton(c, name){
   btn.addEventListener("click", function(){
     performRoll(6, 1, fury.bonus, "none", name + ": Divine Fury" + (fury.type ? " (" + fury.type + ")" : ""));
   });
+  return btn;
+}
+
+/* Blessed Strikes: 1d8 radiant once per turn, its own button for the same
+   reason as Divine Fury. */
+function blessedStrikesButton(c, name){
+  if(!hasBlessedStrikes(c)) return null;
+  var btn = document.createElement("button");
+  btn.type = "button"; btn.className = "btn small inv-roll-btn inv-fury-btn";
+  btn.innerHTML = makeDicesSvg() + "+1d8 radiant";
+  btn.title = "Blessed Strikes: extra radiant damage to a creature your weapon attack damages, once until the start of your next turn";
+  btn.addEventListener("click", function(){ performRoll(8, 1, 0, "none", name + ": Blessed Strikes (Radiant)"); });
   return btn;
 }
 
@@ -992,6 +1006,8 @@ function renderWeaponCard(c, item, idx){
 
   var furyBtn = divineFuryButton(c, item.name || "Weapon");
   if(furyBtn) actions.appendChild(furyBtn);
+  var blessBtn = parsed && blessedStrikesButton(c, item.name || "Weapon");
+  if(blessBtn) actions.appendChild(blessBtn);
 
   if(parsed) cavalierButtons(c, item, atkBonus, atkRoll, parsed, dmgBonus).forEach(function(b){ actions.appendChild(b); });
 

@@ -67,7 +67,7 @@ export function renderClassPicksCard(c){
   // it can be switched back) after the switch goes off.
   var variants = [];
   (c.classes||[]).forEach(function(cl){
-    classVariantSwaps(cl.name).forEach(function(v){
+    classVariantSwaps(cl.name, null, cl).forEach(function(v){
       if((c.tashaOptional && (Number(cl.level)||1) >= (v.level||1)) || usesVariant(cl, v.name)) variants.push({cl: cl, def: v});
     });
   });

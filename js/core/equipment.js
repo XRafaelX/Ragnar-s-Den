@@ -433,6 +433,12 @@ export function divineFury(c){
   if(!barb || barb.subclass!=="Path of the Zealot" || lv < 3) return null;
   return {bonus: Math.floor(lv / 2), type: characterChoices(c, "divineFury")[0] || ""};
 }
+/* Blessed Strikes (Tasha's, cleric 8, in place of the domain's Divine
+   Strike or Potent Spellcasting): 1d8 radiant once per turn when a
+   cantrip or weapon attack damages a creature. */
+export function hasBlessedStrikes(c){
+  return (c.classes||[]).some(function(cl){ return cl.name==="Cleric" && usesVariant(cl, "Blessed Strikes"); });
+}
 /* Unwavering Mark (Cavalier, fighter 3): the bonus action attack against
    a marked creature that damaged someone else, with a melee weapon in
    hand. Advantage on the attack and + half the fighter level to its
