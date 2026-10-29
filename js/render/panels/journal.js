@@ -11,7 +11,7 @@ var TITLE_MAX_CHARS = 80;
 var COUNTER_FROM = 0.9;     // show the character counter once an entry is 90% full
 
 /* Entries the player has opened. Not saved: a fresh visit starts with every
-   written entry folded to one line. */
+   written entry folded to one line, and so does adding a new entry. */
 var openEntries = new WeakSet();
 var focusAfter = null;  // {entry, grip}: what takes focus after a redraw (a new entry's text box, or a moved entry's grip)
 
@@ -132,6 +132,8 @@ export function renderJournalPanel(c){
   addBtn.textContent = "+ New entry";
   addBtn.addEventListener("click", function(){
     var entry = {ts: nowStamp(), title:"", text:""};
+    // The entries already written fold away, so only the new one is open.
+    c.notes.forEach(function(n){ openEntries.delete(n); });
     c.notes.unshift(entry);
     openEntries.add(entry); focusAfter = {entry: entry, grip: false};
     save(); renderAll(); playAdd();
