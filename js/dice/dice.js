@@ -205,9 +205,10 @@ export function renderDicePreview(){
 /* followUp (optional): a function called once the dice settle, returning
    {lead, hint, options: [{label, title, disabled, use}]} or null: what the
    player can still do with this roll (Focused Aim's ki after a missed
-   attack). They show under the result in the tray; use() pays for it and
-   returns {bonus, log} (or null when it can't), and the total grows by
-   the bonus. One per roll. */
+   attack, Magical Guidance's reroll after a failed check). They show
+   under the result in the tray; use() pays for it and returns {bonus,
+   log}, and the total grows by the bonus, or {reroll: true, log}, and
+   the same dice are rolled again (null when it can't). One per roll. */
 export function performRoll(die, qty, modifier, adv, label, followUp){
   lastRollConfig = { die: die, qty: qty, modifier: modifier, adv: adv, label: label, followUp: followUp || null };
   previewDie = die;
@@ -367,6 +368,12 @@ export function performRoll(die, qty, modifier, adv, label, followUp){
     logRoll(label || ("d" + die), full);
     var follow = followUp && followUp();
     if(follow) renderFollowUp(followEl, follow, function(res){
+      // A reroll (Magical Guidance): the same roll again, and it stands.
+      if(res.reroll){
+        logRoll(label || ("d" + die), res.log + ": rerolled");
+        performRoll(die, qty, modifier, adv, label, null);
+        return;
+      }
       finalTotal += res.bonus;
       resultEl.textContent = finalTotal;
       detailEl.textContent += " " + fmtMod(res.bonus) + " = " + finalTotal;

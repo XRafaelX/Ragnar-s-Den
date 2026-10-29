@@ -41,6 +41,9 @@ export var CLASS_RESOURCES = {
     {id:"channel_divinity", name:"Channel Divinity", level:2,
       max:function(lv){ return lv>=18 ? 3 : lv>=6 ? 2 : 1; }, reset:always("short"),
       hint:"Turn Undead or your domain's Channel Divinity option."},
+    {id:"harness_divine_power", name:"Harness Divine Power", level:2, variant:"Harness Divine Power",
+      max:function(lv){ return lv>=18 ? 3 : lv>=6 ? 2 : 1; }, reset:always("long"),
+      hint:"Bonus action: spend a Channel Divinity to get back a spent spell slot."},
     {id:"divine_intervention", name:"Divine Intervention", level:10, max:always(1), reset:always("manual"),
       hint:"Action: roll d100. At or under your cleric level (always from level 20), your deity helps. Regain after 7 days if it worked, or after a long rest if it didn't."}
   ],
@@ -73,6 +76,9 @@ export var CLASS_RESOURCES = {
       hint:"Action: restore hit points from this pool, or spend 5 to cure a disease or poison."},
     {id:"channel_divinity", name:"Channel Divinity", level:3, max:always(1), reset:always("short"),
       hint:"Use one of your Sacred Oath's Channel Divinity options."},
+    {id:"harness_divine_power", name:"Harness Divine Power", level:3, variant:"Harness Divine Power",
+      max:function(lv){ return lv>=15 ? 3 : lv>=7 ? 2 : 1; }, reset:always("long"),
+      hint:"Bonus action: spend a Channel Divinity to get back a spent spell slot."},
     {id:"cleansing_touch", name:"Cleansing Touch", level:14,
       max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
       hint:"Action: end one spell on yourself or a willing creature you touch."}

@@ -114,6 +114,13 @@ export var CLASS_PROGRESSION = {
   "Bard": {
     subclassLevel: 3, subclassLabel: "Bard College",
     prereq: [["cha"]], casterType: "full", spellAbility: "cha", asiLevels: STANDARD_ASI,
+    // Tasha's Cauldron (p. 27), checked on 5etools' data 2026-10-29.
+    variants: [
+      {name:"Magical Inspiration", adds:true, level:2, blurb:"Your Bardic Inspiration die can boost a spell's healing or damage.",
+        features:{
+          2: [{name:"Magical Inspiration", text:"If a creature has a Bardic Inspiration die from you and casts a spell that restores hit points or deals damage, it can roll that die and choose one target affected by the spell. Add the number rolled to the hit points that target regains or the damage it takes. The Bardic Inspiration die is then lost."}]
+        }}
+    ],
     multiclassProfs: {armor:["Light armor"], weapons:[], tools:[], note:"",
       profs:{pick:[{kind:"skill"}, {kind:"tool", group:"Musical instruments"}]}},
     startingProfs: {text: "Three musical instruments of your choice", profs: {pick:[{kind:"tool", group:"Musical instruments", count:3}]}},
@@ -142,6 +149,13 @@ export var CLASS_PROGRESSION = {
   "Cleric": {
     subclassLevel: 1, subclassLabel: "Divine Domain",
     prereq: [["wis"]], casterType: "full", spellAbility: "wis", asiLevels: STANDARD_ASI,
+    // Tasha's Cauldron (p. 30), checked on 5etools' data 2026-10-29.
+    variants: [
+      {name:"Harness Divine Power", adds:true, level:2, blurb:"Spend a Channel Divinity to get back a spent spell slot.",
+        features:{
+          2: [{name:"Harness Divine Power", text:"As a bonus action, you can spend a use of your Channel Divinity to regain one spent spell slot, of a level no higher than half your proficiency bonus (rounded up). You can do this once, twice from cleric level 6 and three times from cleric level 18, and you regain all uses when you finish a long rest. Use it from Harness Divine Power on the Vitals tab."}]
+        }}
+    ],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:[], tools:[], note:""},
     features: {
       2: [{name:"Channel Divinity", text:"Channel divine power once per short or long rest. Every cleric has Turn Undead (action: each undead within 30 feet that can see or hear you makes a WIS save or is turned for 1 minute or until it takes damage), and your domain adds another option."}],
@@ -248,6 +262,13 @@ export var CLASS_PROGRESSION = {
     subclassLevel: 3, subclassLabel: "Sacred Oath",
     fightingStyle: {level:2, options:["Defense","Dueling","Great Weapon Fighting","Protection","Blessed Warrior","Blind Fighting","Interception"]},
     prereq: [["str", "cha"]], casterType: "half", spellAbility: "cha", asiLevels: STANDARD_ASI,
+    // Tasha's Cauldron (p. 52), checked on 5etools' data 2026-10-29.
+    variants: [
+      {name:"Harness Divine Power", adds:true, level:3, blurb:"Spend a Channel Divinity to get back a spent spell slot.",
+        features:{
+          3: [{name:"Harness Divine Power", text:"As a bonus action, you can spend a use of your Channel Divinity to regain one spent spell slot, of a level no higher than half your proficiency bonus (rounded up). You can do this once, twice from paladin level 7 and three times from paladin level 15, and you regain all uses when you finish a long rest. Use it from Harness Divine Power on the Vitals tab."}]
+        }}
+    ],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:""},
     features: {
       2: [
@@ -367,6 +388,13 @@ export var CLASS_PROGRESSION = {
   "Sorcerer": {
     subclassLevel: 1, subclassLabel: "Sorcerous Origin",
     prereq: [["cha"]], casterType: "full", spellAbility: "cha", asiLevels: STANDARD_ASI,
+    // Tasha's Cauldron (p. 65), checked on 5etools' data 2026-10-29.
+    variants: [
+      {name:"Magical Guidance", adds:true, level:5, blurb:"Spend 1 sorcery point to reroll a failed ability check.",
+        features:{
+          5: [{name:"Magical Guidance", text:"When you make an ability check that fails, you can spend 1 sorcery point to reroll the d20, and you must use the new roll. After you roll a check, the dice tray offers it."}]
+        }}
+    ],
     multiclassProfs: {armor:[], weapons:[], tools:[], note:""},
     features: {
       2: [{name:"Font of Magic", text:"You have sorcery points equal to your sorcerer level, regained on a long rest. As a bonus action, expend a spell slot to gain points equal to its level, or spend points to create a slot: 1st (2 points), 2nd (3), 3rd (5), 4th (7) or 5th (9). Created slots vanish on a long rest."}],

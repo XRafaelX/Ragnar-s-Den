@@ -165,33 +165,61 @@ export function songOfVictoryBonus(c, item){
   return classLevelOf(c, "Wizard", "Bladesinging") >= 14 ? bladesongBonus(c) : 0;
 }
 
-/* ---- Tasha's monk ki features ----
+/* ---- Tasha's features that spend points ----
    Quickened Healing (monk 4): 2 ki for a Martial Arts die plus the
    proficiency bonus of healing. Focused Aim (monk 5): after a missed
-   attack roll, 1 to 3 ki for +2 to the roll each. */
-function monkUses(c, name){
-  return (c.classes||[]).some(function(cl){ return cl.name==="Monk" && usesVariant(cl, name); });
+   attack roll, 1 to 3 ki for +2 to the roll each. Magical Guidance
+   (sorcerer 5): 1 sorcery point to reroll a failed ability check. */
+function classUses(c, className, name){
+  return (c.classes||[]).some(function(cl){ return cl.name===className && usesVariant(cl, name); });
 }
-function kiPool(c){
-  return characterResources(c).find(function(r){ return r.key==="Monk:ki"; }) || null;
+function pool(c, key){
+  return characterResources(c).find(function(r){ return r.key===key; }) || null;
 }
-/* The ki points left, or -1 without a ki pool. */
-export function kiLeft(c){
-  var ki = kiPool(c);
-  return ki ? ki.max - ki.used : -1;
+/* What's left of a resource ("Monk:ki"), or -1 without it. */
+export function resourceLeft(c, key){
+  var r = pool(c, key);
+  return r ? r.max - r.used : -1;
 }
-/* Spend `n` ki. False when there isn't enough. */
-export function spendKi(c, n){
-  var ki = kiPool(c);
-  if(!ki || ki.max - ki.used < n) return false;
+/* Spend `n` of it. False when there isn't enough. */
+export function spendResource(c, key, n){
+  var r = pool(c, key);
+  if(!r || r.max - r.used < n) return false;
   if(!c.resourcesUsed) c.resourcesUsed = {};
-  c.resourcesUsed[ki.key] = ki.used + n;
+  c.resourcesUsed[r.key] = r.used + n;
   return true;
 }
+export function kiLeft(c){ return resourceLeft(c, "Monk:ki"); }
+export function spendKi(c, n){ return spendResource(c, "Monk:ki", n); }
 /* {cost, die, bonus} for Quickened Healing, or null without it. */
 export function quickenedHealing(c){
-  return monkUses(c, "Quickened Healing") && kiPool(c) ? {cost: 2, die: martialArtsDie(c), bonus: profBonus(c)} : null;
+  return classUses(c, "Monk", "Quickened Healing") && pool(c, "Monk:ki") ? {cost: 2, die: martialArtsDie(c), bonus: profBonus(c)} : null;
 }
 export function hasFocusedAim(c){
-  return monkUses(c, "Focused Aim") && !!kiPool(c);
+  return classUses(c, "Monk", "Focused Aim") && !!pool(c, "Monk:ki");
+}
+export function hasMagicalGuidance(c){
+  return classUses(c, "Sorcerer", "Magical Guidance") && !!pool(c, "Sorcerer:sorcery_points");
+}
+
+/* ---- Harness Divine Power (Tasha's, cleric 2, paladin 3) ----
+   A use of it and of that class's Channel Divinity give back one spent
+   spell slot, of a level up to half the proficiency bonus (rounded up). */
+export function harnessDivinePower(c, className){
+  if(!classUses(c, className, "Harness Divine Power")) return null;
+  var uses = pool(c, className + ":harness_divine_power"), channel = pool(c, className + ":channel_divinity");
+  if(!uses || !channel) return null;
+  var top = Math.ceil(profBonus(c) / 2), slots = (c.spellcasting && c.spellcasting.slots) || {};
+  var levels = [];
+  for(var l = 1; l <= top; l++) if(slots[l] && (Number(slots[l].used)||0) > 0) levels.push(l);
+  return {top: top, levels: levels, usesLeft: uses.max - uses.used, channelLeft: channel.max - channel.used};
+}
+/* Get back a spent slot of `level`. False if it can't. */
+export function useHarnessDivinePower(c, className, level){
+  var h = harnessDivinePower(c, className);
+  if(!h || !h.usesLeft || !h.channelLeft || h.levels.indexOf(level)===-1) return false;
+  spendResource(c, className + ":harness_divine_power", 1);
+  spendResource(c, className + ":channel_divinity", 1);
+  c.spellcasting.slots[level].used = Number(c.spellcasting.slots[level].used) - 1;
+  return true;
 }

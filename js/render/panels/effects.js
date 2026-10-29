@@ -3,7 +3,7 @@ import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladeso
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { rollAttack } from "./attack-roll.js";
+import { rollAttack } from "./sheet-rolls.js";
 
 /* ---------------- Active effects ----------------
    On the Vitals tab, only for characters with a feature they switch on

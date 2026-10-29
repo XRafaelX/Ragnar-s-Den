@@ -4,7 +4,7 @@ import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { useNextCheck } from "../../core/magic-items.js";
+import { rollCheck } from "./sheet-rolls.js";
 import { abilityScore, abilityScoreDetail } from "../../core/ability-scores.js";
 
 /* "Adv" / "Dis" tag for a check, save or skill that rolls that way. */
@@ -66,15 +66,15 @@ export function renderAbilitiesPanel(c){
     rollArea.setAttribute("tabindex", "0");
     rollArea.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(shown)+'</div>';
     if(check.roll.mode!=="none") rollArea.appendChild(rollTag(check.roll));
-    function rollCheck(){ performRoll(20,1,check.value,check.roll.mode, a[1]+" check"); spentNextCheck(c); }
+    function rollAbilityCheck(){ rollCheck(c, check.value, check.roll.mode, a[1]+" check"); }
     rollArea.addEventListener("click", function(e){
       e.stopPropagation();
-      rollCheck();
+      rollAbilityCheck();
     });
     rollArea.addEventListener("keydown", function(e){
       if(e.key === "Enter" || e.key === " "){
         e.preventDefault();
-        rollCheck();
+        rollAbilityCheck();
       }
     });
     box.appendChild(rollArea);
@@ -251,7 +251,7 @@ export function renderAbilitiesPanel(c){
     abbr.className = "abbr"; abbr.textContent = skillAbility.label.slice(0, 3);
     if(skillAbility.label.length > 3) abbr.title = skillAbility.label;
     row.appendChild(pips); row.appendChild(nameSpan); row.appendChild(abbr); row.appendChild(rollButton(bonus, name));
-    onRowRoll(row, function(){ performRoll(20,1,bonus,rollMode, name); spentNextCheck(c); });
+    onRowRoll(row, function(){ rollCheck(c, bonus, rollMode, name); });
     skillRows.appendChild(row);
   });
   skillCard.appendChild(skillRows);
@@ -283,10 +283,4 @@ export function renderAbilitiesPanel(c){
   panel.appendChild(passCard);
 
   return panel;
-}
-
-/* An ability check rolled with Duality's "advantage on your next ability
-   check" uses the boon up. */
-function spentNextCheck(c){
-  if(useNextCheck(c)){ save(); renderAll(); }
 }

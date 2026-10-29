@@ -1,7 +1,7 @@
 import { save } from "../../core/state.js";
 import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities, plainAttackRollMode } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { rollAttack } from "./attack-roll.js";
+import { rollAttack } from "./sheet-rolls.js";
 import { playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";

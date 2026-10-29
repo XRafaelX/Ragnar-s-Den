@@ -3,7 +3,7 @@ import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg } from "../../ui/svg-icons.js";
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { rollAttack } from "./attack-roll.js";
+import { rollAttack } from "./sheet-rolls.js";
 import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";

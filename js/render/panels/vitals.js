@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, harnessDivinePower, useHarnessDivinePower, ordinal } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -949,6 +949,29 @@ function renderResourcesCard(c, resources){
       });
       heals.appendChild(healBtn);
       info.appendChild(heals);
+    }
+    // Harness Divine Power (Tasha's, cleric 2, paladin 3): a Channel
+    // Divinity for a spent spell slot. Buttons only while one is spent.
+    var hdpClass = /:harness_divine_power$/.test(r.key) && r.key.split(":")[0];
+    var hdp = hdpClass && harnessDivinePower(c, hdpClass);
+    if(hdp && hdp.levels.length){
+      var slotsRow = document.createElement("div");
+      slotsRow.className = "inv-roll-actions fx-rolls";
+      var why = !hdp.usesLeft ? "Used up until a long rest" : !hdp.channelLeft ? "No Channel Divinity left" : "";
+      hdp.levels.forEach(function(l){
+        var slotBtn = document.createElement("button");
+        slotBtn.type = "button"; slotBtn.className = "btn small inv-roll-btn res-roll-btn";
+        slotBtn.textContent = "Get back a " + ordinal(l) + "-level slot";
+        slotBtn.disabled = !!why;
+        slotBtn.title = why || "Bonus action: spend a Channel Divinity to get back one spent " + ordinal(l) + "-level spell slot";
+        slotBtn.addEventListener("click", function(){
+          if(!useHarnessDivinePower(c, hdpClass, l)) return;
+          logRoll("Harness Divine Power", "Got back a " + ordinal(l) + "-level spell slot (1 Channel Divinity)");
+          save(); renderAll();
+        });
+        slotsRow.appendChild(slotBtn);
+      });
+      info.appendChild(slotsRow);
     }
     row.appendChild(info);
 

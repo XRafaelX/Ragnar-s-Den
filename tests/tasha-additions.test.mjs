@@ -256,3 +256,36 @@ test("Quickened Healing and Focused Aim spend ki", () => {
   assert.equal(H.spendKi(c, 3), false, "not enough left");
   assert.equal(H.kiLeft(makeChar([{ name: "Fighter", subclass: "", level: 5 }])), -1);
 });
+
+/* ---- Phase 3 (2026-10-29): Harness Divine Power, Magical Guidance, Magical Inspiration ---- */
+const caster = (name, sub, lv, extra = {}) => ensureShape(makeChar([{ name, subclass: sub, level: lv }], Object.assign({ tashaOptional: true }, extra)));
+
+test("Harness Divine Power: a Channel Divinity for a spent slot up to half the proficiency bonus", () => {
+  const c = caster("Cleric", "Life Domain", 5);
+  c.spellcasting.slots = { 1: { max: 4, used: 1 }, 2: { max: 3, used: 1 }, 3: { max: 2, used: 2 } };
+  const h = H.harnessDivinePower(c, "Cleric");
+  assert.deepEqual([h.top, h.levels, h.usesLeft, h.channelLeft], [2, [1, 2], 1, 1], "proficiency +3: up to 2nd level, the 3rd-level slots aren't offered");
+  assert.equal(H.useHarnessDivinePower(c, "Cleric", 3), false);
+  assert.ok(H.useHarnessDivinePower(c, "Cleric", 2));
+  assert.deepEqual([c.spellcasting.slots[2].used, c.resourcesUsed["Cleric:channel_divinity"], c.resourcesUsed["Cleric:harness_divine_power"]], [0, 1, 1]);
+  assert.equal(H.useHarnessDivinePower(c, "Cleric", 1), false, "once a long rest at cleric 5");
+  // Uses by level: cleric 1/2/3 at 2/6/18, paladin 1/2/3 at 3/7/15.
+  const uses = (cls, sub, lv) => H.characterResources(caster(cls, sub, lv)).find((r) => r.name === "Harness Divine Power")?.max;
+  assert.deepEqual([uses("Cleric", "Life Domain", 2), uses("Cleric", "Life Domain", 6), uses("Cleric", "Life Domain", 18)], [1, 2, 3]);
+  assert.deepEqual([uses("Paladin", "", 2), uses("Paladin", "Oath of Devotion", 3), uses("Paladin", "Oath of Devotion", 7), uses("Paladin", "Oath of Devotion", 15)], [undefined, 1, 2, 3]);
+  const pal = caster("Paladin", "Oath of Devotion", 3);
+  pal.spellcasting.slots = { 1: { max: 3, used: 2 } };
+  assert.deepEqual(H.harnessDivinePower(pal, "Paladin").levels, [1], "proficiency +2: 1st level only");
+  assert.equal(H.harnessDivinePower(caster("Cleric", "Life Domain", 5, { tashaOptional: false }), "Cleric"), null);
+});
+
+test("Magical Guidance and Magical Inspiration arrive with Tasha's", () => {
+  assert.equal(H.hasMagicalGuidance(caster("Sorcerer", "Draconic Bloodline", 5)), true);
+  assert.equal(H.hasMagicalGuidance(caster("Sorcerer", "Draconic Bloodline", 4)), false, "from sorcerer 5");
+  assert.equal(H.hasMagicalGuidance(caster("Sorcerer", "Draconic Bloodline", 5, { tashaOptional: false })), false);
+  const s = caster("Sorcerer", "Draconic Bloodline", 5);
+  assert.ok(H.spendResource(s, "Sorcerer:sorcery_points", 1));
+  assert.equal(H.resourceLeft(s, "Sorcerer:sorcery_points"), 4);
+  assert.ok(names(caster("Bard", "", 2).classes[0]).includes("Magical Inspiration"));
+  assert.ok(!names(caster("Bard", "", 2, { tashaOptional: false }).classes[0]).includes("Magical Inspiration"));
+});
