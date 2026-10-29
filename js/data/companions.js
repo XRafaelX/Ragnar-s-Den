@@ -28,7 +28,9 @@
      requires     in place of cls: {spell, pactBoon}, either one (a familiar:
                   Find Familiar known, or Pact of the Chain); stats get
                   ctx.chain then. choice.chainOnly lists the options only
-                  Pact of the Chain allows.
+                  Pact of the Chain allows. A druid's Wild Companion
+                  counts as Find Familiar (ctx.wild: the hours it lasts,
+                  ctx.wildOnly when that's the only way the druid casts it).
    A new companion is one more entry here; the card draws any of them. */
 import { SRD_STAT_BLOCKS, BEAST_MASTER_BEASTS, FAMILIAR_FORMS, CHAIN_FAMILIARS, MOUNTS } from "./beast-blocks.js";
 
@@ -263,8 +265,9 @@ export var COMPANIONS = [
         {name:"Shared senses", text:"Within 100 feet you can talk with it telepathically, and as an action see through its eyes and hear what it hears until the start of your next turn. It can deliver your touch spells with its reaction."},
         {name:"Dismiss", text:"As an action you can send it to a pocket dimension and later recall it within 30 feet. At 0 hit points it vanishes until you cast Find Familiar again."}];
       if(x.chain) rules.push({name:"Pact of the Chain", text:"When you take the Attack action, you can forgo one of your attacks so that it attacks once with its reaction."});
+      if(x.wild) rules.push({name:"Wild Companion", text:"Summoned with a use of Wild Shape, it's a fey and disappears after " + x.wild + (x.wild===1 ? " hour" : " hours") + ". Summon it from Wild Shape on the Vitals tab."});
       return {
-        type: b.size + " " + (b.type==="beast" ? "celestial, fey or fiend" : b.type) + ": " + x.choice.toLowerCase(),
+        type: b.size + " " + (b.type!=="beast" ? b.type : x.wildOnly ? "fey" : "celestial, fey or fiend") + ": " + x.choice.toLowerCase(),
         ac: b.ac, hp: b.hp, speed: b.speed, abilities: b.abilities, skills: b.skills, senses: b.senses,
         attacks: x.chain ? b.attacks : [],
         traits: (b.traits ? [{text: b.traits}] : []).concat(rules)

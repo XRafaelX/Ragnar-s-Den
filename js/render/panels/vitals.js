@@ -6,7 +6,8 @@ import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { elixirsOnLongRest, infusionsOnLongRest } from "../../core/artificer.js";
-import { restoreCompanions } from "../../core/companions.js";
+import { restoreCompanions, wildCompanionHours, summonWildCompanion } from "../../core/companions.js";
+import { showActionToast } from "../../ui/toast.js";
 import { useNextCheck, magicItemsOnLongRest, endTimedBoons, coinResistances } from "../../core/magic-items.js";
 import { infusionResistances } from "../../core/infusion-effects.js";
 import { renderDeathSaves } from "./death-saves.js";
@@ -972,6 +973,28 @@ function renderResourcesCard(c, resources){
         slotsRow.appendChild(slotBtn);
       });
       info.appendChild(slotsRow);
+    }
+    // Wild Companion (Tasha's, druid 2): a use of Wild Shape casts Find
+    // Familiar, a fey that lasts half the druid level in hours.
+    var wildHours = r.key==="Druid:wild_shape" && wildCompanionHours(c);
+    if(wildHours){
+      var wildRow = document.createElement("div");
+      wildRow.className = "inv-roll-actions fx-rolls";
+      var wildBtn = document.createElement("button");
+      wildBtn.type = "button"; wildBtn.className = "btn small inv-roll-btn res-roll-btn";
+      wildBtn.textContent = "Wild Companion · 1 use";
+      var lasts = wildHours + (wildHours===1 ? " hour" : " hours");
+      wildBtn.disabled = remaining<=0;
+      wildBtn.title = remaining<=0 ? "No Wild Shape uses left" : "Action: spend a use of Wild Shape to cast Find Familiar. The familiar is a fey and lasts " + lasts + ".";
+      wildBtn.addEventListener("click", function(){
+        summonWildCompanion(c);
+        logRoll("Wild Companion", "Cast Find Familiar with a use of Wild Shape. The fey familiar lasts " + lasts + ".");
+        var form = c.companions && c.companions.familiar && c.companions.familiar.choice;
+        showActionToast(form ? "Your " + form.toLowerCase() + " appears. It lasts " + lasts + "." : "Your familiar appears. Choose its form on the Companions tab.");
+        if(r.max!==Infinity) setUsed(r.used+1); else { save(); renderAll(); }
+      });
+      wildRow.appendChild(wildBtn);
+      info.appendChild(wildRow);
     }
     row.appendChild(info);
 

@@ -1,5 +1,5 @@
 import { COMPANIONS } from "../data/companions.js";
-import { mod, profBonus, classSpellAbility, clamp, totalLevel, featureSpells } from "./helpers.js";
+import { mod, profBonus, classSpellAbility, clamp, totalLevel, featureSpells, usesVariant } from "./helpers.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* ---------------- Companions ----------------
@@ -23,7 +23,7 @@ export function characterCompanions(c){
     var castMod = mods[(cl && classSpellAbility(cl)) || "int"] || 0;
     var saved = companionState(c, def.id);
     var stats = def.stats({lv: cl ? Number(cl.level)||1 : totalLevel(c), pb: pb, mods: mods, spellAttack: pb + castMod, spellDC: 8 + pb + castMod,
-      choice: saved.choice || "", beast: saved.beast || null, chain: !!(req && req.chain)});
+      choice: saved.choice || "", beast: saved.beast || null, chain: !!(req && req.chain), wild: (req && req.wild) || 0, wildOnly: !!(req && req.wildOnly)});
     out.push({def: def, stats: stats, choice: saved.choice || "", hasBeast: !!saved.beast, hp: stats ? companionHp(c, def.id, stats) : [],
       source: req ? req.source : "", options: companionOptions(def, req),
       name: saved.name || "", title: saved.title || "", image: saved.image || ""});
@@ -31,13 +31,27 @@ export function characterCompanions(c){
   return out;
 }
 /* A companion that comes from a spell or a Pact Boon (a familiar):
-   {source, chain} when the character has either, else null. */
+   {source, chain, wild} when the character has either, else null. A
+   druid's Wild Companion casts Find Familiar too: `wild` is how many
+   hours that familiar lasts, and the source names the feature when the
+   druid doesn't know the spell otherwise. */
 function companionRequirement(c, r){
   var chain = !!r.pactBoon && (c.classes||[]).some(function(cl){ return cl.name==="Warlock" && cl.pactBoon===r.pactBoon; });
   if(chain) return {source: r.pactBoon, chain: true};
+  var wild = r.spell==="Find Familiar" ? wildCompanionHours(c) : 0;
   var knows = !!r.spell && ((c.spells||[]).some(function(s){ return s.name===r.spell; }) ||
-    featureSpells(c).some(function(s){ return s.name===r.spell; }));
-  return knows ? {source: r.spell, chain: false} : null;
+    featureSpells(c).some(function(s){ return s.name===r.spell && s.feature!=="Wild Companion"; }));
+  return knows || wild ? {source: knows ? r.spell : "Wild Companion", chain: false, wild: wild, wildOnly: !knows} : null;
+}
+/* Wild Companion (Tasha's, druid 2): the hours its familiar lasts (half
+   the druid level), or 0 without it. */
+export function wildCompanionHours(c){
+  var cl = (c.classes||[]).find(function(x){ return x.name==="Druid" && usesVariant(x, "Wild Companion"); });
+  return cl ? Math.max(1, Math.floor((Number(cl.level)||1) / 2)) : 0;
+}
+/* The druid summons it: a new familiar, at full hit points. */
+export function summonWildCompanion(c){
+  companionState(c, "familiar").hp = [];
 }
 /* The choice's options for this character: a familiar's chain-only forms
    need Pact of the Chain. */

@@ -11,6 +11,7 @@ import * as LU from "../js/levelup/session.js";
 import * as W from "../js/wizard/wizard-core.js";
 import { finish, undoLastLevelUp } from "../js/levelup/apply.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
+import * as COMP from "../js/core/companions.js";
 import { withFakeDom } from "./fake-dom.mjs";
 
 function makeChar(classes, extra = {}){
@@ -288,4 +289,30 @@ test("Magical Guidance and Magical Inspiration arrive with Tasha's", () => {
   assert.equal(H.resourceLeft(s, "Sorcerer:sorcery_points"), 4);
   assert.ok(names(caster("Bard", "", 2).classes[0]).includes("Magical Inspiration"));
   assert.ok(!names(caster("Bard", "", 2, { tashaOptional: false }).classes[0]).includes("Magical Inspiration"));
+});
+
+/* ---- Phase 4 (2026-10-29): Wild Companion ---- */
+test("Wild Companion: a Wild Shape use casts Find Familiar, a fey that lasts half the druid level in hours", () => {
+  const druid = (lv, extra) => caster("Druid", lv >= 2 ? "Circle of the Land" : "", lv, extra);
+  const c = druid(2);
+  const ff = H.featureSpells(c).find((s) => s.name === "Find Familiar");
+  assert.deepEqual([ff.kind, ff.kindLabel, ff.feature], ["free", "1 Wild Shape", "Wild Companion"]);
+  const fam = () => COMP.characterCompanions(c).find((x) => x.def.id === "familiar");
+  assert.equal(fam().source, "Wild Companion");
+  COMP.setCompanionChoice(c, "familiar", "Owl");
+  assert.equal(fam().stats.type, "Tiny fey: owl");
+  assert.ok(fam().stats.traits.some((t) => t.name === "Wild Companion" && /disappears after 1 hour\./.test(t.text)));
+  assert.equal(COMP.wildCompanionHours(druid(6)), 3);
+  assert.equal(COMP.wildCompanionHours(druid(2, { tashaOptional: false })), 0);
+  assert.ok(!COMP.characterCompanions(druid(2, { tashaOptional: false })).some((x) => x.def.id === "familiar"), "no familiar without it");
+  // A new summoning is a new familiar at full hit points.
+  c.companions.familiar.hp = [0];
+  COMP.summonWildCompanion(c);
+  assert.deepEqual(fam().hp, [fam().stats.hp]);
+  // A druid who knows the spell too: the familiar may be any of the three.
+  const both = druid(4, { spells: [{ name: "Find Familiar", level: 1 }] });
+  COMP.setCompanionChoice(both, "familiar", "Owl");
+  const f2 = COMP.characterCompanions(both).find((x) => x.def.id === "familiar");
+  assert.deepEqual([f2.source, f2.stats.type], ["Find Familiar", "Tiny celestial, fey or fiend: owl"]);
+  assert.ok(f2.stats.traits.some((t) => t.name === "Wild Companion" && /2 hours/.test(t.text)));
 });

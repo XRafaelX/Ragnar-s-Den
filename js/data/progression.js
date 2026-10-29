@@ -167,6 +167,14 @@ export var CLASS_PROGRESSION = {
   "Druid": {
     subclassLevel: 2, subclassLabel: "Druid Circle",
     prereq: [["wis"]], casterType: "full", spellAbility: "wis", asiLevels: STANDARD_ASI,
+    // Tasha's Cauldron (p. 35), checked on 5etools' data 2026-10-29.
+    variants: [
+      {name:"Wild Companion", adds:true, level:2, blurb:"Spend a use of Wild Shape to cast Find Familiar, a fey that lasts a few hours.",
+        features:{
+          2: [{name:"Wild Companion", text:"As an action, you can spend a use of Wild Shape to cast Find Familiar without material components. The familiar is a fey instead of a beast, and it disappears after a number of hours equal to half your druid level. Summon it from Wild Shape on the Vitals tab. Its card is on the Companions tab.",
+            spells:["Find Familiar"], spellKind:"free", spellLabel:"1 Wild Shape", spellTip:"Wild Companion: spend a use of Wild Shape to cast it without material components (from Wild Shape on the Vitals tab). The familiar is a fey and lasts half your druid level in hours."}]
+        }}
+    ],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:[], tools:[], note:""},
     features: {
       2: [{name:"Wild Shape", text:"Action to turn into a beast you've seen (max CR 1/4, no flying or swimming speed) for hours equal to half your druid level. Twice per short or long rest. You use the beast's hit points. When they hit 0 you turn back."}],
