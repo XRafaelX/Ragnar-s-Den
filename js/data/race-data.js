@@ -784,7 +784,7 @@ export var RACE_DATA = {
       tr("Kefnet's Blessing", "You can add half your proficiency bonus (rounded down) to any Intelligence check that doesn't already include your proficiency bonus.")]},
   "Khenra": {asi:{dex:2,str:1}, size:"Medium", speed:{walk:35}, darkvision:0,
     languages:{fixed:["Common","Khenra"]}, source:"Plane Shift: Amonkhet",
-    traits:[tr("Khenra Weapon Training", "You have proficiency with the khopesh, spear and javelin.", {weapons:["Spear","Javelin"]}),
+    traits:[tr("Khenra Weapon Training", "You have proficiency with the khopesh, spear and javelin.", {weapons:["Khopesh","Spear","Javelin"]}),
       tr("Khenra Twins", "If your twin is alive and you can see them, whenever you roll a 1 on an attack roll, ability check or saving throw, you can reroll the die and must use the new roll. If your twin is dead, or you were born without one, you can't be frightened.")]},
   "Kor": {asi:{dex:2,wis:1}, size:"Medium", speed:{walk:30, climb:30}, speedWhen:{climb:"not encumbered or in heavy armor"}, darkvision:0,
     languages:{fixed:["Common"]}, source:"Plane Shift: Zendikar",

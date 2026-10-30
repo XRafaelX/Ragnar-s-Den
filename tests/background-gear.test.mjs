@@ -11,6 +11,7 @@ import { GEAR_DATA, GEAR_GROUPS } from "../js/data/gear.js";
 import { WEAPON_DATA } from "../js/data/weapons.js";
 import { TRINKET_TABLES } from "../js/data/trinkets.js";
 import { newCharacter } from "../js/core/character.js";
+import { weaponDataOf } from "../js/data/weapons.js";
 
 const names = (r) => r.items.map((i) => (i.qty > 1 ? i.qty + "x " : "") + i.name);
 const fixed = (x) => () => x;
@@ -113,4 +114,37 @@ test("an older sheet: the offer shows until the kit is added or turned down", as
   const none = newCharacter("No background");
   none.background = "";
   assert.equal(K.backgroundKitOffered(none), false, "no background, nothing to offer");
+});
+
+test("Tal'Dorei kits, as the book prints them", () => {
+  assert.deepEqual(names(K.kitItems("Lyceum Scholar", {}, {})), ["Clothes, Fine", "Student uniform", "Writing kit"]);
+  assert.deepEqual(K.kitItems("Lyceum Scholar", {}, {}).coins, { gp: 10 });
+  assert.deepEqual(names(K.kitItems("Reformed Cultist", {}, {})), ["Vestments of your previous cult", "Holy Symbol (amulet)", "Clothes, Common"]);
+  assert.deepEqual(K.kitItems("Reformed Cultist", {}, {}).coins, { gp: 15 });
+  assert.deepEqual(K.kitItems("Clasp Member", {}, {}).coins, { gp: 10 });
+  assert.deepEqual(K.kitItems("Whitestone Rifle Corps", {}, {}).coins, { gp: 10 });
+  // The Clasp's "set of tools with which you're proficient" is one of three, and starts on the pick.
+  const slot = K.kitSlots("Clasp Member", {}).find((s) => s.kind === "group");
+  assert.deepEqual(slot.options.map((o) => o.value), ["Disguise Kit", "Forgery Kit", "Thieves' Tools"]);
+  assert.deepEqual(names(K.kitItems("Clasp Member", {}, { toolPicks: ["Thieves' tools"] })), ["Inconspicuous common clothes", "Thieves' Tools"]);
+  // Musket or pistol.
+  const gun = K.kitSlots("Whitestone Rifle Corps", {})[0];
+  assert.deepEqual(gun.options.map((o) => o.label), ["Musket", "Pistol"]);
+  assert.deepEqual(names(K.kitItems("Whitestone Rifle Corps", { [gun.key]: "1" }, {})), ["Pistol", "Clothes, Common"]);
+});
+
+test("a Gunslinger class character's Rifle Corps gun is one of the class's own", () => {
+  const gunslinger = (pick) => {
+    const c = newCharacter("Gun");
+    c.classes = [{ name: "Gunslinger", subclass: "", level: 1 }];
+    K.addBackgroundKit(c, "Whitestone Rifle Corps", { 0: pick }, {});
+    return c.inventory.find((i) => i.type === "weapon");
+  };
+  const long = gunslinger("0"), pistol = gunslinger("1");
+  assert.deepEqual([long.name, long.firearmSet, long.damageDice, weaponDataOf(long).category], ["Long Gun", "gunslinger", "1d12", "firearm"]);
+  assert.deepEqual([pistol.name, pistol.firearmSet, pistol.damageDice], ["Pistol", "gunslinger", "2d4"]);
+  const other = newCharacter("Scout");
+  K.addBackgroundKit(other, "Whitestone Rifle Corps", { 0: "0" }, {});
+  const musket = other.inventory.find((i) => i.type === "weapon");
+  assert.deepEqual([musket.name, musket.firearmSet, musket.damageDice], ["Musket", undefined, "1d12"]);
 });

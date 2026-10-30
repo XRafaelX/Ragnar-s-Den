@@ -15,7 +15,7 @@ import { draconicBreathText, draconicBreath } from "../js/core/class-features.js
 import { characterResources, restoreResources } from "../js/core/character-resources.js";
 import { RACE_CHOICES, RACES } from "../js/data/races.js";
 import { SKILLS } from "../js/data/abilities-skills.js";
-import { WEAPON_DATA } from "../js/data/weapons.js";
+import { WEAPON_DATA, WEAPON_GROUPS } from "../js/data/weapons.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
 import { state } from "../js/core/state.js";
 import { renderClassPicksCard } from "../js/render/panels/class-picks.js";
@@ -148,6 +148,22 @@ test("weapon proficiency: armor and the Information tab's lists see the race", (
 /* ================================================================
    Choices
    ================================================================ */
+test("the khopesh (Plane Shift: Amonkhet): a longsword, two-handed a greatsword, in the Khenra's training", () => {
+  const stats = (n) => { const w = WEAPON_DATA[n]; return [w.damageDice, w.damageType, w.weight, w.category, w.properties]; };
+  assert.deepEqual(stats("Khopesh"), stats("Longsword"));
+  assert.deepEqual(stats("Two-Handed Khopesh"), stats("Greatsword"));
+  assert.ok(WEAPON_GROUPS["Martial Melee"].includes("Khopesh") && WEAPON_GROUPS["Martial Melee"].includes("Two-Handed Khopesh"));
+  const khenra = makeChar("Khenra");
+  assert.deepEqual(CP.raceProficiencies(khenra).weapons, ["Khopesh", "Spear", "Javelin"]);
+  assert.equal(H.isProficientWithWeapon(khenra, "Khopesh", "martial"), true);
+  assert.equal(H.isProficientWithWeapon(khenra, "Two-Handed Khopesh", "martial"), false, "the book's khenra blade is the longsword kind");
+  // Treated as the weapon it copies, so whoever has that has this.
+  const bard = makeChar("Human", [{ name: "Bard", subclass: "", level: 1 }]);
+  assert.equal(H.isProficientWithWeapon(bard, "Khopesh", "martial"), true, "a bard's longswords");
+  assert.equal(H.isProficientWithWeapon(makeChar("Human"), "Khopesh", "martial"), false, "a wizard has neither");
+  assert.equal(H.isProficientWithWeapon(makeChar("Hobgoblin (Default)"), "Khopesh", "martial"), H.isProficientWithWeapon(makeChar("Hobgoblin (Default)"), "Longsword", "martial"));
+});
+
 test("the Features tab has a card per race trait, with its text; a race with no trait data, one summary card", () => {
   const cards = H.getAllCharacterFeatures(ensureShape(makeChar("Goliath"))).filter((f) => f.category === "race");
   assert.deepEqual(cards.map((f) => f.name), ["Natural Athlete", "Stone's Endurance", "Powerful Build", "Mountain Born"]);

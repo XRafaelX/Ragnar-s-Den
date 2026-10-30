@@ -36,7 +36,7 @@ export function renderPersonalityCard(c){
   var r = storyRows(c), all = r.personality.concat(r.story);
   var card = makeCard("Personality");
   card.classList.add("story-card");
-  var rollable = all.filter(function(row){ return row.table; });
+  var rollable = all.filter(function(row){ return row.table && !row.table.choose; });
   var empty = rollable.filter(function(row){ return !row.get(); });
   if(empty.length){
     var rest = ce("button", "btn small ghost story-roll-rest");
@@ -83,7 +83,7 @@ function tile(row){
   label.appendChild(document.createTextNode(row.label));
   head.appendChild(label);
   var acts = ce("div", "story-acts");
-  if(row.table){
+  if(row.table && !row.table.choose){
     var roll = ce("button", "story-icon");
     roll.type = "button";
     roll.innerHTML = makeDiceSvg();
@@ -146,9 +146,9 @@ function openStorySheet(row){
       row.table.entries.forEach(function(text, i){
         var o = ce("button", "story-opt" + (text === current ? " selected" : ""));
         o.type = "button";
-        var n = ce("span", "story-opt-roll"); n.textContent = entryRoll(row.table, i);
         var tx = ce("span"); tx.textContent = text;
-        o.appendChild(n); o.appendChild(tx);
+        if(!row.table.choose){ var n = ce("span", "story-opt-roll"); n.textContent = entryRoll(row.table, i); o.appendChild(n); }
+        o.appendChild(tx);
         o.addEventListener("click", function(){ done(text); });
         list.appendChild(o);
       });

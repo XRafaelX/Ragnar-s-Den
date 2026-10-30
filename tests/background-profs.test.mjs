@@ -7,10 +7,12 @@
    type skill. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import * as H from "../js/core/helpers.js";
 import * as CP from "../js/core/class-picks.js";
+import { getAllCharacterFeatures } from "../js/core/class-features.js";
 import * as W from "../js/wizard/wizard-core.js";
 import { TOOL_GROUPS } from "../js/core/feat-picks.js";
-import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_TOOLS, BACKGROUND_LANGUAGES, BACKGROUND_PROFS, BACKGROUND_LANGUAGE_RULES, BACKGROUND_SKILL_FIXES } from "../js/data/backgrounds.js";
+import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_TOOLS, BACKGROUND_LANGUAGES, BACKGROUND_PROFS, BACKGROUND_LANGUAGE_RULES, BACKGROUND_WEAPONS, backgroundFeatures, BACKGROUND_SKILL_FIXES } from "../js/data/backgrounds.js";
 import { SKILLS } from "../js/data/abilities-skills.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
 import { state } from "../js/core/state.js";
@@ -41,7 +43,7 @@ const open = (c, g, i, slots = []) => CP.slotOptions(g.def, slots, i, ctxOf(c, g
    ================================================================ */
 test("background data: every tool is a real tool, every kind a group or tool, every background covered", () => {
   const names = Object.keys(BACKGROUND_TOOLS);
-  assert.equal(names.length, 98);
+  assert.equal(names.length, 102);
   // Every background is in a group, has its info and a language count.
   const grouped = Object.values(BACKGROUNDS).flat();
   assert.deepEqual([...grouped].sort(), [...names].sort());
@@ -291,4 +293,50 @@ test("wizard: a shifter's type picked for its abilities also gives the skill, wi
   const c = create(t, Object.assign({ bgPicks: { "bg:Criminal:pick": [["Dice set"]] } }, choices));
   assert.equal(c.skillProfs.Acrobatics.prof, true);
   assert.deepEqual(c.racePicks.profPicks["race:Shifter Type:pick"].slots, [["Swiftstride"], ["Acrobatics"]]);
+});
+
+/* ================================================================
+   Tal'Dorei Campaign Setting Reborn, pages 181 to 189
+   ================================================================ */
+test("Tal'Dorei backgrounds, against the book: skills, tools, languages, features", () => {
+  const info = (n) => BACKGROUND_INFO[n];
+  assert.deepEqual([info("Clasp Member").skills, info("Clasp Member").skillPick], [["Deception"], { count: 1, options: ["Sleight of Hand", "Stealth"] }]);
+  assert.deepEqual(BACKGROUND_PROFS["Clasp Member"].pick[0].options, ["Disguise kit", "Forgery kit", "Thieves' tools"]);
+  assert.deepEqual([BACKGROUND_LANGUAGE_RULES["Clasp Member"].fixed, BACKGROUND_LANGUAGES["Clasp Member"]], [["Thieves' Cant"], 0]);
+  assert.deepEqual([info("Lyceum Scholar").skills, info("Lyceum Scholar").skillPick], [[], { count: 2, options: ["Arcana", "History", "Persuasion"] }]);
+  assert.equal(BACKGROUND_LANGUAGES["Lyceum Scholar"], 2);
+  assert.deepEqual(info("Reformed Cultist").skills, ["Deception", "Religion"]);
+  assert.equal(BACKGROUND_LANGUAGES["Reformed Cultist"], 1);
+  assert.deepEqual([info("Whitestone Rifle Corps").skills, info("Whitestone Rifle Corps").skillPick], [[], { count: 2, options: ["Athletics", "Perception", "Survival"] }]);
+  assert.deepEqual(BACKGROUND_WEAPONS["Whitestone Rifle Corps"], ["Firearms"]);
+  assert.equal(BACKGROUND_LANGUAGES["Whitestone Rifle Corps"], 1);
+  for(const n of ["Lyceum Scholar", "Reformed Cultist", "Whitestone Rifle Corps"]) assert.equal(BACKGROUND_TOOLS[n], "None", n);
+  const features = (n) => backgroundFeatures(info(n)).map((f) => f.name);
+  assert.deepEqual(features("Clasp Member"), ["A Favor in Turn"]);
+  assert.deepEqual(features("Lyceum Scholar"), ["Academic Requisition"]);
+  assert.deepEqual(features("Reformed Cultist"), ["Fell Teachings"]);
+  assert.deepEqual(features("Whitestone Rifle Corps"), ["Legacy of Secrecy", "Rifle Corps Relationship"]);
+  assert.match(info("Clasp Member").feature.text, /no longer than 20 words/);
+  assert.match(info("Lyceum Scholar").feature.text, /25 percent discount/);
+  assert.match(info("Reformed Cultist").feature.text, /advantage on Intelligence \(Religion\) checks/);
+  assert.deepEqual(backgroundFeatures(undefined), []);
+});
+
+test("both of a Rifle Corps member's features reach the Features tab, and firearms the proficiency check", () => {
+  const c = makeChar("Whitestone Rifle Corps");
+  const card = getAllCharacterFeatures(c).find((f) => f.category === "background");
+  assert.match(card.text, /Legacy of Secrecy: /);
+  assert.match(card.text, /Rifle Corps Relationship: /);
+  assert.equal(H.isProficientWithWeapon(c, "Musket", "firearm"), true);
+  assert.equal(H.isProficientWithWeapon(c, "Pistol", "firearm"), true);
+  assert.equal(H.isProficientWithWeapon(c, "Longsword", "martial"), false, "only firearms");
+  assert.equal(H.isProficientWithWeapon(makeChar("Sage"), "Musket", "firearm"), false, "another background gives none");
+});
+
+test("wizard: a Clasp Member's Thieves' Cant is named; a rogue knows it already, so it's a free pick", (t) => {
+  const wizard = inWizard(t, { background: "Clasp Member" }, () => W.languagePlan());
+  assert.ok(wizard.fixed.includes("Thieves' Cant"));
+  assert.ok(!wizard.slots.some((s) => s.source === "Clasp Member"));
+  const rogue = inWizard(t, { background: "Clasp Member", classId: "Rogue" }, () => W.languagePlan());
+  assert.equal(rogue.slots.filter((s) => s.source === "Clasp Member").length, 1);
 });

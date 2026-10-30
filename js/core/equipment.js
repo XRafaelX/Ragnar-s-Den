@@ -695,15 +695,18 @@ export function wieldsMeleeWeaponOrShield(c){
 /* Best-effort default for a newly added weapon's Proficient checkbox:
    true if any of the character's classes list the weapon's category
    ("Simple weapons"/"Martial weapons"/"Firearms") or name it specifically,
-   or the race or a feat gives it. */
+   or the race, the background or a feat gives it. */
 export function isProficientWithWeapon(c, weaponName, category){
+  // A khopesh is treated as a longsword (`treatAs`).
+  var alike = (WEAPON_DATA[weaponName] || {}).treatAs;
+  if(alike && isProficientWithWeapon(c, alike, category)) return true;
   // Weapon Master's picks, and Gunner's firearms.
   if(featProficiencies(c).weapons.some(function(w){ return (weaponName && w.name===weaponName) || (category==="firearm" && w.name==="Firearms"); })) return true;
   // The race's weapon training (an elf's longbow, a hobgoblin's picks, a
-  // giff's firearms).
-  var raceWeapons = raceProficiencies(c).weapons;
-  if(weaponName && raceWeapons.indexOf(weaponName)!==-1) return true;
-  if(category==="firearm" && raceWeapons.indexOf("Firearms")!==-1) return true;
+  // giff's firearms) and the background's (a Rifle Corps member's firearms).
+  var given = raceProficiencies(c).weapons.concat(backgroundProficiencies(c).weapons);
+  if(weaponName && given.indexOf(weaponName)!==-1) return true;
+  if(category==="firearm" && given.indexOf("Firearms")!==-1) return true;
   return (c.classes||[]).some(function(cl, idx){
     var p = classProficiencies(c, idx);
     if(!p || !p.weapons) return false;

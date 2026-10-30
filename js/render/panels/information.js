@@ -2,13 +2,13 @@ import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { openInfoModal } from "../../ui/info-modal.js";
 import { RACE_TRAIT_FALLBACK } from "../../data/races.js";
-import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/backgrounds.js";
+import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, backgroundFeatures } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
 import { classFeatureList, classProficiencies, classVariants, variantFor, syncTashaAdditions, escapeHtml, raceTraitFeatures, characterToolProfs } from "../../core/helpers.js";
 import { featProficiencies, backgroundFeatGrant, backgroundFeatLabel, campaignFeatMissing } from "../../core/feat-picks.js";
 import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME } from "../../ui/dlc-shelf.js";
 import { hasGunslingerClass } from "../../data/weapons.js";
-import { characterPickedProfs, raceProficiencies, syncClassPicks } from "../../core/class-picks.js";
+import { characterPickedProfs, raceProficiencies, backgroundProficiencies, syncClassPicks } from "../../core/class-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -136,15 +136,15 @@ export function renderInformationPanel(c){
     if(bg && bg.skills && bg.skills.length){
       body.appendChild(chipRow("Skill Proficiencies", bg.skills));
     }
-    if(bg && bg.feature && bg.feature.name){
+    backgroundFeatures(bg).forEach(function(f){
       var feat = document.createElement("p");
       feat.className = "info-blurb";
       var b = document.createElement("b");
-      b.textContent = bg.feature.name + ": ";
+      b.textContent = f.name + ": ";
       feat.appendChild(b);
-      feat.appendChild(document.createTextNode(bg.feature.text || ""));
+      feat.appendChild(document.createTextNode(f.text || ""));
       body.appendChild(feat);
-    }
+    });
   }));
 
   aboutCard.appendChild(linkRow("Alignment", c.alignment, "Alignment · " + (c.alignment || ""), function(body){
@@ -196,11 +196,12 @@ export function renderInformationPanel(c){
       if(saves.indexOf(label)===-1) saves.push(label);
     });
   });
-  // Plus what the race gives (an elf's weapons, a dwarf's armor and tool)
-  // and what feats grant (Moderately Armored, Skilled, Weapon Master, Resilient).
+  // Plus what the race gives (an elf's weapons, a dwarf's armor and tool),
+  // the background's weapons (a Rifle Corps member's firearms) and what
+  // feats grant (Moderately Armored, Skilled, Weapon Master, Resilient).
   var fromRace = raceProficiencies(c);
   fromRace.armor.forEach(function(v){ if(armor.indexOf(v)===-1) armor.push(v); });
-  fromRace.weapons.forEach(function(v){ if(weapons.indexOf(v)===-1) weapons.push(v); });
+  fromRace.weapons.concat(backgroundProficiencies(c).weapons).forEach(function(v){ if(weapons.indexOf(v)===-1) weapons.push(v); });
   // Tools from every source (classes, race, background, a pick in place of
   // one given twice, feats).
   tools = characterToolProfs(c);

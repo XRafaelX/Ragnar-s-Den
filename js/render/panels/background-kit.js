@@ -6,7 +6,7 @@
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { ce, escapeHtml, isProficientWithWeapon } from "../../core/helpers.js";
-import { WEAPON_DATA } from "../../data/weapons.js";
+import { weaponDataOf } from "../../data/weapons.js";
 import { backgroundProficiencies } from "../../core/class-picks.js";
 import { backgroundKitOffered, addBackgroundKit, coinsText } from "../../core/background-gear.js";
 import { renderKitPicker } from "../../ui/background-gear.js";
@@ -61,7 +61,7 @@ function openKitSheet(c){
       // A weapon in the kit (a sailor's belaying pin): proficient or not.
       c.inventory.forEach(function(item){
         if(!item.picked) return;
-        item.proficient = isProficientWithWeapon(c, item.name, (WEAPON_DATA[item.name] || {}).category);
+        item.proficient = isProficientWithWeapon(c, item.name, (weaponDataOf(item) || {}).category);
         delete item.picked;
       });
       save(); close(); renderAll(); playAdd();

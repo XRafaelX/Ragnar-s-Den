@@ -21,7 +21,7 @@ export var BACKGROUNDS = {
     "Knight of Solamnia","Mage of High Sorcery",
     "Gate Warden","Planar Philosopher",
     "Giant Foundling","Rune Carver",
-    "Ashari",
+    "Ashari","Clasp Member","Lyceum Scholar","Reformed Cultist","Whitestone Rifle Corps",
     "Grinner","Volstrucker Agent",
     "Initiate","Vizier","Inquisitor"
   ],
@@ -151,6 +151,15 @@ export var BACKGROUND_INFO = {
   /* ---- Tal'Dorei Campaign Setting Reborn ---- */
   "Ashari": {skills:["Nature"], skillChoice:"plus one of Arcana or Survival", skillPick:{count:1, options:["Arcana","Survival"]}, blurb:"Grants Nature plus one of Arcana or Survival, an herbalism kit and Primordial. You grew up in an Ashari tribe, guarding one of Exandria's elemental rifts.",
     feature:{name:"Elemental Harmony", text:"As an action, you channel minor magic involving the element of your Ashari order. Pyrah: you instantly create and control a burst of flame small enough to light a candle, a torch or a small campfire, or snuff out a flame of that size. Terrah: you instantly create a small rock no larger than a gold coin in your hand. It turns to dust after 1 minute. Vesrah: you instantly create enough hot or cold water to fill a small drinking vessel. Zephrah: you create an instant puff of wind strong enough to blow papers off a desk or mess up someone's hair."}},
+  "Clasp Member": {skills:["Deception"], skillChoice:"plus one of Sleight of Hand or Stealth", skillPick:{count:1, options:["Sleight of Hand","Stealth"]}, blurb:"Grants Deception plus one of Sleight of Hand or Stealth, one of a disguise kit, forgery kit or thieves' tools, and Thieves' Cant. You belong to the Clasp, a crime syndicate with hideouts in every city in Tal'Dorei. As a variant, you work for its ruthless rival, the Myriad.",
+    feature:{name:"A Favor in Turn", text:"You can call in a favor from your contacts whenever you're close enough to a center of syndicate activity. A request can be no longer than 20 words, and is passed up the chain to an undisclosed Spireling for approval. The favor can take any form the DM approves, and the DM decides how it is fulfilled. If muscle is requested, an NPC member of the Clasp can temporarily aid your party. If money is needed, a small loan can be provided. If you've been imprisoned, Clasp operatives can look into breaking you out or paying off the jailer. At some point the favor will be called in for repayment, often without warning, and refusing means your termination, literally. You might be called on to commit a burglary, pressure a dignitary to reveal a secret, or even assassinate a specific person, with no questions asked or answered. It's up to the DM to make sure the request is proportionate to the favor, or that you are compensated for anything beyond it."}},
+  "Lyceum Scholar": {skills:[], skillChoice:"two of Arcana, History or Persuasion", skillPick:{count:2, options:["Arcana","History","Persuasion"]}, blurb:"Grants two of Arcana, History or Persuasion, plus two languages. You studied at the Alabaster Lyceum in Emon, Tal'Dorei's highest place of learning, as a student or a graduate.",
+    feature:{name:"Academic Requisition", text:"You have access to certain private areas within the Lyceum and other allied universities. Whenever you're on Lyceum grounds or at another major academic institution, you can requisition any set of tools found in the rules. Each set is magically marked to sound an alarm if it is removed from the university's grounds. When you seek services such as spellcasting from an NPC at the Alabaster Lyceum or a related institution, you can use those services at a 25 percent discount, at the DM's discretion."}},
+  "Reformed Cultist": {skills:["Deception","Religion"], blurb:"Grants Deception and Religion, plus one language. You once belonged to a cult of the Betrayer Gods. You broke free, but the cult does not forgive betrayers, and it will hunt you for as long as you live.",
+    feature:{name:"Fell Teachings", text:"Choose one of the Betrayer Gods. You know everything from their basic commandments to some of their most esoteric secrets, and you have advantage on Intelligence (Religion) checks to know information about their faith, including obscure secrets unknown to most worshipers. You can also work with your DM to create a secret you learned during your time in the cult. It might be the seed of a conspiracy, a myth of a legendary hero whose true meaning has changed over the years, or even the location of a fabled artifact of the gods."}},
+  "Whitestone Rifle Corps": {skills:[], skillChoice:"two of Athletics, Perception or Survival", skillPick:{count:2, options:["Athletics","Perception","Survival"]}, blurb:"Grants two of Athletics, Perception or Survival, proficiency with firearms and one language. You trained with the elite defenders of the city-state of Whitestone and swore never to let the secrets of their firearms fall into the wrong hands. As a variant, you are a Whitestone Hunter, a secret operative of the de Rolo family.",
+    feature:{name:"Legacy of Secrecy", text:"Your commander in the Whitestone Rifle Corps granted you a musket or a pistol. This weapon is a symbol of your status, and when you display it, other folk around you, particularly adventurers, mercenaries, guards, engineers and weapons enthusiasts, treat you differently. You might be seen as a noble defender of the people, a selfish hoarder of power, or anything in between, at the DM's discretion."},
+    feature2:{name:"Rifle Corps Relationship", text:"You are, or were, a member of a trusted band of Whitestone's staunchest defenders. Work with your DM to determine your current relationship with the Rifle Corps. If your campaign starts in Whitestone, you might be an active member of that unit. Otherwise, the Rifle Corps Relationship table has suggestions. A Whitestone Hunter also has the ear of the lord and lady of Whitestone, but must use this privilege graciously or lose it."}},
 
   /* ---- Explorer's Guide to Wildemount ---- */
   "Grinner": {skills:["Deception","Performance"], blurb:"Grants Deception and Performance, plus thieves' tools and one musical instrument. You are a spy and rebel of the Golden Grin, hiding secret messages in folk songs.",
@@ -225,6 +234,12 @@ export var BACKGROUND_INFO = {
 
 /* Tool (and vehicle) proficiencies each background grants, for the
    Compendium. "Choose" entries are picked by the player. */
+/* A background's features: most have one, a Whitestone Rifle Corps
+   member two (`feature2`). */
+export function backgroundFeatures(info){
+  return info ? [info.feature, info.feature2].filter(function(f){ return f && f.name; }) : [];
+}
+
 export var BACKGROUND_TOOLS = {
   "Acolyte":"None", "Charlatan":"Disguise kit, forgery kit", "Criminal":"One gaming set, thieves' tools",
   "Entertainer":"Disguise kit, one musical instrument", "Folk Hero":"One type of artisan's tools, land vehicles",
@@ -287,7 +302,9 @@ export var BACKGROUND_TOOLS = {
 
   /* ---- Added 2026-10-17 ---- */
   "Gladiator":"Disguise kit, one musical instrument", "Knight":"One gaming set", "Spy":"One gaming set, thieves' tools",
-  "Ashari":"Herbalism kit", "Grinner":"One musical instrument, thieves' tools", "Volstrucker Agent":"Poisoner's kit",
+  "Ashari":"Herbalism kit", "Clasp Member":"One of disguise kit, forgery kit or thieves' tools", "Lyceum Scholar":"None",
+  "Reformed Cultist":"None", "Whitestone Rifle Corps":"None",
+  "Grinner":"One musical instrument, thieves' tools", "Volstrucker Agent":"Poisoner's kit",
   "Initiate":"One gaming set, land vehicles", "Vizier":"One type of artisan's tools, one musical instrument",
   "Inquisitor":"Thieves' tools, one type of artisan's tools", "Investigator (Ravenloft)":"Disguise kit, thieves' tools",
   "Faceless":"Disguise kit", "Rewarded":"One gaming set", "Ruined":"One gaming set",
@@ -374,7 +391,8 @@ export var BACKGROUND_LANGUAGES = {
   "Haunted One":2,
 
   /* ---- Added 2026-10-17 (named languages are in BACKGROUND_LANGUAGE_RULES) ---- */
-  "Gladiator":0, "Knight":1, "Spy":0, "Ashari":0, "Grinner":0, "Volstrucker Agent":1,
+  "Gladiator":0, "Knight":1, "Spy":0, "Ashari":0, "Clasp Member":0, "Lyceum Scholar":2, "Reformed Cultist":1,
+  "Whitestone Rifle Corps":1, "Grinner":0, "Volstrucker Agent":1,
   "Initiate":0, "Vizier":0, "Inquisitor":0, "Investigator (Ravenloft)":0, "Faceless":1,
   "Rewarded":1, "Ruined":1, "Black Fist Double Agent":0, "Dragon Casualty":0, "Iron Route Bandit":0,
   "Phlan Insurgent":0, "Stojanow Prisoner":0, "Ticklebelly Nomad":0, "Caravan Specialist":1,
@@ -472,6 +490,7 @@ export var BACKGROUND_PROFS = {
   "Knight": {pick:[GAMING]},
   "Spy": {tools:["Thieves' tools"], pick:[GAMING]},
   "Ashari": {tools:["Herbalism kit"]},
+  "Clasp Member": {pick:[{kind:"tool", options:["Disguise kit","Forgery kit","Thieves' tools"]}]},
   "Grinner": {tools:["Thieves' tools"], pick:[INSTRUMENT]},
   "Volstrucker Agent": {tools:["Poisoner's kit"]},
   "Initiate": {tools:["Vehicles (land)"], pick:[GAMING]},
@@ -517,6 +536,7 @@ export var BACKGROUND_LANGUAGE_RULES = {
   "Rakdos Cultist": {options:["Abyssal","Giant"]},
   "Selesnya Initiate": {options:["Elvish","Loxodon","Sylvan"]},
   "Ashari": {fixed:["Primordial"]},
+  "Clasp Member": {fixed:["Thieves' Cant"]},
   "Dragon Casualty": {fixed:["Draconic"]},
   "Ticklebelly Nomad": {fixed:["Giant"]},
   "Earthspur Miner": {fixed:["Dwarvish","Undercommon"]},
@@ -525,6 +545,11 @@ export var BACKGROUND_LANGUAGE_RULES = {
   "Trade Sheriff": {fixed:["Elvish"]},
   // "One racial language".
   "Hillsfar Smuggler": {options:["Dwarvish","Elvish","Giant","Gnomish","Goblin","Halfling","Orc"]}
+};
+
+/* Weapons a background gives. */
+export var BACKGROUND_WEAPONS = {
+  "Whitestone Rifle Corps": ["Firearms"]
 };
 
 /* Skills this app's data had wrong before 2026-10-15 (checked then

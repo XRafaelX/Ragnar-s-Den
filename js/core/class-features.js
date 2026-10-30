@@ -4,7 +4,7 @@
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../data/classes.js";
 import { RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
 import { RACE_DATA, DRAGONBORN_BREATH, TRAIT_DCS } from "../data/race-data.js";
-import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
+import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, backgroundFeatures } from "../data/backgrounds.js";
 import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from "../data/progression.js";
 import { featDef, featPicksSummary, featPickDetail } from "./feat-picks.js";
 import { uid, mod, fmtMod, totalLevel, profBonus } from "./basics.js";
@@ -532,7 +532,7 @@ export function getAllCharacterFeatures(c){
       id: "bg_"+c.background,
       name: c.background + " Lore & Features",
       source: "Background · " + c.background,
-      text: (bg ? bg.blurb : BACKGROUND_INFO_FALLBACK) + (bg && bg.feature && bg.feature.name ? "\n\n" + bg.feature.name + ": " + (bg.feature.text || "") : "") + bgTools,
+      text: (bg ? bg.blurb : BACKGROUND_INFO_FALLBACK) + backgroundFeatures(bg).map(function(f){ return "\n\n" + f.name + ": " + (f.text || ""); }).join("") + bgTools,
       category: "background",
       isDerived: true
     });

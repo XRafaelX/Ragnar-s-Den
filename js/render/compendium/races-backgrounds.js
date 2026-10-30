@@ -11,7 +11,7 @@ import { renderAll } from "../sheet.js";
 import { openInfoModal } from "../../ui/info-modal.js";
 import { RACES } from "../../data/races.js";
 import { RACE_DATA, raceAsiText, raceAsiShort, raceSpeedText } from "../../data/race-data.js";
-import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, BACKGROUND_LANGUAGES, BACKGROUND_TOOLS } from "../../data/backgrounds.js";
+import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, BACKGROUND_LANGUAGES, BACKGROUND_LANGUAGE_RULES, BACKGROUND_TOOLS, BACKGROUND_WEAPONS, backgroundFeatures } from "../../data/backgrounds.js";
 import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { getHomebrewEntry, saveHomebrew, deleteHomebrew, homebrewNameProblem, charactersUsingHomebrew } from "../../core/custom-homebrew.js";
 import { escapeHtml } from "../../core/helpers.js";
@@ -43,7 +43,8 @@ function backgroundSkills(info){
 }
 function backgroundLanguages(name){
   var n = BACKGROUND_LANGUAGES[name] || 0;
-  return n ? n+" of your choice" : "None";
+  var named = (BACKGROUND_LANGUAGE_RULES[name] || {}).fixed || [];
+  return named.concat(n ? [n+" of your choice"] : []).join(", ") || "None";
 }
 
 function showBackground(name){
@@ -54,8 +55,9 @@ function showBackground(name){
       ["Skills", info ? backgroundSkills(info) : "Two of your choice"],
       ["Tools", BACKGROUND_TOOLS[name] || "Check your sourcebook"],
       ["Languages", backgroundLanguages(name)]
-    ].concat(backgroundFeatLabel(name) ? [["Feat", backgroundFeatLabel(name)]] : [])));
-    if(info && info.feature && info.feature.name) block(body, "Feature", featureList([info.feature]));
+    ].concat(BACKGROUND_WEAPONS[name] ? [["Weapons", BACKGROUND_WEAPONS[name].join(", ")]] : [],
+      backgroundFeatLabel(name) ? [["Feat", backgroundFeatLabel(name)]] : [])));
+    if(backgroundFeatures(info).length) block(body, "Feature", featureList(backgroundFeatures(info)));
   });
 }
 

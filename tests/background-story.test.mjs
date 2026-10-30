@@ -49,6 +49,24 @@ test("rolls: the die read as the entry, ranges, and a second trait differs", () 
   assert.equal(rollStory(inh, fixed(0.25)), inh.entries[1], "a 3 is the 2-3 entry");
 });
 
+test("Tal'Dorei backgrounds: book tables, and the lists a feature says to choose from aren't rolled", (t) => {
+  for(const bg of ["Clasp Member", "Lyceum Scholar", "Reformed Cultist", "Whitestone Rifle Corps"]){
+    const s = BACKGROUND_STORIES[bg];
+    assert.deepEqual([s.traits.entries.length, s.ideal.entries.length, s.bond.entries.length, s.flaw.entries.length], [8, 6, 6, 6], bg);
+    assert.ok(s.ideal.entries.every((e) => /\((Lawful|Good|Neutral|Chaotic|Evil|Any)\)$/.test(e)), bg + ": every ideal has its alignment");
+  }
+  const table = (bg, label) => BACKGROUND_STORIES[bg].story.find((x) => x.label === label);
+  assert.equal(table("Reformed Cultist", "Betrayer God").entries.length, 9);
+  assert.deepEqual(table("Ashari", "Ashari Order").entries, ["Pyrah (fire)", "Vesrah (water)", "Terrah (earth)", "Zephrah (wind)"]);
+  assert.equal(table("Whitestone Rifle Corps", "Unit").entries.length, 3);
+  assert.equal(table("Whitestone Rifle Corps", "Rifle Corps Relationship").die, 6);
+  assert.ok(!table("Whitestone Rifle Corps", "Rifle Corps Relationship").choose, "a real d6 table");
+  const c = newCharacter("Cultist");
+  c.background = "Reformed Cultist";
+  withFakeDom(t, () => { assert.ok(renderPersonalityCard(c)); });
+  assert.ok(!Object.values(BACKGROUND_STORIES).some((s) => JSON.stringify(s).includes(" ,  ")), "no spacing left from stripped dashes");
+});
+
 test("the card draws for any background, and an older sheet gets an empty story", (t) => {
   const c = newCharacter("Test");
   delete c.story;

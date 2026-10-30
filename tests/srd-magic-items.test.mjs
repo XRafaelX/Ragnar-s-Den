@@ -32,7 +32,7 @@ test("the SRD's items: 340 by rarity after our DM's three, as printed", () => {
   assert.deepEqual([d("Potion of Greater Healing").rarity, d("Belt of Hill Giant Strength").rarity, d("Spell Scroll (9th)").rarity], ["Uncommon", "Rare", "Legendary"]);
   assert.equal(d("Arrow-Catching Shield").bonus, undefined, "its +2 is only against ranged attacks");
   assert.ok(!MAGIC_ITEM_DATA["Potion of Healing"], "Potion of Healing stays in the gear list");
-  assert.deepEqual(magicItemBases(d("Vorpal Sword")), ["Double-Bladed Scimitar", "Greatsword", "Longsword", "Scimitar"], "swords that deal slashing damage");
+  assert.deepEqual(magicItemBases(d("Vorpal Sword")), ["Double-Bladed Scimitar", "Greatsword", "Khopesh", "Longsword", "Scimitar", "Two-Handed Khopesh"], "swords that deal slashing damage");
   assert.deepEqual(magicItemBases(d("Berserker Axe")), ["Battleaxe", "Greataxe", "Handaxe"]);
   assert.ok(!magicItemBases(d("Adamantine Armor")).includes("Hide") && magicItemBases(d("Mithral Armor")).includes("Hide"));
   assert.ok(magicItemBases(d("Weapon, +1")).includes("Longbow") && !magicItemBases(d("Weapon, +1")).includes("Pistol"));

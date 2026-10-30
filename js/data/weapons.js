@@ -1,13 +1,15 @@
-/* ---------------- Weapon data (SRD, plus the double-bladed scimitar and firearms) ----------------
+/* ---------------- Weapon data (SRD, plus the double-bladed scimitar, khopesh and firearms) ----------------
    The Player's Handbook's weapons, Eberron's double-bladed scimitar (for
-   Revenant Blade), and the firearms (for Gunner and the Gunslinger
-   archetype) with the Gunslinger write-up's Reload and Misfire scores,
-   plus its fire lance. Firearms are their own category: neither simple
-   nor martial, so only a proficiency in firearms covers them. */
+   Revenant Blade), Plane Shift: Amonkhet's khopesh and two-handed khopesh,
+   and the firearms (for Gunner and the Gunslinger archetype) with the
+   Gunslinger write-up's Reload and Misfire scores, plus its fire lance.
+   Firearms are their own category: neither simple nor martial, so only a
+   proficiency in firearms covers them. `treatAs`: the book says to treat
+   it as that weapon, so proficiency with one covers the other. */
 export var WEAPON_GROUPS = {
   "Simple Melee": ["Club","Dagger","Greatclub","Handaxe","Javelin","Light Hammer","Mace","Quarterstaff","Sickle","Spear"],
   "Simple Ranged": ["Light Crossbow","Dart","Shortbow","Sling"],
-  "Martial Melee": ["Battleaxe","Double-Bladed Scimitar","Fire Lance","Flail","Glaive","Greataxe","Greatsword","Halberd","Lance","Longsword","Maul","Morningstar","Pike","Rapier","Scimitar","Shortsword","Trident","War Pick","Warhammer","Whip"],
+  "Martial Melee": ["Battleaxe","Double-Bladed Scimitar","Fire Lance","Flail","Glaive","Greataxe","Greatsword","Halberd","Khopesh","Lance","Longsword","Maul","Morningstar","Pike","Rapier","Scimitar","Shortsword","Trident","Two-Handed Khopesh","War Pick","Warhammer","Whip"],
   "Martial Ranged": ["Blowgun","Hand Crossbow","Heavy Crossbow","Longbow","Net"],
   "Firearms": ["Pistol","Revolver","Pepperbox","Musket"]
 };
@@ -41,6 +43,8 @@ export var WEAPON_DATA = {
   "Greataxe":        {damageDice:"1d12", damageType:"Slashing",    weight:7,  category:"martial", finesse:false, ranged:false, properties:"Heavy, two-handed"},
   "Greatsword":      {damageDice:"2d6",  damageType:"Slashing",    weight:6,  category:"martial", finesse:false, ranged:false, properties:"Heavy, two-handed"},
   "Halberd":         {damageDice:"1d10", damageType:"Slashing",    weight:6,  category:"martial", finesse:false, ranged:false, properties:"Heavy, reach, two-handed"},
+  // Plane Shift: Amonkhet: "the sickle-bladed khopesh (treat as a longsword)".
+  "Khopesh":         {damageDice:"1d8",  damageType:"Slashing",    weight:3,  category:"martial", finesse:false, ranged:false, properties:"Versatile (1d10)", treatAs:"Longsword"},
   "Lance":           {damageDice:"1d12", damageType:"Piercing",    weight:6,  category:"martial", finesse:false, ranged:false, properties:"Reach, special"},
   "Longsword":       {damageDice:"1d8",  damageType:"Slashing",    weight:3,  category:"martial", finesse:false, ranged:false, properties:"Versatile (1d10)"},
   "Maul":            {damageDice:"2d6",  damageType:"Bludgeoning", weight:10, category:"martial", finesse:false, ranged:false, properties:"Heavy, two-handed"},
@@ -50,6 +54,8 @@ export var WEAPON_DATA = {
   "Scimitar":        {damageDice:"1d6",  damageType:"Slashing",    weight:3,  category:"martial", finesse:true,  ranged:false, properties:"Finesse, light"},
   "Shortsword":      {damageDice:"1d6",  damageType:"Piercing",    weight:2,  category:"martial", finesse:true,  ranged:false, properties:"Finesse, light"},
   "Trident":         {damageDice:"1d6",  damageType:"Piercing",    weight:4,  category:"martial", finesse:false, ranged:false, properties:"Thrown (20/60), versatile (1d8)"},
+  // Plane Shift: Amonkhet: "two-handed khopeshes (treat as a greatsword)".
+  "Two-Handed Khopesh": {damageDice:"2d6", damageType:"Slashing",  weight:6,  category:"martial", finesse:false, ranged:false, properties:"Heavy, two-handed", treatAs:"Greatsword"},
   "War Pick":        {damageDice:"1d8",  damageType:"Piercing",    weight:2,  category:"martial", finesse:false, ranged:false, properties:""},
   "Warhammer":       {damageDice:"1d8",  damageType:"Bludgeoning", weight:2,  category:"martial", finesse:false, ranged:false, properties:"Versatile (1d10)"},
   "Whip":            {damageDice:"1d4",  damageType:"Slashing",    weight:3,  category:"martial", finesse:true,  ranged:false, properties:"Finesse, reach"},

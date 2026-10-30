@@ -2,7 +2,7 @@ import { SKILLS, ABILITIES } from "../data/abilities-skills.js";
 import { CLASS_PROFICIENCIES } from "../data/classes.js";
 import { CLASS_PROGRESSION, SUBCLASSES } from "../data/progression.js";
 import { RACE_DATA, RACE_TRAIT_RENAMES } from "../data/race-data.js";
-import { BACKGROUND_PROFS, BACKGROUND_SKILL_FIXES, BACKGROUND_INFO } from "../data/backgrounds.js";
+import { BACKGROUND_PROFS, BACKGROUND_SKILL_FIXES, BACKGROUND_INFO, BACKGROUND_WEAPONS } from "../data/backgrounds.js";
 import { OPTION_SETS, optionSetStart } from "../data/class-options.js";
 import { languagePickerGroups } from "../data/languages.js";
 import { WEAPON_DATA, WEAPON_GROUPS } from "../data/weapons.js";
@@ -778,9 +778,10 @@ export function backgroundGrantsFor(background){
 }
 export function backgroundGrants(c){ return backgroundGrantsFor(c.background); }
 /* The tools the background gives, outright and picked (leaving out the
-   grant `exceptKey`): {tools}. */
+   grant `exceptKey`), and its weapons: {tools, weapons}. */
 export function backgroundProficiencies(c, exceptKey){
-  var out = {tools: []}, held = (c.backgroundPicks && c.backgroundPicks.profPicks) || {};
+  var out = {tools: [], weapons: BACKGROUND_WEAPONS[c.background] || []};
+  var held = (c.backgroundPicks && c.backgroundPicks.profPicks) || {};
   backgroundGrants(c).forEach(function(g){
     if(g.key===exceptKey) return;
     out.tools = out.tools.concat(g.def.tools || []);

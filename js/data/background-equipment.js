@@ -14,9 +14,10 @@
                               attack with (a sailor's belaying pin is a club)
      {pick, options}          the player chooses one; an option is any of
                               these, or a list of them (a mule and a cart)
-     {group, label}           any one of a gear group ("Artisan's tools"),
-                              or of several; it starts on the tool the
-                              background's proficiency pick chose
+     {group, label, only}     any one of a gear group ("Artisan's tools"),
+                              or of several, or just the `only` ones of
+                              them; it starts on the tool the background's
+                              proficiency pick chose
      {trinket, label, count}  rolled (or chosen) on a table in
                               js/data/trinkets.js
      {none}                   a pick's option with nothing to carry
@@ -27,7 +28,7 @@ function g(gear, name, extra){ var o = {gear: gear}; if(name) o.name = name; ret
 function n(name, notes, extra){ var o = {name: name}; if(notes) o.notes = notes; return Object.assign(o, extra || {}); }
 function w(weapon, name){ return name ? {weapon: weapon, name: name} : {weapon: weapon}; }
 function pick(label, options){ return {pick: label, options: options}; }
-function group(label, groups){ return {group: groups, label: label}; }
+function group(label, groups, only){ var o = {group: groups, label: label}; if(only) o.only = only; return o; }
 function trinket(table, label, count){ return {trinket: table, label: label, count: count || 1}; }
 var ARTISAN = "Artisan's tools", INSTRUMENT = "Musical instruments", GAMING = "Gaming sets";
 var HOLY = pick("Holy symbol", [g("Holy Symbol (amulet)"), g("Holy Symbol (emblem)"), g("Holy Symbol (reliquary)")]);
@@ -145,6 +146,10 @@ export var BACKGROUND_EQUIPMENT = {
 
   /* Wildemount, Tal'Dorei */
   "Ashari": {coins: {gp: 10}, items: [TRAVELER, w("Quarterstaff", "Staff carved with symbols of your tribe"), "Herbalism Kit"]},
+  "Clasp Member": {coins: {gp: 10}, items: [g(COMMON, "Inconspicuous common clothes"), group("Set of tools", ["Kits and tools"], ["Disguise Kit", "Forgery Kit", "Thieves' Tools"])]},
+  "Lyceum Scholar": {coins: {gp: 10}, items: [FINE, n("Student uniform"), n("Writing kit", "Small pouch with a quill, ink, folded parchment and a penknife.")]},
+  "Reformed Cultist": {coins: {gp: 15}, items: [n("Vestments of your previous cult"), pick("Holy symbol of your previous cult", HOLY.options), COMMON]},
+  "Whitestone Rifle Corps": {coins: {gp: 10}, items: [pick("Musket or pistol", [w("Musket"), w("Pistol")]), COMMON]},
   "Grinner": {coins: {gp: 15}, items: [FINE, "Disguise Kit", group("Musical instrument", [INSTRUMENT]), n("Gold-plated ring depicting a smiling face")]},
   "Volstrucker Agent": {coins: {gp: 10}, items: [COMMON, n("Black cloak with a hood"), "Poisoner's Kit"]},
 

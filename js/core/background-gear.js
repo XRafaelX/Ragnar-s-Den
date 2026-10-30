@@ -11,7 +11,7 @@
    number on its table ("37"), the guild's background name. */
 import { BACKGROUND_EQUIPMENT, BACKGROUND_EQUIPMENT_SAME_AS, RAVNICA_GUILD_BACKGROUNDS } from "../data/background-equipment.js";
 import { GEAR_DATA, GEAR_GROUPS } from "../data/gear.js";
-import { WEAPON_DATA } from "../data/weapons.js";
+import { WEAPON_DATA, GUNSLINGER_FIREARMS, hasGunslingerClass } from "../data/weapons.js";
 import { TRINKET_TABLES } from "../data/trinkets.js";
 
 export function backgroundKit(background){
@@ -69,7 +69,7 @@ export function kitSlots(background, picks, prefix){
       if(Array.isArray(chosen)) chosen.forEach(function(x, j){ visit(x, key + "." + j); });
       else visit(chosen, key + ".0");
     } else if(e.group){
-      out.push({key: key, kind: "group", label: e.label, groups: e.group, options: gearGroupNames(e.group).map(function(nm){ return {value: nm, label: nm}; })});
+      out.push({key: key, kind: "group", label: e.label, groups: e.group, options: (e.only || gearGroupNames(e.group)).map(function(nm){ return {value: nm, label: nm}; })});
     } else if(e.trinket){
       var t = trinketTable(e.trinket);
       for(var k = 0; k < (e.count || 1); k++){
@@ -115,12 +115,19 @@ function gearItem(name, over){
   return {name: (over && over.name) || name, type: "gear", qty: n, equipped: false,
     notes: (over && over.notes) || d.notes || "", weight: d.weight ? d.weight / (d.qty || 1) : 0};
 }
-function weaponItem(e){
-  var d = WEAPON_DATA[e.weapon] || {};
+function weaponItem(e, data){
+  var d = data || WEAPON_DATA[e.weapon] || {};
   var props = (d.properties || "").toLowerCase();
   return {name: e.weapon, type: "weapon", qty: 1, equipped: false, notes: e.name ? e.name + (props ? ", " + props : "") : props,
     damageDice: d.damageDice || "", damageType: d.damageType || "", ability: d.finesse ? "finesse" : d.ranged ? "dex" : "str",
     proficient: true, magicBonus: 0, weight: d.weight || 0, picked: true};
+}
+/* A Gunslinger class character carries the class's own guns, not a
+   second Pistol: its Pistol, and its Long Gun for a Rifle Corps musket. */
+var CLASS_GUNS = {"Pistol": "Pistol", "Musket": "Long Gun"};
+function classGunItem(item){
+  var name = CLASS_GUNS[item.name], d = item.type === "weapon" && GUNSLINGER_FIREARMS[name];
+  return d ? Object.assign(weaponItem({weapon: name}, d), {firearmSet: d.firearmSet}) : item;
 }
 /* The kit as inventory items, with the picks (missing ones filled as
    fillKitPicks does): {items, coins: {gp, sp, pp}, notes: [text]}. A
@@ -176,6 +183,7 @@ export function coinsText(coins){
 export function addBackgroundKit(c, background, picks, ctx, rng){
   var res = kitItems(background, picks, ctx, rng);
   if(!Array.isArray(c.inventory)) c.inventory = [];
+  if(hasGunslingerClass(c)) res.items = res.items.map(classGunItem);
   res.items.forEach(function(item){
     var same = item.type === "gear" && c.inventory.find(function(i){
       return i.type === "gear" && (i.name || "").toLowerCase() === item.name.toLowerCase() && (i.notes || "") === (item.notes || "");

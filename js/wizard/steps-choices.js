@@ -301,7 +301,8 @@ function requiresHint(prof){
 /* Languages: what the character already knows, then one dropdown per
    free pick, grouped by where the pick comes from. Known languages and
    ones picked in another dropdown are greyed out. Secret languages
-   (Druidic, Thieves' Cant) only come from classes, so they aren't offered. */
+   (Druidic, Thieves' Cant) only come from classes or a background that
+   names them (a Clasp Member), so they aren't offered. */
 export function wizardStepLanguages(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Languages</span></h3>";

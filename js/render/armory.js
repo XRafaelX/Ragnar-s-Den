@@ -80,7 +80,7 @@ export function addCatalogGear(c, name, d){
 
 /* The weapons or armor a magic item of a kind can be ("any sword"), by
    catalog name, homebrew left out. */
-var SWORDS = ["Double-Bladed Scimitar","Greatsword","Longsword","Rapier","Scimitar","Shortsword"];
+var SWORDS = ["Double-Bladed Scimitar","Greatsword","Khopesh","Longsword","Rapier","Scimitar","Shortsword","Two-Handed Khopesh"];
 var AXES = ["Battleaxe","Greataxe","Handaxe"];
 export function magicItemBases(d){
   if(d.weaponAny){
