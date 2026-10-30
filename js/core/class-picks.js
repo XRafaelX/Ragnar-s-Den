@@ -525,8 +525,9 @@ export function classPicksProblem(grant, slots, ctx){
       var noun = {skill: "skill", expertise: "skill", tool: def.pick[i].noun || (houseGroup ? kindNoun(houseGroup).replace(/^one (type of )?/, "") : "tool"), language: "language", save: "saving throw",
         weapon: def.pick[i].filter==="martial" ? "martial weapon" : "weapon", skillOrLanguage: "skill or language", skillOrTool: "skill or tool", toolOrLanguage: "tool or language",
         spell: def.pick[i].level===0 ? "cantrip" : "spell", choice: def.pick[i].noun}[kind];
+      // (A trait named for what it asks, like Size, needs no "for Size".)
       return "Choose " + (need > 1 ? need + " different " + noun + "s" : (/^[aeiou]/.test(noun) ? "an " : "a ") + noun) +
-        (kind==="expertise" ? " for your expertise (" + grant.name + ")." : " for " + grant.name + ".");
+        (kind==="expertise" ? " for your expertise (" + grant.name + ")." : noun===grant.name.toLowerCase() ? "." : " for " + grant.name + ".");
     }
   }
   return "";
@@ -681,9 +682,10 @@ export function raceChoiceValues(c, id){
 }
 /* The first one ("" if not yet). */
 export function raceChoiceValue(c, id){ return raceChoiceValues(c, id)[0] || ""; }
-/* The character's size: the one picked (a Custom Lineage's), or the race's. */
+/* The character's size: the one picked (a Custom Lineage's, a Dhampir's),
+   or the race's ("Small or Medium" while an older sheet hasn't picked). */
 export function raceSize(c){
-  return raceChoiceValue(c, "lineageSize") || (RACE_DATA[c.race] || {}).size || "Medium";
+  return raceChoiceValue(c, "size") || (RACE_DATA[c.race] || {}).size || "Medium";
 }
 /* A feature among these that gives at least the darkvision a race's
    "darkvision, or something else" trait would (Eyes of Night for a Custom

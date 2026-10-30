@@ -17,7 +17,7 @@ import { classStyleList, styleFeatures, styleNeedsPicks, stylePickChoices } from
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
 import { renderOptionPicker, renderTashaNote } from "../ui/option-picks.js";
 import { renderClassPicks, renderVariantOptions } from "../ui/class-picks.js";
-import { grantHasChoices, classPicksSummary } from "../core/class-picks.js";
+import { grantHasChoices, classPicksSummary, raceSize } from "../core/class-picks.js";
 import { logRoll, getDieSvg } from "../dice/dice.js";
 import { makePlusSvg } from "../ui/svg-icons.js";
 import { openCompendium } from "../render/compendium.js";
@@ -591,7 +591,7 @@ export function stepAsi(container){
     nextBox.textContent = def ? (featNeedsChoice(def) ? lu.featName+": next, you'll choose what it gives you." : lu.featName+": nothing to choose, the sheet applies it.") : "";
     nextBox.hidden = !def;
   }
-  var who = {race: c.race, level: totalLevel(c) + 1, feats: c.feats || []};
+  var who = {race: c.race, size: raceSize(c), level: totalLevel(c) + 1, feats: c.feats || []};
   // A feat for another race, a higher level or after another feat is
   // greyed out at the end of the list, with why.
   function fill(){

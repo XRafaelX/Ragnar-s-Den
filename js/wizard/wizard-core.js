@@ -429,7 +429,8 @@ export function wizardSkillProfs(exceptRaceKey, noReplacements){
    feature, or armor proficiency. */
 var ABILITY_WORDS = {Strength:"str", Dexterity:"dex", Constitution:"con", Intelligence:"int", Wisdom:"wis", Charisma:"cha"};
 export function featPrereqReason(feat){
-  var blocked = featRequiresReason(feat, {race: wizardState.race, level: 1, feats: []});
+  var sizePick = (wizardState.raceChoices.profPicks || {})["race:Size:pick"];
+  var blocked = featRequiresReason(feat, {race: wizardState.race, size: sizePick && sizePick[0] && sizePick[0][0], level: 1, feats: []});
   if(blocked) return blocked;
   var bg = wizardBackgroundFeat();
   if(bg && bg.def===feat && !feat.repeatable) return bg.campaign ? "it's your campaign feat" : "your background already gives it";

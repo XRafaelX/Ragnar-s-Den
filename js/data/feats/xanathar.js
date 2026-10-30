@@ -2,7 +2,7 @@
    Xanathar's Guide to Everything: the 15 racial feats. `requires.races`
    keeps each to its race in the pickers.
    The fields are explained at the top of ../feats.js. */
-import { HALFLINGS, DWARVES, GNOMES, ELVES, HALF_ELVES, HALF_ORCS, HUMANS, TIEFLINGS, SMALL_RACES, DRAGONBORN_RACES } from "./races.js";
+import { HALFLINGS, DWARVES, GNOMES, ELVES, HALF_ELVES, HALF_ORCS, HUMANS, TIEFLINGS, DRAGONBORN_RACES } from "./races.js";
 
 export var XANATHAR_FEATS = [
   {
@@ -141,7 +141,7 @@ export var XANATHAR_FEATS = [
     name: "Squat Nimbleness",
     source: "XGE",
     ability:["str","dex"], speed:5, skills:1, skillOptions:["Acrobatics","Athletics"],
-    requires:{races:DWARVES.concat(SMALL_RACES), raceLabel:"a dwarf or a Small race"},
+    requires:{races:DWARVES, size:"Small", raceLabel:"a dwarf or a Small race"},
     prerequisite: "Dwarf or a Small race",
     category: "Movement",
     summary: "Raise Strength or Dexterity by 1. Your walking speed increases by 5 feet, you gain proficiency in Acrobatics or Athletics, and you have advantage on checks to escape a grapple.",

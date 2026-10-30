@@ -60,6 +60,12 @@ var POISON_IMMUNITY = {immune:["poison"], conditionImmune:["poisoned"]};
      components  "no material" or "none" when cast with the trait
    A cantrip the player picks (a High Elf's) is the trait's spell pick,
    cast with the slot's `ability` or the trait's. */
+/* "Small or Medium (your choice)": the pick the sheet reads for the
+   character's size (raceSize), which heavy weapons and Squat Nimbleness care about. */
+function SIZE_CHOICE(){
+  return tr("Size", "You are Small or Medium, your choice. Small creatures have disadvantage on attack rolls with heavy weapons.",
+    {pick:[{kind:"choice", id:"size", noun:"size", label:"Choose your size", options:["Medium","Small"]}]});
+}
 function innate(t, ability, list, more){ t.spells = Object.assign({ability:ability, list:list}, more || {}); return t; }
 var ABILITY_PICK = {kind:"choice", id:"spellAbility", noun:"spellcasting ability", label:"Choose the ability you cast these spells with",
   options:["Intelligence","Wisdom","Charisma"]};
@@ -425,7 +431,7 @@ export var RACE_DATA = {
       wards(tr("Mountain Born", "You have resistance to cold damage, and you're acclimated to high altitude, including elevations above 20,000 feet."), {resist:["cold"]})]},
   "Harengon": {asiText:"+2 to one score and +1 to another (your choice)", size:"Small or Medium", speed:{walk:30}, darkvision:0,
     languages:{fixed:["Common"], choose:1}, source:"The Wild Beyond the Witchlight",
-    traits:[tr("Hare-Trigger", "You add your proficiency bonus to your initiative rolls."),
+    traits:[SIZE_CHOICE(), tr("Hare-Trigger", "You add your proficiency bonus to your initiative rolls."),
       tr("Leporine Senses", "You have proficiency in the Perception skill.", {skills:["Perception"]}),
       tr("Lucky Footwork", "When you fail a Dexterity saving throw, you can use your reaction to roll a d4 and add it to the save, possibly turning the failure into a success. You can't use this if you're prone or your speed is 0."),
       tr("Rabbit Hop", "As a bonus action, you can jump a number of feet equal to five times your proficiency bonus without provoking opportunity attacks. You can do this only if your speed is above 0. You can do this a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest.")]},
@@ -522,7 +528,7 @@ export var RACE_DATA = {
       tr("Cat's Talents", "You have proficiency in the Perception and Stealth skills.", {skills:["Perception","Stealth"]})]},
   "Thri-kreen": {asiText:"+2 to one score and +1 to another (your choice)", size:"Small or Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common"], choose:1}, source:"Spelljammer: Adventures in Space",
-    traits:[tr("Chameleon Carapace", "While you aren't wearing armor, your carapace gives you a base AC of 13 + your Dexterity modifier. As an action, you can change its color to match your surroundings, giving you advantage on Dexterity (Stealth) checks to hide there."),
+    traits:[SIZE_CHOICE(), tr("Chameleon Carapace", "While you aren't wearing armor, your carapace gives you a base AC of 13 + your Dexterity modifier. As an action, you can change its color to match your surroundings, giving you advantage on Dexterity (Stealth) checks to hide there."),
       tr("Secondary Arms", "You have two slightly smaller arms below your main pair. They can manipulate an object, open or close a door or container, pick up or set down a Tiny object, or wield a weapon with the light property."),
       tr("Sleepless", "You don't need to sleep and can stay conscious during a long rest, though you must still avoid strenuous activity to get its benefit."),
       tr("Thri-kreen Telepathy", "Without magic you can't speak your languages other than thri-kreen. Instead you send your thoughts telepathically to willing creatures within 120 feet. A creature doesn't need to share a language with you, but it must understand at least one. The link breaks if you move more than 120 feet apart, if either of you is incapacitated, or if either of you ends it (no action needed).")]},
@@ -717,7 +723,7 @@ export var RACE_DATA = {
       tr("Water Dependency", "If you don't immerse yourself in water for at least 1 hour during a day, you gain one level of exhaustion at the end of that day. Only magic, or at least 1 hour immersed in water, removes it.")]},
   "Hadozee": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small or Medium", speed:{walk:30, climb:30}, darkvision:0,
     languages:{fixed:["Common"], choose:1}, source:"Spelljammer: Astral Adventurer's Guide",
-    traits:[tr("Dexterous Feet", "As a bonus action, you can use your feet to manipulate an object, open or close a door or container, or pick up or set down a Tiny object."),
+    traits:[SIZE_CHOICE(), tr("Dexterous Feet", "As a bonus action, you can use your feet to manipulate an object, open or close a door or container, or pick up or set down a Tiny object."),
       tr("Glide", "When you fall at least 10 feet, you can use your reaction to spread your skin membranes and glide horizontally up to your walking speed in a direction you choose, taking no damage from the fall."),
       tr("Hadozee Dodge", "When you take damage, you can use your reaction to roll a d6, add your proficiency bonus, and reduce the damage by the total (minimum 0). You can do this a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest.")]},
   "Kalashtar": {asi:{wis:2,cha:1}, size:"Medium", speed:{walk:30}, darkvision:0,
@@ -751,11 +757,11 @@ export var RACE_DATA = {
       tr("Limited Amphibiousness", "You can breathe air and water, but you must be submerged at least once every 4 hours to avoid suffocating.")]},
   "Owlin": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small or Medium", speed:{walk:30, fly:30}, speedWhen:{fly:"not in medium or heavy armor"}, darkvision:120,
     languages:{fixed:["Common"], choose:1}, source:"Strixhaven: A Curriculum of Chaos",
-    traits:[tr("Flight", "Your wings give you a flying speed equal to your walking speed. You can't use it while wearing medium or heavy armor."),
+    traits:[SIZE_CHOICE(), tr("Flight", "Your wings give you a flying speed equal to your walking speed. You can't use it while wearing medium or heavy armor."),
       tr("Silent Feathers", "You have proficiency in the Stealth skill.", {skills:["Stealth"]})]},
   "Plasmoid": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small or Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common"], choose:1}, source:"Spelljammer: Astral Adventurer's Guide",
-    traits:[tr("Amorphous", "You can squeeze through a space as narrow as 1 inch wide, as long as you're wearing and carrying nothing. You have advantage on ability checks to start or escape a grapple."),
+    traits:[SIZE_CHOICE(), tr("Amorphous", "You can squeeze through a space as narrow as 1 inch wide, as long as you're wearing and carrying nothing. You have advantage on ability checks to start or escape a grapple."),
       tr("Hold Breath", "You can hold your breath for up to 1 hour at a time."),
       wards(tr("Natural Resilience", "You have resistance to acid and poison damage, and you have advantage on saving throws against being poisoned.", null,
         {on:"save", abilities:"all", when:"against being poisoned"}), {resist:["acid","poison"]}),
@@ -816,26 +822,25 @@ export var RACE_DATA = {
   /* ---- Lineages ---- */
   "Custom Lineage": {asiText:"+2 to one score of your choice", size:"Small or Medium", speed:{walk:30}, darkvision:60, darkvisionUnlessPicked:"Variable Trait",
     languages:{fixed:["Common"], choose:1}, source:"Tasha's Cauldron of Everything",
-    traits:[tr("Size", "You are Small or Medium, your choice. Small creatures have disadvantage on attack rolls with heavy weapons.",
-        {pick:[{kind:"choice", id:"lineageSize", noun:"size", label:"Choose your size", options:["Medium","Small"]}]}),
+    traits:[SIZE_CHOICE(),
       tr("Feat", "You gain one feat of your choice that you qualify for."),
       tr("Variable Trait", "Choose one: darkvision with a range of 60 feet, or proficiency in one skill of your choice.",
         {pick:[{kind:"skill", optional:true, none:"Darkvision out to 60 feet", label:"Or take a skill instead of darkvision (leave empty to keep darkvision)"}]})]},
   "Dhampir": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", unarmed:{name:"Vampiric Bite", die:4, type:"Piercing", ability:"con"}, size:"Small or Medium", speed:{walk:35, climb:35}, darkvision:60,
     languages:{fixed:["Common"], choose:1}, source:"Van Richten's Guide to Ravenloft",
-    traits:[LINEAGE_SKILLS,
+    traits:[SIZE_CHOICE(), LINEAGE_SKILLS,
       tr("Deathless Nature", "You don't need to breathe."),
       tr("Spider Climb", "You have a climbing speed equal to your walking speed. From 3rd level you can also move up, down and across vertical surfaces and upside down along ceilings, leaving your hands free."),
       tr("Vampiric Bite", "Your fanged bite is a natural weapon that counts as a simple melee weapon you're proficient with. You add your Constitution modifier, not Strength, to its attack and damage rolls, and it deals 1d4 piercing damage. While you're missing half or more of your hit points, you have advantage on attacks with it. When you hit a creature that isn't a construct or undead, you can empower yourself: regain hit points equal to the bite's piercing damage, or gain a bonus equal to that damage on your next ability check or attack roll. You can empower yourself a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest.")]},
   "Hexblood": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small or Medium", speed:{walk:30}, darkvision:60,
     languages:{fixed:["Common"], choose:1}, source:"Van Richten's Guide to Ravenloft",
-    traits:[LINEAGE_SKILLS,
+    traits:[SIZE_CHOICE(), LINEAGE_SKILLS,
       tr("Eerie Token", "As a bonus action, you can harmlessly remove a lock of hair, a nail or a tooth. It stays magical until you finish a long rest, and meanwhile, while you're within 10 miles of it, you can use an action to send a telepathic message of up to 25 words to whoever holds or carries it, or to enter a trance for up to 1 minute in which you see and hear from the token's location (you're blinded and deafened to your own surroundings, and the token is destroyed when the trance ends). Once you make a token, you can't again until you finish a long rest, when the missing part regrows."),
       innate(tr("Hex Magic", "You can cast Disguise Self and Hex once each without a spell slot. Each comes back after a long rest, and you can also cast them with any spell slots you have. Intelligence, Wisdom or Charisma (your choice) is your spellcasting ability for them.",
         {pick:[ABILITY_PICK]}), "pick", ["Disguise Self", "Hex"], {slots:true})]},
   "Reborn": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", size:"Small or Medium", speed:{walk:30}, darkvision:0,
     languages:{fixed:["Common"], choose:1}, source:"Van Richten's Guide to Ravenloft",
-    traits:[LINEAGE_SKILLS,
+    traits:[SIZE_CHOICE(), LINEAGE_SKILLS,
       wards(tr("Deathless Nature", "You have advantage on saving throws against disease and being poisoned, resistance to poison damage, and advantage on death saving throws. You don't need to eat, drink or breathe, and you don't need to sleep. Magic can't put you to sleep. You can finish a long rest in 4 hours spent inactive and motionless, staying conscious.", null,
         {on:"save", abilities:"all", when:"against disease and being poisoned, and death saving throws"}), {resist:["poison"]}),
       tr("Knowledge from a Past Life", "When you make an ability check that uses a skill, you can roll a d6 right after seeing the d20 and add it to the check. You can do this a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest.")]}

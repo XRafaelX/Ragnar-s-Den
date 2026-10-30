@@ -258,14 +258,17 @@ export function campaignFeatsAt(c, level){
 }
 
 /* Why this character can't take the feat ("" if they can), from its
-   `requires`: race, character level, another feat (and its option).
-   who: {race, level, feats}. A homebrew race is never ruled out. */
+   `requires`: race (or `size`, for "a Small race"), character level,
+   another feat (and its option). who: {race, size, level, feats}, size
+   defaulting to the race's. A homebrew race is never ruled out. */
 export function featRequiresReason(def, who){
   var r = def && def.requires;
   if(!r) return "";
   who = who || {};
-  var race = RACE_DATA[who.race];
-  if(r.races && race && !race.custom && r.races.indexOf(who.race)===-1) return "only for " + r.raceLabel;
+  var race = RACE_DATA[who.race], size = who.size || (race && race.size) || "";
+  if(r.races && race && !race.custom && r.races.indexOf(who.race)===-1 && !(r.size && size===r.size)){
+    return "only for " + r.raceLabel + (r.size && size.indexOf(r.size)!==-1 ? " (choose " + r.size + " as your size)" : "");
+  }
   if(r.level && (Number(who.level)||1) < r.level) return "needs level " + r.level;
   if(r.feat){
     var has = (who.feats||[]).some(function(f){ return f.name===r.feat && (!r.option || (f.picks && f.picks.option===r.option)); });

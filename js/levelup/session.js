@@ -8,7 +8,7 @@ import { CLASS_PROGRESSION, MAX_LEVEL, XP_THRESHOLDS } from "../data/progression
 import { mod, ce, escapeHtml, totalLevel, classFeaturesGainedAt, classVariantSwaps, syncTashaAdditions, wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFeat, raceHpPerLevel, classSpellChoices, spellHeldBy } from "../core/helpers.js";
 import { knownInvocations, levelUpPlan, levelUpContext, levelUpProblem } from "../core/invocations.js";
 import { levelUpOptionPlans, planProblem, planSlots, allKnownOptions } from "../core/class-options.js";
-import { levelUpGrants, grantHasChoices, grantHasSpells, classPickContext, classPicksProblem, fillSlots, slotIsFixed } from "../core/class-picks.js";
+import { levelUpGrants, grantHasChoices, grantHasSpells, classPickContext, classPicksProblem, fillSlots, slotIsFixed, raceSize } from "../core/class-picks.js";
 import { styleDueAt, classStyleList, availableStyleNames, versatilityStyleSwap, styleFeatures, stylePicksProblem, styleCantripSwap } from "../core/fighting-styles.js";
 import { showActionToast } from "../ui/toast.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons.js";
@@ -119,7 +119,7 @@ export function bonusFeatReason(def){
   var c = lu.c, now = asiFeatNow();
   if((c.feats||[]).some(function(f){ return f.name===def.name; })) return "you have it";
   if(now && now.name===def.name) return "picked as your feat this level";
-  return featRequiresReason(def, {race: c.race, level: totalLevel(c) + 1, feats: (c.feats||[]).concat(now ? [now] : [])});
+  return featRequiresReason(def, {race: c.race, size: raceSize(c), level: totalLevel(c) + 1, feats: (c.feats||[]).concat(now ? [now] : [])});
 }
 
 /* ---- Warlock: Pact Boon and invocations ----
@@ -459,7 +459,7 @@ export function validate(id){
   if(id==="asi"){
     if(lu.asiMode==="feat"){
       if(!lu.featName) return "Pick a feat, or switch to raising ability scores.";
-      var blocked = featRequiresReason(featDef(lu.featName), {race: lu.c.race, level: totalLevel(lu.c) + 1, feats: lu.c.feats || []});
+      var blocked = featRequiresReason(featDef(lu.featName), {race: lu.c.race, size: raceSize(lu.c), level: totalLevel(lu.c) + 1, feats: lu.c.feats || []});
       return blocked ? lu.featName+" "+blocked+". Pick another feat." : null;
     }
     var can = asiPointsAvailable();

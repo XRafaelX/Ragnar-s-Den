@@ -114,6 +114,22 @@ test("Custom Lineage: the size is the player's, and Small struggles with heavy w
   assert.equal(H.attackRollMode(makeChar("Human"), sword).mode, "none");
 });
 
+test("every race that's Small or Medium asks, and the feats follow the size picked", () => {
+  const choosers = Object.keys(RACE_DATA).filter((r) => RACE_DATA[r].size === "Small or Medium");
+  assert.deepEqual(choosers.sort(), ["Custom Lineage", "Dhampir", "Hadozee", "Harengon", "Hexblood", "Owlin", "Plasmoid", "Reborn", "Thri-kreen"]);
+  choosers.forEach((r) => assert.ok(RACE_DATA[r].traits.some((t) => t.name === "Size" && t.profs.pick[0].id === "size"), r + " asks for a size"));
+  const sized = (race, size) => makeChar(race, { racePicks: { profPicks: { "race:Size:pick": { slots: [[size]] } } } });
+  assert.equal(CP.raceSize(sized("Dhampir", "Small")), "Small");
+  assert.equal(H.attackRollMode(sized("Hexblood", "Small"), { name: "Greatsword", type: "weapon", ability: "str", damageDice: "2d6" }).mode, "dis");
+  const squat = featDef("Squat Nimbleness"), why = (race, size) => featRequiresReason(squat, { race, size, level: 4, feats: [] });
+  assert.equal(why("Reborn", "Small"), "");
+  assert.equal(why("Custom Lineage", "Medium"), "only for a dwarf or a Small race", "a Medium lineage isn't Small");
+  assert.equal(why("Owlin"), "only for a dwarf or a Small race (choose Small as your size)", "an older sheet that hasn't picked");
+  assert.equal(why("Kender"), "", "Small anyway");
+  assert.equal(why("Hill Dwarf"), "", "a dwarf");
+  assert.notEqual(why("Human"), "");
+});
+
 test("Custom Lineage: a kept darkvision says so, and which feature beats it", () => {
   const twilight = SUBCLASSES.Cleric.find((d) => d.name === "Twilight Domain").features[1];
   assert.equal(CP.darkvisionCoveredBy("Custom Lineage", twilight).name, "Eyes of Night");
@@ -183,6 +199,8 @@ test("wizard: +2 and +1, or +1 to three different scores", (t) => {
     const rc = W.wizardState.raceChoices;
     rc.abilities = ["dex", "wis"];
     assert.deepEqual(W.raceAbilityIncreases(), { dex: 2, wis: 1 });
+    assert.equal(W.validateStep("raceChoices"), "Choose a size.", "an owlin is Small or Medium");
+    rc.profPicks = { "race:Size:pick": [["Medium"]] };
     assert.equal(W.validateStep("raceChoices"), null);
     rc.alt = true;
     assert.deepEqual(W.raceAbilityAmounts(), [1, 1, 1]);

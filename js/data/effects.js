@@ -23,7 +23,7 @@
    hint: what it does, kept short; the card adds the worked-out numbers. */
 export var TOGGLE_EFFECTS = [
   {id:"bladesong", name:"Bladesong", className:"Wizard", subclass:"Bladesinging", level:2,
-    cost:{resource:"bladesong", amount:1}, duration:"1 minute",
+    cost:{resource:"bladesong", amount:1}, duration:"1 minute", endsIncapacitated:true,
     hint:"Ends early if you are incapacitated, don medium or heavy armor or a shield, or attack with a weapon in two hands."},
   {id:"astral_arms", name:"Arms of the Astral Self", className:"Monk", subclass:"Way of the Astral Self", level:3,
     cost:{resource:"ki", amount:1}, duration:"10 minutes",

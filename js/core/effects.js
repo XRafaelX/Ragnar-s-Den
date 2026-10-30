@@ -131,7 +131,7 @@ export function endAllEffects(c){
   return ended;
 }
 /* A condition that incapacitates ends the effects tagged
-   `endsIncapacitated` (Twilight Sanctuary). Returns their names. */
+   `endsIncapacitated` (Twilight Sanctuary, Bladesong). Returns their names. */
 export function endIncapacitatedEffects(c){
   var ended = TOGGLE_EFFECTS.filter(function(d){ return d.endsIncapacitated && c.effects && c.effects[d.id]; });
   ended.forEach(function(d){ endEffect(c, d.id); });

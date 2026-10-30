@@ -915,7 +915,7 @@ test("favored enemies and terrains: one of each per level, never the same twice,
   const offered = CP.slotOptions(first.def, [], 0, ctxOf(c, first));
   assert.equal(offered.filter((o) => o.group === "Creature types").length, 13);
   assert.ok(offered.some((o) => o.group === "Humanoids (two races)" && o.value === "Humanoids: gnolls and orcs"));
-  assert.match(CP.classPicksProblem(first, [[], []], ctxOf(c, first)), /Choose a favored enemy for Favored Enemy/);
+  assert.match(CP.classPicksProblem(first, [[], []], ctxOf(c, first)), /Choose a favored enemy\./);
   assert.equal(CP.classPicksProblem(first, [["Beasts"], []], ctxOf(c, first)), "", "beasts speak no language: the language may be left empty");
   assert.ok(!CP.slotIsFixed(first.def, [["Beasts"], []], 1, ctxOf(c, first)));
   // Two humanoid races of the player's own, typed in.
@@ -1098,7 +1098,7 @@ test("wizard: a ranger's favored enemy, its language and terrain on Class Featur
     plan = W.languagePlan();
   });
   assert.ok(applicable, "the step shows though the ranger has no listPick choices any more");
-  assert.match(err, /Choose a favored enemy for Favored Enemy/);
+  assert.match(err, /Choose a favored enemy\./);
   assert.deepEqual(offers, ["Favored Foe", "Deft Explorer"]);
   assert.deepEqual(plan.fromClass, ["Giant"]);
   assert.equal(plan.slots.length, 2, "a human's language and an outlander's: the favored enemy's is asked with the enemy");

@@ -12,6 +12,3 @@ export var HALF_ORCS = ["Half-Orc","Half-Orc (Mark of Finding)"];
 export var HUMANS = ["Human","Variant Human","Human (Mark of Finding)","Human (Mark of Handling)","Human (Mark of Making)","Human (Mark of Passage)","Human (Mark of Sentinel)"];
 export var TIEFLINGS = ["Tiefling","Tiefling (Baalzebul)","Tiefling (Dispater)","Tiefling (Fierna)","Tiefling (Glasya)","Tiefling (Levistus)",
   "Tiefling (Mammon)","Tiefling (Mephistopheles)","Tiefling (Zariel)","Tiefling (Variant)","Tiefling (Winged)"];
-// Small, or Small or Medium (the player's choice).
-export var SMALL_RACES = HALFLINGS.concat(GNOMES, ["Fairy","Goblin","Harengon","Kobold","Thri-kreen","Verdan",
-  "Autognome","Grung","Hadozee","Kender","Owlin","Plasmoid","Custom Lineage","Dhampir","Hexblood","Reborn"]);
