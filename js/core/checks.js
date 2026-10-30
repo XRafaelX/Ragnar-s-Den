@@ -248,7 +248,7 @@ export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)]
 /* Initiative is a DEX check: Feral Instinct's or a Helm of Awareness's
    advantage, Duality's next ability check, and armor worn without
    proficiency's and conditions' disadvantage. */
-export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex"), nextCheckAdvantage(c), infusionInitiative(c), effectOn(c, "vigilant_blessing") ? {mode: "adv", reason: "Vigilant Blessing"} : null].concat(alwaysAdvantage(c, "initiative"), conditionRolls(c, "check"))); }
+export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex"), nextCheckAdvantage(c), tidesRoll(c), infusionInitiative(c), effectOn(c, "vigilant_blessing") ? {mode: "adv", reason: "Vigilant Blessing"} : null].concat(alwaysAdvantage(c, "initiative"), conditionRolls(c, "check"))); }
 /* A weapon attack: disadvantage in armor you aren't proficient with when
    it uses STR or DEX (not INT from Battle Ready or CHA from Hex Warrior),
    and what conditions do to attack rolls. */

@@ -223,29 +223,27 @@ function saveFollowUp(c, ability, r){
   // Supernatural Defense (Monster Slayer 7): your prey forced this save.
   if(hasSupernaturalDefense(c)) opts.push({label: "+1d6 (Supernatural Defense)", title: "When the target of your Slayer's Prey forces this save",
     use: function(){ var got = Math.floor(Math.random() * 6) + 1; return {bonus: got, log: "Supernatural Defense (rolled " + got + ")"}; }});
+  if(favoredByTheGods(c)) opts.push(favoredOption(c));
+  if(resourceLeft(c, "Warlock:dark_ones_own_luck") > 0) opts.push(ownLuckOption(c));
+  if(chronalShiftLeft(c) > 0) opts.push(chronalOption(c));
+  if(flashOfGenius(c)) opts.push(flashOption(c));
+  // Arcane Deflection (War Magic 2): +4 to the save, and cantrips only for a while.
+  if(hasArcaneDeflection(c)){
+    var shroud = deflectingShroud(c);
+    opts.push({label: "+4 (Arcane Deflection)", title: "Your reaction. You can't cast spells other than cantrips until the end of your next turn." + (shroud ? " Deflecting Shroud: up to three creatures within 60 ft take " + shroud + " force damage." : ""),
+      use: function(){ return {bonus: 4, log: "Arcane Deflection: cantrips only until the end of your next turn" + (shroud ? ". Deflecting Shroud: " + shroud + " force to up to three creatures" : "")}; }});
+  }
+  // The Dragon (Starry Form): a low d20 counts as a 10 to keep concentration.
+  if(ability==="con" && starryDragon(c) && (!r || (r.natural!=null && r.natural < 10))){
+    opts.unshift({label: "Concentration: count the d20 as 10", title: "Starry Form, Dragon: a roll of 9 or lower counts as a 10 on a Constitution save to keep concentration",
+      use: function(){ return r ? {bonus: 10 - r.natural, log: "Starry Form: Dragon"} : null; }});
+  }
   var failed = opts.length;
   // Vigilant Rebuke (Oath of the Watchers 15): a reaction after a success.
   if(ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15){
     var rebuke = mod(abilityScore(c, "cha"));
     opts.push({label: "Saved? Vigilant Rebuke 2d8" + fmtMod(rebuke), title: "Your reaction: force damage to the creature that forced the save",
       use: function(){ performRoll(8, 2, rebuke, "none", "Vigilant Rebuke (Force)"); return {silent: true}; }});
-  }
-  if(favoredByTheGods(c)){ opts.push(favoredOption(c)); failed = opts.length; }
-  if(resourceLeft(c, "Warlock:dark_ones_own_luck") > 0){ opts.push(ownLuckOption(c)); failed = opts.length; }
-  if(chronalShiftLeft(c) > 0){ opts.push(chronalOption(c)); failed = opts.length; }
-  if(flashOfGenius(c)){ opts.push(flashOption(c)); failed = opts.length; }
-  // Arcane Deflection (War Magic 2): +4 to the save, and cantrips only for a while.
-  if(hasArcaneDeflection(c)){
-    var shroud = deflectingShroud(c);
-    opts.push({label: "+4 (Arcane Deflection)", title: "Your reaction. You can't cast spells other than cantrips until the end of your next turn." + (shroud ? " Deflecting Shroud: up to three creatures within 60 ft take " + shroud + " force damage." : ""),
-      use: function(){ return {bonus: 4, log: "Arcane Deflection: cantrips only until the end of your next turn" + (shroud ? ". Deflecting Shroud: " + shroud + " force to up to three creatures" : "")}; }});
-    failed = opts.length;
-  }
-  // The Dragon (Starry Form): a low d20 counts as a 10 to keep concentration.
-  if(ability==="con" && starryDragon(c) && (!r || (r.natural!=null && r.natural < 10))){
-    opts.unshift({label: "Concentration: count the d20 as 10", title: "Starry Form, Dragon: a roll of 9 or lower counts as a 10 on a Constitution save to keep concentration",
-      use: function(){ return r ? {bonus: 10 - r.natural, log: "Starry Form: Dragon"} : null; }});
-    failed = opts.length;
   }
   if(!opts.length) return null;
   return failed ? {lead: "Failed?", hint: "Failed? Tap for options.", options: opts} : {lead: "", hint: "Saved? Tap for Vigilant Rebuke.", options: opts};

@@ -65,7 +65,7 @@ export function hpBonuses(c){
 }
 /* The hit point maximum, halved (rounded down) from exhaustion level 4. */
 export function maxHp(c){
-  if(c.wildShape) return c.wildShape.max;
+  if(c.wildShape) return hpMaxHalved(c) ? Math.max(1, Math.floor(c.wildShape.max / 2)) : c.wildShape.max;
   var full = fullMaxHp(c);
   return hpMaxHalved(c) ? Math.max(1, Math.floor(full / 2)) : full;
 }

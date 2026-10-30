@@ -116,6 +116,12 @@ test("the book's example: 10 damage with 1 hit point left, you revert and take 9
   assert.ok(c.wildShape);
 });
 
+test("exhaustion 4 halves a form's hit point maximum too", () => {
+  const c = druid("Circle of the Moon", 4, { exhaustion: 4 });
+  H.startWildShape(c, "Black Bear");
+  assert.equal(H.maxHp(c), 9);
+});
+
 test("changing form keeps your own hit points, and falling unconscious ends it", () => {
   const c = druid("Circle of the Moon", 4);
   c.hp.current = 20;
