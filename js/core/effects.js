@@ -1,12 +1,13 @@
 /* ---------------- Active effects ----------------
    Effects switched on from the Vitals tab (Bladesong, the Astral Self,
    Symbiotic Entity) and the numbers they change. */
-import { TOGGLE_EFFECTS } from "../data/effects.js";
+import { TOGGLE_EFFECTS, WILD_SURGES } from "../data/effects.js";
 import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
 import { classLevelOf, usesVariant } from "./class-features.js";
 import { isRangedWeapon } from "./equipment.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
+import { knownOptions } from "./class-options.js";
 
 /* ---------------- Temporary effects ----------------
    Bladesong, the Astral Self and Symbiotic Entity (js/data/effects.js).
@@ -75,6 +76,7 @@ export function startEffect(c, id){
     if(!c.hp) c.hp = {max:0, current:0, temp:0};
     c.hp.temp = Math.max(Number(c.hp.temp)||0, symbioticTempHp(c));
   }
+  if(id==="reckless_attack") recklessAbandon(c);
   return true;
 }
 /* Switch an effect off, and anything that needs it. */
@@ -88,7 +90,7 @@ export function endEffect(c, id){
 export function endAllEffects(c){
   var ended = TOGGLE_EFFECTS.filter(function(d){ return c.effects && c.effects[d.id]; }).map(function(d){ return d.name; });
   c.effects = {};
-  if(c.rage && c.rage.active){ c.rage.active = false; ended.push("Rage"); }
+  if(c.rage && c.rage.active){ ended.push("Rage"); ended = ended.concat(endRage(c)); }
   // Shillelagh lasts a minute: a rest or dropping to 0 hit points ends it.
   var lit = (c.inventory||[]).filter(function(i){ return i.shillelagh; });
   if(lit.length){ lit.forEach(function(i){ delete i.shillelagh; }); ended.push("Shillelagh"); }
@@ -223,3 +225,248 @@ export function useHarnessDivinePower(c, className, level){
   c.spellcasting.slots[level].used = Number(c.spellcasting.slots[level].used) - 1;
   return true;
 }
+
+/* ---------------- Rage ----------------
+   c.rage = {active, used} and, for the rage going on now, what its
+   features have set: frenzy (Frenzy), fanatical (Fanatical Focus used),
+   abandon (Reckless Abandon's temporary HP), relentless (a Relentless
+   Rage save waiting at 0 HP). c.relentlessUses counts Relentless Rage's
+   saves since the last rest (its DC grows by 5 each time). */
+var RAGE_STATE = ["frenzy", "fanatical", "abandon", "relentless", "surge", "surgeChoice", "beast", "cleaver"];
+function barbLevel(c, subclass){ return classLevelOf(c, "Barbarian", subclass); }
+/* Enter a rage: what that brings, as notes for the log (a Wild Surge).
+   `roll` (sides -> 1..sides) is for tests. */
+export function startRage(c, roll){
+  RAGE_STATE.forEach(function(k){ delete c.rage[k]; });
+  c.rage.active = true;
+  return barbLevel(c, "Path of Wild Magic") >= 3 ? [rollWildSurge(c, roll)] : [];
+}
+/* The rage ends (the button, a rest, or dropping to 0 HP): what that
+   brings, as notes for the log ("Frenzy: 1 level of exhaustion"). */
+export function endRage(c){
+  if(!c.rage || !c.rage.active) return [];
+  var notes = [];
+  c.rage.active = false;
+  if(c.rage.frenzy){
+    c.exhaustion = Math.min(6, (Number(c.exhaustion)||0) + 1);
+    notes.push("Frenzy: 1 level of exhaustion");
+  }
+  // Reckless Abandon's temporary HP vanish with the rage.
+  if(c.rage.abandon && c.hp && (Number(c.hp.temp)||0) > 0){
+    c.hp.temp = Math.max(0, (Number(c.hp.temp)||0) - c.rage.abandon);
+  }
+  RAGE_STATE.forEach(function(k){ delete c.rage[k]; });
+  return notes;
+}
+/* Spirit Shield (Path of the Ancestral Guardian, barbarian 6): the dice
+   a reaction takes off another creature's damage while raging (2d6, 3d6
+   at 10, 4d6 at 14), and whether Vengeful Ancestors (14) sends it back.
+   {dice, vengeful} or null. */
+export function spiritShield(c){
+  var lv = barbLevel(c, "Path of the Ancestral Guardian");
+  if(lv < 6 || !(c.rage && c.rage.active)) return null;
+  return {dice: lv >= 14 ? 4 : lv >= 10 ? 3 : 2, vengeful: lv >= 14};
+}
+/* Frenzy (Path of the Berserker, barbarian 3): while raging, go into a
+   frenzy. True if it could. */
+export function canFrenzy(c){
+  return !!(c.rage && c.rage.active) && barbLevel(c, "Path of the Berserker") >= 3 && !c.rage.frenzy;
+}
+/* Relentless Rage (barbarian 11): dropping to 0 HP while raging asks for
+   a CON save, DC 10 and 5 more for each use since the last rest. */
+export function relentlessRageDc(c){
+  return barbLevel(c) >= 11 ? 10 + 5 * (Number(c.relentlessUses)||0) : 0;
+}
+/* Rage Beyond Death (Path of the Zealot, barbarian 14): raging at 0 HP,
+   you stay conscious and the rage goes on; you die only when it ends with
+   you still at 0 HP. */
+export function rageBeyondDeath(c){
+  return !!(c.rage && c.rage.active) && barbLevel(c, "Path of the Zealot") >= 14;
+}
+/* Dropping to 0 HP while raging: Relentless Rage's save is set up, and the
+   rage goes on while that save is waiting or with Rage Beyond Death. True
+   when the rage holds (the caller then doesn't end the effects). */
+export function rageAtZero(c){
+  if(!(c.rage && c.rage.active)) return false;
+  if(relentlessRageDc(c)) c.rage.relentless = true;
+  return !!c.rage.relentless || rageBeyondDeath(c);
+}
+/* The Relentless Rage save's outcome: back to 1 HP on a success, the rage
+   still going; on a failure the rage ends (unless Rage Beyond Death holds
+   it). Returns "up", "down" or "" when no save was waiting. */
+export function resolveRelentlessRage(c, total){
+  if(!(c.rage && c.rage.relentless)) return "";
+  var dc = relentlessRageDc(c);
+  delete c.rage.relentless;
+  c.relentlessUses = (Number(c.relentlessUses)||0) + 1;
+  if(total >= dc){
+    c.hp.current = 1;
+    c.deathSaves = {success: 0, fail: 0};
+    return "up";
+  }
+  return "down";
+}
+/* Reckless Abandon (Path of the Battlerager, barbarian 6): attacking
+   recklessly while raging gives temporary HP equal to the CON modifier
+   (minimum 1). They don't stack with others: keep the higher. */
+function recklessAbandon(c){
+  if(!(c.rage && c.rage.active) || barbLevel(c, "Path of the Battlerager") < 6) return;
+  var gain = Math.max(1, mod(abilityScore(c, "con")));
+  if(!c.hp) c.hp = {max: 0, current: 0, temp: 0};
+  if(gain > (Number(c.hp.temp)||0)){ c.hp.temp = gain; c.rage.abandon = gain; }
+}
+
+/* What rage gives this barbarian right now, as the Rage card's chips: the
+   base benefits, then each path's (a Bear totem's resistance in place of
+   the usual one, Frenzy, Mindless Rage, Giant Stature...). Rolls and
+   numbers live elsewhere; these are the rules to remember while raging. */
+function totemPick(c, setId){
+  var cl = (c.classes||[]).find(function(x){ return x.name==="Barbarian" && x.subclass==="Path of the Totem Warrior"; });
+  var o = cl && knownOptions(cl, setId)[0];
+  return o ? o.name : "";
+}
+export function ragePerks(c){
+  var raging = !!(c.rage && c.rage.active);
+  var heavy = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
+  var spirit = totemPick(c, "totemSpirit"), attune = totemPick(c, "totemAttunement");
+  var out = [spirit==="Bear" ? "Resist all damage except psychic" : "Resist bludgeoning, piercing & slashing", "Advantage on Strength checks & saves"];
+  var lv = function(sub){ return barbLevel(c, sub); };
+  // Path of the Berserker
+  if(raging && c.rage.frenzy) out.push("Frenzy: a melee weapon attack as a bonus action each turn");
+  if(lv("Path of the Berserker") >= 6) out.push("Can't be charmed or frightened");
+  // Path of the Totem Warrior
+  if(spirit==="Eagle" && !heavy) out.push("Opportunity attacks against you have disadvantage", "Dash as a bonus action");
+  if(spirit==="Wolf") out.push("Friends have advantage on melee attacks against enemies next to you");
+  if(spirit==="Tiger") out.push("Long jump +10 ft, high jump +3 ft");
+  if(attune==="Bear") out.push("Enemies next to you have disadvantage attacking anyone else");
+  if(attune==="Tiger") out.push("After a 20 ft straight charge, a bonus action melee attack");
+  if(attune==="Wolf") out.push("On a melee hit, knock a Large or smaller creature prone (bonus action)");
+  // Path of the Zealot
+  if(lv("Path of the Zealot") >= 6 && !(raging && c.rage.fanatical)) out.push("Reroll one failed save (Fanatical Focus)");
+  if(lv("Path of the Zealot") >= 14) out.push("Stay conscious at 0 HP (Rage Beyond Death)");
+  // Path of the Ancestral Guardian
+  if(lv("Path of the Ancestral Guardian") >= 3) out.push("The first creature you hit each turn has disadvantage attacking anyone else");
+  // Path of the Beast
+  if(raging && c.rage.beast) out.push("Form of the Beast: " + c.rage.beast.toLowerCase() + " (its card is on the Inventory tab)");
+  // Path of the Giant
+  var giant = lv("Path of the Giant");
+  if(giant >= 14) out.push("Large or Huge, reach +10 ft");
+  else if(giant >= 3) out.push("Large, reach +5 ft");
+  if(giant >= 3) out.push("Rage damage on thrown weapon attacks");
+  // Path of the Storm Herald
+  if(lv("Path of the Storm Herald") >= 10) out.push("Creatures you choose in your aura share your Storm Soul resistance");
+  // Path of the Battlerager
+  if(lv("Path of the Battlerager") >= 10) out.push("Dash as a bonus action");
+  var spiked = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && /spiked armor/i.test(i.name||""); });
+  if(lv("Path of the Battlerager") >= 14 && spiked) out.push("A creature next to you that hits you with a melee attack takes 3 piercing");
+  return out;
+}
+
+/* ---- Wild Surge (Path of Wild Magic, barbarian 3) ----
+   Entering a rage rolls a d8 on the Wild Magic table (WILD_SURGES), and
+   Unstable Backlash (10) rolls again. c.rage.surge is the effect in play;
+   with Controlled Surge (14) two rolls wait in c.rage.surgeChoice for the
+   player to pick one (the same number twice: any of the eight). Returns a
+   note for the log. */
+function d(sides){ return Math.floor(Math.random() * sides) + 1; }
+export function rollWildSurge(c, roll){
+  roll = roll || d;
+  var a = roll(8);
+  if(barbLevel(c, "Path of Wild Magic") >= 14){
+    var b = roll(8);
+    delete c.rage.surge;
+    c.rage.surgeChoice = a===b ? [1, 2, 3, 4, 5, 6, 7, 8] : [a, b].sort();
+    return a===b ? "Wild Surge: " + a + " twice, so choose any effect (Controlled Surge)" : "Wild Surge: " + a + " and " + b + ", choose one (Controlled Surge)";
+  }
+  return applySurge(c, a, roll);
+}
+/* Controlled Surge: the effect picked from the two rolled. */
+export function chooseWildSurge(c, n, roll){
+  if(!(c.rage && c.rage.surgeChoice && c.rage.surgeChoice.indexOf(n)!==-1)) return "";
+  delete c.rage.surgeChoice;
+  return applySurge(c, n, roll || d);
+}
+function applySurge(c, n, roll){
+  var s = WILD_SURGES[n-1];
+  c.rage.surge = n;
+  var note = "Wild Surge " + n + ": " + s.name;
+  // Shadowy tendrils: 1d12 temporary HP for the barbarian at once (they don't stack: keep the higher).
+  if(s.temp){
+    var got = roll(12);
+    if(!c.hp) c.hp = {max: 0, current: 0, temp: 0};
+    if(got > (Number(c.hp.temp)||0)) c.hp.temp = got;
+    note += ", " + got + " temporary HP";
+  }
+  return note;
+}
+/* The effect in play this rage ({n, name, text, dice, type, save, ac}),
+   or null. */
+export function wildSurgeNow(c){
+  return c.rage && c.rage.active && c.rage.surge ? WILD_SURGES[c.rage.surge-1] : null;
+}
+export function wildSurgeDc(c){
+  return 8 + profBonus(c) + mod(abilityScore(c, "con"));
+}
+
+/* ---- Path of the Beast, Path of the Giant, Path of the Storm Herald ---- */
+/* Form of the Beast (beast 3): the natural weapon picked for this rage
+   (c.rage.beast: "Bite", "Claws" or "Tail"). */
+export var BEAST_FORMS = {
+  Bite: {die: 8, type: "Piercing", note: "Once on each of your turns, a bite that damages a creature heals you your proficiency bonus, while you have less than half your hit points."},
+  Claws: {die: 6, type: "Slashing", note: "Once on each of your turns, when you attack with a claw using the Attack action, you can make one more claw attack."},
+  Tail: {die: 8, type: "Piercing", note: "Reach. Reaction: when a creature you can see within 10 feet hits you, roll a d8 and add it to your AC against that attack."}
+};
+export function beastFormDue(c){
+  return !!(c.rage && c.rage.active) && barbLevel(c, "Path of the Beast") >= 3 && !c.rage.beast;
+}
+export function chooseBeastForm(c, form){
+  if(BEAST_FORMS[form] && c.rage && c.rage.active) c.rage.beast = form;
+}
+/* Elemental Cleaver (giant 6): the weapon infused this rage and its damage
+   type (c.rage.cleaver = {item, type}); +1d6 of that type, 2d6 from 14. */
+export var CLEAVER_TYPES = ["Acid", "Cold", "Fire", "Lightning", "Thunder"];
+export function elementalCleaver(c, item){
+  var lv = barbLevel(c, "Path of the Giant");
+  if(lv < 6 || !(c.rage && c.rage.active)) return null;
+  var cv = c.rage.cleaver;
+  if(item && !(cv && cv.item===item.id)) return null;
+  return {item: cv ? cv.item : "", type: cv ? cv.type : "", dice: lv >= 14 ? 2 : 1};
+}
+export function setElementalCleaver(c, itemId, type){
+  if(!(c.rage && c.rage.active)) return;
+  var cv = c.rage.cleaver || {item: "", type: ""};
+  if(itemId!=null) cv.item = itemId;
+  if(type!=null) cv.type = type;
+  c.rage.cleaver = cv;
+}
+/* Storm Herald: the environment picked, or "". */
+export function stormEnvironment(c){
+  var cl = (c.classes||[]).find(function(x){ return x.name==="Barbarian" && x.subclass==="Path of the Storm Herald"; });
+  var o = cl && knownOptions(cl, "stormEnvironment")[0];
+  return o ? o.name : "";
+}
+/* Storm Aura's numbers while raging (storm herald 3): {env, dc, damage
+   (Desert, to each other creature), dice (Sea, lightning, DEX save for
+   half), temp (Tundra)}, and Raging Storm's (14) Desert fire. Null when
+   not raging or no environment is picked. */
+export function stormAura(c){
+  var lv = barbLevel(c, "Path of the Storm Herald"), env = stormEnvironment(c);
+  if(lv < 3 || !env || !(c.rage && c.rage.active)) return null;
+  var step = lv >= 20 ? 6 : lv >= 15 ? 5 : lv >= 10 ? 4 : lv >= 5 ? 3 : 2;
+  return {env: env, dc: 8 + profBonus(c) + mod(abilityScore(c, "con")), step: step,
+    dice: lv >= 20 ? 4 : lv >= 15 ? 3 : lv >= 10 ? 2 : 1,
+    ragingStorm: lv >= 14 ? Math.floor(lv / 2) : 0};
+}
+/* Storm Soul (storm herald 6): resistance by environment, always on.
+   [{type, source}]. */
+export function stormSoulResistances(c){
+  var env = barbLevel(c, "Path of the Storm Herald") >= 6 ? stormEnvironment(c) : "";
+  var t = {Desert: "fire", Sea: "lightning", Tundra: "cold"}[env];
+  return t ? [{type: t, source: "Storm Soul"}] : [];
+}
+/* Call the Hunt (beast 14): 5 temporary HP for each creature that joins,
+   up to the CON modifier (minimum 1). The most that can join. */
+export function callTheHuntMax(c){
+  return barbLevel(c, "Path of the Beast") >= 14 ? Math.max(1, mod(abilityScore(c, "con"))) : 0;
+}
+

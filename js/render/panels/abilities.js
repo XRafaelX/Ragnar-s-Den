@@ -4,7 +4,7 @@ import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { rollCheck } from "./sheet-rolls.js";
+import { rollCheck, rollSave } from "./sheet-rolls.js";
 import { abilityScore, abilityScoreDetail } from "../../core/ability-scores.js";
 
 /* "Adv" / "Dis" tag for a check, save or skill that rolls that way. */
@@ -66,7 +66,7 @@ export function renderAbilitiesPanel(c){
     rollArea.setAttribute("tabindex", "0");
     rollArea.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(shown)+'</div>';
     if(check.roll.mode!=="none") rollArea.appendChild(rollTag(check.roll));
-    function rollAbilityCheck(){ rollCheck(c, check.value, check.roll.mode, a[1]+" check"); }
+    function rollAbilityCheck(){ rollCheck(c, check.value, check.roll.mode, a[1]+" check", key); }
     rollArea.addEventListener("click", function(e){
       e.stopPropagation();
       rollAbilityCheck();
@@ -168,7 +168,7 @@ export function renderAbilitiesPanel(c){
     row.appendChild(cb); row.appendChild(name); row.appendChild(rollButton(total, a[1] + " save"));
     onRowRoll(row, function(){
       if(fails) logRoll(a[1]+" save", "Fails automatically ("+fails+").");
-      else performRoll(20,1,total,saveRoll.mode, a[1]+" save");
+      else rollSave(c, total, saveRoll.mode, a[1]+" save");
     });
     saveRows.appendChild(row);
   });
@@ -251,7 +251,7 @@ export function renderAbilitiesPanel(c){
     abbr.className = "abbr"; abbr.textContent = skillAbility.label.slice(0, 3);
     if(skillAbility.label.length > 3) abbr.title = skillAbility.label;
     row.appendChild(pips); row.appendChild(nameSpan); row.appendChild(abbr); row.appendChild(rollButton(bonus, name));
-    onRowRoll(row, function(){ rollCheck(c, bonus, rollMode, name); });
+    onRowRoll(row, function(){ rollCheck(c, bonus, rollMode, name, ab); });
     skillRows.appendChild(row);
   });
   skillCard.appendChild(skillRows);

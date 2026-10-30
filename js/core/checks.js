@@ -8,7 +8,7 @@ import { mod, fmtMod, profBonus, combineRolls } from "./basics.js";
 import { barbarianClassEntry } from "./character-resources.js";
 import { classFeatureList } from "./class-features.js";
 import { effectOn, effectRolls } from "./effects.js";
-import { weaponAbility, armorPenalty } from "./equipment.js";
+import { weaponAbility, armorPenalty, isRangedWeapon } from "./equipment.js";
 import { hasFeat } from "./vitals.js";
 import { nextCheckAdvantage } from "./magic-items.js";
 import { infusionInitiative } from "./infusion-effects.js";
@@ -165,8 +165,11 @@ export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex
 export function attackRollMode(c, item){
   // Only when every best choice is STR or DEX (on a tie with INT from
   // Battle Ready, the player attacks with INT and avoids it).
-  var physical = weaponAbility(c, item).keys.every(function(k){ return k==="str" || k==="dex"; });
-  return combineRolls([physical ? armorPenalty(c, "str") : null].concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
+  var keys = weaponAbility(c, item).keys;
+  var physical = keys.every(function(k){ return k==="str" || k==="dex"; });
+  // Reckless Attack: advantage on melee weapon attacks that use Strength.
+  var reckless = effectOn(c, "reckless_attack") && !isRangedWeapon(item) && keys.indexOf("str")!==-1 ? {mode: "adv", reason: "Reckless Attack"} : null;
+  return combineRolls([physical ? armorPenalty(c, "str") : null, reckless].concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
 }
 /* An attack with no weapon card (a spell attack, the astral arms): only
    conditions change it (Poisoned, Invisible, exhaustion). */

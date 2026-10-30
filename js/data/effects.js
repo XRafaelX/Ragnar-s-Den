@@ -32,6 +32,11 @@ export var TOGGLE_EFFECTS = [
   {id:"symbiotic_entity", name:"Symbiotic Entity", className:"Druid", subclass:"Circle of Spores", level:2,
     cost:{resource:"wild_shape", amount:1}, duration:"10 minutes",
     hint:"Ends early when these temporary hit points are gone or you use Wild Shape again."},
+  // Player's Handbook (p. 46), checked on 5etools' data 2026-10-29. With
+  // Reckless Abandon (Battlerager 6) it gives temporary HP while raging.
+  {id:"reckless_attack", name:"Reckless Attack", className:"Barbarian", level:2, duration:"Until your next turn",
+    startLabel:"Attack recklessly",
+    hint:"Decide on your first attack of the turn. Attacks against you have advantage until your next turn."},
   // Tasha's Cauldron (p. 62), checked on 5etools' data 2026-10-29. The
   // advantage goes with the next attack roll, the speed stays 0 until End turn.
   {id:"steady_aim", name:"Steady Aim", className:"Rogue", level:3, variant:"Steady Aim", duration:"Until the end of your turn",
@@ -55,4 +60,28 @@ export var TOGGLE_EFFECTS = [
   {id:"sunlight", name:"Sunlight Sensitivity", race:["Dark Elf (Drow)", "Duergar", "Kobold"], level:1, duration:"While in direct sunlight",
     startLabel:"In sunlight", endLabel:"Out of it",
     hint:"Also when your target, or whatever you're trying to see, is in direct sunlight."}
+];
+
+/* Path of Wild Magic's Wild Magic table (Tasha's Cauldron, p. 25, checked
+   on 5etools' data 2026-10-29): rolled with a d8 when the barbarian enters
+   a rage. dice: what its Rage card button rolls; save: the ability of the
+   save it asks for (DC 8 + proficiency + CON); temp: temporary HP the
+   barbarian gains at once; ac: an AC bonus while the rage lasts. */
+export var WILD_SURGES = [
+  {n:1, name:"Shadowy tendrils", dice:"1d12", type:"Necrotic", save:"con", temp:"1d12",
+    text:"Each creature you choose within 30 feet makes a Constitution save or takes 1d12 necrotic damage. You gain 1d12 temporary hit points."},
+  {n:2, name:"Teleport",
+    text:"You teleport up to 30 feet to an unoccupied space you can see. Until the rage ends, you can do it again as a bonus action on each of your turns."},
+  {n:3, name:"Exploding spirit", dice:"1d6", type:"Force", save:"dex",
+    text:"A spirit appears within 5 feet of a creature you choose within 30 feet and explodes at the end of the turn: each creature within 5 feet of it makes a Dexterity save or takes 1d6 force damage. You can summon another as a bonus action on each of your turns."},
+  {n:4, name:"Infused weapon",
+    text:"A weapon you're holding deals force damage and gains the light and thrown properties (20/60 feet) until the rage ends. If it leaves your hand, it reappears there at the end of the turn."},
+  {n:5, name:"Retribution", dice:"1d6", type:"Force",
+    text:"Whenever a creature hits you with an attack roll before the rage ends, it takes 1d6 force damage."},
+  {n:6, name:"Protective lights", ac:1,
+    text:"Until the rage ends you gain +1 AC, and allies within 10 feet of you gain it too."},
+  {n:7, name:"Flowers and vines",
+    text:"Until the rage ends, the ground within 15 feet of you is difficult terrain for your enemies."},
+  {n:8, name:"Bolt of light", dice:"1d6", type:"Radiant", save:"con",
+    text:"Another creature you choose within 30 feet makes a Constitution save or takes 1d6 radiant damage and is blinded until the start of your next turn. You can do it again as a bonus action on each of your turns."}
 ];

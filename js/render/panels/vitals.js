@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, harnessDivinePower, useHarnessDivinePower, ordinal } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, harnessDivinePower, useHarnessDivinePower, ordinal } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -8,6 +8,8 @@ import { confirmDialog } from "../../ui/confirm-modal.js";
 import { elixirsOnLongRest, infusionsOnLongRest } from "../../core/artificer.js";
 import { restoreCompanions, wildCompanionHours, summonWildCompanion } from "../../core/companions.js";
 import { showActionToast } from "../../ui/toast.js";
+import { WILD_SURGES } from "../../data/effects.js";
+import { themedPicker } from "../../ui/themed-picker.js";
 import { useNextCheck, magicItemsOnLongRest, endTimedBoons, coinResistances } from "../../core/magic-items.js";
 import { infusionResistances } from "../../core/infusion-effects.js";
 import { renderDeathSaves } from "./death-saves.js";
@@ -125,7 +127,11 @@ export function renderVitalsPanel(c){
     c.hp.current = Math.max(0, (Number(c.hp.current)||0) - n);
     var wentDown = wasUp && c.hp.current === 0;
     // Dropping to 0 HP: unconscious (worked out from the HP) and prone.
-    if(wentDown){ c.deathSaves = {success:0, fail:0}; endAllEffects(c); addCondition(c, "prone"); }
+    // (Relentless Rage's save waiting, or Rage Beyond Death: the rage holds.)
+    if(wentDown){
+      c.deathSaves = {success:0, fail:0};
+      if(!rageAtZero(c)){ endAllEffects(c); addCondition(c, "prone"); }
+    }
     save(); renderSidebar(); renderAll();
     flashHpNum("hp-dmg");
     if(wentDown){ var ds = document.querySelector(".death-saves"); if(ds) ds.classList.add("ds-enter"); }
@@ -194,7 +200,7 @@ export function renderVitalsPanel(c){
   // immune to isn't listed as resisted too.
   var wards = raceWards(c);
   var immuneTypes = wards.immune.map(function(r){ return r.type; });
-  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }))
+  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c))
     .filter(function(r){ return immuneTypes.indexOf(r.type.toLowerCase())===-1; });
   var resistAll = resistsAllDamage(c); // Petrified
   if(resistAll) resist = [{type: "all damage", source: resistAll}];
@@ -667,6 +673,7 @@ export function renderVitalsPanel(c){
     var pactNote = "";
     if(c.spellcasting.pact && c.spellcasting.pact.used){ c.spellcasting.pact.used = 0; pactNote = " Pact slots restored."; }
     var restored = restoreResources(c, "short");
+    delete c.relentlessUses; // Relentless Rage's DC is back to 10
     var resNote = restored.length ? " Restored: "+restored.join(", ")+"." : "";
     var ended = endAllEffects(c).concat(endTimedBoons(c));
     if(ended.length) resNote += " Ended: "+ended.join(", ")+".";
@@ -692,6 +699,10 @@ export function renderVitalsPanel(c){
         var before = resourceUse(c);
         var ragesBefore = c.rage.used || 0;
         var hpBefore = Number(c.hp.current) || 0;
+        // A rage still going ended long before the rest (Frenzy's
+        // exhaustion is taken first, then the rest's level comes off).
+        endAllEffects(c); // also ends Rage
+        delete c.relentlessUses;
         // One level of exhaustion goes first, so a maximum halved by
         // level 4 is whole again when the hit points come back.
         var exhaustionNow = longRestExhaustion(c);
@@ -706,7 +717,6 @@ export function renderVitalsPanel(c){
         });
         if(c.spellcasting.pact) c.spellcasting.pact.used = 0;
         c.rage.used = 0;
-        endAllEffects(c); // also ends Rage
         // Magic items: charges back at dawn, the day's boons over.
         var items = magicItemsOnLongRest(c);
         items.recharged = items.recharged.concat(infusionsOnLongRest(c));
@@ -828,11 +838,13 @@ function renderRageCard(c, barbClass){
   else if(!raging && usesVariant(barbClass, "Instinctive Pounce")) btn.title = "Instinctive Pounce: as you enter your rage, you can move up to half your speed (" + Math.floor(computeSpeed(c).value / 2) + " ft).";
   btn.addEventListener("click", function(){
     if(c.rage.active){
-      c.rage.active = false;
+      var notes = endRage(c);
+      if(notes.length){ logRoll("Rage ended", notes.join(". ") + "."); showActionToast(notes.join(". ") + "."); }
     } else {
       if(rageLeft<=0) return;
-      c.rage.active = true;
+      var started = startRage(c);
       if(rageMax!==Infinity) c.rage.used = rageUsed+1;
+      if(started.length) logRoll("Rage", started.join(". ") + ".");
     }
     save(); renderAll();
     // Entering spends the last full pip.
@@ -841,7 +853,23 @@ function renderRageCard(c, barbClass){
   main.appendChild(btn);
   card.appendChild(main);
 
-  var perks = ["Resist bludgeoning, piercing & slashing", "Advantage on Strength checks & saves"];
+  // A Wild Surge: the effect in play (or Controlled Surge's choice).
+  if(raging){
+    var surgeBox = wildSurgeBlock(c);
+    if(surgeBox) card.appendChild(surgeBox);
+  }
+  // What the rage's features let you do now (Frenzy), as buttons.
+  if(raging){
+    var acts = rageActions(c);
+    if(acts.length){
+      var actRow = document.createElement("div");
+      actRow.className = "inv-roll-actions rage-acts";
+      acts.forEach(function(b){ actRow.appendChild(b); });
+      card.appendChild(actRow);
+    }
+  }
+
+  var perks = ragePerks(c);
   if(castsSpells(c)) perks.push("No spellcasting or concentration");
   var perkRow = document.createElement("div");
   perkRow.className = "rage-perks";
@@ -853,6 +881,177 @@ function renderRageCard(c, barbClass){
   });
   card.appendChild(perkRow);
   return card;
+}
+/* Path of Wild Magic: the Wild Surge in play, its save DC and dice, and
+   Unstable Backlash's reroll (10); with Controlled Surge (14) a choice
+   between the two rolled first. */
+function wildSurgeBlock(c){
+  var choice = c.rage.surgeChoice, s = wildSurgeNow(c);
+  if(!choice && !s) return null;
+  var box = document.createElement("div");
+  box.className = "rage-surge";
+  var head = document.createElement("div");
+  head.className = "rage-surge-head";
+  var acts = document.createElement("div");
+  acts.className = "inv-roll-actions";
+  if(choice){
+    head.textContent = choice.length > 2 ? "Controlled Surge: you rolled the same number twice, so choose any effect" : "Controlled Surge: choose one";
+    box.appendChild(head);
+    choice.forEach(function(n){
+      var e = WILD_SURGES[n-1];
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "btn small inv-roll-btn";
+      b.textContent = n + ". " + e.name;
+      b.title = e.text;
+      b.addEventListener("click", function(){
+        var note = chooseWildSurge(c, n);
+        if(note) logRoll("Wild Surge", note + ".");
+        save(); renderAll();
+      });
+      acts.appendChild(b);
+    });
+    box.appendChild(acts);
+    return box;
+  }
+  head.textContent = "Wild Surge " + s.n + ": " + s.name;
+  box.appendChild(head);
+  var text = document.createElement("div");
+  text.className = "rage-surge-text";
+  text.textContent = s.text;
+  box.appendChild(text);
+  if(s.dice){
+    var p = parseDiceNotation(s.dice);
+    var dmg = document.createElement("button");
+    dmg.type = "button"; dmg.className = "btn small inv-roll-btn";
+    dmg.innerHTML = makeDiceSvg() + s.dice + " " + s.type.toLowerCase() + (s.save ? " · " + s.save.toUpperCase() + " DC " + wildSurgeDc(c) : "");
+    dmg.addEventListener("click", function(){ performRoll(p.die, p.qty, 0, "none", "Wild Surge: " + s.name + " (" + s.type + ")"); });
+    acts.appendChild(dmg);
+  }
+  if(classLevelOf(c, "Barbarian", "Path of Wild Magic") >= 10){
+    var back = document.createElement("button");
+    back.type = "button"; back.className = "btn small inv-roll-btn";
+    back.textContent = "Unstable Backlash";
+    back.title = "Reaction: right after you take damage or fail a saving throw while raging, roll a new Wild Surge in place of this one";
+    back.addEventListener("click", function(){
+      logRoll("Unstable Backlash", rollWildSurge(c) + ".");
+      save(); renderAll();
+    });
+    acts.appendChild(back);
+  }
+  if(acts.children.length) box.appendChild(acts);
+  return box;
+}
+/* The rage's buttons and pickers: Frenzy (Berserker), Form of the Beast
+   and Call the Hunt (Beast), Elemental Cleaver (Giant), Storm Aura and
+   Raging Storm (Storm Herald), Spirit Shield (Ancestral Guardian). */
+function rageActions(c){
+  var out = [];
+  if(canFrenzy(c)){
+    var fz = document.createElement("button");
+    fz.type = "button"; fz.className = "btn small inv-roll-btn";
+    fz.textContent = "Frenzy";
+    fz.title = "Go into a frenzy: a melee weapon attack as a bonus action on each of your turns after this one. When the rage ends, you gain 1 level of exhaustion.";
+    fz.addEventListener("click", function(){
+      c.rage.frenzy = true;
+      logRoll("Frenzy", "A melee weapon attack as a bonus action on each of your next turns. 1 level of exhaustion when the rage ends.");
+      save(); renderAll();
+    });
+    out.push(fz);
+  }
+  // Form of the Beast: the natural weapon for this rage.
+  if(beastFormDue(c)){
+    Object.keys(BEAST_FORMS).forEach(function(form){
+      var bf = document.createElement("button");
+      bf.type = "button"; bf.className = "btn small inv-roll-btn";
+      bf.textContent = form;
+      bf.title = "Form of the Beast: 1d" + BEAST_FORMS[form].die + " " + BEAST_FORMS[form].type.toLowerCase() + ". " + BEAST_FORMS[form].note + " Its card is on the Inventory tab.";
+      bf.addEventListener("click", function(){
+        chooseBeastForm(c, form);
+        logRoll("Form of the Beast", form + " for this rage.");
+        save(); renderAll();
+      });
+      out.push(bf);
+    });
+  }
+  // Call the Hunt (beast 14): how many allies join, 5 temporary HP each.
+  var hunt = characterResources(c).find(function(r){ return r.key==="Barbarian:call_the_hunt"; });
+  var huntMax = callTheHuntMax(c);
+  if(hunt && huntMax && hunt.max - hunt.used > 0){
+    var counts = [];
+    for(var n = 1; n <= huntMax; n++) counts.push({value: String(n), label: n + (n===1 ? " ally joins" : " allies join") + " (+" + 5 * n + " temp HP)"});
+    out.push(themedPicker({key: "rage:hunt", groups: {"": counts}, value: "", placeholder: "Call the Hunt", ariaLabel: "Call the Hunt: how many allies join",
+      onPick: function(v){
+        var gain = 5 * Number(v);
+        c.resourcesUsed[hunt.key] = hunt.used + 1;
+        if(gain > (Number(c.hp.temp)||0)) c.hp.temp = gain;
+        logRoll("Call the Hunt", v + (v==="1" ? " ally joins" : " allies join") + ": +" + gain + " temporary HP. Each can add 1d6 to one hit on each of their turns.");
+        save(); renderAll();
+      }}));
+  }
+  // Elemental Cleaver (giant 6): the weapon infused and its damage type.
+  var cleaver = elementalCleaver(c);
+  if(cleaver){
+    var held = (c.inventory||[]).filter(function(i){ return i.type==="weapon" && i.equipped; });
+    var cv = document.createElement("div");
+    cv.className = "rage-pick";
+    var cvLbl = document.createElement("span");
+    cvLbl.className = "rage-pick-lbl";
+    cvLbl.textContent = "Elemental Cleaver (+" + cleaver.dice + "d6)";
+    cv.appendChild(cvLbl);
+    if(held.length) cv.appendChild(themedPicker({key: "rage:cleaver-item", groups: {"": held.map(function(i){ return {value: i.id, label: i.name || "Weapon"}; })},
+      value: cleaver.item || "", placeholder: "Weapon", ariaLabel: "Elemental Cleaver: the weapon to infuse",
+      onPick: function(v){ setElementalCleaver(c, v, null); save(); renderAll(); }}));
+    else cvLbl.textContent += ": hold a weapon to infuse it";
+    cv.appendChild(themedPicker({key: "rage:cleaver-type", groups: {"": CLEAVER_TYPES}, value: cleaver.type || "", placeholder: "Damage type",
+      ariaLabel: "Elemental Cleaver: damage type",
+      onPick: function(v){ setElementalCleaver(c, null, v); logRoll("Elemental Cleaver", v + " (+" + cleaver.dice + "d6)."); save(); renderAll(); }}));
+    out.push(cv);
+  }
+  // Storm Aura (storm herald 3) when it activates, and Raging Storm's Desert reaction (14).
+  var aura = stormAura(c);
+  if(aura){
+    var ab = document.createElement("button");
+    ab.type = "button"; ab.className = "btn small inv-roll-btn";
+    if(aura.env==="Sea"){
+      ab.innerHTML = makeDiceSvg() + "Storm Aura " + aura.dice + "d6 lightning · DEX DC " + aura.dc;
+      ab.title = "One other creature in your aura makes a Dexterity save, taking half on a success. When you enter a rage, and as a bonus action on each of your turns.";
+      ab.addEventListener("click", function(){ performRoll(6, aura.dice, 0, "none", "Storm Aura: lightning (DEX DC " + aura.dc + ", half on a success)"); });
+    } else if(aura.env==="Desert"){
+      ab.textContent = "Storm Aura: " + aura.step + " fire";
+      ab.title = "Every other creature in your aura takes " + aura.step + " fire damage. When you enter a rage, and as a bonus action on each of your turns.";
+      ab.addEventListener("click", function(){ logRoll("Storm Aura", aura.step + " fire damage to every other creature in your aura."); });
+    } else {
+      ab.textContent = "Storm Aura: +" + aura.step + " temp HP";
+      ab.title = "Each creature you choose in your aura (you too) gains " + aura.step + " temporary hit points. When you enter a rage, and as a bonus action on each of your turns.";
+      ab.addEventListener("click", function(){
+        if(aura.step > (Number(c.hp.temp)||0)) c.hp.temp = aura.step;
+        logRoll("Storm Aura", "+" + aura.step + " temporary HP for each creature you choose in your aura.");
+        save(); renderAll();
+      });
+    }
+    out.push(ab);
+    if(aura.ragingStorm && aura.env==="Desert"){
+      var rs = document.createElement("button");
+      rs.type = "button"; rs.className = "btn small inv-roll-btn";
+      rs.textContent = "Raging Storm: " + aura.ragingStorm + " fire · DEX DC " + aura.dc;
+      rs.title = "Reaction: right after a creature in your aura hits you, it makes a Dexterity save or takes " + aura.ragingStorm + " fire damage.";
+      rs.addEventListener("click", function(){ logRoll("Raging Storm", aura.ragingStorm + " fire damage unless the attacker succeeds on a DEX save (DC " + aura.dc + ")."); });
+      out.push(rs);
+    }
+  }
+  var shield = spiritShield(c);
+  if(shield){
+    var ss = document.createElement("button");
+    ss.type = "button"; ss.className = "btn small inv-roll-btn";
+    ss.innerHTML = makeDiceSvg() + "Spirit Shield " + shield.dice + "d6";
+    ss.title = "Reaction: when a creature you can see within 30 feet takes damage, reduce it by " + shield.dice + "d6" +
+      (shield.vengeful ? ". The attacker takes that much force damage (Vengeful Ancestors)." : ".");
+    ss.addEventListener("click", function(){
+      performRoll(6, shield.dice, 0, "none", "Spirit Shield: damage prevented" + (shield.vengeful ? ", and force damage to the attacker" : ""));
+    });
+    out.push(ss);
+  }
+  return out;
 }
 /* Has spell slots or pact slots, so rage's "no spells" matters. */
 function castsSpells(c){

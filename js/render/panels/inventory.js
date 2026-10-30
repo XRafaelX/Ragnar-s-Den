@@ -4,7 +4,7 @@ import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
-import { fmtMod, escapeHtml, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -20,6 +20,7 @@ import { infusionOn, infusionWorks, activeInfusionData, infusionCharges, useInfu
 import { itemCharges, spendCharges, potionHealing, drinkPotion } from "../../core/magic-items.js";
 import { magicItemDef, magicItemActive, needsAttunement, holsterKnives, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, closeEmptyFlip, endBoon, activeBoons, boonLabel, weaponFlames, flamesOn } from "../../core/magic-items.js";
 import { pipChanged, pipsRefilled, flash } from "../../ui/fx.js";
+import { abilityScore } from "../../core/ability-scores.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 var ARMOR_CATEGORIES = [
@@ -585,7 +586,9 @@ function renderUnarmedCard(c, u){
   atkBtn.type = "button"; atkBtn.className = "btn small inv-roll-btn";
   atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(u.attack) + (u.roll && u.roll.mode==="dis" ? " (Dis)" : u.roll && u.roll.mode==="adv" ? " (Adv)" : "");
   if(u.roll && u.roll.reason) atkBtn.title = u.roll.reason;
-  atkBtn.addEventListener("click", function(){ rollAttack(c, u.attack, u.roll ? u.roll.mode : "none", u.name + ": Attack"); });
+  // (A plain unarmed strike has no dice to double on a critical hit.)
+  var uHit = u.die ? {qty: 1, die: u.die, bonus: u.bonus, melee: true, label: u.name} : null;
+  atkBtn.addEventListener("click", function(){ rollAttack(c, u.attack, u.roll ? u.roll.mode : "none", u.name + ": Attack", uHit); });
   actions.appendChild(atkBtn);
   var dmgBtn = document.createElement("button");
   dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
@@ -612,8 +615,50 @@ function renderUnarmedCard(c, u){
   if(furyBtn) actions.appendChild(furyBtn);
   var blessBtn = blessedStrikesButton(c, u.name);
   if(blessBtn) actions.appendChild(blessBtn);
+  if(u.beast) beastButtons(c, u).forEach(function(b){ actions.appendChild(b); });
   card.appendChild(actions);
   return card;
+}
+
+/* Path of the Beast's natural weapon: the bite's healing, the tail's AC
+   die, and Infectious Fury's psychic damage (barbarian 10, spends a use). */
+function beastButtons(c, u){
+  var out = [];
+  var pb = profBonus(c);
+  function button(text, title, onClick, disabled){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn small inv-roll-btn inv-fury-btn";
+    b.innerHTML = text;
+    b.title = title;
+    b.disabled = !!disabled;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+  var form = BEAST_FORMS[u.beast];
+  if(u.beast==="Bite"){
+    var low = (Number(c.hp.current)||0) < maxHp(c) / 2;
+    out.push(button("Heal " + pb, low ? form.note : "Only while you have less than half your hit points", function(){
+      c.hp.current = Math.min(maxHp(c), (Number(c.hp.current)||0) + pb);
+      logRoll("Bite", "Healed " + pb + " HP (Form of the Beast)");
+      save(); renderAll();
+    }, !low));
+  }
+  if(u.beast==="Tail") out.push(button(makeDicesSvg() + "Tail swipe 1d8 AC", form.note, function(){
+    performRoll(8, 1, 0, "none", "Tail swipe: add to your AC against this attack");
+  }));
+  var fury = characterResources(c).find(function(r){ return r.key==="Barbarian:infectious_fury"; });
+  if(fury){
+    var dc = 8 + pb + mod(abilityScore(c, "con"));
+    var left = fury.max - fury.used;
+    out.push(button(makeDicesSvg() + "Infectious Fury 2d12 · WIS DC " + dc,
+      left > 0 ? "On a hit: the target makes a Wisdom save or uses its reaction to attack a creature you choose, or takes 2d12 psychic damage (your choice). Spends one of " + left + " left." : "No uses left until a long rest",
+      function(){
+        c.resourcesUsed[fury.key] = fury.used + 1;
+        save(); renderAll();
+        performRoll(12, 2, 0, "none", "Infectious Fury: psychic damage (WIS DC " + dc + ")");
+      }, left <= 0));
+  }
+  return out;
 }
 
 /* A Cavalier's weapon in hand: Unwavering Mark's special attack (a bonus
@@ -639,7 +684,7 @@ function cavalierButtons(c, item, atkBonus, atkRoll, parsed, dmgBonus){
   atk.addEventListener("click", function(){
     c.resourcesUsed[res.key] = res.used + 1;
     save(); renderAll();
-    rollAttack(c, atkBonus, roll.mode, name + ": Unwavering Mark attack");
+    rollAttack(c, atkBonus, roll.mode, name + ": Unwavering Mark attack", {qty: parsed.qty, die: parsed.die, bonus: dmgBonus + mark.extra, melee: true, label: name});
   });
   var dmg = document.createElement("button");
   dmg.type = "button"; dmg.className = "btn small inv-roll-btn inv-mark-btn";
@@ -880,7 +925,10 @@ function renderWeaponCard(c, item, idx){
   var shil = shillelaghOn(c, item);
   if(shil) abilityLabel = "Shillelagh (STR or " + shillelaghAbilities(c).map(function(k){ return k.toUpperCase(); }).join(" or ") + ")";
   var subtitleParts = [];
-  if(item.damageDice) subtitleParts.push((shil && maDice ? maDice.qty + "d" + maDice.die : item.damageDice) + (item.damageType ? " " + item.damageType : ""));
+  // Elemental Cleaver's weapon deals the chosen type while the rage lasts.
+  var cleave = elementalCleaver(c, item);
+  var dmgType = (cleave && cleave.type) || item.damageType;
+  if(item.damageDice) subtitleParts.push((shil && maDice ? maDice.qty + "d" + maDice.die : item.damageDice) + (dmgType ? " " + dmgType : ""));
   subtitleParts.push(abilityLabel);
   subtitleParts.push(item.proficient ? "Proficient" : "Not proficient");
   if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
@@ -923,7 +971,9 @@ function renderWeaponCard(c, item, idx){
   atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(atkBonus) + (atkRoll.mode==="dis" ? " (Dis)" : atkRoll.mode==="adv" ? " (Adv)" : "");
   if(atkRoll.reason) atkBtn.title = atkRoll.reason;
   atkBtn.addEventListener("click", function(){
-    rollAttack(c, atkBonus, atkRoll.mode, (item.name||"Weapon") + ": Attack");
+    // (parsed and dmgBonus are worked out below, before any click.)
+    rollAttack(c, atkBonus, atkRoll.mode, (item.name||"Weapon") + ": Attack",
+      parsed ? {qty: parsed.qty, die: parsed.die, bonus: off ? off.damage : dmgBonus, melee: !isRangedWeapon(item), label: item.name || "Weapon"} : null);
   });
   actions.appendChild(atkBtn);
 
@@ -938,7 +988,7 @@ function renderWeaponCard(c, item, idx){
   if(parsed){
     dmgBtn.innerHTML = makeDicesSvg() + "Damage " + parsed.qty + "d" + parsed.die + fmtMod(dmgBonus);
     dmgBtn.addEventListener("click", function(){
-      performRoll(parsed.die, parsed.qty, dmgBonus, "none", (item.name||"Weapon") + ": Damage" + (item.damageType ? " (" + item.damageType + ")" : ""));
+      performRoll(parsed.die, parsed.qty, dmgBonus, "none", (item.name||"Weapon") + ": Damage" + (dmgType ? " (" + dmgType + ")" : ""));
     });
   } else {
     dmgBtn.innerHTML = makeDicesSvg() + "Damage";
@@ -957,7 +1007,7 @@ function renderWeaponCard(c, item, idx){
       tAtk.type = "button"; tAtk.className = "btn small inv-roll-btn inv-thrown-btn";
       tAtk.innerHTML = makeDiceSvg() + "Thrown attack " + fmtMod(thrown.attack) + (atkRoll.mode==="dis" ? " (Dis)" : atkRoll.mode==="adv" ? " (Adv)" : "");
       tAtk.title = "Thrown, a ranged attack: " + thrown.parts.join(", ");
-      tAtk.addEventListener("click", function(){ rollAttack(c, thrown.attack, atkRoll.mode, (item.name||"Weapon") + ": Thrown attack"); });
+      tAtk.addEventListener("click", function(){ rollAttack(c, thrown.attack, atkRoll.mode, (item.name||"Weapon") + ": Thrown attack", {qty: parsed.qty, die: parsed.die, bonus: thrown.damage, melee: false, label: item.name || "Weapon"}); });
       actions.appendChild(tAtk);
     }
     if(thrown.damage!==dmgBonus){
@@ -1008,6 +1058,15 @@ function renderWeaponCard(c, item, idx){
   if(furyBtn) actions.appendChild(furyBtn);
   var blessBtn = parsed && blessedStrikesButton(c, item.name || "Weapon");
   if(blessBtn) actions.appendChild(blessBtn);
+  // Elemental Cleaver: its extra die of the chosen type on a hit.
+  if(cleave && cleave.type){
+    var cvBtn = document.createElement("button");
+    cvBtn.type = "button"; cvBtn.className = "btn small inv-roll-btn inv-fury-btn";
+    cvBtn.innerHTML = makeDicesSvg() + "+" + cleave.dice + "d6 " + cleave.type.toLowerCase();
+    cvBtn.title = "Elemental Cleaver: extra " + cleave.type.toLowerCase() + " damage when this weapon hits while you rage. It has the thrown property (20/60 feet) and comes back to your hand.";
+    cvBtn.addEventListener("click", function(){ performRoll(6, cleave.dice, 0, "none", (item.name || "Weapon") + ": Elemental Cleaver (" + cleave.type + ")"); });
+    actions.appendChild(cvBtn);
+  }
 
   if(parsed) cavalierButtons(c, item, atkBonus, atkRoll, parsed, dmgBonus).forEach(function(b){ actions.appendChild(b); });
 
@@ -1623,6 +1682,8 @@ export function renderInventoryPanel(c){
   // Tavern Brawler.
   var unarmed = unarmedStrike(c);
   if(unarmed){ anyWeapon = true; weaponList.appendChild(renderUnarmedCard(c, unarmed)); }
+  // A barbarian's natural weapons while raging (Form of the Beast, armor spikes).
+  barbarianNaturalWeapons(c).forEach(function(w){ anyWeapon = true; weaponList.appendChild(renderUnarmedCard(c, w)); });
   // Arcane Propulsion Armor's gauntlets, while it's worn.
   var gauntlets = propulsionGauntlets(c);
   if(gauntlets){

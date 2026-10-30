@@ -202,15 +202,27 @@ export function renderDicePreview(){
   markSelectedDie();
 }
 
-/* followUp (optional): a function called once the dice settle, returning
-   {lead, hint, options: [{label, title, disabled, use}]} or null: what the
-   player can still do with this roll (Focused Aim's ki after a missed
-   attack, Magical Guidance's reroll after a failed check). They show
-   under the result in the tray; use() pays for it and returns {bonus,
-   log}, and the total grows by the bonus, or {reroll: true, log}, and
-   the same dice are rolled again (null when it can't). One per roll. */
-export function performRoll(die, qty, modifier, adv, label, followUp){
-  lastRollConfig = { die: die, qty: qty, modifier: modifier, adv: adv, label: label, followUp: followUp || null };
+/* extra (optional): what happens around the roll, either a followUp
+   function or {followUp, adjust}.
+   followUp(result) is called once the dice settle (and once before, with
+   null, for the toast's hint), returning {lead, hint, options: [{label,
+   title, disabled, use}]} or null: what the player can still do with
+   this roll (Focused Aim's ki after a missed attack, Magical Guidance's
+   reroll after a failed check, critical damage after a natural 20).
+   They show under the result in the tray; use() pays for it and returns
+   {bonus, log}, and the total grows by the bonus, or {reroll: true, log},
+   and the same dice are rolled again, or {silent: true} when it rolled
+   something of its own (null when it can't). One per roll.
+   adjust(result) can change the total before it's shown: {total, note}
+   (Indomitable Might's Strength score in place of a lower total).
+   onResult(result) is told the final result once the dice settle (a
+   Relentless Rage save puts the character back on 1 HP when it succeeds).
+   result = {total, natural (the d20 kept, or null), values}. */
+export function performRoll(die, qty, modifier, adv, label, extra){
+  var followUp = typeof extra==="function" ? extra : (extra && extra.followUp) || null;
+  var adjust = extra && typeof extra==="object" ? extra.adjust || null : null;
+  var onResult = extra && typeof extra==="object" ? extra.onResult || null : null;
+  lastRollConfig = { die: die, qty: qty, modifier: modifier, adv: adv, label: label, followUp: extra || null };
   previewDie = die;
   rolling = true;
   markSelectedDie();
@@ -255,6 +267,14 @@ export function performRoll(die, qty, modifier, adv, label, followUp){
     showsTotal = finalValues.length > 1 || !!modifier;
   }
 
+  var natural = die === 20 && qty === 1 ? (isAdvDis ? chosenValue : finalValues[0]) : null;
+  var adjusted = adjust && adjust({total: finalTotal, natural: natural, values: finalValues});
+  // "[4] +3 = 7 → 18 (Indomitable Might)"
+  if(adjusted && adjusted.total !== finalTotal){
+    summary += " = " + finalTotal + " \u2192 " + adjusted.total + " (" + adjusted.note + ")";
+    finalTotal = adjusted.total;
+    showsTotal = false;
+  }
   var full = showsTotal ? summary + " = " + finalTotal : summary;
 
   // Render dice tokens in the animation stage
@@ -366,14 +386,18 @@ export function performRoll(die, qty, modifier, adv, label, followUp){
     rollAgainBtn.style.display = "inline-flex";
 
     logRoll(label || ("d" + die), full);
-    var follow = followUp && followUp();
+    if(onResult) onResult({total: finalTotal, natural: natural, values: finalValues});
+    var follow = followUp && followUp({total: finalTotal, natural: natural, values: finalValues});
     if(follow) renderFollowUp(followEl, follow, function(res){
-      // A reroll (Magical Guidance): the same roll again, and it stands.
+      // A reroll (Magical Guidance): the same roll again, and it stands
+      // (an adjustment still applies to it, but no second follow-up).
       if(res.reroll){
         logRoll(label || ("d" + die), res.log + ": rerolled");
-        performRoll(die, qty, modifier, adv, label, null);
+        performRoll(die, qty, modifier, adv, label, adjust ? {adjust: adjust} : null);
         return;
       }
+      // One that rolled something of its own (critical damage) is done.
+      if(res.silent) return;
       finalTotal += res.bonus;
       resultEl.textContent = finalTotal;
       detailEl.textContent += " " + fmtMod(res.bonus) + " = " + finalTotal;
@@ -388,7 +412,7 @@ export function performRoll(die, qty, modifier, adv, label, followUp){
   } else {
     // Show smooth floating toast on screen (it says where a follow-up is:
     // tapping the toast opens the tray).
-    var ahead = followUp && followUp();
+    var ahead = followUp && followUp(null);
     showFloatingToast(die, finalTotal, summary + (ahead && ahead.hint ? " · " + ahead.hint : ""), label, isCrit, isFail);
   }
 }

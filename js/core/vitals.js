@@ -14,7 +14,7 @@ import { styleSenses } from "./fighting-styles.js";
 import { mod, fmtMod, totalLevel, profBonus } from "./basics.js";
 import { halfProficiency, checkAbility } from "./checks.js";
 import { findSubclass, classFeatureList } from "./class-features.js";
-import { effectOn, bladesongBonus } from "./effects.js";
+import { effectOn, bladesongBonus, wildSurgeNow } from "./effects.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
 import { infusionSpeedParts } from "./infusion-effects.js";
@@ -295,6 +295,11 @@ export function computeArmorClass(c){
   }
   if(effectOn(c, "shell_defense")){
     base += 4; breakdown += " + Shell Defense (+4)"; short += " + Shell Defense";
+  }
+  // A Wild Surge's protective lights while the rage lasts.
+  var surge = wildSurgeNow(c);
+  if(surge && surge.ac){
+    base += surge.ac; breakdown += " + Wild Surge (" + fmtMod(surge.ac) + ")"; short += " + Wild Surge";
   }
   // A magic item's boon (Duality's angel side: +1 AC for 10 minutes).
   var coinAc = coinAcBonus(c);

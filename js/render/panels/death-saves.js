@@ -1,7 +1,9 @@
 import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
-import { getDieSvg, logRoll } from "../../dice/dice.js";
+import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
+import { computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod } from "../../core/helpers.js";
+import { showActionToast } from "../../ui/toast.js";
 import { playDiceRattle, playDeathSaveSuccess, playDeathSaveFail, playStabilized, playDeath, playRevive } from "../../ui/sound.js";
 
 /* ---------------- Death saving throws ----------------
@@ -34,11 +36,15 @@ function counts(c){
   };
 }
 
-/* The Death Saves strip for the HP box. */
+/* The Death Saves strip for the HP box (or, right after dropping to 0
+   HP while raging, Relentless Rage's save in its place). */
 export function renderDeathSaves(c){
+  if(c.rage && c.rage.relentless) return renderRelentless(c);
   var n = counts(c);
   var stable = n.success >= 3 && n.fail < 3;
   var dead = n.fail >= 3;
+  // Rage Beyond Death: death waits until the rage ends.
+  var holding = rageBeyondDeath(c);
 
   var box = document.createElement("div");
   box.className = "death-saves" + (stable ? " is-stable" : "") + (dead ? " is-dead" : "");
@@ -59,7 +65,7 @@ export function renderDeathSaves(c){
   if(stable || dead){
     var badge = document.createElement("div");
     badge.className = "ds-outcome";
-    badge.innerHTML = (dead ? SKULL : SHIELD) + '<span>' + (dead ? "Dead" : "Stable") + '</span>';
+    badge.innerHTML = (dead ? SKULL : SHIELD) + '<span>' + (dead ? (holding ? "Holding on" : "Dead") : "Stable") + '</span>';
     core.appendChild(badge);
   } else {
     var roll = document.createElement("button");
@@ -82,11 +88,56 @@ export function renderDeathSaves(c){
   var status = document.createElement("div");
   status.className = "ds-status";
   status.setAttribute("aria-live", "polite");
-  status.textContent = dead ? "Three failures. The character has died."
+  status.textContent = dead ? (holding ? "Three failures, but your rage holds death off. You die when it ends if you're still at 0 HP." : "Three failures. The character has died.")
     : stable ? "Stable at 0 HP. No more saves unless you take damage."
+    : holding ? "Rage Beyond Death: you stay conscious and keep fighting. " + HINT
     : HINT;
   box.appendChild(status);
 
+  return box;
+}
+
+/* Relentless Rage (barbarian 11): dropping to 0 HP while raging, a
+   Constitution save (DC 10, 5 more each use since a rest) puts the
+   barbarian back on 1 HP, still raging. A failure ends the rage there,
+   unless Rage Beyond Death holds it. */
+function renderRelentless(c){
+  var dc = relentlessRageDc(c), sv = computeSave(c, "con"), mode = saveRollMode(c, "con");
+  var box = document.createElement("div");
+  box.className = "death-saves ds-relentless";
+  var head = document.createElement("div");
+  head.className = "ds-head";
+  head.innerHTML = '<span class="ds-heart">' + HEART + '</span><span class="ds-title">Relentless Rage</span>';
+  box.appendChild(head);
+  var status = document.createElement("div");
+  status.className = "ds-status";
+  status.textContent = "You dropped to 0 HP while raging. Make a Constitution save, DC " + dc + ". On a success you drop to 1 HP instead.";
+  box.appendChild(status);
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn small primary ds-relentless-roll";
+  btn.textContent = "Roll CON save (" + fmtMod(sv.value) + (mode.mode==="adv" ? ", Adv" : mode.mode==="dis" ? ", Dis" : "") + ")";
+  if(mode.reason) btn.title = mode.reason;
+  btn.addEventListener("click", function(e){
+    e.stopPropagation();
+    btn.disabled = true;
+    performRoll(20, 1, sv.value, mode.mode, "Relentless Rage: CON save (DC " + dc + ")", {onResult: function(r){
+      var outcome = resolveRelentlessRage(c, r.total);
+      if(outcome==="up"){
+        logRoll("Relentless Rage", "Saved (" + r.total + " vs DC " + dc + "): back up on 1 HP, still raging.");
+        showActionToast("Relentless Rage: you drop to 1 HP instead.");
+        playRevive();
+      } else if(outcome==="down"){
+        // The rage ends with the fall, unless Rage Beyond Death holds it.
+        var holds = rageBeyondDeath(c);
+        if(!holds){ endAllEffects(c); addCondition(c, "prone"); }
+        logRoll("Relentless Rage", "Failed (" + r.total + " vs DC " + dc + ")." + (holds ? " Rage Beyond Death keeps you conscious." : " You fall unconscious."));
+        showActionToast(holds ? "Relentless Rage failed. Rage Beyond Death keeps you up." : "Relentless Rage failed. You fall unconscious.", !holds);
+      }
+      save(); renderSidebar(); renderAll();
+    }});
+  });
+  box.appendChild(btn);
   return box;
 }
 

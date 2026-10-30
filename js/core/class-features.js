@@ -100,8 +100,13 @@ export function classSpellAbility(cl){
                    kind), each option shaped like `spells`. The pick is
                    saved on the class entry as spellChoices[id].
      attuneLimit   how many magic items the character can attune to at
-                   once (an artificer's Magic Item Adept: 4) */
-var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellLabel", "spellTip", "spellAbility", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit"];
+                   once (an artificer's Magic Item Adept: 4)
+     saveDc        {save, ability} or a list of them: a save DC the feature
+                   sets, 8 + proficiency bonus + the ability's modifier
+                   (Intimidating Presence: {save:"wis", ability:"cha"};
+                   save "" when its effects ask for different saves),
+                   shown as a chip on its Features card (featureDcs) */
+var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellLabel", "spellTip", "spellAbility", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit", "saveDc"];
 
 /* ---- Optional features that replace one of the class's own ----
    Tasha's Favored Foe for a ranger's Favored Enemy, Deft Explorer for
@@ -397,6 +402,19 @@ function pickedOptionText(t, values){
   return lines.join("\n");
 }
 var ABILITY_OF = {Intelligence: "int", Wisdom: "wis", Charisma: "cha", Strength: "str", Dexterity: "dex", Constitution: "con"};
+function abilityName(key){ return Object.keys(ABILITY_OF).find(function(k){ return ABILITY_OF[k]===key; }) || key.toUpperCase(); }
+/* The save DCs a class feature sets (its saveDc), worked out: [{dc, save,
+   chip: "WIS DC 13", line: "Wisdom save DC 13 (8 + proficiency +3 +
+   Charisma +2)."}]. */
+export function featureDcs(c, f){
+  var pb = profBonus(c);
+  return [].concat(f.saveDc || []).map(function(d){
+    var m = mod(abilityScore(c, d.ability)), dc = 8 + pb + m;
+    // (No save named: the feature's effects ask for different ones, "DC 13".)
+    return {dc: dc, save: d.save || "", chip: (d.save ? d.save.toUpperCase() + " " : "") + "DC " + dc,
+      line: (d.save ? abilityName(d.save) + " save" : "Save") + " DC " + dc + " (8 + proficiency " + fmtMod(pb) + " + " + abilityName(d.ability) + " " + fmtMod(m) + ")."};
+  });
+}
 /* The save DCs a trait sets (TRAIT_DCS), worked out: "Taunt save DC 13
    (8 + proficiency +2 + Charisma +3)." Waits for an ability still to be
    picked, or for the option the DC belongs to. */
@@ -445,11 +463,13 @@ export function getAllCharacterFeatures(c){
     classFeatureList(cl).forEach(function(f){
       // What was picked for it (an Expertise's skills, a tool).
       var picked = featurePicksText(cl, idx > 0, f.name, f.subclass);
+      var dcs = featureDcs(c, f);
       list.push({
         id: f.id,
         name: f.name,
         source: (f.subclass ? cl.subclass : "Class · " + cl.name) + " · Lv " + f.level,
-        text: f.text + (picked ? "\n\nYour picks: " + picked + "." : ""),
+        text: f.text + (picked ? "\n\nYour picks: " + picked + "." : "") + (dcs.length ? "\n\n" + dcs.map(function(d){ return d.line; }).join("\n") : ""),
+        dcs: dcs,
         category: "class",
         isDerived: true
       });

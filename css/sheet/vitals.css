@@ -361,6 +361,16 @@
 .rage-btn{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;gap:2px;min-width:132px;}
 .rage-btn .btn-icon-svg{width:16px;height:16px;}
 .rage-perks{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+/* The rage's buttons (Frenzy, Spirit Shield) and a Wild Surge in play. */
+.rage-acts{margin-top:10px;}
+.rage-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;}
+.rage-pick-lbl{font-size:12px;font-weight:600;color:var(--text-on-parch-dim);flex:1 0 100%;}
+.rage-pick .tp{flex:1 1 140px;min-width:0;}
+.rage-surge{margin-top:10px;padding:8px 10px;border:1px solid var(--brass);border-radius:8px;
+  background:color-mix(in srgb, var(--brass) 10%, transparent);}
+.rage-surge-head{font-weight:700;font-size:13px;color:var(--text-on-parch);}
+.rage-surge-text{font-size:12px;line-height:1.4;color:var(--text-on-parch-dim);margin-top:2px;}
+.rage-surge .inv-roll-actions{margin-top:8px;}
 .rage-perk{
   font-size:12px;padding:3px 10px;border-radius:999px;
   border:1px solid var(--rule);color:var(--text-on-parch-dim);

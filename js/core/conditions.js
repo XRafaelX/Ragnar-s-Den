@@ -13,16 +13,27 @@ export function conditionDef(id){
 export function exhaustionLevel(c){
   return Math.max(0, Math.min(6, Math.floor(Number(c.exhaustion)||0)));
 }
-/* Dying or stable at 0 HP, not dead. */
+/* Dying or stable at 0 HP, not dead (and not holding on with Rage
+   Beyond Death or a Relentless Rage save still to make). */
 function downAtZero(c){
   var hp = c.hp || {};
+  if(c.rage && c.rage.active && (c.rage.relentless || rageLevel(c, "Path of the Zealot") >= 14)) return false;
   return (Number(hp.current)||0) <= 0 && (Number(hp.max)||0) > 0 && !((Number(c.deathSaves && c.deathSaves.fail)||0) >= 3);
+}
+function rageLevel(c, subclass){
+  var cl = (c.classes||[]).find(function(x){ return x.name==="Barbarian" && x.subclass===subclass; });
+  return cl ? Number(cl.level)||1 : 0;
+}
+/* Mindless Rage (Path of the Berserker, barbarian 6): while raging,
+   charmed and frightened are suspended. The feature's name, or "". */
+export function rageSuspends(c, id){
+  return (id==="charmed" || id==="frightened") && c.rage && c.rage.active && rageLevel(c, "Path of the Berserker") >= 6 ? "Mindless Rage" : "";
 }
 /* The conditions on now, in the book's order: [{def, auto}], with
    `auto` true for Unconscious from being at 0 HP. */
 export function activeConditions(c){
   var on = Array.isArray(c.conditions) ? c.conditions : [];
-  var out = CONDITIONS.filter(function(d){ return on.indexOf(d.id)!==-1; }).map(function(d){ return {def: d, auto: false}; });
+  var out = CONDITIONS.filter(function(d){ return on.indexOf(d.id)!==-1 && !rageSuspends(c, d.id); }).map(function(d){ return {def: d, auto: false}; });
   if(downAtZero(c) && on.indexOf("unconscious")===-1){
     var unc = conditionDef("unconscious");
     var at = out.findIndex(function(x){ return CONDITIONS.indexOf(x.def) > CONDITIONS.indexOf(unc); });

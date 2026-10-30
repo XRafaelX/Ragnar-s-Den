@@ -150,6 +150,12 @@ function setFacts(c, set, entry, all){
     dc("Misfortune save DC");
     uses("Rogue:jinx_points", "Jinx Points", "short");
   }
+  // Totemic Attunement's Elk: its save DC and damage (STR, not a set ability).
+  if(set.id==="totemAttunement" && entry && all[0] && all[0].name==="Elk"){
+    var str = mod(abilityScore(c, "str"));
+    rows.push(["Elk save DC", String(8 + pb + str), "8 + proficiency + STR, or knocked prone"]);
+    rows.push(["Elk damage", "1d12" + (str ? (str > 0 ? " + " : " - ") + Math.abs(str) : "") + " bludgeoning", "on a failed save"]);
+  }
   if(set.id==="stormEnvironment" && entry){
     dc("Storm Aura save DC");
     var env = all[0] && all[0].name;

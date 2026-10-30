@@ -13,7 +13,7 @@ import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { conditionRolls } from "./conditions.js";
-import { effectRolls } from "./effects.js";
+import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver } from "./effects.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
    (see applyClassChoices), so deleting the feature removes its bonus. */
@@ -201,7 +201,8 @@ export function unarmedStrike(c){
   if(c.rage && c.rage.active && barb && !heavy && ability==="STR") bonus += barbarianRageDamage(Number(barb.level)||1);
   bonus += songOfVictoryBonus(c, {name: "Unarmed strike"});
   return {name: name, attack: abilityMod + profBonus(c), die: die, bonus: bonus, type: type, ability: ability,
-    roll: combineRolls([armorPenalty(c, ability.toLowerCase())].concat(conditionRolls(c, "attack"), effectRolls(c, "attack"))), parts: parts, grappleDie: styled ? 4 : 0};
+    roll: combineRolls([armorPenalty(c, ability.toLowerCase()), ability==="STR" && effectOn(c, "reckless_attack") ? {mode: "adv", reason: "Reckless Attack"} : null]
+      .concat(conditionRolls(c, "attack"), effectRolls(c, "attack"))), parts: parts, grappleDie: styled ? 4 : 0};
 }
 /* ---------------- Shillelagh ----------------
    A club or quarterstaff you hold becomes magical, uses your spellcasting
@@ -344,9 +345,12 @@ function thrownStyleBonus(c, item){
    when that differs from the melee numbers, else null (a dart, being a
    ranged weapon, already shows its thrown numbers). */
 export function thrownAttack(c, item){
-  if(!isThrownWeapon(item) || isRangedWeapon(item)) return null;
+  // (Elemental Cleaver's weapon gains the thrown property while raging.)
+  if(!(isThrownWeapon(item) || elementalCleaver(c, item)) || isRangedWeapon(item)) return null;
   var archery = hasFightingStyle(c, "Archery") ? 2 : 0;
   var style = thrownStyleBonus(c, item), rage = rageDamageBonus(c, item);
+  // Giant's Havoc's Crushing Throw (giant 3): rage damage on thrown attacks too.
+  if(rage && classLevelOf(c, "Barbarian", "Path of the Giant") >= 3) rage = 0;
   if(!archery && !style && !rage) return null;
   var parts = [];
   if(archery) parts.push("Archery +2 to hit");
@@ -432,6 +436,51 @@ export function divineFury(c){
   var barb = barbarianClassEntry(c), lv = barb ? Number(barb.level)||1 : 0;
   if(!barb || barb.subclass!=="Path of the Zealot" || lv < 3) return null;
   return {bonus: Math.floor(lv / 2), type: characterChoices(c, "divineFury")[0] || ""};
+}
+/* Natural weapons and armor spikes some barbarians attack with, shaped
+   like an unarmed strike for its card: Form of the Beast's bite, claws or
+   tail while raging (beast 3; magical from 6), and a Battlerager's armor
+   spikes while raging in spiked armor (a bonus action, 1d4 piercing). STR
+   for attack and damage, with rage damage. [] when there are none. */
+export function barbarianNaturalWeapons(c){
+  var out = [];
+  if(!(c.rage && c.rage.active)) return out;
+  var barb = barbarianClassEntry(c);
+  if(!barb) return out;
+  var str = mod(abilityScore(c, "str")), pb = profBonus(c), rage = barbarianRageDamage(Number(barb.level)||1);
+  var roll = combineRolls([armorPenalty(c, "str"), effectOn(c, "reckless_attack") ? {mode: "adv", reason: "Reckless Attack"} : null]
+    .concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
+  var form = barb.subclass==="Path of the Beast" && c.rage.beast && BEAST_FORMS[c.rage.beast];
+  if(form) out.push({name: c.rage.beast, beast: c.rage.beast, attack: str + pb, die: form.die, bonus: str + rage, type: form.type, ability: "STR",
+    roll: roll, parts: ["Form of the Beast"].concat((Number(barb.level)||1) >= 6 ? ["magical"] : [])});
+  var spiked = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && /spiked armor/i.test(i.name||""); });
+  if(barb.subclass==="Path of the Battlerager" && spiked) out.push({name: "Armor spikes", spikes: true, attack: str + pb, die: 4, bonus: str + rage, type: "Piercing", ability: "STR",
+    roll: roll, parts: ["Bonus action", "a grapple you win also deals 3 piercing"]});
+  return out;
+}
+/* Brutal Critical (barbarian 9): extra weapon damage dice on a critical
+   hit with a melee attack, 1 die at 9, 2 at 13, 3 at 17. */
+export function brutalCriticalDice(c){
+  var lv = classLevelOf(c, "Barbarian");
+  return lv >= 17 ? 3 : lv >= 13 ? 2 : lv >= 9 ? 1 : 0;
+}
+/* A critical hit's damage: the attack's dice twice, Brutal Critical's
+   extra dice on a melee attack, the bonus once. hit = {qty, die, bonus,
+   melee}. {qty, die, bonus, brutal}. */
+export function criticalDamage(c, hit){
+  var brutal = hit.melee ? brutalCriticalDice(c) : 0;
+  return {qty: hit.qty * 2 + brutal, die: hit.die, bonus: hit.bonus, brutal: brutal};
+}
+/* Fanatical Focus (Path of the Zealot, barbarian 6): while raging, a
+   failed saving throw can be rerolled, once per rage (c.rage.fanatical
+   is set when it's used; entering a rage clears it). */
+export function fanaticalFocusReady(c){
+  return !!(c.rage && c.rage.active) && classLevelOf(c, "Barbarian", "Path of the Zealot") >= 6 && !c.rage.fanatical;
+}
+/* Indomitable Might (barbarian 18): a Strength check's total below the
+   Strength score becomes the score. The score, or 0 without the feature. */
+export function indomitableMight(c){
+  return classLevelOf(c, "Barbarian") >= 18 ? abilityScore(c, "str") : 0;
 }
 /* Blessed Strikes (Tasha's, cleric 8, in place of the domain's Divine
    Strike or Potent Spellcasting): 1d8 radiant once per turn when a

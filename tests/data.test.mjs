@@ -14,7 +14,7 @@ import { MONSTER_GROUPS, MONSTER_DATA } from "../js/data/monsters.js";
 
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
-const FEATURE_KEYS = new Set(["name", "text", "replaces", "attuneLimit", "speed", "speedWhen", "initiative", "acHeavyArmor", "grants",
+const FEATURE_KEYS = new Set(["name", "text", "replaces", "saveDc", "attuneLimit", "speed", "speedWhen", "initiative", "acHeavyArmor", "grants",
   "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "halfProficiency", "styleChoice", "profs", "advantage",
   "spellLabel", "spellTip", "spellAbility"]);
 const LONG_DASH = /[–—]/;
@@ -37,6 +37,7 @@ function checkFeature(f, where){
   if(f.attuneLimit != null) assert.equal(f.attuneLimit, { four: 4, five: 5, six: 6 }[(/attune to up to (\w+) magic items/.exec(f.text) || [])[1]], where + " " + f.name + ": attuneLimit matches its text");
   if(f.initiative != null) assert.ok([...ABILITIES, "pb"].includes(f.initiative), where + " " + f.name + ": initiative");
   if(f.saveBonus != null) assert.ok(ABILITIES.includes(f.saveBonus), where + " " + f.name + ": saveBonus");
+  [].concat(f.saveDc || []).forEach((d) => assert.ok(ABILITIES.includes(d.ability) && (d.save === "" || ABILITIES.includes(d.save)) && /\bDC\b|saving throw|save/i.test(f.text), where + " " + f.name + ": saveDc"));
   if(f.advantage){
     assert.ok(["save", "check", "initiative"].includes(f.advantage.on), where + " " + f.name + ": advantage.on");
     if(f.advantage.on!=="initiative") assert.ok(f.advantage.abilities==="all" || f.advantage.abilities.every((k) => ABILITIES.includes(k)), where + " " + f.name + ": advantage.abilities");

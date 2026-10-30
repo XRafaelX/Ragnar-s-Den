@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { maxHp, activeConditions, exhaustionLevel, exhaustionSummary, addCondition, removeCondition, conditionDef, raceConditionImmunity } from "../../core/helpers.js";
+import { maxHp, activeConditions, exhaustionLevel, exhaustionSummary, addCondition, removeCondition, conditionDef, raceConditionImmunity, rageSuspends } from "../../core/helpers.js";
 import { CONDITIONS, EXHAUSTION_LEVELS, EXHAUSTION_RULES } from "../../data/conditions.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -368,10 +368,12 @@ function openConditionsSheet(c){
       text.firstChild.textContent = d.name;
       // A race immune to it (a yuan-ti's Poison Immunity) can't have it put on.
       var immune = !cur && raceConditionImmunity(c, d.id);
-      text.lastChild.textContent = cur && cur.auto ? "From 0 HP. Heal to wake up." : immune ? "Immune (" + immune + ")" : d.short;
+      // Mindless Rage: charmed and frightened wait until the rage ends.
+      var suspended = !cur && rageSuspends(c, d.id);
+      text.lastChild.textContent = cur && cur.auto ? "From 0 HP. Heal to wake up." : immune ? "Immune (" + immune + ")" : suspended ? "Suspended while raging (" + suspended + ")" : d.short;
       tile.appendChild(text);
       tile.setAttribute("aria-pressed", cur ? "true" : "false");
-      if((cur && cur.auto) || immune) tile.disabled = true;
+      if((cur && cur.auto) || immune || suspended) tile.disabled = true;
       tile.addEventListener("click", function(){
         if(cur){
           removeCondition(c, d.id);

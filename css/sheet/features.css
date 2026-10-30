@@ -60,6 +60,10 @@
 .ff-tag.source-class{background:color-mix(in srgb, var(--brass) 18%, transparent);color:var(--brass-bright);border-color:var(--rule);}
 .ff-tag.source-bg{background:rgba(234,179,8,0.15);color:#fde047;border-color:rgba(234,179,8,0.35);}
 .ff-tag.source-feat{background:rgba(217,69,95,0.15);color:#fca5a5;border-color:rgba(217,69,95,0.4);}
+.ff-dc{
+  font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:1px 7px;border-radius:10px;
+  border:1px solid color-mix(in srgb, var(--brass) 55%, transparent);color:var(--text-on-parch);
+}
 .ff-tag.source-passive{background:rgba(56,189,248,0.15);color:#7dd3fc;border-color:rgba(56,189,248,0.4);}
 
 .ff-prereq{

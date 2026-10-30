@@ -226,6 +226,14 @@ export function renderFeaturesPanel(c){
       tagSpan.className = "ff-tag " + sourceClass;
       tagSpan.textContent = item.source || "Feature";
       titleGrp.appendChild(tagSpan);
+      // A save DC the feature sets, worked out ("WIS DC 13"); the sum is in its tooltip.
+      (item.dcs || []).forEach(function(d){
+        var dc = document.createElement("span");
+        dc.className = "ff-dc";
+        dc.textContent = d.chip;
+        dc.title = d.line;
+        titleGrp.appendChild(dc);
+      });
 
       markIfNew(card, titleGrp, item.id);
 
