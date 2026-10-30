@@ -1,4 +1,4 @@
-/* ---------------- Gunslinger class rounds (Michael's homebrew) ----------------
+/* ---------------- Gunslinger class rounds (Spikael's homebrew) ----------------
    Which rounds a class firearm (firearmSet "gunslinger") fires, the one
    loaded (item.round = {kind, heavy, element, spell}) and spending one per
    shot. Heavy rounds add 3 damage and a die on a critical hit. Master of

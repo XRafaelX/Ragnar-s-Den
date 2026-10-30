@@ -1,4 +1,4 @@
-/* ---------------- Gunslinger class rounds (Michael's homebrew) ----------------
+/* ---------------- Gunslinger class rounds (Spikael's homebrew) ----------------
    The Firearm Ammunition table (books/gun_2.webp) and the Bulletsmith
    features (books/Gunslinger.pdf). A stack of rounds in the inventory is
    a gear item with `round` (a key below) and `heavy`; an elemental stack

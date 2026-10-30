@@ -407,7 +407,7 @@
 /* An older sheet's one-time offer of its background's starting gear. */
 .bgk-offer-text{margin:4px 0 10px;font-size:13.5px;color:var(--text-on-parch);}
 .bgk-offer-actions{display:flex;gap:8px;flex-wrap:wrap;}
-/* The Gunslinger class (Michael's homebrew): the round loaded in a class
+/* The Gunslinger class (Spikael's homebrew): the round loaded in a class
    firearm (a picker, an elemental type beside it, a quiet line on what it
    does) and the Bulletsmith card's batch: plain or heavy, then a stepper
    per round kind. */

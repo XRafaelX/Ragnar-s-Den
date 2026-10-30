@@ -566,7 +566,7 @@ export var SPELL_DATA = {
   // Cantrips (Encode Thoughts is on no class list: a Dimir Operative's
   // guild spell, see js/data/origin-spells.js)
   "Encode Thoughts": s(0,"Enc",A,"Self","S","8 hours","","Turn a memory, idea or message from your mind (or thoughts you are reading with a spell like Detect Thoughts) into a glowing thought strand you can carry. Casting the spell while holding a strand shows you what it holds.",{source:"GGR"}),
-  // The Gunslinger class's Eldritch Gunman (Michael's homebrew, books/gun_3
+  // The Gunslinger class's Eldritch Gunman (Spikael's homebrew, books/gun_3
   // and gun_4.webp): on no class list, the subclass always knows them.
   "Ready Arms!": s(0,"Con",A,"Self","V, S",CONC1M,"","A spectral firearm of any form floats by your side and fires at a creature you choose. Make a ranged spell attack. On a hit, it deals 1d4 piercing damage. Until the spell ends, you can fire any firearms you created with it as a bonus action.",{source:"GSL"}),
   "Sapping Sting": s(0,"Nec",A,"30 feet","V, S","Instantaneous","Dunamancy","One creature you can see makes a Constitution save or takes 1d4 necrotic damage and falls prone.",{source:"EGW"}),

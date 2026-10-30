@@ -213,7 +213,7 @@ export var CLASS_PROGRESSION = {
       20: [{name:"Extra Attack", replaces:"Extra Attack", text:"When you take the Attack action, you attack four times instead of once."}]
     }
   },
-  // Michael's homebrew class (books/Gunslinger.pdf). The PDF names no
+  // Spikael's homebrew class (books/Gunslinger.pdf). The PDF names no
   // multiclass requirement or proficiencies: DEX 13 was agreed with the
   // user, and the multiclass proficiencies are the class's own armor and
   // weapons.

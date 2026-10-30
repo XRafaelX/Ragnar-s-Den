@@ -60,7 +60,7 @@ export var CLASS_RESOURCES = {
       max:function(lv){ return lv>=20 ? Infinity : 2; }, reset:always("short"),
       hint:"Action (bonus action for Circle of the Moon): turn into a beast you've seen. Unlimited from level 20 (Archdruid)."}
   ],
-  // The Gunslinger class (Michael's homebrew). Quick Patch's row heals you
+  // The Gunslinger class (Spikael's homebrew). Quick Patch's row heals you
   // or rolls for an ally, Honed Instinct's makes the Perception check, and
   // Willpower is offered in the dice tray after a save (vitals.js,
   // render/panels/gunslinger.js, sheet-rolls.js).

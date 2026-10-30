@@ -70,7 +70,7 @@ export var WEAPON_DATA = {
   "Musket":          {damageDice:"1d12", damageType:"Piercing",    weight:10, category:"firearm", finesse:false, ranged:true,  properties:"Reload 1 (range 120/480), misfire 2, two-handed"}
 };
 
-/* The Gunslinger class's firearms (Michael's homebrew, books/gun_1.webp):
+/* The Gunslinger class's firearms (Spikael's homebrew, books/gun_1.webp):
    what a Gunslinger class character sees in place of the Firearms above,
    so nobody gets two Pistols. Kept out of WEAPON_DATA, and an item made
    from one is marked firearmSet "gunslinger" (see weaponDataOf). Damage

@@ -1,4 +1,4 @@
-/* ---------------- Gunslinger class (Michael's homebrew) on the sheet ----------------
+/* ---------------- Gunslinger class (Spikael's homebrew) on the sheet ----------------
    Vitals: the buttons under two of its rows on the Class resources card:
    Quick Patch (level 9): heal yourself 1d8 + WIS while you have less than
    half your hit points (spends your own use), or roll it for an ally

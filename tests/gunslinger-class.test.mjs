@@ -1,4 +1,4 @@
-/* The Gunslinger class (Michael's homebrew, books/Gunslinger.pdf and the
+/* The Gunslinger class (Spikael's homebrew, books/Gunslinger.pdf and the
    gun_1 to gun_4 images): the class itself, its four subclasses, its own
    firearms (what a Gunslinger class character sees in place of the
    Firearms), the optional misfire rule and the Eldritch Gunman's spells. */
@@ -83,14 +83,14 @@ test("Eldritch Gunman: a one-third caster on the wizard list like the Eldritch K
   const always = SUBCLASSES.Gunslinger.find((s) => s.name === "Eldritch Gunman").features[3].find((f) => f.name === "Gunman Spells");
   assert.deepEqual(always.spells, ["Ready Arms!", "Misty Step", "Switcheroo"]);
   assert.equal(always.spellKind, "known");
-  // Michael's two spells: on no class list, a cantrip and a 2nd-level conjuration.
+  // Spikael's two spells: on no class list, a cantrip and a 2nd-level conjuration.
   assert.deepEqual([SPELL_DATA["Ready Arms!"].level, SPELL_DATA["Ready Arms!"].school, SPELL_DATA["Ready Arms!"].concentration], [0, "Conjuration", true]);
   assert.deepEqual([SPELL_DATA.Switcheroo.level, SPELL_DATA.Switcheroo.school, SPELL_DATA.Switcheroo.material], [2, "Conjuration", "a firearm"]);
   assert.deepEqual(SPELL_DATA["Ready Arms!"].classes, []);
   assert.ok(!SPELL_DATA["Misty Shot"], "Misty Shot was removed");
 });
 
-test("Gunslinger firearms: Michael's four, only in a Gunslinger class character's catalog", () => {
+test("Gunslinger firearms: Spikael's four, only in a Gunslinger class character's catalog", () => {
   assert.deepEqual(Object.keys(GUNSLINGER_FIREARMS), ["Pistol", "Handcannon", "Long Gun", "Spread Shot"]);
   assert.deepEqual(["Pistol", "Handcannon", "Long Gun", "Spread Shot"].map((n) => GUNSLINGER_FIREARMS[n].damageDice), ["2d4", "1d10", "1d12", "1d6"]);
   assert.match(GUNSLINGER_FIREARMS["Long Gun"].properties, /range 300\/1000/);

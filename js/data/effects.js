@@ -148,7 +148,7 @@ export var TOGGLE_EFFECTS = [
   {id:"steady_aim", name:"Steady Aim", className:"Rogue", level:3, variant:"Steady Aim", duration:"Until the end of your turn",
     startLabel:"Take aim", endLabel:"End turn",
     hint:"Bonus action. Only if you haven't moved this turn."},
-  // The Gunslinger class (Michael's homebrew), level 3: Steady Aim's twin.
+  // The Gunslinger class (Spikael's homebrew), level 3: Steady Aim's twin.
   {id:"take_aim", name:"Take Aim", className:"Gunslinger", level:3, duration:"Until the end of your turn",
     startLabel:"Take aim", endLabel:"End turn",
     hint:"Bonus action. Only if you haven't moved this turn."},

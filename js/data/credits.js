@@ -44,7 +44,7 @@ export var CREDITS = [
   {
     tag: "Homebrew",
     label: "Gunslinger class",
-    text: "The Gunslinger class was created by Michael and is used with his permission."
+    text: "The Gunslinger class was created by Spikael and is used with his permission."
   },
   {
     tag: "Team",

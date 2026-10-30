@@ -711,7 +711,7 @@ Object.assign(CLASSES_INFO["Artificer"], {
   }
 });
 
-/* Gunslinger: Michael's homebrew class (books/Gunslinger.pdf, firearms and
+/* Gunslinger: Spikael's homebrew class (books/Gunslinger.pdf, firearms and
    rounds in books/gun_1.webp to gun_4.webp). Picks its subclass at level
    1. Its firearm comes from the class's own guns (pick.set). The class
    only knows light armor, so the PDF's scale mail waits for medium armor

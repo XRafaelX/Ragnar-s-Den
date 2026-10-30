@@ -1,4 +1,4 @@
-/* Gunslinger subclasses (Michael's homebrew class, books/Gunslinger.pdf):
+/* Gunslinger subclasses (Spikael's homebrew class, books/Gunslinger.pdf):
    the full feature list for each one, keyed by class level. Assembled into
    SUBCLASSES in ../progression.js; see the comment there for the feature
    fields and flags. The Eldritch Gunman casts like an Eldritch Knight
