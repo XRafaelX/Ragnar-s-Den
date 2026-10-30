@@ -2,7 +2,7 @@
    data/spell-scaling.js). */
 import { SPELL_SCALING } from "../data/spell-scaling.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
-import { featureSpells, totalLevel, computeSpellSlots, ordinal, mod, hasFeat, hasBlessedStrikes, classLevelOf } from "./helpers.js";
+import { profBonus, featureSpells, totalLevel, computeSpellSlots, ordinal, mod, hasFeat, hasBlessedStrikes, classLevelOf } from "./helpers.js";
 import { eldritchBlastSummary } from "./invocations.js";
 import { classFeatureList } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
@@ -135,6 +135,15 @@ export function circleSpellNote(c, name){
   if(storm && d.level >= 1 && /\b(lightning|thunder)\b[^.]*damage/i.test(d.summary)) notes.push("Heart of the Storm: creatures you choose within 10 feet take " + storm + " lightning or thunder damage as you start casting.");
   if(classLevelOf(c, "Sorcerer", "Wild Magic") >= 18 && /\b\d+d\d+\b/.test(d.summary) && /damage/i.test(d.summary)) notes.push("Spell Bombardment: once per turn, when a die rolls its highest number, roll one of them again and add it.");
   if(classLevelOf(c, "Sorcerer", "Aberrant Mind") >= 6 && d.level >= 1 && featureSpells(c).some(function(s){ return s.name===spell && s.feature==="Psionic Spells"; })) notes.push("Psionic Sorcery: you can cast it with " + d.level + (d.level===1 ? " sorcery point" : " sorcery points") + " instead of a slot, with no components.");
+  // Wizard schools.
+  var school = function(n){ return classLevelOf(c, "Wizard", n); };
+  if(school("School of Evocation") >= 2 && d.school==="Evocation" && /\bsave\b/i.test(d.summary)) notes.push("Sculpt Spells: up to " + (1 + d.level) + (d.level ? " creatures" : " creature") + " you can see automatically succeed, and take no damage on a half-damage save.");
+  if(school("School of Abjuration") >= 2 && d.school==="Abjuration" && d.level >= 1) notes.push("Arcane Ward: casting it gives your ward " + 2 * d.level + " hit points, or creates it.");
+  if(school("School of Abjuration") >= 10 && (spell==="Counterspell" || spell==="Dispel Magic")) notes.push("Improved Abjuration: add " + profBonus(c) + " to the ability check.");
+  if(school("School of Divination") >= 6 && d.school==="Divination" && d.level >= 2) notes.push("Expert Divination: with a slot, you get back a lower slot, 5th level at most.");
+  if(school("School of Necromancy") >= 6 && ["Animate Dead", "Create Undead", "Finger of Death"].indexOf(spell)!==-1) notes.push("Undead Thralls: undead it makes get +" + school("School of Necromancy") + " hit points and +" + profBonus(c) + " to weapon damage." + (spell==="Animate Dead" ? " You can target one more corpse or pile of bones." : ""));
+  if(school("School of Conjuration") >= 14 && d.school==="Conjuration" && SUMMON_SPELLS.concat(["Conjure Minor Elementals", "Conjure Elemental", "Conjure Celestial", "Summon Elemental", "Summon Construct"]).indexOf(spell)!==-1) notes.push("Durable Summons: what it brings has 30 temporary hit points.");
+  if(school("School of Enchantment") >= 10 && d.school==="Enchantment" && d.level >= 1) notes.push("Split Enchantment: if it targets only one creature, it can target a second.");
   // Radiant Soul (Celestial 6): radiant or fire damage.
   if(classLevelOf(c, "Warlock", "The Celestial") >= 6 && /\b(radiant|fire)\b[^.]*damage/i.test(d.summary)) notes.push("Radiant Soul: add " + mod(abilityScore(c, "cha")) + " to one radiant or fire damage roll against one target.");
   // Spiritual Focus (College of Spirits 6): a bard spell's damage or healing.

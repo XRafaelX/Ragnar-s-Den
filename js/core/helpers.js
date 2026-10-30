@@ -29,5 +29,6 @@ export * from "./druid.js";
 export * from "./bard.js";
 export * from "./sorcerer.js";
 export * from "./warlock.js";
+export * from "./wizard.js";
 export * from "./conditions.js";
 export * from "./gunslinger.js";

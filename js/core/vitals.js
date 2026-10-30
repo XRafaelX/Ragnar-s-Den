@@ -17,6 +17,7 @@ import { findSubclass, classFeatureList } from "./class-features.js";
 import { effectOn, bladesongBonus, wildSurgeNow } from "./effects.js";
 import { twilightShroud } from "./cleric.js";
 import { defensiveFlourish } from "./bard.js";
+import { stoneBenefit } from "./wizard.js";
 import { wildForm, wildShapeSpeeds, wildShapeArmorClass, wildShapeSenses, incarnationAc } from "./druid.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
@@ -153,6 +154,7 @@ export function computeSpeed(c){
   var strReq = armorStrengthShortfall(c, body);
   if(strReq) parts.push({name: body.name || "Heavy armor", value: -10, why: "needs STR " + strReq});
   // Wild Shape: the form's speeds, plus what your features still add.
+  if(stoneBenefit(c)==="Speed") parts.push({name: "Transmuter's Stone", value: 10});
   var form = wildForm(c);
   if(form) parts = parts.filter(function(p){ return p.value > 0; });
   var mobile = parts.reduce(function(a, p){ return a + p.value; }, 0);
@@ -315,6 +317,8 @@ export function computeArmorClass(c){
   if(effectOn(c, "awakened_astral_self")){
     base += 2; breakdown += " + Armor of the Spirit (+2)"; short += " + Astral Self";
   }
+  if(effectOn(c, "arcane_deflection")){ base += 2; breakdown += " + Arcane Deflection (+2)"; short += " + Deflection"; }
+  if(effectOn(c, "durable_magic")){ base += 2; breakdown += " + Durable Magic (+2)"; short += " + Durable Magic"; }
   if(effectOn(c, "shell_defense")){
     base += 4; breakdown += " + Shell Defense (+4)"; short += " + Shell Defense";
   }
@@ -391,10 +395,12 @@ export function computeSave(c, key){
   });
   // Magic items that add to every save (a Cloak of Protection).
   magicItemSaveBonuses(c).forEach(function(b){ bonuses.push(b); });
+  if(effectOn(c, "durable_magic") && !unconscious) bonuses.push({name: "Durable Magic", value: 2});
   // Half cover in a Twilight Sanctuary.
   if(key==="dex" && twilightShroud(c)) bonuses.push({name: "Twilight Shroud", value: twilightShroud(c)});
   // A save picked for a feature (Iron Mind, Elegant Courtier).
   if(!grantedBy) characterPickedProfs(c).saves.forEach(function(s){ if(!grantedBy && s.ability===key) grantedBy = s.name; });
+  if(!grantedBy && key==="con" && stoneBenefit(c)==="CON saves") grantedBy = "Transmuter's Stone";
   // Resilient: proficiency in the ability it raised.
   if(!grantedBy) featProficiencies(c).saves.forEach(function(s){ if(!grantedBy && s.ability===key) grantedBy = s.feat; });
   var prof = !!(c.saveProfs && c.saveProfs[key]) || !!grantedBy;
@@ -437,6 +443,8 @@ export function computeDarkvision(c){
   optionEffects(c).forEach(function(f){
     if(f.darkvision && f.darkvision.range > range){ range = f.darkvision.range; sources.push(f.name); }
   });
+  var seeing = effectOn(c, "third_eye") && c.effects.third_eye==="Darkvision";
+  if((seeing || stoneBenefit(c)==="Darkvision") && range < 60){ range = 60; sources.push(seeing ? "The Third Eye" : "Transmuter's Stone"); }
   // Astral Sight sees through any darkness; shown as 120 ft while the visage is out.
   if(effectOn(c, "astral_visage") && range < 120){ range = 120; sources.push("Astral Sight"); }
   return {range: range, sources: sources};
@@ -447,6 +455,8 @@ export function getCharacterSenses(c){
   // (A class feature's own sense too: a rogue's Blindsense.)
   var extra = styleSenses(c).concat(invocationSenses(c));
   if(effectOn(c, "mortal_bulwark")) extra.push("Truesight 120 ft");
+  if(effectOn(c, "third_eye") && c.effects.third_eye==="Ethereal Sight") extra.push("Ethereal Sight 60 ft");
+  if(effectOn(c, "third_eye") && c.effects.third_eye==="See Invisibility") extra.push("See invisibility 10 ft");
   if(effectOn(c, "revelation_in_flesh") && [].concat(c.effects.revelation_in_flesh).indexOf("Sight")!==-1) extra.push("See invisible creatures 60 ft");
   (c.classes||[]).forEach(function(cl){ classFeatureList(cl).forEach(function(f){ if(f.sense && extra.indexOf(f.sense)===-1) extra.push(f.sense); }); });
   if(!dv.range && extra.length) return extra.join(", ");

@@ -138,7 +138,7 @@ export var CLASS_RESOURCES = {
   ],
   "Wizard": [
     {id:"arcane_recovery", name:"Arcane Recovery", level:1, max:always(1), reset:always("long"),
-      hint:"During a short rest, recover spell slots with a combined level up to half your wizard level (rounded up), none 6th level or higher."},
+      hint:"When you finish a short rest, recover spell slots with a combined level up to half your wizard level (rounded up), none 6th level or higher."},
     {id:"signature_spells", name:"Signature Spells", level:20, max:always(2), reset:always("short"),
       hint:"Cast each of your two signature spells once at 3rd level without a spell slot.",
       // Once both are picked: a counter for each, named after the spell.
@@ -568,14 +568,20 @@ export var SUBCLASS_RESOURCES = {
     ],
     "School of Abjuration": [
       {id:"arcane_ward", name:"Arcane Ward HP", level:2, pool:true, max:function(lv, m){ return lv*2 + m.int; }, reset:always("long"),
-        hint:"Track damage your ward absorbs. Regains twice the spell's level whenever you cast an abjuration spell of 1st level or higher."}
+        hint:"Once it's up, it takes damage before you do. An abjuration spell of 1st level or higher gives it twice the spell's level."}
     ],
     "School of Divination": [
       {id:"portent", name:"Portent Dice", level:2,
         max:function(lv){ return lv>=14 ? 3 : 2; }, reset:always("long"),
         hint:"Roll these d20s after a long rest and write them down. Replace a roll by you or a creature you can see (before it's rolled), once per turn."},
+      {id:"expert_divination", name:"Expert Divination", level:6, max:always(Infinity), reset:always("long"),
+        hint:"When you cast a divination spell of 2nd level or higher with a slot: get back a spent slot of a lower level, 5th at most."},
       {id:"third_eye", name:"The Third Eye", level:10, max:always(1), reset:always("short"),
         hint:"Action: darkvision, ethereal sight, read any language, or see invisibility within 10 ft, until your next rest."}
+    ],
+    "School of Necromancy": [
+      {id:"grim_harvest", name:"Grim Harvest", level:2, max:always(Infinity), reset:always("long"),
+        hint:"Once per turn, when you kill one or more creatures with a spell of 1st level or higher. Not constructs or undead."}
     ],
     "School of Illusion": [
       {id:"illusory_self", name:"Illusory Self", level:10, max:always(1), reset:always("short"),
@@ -593,11 +599,12 @@ export var SUBCLASS_RESOURCES = {
     "Order of Scribes": [
       {id:"fast_ritual", name:"Awakened Spellbook (Fast Ritual)", level:2, max:always(1), reset:always("long"),
         hint:"Cast a wizard ritual in its normal casting time instead of adding 10 minutes."},
-      {id:"manifest_mind", name:"Manifest Mind", level:6, max:always(1), reset:always("long"),
+      {id:"manifest_mind", name:"Manifest Mind", level:6, max:always(1), reset:always("long"), slotMin:1,
         hint:"Bonus action: manifest your spellbook's mind within 60 ft. More uses cost a spell slot."},
       {id:"manifest_mind_casting", name:"Manifest Mind (Cast from It)", level:6, max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Cast a wizard spell on your turn as if you were in the mind's space."},
       {id:"one_with_the_word", name:"One with the Word", level:14, max:always(1), reset:always("long"),
+        roll:{qty:3, die:6, button:"Prevent it", label:"One with the Word: spell levels your book loses"},
         hint:"Reaction while the mind is manifested: dismiss it to prevent all damage you take. Your book loses 3d6 levels of spells for 1d6 long rests."}
     ],
     "School of Conjuration": [
@@ -605,6 +612,8 @@ export var SUBCLASS_RESOURCES = {
         hint:"Action: teleport 30 ft or swap with a willing creature. Also regained when you cast a conjuration spell of 1st level or higher."}
     ],
     "School of Transmutation": [
+      {id:"transmuters_stone", name:"Transmuter's Stone", level:6, max:always(Infinity), reset:always("long"),
+        hint:"Whoever holds it gains its benefit. You can change it when you cast a transmutation spell of 1st level or higher with it on you."},
       {id:"shapechanger", name:"Shapechanger (Polymorph Self)", level:10, max:always(1), reset:always("short"),
         hint:"Cast Polymorph on yourself (beast of CR 1 or lower) without a spell slot."},
       {id:"master_transmuter", name:"Master Transmuter", level:14, max:always(1), reset:always("long"),
@@ -617,7 +626,9 @@ export var SUBCLASS_RESOURCES = {
         max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
         hint:"Action: a Large or smaller creature within 60 ft makes a CON save or is incapacitated with speed 0 until the end of your next turn."},
       {id:"arcane_abeyance", name:"Arcane Abeyance", level:10, max:always(1), reset:always("short"),
-        hint:"Freeze a spell of 4th level or lower in a bead for 1 hour. Whoever holds it can release the spell as an action."}
+        hint:"Freeze a spell of 4th level or lower in a bead for 1 hour. Whoever holds it can release the spell as an action."},
+      {id:"convergent_future", name:"Convergent Future", level:14, max:always(Infinity), reset:always("long"),
+        hint:"Reaction, on an attack, check or save within 60 ft: ignore the die and make it succeed, or fall one short."}
     ],
     "Graviturgy Magic": [
       {id:"violent_attraction", name:"Violent Attraction", level:10,

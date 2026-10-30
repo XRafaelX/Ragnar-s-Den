@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud } from "../../core/helpers.js";
 import { openFlourishSheet } from "./bard.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
@@ -108,6 +108,7 @@ function checkFollowUp(c, r, opts){
   }
   if(hasMagicalGuidance(c)) out = out.concat(magicalGuidance(c).options);
   if(resourceLeft(c, "Warlock:dark_ones_own_luck") > 0) out.push(ownLuckOption(c));
+  if(chronalShiftLeft(c) > 0) out.push(chronalOption(c));
   // Peerless Skill (College of Lore 14): a Bardic Inspiration die on your own check.
   if(hasPeerlessSkill(c)){
     var peerless = bardicDie(c);
@@ -169,7 +170,7 @@ function checkFollowUp(c, r, opts){
 export function rollSave(c, bonus, mode, label, ability){
   var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c), will = resourceLeft(c, "Gunslinger:willpower") > 0;
   var oath = livingLegendOn(c) || hasSupernaturalDefense(c) || effectOn(c, "emboldening_bond") || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
-  var dragon = ability==="con" && starryDragon(c), favored = favoredByTheGods(c) || resourceLeft(c, "Warlock:dark_ones_own_luck") > 0, trance = tranceOn(c);
+  var dragon = ability==="con" && starryDragon(c), favored = favoredByTheGods(c) || resourceLeft(c, "Warlock:dark_ones_own_luck") > 0 || chronalShiftLeft(c) > 0 || hasArcaneDeflection(c), trance = tranceOn(c);
   performRoll(20, 1, bonus, mode, label, {
     followUp: fanatic || indom || diamond || oath || will || dragon || favored ? function(r){ return saveFollowUp(c, ability, r); } : null,
     adjust: trance ? function(r){ return r.natural!=null && r.natural < 10 ? {total: r.total + 10 - r.natural, note: "Trance of Order"} : null; } : null
@@ -229,6 +230,14 @@ function saveFollowUp(c, ability, r){
   }
   if(favoredByTheGods(c)){ opts.push(favoredOption(c)); failed = opts.length; }
   if(resourceLeft(c, "Warlock:dark_ones_own_luck") > 0){ opts.push(ownLuckOption(c)); failed = opts.length; }
+  if(chronalShiftLeft(c) > 0){ opts.push(chronalOption(c)); failed = opts.length; }
+  // Arcane Deflection (War Magic 2): +4 to the save, and cantrips only for a while.
+  if(hasArcaneDeflection(c)){
+    var shroud = deflectingShroud(c);
+    opts.push({label: "+4 (Arcane Deflection)", title: "Your reaction. You can't cast spells other than cantrips until the end of your next turn." + (shroud ? " Deflecting Shroud: up to three creatures within 60 ft take " + shroud + " force damage." : ""),
+      use: function(){ return {bonus: 4, log: "Arcane Deflection: cantrips only until the end of your next turn" + (shroud ? ". Deflecting Shroud: " + shroud + " force to up to three creatures" : "")}; }});
+    failed = opts.length;
+  }
   // The Dragon (Starry Form): a low d20 counts as a 10 to keep concentration.
   if(ability==="con" && starryDragon(c) && (!r || (r.natural!=null && r.natural < 10))){
     opts.unshift({label: "Concentration: count the d20 as 10", title: "Starry Form, Dragon: a roll of 9 or lower counts as a 10 on a Constitution save to keep concentration",
@@ -237,6 +246,15 @@ function saveFollowUp(c, ability, r){
   }
   if(!opts.length) return null;
   return failed ? {lead: "Failed?", hint: "Failed? Tap for options.", options: opts} : {lead: "", hint: "Saved? Tap for Vigilant Rebuke.", options: opts};
+}
+/* Chronal Shift (Chronurgy 2): a reroll after seeing how it went. */
+function chronalOption(c){
+  return {label: "Reroll (Chronal Shift)", title: "Your reaction. You must use the new roll.",
+    use: function(){
+      if(!spendResource(c, "Wizard:chronal_shift", 1)) return null;
+      save(); renderAll();
+      return {reroll: true, log: "Chronal Shift"};
+    }};
 }
 /* Dark One's Own Luck (Fiend 6): a d10 on a check or a save. */
 function ownLuckOption(c){
@@ -298,6 +316,7 @@ function attackFollowUp(c, r, aim, hit){
       }});
   }
   if(favoredByTheGods(c)) opts.push(favoredOption(c));
+  if(chronalShiftLeft(c) > 0) opts.push(chronalOption(c));
   // Hurl Through Hell (Fiend 14): on a hit, once per long rest.
   if(hit && resourceLeft(c, "Warlock:hurl_through_hell") > 0) opts.push({label: "Hit? Hurl Through Hell", title: "The target vanishes until the end of your next turn, then takes 10d10 psychic damage unless it's a fiend",
     use: function(){

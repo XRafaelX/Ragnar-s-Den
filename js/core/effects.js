@@ -3,6 +3,7 @@
    Symbiotic Entity) and the numbers they change. */
 import { dragonType, lunarEmpowered } from "./sorcerer.js";
 import { formOfDreadTemp, warlockResistances } from "./warlock.js";
+import { stoneBenefit } from "./wizard.js";
 import { TOGGLE_EFFECTS, WILD_SURGES } from "../data/effects.js";
 import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
@@ -85,7 +86,9 @@ export function characterEffects(c){
       else if(def.slotPick && !spellSlotsLeft(c).some(function(s){ return !s.pact; })) why = "No spell slots left.";
       else if(def.cost && (!res || res.max - res.used < def.cost.amount)){
         // Living Legend: a spell slot of that level pays once the use is gone.
-        if(def.slotCost && spellSlotLeft(c, def.slotCost)) slot = def.slotCost;
+        // (Exactly that level, or any higher one with `slotAtLeast`: Event Horizon.)
+        for(var l = def.slotCost || 10; l <= (def.slotAtLeast ? 9 : def.slotCost || 0) && !slot; l++) if(spellSlotLeft(c, l)) slot = l;
+        if(slot){ /* paid in startEffect */ }
         // Trance of Order: sorcery points pay once the use is gone.
         else if(def.pointsCost && resourceLeft(c, "Sorcerer:sorcery_points") >= def.pointsCost) points = def.pointsCost;
         else why = "Not enough " + (res ? res.name : def.cost.resource) + " left.";
@@ -594,6 +597,8 @@ export function effectResistances(c){
   if(effectOn(c, "exalted_champion")) out.push({type: "nonmagical bludgeoning, piercing and slashing", source: "Exalted Champion"});
   if(effectOn(c, "starry_form") && classLevelOf(c, "Druid", "Circle of Stars") >= 14) out.push({type: "bludgeoning, piercing and slashing", source: "Full of Stars"});
   out = out.concat(warlockResistances(c));
+  var stone = stoneBenefit(c);
+  if(stone && ["Acid", "Cold", "Fire", "Lightning", "Thunder"].indexOf(stone)!==-1) out.push({type: stone.toLowerCase(), source: "Transmuter's Stone"});
   if(effectOn(c, "elemental_affinity")) out.push({type: dragonType(c) || "your ancestry's damage", source: "Elemental Affinity"});
   if(effectOn(c, "umbral_form")) out.push({type: "all damage but force and radiant", source: "Umbral Form"});
   if(lunarEmpowered(c)==="Crescent Moon") out.push({type: "necrotic", source: "Lunar Empowerment"}, {type: "radiant", source: "Lunar Empowerment"});

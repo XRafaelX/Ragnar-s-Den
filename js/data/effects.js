@@ -15,7 +15,8 @@
    requires: other effects that must be on first; ending one of those
      ends this too (Awakened Astral Self needs the arms and the visage).
    channel: started from the Channel Divinity list, shown here only while on.
-   slotCost: a spell slot of this level can pay instead once the uses are gone.
+   slotCost: a spell slot of this level can pay instead once the uses are gone
+     (`slotAtLeast`: or any higher level).
    slotPick: the player picks a spell slot to pay with (Primeval Awareness).
    replacedBy: a Tasha's feature that replaces it (the entry using that loses it).
    option: {set, name}, only with that class option known (Hunter's picks).
@@ -43,6 +44,22 @@ export var TOGGLE_EFFECTS = [
   {id:"symbiotic_entity", name:"Symbiotic Entity", className:"Druid", subclass:"Circle of Spores", level:2,
     cost:{resource:"wild_shape", amount:1}, duration:"10 minutes",
     hint:"Ends early when these temporary hit points are gone or you use Wild Shape again."},
+  // Wizard: Player's Handbook (p. 116), Xanathar's Guide (p. 59) and
+  // Explorer's Guide to Wildemount (p. 185), checked on 5etools' data 2026-10-30.
+  {id:"third_eye", name:"The Third Eye", className:"Wizard", subclass:"School of Divination", level:10,
+    cost:{resource:"third_eye", amount:1}, duration:"Until a rest", endsIncapacitated:true,
+    choose:{placeholder:"Choose a sight...", options:["Darkvision", "Ethereal Sight", "Greater Comprehension", "See Invisibility"]},
+    hint:"Action. It ends if you are incapacitated or take a rest."},
+  {id:"arcane_deflection", name:"Arcane Deflection", className:"Wizard", subclass:"War Magic", level:2, duration:"Until the end of your next turn", startLabel:"Deflect",
+    hint:"Reaction when you are hit by an attack. A failed save offers +4 in the dice tray."},
+  {id:"durable_magic", name:"Durable Magic", className:"Wizard", subclass:"War Magic", level:10, duration:"While you concentrate", startLabel:"Concentrating", endLabel:"Not concentrating",
+    hint:"The sheet doesn't track concentration, so switch this on while you keep a spell going."},
+  {id:"adjust_density", name:"Adjust Density", className:"Wizard", subclass:"Graviturgy Magic", level:2, duration:"1 minute",
+    choose:{placeholder:"Halve or double...", options:["Halved", "Doubled"]},
+    hint:"Action, on a creature or object you can see within 30 ft, with your concentration as if on a spell."},
+  {id:"event_horizon", name:"Event Horizon", className:"Wizard", subclass:"Graviturgy Magic", level:14,
+    cost:{resource:"event_horizon", amount:1}, slotCost:3, slotAtLeast:true, duration:"1 minute",
+    hint:"Action, with your concentration as if on a spell. A 3rd-level or higher slot pays once the use is gone."},
   // Warlock: Player's Handbook (pp. 108-109), Xanathar's Guide (p. 55),
   // Tasha's Cauldron (pp. 72-73) and Van Richten's Guide (p. 30), checked on
   // 5etools' data 2026-10-30.

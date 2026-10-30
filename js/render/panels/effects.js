@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
+import { wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -173,6 +173,14 @@ function effectSummary(c, id){
     var halo = haloOfSporesDie(c);
     return "+" + symbioticTempHp(c) + " temporary HP · Halo of Spores 2d" + halo + " necrotic · melee weapon attacks +1d6 necrotic";
   }
+  if(id==="third_eye") return {"Darkvision": "Darkvision 60 ft", "Ethereal Sight": "See into the Ethereal Plane within 60 ft", "Greater Comprehension": "Read any language", "See Invisibility": "See invisible creatures and objects within 10 ft in your line of sight"}[c.effects && c.effects.third_eye] || "One sight of your choice";
+  if(id==="arcane_deflection") return "+2 AC against that attack · cantrips only until the end of your next turn" + (deflectingShroud(c) ? " · Deflecting Shroud: up to three creatures within 60 ft take " + deflectingShroud(c) + " force damage" : "");
+  if(id==="durable_magic") return "+2 AC and +2 to all saving throws";
+  if(id==="adjust_density"){
+    var dense = c.effects && c.effects.adjust_density, size = classLevelOf(c, "Wizard", "Graviturgy Magic") >= 10 ? "Huge" : "Large";
+    return (size + " or smaller") + " · " + (dense==="Doubled" ? "Weight doubled: speed -10 ft, advantage on STR checks and saves" : dense==="Halved" ? "Weight halved: speed +10 ft, jumps twice as far, disadvantage on STR checks and saves" : "Halve or double its weight");
+  }
+  if(id==="event_horizon") return "A hostile creature starting its turn within 30 ft: STR save DC " + wizardDc(c) + " or 2d10 force and speed 0 until the start of its next turn. On a success, half damage and each foot of movement costs 2 extra feet";
   if(id==="hexblades_curse") return "+" + profBonus(c) + " to damage rolls and a critical hit on 19 or 20 against the cursed target. Your weapon cards already include them";
   if(id==="misty_escape") return "Invisible · advantage on attack rolls · ends if you attack or cast a spell";
   if(id==="entropic_ward") return "Its attack has disadvantage. If it misses, your next attack against it has advantage. End this if it hit";
@@ -385,6 +393,23 @@ function appendRolls(c, id, info){
     buttons.push(rollButton(makeDicesSvg(), "Halo 2d" + halo, function(){ performRoll(halo, 2, 0, "none", "Halo of Spores (necrotic, CON save)"); }));
   }
   if(id==="bastion_of_law") info.appendChild(bastionPicker(c));
+  // Song of Defense (Bladesinging 10): a slot takes five times its level off the damage.
+  if(id==="bladesong" && classLevelOf(c, "Wizard", "Bladesinging") >= 10){
+    var defendSlots = spellSlotsLeft(c);
+    if(defendSlots.length){
+      var defend = document.createElement("div");
+      defend.className = "res-pick";
+      defend.appendChild(themedPicker({key: "song-of-defense", groups: {"": defendSlots.map(function(s, i){ return {value: String(i), label: ordinal(s.level) + "-level slot: reduce by " + 5 * s.level}; })}, value: "", placeholder: "Song of Defense...", ariaLabel: "Song of Defense: spend a spell slot",
+        onPick: function(v){
+          var s = defendSlots[Number(v)];
+          spendSpellSlot(c, s);
+          logRoll("Song of Defense", "Reduced the damage by " + 5 * s.level + ".");
+          save(); renderAll();
+        }}));
+      info.appendChild(defend);
+    }
+  }
+  if(id==="event_horizon") buttons.push(rollButton(makeDicesSvg(), "Force 2d10", function(){ performRoll(10, 2, 0, "none", "Event Horizon (force, STR save)"); }));
   if(id==="hexblades_curse"){
     var healed = hexCurseHealing(c), hexLv = classLevelOf(c, "Warlock", "The Hexblade");
     buttons.push(rollButton("", "It died: heal " + healed, function(){

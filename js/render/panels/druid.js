@@ -176,22 +176,23 @@ function openFormSheet(form){
 /* ---- Class resources ---- */
 export function druidResourceRow(c, r){
   if(r.key==="Druid:wild_shape") return wildShapePicker(c, r);
-  if(r.key==="Druid:natural_recovery") return recoveryRow(c, r);
+  if(r.key==="Druid:natural_recovery") return slotRecoveryRow(c, r, naturalRecoveryBudget(c));
   if(r.key==="Druid:cosmic_omen") return omenRow(c, r);
   if(r.key==="Druid:balm_of_the_summer_court") return balmPicker(c, r);
   return null;
 }
-function recoveryRow(c, r){
+/* Natural Recovery and Arcane Recovery. */
+export function slotRecoveryRow(c, r, budget){
   var row = buttonRow(), spent = recoverableSlots(c);
-  var b = rollBtn("", "Recover slots", "", function(){ openRecoverySheet(c, r); });
+  var b = rollBtn("", "Recover slots", "", function(){ openRecoverySheet(c, r, budget); });
   b.disabled = r.used >= r.max || !spent.length;
-  b.title = r.used >= r.max ? "Used until a long rest" : !spent.length ? "No spent spell slots to recover" : "During a short rest";
+  b.title = r.used >= r.max ? "Used until a long rest" : !spent.length ? "No spent spell slots to recover" : "With a short rest";
   row.appendChild(b);
   return row;
 }
 /* Tap a slot to pick it, as many as the budget allows. */
-function openRecoverySheet(c, r){
-  var budget = naturalRecoveryBudget(c), picked = {};
+function openRecoverySheet(c, r, budget){
+  var picked = {};
   var cost = function(){ return Object.keys(picked).reduce(function(n, l){ return n + Number(l) * picked[l]; }, 0); };
   openBottomSheet(function(body, refresh, close){
     sheetTop(body, r.name, close);
