@@ -42,6 +42,11 @@ export var CREDITS = [
     link: {text: "getbootstrap.com", href: "https://getbootstrap.com/"}
   },
   {
+    tag: "Homebrew",
+    label: "Gunslinger class",
+    text: "The Gunslinger class was created by Michael and is used with his permission."
+  },
+  {
     tag: "Team",
     label: "Made by",
     text: "Hunter & Kayn."
