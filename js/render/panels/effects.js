@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
+import { bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -166,6 +166,11 @@ function effectSummary(c, id){
     var halo = haloOfSporesDie(c);
     return "+" + symbioticTempHp(c) + " temporary HP · Halo of Spores 2d" + halo + " necrotic · melee weapon attacks +1d6 necrotic";
   }
+  if(id==="countercharm") return "Advantage on saves against being frightened or charmed, for you and friendly creatures within 30 ft";
+  if(id==="defensive_flourish") return "+" + (Number(c.effects && c.effects.defensive_flourish)||0) + " AC";
+  if(id==="mantle_of_majesty") return "Command as a bonus action each turn without a spell slot, DC " + bardDc(c) + " · creatures charmed by you fail the save";
+  if(id==="unbreakable_majesty") return "The first time a creature tries to attack you on a turn: CHA save DC " + bardDc(c) + " or it can't, and picks a new target. If it saves, disadvantage on saves against your spells on your next turn";
+  if(id==="shadow_disguise") return "You look like the dead person and know what it would tell a casual acquaintance · +5 to Deception against Insight";
   if(id==="spreading_spores") return "A creature entering the cube or starting its turn there: CON save DC " + druidDc(c) + " or your Halo of Spores damage, once per turn · no Halo of Spores reaction while it lasts";
   if(id==="starry_form"){
     var star = c.effects && c.effects.starry_form, wisMod = mod(abilityScore(c, "wis")), dice = starryDice(c) + "d8" + fmtMod(wisMod);

@@ -1,11 +1,12 @@
 import { save } from "../../core/state.js";
+import { openFlourishSheet } from "./bard.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg } from "../../ui/svg-icons.js";
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, bardHitDice, bladeFlourish, spendResource } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -688,14 +689,21 @@ function deflectMissilesButton(c){
 }
 /* A ranger's or cleric's extra dice on a hit. */
 function rangerButtons(c, name, unarmed){
-  return rangerHitDice(c).concat(clericHitDice(c), druidHitDice(c, unarmed)).filter(function(d){ return !unarmed || d.unarmed; }).map(function(d){ return hitDieButton(name, d); });
+  return rangerHitDice(c).concat(clericHitDice(c), druidHitDice(c, unarmed), bardHitDice(c)).filter(function(d){ return !unarmed || d.unarmed; }).map(function(d){ return hitDieButton(name, d, c); });
 }
-function hitDieButton(name, d){
+function hitDieButton(name, d, c){
   var b = document.createElement("button");
   b.type = "button"; b.className = "btn small inv-roll-btn inv-fury-btn";
   b.innerHTML = makeDicesSvg() + d.text;
   b.title = d.title;
-  b.addEventListener("click", function(){ performRoll(d.die, d.qty, 0, "none", name + ": " + d.label); });
+  b.addEventListener("click", function(){
+    // (Psychic Blades spends a Bardic Inspiration.)
+    if(d.pay){
+      if(!spendResource(c, d.pay, 1)) return;
+      save(); renderAll();
+    }
+    performRoll(d.die, d.qty, 0, "none", name + ": " + d.label);
+  });
   return b;
 }
 /* A Kensei's weapon: Kensei's Shot on a ranged one (monk 3), and Sharpen
@@ -1396,6 +1404,15 @@ function renderWeaponCard(c, item, idx){
 
   // Symbiotic Entity: melee weapon hits deal an extra 1d6 necrotic.
   druidHitDice(c, !isRangedWeapon(item)).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d)); });
+  // Blade Flourish (College of Swords): on any weapon's hit.
+  if(bladeFlourish(c)){
+    var flourishBtn = document.createElement("button");
+    flourishBtn.type = "button"; flourishBtn.className = "btn small inv-roll-btn inv-fury-btn";
+    flourishBtn.textContent = "Blade Flourish";
+    flourishBtn.title = "One flourish a turn, on a hit";
+    flourishBtn.addEventListener("click", function(){ openFlourishSheet(c, item.name || "Weapon"); });
+    actions.appendChild(flourishBtn);
+  }
 
   // Flame Tongue: a bonus action lights it while it's in hand; while it
   // burns, every hit deals extra fire damage. (Asked even when it isn't

@@ -72,7 +72,8 @@ export function skillCheck(c, skill, passive){
   // Emissary of Peace: +5 to Persuasion. Hide in Plain Sight: +10 to Stealth.
   var effectBonus = skill==="Persuasion" && effectOn(c, "emissary_of_peace") ? {name: "Emissary of Peace", value: 5}
     : skill==="Stealth" && effectOn(c, "hide_in_plain_sight") ? {name: "Hide in Plain Sight", value: 10}
-    : (skill==="Stealth" || skill==="Perception") && effectOn(c, "hearth_of_moonlight") ? {name: "Hearth of Moonlight and Shadow", value: 5} : null;
+    : (skill==="Stealth" || skill==="Perception") && effectOn(c, "hearth_of_moonlight") ? {name: "Hearth of Moonlight and Shadow", value: 5}
+    : skill==="Deception" && effectOn(c, "shadow_disguise") ? {name: "Mantle of Whispers", value: 5} : null;
   // Features that double the proficiency bonus for this skill (Royal Envoy's Persuasion).
   var doubled = featureSkillFlags(c, "skillDouble").find(function(x){ return x.value===skill; });
   if(entry.prof){
@@ -190,6 +191,7 @@ export function advantagesFor(c){
   if(effectOn(c, "watchers_will")) out.push({name: "Watcher's Will", on: "save", abilities: ["int", "wis", "cha"]});
   if(effectOn(c, "exalted_champion")) out.push({name: "Exalted Champion", on: "save", abilities: ["wis"]});
   if(effectOn(c, "living_legend")) out.push({name: "Living Legend", on: "check", abilities: ["cha"]});
+  if(effectOn(c, "countercharm")) out.push({name: "Countercharm", on: "save", abilities: "all", when: "against being frightened or charmed"});
   // Spirit Totem: only inside the aura, so these are reminders.
   var spirit = totemSpirit(c);
   if(spirit==="Bear") out.push({name: "Bear Spirit", on: "save", abilities: ["str"], when: "in the aura"}, {name: "Bear Spirit", on: "skill", skills: ["Athletics"], when: "in the aura"});

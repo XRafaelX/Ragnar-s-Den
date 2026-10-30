@@ -1,5 +1,6 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue } from "../../core/helpers.js";
+import { openFlourishSheet } from "./bard.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
 import { useNextCheck } from "../../core/magic-items.js";
@@ -75,14 +76,14 @@ export function rollCheck(c, bonus, mode, label, ability, opts){
   opts = opts || {};
   var might = ability==="str" ? indomitableMight(c) : 0;
   var reliable = opts.proficient && reliableTalent(c);
-  var dragon = (ability==="int" || ability==="wis") && starryDragon(c);
+  var dragon = ((ability==="int" || ability==="wis") && starryDragon(c)) || silverTongue(c, opts.skill);
   opts.mode = mode; // (Intuition needs no disadvantage.)
   performRoll(20, 1, bonus, mode, label, {
     followUp: function(r){ return checkFollowUp(c, r, opts); },
     adjust: might || reliable || dragon ? function(r){
       var total = r.total, notes = [];
       // Reliable Talent: a d20 of 9 or lower counts as a 10.
-      if((reliable || dragon) && r.natural!=null && r.natural < 10){ total += 10 - r.natural; notes.push(reliable ? "Reliable Talent" : "Starry Form: Dragon"); }
+      if((reliable || dragon) && r.natural!=null && r.natural < 10){ total += 10 - r.natural; notes.push(reliable ? "Reliable Talent" : silverTongue(c, opts.skill) ? "Silver Tongue" : "Starry Form: Dragon"); }
       if(might && total < might){ total = might; notes.push("Indomitable Might"); }
       return notes.length ? {total: total, note: notes.join(", ")} : null;
     } : null
@@ -104,6 +105,17 @@ function checkFollowUp(c, r, opts){
       use: function(){ return {bonus: 10 - low, log: "Intuition (the d20 counts as 10)"}; }});
   }
   if(hasMagicalGuidance(c)) out = out.concat(magicalGuidance(c).options);
+  // Peerless Skill (College of Lore 14): a Bardic Inspiration die on your own check.
+  if(hasPeerlessSkill(c)){
+    var peerless = bardicDie(c);
+    out.push({label: "+1d" + peerless + " (Peerless Skill)", title: "Spend a Bardic Inspiration and add the die",
+      use: function(){
+        if(!spendBardic(c)) return null;
+        var got = Math.floor(Math.random() * peerless) + 1;
+        save(); renderAll();
+        return {bonus: got, log: "Peerless Skill (rolled " + got + ")"};
+      }});
+  }
   // (Counted from the d20 as it stands: Reliable Talent may have made a 1 a 10.)
   var counted = r && r.natural!=null ? (opts.proficient && reliableTalent(c) ? Math.max(10, r.natural) : r.natural) : null;
   if(counted!=null && counted < 20 && resourceLeft(c, "Rogue:stroke_of_luck") > 0){
@@ -256,6 +268,8 @@ function attackFollowUp(c, r, aim, hit){
         return {bonus: sniper, log: "Expert Sniper"};
       }});
   }
+  // Blade Flourish (College of Swords 3): on a hit with a weapon.
+  if(hit && hit.item && bladeFlourish(c)) opts.push({label: "Hit? Blade Flourish", title: "One flourish a turn, on a hit", use: function(){ openFlourishSheet(c, hit.label); return {silent: true}; }});
   // A roll with no card of its own to roll damage from (a caught missile).
   if(hit && hit.offerDamage) opts.push({label: "Hit? Damage " + hit.qty + "d" + hit.die + (hit.bonus ? (hit.bonus > 0 ? "+" : "") + hit.bonus : ""), title: "Roll the damage",
     use: function(){ performRoll(hit.die, hit.qty, hit.bonus, "none", hit.label + ": Damage"); return {silent: true}; }});
@@ -401,10 +415,17 @@ function criticalHit(c, hit){
   if(hit.melee && hasImprovedSmite(c) && hit.item) extra.push({label: "Improved Divine Smite 2d8", title: "On a critical hit, its die is doubled too",
     use: function(){ performRoll(8, 2, 0, "none", hit.label + ": Improved Divine Smite (critical)"); return {silent: true}; }});
   // The dice a ranger's or cleric's hit adds are doubled too.
-  rangerHitDice(c).concat(clericHitDice(c), gunslingerHitDice(c, hit.item), druidHitDice(c, hit.melee)).filter(function(d){ return hit.item || d.unarmed; }).forEach(function(d){
+  rangerHitDice(c).concat(clericHitDice(c), gunslingerHitDice(c, hit.item), druidHitDice(c, hit.melee), bardHitDice(c)).filter(function(d){ return hit.item || d.unarmed; }).forEach(function(d){
     extra.push({label: d.name + " " + 2 * d.qty + "d" + d.die, title: "On a critical hit, these dice are doubled too",
-      use: function(){ performRoll(d.die, 2 * d.qty, 0, "none", hit.label + ": " + d.label + " (critical)"); return {silent: true}; }});
+      use: function(){
+        if(d.pay && !spendResource(c, d.pay, 1)) return null;
+        if(d.pay){ save(); renderAll(); }
+        performRoll(d.die, 2 * d.qty, 0, "none", hit.label + ": " + d.label + " (critical)");
+        return {silent: true};
+      }});
   });
+  if(hit.item && bladeFlourish(c)) extra.push({label: "Blade Flourish", title: "On a critical hit, its die is doubled too",
+    use: function(){ openFlourishSheet(c, hit.label, true); return {silent: true}; }});
   if(hit.melee && smiteSlots(c).length) extra.push({label: "Divine Smite", title: "Spend a spell slot: the dice are doubled on a critical hit",
     use: function(){ openSmiteSheet(c, hit.label, true); return {silent: true}; }});
   return {lead: "Critical hit!", hint: "",

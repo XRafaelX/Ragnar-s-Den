@@ -220,6 +220,22 @@ export var COMPANIONS = [
         traits:[{name:"Call of the Shadowseeds", text:"Your reaction raises it next to a creature that takes damage in your Defile Ground. It attacks at once, then obeys your verbal commands on your turn. It lasts until 0 HP, your long rest, or you summon another. It understands your languages."}]
       };
     }},
+  // Tasha's Cauldron (p. 28), checked on 5etools' data 2026-10-30.
+  {id:"dancing_item", name:"Dancing Item", cls:"Bard", subclass:"College of Creation", level:6,
+    stats:function(x){
+      return {
+        type:"Large or smaller construct", ac:16, hp: 10 + 5 * x.lv, speed:"30 ft, fly 30 ft (hover)",
+        abilities:{str:18, dex:14, con:16, int:4, wis:10, cha:6},
+        senses:"darkvision 60 ft, passive Perception 10", immunities:"poison and psychic damage · charmed, exhaustion, frightened, poisoned",
+        attacks:[{name:"Force-Empowered Slam", toHit: x.spellAttack, dice:"1d10", bonus: x.pb, damageType:"force", text:"Melee, reach 5 ft, one target you can see."}],
+        actions:[],
+        traits:[
+          {name:"Your turn", text:"It acts right after you and takes the Dodge action unless you use a bonus action to command it, which can be the one you use for Bardic Inspiration. It lasts 1 hour and understands your languages."},
+          {name:"Irrepressible Dance", text:"When a creature starts its turn within 10 ft of it, it can raise or lower that creature's walking speed by 10 ft until the end of the turn, your choice."},
+          {name:"Immutable Form", text:"It is immune to any spell or effect that would alter its form."}
+        ]
+      };
+    }},
   // Tasha's Cauldron (p. 36) with the Monster Manual's zombie, at 1 hit point.
   {id:"fungal_zombie", name:"Fungal Zombie", cls:"Druid", subclass:"Circle of Spores", level:6,
     stats:function(){

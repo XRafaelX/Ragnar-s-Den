@@ -40,6 +40,20 @@ export var TOGGLE_EFFECTS = [
   {id:"symbiotic_entity", name:"Symbiotic Entity", className:"Druid", subclass:"Circle of Spores", level:2,
     cost:{resource:"wild_shape", amount:1}, duration:"10 minutes",
     hint:"Ends early when these temporary hit points are gone or you use Wild Shape again."},
+  // Player's Handbook (p. 54) and Xanathar's Guide (pp. 14-16), checked on
+  // 5etools' data 2026-10-30.
+  {id:"countercharm", name:"Countercharm", className:"Bard", level:6, duration:"Until the end of your next turn", endsIncapacitated:true,
+    hint:"Action: a performance. It ends early if you are incapacitated or silenced, or if you stop it. Friends within 30 ft have to hear you."},
+  {id:"defensive_flourish", name:"Defensive Flourish", className:"Bard", subclass:"College of Swords", level:3, channel:true, duration:"Until the start of your next turn",
+    hint:"From a Blade Flourish."},
+  {id:"mantle_of_majesty", name:"Mantle of Majesty", className:"Bard", subclass:"College of Glamour", level:6,
+    cost:{resource:"mantle_of_majesty", amount:1}, duration:"1 minute",
+    hint:"Bonus action, with your concentration as if on a spell. It ends if your concentration does."},
+  {id:"unbreakable_majesty", name:"Unbreakable Majesty", className:"Bard", subclass:"College of Glamour", level:14,
+    cost:{resource:"unbreakable_majesty", amount:1}, duration:"1 minute", endsIncapacitated:true,
+    hint:"Bonus action. Ends early if you are incapacitated."},
+  {id:"shadow_disguise", name:"Stolen Shadow", className:"Bard", subclass:"College of Whispers", level:6, duration:"1 hour", startLabel:"Wear it", endLabel:"End",
+    hint:"Action: use a shadow from Mantle of Whispers to look like the dead person. A bonus action ends it."},
   // Tasha's Cauldron (pp. 36-39), checked on 5etools' data 2026-10-30.
   {id:"spreading_spores", name:"Spreading Spores", className:"Druid", subclass:"Circle of Spores", level:10,
     duration:"1 minute", requires:["symbiotic_entity"], startLabel:"Hurl",

@@ -43,7 +43,8 @@ export var CLASS_RESOURCES = {
     {id:"bardic_inspiration", name:"Bardic Inspiration", level:1,
       max:function(lv, m){ return atLeastOne(m.cha); },
       reset:function(lv){ return lv>=5 ? "short" : "long"; },
-      hint:"Bonus action: give an ally within 60 ft an inspiration die (d6, d8 from level 5, d10 from 10, d12 from 15) to add to one check, attack or save."}
+      initiativeRegain:20,
+      hint:function(lv){ return "Bonus action: give a creature within 60 ft a d" + (lv>=15 ? 12 : lv>=10 ? 10 : lv>=5 ? 8 : 6) + " to add to one check, attack or save." + (lv>=20 ? " Superior Inspiration: rolling initiative with none left gives you one back." : ""); }}
   ],
   "Cleric": [
     {id:"channel_divinity", name:"Channel Divinity", level:2,
@@ -213,20 +214,26 @@ export var SUBCLASS_RESOURCES = {
   "Bard": {
     "College of Eloquence": [
       {id:"universal_speech", name:"Universal Speech", level:6, max:always(1), reset:always("long"),
-        hint:"Action: up to CHA mod creatures within 60 ft understand you for 1 hour. More uses cost a spell slot."},
+        slotMin:1,
+        hint:function(lv, m){ return "Action: up to " + atLeastOne(m.cha) + " creatures within 60 ft understand you for 1 hour. More uses cost a spell slot."; }},
       {id:"infectious_inspiration", name:"Infectious Inspiration", level:14,
         max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
         hint:"Reaction when your Bardic Inspiration die helps someone succeed: give another creature within 60 ft a free die."}
     ],
     "College of Creation": [
       {id:"performance_of_creation", name:"Performance of Creation", level:3, max:always(1), reset:always("long"),
-        hint:"Action: create a nonmagical item worth up to 20 x your bard level gp. More uses cost a 2nd-level or higher spell slot."},
-      {id:"animating_performance", name:"Animating Performance", level:6, max:always(1), reset:always("long"),
+        slotMin:2,
+        hint:function(lv, m){
+          var size = lv>=14 ? "Huge" : lv>=6 ? "Large" : "Medium";
+          return (lv>=14 ? "Action: create up to " + Math.max(2, m.cha) + " nonmagical items of any value. Only one can be " + size + ", the rest Small or Tiny." : "Action: create a nonmagical item, " + size + " or smaller, worth up to " + 20 * lv + " gp.") +
+            " It lasts " + m.pb + " hours. More uses cost a 2nd-level or higher spell slot.";
+        }},
+      {id:"animating_performance", name:"Animating Performance", level:6, max:always(1), reset:always("long"), slotMin:3,
         hint:"Action: animate a Large or smaller nonmagical item within 30 ft as your Dancing Item for 1 hour. More uses cost a 3rd-level or higher spell slot."}
     ],
     "College of Glamour": [
       {id:"enthralling_performance", name:"Enthralling Performance", level:3, max:always(1), reset:always("short"),
-        hint:"After performing for 1 minute: up to CHA mod humanoids that watched make a WIS save or are charmed by you for 1 hour."},
+        hint:function(lv, m){ return "After performing for 1 minute: up to " + atLeastOne(m.cha) + " humanoids that watched make a WIS save or are charmed by you for 1 hour."; }},
       {id:"mantle_of_majesty", name:"Mantle of Majesty", level:6, max:always(1), reset:always("long"),
         hint:"Bonus action: cast Command without a slot, then again as a bonus action each turn for 1 minute (concentration)."},
       {id:"unbreakable_majesty", name:"Unbreakable Majesty", level:14, max:always(1), reset:always("short"),
@@ -234,7 +241,7 @@ export var SUBCLASS_RESOURCES = {
     ],
     "College of Spirits": [
       {id:"spirit_session", name:"Spirit Session", level:6, max:always(1), reset:always("long"),
-        hint:"1-hour ritual with up to proficiency-bonus creatures: learn a divination or necromancy spell of level up to the number taking part."}
+        hint:function(lv, m){ return "1-hour ritual during a rest, with up to " + m.pb + " willing creatures including you: learn a divination or necromancy spell of a level no higher than the number taking part."; }}
     ],
     "College of Whispers": [
       {id:"words_of_terror", name:"Words of Terror", level:3, max:always(1), reset:always("short"),

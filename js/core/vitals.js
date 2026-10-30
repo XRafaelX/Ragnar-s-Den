@@ -16,6 +16,7 @@ import { halfProficiency, checkAbility } from "./checks.js";
 import { findSubclass, classFeatureList } from "./class-features.js";
 import { effectOn, bladesongBonus, wildSurgeNow } from "./effects.js";
 import { twilightShroud } from "./cleric.js";
+import { defensiveFlourish } from "./bard.js";
 import { wildForm, wildShapeSpeeds, wildShapeArmorClass, wildShapeSenses, incarnationAc } from "./druid.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
@@ -320,6 +321,8 @@ export function computeArmorClass(c){
   if(surge && surge.ac){
     base += surge.ac; breakdown += " + Wild Surge (" + fmtMod(surge.ac) + ")"; short += " + Wild Surge";
   }
+  var flourish = defensiveFlourish(c);
+  if(flourish){ base += flourish; breakdown += " + Defensive Flourish (" + fmtMod(flourish) + ")"; short += " + Flourish"; }
   var corrupt = incarnationAc(c);
   if(corrupt){ base += corrupt; breakdown += " + Incarnation of Corruption (+2)"; short += " + Incarnation"; }
   // A magic item's boon (Duality's angel side: +1 AC for 10 minutes).

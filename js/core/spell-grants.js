@@ -84,6 +84,13 @@ export function featureSpells(c){
       out.push(fs);
     });
   });
+  // Spirit Session (College of Spirits 6): one spell until the next long rest.
+  var session = c.sessionSpell && (c.classes||[]).find(function(cl){ return cl.name==="Bard" && cl.subclass==="College of Spirits"; });
+  if(session && !out.some(function(x){ return x.name===c.sessionSpell; })){
+    var sessionData = SPELL_DATA[catalogSpellName(c.sessionSpell)] || null;
+    out.push({name: c.sessionSpell, data: sessionData, level: sessionData ? sessionData.level : 0, kind: "known", kindLabel: "Spirit Session",
+      tip: "Spirit Session: you know it until you start a long rest.", source: session.subclass, feature: "Spirit Session", className: "Bard"});
+  }
   // Feats that teach spells (Fey Touched: Misty Step and the picked
   // spell), cast with the ability the feat raised or names (Drow High
   // Magic: Charisma). A cantrip is simply known; the rest get a free

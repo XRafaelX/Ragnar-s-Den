@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn } from "../../core/helpers.js";
+import { talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -18,6 +18,7 @@ import { infusionResistances } from "../../core/infusion-effects.js";
 import { renderDeathSaves } from "./death-saves.js";
 import { renderEffectsCard } from "./effects.js";
 import { renderWildShapeCard, druidResourceRow } from "./druid.js";
+import { bardResourceRow, songOfRestButton } from "./bard.js";
 import { renderConditionsButton, renderConditionsStrip, longRestConditionsChoice } from "./conditions.js";
 import { openPrepareSheet } from "./spells.js";
 import { preparedState } from "../../core/spells-known.js";
@@ -703,6 +704,8 @@ export function renderVitalsPanel(c){
   hdHint.className = "hd-hint";
   hdHint.textContent = hdRemaining===0 ? "No hit dice left. A long rest gives some back." : pools.length > 1 ? "Tap a die to roll it and heal." : "Tap the die to roll it and heal.";
   restCard.appendChild(hdHint);
+  var songRow = songOfRestButton(c);
+  if(songRow) restCard.appendChild(songRow);
 
   var restRow = document.createElement("div");
   restRow.className = "rest-row";
@@ -715,6 +718,7 @@ export function renderVitalsPanel(c){
     var pactNote = "";
     if(c.spellcasting.pact && c.spellcasting.pact.used){ c.spellcasting.pact.used = 0; pactNote = " Pact slots restored."; }
     var restored = restoreResources(c, "short");
+    talesOnRest(c);
     delete c.relentlessUses; // Relentless Rage's DC is back to 10
     var resNote = restored.length ? " Restored: "+restored.join(", ")+"." : "";
     var ended = endAllEffects(c).concat(endTimedBoons(c));
@@ -772,6 +776,8 @@ export function renderVitalsPanel(c){
         forgeOnLongRest(c);
         interventionOnLongRest(c);
         var omen = omenOnLongRest(c);
+        talesOnRest(c);
+        delete c.sessionSpell; // Spirit Session's spell goes as a long rest starts.
         restoreCompanions(c);
         var elixirs = elixirsOnLongRest(c);
         logRoll("Long rest taken", "HP and spell slots restored. "+recovered+" hit dice recovered."+
@@ -1342,6 +1348,8 @@ function renderResourcesCard(c, resources){
     if(gunRow) info.appendChild(gunRow);
     var druidRow = druidResourceRow(c, r); // Wild Shape, Natural Recovery, Cosmic Omen, Balm
     if(druidRow) info.appendChild(druidRow);
+    var bardRow = bardResourceRow(c, r); // Bardic Inspiration's list and tale, Spirit Session
+    if(bardRow) info.appendChild(bardRow);
     // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
     // plus the proficiency bonus of healing.
     var qh = r.key==="Monk:ki" && quickenedHealing(c);
