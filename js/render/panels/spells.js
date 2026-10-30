@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities, plainAttackRollMode } from "../../core/helpers.js";
+import { conduitAbility, profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities, plainAttackRollMode } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { playDelete } from "../../ui/sound.js";
@@ -252,14 +252,16 @@ function renderSpellcastingCard(c){
   if(byAbility.length > 1) return renderMulticlassCasting(c, byAbility);
   var card = makeCard("Spellcasting");
   var pb = profBonus(c);
-  var scMod = mod(abilityScore(c, c.spellcasting.ability));
+  // (Arcane Conduit: Wisdom while the enchanted firearm is in hand.)
+  var scAbility = conduitAbility(c) || c.spellcasting.ability;
+  var scMod = mod(abilityScore(c, scAbility));
   var grid = ce("div","vitals-grid");
 
   var ab = statTile("Ability", fmtMod(scMod)+" modifier");
   ab.val.appendChild(themedPicker({
     variant:"pill", triggerClass:"sc-ability-pill", chevron:true, search:false,
     groups:{"":[{value:"int", label:"INT"}, {value:"wis", label:"WIS"}, {value:"cha", label:"CHA"}]},
-    value:c.spellcasting.ability, ariaLabel:"Spellcasting ability",
+    value:scAbility, ariaLabel:"Spellcasting ability",
     onPick:function(v){ c.spellcasting.ability = v; save(); renderAll(); }
   }));
   grid.appendChild(ab.box);

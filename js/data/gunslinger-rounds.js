@@ -37,3 +37,13 @@ export function roundStackName(kind, heavy, element, spell){
   var def = ROUND_KINDS[kind];
   return (heavy ? "Heavy " : "") + (kind==="elemental" && element ? element : def.name) + " Rounds";
 }
+
+/* Firearm Enchantment (Eldritch Gunman 3): what a ritual can put on one
+   firearm. item.enchantment holds the id. */
+export var FIREARM_ENCHANTMENTS = [
+  {id: "arcane_conduit", name: "Arcane Conduit", text: "While the firearm is in your hand, you use Wisdom in place of Intelligence for your spell save DC and spell attack bonus."},
+  {id: "veil_of_smoke", name: "Veil of Smoke", text: "When you miss with the firearm, the bullet can vanish into a puff of smoke until the start of your next turn. Unless the target moves away from it, the target has disadvantage on its attacks."},
+  {id: "arcane_infusion", name: "Arcane Infusion", text: "You add your Intelligence modifier to the firearm's damage rolls, and its attacks count as magical for overcoming resistance and immunity."},
+  {id: "runic_bind", name: "Runic Bind", text: "When you hit with the firearm, you can use your bonus action to bind the target. It must succeed on a Strength saving throw against your spell save DC or be restrained. It can use its action to repeat the save, freeing itself on a success."},
+  {id: "bullet_ward", name: "Bullet Ward", text: "You can shoot yourself or an ally with the firearm to give 1d8 + your Intelligence modifier temporary hit points. You can do this a number of times equal to your Intelligence modifier, and you get them back on a short or long rest."}
+];

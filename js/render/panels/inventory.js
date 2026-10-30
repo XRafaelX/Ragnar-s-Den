@@ -5,12 +5,12 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker, openArmorPicker, openGearPicker } from "../armory.js";
-import { gunRoundRow, bulletsmithCard, pressureButton } from "./gunslinger.js";
+import { gunRoundRow, bulletsmithCard, pressureButton, openEnchantSheet } from "./gunslinger.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -89,6 +89,15 @@ function bondEntry(c, item, idx){
       showActionToast((item.name || "It") + (item.bonded ? " is bonded to you." : " is no longer bonded."));
       redrawKeeping(idx);
     }
+  };
+}
+/* Firearm Enchantment (Eldritch Gunman 3): a 1-hour ritual on one firearm. */
+function enchantEntry(c, item, idx){
+  if(!canEnchant(c, item)) return null;
+  return {
+    label: enchantmentOf(c, item) ? "Change the enchantment" : "Enchant this firearm",
+    title: "Firearm Enchantment: a 1-hour ritual, which can be a short rest",
+    onClick: function(){ openEnchantSheet(c, item, function(){ redrawKeeping(idx); }); }
   };
 }
 function attuneEntry(c, item, idx){
@@ -362,6 +371,7 @@ function itemHeader(c, item, idx, onOpenDetails, noEquip){
     endInfusionEntry(c, item),
     dedicateEntry(c, item, idx),
     bondEntry(c, item, idx),
+    enchantEntry(c, item, idx),
     {label:"Edit details", onClick:onOpenDetails},
     {label:"Remove", danger:true, onClick:function(){
       confirmDialog("Remove "+(item.name||"this item")+"?", "This cannot be undone.", function(){
@@ -1220,6 +1230,8 @@ function renderWeaponCard(c, item, idx){
   if(sidearmMasteryBonus(c, item)) subtitleParts.push("Sidearm Mastery +2 damage");
   if(outlawGritBonus(c, item)) subtitleParts.push("Outlaw's Grit +2 damage");
   if(marshalRange(c, item)) subtitleParts.push(marshalRange(c, item));
+  var ench = enchantmentOf(c, item);
+  if(ench) subtitleParts.push(ench.name + (arcaneInfusionBonus(c, item) ? " " + fmtMod(arcaneInfusionBonus(c, item)) + " damage" : ""));
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");

@@ -356,3 +356,79 @@ test("Pinpoint Control and Intuition: uses equal the proficiency bonus, DC 8 + D
   assert.ok(!H.hasIntuition(marshal(17)) && H.hasIntuition(marshal(18)) && !H.hasIntuition(outlaw(18)));
   assert.deepEqual(H.INTUITION_SKILLS, ["Insight", "Perception", "Investigation"]);
 });
+
+/* ---- Phase 6: the Eldritch Gunman ---- */
+import { FIREARM_ENCHANTMENTS } from "../js/data/gunslinger-rounds.js";
+import { spellScalingLine } from "../js/core/spell-scaling.js";
+
+function gunman(level, extra = {}){ return slinger(level, "Eldritch Gunman", extra); }
+function holding(c, name, enchantment, extra = {}){
+  const item = gun(name, Object.assign({ equipped: true }, extra));
+  if(enchantment) item.enchantment = enchantment;
+  c.inventory = [item];
+  return item;
+}
+
+test("Firearm Enchantment: five, from Eldritch Gunman 3, on one firearm at a time", () => {
+  assert.deepEqual(FIREARM_ENCHANTMENTS.map((e) => e.name), ["Arcane Conduit", "Veil of Smoke", "Arcane Infusion", "Runic Bind", "Bullet Ward"]);
+  const c = gunman(3), a = gun("Pistol"), b = gun("Long Gun");
+  c.inventory = [a, b];
+  assert.ok(H.canEnchant(c, a));
+  assert.ok(!H.canEnchant(gunman(2), a), "not before level 3");
+  assert.ok(!H.canEnchant(c, { name: "Dagger", type: "weapon" }), "firearms only");
+  H.setEnchantment(c, a, "veil_of_smoke");
+  H.setEnchantment(c, b, "runic_bind");
+  assert.equal(a.enchantment, undefined, "a new ritual moves it");
+  assert.equal(H.enchantedFirearm(c), b);
+  assert.equal(H.enchantmentOf(c, b).name, "Runic Bind");
+  H.setEnchantment(c, b, "");
+  assert.equal(H.enchantedFirearm(c), null);
+});
+
+test("Arcane Conduit: Wisdom for spells while the firearm is in hand", () => {
+  const c = gunman(3);
+  c.abilities.wis = 18;
+  c.abilities.int = 10;
+  const item = holding(c, "Pistol", "arcane_conduit");
+  assert.equal(H.conduitAbility(c), "wis");
+  assert.deepEqual(H.spellcastingAbilities(c).map((a) => [a.ability, a.dc]), [["wis", 8 + 2 + 4]]);
+  item.equipped = false;
+  assert.equal(H.conduitAbility(c), "");
+  assert.deepEqual(H.spellcastingAbilities(c).map((a) => [a.ability, a.dc]), [["int", 8 + 2 + 0]]);
+});
+
+test("Arcane Infusion: Intelligence to damage, and the firearm counts as magical", () => {
+  const c = gunman(3);
+  const plain = holding(c, "Long Gun", "");
+  const base = H.weaponDamageBonus(c, plain);
+  assert.ok(!H.isMagicWeapon(c, plain));
+  const item = holding(c, "Long Gun", "arcane_infusion");
+  assert.equal(H.arcaneInfusionBonus(c, item), 2);
+  assert.equal(H.weaponDamageBonus(c, item), base + 2);
+  assert.ok(H.isMagicWeapon(c, item));
+  // Only for the Gunman.
+  const m = slinger(3, "Marshal");
+  const other = holding(m, "Long Gun", "arcane_infusion");
+  assert.equal(H.arcaneInfusionBonus(m, other), 0);
+});
+
+test("Bullet Ward: INT modifier uses on a short rest, only while the firearm holds it", () => {
+  const c = gunman(3);
+  assert.ok(!H.characterResources(c).some((r) => r.key === "Gunslinger:bullet_ward"));
+  holding(c, "Pistol", "bullet_ward");
+  const r = H.characterResources(c).find((x) => x.key === "Gunslinger:bullet_ward");
+  assert.deepEqual([r.max, r.reset], [2, "short"]);
+});
+
+test("Arcane Apprentice: Arcana, or a pick when it's already known", () => {
+  const f = SUBCLASSES.Gunslinger.find((s) => s.name === "Eldritch Gunman").features[1][0];
+  assert.deepEqual(f.profs.pick[0], { kind: "skill", options: ["Arcana"], fallback: ["History", "Investigation", "Religion"] });
+});
+
+test("Ready Arms!: more firearms at levels 5, 11 and 17", () => {
+  const line = (lv) => spellScalingLine(gunman(lv), "Ready Arms!", 0);
+  assert.match(String(line(4)), /1 spectral firearm/);
+  assert.match(line(5), /2 spectral firearms/);
+  assert.match(line(11), /3 spectral firearms/);
+  assert.match(line(17), /4 spectral firearms/);
+});

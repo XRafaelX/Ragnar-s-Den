@@ -16,7 +16,7 @@ import { conditionRolls } from "./conditions.js";
 import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver, weaponAttackEffect } from "./effects.js";
 import { sharpenBonus } from "./monk.js";
 import { sacredWeaponBonus, auraOfHate } from "./paladin.js";
-import { heavyRoundBonus, marksmanCritMin, deadlyCriticalDice, outlawGritBonus, outlawDualFirearm } from "./gunslinger.js";
+import { heavyRoundBonus, marksmanCritMin, deadlyCriticalDice, outlawGritBonus, outlawDualFirearm, arcaneInfusionBonus, arcaneInfusionOn } from "./gunslinger.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
    (see applyClassChoices), so deleting the feature removes its bonus. */
@@ -311,7 +311,7 @@ export function chosenWeaponFeature(c){
 /* A magic weapon: marked magic on the sheet (a Flame Tongue, a +0
    weapon), with a magic bonus, or holding an active artificer infusion. */
 export function isMagicWeapon(c, item){
-  if(item.magic || magicBonusOf(item) > 0 || shillelaghOn(c, item) || sacredWeaponBonus(c, item) > 0) return true;
+  if(item.magic || magicBonusOf(item) > 0 || shillelaghOn(c, item) || sacredWeaponBonus(c, item) > 0 || arcaneInfusionOn(c, item)) return true;
   var active = c.infusions && c.infusions.active || [];
   return !!item.id && active.some(function(a){ return a.itemId===item.id; });
 }
@@ -338,7 +338,7 @@ export function weaponAttackBonus(c, item){
 }
 export function weaponDamageBonus(c, item){
   return weaponAbilityMod(c, item) + magicBonusOf(item) + sharpenBonus(c, item) + auraOfHate(c, item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
-    + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0) + heavyRoundBonus(c, item) + outlawGritBonus(c, item);
+    + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0) + heavyRoundBonus(c, item) + outlawGritBonus(c, item) + arcaneInfusionBonus(c, item);
 }
 /* A weapon with the thrown property (a dagger, a handaxe, a dart). */
 export function isThrownWeapon(item){

@@ -415,7 +415,7 @@
 .gun-round-pickers{display:flex;flex-wrap:wrap;gap:8px;}
 .gun-round-field{flex:1 1 180px;max-width:280px;min-width:0;}
 .gun-round .gun-round-note{margin:0;}
-.bulletsmith-card .bs-lead{font-size:13px;color:var(--text-on-parch-dim);margin:0 0 10px;}
+.bs-lead{font-size:13px;color:var(--text-on-parch-dim);margin:0 0 10px;}
 .bs-weight{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
 .bs-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 16px;margin-bottom:10px;}
 .bs-row{display:flex;align-items:center;gap:8px;}
@@ -424,3 +424,10 @@
 .bs-count{min-width:24px;text-align:center;font-variant-numeric:tabular-nums;}
 .bs-spell{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);}
 .bs-spell h4{font-size:14px;margin:0 0 8px;}
+/* Firearm Enchantment (the Gunslinger class's Eldritch Gunman): the five
+   enchantments as tiles in a bottom sheet. */
+.enchant-title{font-size:17px;margin:0 0 6px;}
+.enchant-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.enchant-tile{display:flex;flex-direction:column;gap:3px;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--rule);background:transparent;color:var(--text-on-parch);cursor:pointer;}
+.enchant-tile span{font-size:13px;color:var(--text-on-parch-dim);}
+.enchant-tile.selected{border-color:var(--brass);}

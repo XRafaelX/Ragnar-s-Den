@@ -12,6 +12,7 @@ import { usesVariant, draconicBreath } from "./class-features.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { raceSpellEntries } from "./spell-grants.js";
 import { raceChoiceValues } from "./class-picks.js";
+import { hasEnchantment } from "./gunslinger.js";
 
 /* Limited-use resources this character has right now, from each class
    and its subclass. `key` is unique per character (class + resource id)
@@ -50,6 +51,8 @@ export function characterResources(c){
       if(r.armorModel && cl.armorModel!==r.armorModel) return;
       // An optional feature's uses (Favored Foe) only for a ranger using it.
       if(r.variant && !usesVariant(cl, r.variant)) return;
+      // An enchantment's uses (Bullet Ward) while a firearm has it.
+      if(r.enchantment && !hasEnchantment(c, r.enchantment)) return;
       var key = cl.name+":"+r.id;
       // One counter per picked spell (Signature Spells), once they're picked.
       var perSpell = r.perSpell && pickedSpellNames(cl, r.perSpell.grant);

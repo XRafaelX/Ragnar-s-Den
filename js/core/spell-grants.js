@@ -14,6 +14,7 @@ import { characterIsCaster, classCasterType, classSpellAbility, classFeatureList
 import { coinAttackBonus } from "./magic-items.js";
 import { infusionSpellAttack } from "./infusion-effects.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
+import { conduitAbility } from "./gunslinger.js";
 
 /* The spellcasting abilities of the classes that cast spells now (a
    Paladin or Ranger from level 2, an Eldritch Knight or Arcane Trickster
@@ -22,7 +23,7 @@ import { abilityScore, abilityScores } from "./ability-scores.js";
 export function spellcastingAbilities(c){
   var out = [];
   (c.classes||[]).forEach(function(cl){
-    var type = classCasterType(cl), ability = classSpellAbility(cl), lv = Number(cl.level)||1;
+    var type = classCasterType(cl), ability = (cl.name==="Gunslinger" && conduitAbility(c)) || classSpellAbility(cl), lv = Number(cl.level)||1;
     if(!type || !ability || (type==="half" && lv < 2) || (type==="third" && lv < 3)) return;
     var entry = out.find(function(x){ return x.ability===ability; });
     if(!entry){

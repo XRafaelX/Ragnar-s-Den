@@ -18,6 +18,7 @@
      "Guardian").
    variant: only for a class entry using that optional feature (Tasha's
      Favored Foe, see CLASS_PROGRESSION's `variants`).
+   enchantment: only while a firearm has that enchantment (Bullet Ward).
    roll: {die, label, needs}: a button on its row that spends one and rolls
      the die (Warding Maneuver's d8). needs "meleeOrShield" turns it off
      without a melee weapon or a shield in hand. dieAt(lv) instead gives a
@@ -325,6 +326,10 @@ export var SUBCLASS_RESOURCES = {
       {id:"predicted_critical", name:"Predicted Critical", level:14,
         max:function(lv, m){ return Math.floor(m.pb / 2); }, reset:always("long"),
         hint:"Before a firearm attack with advantage: a hit becomes a critical hit. Start it on Active effects."}
+    ],
+    "Eldritch Gunman": [
+      {id:"bullet_ward", name:"Bullet Ward", level:3, enchantment:"bullet_ward", max:function(lv, m){ return Math.max(0, m.int); }, reset:always("short"),
+        hint:"Shoot yourself or an ally with your enchanted firearm: 1d8 + INT temporary hit points."}
     ],
     "Marshal": [
       {id:"pinpoint_control", name:"Pinpoint Control", level:14, max:function(lv, m){ return m.pb; }, reset:always("long"),

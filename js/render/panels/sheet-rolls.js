@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, skillCheck, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
 import { useNextCheck } from "../../core/magic-items.js";
@@ -223,6 +223,14 @@ function attackFollowUp(c, r, aim, hit){
   if(hit && r && r.natural >= (hit.critMin || 20)) return hit.noDamage ? {lead: "Critical hit! The round deals no damage.", options: []} : withPinpoint(c, hit, criticalHit(c, hit), criticalDamage(c, hit).qty);
   if(hit && r && hit.predicted && !hit.noDamage) return withPinpoint(c, hit, Object.assign(criticalHit(c, hit), {lead: "Predicted Critical: if it hits, it's a critical hit."}), criticalDamage(c, hit).qty);
   var opts = !hit || hit.noDamage ? [] : pinpointOptions(c, hit, hit.qty);
+  // The Eldritch Gunman's enchanted firearm: Runic Bind on a hit, Veil of
+  // Smoke on a miss.
+  var ench = hit && !hit.noDamage && enchantmentOf(c, hit.item);
+  if(ench && ench.id==="runic_bind"){
+    var bindDc = spellcastingAbilities(c).filter(function(a){ return a.classes.indexOf("Gunslinger")!==-1; }).map(function(a){ return a.dc; })[0];
+    opts.push(reminder("Hit? Runic Bind (STR DC " + bindDc + ")", "Your bonus action: on a failed save the target is restrained. It can use its action to repeat the save.", "Runic Bind", "Strength save, DC " + bindDc + ", or the target is restrained. It can use its action to repeat the save."));
+  }
+  if(ench && ench.id==="veil_of_smoke") opts.push(reminder("Missed? Veil of Smoke", "The bullet vanishes into a puff of smoke until the start of your next turn", "Veil of Smoke", "Unless the target moves away from the smoke, it has disadvantage on its attacks until the start of your next turn."));
   // Intuition (Marshal 18): a firearm's d20 of 9 or lower as a 10, once per
   // turn, without disadvantage. (Master of the Barrel already did it at 20.)
   if(hit && r && r.natural!=null && r.natural < 10 && gun && hasIntuition(c) && hit.rollMode!=="dis" && classLevelOf(c, "Gunslinger") < 20){
@@ -321,8 +329,18 @@ function attackFollowUp(c, r, aim, hit){
   // Only Focused Aim's three: named in the lead, as before.
   var onlyAim = opts.every(function(o){ return / ki\)$/.test(o.label); });
   // (Pinpoint Control's are for a hit: "Missed?" would read wrong over them.)
-  if(opts.some(function(o){ return /^Hit\? (Disarm|Hobble|Interrupt)/.test(o.label); })) return {lead: "", hint: "Tap for more options.", options: opts};
+  if(opts.some(function(o){ return /^(Hit\? (Disarm|Hobble|Interrupt|Runic)|Missed\? Veil)/.test(o.label); })) return {lead: "", hint: "Tap for more options.", options: opts};
   return {lead: onlyAim ? "Missed? Focused Aim:" : "Missed?", hint: onlyAim ? "Missed? Tap for Focused Aim." : "Missed? Tap for more options.", options: opts};
+}
+/* A tray option that only tells the player what happens, logged. pay
+   (optional) spends what it costs, false if it can't. */
+function reminder(label, title, name, text, pay){
+  return {label: label, title: title, use: function(){
+    if(pay && !pay()) return null;
+    logRoll(name, text);
+    showActionToast(text);
+    return {silent: true};
+  }};
 }
 /* Pinpoint Control (Marshal 14): after a firearm attack, a use for one of
    its three effects. Disarm rolls the attack's damage halved, so it stands
@@ -336,12 +354,7 @@ function pinpointOptions(c, hit, qty){
     return true;
   }
   function effect(label, title, text){
-    return {label: label, title: title, use: function(){
-      if(!spend()) return null;
-      logRoll("Pinpoint Control", text);
-      showActionToast(text);
-      return {silent: true};
-    }};
+    return reminder(label, title, "Pinpoint Control", text, spend);
   }
   return [
     {label: "Hit? Disarm (STR DC " + dc + ")", title: "Halved damage, and a Strength save or it drops an object of your choice at its feet",

@@ -5,7 +5,7 @@
    the Barrel (gunslinger 20): rounds have no types, so any kind can be
    loaded and any stack of the right weight pays for the shot (spell
    rounds aside). */
-import { ROUND_KINDS, HEAVY_ROUND_DAMAGE } from "../data/gunslinger-rounds.js";
+import { ROUND_KINDS, HEAVY_ROUND_DAMAGE, FIREARM_ENCHANTMENTS } from "../data/gunslinger-rounds.js";
 import { weaponDataOf } from "../data/weapons.js";
 import { classLevelOf } from "./class-features.js";
 import { mod, profBonus } from "./basics.js";
@@ -152,4 +152,43 @@ export function pinpointDc(c){
 export var INTUITION_SKILLS = ["Insight", "Perception", "Investigation"];
 export function hasIntuition(c){
   return marshalLevel(c) >= 18;
+}
+
+/* ---- Eldritch Gunman: Firearm Enchantment (3) ---- */
+function gunmanLevel(c){ return classLevelOf(c, "Gunslinger", "Eldritch Gunman"); }
+export function canEnchant(c, item){
+  return gunmanLevel(c) >= 3 && isFirearmItem(item);
+}
+/* The one firearm holding an enchantment, or null. */
+export function enchantedFirearm(c){
+  if(gunmanLevel(c) < 3) return null;
+  return (c.inventory||[]).find(function(i){ return i.enchantment && isFirearmItem(i); }) || null;
+}
+/* This firearm's enchantment ({id, name, text}), or null. */
+export function enchantmentOf(c, item){
+  if(!item || !item.enchantment || enchantedFirearm(c)!==item) return null;
+  return FIREARM_ENCHANTMENTS.find(function(e){ return e.id===item.enchantment; }) || null;
+}
+export function hasEnchantment(c, id){
+  var gun = enchantedFirearm(c);
+  return !!gun && gun.enchantment===id;
+}
+/* Only one firearm at a time: a new ritual moves it. id "" ends it. */
+export function setEnchantment(c, item, id){
+  (c.inventory||[]).forEach(function(i){ delete i.enchantment; });
+  if(id) item.enchantment = id;
+}
+/* Arcane Conduit: WIS for spells while the firearm is in hand, else "". */
+export function conduitAbility(c){
+  var gun = enchantedFirearm(c);
+  return gun && gun.enchantment==="arcane_conduit" && gun.equipped ? "wis" : "";
+}
+/* Arcane Infusion: + INT to the firearm's damage. */
+export function arcaneInfusionBonus(c, item){
+  var e = enchantmentOf(c, item);
+  return e && e.id==="arcane_infusion" ? mod(abilityScore(c, "int")) : 0;
+}
+export function arcaneInfusionOn(c, item){
+  var e = enchantmentOf(c, item);
+  return !!e && e.id==="arcane_infusion";
 }

@@ -9,8 +9,9 @@
    Bulletsmith card that crafts rounds (Novice, Handy, Elemental and
    Occult Bulletsmith). */
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, maxHp, skillCheck, profBonus, classLevelOf, roundStacks, loadedRound, loadedStack, takesHeavyRounds, roundsHaveNoType, canRigRound, roundRigged, RIGGED_ROUND_NOTE, hasApplyingPressure } from "../../core/helpers.js";
-import { ROUND_KINDS, ROUND_ELEMENTS, roundBatchSize, roundStackName } from "../../data/gunslinger-rounds.js";
+import { clamp, mod, fmtMod, maxHp, skillCheck, profBonus, classLevelOf, roundStacks, loadedRound, loadedStack, takesHeavyRounds, roundsHaveNoType, canRigRound, roundRigged, RIGGED_ROUND_NOTE, hasApplyingPressure, enchantmentOf, setEnchantment } from "../../core/helpers.js";
+import { ROUND_KINDS, ROUND_ELEMENTS, FIREARM_ENCHANTMENTS, roundBatchSize, roundStackName } from "../../data/gunslinger-rounds.js";
+import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { SPELL_DATA } from "../../data/spells.js";
 import { spendCoins } from "../../core/coins.js";
 import { themedPicker } from "../../ui/themed-picker.js";
@@ -43,6 +44,7 @@ function button(row, text, title, disabled, onClick, dice){
 export function gunslingerResourceRow(c, r){
   if(r.key==="Gunslinger:quick_patch") return quickPatchRow(c, r);
   if(r.key==="Gunslinger:honed_instinct") return honedInstinctRow(c, r);
+  if(r.key==="Gunslinger:bullet_ward") return bulletWardRow(c, r);
   return null;
 }
 
@@ -76,6 +78,70 @@ function honedInstinctRow(c, r){
     save(); renderAll();
   });
   return row;
+}
+
+/* Bullet Ward (Eldritch Gunman): temporary hit points don't stack, so
+   you keep the higher. An ally's use just rolls. */
+function bulletWardRow(c, r){
+  var int = mod(abilityScore(c, "int")), dice = "1d8" + fmtMod(int), row = rowOf(), left = r.max - r.used;
+  button(row, "Ward yourself " + dice, left <= 0 ? "None left until a short or long rest" : "Spend one and gain " + dice + " temporary hit points", left <= 0, function(){
+    c.resourcesUsed[r.key] = r.used + 1;
+    performRoll(8, 1, int, "none", "Bullet Ward (yourself)", {onResult: function(x){
+      if(x.total > (Number(c.hp.temp)||0)) c.hp.temp = x.total;
+      save(); renderAll();
+    }});
+    save(); renderAll();
+  }, true);
+  button(row, "Ward an ally " + dice, left <= 0 ? "None left until a short or long rest" : "Spend one: an ally gains " + dice + " temporary hit points", left <= 0, function(){
+    c.resourcesUsed[r.key] = r.used + 1;
+    performRoll(8, 1, int, "none", "Bullet Ward (an ally)");
+    save(); renderAll();
+  }, true);
+  return row;
+}
+
+/* ---- Firearm Enchantment: picked in a bottom sheet ---- */
+export function openEnchantSheet(c, item, done){
+  openBottomSheet(function(body, refresh, close){
+    var h = document.createElement("h3");
+    h.className = "enchant-title";
+    h.textContent = "Enchant " + (item.name || "this firearm");
+    body.appendChild(h);
+    var lead = document.createElement("p");
+    lead.className = "bs-lead";
+    lead.textContent = "A 1-hour ritual, which can be a short rest. Only one firearm holds an enchantment, so this moves it from any other.";
+    body.appendChild(lead);
+    var list = document.createElement("div");
+    list.className = "enchant-list";
+    var current = enchantmentOf(c, item);
+    FIREARM_ENCHANTMENTS.forEach(function(e){
+      var tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "enchant-tile" + (current && current.id===e.id ? " selected" : "");
+      tile.setAttribute("aria-pressed", String(!!current && current.id===e.id));
+      var name = document.createElement("strong");
+      name.textContent = e.name;
+      var text = document.createElement("span");
+      text.textContent = e.text;
+      tile.appendChild(name); tile.appendChild(text);
+      tile.addEventListener("click", function(){
+        setEnchantment(c, item, e.id);
+        logRoll("Firearm Enchantment", (item.name || "The firearm") + " now holds " + e.name + ".");
+        close(); save(); done();
+      });
+      list.appendChild(tile);
+    });
+    body.appendChild(list);
+    if(current){
+      var end = document.createElement("div");
+      end.className = "inv-roll-actions";
+      button(end, "Remove the enchantment", "It becomes an ordinary firearm again", false, function(){
+        setEnchantment(c, item, "");
+        close(); save(); done();
+      });
+      body.appendChild(end);
+    }
+  });
 }
 
 /* ---- The loaded round, on a class firearm's card ---- */
