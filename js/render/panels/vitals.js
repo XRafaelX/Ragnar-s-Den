@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn } from "../../core/helpers.js";
+import { resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -20,6 +20,7 @@ import { renderEffectsCard } from "./effects.js";
 import { renderWildShapeCard, druidResourceRow } from "./druid.js";
 import { bardResourceRow, songOfRestButton } from "./bard.js";
 import { sorcererResourceRow } from "./sorcerer.js";
+import { warlockResourceRow } from "./warlock.js";
 import { renderConditionsButton, renderConditionsStrip, longRestConditionsChoice } from "./conditions.js";
 import { openPrepareSheet } from "./spells.js";
 import { preparedState } from "../../core/spells-known.js";
@@ -723,6 +724,8 @@ export function renderVitalsPanel(c){
     delete c.relentlessUses; // Relentless Rage's DC is back to 10
     var resNote = restored.length ? " Restored: "+restored.join(", ")+"." : "";
     var ended = endAllEffects(c, "short").concat(endTimedBoons(c));
+    var lightRest = resilienceOnRest(c);
+    if(lightRest) resNote += " Celestial Resilience: " + lightRest.self + " temporary HP, " + lightRest.others + " for up to five creatures.";
     var back = sorcerousRestoration(c);
     if(back) resNote += " Sorcerous Restoration: " + back + " sorcery points.";
     if(ended.length) resNote += " Ended: "+ended.join(", ")+".";
@@ -779,6 +782,8 @@ export function renderVitalsPanel(c){
         forgeOnLongRest(c);
         interventionOnLongRest(c);
         var omen = omenOnLongRest(c);
+        resilienceOnRest(c);
+        restWaitOnLongRest(c);
         fontOnLongRest(c);
         lunarOnLongRest(c);
         talesOnRest(c);
@@ -1232,12 +1237,15 @@ function renderResourcesCard(c, resources){
               save(); renderAll();
               return {bonus: top - x.total, log: "Destructive Wrath"};
             }}]};
-        } : r.roll.min || r.roll.temp ? {
+        } : r.roll.min || r.roll.temp || r.roll.heal ? {
           adjust: least ? function(x){ return x.total < least ? {total: least, note: "at least " + least} : null; } : null,
           // Temporary hit points don't stack: keep the higher.
           onResult: r.roll.temp ? function(x){
             var got = Math.max(x.total, least);
             if(got > (Number(c.hp.temp)||0)){ c.hp.temp = got; save(); renderSidebar(); renderAll(); }
+          } : r.roll.heal ? function(x){
+            c.hp.current = clamp((Number(c.hp.current)||0) + Math.max(x.total, least), 0, maxHp(c));
+            save(); renderSidebar(); renderAll();
           } : null
         } : null);
       });
@@ -1374,6 +1382,8 @@ function renderResourcesCard(c, resources){
     if(bardRow) info.appendChild(bardRow);
     var sorcRow = sorcererResourceRow(c, r); // Sorcery points' list, the surge table, the phases
     if(sorcRow) info.appendChild(sorcRow);
+    var lockRow = warlockResourceRow(c, r); // Patron buttons and pickers
+    if(lockRow) info.appendChild(lockRow);
     // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
     // plus the proficiency bonus of healing.
     var qh = r.key==="Monk:ki" && quickenedHealing(c);

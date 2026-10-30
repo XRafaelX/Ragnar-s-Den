@@ -1,6 +1,7 @@
 /* ---------------- Equipment ----------------
    Hands and equipping, weapon attack and damage numbers, and weapon and
    armor proficiency. */
+import { isPactWeapon, pactWeaponBonus, hexCurseBonus, hasInvocation } from "./warlock.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { WEAPON_DATA, weaponDataOf, baseWeaponName, hasHeavyProperty } from "../data/weapons.js";
 import { featProficiencies, featDef, featSpellEntries, featCastAbility } from "./feat-picks.js";
@@ -279,7 +280,8 @@ export function weaponAbility(c, item){
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
       if(f.magicWeaponAbility && isMagic) allowed.push(f.magicWeaponAbility);
-      if(f.chosenWeaponAbility && item.chosenWeapon) allowed.push(f.chosenWeaponAbility);
+      // (Hex Warrior reaches every pact weapon too.)
+      if(f.chosenWeaponAbility && (item.chosenWeapon || isPactWeapon(c, item))) allowed.push(f.chosenWeaponAbility);
     });
   });
   var best = Math.max.apply(null, allowed.map(function(k){ return mod(ab[k]); }));
@@ -311,7 +313,7 @@ export function chosenWeaponFeature(c){
 /* A magic weapon: marked magic on the sheet (a Flame Tongue, a +0
    weapon), with a magic bonus, or holding an active artificer infusion. */
 export function isMagicWeapon(c, item){
-  if(item.magic || magicBonusOf(item) > 0 || shillelaghOn(c, item) || sacredWeaponBonus(c, item) > 0 || arcaneInfusionOn(c, item)) return true;
+  if(item.magic || isPactWeapon(c, item) || magicBonusOf(item) > 0 || shillelaghOn(c, item) || sacredWeaponBonus(c, item) > 0 || arcaneInfusionOn(c, item)) return true;
   var active = c.infusions && c.infusions.active || [];
   return !!item.id && active.some(function(a){ return a.itemId===item.id; });
 }
@@ -334,10 +336,10 @@ export function powerAttackOn(c, item){
 export function weaponAttackBonus(c, item){
   var pb = item.proficient ? profBonus(c) : 0;
   var archery = isRangedWeapon(item) && hasFightingStyle(c, "Archery") ? 2 : 0;
-  return weaponAbilityMod(c, item) + pb + magicBonusOf(item) + sharpenBonus(c, item) + sacredWeaponBonus(c, item) + archery - (powerAttackOn(c, item) ? 5 : 0) + coinAttackBonus(c);
+  return weaponAbilityMod(c, item) + pb + magicBonusOf(item) + pactWeaponBonus(c, item) + sharpenBonus(c, item) + sacredWeaponBonus(c, item) + archery - (powerAttackOn(c, item) ? 5 : 0) + coinAttackBonus(c);
 }
 export function weaponDamageBonus(c, item){
-  return weaponAbilityMod(c, item) + magicBonusOf(item) + sharpenBonus(c, item) + auraOfHate(c, item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
+  return weaponAbilityMod(c, item) + magicBonusOf(item) + pactWeaponBonus(c, item) + hexCurseBonus(c) + sharpenBonus(c, item) + auraOfHate(c, item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
     + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0) + heavyRoundBonus(c, item) + outlawGritBonus(c, item) + arcaneInfusionBonus(c, item);
 }
 /* A weapon with the thrown property (a dagger, a handaxe, a dart). */
@@ -480,6 +482,8 @@ export function critRange(c, item){
   var min = champ >= 15 ? 18 : champ >= 3 ? 19 : 20;
   // Invincible Conqueror: melee weapon attacks crit on 19 or 20.
   if(effectOn(c, "invincible_conqueror") && !(item && isRangedWeapon(item))) min = Math.min(min, 19);
+  // Hexblade's Curse: a 19 or 20 against the cursed target.
+  if(effectOn(c, "hexblades_curse")) min = Math.min(min, 19);
   if(item && isFirearm(item) && classLevelOf(c, "Fighter", "Gunslinger") >= 18) min = Math.min(min, 19);
   return Math.min(min, marksmanCritMin(c, item));
 }
@@ -516,6 +520,8 @@ export function attacksPerAction(c){
     if(cl.name==="Fighter") n = Math.max(n, lv >= 20 ? 4 : lv >= 11 ? 3 : lv >= 5 ? 2 : 1);
     if(classFeatureList(cl).some(function(f){ return f.name==="Extra Attack"; })) n = Math.max(n, 2);
   });
+  // Thirsting Blade: twice with the pact weapon.
+  if(hasInvocation(c, "Thirsting Blade")) n = Math.max(n, 2);
   // Invincible Conqueror and Dread Ambusher's first turn: one more.
   return n + (effectOn(c, "invincible_conqueror") ? 1 : 0) + (effectOn(c, "dread_ambusher") ? 1 : 0);
 }

@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot } from "../../core/helpers.js";
 import { openFlourishSheet } from "./bard.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
@@ -107,6 +107,7 @@ function checkFollowUp(c, r, opts){
       use: function(){ return {bonus: 10 - low, log: "Intuition (the d20 counts as 10)"}; }});
   }
   if(hasMagicalGuidance(c)) out = out.concat(magicalGuidance(c).options);
+  if(resourceLeft(c, "Warlock:dark_ones_own_luck") > 0) out.push(ownLuckOption(c));
   // Peerless Skill (College of Lore 14): a Bardic Inspiration die on your own check.
   if(hasPeerlessSkill(c)){
     var peerless = bardicDie(c);
@@ -168,7 +169,7 @@ function checkFollowUp(c, r, opts){
 export function rollSave(c, bonus, mode, label, ability){
   var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c), will = resourceLeft(c, "Gunslinger:willpower") > 0;
   var oath = livingLegendOn(c) || hasSupernaturalDefense(c) || effectOn(c, "emboldening_bond") || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
-  var dragon = ability==="con" && starryDragon(c), favored = favoredByTheGods(c), trance = tranceOn(c);
+  var dragon = ability==="con" && starryDragon(c), favored = favoredByTheGods(c) || resourceLeft(c, "Warlock:dark_ones_own_luck") > 0, trance = tranceOn(c);
   performRoll(20, 1, bonus, mode, label, {
     followUp: fanatic || indom || diamond || oath || will || dragon || favored ? function(r){ return saveFollowUp(c, ability, r); } : null,
     adjust: trance ? function(r){ return r.natural!=null && r.natural < 10 ? {total: r.total + 10 - r.natural, note: "Trance of Order"} : null; } : null
@@ -227,6 +228,7 @@ function saveFollowUp(c, ability, r){
       use: function(){ performRoll(8, 2, rebuke, "none", "Vigilant Rebuke (Force)"); return {silent: true}; }});
   }
   if(favoredByTheGods(c)){ opts.push(favoredOption(c)); failed = opts.length; }
+  if(resourceLeft(c, "Warlock:dark_ones_own_luck") > 0){ opts.push(ownLuckOption(c)); failed = opts.length; }
   // The Dragon (Starry Form): a low d20 counts as a 10 to keep concentration.
   if(ability==="con" && starryDragon(c) && (!r || (r.natural!=null && r.natural < 10))){
     opts.unshift({label: "Concentration: count the d20 as 10", title: "Starry Form, Dragon: a roll of 9 or lower counts as a 10 on a Constitution save to keep concentration",
@@ -235,6 +237,16 @@ function saveFollowUp(c, ability, r){
   }
   if(!opts.length) return null;
   return failed ? {lead: "Failed?", hint: "Failed? Tap for options.", options: opts} : {lead: "", hint: "Saved? Tap for Vigilant Rebuke.", options: opts};
+}
+/* Dark One's Own Luck (Fiend 6): a d10 on a check or a save. */
+function ownLuckOption(c){
+  return {label: "+1d10 (Dark One's Own Luck)", title: "Once per short or long rest",
+    use: function(){
+      if(!spendResource(c, "Warlock:dark_ones_own_luck", 1)) return null;
+      var got = Math.floor(Math.random() * 10) + 1;
+      save(); renderAll();
+      return {bonus: got, log: "Dark One's Own Luck (rolled " + got + ")"};
+    }};
 }
 /* Favored by the Gods (Divine Soul 1): 2d4 on a failed save or a miss. */
 function favoredOption(c){
@@ -286,6 +298,14 @@ function attackFollowUp(c, r, aim, hit){
       }});
   }
   if(favoredByTheGods(c)) opts.push(favoredOption(c));
+  // Hurl Through Hell (Fiend 14): on a hit, once per long rest.
+  if(hit && resourceLeft(c, "Warlock:hurl_through_hell") > 0) opts.push({label: "Hit? Hurl Through Hell", title: "The target vanishes until the end of your next turn, then takes 10d10 psychic damage unless it's a fiend",
+    use: function(){
+      if(!spendResource(c, "Warlock:hurl_through_hell", 1)) return null;
+      save(); renderAll();
+      performRoll(10, 10, 0, "none", "Hurl Through Hell (Psychic, not a fiend)");
+      return {silent: true};
+    }});
   // Blade Flourish (College of Swords 3): on a hit with a weapon.
   if(hit && hit.item && bladeFlourish(c)) opts.push({label: "Hit? Blade Flourish", title: "One flourish a turn, on a hit", use: function(){ openFlourishSheet(c, hit.label); return {silent: true}; }});
   // A roll with no card of its own to roll damage from (a caught missile).
@@ -433,11 +453,12 @@ function criticalHit(c, hit){
   if(hit.melee && hasImprovedSmite(c) && hit.item) extra.push({label: "Improved Divine Smite 2d8", title: "On a critical hit, its die is doubled too",
     use: function(){ performRoll(8, 2, 0, "none", hit.label + ": Improved Divine Smite (critical)"); return {silent: true}; }});
   // The dice a ranger's or cleric's hit adds are doubled too.
-  rangerHitDice(c).concat(clericHitDice(c), gunslingerHitDice(c, hit.item), druidHitDice(c, hit.melee), bardHitDice(c)).filter(function(d){ return hit.item || d.unarmed; }).forEach(function(d){
+  rangerHitDice(c).concat(clericHitDice(c), gunslingerHitDice(c, hit.item), druidHitDice(c, hit.melee), bardHitDice(c), warlockHitDice(c, hit.item)).filter(function(d){ return !d.flat && (hit.item || d.unarmed); }).forEach(function(d){
     extra.push({label: d.name + " " + 2 * d.qty + "d" + d.die, title: "On a critical hit, these dice are doubled too",
       use: function(){
         if(d.pay && !spendResource(c, d.pay, 1)) return null;
-        if(d.pay){ save(); renderAll(); }
+        if(d.paySlot) spendSpellSlot(c, d.paySlot);
+        if(d.pay || d.paySlot){ save(); renderAll(); }
         performRoll(d.die, 2 * d.qty, 0, "none", hit.label + ": " + d.label + " (critical)");
         return {silent: true};
       }});

@@ -2,6 +2,7 @@
    Effects switched on from the Vitals tab (Bladesong, the Astral Self,
    Symbiotic Entity) and the numbers they change. */
 import { dragonType, lunarEmpowered } from "./sorcerer.js";
+import { formOfDreadTemp, warlockResistances } from "./warlock.js";
 import { TOGGLE_EFFECTS, WILD_SURGES } from "../data/effects.js";
 import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
@@ -119,6 +120,11 @@ export function startEffect(c, id, slotLevel){
     c.hp.temp = Math.max(Number(c.hp.temp)||0, symbioticTempHp(c));
   }
   if(id==="reckless_attack") recklessAbandon(c);
+  // Form of Dread: 1d10 + warlock level temporary HP (keep the higher).
+  if(id==="form_of_dread"){
+    var dread = formOfDreadTemp(c);
+    if(dread > (Number(c.hp.temp)||0)) c.hp.temp = dread;
+  }
   // Fighting Spirit: 5 temporary HP, 10 from fighter 10, 15 from 15 (keep the higher).
   if(id==="fighting_spirit"){
     var fs = fightingSpiritTempHp(c);
@@ -197,6 +203,8 @@ export function effectRolls(c, kind, ability){
   if(kind==="attack" && effectOn(c, "empty_body")) out.push({mode: "adv", reason: "Empty Body: you're invisible"});
   if(kind==="attack" && effectOn(c, "cloak_of_shadows")) out.push({mode: "adv", reason: "Cloak of Shadows: you're invisible"});
   if(kind==="attack" && effectOn(c, "trickery_cloak")) out.push({mode: "adv", reason: "Cloak of Shadows: you're invisible"});
+  if(kind==="attack" && effectOn(c, "misty_escape")) out.push({mode: "adv", reason: "Misty Escape: you're invisible"});
+  if(kind==="attack" && effectOn(c, "entropic_ward")) out.push({mode: "adv", reason: "Entropic Ward"});
   // Assassinate and Versatile Trickster: advantage on attack rolls while they're on.
   if(kind==="attack" && effectOn(c, "assassinate")) out.push({mode: "adv", reason: "Assassinate"});
   if(kind==="attack" && effectOn(c, "versatile_trickster")) out.push({mode: "adv", reason: "Versatile Trickster"});
@@ -585,6 +593,7 @@ export function effectResistances(c){
   if(effectOn(c, "invincible_conqueror")) out.push({type: "all damage", source: "Invincible Conqueror"});
   if(effectOn(c, "exalted_champion")) out.push({type: "nonmagical bludgeoning, piercing and slashing", source: "Exalted Champion"});
   if(effectOn(c, "starry_form") && classLevelOf(c, "Druid", "Circle of Stars") >= 14) out.push({type: "bludgeoning, piercing and slashing", source: "Full of Stars"});
+  out = out.concat(warlockResistances(c));
   if(effectOn(c, "elemental_affinity")) out.push({type: dragonType(c) || "your ancestry's damage", source: "Elemental Affinity"});
   if(effectOn(c, "umbral_form")) out.push({type: "all damage but force and radiant", source: "Umbral Form"});
   if(lunarEmpowered(c)==="Crescent Moon") out.push({type: "necrotic", source: "Lunar Empowerment"}, {type: "radiant", source: "Lunar Empowerment"});
@@ -595,6 +604,8 @@ export function attackEndsEffects(c, melee){
   if(melee && effectOn(c, "shadow_step")){ endEffect(c, "shadow_step"); changed = true; }
   if(effectOn(c, "cloak_of_shadows")){ endEffect(c, "cloak_of_shadows"); changed = true; }
   if(effectOn(c, "trickery_cloak")){ endEffect(c, "trickery_cloak"); changed = true; }
+  if(effectOn(c, "misty_escape")){ endEffect(c, "misty_escape"); changed = true; }
+  if(effectOn(c, "entropic_ward")){ endEffect(c, "entropic_ward"); changed = true; }
   return changed;
 }
 

@@ -135,6 +135,8 @@ export function circleSpellNote(c, name){
   if(storm && d.level >= 1 && /\b(lightning|thunder)\b[^.]*damage/i.test(d.summary)) notes.push("Heart of the Storm: creatures you choose within 10 feet take " + storm + " lightning or thunder damage as you start casting.");
   if(classLevelOf(c, "Sorcerer", "Wild Magic") >= 18 && /\b\d+d\d+\b/.test(d.summary) && /damage/i.test(d.summary)) notes.push("Spell Bombardment: once per turn, when a die rolls its highest number, roll one of them again and add it.");
   if(classLevelOf(c, "Sorcerer", "Aberrant Mind") >= 6 && d.level >= 1 && featureSpells(c).some(function(s){ return s.name===spell && s.feature==="Psionic Spells"; })) notes.push("Psionic Sorcery: you can cast it with " + d.level + (d.level===1 ? " sorcery point" : " sorcery points") + " instead of a slot, with no components.");
+  // Radiant Soul (Celestial 6): radiant or fire damage.
+  if(classLevelOf(c, "Warlock", "The Celestial") >= 6 && /\b(radiant|fire)\b[^.]*damage/i.test(d.summary)) notes.push("Radiant Soul: add " + mod(abilityScore(c, "cha")) + " to one radiant or fire damage roll against one target.");
   // Spiritual Focus (College of Spirits 6): a bard spell's damage or healing.
   if(classLevelOf(c, "Bard", "College of Spirits") >= 6 && d.classes.indexOf("Bard")!==-1 && (/\bdamage\b/i.test(d.summary) || HEALING_SPELLS.indexOf(spell)!==-1))
     notes.push("Spiritual Focus: through your focus, add a d6 to one damage or healing roll.");

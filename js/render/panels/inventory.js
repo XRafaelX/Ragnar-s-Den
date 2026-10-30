@@ -6,7 +6,7 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, bardHitDice, bladeFlourish, spendResource } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -547,6 +547,20 @@ function openWeaponSheet(c, item, idx){
     profLbl.appendChild(document.createTextNode("Proficient"));
     details.appendChild(profLbl);
 
+    // Pact of the Blade: the weapon you summon. It's magical, and invocations reach it.
+    if(hasPactOfTheBlade(c)){
+      var pactLbl = document.createElement("label");
+      pactLbl.className = "inv-prof-label";
+      var pactCb = document.createElement("input"); pactCb.type="checkbox"; pactCb.className="chk"; pactCb.checked = !!item.pactWeapon;
+      pactCb.addEventListener("change", function(){
+        if(pactCb.checked) item.pactWeapon = true; else delete item.pactWeapon;
+        save(); renderAll();
+      });
+      pactLbl.appendChild(pactCb);
+      pactLbl.appendChild(document.createTextNode("Pact weapon"));
+      details.appendChild(pactLbl);
+    }
+
     // Hex Warrior and similar: mark one weapon to attack with another
     // ability. Only one weapon can be marked, so ticking one clears the rest.
     var chosenFeat = chosenWeaponFeature(c);
@@ -689,7 +703,7 @@ function deflectMissilesButton(c){
 }
 /* A ranger's or cleric's extra dice on a hit. */
 function rangerButtons(c, name, unarmed){
-  return rangerHitDice(c).concat(clericHitDice(c), druidHitDice(c, unarmed), bardHitDice(c)).filter(function(d){ return !unarmed || d.unarmed; }).map(function(d){ return hitDieButton(name, d, c); });
+  return rangerHitDice(c).concat(clericHitDice(c), druidHitDice(c, unarmed), bardHitDice(c), unarmed ? warlockHitDice(c, null) : []).filter(function(d){ return !unarmed || d.unarmed; }).map(function(d){ return hitDieButton(name, d, c); });
 }
 function hitDieButton(name, d, c){
   var b = document.createElement("button");
@@ -697,12 +711,13 @@ function hitDieButton(name, d, c){
   b.innerHTML = makeDicesSvg() + d.text;
   b.title = d.title;
   b.addEventListener("click", function(){
-    // (Psychic Blades spends a Bardic Inspiration.)
-    if(d.pay){
-      if(!spendResource(c, d.pay, 1)) return;
-      save(); renderAll();
-    }
-    performRoll(d.die, d.qty, 0, "none", name + ": " + d.label);
+    // (Psychic Blades spends a Bardic Inspiration, Eldritch Smite a pact slot.)
+    if(d.pay && !spendResource(c, d.pay, 1)) return;
+    if(d.paySlot) spendSpellSlot(c, d.paySlot);
+    if(d.pay || d.paySlot){ save(); renderAll(); }
+    // (A flat number has no die to roll: Lifedrinker, Genie's Wrath.)
+    if(d.flat) logRoll(name + ": " + d.label, "+" + d.flat + " damage.");
+    else performRoll(d.die, d.qty, 0, "none", name + ": " + d.label);
   });
   return b;
 }
@@ -1404,6 +1419,7 @@ function renderWeaponCard(c, item, idx){
 
   // Symbiotic Entity: melee weapon hits deal an extra 1d6 necrotic.
   druidHitDice(c, !isRangedWeapon(item)).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d)); });
+  warlockHitDice(c, item).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d, c)); });
   // Blade Flourish (College of Swords): on any weapon's hit.
   if(bladeFlourish(c)){
     var flourishBtn = document.createElement("button");

@@ -13,6 +13,7 @@ import { abilityScore, abilityScores } from "./ability-scores.js";
 import { raceSpellEntries } from "./spell-grants.js";
 import { raceChoiceValues } from "./class-picks.js";
 import { hasEnchantment } from "./gunslinger.js";
+import { vesselHitDieBonus } from "./warlock.js";
 
 /* Limited-use resources this character has right now, from each class
    and its subclass. `key` is unique per character (class + resource id)
@@ -71,7 +72,7 @@ export function characterResources(c){
       if(runes) max = runes * (lv>=15 ? 2 : 1);
       // (A roll's die can grow with level: superiority dice d8, d10, d12.)
       // (And a roll can add an ability modifier: Protective Field's INT.)
-      var roll = r.roll ? Object.assign({}, r.roll, r.roll.dieAt ? {die: r.roll.dieAt(lv)} : {}, r.roll.qtyAt ? {qty: r.roll.qtyAt(lv)} : {}, r.roll.bonusAbility ? {bonus: m[r.roll.bonusAbility]} : {}) : null;
+      var roll = r.roll ? Object.assign({}, r.roll, r.roll.dieAt ? {die: r.roll.dieAt(lv)} : {}, r.roll.qtyAt ? {qty: r.roll.qtyAt(lv)} : {}, r.roll.bonusAbility ? {bonus: m[r.roll.bonusAbility]} : {}, r.roll.bonusLevel ? {bonus: lv} : {}) : null;
       list.push({
         key: key, name: r.name, source: d.source, hint: typeof r.hint==="function" ? r.hint(lv, m, cl) : r.hint, pool: !!r.pool,
         max: max, used: max===Infinity ? 0 : clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
@@ -301,5 +302,5 @@ export function recoverHitDice(c){
 export function hitDieHealing(c, roll){
   var conMod = mod(abilityScore(c, "con"));
   var floor = hasFeat(c, "Durable") ? Math.max(2, 2 * conMod) : 1;
-  return Math.max(floor, roll + conMod);
+  return Math.max(floor, roll + conMod) + vesselHitDieBonus(c);
 }

@@ -9,6 +9,7 @@ import { barbarianClassEntry } from "./character-resources.js";
 import { classFeatureList } from "./class-features.js";
 import { effectOn, effectRolls, weaponAttackEffect, tidesRoll } from "./effects.js";
 import { lunarEmpowered } from "./sorcerer.js";
+import { hasInvocation } from "./warlock.js";
 import { otherworldlyGlamour } from "./ranger.js";
 import { wildForm, wildShapeSkill, totemSpirit } from "./druid.js";
 import { optionEffects } from "./class-options.js";
@@ -196,6 +197,7 @@ export function advantagesFor(c){
   var moon = lunarEmpowered(c);
   if(moon==="New Moon") out.push({name: "Lunar Empowerment", on: "skill", skills: ["Stealth"]});
   if(moon==="Full Moon" && effectOn(c, "lunar_light")) out.push({name: "Lunar Empowerment", on: "skill", skills: ["Investigation", "Perception"]});
+  if(hasInvocation(c, "Eldritch Mind")) out.push({name: "Eldritch Mind", on: "save", abilities: ["con"], when: "to keep concentration"});
   if(effectOn(c, "countercharm")) out.push({name: "Countercharm", on: "save", abilities: "all", when: "against being frightened or charmed"});
   // Spirit Totem: only inside the aura, so these are reminders.
   var spirit = totemSpirit(c);

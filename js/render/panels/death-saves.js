@@ -2,7 +2,8 @@ import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
-import { strengthOfTheGrave, blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource } from "../../core/helpers.js";
+import { searingVengeanceReady, necroticHuskReady, spendForRests, mod, strengthOfTheGrave, blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource } from "../../core/helpers.js";
+import { abilityScore } from "../../core/ability-scores.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playDiceRattle, playDeathSaveSuccess, playDeathSaveFail, playStabilized, playDeath, playRevive } from "../../ui/sound.js";
 
@@ -153,6 +154,45 @@ export function renderDeathSaves(c){
       });
     });
     box.appendChild(grave);
+  }
+  // Searing Vengeance (Celestial 14): instead of a death save.
+  if(searingVengeanceReady(c) && !dead){
+    var searing = document.createElement("button");
+    searing.type = "button"; searing.className = "btn small primary ds-searing";
+    searing.textContent = "Searing Vengeance";
+    searing.title = "Instead of the death save at the start of your turn: regain half your hit points and stand. Creatures you choose within 30 ft take radiant damage and are blinded until the end of the turn.";
+    searing.addEventListener("click", function(e){
+      e.stopPropagation();
+      if(!spendResource(c, "Warlock:searing_vengeance", 1)) return;
+      c.hp.current = Math.floor(maxHp(c) / 2);
+      c.deathSaves = {success: 0, fail: 0};
+      removeCondition(c, "prone");
+      playRevive();
+      save(); renderSidebar(); renderAll();
+      performRoll(8, 2, mod(abilityScore(c, "cha")), "none", "Searing Vengeance (Radiant)");
+    });
+    box.appendChild(searing);
+  }
+  // Necrotic Husk (Undead 10): 1 hit point instead, an eruption and a level of exhaustion.
+  if(necroticHuskReady(c) && !dead){
+    var husk = document.createElement("button");
+    husk.type = "button"; husk.className = "btn small primary ds-husk";
+    husk.textContent = "Necrotic Husk";
+    husk.title = "Reaction when you would drop to 0: 1 hit point instead. Creatures you choose within 30 ft take necrotic damage, and you gain a level of exhaustion. It comes back after 1d4 long rests.";
+    husk.addEventListener("click", function(e){
+      e.stopPropagation();
+      var rests = spendForRests(c, "Warlock:necrotic_husk");
+      if(!rests) return;
+      c.hp.current = 1;
+      c.deathSaves = {success: 0, fail: 0};
+      c.exhaustion = Math.min(6, (Number(c.exhaustion)||0) + 1);
+      removeCondition(c, "prone");
+      logRoll("Necrotic Husk", "1 hit point instead. It comes back after " + rests + (rests===1 ? " long rest." : " long rests."));
+      playRevive();
+      save(); renderSidebar(); renderAll();
+      performRoll(10, 2, classLevelOf(c, "Warlock", "The Undead"), "none", "Necrotic Husk (Necrotic)");
+    });
+    box.appendChild(husk);
   }
   // Faithful Summons (Shepherd 14): four beasts protect you.
   if(faithfulSummonsReady(c) && !dead){

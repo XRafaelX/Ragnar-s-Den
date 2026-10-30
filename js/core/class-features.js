@@ -492,6 +492,10 @@ export function raceWards(c){
   });
   // Switched on from the Active effects card.
   if(b && effectOn(c, "chromatic_warding")) out.immune.push({type: b.damage.toLowerCase(), source: "Chromatic Warding"});
+  if(effectOn(c, "form_of_dread")){
+    out.conditionImmune.push({type: "frightened", source: "Form of Dread"});
+    if(classLevelOf(c, "Warlock", "The Undead") >= 10) out.immune.push({type: "necrotic", source: "Necrotic Husk"});
+  }
   if(effectOn(c, "raven_queen_resistance")) out.resist.push({type: "all damage", source: "Blessing of the Raven Queen"});
   return out;
 }

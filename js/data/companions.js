@@ -220,6 +220,23 @@ export var COMPANIONS = [
         traits:[{name:"Call of the Shadowseeds", text:"Your reaction raises it next to a creature that takes damage in your Defile Ground. It attacks at once, then obeys your verbal commands on your turn. It lasts until 0 HP, your long rest, or you summon another. It understands your languages."}]
       };
     }},
+  // Xanathar's Guide (p. 55) with the Monster Manual's specter.
+  {id:"accursed_specter", name:"Accursed Specter", cls:"Warlock", subclass:"The Hexblade", level:6,
+    stats:function(x){
+      return {
+        type:"Medium undead", ac:12, hp:22, speed:"0 ft, fly 50 ft (hover)",
+        abilities:{str:1, dex:14, con:11, int:10, wis:10, cha:11},
+        senses:"darkvision 60 ft, passive Perception 10", resistances:"acid, cold, fire, lightning, thunder · bludgeoning, piercing and slashing from nonmagical attacks",
+        immunities:"necrotic and poison damage · charmed, exhaustion, grappled, paralyzed, petrified, poisoned, prone, restrained, unconscious",
+        attacks:[{name:"Life Drain", toHit: 4 + Math.max(0, x.mods.cha), dice:"3d6", bonus:0, damageType:"necrotic", text:"Melee, reach 5 ft, one creature. It makes a DC 10 CON save or its hit point maximum drops by the damage until a long rest."}],
+        actions:[],
+        traits:[
+          {name:"Your service", text:"It has " + Math.floor(x.lv / 2) + " temporary hit points, rolls its own initiative and obeys your verbal commands. It leaves at the end of your next long rest."},
+          {name:"Incorporeal Movement", text:"It moves through creatures and objects as difficult terrain, taking 1d10 force damage if it ends its turn inside an object."},
+          {name:"Sunlight Sensitivity", text:"In sunlight it has disadvantage on attack rolls and on Perception checks that rely on sight."}
+        ]
+      };
+    }},
   // Xanathar's Guide (p. 50) with the Monster Manual's dire wolf.
   {id:"hound_of_ill_omen", name:"Hound of Ill Omen", cls:"Sorcerer", subclass:"Shadow Magic", level:6,
     stats:function(x){

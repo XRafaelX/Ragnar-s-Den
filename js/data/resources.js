@@ -492,9 +492,14 @@ export var SUBCLASS_RESOURCES = {
   },
   "Warlock": {
     "The Fiend": [
+      {id:"dark_ones_blessing", name:"Dark One's Blessing", level:1, max:always(Infinity), reset:always("long"),
+        hint:"When you reduce a hostile creature to 0 hit points."},
+      {id:"fiendish_resilience", name:"Fiendish Resilience", level:10, max:always(Infinity), reset:always("long"),
+        hint:"When you finish a short or long rest, choose a damage type to resist. Magical and silvered weapons ignore it."},
       {id:"dark_ones_own_luck", name:"Dark One's Own Luck", level:6, max:always(1), reset:always("short"),
         hint:"Add a d10 to an ability check or saving throw after seeing the roll."},
       {id:"hurl_through_hell", name:"Hurl Through Hell", level:14, max:always(1), reset:always("long"),
+        roll:{qty:10, die:10, button:"Hurl", label:"Hurl Through Hell (Psychic, not a fiend)"},
         hint:"On a hit: send the target through the lower planes until the end of your next turn (10d10 psychic unless it's a fiend)."}
     ],
     "The Archfey": [
@@ -536,21 +541,23 @@ export var SUBCLASS_RESOURCES = {
       {id:"elemental_gift_flight", name:"Elemental Gift (Flight)", level:6, max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Bonus action: 30-ft flying speed with hover for 10 minutes."},
       {id:"limited_wish", name:"Limited Wish", level:14, max:always(1), reset:always("manual"),
-        hint:"Action: the effect of any spell of 6th level or lower (1-action casting time). Returns after 1d4 long rests: roll when you use it and regain it yourself."}
+        hint:"Action: the effect of any spell of 6th level or lower with a casting time of 1 action, from any class's list. It comes back after 1d4 long rests."}
     ],
     "The Undead": [
       {id:"form_of_dread", name:"Form of Dread", level:1,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Bonus action for 1 minute: 1d10 + warlock level temp HP, immune to fear, and frighten a creature you hit once per turn (WIS save)."},
       {id:"necrotic_husk", name:"Necrotic Husk", level:10, max:always(1), reset:always("manual"),
-        hint:"Reaction at 0 HP: drop to 1 HP and deal 2d10 + warlock level necrotic around you, gaining 1 exhaustion. Returns after 1d4 long rests: roll when you use it and regain it yourself."},
+        hint:"Reaction when you would drop to 0 HP: 1 HP instead, 2d10 + warlock level necrotic around you and 1 exhaustion. The button is with your death saves. It comes back after 1d4 long rests."},
       {id:"spirit_projection", name:"Spirit Projection", level:14, max:always(1), reset:always("long"),
         hint:"Action: project your spirit for up to 1 hour, with flight, weapon resistance and easier conjuration and necromancy spells."}
     ],
     "The Undying": [
       {id:"defy_death", name:"Defy Death", level:6, max:always(1), reset:always("long"),
+        roll:{die:8, bonusAbility:"con", min:1, heal:true, button:"Heal", label:"Defy Death"},
         hint:"When you succeed on a death save or stabilize someone with Spare the Dying, regain 1d8 + CON mod HP."},
       {id:"indestructible_life", name:"Indestructible Life", level:14, max:always(1), reset:always("short"),
+        roll:{die:8, bonusLevel:true, heal:true, button:"Heal", label:"Indestructible Life"},
         hint:"Bonus action: regain 1d8 + warlock level HP, and reattach a severed body part held in place."}
     ]
   },

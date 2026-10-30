@@ -1,11 +1,12 @@
 import { save } from "../../core/state.js";
-import { dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
+import { tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
+import { showActionToast } from "../../ui/toast.js";
 import { openRevelationSheet, bastionPicker } from "./sorcerer.js";
 
 /* ---------------- Active effects ----------------
@@ -172,6 +173,14 @@ function effectSummary(c, id){
     var halo = haloOfSporesDie(c);
     return "+" + symbioticTempHp(c) + " temporary HP · Halo of Spores 2d" + halo + " necrotic · melee weapon attacks +1d6 necrotic";
   }
+  if(id==="hexblades_curse") return "+" + profBonus(c) + " to damage rolls and a critical hit on 19 or 20 against the cursed target. Your weapon cards already include them";
+  if(id==="misty_escape") return "Invisible · advantage on attack rolls · ends if you attack or cast a spell";
+  if(id==="entropic_ward") return "Its attack has disadvantage. If it misses, your next attack against it has advantage. End this if it hit";
+  if(id==="tentacle_of_the_deeps") return tentacleDice(c) + "d8 cold, and its speed drops 10 ft until the start of your next turn · a bonus action moves it 30 ft and attacks again" + (classLevelOf(c, "Warlock", "The Fathomless") >= 6 ? " · Guardian Coil: your reaction reduces damage within 10 ft of it" : "");
+  if(id==="elemental_flight") return "Fly 30 ft and hover";
+  if(id==="bottled_respite") return "Up to " + 2 * profBonus(c) + " hours · you hear the area around the vessel" + (classLevelOf(c, "Warlock", "The Genie") >= 10 ? " · up to five willing creatures with you · 10 minutes inside is a short rest, and Hit Dice heal " + profBonus(c) + " more" : "");
+  if(id==="form_of_dread") return "Immune to frightened · once per turn on a hit: WIS save DC " + warlockDc(c) + " or frightened of you until the end of your next turn" + (classLevelOf(c, "Warlock", "The Undead") >= 10 ? " · immune to necrotic damage" : "");
+  if(id==="spirit_projection") return "Your body is unconscious and damage to one affects the other · resistance to bludgeoning, piercing and slashing · fly at your walking speed · conjuration and necromancy spells need no verbal, somatic or costless material components";
   if(id==="elemental_affinity") return "Resistance to " + (dragonType(c) || "your ancestry's") + " damage";
   if(id==="dragon_wings") return "Fly " + computeSpeed(c).value + " ft";
   if(id==="draconic_presence"){
@@ -376,6 +385,25 @@ function appendRolls(c, id, info){
     buttons.push(rollButton(makeDicesSvg(), "Halo 2d" + halo, function(){ performRoll(halo, 2, 0, "none", "Halo of Spores (necrotic, CON save)"); }));
   }
   if(id==="bastion_of_law") info.appendChild(bastionPicker(c));
+  if(id==="hexblades_curse"){
+    var healed = hexCurseHealing(c), hexLv = classLevelOf(c, "Warlock", "The Hexblade");
+    buttons.push(rollButton("", "It died: heal " + healed, function(){
+      c.hp.current = Math.min(maxHp(c), (Number(c.hp.current)||0) + healed);
+      endEffect(c, "hexblades_curse");
+      logRoll("Hexblade's Curse", "The target died. Regained " + healed + " HP.");
+      save(); renderAll();
+    }));
+    if(hexLv >= 14) buttons.push(rollButton("", "It died: move the curse", function(){ logRoll("Master of Hexes", "The curse moved to a creature within 30 ft. No hit points regained."); showActionToast("The curse moves on."); }));
+    if(hexLv >= 10) buttons.push(rollButton(makeDicesSvg(), "Armor of Hexes d6", function(){
+      performRoll(6, 1, 0, "none", "Armor of Hexes: 4 or higher, it misses");
+    }));
+  }
+  if(id==="tentacle_of_the_deeps"){
+    var tent = tentacleDice(c), tentHit = warlockSpellAttack(c), tentRoll = plainAttackRollMode(c);
+    buttons.push(rollButton(makeDiceSvg(), "Attack " + fmtMod(tentHit), function(){ rollAttack(c, tentHit, tentRoll.mode, "Tentacle of the Deeps", {qty: tent, die: 8, bonus: 0, label: "Tentacle of the Deeps (Cold)", offerDamage: true}); }));
+    buttons.push(rollButton(makeDicesSvg(), "Cold " + tent + "d8", function(){ performRoll(8, tent, 0, "none", "Tentacle of the Deeps (Cold)"); }));
+    if(classLevelOf(c, "Warlock", "The Fathomless") >= 6) buttons.push(rollButton(makeDicesSvg(), "Guardian Coil " + tent + "d8", function(){ performRoll(8, tent, 0, "none", "Guardian Coil: damage reduced"); }));
+  }
   if(id==="spreading_spores"){
     var cube = haloOfSporesDie(c);
     buttons.push(rollButton(makeDicesSvg(), "Spores 2d" + cube, function(){ performRoll(cube, 2, 0, "none", "Spreading Spores (necrotic, CON save)"); }));
