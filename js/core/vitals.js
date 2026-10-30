@@ -16,6 +16,7 @@ import { halfProficiency, checkAbility } from "./checks.js";
 import { findSubclass, classFeatureList } from "./class-features.js";
 import { effectOn, bladesongBonus, wildSurgeNow } from "./effects.js";
 import { twilightShroud } from "./cleric.js";
+import { wildForm, wildShapeSpeeds, wildShapeArmorClass, wildShapeSenses, incarnationAc } from "./druid.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
 import { infusionSpeedParts } from "./infusion-effects.js";
@@ -46,6 +47,7 @@ export function raceHpBonus(c){
 /* An item that raises Constitution (an Amulet of Health) raises the hit
    point maximum by the change in modifier for every level. */
 export function itemConHpBonus(c){
+  if(c.wildShape) return 0; // (the form's CON, not an item's)
   var gain = mod(abilityScore(c, "con")) - mod(baseScore(c, "con"));
   return gain > 0 ? gain * totalLevel(c) : 0;
 }
@@ -60,6 +62,7 @@ export function hpBonuses(c){
 }
 /* The hit point maximum, halved (rounded down) from exhaustion level 4. */
 export function maxHp(c){
+  if(c.wildShape) return c.wildShape.max;
   var full = fullMaxHp(c);
   return hpMaxHalved(c) ? Math.max(1, Math.floor(full / 2)) : full;
 }
@@ -148,8 +151,11 @@ export function computeSpeed(c){
   });
   var strReq = armorStrengthShortfall(c, body);
   if(strReq) parts.push({name: body.name || "Heavy armor", value: -10, why: "needs STR " + strReq});
+  // Wild Shape: the form's speeds, plus what your features still add.
+  var form = wildForm(c);
+  if(form) parts = parts.filter(function(p){ return p.value > 0; });
   var mobile = parts.reduce(function(a, p){ return a + p.value; }, 0);
-  var walk = Math.max(0, (Number(c.speed)||0) + mobile);
+  var walk = Math.max(0, (form ? form.speed.walk||0 : Number(c.speed)||0) + mobile);
   var list = [], bonus = {};
   var race = RACE_DATA[c.race];
   var rs = race && race.speed || {};
@@ -166,7 +172,8 @@ export function computeSpeed(c){
       if(sp.bonus){ bonus[sp.type] = (bonus[sp.type]||0) + sp.bonus; return; }
       var value = sp.value==="walk" ? walk : sp.value==="2walk" ? 2 * walk : sp.value;
       // (`effect`: no longer conditional while that effect is on.)
-      list.push({type: sp.type, value: value, when: sp.effect && effectOn(c, sp.effect) ? "" : sp.when || "", source: f.name});
+      var live = sp.effect && effectOn(c, sp.effect) && (!sp.choice || c.effects[sp.effect]===sp.choice);
+      list.push({type: sp.type, value: value, when: live ? "" : sp.when || "", source: f.name});
     });
   });
   list.forEach(function(o){ if(bonus[o.type]) o.value += bonus[o.type]; });
@@ -180,6 +187,7 @@ export function computeSpeed(c){
   var others = always.concat(list.filter(function(o){
     return o.when && !always.some(function(a){ return a.type===o.type && a.value >= o.value; });
   }));
+  if(form) others = wildShapeSpeeds(form);
   // Grappled, restrained or unable to move: 0, bonuses and all. Exhaustion
   // 2 halves every speed (rounded down), 5 takes it to 0.
   // In a tortle's shell, or after Steady Aim: 0, and it can't increase.
@@ -196,6 +204,8 @@ export function computeSpeed(c){
    manual number, with Barbarian/Monk Unarmored Defense honored when no
    body armor is equipped. c.acMisc covers anything else (rings, feats). */
 export function computeArmorClass(c){
+  var shape = wildShapeArmorClass(c);
+  if(shape) return shape;
   var dexMod = mod(abilityScore(c, "dex"));
   var items = (c.inventory||[]).filter(function(i){ return i.type==="armor" && i.equipped; });
   var bodyArmor = items.find(function(i){ return i.category!=="shield"; });
@@ -310,6 +320,8 @@ export function computeArmorClass(c){
   if(surge && surge.ac){
     base += surge.ac; breakdown += " + Wild Surge (" + fmtMod(surge.ac) + ")"; short += " + Wild Surge";
   }
+  var corrupt = incarnationAc(c);
+  if(corrupt){ base += corrupt; breakdown += " + Incarnation of Corruption (+2)"; short += " + Incarnation"; }
   // A magic item's boon (Duality's angel side: +1 AC for 10 minutes).
   var coinAc = coinAcBonus(c);
   if(coinAc){ base += coinAc; breakdown += " + Duality (" + fmtMod(coinAc) + ")"; short += " + Duality"; }
@@ -425,6 +437,7 @@ export function computeDarkvision(c){
   return {range: range, sources: sources};
 }
 export function getCharacterSenses(c){
+  if(c.wildShape) return wildShapeSenses(c);
   var dv = computeDarkvision(c);
   // (A class feature's own sense too: a rogue's Blindsense.)
   var extra = styleSenses(c).concat(invocationSenses(c));

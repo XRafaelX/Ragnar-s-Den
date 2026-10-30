@@ -19,6 +19,9 @@
    slotPick: the player picks a spell slot to pay with (Primeval Awareness).
    replacedBy: a Tasha's feature that replaces it (the entry using that loses it).
    option: {set, name}, only with that class option known (Hunter's picks).
+   choose: {placeholder, options}, started by picking one, which is kept
+     as the effect's value (Starry Form's constellation, Spirit Totem's spirit).
+   staysUp: dropping to 0 HP doesn't end it (the wildfire spirit).
    duration: shown on the card.
    hint: what it does, kept short; the card adds the worked-out numbers. */
 export var TOGGLE_EFFECTS = [
@@ -37,6 +40,29 @@ export var TOGGLE_EFFECTS = [
   {id:"symbiotic_entity", name:"Symbiotic Entity", className:"Druid", subclass:"Circle of Spores", level:2,
     cost:{resource:"wild_shape", amount:1}, duration:"10 minutes",
     hint:"Ends early when these temporary hit points are gone or you use Wild Shape again."},
+  // Tasha's Cauldron (pp. 36-39), checked on 5etools' data 2026-10-30.
+  {id:"spreading_spores", name:"Spreading Spores", className:"Druid", subclass:"Circle of Spores", level:10,
+    duration:"1 minute", requires:["symbiotic_entity"], startLabel:"Hurl",
+    hint:"Bonus action: a 10-foot cube within 30 ft. It ends early if you hurl it again, dismiss it as a bonus action or Symbiotic Entity ends."},
+  {id:"starry_form", name:"Starry Form", className:"Druid", subclass:"Circle of Stars", level:2,
+    cost:{resource:"wild_shape", amount:1}, duration:"10 minutes", endsIncapacitated:true,
+    choose:{placeholder:"Choose a constellation...", options:["Archer", "Chalice", "Dragon"]},
+    hint:"Bonus action instead of a beast form. You keep your statistics and shed bright light for 10 ft and dim light for 10 ft more. It ends early if you dismiss it or are incapacitated."},
+  {id:"wildfire_spirit", name:"Wildfire Spirit", className:"Druid", subclass:"Circle of Wildfire", level:2,
+    cost:{resource:"wild_shape", amount:1}, duration:"1 hour", staysUp:true, startLabel:"Summon", endLabel:"Dismiss",
+    hint:"Action instead of a beast form, within 30 ft. It ends early at 0 hit points, if you summon it again or if you die. Its stats are on the Companions tab."},
+  // Xanathar's Guide (pp. 22-23), checked on 5etools' data 2026-10-30.
+  {id:"hearth_of_moonlight", name:"Hearth of Moonlight and Shadow", className:"Druid", subclass:"Circle of Dreams", level:6,
+    duration:"Until the rest ends",
+    hint:"At the start of a short or long rest, a 30-ft sphere around a point you touch. Cover blocks it, and it ends if you leave it. Light from open flames in it can't be seen outside."},
+  {id:"spirit_totem", name:"Spirit Totem", className:"Druid", subclass:"Circle of the Shepherd", level:2,
+    cost:{resource:"spirit_totem", amount:1}, duration:"1 minute", endsIncapacitated:true,
+    choose:{placeholder:"Summon a spirit...", options:["Bear", "Hawk", "Unicorn"]},
+    hint:"Bonus action: a 30-ft aura around a point within 60 ft. A bonus action moves it up to 60 ft. Ends early if you are incapacitated."},
+  // Tal'Dorei Reborn (p. 172), checked on the book's scan 2026-10-30.
+  {id:"defile_ground", name:"Defile Ground", className:"Druid", subclass:"Circle of the Blighted", level:2,
+    cost:{resource:"defile_ground", amount:1}, duration:"1 minute",
+    hint:"Bonus action: centered on a point within 60 ft. A bonus action moves it up to 30 ft. Flying creatures are unaffected."},
   // Player's Handbook (p. 46), checked on 5etools' data 2026-10-29. With
   // Reckless Abandon (Battlerager 6) it gives temporary HP while raging.
   {id:"reckless_attack", name:"Reckless Attack", className:"Barbarian", level:2, duration:"Until your next turn",

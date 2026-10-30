@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
+import { druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -101,8 +101,27 @@ function effectRow(c, e){
     if(!e.why) info.appendChild(slotPicker(c, def));
     return row;
   }
+  // Starry Form, Spirit Totem: picking one starts it.
+  if(def.choose && !e.on){
+    if(!e.why) info.appendChild(choicePicker(c, def, false));
+    return row;
+  }
+  // Twinkling Constellations: another constellation at the start of a turn.
+  if(def.id==="starry_form" && e.on && canChangeConstellation(c)) info.appendChild(choicePicker(c, def, true));
   row.appendChild(ctrl);
   return row;
+}
+function choicePicker(c, def, on){
+  var wrap = document.createElement("div");
+  wrap.className = "res-pick";
+  wrap.appendChild(themedPicker({key: "effect:" + def.id, groups: {"": def.choose.options}, value: on ? c.effects[def.id] : "", placeholder: def.choose.placeholder, ariaLabel: def.name + ": choose",
+    onPick: function(v){
+      if(on) c.effects[def.id] = v;
+      else if(!startEffect(c, def.id, v)) return;
+      logRoll(def.name, v + ".");
+      save(); renderAll();
+    }}));
+  return wrap;
 }
 function slotPicker(c, def){
   var wrap = document.createElement("div");
@@ -145,7 +164,33 @@ function effectSummary(c, id){
   if(id==="awakened_astral_self") return "+2 AC (Armor of the Spirit)";
   if(id==="symbiotic_entity"){
     var halo = haloOfSporesDie(c);
-    return "+" + symbioticTempHp(c) + " temporary HP · Halo of Spores 2d" + halo + " necrotic · melee weapon attacks +1d6 poison";
+    return "+" + symbioticTempHp(c) + " temporary HP · Halo of Spores 2d" + halo + " necrotic · melee weapon attacks +1d6 necrotic";
+  }
+  if(id==="spreading_spores") return "A creature entering the cube or starting its turn there: CON save DC " + druidDc(c) + " or your Halo of Spores damage, once per turn · no Halo of Spores reaction while it lasts";
+  if(id==="starry_form"){
+    var star = c.effects && c.effects.starry_form, wisMod = mod(abilityScore(c, "wis")), dice = starryDice(c) + "d8" + fmtMod(wisMod);
+    var stars = star==="Archer" ? ["A luminous arrow as you start and as a bonus action on later turns, 60 ft, " + dice + " radiant"]
+      : star==="Chalice" ? ["A healing spell with a slot: you or a creature within 30 ft also regains " + dice + " hit points"]
+      : star==="Dragon" ? ["A d20 of 9 or lower counts as a 10 on INT and WIS checks and CON saves to keep concentration"].concat(canChangeConstellation(c) ? ["Fly 20 ft and hover"] : [])
+      : ["Archer, Chalice or Dragon"];
+    if(star && canChangeConstellation(c)) stars.push("You can change it at the start of each turn");
+    if(star && classLevelOf(c, "Druid", "Circle of Stars") >= 14) stars.push("Resistance to bludgeoning, piercing and slashing");
+    return stars.join(" · ");
+  }
+  if(id==="wildfire_spirit") return "On arrival, each creature within 10 ft of it but you: DEX save DC " + druidDc(c) + " or 2d6 fire" + (classLevelOf(c, "Druid", "Circle of Wildfire") >= 6 ? " · Enhanced Bond: +1d8 to one roll of a fire or healing spell, which can start from the spirit" : "");
+  if(id==="hearth_of_moonlight") return "+5 to Stealth and Perception in the sphere, for you and your allies";
+  if(id==="spirit_totem"){
+    var spirit = c.effects && c.effects.spirit_totem, shepherd = classLevelOf(c, "Druid", "Circle of the Shepherd");
+    var aura = spirit==="Bear" ? ["Creatures you choose in the aura as it appears: +" + (5 + shepherd) + " temporary HP", "Advantage on STR checks and saves in the aura, for you and your allies"]
+      : spirit==="Hawk" ? ["Reaction: advantage on an attack roll against a target in the aura", "Advantage on Perception in the aura, for you and your allies"]
+      : spirit==="Unicorn" ? ["Advantage on checks to detect creatures in the aura", "A healing spell with a slot: creatures you choose in the aura regain " + shepherd + " hit points"]
+      : ["Bear, Hawk or Unicorn"];
+    if(spirit && shepherd >= 10) aura.push("Guardian Spirit: your summoned beasts and fey that end their turn in it regain " + Math.floor(shepherd / 2) + " hit points");
+    return aura.join(" · ");
+  }
+  if(id==="defile_ground"){
+    var defile = defileGround(c);
+    return defile.radius + "-ft radius · difficult terrain for hostile creatures · +1d" + defile.die + " necrotic the first time on a turn a creature in it takes damage from an attack or spell";
   }
   if(id==="shell_defense") return "+4 AC · advantage on STR and CON saves · disadvantage on DEX saves · speed 0";
   if(id==="chromatic_warding"){
@@ -219,7 +264,7 @@ function hasSongOfVictory(c){
 
 /* Roll buttons for what the effect adds that has no weapon card of its
    own: the astral arms' strikes, the Halo of Spores. (Symbiotic Entity's
-   1d6 poison sits on each melee weapon's card.) */
+   1d6 necrotic sits on each melee weapon's card.) */
 function appendRolls(c, id, info){
   var buttons = [];
   if(id==="astral_arms"){
@@ -284,6 +329,46 @@ function appendRolls(c, id, info){
   if(id==="symbiotic_entity"){
     var halo = haloOfSporesDie(c);
     buttons.push(rollButton(makeDicesSvg(), "Halo 2d" + halo, function(){ performRoll(halo, 2, 0, "none", "Halo of Spores (necrotic, CON save)"); }));
+  }
+  if(id==="spreading_spores"){
+    var cube = haloOfSporesDie(c);
+    buttons.push(rollButton(makeDicesSvg(), "Spores 2d" + cube, function(){ performRoll(cube, 2, 0, "none", "Spreading Spores (necrotic, CON save)"); }));
+  }
+  if(id==="starry_form"){
+    var constellation = c.effects.starry_form, n = starryDice(c), wis2 = mod(abilityScore(c, "wis")), starText = n + "d8" + fmtMod(wis2);
+    if(constellation==="Archer"){
+      var arrow = druidSpellAttack(c), arrowRoll = plainAttackRollMode(c);
+      var arrowBtn = rollButton(makeDiceSvg(), "Arrow " + fmtMod(arrow) + (arrowRoll.mode==="dis" ? " (Dis)" : arrowRoll.mode==="adv" ? " (Adv)" : ""), function(){ rollAttack(c, arrow, arrowRoll.mode, "Starry Form: luminous arrow", {qty: n, die: 8, bonus: wis2, label: "Luminous arrow (Radiant)"}); });
+      if(arrowRoll.reason) arrowBtn.title = arrowRoll.reason;
+      buttons.push(arrowBtn);
+      buttons.push(rollButton(makeDicesSvg(), "Radiant " + starText, function(){ performRoll(8, n, wis2, "none", "Luminous arrow (Radiant)"); }));
+    }
+    if(constellation==="Chalice") buttons.push(rollButton(makeDicesSvg(), "Heal " + starText, function(){
+      performRoll(8, n, wis2, "none", "Chalice: hit points regained", function(r){
+        if(!r) return null;
+        return {lead: "For a creature within 30 ft, or:", options: [{label: "Heal yourself " + r.total, title: "You regain these hit points",
+          use: function(){ c.hp.current = Math.min(maxHp(c), (Number(c.hp.current)||0) + r.total); save(); renderAll(); return {silent: true}; }}]};
+      });
+    }));
+  }
+  if(id==="wildfire_spirit"){
+    buttons.push(rollButton(makeDicesSvg(), "Arrival 2d6", function(){ performRoll(6, 2, 0, "none", "Wildfire Spirit: arrival (fire, DEX save)"); }));
+    if(hasEnhancedBond(c)) buttons.push(rollButton(makeDicesSvg(), "Enhanced Bond 1d8", function(){ performRoll(8, 1, 0, "none", "Enhanced Bond"); }));
+  }
+  if(id==="defile_ground"){
+    var blight = defileGround(c);
+    buttons.push(rollButton(makeDicesSvg(), "+1d" + blight.die + " necrotic", function(){ performRoll(blight.die, 1, 0, "none", "Defile Ground (necrotic)"); }));
+    // Incarnation of Corruption (Blighted 14): a bonus action, if your turn started in it.
+    if(classLevelOf(c, "Druid", "Circle of the Blighted") >= 14){
+      var pb = profBonus(c);
+      var corrupt = rollButton("", "Temp HP " + pb, function(){
+        if(pb > (Number(c.hp.temp)||0)) c.hp.temp = pb;
+        logRoll("Incarnation of Corruption", "Temporary hit points: " + c.hp.temp + ".");
+        save(); renderAll();
+      });
+      corrupt.title = "Bonus action, when you start your turn inside the area";
+      buttons.push(corrupt);
+    }
   }
   if(!buttons.length) return;
   var row = document.createElement("div");

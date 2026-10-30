@@ -220,6 +220,21 @@ export var COMPANIONS = [
         traits:[{name:"Call of the Shadowseeds", text:"Your reaction raises it next to a creature that takes damage in your Defile Ground. It attacks at once, then obeys your verbal commands on your turn. It lasts until 0 HP, your long rest, or you summon another. It understands your languages."}]
       };
     }},
+  // Tasha's Cauldron (p. 36) with the Monster Manual's zombie, at 1 hit point.
+  {id:"fungal_zombie", name:"Fungal Zombie", cls:"Druid", subclass:"Circle of Spores", level:6,
+    stats:function(){
+      return {
+        type:"Medium undead", ac:8, hp:1, speed:"20 ft",
+        abilities:{str:13, dex:6, con:16, int:3, wis:6, cha:5},
+        senses:"darkvision 60 ft, passive Perception 8", immunities:"poison damage · poisoned",
+        attacks:[{name:"Slam", toHit:3, dice:"1d6", bonus:1, damageType:"bludgeoning", text:"Melee, reach 5 ft, one target."}],
+        actions:[],
+        traits:[
+          {name:"Your turn", text:"It acts right after you, obeys your mental commands, and can only take the Attack action, making one melee attack. It collapses and dies after 1 hour."},
+          {name:"Undead Fortitude", text:"If damage reduces it to 0 hit points, it makes a CON save with DC 5 + the damage taken, unless the damage is radiant or from a critical hit. On a success it drops to 1 hit point instead."}
+        ]
+      };
+    }},
   {id:"beast_companion", name:"Ranger's Companion", cls:"Ranger", subclass:"Beast Master", level:3,
     // Tasha's Primal Companion (three fixed beasts) or the PHB companion (your own beast).
     choice:{label:"Companion", options:["Beast of the Land","Beast of the Sea","Beast of the Sky","Your own beast"]},

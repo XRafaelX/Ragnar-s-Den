@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
-import { computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource } from "../../core/helpers.js";
+import { blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource } from "../../core/helpers.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playDiceRattle, playDeathSaveSuccess, playDeathSaveFail, playStabilized, playDeath, playRevive } from "../../ui/sound.js";
 
@@ -112,6 +112,37 @@ export function renderDeathSaves(c){
   // Mastery of Death (Way of Long Death 11): 1 ki for 1 hit point instead.
   if(classLevelOf(c, "Monk", "Way of Long Death") >= 11 && !dead){
     box.appendChild(backToOne(c, "ds-mastery", "Mastery of Death · 1 ki", kiLeft(c) >= 1, "No ki left", function(){ return spendKi(c, 1); }, "1 hit point instead of 0 (1 ki)."));
+  }
+  // Blazing Revival (Wildfire 14): the spirit drops to 0 and you rise with half your hit points.
+  if(blazingRevivalReady(c) && !dead){
+    var revive = document.createElement("button");
+    revive.type = "button"; revive.className = "btn small primary ds-revival";
+    revive.textContent = "Blazing Revival";
+    revive.title = "Your wildfire spirit drops to 0 hit points if it's within 120 feet: regain half your hit points and rise to your feet";
+    revive.addEventListener("click", function(e){
+      e.stopPropagation();
+      if(!useBlazingRevival(c, maxHp(c))) return;
+      removeCondition(c, "prone");
+      logRoll("Blazing Revival", "Your spirit fell. You rise with " + c.hp.current + " hit points.");
+      playRevive();
+      save(); renderSidebar(); renderAll();
+    });
+    box.appendChild(revive);
+  }
+  // Faithful Summons (Shepherd 14): four beasts protect you.
+  if(faithfulSummonsReady(c) && !dead){
+    var summons = document.createElement("button");
+    summons.type = "button"; summons.className = "btn small primary ds-summons";
+    summons.textContent = "Faithful Summons";
+    summons.title = "Four beasts of challenge rating 2 or lower appear within 20 feet and protect you for 1 hour, with no concentration";
+    summons.addEventListener("click", function(e){
+      e.stopPropagation();
+      if(!spendResource(c, "Druid:faithful_summons", 1)) return;
+      logRoll("Faithful Summons", "Four beasts of CR 2 or lower appear within 20 feet and protect you for 1 hour.");
+      showActionToast("Four beasts come to protect you.");
+      save(); renderSidebar(); renderAll();
+    });
+    box.appendChild(summons);
   }
   // Undying Sentinel (Oath of the Ancients 15): 1 hit point instead, once per long rest.
   if(classLevelOf(c, "Paladin", "Oath of the Ancients") >= 15 && !dead){

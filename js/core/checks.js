@@ -9,6 +9,7 @@ import { barbarianClassEntry } from "./character-resources.js";
 import { classFeatureList } from "./class-features.js";
 import { effectOn, effectRolls, weaponAttackEffect } from "./effects.js";
 import { otherworldlyGlamour } from "./ranger.js";
+import { wildForm, wildShapeSkill, totemSpirit } from "./druid.js";
 import { optionEffects } from "./class-options.js";
 import { weaponAbility, armorPenalty, isRangedWeapon, isHeavyWeapon } from "./equipment.js";
 import { raceSize } from "./class-picks.js";
@@ -63,11 +64,15 @@ export function skillCheck(c, skill, passive){
   var entry = c.skillProfs && c.skillProfs[skill] || {};
   // Knowledge of the Ages: proficient with the chosen skill for 10 minutes.
   if(!entry.prof && c.agesSkill===skill && effectOn(c, "knowledge_of_the_ages")) entry = {prof: true, expertise: false};
+  // Wild Shape: you gain the form's proficiencies, and its bonus counts if it's higher.
+  var formBonus = wildShapeSkill(c, skill);
+  if(!entry.prof && formBonus!==null) entry = {prof: true, expertise: false};
   var pb = profBonus(c);
   var value = ab.mod, breakdown = ab.label + " (" + fmtMod(ab.mod) + ")";
   // Emissary of Peace: +5 to Persuasion. Hide in Plain Sight: +10 to Stealth.
   var effectBonus = skill==="Persuasion" && effectOn(c, "emissary_of_peace") ? {name: "Emissary of Peace", value: 5}
-    : skill==="Stealth" && effectOn(c, "hide_in_plain_sight") ? {name: "Hide in Plain Sight", value: 10} : null;
+    : skill==="Stealth" && effectOn(c, "hide_in_plain_sight") ? {name: "Hide in Plain Sight", value: 10}
+    : (skill==="Stealth" || skill==="Perception") && effectOn(c, "hearth_of_moonlight") ? {name: "Hearth of Moonlight and Shadow", value: 5} : null;
   // Features that double the proficiency bonus for this skill (Royal Envoy's Persuasion).
   var doubled = featureSkillFlags(c, "skillDouble").find(function(x){ return x.value===skill; });
   if(entry.prof){
@@ -87,6 +92,7 @@ export function skillCheck(c, skill, passive){
     var m = mod(abilityScore(c, x.value.ability));
     value += m; breakdown += " + " + x.name + " (" + fmtMod(m) + ")";
   });
+  if(formBonus!==null && formBonus > value){ value = formBonus; breakdown = wildForm(c).name + "'s bonus (" + fmtMod(formBonus) + ")"; }
   return {value: value, label: ab.label, breakdown: breakdown, roll: skillRollMode(c, skill, passive)};
 }
 /* Class features carrying a skill flag: [{name, value}]. */
@@ -184,6 +190,10 @@ export function advantagesFor(c){
   if(effectOn(c, "watchers_will")) out.push({name: "Watcher's Will", on: "save", abilities: ["int", "wis", "cha"]});
   if(effectOn(c, "exalted_champion")) out.push({name: "Exalted Champion", on: "save", abilities: ["wis"]});
   if(effectOn(c, "living_legend")) out.push({name: "Living Legend", on: "check", abilities: ["cha"]});
+  // Spirit Totem: only inside the aura, so these are reminders.
+  var spirit = totemSpirit(c);
+  if(spirit==="Bear") out.push({name: "Bear Spirit", on: "save", abilities: ["str"], when: "in the aura"}, {name: "Bear Spirit", on: "skill", skills: ["Athletics"], when: "in the aura"});
+  if(spirit==="Hawk") out.push({name: "Hawk Spirit", on: "skill", skills: ["Perception"], when: "in the aura"});
   return out;
 }
 function covers(a, on, key){ return a.on===on && (on==="initiative" || a.abilities==="all" || a.abilities.indexOf(key)!==-1); }

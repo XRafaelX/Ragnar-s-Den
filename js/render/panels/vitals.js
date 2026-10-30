@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn } from "../../core/helpers.js";
+import { wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -17,6 +17,7 @@ import { useNextCheck, magicItemsOnLongRest, endTimedBoons, coinResistances } fr
 import { infusionResistances } from "../../core/infusion-effects.js";
 import { renderDeathSaves } from "./death-saves.js";
 import { renderEffectsCard } from "./effects.js";
+import { renderWildShapeCard, druidResourceRow } from "./druid.js";
 import { renderConditionsButton, renderConditionsStrip, longRestConditionsChoice } from "./conditions.js";
 import { openPrepareSheet } from "./spells.js";
 import { preparedState } from "../../core/spells-known.js";
@@ -78,6 +79,7 @@ export function renderVitalsPanel(c){
   var hpBox = document.createElement("div");
   hpBox.className = "vital-box hp-vital-box";
   hpBox.innerHTML = '<div class="lbl">Hit Points</div>';
+  if(c.wildShape) hpBox.querySelector(".lbl").textContent = c.wildShape.form + " hit points";
 
   // HP fill bar: set the CSS variable so the ::before pseudo-element
   // knows how wide the fill should be. Clamp to [0,100]% and flag low HP.
@@ -126,6 +128,13 @@ export function renderVitalsPanel(c){
       c.hp.temp = temp - absorbed;
       n -= absorbed;
     }
+    // Wild Shape: the form takes it. At 0 hit points you turn back, and
+    // what's left carries over.
+    if(c.wildShape){
+      n = wildShapeDamage(c, n);
+      if(n < 0){ save(); renderSidebar(); renderAll(); flashHpNum("hp-dmg"); return; }
+      showActionToast(n ? "You turn back, and " + n + " damage carries over." : "You turn back to your own shape.");
+    }
     var wasUp = (Number(c.hp.current)||0) > 0;
     c.hp.current = Math.max(0, (Number(c.hp.current)||0) - n);
     var wentDown = wasUp && c.hp.current === 0;
@@ -134,7 +143,7 @@ export function renderVitalsPanel(c){
     if(wentDown){
       c.deathSaves = {success:0, fail:0};
       delete c.extraTurn; // a new fall: Strength Before Death can be used again (if a use is left)
-      if(!rageAtZero(c)){ endAllEffects(c); addCondition(c, "prone"); }
+      if(!rageAtZero(c)){ endAllEffects(c, true); addCondition(c, "prone"); }
     }
     save(); renderSidebar(); renderAll();
     flashHpNum("hp-dmg");
@@ -731,6 +740,7 @@ export function renderVitalsPanel(c){
         (exhaustionLevel(c) && exhaustionLevel(c) < 6 ? " One level of exhaustion goes too, if you've had food and drink." : "")+
         (preparesSpells(c) ? " Afterwards you can choose today's prepared spells." : ""),
       function(){
+        endWildShape(c); // Sleep ends a form: it ends if you fall unconscious.
         var before = resourceUse(c);
         var ragesBefore = c.rage.used || 0;
         var hpBefore = Number(c.hp.current) || 0;
@@ -761,12 +771,14 @@ export function renderVitalsPanel(c){
         restoreResources(c, "long");
         forgeOnLongRest(c);
         interventionOnLongRest(c);
+        var omen = omenOnLongRest(c);
         restoreCompanions(c);
         var elixirs = elixirsOnLongRest(c);
         logRoll("Long rest taken", "HP and spell slots restored. "+recovered+" hit dice recovered."+
           (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : "")+
           (items.recharged.length ? " Recharged: "+items.recharged.join(", ")+"." : "")+
           (items.ended.length ? " Ended: "+items.ended.join(", ")+"." : "")+
+          (omen ? " Cosmic Omen: " + omen + "." : "")+
           (exhaustionNow!==null ? " Exhaustion down to level "+exhaustionNow+" (with food and drink)." : "")+
           (conditionsEnded.length ? " Conditions ended: "+conditionsEnded.join(", ")+"." : ""));
         save(); renderAll();
@@ -791,6 +803,8 @@ export function renderVitalsPanel(c){
 
   var barbClass = barbarianClassEntry(c);
   if(barbClass) panel.appendChild(renderRageCard(c, barbClass));
+
+  if(c.wildShape) panel.appendChild(renderWildShapeCard(c));
 
   var effectsCard = renderEffectsCard(c);
   if(effectsCard) panel.appendChild(effectsCard);
@@ -1326,6 +1340,8 @@ function renderResourcesCard(c, resources){
     if(r.key==="Paladin:lay_on_hands") info.appendChild(layOnHandsRow(c));
     var gunRow = gunslingerResourceRow(c, r); // Quick Patch, Honed Instinct
     if(gunRow) info.appendChild(gunRow);
+    var druidRow = druidResourceRow(c, r); // Wild Shape, Natural Recovery, Cosmic Omen, Balm
+    if(druidRow) info.appendChild(druidRow);
     // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
     // plus the proficiency bonus of healing.
     var qh = r.key==="Monk:ki" && quickenedHealing(c);

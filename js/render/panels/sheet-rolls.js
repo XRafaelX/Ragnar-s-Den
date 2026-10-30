@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
 import { useNextCheck } from "../../core/magic-items.js";
@@ -75,13 +75,14 @@ export function rollCheck(c, bonus, mode, label, ability, opts){
   opts = opts || {};
   var might = ability==="str" ? indomitableMight(c) : 0;
   var reliable = opts.proficient && reliableTalent(c);
+  var dragon = (ability==="int" || ability==="wis") && starryDragon(c);
   opts.mode = mode; // (Intuition needs no disadvantage.)
   performRoll(20, 1, bonus, mode, label, {
     followUp: function(r){ return checkFollowUp(c, r, opts); },
-    adjust: might || reliable ? function(r){
+    adjust: might || reliable || dragon ? function(r){
       var total = r.total, notes = [];
       // Reliable Talent: a d20 of 9 or lower counts as a 10.
-      if(reliable && r.natural!=null && r.natural < 10){ total += 10 - r.natural; notes.push("Reliable Talent"); }
+      if((reliable || dragon) && r.natural!=null && r.natural < 10){ total += 10 - r.natural; notes.push(reliable ? "Reliable Talent" : "Starry Form: Dragon"); }
       if(might && total < might){ total = might; notes.push("Indomitable Might"); }
       return notes.length ? {total: total, note: notes.join(", ")} : null;
     } : null
@@ -153,7 +154,8 @@ function checkFollowUp(c, r, opts){
 export function rollSave(c, bonus, mode, label, ability){
   var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c), will = resourceLeft(c, "Gunslinger:willpower") > 0;
   var oath = livingLegendOn(c) || hasSupernaturalDefense(c) || effectOn(c, "emboldening_bond") || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
-  performRoll(20, 1, bonus, mode, label, fanatic || indom || diamond || oath || will ? function(r){ return saveFollowUp(c, ability, r); } : null);
+  var dragon = ability==="con" && starryDragon(c);
+  performRoll(20, 1, bonus, mode, label, fanatic || indom || diamond || oath || will || dragon ? function(r){ return saveFollowUp(c, ability, r); } : null);
 }
 /* After a save: Fanatical Focus (once per rage) and Indomitable (a use;
    a Banneret's Bulwark lets an ally who failed the same INT, WIS or CHA
@@ -206,8 +208,14 @@ function saveFollowUp(c, ability, r){
     opts.push({label: "Saved? Vigilant Rebuke 2d8" + fmtMod(rebuke), title: "Your reaction: force damage to the creature that forced the save",
       use: function(){ performRoll(8, 2, rebuke, "none", "Vigilant Rebuke (Force)"); return {silent: true}; }});
   }
+  // The Dragon (Starry Form): a low d20 counts as a 10 to keep concentration.
+  if(ability==="con" && starryDragon(c) && (!r || (r.natural!=null && r.natural < 10))){
+    opts.unshift({label: "Concentration: count the d20 as 10", title: "Starry Form, Dragon: a roll of 9 or lower counts as a 10 on a Constitution save to keep concentration",
+      use: function(){ return r ? {bonus: 10 - r.natural, log: "Starry Form: Dragon"} : null; }});
+    failed = opts.length;
+  }
   if(!opts.length) return null;
-  return failed ? {lead: "Failed?", hint: "Failed? Tap to reroll.", options: opts} : {lead: "", hint: "Saved? Tap for Vigilant Rebuke.", options: opts};
+  return failed ? {lead: "Failed?", hint: "Failed? Tap for options.", options: opts} : {lead: "", hint: "Saved? Tap for Vigilant Rebuke.", options: opts};
 }
 /* Diamond Soul (monk 14): a ki point left to reroll a failed save. */
 function hasDiamondSoul(c){
@@ -385,7 +393,7 @@ function criticalHit(c, hit){
   if(hit.melee && hasImprovedSmite(c) && hit.item) extra.push({label: "Improved Divine Smite 2d8", title: "On a critical hit, its die is doubled too",
     use: function(){ performRoll(8, 2, 0, "none", hit.label + ": Improved Divine Smite (critical)"); return {silent: true}; }});
   // The dice a ranger's or cleric's hit adds are doubled too.
-  rangerHitDice(c).concat(clericHitDice(c), gunslingerHitDice(c, hit.item)).filter(function(d){ return hit.item || d.unarmed; }).forEach(function(d){
+  rangerHitDice(c).concat(clericHitDice(c), gunslingerHitDice(c, hit.item), druidHitDice(c, hit.melee)).filter(function(d){ return hit.item || d.unarmed; }).forEach(function(d){
     extra.push({label: d.name + " " + 2 * d.qty + "d" + d.die, title: "On a critical hit, these dice are doubled too",
       use: function(){ performRoll(d.die, 2 * d.qty, 0, "none", hit.label + ": " + d.label + " (critical)"); return {silent: true}; }});
   });

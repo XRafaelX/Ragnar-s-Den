@@ -6,6 +6,7 @@
    (vitals.js), the saves card's automatic failures. A character at 0 HP
    is unconscious without it being stored, so healing wakes them. */
 import { CONDITIONS } from "../data/conditions.js";
+import { endWildShape } from "./druid.js";
 
 export function conditionDef(id){
   return CONDITIONS.find(function(d){ return d.id===id; });
@@ -55,6 +56,7 @@ export function hasCondition(c, id){
 export function addCondition(c, id){
   if(!conditionDef(id)) return [];
   if(!Array.isArray(c.conditions)) c.conditions = [];
+  if(id==="unconscious") endWildShape(c); // Wild Shape ends if you fall unconscious.
   var added = [];
   [id].concat(id==="unconscious" ? ["prone"] : []).forEach(function(x){
     if(c.conditions.indexOf(x)===-1){ c.conditions.push(x); added.push(x); }

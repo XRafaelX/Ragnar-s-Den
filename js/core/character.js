@@ -6,6 +6,8 @@ import { currentSpellSummary, currentSpellRange } from "../data/spells.js";
 import { syncInfusions } from "./artificer.js";
 import { syncClassPicks, migrateClassPicks, migrateRacePicks } from "./class-picks.js";
 import { characterCompanions } from "./companions.js";
+import { endWildShape } from "./druid.js";
+import { wildShapeForm } from "../data/wild-shapes.js";
 
 /* ---------------- Default character ---------------- */
 export function newCharacter(name){
@@ -68,6 +70,8 @@ export function ensureShape(c){
   if(c.inspiration===undefined) c.inspiration = c.inspired ? 1 : 0;
   if(!Array.isArray(c.conditions)) c.conditions = [];
   if(c.exhaustion==null) c.exhaustion = 0;
+  // A Wild Shape form that isn't on the list any more: back to their own shape.
+  if(c.wildShape && !wildShapeForm(c.wildShape.form)) endWildShape(c);
   delete c.inspired;
   if(c.backdrop===undefined) c.backdrop = null;
   if(c.backdropPalette===undefined) c.backdropPalette = null;

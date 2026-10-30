@@ -691,6 +691,7 @@ export var SUBCLASS_RESOURCES = {
     "Circle of Wildfire": [
       {id:"cauterizing_flames", name:"Cauterizing Flames", level:10,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
+        roll:{qty:2, die:10, bonusAbility:"wis", button:"Roll", label:"Cauterizing Flames (healing or fire damage)"},
         hint:"Reaction: extinguish a spectral flame to heal or burn the creature entering it for 2d10 + WIS mod."},
       {id:"blazing_revival", name:"Blazing Revival", level:14, max:always(1), reset:always("long"),
         hint:"When you drop to 0 HP with your spirit within 120 ft: it drops to 0 HP, and you regain half your HP and stand up."}

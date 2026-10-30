@@ -5,8 +5,10 @@
    everything else: `setScore` makes a score that number unless it's
    already higher (Gauntlets of Ogre Power: STR 19, a Belt of Giant
    Strength), `raiseScore` adds to it, to a maximum of 20 (an Ioun Stone
-   of Agility's +2 DEX). Reads only data, so any module can use it. */
+   of Agility's +2 DEX). A druid's Wild Shape form replaces STR, DEX and CON
+   (c.wildShape). Reads only data, so any module can use it. */
 import { MAGIC_ITEM_DATA } from "../data/magic-items.js";
+import { wildShapeForm } from "../data/wild-shapes.js";
 
 var KEYS = ["str", "dex", "con", "int", "wis", "cha"];
 
@@ -23,7 +25,8 @@ function scoreItems(c){
 }
 /* One score in effect, and which items made it so: {score, base, sources}. */
 export function abilityScoreDetail(c, key){
-  var base = baseScore(c, key), score = base, sources = [];
+  var form = c && c.wildShape && (key==="str" || key==="dex" || key==="con") ? wildShapeForm(c.wildShape.form) : null;
+  var base = baseScore(c, key), score = form ? form[key] : base, sources = form ? [form.name] : [];
   scoreItems(c).forEach(function(x){
     var add = x.def.raiseScore && x.def.raiseScore[key];
     if(add && score < 20){ score = Math.min(20, score + add); sources.push(x.name); }

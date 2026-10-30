@@ -473,6 +473,9 @@
 .pal-ticks{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 14px;}
 .pal-tick{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;}
 .pal-sheet-list{display:flex;flex-direction:column;gap:8px;}
+.pal-sheet-head{font-weight:600;font-size:13px;margin:12px 0 4px;}
+.pal-sheet-head:empty{display:none;}
+.spell-shape-note{margin:0 0 12px;}
 .pal-sheet-btn{justify-content:center;width:100%;min-height:42px;}
 .pal-amount{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;margin:0 0 14px;}
 .hp-spirit-btn{margin-top:8px;}

@@ -10,7 +10,7 @@ import { performRoll, logRoll } from "../../dice/dice.js";
 /* ---------------- Paladin ----------------
    Divine Smite's sheet (from a melee weapon's card, or a natural 20), the
    Channel Divinity list and Lay on Hands (Vitals). */
-function sheetTop(body, title, close){
+export function sheetTop(body, title, close){
   var header = document.createElement("div");
   header.className = "bs-header";
   var name = document.createElement("div");
@@ -24,12 +24,12 @@ function sheetTop(body, title, close){
   header.appendChild(x);
   body.appendChild(header);
 }
-function lead(body, text){
+export function lead(body, text){
   var p = document.createElement("p");
   p.className = "bs-subtitle"; p.textContent = text;
   body.appendChild(p);
 }
-function sheetButton(text, onClick, disabled, title){
+export function sheetButton(text, onClick, disabled, title){
   var b = document.createElement("button");
   b.type = "button"; b.className = "btn small inv-roll-btn pal-sheet-btn";
   b.textContent = text;

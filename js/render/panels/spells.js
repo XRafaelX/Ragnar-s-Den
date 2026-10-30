@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { conduitAbility, profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities, plainAttackRollMode } from "../../core/helpers.js";
+import { wildShapeSpellNote, conduitAbility, profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities, plainAttackRollMode } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { playDelete } from "../../ui/sound.js";
@@ -17,7 +17,7 @@ import { infusionSpellAttack } from "../../core/infusion-effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner, cantripFormulas, swapCantripFormula } from "../../core/spells-known.js";
 import { PREPARED_CASTERS } from "../../data/spells-known.js";
-import { spellScalingLine, spellRangeText, healingNote } from "../../core/spell-scaling.js";
+import { spellScalingLine, spellRangeText, healingNote, circleSpellNote } from "../../core/spell-scaling.js";
 import { abilityScore, abilityScores } from "../../core/ability-scores.js";
 
 
@@ -133,6 +133,7 @@ function renderSpellCard(c, sp, idx, patron, granted){
   }
   appendScaling(card, spellScalingLine(c, sp.name, sp.level||0, {pact: spellOwner(c, sp)==="Warlock", owner: spellOwner(c, sp), fixed: !!sp.arcanum}));
   appendScaling(card, healingNote(c, sp.name));
+  appendScaling(card, circleSpellNote(c, sp.name));
   if(granted && granted.note){
     var grantP = document.createElement("p");
     grantP.className = "inv-armor-note feature-spell-note";
@@ -545,6 +546,7 @@ function renderFeatureSpellCard(c, fs, canLearn){
   var fixed = fs.kind==="atwill" || fs.kind==="ritual" || (fs.kind==="free" && fs.className==="Warlock") || !!fs.limited;
   appendScaling(card, spellScalingLine(c, fs.name, fs.level, {pact: fs.className==="Warlock" && !fixed, owner: fs.className, fixed: fixed, castAt: fs.castAt}));
   appendScaling(card, healingNote(c, fs.name));
+  appendScaling(card, circleSpellNote(c, fs.name));
   if(fs.note){
     var noteP = document.createElement("p");
     noteP.className = "inv-armor-note feature-spell-note";
@@ -848,6 +850,13 @@ export function openPrepareSheet(c, onlyWithChoices){
 /* ---- Spells panel ---- */
 export function renderSpellsPanel(c){
   var panel = document.createElement("div");
+  // Wild Shape: no spells in beast form until Beast Spells.
+  var shapeNote = wildShapeSpellNote(c);
+  if(shapeNote){
+    var shapeLine = ce("div", "fx-note warn spell-shape-note");
+    shapeLine.textContent = shapeNote;
+    panel.appendChild(shapeLine);
+  }
   // Non-casters reach this tab only through a granted spell (a Shadow
   // monk's Minor Illusion), so skip the spellcasting and slot cards.
   if(characterIsCaster(c)){

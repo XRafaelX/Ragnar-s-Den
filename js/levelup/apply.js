@@ -8,6 +8,7 @@ import { MAX_LEVEL, XP_THRESHOLDS, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from ".
 import { fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus, classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots, maxHp, fullMaxHp, syncHitDice, computeSpeed, ordinal } from "../core/helpers.js";
 import { save } from "../core/state.js";
 import { syncInfusions } from "../core/artificer.js";
+import { endWildShape } from "../core/druid.js";
 import { applyLevelUpChoices, undoLevelUpChoices } from "../core/invocations.js";
 import { applyPlan, undoPlan, knownOptions } from "../core/class-options.js";
 import { makeStyleFeature } from "../core/fighting-styles.js";
@@ -56,6 +57,7 @@ function hadAnyCasting(slots, pact){
 
 export function finish(){
   var c = lu.c;
+  endWildShape(c); // (a level-up changes your own hit points)
   var t = target();
   var subName = t.needsSubclass ? chosenSubclass() : null;
   var dueChoices = dueSpellChoices();
@@ -286,6 +288,7 @@ export function undoLastLevelUp(c){
   var label = rec.className+" "+(entry ? entry.level : "");
   confirmDialog("Undo last level-up?", "This removes "+label+" and reverts the HP, ability scores, feat, fighting style, proficiencies, spells, invocations, maneuvers or Metamagic, and spell slots it gave.", function(){
     c.levelHistory.pop();
+    endWildShape(c);
     undoLearn(c, rec.learn);
     if(entry){
       if(rec.isNewClass){ revertEntryPicks(c, entry); c.classes.splice(c.classes.indexOf(entry), 1); }

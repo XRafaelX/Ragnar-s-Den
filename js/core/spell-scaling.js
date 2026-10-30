@@ -6,6 +6,7 @@ import { totalLevel, computeSpellSlots, ordinal, mod, hasFeat, hasBlessedStrikes
 import { eldritchBlastSummary } from "./invocations.js";
 import { classFeatureList } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
+import { druidDc, starryConstellation, starryDice, totemSpirit, hasEnhancedBond } from "./druid.js";
 
 var CANTRIP_STEPS = [5, 11, 17];
 
@@ -101,6 +102,27 @@ export function healingNote(c, name){
   if(life >= 6) notes.push("Blessed Healer: you regain the same when it heals someone else.");
   if(life >= 17 && dice) notes.push("Supreme Healing: use the highest number on each die.");
   if(grave >= 1 && dice) notes.push("Circle of Mortality: use the highest number on each die for a creature at 0 hit points.");
+  // Druid: what's on right now. These need a spell slot, so not a cantrip's or a free cast.
+  if(starryConstellation(c)==="Chalice"){
+    var wis = mod(abilityScore(c, "wis"));
+    notes.push("Chalice: with a spell slot, you or a creature within 30 feet also regains " + starryDice(c) + "d8" + (wis ? (wis > 0 ? "+" : "") + wis : "") + " hit points.");
+  }
+  if(totemSpirit(c)==="Unicorn") notes.push("Unicorn Spirit: with a spell slot, each creature you choose in the aura also regains " + classLevelOf(c, "Druid", "Circle of the Shepherd") + " hit points.");
+  if(hasEnhancedBond(c)) notes.push("Enhanced Bond: add a d8 to one healing roll.");
+  return notes.join(" ");
+}
+/* What a druid's circle adds to other spells, for their cards: Enhanced
+   Bond's d8 on fire damage, and what Mighty Summoner and Foul Conjuration
+   do to the beasts and fey a spell brings. */
+var SUMMON_SPELLS = ["Conjure Animals", "Conjure Woodland Beings", "Conjure Fey", "Summon Beast", "Summon Fey", "Find Familiar", "Find Steed", "Find Greater Steed"];
+export function circleSpellNote(c, name){
+  var spell = catalogSpellName((name||"").trim()), d = SPELL_DATA[spell], notes = [];
+  if(!d) return "";
+  if(hasEnhancedBond(c) && /\bfire\b[^.]*damage/i.test(d.summary)) notes.push("Enhanced Bond: add a d8 to one damage roll.");
+  if(SUMMON_SPELLS.indexOf(spell)!==-1){
+    if(classLevelOf(c, "Druid", "Circle of the Shepherd") >= 6) notes.push("Mighty Summoner: beasts and fey it brings get 2 extra hit points per Hit Die, and their natural weapons count as magical.");
+    if(classLevelOf(c, "Druid", "Circle of the Blighted") >= 10) notes.push("Foul Conjuration: beasts and fey it brings are immune to necrotic and poison damage and to being poisoned. At 0 hit points they explode, CON save DC " + druidDc(c) + ".");
+  }
   return notes.join(" ");
 }
 /* A spell's range as the character has it. Spell Sniper doubles the range

@@ -97,7 +97,14 @@ export function startEffect(c, id, slotLevel){
     c.resourcesUsed[e.resource.key] = e.resource.used + e.def.cost.amount;
   }
   if(!c.effects) c.effects = {};
-  c.effects[id] = e.def.slotPick ? slotLevel : true;
+  c.effects[id] = e.def.slotPick || e.def.choose ? slotLevel : true;
+  // Symbiotic Entity lasts until you use Wild Shape again.
+  if(id!=="symbiotic_entity" && e.def.cost && e.def.cost.resource==="wild_shape") endEffect(c, "symbiotic_entity");
+  // The Bear Spirit: 5 + druid level temporary HP (keep the higher).
+  if(id==="spirit_totem" && slotLevel==="Bear"){
+    var bear = 5 + classLevelOf(c, "Druid", "Circle of the Shepherd");
+    if(bear > (Number(c.hp.temp)||0)) c.hp.temp = bear;
+  }
   if(id==="symbiotic_entity"){
     if(!c.hp) c.hp = {max:0, current:0, temp:0};
     c.hp.temp = Math.max(Number(c.hp.temp)||0, symbioticTempHp(c));
@@ -117,11 +124,14 @@ export function endEffect(c, id){
   delete c.effects[id];
   TOGGLE_EFFECTS.forEach(function(d){ if((d.requires||[]).indexOf(id)!==-1) endEffect(c, d.id); });
 }
-/* A rest or dropping to 0 HP ends every effect, and a Barbarian's Rage.
+/* A rest or dropping to 0 HP (falling: true) ends every effect, but for
+   those that outlast you falling (`staysUp`), and a Barbarian's Rage.
    Returns the names that were on. */
-export function endAllEffects(c){
-  var ended = TOGGLE_EFFECTS.filter(function(d){ return c.effects && c.effects[d.id]; }).map(function(d){ return d.name; });
-  c.effects = {};
+export function endAllEffects(c, falling){
+  var going = TOGGLE_EFFECTS.filter(function(d){ return c.effects && c.effects[d.id] && !(falling && d.staysUp); });
+  var ended = going.map(function(d){ return d.name; });
+  going.forEach(function(d){ delete c.effects[d.id]; });
+  if(!falling) c.effects = {};
   if(c.rage && c.rage.active){ ended.push("Rage"); ended = ended.concat(endRage(c)); }
   // Sharpen the Blade lasts a minute.
   if(c.sharpen){ delete c.sharpen; ended.push("Sharpen the Blade"); }
@@ -553,6 +563,7 @@ export function effectResistances(c){
   if(effectOn(c, "empty_body")) out.push({type: "all damage but force", source: "Empty Body"});
   if(effectOn(c, "invincible_conqueror")) out.push({type: "all damage", source: "Invincible Conqueror"});
   if(effectOn(c, "exalted_champion")) out.push({type: "nonmagical bludgeoning, piercing and slashing", source: "Exalted Champion"});
+  if(effectOn(c, "starry_form") && classLevelOf(c, "Druid", "Circle of Stars") >= 14) out.push({type: "bludgeoning, piercing and slashing", source: "Full of Stars"});
   return out;
 }
 export function attackEndsEffects(c, melee){

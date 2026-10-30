@@ -5,7 +5,7 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -688,7 +688,7 @@ function deflectMissilesButton(c){
 }
 /* A ranger's or cleric's extra dice on a hit. */
 function rangerButtons(c, name, unarmed){
-  return rangerHitDice(c).concat(clericHitDice(c)).filter(function(d){ return !unarmed || d.unarmed; }).map(function(d){ return hitDieButton(name, d); });
+  return rangerHitDice(c).concat(clericHitDice(c), druidHitDice(c, unarmed)).filter(function(d){ return !unarmed || d.unarmed; }).map(function(d){ return hitDieButton(name, d); });
 }
 function hitDieButton(name, d){
   var b = document.createElement("button");
@@ -1394,17 +1394,8 @@ function renderWeaponCard(c, item, idx){
 
   if(parsed) cavalierButtons(c, item, atkBonus, atkRoll, parsed, dmgBonus).forEach(function(b){ actions.appendChild(b); });
 
-  // Symbiotic Entity: melee weapon hits deal an extra 1d6 poison.
-  if(effectOn(c, "symbiotic_entity") && !isRangedWeapon(item)){
-    var sporeBtn = document.createElement("button");
-    sporeBtn.type = "button"; sporeBtn.className = "btn small inv-roll-btn";
-    sporeBtn.innerHTML = makeDicesSvg() + "+1d6 poison";
-    sporeBtn.title = "Symbiotic Entity: extra poison damage on a hit";
-    sporeBtn.addEventListener("click", function(){
-      performRoll(6, 1, 0, "none", (item.name||"Weapon") + ": Symbiotic Entity (poison)");
-    });
-    actions.appendChild(sporeBtn);
-  }
+  // Symbiotic Entity: melee weapon hits deal an extra 1d6 necrotic.
+  druidHitDice(c, !isRangedWeapon(item)).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d)); });
 
   // Flame Tongue: a bonus action lights it while it's in hand; while it
   // burns, every hit deals extra fire damage. (Asked even when it isn't

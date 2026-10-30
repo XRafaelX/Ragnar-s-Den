@@ -439,9 +439,9 @@ function featureChip(c, cl, f){
 }
 /* The roll a feature has its own button for on its card (Vigilant
    Rebuke), worked out: {qty, die, bonus, label}, or null. */
-export function featureRoll(c, f){
+export function featureRoll(c, f, cl){
   var r = f.rollButton;
-  return r ? {qty: r.qty, die: r.die, bonus: r.ability ? mod(abilityScore(c, r.ability)) : 0, label: r.label} : null;
+  return r ? {qty: r.qty, die: r.dieAt ? r.dieAt(Number(cl.level)||1) : r.die, bonus: r.ability ? mod(abilityScore(c, r.ability)) : 0, label: r.label} : null;
 }
 export function featureDcs(c, f){
   var pb = profBonus(c);
@@ -515,7 +515,7 @@ export function getAllCharacterFeatures(c){
         source: (f.subclass ? cl.subclass : "Class · " + cl.name) + " · Lv " + f.level,
         text: f.text + (picked ? "\n\nYour picks: " + picked + "." : "") + (dcs.length ? "\n\n" + dcs.map(function(d){ return d.line; }).join("\n") : ""),
         dcs: dcs,
-        roll: featureRoll(c, f),
+        roll: featureRoll(c, f, cl),
         category: "class",
         isDerived: true
       });
