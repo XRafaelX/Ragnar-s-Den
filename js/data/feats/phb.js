@@ -357,6 +357,7 @@ export var PHB_FEATS = [
     name: "War Caster",
     source: "PHB",
     prerequisite: "The ability to cast at least one spell",
+    advantage: {on: "save", abilities: ["con"], when: "to keep concentrating on a spell when you take damage"},
     category: "Magic",
     summary: "You have advantage on saves to keep concentration when you take damage. You can cast spells with weapons or a shield in your hands, and you can cast a spell instead of making an opportunity attack.",
     description: "You have practiced casting spells in the midst of combat:\n• You have advantage on Constitution saving throws that you make to maintain your concentration on a spell when you take damage.\n• You can perform the somatic components of spells even when you have weapons or a shield in one or both hands.\n• When a hostile creature’s movement provokes an opportunity attack from you, you can use your reaction to cast a spell at the creature, rather than making an opportunity attack."

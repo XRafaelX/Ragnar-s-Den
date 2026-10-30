@@ -816,9 +816,11 @@ export var RACE_DATA = {
   /* ---- Lineages ---- */
   "Custom Lineage": {asiText:"+2 to one score of your choice", size:"Small or Medium", speed:{walk:30}, darkvision:60, darkvisionUnlessPicked:"Variable Trait",
     languages:{fixed:["Common"], choose:1}, source:"Tasha's Cauldron of Everything",
-    traits:[tr("Feat", "You gain one feat of your choice that you qualify for."),
+    traits:[tr("Size", "You are Small or Medium, your choice. Small creatures have disadvantage on attack rolls with heavy weapons.",
+        {pick:[{kind:"choice", id:"lineageSize", noun:"size", label:"Choose your size", options:["Medium","Small"]}]}),
+      tr("Feat", "You gain one feat of your choice that you qualify for."),
       tr("Variable Trait", "Choose one: darkvision with a range of 60 feet, or proficiency in one skill of your choice.",
-        {pick:[{kind:"skill", optional:true, label:"Or take a skill instead of darkvision (leave empty to keep darkvision)"}]})]},
+        {pick:[{kind:"skill", optional:true, none:"Darkvision out to 60 feet", label:"Or take a skill instead of darkvision (leave empty to keep darkvision)"}]})]},
   "Dhampir": {asiText:"+2 to one score and +1 to another, or +1 to three (your choice)", unarmed:{name:"Vampiric Bite", die:4, type:"Piercing", ability:"con"}, size:"Small or Medium", speed:{walk:35, climb:35}, darkvision:60,
     languages:{fixed:["Common"], choose:1}, source:"Van Richten's Guide to Ravenloft",
     traits:[LINEAGE_SKILLS,

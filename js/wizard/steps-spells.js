@@ -8,7 +8,7 @@ import { TITLE_MAX } from "../ui/char-title.js";
 import { SPELL_DATA, spellDataForClass, tashaAddsSpell, tashaSpellCount } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeDiceSvg } from "../ui/svg-icons.js";
-import { wizardExtraSpellTag, wizardOriginSpells, wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, wizardRaceGrants, wizardRaceSlots, wizardRaceSkills, wizardBackgroundGrants, wizardBgSlots, wizardOverlapGrants, wizardOverlapSlots } from "./wizard-core.js";
+import { wizardExtraSpellTag, wizardOriginSpells, wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, wizardRaceGrants, wizardRacePickGrants, wizardRaceSlots, wizardRaceSkills, wizardBackgroundGrants, wizardBgSlots, wizardOverlapGrants, wizardOverlapSlots } from "./wizard-core.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { featPicksSummary } from "../core/feat-picks.js";
 import { classPicksSummary } from "../core/class-picks.js";
@@ -289,6 +289,11 @@ export function wizardStepReview(container){
   (info.choices||[]).forEach(function(ch){
     var v = wizardState.classChoices[ch.id];
     row(ch.label, Array.isArray(v) ? v.join(", ") : (v || "None"));
+  });
+  // What the race's traits let you choose (a Custom Lineage's size).
+  wizardRacePickGrants().forEach(function(g){
+    var chosen = classPicksSummary(g, {slots: wizardRaceSlots(g.key)}) || ((g.def.pick||[])[0]||{}).none;
+    if(chosen) row(g.name, chosen);
   });
   var grants = subclassGrants(info, wizardState.classChoices);
   // What the subclass's features add: given outright, or picked.

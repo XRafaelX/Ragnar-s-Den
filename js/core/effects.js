@@ -130,6 +130,13 @@ export function endAllEffects(c){
   if(lit.length){ lit.forEach(function(i){ delete i.shillelagh; }); ended.push("Shillelagh"); }
   return ended;
 }
+/* A condition that incapacitates ends the effects tagged
+   `endsIncapacitated` (Twilight Sanctuary). Returns their names. */
+export function endIncapacitatedEffects(c){
+  var ended = TOGGLE_EFFECTS.filter(function(d){ return d.endsIncapacitated && c.effects && c.effects[d.id]; });
+  ended.forEach(function(d){ endEffect(c, d.id); });
+  return ended.map(function(d){ return d.name; });
+}
 /* Drop flags that can't come back on their own: the feature is gone
    (level undone) or Symbiotic Entity's temporary HP ran out. True if any went. */
 export function pruneEffects(c){

@@ -1,7 +1,8 @@
 import { save } from "../../core/state.js";
-import { characterGrants, grantHasChoices, grantEntry, classPicksSummary, classPicksDetails, setClassVariant, backgroundSkillFix, resolveBackgroundSkillFix } from "../../core/class-picks.js";
+import { characterGrants, grantHasChoices, grantEntry, classPicksSummary, classPicksDetails, setClassVariant, backgroundSkillFix, resolveBackgroundSkillFix, darkvisionCoveredBy } from "../../core/class-picks.js";
 import { BACKGROUND_INFO } from "../../data/backgrounds.js";
-import { classVariantSwaps, usesVariant } from "../../core/helpers.js";
+import { RACE_DATA } from "../../data/race-data.js";
+import { classVariantSwaps, usesVariant, classFeatureList } from "../../core/helpers.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { sectionTitle } from "../../ui/card-parts.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -105,7 +106,7 @@ export function renderClassPicksCard(c){
     // What was picked, plainly (the card says what it is), and a picked
     // option's details under it (a dragon's breath and resistance).
     var text = document.createElement("div");
-    var picked = classPicksSummary(g, entry);
+    var picked = classPicksSummary(g, entry) || (entry && !entry.manual && ((g.def.pick||[])[0]||{}).none) || "";
     text.className = "inf-text" + (entry && !entry.manual && picked ? " cpk-picked" : "");
     text.textContent = !entry ? "Not chosen yet."
       : entry.manual ? "Marked as already on your sheet."
@@ -118,6 +119,16 @@ export function renderClassPicksCard(c){
       detail.textContent = line;
       box.appendChild(detail);
     });
+    // Keeping darkvision a class feature already beats (a Custom Lineage
+    // who became a Twilight cleric): the skill would add more.
+    var covered = entry && !classPicksSummary(g, entry) && g.name===(RACE_DATA[c.race]||{}).darkvisionUnlessPicked &&
+      darkvisionCoveredBy(c.race, (c.classes||[]).reduce(function(a, cl){ return a.concat(classFeatureList(cl)); }, []));
+    if(covered){
+      var nudge = document.createElement("div");
+      nudge.className = "inf-text cpk-picked-detail";
+      nudge.textContent = covered.name + " already gives you better darkvision, so you could take a skill here instead.";
+      box.appendChild(nudge);
+    }
     card.appendChild(box);
   });
   if(variants.length) card.appendChild(sectionTitle("Tasha's optional features"));

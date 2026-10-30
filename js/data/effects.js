@@ -74,7 +74,7 @@ export var TOGGLE_EFFECTS = [
     hint:"Needs your concentration, as a spell does."},
   {id:"trickery_cloak", name:"Cloak of Shadows", className:"Cleric", subclass:"Trickery Domain", level:6, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"Until the end of your next turn",
     hint:"Ends if you attack or cast a spell."},
-  {id:"twilight_sanctuary", name:"Twilight Sanctuary", className:"Cleric", subclass:"Twilight Domain", level:2, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 minute",
+  {id:"twilight_sanctuary", name:"Twilight Sanctuary", className:"Cleric", subclass:"Twilight Domain", level:2, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 minute", endsIncapacitated:true,
     hint:"Ends early if you are incapacitated or die."},
   {id:"vigilant_blessing", name:"Vigilant Blessing", className:"Cleric", subclass:"Twilight Domain", level:1, duration:"Your next initiative",
     startLabel:"Bless", hint:"An action, on a creature you touch. Switch it on when that's you."},

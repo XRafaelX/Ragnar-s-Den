@@ -16,6 +16,7 @@ import { RACE_CHOICES, RACES, RACE_LANGUAGES } from "../js/data/races.js";
 import { LANGUAGE_LIST } from "../js/data/languages.js";
 import { characterResources } from "../js/core/character-resources.js";
 import * as CP from "../js/core/class-picks.js";
+import { SUBCLASSES } from "../js/data/progression.js";
 import { newCharacter } from "../js/core/character.js";
 import { withFakeDom } from "./fake-dom.mjs";
 
@@ -96,6 +97,52 @@ test("Custom Lineage: darkvision, unless the Variable Trait takes a skill instea
   assert.equal(H.computeDarkvision(c).range, 60);
   c.racePicks = { profPicks: { "race:Variable Trait:pick": { slots: [["Arcana"]] } } };
   assert.equal(H.computeDarkvision(c).range, 0, "a skill in place of darkvision");
+});
+
+test("Custom Lineage: the size is the player's, and Small struggles with heavy weapons", () => {
+  const picks = (size) => ({ racePicks: { profPicks: { "race:Size:pick": { slots: [[size]] } } } });
+  const sword = { name: "Greatsword", type: "weapon", ability: "str", damageDice: "2d6" }, rapier = { name: "Rapier", type: "weapon", ability: "finesse", damageDice: "1d8" };
+  assert.equal(CP.raceSize(makeChar("Custom Lineage", picks("Small"))), "Small");
+  assert.equal(CP.raceSize(makeChar("Custom Lineage", picks("Medium"))), "Medium");
+  assert.equal(CP.raceSize(makeChar("Custom Lineage")), "Small or Medium", "not settled on an older sheet");
+  assert.equal(H.attackRollMode(makeChar("Custom Lineage", picks("Small")), sword).mode, "dis");
+  assert.match(H.attackRollMode(makeChar("Custom Lineage", picks("Small")), sword).reason, /Heavy weapon/);
+  assert.equal(H.attackRollMode(makeChar("Custom Lineage", picks("Small")), rapier).mode, "none", "only heavy weapons");
+  assert.equal(H.attackRollMode(makeChar("Custom Lineage", picks("Medium")), sword).mode, "none");
+  assert.equal(H.attackRollMode(makeChar("Custom Lineage"), sword).mode, "none", "no guessing before the size is picked");
+  assert.equal(H.attackRollMode(makeChar("Lightfoot Halfling"), sword).mode, "dis");
+  assert.equal(H.attackRollMode(makeChar("Human"), sword).mode, "none");
+});
+
+test("Custom Lineage: a kept darkvision says so, and which feature beats it", () => {
+  const twilight = SUBCLASSES.Cleric.find((d) => d.name === "Twilight Domain").features[1];
+  assert.equal(CP.darkvisionCoveredBy("Custom Lineage", twilight).name, "Eyes of Night");
+  assert.equal(CP.darkvisionCoveredBy("Custom Lineage", SUBCLASSES.Cleric.find((d) => d.name === "Life Domain").features[1]), null);
+  assert.equal(CP.darkvisionCoveredBy("Human", twilight), null, "only for a race with that choice");
+  const card = H.getAllCharacterFeatures(makeChar("Custom Lineage")).find((f) => f.name === "Variable Trait");
+  assert.match(card.text, /Your picks: Darkvision out to 60 feet\./);
+});
+
+test("wizard: a feat a domain would allow waits for the domain", (t) => {
+  withFakeDom(t, () => {
+    W.openWizard();
+    Object.assign(W.wizardState, { classId: "Cleric", race: "Custom Lineage", abilities: { str: 14, dex: 10, con: 13, int: 8, wis: 15, cha: 12 } });
+    W.wizardState.raceChoices.feat = "Heavy Armor Master";
+    const ham = featDef("Heavy Armor Master"), errorOn = () => W.validateStep("choices");
+    assert.equal(W.featPrereqReason(ham), "", "open while the domain isn't picked");
+    assert.ok(W.subclassesThatGive("heavy").includes("Twilight Domain"));
+    assert.ok(!W.subclassesThatGive("heavy").includes("Knowledge Domain"));
+    W.wizardState.classChoices.subclass = "Knowledge Domain";
+    assert.equal(W.featPrereqReason(ham), "needs heavy armor");
+    assert.match(errorOn(), /Heavy Armor Master needs heavy armor\. Pick a Divine Domain that gives it/);
+    W.wizardState.classChoices.subclass = "Twilight Domain";
+    assert.equal(W.featPrereqReason(ham), "");
+    assert.equal(errorOn(), null);
+    assert.ok(W.equipmentOptionAvailable({ requires: "heavy" }) && W.equipmentOptionAvailable({ requires: "martial" }), "chain mail and a warhammer");
+    W.wizardState.classId = "Wizard";
+    W.wizardState.classChoices = {};
+    assert.equal(W.featPrereqReason(ham), "needs heavy armor", "a class with no such subclass");
+  });
 });
 
 test("a giff is proficient with firearms; a dhampir's bite uses CON", () => {

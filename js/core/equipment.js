@@ -320,9 +320,11 @@ export function isMagicWeapon(c, item){
 export function powerAttackFeat(c, item){
   if(!item.proficient) return null;
   if(isRangedWeapon(item)) return hasFeat(c, "Sharpshooter") ? "Sharpshooter" : null;
+  return isHeavyWeapon(item) && hasFeat(c, "Great Weapon Master") ? "Great Weapon Master" : null;
+}
+export function isHeavyWeapon(item){
   var d = weaponDataOf(item);
-  var heavy = /\bheavy\b/i.test(((d && d.properties) || "") + " " + (item.notes || ""));
-  return heavy && hasFeat(c, "Great Weapon Master") ? "Great Weapon Master" : null;
+  return /\bheavy\b/i.test(((d && d.properties) || "") + " " + (item.notes || ""));
 }
 /* The weapon's -5/+10 switch is on (and its feat still applies). */
 export function powerAttackOn(c, item){

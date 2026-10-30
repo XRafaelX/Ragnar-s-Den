@@ -15,6 +15,7 @@ import { mod, fmtMod, totalLevel, profBonus } from "./basics.js";
 import { halfProficiency, checkAbility } from "./checks.js";
 import { findSubclass, classFeatureList } from "./class-features.js";
 import { effectOn, bladesongBonus, wildSurgeNow } from "./effects.js";
+import { twilightShroud } from "./cleric.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
 import { infusionSpeedParts } from "./infusion-effects.js";
@@ -164,7 +165,8 @@ export function computeSpeed(c){
     (f.speeds||[]).forEach(function(sp){
       if(sp.bonus){ bonus[sp.type] = (bonus[sp.type]||0) + sp.bonus; return; }
       var value = sp.value==="walk" ? walk : sp.value==="2walk" ? 2 * walk : sp.value;
-      list.push({type: sp.type, value: value, when: sp.when || "", source: f.name});
+      // (`effect`: no longer conditional while that effect is on.)
+      list.push({type: sp.type, value: value, when: sp.effect && effectOn(c, sp.effect) ? "" : sp.when || "", source: f.name});
     });
   });
   list.forEach(function(o){ if(bonus[o.type]) o.value += bonus[o.type]; });
@@ -254,6 +256,8 @@ export function computeArmorClass(c){
   if(effectOn(c, "agile_parry")){ base += 2; breakdown += " + Agile Parry (+2)"; short += " + Agile Parry"; }
   // Multiattack Defense (Hunter 7): +4 against that creature for the turn.
   if(effectOn(c, "multiattack_defense")){ base += 4; breakdown += " + Multiattack Defense (+4)"; short += " + Multiattack Defense"; }
+  var shroud = twilightShroud(c);
+  if(shroud){ base += shroud; breakdown += " + Twilight Shroud (" + fmtMod(shroud) + ")"; short += " + Twilight Shroud"; }
   // A race's own bonus (Warforged's Integrated Protection).
   var raceAc = RACE_DATA[c.race] && Number(RACE_DATA[c.race].acBonus) || 0;
   if(raceAc){
@@ -370,6 +374,8 @@ export function computeSave(c, key){
   });
   // Magic items that add to every save (a Cloak of Protection).
   magicItemSaveBonuses(c).forEach(function(b){ bonuses.push(b); });
+  // Half cover in a Twilight Sanctuary.
+  if(key==="dex" && twilightShroud(c)) bonuses.push({name: "Twilight Shroud", value: twilightShroud(c)});
   // A save picked for a feature (Iron Mind, Elegant Courtier).
   if(!grantedBy) characterPickedProfs(c).saves.forEach(function(s){ if(!grantedBy && s.ability===key) grantedBy = s.name; });
   // Resilient: proficiency in the ability it raised.

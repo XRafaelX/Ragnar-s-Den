@@ -597,7 +597,7 @@ export var SUBCLASS_RESOURCES = {
     ],
     "Twilight Domain": [
       {id:"eyes_of_night", name:"Eyes of Night (Share)", level:1, max:always(1), reset:always("long"), slotMin:1,
-        hint:"Action: share your 300-ft darkvision for 1 hour with up to WIS mod willing creatures within 10 ft. More uses cost a spell slot."},
+        hint:function(lv, m){ var n = atLeastOne(m.wis); return "Action: share your 300-ft darkvision for 1 hour with up to " + n + " willing creature" + (n===1 ? "" : "s") + " within 10 ft. More uses cost a spell slot."; }},
       {id:"steps_of_night", name:"Steps of Night", level:6,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Bonus action in dim light or darkness: flying speed equal to your walking speed for 1 minute."}

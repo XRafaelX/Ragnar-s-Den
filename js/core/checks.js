@@ -10,7 +10,9 @@ import { classFeatureList } from "./class-features.js";
 import { effectOn, effectRolls, weaponAttackEffect } from "./effects.js";
 import { otherworldlyGlamour } from "./ranger.js";
 import { optionEffects } from "./class-options.js";
-import { weaponAbility, armorPenalty, isRangedWeapon } from "./equipment.js";
+import { weaponAbility, armorPenalty, isRangedWeapon, isHeavyWeapon } from "./equipment.js";
+import { raceSize } from "./class-picks.js";
+import { featDef } from "./feat-picks.js";
 import { hasFeat } from "./vitals.js";
 import { nextCheckAdvantage } from "./magic-items.js";
 import { infusionInitiative } from "./infusion-effects.js";
@@ -164,6 +166,11 @@ export function advantagesFor(c){
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){ if(f.advantage) out.push(Object.assign({name: f.name}, f.advantage)); });
   });
+  // Feats tagged `advantage` (War Caster on concentration saves).
+  (c.feats||[]).forEach(function(f){
+    var fd = featDef(f.name);
+    if(fd && fd.advantage && !out.some(function(x){ return x.name===fd.name; })) out.push(Object.assign({name: fd.name}, fd.advantage));
+  });
   var heavy = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
   if(c.rage && c.rage.active && barbarianClassEntry(c) && !heavy){
     out.push({name: "Rage", on: "save", abilities: ["str"]}, {name: "Rage", on: "check", abilities: ["str"]});
@@ -234,7 +241,9 @@ export function attackRollMode(c, item){
   var reckless = effectOn(c, "reckless_attack") && !isRangedWeapon(item) && keys.indexOf("str")!==-1 ? {mode: "adv", reason: "Reckless Attack"} : null;
   // Shadow Step: advantage on the next melee attack.
   var step = effectOn(c, "shadow_step") && !isRangedWeapon(item) ? {mode: "adv", reason: "Shadow Step"} : null;
-  return combineRolls([physical ? armorPenalty(c, "str") : null, reckless, step, weaponAttackEffect(c)].concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
+  // A heavy weapon is too big for a Small or Tiny creature to use well.
+  var bulky = isHeavyWeapon(item) && /^(Small|Tiny)$/.test(raceSize(c)) ? {mode: "dis", reason: "Heavy weapon: you're " + raceSize(c)} : null;
+  return combineRolls([physical ? armorPenalty(c, "str") : null, reckless, step, bulky, weaponAttackEffect(c)].concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
 }
 /* An attack with no weapon card (a spell attack, the astral arms): only
    conditions change it (Poisoned, Invisible, exhaustion). */

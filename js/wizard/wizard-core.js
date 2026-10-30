@@ -327,6 +327,14 @@ export function equipmentOptionAvailable(opt){
   var grants = subclassGrants(currentClassInfo(), wizardState.classChoices);
   return (grants.profs||[]).indexOf(opt.requires)!==-1;
 }
+/* The subclasses that could still give this proficiency while the level-1
+   pick is open: the feats come before the Class Features step, so a feat
+   a domain would allow isn't ruled out yet. [] once it's picked. */
+export function subclassesThatGive(prof){
+  var ch = subclassChoice(currentClassInfo());
+  if(!ch || wizardState.classChoices[ch.id]) return [];
+  return Object.keys(ch.grants||{}).filter(function(n){ return (ch.grants[n].profs||[]).indexOf(prof)!==-1; });
+}
 /* Race picks (Variant Human): what the race lets you choose, if anything. */
 export function raceChoiceDef(){ return wizardState && RACE_CHOICES[wizardState.race] || null; }
 /* The race's flexible increases in use: its amounts, or its `alt` set
@@ -438,7 +446,7 @@ export function featPrereqReason(feat){
   if(m){
     var armor = ((CLASS_PROFICIENCIES[wizardState.classId]||{}).armor||[]).map(function(a){ return a.toLowerCase(); });
     var has = armor.indexOf("all armor")!==-1 || armor.indexOf(m[1]+" armor")!==-1 ||
-      (m[1]==="heavy" && (subclassGrants(info, wizardState.classChoices).profs||[]).indexOf("heavy")!==-1);
+      (m[1]==="heavy" && ((subclassGrants(info, wizardState.classChoices).profs||[]).indexOf("heavy")!==-1 || subclassesThatGive("heavy").length > 0));
     return has ? "" : "needs "+m[1]+" armor";
   }
   return "";
@@ -675,6 +683,11 @@ export function validateStep(id){
       if(missing.kind==="listPick" && missing.count>1) return "Choose "+missing.count+" different "+missing.label.toLowerCase()+".";
       return missing.kind==="expertise" ? "Choose "+missing.count+" for "+missing.label+"." : "Choose a "+missing.label+".";
     }
+    // The race's feat came first: the subclass has to give what it needs.
+    var earlierFeat = isStepApplicable("feat") && wizardFeat();
+    var featNeeds = earlierFeat && featPrereqReason(earlierFeat);
+    var subPick = subclassChoice(info);
+    if(featNeeds && subPick) return earlierFeat.name+" "+featNeeds+". Pick a "+subPick.label+" that gives it, or go back and take another feat.";
     // What the level-1 features let you choose (a domain's skill, a
     // ranger's favored enemy, a Draconic sorcerer's dragon).
     var grantWhy = "";

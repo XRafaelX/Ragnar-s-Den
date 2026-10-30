@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { maxHp, activeConditions, exhaustionLevel, exhaustionSummary, addCondition, removeCondition, conditionDef, raceConditionImmunity, rageSuspends, classLevelOf } from "../../core/helpers.js";
+import { maxHp, activeConditions, exhaustionLevel, exhaustionSummary, addCondition, removeCondition, conditionDef, raceConditionImmunity, rageSuspends, classLevelOf, endIncapacitatedEffects } from "../../core/helpers.js";
 import { CONDITIONS, EXHAUSTION_LEVELS, EXHAUSTION_RULES } from "../../data/conditions.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -7,6 +7,7 @@ import { makeConditionSvg, makeInfoSvg } from "../../ui/svg-icons.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { logRoll } from "../../dice/dice.js";
+import { showActionToast } from "../../ui/toast.js";
 import { conditionTakesHold, conditionEnds, exhaustionChanged } from "../../ui/fx.js";
 import { playConditionOn, playConditionOff, playExhaustion, playDeath } from "../../ui/sound.js";
 
@@ -279,6 +280,10 @@ function startCondition(c, id){
   if(!added.length) return;
   var def = conditionDef(id);
   logRoll(def.name, added.length > 1 ? "And falls prone." : def.short);
+  if(def.incapacitated) endIncapacitatedEffects(c).forEach(function(name){
+    logRoll(name, "Ended: you are incapacitated.");
+    showActionToast(name + " ended: you are incapacitated.");
+  });
   save(); renderAll();
   // The new chips, staggered when Unconscious brings Prone with it.
   added.forEach(function(a, i){

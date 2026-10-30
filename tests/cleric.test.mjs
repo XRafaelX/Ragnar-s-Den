@@ -9,6 +9,9 @@ import assert from "node:assert/strict";
 import * as H from "../js/core/helpers.js";
 import { healingNote } from "../js/core/spell-scaling.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
+import { CLASSES_INFO } from "../js/data/classes.js";
+import { SUBCLASSES } from "../js/data/progression.js";
+import { SPELL_DATA } from "../js/data/spells.js";
 
 const ABIL = { str: 14, dex: 10, con: 14, int: 10, wis: 18, cha: 12 };
 function cleric(sub, lv, extra = {}, entry = {}){
@@ -189,4 +192,72 @@ test("book corrections", () => {
   assert.match(feature(cleric("Grave Domain", 17), "Keeper of Souls").text, /until the start of your next turn/);
   assert.match(feature(cleric("Nature Domain", 1), "Acolyte of Nature").text, /doesn't count against/);
   assert.match(feature(cleric("War Domain", 17), "Avatar of Battle").text, /nonmagical attacks/);
+});
+
+test("the wizard's domain table says what each domain's level-1 features say", () => {
+  const info = CLASSES_INFO.Cleric, table = info.choices.find((ch) => ch.kind === "subclass").grants;
+  SUBCLASSES.Cleric.forEach((d) => {
+    const first = d.features[1], row = table[d.name];
+    assert.ok(row, d.name + " is in the table");
+    const given = first.reduce((a, f) => a.concat((f.grants && f.grants.armor) || [], (f.grants && f.grants.weapons) || []), []);
+    assert.equal((row.profs || []).includes("heavy"), given.includes("Heavy armor"), d.name + ": heavy armor");
+    assert.equal((row.profs || []).includes("martial"), given.includes("Martial weapons"), d.name + ": martial weapons");
+    assert.deepEqual(row.spells, first.find((f) => f.spellKind === "prepared").spells, d.name + ": domain spells");
+    const known = first.filter((f) => f.spellKind === "known").reduce((a, f) => a.concat(f.spells), []);
+    assert.deepEqual(row.cantrips || [], known, d.name + ": bonus cantrips");
+  });
+});
+
+test("every Twilight domain spell is in the spell list", () => {
+  const nine = SUBCLASSES.Cleric.find((d) => d.name === "Twilight Domain").features[9].find((f) => f.spells);
+  assert.deepEqual(nine.spells, ["Faerie Fire", "Sleep", "Moonbeam", "See Invisibility", "Aura of Vitality", "Leomund's Tiny Hut", "Aura of Life", "Greater Invisibility", "Circle of Power", "Mislead"]);
+  nine.spells.forEach((n) => assert.ok(SPELL_DATA[n], n));
+});
+
+test("Twilight Shroud: half cover in the sanctuary, from level 17", () => {
+  const plate = { inventory: [PLATE] };
+  const seventeen = cleric("Twilight Domain", 17, plate), sixteen = cleric("Twilight Domain", 16, plate);
+  [seventeen, sixteen].forEach((c) => H.startEffect(c, "twilight_sanctuary"));
+  assert.equal(H.computeArmorClass(seventeen).value, H.computeArmorClass(cleric("Twilight Domain", 17, plate)).value + 2);
+  assert.match(H.computeArmorClass(seventeen).breakdown, /Twilight Shroud \(\+2\)/);
+  assert.equal(H.computeSave(seventeen, "dex").value, H.computeSave(cleric("Twilight Domain", 17), "dex").value + 2);
+  assert.equal(H.computeSave(seventeen, "wis").value, H.computeSave(cleric("Twilight Domain", 17), "wis").value, "only DEX saves");
+  assert.equal(H.computeArmorClass(sixteen).value, H.computeArmorClass(cleric("Twilight Domain", 16, plate)).value, "not before 17");
+  H.endEffect(seventeen, "twilight_sanctuary");
+  assert.equal(H.computeArmorClass(seventeen).value, H.computeArmorClass(cleric("Twilight Domain", 17, plate)).value, "gone with the sphere");
+});
+
+test("Twilight Sanctuary ends when you're incapacitated", () => {
+  const c = cleric("Twilight Domain", 2);
+  H.startEffect(c, "twilight_sanctuary");
+  assert.deepEqual(H.endIncapacitatedEffects(c), ["Twilight Sanctuary"]);
+  assert.ok(!H.effectOn(c, "twilight_sanctuary"));
+  assert.deepEqual(H.endIncapacitatedEffects(c), [], "nothing left to end");
+  const steps = cleric("Twilight Domain", 6);
+  H.startEffect(steps, "steps_of_night");
+  H.endIncapacitatedEffects(steps);
+  assert.ok(H.effectOn(steps, "steps_of_night"), "Steps of Night doesn't care");
+});
+
+test("Steps of Night: conditional until it's on, then a plain flying speed", () => {
+  const c = cleric("Twilight Domain", 6, { speed: 30 });
+  const fly = () => H.computeSpeed(c).others.find((o) => o.type === "fly");
+  assert.ok(fly().when);
+  assert.equal(fly().value, 30);
+  H.startEffect(c, "steps_of_night");
+  assert.equal(fly().when, "");
+  assert.equal(fly().value, 30);
+});
+
+test("Eyes of Night says how many creatures can share it", () => {
+  assert.match(resource(cleric("Twilight Domain", 1), "Cleric:eyes_of_night").hint, /up to 4 willing creatures/);
+  const low = cleric("Twilight Domain", 1, { abilities: Object.assign({}, ABIL, { wis: 8 }) });
+  assert.match(resource(low, "Cleric:eyes_of_night").hint, /up to 1 willing creature within/, "at least one");
+});
+
+test("War Caster goes on the saves card, for CON saves", () => {
+  const c = cleric("Twilight Domain", 1, { feats: [{ name: "War Caster" }] });
+  assert.deepEqual(H.situationalSaveAdvantages(c, "con").map((a) => a.name), ["War Caster"]);
+  assert.deepEqual(H.situationalSaveAdvantages(c, "wis"), []);
+  assert.equal(H.saveRollMode(c, "con").mode, "none", "only for concentration, so not on every CON save");
 });

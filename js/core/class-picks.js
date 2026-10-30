@@ -681,6 +681,18 @@ export function raceChoiceValues(c, id){
 }
 /* The first one ("" if not yet). */
 export function raceChoiceValue(c, id){ return raceChoiceValues(c, id)[0] || ""; }
+/* The character's size: the one picked (a Custom Lineage's), or the race's. */
+export function raceSize(c){
+  return raceChoiceValue(c, "lineageSize") || (RACE_DATA[c.race] || {}).size || "Medium";
+}
+/* A feature among these that gives at least the darkvision a race's
+   "darkvision, or something else" trait would (Eyes of Night for a Custom
+   Lineage), so the other option is the better pick. Null if none. */
+export function darkvisionCoveredBy(race, features){
+  var d = RACE_DATA[race];
+  if(!d || !d.darkvisionUnlessPicked) return null;
+  return features.find(function(f){ return f.darkvision && (f.darkvision.range||0) >= d.darkvision; }) || null;
+}
 /* What the race's choices give on the sheet (its `choiceEffects` for each
    picked option): [{name, weapons, walk, swim, climb, ac, acWhen, spells}]. */
 export function raceChoiceEffects(c){

@@ -6,16 +6,17 @@ import { FIGHTING_STYLES } from "../data/classes.js";
 import { escapeHtml, ce, autoEquipLoadout, isProficientWithWeapon } from "../core/helpers.js";
 import { WEAPON_DATA, WEAPON_GROUPS } from "../data/weapons.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
-import { wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills, wizardKitContext } from "./wizard-core.js";
+import { wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills, wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardKitContext } from "./wizard-core.js";
 import { renderKitPicker, kitIntroHtml } from "../ui/background-gear.js";
 import { backgroundKit } from "../core/background-gear.js";
 import { renderClassPicks, renderVariantOptions } from "../ui/class-picks.js";
-import { grantHasChoices } from "../core/class-picks.js";
+import { grantHasChoices, darkvisionCoveredBy } from "../core/class-picks.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
 import { styleNeedsPicks } from "../core/fighting-styles.js";
 import { languagePickerGroups } from "../data/languages.js";
 import { SUBCLASSES } from "../data/progression.js";
+import { RACE_DATA } from "../data/race-data.js";
 
 /* What a Rogue-style expertise pick can target: every skill the new
    character is proficient in (class picks + background) plus any tools
@@ -122,6 +123,19 @@ export function wizardStepChoices(container){
     if(shown.indexOf(grant.key)!==-1) return;
     picks(panel(grant.name), grant);
   });
+  // A subclass that gives darkvision anyway (Twilight's Eyes of Night):
+  // the Race Traits step came first, so a Custom Lineage's Variable Trait
+  // is offered again here, where the choice is clear.
+  var sub = (SUBCLASSES[wizardState.classId]||[]).find(function(x){ return x.name===wizardState.classChoices.subclass; });
+  var covers = sub && darkvisionCoveredBy(wizardState.race, (sub.features||{})[1] || []);
+  var trait = covers && wizardRacePickGrants().find(function(g){ return g.name===RACE_DATA[wizardState.race].darkvisionUnlessPicked; });
+  if(trait){
+    panel(trait.name, covers.name+" already gives you darkvision out to "+covers.darkvision.range+" feet, so your "+wizardState.race+" doesn't need to. You can take a skill here instead.")
+      .appendChild(renderClassPicks(trait, wizardRaceSlots(trait.key), wizardRacePickContext(trait), function(meta){
+        var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+        if(!(meta && meta.typing)) renderWizard();
+      }, "wiz:race:"+trait.key));
+  }
   container.appendChild(card);
 }
 

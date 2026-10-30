@@ -291,7 +291,16 @@ Object.assign(CLASSES_INFO["Cleric"], {
         "War Domain":{profs:["heavy","martial"], spells:["Divine Favor","Shield of Faith"]},
         "Knowledge Domain":{spells:["Command","Identify"]},
         "Tempest Domain":{profs:["heavy","martial"], spells:["Fog Cloud","Thunderwave"]},
-        "Trickery Domain":{spells:["Charm Person","Disguise Self"]}
+        "Trickery Domain":{spells:["Charm Person","Disguise Self"]},
+        "Nature Domain":{profs:["heavy"], spells:["Animal Friendship","Speak with Animals"]},
+        "Twilight Domain":{profs:["heavy","martial"], spells:["Faerie Fire","Sleep"]},
+        "Forge Domain":{profs:["heavy"], spells:["Identify","Searing Smite"]},
+        "Order Domain":{profs:["heavy"], spells:["Command","Heroism"]},
+        "Peace Domain":{spells:["Heroism","Sanctuary"]},
+        "Death Domain":{profs:["martial"], spells:["False Life","Ray of Sickness"]},
+        "Arcana Domain":{spells:["Detect Magic","Magic Missile"]},
+        "Grave Domain":{cantrips:["Spare the Dying"], spells:["Bane","False Life"]},
+        "Fate Domain":{spells:["Dissonant Whispers","Heroism"]}
       }}
   ],
   spellcasting:{

@@ -10,7 +10,7 @@
 import { mod, profBonus } from "./basics.js";
 import { classFeatureList, classLevelOf } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
-import { resourceLeft } from "./effects.js";
+import { resourceLeft, effectOn } from "./effects.js";
 import { SKILLS } from "../data/abilities-skills.js";
 
 var CHANNEL = "Cleric:channel_divinity";
@@ -48,6 +48,11 @@ export function warGuidedStrike(c){
 /* The healing a Twilight Sanctuary gives at the end of a turn. */
 export function sanctuaryBonus(c){
   return classLevelOf(c, "Cleric");
+}
+/* Twilight Shroud (Twilight Domain 17): half cover in your sanctuary, which
+   is +2 to AC and Dexterity saves. 0 when it isn't up. */
+export function twilightShroud(c){
+  return classLevelOf(c, "Cleric", "Twilight Domain") >= 17 && effectOn(c, "twilight_sanctuary") ? 2 : 0;
 }
 /* Saint of Forge and Fire (Forge Domain 17): needs heavy armor on. */
 export function saintResistance(c){

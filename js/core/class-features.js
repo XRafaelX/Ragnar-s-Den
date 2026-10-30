@@ -377,7 +377,8 @@ export function raceTraitFeatures(c){
     ? [{id: "race_" + c.race + "_Darkvision", name: "Darkvision", source: source, category: "race", isDerived: true,
       text: "You can see in dim light within " + d.darkvision + " feet of you as if it were bright light, and in darkness as if it were dim light. In darkness you see only shades of gray, not color."}] : [];
   return dark.concat(traits.map(function(t){
-    var picked = raceTraitPicksText(c, t.name), values = raceTraitPickValues(c, t);
+    // (An optional pick left empty keeps what it says: a Custom Lineage's darkvision.)
+    var picked = raceTraitPicksText(c, t.name) || (((t.profs||{}).pick||[])[0]||{}).none || "", values = raceTraitPickValues(c, t);
     var worked = t.name==="Breath Weapon" ? breath.breath
       : t.name==="Metallic Breath Weapon" ? breath.metallic
       : (t.name==="Damage Resistance" || t.name==="Draconic Resistance") ? breath.resistance : "";

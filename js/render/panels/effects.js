@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus } from "../../core/helpers.js";
+import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -149,9 +149,9 @@ function effectSummary(c, id){
   if(id==="knowledge_of_the_ages") return "Proficient with " + (c.agesSkill || "the skill you chose");
   if(id==="invoke_duplicity") return (classLevelOf(c, "Cleric", "Trickery Domain") >= 17 ? "Up to four illusions of you" : "An illusion of you") + " · move as a bonus action, 30 ft · cast spells from its space · advantage on attacks when you and it are both within 5 ft of a creature that can see it";
   if(id==="trickery_cloak") return "Invisible · advantage on attack rolls";
-  if(id==="twilight_sanctuary") return "When a turn ends in the sphere: temporary hit points, or end charmed or frightened" + (classLevelOf(c, "Cleric", "Twilight Domain") >= 17 ? " · you and your allies have half cover in it" : "");
+  if(id==="twilight_sanctuary") return "When a turn ends in the sphere: temporary hit points, or end charmed or frightened" + (classLevelOf(c, "Cleric", "Twilight Domain") >= 17 ? " · Twilight Shroud: half cover in it for you and your allies, +2 to AC and DEX saves" : "");
   if(id==="vigilant_blessing") return "Advantage on your next initiative roll";
-  if(id==="steps_of_night") return "Fly at your walking speed";
+  if(id==="steps_of_night") return "Fly " + computeSpeed(c).value + " ft";
   if(id==="corona_of_light") return "Bright light 60 ft · enemies in it have disadvantage on saves against spells that deal fire or radiant damage";
   if(id==="emboldening_bond") return "A d4 on attack rolls, ability checks and saves within " + (classLevelOf(c, "Cleric", "Peace Domain") >= 17 ? 60 : 30) + " ft of a bonded creature, once per turn";
   if(id==="favored_foe") return "+1d" + favoredFoeDie(c) + " on the first hit each turn against it, on your weapon's card";
@@ -243,6 +243,17 @@ function appendRolls(c, id, info){
           }}]};
       });
     }));
+    // The other benefit, on you: ends a charm or a fright, so the sheet can too.
+    ["charmed", "frightened"].forEach(function(cond){
+      if(!hasCondition(c, cond)) return;
+      var ease = rollButton("", "End " + cond, function(){
+        removeCondition(c, cond);
+        logRoll("Twilight Sanctuary", "Ended " + cond + ".");
+        save(); renderAll();
+      });
+      ease.title = "Instead of temporary hit points, when your turn ends in the sphere";
+      buttons.push(ease);
+    });
   }
   if(id==="elder_champion"){
     var regain = rollButton("", "Regain 10 HP", function(){

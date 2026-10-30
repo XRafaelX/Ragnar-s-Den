@@ -6,7 +6,7 @@ import { BACKGROUND_INFO } from "../data/backgrounds.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { themedPicker } from "../ui/themed-picker.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityAmounts, raceAbilityIncreases, raceAbilityPicksNeeded, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
+import { currentClassInfo, wizardState, renderWizard, abilityFullName, subclassChoice, subclassesThatGive, raceChoiceDef, raceAbilityAmounts, raceAbilityIncreases, raceAbilityPicksNeeded, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
   wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardRaceSkills,
   wizardBackgroundGrants, wizardBackgroundPickGrants, wizardBgSlots, wizardBgPickContext,
   wizardOverlapGrants, wizardOverlapSlots, wizardOverlapContext } from "./wizard-core.js";
@@ -341,6 +341,12 @@ function featSummaryBox(feat, why){
     more.className = "rt-feat-more";
     more.innerHTML = "<summary>Full description</summary><p>"+escapeHtml(feat.description)+"</p>";
     box.appendChild(more);
+  }
+  var needsSub = !why && /heavy armor$/.test(feat.prerequisite || "") ? subclassesThatGive("heavy") : [];
+  if(needsSub.length){
+    var later = ce("p","rt-feat-next");
+    later.textContent = "You'll need a "+subclassChoice(currentClassInfo()).label+" that gives heavy armor: "+needsSub.join(", ").replace(/ Domain/g, "").replace(/, ([^,]*)$/, " or $1")+".";
+    box.appendChild(later);
   }
   if(!why && featNeedsChoice(feat)){
     var next = ce("p","rt-feat-next");
