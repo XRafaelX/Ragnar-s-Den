@@ -139,7 +139,7 @@ export function wizardStepChoices(container){
   container.appendChild(card);
 }
 
-var PROF_LABELS = {heavy:"heavy armor", martial:"martial weapons"};
+var PROF_LABELS = {heavy:"heavy armor", medium:"medium armor", martial:"martial weapons"};
 
 function choiceSubclass(card, ch){
   (SUBCLASSES[wizardState.classId]||[]).forEach(function(sub){

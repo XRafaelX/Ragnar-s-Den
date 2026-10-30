@@ -125,3 +125,10 @@ test("Gunslinger firearms: misfire is an optional rule, on a 1, gone with Master
   // Clearing a misfire is not a tinker's tools check: the old guns' rules stay as they were.
   assert.equal(H.firearmStats({ name: "Musket", type: "weapon", proficient: true }).misfire, 2);
 });
+
+test("Gunslinger class: scale mail is offered as the PDF lists it, but locked without medium armor", () => {
+  const scale = CLASSES_INFO.Gunslinger.equipment.choiceGroups[0].options.find((o) => o.key === "scale");
+  assert.equal(scale.requires, "medium");
+  assert.ok(!CLASS_PROFICIENCIES.Gunslinger.armor.includes("Medium armor"));
+  assert.match(CLASS_PROGRESSION.Gunslinger.features[15][0].text, /Wisdom score in its place/);
+});

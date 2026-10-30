@@ -7,6 +7,7 @@ import { LANGUAGES, ANY_LANGUAGES } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, originListSpells, classVariantSwaps, classFeaturesAt, isProficientWithWeapon } from "../core/helpers.js";
 import { weaponDataOf } from "../data/weapons.js";
+import { armorProficiencies } from "../core/equipment.js";
 import { backgroundKit, addBackgroundKit } from "../core/background-gear.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
@@ -321,11 +322,20 @@ export function wizardExtraListName(){
   return classExtraSpellLists(wizardClassEntry())[0] || "";
 }
 /* Some gear needs a proficiency only certain subclasses give (a cleric's
-   chain mail needs a heavy-armor domain). */
+   chain mail needs a heavy-armor domain), or the race or a feat (a
+   gunslinger's scale mail needs medium armor: a Mountain Dwarf, or
+   Moderately Armored). */
 export function equipmentOptionAvailable(opt){
   if(!opt.requires) return true;
   var grants = subclassGrants(currentClassInfo(), wizardState.classChoices);
-  return (grants.profs||[]).indexOf(opt.requires)!==-1;
+  if((grants.profs||[]).indexOf(opt.requires)!==-1) return true;
+  if(opt.requires!=="medium" && opt.requires!=="heavy") return false;
+  var w = wizardState, feats = [];
+  if(w.raceChoices && w.raceChoices.feat) feats.push({name: w.raceChoices.feat, picks: w.raceChoices.featPicks || {}});
+  var bg = wizardBackgroundFeat();
+  if(bg && bg.def) feats.push({name: bg.def.name, picks: (w.bgFeat && w.bgFeat.picks) || {}});
+  var standIn = {race: w.race, classes: w.classId ? [wizardClassEntry()] : [], feats: feats, features: []};
+  return armorProficiencies(standIn).indexOf(opt.requires + " armor")!==-1;
 }
 /* The subclasses that could still give this proficiency while the level-1
    pick is open: the feats come before the Class Features step, so a feat

@@ -713,7 +713,9 @@ Object.assign(CLASSES_INFO["Artificer"], {
 
 /* Gunslinger: Michael's homebrew class (books/Gunslinger.pdf, firearms and
    rounds in books/gun_1.webp to gun_4.webp). Picks its subclass at level
-   1. Its firearm comes from the class's own guns (pick.set). */
+   1. Its firearm comes from the class's own guns (pick.set). The class
+   only knows light armor, so the PDF's scale mail waits for medium armor
+   from the race or a feat. */
 CLASSES_INFO["Gunslinger"].features = [
   {name:"Gunslinger Subclass", text:"Choose the subclass that best fits your combat style: Marksman, Outlaw, Marshal or Eldritch Gunman. It gives you a feature now and more as you level."},
   {name:"Novice Bulletsmith", text:"You can use your tinker's tools to craft your own ammunition. Spend 2 hours and 2 gold pieces to gather the materials, then craft 20 rounds for your firearm, in any mix of slashing, piercing and bludgeoning rounds. Heavy rounds take twice as long and cost 4 gold pieces instead."}
@@ -733,7 +735,7 @@ Object.assign(CLASSES_INFO["Gunslinger"], {
         {key:"leather", label:"Leather armor", detail:"Light armor, AC 11 + DEX", items:[
           {name:"Leather",qty:1,weight:10,notes:"light armor",type:"armor",category:"light",baseAC:11}
         ]},
-        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2), disadvantage on Stealth. Gunslingers aren't proficient with medium armor, so you'd have disadvantage on Strength and Dexterity rolls and can't cast spells in it", items:[
+        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2), disadvantage on Stealth", requires:"medium", items:[
           {name:"Scale Mail",qty:1,weight:45,notes:"medium, stealth disadvantage",type:"armor",category:"medium",baseAC:14}
         ]}
       ]},
