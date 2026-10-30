@@ -5,12 +5,12 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker, openArmorPicker, openGearPicker } from "../armory.js";
-import { gunRoundRow, bulletsmithCard } from "./gunslinger.js";
+import { gunRoundRow, bulletsmithCard, pressureButton } from "./gunslinger.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -1219,6 +1219,7 @@ function renderWeaponCard(c, item, idx){
   if(duelingBonus(c, item)) subtitleParts.push("Dueling +2 damage");
   if(sidearmMasteryBonus(c, item)) subtitleParts.push("Sidearm Mastery +2 damage");
   if(outlawGritBonus(c, item)) subtitleParts.push("Outlaw's Grit +2 damage");
+  if(marshalRange(c, item)) subtitleParts.push(marshalRange(c, item));
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");
@@ -1278,7 +1279,8 @@ function renderWeaponCard(c, item, idx){
   } else if(parsed){
     dmgBtn.innerHTML = makeDicesSvg() + "Damage " + parsed.qty + "d" + parsed.die + fmtMod(dmgBonus);
     dmgBtn.addEventListener("click", function(){
-      performRoll(parsed.die, parsed.qty, dmgBonus, "none", (item.name||"Weapon") + ": Damage" + (dmgType ? " (" + dmgType + ")" : ""));
+      var sights = calibratedSights(c, item, parsed.die);
+      performRoll(parsed.die, parsed.qty, dmgBonus, "none", (item.name||"Weapon") + ": Damage" + (dmgType ? " (" + dmgType + ")" : ""), sights ? {adjust: sights} : null);
     });
   } else {
     dmgBtn.innerHTML = makeDicesSvg() + "Damage";
@@ -1322,7 +1324,8 @@ function renderWeaponCard(c, item, idx){
       ? "Two-weapon fighting: after attacking with a weapon in your other hand, a bonus action attack with this one. Two-Weapon Fighting adds your ability modifier to its damage."
       : "Two-weapon fighting: after attacking with a weapon in your other hand, a bonus action attack with this one. Its damage leaves out your ability modifier (unless it's negative).";
     offBtn.addEventListener("click", function(){
-      performRoll(parsed.die, parsed.qty, off.damage, "none", (item.name||"Weapon") + ": Off-hand damage" + (item.damageType ? " (" + item.damageType + ")" : ""));
+      var sights = calibratedSights(c, item, parsed.die);
+      performRoll(parsed.die, parsed.qty, off.damage, "none", (item.name||"Weapon") + ": Off-hand damage" + (item.damageType ? " (" + item.damageType + ")" : ""), sights ? {adjust: sights} : null);
     });
     actions.appendChild(offBtn);
   }
@@ -1353,6 +1356,8 @@ function renderWeaponCard(c, item, idx){
   if(!isRangedWeapon(item)) smiteButtons(c, item.name || "Weapon", true).forEach(function(b){ actions.appendChild(b); });
   rangerButtons(c, item.name || "Weapon", false).forEach(function(b){ actions.appendChild(b); });
   gunslingerHitDice(c, item).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d)); });
+  var pressure = pressureButton(c, item);
+  if(pressure) actions.appendChild(pressure);
   var sneakBtn = sneakAttackWeapon(item) && sneakButton(c, item.name || "Weapon");
   if(sneakBtn) actions.appendChild(sneakBtn);
   // Weapon Bond: a bonded weapon not in hand can be summoned to it.

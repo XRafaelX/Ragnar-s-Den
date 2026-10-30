@@ -1,10 +1,11 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, skillCheck, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, skillCheck, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
 import { useNextCheck } from "../../core/magic-items.js";
 import { renderAll } from "../sheet.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
+import { showActionToast } from "../../ui/toast.js";
 
 /* ---------------- Attack rolls, ability checks and saves ----------------
    Every attack roll on the sheet (weapons, unarmed strikes, spell
@@ -21,6 +22,7 @@ import { performRoll, logRoll } from "../../dice/dice.js";
    given), and the weapon (a firearm counts its shots and can misfire). */
 export function rollAttack(c, bonus, mode, label, hit){
   var aim = hasFocusedAim(c) || !!(hit && hit.item && magicArrows(c, hit.item)), gun = hit && hit.item && firearmStats(hit.item, c);
+  if(hit) hit.rollMode = mode; // (Intuition needs no disadvantage.)
   if(gun && gun.reload) hit.item.shots = (Number(hit.item.shots)||0) + 1;
   // Predicted Critical (Marksman 14): this firearm attack is the one.
   if(gun && effectOn(c, "predicted_critical")){
@@ -73,6 +75,7 @@ export function rollCheck(c, bonus, mode, label, ability, opts){
   opts = opts || {};
   var might = ability==="str" ? indomitableMight(c) : 0;
   var reliable = opts.proficient && reliableTalent(c);
+  opts.mode = mode; // (Intuition needs no disadvantage.)
   performRoll(20, 1, bonus, mode, label, {
     followUp: function(r){ return checkFollowUp(c, r, opts); },
     adjust: might || reliable ? function(r){
@@ -93,6 +96,12 @@ export function rollCheck(c, bonus, mode, label, ability, opts){
    (Insight). (r is null for the toast's hint.) */
 function checkFollowUp(c, r, opts){
   var out = [], lead = "Failed?";
+  // Intuition (Marshal 18): a d20 of 9 or lower as a 10, once per turn.
+  if(r && r.natural!=null && r.natural < 10 && hasIntuition(c) && INTUITION_SKILLS.indexOf(opts.skill)!==-1 && opts.mode!=="dis" && !(opts.proficient && reliableTalent(c))){
+    var low = r.natural;
+    out.push({label: "Count it as a 10 (Intuition)", title: "Once per turn, without disadvantage: a d20 of 9 or lower counts as a 10",
+      use: function(){ return {bonus: 10 - low, log: "Intuition (the d20 counts as 10)"}; }});
+  }
   if(hasMagicalGuidance(c)) out = out.concat(magicalGuidance(c).options);
   // (Counted from the d20 as it stands: Reliable Talent may have made a 1 a 10.)
   var counted = r && r.natural!=null ? (opts.proficient && reliableTalent(c) ? Math.max(10, r.natural) : r.natural) : null;
@@ -211,9 +220,16 @@ function attackFollowUp(c, r, aim, hit){
   var gun = hit && hit.item && firearmStats(hit.item, c);
   if(gun && r && r.natural <= gun.misfire) return {lead: "Misfire! The attack misses and the " + (hit.item.name || "firearm") + " jams. " + (gun.set==="gunslinger" ? "Clear it on its card." : "Repair it on its card."), options: []};
   if(hit && r && hit.rigged) return {lead: "Playing Dirty: the target makes a DC 14 Wisdom save or is blinded until the start of your next turn.", options: []};
-  if(hit && r && r.natural >= (hit.critMin || 20)) return hit.noDamage ? {lead: "Critical hit! The round deals no damage.", options: []} : criticalHit(c, hit);
-  if(hit && r && hit.predicted && !hit.noDamage) return Object.assign(criticalHit(c, hit), {lead: "Predicted Critical: if it hits, it's a critical hit."});
-  var opts = [];
+  if(hit && r && r.natural >= (hit.critMin || 20)) return hit.noDamage ? {lead: "Critical hit! The round deals no damage.", options: []} : withPinpoint(c, hit, criticalHit(c, hit), criticalDamage(c, hit).qty);
+  if(hit && r && hit.predicted && !hit.noDamage) return withPinpoint(c, hit, Object.assign(criticalHit(c, hit), {lead: "Predicted Critical: if it hits, it's a critical hit."}), criticalDamage(c, hit).qty);
+  var opts = !hit || hit.noDamage ? [] : pinpointOptions(c, hit, hit.qty);
+  // Intuition (Marshal 18): a firearm's d20 of 9 or lower as a 10, once per
+  // turn, without disadvantage. (Master of the Barrel already did it at 20.)
+  if(hit && r && r.natural!=null && r.natural < 10 && gun && hasIntuition(c) && hit.rollMode!=="dis" && classLevelOf(c, "Gunslinger") < 20){
+    var counted = r.natural;
+    opts.push({label: "Count it as a 10 (Intuition)", title: "Once per turn, without disadvantage: a d20 of 9 or lower counts as a 10",
+      use: function(){ return {bonus: 10 - counted, log: "Intuition (the d20 counts as 10)"}; }});
+  }
   // Expert Sniper (Marksman 1): the Perception bonus, once per long rest.
   if(hit && resourceLeft(c, "Gunslinger:expert_sniper") > 0){
     var sniper = skillCheck(c, "Perception").value;
@@ -304,7 +320,48 @@ function attackFollowUp(c, r, aim, hit){
   if(!opts.length) return null;
   // Only Focused Aim's three: named in the lead, as before.
   var onlyAim = opts.every(function(o){ return / ki\)$/.test(o.label); });
+  // (Pinpoint Control's are for a hit: "Missed?" would read wrong over them.)
+  if(opts.some(function(o){ return /^Hit\? (Disarm|Hobble|Interrupt)/.test(o.label); })) return {lead: "", hint: "Tap for more options.", options: opts};
   return {lead: onlyAim ? "Missed? Focused Aim:" : "Missed?", hint: onlyAim ? "Missed? Tap for Focused Aim." : "Missed? Tap for more options.", options: opts};
+}
+/* Pinpoint Control (Marshal 14): after a firearm attack, a use for one of
+   its three effects. Disarm rolls the attack's damage halved, so it stands
+   in for the damage roll. qty: the attack's dice (doubled on a critical). */
+function pinpointOptions(c, hit, qty){
+  if(!hit.item || !firearmStats(hit.item, c) || resourceLeft(c, "Gunslinger:pinpoint_control") <= 0) return [];
+  var dc = pinpointDc(c);
+  function spend(){
+    if(!spendResource(c, "Gunslinger:pinpoint_control", 1)) return false;
+    save(); renderAll();
+    return true;
+  }
+  function effect(label, title, text){
+    return {label: label, title: title, use: function(){
+      if(!spend()) return null;
+      logRoll("Pinpoint Control", text);
+      showActionToast(text);
+      return {silent: true};
+    }};
+  }
+  return [
+    {label: "Hit? Disarm (STR DC " + dc + ")", title: "Halved damage, and a Strength save or it drops an object of your choice at its feet",
+      use: function(){
+        if(!spend()) return null;
+        var sights = calibratedSights(c, hit.item, hit.die);
+        performRoll(hit.die, qty, hit.bonus, "none", hit.label + ": Disarm damage (halved)", {adjust: function(x){
+          var got = sights && sights(x), total = got ? got.total : x.total;
+          return {total: Math.max(1, Math.floor(total / 2)), note: "halved" + (got ? ", " + got.note : "")};
+        }, followUp: function(x){
+          return x ? {lead: "Disarm: Strength save, DC " + dc + ", or it drops an object of your choice at its feet.", options: []} : null;
+        }});
+        return {silent: true};
+      }},
+    effect("Hit? Hobble", "The target's speed drops by 10 feet until the start of your next turn", "Hobble: the target's speed drops by 10 feet until the start of your next turn."),
+    effect("Hit? Interrupt", "If the target is concentrating, it makes the concentration save against this attack with disadvantage", "Interrupt: the target has disadvantage on its concentration save against this attack.")
+  ];
+}
+function withPinpoint(c, hit, follow, qty){
+  return Object.assign({}, follow, {options: follow.options.concat(pinpointOptions(c, hit, qty))});
 }
 function criticalHit(c, hit){
   var crit = criticalDamage(c, hit);
@@ -330,9 +387,9 @@ function critOption(c, hit, crit){
       use: function(){
         // Hemorrhaging Critical (gunslinger 18): half again at the end of the target's next turn.
         var bleed = hit.item && firearmStats(hit.item, c) && hemorrhagingCritical(c);
-        performRoll(crit.die, crit.qty, crit.bonus, "none", hit.label + ": Critical damage", bleed ? function(r){
+        performRoll(crit.die, crit.qty, crit.bonus, "none", hit.label + ": Critical damage", {followUp: bleed ? function(r){
           return r ? {lead: "Hemorrhaging Critical: " + Math.floor(r.total / 2) + " more damage to the target at the end of its next turn.", options: []} : null;
-        } : null);
+        } : null, adjust: hit.item ? calibratedSights(c, hit.item, crit.die) : null});
         return {bonus: 0, log: "Critical hit", silent: true};
       }};
 }

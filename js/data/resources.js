@@ -326,6 +326,10 @@ export var SUBCLASS_RESOURCES = {
         max:function(lv, m){ return Math.floor(m.pb / 2); }, reset:always("long"),
         hint:"Before a firearm attack with advantage: a hit becomes a critical hit. Start it on Active effects."}
     ],
+    "Marshal": [
+      {id:"pinpoint_control", name:"Pinpoint Control", level:14, max:function(lv, m){ return m.pb; }, reset:always("long"),
+        hint:"Disarm, Hobble or Interrupt a target. The dice tray offers them after a firearm attack."}
+    ],
     "Outlaw": [
       {id:"duel", name:"Duel", level:18, max:always(1), reset:always("long"),
         hint:"Challenge a creature you can see within 30 ft. Start it on Active effects."}

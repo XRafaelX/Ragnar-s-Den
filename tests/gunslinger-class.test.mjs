@@ -318,3 +318,41 @@ test("Playing Dirty: from Outlaw 14, a rigged shot; Duel from 18; Luck of the Dr
   assert.deepEqual([fx("luck_of_the_draw").subclass, fx("luck_of_the_draw").level], ["Outlaw", 7]);
   assert.deepEqual([fx("duel").subclass, fx("duel").level, fx("duel").cost.resource], ["Outlaw", 18, "duel"]);
 });
+
+/* ---- Phase 5: the Marshal ---- */
+function marshal(level, extra = {}){ return slinger(level, "Marshal", extra); }
+
+test("Calibrated Sights: firearm damage dice of 1 or 2 reroll once, the new roll stands", () => {
+  const real = Math.random;
+  try{
+    Math.random = () => 0.99;   // a 12 on the reroll
+    const sights = H.calibratedSights(marshal(1), gun("Long Gun"), 12);
+    assert.deepEqual(sights({ total: 5, values: [2] }), { total: 15, note: "Calibrated Sights: 2 to 12" });
+    assert.equal(sights({ total: 8, values: [5] }), null, "only 1s and 2s");
+    const two = H.calibratedSights(marshal(1), gun("Pistol"), 4);
+    assert.equal(two({ total: 3 + 3, values: [1, 2] }).total, 6 + 3 + 2, "each die on its own");
+    Math.random = () => 0;      // a 1 again: it must be kept
+    assert.equal(sights({ total: 4, values: [1] }).total, 4);
+  } finally { Math.random = real; }
+  assert.equal(H.calibratedSights(marshal(1), { name: "Longbow", type: "weapon" }, 8), null);
+  assert.equal(H.calibratedSights(outlaw(1), gun("Pistol"), 4), null);
+});
+
+test("Calibrated Sights: the Long Gun's range, Sharp Read and Pressure", () => {
+  assert.equal(H.marshalRange(marshal(1), gun("Long Gun")), "Range 600/1000");
+  assert.equal(H.marshalRange(marshal(1), gun("Pistol")), "");
+  assert.equal(H.marshalRange(outlaw(1), gun("Long Gun")), "");
+  assert.equal(H.skillCheck(marshal(6), "Insight").value, H.skillCheck(marshal(7), "Insight").value - 3, "DEX +3 at 7, and nothing earlier");
+  assert.match(H.skillCheck(marshal(7), "Insight").breakdown, /Sharp Read/);
+  assert.ok(!H.hasApplyingPressure(marshal(2), gun("Pistol")));
+  assert.ok(H.hasApplyingPressure(marshal(3), gun("Pistol")));
+  assert.ok(!H.hasApplyingPressure(marshal(3), { name: "Dagger", type: "weapon" }));
+});
+
+test("Pinpoint Control and Intuition: uses equal the proficiency bonus, DC 8 + DEX + proficiency", () => {
+  const uses = (lv) => (H.characterResources(marshal(lv)).find((r) => r.key === "Gunslinger:pinpoint_control") || {}).max;
+  assert.deepEqual([uses(13), uses(14), uses(17)], [undefined, 5, 6]);
+  assert.equal(H.pinpointDc(marshal(14)), 8 + 3 + 5);
+  assert.ok(!H.hasIntuition(marshal(17)) && H.hasIntuition(marshal(18)) && !H.hasIntuition(outlaw(18)));
+  assert.deepEqual(H.INTUITION_SKILLS, ["Insight", "Perception", "Investigation"]);
+});

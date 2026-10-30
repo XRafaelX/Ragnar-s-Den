@@ -9,7 +9,7 @@
    Bulletsmith card that crafts rounds (Novice, Handy, Elemental and
    Occult Bulletsmith). */
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, maxHp, skillCheck, profBonus, classLevelOf, roundStacks, loadedRound, loadedStack, takesHeavyRounds, roundsHaveNoType, canRigRound, roundRigged, RIGGED_ROUND_NOTE } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, maxHp, skillCheck, profBonus, classLevelOf, roundStacks, loadedRound, loadedStack, takesHeavyRounds, roundsHaveNoType, canRigRound, roundRigged, RIGGED_ROUND_NOTE, hasApplyingPressure } from "../../core/helpers.js";
 import { ROUND_KINDS, ROUND_ELEMENTS, roundBatchSize, roundStackName } from "../../data/gunslinger-rounds.js";
 import { SPELL_DATA } from "../../data/spells.js";
 import { spendCoins } from "../../core/coins.js";
@@ -19,6 +19,7 @@ import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
+import { rollCheck } from "./sheet-rolls.js";
 
 function rowOf(){
   var row = document.createElement("div");
@@ -162,6 +163,22 @@ function roundNote(c, round){
   }
   if(round.def.elemental && !round.element) return "Pick its damage type before you fire.";
   return round.note;
+}
+
+/* Applying Pressure (Marshal 3): on a firearm's card, the Insight check
+   against the target's Deception. null for anyone else. */
+export function pressureButton(c, item){
+  if(!hasApplyingPressure(c, item)) return null;
+  var check = skillCheck(c, "Insight"), entry = (c.skillProfs || {}).Insight || {};
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "btn small inv-roll-btn inv-fury-btn";
+  b.innerHTML = makeDiceSvg();
+  b.appendChild(document.createTextNode("Pressure " + fmtMod(check.value)));
+  b.title = "A bonus action after a firearm hit: your Insight against the target's Deception. If you win, the next attack against it has advantage.";
+  b.addEventListener("click", function(){
+    rollCheck(c, check.value, check.roll.mode, "Applying Pressure (Insight)", "wis", {proficient: !!entry.prof, skill: "Insight"});
+  });
+  return b;
 }
 
 /* ---- The Bulletsmith card (Inventory tab) ---- */

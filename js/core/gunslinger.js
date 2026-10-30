@@ -8,6 +8,8 @@
 import { ROUND_KINDS, HEAVY_ROUND_DAMAGE } from "../data/gunslinger-rounds.js";
 import { weaponDataOf } from "../data/weapons.js";
 import { classLevelOf } from "./class-features.js";
+import { mod, profBonus } from "./basics.js";
+import { abilityScore } from "./ability-scores.js";
 
 export function isClassFirearm(item){
   return !!(item && item.type==="weapon" && item.firearmSet==="gunslinger" && weaponDataOf(item));
@@ -114,4 +116,40 @@ export function canRigRound(c){
 }
 export function roundRigged(c, item){
   return canRigRound(c) && !!(item && item.rigged);
+}
+
+/* ---- Marshal ---- */
+function marshalLevel(c){ return classLevelOf(c, "Gunslinger", "Marshal"); }
+/* Calibrated Sights (1): firearm damage dice of 1 or 2 are rerolled, and
+   the new roll stands. An `adjust` for performRoll, or null. */
+export function calibratedSights(c, item, die){
+  if(!marshalLevel(c) || !isFirearmItem(item)) return null;
+  return function(r){
+    var gain = 0, changed = [];
+    (r.values||[]).forEach(function(v){
+      if(v > 2) return;
+      var again = Math.floor(Math.random() * die) + 1;
+      gain += again - v;
+      changed.push(v + " to " + again);
+    });
+    return changed.length ? {total: r.total + gain, note: "Calibrated Sights: " + changed.join(", ")} : null;
+  };
+}
+/* Calibrated Sights: the Long Gun's normal range doubles. The PDF says
+   "minimum range", but no firearm has one: its first number is the one
+   the table gives. "" for any other gun. */
+export function marshalRange(c, item){
+  return marshalLevel(c) && isClassFirearm(item) && item.name==="Long Gun" ? "Range 600/1000" : "";
+}
+export function hasApplyingPressure(c, item){
+  return marshalLevel(c) >= 3 && isFirearmItem(item);
+}
+/* Pinpoint Control (14): the Disarm save's DC, 8 + DEX + proficiency. */
+export function pinpointDc(c){
+  return 8 + mod(abilityScore(c, "dex")) + profBonus(c);
+}
+/* Intuition (18): a firearm attack, or one of these checks. */
+export var INTUITION_SKILLS = ["Insight", "Perception", "Investigation"];
+export function hasIntuition(c){
+  return marshalLevel(c) >= 18;
 }
