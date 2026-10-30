@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, harnessDivinePower, useHarnessDivinePower, ordinal } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, emptyBodyResistance, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -130,6 +130,7 @@ export function renderVitalsPanel(c){
     // (Relentless Rage's save waiting, or Rage Beyond Death: the rage holds.)
     if(wentDown){
       c.deathSaves = {success:0, fail:0};
+      delete c.extraTurn; // a new fall: Strength Before Death can be used again (if a use is left)
       if(!rageAtZero(c)){ endAllEffects(c); addCondition(c, "prone"); }
     }
     save(); renderSidebar(); renderAll();
@@ -200,7 +201,7 @@ export function renderVitalsPanel(c){
   // immune to isn't listed as resisted too.
   var wards = raceWards(c);
   var immuneTypes = wards.immune.map(function(r){ return r.type; });
-  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c))
+  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c), featureResistances(c), emptyBodyResistance(c))
     .filter(function(r){ return immuneTypes.indexOf(r.type.toLowerCase())===-1; });
   var resistAll = resistsAllDamage(c); // Petrified
   if(resistAll) resist = [{type: "all damage", source: resistAll}];
@@ -571,9 +572,17 @@ export function renderVitalsPanel(c){
   initBox.title = "Click to roll initiative (1d20" + fmtMod(initTotal) + ")";
   initBox.addEventListener("click", function(e){
     if(e.target.closest(".stat-stepper") || e.target.closest("button")) return;
-    performRoll(20,1,initTotal,initRoll.mode,"Initiative");
+    // Thief's Reflexes (Thief 17): a second turn at the initiative minus 10.
+    var reflexes = classLevelOf(c, "Rogue", "Thief") >= 17;
+    performRoll(20,1,initTotal,initRoll.mode,"Initiative", reflexes ? function(r){
+      return r ? {lead: "Thief's Reflexes: a second turn in the first round at initiative " + (r.total - 10) + " (not when you're surprised).", options: []} : null;
+    } : null);
     // Initiative is a DEX check: Duality's next-check advantage is used.
-    if(useNextCheck(c)){ save(); renderAll(); }
+    var used = useNextCheck(c);
+    // Relentless, Tireless Spirit...: one use back if none were left.
+    var back = regainOnInitiative(c);
+    if(back.length){ logRoll("Initiative", "Regained one use of " + back.join(", ") + "."); showActionToast("Regained one use of " + back.join(", ") + "."); }
+    if(used || back.length){ save(); renderAll(); }
   });
   grid.appendChild(initBox);
 
@@ -703,6 +712,9 @@ export function renderVitalsPanel(c){
         // exhaustion is taken first, then the rest's level comes off).
         endAllEffects(c); // also ends Rage
         delete c.relentlessUses;
+        delete c.extraTurn;
+        // Death's Friend (Phantom 17): a soul trinket appears if you have none.
+        if(classLevelOf(c, "Rogue", "Phantom") >= 17 && !(Number(c.soulTrinkets)||0)) c.soulTrinkets = 1;
         // One level of exhaustion goes first, so a maximum halved by
         // level 4 is whole again when the hit points come back.
         var exhaustionNow = longRestExhaustion(c);
@@ -944,6 +956,34 @@ function wildSurgeBlock(c){
 /* The rage's buttons and pickers: Frenzy (Berserker), Form of the Beast
    and Call the Hunt (Beast), Elemental Cleaver (Giant), Storm Aura and
    Raging Storm (Storm Herald), Spirit Shield (Ancestral Guardian). */
+/* "Spend ki on...": what the monk's ki can pay for. Picking one pays for
+   it and rolls its dice, if it has any. */
+function kiPicker(c){
+  var actions = kiActions(c), groups = {"": []};
+  function cost(a){ return a.useKey && a.freeUse ? "1 use" : a.cost ? a.cost + " ki" : "Free"; }
+  actions.forEach(function(a){
+    var g = a.group || "";
+    if(!groups[g]) groups[g] = [];
+    groups[g].push({value: a.id, label: a.name + " · " + cost(a)});
+  });
+  function find(id){ return actions.find(function(a){ return a.id===id; }); }
+  var wrap = document.createElement("div");
+  wrap.className = "ki-pick";
+  wrap.appendChild(themedPicker({key: "ki:spend", groups: groups, value: "", placeholder: "Spend ki on...", ariaLabel: "Spend ki on", sheet: true,
+    reasonFor: function(id){ return kiActionProblem(c, find(id)); },
+    detailFor: function(id){ return find(id).detail; },
+    onPick: function(id){
+      var a = find(id), paid = cost(a);
+      if(!payKiAction(c, a)) return;
+      var name = (a.group ? a.group + ": " : "") + a.name;
+      if(a.log) logRoll(name, a.log + " (" + paid + ")");
+      save(); renderAll();
+      if(a.sharpen) showActionToast(a.sharpen.name + " sharpened: +" + a.sharpen.bonus + " to attack and damage for 1 minute.");
+      if(a.roll) performRoll(a.roll.die, a.roll.qty, a.roll.bonus, "none", a.roll.label);
+    }}));
+  return wrap;
+}
+
 function rageActions(c){
   var out = [];
   if(canFrenzy(c)){
@@ -1115,17 +1155,103 @@ function renderResourcesCard(c, resources){
       var rollBtn = document.createElement("button");
       rollBtn.type = "button"; rollBtn.className = "btn small inv-roll-btn res-roll-btn";
       rollBtn.innerHTML = makeDiceSvg();
-      rollBtn.appendChild(document.createTextNode("Use · 1d" + r.roll.die));
+      rollBtn.appendChild(document.createTextNode((r.roll.button || "Use") + " · 1d" + r.roll.die + (r.roll.bonus ? fmtMod(r.roll.bonus) : "")));
       var unarmed = r.roll.needs==="meleeOrShield" && !wieldsMeleeWeaponOrShield(c);
       rollBtn.disabled = remaining<=0 || unarmed;
       rollBtn.title = remaining<=0 ? "None left" : unarmed ? "Needs a melee weapon or a shield in hand" : "Spend one and roll 1d" + r.roll.die;
       rollBtn.addEventListener("click", function(){
         setUsed(r.used+1);
-        performRoll(r.roll.die, 1, 0, "none", r.roll.label);
+        performRoll(r.roll.die, 1, r.roll.bonus || 0, "none", r.roll.label, r.roll.min ? {adjust: function(x){ return x.total < r.roll.min ? {total: r.roll.min, note: "at least " + r.roll.min} : null; }} : null);
       });
       rolls.appendChild(rollBtn);
       info.appendChild(rolls);
     }
+    // Second Wind (fighter 1): a use for 1d10 + fighter level, and
+    // Rallying Cry's healing for allies (Banneret 3).
+    var sw = r.key==="Fighter:second_wind" && secondWind(c);
+    if(sw){
+      var swRow = document.createElement("div");
+      swRow.className = "inv-roll-actions fx-rolls";
+      var swBtn = document.createElement("button");
+      swBtn.type = "button"; swBtn.className = "btn small inv-roll-btn res-roll-btn";
+      swBtn.innerHTML = makeDiceSvg();
+      swBtn.appendChild(document.createTextNode("Heal 1d10+" + sw.bonus));
+      var swFull = (Number(c.hp.current)||0) >= maxHp(c);
+      swBtn.disabled = remaining<=0 || (swFull && !sw.rally);
+      swBtn.title = remaining<=0 ? "Used until a short or long rest" : swFull && !sw.rally ? "You're at full hit points"
+        : "Bonus action: regain 1d10 + " + sw.bonus + " hit points." + (sw.rally ? " Rallying Cry: up to three allies within 60 feet who can see or hear you regain " + sw.rally + " hit points each." : "");
+      swBtn.addEventListener("click", function(){
+        var roll = Math.floor(Math.random()*10)+1, healed = roll + sw.bonus;
+        c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, maxHp(c));
+        c.resourcesUsed[r.key] = r.used + 1;
+        logRoll("Second Wind (1d10+" + sw.bonus + ")", roll + " +" + sw.bonus + " = " + healed + " HP healed" + (sw.rally ? ". Rallying Cry: up to three allies regain " + sw.rally + " HP each" : ""));
+        save(); renderAll();
+      });
+      swRow.appendChild(swBtn);
+      info.appendChild(swRow);
+    }
+    // Reclaim Potential (Echo Knight 15): 2d6 + CON temporary HP when the
+    // echo is destroyed by damage, if you have none.
+    if(r.key==="Fighter:reclaim_potential"){
+      var conM = mod(abilityScore(c, "con"));
+      var rpRow = document.createElement("div");
+      rpRow.className = "inv-roll-actions fx-rolls";
+      var rpBtn = document.createElement("button");
+      rpBtn.type = "button"; rpBtn.className = "btn small inv-roll-btn res-roll-btn";
+      rpBtn.innerHTML = makeDiceSvg();
+      rpBtn.appendChild(document.createTextNode("Temp HP 2d6" + fmtMod(conM)));
+      var hasTemp = (Number(c.hp.temp)||0) > 0;
+      rpBtn.disabled = remaining<=0 || hasTemp;
+      rpBtn.title = remaining<=0 ? "None left until a long rest" : hasTemp ? "Only when you have no temporary hit points" : "When your echo is destroyed by taking damage";
+      rpBtn.addEventListener("click", function(){
+        var a = Math.floor(Math.random()*6)+1, b2 = Math.floor(Math.random()*6)+1, got = Math.max(0, a + b2 + conM);
+        c.hp.temp = got;
+        c.resourcesUsed[r.key] = r.used + 1;
+        logRoll("Reclaim Potential (2d6" + fmtMod(conM) + ")", "[" + a + ", " + b2 + "] " + fmtMod(conM) + " = " + got + " temporary HP");
+        save(); renderAll();
+      });
+      rpRow.appendChild(rpBtn);
+      info.appendChild(rpRow);
+    }
+    // Survivor (Champion 18): regain 5 + CON at the start of a turn, at half HP or less.
+    var surv = r.key==="Fighter:survivor" && survivorHeal(c);
+    if(surv){
+      var svRow = document.createElement("div");
+      svRow.className = "inv-roll-actions fx-rolls";
+      var svBtn = document.createElement("button");
+      svBtn.type = "button"; svBtn.className = "btn small inv-roll-btn res-roll-btn";
+      svBtn.textContent = "Heal " + surv.heal;
+      svBtn.disabled = !surv.due;
+      svBtn.title = surv.due ? "Start of your turn: regain " + surv.heal + " hit points" : "Only while you have half your hit points or fewer (not at 0)";
+      svBtn.addEventListener("click", function(){
+        c.hp.current = clamp((Number(c.hp.current)||0) + surv.heal, 0, maxHp(c));
+        logRoll("Survivor", "Regained " + surv.heal + " HP at the start of the turn.");
+        save(); renderAll();
+      });
+      svRow.appendChild(svBtn);
+      info.appendChild(svRow);
+    }
+    // A use that restores a set number of hit points (Wholeness of Body).
+    if(r.heal && r.max!==Infinity){
+      var hr = document.createElement("div");
+      hr.className = "inv-roll-actions fx-rolls";
+      var hb = document.createElement("button");
+      hb.type = "button"; hb.className = "btn small inv-roll-btn res-roll-btn";
+      hb.textContent = "Heal " + r.heal;
+      var hbFull = (Number(c.hp.current)||0) >= maxHp(c);
+      hb.disabled = remaining<=0 || hbFull;
+      hb.title = remaining<=0 ? "None left" : hbFull ? "You're at full hit points" : "Spend one and regain " + r.heal + " hit points";
+      hb.addEventListener("click", function(){
+        c.hp.current = clamp((Number(c.hp.current)||0) + r.heal, 0, maxHp(c));
+        c.resourcesUsed[r.key] = r.used + 1;
+        logRoll(r.name, "Regained " + r.heal + " HP.");
+        save(); renderAll();
+      });
+      hr.appendChild(hb);
+      info.appendChild(hr);
+    }
+    // Everything ki can pay for, in one list.
+    if(r.key==="Monk:ki") info.appendChild(kiPicker(c));
     // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
     // plus the proficiency bonus of healing.
     var qh = r.key==="Monk:ki" && quickenedHealing(c);
@@ -1270,6 +1396,50 @@ function renderResourcesCard(c, resources){
     }
     list.appendChild(row);
   });
+  // A Phantom's soul trinkets (Tokens of the Departed): how many are held.
+  var trinkets = soulTrinkets(c);
+  if(trinkets) list.appendChild(soulTrinketRow(c, trinkets));
   card.appendChild(list);
   return card;
+}
+/* Soul trinkets held, with a button for one gained (a creature dies
+   within 30 feet, a reaction) and one used up. */
+function soulTrinketRow(c, t){
+  var row = document.createElement("div");
+  row.className = "res-row";
+  var info = document.createElement("div");
+  info.className = "res-info";
+  var name = document.createElement("div");
+  name.className = "res-name";
+  name.textContent = "Soul Trinkets";
+  info.appendChild(name);
+  var hint = document.createElement("div");
+  hint.className = "res-hint";
+  hint.textContent = "While you carry one: advantage on death saves and Constitution saves. Destroy one to use Wails from the Grave without a use, to use Ghost Walk again, or (as an action) to ask its spirit one question. (Phantom)";
+  info.appendChild(hint);
+  row.appendChild(info);
+  var ctrl = document.createElement("div");
+  ctrl.className = "res-ctrl";
+  var count = document.createElement("div");
+  count.className = "res-count";
+  count.innerHTML = "<b>" + t.held + "</b> / " + t.max;
+  ctrl.appendChild(count);
+  var steps = document.createElement("div");
+  steps.className = "res-steps";
+  [["down", "Destroy a soul trinket", -1], ["up", "Gain a soul trinket (a creature you can see dies within 30 feet)", 1]].forEach(function(s){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "stat-arrow-btn stat-arrow-" + s[0];
+    b.innerHTML = makeStatArrowSvg(s[0]);
+    b.title = s[1]; b.setAttribute("aria-label", s[1]);
+    b.disabled = s[2] < 0 ? t.held <= 0 : t.held >= t.max;
+    b.addEventListener("click", function(){
+      c.soulTrinkets = Math.max(0, Math.min(t.max, t.held + s[2]));
+      logRoll("Soul trinkets", (s[2] > 0 ? "Gained one" : "Destroyed one") + ": " + c.soulTrinkets + " held.");
+      save(); renderAll();
+    });
+    steps.appendChild(b);
+  });
+  ctrl.appendChild(steps);
+  row.appendChild(ctrl);
+  return row;
 }

@@ -249,6 +249,8 @@ export function computeArmorClass(c){
   var defense = bodyArmor && hasFightingStyle(c, "Defense") ? 1 : 0;
   if(defense){ breakdown += " + Defense style (+1)"; short += " + Defense"; }
   base += defense;
+  // Agile Parry (Kensei 3): +2 until the start of your next turn.
+  if(effectOn(c, "agile_parry")){ base += 2; breakdown += " + Agile Parry (+2)"; short += " + Agile Parry"; }
   // A race's own bonus (Warforged's Integrated Protection).
   var raceAc = RACE_DATA[c.race] && Number(RACE_DATA[c.race].acBonus) || 0;
   if(raceAc){
@@ -413,7 +415,9 @@ export function computeDarkvision(c){
 }
 export function getCharacterSenses(c){
   var dv = computeDarkvision(c);
+  // (A class feature's own sense too: a rogue's Blindsense.)
   var extra = styleSenses(c).concat(invocationSenses(c));
+  (c.classes||[]).forEach(function(cl){ classFeatureList(cl).forEach(function(f){ if(f.sense && extra.indexOf(f.sense)===-1) extra.push(f.sense); }); });
   if(!dv.range && extra.length) return extra.join(", ");
   return [dv.range ? "Darkvision " + dv.range + " ft" : "No darkvision"].concat(extra).join(", ");
 }

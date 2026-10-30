@@ -14,7 +14,7 @@ import { MONSTER_GROUPS, MONSTER_DATA } from "../js/data/monsters.js";
 
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
-const FEATURE_KEYS = new Set(["name", "text", "replaces", "saveDc", "attuneLimit", "speed", "speedWhen", "initiative", "acHeavyArmor", "grants",
+const FEATURE_KEYS = new Set(["name", "text", "replaces", "saveDc", "skillBonus", "skillDouble", "resist", "saveNote", "sense", "chip", "immune", "conditionImmune", "attuneLimit", "speed", "speedWhen", "initiative", "acHeavyArmor", "grants",
   "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "halfProficiency", "styleChoice", "profs", "advantage",
   "spellLabel", "spellTip", "spellAbility"]);
 const LONG_DASH = /[–—]/;
@@ -39,8 +39,9 @@ function checkFeature(f, where){
   if(f.saveBonus != null) assert.ok(ABILITIES.includes(f.saveBonus), where + " " + f.name + ": saveBonus");
   [].concat(f.saveDc || []).forEach((d) => assert.ok(ABILITIES.includes(d.ability) && (d.save === "" || ABILITIES.includes(d.save)) && /\bDC\b|saving throw|save/i.test(f.text), where + " " + f.name + ": saveDc"));
   if(f.advantage){
-    assert.ok(["save", "check", "initiative"].includes(f.advantage.on), where + " " + f.name + ": advantage.on");
-    if(f.advantage.on!=="initiative") assert.ok(f.advantage.abilities==="all" || f.advantage.abilities.every((k) => ABILITIES.includes(k)), where + " " + f.name + ": advantage.abilities");
+    assert.ok(["save", "check", "initiative", "skill"].includes(f.advantage.on), where + " " + f.name + ": advantage.on");
+    if(f.advantage.on==="skill") assert.ok(f.advantage.skills.length && f.advantage.skills.every((s) => SKILLS.some((x) => x[0] === s)), where + " " + f.name + ": advantage.skills");
+    else if(f.advantage.on!=="initiative") assert.ok(f.advantage.abilities==="all" || f.advantage.abilities.every((k) => ABILITIES.includes(k)), where + " " + f.name + ": advantage.abilities");
   }
   for(const k of ["magicWeaponAbility", "chosenWeaponAbility"]) if(f[k] != null) assert.ok(ABILITIES.includes(f[k]), where + " " + f.name + ": " + k);
   if(f.grants){
@@ -143,8 +144,10 @@ function checkResource(r, where, ids){
   assert.ok(/^[a-z0-9_]+$/.test(r.id), where + ": bad id " + r.id);
   assert.ok(!ids.has(r.id), where + ": duplicate id " + r.id);
   ids.add(r.id);
-  assert.ok(r.name && !LONG_DASH.test(r.name + r.hint), where + " " + r.id + ": name or long dash");
-  assert.ok(typeof r.hint === "string" && r.hint.length > 10, where + " " + r.id + ": hint");
+  // (A hint can be worked out from the level and modifiers: the ki save DC.)
+  const hint = typeof r.hint === "function" ? r.hint(5, { pb: 3, wis: 3 }) : r.hint;
+  assert.ok(r.name && !LONG_DASH.test(r.name + hint), where + " " + r.id + ": name or long dash");
+  assert.ok(typeof hint === "string" && hint.length > 10, where + " " + r.id + ": hint");
   assert.ok(Number.isInteger(r.level) && r.level >= 1 && r.level <= MAX_LEVEL, where + " " + r.id + ": level");
   for(let lv = r.level; lv <= MAX_LEVEL; lv++){
     for(const m of [-1, 0, 3, 5]){

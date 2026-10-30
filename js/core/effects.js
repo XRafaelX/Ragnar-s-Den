@@ -77,6 +77,12 @@ export function startEffect(c, id){
     c.hp.temp = Math.max(Number(c.hp.temp)||0, symbioticTempHp(c));
   }
   if(id==="reckless_attack") recklessAbandon(c);
+  // Fighting Spirit: 5 temporary HP, 10 from fighter 10, 15 from 15 (keep the higher).
+  if(id==="fighting_spirit"){
+    var fs = fightingSpiritTempHp(c);
+    if(!c.hp) c.hp = {max:0, current:0, temp:0};
+    if(fs > (Number(c.hp.temp)||0)) c.hp.temp = fs;
+  }
   return true;
 }
 /* Switch an effect off, and anything that needs it. */
@@ -91,6 +97,8 @@ export function endAllEffects(c){
   var ended = TOGGLE_EFFECTS.filter(function(d){ return c.effects && c.effects[d.id]; }).map(function(d){ return d.name; });
   c.effects = {};
   if(c.rage && c.rage.active){ ended.push("Rage"); ended = ended.concat(endRage(c)); }
+  // Sharpen the Blade lasts a minute.
+  if(c.sharpen){ delete c.sharpen; ended.push("Sharpen the Blade"); }
   // Shillelagh lasts a minute: a rest or dropping to 0 hit points ends it.
   var lit = (c.inventory||[]).filter(function(i){ return i.shillelagh; });
   if(lit.length){ lit.forEach(function(i){ delete i.shillelagh; }); ended.push("Shillelagh"); }
@@ -121,6 +129,12 @@ export function effectRolls(c, kind, ability){
   if((kind==="attack" || kind==="perception") && effectOn(c, "sunlight")) out.push({mode: "dis", reason: "Sunlight Sensitivity"});
   if(kind==="attack" && steadyAimReady(c)) out.push({mode: "adv", reason: "Steady Aim"});
   if(kind==="attack" && effectOn(c, "natures_veil")) out.push({mode: "adv", reason: "Nature's Veil: you're invisible"});
+  // Empty Body and Cloak of Shadows: invisible, so advantage on attack rolls.
+  if(kind==="attack" && effectOn(c, "empty_body")) out.push({mode: "adv", reason: "Empty Body: you're invisible"});
+  if(kind==="attack" && effectOn(c, "cloak_of_shadows")) out.push({mode: "adv", reason: "Cloak of Shadows: you're invisible"});
+  // Assassinate and Versatile Trickster: advantage on attack rolls while they're on.
+  if(kind==="attack" && effectOn(c, "assassinate")) out.push({mode: "adv", reason: "Assassinate"});
+  if(kind==="attack" && effectOn(c, "versatile_trickster")) out.push({mode: "adv", reason: "Versatile Trickster"});
   return out;
 }
 /* Steady Aim: on, with its advantage not yet used ("used" once an
@@ -468,5 +482,38 @@ export function stormSoulResistances(c){
    up to the CON modifier (minimum 1). The most that can join. */
 export function callTheHuntMax(c){
   return barbLevel(c, "Path of the Beast") >= 14 ? Math.max(1, mod(abilityScore(c, "con"))) : 0;
+}
+
+/* ---- Fighter archetypes ---- */
+export function fightingSpiritTempHp(c){
+  var lv = classLevelOf(c, "Fighter", "Samurai");
+  return lv >= 15 ? 15 : lv >= 10 ? 10 : 5;
+}
+/* Giant's Might (Rune Knight 3): its extra damage die once per turn, 1d6,
+   1d8 from fighter 10 (Great Stature), 1d10 from 18 (Runic Juggernaut),
+   while it's on. The die size, or 0. */
+export function giantsMightDie(c){
+  if(!effectOn(c, "giants_might")) return 0;
+  var lv = classLevelOf(c, "Fighter", "Rune Knight");
+  return lv >= 18 ? 10 : lv >= 10 ? 8 : 6;
+}
+/* Advantage on weapon attack rolls from an effect that's on: Reckless
+   Attack (STR melee only, worked out by the caller) aside, Fighting
+   Spirit's for the turn. A roll mode or null. */
+export function weaponAttackEffect(c){
+  return effectOn(c, "fighting_spirit") ? {mode: "adv", reason: "Fighting Spirit"} : null;
+}
+/* An attack was rolled: what it uses up. Shadow Step's advantage goes
+   with the next melee attack, Cloak of Shadows ends with any attack.
+   True if either changed. */
+/* Empty Body's resistance, for the HP card's line. */
+export function emptyBodyResistance(c){
+  return effectOn(c, "empty_body") ? [{type: "all damage but force", source: "Empty Body"}] : [];
+}
+export function attackEndsEffects(c, melee){
+  var changed = false;
+  if(melee && effectOn(c, "shadow_step")){ endEffect(c, "shadow_step"); changed = true; }
+  if(effectOn(c, "cloak_of_shadows")){ endEffect(c, "cloak_of_shadows"); changed = true; }
+  return changed;
 }
 

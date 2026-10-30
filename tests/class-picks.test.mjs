@@ -75,7 +75,7 @@ test("profs data: real skills, tools, languages, abilities and weapon filters", 
     (def.languages || []).forEach((l) => assert.ok(LANGUAGE_LIST.includes(l), where + ": language " + l));
     assert.ok((def.skills || def.expertise || def.languages || def.pick || []).length, where + ": gives nothing");
     for(const slot of def.pick || []){
-      assert.ok(["skill", "expertise", "tool", "language", "save", "weapon", "skillOrLanguage", "spell", "choice"].includes(slot.kind), where + ": kind " + slot.kind);
+      assert.ok(["skill", "expertise", "tool", "language", "save", "weapon", "skillOrLanguage", "skillOrTool", "spell", "choice"].includes(slot.kind), where + ": kind " + slot.kind);
       if(slot.kind === "choice"){
         const names = slot.groups ? Object.values(slot.groups).flat() : slot.options;
         assert.ok(slot.id && slot.noun && names.length >= 2 && new Set(names).size === names.length, where + ": choice needs an id, a noun and distinct options");

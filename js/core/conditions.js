@@ -18,6 +18,8 @@ export function exhaustionLevel(c){
 function downAtZero(c){
   var hp = c.hp || {};
   if(c.rage && c.rage.active && (c.rage.relentless || rageLevel(c, "Path of the Zealot") >= 14)) return false;
+  // Strength Before Death (Samurai 18): conscious through the extra turn.
+  if(c.extraTurn) return false;
   return (Number(hp.current)||0) <= 0 && (Number(hp.max)||0) > 0 && !((Number(c.deathSaves && c.deathSaves.fail)||0) >= 3);
 }
 function rageLevel(c, subclass){

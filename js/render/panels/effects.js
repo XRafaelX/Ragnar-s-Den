@@ -1,5 +1,6 @@
 import { save } from "../../core/state.js";
-import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath } from "../../core/helpers.js";
+import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod } from "../../core/helpers.js";
+import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
@@ -121,6 +122,20 @@ function effectSummary(c, id){
   }
   if(id==="raven_queen_resistance") return "Resistance to all damage";
   if(id==="sunlight") return "Disadvantage on attack rolls and Perception checks";
+  if(id==="empty_body") return "Invisible · advantage on attack rolls · resistance to all damage but force";
+  if(id==="shadow_step") return "Advantage on your first melee attack this turn";
+  if(id==="cloak_of_shadows") return "Invisible · advantage on attack rolls";
+  if(id==="agile_parry") return "+2 AC while the weapon is in your hand";
+  if(id==="assassinate") return "Advantage on attack rolls · critical damage on any hit against a surprised creature";
+  if(id==="versatile_trickster") return "Advantage on attack rolls against that creature";
+  if(id==="elegant_maneuver") return "Advantage on your next Acrobatics or Athletics check";
+  if(id==="insightful_fighting") return "Sneak Attack against that creature without advantage" + (classLevelOf(c, "Rogue", "Inquisitive") >= 17 ? " · +3d6 Sneak Attack (Eye for Weakness)" : "");
+  if(id==="ghost_walk") return "Fly 10 ft and hover · attack rolls against you have disadvantage · move through creatures and objects";
+  if(id==="giants_might"){
+    var gm = classLevelOf(c, "Fighter", "Rune Knight");
+    return (gm >= 18 ? "Large or Huge (reach +5 ft while Huge)" : "Large") + " · advantage on Strength checks and saves · +1d" + (gm >= 18 ? 10 : gm >= 10 ? 8 : 6) + " damage once on each of your turns";
+  }
+  if(id==="fighting_spirit") return "Advantage on weapon attack rolls · +" + fightingSpiritTempHp(c) + " temporary HP";
   if(id==="reckless_attack") return "Advantage on Strength melee weapon attacks · attacks against you have advantage";
   if(id==="natures_veil") return "Invisible · advantage on your attack rolls · attacks against you have disadvantage";
   if(id==="steady_aim") return c.effects.steady_aim==="used" ? "Advantage used · speed 0" : "Advantage on your next attack roll · speed 0";
@@ -138,12 +153,21 @@ function appendRolls(c, id, info){
   if(id==="astral_arms"){
     var arms = astralArmsAttack(c);
     var armsRoll = plainAttackRollMode(c);
-    var armsBtn = rollButton(makeDiceSvg(), "Attack " + fmtMod(arms.attack) + (armsRoll.mode==="dis" ? " (Dis)" : armsRoll.mode==="adv" ? " (Adv)" : ""), function(){ rollAttack(c, arms.attack, armsRoll.mode, "Astral arms: Attack"); });
+    var armsBtn = rollButton(makeDiceSvg(), "Attack " + fmtMod(arms.attack) + (armsRoll.mode==="dis" ? " (Dis)" : armsRoll.mode==="adv" ? " (Adv)" : ""), function(){ rollAttack(c, arms.attack, armsRoll.mode, "Astral arms: Attack", {qty: 1, die: arms.die, bonus: arms.damage, melee: true, label: "Astral arms"}); });
     if(armsRoll.reason) armsBtn.title = armsRoll.reason;
     buttons.push(armsBtn);
     buttons.push(rollButton(makeDicesSvg(), "Damage 1d" + arms.die + fmtMod(arms.damage), function(){ performRoll(arms.die, 1, arms.damage, "none", "Astral arms: Damage (force)"); }));
     if(arms.empowered) buttons.push(rollButton(makeDicesSvg(), "Empowered +1d" + arms.die, function(){ performRoll(arms.die, 1, 0, "none", "Empowered Arms (once per turn)"); }));
     buttons.push(rollButton(makeDicesSvg(), "Arrival 2d" + arms.die, function(){ performRoll(arms.die, 2, 0, "none", "Arms of the Astral Self: arrival (force, DEX save)"); }));
+  }
+  // Deflect Energy (Body of the Astral Self, 11): arms and visage both out.
+  if(id==="astral_visage" && classLevelOf(c, "Monk", "Way of the Astral Self") >= 11 && effectOn(c, "astral_arms")){
+    var wis = mod(abilityScore(c, "wis"));
+    var de = rollButton(makeDicesSvg(), "Deflect Energy 1d10" + fmtMod(wis), function(){
+      performRoll(10, 1, wis, "none", "Deflect Energy: damage reduced", {adjust: function(r){ return r.total < 1 ? {total: 1, note: "at least 1"} : null; }});
+    });
+    de.title = "Reaction, when you take acid, cold, fire, force, lightning or thunder damage";
+    buttons.push(de);
   }
   if(id==="symbiotic_entity"){
     var halo = haloOfSporesDie(c);

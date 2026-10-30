@@ -4,7 +4,7 @@
 import { RACE_DATA } from "../data/race-data.js";
 import { WEAPON_DATA, weaponDataOf, baseWeaponName } from "../data/weapons.js";
 import { featProficiencies, featDef, featSpellEntries, featCastAbility } from "./feat-picks.js";
-import { characterPickedProfs, characterChoices, raceProficiencies } from "./class-picks.js";
+import { characterPickedProfs, characterChoices, raceProficiencies, backgroundProficiencies, overlapTools } from "./class-picks.js";
 import { mod, profBonus, parseDiceNotation, combineRolls } from "./basics.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
 import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant } from "./class-features.js";
@@ -13,7 +13,8 @@ import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { conditionRolls } from "./conditions.js";
-import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver } from "./effects.js";
+import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver, weaponAttackEffect } from "./effects.js";
+import { sharpenBonus } from "./monk.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
    (see applyClassChoices), so deleting the feature removes its bonus. */
@@ -138,9 +139,12 @@ export function setDedicatedWeapon(c, item, on){
    Dedicated Weapon included. */
 export function martialArtsApplies(c, item){
   if(!(c.classes||[]).some(function(cl){ return cl.name==="Monk"; })) return false;
-  var dedicated = item.dedicated && hasDedicatedWeapon(c) && !dedicateProblem(item);
-  if(!isMonkWeapon(item) && !dedicated && characterPickedProfs(c).monkWeapons.indexOf(baseWeaponName(item))===-1) return false;
+  if(!isMonkWeaponFor(c, item)) return false;
   return !(c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
+}
+export function isMonkWeaponFor(c, item){
+  var dedicated = item.dedicated && hasDedicatedWeapon(c) && !dedicateProblem(item);
+  return isMonkWeapon(item) || !!dedicated || characterPickedProfs(c).monkWeapons.indexOf(baseWeaponName(item))!==-1;
 }
 /* The damage dice a weapon rolls: its own, or the Martial Arts die when
    that's bigger ("You can roll a d4 in place of the normal damage of your
@@ -194,6 +198,8 @@ export function unarmedStrike(c){
     parts.push("Martial Arts d" + ma);
     if(dex > abilityMod){ abilityMod = dex; ability = "DEX"; }
   }
+  // Ki-Empowered Strikes (monk 6): they count as magical.
+  if(monk && classLevelOf(c, "Monk") >= 6) parts.push("Magic");
   var bonus = abilityMod + holsterDamageBonus(c);
   // Rage: melee weapon attacks with STR, not in heavy armor.
   var barb = barbarianClassEntry(c);
@@ -201,7 +207,8 @@ export function unarmedStrike(c){
   if(c.rage && c.rage.active && barb && !heavy && ability==="STR") bonus += barbarianRageDamage(Number(barb.level)||1);
   bonus += songOfVictoryBonus(c, {name: "Unarmed strike"});
   return {name: name, attack: abilityMod + profBonus(c), die: die, bonus: bonus, type: type, ability: ability,
-    roll: combineRolls([armorPenalty(c, ability.toLowerCase()), ability==="STR" && effectOn(c, "reckless_attack") ? {mode: "adv", reason: "Reckless Attack"} : null]
+    roll: combineRolls([armorPenalty(c, ability.toLowerCase()), ability==="STR" && effectOn(c, "reckless_attack") ? {mode: "adv", reason: "Reckless Attack"} : null,
+      effectOn(c, "shadow_step") ? {mode: "adv", reason: "Shadow Step"} : null, weaponAttackEffect(c)]
       .concat(conditionRolls(c, "attack"), effectRolls(c, "attack"))), parts: parts, grappleDie: styled ? 4 : 0};
 }
 /* ---------------- Shillelagh ----------------
@@ -323,10 +330,10 @@ export function powerAttackOn(c, item){
 export function weaponAttackBonus(c, item){
   var pb = item.proficient ? profBonus(c) : 0;
   var archery = isRangedWeapon(item) && hasFightingStyle(c, "Archery") ? 2 : 0;
-  return weaponAbilityMod(c, item) + pb + magicBonusOf(item) + archery - (powerAttackOn(c, item) ? 5 : 0) + coinAttackBonus(c);
+  return weaponAbilityMod(c, item) + pb + magicBonusOf(item) + sharpenBonus(c, item) + archery - (powerAttackOn(c, item) ? 5 : 0) + coinAttackBonus(c);
 }
 export function weaponDamageBonus(c, item){
-  return weaponAbilityMod(c, item) + magicBonusOf(item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
+  return weaponAbilityMod(c, item) + magicBonusOf(item) + sharpenBonus(c, item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
     + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0);
 }
 /* A weapon with the thrown property (a dagger, a handaxe, a dart). */
@@ -448,7 +455,7 @@ export function barbarianNaturalWeapons(c){
   var barb = barbarianClassEntry(c);
   if(!barb) return out;
   var str = mod(abilityScore(c, "str")), pb = profBonus(c), rage = barbarianRageDamage(Number(barb.level)||1);
-  var roll = combineRolls([armorPenalty(c, "str"), effectOn(c, "reckless_attack") ? {mode: "adv", reason: "Reckless Attack"} : null]
+  var roll = combineRolls([armorPenalty(c, "str"), effectOn(c, "reckless_attack") ? {mode: "adv", reason: "Reckless Attack"} : null, weaponAttackEffect(c)]
     .concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
   var form = barb.subclass==="Path of the Beast" && c.rage.beast && BEAST_FORMS[c.rage.beast];
   if(form) out.push({name: c.rage.beast, beast: c.rage.beast, attack: str + pb, die: form.die, bonus: str + rage, type: form.type, ability: "STR",
@@ -457,6 +464,153 @@ export function barbarianNaturalWeapons(c){
   if(barb.subclass==="Path of the Battlerager" && spiked) out.push({name: "Armor spikes", spikes: true, attack: str + pb, die: 4, bonus: str + rage, type: "Piercing", ability: "STR",
     roll: roll, parts: ["Bonus action", "a grapple you win also deals 3 piercing"]});
   return out;
+}
+/* The lowest d20 roll that's a critical hit with this attack: 20, 19
+   with a Champion's Improved Critical (fighter 3), 18 with Superior
+   Critical (15), 19 with a firearm for a Gunslinger's Vicious Intent (18). */
+export function critRange(c, item){
+  var champ = classLevelOf(c, "Fighter", "Champion");
+  var min = champ >= 15 ? 18 : champ >= 3 ? 19 : 20;
+  if(item && isFirearm(item) && classLevelOf(c, "Fighter", "Gunslinger") >= 18) min = Math.min(min, 19);
+  return min;
+}
+export function isFirearm(item){
+  var d = weaponDataOf(item);
+  return !!(item && item.type==="weapon" && d && d.category==="firearm");
+}
+/* A firearm's misfire and reload scores (the Gunslinger's rules): from its
+   properties ("reload 4 ... misfire 1"), +1 misfire without proficiency.
+   {misfire, reload} or null for any other weapon. */
+export function firearmStats(item){
+  if(!isFirearm(item)) return null;
+  var props = (weaponDataOf(item).properties || "") + " " + (item.notes || "");
+  var mf = /misfire (\d+)/i.exec(props), rl = /reload (\d+)/i.exec(props);
+  return {misfire: (mf ? Number(mf[1]) : 1) + (item.proficient===false ? 1 : 0), reload: rl ? Number(rl[1]) : 1};
+}
+/* How many attacks the Attack action makes: 2 with any Extra Attack
+   feature, 3 for a fighter 11 and 4 for a fighter 20. */
+export function attacksPerAction(c){
+  var n = 1;
+  (c.classes||[]).forEach(function(cl){
+    var lv = Number(cl.level)||1;
+    if(cl.name==="Fighter") n = Math.max(n, lv >= 20 ? 4 : lv >= 11 ? 3 : lv >= 5 ? 2 : 1);
+    if(classFeatureList(cl).some(function(f){ return f.name==="Extra Attack"; })) n = Math.max(n, 2);
+  });
+  return n;
+}
+/* Every tool the character is proficient with, in the Information tab's
+   order: classes, race, background, a tool picked in place of one given
+   twice, feats. */
+export function characterToolProfs(c){
+  var tools = [];
+  function add(v){ if(v && tools.indexOf(v)===-1) tools.push(v); }
+  (c.classes||[]).forEach(function(cl, idx){ var p = classProficiencies(c, idx); ((p && p.tools)||[]).forEach(add); });
+  raceProficiencies(c).tools.forEach(add);
+  backgroundProficiencies(c).tools.forEach(add);
+  overlapTools(c).forEach(add);
+  featProficiencies(c).tools.forEach(function(p){ add(p.name); });
+  return tools;
+}
+/* A misfired firearm's repair: a tinker's tools check against DC 8 + its
+   misfire score. The Gunslinger's rules don't name the ability, so the
+   better of INT and DEX is used, with proficiency when the character has
+   tinker's tools. {dc, bonus, ability}. */
+export function firearmRepair(c, item){
+  var gun = firearmStats(item);
+  if(!gun) return null;
+  var intMod = mod(abilityScore(c, "int")), dexMod = mod(abilityScore(c, "dex"));
+  var prof = characterToolProfs(c).some(function(t){ return /tinker/i.test(t); }) ? profBonus(c) : 0;
+  return {dc: 8 + gun.misfire, bonus: Math.max(intMod, dexMod) + prof, ability: intMod >= dexMod ? "INT" : "DEX", proficient: !!prof};
+}
+/* Psi Warrior (fighter 3): the Psionic Energy die (d6, d8 from 5, d10 from
+   11, d12 from 17) and Psionic Strike's roll: that die + INT force, for a
+   die. {die, bonus, key, used, left, thrustDc (Telekinetic Thrust, 7)}
+   or null. */
+export function psionicDie(c){
+  var lv = classLevelOf(c, "Fighter", "Psi Warrior");
+  return lv >= 17 ? 12 : lv >= 11 ? 10 : lv >= 5 ? 8 : lv >= 3 ? 6 : 0;
+}
+export function psionicStrike(c){
+  var die = psionicDie(c);
+  if(!die) return null;
+  var key = "Fighter:psionic_energy_dice", max = profBonus(c) * 2, used = Math.min(max, Number((c.resourcesUsed||{})[key])||0);
+  var int = mod(abilityScore(c, "int"));
+  return {die: die, bonus: int, key: key, used: used, left: max - used,
+    thrustDc: classLevelOf(c, "Fighter", "Psi Warrior") >= 7 ? 8 + profBonus(c) + int : 0};
+}
+/* Magic Arrow (Arcane Archer 7): a shortbow's or longbow's arrows count as magical. */
+export function magicArrows(c, item){
+  return classLevelOf(c, "Fighter", "Arcane Archer") >= 7 && /^(Shortbow|Longbow)$/.test(baseWeaponName(item) || "");
+}
+/* A Soulknife's Psionic Energy die (d6, d8 from 5, d10 from 11, d12 from
+   17) and the pool: {die, key, used, left} or null. */
+export function soulknifeDie(c){
+  var lv = classLevelOf(c, "Rogue", "Soulknife");
+  if(lv < 3) return null;
+  var key = "Rogue:psionic_energy_dice", max = profBonus(c) * 2, used = Math.min(max, Number((c.resourcesUsed||{})[key])||0);
+  return {die: lv >= 17 ? 12 : lv >= 11 ? 10 : lv >= 5 ? 8 : 6, key: key, used: used, left: max - used};
+}
+/* A Sun Soul's Radiant Sun Bolt (monk 3), shaped like an unarmed strike
+   for its card: a ranged spell attack, 30 feet, DEX, the Martial Arts die
+   of radiant. [] or [bolt]. */
+export function sunBolts(c){
+  if(classLevelOf(c, "Monk", "Way of the Sun Soul") < 3) return [];
+  var dex = mod(abilityScore(c, "dex"));
+  return [{name: "Radiant Sun Bolt", ranged: true, attack: dex + profBonus(c), die: martialArtsDie(c), bonus: dex, type: "Radiant", ability: "DEX",
+    roll: combineRolls(conditionRolls(c, "attack").concat(effectRolls(c, "attack"))), parts: ["ranged spell attack, 30 ft", "with the Attack action"]}];
+}
+/* Sneak Attack (rogue 1): the d6s once per turn (half the rogue level,
+   rounded up), with a finesse or ranged weapon (or a Soulknife's psychic
+   blade). Eye for Weakness (Inquisitive 17) adds 3d6 while Insightful
+   Fighting is on. {dice, eye} or null. */
+export function sneakAttack(c){
+  var lv = classLevelOf(c, "Rogue");
+  if(!lv) return null;
+  var eye = classLevelOf(c, "Rogue", "Inquisitive") >= 17 && effectOn(c, "insightful_fighting") ? 3 : 0;
+  return {dice: Math.ceil(lv / 2) + eye, eye: eye};
+}
+export function sneakAttackWeapon(item){
+  if(!item || item.psychicBlade) return !!item;
+  if(item.type!=="weapon") return false;
+  var d = weaponDataOf(item);
+  return isRangedWeapon(item) || item.ability==="finesse" || !!(d && d.finesse) || /\bfinesse\b/i.test(item.notes || "");
+}
+/* A Soulknife's psychic blades (rogue 3), shaped like an unarmed strike
+   for their card: a simple melee weapon with finesse and thrown (60 ft),
+   1d6 psychic plus the better of STR and DEX, proficient. [] or [blade]. */
+export function psychicBlades(c){
+  if(classLevelOf(c, "Rogue", "Soulknife") < 3) return [];
+  var str = mod(abilityScore(c, "str")), dex = mod(abilityScore(c, "dex")), best = Math.max(str, dex);
+  return [{name: "Psychic blade", psychicBlade: true, attack: best + profBonus(c), die: 6, bonus: best, type: "Psychic", ability: dex >= str ? "DEX" : "STR",
+    roll: combineRolls([armorPenalty(c, dex >= str ? "dex" : "str")].concat(conditionRolls(c, "attack"), effectRolls(c, "attack"))),
+    parts: ["finesse, thrown (60 ft)", "magic"], secondDie: 4}];
+}
+/* Phantom (rogue 9): soul trinkets held (c.soulTrinkets, up to the
+   proficiency bonus). {held, max} or null. */
+export function soulTrinkets(c){
+  if(classLevelOf(c, "Rogue", "Phantom") < 9) return null;
+  var max = profBonus(c);
+  return {held: Math.max(0, Math.min(max, Number(c.soulTrinkets)||0)), max: max};
+}
+/* Wails from the Grave (Phantom 3): half the Sneak Attack dice for the
+   level (rounded up) of necrotic to a second creature, both with Death's
+   Friend (17). {dice, both, usesLeft, key, trinkets} or null. */
+export function wailsFromTheGrave(c){
+  var lv = classLevelOf(c, "Rogue", "Phantom"), rogue = classLevelOf(c, "Rogue");
+  if(lv < 3) return null;
+  var key = "Rogue:wails_from_the_grave", max = profBonus(c), used = Math.min(max, Number((c.resourcesUsed||{})[key])||0);
+  var t = soulTrinkets(c);
+  return {dice: Math.ceil(Math.ceil(rogue / 2) / 2), both: lv >= 17, key: key, used: used, usesLeft: max - used, trinkets: t ? t.held : 0};
+}
+/* Gunslinger (fighter 18): Vicious Intent and Hemorrhaging Critical. */
+export function viciousIntent(c){ return classLevelOf(c, "Fighter", "Gunslinger") >= 18; }
+export function hemorrhagingCritical(c){ return classLevelOf(c, "Fighter", "Gunslinger") >= 18; }
+/* A grit point back (one spent, up to the most). True if one came back. */
+export function regainGrit(c){
+  var key = "Fighter:grit_points", used = Number((c.resourcesUsed||{})[key])||0;
+  if(!used) return false;
+  c.resourcesUsed[key] = used - 1;
+  return true;
 }
 /* Brutal Critical (barbarian 9): extra weapon damage dice on a critical
    hit with a melee attack, 1 die at 9, 2 at 13, 3 at 17. */

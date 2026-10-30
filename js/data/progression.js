@@ -238,14 +238,14 @@ export var CLASS_PROGRESSION = {
     startingProfs: {text: "One type of artisan's tools or musical instrument", profs: {pick:[{kind:"tool", kinds:["Artisan's tools","Musical instruments"]}]}},
     features: {
       2: [
-        {name:"Ki", text:"You have ki points equal to your monk level, regained on a short or long rest. Spend 1 ki for: Flurry of Blows (two unarmed strikes as a bonus action), Patient Defense (Dodge as a bonus action) or Step of the Wind (Disengage or Dash as a bonus action, jump distance doubled). Save DC = 8 + proficiency + WIS."},
+        {name:"Ki", text:"You have ki points equal to your monk level, regained on a short or long rest. Spend 1 ki for: Flurry of Blows (two unarmed strikes as a bonus action), Patient Defense (Dodge as a bonus action) or Step of the Wind (Disengage or Dash as a bonus action, jump distance doubled). Save DC = 8 + proficiency + WIS.", saveDc:{save:"", ability:"wis"}},
         {name:"Unarmored Movement", text:"Your speed increases by 10 feet while you wear no armor and no shield. (Added to your speed while that's true.)", speed:10, speedWhen:"unarmored"}
       ],
       3: [{name:"Deflect Missiles", text:"Reaction when hit by a ranged weapon attack: reduce the damage by 1d10 + DEX modifier + monk level. If that reduces it to 0 you can catch it and spend 1 ki to throw it back."}],
-      4: [{name:"Slow Fall", text:"Reaction when you fall: reduce the falling damage by five times your monk level."}],
+      4: [{name:"Slow Fall", text:"Reaction when you fall: reduce the falling damage by five times your monk level.", chip:function(x){ return "Reduces falls by " + 5 * x.lv; }}],
       5: [
         {name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."},
-        {name:"Stunning Strike", text:"When you hit with a melee weapon attack, spend 1 ki: the target must make a Constitution save or be stunned until the end of your next turn."},
+        {name:"Stunning Strike", text:"When you hit with a melee weapon attack, spend 1 ki: the target must make a Constitution save or be stunned until the end of your next turn.", saveDc:{save:"con", ability:"wis"}},
         {name:"Martial Arts", replaces:"Martial Arts", text:"Use DEX instead of STR for unarmed strikes and monk weapons, which deal 1d6 damage. When you take the Attack action with them, you can make one unarmed strike as a bonus action."}
       ],
       6: [
@@ -253,12 +253,12 @@ export var CLASS_PROGRESSION = {
         {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 15 feet while you wear no armor and no shield. (Added to your speed while that's true.)", speed:5, speedWhen:"unarmored"}
       ],
       7: [
-        {name:"Evasion", text:"When an effect lets you make a DEX save to take half damage, you take no damage on a success and half on a failure."},
+        {name:"Evasion", text:"When an effect lets you make a DEX save to take half damage, you take no damage on a success and half on a failure.", saveNote:{abilities:["dex"], text:"When a Dexterity save would halve the damage, you take none on a success and half on a failure"}},
         {name:"Stillness of Mind", text:"As an action, end one effect on yourself that is causing you to be charmed or frightened."}
       ],
       9: [{name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 15 feet while you wear no armor and no shield. (Added to your speed while that's true.) You can also move along vertical surfaces and across liquids on your turn without falling during the move."}],
       10: [
-        {name:"Purity of Body", text:"You are immune to disease and poison."},
+        {name:"Purity of Body", text:"You are immune to disease and poison.", immune:["poison"], conditionImmune:["poisoned"]},
         {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 20 feet while you wear no armor and no shield. (Added to your speed while that's true.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5, speedWhen:"unarmored"}
       ],
       11: [{name:"Martial Arts", replaces:"Martial Arts", text:"Use DEX instead of STR for unarmed strikes and monk weapons, which deal 1d8 damage. When you take the Attack action with them, you can make one unarmed strike as a bonus action."}],
@@ -384,7 +384,7 @@ export var CLASS_PROGRESSION = {
         profs:{pick:[{kind:"expertise", count:2, tools:["Thieves' tools"]}]}}],
       7: [
         {name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 4d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage on the attack roll, or if another enemy of the target is within 5 feet of it (and you don't have disadvantage)."},
-        {name:"Evasion", text:"When an effect lets you make a DEX save to take half damage, you take no damage on a success and half on a failure."}
+        {name:"Evasion", text:"When an effect lets you make a DEX save to take half damage, you take no damage on a success and half on a failure.", saveNote:{abilities:["dex"], text:"When a Dexterity save would halve the damage, you take none on a success and half on a failure"}}
       ],
       9: [{name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 5d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage on the attack roll, or if another enemy of the target is within 5 feet of it (and you don't have disadvantage)."}],
       11: [
@@ -392,7 +392,7 @@ export var CLASS_PROGRESSION = {
         {name:"Reliable Talent", text:"Whenever you make an ability check that uses your proficiency bonus, you can treat a d20 roll of 9 or lower as a 10."}
       ],
       13: [{name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 7d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage on the attack roll, or if another enemy of the target is within 5 feet of it (and you don't have disadvantage)."}],
-      14: [{name:"Blindsense", text:"If you can hear, you know the location of any hidden or invisible creature within 10 feet of you."}],
+      14: [{name:"Blindsense", text:"If you can hear, you know the location of any hidden or invisible creature within 10 feet of you.", sense:"Blindsense 10 ft"}],
       15: [
         {name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 8d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage on the attack roll, or if another enemy of the target is within 5 feet of it (and you don't have disadvantage)."},
         {name:"Slippery Mind", text:"You gain proficiency in Wisdom saving throws (already applied to your saves).", grants:{savingThrows:["wis"]}}

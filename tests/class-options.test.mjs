@@ -418,7 +418,7 @@ test("Storm Herald: change the environment at every barbarian level; misfortunes
 });
 
 test("costs name their points", () => {
-  assert.equal(optionMeta(optionDef("disciplines", "Flames of the Phoenix"), optionSetDef("disciplines")), "4 ki points");
+  assert.equal(optionMeta(optionDef("disciplines", "Flames of the Phoenix"), optionSetDef("disciplines")), "4 ki points · Dexterity save");
   assert.equal(optionMeta(optionDef("disciplines", "Fangs of the Fire Snake"), optionSetDef("disciplines")), "1 ki point");
   assert.equal(optionMeta(optionDef("disciplines", "Water Whip"), optionSetDef("disciplines")), "2 ki points · Dexterity save");
   assert.equal(optionMeta(optionDef("misfortunes", "Doomed"), optionSetDef("misfortunes")), "1 Jinx Point");

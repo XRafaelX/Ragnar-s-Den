@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
-import { computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod } from "../../core/helpers.js";
+import { computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition } from "../../core/helpers.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playDiceRattle, playDeathSaveSuccess, playDeathSaveFail, playStabilized, playDeath, playRevive } from "../../ui/sound.js";
 
@@ -23,6 +23,7 @@ var SKULL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="ds-skull-h
 var SHIELD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path class="ds-shield-check" d="m9 12 2 2 4-4"/></svg>';
 
 var HINT = "10+ succeeds · Natural 20 regains 1 HP";
+var HINT_ADV = "Advantage from your soul trinket · " + HINT;
 
 function reducedMotion(){
   return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -85,12 +86,59 @@ export function renderDeathSaves(c){
   body.appendChild(track(c, "fail", n.fail));
   box.appendChild(body);
 
+  // Strength Before Death (Samurai 18): a reaction for an extra turn
+  // before falling unconscious, once per long rest.
+  var sbd = strengthBeforeDeath(c);
+  if(sbd && !dead){
+    var sbdBtn = document.createElement("button");
+    sbdBtn.type = "button";
+    sbdBtn.className = "btn small primary ds-extra-turn";
+    sbdBtn.textContent = c.extraTurn ? "End the extra turn" : "Strength Before Death";
+    sbdBtn.title = c.extraTurn ? "You fall unconscious if you're still at 0 HP" : "Reaction: delay falling unconscious and take an extra turn right now";
+    sbdBtn.disabled = !c.extraTurn && !sbd.left;
+    sbdBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      if(c.extraTurn){ delete c.extraTurn; logRoll("Strength Before Death", "The extra turn ends."); }
+      else {
+        c.resourcesUsed[sbd.key] = sbd.used + 1;
+        c.extraTurn = true;
+        logRoll("Strength Before Death", "An extra turn right now, at 0 HP. Damage still causes death save failures.");
+      }
+      save(); renderSidebar(); renderAll();
+    });
+    box.appendChild(sbdBtn);
+  }
+
+  // Mastery of Death (Way of Long Death 11): 1 ki for 1 hit point instead.
+  if(classLevelOf(c, "Monk", "Way of Long Death") >= 11 && !dead){
+    var mastery = document.createElement("button");
+    mastery.type = "button";
+    mastery.className = "btn small primary ds-mastery";
+    mastery.textContent = "Mastery of Death · 1 ki";
+    mastery.title = kiLeft(c) >= 1 ? "When you're reduced to 0 hit points: have 1 hit point instead (no action)" : "No ki left";
+    mastery.disabled = kiLeft(c) < 1;
+    mastery.addEventListener("click", function(e){
+      e.stopPropagation();
+      if(!spendKi(c, 1)) return;
+      c.hp.current = 1;
+      c.deathSaves = {success: 0, fail: 0};
+      removeCondition(c, "prone");
+      logRoll("Mastery of Death", "1 hit point instead of 0 (1 ki).");
+      showActionToast("Mastery of Death: you have 1 hit point instead.");
+      playRevive();
+      save(); renderSidebar(); renderAll();
+    });
+    box.appendChild(mastery);
+  }
+
   var status = document.createElement("div");
   status.className = "ds-status";
   status.setAttribute("aria-live", "polite");
   status.textContent = dead ? (holding ? "Three failures, but your rage holds death off. You die when it ends if you're still at 0 HP." : "Three failures. The character has died.")
     : stable ? "Stable at 0 HP. No more saves unless you take damage."
     : holding ? "Rage Beyond Death: you stay conscious and keep fighting. " + HINT
+    : c.extraTurn ? "Strength Before Death: your extra turn. You fall unconscious when it ends if you're still at 0 HP."
+    : soulTrinkets(c) && soulTrinkets(c).held ? HINT_ADV
     : HINT;
   box.appendChild(status);
 
@@ -141,6 +189,12 @@ function renderRelentless(c){
   return box;
 }
 
+/* Strength Before Death's use: {key, used, left}, or null without it. */
+function strengthBeforeDeath(c){
+  var r = characterResources(c).find(function(x){ return x.key==="Fighter:strength_before_death"; });
+  return r ? {key: r.key, used: r.used, left: r.max - r.used} : null;
+}
+
 function track(c, kind, filled){
   var wrap = document.createElement("div");
   wrap.className = "ds-track ds-" + kind;
@@ -183,6 +237,9 @@ function rollDeathSave(c, btn){
   if(btn.disabled) return;
   btn.disabled = true;
   var value = Math.floor(Math.random()*20) + 1;
+  // A Phantom's soul trinket (Tokens of the Departed): advantage on death saves.
+  var t = soulTrinkets(c);
+  if(t && t.held) value = Math.max(value, Math.floor(Math.random()*20) + 1);
   var text = btn.querySelector(".die-text");
   var motion = !reducedMotion();
   playDiceRattle();

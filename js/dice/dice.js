@@ -210,8 +210,9 @@ export function renderDicePreview(){
    this roll (Focused Aim's ki after a missed attack, Magical Guidance's
    reroll after a failed check, critical damage after a natural 20).
    They show under the result in the tray; use() pays for it and returns
-   {bonus, log}, and the total grows by the bonus, or {reroll: true, log},
-   and the same dice are rolled again, or {silent: true} when it rolled
+   {bonus, log}, and the total grows by the bonus, or {reroll: true, log,
+   adv} and the same dice are rolled again (with advantage when adv is
+   "adv"), or {silent: true} when it rolled
    something of its own (null when it can't). One per roll.
    adjust(result) can change the total before it's shown: {total, note}
    (Indomitable Might's Strength score in place of a lower total).
@@ -393,7 +394,8 @@ export function performRoll(die, qty, modifier, adv, label, extra){
       // (an adjustment still applies to it, but no second follow-up).
       if(res.reroll){
         logRoll(label || ("d" + die), res.log + ": rerolled");
-        performRoll(die, qty, modifier, adv, label, adjust ? {adjust: adjust} : null);
+        // (Master Duelist rerolls with advantage: res.adv.)
+        performRoll(die, qty, modifier, res.adv || adv, label, adjust ? {adjust: adjust} : null);
         return;
       }
       // One that rolled something of its own (critical damage) is done.

@@ -37,6 +37,42 @@ export var TOGGLE_EFFECTS = [
   {id:"reckless_attack", name:"Reckless Attack", className:"Barbarian", level:2, duration:"Until your next turn",
     startLabel:"Attack recklessly",
     hint:"Decide on your first attack of the turn. Attacks against you have advantage until your next turn."},
+  // Tasha's Cauldron (p. 44), checked on 5etools' data 2026-10-30.
+  {id:"giants_might", name:"Giant's Might", className:"Fighter", subclass:"Rune Knight", level:3,
+    cost:{resource:"giants_might", amount:1}, duration:"1 minute",
+    hint:"Bonus action. You become Large if there's room, along with what you wear."},
+  // Xanathar's Guide (p. 31), checked on 5etools' data 2026-10-30.
+  {id:"fighting_spirit", name:"Fighting Spirit", className:"Fighter", subclass:"Samurai", level:3,
+    cost:{resource:"fighting_spirit", amount:1}, duration:"Until the end of your turn",
+    hint:"Bonus action on your turn."},
+  // Monk (Player's Handbook pp. 76 to 80, Xanathar's Guide p. 34), checked
+  // on 5etools' data 2026-10-30.
+  {id:"empty_body", name:"Empty Body", className:"Monk", level:18, cost:{resource:"ki", amount:4}, duration:"1 minute",
+    hint:"An action."},
+  {id:"shadow_step", name:"Shadow Step", className:"Monk", subclass:"Way of Shadow", level:6, duration:"This turn",
+    startLabel:"Step", endLabel:"Done",
+    hint:"Bonus action, in dim light or darkness: teleport up to 60 feet to another such space. Your next melee attack uses it up."},
+  {id:"cloak_of_shadows", name:"Cloak of Shadows", className:"Monk", subclass:"Way of Shadow", level:11, duration:"Until you attack or cast a spell",
+    startLabel:"Vanish", endLabel:"Reappear",
+    hint:"An action, in dim light or darkness. It also ends in bright light."},
+  {id:"agile_parry", name:"Agile Parry", className:"Monk", subclass:"Way of the Kensei", level:3, duration:"Until the start of your next turn",
+    startLabel:"Parry",
+    hint:"After an unarmed strike in the Attack action, with a melee kensei weapon in hand."},
+  // Rogue archetypes (Player's Handbook p. 97, Xanathar's Guide pp. 45 to
+  // 48, Tasha's Cauldron pp. 62 to 63), checked on 5etools' data 2026-10-30.
+  {id:"assassinate", name:"Assassinate", className:"Rogue", subclass:"Assassin", level:3, duration:"The first round of combat",
+    startLabel:"Combat starts", endLabel:"First round over",
+    hint:"Only against creatures that haven't taken a turn yet. Any hit against a surprised creature is a critical hit."},
+  {id:"versatile_trickster", name:"Versatile Trickster", className:"Rogue", subclass:"Arcane Trickster", level:13, duration:"Until the end of your turn",
+    hint:"Bonus action: pick a creature within 5 feet of your mage hand."},
+  {id:"elegant_maneuver", name:"Elegant Maneuver", className:"Rogue", subclass:"Swashbuckler", level:13, duration:"This turn",
+    hint:"Bonus action. It's used up by your next Acrobatics or Athletics check."},
+  {id:"insightful_fighting", name:"Insightful Fighting", className:"Rogue", subclass:"Inquisitive", level:3, duration:"1 minute",
+    startLabel:"Read the target",
+    hint:"Bonus action: an Insight check against the target's Deception. Start this when you win it."},
+  {id:"ghost_walk", name:"Ghost Walk", className:"Rogue", subclass:"Phantom", level:13,
+    cost:{resource:"ghost_walk", amount:1}, duration:"10 minutes",
+    hint:"Bonus action. You take 1d10 force damage if you end your turn inside a creature or an object."},
   // Tasha's Cauldron (p. 62), checked on 5etools' data 2026-10-29. The
   // advantage goes with the next attack roll, the speed stays 0 until End turn.
   {id:"steady_aim", name:"Steady Aim", className:"Rogue", level:3, variant:"Steady Aim", duration:"Until the end of your turn",

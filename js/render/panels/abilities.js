@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { fmtMod, mod, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, computeDarkvision, checkAbility, abilityCheck, skillCheck, saveRollMode, situationalSaveAdvantages, saveAutoFail, escapeHtml } from "../../core/helpers.js";
+import { fmtMod, mod, computeSave, passivePerception, passiveInvestigation, passiveInsight, getCharacterSenses, computeDarkvision, checkAbility, abilityCheck, skillCheck, saveRollMode, situationalSaveAdvantages, saveAutoFail, escapeHtml, situationalSkillAdvantages, saveNotes } from "../../core/helpers.js";
 import { ABILITIES, SKILLS } from "../../data/abilities-skills.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeAlertSvg } from "../../ui/svg-icons.js";
@@ -66,7 +66,8 @@ export function renderAbilitiesPanel(c){
     rollArea.setAttribute("tabindex", "0");
     rollArea.innerHTML = '<div class="lbl">'+a[1].slice(0,3).toUpperCase()+'</div><div class="mod">'+fmtMod(shown)+'</div>';
     if(check.roll.mode!=="none") rollArea.appendChild(rollTag(check.roll));
-    function rollAbilityCheck(){ rollCheck(c, check.value, check.roll.mode, a[1]+" check", key); }
+    // (A plain ability check never adds the full proficiency bonus.)
+    function rollAbilityCheck(){ rollCheck(c, check.value, check.roll.mode, a[1]+" check", key, {proficient: false}); }
     rollArea.addEventListener("click", function(e){
       e.stopPropagation();
       rollAbilityCheck();
@@ -168,7 +169,7 @@ export function renderAbilitiesPanel(c){
     row.appendChild(cb); row.appendChild(name); row.appendChild(rollButton(total, a[1] + " save"));
     onRowRoll(row, function(){
       if(fails) logRoll(a[1]+" save", "Fails automatically ("+fails+").");
-      else rollSave(c, total, saveRoll.mode, a[1]+" save");
+      else rollSave(c, total, saveRoll.mode, a[1]+" save", key);
     });
     saveRows.appendChild(row);
   });
@@ -201,6 +202,9 @@ export function renderAbilitiesPanel(c){
     notes.appendChild(ul);
     saveCard.appendChild(notes);
   }
+  // Rules to remember on some saves (Evasion on DEX saves).
+  var reminders = saveNotes(c);
+  if(reminders.length) saveCard.appendChild(noteList("Remember:", reminders.map(function(n){ return {name: n.name, text: n.text + "."}; })));
   panel.appendChild(saveCard);
 
   var skillCard = makeCard("Skills");
@@ -251,10 +255,14 @@ export function renderAbilitiesPanel(c){
     abbr.className = "abbr"; abbr.textContent = skillAbility.label.slice(0, 3);
     if(skillAbility.label.length > 3) abbr.title = skillAbility.label;
     row.appendChild(pips); row.appendChild(nameSpan); row.appendChild(abbr); row.appendChild(rollButton(bonus, name));
-    onRowRoll(row, function(){ rollCheck(c, bonus, rollMode, name, ab); });
+    onRowRoll(row, function(){ rollCheck(c, bonus, rollMode, name, ab, {proficient: !!entry.prof, skill: name}); });
     skillRows.appendChild(row);
   });
   skillCard.appendChild(skillRows);
+  // Advantage on a skill that depends on the situation (Supreme Sneak).
+  var skillSits = situationalSkillAdvantages(c);
+  if(skillSits.length) skillCard.appendChild(noteList("Situational advantage (roll with advantage yourself when it applies):",
+    skillSits.map(function(s){ return {name: s.name, text: s.skills.join(" and ") + " " + s.when + "."}; })));
   panel.appendChild(skillCard);
 
   var passCard = makeCard("Passive senses");
@@ -284,3 +292,26 @@ export function renderAbilitiesPanel(c){
 
   return panel;
 }
+
+/* A small list of reminders under a card: a lead line, then "Name: text"
+   items (the saves card's situational advantage look). */
+function noteList(lead, items){
+  var notes = document.createElement("div");
+  notes.className = "save-adv-notes";
+  var head = document.createElement("p");
+  head.className = "save-adv-head";
+  head.textContent = lead;
+  notes.appendChild(head);
+  var ul = document.createElement("ul");
+  items.forEach(function(it){
+    var li = document.createElement("li");
+    var b = document.createElement("b");
+    b.textContent = it.name + ": ";
+    li.appendChild(b);
+    li.appendChild(document.createTextNode(it.text));
+    ul.appendChild(li);
+  });
+  notes.appendChild(ul);
+  return notes;
+}
+

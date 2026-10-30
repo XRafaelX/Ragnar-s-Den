@@ -1,8 +1,8 @@
 import { save } from "../../core/state.js";
-import { useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady } from "../../core/helpers.js";
+import { useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor } from "../../core/helpers.js";
 import { useNextCheck } from "../../core/magic-items.js";
 import { renderAll } from "../sheet.js";
-import { performRoll } from "../../dice/dice.js";
+import { performRoll, logRoll } from "../../dice/dice.js";
 
 /* ---------------- Attack rolls, ability checks and saves ----------------
    Every attack roll on the sheet (weapons, unarmed strikes, spell
@@ -14,41 +14,219 @@ import { performRoll } from "../../dice/dice.js";
    Magical Guidance's reroll after a failed check, Fanatical Focus's
    after a failed save). */
 
-/* hit (optional) = {qty, die, bonus, melee, label}: the attack's damage,
-   for its critical hit. */
+/* hit (optional) = {qty, die, bonus, melee, label, critMin, item}: the
+   attack's damage for its critical hit (on critMin or more, 20 if not
+   given), and the weapon (a firearm counts its shots and can misfire). */
 export function rollAttack(c, bonus, mode, label, hit){
-  var aim = hasFocusedAim(c);
-  performRoll(20, 1, bonus, mode, label, aim || hit ? function(r){ return attackFollowUp(c, r, aim, hit); } : null);
-  if(useSteadyAim(c)){ save(); renderAll(); }
+  var aim = hasFocusedAim(c) || !!(hit && hit.item && magicArrows(c, hit.item)), gun = hit && hit.item && firearmStats(hit.item);
+  if(gun) hit.item.shots = (Number(hit.item.shots)||0) + 1;
+  performRoll(20, 1, bonus, mode, label, {
+    followUp: function(r){ return attackFollowUp(c, r, aim, hit); },
+    onResult: gun ? function(r){ firearmResult(c, hit.item, gun, r); } : null
+  });
+  var ended = attackEndsEffects(c, !!(hit && hit.melee));
+  if(useSteadyAim(c) || gun || ended){ save(); renderAll(); }
+}
+/* A firearm's roll (the Gunslinger's rules): at or under its misfire
+   score it misfires, and the gun is jammed until repaired. Vicious Intent
+   (gunslinger 18): a grit point back on a 19 or 20. */
+function firearmResult(c, item, gun, r){
+  if(r.natural!=null && r.natural <= gun.misfire){
+    item.misfired = true;
+    save(); renderAll();
+    return;
+  }
+  if(r.natural >= 19 && viciousIntent(c) && regainGrit(c)){
+    logRoll("Vicious Intent", "Regained a grit point.");
+    save(); renderAll();
+  }
 }
 /* ability: the check's ability ("str" for a Strength check or Athletics). */
-export function rollCheck(c, bonus, mode, label, ability){
+/* opts = {proficient, skill}: whether the check adds the proficiency bonus
+   (Reliable Talent, Psi-Bolstered Knack) and which skill it is (Ear for
+   Deceit on Insight, Elegant Maneuver on Acrobatics and Athletics). */
+export function rollCheck(c, bonus, mode, label, ability, opts){
+  opts = opts || {};
   var might = ability==="str" ? indomitableMight(c) : 0;
+  var reliable = opts.proficient && reliableTalent(c);
   performRoll(20, 1, bonus, mode, label, {
-    followUp: hasMagicalGuidance(c) ? function(){ return magicalGuidance(c); } : null,
-    adjust: might ? function(r){ return r.total < might ? {total: might, note: "Indomitable Might"} : null; } : null
+    followUp: function(r){ return checkFollowUp(c, r, opts); },
+    adjust: might || reliable ? function(r){
+      var total = r.total, notes = [];
+      // Reliable Talent: a d20 of 9 or lower counts as a 10.
+      if(reliable && r.natural!=null && r.natural < 10){ total += 10 - r.natural; notes.push("Reliable Talent"); }
+      if(might && total < might){ total = might; notes.push("Indomitable Might"); }
+      return notes.length ? {total: total, note: notes.join(", ")} : null;
+    } : null
   });
-  if(useNextCheck(c)){ save(); renderAll(); }
+  var used = useNextCheck(c);
+  // Elegant Maneuver is used up by the Acrobatics or Athletics check.
+  if((opts.skill==="Acrobatics" || opts.skill==="Athletics") && effectOn(c, "elegant_maneuver")){ endEffect(c, "elegant_maneuver"); used = true; }
+  if(used){ save(); renderAll(); }
 }
-export function rollSave(c, bonus, mode, label){
-  performRoll(20, 1, bonus, mode, label, fanaticalFocusReady(c) ? function(){ return fanaticalFocus(c); } : null);
+/* After a check: Magical Guidance's reroll, Stroke of Luck's 20,
+   Psi-Bolstered Knack's die (a proficient check), Ear for Deceit's 8
+   (Insight). (r is null for the toast's hint.) */
+function checkFollowUp(c, r, opts){
+  var out = [], lead = "Failed?";
+  if(hasMagicalGuidance(c)) out = out.concat(magicalGuidance(c).options);
+  // (Counted from the d20 as it stands: Reliable Talent may have made a 1 a 10.)
+  var counted = r && r.natural!=null ? (opts.proficient && reliableTalent(c) ? Math.max(10, r.natural) : r.natural) : null;
+  if(counted!=null && counted < 20 && resourceLeft(c, "Rogue:stroke_of_luck") > 0){
+    var nat = counted;
+    out.push({label: "Stroke of Luck: a 20", title: "Treat the d20 as a 20 (once per short or long rest)",
+      use: function(){
+        if(!spendResource(c, "Rogue:stroke_of_luck", 1)) return null;
+        save(); renderAll();
+        return {bonus: 20 - nat, log: "Stroke of Luck (the d20 counts as 20)"};
+      }});
+  }
+  // Draconic Presence (Ascendant Dragon 3): only used up by a success.
+  if((opts.skill==="Intimidation" || opts.skill==="Persuasion") && resourceLeft(c, "Monk:draconic_presence") > 0){
+    out.push({label: "Draconic Presence: reroll", title: "Reaction: reroll this check. It's only used up if the reroll succeeds: tap it back on Vitals if it didn't.",
+      use: function(){
+        if(!spendResource(c, "Monk:draconic_presence", 1)) return null;
+        save(); renderAll();
+        return {reroll: true, log: "Draconic Presence"};
+      }});
+  }
+  var knack = opts.proficient && soulknifeDie(c);
+  if(knack && knack.left > 0){
+    out.push({label: "+1d" + knack.die + " (Psi-Bolstered Knack)", title: "Roll a Psionic Energy die and add it. Only spend the die if this turns the failure into a success: tap it back on Vitals if it didn't.",
+      use: function(){
+        var got = Math.floor(Math.random() * knack.die) + 1;
+        c.resourcesUsed[knack.key] = knack.used + 1;
+        save(); renderAll();
+        return {bonus: got, log: "Psi-Bolstered Knack (rolled " + got + ")"};
+      }});
+  }
+  if(opts.skill==="Insight" && r && r.natural!=null && r.natural <= 7 && classLevelOf(c, "Rogue", "Inquisitive") >= 3){
+    var n8 = r.natural;
+    out.push({label: "Lie check: count it as 8", title: "Ear for Deceit: when you're checking whether a creature is lying, a d20 of 7 or lower counts as 8",
+      use: function(){ return {bonus: 8 - n8, log: "Ear for Deceit (the d20 counts as 8)"}; }});
+    lead = "";
+  }
+  if(!out.length) return null;
+  // Only Magical Guidance's reroll: named in the lead, as before.
+  var onlyGuidance = out.length===1 && /sorcery point/.test(out[0].label);
+  return {lead: onlyGuidance ? "Failed? Magical Guidance:" : lead, hint: onlyGuidance ? "Failed? Tap to reroll with Magical Guidance." : "Tap for more options.", options: out};
+}
+/* ability: the save's ability (Bulwark only helps with INT, WIS and CHA). */
+export function rollSave(c, bonus, mode, label, ability){
+  var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c);
+  performRoll(20, 1, bonus, mode, label, fanatic || indom || diamond ? function(){ return saveFollowUp(c, ability); } : null);
+}
+/* After a save: Fanatical Focus (once per rage) and Indomitable (a use;
+   a Banneret's Bulwark lets an ally who failed the same INT, WIS or CHA
+   save reroll too). */
+function saveFollowUp(c, ability){
+  var opts = [];
+  if(fanaticalFocusReady(c)) opts = opts.concat(fanaticalFocus(c).options);
+  var left = resourceLeft(c, "Fighter:indomitable");
+  if(left > 0){
+    var bulwark = ["int", "wis", "cha"].indexOf(ability)!==-1 && classLevelOf(c, "Fighter", "Banneret (Purple Dragon Knight)") >= 15;
+    opts.push({label: "Reroll (Indomitable, " + left + " left)",
+      title: "Reroll this saving throw. You must use the new roll." + (bulwark ? " Bulwark: one ally within 60 feet who failed the same save can reroll too." : ""),
+      use: function(){
+        if(!spendResource(c, "Fighter:indomitable", 1)) return null;
+        save(); renderAll();
+        return {reroll: true, log: "Indomitable" + (bulwark ? " (Bulwark: an ally can reroll too)" : "")};
+      }});
+  }
+  if(hasDiamondSoul(c)){
+    opts.push({label: "Reroll (Diamond Soul, 1 ki)", title: "Spend 1 ki to reroll this saving throw. You must use the new roll.",
+      use: function(){
+        if(!spendKi(c, 1)) return null;
+        save(); renderAll();
+        return {reroll: true, log: "Diamond Soul (1 ki)"};
+      }});
+  }
+  return opts.length ? {lead: "Failed?", hint: "Failed? Tap to reroll.", options: opts} : null;
+}
+/* Diamond Soul (monk 14): a ki point left to reroll a failed save. */
+function hasDiamondSoul(c){
+  return classLevelOf(c, "Monk") >= 14 && kiLeft(c) >= 1;
 }
 
 /* After an attack roll: critical damage on a natural 20, else Focused
    Aim's +2, +4 or +6 for 1, 2 or 3 ki. (r is null for the toast's hint.) */
 function attackFollowUp(c, r, aim, hit){
-  if(hit && r && r.natural===20) return criticalHit(c, hit);
-  return aim ? focusedAim(c) : null;
+  var gun = hit && hit.item && firearmStats(hit.item);
+  if(gun && r && r.natural <= gun.misfire) return {lead: "Misfire! The attack misses and the " + (hit.item.name || "firearm") + " jams. Repair it on its card.", options: []};
+  if(hit && r && r.natural >= (hit.critMin || 20)) return criticalHit(c, hit);
+  var opts = [];
+  // A roll with no card of its own to roll damage from (a caught missile).
+  if(hit && hit.offerDamage) opts.push({label: "Hit? Damage 1d" + hit.die + (hit.bonus ? (hit.bonus > 0 ? "+" : "") + hit.bonus : ""), title: "Roll the damage",
+    use: function(){ performRoll(hit.die, hit.qty, hit.bonus, "none", hit.label + ": Damage"); return {silent: true}; }});
+  // Assassinate (Assassin 3): any hit against a surprised creature is a critical hit.
+  if(hit && r && effectOn(c, "assassinate")){
+    var surprised = criticalHit(c, hit).options.map(function(o){ return Object.assign({}, o, {label: "Surprised target? " + o.label}); });
+    opts = opts.concat(surprised);
+  }
+  // After a miss: Focused Aim's ki (monk 5), Curving Shot's reroll with a
+  // magic arrow (Arcane Archer 7), Homing Strikes' die with a psychic blade
+  // (Soulknife 9), Master Duelist's reroll with advantage (Swashbuckler
+  // 17), Stroke of Luck's hit (rogue 20).
+  if(hasFocusedAim(c)) opts = opts.concat(focusedAim(c).options);
+  if(hit && hit.item && magicArrows(c, hit.item)){
+    opts.push({label: "Curving Shot", title: "A bonus action: reroll this attack against a different target within 60 feet of the first",
+      use: function(){ return {reroll: true, log: "Curving Shot (a different target)"}; }});
+  }
+  var sk = hit && hit.psychicBlade && classLevelOf(c, "Rogue", "Soulknife") >= 9 && soulknifeDie(c);
+  if(sk && sk.left > 0){
+    opts.push({label: "+1d" + sk.die + " (Homing Strikes)", title: "Roll a Psionic Energy die and add it. Only spend the die if the attack now hits: tap it back on Vitals if it still misses.",
+      use: function(){
+        var got = Math.floor(Math.random() * sk.die) + 1;
+        c.resourcesUsed[sk.key] = sk.used + 1;
+        save(); renderAll();
+        return {bonus: got, log: "Homing Strikes (rolled " + got + ")"};
+      }});
+  }
+  // Unerring Accuracy (Kensei 17): reroll a miss with a monk weapon, once a turn.
+  if(hit && hit.item && isMonkWeaponFor(c, hit.item) && classLevelOf(c, "Monk", "Way of the Kensei") >= 17){
+    opts.push({label: "Unerring Accuracy: reroll", title: "Once on each of your turns: reroll this attack",
+      use: function(){ return {reroll: true, log: "Unerring Accuracy"}; }});
+  }
+  if(resourceLeft(c, "Rogue:master_duelist") > 0){
+    opts.push({label: "Master Duelist: reroll with advantage", title: "Once per short or long rest",
+      use: function(){
+        if(!spendResource(c, "Rogue:master_duelist", 1)) return null;
+        save(); renderAll();
+        return {reroll: true, adv: "adv", log: "Master Duelist (with advantage)"};
+      }});
+  }
+  if(resourceLeft(c, "Rogue:stroke_of_luck") > 0){
+    opts.push({label: "Stroke of Luck: it hits", title: "Turn the miss into a hit (once per short or long rest)",
+      use: function(){
+        if(!spendResource(c, "Rogue:stroke_of_luck", 1)) return null;
+        save(); renderAll();
+        return {bonus: 0, log: "Stroke of Luck: the miss is a hit"};
+      }});
+  }
+  if(!opts.length) return null;
+  // Only Focused Aim's three: named in the lead, as before.
+  var onlyAim = opts.every(function(o){ return / ki\)$/.test(o.label); });
+  return {lead: onlyAim ? "Missed? Focused Aim:" : "Missed?", hint: onlyAim ? "Missed? Tap for Focused Aim." : "Missed? Tap for more options.", options: opts};
 }
 function criticalHit(c, hit){
   var crit = criticalDamage(c, hit);
+  var sa = hit.sneak && sneakAttack(c);
+  var extra = sa ? [{label: "Sneak Attack " + 2 * sa.dice + "d6", title: "On a critical hit, Sneak Attack's dice are doubled too",
+    use: function(){ performRoll(6, 2 * sa.dice, 0, "none", hit.label + ": Sneak Attack (critical)"); return {silent: true}; }}] : [];
   return {lead: "Critical hit!", hint: "",
-    options: [{label: "Roll " + crit.qty + "d" + crit.die + (crit.bonus ? (crit.bonus > 0 ? "+" : "") + crit.bonus : "") + " damage",
+    options: extra.length ? [critOption(c, hit, crit)].concat(extra) : [critOption(c, hit, crit)]};
+}
+function critOption(c, hit, crit){
+  return {label: "Roll " + crit.qty + "d" + crit.die + (crit.bonus ? (crit.bonus > 0 ? "+" : "") + crit.bonus : "") + " damage",
       title: "Critical hit: the damage dice twice" + (crit.brutal ? ", plus " + crit.brutal + " more from Brutal Critical" : "") + ", then your bonus once",
       use: function(){
-        performRoll(crit.die, crit.qty, crit.bonus, "none", hit.label + ": Critical damage");
+        // Hemorrhaging Critical (gunslinger 18): half again at the end of the target's next turn.
+        var bleed = hit.item && firearmStats(hit.item) && hemorrhagingCritical(c);
+        performRoll(crit.die, crit.qty, crit.bonus, "none", hit.label + ": Critical damage", bleed ? function(r){
+          return r ? {lead: "Hemorrhaging Critical: " + Math.floor(r.total / 2) + " more damage to the target at the end of its next turn.", options: []} : null;
+        } : null);
         return {bonus: 0, log: "Critical hit", silent: true};
-      }}]};
+      }};
 }
 function focusedAim(c){
   var left = kiLeft(c);

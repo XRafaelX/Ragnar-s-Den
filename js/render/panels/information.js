@@ -4,10 +4,10 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { RACE_TRAIT_FALLBACK } from "../../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
-import { classFeatureList, classProficiencies, classVariants, variantFor, syncTashaAdditions, escapeHtml, raceTraitFeatures } from "../../core/helpers.js";
+import { classFeatureList, classProficiencies, classVariants, variantFor, syncTashaAdditions, escapeHtml, raceTraitFeatures, characterToolProfs } from "../../core/helpers.js";
 import { featProficiencies, backgroundFeatGrant, backgroundFeatLabel, campaignFeatMissing } from "../../core/feat-picks.js";
 import { dlcShelf, campaignBookCard } from "../../ui/dlc-shelf.js";
-import { characterPickedProfs, raceProficiencies, backgroundProficiencies, overlapTools, syncClassPicks } from "../../core/class-picks.js";
+import { characterPickedProfs, raceProficiencies, syncClassPicks } from "../../core/class-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -190,7 +190,6 @@ export function renderInformationPanel(c){
     if(!p) return;
     (p.armor||[]).forEach(function(v){ if(armor.indexOf(v)===-1) armor.push(v); });
     (p.weapons||[]).forEach(function(v){ if(weapons.indexOf(v)===-1) weapons.push(v); });
-    (p.tools||[]).forEach(function(v){ if(tools.indexOf(v)===-1) tools.push(v); });
     (p.savingThrows||[]).forEach(function(v){
       var label = ABILITY_NAME[v] || v;
       if(saves.indexOf(label)===-1) saves.push(label);
@@ -201,14 +200,11 @@ export function renderInformationPanel(c){
   var fromRace = raceProficiencies(c);
   fromRace.armor.forEach(function(v){ if(armor.indexOf(v)===-1) armor.push(v); });
   fromRace.weapons.forEach(function(v){ if(weapons.indexOf(v)===-1) weapons.push(v); });
-  fromRace.tools.forEach(function(v){ if(tools.indexOf(v)===-1) tools.push(v); });
-  // The background's (an Urchin's disguise kit and thieves' tools).
-  backgroundProficiencies(c).tools.forEach(function(v){ if(tools.indexOf(v)===-1) tools.push(v); });
-  // And tools picked in place of one given twice.
-  overlapTools(c).forEach(function(v){ if(tools.indexOf(v)===-1) tools.push(v); });
+  // Tools from every source (classes, race, background, a pick in place of
+  // one given twice, feats).
+  tools = characterToolProfs(c);
   var fromFeats = featProficiencies(c);
   fromFeats.armor.forEach(function(p){ if(armor.indexOf(p.name)===-1) armor.push(p.name); });
-  fromFeats.tools.forEach(function(p){ if(tools.indexOf(p.name)===-1) tools.push(p.name); });
   fromFeats.weapons.forEach(function(p){ if(weapons.indexOf(p.name)===-1) weapons.push(p.name); });
   fromFeats.saves.forEach(function(p){
     var label = ABILITY_NAME[p.ability] || p.ability;

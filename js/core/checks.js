@@ -7,7 +7,7 @@ import { RACE_DATA, TRAIT_ADVANTAGES, TRAIT_HALF_PROFICIENCY } from "../data/rac
 import { mod, fmtMod, profBonus, combineRolls } from "./basics.js";
 import { barbarianClassEntry } from "./character-resources.js";
 import { classFeatureList } from "./class-features.js";
-import { effectOn, effectRolls } from "./effects.js";
+import { effectOn, effectRolls, weaponAttackEffect } from "./effects.js";
 import { weaponAbility, armorPenalty, isRangedWeapon } from "./equipment.js";
 import { hasFeat } from "./vitals.js";
 import { nextCheckAdvantage } from "./magic-items.js";
@@ -56,14 +56,31 @@ export function skillCheck(c, skill, passive){
   var entry = c.skillProfs && c.skillProfs[skill] || {};
   var pb = profBonus(c);
   var value = ab.mod, breakdown = ab.label + " (" + fmtMod(ab.mod) + ")";
+  // Features that double the proficiency bonus for this skill (Royal Envoy's Persuasion).
+  var doubled = featureSkillFlags(c, "skillDouble").find(function(x){ return x.value===skill; });
   if(entry.prof){
-    var p = entry.expertise ? 2*pb : pb;
-    value += p; breakdown += " + " + (entry.expertise ? "expertise" : "proficiency") + " (" + fmtMod(p) + ")";
+    var twice = entry.expertise || !!doubled;
+    var p = twice ? 2*pb : pb;
+    value += p; breakdown += " + " + (entry.expertise ? "expertise" : doubled ? "proficiency doubled by " + doubled.name : "proficiency") + " (" + fmtMod(p) + ")";
   } else {
     var half = halfProficiency(c, key);
     if(half){ value += half.value; breakdown += " + " + half.name + " (" + fmtMod(half.value) + ")"; }
   }
+  // Features that add an ability modifier to this skill (Elegant Courtier: WIS to Persuasion).
+  featureSkillFlags(c, "skillBonus").forEach(function(x){
+    if(x.value.skill!==skill) return;
+    var m = mod(abilityScore(c, x.value.ability));
+    value += m; breakdown += " + " + x.name + " (" + fmtMod(m) + ")";
+  });
   return {value: value, label: ab.label, breakdown: breakdown, roll: skillRollMode(c, skill, passive)};
+}
+/* Class features carrying a skill flag: [{name, value}]. */
+function featureSkillFlags(c, flag){
+  var out = [];
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){ if(f[flag]) out.push({name: f.name, value: f[flag]}); });
+  });
+  return out;
 }
 /* 10 + everything the check adds, +5 with advantage or -5 with
    disadvantage on it, and Observant's +5 to Perception and Investigation. */
@@ -113,6 +130,8 @@ export function skillRollMode(c, skill, passive){
   if(skill==="Acrobatics" && effectOn(c, "bladesong")) list.push({mode: "adv", reason: "Bladesong"});
   if((skill==="Insight" || skill==="Intimidation") && effectOn(c, "astral_visage")) list.push({mode: "adv", reason: "Wisdom of the Spirit (Visage of the Astral Self)"});
   if(skill==="Perception") list = list.concat(effectRolls(c, "perception"));
+  // Elegant Maneuver (Swashbuckler 13): the next Acrobatics or Athletics check.
+  if(!passive && (skill==="Acrobatics" || skill==="Athletics") && effectOn(c, "elegant_maneuver")) list.push({mode: "adv", reason: "Elegant Maneuver"});
   return combineRolls(list);
 }
 /* ---- Advantage from features and traits ----
@@ -136,6 +155,11 @@ export function advantagesFor(c){
   if(c.rage && c.rage.active && barbarianClassEntry(c) && !heavy){
     out.push({name: "Rage", on: "save", abilities: ["str"]}, {name: "Rage", on: "check", abilities: ["str"]});
   }
+  // A Phantom's soul trinket (Tokens of the Departed): advantage on CON saves while one is on you.
+  if((c.classes||[]).some(function(cl){ return cl.name==="Rogue" && cl.subclass==="Phantom" && (Number(cl.level)||1) >= 9; }) && (Number(c.soulTrinkets)||0) > 0)
+    out.push({name: "Soul trinket", on: "save", abilities: ["con"]});
+  // Giant's Might (Rune Knight): advantage on Strength checks and saves while it's on.
+  if(effectOn(c, "giants_might")) out.push({name: "Giant's Might", on: "save", abilities: ["str"]}, {name: "Giant's Might", on: "check", abilities: ["str"]});
   return out;
 }
 function covers(a, on, key){ return a.on===on && (on==="initiative" || a.abilities==="all" || a.abilities.indexOf(key)!==-1); }
@@ -147,6 +171,27 @@ function skillAdvantage(c, skill){
 /* The ones that always apply to this roll, as roll modes. */
 function alwaysAdvantage(c, on, key){
   return advantagesFor(c).filter(function(a){ return !a.when && covers(a, on, key); }).map(function(a){ return {mode: "adv", reason: a.name}; });
+}
+/* Situational ones for skills, for reminders: [{name, when, skills}]
+   (Supreme Sneak's Stealth when you move no more than half your speed). */
+export function situationalSkillAdvantages(c){
+  return advantagesFor(c).filter(function(a){ return a.when && a.on==="skill"; }).map(function(a){ return {name: a.name, when: a.when, skills: a.skills || []}; });
+}
+/* Reminders for saves from class features (Evasion on DEX saves):
+   [{name, abilities, text}]. */
+export function saveNotes(c){
+  var out = [];
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){
+      if(f.saveNote && !out.some(function(x){ return x.name===f.name; })) out.push(Object.assign({name: f.name}, f.saveNote));
+    });
+  });
+  return out;
+}
+/* Reliable Talent (rogue 11): a proficient check's d20 of 9 or lower
+   counts as a 10. */
+export function reliableTalent(c){
+  return (c.classes||[]).some(function(cl){ return cl.name==="Rogue" && (Number(cl.level)||1) >= 11; });
 }
 /* Situational ones for a save, for reminders: [{name, when}]. */
 export function situationalSaveAdvantages(c, key){
@@ -169,7 +214,9 @@ export function attackRollMode(c, item){
   var physical = keys.every(function(k){ return k==="str" || k==="dex"; });
   // Reckless Attack: advantage on melee weapon attacks that use Strength.
   var reckless = effectOn(c, "reckless_attack") && !isRangedWeapon(item) && keys.indexOf("str")!==-1 ? {mode: "adv", reason: "Reckless Attack"} : null;
-  return combineRolls([physical ? armorPenalty(c, "str") : null, reckless].concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
+  // Shadow Step: advantage on the next melee attack.
+  var step = effectOn(c, "shadow_step") && !isRangedWeapon(item) ? {mode: "adv", reason: "Shadow Step"} : null;
+  return combineRolls([physical ? armorPenalty(c, "str") : null, reckless, step, weaponAttackEffect(c)].concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
 }
 /* An attack with no weapon card (a spell attack, the astral arms): only
    conditions change it (Poisoned, Invisible, exhaustion). */

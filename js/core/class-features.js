@@ -101,12 +101,26 @@ export function classSpellAbility(cl){
                    saved on the class entry as spellChoices[id].
      attuneLimit   how many magic items the character can attune to at
                    once (an artificer's Magic Item Adept: 4)
+     chip(x)       a number worked out for the Features card, x = {lv, pb,
+                   mods}: Slow Fall's "Reduces falls by 25"
+     immune, conditionImmune  damage types and conditions the feature makes
+                   you immune to (Purity of Body), shown with the race's
+     saveNote      {abilities, text}: a reminder for those saves on the saves
+                   card (Evasion on DEX saves)
+     sense         a sense the feature gives, listed with darkvision
+                   ("Blindsense 10 ft")
+     resist        damage types the feature gives resistance to, always on
+                   (Guarded Mind: ["psychic"]); see featureResistances
+     skillBonus    {skill, ability}: that ability's modifier added to the
+                   skill's checks (Elegant Courtier: WIS to Persuasion)
+     skillDouble   a skill whose checks get double the proficiency bonus
+                   when proficient (Royal Envoy: "Persuasion")
      saveDc        {save, ability} or a list of them: a save DC the feature
                    sets, 8 + proficiency bonus + the ability's modifier
                    (Intimidating Presence: {save:"wis", ability:"cha"};
                    save "" when its effects ask for different saves),
                    shown as a chip on its Features card (featureDcs) */
-var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellLabel", "spellTip", "spellAbility", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit", "saveDc"];
+var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellLabel", "spellTip", "spellAbility", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit", "saveDc", "skillBonus", "skillDouble", "resist", "saveNote", "sense", "chip", "immune", "conditionImmune"];
 
 /* ---- Optional features that replace one of the class's own ----
    Tasha's Favored Foe for a ranger's Favored Enemy, Deft Explorer for
@@ -406,6 +420,21 @@ function abilityName(key){ return Object.keys(ABILITY_OF).find(function(k){ retu
 /* The save DCs a class feature sets (its saveDc), worked out: [{dc, save,
    chip: "WIS DC 13", line: "Wisdom save DC 13 (8 + proficiency +3 +
    Charisma +2)."}]. */
+/* Damage resistances class features give ([{type, source}]): their
+   `resist`, always on. */
+export function featureResistances(c){
+  var out = [];
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){ (f.resist||[]).forEach(function(t){ out.push({type: t, source: f.name}); }); });
+  });
+  return out;
+}
+function featureChip(c, cl, f){
+  var mods = {};
+  ["str","dex","con","int","wis","cha"].forEach(function(k){ mods[k] = mod(abilityScore(c, k)); });
+  var text = f.chip({lv: Number(cl.level)||1, pb: profBonus(c), mods: mods});
+  return {chip: text, line: f.name + ": " + text + "."};
+}
 export function featureDcs(c, f){
   var pb = profBonus(c);
   return [].concat(f.saveDc || []).map(function(d){
@@ -446,6 +475,13 @@ export function raceWards(c){
     var rt = traits.find(function(t){ return t.name==="Damage Resistance" || t.name==="Draconic Resistance"; });
     out.resist.push({type: b.damage.toLowerCase(), source: rt ? rt.name : c.race});
   }
+  // Class features' (Purity of Body: poison and the poisoned condition).
+  (c.classes||[]).forEach(function(cl){
+    classFeatureList(cl).forEach(function(f){
+      (f.immune||[]).forEach(function(v){ out.immune.push({type: v, source: f.name}); });
+      (f.conditionImmune||[]).forEach(function(v){ out.conditionImmune.push({type: v, source: f.name}); });
+    });
+  });
   // Switched on from the Active effects card.
   if(b && effectOn(c, "chromatic_warding")) out.immune.push({type: b.damage.toLowerCase(), source: "Chromatic Warding"});
   if(effectOn(c, "raven_queen_resistance")) out.resist.push({type: "all damage", source: "Blessing of the Raven Queen"});
@@ -464,6 +500,7 @@ export function getAllCharacterFeatures(c){
       // What was picked for it (an Expertise's skills, a tool).
       var picked = featurePicksText(cl, idx > 0, f.name, f.subclass);
       var dcs = featureDcs(c, f);
+      if(f.chip) dcs = dcs.concat(featureChip(c, cl, f));
       list.push({
         id: f.id,
         name: f.name,

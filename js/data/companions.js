@@ -122,6 +122,19 @@ export var COMPANIONS = [
           {name:"Your turn", text:"It acts right after you and takes the Dodge action unless you use a bonus action to command it."}]
       };
     }},
+  // Echo Knight (Explorer's Guide to Wildemount, p. 183, checked on
+  // 5etools' data 2026-10-30): Manifest Echo, two from Legion of One (18).
+  {id:"echo", name:"Echo", cls:"Fighter", subclass:"Echo Knight", level:3,
+    stats:function(x){
+      var traits = [
+        {name:"Manifest Echo", text:"Bonus action: it appears in an unoccupied space you can see within 15 feet. It lasts until it's destroyed, you dismiss it (bonus action), you manifest another, or you're incapacitated. It's destroyed if it's ever more than 30 feet from you at the end of your turn."},
+        {name:"Moving it", text:"On your turn you can mentally move it up to 30 feet in any direction (no action). As a bonus action you can teleport to its space and swap places with it, for 15 feet of your movement."},
+        {name:"Attacking from it", text:"When you take the Attack action, any attack you make can come from your space or the echo's. When a creature you can see within 5 feet of it moves at least 5 feet away from it, you can use your reaction to make an opportunity attack as if you were in its space."},
+        {name:"Saves and conditions", text:"It uses your saving throw bonuses and is immune to all conditions."}];
+      if(x.lv >= 7) traits.push({name:"Echo Avatar", text:"Action: see and hear through it for up to 10 minutes, while you're blinded and deafened. It can then be up to 1,000 feet from you."});
+      if(x.lv >= 18) traits.push({name:"Legion of One", text:"You can have two echoes at once (a third destroys both). Anything you can do from one's position you can do from the other's."});
+      return {type:"Medium echo of you", ac: 14 + x.pb, hp: 1, speed:"30 ft, in any direction", count: x.lv >= 18 ? 2 : 1, traits: traits};
+    }},
   {id:"homunculus_servant", name:"Homunculus Servant", cls:"Artificer", level:2,
     infusion:"Homunculus Servant", source:"Homunculus Servant infusion",
     stats:function(x){

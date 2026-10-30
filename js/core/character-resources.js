@@ -66,10 +66,14 @@ export function characterResources(c){
       // without picks keep the count for their level).
       var runes = r.id==="rune_invocations" ? knownClassOptions(cl, "runes").length : 0;
       if(runes) max = runes * (lv>=15 ? 2 : 1);
+      // (A roll's die can grow with level: superiority dice d8, d10, d12.)
+      // (And a roll can add an ability modifier: Protective Field's INT.)
+      var roll = r.roll ? Object.assign({}, r.roll, r.roll.dieAt ? {die: r.roll.dieAt(lv)} : {}, r.roll.bonusAbility ? {bonus: m[r.roll.bonusAbility]} : {}) : null;
       list.push({
-        key: key, name: r.name, source: d.source, hint: r.hint, pool: !!r.pool,
+        key: key, name: r.name, source: d.source, hint: typeof r.hint==="function" ? r.hint(lv, m) : r.hint, pool: !!r.pool,
         max: max, used: max===Infinity ? 0 : clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
-        reset: r.reset(lv), roll: r.roll || null
+        reset: r.reset(lv), roll: roll, heal: r.heal ? r.heal(lv, m) : 0,
+        initiativeRegain: r.initiativeRegain && lv >= r.initiativeRegain ? (r.initiativeAmount || 1) : 0
       });
     });
   });
@@ -167,8 +171,44 @@ export function characterResources(c){
         used: clamp(Number((c.resourcesUsed||{})["style:superiority_dice"])||0, 0, 1), reset: "short"});
     }
   }
+  // What a fighter archetype adds to Action Surge (Arcane Charge, Inspiring Surge).
+  var surge = list.find(function(x){ return x.key==="Fighter:action_surge"; });
+  if(surge){
+    var ek = classLevelIn(c, "Fighter", "Eldritch Knight"), ban = classLevelIn(c, "Fighter", "Banneret (Purple Dragon Knight)");
+    if(ek >= 15) surge.hint += " Arcane Charge: you can also teleport up to 30 feet to a space you can see, before or after the extra action.";
+    if(ban >= 10) surge.hint += " Inspiring Surge: " + (ban >= 18 ? "two allies" : "one ally") + " within 60 feet who can see or hear you can make one weapon attack with their reaction.";
+  }
   // Pact Boon and invocation uses (Tomb of Levistus, Sign of Ill Omen's curse).
   return list.concat(invocationResources(c, m));
+}
+function classLevelIn(c, name, subclass){
+  var cl = (c.classes||[]).find(function(x){ return x.name===name && x.subclass===subclass; });
+  return cl ? Number(cl.level)||1 : 0;
+}
+/* Second Wind's healing (1d10 + fighter level) and Rallying Cry's
+   (Banneret 3): allies healed by the fighter level. {die, bonus, rally}
+   or null without Second Wind. Survivor's (Champion 18): 5 + CON while
+   at half HP or less, {heal, due}. */
+export function secondWind(c){
+  var lv = (c.classes||[]).reduce(function(a, cl){ return cl.name==="Fighter" ? Number(cl.level)||1 : a; }, 0);
+  return lv ? {die: 10, bonus: lv, rally: classLevelIn(c, "Fighter", "Banneret (Purple Dragon Knight)") >= 3 ? lv : 0} : null;
+}
+export function survivorHeal(c){
+  if(classLevelIn(c, "Fighter", "Champion") < 18) return null;
+  var hp = c.hp || {}, cur = Number(hp.current)||0, max = Number(hp.max)||0;
+  return {heal: 5 + mod(abilityScore(c, "con")), due: cur > 0 && cur <= max / 2};
+}
+/* Rolling initiative with none left gives one back (Relentless, Tireless
+   Spirit, Ever-Ready Shot, Legion of One: a resource's initiativeRegain).
+   The names that came back. */
+export function regainOnInitiative(c){
+  var back = [];
+  characterResources(c).forEach(function(r){
+    if(!r.initiativeRegain || r.max===Infinity || r.used < r.max) return;
+    c.resourcesUsed[r.key] = Math.max(0, r.used - r.initiativeRegain);
+    back.push(r.name);
+  });
+  return back;
 }
 /* Restore resources on a rest. A long rest restores everything except
    "manual" ones; a short rest only what recharges on one. Returns the names restored. */

@@ -19,7 +19,13 @@
      Favored Foe, see CLASS_PROGRESSION's `variants`).
    roll: {die, label, needs}: a button on its row that spends one and rolls
      the die (Warding Maneuver's d8). needs "meleeOrShield" turns it off
-     without a melee weapon or a shield in hand. */
+     without a melee weapon or a shield in hand. dieAt(lv) instead gives a
+     die that grows with level (superiority dice).
+   initiativeRegain: the class level from which rolling initiative with
+     none left gives one back (Relentless, Tireless Spirit), or
+     initiativeAmount of them (Perfect Self: 4 ki).
+   heal(lv, m): a Heal button on its row that spends a use and restores
+     that many hit points (Wholeness of Body). */
 
 function atLeastOne(n){ return Math.max(1, n); }
 function always(value){ return function(){ return value; }; }
@@ -64,8 +70,8 @@ export var CLASS_RESOURCES = {
   ],
   "Monk": [
     {id:"ki", name:"Ki Points", level:2, pool:true,
-      max:function(lv){ return lv; }, reset:always("short"),
-      hint:"1 ki: Flurry of Blows, Patient Defense or Step of the Wind. Stunning Strike from level 5, Diamond Soul reroll from 14, Empty Body (4 or 8 ki) from 18."}
+      max:function(lv){ return lv; }, reset:always("short"), initiativeRegain:20, initiativeAmount:4,
+      hint:function(lv, m){ return "Your ki save DC is " + (8 + m.pb + m.wis) + "."; }}
   ],
   "Paladin": [
     {id:"divine_sense", name:"Divine Sense", level:1,
@@ -225,14 +231,20 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Fighter": {
+    "Champion": [
+      // Survivor (fighter 18): no uses to count, a heal button on its row.
+      {id:"survivor", name:"Survivor", level:18, max:always(Infinity), reset:always("long"),
+        hint:"At the start of each of your turns, regain 5 + your CON modifier hit points while you have half your hit points or fewer (not at 0)."}
+    ],
     "Battle Master": [
       {id:"superiority_dice", name:"Superiority Dice", level:3,
-        max:function(lv){ return lv>=15 ? 6 : lv>=7 ? 5 : 4; }, reset:always("short"),
+        max:function(lv){ return lv>=15 ? 6 : lv>=7 ? 5 : 4; }, reset:always("short"), initiativeRegain:15,
+        roll:{die:8, dieAt:function(lv){ return lv>=18 ? 12 : lv>=10 ? 10 : 8; }, label:"Superiority die"},
         hint:"d8s (d10 from level 10, d12 from level 18) that fuel your maneuvers. Relentless (level 15) gives one back on initiative if you have none."}
     ],
     "Echo Knight": [
       {id:"unleash_incarnation", name:"Unleash Incarnation", level:3,
-        max:function(lv, m){ return atLeastOne(m.con); }, reset:always("long"),
+        max:function(lv, m){ return atLeastOne(m.con); }, reset:always("long"), initiativeRegain:18,
         hint:"When you take the Attack action, make one additional melee attack from your echo's position."},
       {id:"shadow_martyr", name:"Shadow Martyr", level:10, max:always(1), reset:always("short"),
         hint:"Reaction: teleport your echo next to a creature about to be attacked. The attack targets the echo instead."},
@@ -263,13 +275,13 @@ export var SUBCLASS_RESOURCES = {
     ],
     "Samurai": [
       {id:"fighting_spirit", name:"Fighting Spirit", level:3,
-        max:always(3), reset:always("long"),
+        max:always(3), reset:always("long"), initiativeRegain:10,
         hint:"Bonus action: advantage on weapon attacks until the end of your turn, and gain 5 temporary HP (10 at level 10, 15 at level 15)."},
       {id:"strength_before_death", name:"Strength Before Death", level:18, max:always(1), reset:always("long"),
         hint:"Reaction when dropped to 0 HP: take an extra turn immediately before falling unconscious."}
     ],
     "Arcane Archer": [
-      {id:"arcane_shot", name:"Arcane Shot", level:3, max:always(2), reset:always("short"),
+      {id:"arcane_shot", name:"Arcane Shot", level:3, max:always(2), reset:always("short"), initiativeRegain:15,
         hint:"Once per turn, apply an Arcane Shot option to an arrow fired as part of the Attack action. Regain one on initiative if empty (level 15)."}
     ],
     "Gunslinger": [
@@ -280,6 +292,7 @@ export var SUBCLASS_RESOURCES = {
     "Psi Warrior": [
       {id:"psionic_energy_dice", name:"Psionic Energy Dice", level:3, pool:true,
         max:function(lv, m){ return m.pb * 2; }, reset:always("long"),
+        roll:{die:6, dieAt:function(lv){ return lv>=17 ? 12 : lv>=11 ? 10 : lv>=5 ? 8 : 6; }, bonusAbility:"int", min:1, label:"Protective Field: damage prevented", button:"Protective Field"},
         hint:"Fuel Protective Field, Psionic Strike and extra uses of your other psionic features. Bonus action: regain one (once per short or long rest)."},
       {id:"telekinetic_movement", name:"Telekinetic Movement", level:3, max:always(1), reset:always("short"),
         hint:"Action: move a Large or smaller object or a willing creature within 30 ft up to 30 ft. More uses cost a Psionic Energy die."},
@@ -294,12 +307,10 @@ export var SUBCLASS_RESOURCES = {
   "Monk": {
     "Way of the Open Hand": [
       {id:"wholeness_of_body", name:"Wholeness of Body", level:6, max:always(1), reset:always("long"),
+        heal:function(lv){ return 3 * lv; },
         hint:"Action: regain hit points equal to three times your monk level."}
     ],
     "Way of Mercy": [
-      {id:"free_hand_of_harm", name:"Free Hand of Harm (Flurry)", level:11,
-        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
-        hint:"Use Hand of Harm on a Flurry of Blows strike without spending ki."},
       {id:"hand_of_ultimate_mercy", name:"Hand of Ultimate Mercy", level:17, max:always(1), reset:always("long"),
         hint:"Action, 5 ki: revive a creature dead under 24 hours with 4d10 + WIS mod HP."}
     ],

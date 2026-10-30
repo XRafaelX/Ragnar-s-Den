@@ -21,4 +21,5 @@ export * from "./spell-grants.js";
 export * from "./equipment.js";
 export * from "./checks.js";
 export * from "./effects.js";
+export * from "./monk.js";
 export * from "./conditions.js";

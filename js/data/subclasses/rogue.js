@@ -5,9 +5,9 @@ export var ROGUE_SUBCLASSES = [
   {name:"Thief", blurb:"A burglar and treasure hunter.", features:{
     3:[
       {name:"Fast Hands", text:"You can use the bonus action from Cunning Action to make a DEX (Sleight of Hand) check, use thieves' tools to disarm a trap or open a lock, or take the Use an Object action."},
-      {name:"Second-Story Work", text:"Climbing costs you no extra movement, and your running jumps cover extra feet equal to your DEX modifier."}
+      {name:"Second-Story Work", text:"Climbing costs you no extra movement, and your running jumps cover extra feet equal to your DEX modifier.", speeds:[{type:"climb", value:"walk"}]}
     ],
-    9:[{name:"Supreme Sneak", text:"You have advantage on DEX (Stealth) checks if you move no more than half your speed on the same turn."}],
+    9:[{name:"Supreme Sneak", text:"You have advantage on DEX (Stealth) checks if you move no more than half your speed on the same turn.", advantage:{on:"skill", skills:["Stealth"], when:"if you move no more than half your speed this turn"}}],
     13:[{name:"Use Magic Device", text:"You ignore all class, race and level requirements on the use of magic items."}],
     17:[{name:"Thief's Reflexes", text:"You take two turns during the first round of any combat: the first at your normal initiative and the second at your initiative minus 10. You can't use this when you are surprised."}]
   }},
@@ -17,8 +17,8 @@ export var ROGUE_SUBCLASSES = [
       {name:"Assassinate", text:"You have advantage on attack rolls against any creature that hasn't taken a turn in the combat yet, and any hit you score against a surprised creature is a critical hit."}
     ],
     9:[{name:"Infiltration Expertise", text:"By spending seven days and 25 gp, you can create a false identity with a history, profession and affiliations (not one belonging to someone else), including documents and established acquaintances. While disguised as that identity, others believe you are that person until given an obvious reason not to."}],
-    13:[{name:"Impostor", text:"After at least three hours studying a person's speech, writing and behavior, you can mimic them unerringly. The ruse fools casual observers, and if a wary creature suspects something, you have advantage on CHA (Deception) checks to avoid detection."}],
-    17:[{name:"Death Strike", text:"When you hit a surprised creature, it makes a CON save (DC 8 + DEX modifier + proficiency bonus). On a failure, double the damage of your attack against it."}]
+    13:[{name:"Impostor", text:"After at least three hours studying a person's speech, writing and behavior, you can mimic them unerringly. The ruse fools casual observers, and if a wary creature suspects something, you have advantage on CHA (Deception) checks to avoid detection.", advantage:{on:"skill", skills:["Deception"], when:"to avoid being found out while you mimic someone and a wary creature suspects you"}}],
+    17:[{name:"Death Strike", text:"When you hit a surprised creature, it makes a CON save (DC 8 + DEX modifier + proficiency bonus). On a failure, double the damage of your attack against it.", saveDc:{save:"con", ability:"dex"}}]
   }},
   {name:"Arcane Trickster", blurb:"Enhances stealth and trickery with illusion and enchantment magic.", casterType:"third", spellAbility:"int", features:{
     3:[
@@ -27,7 +27,7 @@ export var ROGUE_SUBCLASSES = [
     ],
     9:[{name:"Magical Ambush", text:"If you are hidden from a creature when you cast a spell on it, it has disadvantage on saving throws against the spell this turn."}],
     13:[{name:"Versatile Trickster", text:"As a bonus action, designate a creature within 5 feet of your Mage Hand Legerdemain hand. You have advantage on attack rolls against it until the end of the turn."}],
-    17:[{name:"Spell Thief", text:"Immediately after a creature casts a spell that targets you or includes you in its area, you can use your reaction to force it to make a save with its spellcasting ability against your spell save DC. On a failure, you negate the spell's effect on you and, if it's 1st level or higher and of a level you can cast, you steal it: for 8 hours you know it and can cast it with your spell slots, and the creature can't cast it. Once per long rest."}]
+    17:[{name:"Spell Thief", text:"Immediately after a creature casts a spell that targets you or includes you in its area, you can use your reaction to force it to make a save with its spellcasting ability against your spell save DC. On a failure, you negate the spell's effect on you and, if it's 1st level or higher and of a level you can cast, you steal it: for 8 hours you know it and can cast it with your spell slots, and the creature can't cast it. Once per long rest.", saveDc:{save:"", ability:"int"}}]
   }},
   {name:"Swashbuckler", blurb:"A daring duelist who fights with flair and wins with charm.", features:{
     3:[
@@ -45,11 +45,11 @@ export var ROGUE_SUBCLASSES = [
     ],
     9:[{name:"Soul Blades", text:"Homing Strikes: if you miss with a Psychic Blades attack, roll a Psionic Energy die and add it to the roll. The die is spent only if the attack then hits. Psychic Teleportation: as a bonus action, spend and roll a die, throw a blade at an unoccupied space you can see up to 10 times the roll in feet away, and teleport there."}],
     13:[{name:"Psychic Veil", text:"As an action, you become invisible, along with what you wear and carry, for 1 hour or until you dismiss it. It ends early right after you deal damage to a creature or force one to make a saving throw. Once per long rest, or spend a Psionic Energy die to use it again."}],
-    17:[{name:"Rend Mind", text:"When you deal Sneak Attack damage with your Psychic Blades, you can force the target to make a WIS save (DC 8 + proficiency bonus + DEX modifier) or be stunned for 1 minute, repeating the save at the end of each of its turns. Once per long rest, or spend three Psionic Energy dice (no action) to use it again."}]
+    17:[{name:"Rend Mind", text:"When you deal Sneak Attack damage with your Psychic Blades, you can force the target to make a WIS save (DC 8 + proficiency bonus + DEX modifier) or be stunned for 1 minute, repeating the save at the end of each of its turns. Once per long rest, or spend three Psionic Energy dice (no action) to use it again.", saveDc:{save:"wis", ability:"dex"}}]
   }},
   {name:"Phantom", blurb:"Flirts with death, drawing power from the boundary between life and undeath.", features:{
     3:[
-      {name:"Whispers of the Dead", text:"Whenever you finish a short or long rest, you can gain one skill or tool proficiency of your choice. You lose it when you use this feature to choose a different one you lack."},
+      {name:"Whispers of the Dead", text:"Whenever you finish a short or long rest, you can gain one skill or tool proficiency of your choice. You lose it when you use this feature to choose a different one you lack.", profs:{pick:[{kind:"skillOrTool", label:"A skill or tool you lack (change it on the Feature choices card after any short or long rest)"}]}},
       {name:"Wails from the Grave", text:"Immediately after you deal Sneak Attack damage to a creature on your turn, you can target a second creature you can see within 30 feet of the first. Roll half your Sneak Attack dice (rounded up). It takes that much necrotic damage. Uses equal to your proficiency bonus per long rest."}
     ],
     9:[{name:"Tokens of the Departed", text:"As a reaction when a creature you can see dies within 30 feet, a Tiny soul trinket appears in your free hand. You can hold up to your proficiency bonus of them. While you carry one, you have advantage on death saves and CON saves. When you deal Sneak Attack damage on your turn, you can destroy one to use Wails from the Grave without spending a use. As an action, you can destroy one (wherever it is) to ask its spirit one question. It answers concisely, knowing only what it knew in life, and needn't be truthful."}],
@@ -62,7 +62,7 @@ export var ROGUE_SUBCLASSES = [
       {name:"Survivalist", text:"You gain proficiency in Nature and Survival, and your proficiency bonus is doubled for checks using them.", profs:{skills:["Nature","Survival"], expertise:["Nature","Survival"]}}
     ],
     9:[{name:"Superior Mobility", text:"Your walking speed increases by 10 feet. (Already added to your speed.) If you have a climbing or swimming speed, those also increase by 10 feet.", speeds:[{type:"climb", bonus:10},{type:"swim", bonus:10}], speed:10}],
-    13:[{name:"Ambush Master", text:"You have advantage on initiative rolls. The first creature you hit during the first round of a combat is easier to strike: attack rolls against it by anyone have advantage until the start of your next turn."}],
+    13:[{name:"Ambush Master", text:"You have advantage on initiative rolls. The first creature you hit during the first round of a combat is easier to strike: attack rolls against it by anyone have advantage until the start of your next turn.", advantage:{on:"initiative"}}],
     17:[{name:"Sudden Strike", text:"If you take the Attack action on your turn, you can make one additional attack as a bonus action. It can use Sneak Attack even if you already have this turn, but not against the same target twice in a turn."}]
   }},
   {name:"Inquisitive", blurb:"A keen-eyed investigator who reads lies, spots clues and exploits a foe's weaknesses.", features:{
@@ -71,7 +71,7 @@ export var ROGUE_SUBCLASSES = [
       {name:"Eye for Detail", text:"As a bonus action, make a WIS (Perception) check to spot a hidden creature or object, or an INT (Investigation) check to uncover or decipher clues."},
       {name:"Insightful Fighting", text:"As a bonus action, make a WIS (Insight) check against a creature you can see that isn't incapacitated, contested by its CHA (Deception) check. If you win, you can use Sneak Attack against it even without advantage (but not with disadvantage) for 1 minute, or until you succeed with this feature against a different target."}
     ],
-    9:[{name:"Steady Eye", text:"You have advantage on WIS (Perception) and INT (Investigation) checks if you move no more than half your speed on the same turn."}],
+    9:[{name:"Steady Eye", text:"You have advantage on WIS (Perception) and INT (Investigation) checks if you move no more than half your speed on the same turn.", advantage:{on:"skill", skills:["Perception", "Investigation"], when:"if you move no more than half your speed this turn"}}],
     13:[{name:"Unerring Eye", text:"As an action, sense the presence of illusions, shapechangers not in their true form, and other magic meant to deceive the senses within 30 feet, as long as you aren't blinded or deafened. You know something is trying to trick you, but not what it hides or its true nature. You can use this a number of times equal to your WIS modifier (minimum 1), regained on a long rest."}],
     17:[{name:"Eye for Weakness", text:"While your Insightful Fighting applies to a creature, your Sneak Attack damage against it increases by 3d6."}]
   }},
@@ -87,7 +87,7 @@ export var ROGUE_SUBCLASSES = [
   }},
   {name:"Misfortune Bringer", blurb:"Manipulates probability to curse foes with bad luck and capitalize on their failures.", features:{
     3:[
-      {name:"Evil Eye", text:"As a bonus action, choose a creature you can see within 60 feet. It makes a CHA save against your misfortune save DC (8 + proficiency bonus + CHA modifier) or is marked by your evil eye for 1 minute, or until you mark a different creature. You can deal Sneak Attack damage to a marked creature as long as you don't have disadvantage on the attack roll."},
+      {name:"Evil Eye", text:"As a bonus action, choose a creature you can see within 60 feet. It makes a CHA save against your misfortune save DC (8 + proficiency bonus + CHA modifier) or is marked by your evil eye for 1 minute, or until you mark a different creature. You can deal Sneak Attack damage to a marked creature as long as you don't have disadvantage on the attack roll.", saveDc:{save:"cha", ability:"cha"}},
       {name:"Misfortunist", text:"You learn two misfortunes of your choice, and one more at rogue levels 9, 13 and 17. When you finish a long rest you can swap one you know for another. You have 4 Jinx Points to fuel them (6 from level 13), regained on a short or long rest. Each misfortune targets the creature marked by your Evil Eye. The level-up asks you to pick them, and the Misfortunes card on the Features & Feats tab lists them with their costs and your save DC."}
     ],
     9:[{name:"Steal Luck", text:"When a creature within 30 feet makes an attack roll, saving throw or ability check with advantage, you can use your reaction to remove the advantage from that roll and regain 1 expended Jinx Point. Once per short or long rest."}],
