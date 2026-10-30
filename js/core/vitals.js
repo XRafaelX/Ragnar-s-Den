@@ -18,6 +18,7 @@ import { effectOn, bladesongBonus, wildSurgeNow } from "./effects.js";
 import { twilightShroud } from "./cleric.js";
 import { defensiveFlourish } from "./bard.js";
 import { stoneBenefit } from "./wizard.js";
+import { soulOfArtificeBonus } from "./artificer.js";
 import { wildForm, wildShapeSpeeds, wildShapeArmorClass, wildShapeSenses, incarnationAc } from "./druid.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
@@ -396,6 +397,8 @@ export function computeSave(c, key){
   // Magic items that add to every save (a Cloak of Protection).
   magicItemSaveBonuses(c).forEach(function(b){ bonuses.push(b); });
   if(effectOn(c, "durable_magic") && !unconscious) bonuses.push({name: "Durable Magic", value: 2});
+  var artifice = soulOfArtificeBonus(c);
+  if(artifice) bonuses.push({name: "Soul of Artifice", value: artifice});
   // Half cover in a Twilight Sanctuary.
   if(key==="dex" && twilightShroud(c)) bonuses.push({name: "Twilight Shroud", value: twilightShroud(c)});
   // A save picked for a feature (Iron Mind, Elegant Courtier).

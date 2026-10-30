@@ -5,7 +5,7 @@ import { activeInfusionData, infusionWorks } from "./infusion-effects.js";
 export { activeInfusionData, infusionWorks };
 import { WEAPON_DATA, weaponDataOf } from "../data/weapons.js";
 import { GEAR_DATA } from "../data/gear.js";
-import { mod, profBonus, parseDiceNotation, uid } from "./helpers.js";
+import { mod, profBonus, parseDiceNotation, uid, resourceLeft, classLevelOf, isMagicWeapon } from "./helpers.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* ---------------- Artificer extras ----------------
@@ -339,4 +339,33 @@ export function elixirRolls(c, name){
   if(effect && effect.heal) out.push({label: "Heal", dice: parseDiceNotation(effect.heal), diceText: effect.heal, bonus: intMod});
   if(cl && (Number(cl.level)||1) >= 9) out.push({label: "Temp HP", dice: parseDiceNotation("2d6"), diceText: "2d6", bonus: Math.max(1, intMod)});
   return out;
+}
+
+/* ---- Class automation Phase 13 (checked against Tasha's Cauldron on
+   5etools' data 2026-10-30) ---- */
+/* Flash of Genius (7): INT on a check or save, a use each. */
+export function flashOfGenius(c){
+  return resourceLeft(c, "Artificer:flash_of_genius") > 0 ? Math.max(1, mod(abilityScore(c, "int"))) : 0;
+}
+/* Soul of Artifice (20): +1 to saves per attuned magic item. */
+export function soulOfArtificeBonus(c){
+  if(artificerLevel(c) < 20) return 0;
+  return (c.inventory||[]).filter(function(i){ return i.attuned; }).length;
+}
+/* Soul of Artifice: an infusion ends and you have 1 hit point instead of 0. */
+export function soulOfArtificeReady(c){
+  return artificerLevel(c) >= 20 && !!(c.infusions && (c.infusions.active||[]).length);
+}
+/* Tool Expertise (6): every tool you're proficient with. */
+export function hasToolExpertise(c){
+  return artificerLevel(c) >= 6;
+}
+/* Arcane Jolt (Battle Smith 9): 2d6, 4d6 from 15, on a magic weapon's hit.
+   Shaped like rangerHitDice, paid with a use. */
+export function artificerHitDice(c, item){
+  var bs = classLevelOf(c, "Artificer", "Battle Smith");
+  if(bs < 9 || !item || !isMagicWeapon(c, item) || resourceLeft(c, "Artificer:arcane_jolt") <= 0) return [];
+  var qty = bs >= 15 ? 4 : 2;
+  return [{id: "arcane_jolt", name: "Arcane Jolt", text: "Arcane Jolt " + qty + "d6", qty: qty, die: 6, label: "Arcane Jolt (Force, or healing within 30 ft of the target)",
+    title: "Once per turn on a hit with a magic weapon: force damage, or the same healing for a creature within 30 ft of the target", unarmed: false, pay: "Artificer:arcane_jolt"}];
 }

@@ -1,3 +1,4 @@
+import { hasToolExpertise } from "../../core/artificer.js";
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { openInfoModal } from "../../ui/info-modal.js";
@@ -215,8 +216,10 @@ export function renderInformationPanel(c){
   profCard.appendChild(chipRow("Armor", armor));
   profCard.appendChild(chipRow("Weapons", weapons));
   // Expertise picked for a tool (a rogue's thieves' tools).
+  // (An artificer's Tool Expertise covers every tool.)
   var expertTools = characterPickedProfs(c).toolExpertise.map(function(t){ return t.toLowerCase(); });
-  tools = tools.map(function(t){ return expertTools.indexOf(t.toLowerCase())!==-1 ? t + " (expertise)" : t; });
+  var allExpert = hasToolExpertise(c);
+  tools = tools.map(function(t){ return allExpert || expertTools.indexOf(t.toLowerCase())!==-1 ? t + " (expertise)" : t; });
   profCard.appendChild(chipRow("Tools", tools));
   profCard.appendChild(chipRow("Saving Throws", saves));
   panel.appendChild(profCard);

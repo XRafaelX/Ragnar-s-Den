@@ -1,3 +1,6 @@
+import { soulOfArtificeReady, endInfusion } from "../../core/artificer.js";
+import { openBottomSheet } from "../../ui/bottom-sheet.js";
+import { sheetTop, lead, sheetButton } from "./paladin.js";
 import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -129,6 +132,36 @@ export function renderDeathSaves(c){
       save(); renderSidebar(); renderAll();
     });
     box.appendChild(revive);
+  }
+  // Soul of Artifice (artificer 20): an infusion ends, and you have 1 hit point.
+  if(soulOfArtificeReady(c) && !dead){
+    var soul = document.createElement("button");
+    soul.type = "button"; soul.className = "btn small primary ds-soul";
+    soul.textContent = "Soul of Artifice";
+    soul.title = "Reaction: end one of your infusions to have 1 hit point instead of 0";
+    soul.addEventListener("click", function(e){
+      e.stopPropagation();
+      openBottomSheet(function(body, refresh, close){
+        sheetTop(body, "Soul of Artifice", close);
+        lead(body, "End which infusion?");
+        var list = document.createElement("div");
+        list.className = "pal-sheet-list";
+        (c.infusions.active||[]).forEach(function(a){
+          list.appendChild(sheetButton(a.name, function(){
+            endInfusion(c, a);
+            c.hp.current = 1;
+            c.deathSaves = {success: 0, fail: 0};
+            removeCondition(c, "prone");
+            logRoll("Soul of Artifice", a.name + " ended. 1 hit point instead of 0.");
+            playRevive();
+            close();
+            save(); renderSidebar(); renderAll();
+          }));
+        });
+        body.appendChild(list);
+      });
+    });
+    box.appendChild(soul);
   }
   // Strength of the Grave (Shadow Magic 1): only a success spends it.
   if(strengthOfTheGrave(c) && !dead){

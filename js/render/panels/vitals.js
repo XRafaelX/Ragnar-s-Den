@@ -5,7 +5,7 @@ import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
-import { elixirsOnLongRest, infusionsOnLongRest } from "../../core/artificer.js";
+import { elixirsOnLongRest, infusionsOnLongRest, artificerLevel } from "../../core/artificer.js";
 import { restoreCompanions, wildCompanionHours, summonWildCompanion } from "../../core/companions.js";
 import { showActionToast } from "../../ui/toast.js";
 import { WILD_SURGES } from "../../data/effects.js";
@@ -1399,6 +1399,24 @@ function renderResourcesCard(c, resources){
     if(lockRow) info.appendChild(lockRow);
     var wizRow = wizardResourceRow(c, r); // The schools' buttons and pickers
     if(wizRow) info.appendChild(wizRow);
+    // Defensive Field (Armorer, Guardian): temporary HP equal to the artificer level.
+    if(r.key==="Artificer:defensive_field"){
+      var field = artificerLevel(c);
+      var fieldRow = document.createElement("div");
+      fieldRow.className = "inv-roll-actions fx-rolls";
+      var fieldBtn = document.createElement("button");
+      fieldBtn.type = "button"; fieldBtn.className = "btn small inv-roll-btn res-roll-btn";
+      fieldBtn.textContent = "Temp HP " + field;
+      fieldBtn.disabled = remaining<=0;
+      fieldBtn.title = remaining<=0 ? "None left until a long rest" : "Bonus action, while you wear the armor";
+      fieldBtn.addEventListener("click", function(){
+        if(field > (Number(c.hp.temp)||0)) c.hp.temp = field;
+        logRoll("Defensive Field", "Temporary hit points: " + c.hp.temp + ".");
+        setUsed(r.used+1);
+      });
+      fieldRow.appendChild(fieldBtn);
+      info.appendChild(fieldRow);
+    }
     // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
     // plus the proficiency bonus of healing.
     var qh = r.key==="Monk:ki" && quickenedHealing(c);

@@ -1,5 +1,6 @@
 import { save } from "../../core/state.js";
 import { openFlourishSheet } from "./bard.js";
+import { artificerHitDice } from "../../core/artificer.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg } from "../../ui/svg-icons.js";
 import { cardMenu } from "../../ui/card-menu.js";
@@ -1419,7 +1420,7 @@ function renderWeaponCard(c, item, idx){
 
   // Symbiotic Entity: melee weapon hits deal an extra 1d6 necrotic.
   druidHitDice(c, !isRangedWeapon(item)).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d)); });
-  warlockHitDice(c, item).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d, c)); });
+  warlockHitDice(c, item).concat(artificerHitDice(c, item)).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d, c)); });
   // Blade Flourish (College of Swords): on any weapon's hit.
   if(bladeFlourish(c)){
     var flourishBtn = document.createElement("button");

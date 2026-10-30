@@ -1,5 +1,6 @@
 import { save } from "../../core/state.js";
 import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud } from "../../core/helpers.js";
+import { flashOfGenius, artificerHitDice } from "../../core/artificer.js";
 import { openFlourishSheet } from "./bard.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
@@ -109,6 +110,7 @@ function checkFollowUp(c, r, opts){
   if(hasMagicalGuidance(c)) out = out.concat(magicalGuidance(c).options);
   if(resourceLeft(c, "Warlock:dark_ones_own_luck") > 0) out.push(ownLuckOption(c));
   if(chronalShiftLeft(c) > 0) out.push(chronalOption(c));
+  if(flashOfGenius(c)) out.push(flashOption(c));
   // Peerless Skill (College of Lore 14): a Bardic Inspiration die on your own check.
   if(hasPeerlessSkill(c)){
     var peerless = bardicDie(c);
@@ -170,7 +172,7 @@ function checkFollowUp(c, r, opts){
 export function rollSave(c, bonus, mode, label, ability){
   var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c), will = resourceLeft(c, "Gunslinger:willpower") > 0;
   var oath = livingLegendOn(c) || hasSupernaturalDefense(c) || effectOn(c, "emboldening_bond") || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
-  var dragon = ability==="con" && starryDragon(c), favored = favoredByTheGods(c) || resourceLeft(c, "Warlock:dark_ones_own_luck") > 0 || chronalShiftLeft(c) > 0 || hasArcaneDeflection(c), trance = tranceOn(c);
+  var dragon = ability==="con" && starryDragon(c), favored = favoredByTheGods(c) || resourceLeft(c, "Warlock:dark_ones_own_luck") > 0 || chronalShiftLeft(c) > 0 || hasArcaneDeflection(c) || !!flashOfGenius(c), trance = tranceOn(c);
   performRoll(20, 1, bonus, mode, label, {
     followUp: fanatic || indom || diamond || oath || will || dragon || favored ? function(r){ return saveFollowUp(c, ability, r); } : null,
     adjust: trance ? function(r){ return r.natural!=null && r.natural < 10 ? {total: r.total + 10 - r.natural, note: "Trance of Order"} : null; } : null
@@ -231,6 +233,7 @@ function saveFollowUp(c, ability, r){
   if(favoredByTheGods(c)){ opts.push(favoredOption(c)); failed = opts.length; }
   if(resourceLeft(c, "Warlock:dark_ones_own_luck") > 0){ opts.push(ownLuckOption(c)); failed = opts.length; }
   if(chronalShiftLeft(c) > 0){ opts.push(chronalOption(c)); failed = opts.length; }
+  if(flashOfGenius(c)){ opts.push(flashOption(c)); failed = opts.length; }
   // Arcane Deflection (War Magic 2): +4 to the save, and cantrips only for a while.
   if(hasArcaneDeflection(c)){
     var shroud = deflectingShroud(c);
@@ -246,6 +249,16 @@ function saveFollowUp(c, ability, r){
   }
   if(!opts.length) return null;
   return failed ? {lead: "Failed?", hint: "Failed? Tap for options.", options: opts} : {lead: "", hint: "Saved? Tap for Vigilant Rebuke.", options: opts};
+}
+/* Flash of Genius (artificer 7): INT on a check or a save. */
+function flashOption(c){
+  var bonus = flashOfGenius(c);
+  return {label: "+" + bonus + " (Flash of Genius)", title: "Your reaction, a use each",
+    use: function(){
+      if(!spendResource(c, "Artificer:flash_of_genius", 1)) return null;
+      save(); renderAll();
+      return {bonus: bonus, log: "Flash of Genius"};
+    }};
 }
 /* Chronal Shift (Chronurgy 2): a reroll after seeing how it went. */
 function chronalOption(c){
@@ -472,7 +485,7 @@ function criticalHit(c, hit){
   if(hit.melee && hasImprovedSmite(c) && hit.item) extra.push({label: "Improved Divine Smite 2d8", title: "On a critical hit, its die is doubled too",
     use: function(){ performRoll(8, 2, 0, "none", hit.label + ": Improved Divine Smite (critical)"); return {silent: true}; }});
   // The dice a ranger's or cleric's hit adds are doubled too.
-  rangerHitDice(c).concat(clericHitDice(c), gunslingerHitDice(c, hit.item), druidHitDice(c, hit.melee), bardHitDice(c), warlockHitDice(c, hit.item)).filter(function(d){ return !d.flat && (hit.item || d.unarmed); }).forEach(function(d){
+  rangerHitDice(c).concat(clericHitDice(c), gunslingerHitDice(c, hit.item), druidHitDice(c, hit.melee), bardHitDice(c), warlockHitDice(c, hit.item), artificerHitDice(c, hit.item)).filter(function(d){ return !d.flat && (hit.item || d.unarmed); }).forEach(function(d){
     extra.push({label: d.name + " " + 2 * d.qty + "d" + d.die, title: "On a critical hit, these dice are doubled too",
       use: function(){
         if(d.pay && !spendResource(c, d.pay, 1)) return null;

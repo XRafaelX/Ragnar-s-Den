@@ -144,6 +144,12 @@ export function circleSpellNote(c, name){
   if(school("School of Necromancy") >= 6 && ["Animate Dead", "Create Undead", "Finger of Death"].indexOf(spell)!==-1) notes.push("Undead Thralls: undead it makes get +" + school("School of Necromancy") + " hit points and +" + profBonus(c) + " to weapon damage." + (spell==="Animate Dead" ? " You can target one more corpse or pile of bones." : ""));
   if(school("School of Conjuration") >= 14 && d.school==="Conjuration" && SUMMON_SPELLS.concat(["Conjure Minor Elementals", "Conjure Elemental", "Conjure Celestial", "Summon Elemental", "Summon Construct"]).indexOf(spell)!==-1) notes.push("Durable Summons: what it brings has 30 temporary hit points.");
   if(school("School of Enchantment") >= 10 && d.school==="Enchantment" && d.level >= 1) notes.push("Split Enchantment: if it targets only one creature, it can target a second.");
+  // Artificer: what the focus adds to an artificer spell.
+  if(d.classes.indexOf("Artificer")!==-1){
+    if(classLevelOf(c, "Artificer", "Alchemist") >= 5 && (HEALING_SPELLS.indexOf(spell)!==-1 || /\b(acid|fire|necrotic|poison)\b[^.]*damage/i.test(d.summary)))
+      notes.push("Alchemical Savant: with alchemist's supplies as your focus, add " + Math.max(1, mod(abilityScore(c, "int"))) + " to one roll of it.");
+    if(classLevelOf(c, "Artificer", "Artillerist") >= 5 && /\bdamage\b/i.test(d.summary)) notes.push("Arcane Firearm: cast through it, add a d8 to one damage roll.");
+  }
   // Radiant Soul (Celestial 6): radiant or fire damage.
   if(classLevelOf(c, "Warlock", "The Celestial") >= 6 && /\b(radiant|fire)\b[^.]*damage/i.test(d.summary)) notes.push("Radiant Soul: add " + mod(abilityScore(c, "cha")) + " to one radiant or fire damage roll against one target.");
   // Spiritual Focus (College of Spirits 6): a bard spell's damage or healing.

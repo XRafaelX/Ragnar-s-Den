@@ -192,11 +192,12 @@ export var SUBCLASS_RESOURCES = {
         hint:"Cast Heal without a spell slot or material components."}
     ],
     "Artillerist": [
-      {id:"eldritch_cannon", name:"Eldritch Cannon", level:3, max:always(1), reset:always("long"),
+      {id:"eldritch_cannon", name:"Eldritch Cannon", level:3, max:always(1), reset:always("long"), slotMin:1,
         hint:"Create a cannon (two at once from level 15) without spending a spell slot. After that, each one costs a spell slot."}
     ],
     "Battle Smith": [
       {id:"steel_defender_repair", name:"Steel Defender: Repair", level:3, max:always(3), reset:always("long"),
+        roll:{qty:2, die:8, bonusPb:true, button:"Repair", label:"Steel Defender: Repair (hit points)"},
         hint:"Your steel defender's action: restore 2d8 + proficiency bonus HP to itself or a construct or object within 5 ft."},
       {id:"arcane_jolt", name:"Arcane Jolt", level:9,
         max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
