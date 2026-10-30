@@ -111,8 +111,9 @@ export function classSpellAbility(cl){
                    ("Blindsense 10 ft")
      resist        damage types the feature gives resistance to, always on
                    (Guarded Mind: ["psychic"]); see featureResistances
-     skillBonus    {skill, ability}: that ability's modifier added to the
-                   skill's checks (Elegant Courtier: WIS to Persuasion)
+     skillBonus    {skill, ability, when}: that ability's modifier added to the
+                   skill's checks (Elegant Courtier: WIS to Persuasion);
+                   when "firearm": only with a firearm in hand (Outlaw's Grit)
      skillDouble   a skill whose checks get double the proficiency bonus
                    when proficient (Royal Envoy: "Persuasion")
      saveDc        {save, ability} or a list of them: a save DC the feature

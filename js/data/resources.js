@@ -325,6 +325,10 @@ export var SUBCLASS_RESOURCES = {
       {id:"predicted_critical", name:"Predicted Critical", level:14,
         max:function(lv, m){ return Math.floor(m.pb / 2); }, reset:always("long"),
         hint:"Before a firearm attack with advantage: a hit becomes a critical hit. Start it on Active effects."}
+    ],
+    "Outlaw": [
+      {id:"duel", name:"Duel", level:18, max:always(1), reset:always("long"),
+        hint:"Challenge a creature you can see within 30 ft. Start it on Active effects."}
     ]
   },
   "Monk": {

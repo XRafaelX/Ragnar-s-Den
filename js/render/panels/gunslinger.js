@@ -9,7 +9,7 @@
    Bulletsmith card that crafts rounds (Novice, Handy, Elemental and
    Occult Bulletsmith). */
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, maxHp, skillCheck, profBonus, classLevelOf, roundStacks, loadedRound, loadedStack, takesHeavyRounds, roundsHaveNoType } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, maxHp, skillCheck, profBonus, classLevelOf, roundStacks, loadedRound, loadedStack, takesHeavyRounds, roundsHaveNoType, canRigRound, roundRigged, RIGGED_ROUND_NOTE } from "../../core/helpers.js";
 import { ROUND_KINDS, ROUND_ELEMENTS, roundBatchSize, roundStackName } from "../../data/gunslinger-rounds.js";
 import { SPELL_DATA } from "../../data/spells.js";
 import { spendCoins } from "../../core/coins.js";
@@ -120,6 +120,16 @@ export function gunRoundRow(c, item, redraw){
     }
   }));
   row.appendChild(field);
+  // Playing Dirty (Outlaw 14): rig the next shot.
+  if(canRigRound(c)){
+    var rig = document.createElement("div");
+    rig.className = "inv-roll-actions gun-rig";
+    button(rig, roundRigged(c, item) ? "Don't rig it" : "Rig it", "Once per turn: the next shot is a blinding flash", false, function(){
+      if(item.rigged) delete item.rigged; else item.rigged = true;
+      redraw();
+    });
+    row.appendChild(rig);
+  }
   // An elemental round takes its damage type when it's loaded.
   if(round && round.def.elemental){
     var stack = loadedStack(c, item);
@@ -135,7 +145,7 @@ export function gunRoundRow(c, item, redraw){
     }
   }
   wrap.appendChild(row);
-  var note = roundNote(c, round);
+  var note = roundRigged(c, item) ? RIGGED_ROUND_NOTE : roundNote(c, round);
   if(note){
     var p = document.createElement("p");
     p.className = "inv-armor-note gun-round-note";

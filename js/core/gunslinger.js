@@ -85,3 +85,33 @@ export function gunslingerHitDice(c, item){
   return [{id: "vital", name: "Vital Points", text: "Vital Points +" + qty + "d6", qty: qty, die: 6, label: "Vital Points",
     title: "Once on each of your turns, against a creature that is missing any hit points"}];
 }
+
+/* ---- Outlaw ---- */
+function outlawLevel(c){ return classLevelOf(c, "Gunslinger", "Outlaw"); }
+/* A firearm in hand (Outlaw's Grit's Intimidation bonus). */
+export function holdsFirearm(c){
+  return (c.inventory||[]).some(function(i){ return i.equipped && isFirearmItem(i); });
+}
+/* Outlaw's Grit (1): +2 damage with a firearm when no other weapon is in
+   hand, judged like Dueling. Two-handed guns count: the rule only asks
+   for a single firearm. */
+export function outlawGritBonus(c, item){
+  if(!outlawLevel(c) || !isFirearmItem(item)) return 0;
+  var other = (c.inventory||[]).some(function(i){ return i!==item && i.equipped && i.type==="weapon"; });
+  return other ? 0 : 2;
+}
+/* Outlaw's Grit: a light, one-handed firearm can be dual-wielded. */
+export function outlawDualFirearm(c, item){
+  if(!outlawLevel(c) || !isFirearmItem(item)) return false;
+  var props = weaponDataOf(item).properties || "";
+  return /\blight\b/i.test(props) && !/two-handed/i.test(props);
+}
+/* Playing Dirty (14): the next shot is a blinding flash. item.rigged is
+   the player's pick on the gun's card. */
+export var RIGGED_ROUND_NOTE = "Rigged: range 10 feet and no damage. The target must succeed on a DC 14 Wisdom saving throw or be blinded until the start of your next turn.";
+export function canRigRound(c){
+  return outlawLevel(c) >= 14;
+}
+export function roundRigged(c, item){
+  return canRigRound(c) && !!(item && item.rigged);
+}

@@ -253,3 +253,68 @@ test("Marksman resources: Expert Sniper once, Predicted Critical half the profic
   assert.deepEqual(res(17), { expert_sniper: 1, predicted_critical: 3 });
   assert.ok(TOGGLE_EFFECTS.some((e) => e.id === "predicted_critical" && e.subclass === "Marksman" && e.level === 14 && e.cost.resource === "predicted_critical"));
 });
+
+/* ---- Phase 4: the Outlaw ---- */
+function outlaw(level, extra = {}){ return slinger(level, "Outlaw", extra); }
+
+test("Outlaw's Grit: +2 damage with a single firearm, Marksmen and second weapons don't get it", () => {
+  const c = outlaw(1), pistol = gun("Pistol", { equipped: true });
+  c.inventory = [pistol];
+  assert.equal(H.outlawGritBonus(c, pistol), 2);
+  const base = H.weaponDamageBonus(marksmanFor(pistol), pistol);
+  assert.equal(H.weaponDamageBonus(c, pistol), base + 2);
+  assert.equal(H.outlawGritBonus(marksmanFor(pistol), pistol), 0);
+  // A two-handed gun is still a single firearm.
+  const rifle = gun("Long Gun", { equipped: true });
+  c.inventory = [rifle];
+  assert.equal(H.outlawGritBonus(c, rifle), 2);
+  // A second weapon in hand turns it off, one in the pack doesn't.
+  c.inventory = [pistol, { name: "Dagger", type: "weapon", equipped: true }];
+  assert.equal(H.outlawGritBonus(c, pistol), 0);
+  c.inventory = [pistol, { name: "Dagger", type: "weapon", equipped: false }];
+  assert.equal(H.outlawGritBonus(c, pistol), 2);
+});
+function marksmanFor(item){ const c = slinger(1, "Marksman"); c.inventory = [item]; return c; }
+
+test("Outlaw's Grit: two light firearms dual-wield, a firearm and a blade don't", () => {
+  const c = outlaw(1), a = gun("Pistol", { id: "a", equipped: true }), b = gun("Pistol", { id: "b", equipped: true });
+  c.inventory = [a, b];
+  const hands = H.dualWieldHands(c);
+  assert.ok(hands && hands.main !== hands.off, "two pistols pair up");
+  assert.ok(H.offHandAttack(c, hands.off), "the off-hand pistol is a bonus action attack");
+  assert.equal(H.outlawGritBonus(c, a), 0, "no +2 while holding two");
+  // Not a Handcannon (not light) or the Long Gun (two-handed).
+  assert.ok(!H.outlawDualFirearm(c, gun("Handcannon")));
+  assert.ok(!H.outlawDualFirearm(c, gun("Long Gun")));
+  // Not a pistol and a dagger.
+  c.inventory = [a, { name: "Dagger", type: "weapon", equipped: true, notes: "light", damageDice: "1d4" }];
+  assert.equal(H.dualWieldHands(c), null);
+  // Not for other subclasses.
+  const m = slinger(1, "Marshal");
+  m.inventory = [a, b];
+  assert.equal(H.dualWieldHands(m), null);
+});
+
+test("Outlaw's Grit: Wisdom added to Intimidation only with a firearm in hand", () => {
+  const c = outlaw(1);
+  c.inventory = [gun("Pistol", { equipped: false })];
+  const without = H.skillCheck(c, "Intimidation").value;
+  c.inventory[0].equipped = true;
+  assert.equal(H.skillCheck(c, "Intimidation").value, without + 2);
+  assert.match(H.skillCheck(c, "Intimidation").breakdown, /Outlaw's Grit/);
+  assert.equal(H.skillCheck(c, "Persuasion").value, 0);
+});
+
+test("Playing Dirty: from Outlaw 14, a rigged shot; Duel from 18; Luck of the Draw from 7", () => {
+  assert.ok(!H.canRigRound(outlaw(13)));
+  assert.ok(H.canRigRound(outlaw(14)));
+  assert.ok(H.roundRigged(outlaw(14), { rigged: true }));
+  assert.ok(!H.roundRigged(outlaw(13), { rigged: true }));
+  assert.ok(!H.canRigRound(marksmanFor(gun("Pistol"))));
+  assert.match(H.RIGGED_ROUND_NOTE, /DC 14 Wisdom/);
+  const keys = (lv) => H.characterResources(outlaw(lv)).map((r) => r.key).filter((k) => /duel/.test(k));
+  assert.deepEqual([keys(17), keys(18)], [[], ["Gunslinger:duel"]]);
+  const fx = (id) => TOGGLE_EFFECTS.find((e) => e.id === id);
+  assert.deepEqual([fx("luck_of_the_draw").subclass, fx("luck_of_the_draw").level], ["Outlaw", 7]);
+  assert.deepEqual([fx("duel").subclass, fx("duel").level, fx("duel").cost.resource], ["Outlaw", 18, "duel"]);
+});

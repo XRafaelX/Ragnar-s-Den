@@ -18,6 +18,7 @@ import { nextCheckAdvantage } from "./magic-items.js";
 import { infusionInitiative } from "./infusion-effects.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { conditionRolls } from "./conditions.js";
+import { holdsFirearm } from "./gunslinger.js";
 
 /* ---------------- Ability checks and skills ---------------- */
 var SKILL_ABILITY = {};
@@ -82,7 +83,7 @@ export function skillCheck(c, skill, passive){
   if(glamour){ value += glamour; breakdown += " + Otherworldly Glamour (" + fmtMod(glamour) + ")"; }
   // Features that add an ability modifier to this skill (Elegant Courtier: WIS to Persuasion).
   featureSkillFlags(c, "skillBonus").forEach(function(x){
-    if(x.value.skill!==skill) return;
+    if(x.value.skill!==skill || (x.value.when==="firearm" && !holdsFirearm(c))) return;
     var m = mod(abilityScore(c, x.value.ability));
     value += m; breakdown += " + " + x.name + " (" + fmtMod(m) + ")";
   });

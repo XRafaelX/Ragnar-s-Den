@@ -16,7 +16,7 @@ import { conditionRolls } from "./conditions.js";
 import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver, weaponAttackEffect } from "./effects.js";
 import { sharpenBonus } from "./monk.js";
 import { sacredWeaponBonus, auraOfHate } from "./paladin.js";
-import { heavyRoundBonus, marksmanCritMin, deadlyCriticalDice } from "./gunslinger.js";
+import { heavyRoundBonus, marksmanCritMin, deadlyCriticalDice, outlawGritBonus, outlawDualFirearm } from "./gunslinger.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
    (see applyClassChoices), so deleting the feature removes its bonus. */
@@ -338,7 +338,7 @@ export function weaponAttackBonus(c, item){
 }
 export function weaponDamageBonus(c, item){
   return weaponAbilityMod(c, item) + magicBonusOf(item) + sharpenBonus(c, item) + auraOfHate(c, item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
-    + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0) + heavyRoundBonus(c, item);
+    + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0) + heavyRoundBonus(c, item) + outlawGritBonus(c, item);
 }
 /* A weapon with the thrown property (a dagger, a handaxe, a dart). */
 export function isThrownWeapon(item){
@@ -374,10 +374,13 @@ export function thrownAttack(c, item){
    in the other, adding no ability modifier to its damage unless the
    modifier is negative; the Two-Weapon Fighting style adds it. Dual
    Wielder lifts "light" (one-handed weapons still). Two separate equipped
-   weapons are needed: a stack ("Dagger ×2") is one weapon in hand. For
+   weapons are needed: a stack ("Dagger ×2") is one weapon in hand. An
+   Outlaw (the Gunslinger class) can do this with two light firearms, but
+   not with a firearm and a blade. For
    `item`, when it's the off-hand weapon (see dualWieldHands): {damage,
    style}, else null. */
 function offHandCapable(c, item){
+  if(item.type==="weapon" && item.equipped && outlawDualFirearm(c, item)) return true;
   if(item.type!=="weapon" || !item.equipped || isRangedWeapon(item) || isTwoHanded(item)) return false;
   var d = weaponDataOf(item);
   return /\blight\b/i.test(((d && d.properties) || "") + " " + (item.notes || "")) || hasFeat(c, "Dual Wielder");
@@ -389,7 +392,7 @@ function offHandCapable(c, item){
    {main, off} or null when not wielding two. */
 export function dualWieldHands(c){
   var pair = (c.inventory||[]).filter(function(i){ return offHandCapable(c, i); });
-  if(pair.length!==2) return null;
+  if(pair.length!==2 || isFirearm(pair[0])!==isFirearm(pair[1])) return null;
   if(pair[0].offHand!==pair[1].offHand) return pair[0].offHand ? {main: pair[1], off: pair[0]} : {main: pair[0], off: pair[1]};
   function avg(i){ var d = weaponDamageDice(c, i); return (d ? d.qty * (d.die + 1) / 2 : 0) + weaponDamageBonus(c, i); }
   return avg(pair[1]) > avg(pair[0]) ? {main: pair[1], off: pair[0]} : {main: pair[0], off: pair[1]};

@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, skillCheck, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, skillCheck, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
 import { useNextCheck } from "../../core/magic-items.js";
@@ -34,6 +34,12 @@ export function rollAttack(c, bonus, mode, label, hit){
     hit.heavyRound = !!heavyRoundBonus(c, hit.item);
     hit.noDamage = round.noDamage;
     spendRound(c, hit.item);
+  }
+  // Playing Dirty (Outlaw 14): the rigged round flashes instead.
+  if(gun && roundRigged(c, hit.item)){
+    hit.noDamage = true;
+    hit.rigged = true;
+    delete hit.item.rigged;
   }
   // Master of the Barrel (gunslinger 20): a firearm's d20 of 9 or lower counts as a 10.
   var barrel = gun && classLevelOf(c, "Gunslinger") >= 20;
@@ -204,6 +210,7 @@ function hasDiamondSoul(c){
 function attackFollowUp(c, r, aim, hit){
   var gun = hit && hit.item && firearmStats(hit.item, c);
   if(gun && r && r.natural <= gun.misfire) return {lead: "Misfire! The attack misses and the " + (hit.item.name || "firearm") + " jams. " + (gun.set==="gunslinger" ? "Clear it on its card." : "Repair it on its card."), options: []};
+  if(hit && r && hit.rigged) return {lead: "Playing Dirty: the target makes a DC 14 Wisdom save or is blinded until the start of your next turn.", options: []};
   if(hit && r && r.natural >= (hit.critMin || 20)) return hit.noDamage ? {lead: "Critical hit! The round deals no damage.", options: []} : criticalHit(c, hit);
   if(hit && r && hit.predicted && !hit.noDamage) return Object.assign(criticalHit(c, hit), {lead: "Predicted Critical: if it hits, it's a critical hit."});
   var opts = [];

@@ -5,7 +5,7 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -868,6 +868,9 @@ function firearmRow(c, item, gun, idx){
   row.appendChild(label);
   btn("Reload", slLv >= 15 ? "A bonus action (Lightning Reload). You need a free hand." : "Spend one attack or an action. You need a free hand.", function(){
     item.shots = 0;
+    // Outlaw's Grit: reloading reloads both firearms in hand.
+    var hands = classLevelOf(c, "Gunslinger", "Outlaw") ? dualWieldHands(c) : null;
+    if(hands && (hands.main===item || hands.off===item)){ hands.main.shots = 0; hands.off.shots = 0; }
     logRoll(item.name || "Firearm", "Reloaded.");
     redrawKeeping(idx);
   }, left===gun.reload);
@@ -1215,6 +1218,7 @@ function renderWeaponCard(c, item, idx){
   if(rage) subtitleParts.push("Rage +" + rage + " damage");
   if(duelingBonus(c, item)) subtitleParts.push("Dueling +2 damage");
   if(sidearmMasteryBonus(c, item)) subtitleParts.push("Sidearm Mastery +2 damage");
+  if(outlawGritBonus(c, item)) subtitleParts.push("Outlaw's Grit +2 damage");
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");
@@ -1266,10 +1270,11 @@ function renderWeaponCard(c, item, idx){
   var off = parsed && offHandAttack(c, item);
   var dmgBtn = document.createElement("button");
   dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
-  if(parsed && round && round.noDamage){
+  var rigged = roundRigged(c, item);
+  if(parsed && (rigged || (round && round.noDamage))){
     dmgBtn.innerHTML = makeDicesSvg() + "No damage";
     dmgBtn.disabled = true;
-    dmgBtn.title = "The " + round.def.name.toLowerCase() + " round deals no damage";
+    dmgBtn.title = "The " + (rigged ? "rigged" : round.def.name.toLowerCase()) + " round deals no damage";
   } else if(parsed){
     dmgBtn.innerHTML = makeDicesSvg() + "Damage " + parsed.qty + "d" + parsed.die + fmtMod(dmgBonus);
     dmgBtn.addEventListener("click", function(){

@@ -80,6 +80,14 @@ function effectRow(c, e){
   btn.addEventListener("click", function(){
     if(e.on){
       endEffect(c, def.id);
+    } else if(def.id==="luck_of_the_draw"){
+      // The d4 decides: only a 4 turns it on.
+      performRoll(4, 1, 0, "none", "Luck of the Draw", {onResult: function(r){
+        if(r.total!==4) return;
+        startEffect(c, def.id);
+        save(); renderAll();
+      }});
+      return;
     } else {
       if(!startEffect(c, def.id)) return;
       var gain = def.id==="symbiotic_entity" ? " Temporary HP: " + c.hp.temp + "." : "";
@@ -200,6 +208,8 @@ function effectSummary(c, id){
   if(id==="reckless_attack") return "Advantage on Strength melee weapon attacks · attacks against you have advantage";
   if(id==="natures_veil") return "Invisible · advantage on your attack rolls · attacks against you have disadvantage";
   if(id==="predicted_critical") return "A hit with your next firearm attack is a critical hit";
+  if(id==="luck_of_the_draw") return "An extra reaction until the start of your next turn";
+  if(id==="duel") return "Neither of you can target anyone else · both move at once, in a straight line";
   if(id==="steady_aim" || id==="take_aim") return c.effects[id]==="used" ? "Advantage used · speed 0" : "Advantage on your next attack roll · speed 0";
   return "";
 }
