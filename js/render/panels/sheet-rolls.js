@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
 import { useNextCheck } from "../../core/magic-items.js";
@@ -22,8 +22,19 @@ import { performRoll, logRoll } from "../../dice/dice.js";
 export function rollAttack(c, bonus, mode, label, hit){
   var aim = hasFocusedAim(c) || !!(hit && hit.item && magicArrows(c, hit.item)), gun = hit && hit.item && firearmStats(hit.item, c);
   if(gun && gun.reload) hit.item.shots = (Number(hit.item.shots)||0) + 1;
+  // A Gunslinger class gun fires its loaded round (noted first: the last
+  // one unloads the gun).
+  var round = gun && gun.set==="gunslinger" && loadedRound(c, hit.item);
+  if(round){
+    hit.heavyRound = !!heavyRoundBonus(c, hit.item);
+    hit.noDamage = round.noDamage;
+    spendRound(c, hit.item);
+  }
+  // Master of the Barrel (gunslinger 20): a firearm's d20 of 9 or lower counts as a 10.
+  var barrel = gun && classLevelOf(c, "Gunslinger") >= 20;
   performRoll(20, 1, bonus, mode, label, {
     followUp: function(r){ return attackFollowUp(c, r, aim, hit); },
+    adjust: barrel ? function(r){ return r.natural!=null && r.natural < 10 ? {total: r.total + 10 - r.natural, note: "Master of the Barrel"} : null; } : null,
     onResult: gun ? function(r){ firearmResult(c, hit.item, gun, r); } : null
   });
   var ended = attackEndsEffects(c, !!(hit && hit.melee));
@@ -120,15 +131,25 @@ function checkFollowUp(c, r, opts){
 }
 /* ability: the save's ability (Bulwark only helps with INT, WIS and CHA). */
 export function rollSave(c, bonus, mode, label, ability){
-  var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c);
+  var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c), will = resourceLeft(c, "Gunslinger:willpower") > 0;
   var oath = livingLegendOn(c) || hasSupernaturalDefense(c) || effectOn(c, "emboldening_bond") || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
-  performRoll(20, 1, bonus, mode, label, fanatic || indom || diamond || oath ? function(){ return saveFollowUp(c, ability); } : null);
+  performRoll(20, 1, bonus, mode, label, fanatic || indom || diamond || oath || will ? function(r){ return saveFollowUp(c, ability, r); } : null);
 }
 /* After a save: Fanatical Focus (once per rage) and Indomitable (a use;
    a Banneret's Bulwark lets an ally who failed the same INT, WIS or CHA
-   save reroll too). */
-function saveFollowUp(c, ability){
+   save reroll too). Willpower (gunslinger 13): the Wisdom score in
+   place of the d20, once per long rest. r: the roll (null for the hint). */
+function saveFollowUp(c, ability, r){
   var opts = [];
+  if(resourceLeft(c, "Gunslinger:willpower") > 0){
+    var wis = abilityScore(c, "wis");
+    opts.push({label: "Use Wisdom " + wis + " (Willpower)", title: "Replace the d20 with your Wisdom score (" + wis + "). Once per long rest.",
+      use: function(){
+        if(!r || r.natural==null || !spendResource(c, "Gunslinger:willpower", 1)) return null;
+        save(); renderAll();
+        return {bonus: wis - r.natural, log: "Willpower (the d20's " + r.natural + " becomes " + wis + ")"};
+      }});
+  }
   if(fanaticalFocusReady(c)) opts = opts.concat(fanaticalFocus(c).options);
   var left = resourceLeft(c, "Fighter:indomitable");
   if(left > 0){
@@ -178,7 +199,7 @@ function hasDiamondSoul(c){
 function attackFollowUp(c, r, aim, hit){
   var gun = hit && hit.item && firearmStats(hit.item, c);
   if(gun && r && r.natural <= gun.misfire) return {lead: "Misfire! The attack misses and the " + (hit.item.name || "firearm") + " jams. " + (gun.set==="gunslinger" ? "Clear it on its card." : "Repair it on its card."), options: []};
-  if(hit && r && r.natural >= (hit.critMin || 20)) return criticalHit(c, hit);
+  if(hit && r && r.natural >= (hit.critMin || 20)) return hit.noDamage ? {lead: "Critical hit! The round deals no damage.", options: []} : criticalHit(c, hit);
   var opts = [];
   // A roll with no card of its own to roll damage from (a caught missile).
   if(hit && hit.offerDamage) opts.push({label: "Hit? Damage " + hit.qty + "d" + hit.die + (hit.bonus ? (hit.bonus > 0 ? "+" : "") + hit.bonus : ""), title: "Roll the damage",
@@ -282,7 +303,7 @@ function criticalHit(c, hit){
 }
 function critOption(c, hit, crit){
   return {label: "Roll " + crit.qty + "d" + crit.die + (crit.bonus ? (crit.bonus > 0 ? "+" : "") + crit.bonus : "") + " damage",
-      title: "Critical hit: the damage dice twice" + (crit.brutal ? ", plus " + crit.brutal + " more from Brutal Critical" : "") + ", then your bonus once",
+      title: "Critical hit: the damage dice twice" + (crit.brutal ? ", plus " + crit.brutal + " more from Brutal Critical" : "") + (crit.heavy ? ", plus one more for the heavy round" : "") + ", then your bonus once",
       use: function(){
         // Hemorrhaging Critical (gunslinger 18): half again at the end of the target's next turn.
         var bleed = hit.item && firearmStats(hit.item, c) && hemorrhagingCritical(c);

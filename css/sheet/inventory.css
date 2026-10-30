@@ -407,3 +407,20 @@
 /* An older sheet's one-time offer of its background's starting gear. */
 .bgk-offer-text{margin:4px 0 10px;font-size:13.5px;color:var(--text-on-parch);}
 .bgk-offer-actions{display:flex;gap:8px;flex-wrap:wrap;}
+/* The Gunslinger class (Michael's homebrew): the round loaded in a class
+   firearm (a picker, an elemental type beside it, a quiet line on what it
+   does) and the Bulletsmith card's batch: plain or heavy, then a stepper
+   per round kind. */
+.gun-round{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+.gun-round-pickers{display:flex;flex-wrap:wrap;gap:8px;}
+.gun-round-field{flex:1 1 180px;max-width:280px;min-width:0;}
+.gun-round .gun-round-note{margin:0;}
+.bulletsmith-card .bs-lead{font-size:13px;color:var(--text-on-parch-dim);margin:0 0 10px;}
+.bs-weight{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.bs-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 16px;margin-bottom:10px;}
+.bs-row{display:flex;align-items:center;gap:8px;}
+.bs-name{flex:1;min-width:0;font-size:14px;color:var(--text-on-parch);}
+.bs-step{min-width:32px;padding-left:0;padding-right:0;}
+.bs-count{min-width:24px;text-align:center;font-variant-numeric:tabular-nums;}
+.bs-spell{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);}
+.bs-spell h4{font-size:14px;margin:0 0 8px;}

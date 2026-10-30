@@ -132,3 +132,70 @@ test("Gunslinger class: scale mail is offered as the PDF lists it, but locked wi
   assert.ok(!CLASS_PROFICIENCIES.Gunslinger.armor.includes("Medium armor"));
   assert.match(CLASS_PROGRESSION.Gunslinger.features[15][0].text, /Wisdom score in its place/);
 });
+
+/* ---- Phase 2: the class features at work ---- */
+import { TOGGLE_EFFECTS } from "../js/data/effects.js";
+import { ROUND_KINDS, roundBatchSize, roundStackName } from "../js/data/gunslinger-rounds.js";
+
+test("Take Aim: an Active effect from gunslinger 3, advantage on the next attack and speed 0", () => {
+  assert.ok(TOGGLE_EFFECTS.some((e) => e.id === "take_aim" && e.className === "Gunslinger" && e.level === 3));
+  const c = slinger(3);
+  c.effects = { take_aim: true };
+  assert.ok(H.steadyAimReady(c));
+  assert.equal(H.effectRolls(c, "attack").find((r) => r.mode === "adv").reason, "Take Aim");
+  assert.ok(H.useSteadyAim(c));
+  assert.equal(c.effects.take_aim, "used");
+  assert.ok(!H.steadyAimReady(c), "one attack only");
+});
+
+test("Gunslinger resources: Quick Patch at 9, Willpower at 13, Honed Instinct at 15 (with blindsight)", () => {
+  const keys = (lv) => H.characterResources(slinger(lv)).map((r) => r.key).filter((k) => k.startsWith("Gunslinger:"));
+  assert.deepEqual(keys(8), []);
+  assert.deepEqual(keys(9), ["Gunslinger:quick_patch"]);
+  assert.deepEqual(keys(15), ["Gunslinger:quick_patch", "Gunslinger:willpower", "Gunslinger:honed_instinct"]);
+  assert.ok(H.characterResources(slinger(15)).every((r) => !r.key.startsWith("Gunslinger:") || (r.max === 1 && r.reset === "long")));
+  assert.ok(H.classFeatureList({ name: "Gunslinger", level: 15 }).some((f) => f.sense === "Blindsight 10 ft"));
+});
+
+test("Bulletsmith: 20, 30 then 40 rounds a batch, round kinds by level, stack names", () => {
+  assert.deepEqual([1, 6, 11, 20].map(roundBatchSize), [20, 30, 40, 40]);
+  assert.deepEqual(Object.keys(ROUND_KINDS).filter((k) => ROUND_KINDS[k].level <= 1), ["slashing", "piercing", "bludgeoning"]);
+  assert.deepEqual(Object.keys(ROUND_KINDS).filter((k) => ROUND_KINDS[k].level === 6), ["poisoned", "net", "smoke"]);
+  assert.equal(roundStackName("piercing", true), "Heavy Piercing Rounds");
+  assert.equal(roundStackName("elemental", false, "Fire"), "Fire Rounds");
+  assert.equal(roundStackName("spell", false, "", "Fireball"), "Spell Round (Fireball)");
+});
+
+test("Rounds: the loaded round sets the damage type, heavy adds 3 and a critical die, one is spent per shot", () => {
+  const c = slinger(5);
+  const cannon = gun("Handcannon", { round: { kind: "slashing" } });
+  c.inventory = [cannon, { name: "Heavy Slashing Rounds", type: "gear", qty: 2, round: "slashing", heavy: true },
+    { name: "Slashing Rounds", type: "gear", qty: 5, round: "slashing" }];
+  assert.ok(H.takesHeavyRounds(cannon) && !H.takesHeavyRounds(gun("Pistol")));
+  assert.deepEqual(H.roundStacks(c, cannon).map((s) => s.name), ["Heavy Slashing Rounds"], "a heavy gun fires heavy rounds only");
+  assert.equal(H.loadedRound(c, cannon).damageType, "Slashing");
+  assert.equal(H.heavyRoundBonus(c, cannon), 3);
+  const plain = H.weaponDamageBonus(c, gun("Handcannon"));
+  assert.equal(H.weaponDamageBonus(c, cannon), plain + 3);
+  assert.equal(H.criticalDamage(c, { qty: 1, die: 10, bonus: 6, item: cannon }).qty, 3, "two dice for the crit, one for the heavy round");
+  assert.ok(H.spendRound(c, cannon));
+  assert.equal(c.inventory[1].qty, 1);
+  H.spendRound(c, cannon);
+  assert.ok(!c.inventory.some((i) => i.name === "Heavy Slashing Rounds"), "an empty stack goes");
+  assert.ok(!cannon.round, "and the gun is unloaded");
+  // No damage from a net or smoke round; an elemental round takes the type picked on loading.
+  const pistol = gun("Pistol", { round: { kind: "net" } });
+  c.inventory.push(pistol, { name: "Net Rounds", type: "gear", qty: 3, round: "net" });
+  assert.ok(H.loadedRound(c, pistol).noDamage);
+  pistol.round = { kind: "elemental", element: "Thunder" };
+  assert.equal(H.loadedRound(c, pistol).damageType, "Thunder");
+});
+
+test("Master of the Barrel: any kind loads, paid for by any stack of the right weight", () => {
+  const c = slinger(20);
+  const pistol = gun("Pistol", { round: { kind: "poisoned" } });
+  c.inventory = [pistol, { name: "Piercing Rounds", type: "gear", qty: 1, round: "piercing" }];
+  assert.ok(H.loadedStack(c, pistol), "a piercing round becomes a poisoned one");
+  assert.ok(H.spendRound(c, pistol));
+  assert.equal(c.inventory.length, 1);
+});

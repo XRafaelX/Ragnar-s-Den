@@ -199,7 +199,7 @@ function effectSummary(c, id){
   if(id==="fighting_spirit") return "Advantage on weapon attack rolls · +" + fightingSpiritTempHp(c) + " temporary HP";
   if(id==="reckless_attack") return "Advantage on Strength melee weapon attacks · attacks against you have advantage";
   if(id==="natures_veil") return "Invisible · advantage on your attack rolls · attacks against you have disadvantage";
-  if(id==="steady_aim") return c.effects.steady_aim==="used" ? "Advantage used · speed 0" : "Advantage on your next attack roll · speed 0";
+  if(id==="steady_aim" || id==="take_aim") return c.effects[id]==="used" ? "Advantage used · speed 0" : "Advantage on your next attack roll · speed 0";
   return "";
 }
 function hasSongOfVictory(c){

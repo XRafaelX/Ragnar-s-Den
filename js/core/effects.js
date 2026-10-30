@@ -160,7 +160,7 @@ export function effectRolls(c, kind, ability){
     if(ability==="dex") out.push({mode: "dis", reason: "Shell Defense"});
   }
   if((kind==="attack" || kind==="perception") && effectOn(c, "sunlight")) out.push({mode: "dis", reason: "Sunlight Sensitivity"});
-  if(kind==="attack" && steadyAimReady(c)) out.push({mode: "adv", reason: "Steady Aim"});
+  if(kind==="attack" && steadyAimReady(c)) out.push({mode: "adv", reason: AIM_EFFECTS[readyAim(c)]});
   if(kind==="attack" && effectOn(c, "natures_veil")) out.push({mode: "adv", reason: "Nature's Veil: you're invisible"});
   // Empty Body and Cloak of Shadows: invisible, so advantage on attack rolls.
   if(kind==="attack" && effectOn(c, "empty_body")) out.push({mode: "adv", reason: "Empty Body: you're invisible"});
@@ -172,15 +172,21 @@ export function effectRolls(c, kind, ability){
   if(kind==="attack" && effectOn(c, "vow_of_enmity")) out.push({mode: "adv", reason: "Vow of Enmity"});
   return out;
 }
-/* Steady Aim: on, with its advantage not yet used ("used" once an
-   attack is rolled, while the speed stays 0 until the turn ends). */
-export function steadyAimReady(c){
-  return effectOn(c, "steady_aim") && c.effects.steady_aim!=="used";
+/* Steady Aim (a rogue's) and Take Aim (a gunslinger's): on, with its
+   advantage not yet used ("used" once an attack is rolled, while the
+   speed stays 0 until the turn ends). */
+export var AIM_EFFECTS = {steady_aim: "Steady Aim", take_aim: "Take Aim"};
+function readyAim(c){
+  return Object.keys(AIM_EFFECTS).find(function(id){ return effectOn(c, id) && c.effects[id]!=="used"; }) || "";
 }
-/* An attack was rolled: Steady Aim's advantage is used up. True if it was. */
+export function steadyAimReady(c){
+  return !!readyAim(c);
+}
+/* An attack was rolled: the aim's advantage is used up. True if it was. */
 export function useSteadyAim(c){
-  if(!steadyAimReady(c)) return false;
-  c.effects.steady_aim = "used";
+  var id = readyAim(c);
+  if(!id) return false;
+  c.effects[id] = "used";
   return true;
 }
 /* Bladesong's bonus to AC and concentration saves (and Song of Victory's damage). */

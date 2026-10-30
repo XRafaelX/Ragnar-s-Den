@@ -12,6 +12,7 @@ import { WILD_SURGES } from "../../data/effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { channelPicker, layOnHandsRow } from "./paladin.js";
 import { interventionRow, forgePicker } from "./cleric.js";
+import { gunslingerResourceRow } from "./gunslinger.js";
 import { useNextCheck, magicItemsOnLongRest, endTimedBoons, coinResistances } from "../../core/magic-items.js";
 import { infusionResistances } from "../../core/infusion-effects.js";
 import { renderDeathSaves } from "./death-saves.js";
@@ -1323,6 +1324,8 @@ function renderResourcesCard(c, resources){
     if(r.key==="Cleric:divine_intervention") info.appendChild(interventionRow(c, r));
     if(r.key==="Cleric:blessing_of_the_forge" && remaining > 0) info.appendChild(forgePicker(c, r));
     if(r.key==="Paladin:lay_on_hands") info.appendChild(layOnHandsRow(c));
+    var gunRow = gunslingerResourceRow(c, r); // Quick Patch, Honed Instinct
+    if(gunRow) info.appendChild(gunRow);
     // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
     // plus the proficiency bonus of healing.
     var qh = r.key==="Monk:ki" && quickenedHealing(c);

@@ -59,6 +59,18 @@ export var CLASS_RESOURCES = {
       max:function(lv){ return lv>=20 ? Infinity : 2; }, reset:always("short"),
       hint:"Action (bonus action for Circle of the Moon): turn into a beast you've seen. Unlimited from level 20 (Archdruid)."}
   ],
+  // The Gunslinger class (Michael's homebrew). Quick Patch's row heals you
+  // or rolls for an ally, Honed Instinct's makes the Perception check, and
+  // Willpower is offered in the dice tray after a save (vitals.js,
+  // render/panels/gunslinger.js, sheet-rolls.js).
+  "Gunslinger": [
+    {id:"quick_patch", name:"Quick Patch", level:9, max:always(1), reset:always("long"),
+      hint:"Bonus action: you or an ally with less than half its hit points regains 1d8 + WIS. Once per creature per long rest."},
+    {id:"willpower", name:"Willpower", level:13, max:always(1), reset:always("long"),
+      hint:"When you fail a saving throw, use your Wisdom score in place of the d20. The dice tray offers it."},
+    {id:"honed_instinct", name:"Honed Instinct", level:15, max:always(1), reset:always("long"),
+      hint:"Skip a Perception roll and use your Wisdom score in its place."}
+  ],
   "Fighter": [
     {id:"second_wind", name:"Second Wind", level:1, max:always(1), reset:always("short"),
       hint:"Bonus action: regain 1d10 + your fighter level hit points."},

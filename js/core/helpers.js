@@ -26,3 +26,4 @@ export * from "./cleric.js";
 export * from "./paladin.js";
 export * from "./ranger.js";
 export * from "./conditions.js";
+export * from "./gunslinger.js";

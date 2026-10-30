@@ -378,7 +378,8 @@ export function performRoll(die, qty, modifier, adv, label, extra){
     if(isCrit){
       badgeSlot.innerHTML = '<span class="crit-badge crit-success">✨ Natural 20: Critical Hit! ✨</span>';
       playCrit();
-    } else if(isFail){
+    } else if(isFail && !adjusted){
+      // (Not when a feature counted the 1 as more: Master of the Barrel, Reliable Talent.)
       badgeSlot.innerHTML = '<span class="crit-badge crit-fail">💀 Natural 1: Critical Miss! 💀</span>';
       playFail();
     }

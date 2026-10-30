@@ -16,6 +16,7 @@ import { conditionRolls } from "./conditions.js";
 import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver, weaponAttackEffect } from "./effects.js";
 import { sharpenBonus } from "./monk.js";
 import { sacredWeaponBonus, auraOfHate } from "./paladin.js";
+import { heavyRoundBonus } from "./gunslinger.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
    (see applyClassChoices), so deleting the feature removes its bonus. */
@@ -337,7 +338,7 @@ export function weaponAttackBonus(c, item){
 }
 export function weaponDamageBonus(c, item){
   return weaponAbilityMod(c, item) + magicBonusOf(item) + sharpenBonus(c, item) + auraOfHate(c, item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
-    + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0);
+    + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0) + heavyRoundBonus(c, item);
 }
 /* A weapon with the thrown property (a dagger, a handaxe, a dart). */
 export function isThrownWeapon(item){
@@ -640,7 +641,12 @@ export function brutalCriticalDice(c){
    melee}. {qty, die, bonus, brutal}. */
 export function criticalDamage(c, hit){
   var brutal = hit.melee ? brutalCriticalDice(c) : 0;
-  return {qty: hit.qty * 2 + brutal, die: hit.die, bonus: hit.bonus, brutal: brutal};
+  // A Gunslinger class's heavy round: one more die on a critical hit.
+  // (rollAttack notes it before the shot spends the round: hit.heavyRound.)
+  var heavy = (hit.heavyRound!=null ? hit.heavyRound : hit.item && heavyRoundBonus(c, hit.item)) ? 1 : 0;
+  var out = {qty: hit.qty * 2 + brutal + heavy, die: hit.die, bonus: hit.bonus, brutal: brutal};
+  if(heavy) out.heavy = heavy;
+  return out;
 }
 /* Fanatical Focus (Path of the Zealot, barbarian 6): while raging, a
    failed saving throw can be rerolled, once per rage (c.rage.fanatical

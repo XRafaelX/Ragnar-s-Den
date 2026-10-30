@@ -5,11 +5,12 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
 import { openWeaponPicker, openArmorPicker, openGearPicker } from "../armory.js";
+import { gunRoundRow, bulletsmithCard } from "./gunslinger.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -1196,7 +1197,9 @@ function renderWeaponCard(c, item, idx){
   var subtitleParts = [];
   // Elemental Cleaver's weapon deals the chosen type while the rage lasts.
   var cleave = elementalCleaver(c, item);
-  var dmgType = (cleave && cleave.type) || item.damageType;
+  // A Gunslinger class gun deals its loaded round's damage type.
+  var round = loadedRound(c, item);
+  var dmgType = (round && round.damageType) || (cleave && cleave.type) || item.damageType;
   if(item.damageDice) subtitleParts.push((shil && maDice ? maDice.qty + "d" + maDice.die : item.damageDice) + (dmgType ? " " + dmgType : ""));
   subtitleParts.push(abilityLabel);
   subtitleParts.push(item.proficient ? "Proficient" : "Not proficient");
@@ -1262,7 +1265,11 @@ function renderWeaponCard(c, item, idx){
   var off = parsed && offHandAttack(c, item);
   var dmgBtn = document.createElement("button");
   dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
-  if(parsed){
+  if(parsed && round && round.noDamage){
+    dmgBtn.innerHTML = makeDicesSvg() + "No damage";
+    dmgBtn.disabled = true;
+    dmgBtn.title = "The " + round.def.name.toLowerCase() + " round deals no damage";
+  } else if(parsed){
     dmgBtn.innerHTML = makeDicesSvg() + "Damage " + parsed.qty + "d" + parsed.die + fmtMod(dmgBonus);
     dmgBtn.addEventListener("click", function(){
       performRoll(parsed.die, parsed.qty, dmgBonus, "none", (item.name||"Weapon") + ": Damage" + (dmgType ? " (" + dmgType + ")" : ""));
@@ -1494,6 +1501,9 @@ function renderWeaponCard(c, item, idx){
   card.appendChild(actions);
   var gunRow = gun && firearmRow(c, item, gun, idx);
   if(gunRow) card.appendChild(gunRow);
+  // A Gunslinger class gun's loaded round.
+  var roundRow = gunRoundRow(c, item, function(){ redrawKeeping(idx); });
+  if(roundRow) card.appendChild(roundRow);
   // A magic weapon with charges (Hammer of Thunderbolts, Mace of Terror).
   var charges = chargesBlock(c, item, idx);
   if(charges) card.appendChild(charges);
@@ -2078,6 +2088,9 @@ export function renderInventoryPanel(c){
   });
   gearCard.appendChild(customItemBtn);
   panel.appendChild(gearCard);
+  // A gunslinger's (the class's) Bulletsmith crafting.
+  var smith = bulletsmithCard(c, function(){ save(); renderAll(); });
+  if(smith) panel.appendChild(smith);
   // An Alchemist's experimental elixirs are carried gear.
   var elixirs = renderElixirCard(c);
   if(elixirs) panel.appendChild(elixirs);
