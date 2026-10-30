@@ -4,7 +4,7 @@
 import { SKILLS } from "../data/abilities-skills.js";
 import { FIGHTING_STYLES } from "../data/classes.js";
 import { escapeHtml, ce, autoEquipLoadout, isProficientWithWeapon } from "../core/helpers.js";
-import { WEAPON_DATA, WEAPON_GROUPS } from "../data/weapons.js";
+import { WEAPON_DATA, WEAPON_GROUPS, GUNSLINGER_FIREARMS } from "../data/weapons.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
 import { wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills, wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardKitContext } from "./wizard-core.js";
 import { renderKitPicker, kitIntroHtml } from "../ui/background-gear.js";
@@ -422,8 +422,12 @@ export function wizardStepEquipment(container){
    weapon"). wizardState.equipmentPicks[key] holds the weapon chosen
    ("groupIndex:itemIndex", or "fixed:itemIndex"); the item itself is the
    default. */
+/* pick.set "gunslinger": the Gunslinger class's own firearms. */
+function pickCatalog(pick){
+  return pick.set==="gunslinger" ? {groups: {"Firearms": Object.keys(GUNSLINGER_FIREARMS)}, data: GUNSLINGER_FIREARMS} : {groups: WEAPON_GROUPS, data: WEAPON_DATA};
+}
 function weaponFitsPick(pick, name){
-  var d = WEAPON_DATA[name];
+  var d = pickCatalog(pick).data[name];
   return !!(d && !d.custom && d.category===pick.category && (!pick.melee || !d.ranged));
 }
 function pickedWeaponName(it, key){
@@ -433,9 +437,9 @@ function pickedWeaponName(it, key){
 /* The weapon picker under an option: grouped like the Armory, weapons the
    class can't use greyed out. */
 function weaponPickField(it, key){
-  var groups = {};
-  Object.keys(WEAPON_GROUPS).forEach(function(g){
-    var names = WEAPON_GROUPS[g].filter(function(n){ return weaponFitsPick(it.pick, n); });
+  var groups = {}, catalog = pickCatalog(it.pick);
+  Object.keys(catalog.groups).forEach(function(g){
+    var names = catalog.groups[g].filter(function(n){ return weaponFitsPick(it.pick, n); });
     if(names.length) groups[g] = names;
   });
   var who = {classes: [{name: wizardState.classId, subclass: "", level: 1}], race: wizardState.race, feats: [], features: []};
@@ -444,9 +448,9 @@ function weaponPickField(it, key){
   f.style.margin = "6px 0 10px";
   f.appendChild(themedPicker({
     key: "equipWeapon:" + key, groups: groups, value: pickedWeaponName(it, key), search: true, sheet: true,
-    ariaLabel: "Weapon: " + (it.pick.category==="martial" ? "martial" : "simple") + (it.pick.melee ? " melee" : "") + " weapon",
-    detailFor: function(n){ var d = WEAPON_DATA[n]; return d ? d.damageDice + " " + d.damageType.toLowerCase() + (d.properties ? " · " + d.properties : "") : ""; },
-    reasonFor: function(n){ return isProficientWithWeapon(who, n, WEAPON_DATA[n].category) ? "" : "not proficient"; },
+    ariaLabel: it.pick.category==="firearm" ? "Weapon: firearm" : "Weapon: " + (it.pick.category==="martial" ? "martial" : "simple") + (it.pick.melee ? " melee" : "") + " weapon",
+    detailFor: function(n){ var d = catalog.data[n]; return d ? d.damageDice + " " + d.damageType.toLowerCase() + (d.properties ? " · " + d.properties : "") : ""; },
+    reasonFor: function(n){ return isProficientWithWeapon(who, n, catalog.data[n].category) ? "" : "not proficient"; },
     onPick: function(v){
       wizardState.equipmentPicks = wizardState.equipmentPicks || {};
       wizardState.equipmentPicks[key] = v;
@@ -459,9 +463,11 @@ function weaponPickField(it, key){
 function pickedItem(it, key){
   var name = pickedWeaponName(it, key);
   if(name===it.name) return it;
-  var d = WEAPON_DATA[name];
-  return {name: name, qty: it.qty, weight: d.weight, notes: (d.properties || "").toLowerCase(), type: "weapon", damageDice: d.damageDice,
+  var d = pickCatalog(it.pick).data[name];
+  var out = {name: name, qty: it.qty, weight: d.weight, notes: (d.properties || "").toLowerCase(), type: "weapon", damageDice: d.damageDice,
     damageType: d.damageType, ability: d.finesse ? "finesse" : d.ranged ? "dex" : "str", proficient: true, picked: true};
+  if(d.firearmSet) out.firearmSet = d.firearmSet;
+  return out;
 }
 
 /* Carries a starting-equipment entry into an inventory item, keeping the
@@ -476,6 +482,7 @@ function equipmentItemToInventoryItem(it, equipped){
     item.ability = it.ability||"str";
     item.proficient = it.proficient!=null ? it.proficient : true;
     item.magicBonus = it.magicBonus||0;
+    if(it.firearmSet) item.firearmSet = it.firearmSet; // the Gunslinger class's own guns
     if(it.picked) item.picked = true; // finishWizard works out its proficiency
   } else if(it.type==="armor"){
     item.category = it.category||"light";

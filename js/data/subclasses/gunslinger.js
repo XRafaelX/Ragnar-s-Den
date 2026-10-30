@@ -1,0 +1,46 @@
+/* Gunslinger subclasses (Michael's homebrew class, books/Gunslinger.pdf):
+   the full feature list for each one, keyed by class level. Assembled into
+   SUBCLASSES in ../progression.js; see the comment there for the feature
+   fields and flags. The Eldritch Gunman casts like an Eldritch Knight
+   (SUBCLASS_CASTERS in ../spells-known.js). */
+export var GUNSLINGER_SUBCLASSES = [
+  {name:"Marksman", blurb:"A calm, precise shot who finds the weak spot and turns hits into critical hits.", features:{
+    1:[{name:"Expert Sniper", text:"You gain proficiency in Perception, or expertise if you already have it (double your proficiency bonus). Once per long rest, after you see an attack roll, you can add your Perception bonus to it."}],
+    3:[{name:"Improved Critical", text:"Your firearm attacks score a critical hit on a roll of 19 or 20."}],
+    7:[{name:"Vital Points", text:"Once on each of your turns, your firearm attacks deal an extra 1d6 damage to a creature that is missing any of its hit points."}],
+    14:[{name:"Predicted Critical", text:"When you make a firearm attack roll with advantage, you can decide before rolling to turn a hit into a critical hit. The use is spent whether you hit or not. You can do this a number of times equal to half your proficiency bonus (rounded down), and you get them back on a long rest."}],
+    18:[
+      {name:"Deadly Critical", replaces:"Improved Critical", text:"Your firearm attacks score a critical hit on a roll of 18, 19 or 20. On a critical hit, roll one of the firearm's damage dice one more time and add it to the extra damage."},
+      {name:"Vital Points", replaces:"Vital Points", text:"Once on each of your turns, your firearm attacks deal an extra 2d6 damage to a creature that is missing any of its hit points."}
+    ]
+  }},
+  {name:"Outlaw", blurb:"A dirty fighter who settles things up close with quick draws, tricks and a hard stare.", features:{
+    1:[{name:"Outlaw's Grit", text:"While you wield a single firearm and no other weapon, you get a +2 bonus to its damage rolls. You can also wield two firearms at once if both are one-handed and light, and reloading reloads both. While you wield a firearm, you add your Wisdom modifier to your Intimidation checks."}],
+    3:[{name:"Drawn and Quartered", text:"A hostile creature within 5 feet of you no longer gives your ranged attacks disadvantage. You also gain two reactions. Rapid Response: make an opportunity attack with a firearm when a hostile creature moves 10 feet away from you, or moves within 10 feet of you. Counter Attack: when a creature misses you with a melee attack, attack it with your firearm and move up to 10 feet without provoking opportunity attacks."}],
+    7:[{name:"Luck of the Draw", text:"At the start of your turn, roll a d4. On a 4, you can take an extra reaction before the start of your next turn."}],
+    14:[{name:"Playing Dirty", text:"Once per turn, as you load a round, you can rig it to misfire into a blinding flash. The rigged round has a range of 10 feet and deals no damage. The target must succeed on a DC 14 Wisdom saving throw or be blinded until the start of your next turn."}],
+    18:[{name:"Duel", text:"Once per long rest, challenge a creature you can see within 30 feet to a duel. You both leave the initiative order and act together on your turn, and its own turns are skipped.\nNeither of you can target anyone else. You both move at the same time, only in a straight line toward or away from each other, and it can't move more than 30 feet from you.\nThen you both make attack rolls. The higher total succeeds and the other fails. A 20 doesn't guarantee success, and a tie means both succeed. This repeats while either of you has attacks left that turn: if you have 1 attack and it has 2, you both make two.\nThe duel ends when either of you drops to 0 hit points, or when you move more than 30 feet away from it."}]
+  }},
+  {name:"Marshal", blurb:"A lawkeeper who reads foes, guides allies and controls the fight with careful shots.", features:{
+    1:[{name:"Calibrated Sights", text:"When you roll a 1 or 2 on a damage die for a firearm attack, you can reroll the die and must use the new roll, even if it's a 1 or 2. Your long gun's minimum range is also doubled."}],
+    3:[{name:"Applying Pressure", text:"When you hit a creature with a firearm attack, you can use a bonus action to try to unnerve it: its Deception check against your Insight check. If you win, the next attack made against it has advantage."}],
+    7:[
+      {name:"Know Your Enemy", text:"If you spend at least 1 minute watching or talking with a creature outside combat, the DM tells you whether it is your equal, superior or inferior in two of these: Strength, Dexterity, Constitution, Armor Class, current hit points, total class levels, or gunslinger levels."},
+      {name:"Sharp Read", text:"You add your Dexterity modifier to your Insight checks."}
+    ],
+    14:[{name:"Pinpoint Control", text:"When you make a firearm attack roll, you can try to hinder the target with one of these effects.\nDisarm: the attack's damage is halved (rounded down, minimum 1) and the target makes a Strength saving throw (DC 8 + your Dexterity modifier + your proficiency bonus). On a failure it drops an object of your choice, which lands at its feet.\nHobble: the target's speed drops by 10 feet.\nInterrupt: if the target is concentrating on a spell, it makes the concentration save against this attack with disadvantage.\nYou can do this a number of times equal to your proficiency bonus, and you get them back on a long rest."}],
+    18:[{name:"Intuition", text:"Once per turn, when you make a firearm attack roll, or an Insight, Perception or Investigation check, without disadvantage, you can treat a d20 roll of 9 or lower as a 10."}]
+  }},
+  {name:"Eldritch Gunman", blurb:"Blends wizard magic with marksmanship, enchanting a firearm to channel spells.", casterType:"third", spellAbility:"int", features:{
+    1:[{name:"Arcane Apprentice", text:"You gain proficiency in Arcana. If you already have it, choose History, Investigation or Religion instead. Whenever you make an attack with a firearm, you can create small, harmless illusions at the barrel or where the bullet lands, from sounds to glowing runes. You can do this without making an attack roll too.",
+      profs:{pick:[{kind:"skill", options:["Arcana"], fallback:["History","Investigation","Religion"]}]}}],
+    3:[
+      {name:"Spellcasting", text:"You cast wizard spells with Intelligence, using a third of your gunslinger level for spell slots. You learn two wizard cantrips (a third at level 10) and three 1st-level wizard spells, two of which must be abjuration or evocation. You learn more as you level, and spells learned at levels 8, 14 and 20 can come from any school. Whenever you gain a level, you can replace one wizard spell you know with another of a level you have slots for."},
+      {name:"Gunman Spells", text:"You always know Ready Arms!, Misty Step and Switcheroo. They don't count against your spells known.", spells:["Ready Arms!","Misty Step","Switcheroo"], spellKind:"known"},
+      {name:"Firearm Enchantment", text:"You learn a 1-hour ritual to enchant one firearm, which you can do during a short rest. The weapon must be within your reach the whole time, and at the end you touch it. Choose the enchantment before you start: Arcane Conduit, Veil of Smoke, Arcane Infusion, Runic Bind or Bullet Ward. A weapon can have only one of your enchantments at a time, and you can repeat the ritual to change it. While enchanted, you can use the firearm as a spellcasting focus.\nArcane Conduit: while you use the firearm as your spellcasting focus, you use Wisdom in place of Intelligence for your spell save DC and spell attack bonus.\nVeil of Smoke: when you miss an attack with the firearm, the bullet can vanish into a puff of smoke until the start of your next turn. Unless the target moves away from the smoke, it has disadvantage on its attacks.\nArcane Infusion: you add your Intelligence modifier to damage rolls with the firearm, and its attacks count as magical for overcoming resistance and immunity.\nRunic Bind: when you hit a creature with a firearm attack, you can use your bonus action to make the round twist and bind it. The target must succeed on a Strength saving throw or be restrained. It can use its action to repeat the save, freeing itself on a success.\nBullet Ward: you can shoot yourself or an ally with the firearm to give 1d8 + your Intelligence modifier temporary hit points. You can do this a number of times equal to your Intelligence modifier."}
+    ],
+    7:[{name:"War Magic", text:"When you use your action to cast a cantrip, you can make one firearm attack as a bonus action."}],
+    14:[{name:"Eldritch Shot", text:"When you hit a creature with a firearm, it has disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn."}],
+    18:[{name:"Improved War Magic", replaces:"War Magic", text:"When you use your action to cast a spell, you can make one firearm attack as a bonus action."}]
+  }}
+];

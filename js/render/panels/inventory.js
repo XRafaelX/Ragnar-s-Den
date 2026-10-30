@@ -831,6 +831,7 @@ function firearmRow(c, item, gun, idx){
     row.appendChild(b);
     return b;
   }
+  if(gun.set==="gunslinger") return classFirearmRow(c, item, gun, idx, row, label, btn);
   if(item.broken){
     label.textContent = "Broken: mend it out of combat at a quarter of its cost.";
     row.appendChild(label);
@@ -868,6 +869,36 @@ function firearmRow(c, item, gun, idx){
     logRoll(item.name || "Firearm", "Reloaded.");
     redrawKeeping(idx);
   }, left===gun.reload);
+  return row;
+}
+/* The Gunslinger class's own guns: a misfire (an optional rule) never
+   breaks the gun, and clearing it always works but takes an action. A
+   loading gun fires once per reload, free once per turn with Master of
+   Arms (gunslinger 2). Nothing to show for a gun that neither reloads
+   nor misfires (the Pistol): null. */
+function classFirearmRow(c, item, gun, idx, row, label, btn){
+  if(item.misfired){
+    label.textContent = "Misfired: clearing it takes an action.";
+    row.appendChild(label);
+    btn("Clear it", "An action. It always works.", function(){
+      delete item.misfired;
+      logRoll(item.name || "Firearm", "Cleared the misfire.");
+      redrawKeeping(idx);
+    });
+    return row;
+  }
+  if(!gun.reload && !gun.misfire) return null;
+  var left = gun.reload ? Math.max(0, gun.reload - (Number(item.shots)||0)) : 0;
+  label.textContent = [gun.reload ? "Shots " + left + " of " + gun.reload : "", gun.misfire ? "misfires on " + (gun.misfire > 1 ? "1 to " + gun.misfire : "a 1") : ""]
+    .filter(Boolean).join(" · ");
+  row.appendChild(label);
+  if(gun.reload){
+    btn("Reload", classLevelOf(c, "Gunslinger") >= 2 ? "Once per turn this is a free action (Master of Arms)." : "Load the next round.", function(){
+      item.shots = 0;
+      logRoll(item.name || "Firearm", "Reloaded.");
+      redrawKeeping(idx);
+    }, left===gun.reload);
+  }
   return row;
 }
 /* Sneak Attack (rogue 1): its dice once per turn, on a finesse or ranged
@@ -1212,8 +1243,9 @@ function renderWeaponCard(c, item, idx){
   atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(atkBonus) + (atkRoll.mode==="dis" ? " (Dis)" : atkRoll.mode==="adv" ? " (Adv)" : "");
   if(atkRoll.reason) atkBtn.title = atkRoll.reason;
   // A firearm that's jammed, broken or out of shots can't fire.
-  var gun = firearmStats(item);
-  var gunStop = gun && (item.broken ? "Broken: mend it out of combat at a quarter of its cost" : item.misfired ? "Misfired: repair it first" : (Number(item.shots)||0) >= gun.reload ? "Out of shots: reload first" : "");
+  var gun = firearmStats(item, c);
+  var gunStop = gun && (item.broken ? "Broken: mend it out of combat at a quarter of its cost" : item.misfired ? (gun.set==="gunslinger" ? "Misfired: clear it first" : "Misfired: repair it first")
+    : gun.reload && (Number(item.shots)||0) >= gun.reload ? "Out of shots: reload first" : "");
   if(gunStop){ atkBtn.disabled = true; atkBtn.title = gunStop; }
   atkBtn.addEventListener("click", function(){
     // (parsed and dmgBonus are worked out below, before any click.)
@@ -1460,7 +1492,8 @@ function renderWeaponCard(c, item, idx){
     }
   }
   card.appendChild(actions);
-  if(gun) card.appendChild(firearmRow(c, item, gun, idx));
+  var gunRow = gun && firearmRow(c, item, gun, idx);
+  if(gunRow) card.appendChild(gunRow);
   // A magic weapon with charges (Hammer of Thunderbolts, Mace of Terror).
   var charges = chargesBlock(c, item, idx);
   if(charges) card.appendChild(charges);

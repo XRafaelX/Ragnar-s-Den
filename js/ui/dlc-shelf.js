@@ -111,6 +111,14 @@ export function dlcShelf(opts){
   return {el: wrap, refresh: refresh};
 }
 
+/* The Gunslinger class's optional misfire rule (c.gunMisfire), offered
+   only to a character with that class. See firearmStats in
+   js/core/equipment.js. */
+export var GUN_MISFIRE_CARD = {key: "gunMisfire", series: "Gunslinger class", title: "Firearm misfires", switchLabel: "Use firearm misfires",
+  perks: ["Guns can jam on a 1", "An action clears it", "Gone at level 2"],
+  text: "The Handcannon, Long Gun and Spread Shot jam on an attack roll of 1. Clearing a jam takes an action and always works. Master of Arms (gunslinger level 2) stops your guns from misfiring."};
+export var GUN_MISFIRE_OUTCOME = "<b>Misfires:</b> your Handcannon, Long Gun and Spread Shot jam on a roll of 1 until Master of Arms at gunslinger level 2. Clearing a jam takes an action.";
+
 /* A campaign book (see CAMPAIGN_FEATS) as a shelf card: "Dragonlance"
    over its title, and what it gives. */
 export function campaignBookCard(k){

@@ -21,7 +21,7 @@ const LONG_DASH = /[–—]/;
 
 // Lowest acceptable last-feature level per class: guards against a
 // subclass being left unfinished (as 46 of them once stopped at level 5).
-const MIN_TOP_LEVEL = { Artificer: 15, Barbarian: 14, Bard: 14, Cleric: 17, Druid: 14, Fighter: 15,
+const MIN_TOP_LEVEL = { Artificer: 15, Barbarian: 14, Bard: 14, Cleric: 17, Druid: 14, Fighter: 15, Gunslinger: 18,
   Monk: 17, Paladin: 20, Ranger: 15, Rogue: 17, Sorcerer: 18, Warlock: 14, Wizard: 14 };
 
 function levels(features){ return Object.keys(features).map(Number); }
@@ -79,7 +79,7 @@ function checkFeature(f, where){
 }
 
 test("every class has progression, level 1 info and a subclass list", () => {
-  assert.equal(CLASSES.length, 13);
+  assert.equal(CLASSES.length, 14); // the PHB's 12, the Artificer and the Gunslinger class (homebrew)
   for(const cls of CLASSES){
     assert.ok(CLASSES_INFO[cls], cls + " missing from CLASSES_INFO");
     assert.ok(Array.isArray(SUBCLASSES[cls]) && SUBCLASSES[cls].length, cls + " has no subclasses");
@@ -244,17 +244,19 @@ test("spell catalog: well formed, with the Player's Handbook, Xanathar's, Tasha'
     assert.ok(d.castingTime && d.range && d.components && d.duration, name + ": casting time, range, components, duration");
     assert.equal(d.components.includes("M"), !!d.material, name + ": material component");
     assert.ok(d.summary.length > 15 && !LONG_DASH.test(name + d.summary + d.material), name + ": summary");
-    // Only a guild spell (Encode Thoughts) is on no class list. Wildemount's
-    // dunamancy spells are on the "Dunamancy" list, opened by two wizard subclasses.
-    assert.ok((d.classes.length || d.source === "GGR") && d.classes.every((c) => casters.includes(c) || (c === "Dunamancy" && d.source === "EGW")), name + ": classes " + d.classes);
+    // Only a guild spell (Encode Thoughts) and the Gunslinger class's
+    // Eldritch Gunman spells (always known, see js/data/subclasses/gunslinger.js)
+    // are on no class list. Wildemount's dunamancy spells are on the
+    // "Dunamancy" list, opened by two wizard subclasses.
+    assert.ok((d.classes.length || d.source === "GGR" || d.source === "GSL") && d.classes.every((c) => casters.includes(c) || (c === "Dunamancy" && d.source === "EGW")), name + ": classes " + d.classes);
     assert.deepEqual(d.classes, d.classes.slice().sort(), name + ": classes in order");
     d.classes.forEach((c) => { count[c] = (count[c] || 0) + 1; });
   }
-  assert.equal(Object.keys(SPELL_DATA).length, 544, "PHB 361 + XGE 95 + TCE 21 + 67 from other books");
+  assert.equal(Object.keys(SPELL_DATA).length, 546, "PHB 361 + XGE 95 + TCE 21 + 67 from other books + 2 from the Gunslinger class");
   assert.deepEqual(count, { Artificer: 102, Bard: 152, Cleric: 126, Druid: 161, Paladin: 51, Ranger: 61, Sorcerer: 223, Warlock: 138, Wizard: 358, Dunamancy: 15 });
   // The other books' spells name their book; the core ones don't.
   const fromBooks = Object.entries(SPELL_DATA).filter(([, d]) => d.source);
-  assert.equal(fromBooks.length, 67);
+  assert.equal(fromBooks.length, 69); // with the Gunslinger class's two
   fromBooks.forEach(([n, d]) => assert.ok(SPELL_SOURCES[d.source], n + ": source " + d.source));
   assert.deepEqual([SPELL_DATA["Silvery Barbs"].source, SPELL_DATA["Silvery Barbs"].castingTime, SPELL_DATA["Wristpocket"].ritual], ["SCC", "1 reaction", true]);
   // An artificer has spells to prepare at every level it casts.

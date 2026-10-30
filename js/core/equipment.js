@@ -2,7 +2,7 @@
    Hands and equipping, weapon attack and damage numbers, and weapon and
    armor proficiency. */
 import { RACE_DATA } from "../data/race-data.js";
-import { WEAPON_DATA, weaponDataOf, baseWeaponName } from "../data/weapons.js";
+import { WEAPON_DATA, weaponDataOf, baseWeaponName, hasHeavyProperty } from "../data/weapons.js";
 import { featProficiencies, featDef, featSpellEntries, featCastAbility } from "./feat-picks.js";
 import { characterPickedProfs, characterChoices, raceProficiencies, backgroundProficiencies, overlapTools } from "./class-picks.js";
 import { mod, profBonus, parseDiceNotation, combineRolls } from "./basics.js";
@@ -324,7 +324,7 @@ export function powerAttackFeat(c, item){
 }
 export function isHeavyWeapon(item){
   var d = weaponDataOf(item);
-  return /\bheavy\b/i.test(((d && d.properties) || "") + " " + (item.notes || ""));
+  return hasHeavyProperty(((d && d.properties) || "") + " " + (item.notes || ""));
 }
 /* The weapon's -5/+10 switch is on (and its feat still applies). */
 export function powerAttackOn(c, item){
@@ -485,10 +485,21 @@ export function isFirearm(item){
 }
 /* A firearm's misfire and reload scores (the Gunslinger's rules): from its
    properties ("reload 4 ... misfire 1"), +1 misfire without proficiency.
-   {misfire, reload} or null for any other weapon. */
-export function firearmStats(item){
+   {misfire, reload} or null for any other weapon.
+   The Gunslinger class's own guns (firearmSet "gunslinger") follow its
+   rules instead: misfire is an optional rule (c.gunMisfire) that makes a
+   gun with the misfire property jam on a 1 until a gunslinger's Master of
+   Arms (level 2) stops it, and clearing the jam always works but takes an
+   action (set: "gunslinger"). A loading gun fires once per reload, and the
+   Pistol needs no reloading (reload 0). */
+export function firearmStats(item, c){
   if(!isFirearm(item)) return null;
-  var props = (weaponDataOf(item).properties || "") + " " + (item.notes || "");
+  var d = weaponDataOf(item);
+  if(d.firearmSet==="gunslinger"){
+    var jams = !!(c && c.gunMisfire) && /misfire/i.test(d.properties) && classLevelOf(c, "Gunslinger") < 2;
+    return {misfire: jams ? 1 + (item.proficient===false ? 1 : 0) : 0, reload: /loading/i.test(d.properties) ? 1 : 0, set: "gunslinger"};
+  }
+  var props = (d.properties || "") + " " + (item.notes || "");
   var mf = /misfire (\d+)/i.exec(props), rl = /reload (\d+)/i.exec(props);
   return {misfire: (mf ? Number(mf[1]) : 1) + (item.proficient===false ? 1 : 0), reload: rl ? Number(rl[1]) : 1};
 }
@@ -522,7 +533,7 @@ export function characterToolProfs(c){
    better of INT and DEX is used, with proficiency when the character has
    tinker's tools. {dc, bonus, ability}. */
 export function firearmRepair(c, item){
-  var gun = firearmStats(item);
+  var gun = firearmStats(item, c);
   if(!gun) return null;
   var intMod = mod(abilityScore(c, "int")), dexMod = mod(abilityScore(c, "dex"));
   var prof = characterToolProfs(c).some(function(t){ return /tinker/i.test(t); }) ? profBonus(c) : 0;

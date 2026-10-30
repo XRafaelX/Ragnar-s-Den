@@ -41,6 +41,7 @@ export var SPELL_SCALING = {
   // The sheet's version adds the invocations (see spellScalingLine).
   "Eldritch Blast": { at: function(n){ return n + " beam" + (n>1 ? "s" : "") + ", 1d10 force damage" + (n>1 ? " each" : ""); } },
   "Fire Bolt": cantrip(10, "fire damage"),
+  "Ready Arms!": { at: function(n){ return n + " spectral firearm" + (n>1 ? "s" : "") + ", 1d4 piercing damage" + (n>1 ? " each, at the same or different targets" : ""); } },
   "Frostbite": cantrip(6, "cold damage"),
   "Green-Flame Blade": { at: function(n){ return (n>1 ? "+" + (n-1) + "d8 fire damage on the hit, and " + (n-1) + "d8 + " : "") + "your spellcasting modifier in fire damage to the second creature"; } },
   "Infestation": cantrip(6, "poison damage"),

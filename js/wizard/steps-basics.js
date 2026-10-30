@@ -10,7 +10,7 @@ import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/ali
 import { POINT_BUY_COSTS } from "../data/misc.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDicesSvg, makePlusSvg } from "../ui/svg-icons.js";
-import { dlcShelf, campaignBookCard } from "../ui/dlc-shelf.js";
+import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME } from "../ui/dlc-shelf.js";
 import { getDieSvg } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker } from "../ui/themed-picker.js";
@@ -323,7 +323,7 @@ export function wizardStepClass(container){
    add something they're hiding. */
 var rulesShelfOpen = false, rulesShelfTapped = "";
 function optionalRulesShelf(){
-  var books = Object.keys(CAMPAIGN_FEATS);
+  var books = Object.keys(CAMPAIGN_FEATS), gunslinger = wizardState.classId==="Gunslinger";
   var wrap = ce("div", "card opt-rules-card wiz-opt-rules");
   var tapped = rulesShelfTapped;
   rulesShelfTapped = "";
@@ -332,14 +332,16 @@ function optionalRulesShelf(){
     onToggle: function(open){ rulesShelfOpen = open; },
     lead: "Extra rules from other books. Ask your DM whether your table uses them, then tap one to turn it on. You can change this later on the Information tab.",
     sub: function(){
-      var on = (wizardState.tashaOptional ? ["Tasha's optional class features"] : []).concat(CAMPAIGN_FEATS[wizardState.campaign] ? [wizardState.campaign] : []);
+      var on = (wizardState.tashaOptional ? ["Tasha's optional class features"] : []).concat(CAMPAIGN_FEATS[wizardState.campaign] ? [wizardState.campaign] : [])
+        .concat(gunslinger && wizardState.gunMisfire ? ["firearm misfires"] : []);
       return on.length ? "Using " + on.join(" and ") : "Tasha's Cauldron and the campaign books. Most new players leave these off.";
     },
     cards: [{key: "tasha", series: "Tasha's Cauldron of Everything", title: "Optional class features", switchLabel: "Use Tasha's optional class features",
-      perks: ["More class options", "Additional spells", "Swaps at level-up"]}].concat(books.map(campaignBookCard)),
-    isOn: function(k){ return k==="tasha" ? !!wizardState.tashaOptional : wizardState.campaign===k; },
+      perks: ["More class options", "Additional spells", "Swaps at level-up"]}].concat(gunslinger ? [GUN_MISFIRE_CARD] : []).concat(books.map(campaignBookCard)),
+    isOn: function(k){ return k==="tasha" ? !!wizardState.tashaOptional : k==="gunMisfire" ? !!wizardState.gunMisfire : wizardState.campaign===k; },
     onTap: function(k){
       if(k==="tasha") setWizardTasha(!wizardState.tashaOptional);
+      else if(k==="gunMisfire") wizardState.gunMisfire = !wizardState.gunMisfire;
       else wizardState.campaign = wizardState.campaign===k ? "" : k;
       rulesShelfOpen = true;
       rulesShelfTapped = k;
@@ -349,6 +351,7 @@ function optionalRulesShelf(){
     outcome: function(){
       var lines = [];
       if(wizardState.tashaOptional) lines.push("<b>Tasha's:</b> " + escapeHtml(tashaAddsFor(wizardState.classId)));
+      if(gunslinger && wizardState.gunMisfire) lines.push(GUN_MISFIRE_OUTCOME);
       if(CAMPAIGN_FEATS[wizardState.campaign]) lines.push("<b>" + escapeHtml(wizardState.campaign) + ":</b> a free feat if your background has none of its own (see the Background step)." +
         (CAMPAIGN_FEATS[wizardState.campaign].level4 ? " Another at level 4." : ""));
       return lines.join("<br>");

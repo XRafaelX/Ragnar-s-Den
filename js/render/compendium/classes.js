@@ -19,7 +19,7 @@ import { save } from "../../core/state.js";
 import { session, ABILITY_NAME, abilityList, block, featureList, closeInfo } from "./shared.js";
 
 var CLASS_ROLES = {
-  "Martial": ["Barbarian","Fighter","Monk","Rogue"],
+  "Martial": ["Barbarian","Fighter","Gunslinger","Monk","Rogue"],
   "Half casters": ["Artificer","Paladin","Ranger"],
   "Full casters": ["Bard","Cleric","Druid","Sorcerer","Warlock","Wizard"]
 };

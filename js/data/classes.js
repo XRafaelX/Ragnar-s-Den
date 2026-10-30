@@ -12,6 +12,7 @@ var CLASS_BLURBS = {
   "Cleric":"A divine spellcaster channeling a deity's power to heal and smite.",
   "Druid":"A nature spellcaster who can shapeshift into animals and command the elements.",
   "Fighter":"A master of weapons and armor with the most versatile combat options.",
+  "Gunslinger":"A firearm expert who crafts their own rounds and controls the fight from range.",
   "Monk":"A martial artist who fights unarmed with supernatural speed and ki.",
   "Paladin":"A holy warrior blending heavy armor combat with divine spells and oaths.",
   "Ranger":"A wilderness warrior blending archery or melee with nature magic.",
@@ -710,6 +711,45 @@ Object.assign(CLASSES_INFO["Artificer"], {
   }
 });
 
+/* Gunslinger: Michael's homebrew class (books/Gunslinger.pdf, firearms and
+   rounds in books/gun_1.webp to gun_4.webp). Picks its subclass at level
+   1. Its firearm comes from the class's own guns (pick.set). */
+CLASSES_INFO["Gunslinger"].features = [
+  {name:"Gunslinger Subclass", text:"Choose the subclass that best fits your combat style: Marksman, Outlaw, Marshal or Eldritch Gunman. It gives you a feature now and more as you level."},
+  {name:"Novice Bulletsmith", text:"You can use your tinker's tools to craft your own ammunition. Spend 2 hours and 2 gold pieces to gather the materials, then craft 20 rounds for your firearm, in any mix of slashing, piercing and bludgeoning rounds. Heavy rounds take twice as long and cost 4 gold pieces instead."}
+];
+Object.assign(CLASSES_INFO["Gunslinger"], {
+  available:true,
+  primaryAbility:"dex",
+  savingThrows:["dex","cha"],
+  skillChoices:{count:3, options:["Deception","History","Insight","Investigation","Perception","Sleight of Hand","Stealth","Survival"]},
+  choices:[
+    {id:"subclass", kind:"subclass", label:"Gunslinger Subclass",
+      help:"Your subclass is the kind of gunslinger you are. It gives you a feature now and more as you level."}
+  ],
+  equipment:{
+    choiceGroups:[
+      {options:[
+        {key:"leather", label:"Leather armor", detail:"Light armor, AC 11 + DEX", items:[
+          {name:"Leather",qty:1,weight:10,notes:"light armor",type:"armor",category:"light",baseAC:11}
+        ]},
+        {key:"scale", label:"Scale mail", detail:"Medium armor, AC 14 + DEX (max 2), disadvantage on Stealth. Gunslingers aren't proficient with medium armor, so you'd have disadvantage on Strength and Dexterity rolls and can't cast spells in it", items:[
+          {name:"Scale Mail",qty:1,weight:45,notes:"medium, stealth disadvantage",type:"armor",category:"medium",baseAC:14}
+        ]}
+      ]},
+      {options:[
+        {key:"dungeoneer", label:"Dungeoneer's Pack", detail:"Backpack, crowbar, hammer, pitons, torches, rations, waterskin, rope", items:[DUNGEONEERS_PACK]},
+        {key:"explorer", label:"Explorer's Pack", detail:"Backpack, bedroll, mess kit, tinderbox, torches, rations, waterskin, rope", items:[EXPLORERS_PACK]}
+      ]}
+    ],
+    fixed:[
+      {name:"Pistol", qty:1, weight:5, notes:"ammunition, light (range 100/240)", type:"weapon", damageDice:"2d4", damageType:"Piercing", ability:"dex", proficient:true, firearmSet:"gunslinger", pick:{category:"firearm", set:"gunslinger"}},
+      {name:"Dagger", qty:1, weight:1, notes:"simple weapon, finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true, pick:{category:"simple"}},
+      {name:"Tinker's Tools", qty:1, weight:10, notes:"craft your ammunition (Novice Bulletsmith)"}
+    ]
+  }
+});
+
 /* ---------------- Standard SRD proficiencies by class ----------------
    Used by the Information tab to show a quick, non-editable readout of
    what each class grants. Kept separate from CLASSES_INFO so it can cover
@@ -750,6 +790,12 @@ export var CLASS_PROFICIENCIES = {
     weapons:["Simple weapons","Martial weapons"],
     tools:[],
     savingThrows:["str","con"]
+  },
+  "Gunslinger": {
+    armor:["Light armor"],
+    weapons:["Simple weapons","Firearms"],
+    tools:["One type of artisan's tools"],
+    savingThrows:["dex","cha"]
   },
   "Monk": {
     armor:[],

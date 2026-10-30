@@ -20,8 +20,8 @@ import { performRoll, logRoll } from "../../dice/dice.js";
    attack's damage for its critical hit (on critMin or more, 20 if not
    given), and the weapon (a firearm counts its shots and can misfire). */
 export function rollAttack(c, bonus, mode, label, hit){
-  var aim = hasFocusedAim(c) || !!(hit && hit.item && magicArrows(c, hit.item)), gun = hit && hit.item && firearmStats(hit.item);
-  if(gun) hit.item.shots = (Number(hit.item.shots)||0) + 1;
+  var aim = hasFocusedAim(c) || !!(hit && hit.item && magicArrows(c, hit.item)), gun = hit && hit.item && firearmStats(hit.item, c);
+  if(gun && gun.reload) hit.item.shots = (Number(hit.item.shots)||0) + 1;
   performRoll(20, 1, bonus, mode, label, {
     followUp: function(r){ return attackFollowUp(c, r, aim, hit); },
     onResult: gun ? function(r){ firearmResult(c, hit.item, gun, r); } : null
@@ -176,8 +176,8 @@ function hasDiamondSoul(c){
 /* After an attack roll: critical damage on a natural 20, else Focused
    Aim's +2, +4 or +6 for 1, 2 or 3 ki. (r is null for the toast's hint.) */
 function attackFollowUp(c, r, aim, hit){
-  var gun = hit && hit.item && firearmStats(hit.item);
-  if(gun && r && r.natural <= gun.misfire) return {lead: "Misfire! The attack misses and the " + (hit.item.name || "firearm") + " jams. Repair it on its card.", options: []};
+  var gun = hit && hit.item && firearmStats(hit.item, c);
+  if(gun && r && r.natural <= gun.misfire) return {lead: "Misfire! The attack misses and the " + (hit.item.name || "firearm") + " jams. " + (gun.set==="gunslinger" ? "Clear it on its card." : "Repair it on its card."), options: []};
   if(hit && r && r.natural >= (hit.critMin || 20)) return criticalHit(c, hit);
   var opts = [];
   // A roll with no card of its own to roll damage from (a caught missile).
@@ -285,7 +285,7 @@ function critOption(c, hit, crit){
       title: "Critical hit: the damage dice twice" + (crit.brutal ? ", plus " + crit.brutal + " more from Brutal Critical" : "") + ", then your bonus once",
       use: function(){
         // Hemorrhaging Critical (gunslinger 18): half again at the end of the target's next turn.
-        var bleed = hit.item && firearmStats(hit.item) && hemorrhagingCritical(c);
+        var bleed = hit.item && firearmStats(hit.item, c) && hemorrhagingCritical(c);
         performRoll(crit.die, crit.qty, crit.bonus, "none", hit.label + ": Critical damage", bleed ? function(r){
           return r ? {lead: "Hemorrhaging Critical: " + Math.floor(r.total / 2) + " more damage to the target at the end of its next turn.", options: []} : null;
         } : null);

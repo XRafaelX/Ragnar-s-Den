@@ -64,6 +64,35 @@ export var WEAPON_DATA = {
   "Musket":          {damageDice:"1d12", damageType:"Piercing",    weight:10, category:"firearm", finesse:false, ranged:true,  properties:"Reload 1 (range 120/480), misfire 2, two-handed"}
 };
 
+/* The Gunslinger class's firearms (Michael's homebrew, books/gun_1.webp):
+   what a Gunslinger class character sees in place of the Firearms above,
+   so nobody gets two Pistols. Kept out of WEAPON_DATA, and an item made
+   from one is marked firearmSet "gunslinger" (see weaponDataOf). Damage
+   type is the round's (piercing rounds by default). Misfire is an
+   optional rule for these guns (c.gunMisfire): they misfire on a 1. */
+export var GUNSLINGER_FIREARMS = {
+  "Pistol":      {damageDice:"2d4",  damageType:"Piercing", weight:5,  cost:"50 gp",  category:"firearm", finesse:false, ranged:true, firearmSet:"gunslinger", properties:"Ammunition, light (range 100/240)"},
+  "Handcannon":  {damageDice:"1d10", damageType:"Piercing", weight:6,  cost:"75 gp",  category:"firearm", finesse:false, ranged:true, firearmSet:"gunslinger", properties:"Loading, heavy ammunition, misfire (range 80/150)"},
+  "Long Gun":    {damageDice:"1d12", damageType:"Piercing", weight:7,  cost:"100 gp", category:"firearm", finesse:false, ranged:true, firearmSet:"gunslinger", properties:"Loading, heavy ammunition, two-handed, misfire (range 300/1000)"},
+  "Spread Shot": {damageDice:"1d6",  damageType:"Piercing", weight:10, cost:"80 gp",  category:"firearm", finesse:false, ranged:true, firearmSet:"gunslinger", properties:"Loading, ammunition, two-handed, misfire, special (10-foot cone)",
+    special:"When you fire this weapon, make one attack roll for all creatures in a 10-foot cone in front of you. If a creature is standing right in front of you, you instead make an attack roll with advantage, but the attack only hits that target and no targets behind it."}
+};
+export function hasGunslingerClass(c){
+  return !!(c && (c.classes||[]).some(function(cl){ return cl.name==="Gunslinger"; }));
+}
+/* The weapon catalog a character picks from: a Gunslinger class
+   character's Firearms group holds the class's own guns. {groups, data} */
+export function weaponCatalogFor(c){
+  if(!hasGunslingerClass(c)) return {groups: WEAPON_GROUPS, data: WEAPON_DATA};
+  var groups = Object.assign({}, WEAPON_GROUPS, {"Firearms": Object.keys(GUNSLINGER_FIREARMS)});
+  return {groups: groups, data: Object.assign({}, WEAPON_DATA, GUNSLINGER_FIREARMS)};
+}
+/* The heavy property. "Heavy ammunition" (the Gunslinger class's
+   Handcannon and Long Gun) is about the rounds, not the weapon. */
+export function hasHeavyProperty(props){
+  return /\bheavy\b(?! ammunition)/i.test(props || "");
+}
+
 /* Flat, searchable form of the catalog above; one entry per weapon,
    tagged with the group it belongs to (for the picker's filter pills). */
 export var WEAPON_LIST = Object.keys(WEAPON_GROUPS).reduce(function(all, group){
@@ -76,6 +105,7 @@ export var WEAPON_LIST = Object.keys(WEAPON_GROUPS).reduce(function(all, group){
 /* A weapon row's catalog entry: its own name's, or the base weapon a
    magic weapon is ("Longsword, +1" is a longsword: `baseWeapon`). */
 export function weaponDataOf(item){
+  if(item && item.firearmSet==="gunslinger") return GUNSLINGER_FIREARMS[item.name] || GUNSLINGER_FIREARMS[item.baseWeapon] || null;
   return (item && (WEAPON_DATA[item.name] || WEAPON_DATA[item.baseWeapon])) || null;
 }
 /* The weapon it is, by catalog name ("Longsword" for "Flame Tongue (Longsword)"). */

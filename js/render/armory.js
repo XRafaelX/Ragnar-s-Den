@@ -1,6 +1,6 @@
 import { state, save } from "../core/state.js";
 import { openCatalogPicker, showCatalogCustomView, refreshCatalog } from "../ui/catalog-picker.js";
-import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
+import { WEAPON_GROUPS, WEAPON_DATA, weaponCatalogFor } from "../data/weapons.js";
 import { ARMOR_GROUPS, ARMOR_DATA, armorAcText } from "../data/armor.js";
 import { GEAR_GROUPS, GEAR_DATA } from "../data/gear.js";
 import { MAGIC_ITEM_GROUPS, MAGIC_ITEM_DATA } from "../data/magic-items.js";
@@ -47,6 +47,7 @@ export function addCatalogWeapon(c, name, d){
     proficient: isProficientWithWeapon(c, name, d.category), magicBonus: 0
   };
   if(d.custom) item.homebrewId = d.id; // stays linked to the Armory entry
+  if(d.firearmSet) item.firearmSet = d.firearmSet; // the Gunslinger class's own guns
   c.inventory.push(item);
   // Ready it if there's a free hand; otherwise it goes in the pack.
   tryEquip(c, item);
@@ -433,9 +434,11 @@ function buildArmorForm(container){
 
 /* ---- Sections ---- */
 function weaponSection(){
+  // A Gunslinger class character's Firearms are the class's own guns.
+  var catalog = weaponCatalogFor(target);
   return {
     key: "weapons", label: "Weapons", searchPlaceholder: "Search all weapons…",
-    groups: WEAPON_GROUPS, data: WEAPON_DATA, // Homebrew is merged in (and kept current) by custom-items.js
+    groups: catalog.groups, data: catalog.data, // Homebrew is merged in (and kept current) by custom-items.js
     renderSub: function(name, d){ return d.properties || ""; },
     renderRight: function(name, d){ return [d.damageDice||"", d.damageType||""]; },
     searchText: function(name, d){ return name+" "+(d.properties||"")+" "+(d.damageType||"")+(d.custom ? " custom homebrew" : ""); },

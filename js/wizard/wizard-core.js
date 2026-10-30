@@ -6,7 +6,7 @@ import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/r
 import { LANGUAGES, ANY_LANGUAGES } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, originListSpells, classVariantSwaps, classFeaturesAt, isProficientWithWeapon } from "../core/helpers.js";
-import { WEAPON_DATA } from "../data/weapons.js";
+import { weaponDataOf } from "../data/weapons.js";
 import { backgroundKit, addBackgroundKit } from "../core/background-gear.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
@@ -793,6 +793,7 @@ export function finishWizard(){
   c.classes = [{name:w.classId, subclass:"", level:1}];
   if(Object.keys(wizardVariants()).length) c.classes[0].variants = wizardVariants(); // Favored Foe in place of Favored Enemy
   if(w.tashaOptional) c.tashaOptional = true;
+  if(w.gunMisfire && w.classId==="Gunslinger") c.gunMisfire = true;
   var fa = finalAbilities({withoutFeat:true}); // applyRaceChoices adds the feat's +1
   c.abilities = {str:fa.str, dex:fa.dex, con:fa.con, int:fa.int, wis:fa.wis, cha:fa.cha};
   info.savingThrows.forEach(function(k){ c.saveProfs[k] = true; });
@@ -825,7 +826,7 @@ export function finishWizard(){
   // (a druid's light crossbow): say so on its card.
   c.inventory.forEach(function(item){
     if(!item.picked) return;
-    item.proficient = isProficientWithWeapon(c, item.name, (WEAPON_DATA[item.name] || {}).category);
+    item.proficient = isProficientWithWeapon(c, item.name, (weaponDataOf(item) || {}).category);
     delete item.picked;
   });
   applyClassChoices(c, info, w.classChoices);
@@ -854,7 +855,7 @@ export function finishWizard(){
     addBackgroundKit(c, w.background, w.bgGear || {}, wizardKitContext());
     c.inventory.forEach(function(item){
       if(!item.picked) return;
-      item.proficient = isProficientWithWeapon(c, item.name, (WEAPON_DATA[item.name] || {}).category);
+      item.proficient = isProficientWithWeapon(c, item.name, (weaponDataOf(item) || {}).category);
       delete item.picked;
     });
   }

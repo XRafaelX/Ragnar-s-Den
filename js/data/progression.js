@@ -12,6 +12,7 @@ import { BARD_SUBCLASSES } from "./subclasses/bard.js";
 import { CLERIC_SUBCLASSES } from "./subclasses/cleric.js";
 import { DRUID_SUBCLASSES } from "./subclasses/druid.js";
 import { FIGHTER_SUBCLASSES } from "./subclasses/fighter.js";
+import { GUNSLINGER_SUBCLASSES } from "./subclasses/gunslinger.js";
 import { MONK_SUBCLASSES } from "./subclasses/monk.js";
 import { PALADIN_SUBCLASSES } from "./subclasses/paladin.js";
 import { RANGER_SUBCLASSES } from "./subclasses/ranger.js";
@@ -210,6 +211,28 @@ export var CLASS_PROGRESSION = {
       11: [{name:"Extra Attack", replaces:"Extra Attack", text:"When you take the Attack action, you attack three times instead of once."}],
       17: [{name:"Action Surge", replaces:"Action Surge", text:"Twice per short or long rest, take one additional action on your turn, but only once on the same turn."}],
       20: [{name:"Extra Attack", replaces:"Extra Attack", text:"When you take the Attack action, you attack four times instead of once."}]
+    }
+  },
+  // Michael's homebrew class (books/Gunslinger.pdf). The PDF names no
+  // multiclass requirement or proficiencies: DEX 13 was agreed with the
+  // user, and the multiclass proficiencies are the class's own armor and
+  // weapons.
+  "Gunslinger": {
+    subclassLevel: 1, subclassLabel: "Gunslinger Subclass",
+    prereq: [["dex"]], casterType: null, asiLevels: STANDARD_ASI,
+    multiclassProfs: {armor:["Light armor"], weapons:["Simple weapons","Firearms"], tools:[], note:""},
+    startingProfs: {text: "One type of artisan's tools", profs: {pick:[{kind:"tool", group:"Artisan's tools"}]}},
+    features: {
+      2: [{name:"Master of Arms", text:"You gain proficiency with firearms, and your firearms can't misfire. Once per turn, you can reload your firearms as a free action."}],
+      3: [{name:"Take Aim", text:"As a bonus action, give yourself advantage on your next attack roll this turn. You can only do this if you haven't moved during this turn, and afterwards your speed is 0 until the end of the turn."}],
+      5: [{name:"Extra Attack", text:"You can attack twice, instead of once, whenever you take the Attack action on your turn."}],
+      6: [{name:"Handy Bulletsmith", text:"When you craft your own ammunition, you can also make poisoned, net or smoke rounds. You also craft 10 more rounds at a time."}],
+      9: [{name:"Quick Patch", text:"As a bonus action on your turn, patch up yourself or an ally. The target regains 1d8 + your Wisdom modifier hit points. It only works on a creature that has less than half its hit points left, and only once per creature per long rest."}],
+      11: [{name:"Elemental Bulletsmith", text:"When you craft your own ammunition, you can also make elemental rounds. When you load one into your firearm, choose its damage type: cold, fire, acid, poison, thunder or lightning. You also craft 10 more rounds at a time."}],
+      13: [{name:"Willpower", text:"When you fail a saving throw, you can replace your roll with your Wisdom score. Once you do, you can't again until you finish a long rest."}],
+      15: [{name:"Honed Instinct", text:"You gain blindsight out to 10 feet. When you make a Wisdom (Perception) check, you can skip the roll and use your Wisdom modifier in its place. Once you do, you can't again until you finish a long rest."}],
+      17: [{name:"Occult Bulletsmith", text:"When you craft ammunition, you can instead make a spell round from a spell scroll, which is used up. After the usual time and cost, you get 1 spell round of that scroll's spell, and no other rounds from that batch. Firing it casts the spell, with Dexterity as your spellcasting ability."}],
+      20: [{name:"Master of the Barrel", text:"When you roll 9 or lower on an attack roll with a firearm, you can treat the roll as a 10. Your rounds also stop having types, apart from spell rounds: whenever you load a round, choose what type it is."}]
     }
   },
   "Monk": {
@@ -465,6 +488,7 @@ export var SUBCLASSES = {
   "Cleric": CLERIC_SUBCLASSES,
   "Druid": DRUID_SUBCLASSES,
   "Fighter": FIGHTER_SUBCLASSES,
+  "Gunslinger": GUNSLINGER_SUBCLASSES,
   "Monk": MONK_SUBCLASSES,
   "Paladin": PALADIN_SUBCLASSES,
   "Ranger": RANGER_SUBCLASSES,

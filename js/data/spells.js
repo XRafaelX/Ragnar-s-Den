@@ -566,6 +566,9 @@ export var SPELL_DATA = {
   // Cantrips (Encode Thoughts is on no class list: a Dimir Operative's
   // guild spell, see js/data/origin-spells.js)
   "Encode Thoughts": s(0,"Enc",A,"Self","S","8 hours","","Turn a memory, idea or message from your mind (or thoughts you are reading with a spell like Detect Thoughts) into a glowing thought strand you can carry. Casting the spell while holding a strand shows you what it holds.",{source:"GGR"}),
+  // The Gunslinger class's Eldritch Gunman (Michael's homebrew, books/gun_3
+  // and gun_4.webp): on no class list, the subclass always knows them.
+  "Ready Arms!": s(0,"Con",A,"Self","V, S",CONC1M,"","A spectral firearm of any form floats by your side and fires at a creature you choose. Make a ranged spell attack. On a hit, it deals 1d4 piercing damage. Until the spell ends, you can fire any firearms you created with it as a bonus action.",{source:"GSL"}),
   "Sapping Sting": s(0,"Nec",A,"30 feet","V, S","Instantaneous","Dunamancy","One creature you can see makes a Constitution save or takes 1d4 necrotic damage and falls prone.",{source:"EGW"}),
   // 1st level
   "Distort Value": s(1,"Ill","1 minute","Touch","V","8 hours","Bard,Sorcerer,Warlock,Wizard","An object up to 1 foot on a side looks worth twice as much, or half as much. Anyone examining it makes an Investigation check against your spell save DC to see through it.",{source:"AI"}),
@@ -577,6 +580,7 @@ export var SPELL_DATA = {
   "Spellfire Flare": s(1,"Evo",A,"60 feet","V, S","Instantaneous","Sorcerer,Wizard","Make a ranged spell attack that ignores half and three-quarters cover. On a hit, the target takes 2d10 radiant damage.",{source:"FRHoF"}),
   "Wardaway": s(1,"Abj",A,"60 feet","V, S, M","Instantaneous","Bard,Cleric,Paladin,Wizard","A creature makes a Constitution save (constructs and undead succeed automatically). On a failure it takes 2d4 force damage, its speed is halved until the start of your next turn, and on its next turn it can take only an action or a bonus action. On a success it takes half damage.",{material:"a miniature clay hand",source:"FRHoF"}),
   // 2nd level
+  "Switcheroo": s(2,"Con",A,"Self","V, M","Instantaneous","","Brandish the firearm used in the casting with fey magic and make a ranged attack with it. On a hit, the target takes the attack's normal effect and makes a Wisdom save. On a failure, you swap places. If you or the target doesn't fit in the other's space, the spell fails.",{material:"a firearm", source:"GSL"}),
   "Air Bubble": s(2,"Con",A,"60 feet","S","24 hours","Artificer,Druid,Ranger,Sorcerer,Wizard","A globe of fresh air surrounds the head of a willing creature you can see, so it can breathe anywhere for the duration.",{source:"SAiS"}),
   "Borrowed Knowledge": s(2,"Div",A,"Self","V, S, M","1 hour","Bard,Cleric,Warlock,Wizard","Choose a skill you aren't proficient in. You have proficiency in it for the duration. The spell ends early if you cast it again.",{material:"a book worth at least 25 gp",source:"SCC"}),
   "Death Armor": s(2,"Nec",A,"Touch","V, S, M","1 hour","Sorcerer,Wizard","An inky aura surrounds a creature you touch. It has advantage on death saves, and once per turn a creature within 5 feet that hits it with a melee attack takes 2d4 necrotic damage.",{material:"an onyx worth at least 50 gp, which the spell consumes",source:"FRHoF"}),
@@ -647,7 +651,7 @@ export var SPELL_DATA = {
 export var SPELL_SOURCES = {
   AI:"Acquisitions Inc.", BMT:"The Book of Many Things", EGW:"Wildemount", FTD:"Fizban's Treasury", GGR:"Ravnica",
   IDRotF:"Icewind Dale", LLoK:"Lost Laboratory of Kwalish", PAitM:"Planescape", SAiS:"Spelljammer", SCC:"Strixhaven",
-  FRHoF:"Heroes of Faerûn", EFA:"Forge of the Artificer", "AitFR-AVT":"A Verdant Tomb"
+  FRHoF:"Heroes of Faerûn", GSL:"Gunslinger class", EFA:"Forge of the Artificer", "AitFR-AVT":"A Verdant Tomb"
 };
 
 /* Summaries the catalog used to have for a spell, before they were
