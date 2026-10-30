@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
-import { blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource } from "../../core/helpers.js";
+import { strengthOfTheGrave, blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource } from "../../core/helpers.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playDiceRattle, playDeathSaveSuccess, playDeathSaveFail, playStabilized, playDeath, playRevive } from "../../ui/sound.js";
 
@@ -128,6 +128,31 @@ export function renderDeathSaves(c){
       save(); renderSidebar(); renderAll();
     });
     box.appendChild(revive);
+  }
+  // Strength of the Grave (Shadow Magic 1): only a success spends it.
+  if(strengthOfTheGrave(c) && !dead){
+    var grave = document.createElement("button");
+    grave.type = "button"; grave.className = "btn small primary ds-grave";
+    grave.textContent = "Strength of the Grave";
+    grave.title = "CHA save, DC 5 + the damage you took. Not against radiant damage or a critical hit.";
+    grave.addEventListener("click", function(e){
+      e.stopPropagation();
+      var save2 = computeSave(c, "cha");
+      performRoll(20, 1, save2.value, saveRollMode(c, "cha").mode, "Strength of the Grave (DC 5 + the damage)", function(r){
+        if(!r) return null;
+        return {lead: "Saved?", options: [{label: "Back to 1 hit point", title: "Only a success spends it",
+          use: function(){
+            if(!spendResource(c, "Sorcerer:strength_of_the_grave", 1)) return null;
+            c.hp.current = 1;
+            c.deathSaves = {success: 0, fail: 0};
+            removeCondition(c, "prone");
+            playRevive();
+            save(); renderSidebar(); renderAll();
+            return {silent: true};
+          }}]};
+      });
+    });
+    box.appendChild(grave);
   }
   // Faithful Summons (Shepherd 14): four beasts protect you.
   if(faithfulSummonsReady(c) && !dead){

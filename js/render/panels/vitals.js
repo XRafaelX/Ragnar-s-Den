@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn } from "../../core/helpers.js";
+import { spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -19,6 +19,7 @@ import { renderDeathSaves } from "./death-saves.js";
 import { renderEffectsCard } from "./effects.js";
 import { renderWildShapeCard, druidResourceRow } from "./druid.js";
 import { bardResourceRow, songOfRestButton } from "./bard.js";
+import { sorcererResourceRow } from "./sorcerer.js";
 import { renderConditionsButton, renderConditionsStrip, longRestConditionsChoice } from "./conditions.js";
 import { openPrepareSheet } from "./spells.js";
 import { preparedState } from "../../core/spells-known.js";
@@ -721,7 +722,9 @@ export function renderVitalsPanel(c){
     talesOnRest(c);
     delete c.relentlessUses; // Relentless Rage's DC is back to 10
     var resNote = restored.length ? " Restored: "+restored.join(", ")+"." : "";
-    var ended = endAllEffects(c).concat(endTimedBoons(c));
+    var ended = endAllEffects(c, "short").concat(endTimedBoons(c));
+    var back = sorcerousRestoration(c);
+    if(back) resNote += " Sorcerous Restoration: " + back + " sorcery points.";
     if(ended.length) resNote += " Ended: "+ended.join(", ")+".";
     var rested = tirelessRest(c);
     if(rested!==null) resNote += " Tireless: exhaustion down to level "+rested+".";
@@ -776,6 +779,8 @@ export function renderVitalsPanel(c){
         forgeOnLongRest(c);
         interventionOnLongRest(c);
         var omen = omenOnLongRest(c);
+        fontOnLongRest(c);
+        lunarOnLongRest(c);
         talesOnRest(c);
         delete c.sessionSpell; // Spirit Session's spell goes as a long rest starts.
         restoreCompanions(c);
@@ -1196,9 +1201,10 @@ function renderResourcesCard(c, resources){
     hint.className = "res-hint";
     hint.textContent = r.hint + (r.source ? " ("+r.source+")" : "");
     info.appendChild(hint);
-    // A spell slot pays once the uses are gone (Drake's Breath).
+    // A spell slot pays once the uses are gone (Drake's Breath), or sorcery points (Warping Implosion).
     var slotPay = r.slotMin && remaining<=0 ? spellSlotsLeft(c).find(function(s){ return s.level >= r.slotMin; }) : null;
-    var slotWords = slotPay ? " (" + ordinal(slotPay.level) + "-level slot)" : "";
+    var pointsPay = r.againPoints && remaining<=0 && resourceLeft(c, "Sorcerer:sorcery_points") >= r.againPoints ? r.againPoints : 0;
+    var slotWords = slotPay ? " (" + ordinal(slotPay.level) + "-level slot)" : pointsPay ? " (" + pointsPay + " points)" : "";
     // A use that rolls a die (Warding Maneuver's d8): spends one and rolls.
     if(r.roll && r.max!==Infinity){
       var rolls = document.createElement("div");
@@ -1208,10 +1214,11 @@ function renderResourcesCard(c, resources){
       rollBtn.innerHTML = makeDiceSvg();
       rollBtn.appendChild(document.createTextNode((r.roll.button || "Use") + " · " + (r.roll.qty || 1) + "d" + r.roll.die + (r.roll.bonus ? fmtMod(r.roll.bonus) : "") + slotWords));
       var unarmed = r.roll.needs==="meleeOrShield" && !wieldsMeleeWeaponOrShield(c);
-      rollBtn.disabled = (remaining<=0 && !slotPay) || unarmed;
-      rollBtn.title = remaining<=0 && !slotPay ? "None left" : unarmed ? "Needs a melee weapon or a shield in hand" : "Spend one and roll " + (r.roll.qty || 1) + "d" + r.roll.die;
+      rollBtn.disabled = (remaining<=0 && !slotPay && !pointsPay) || unarmed;
+      rollBtn.title = remaining<=0 && !slotPay && !pointsPay ? "None left" : unarmed ? "Needs a melee weapon or a shield in hand" : "Spend one and roll " + (r.roll.qty || 1) + "d" + r.roll.die;
       rollBtn.addEventListener("click", function(){
         if(slotPay){ spendSpellSlot(c, slotPay); save(); renderAll(); }
+        else if(pointsPay){ spendResource(c, "Sorcerer:sorcery_points", pointsPay); save(); renderAll(); }
         else setUsed(r.used+1);
         var least = r.roll.min || 0;
         // Destructive Wrath: a Channel Divinity for the maximum.
@@ -1237,7 +1244,22 @@ function renderResourcesCard(c, resources){
       rolls.appendChild(rollBtn);
       info.appendChild(rolls);
     }
-    // No roll: the slot just pays (summoning the drake again).
+    // No roll: the slot or the points just pay (summoning the drake again).
+    if(pointsPay && !r.roll){
+      var againPts = document.createElement("div");
+      againPts.className = "inv-roll-actions fx-rolls";
+      var ptsBtn = document.createElement("button");
+      ptsBtn.type = "button"; ptsBtn.className = "btn small inv-roll-btn res-roll-btn";
+      ptsBtn.textContent = "Again" + slotWords;
+      ptsBtn.title = "Spend sorcery points to use it again";
+      ptsBtn.addEventListener("click", function(){
+        spendResource(c, "Sorcerer:sorcery_points", pointsPay);
+        logRoll(r.name, "Used again with " + pointsPay + " sorcery points.");
+        save(); renderAll();
+      });
+      againPts.appendChild(ptsBtn);
+      info.appendChild(againPts);
+    }
     if(slotPay && !r.roll){
       var again = document.createElement("div");
       again.className = "inv-roll-actions fx-rolls";
@@ -1350,6 +1372,8 @@ function renderResourcesCard(c, resources){
     if(druidRow) info.appendChild(druidRow);
     var bardRow = bardResourceRow(c, r); // Bardic Inspiration's list and tale, Spirit Session
     if(bardRow) info.appendChild(bardRow);
+    var sorcRow = sorcererResourceRow(c, r); // Sorcery points' list, the surge table, the phases
+    if(sorcRow) info.appendChild(sorcRow);
     // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
     // plus the proficiency bonus of healing.
     var qh = r.key==="Monk:ki" && quickenedHealing(c);

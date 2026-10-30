@@ -75,7 +75,7 @@ export function characterResources(c){
       list.push({
         key: key, name: r.name, source: d.source, hint: typeof r.hint==="function" ? r.hint(lv, m, cl) : r.hint, pool: !!r.pool,
         max: max, used: max===Infinity ? 0 : clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
-        reset: r.reset(lv), roll: roll, heal: r.heal ? r.heal(lv, m) : 0, slotMin: r.slotMin || 0,
+        reset: r.reset(lv), roll: roll, heal: r.heal ? r.heal(lv, m) : 0, slotMin: r.slotMin || 0, againPoints: r.againPoints || 0,
         initiativeRegain: r.initiativeRegain && lv >= r.initiativeRegain ? (r.initiativeAmount || 1) : 0
       });
     });

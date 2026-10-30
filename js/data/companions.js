@@ -220,6 +220,24 @@ export var COMPANIONS = [
         traits:[{name:"Call of the Shadowseeds", text:"Your reaction raises it next to a creature that takes damage in your Defile Ground. It attacks at once, then obeys your verbal commands on your turn. It lasts until 0 HP, your long rest, or you summon another. It understands your languages."}]
       };
     }},
+  // Xanathar's Guide (p. 50) with the Monster Manual's dire wolf.
+  {id:"hound_of_ill_omen", name:"Hound of Ill Omen", cls:"Sorcerer", subclass:"Shadow Magic", level:6,
+    stats:function(x){
+      return {
+        type:"Medium monstrosity", ac:14, hp:37, speed:"50 ft",
+        abilities:{str:17, dex:15, con:15, int:3, wis:12, cha:7},
+        senses:"passive Perception 13",
+        attacks:[{name:"Bite", toHit:5, dice:"2d6", bonus:3, damageType:"piercing", text:"Melee, reach 5 ft. A creature makes a DC 13 STR save or falls prone."}],
+        actions:[],
+        traits:[
+          {name:"When it appears", text:"It has " + Math.floor(x.lv / 2) + " temporary hit points, appears within 30 ft of its target and rolls its own initiative. It vanishes at 0 hit points, when its target drops to 0, or after 5 minutes."},
+          {name:"The hunt", text:"It always knows where its target is, moves only toward it and attacks only it, opportunity attacks included. It moves through creatures and objects as difficult terrain, taking 5 force damage if it ends its turn inside an object."},
+          {name:"Ill omen", text:"While it is within 5 ft of its target, the target has disadvantage on saves against your spells."},
+          {name:"Keen Hearing and Smell", text:"Advantage on Perception checks that rely on hearing or smell."},
+          {name:"Pack Tactics", text:"Advantage on an attack roll if an ally of its is within 5 ft of the creature and isn't incapacitated."}
+        ]
+      };
+    }},
   // Tasha's Cauldron (p. 28), checked on 5etools' data 2026-10-30.
   {id:"dancing_item", name:"Dancing Item", cls:"Bard", subclass:"College of Creation", level:6,
     stats:function(x){

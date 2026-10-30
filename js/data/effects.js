@@ -21,7 +21,10 @@
    option: {set, name}, only with that class option known (Hunter's picks).
    choose: {placeholder, options}, started by picking one, which is kept
      as the effect's value (Starry Form's constellation, Spirit Totem's spirit).
+   keeps: startEffect's value is kept as the effect's value (Revelation in Flesh's list).
    staysUp: dropping to 0 HP doesn't end it (the wildfire spirit).
+   staysRest: a short rest doesn't end it (Bastion of Law).
+   pointsCost: sorcery points can pay instead once the uses are gone.
    duration: shown on the card.
    hint: what it does, kept short; the card adds the worked-out numbers. */
 export var TOGGLE_EFFECTS = [
@@ -40,6 +43,40 @@ export var TOGGLE_EFFECTS = [
   {id:"symbiotic_entity", name:"Symbiotic Entity", className:"Druid", subclass:"Circle of Spores", level:2,
     cost:{resource:"wild_shape", amount:1}, duration:"10 minutes",
     hint:"Ends early when these temporary hit points are gone or you use Wild Shape again."},
+  // Sorcerer: Player's Handbook (pp. 102-103), Xanathar's Guide (pp. 50-51),
+  // Tasha's Cauldron (pp. 66-68) and Dragonlance (p. 35), checked on
+  // 5etools' data 2026-10-30.
+  {id:"elemental_affinity", name:"Elemental Affinity", className:"Sorcerer", subclass:"Draconic Bloodline", level:6,
+    cost:{resource:"sorcery_points", amount:1}, duration:"1 hour",
+    hint:"When you cast a spell that deals your ancestry's damage type."},
+  {id:"dragon_wings", name:"Dragon Wings", className:"Sorcerer", subclass:"Draconic Bloodline", level:14, duration:"Until you dismiss them",
+    hint:"Bonus action. Dismiss them as a bonus action."},
+  {id:"draconic_presence", name:"Draconic Presence", className:"Sorcerer", subclass:"Draconic Bloodline", level:18,
+    cost:{resource:"sorcery_points", amount:5}, duration:"1 minute",
+    choose:{placeholder:"Awe or fear...", options:["Awe", "Fear"]},
+    hint:"Action, with your concentration as if on a spell."},
+  {id:"tides_of_chaos", name:"Tides of Chaos", className:"Sorcerer", subclass:"Wild Magic", level:1,
+    cost:{resource:"tides_of_chaos", amount:1}, duration:"Your next d20", startLabel:"Use",
+    hint:"It comes back on a long rest, or when you roll on the surge table."},
+  {id:"trance_of_order", name:"Trance of Order", className:"Sorcerer", subclass:"Clockwork Soul", level:14,
+    cost:{resource:"trance_of_order", amount:1}, pointsCost:5, duration:"1 minute",
+    hint:"Bonus action. Once the use is gone, 5 sorcery points pay."},
+  {id:"bastion_of_law", name:"Bastion of Law", className:"Sorcerer", subclass:"Clockwork Soul", level:6, channel:true, staysUp:true, staysRest:true, duration:"Until a long rest",
+    hint:"The warded creature spends the dice when it takes damage."},
+  {id:"telepathic_speech", name:"Telepathic Speech", className:"Sorcerer", subclass:"Aberrant Mind", level:1, duration:"1 minute per sorcerer level", endsIncapacitated:true,
+    hint:"Bonus action, with a creature you can see within 30 ft. A new connection ends the last."},
+  {id:"revelation_in_flesh", name:"Revelation in Flesh", className:"Sorcerer", subclass:"Aberrant Mind", level:14, duration:"10 minutes", startLabel:"Transform", keeps:true,
+    hint:"Bonus action: one benefit for each sorcery point you spend."},
+  {id:"otherworldly_wings", name:"Otherworldly Wings", className:"Sorcerer", subclass:"Divine Soul", level:14, duration:"Until you dismiss them", endsIncapacitated:true,
+    hint:"Bonus action. They last until you are incapacitated, die or dismiss them."},
+  {id:"umbral_form", name:"Umbral Form", className:"Sorcerer", subclass:"Shadow Magic", level:18,
+    cost:{resource:"sorcery_points", amount:6}, duration:"1 minute", endsIncapacitated:true,
+    hint:"Bonus action. A bonus action dismisses it."},
+  {id:"wind_soul_shared", name:"Wind Soul: shared flight", className:"Sorcerer", subclass:"Storm Sorcery", level:18,
+    cost:{resource:"wind_soul", amount:1}, duration:"1 hour",
+    hint:"Action. Once per short or long rest."},
+  {id:"lunar_light", name:"Lunar Empowerment: light", className:"Sorcerer", subclass:"Lunar Sorcery", level:14, duration:"Until you douse it", startLabel:"Shine", endLabel:"Douse",
+    hint:"Bonus action, in the Full Moon."},
   // Player's Handbook (p. 54) and Xanathar's Guide (pp. 14-16), checked on
   // 5etools' data 2026-10-30.
   {id:"countercharm", name:"Countercharm", className:"Bard", level:6, duration:"Until the end of your next turn", endsIncapacitated:true,

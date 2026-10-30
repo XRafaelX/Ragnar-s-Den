@@ -7,7 +7,8 @@ import { RACE_DATA, TRAIT_ADVANTAGES, TRAIT_HALF_PROFICIENCY } from "../data/rac
 import { mod, fmtMod, profBonus, combineRolls } from "./basics.js";
 import { barbarianClassEntry } from "./character-resources.js";
 import { classFeatureList } from "./class-features.js";
-import { effectOn, effectRolls, weaponAttackEffect } from "./effects.js";
+import { effectOn, effectRolls, weaponAttackEffect, tidesRoll } from "./effects.js";
+import { lunarEmpowered } from "./sorcerer.js";
 import { otherworldlyGlamour } from "./ranger.js";
 import { wildForm, wildShapeSkill, totemSpirit } from "./druid.js";
 import { optionEffects } from "./class-options.js";
@@ -147,7 +148,7 @@ export function stealthCheck(c){
 export function skillRollMode(c, skill, passive){
   var list = [armorPenalty(c, SKILL_ABILITY[skill])].concat(alwaysAdvantage(c, "check", SKILL_ABILITY[skill]), skillAdvantage(c, skill), conditionRolls(c, "check"));
   // A boon for the next roll (Duality) isn't part of a passive score.
-  if(!passive) list.push(nextCheckAdvantage(c));
+  if(!passive) list.push(nextCheckAdvantage(c), tidesRoll(c));
   if(skill==="Stealth") list.push(stealthCheck(c));
   if(skill==="Acrobatics" && effectOn(c, "bladesong")) list.push({mode: "adv", reason: "Bladesong"});
   if((skill==="Athletics" || skill==="Acrobatics") && effectOn(c, "peerless_athlete")) list.push({mode: "adv", reason: "Peerless Athlete"});
@@ -191,6 +192,10 @@ export function advantagesFor(c){
   if(effectOn(c, "watchers_will")) out.push({name: "Watcher's Will", on: "save", abilities: ["int", "wis", "cha"]});
   if(effectOn(c, "exalted_champion")) out.push({name: "Exalted Champion", on: "save", abilities: ["wis"]});
   if(effectOn(c, "living_legend")) out.push({name: "Living Legend", on: "check", abilities: ["cha"]});
+  // Lunar Empowerment (Lunar Sorcery 14): by phase.
+  var moon = lunarEmpowered(c);
+  if(moon==="New Moon") out.push({name: "Lunar Empowerment", on: "skill", skills: ["Stealth"]});
+  if(moon==="Full Moon" && effectOn(c, "lunar_light")) out.push({name: "Lunar Empowerment", on: "skill", skills: ["Investigation", "Perception"]});
   if(effectOn(c, "countercharm")) out.push({name: "Countercharm", on: "save", abilities: "all", when: "against being frightened or charmed"});
   // Spirit Totem: only inside the aura, so these are reminders.
   var spirit = totemSpirit(c);
@@ -236,7 +241,7 @@ export function situationalSaveAdvantages(c, key){
   return advantagesFor(c).filter(function(a){ return a.when && covers(a, "save", key); }).map(function(a){ return {name: a.name, when: a.when}; });
 }
 /* A plain ability check or a saving throw with this ability. */
-export function checkRollMode(c, key){ return combineRolls([armorPenalty(c, key), nextCheckAdvantage(c)].concat(alwaysAdvantage(c, "check", key), conditionRolls(c, "check"))); }
+export function checkRollMode(c, key){ return combineRolls([armorPenalty(c, key), nextCheckAdvantage(c), tidesRoll(c)].concat(alwaysAdvantage(c, "check", key), conditionRolls(c, "check"))); }
 export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)].concat(alwaysAdvantage(c, "save", key), conditionRolls(c, "save", key), effectRolls(c, "save", key))); }
 /* Initiative is a DEX check: Feral Instinct's or a Helm of Awareness's
    advantage, Duality's next ability check, and armor worn without

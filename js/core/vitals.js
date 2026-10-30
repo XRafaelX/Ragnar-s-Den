@@ -173,7 +173,7 @@ export function computeSpeed(c){
       if(sp.bonus){ bonus[sp.type] = (bonus[sp.type]||0) + sp.bonus; return; }
       var value = sp.value==="walk" ? walk : sp.value==="2walk" ? 2 * walk : sp.value;
       // (`effect`: no longer conditional while that effect is on.)
-      var live = sp.effect && effectOn(c, sp.effect) && (!sp.choice || c.effects[sp.effect]===sp.choice);
+      var live = sp.effect && effectOn(c, sp.effect) && (!sp.choice || [].concat(c.effects[sp.effect]).indexOf(sp.choice)!==-1);
       list.push({type: sp.type, value: value, when: live ? "" : sp.when || "", source: f.name});
     });
   });
@@ -189,6 +189,8 @@ export function computeSpeed(c){
     return o.when && !always.some(function(a){ return a.type===o.type && a.value >= o.value; });
   }));
   if(form) others = wildShapeSpeeds(form);
+  // Wind Soul: flight shared, yours drops to 30 ft.
+  if(effectOn(c, "wind_soul_shared")) others.forEach(function(o){ if(o.type==="fly" && o.source==="Wind Soul") o.value = 30; });
   // Grappled, restrained or unable to move: 0, bonuses and all. Exhaustion
   // 2 halves every speed (rounded down), 5 takes it to 0.
   // In a tortle's shell, or after Steady Aim: 0, and it can't increase.
@@ -445,6 +447,7 @@ export function getCharacterSenses(c){
   // (A class feature's own sense too: a rogue's Blindsense.)
   var extra = styleSenses(c).concat(invocationSenses(c));
   if(effectOn(c, "mortal_bulwark")) extra.push("Truesight 120 ft");
+  if(effectOn(c, "revelation_in_flesh") && [].concat(c.effects.revelation_in_flesh).indexOf("Sight")!==-1) extra.push("See invisible creatures 60 ft");
   (c.classes||[]).forEach(function(cl){ classFeatureList(cl).forEach(function(f){ if(f.sense && extra.indexOf(f.sense)===-1) extra.push(f.sense); }); });
   if(!dv.range && extra.length) return extra.join(", ");
   return [dv.range ? "Darkvision " + dv.range + " ft" : "No darkvision"].concat(extra).join(", ");

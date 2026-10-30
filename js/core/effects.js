@@ -1,6 +1,7 @@
 /* ---------------- Active effects ----------------
    Effects switched on from the Vitals tab (Bladesong, the Astral Self,
    Symbiotic Entity) and the numbers they change. */
+import { dragonType, lunarEmpowered } from "./sorcerer.js";
 import { TOGGLE_EFFECTS, WILD_SURGES } from "../data/effects.js";
 import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
@@ -30,6 +31,11 @@ function effectClass(c, def){
 }
 /* Why an effect that's switched on gives nothing right now, or "". */
 export function effectBlocked(c, id){
+  if(id==="dragon_wings"){
+    var armor = (c.inventory||[]).find(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
+    if(armor) return "Not while you wear " + (armor.name || "armor") + ", unless it's made for them.";
+  }
+  if(id==="lunar_light" && lunarEmpowered(c)!=="Full Moon") return "Only in the Full Moon.";
   if(id==="bladesong"){
     var worn = (c.inventory||[]).find(function(i){
       return i.type==="armor" && i.equipped && (i.category==="medium" || i.category==="heavy" || i.category==="shield");
@@ -71,7 +77,7 @@ export function characterEffects(c){
   return TOGGLE_EFFECTS.filter(function(def){ return effectClass(c, def); }).map(function(def){
     var res = def.cost && resources.find(function(r){ return r.key===(def.race ? "race" : def.className)+":"+def.cost.resource; });
     var on = !!flags[def.id];
-    var why = "", slot = 0;
+    var why = "", slot = 0, points = 0;
     if(!on){
       var missing = (def.requires||[]).filter(function(r){ return !flags[r]; });
       if(missing.length) why = "Needs " + missing.map(function(r){ return effectDef(r).name; }).join(" and ") + " first.";
@@ -79,10 +85,12 @@ export function characterEffects(c){
       else if(def.cost && (!res || res.max - res.used < def.cost.amount)){
         // Living Legend: a spell slot of that level pays once the use is gone.
         if(def.slotCost && spellSlotLeft(c, def.slotCost)) slot = def.slotCost;
+        // Trance of Order: sorcery points pay once the use is gone.
+        else if(def.pointsCost && resourceLeft(c, "Sorcerer:sorcery_points") >= def.pointsCost) points = def.pointsCost;
         else why = "Not enough " + (res ? res.name : def.cost.resource) + " left.";
       }
     }
-    return {def: def, on: on, blocked: on ? effectBlocked(c, def.id) : "", resource: res, why: why, slot: slot};
+    return {def: def, on: on, blocked: on ? effectBlocked(c, def.id) : "", resource: res, why: why, slot: slot, points: points};
   });
 }
 /* Switch an effect on: pay its cost and, for Symbiotic Entity, gain its
@@ -92,12 +100,13 @@ export function startEffect(c, id, slotLevel){
   if(!e || e.on || e.why) return false;
   if(e.def.slotPick) c.spellcasting.slots[slotLevel].used = (Number(c.spellcasting.slots[slotLevel].used)||0) + 1;
   if(e.slot) c.spellcasting.slots[e.slot].used = (Number(c.spellcasting.slots[e.slot].used)||0) + 1;
+  else if(e.points) spendResource(c, "Sorcerer:sorcery_points", e.points);
   else if(e.resource && e.resource.max!==Infinity){
     if(!c.resourcesUsed) c.resourcesUsed = {};
     c.resourcesUsed[e.resource.key] = e.resource.used + e.def.cost.amount;
   }
   if(!c.effects) c.effects = {};
-  c.effects[id] = e.def.slotPick || e.def.choose ? slotLevel : true;
+  c.effects[id] = e.def.slotPick || e.def.choose || e.def.keeps ? slotLevel : true;
   // Symbiotic Entity lasts until you use Wild Shape again.
   if(id!=="symbiotic_entity" && e.def.cost && e.def.cost.resource==="wild_shape") endEffect(c, "symbiotic_entity");
   // The Bear Spirit: 5 + druid level temporary HP (keep the higher).
@@ -124,14 +133,15 @@ export function endEffect(c, id){
   delete c.effects[id];
   TOGGLE_EFFECTS.forEach(function(d){ if((d.requires||[]).indexOf(id)!==-1) endEffect(c, d.id); });
 }
-/* A rest or dropping to 0 HP (falling: true) ends every effect, but for
-   those that outlast you falling (`staysUp`), and a Barbarian's Rage.
+/* A rest or dropping to 0 HP (why: true) ends every effect, but for those
+   that outlast you falling (`staysUp`), and a Barbarian's Rage. A short
+   rest (why: "short") leaves what lasts until a long rest (`staysRest`).
    Returns the names that were on. */
-export function endAllEffects(c, falling){
-  var going = TOGGLE_EFFECTS.filter(function(d){ return c.effects && c.effects[d.id] && !(falling && d.staysUp); });
+export function endAllEffects(c, why){
+  var going = TOGGLE_EFFECTS.filter(function(d){ return c.effects && c.effects[d.id] && !(why===true && d.staysUp) && !(why==="short" && d.staysRest); });
   var ended = going.map(function(d){ return d.name; });
   going.forEach(function(d){ delete c.effects[d.id]; });
-  if(!falling) c.effects = {};
+  if(!why) c.effects = {};
   if(c.rage && c.rage.active){ ended.push("Rage"); ended = ended.concat(endRage(c)); }
   // Sharpen the Blade lasts a minute.
   if(c.sharpen){ delete c.sharpen; ended.push("Sharpen the Blade"); }
@@ -139,6 +149,16 @@ export function endAllEffects(c, falling){
   var lit = (c.inventory||[]).filter(function(i){ return i.shillelagh; });
   if(lit.length){ lit.forEach(function(i){ delete i.shillelagh; }); ended.push("Shillelagh"); }
   return ended;
+}
+/* Tides of Chaos: advantage on the next attack roll, check or save. */
+export function tidesRoll(c){
+  return effectOn(c, "tides_of_chaos") ? {mode: "adv", reason: "Tides of Chaos"} : null;
+}
+/* The roll uses it up. True if it did. */
+export function useTides(c){
+  if(!effectOn(c, "tides_of_chaos")) return false;
+  endEffect(c, "tides_of_chaos");
+  return true;
 }
 /* A condition that incapacitates ends the effects tagged
    `endsIncapacitated` (Twilight Sanctuary, Bladesong). Returns their names. */
@@ -171,6 +191,7 @@ export function effectRolls(c, kind, ability){
   }
   if((kind==="attack" || kind==="perception") && effectOn(c, "sunlight")) out.push({mode: "dis", reason: "Sunlight Sensitivity"});
   if(kind==="attack" && steadyAimReady(c)) out.push({mode: "adv", reason: AIM_EFFECTS[readyAim(c)]});
+  if((kind==="attack" || kind==="save") && effectOn(c, "tides_of_chaos")) out.push({mode: "adv", reason: "Tides of Chaos"});
   if(kind==="attack" && effectOn(c, "natures_veil")) out.push({mode: "adv", reason: "Nature's Veil: you're invisible"});
   // Empty Body and Cloak of Shadows: invisible, so advantage on attack rolls.
   if(kind==="attack" && effectOn(c, "empty_body")) out.push({mode: "adv", reason: "Empty Body: you're invisible"});
@@ -564,6 +585,9 @@ export function effectResistances(c){
   if(effectOn(c, "invincible_conqueror")) out.push({type: "all damage", source: "Invincible Conqueror"});
   if(effectOn(c, "exalted_champion")) out.push({type: "nonmagical bludgeoning, piercing and slashing", source: "Exalted Champion"});
   if(effectOn(c, "starry_form") && classLevelOf(c, "Druid", "Circle of Stars") >= 14) out.push({type: "bludgeoning, piercing and slashing", source: "Full of Stars"});
+  if(effectOn(c, "elemental_affinity")) out.push({type: dragonType(c) || "your ancestry's damage", source: "Elemental Affinity"});
+  if(effectOn(c, "umbral_form")) out.push({type: "all damage but force and radiant", source: "Umbral Form"});
+  if(lunarEmpowered(c)==="Crescent Moon") out.push({type: "necrotic", source: "Lunar Empowerment"}, {type: "radiant", source: "Lunar Empowerment"});
   return out;
 }
 export function attackEndsEffects(c, melee){

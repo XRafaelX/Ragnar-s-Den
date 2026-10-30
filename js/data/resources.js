@@ -118,7 +118,7 @@ export var CLASS_RESOURCES = {
   "Sorcerer": [
     {id:"sorcery_points", name:"Sorcery Points", level:2, pool:true,
       max:function(lv){ return lv; }, reset:always("long"),
-      hint:"Fuel Metamagic, or convert them to and from spell slots as a bonus action. From level 20, regain 4 on a short rest."}
+      hint:function(lv){ return "Fuel Metamagic, or turn them into spell slots and back as a bonus action." + (lv>=20 ? " Sorcerous Restoration: 4 come back on a short rest." : ""); }}
   ],
   "Rogue": [
     {id:"stroke_of_luck", name:"Stroke of Luck", level:20, max:always(1), reset:always("short"),
@@ -462,11 +462,12 @@ export var SUBCLASS_RESOURCES = {
         hint:"Reaction: cancel advantage or disadvantage on a d20 roll by a creature within 60 ft."},
       {id:"trance_of_order", name:"Trance of Order", level:14, max:always(1), reset:always("long"),
         hint:"Bonus action for 1 minute: no advantage against you, treat d20 rolls of 9 or lower as 10. More uses cost 5 sorcery points."},
-      {id:"clockwork_cavalcade", name:"Clockwork Cavalcade", level:18, max:always(1), reset:always("long"),
+      {id:"clockwork_cavalcade", name:"Clockwork Cavalcade", level:18, max:always(1), reset:always("long"), againPoints:7,
         hint:"Action: 30-ft cube heals up to 100 HP, repairs objects and ends spells of 6th level or lower. More uses cost 7 sorcery points."}
     ],
     "Aberrant Mind": [
-      {id:"warping_implosion", name:"Warping Implosion", level:18, max:always(1), reset:always("long"),
+      {id:"warping_implosion", name:"Warping Implosion", level:18, max:always(1), reset:always("long"), againPoints:5,
+        roll:{qty:3, die:10, button:"Implode", label:"Warping Implosion (force, STR save)"},
         hint:"Action: teleport 120 ft. Creatures near your old space take 3d10 force and are pulled (STR save). More uses cost 5 sorcery points."}
     ],
     "Divine Soul": [
@@ -480,13 +481,13 @@ export var SUBCLASS_RESOURCES = {
         hint:"Action: drop your flying speed to 30 ft for 1 hour and give up to 3 + CHA mod creatures within 30 ft a 30-ft flying speed."}
     ],
     "Lunar Sorcery": [
-      {id:"lunar_embodiment", name:"Lunar Embodiment (Free Spell)", level:1, max:always(1), reset:always("long"),
-        hint:"Cast your current phase's 1st-level spell without a slot: Shield (Full), Ray of Sickness (New) or Color Spray (Crescent)."},
+      {id:"lunar_embodiment", name:"Lunar Embodiment (Free Spell)", level:1, max:function(lv){ return lv>=6 ? 3 : 1; }, reset:always("long"),
+        hint:function(lv){ return "Choose your phase after each long rest, and cast its 1st-level spell without a slot" + (lv>=6 ? ". With Waxing and Waning, each phase's spell once." : "."); }},
       {id:"lunar_boons", name:"Lunar Boons", level:6,
         max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Spend 1 fewer sorcery point on Metamagic for a spell from a school tied to your current phase."},
-      {id:"lunar_phenomenon", name:"Lunar Phenomenon", level:18, max:always(1), reset:always("long"),
-        hint:"Bonus action: unleash your current phase's power (blind and heal, necrotic burst and invisibility, or teleport with resistance). More uses cost 5 sorcery points."}
+      {id:"lunar_phenomenon", name:"Lunar Phenomenon", level:18, max:always(3), reset:always("long"),
+        hint:"Bonus action: your current phase's power, each one once per long rest. Using one again costs 5 sorcery points."}
     ]
   },
   "Warlock": {

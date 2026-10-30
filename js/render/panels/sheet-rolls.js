@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods } from "../../core/helpers.js";
 import { openFlourishSheet } from "./bard.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
@@ -45,14 +45,14 @@ export function rollAttack(c, bonus, mode, label, hit){
     delete hit.item.rigged;
   }
   // Master of the Barrel (gunslinger 20): a firearm's d20 of 9 or lower counts as a 10.
-  var barrel = gun && classLevelOf(c, "Gunslinger") >= 20;
+  var barrel = gun && classLevelOf(c, "Gunslinger") >= 20, trance = tranceOn(c);
   performRoll(20, 1, bonus, mode, label, {
     followUp: function(r){ return attackFollowUp(c, r, aim, hit); },
-    adjust: barrel ? function(r){ return r.natural!=null && r.natural < 10 ? {total: r.total + 10 - r.natural, note: "Master of the Barrel"} : null; } : null,
+    adjust: barrel || trance ? function(r){ return r.natural!=null && r.natural < 10 ? {total: r.total + 10 - r.natural, note: barrel ? "Master of the Barrel" : "Trance of Order"} : null; } : null,
     onResult: gun ? function(r){ firearmResult(c, hit.item, gun, r); } : null
   });
-  var ended = attackEndsEffects(c, !!(hit && hit.melee));
-  if(useSteadyAim(c) || gun || ended){ save(); renderAll(); }
+  var ended = attackEndsEffects(c, !!(hit && hit.melee)), tides = useTides(c);
+  if(useSteadyAim(c) || gun || ended || tides){ save(); renderAll(); }
 }
 /* A firearm's roll (the Gunslinger's rules): at or under its misfire
    score it misfires, and the gun is jammed until repaired. Vicious Intent
@@ -76,19 +76,21 @@ export function rollCheck(c, bonus, mode, label, ability, opts){
   opts = opts || {};
   var might = ability==="str" ? indomitableMight(c) : 0;
   var reliable = opts.proficient && reliableTalent(c);
-  var dragon = ((ability==="int" || ability==="wis") && starryDragon(c)) || silverTongue(c, opts.skill);
+  var trance = tranceOn(c);
+  var dragon = ((ability==="int" || ability==="wis") && starryDragon(c)) || silverTongue(c, opts.skill) || trance;
   opts.mode = mode; // (Intuition needs no disadvantage.)
   performRoll(20, 1, bonus, mode, label, {
     followUp: function(r){ return checkFollowUp(c, r, opts); },
     adjust: might || reliable || dragon ? function(r){
       var total = r.total, notes = [];
       // Reliable Talent: a d20 of 9 or lower counts as a 10.
-      if((reliable || dragon) && r.natural!=null && r.natural < 10){ total += 10 - r.natural; notes.push(reliable ? "Reliable Talent" : silverTongue(c, opts.skill) ? "Silver Tongue" : "Starry Form: Dragon"); }
+      if((reliable || dragon) && r.natural!=null && r.natural < 10){ total += 10 - r.natural; notes.push(reliable ? "Reliable Talent" : trance ? "Trance of Order" : silverTongue(c, opts.skill) ? "Silver Tongue" : "Starry Form: Dragon"); }
       if(might && total < might){ total = might; notes.push("Indomitable Might"); }
       return notes.length ? {total: total, note: notes.join(", ")} : null;
     } : null
   });
-  var used = useNextCheck(c);
+  var used = useTides(c);
+  used = useNextCheck(c) || used;
   // Elegant Maneuver is used up by the Acrobatics or Athletics check.
   if((opts.skill==="Acrobatics" || opts.skill==="Athletics") && effectOn(c, "elegant_maneuver")){ endEffect(c, "elegant_maneuver"); used = true; }
   if(used){ save(); renderAll(); }
@@ -166,8 +168,12 @@ function checkFollowUp(c, r, opts){
 export function rollSave(c, bonus, mode, label, ability){
   var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c), will = resourceLeft(c, "Gunslinger:willpower") > 0;
   var oath = livingLegendOn(c) || hasSupernaturalDefense(c) || effectOn(c, "emboldening_bond") || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
-  var dragon = ability==="con" && starryDragon(c);
-  performRoll(20, 1, bonus, mode, label, fanatic || indom || diamond || oath || will || dragon ? function(r){ return saveFollowUp(c, ability, r); } : null);
+  var dragon = ability==="con" && starryDragon(c), favored = favoredByTheGods(c), trance = tranceOn(c);
+  performRoll(20, 1, bonus, mode, label, {
+    followUp: fanatic || indom || diamond || oath || will || dragon || favored ? function(r){ return saveFollowUp(c, ability, r); } : null,
+    adjust: trance ? function(r){ return r.natural!=null && r.natural < 10 ? {total: r.total + 10 - r.natural, note: "Trance of Order"} : null; } : null
+  });
+  if(useTides(c)){ save(); renderAll(); }
 }
 /* After a save: Fanatical Focus (once per rage) and Indomitable (a use;
    a Banneret's Bulwark lets an ally who failed the same INT, WIS or CHA
@@ -220,6 +226,7 @@ function saveFollowUp(c, ability, r){
     opts.push({label: "Saved? Vigilant Rebuke 2d8" + fmtMod(rebuke), title: "Your reaction: force damage to the creature that forced the save",
       use: function(){ performRoll(8, 2, rebuke, "none", "Vigilant Rebuke (Force)"); return {silent: true}; }});
   }
+  if(favoredByTheGods(c)){ opts.push(favoredOption(c)); failed = opts.length; }
   // The Dragon (Starry Form): a low d20 counts as a 10 to keep concentration.
   if(ability==="con" && starryDragon(c) && (!r || (r.natural!=null && r.natural < 10))){
     opts.unshift({label: "Concentration: count the d20 as 10", title: "Starry Form, Dragon: a roll of 9 or lower counts as a 10 on a Constitution save to keep concentration",
@@ -228,6 +235,16 @@ function saveFollowUp(c, ability, r){
   }
   if(!opts.length) return null;
   return failed ? {lead: "Failed?", hint: "Failed? Tap for options.", options: opts} : {lead: "", hint: "Saved? Tap for Vigilant Rebuke.", options: opts};
+}
+/* Favored by the Gods (Divine Soul 1): 2d4 on a failed save or a miss. */
+function favoredOption(c){
+  return {label: "+2d4 (Favored by the Gods)", title: "Once per short or long rest",
+    use: function(){
+      if(!spendResource(c, "Sorcerer:favored_by_the_gods", 1)) return null;
+      var got = Math.floor(Math.random() * 4) + Math.floor(Math.random() * 4) + 2;
+      save(); renderAll();
+      return {bonus: got, log: "Favored by the Gods (rolled " + got + ")"};
+    }};
 }
 /* Diamond Soul (monk 14): a ki point left to reroll a failed save. */
 function hasDiamondSoul(c){
@@ -268,6 +285,7 @@ function attackFollowUp(c, r, aim, hit){
         return {bonus: sniper, log: "Expert Sniper"};
       }});
   }
+  if(favoredByTheGods(c)) opts.push(favoredOption(c));
   // Blade Flourish (College of Swords 3): on a hit with a weapon.
   if(hit && hit.item && bladeFlourish(c)) opts.push({label: "Hit? Blade Flourish", title: "One flourish a turn, on a hit", use: function(){ openFlourishSheet(c, hit.label); return {silent: true}; }});
   // A roll with no card of its own to roll damage from (a caught missile).

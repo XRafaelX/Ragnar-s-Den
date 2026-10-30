@@ -2,10 +2,11 @@
    data/spell-scaling.js). */
 import { SPELL_SCALING } from "../data/spell-scaling.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
-import { totalLevel, computeSpellSlots, ordinal, mod, hasFeat, hasBlessedStrikes, classLevelOf } from "./helpers.js";
+import { featureSpells, totalLevel, computeSpellSlots, ordinal, mod, hasFeat, hasBlessedStrikes, classLevelOf } from "./helpers.js";
 import { eldritchBlastSummary } from "./invocations.js";
 import { classFeatureList } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
+import { dragonType, heartOfTheStorm } from "./sorcerer.js";
 import { druidDc, starryConstellation, starryDice, totemSpirit, hasEnhancedBond } from "./druid.js";
 
 var CANTRIP_STEPS = [5, 11, 17];
@@ -109,6 +110,7 @@ export function healingNote(c, name){
   }
   if(totemSpirit(c)==="Unicorn") notes.push("Unicorn Spirit: with a spell slot, each creature you choose in the aura also regains " + classLevelOf(c, "Druid", "Circle of the Shepherd") + " hit points.");
   if(hasEnhancedBond(c)) notes.push("Enhanced Bond: add a d8 to one healing roll.");
+  if(classLevelOf(c, "Sorcerer", "Divine Soul") >= 6) notes.push("Empowered Healing: 1 sorcery point rerolls any of the dice, once per turn.");
   return notes.join(" ");
 }
 /* What a druid's circle or a bard's college adds to other spells, for
@@ -123,6 +125,16 @@ export function circleSpellNote(c, name){
   if(!d) return "";
   if(hasEnhancedBond(c) && /\bfire\b[^.]*damage/i.test(d.summary)) notes.push("Enhanced Bond: add a d8 to one damage roll.");
   if(OMENS_SPELLS.indexOf(spell)!==-1 && classLevelOf(c, "Cleric", "Fate Domain") >= 1 && (c.resourcesUsed||{})["Cleric:omens_and_portents"] > 0) notes.push("Omens and Portents: 25 percent less chance of no answer or a random reading, until your long rest.");
+  // Elemental Affinity (Draconic Bloodline 6): the ancestry's damage type.
+  var ancestry = classLevelOf(c, "Sorcerer", "Draconic Bloodline") >= 6 && dragonType(c);
+  if(ancestry && new RegExp("\\b" + ancestry + "\\b[^.]*damage", "i").test(d.summary)){
+    var affinity = mod(abilityScore(c, "cha"));
+    notes.push("Elemental Affinity: add " + affinity + " to one damage roll. You can also spend 1 sorcery point for resistance to " + ancestry + " for 1 hour, on Active effects.");
+  }
+  var storm = heartOfTheStorm(c);
+  if(storm && d.level >= 1 && /\b(lightning|thunder)\b[^.]*damage/i.test(d.summary)) notes.push("Heart of the Storm: creatures you choose within 10 feet take " + storm + " lightning or thunder damage as you start casting.");
+  if(classLevelOf(c, "Sorcerer", "Wild Magic") >= 18 && /\b\d+d\d+\b/.test(d.summary) && /damage/i.test(d.summary)) notes.push("Spell Bombardment: once per turn, when a die rolls its highest number, roll one of them again and add it.");
+  if(classLevelOf(c, "Sorcerer", "Aberrant Mind") >= 6 && d.level >= 1 && featureSpells(c).some(function(s){ return s.name===spell && s.feature==="Psionic Spells"; })) notes.push("Psionic Sorcery: you can cast it with " + d.level + (d.level===1 ? " sorcery point" : " sorcery points") + " instead of a slot, with no components.");
   // Spiritual Focus (College of Spirits 6): a bard spell's damage or healing.
   if(classLevelOf(c, "Bard", "College of Spirits") >= 6 && d.classes.indexOf("Bard")!==-1 && (/\bdamage\b/i.test(d.summary) || HEALING_SPELLS.indexOf(spell)!==-1))
     notes.push("Spiritual Focus: through your focus, add a d6 to one damage or healing roll.");

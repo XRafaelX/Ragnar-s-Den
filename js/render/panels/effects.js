@@ -1,11 +1,12 @@
 import { save } from "../../core/state.js";
-import { bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
+import { dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
+import { openRevelationSheet, bastionPicker } from "./sorcerer.js";
 
 /* ---------------- Active effects ----------------
    On the Vitals tab, only for characters with a feature they switch on
@@ -80,6 +81,9 @@ function effectRow(c, e){
   btn.addEventListener("click", function(){
     if(e.on){
       endEffect(c, def.id);
+    } else if(def.id==="revelation_in_flesh"){
+      openRevelationSheet(c);
+      return;
     } else if(def.id==="luck_of_the_draw"){
       // The d4 decides: only a 4 turns it on.
       performRoll(4, 1, 0, "none", "Luck of the Draw", {onResult: function(r){
@@ -145,6 +149,8 @@ function costText(e){
   var n = e.def.cost.amount;
   if(e.def.cost.resource==="ki") return n + " ki";
   if(e.def.cost.resource==="wild_shape") return n + " Wild Shape";
+  if(e.def.cost.resource==="sorcery_points") return n + (n===1 ? " point" : " points");
+  if(e.points) return e.points + " points";
   return n + (n===1 ? " use" : " uses");
 }
 
@@ -166,6 +172,27 @@ function effectSummary(c, id){
     var halo = haloOfSporesDie(c);
     return "+" + symbioticTempHp(c) + " temporary HP · Halo of Spores 2d" + halo + " necrotic · melee weapon attacks +1d6 necrotic";
   }
+  if(id==="elemental_affinity") return "Resistance to " + (dragonType(c) || "your ancestry's") + " damage";
+  if(id==="dragon_wings") return "Fly " + computeSpeed(c).value + " ft";
+  if(id==="draconic_presence"){
+    var dread = c.effects && c.effects.draconic_presence;
+    return "60-ft aura · a hostile creature starting its turn in it: WIS save DC " + sorcererDc(c) + " or " + (dread==="Fear" ? "frightened" : "charmed") + " until it ends · a success makes it immune for 24 hours";
+  }
+  if(id==="tides_of_chaos") return "Advantage on your next attack roll, ability check or saving throw";
+  if(id==="trance_of_order") return "Attack rolls against you can't have advantage · a d20 of 9 or lower counts as a 10 on your attacks, checks and saves";
+  if(id==="telepathic_speech"){
+    var mind = classLevelOf(c, "Sorcerer", "Aberrant Mind");
+    return "For " + mind + (mind===1 ? " minute" : " minutes") + ", within " + Math.max(1, mod(abilityScore(c, "cha"))) + " miles · you each need a language the other knows";
+  }
+  if(id==="revelation_in_flesh"){
+    var body = [].concat(c.effects && c.effects.revelation_in_flesh || []), speed = computeSpeed(c).value;
+    return body.map(function(b){ return b==="Sight" ? "See invisible creatures within 60 ft" : b==="Flight" ? "Fly " + speed + " ft and hover" : b==="Water" ? "Swim " + 2 * speed + " ft, breathe underwater" : b==="Pliable" ? "Through 1-inch gaps, 5 ft of movement escapes restraints or a grapple" : ""; }).filter(Boolean).join(" · ") || "One benefit for each sorcery point";
+  }
+  if(id==="otherworldly_wings") return "Fly 30 ft";
+  if(id==="umbral_form") return "Resistance to all damage but force and radiant · move through creatures and objects as difficult terrain · 5 force damage if you end your turn in an object";
+  if(id==="bastion_of_law") return bastionDice(c) + "d8 left";
+  if(id==="wind_soul_shared") return "Your flying speed is 30 ft · up to " + (3 + mod(abilityScore(c, "cha"))) + " creatures within 30 ft fly 30 ft";
+  if(id==="lunar_light") return "Bright light 10 ft, dim light 10 ft more · advantage on Investigation and Perception in it, for you and creatures you choose";
   if(id==="countercharm") return "Advantage on saves against being frightened or charmed, for you and friendly creatures within 30 ft";
   if(id==="defensive_flourish") return "+" + (Number(c.effects && c.effects.defensive_flourish)||0) + " AC";
   if(id==="mantle_of_majesty") return "Command as a bonus action each turn without a spell slot, DC " + bardDc(c) + " · creatures charmed by you fail the save";
@@ -348,6 +375,7 @@ function appendRolls(c, id, info){
     var halo = haloOfSporesDie(c);
     buttons.push(rollButton(makeDicesSvg(), "Halo 2d" + halo, function(){ performRoll(halo, 2, 0, "none", "Halo of Spores (necrotic, CON save)"); }));
   }
+  if(id==="bastion_of_law") info.appendChild(bastionPicker(c));
   if(id==="spreading_spores"){
     var cube = haloOfSporesDie(c);
     buttons.push(rollButton(makeDicesSvg(), "Spores 2d" + cube, function(){ performRoll(cube, 2, 0, "none", "Spreading Spores (necrotic, CON save)"); }));
