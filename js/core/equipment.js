@@ -16,7 +16,7 @@ import { conditionRolls } from "./conditions.js";
 import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver, weaponAttackEffect } from "./effects.js";
 import { sharpenBonus } from "./monk.js";
 import { sacredWeaponBonus, auraOfHate } from "./paladin.js";
-import { heavyRoundBonus } from "./gunslinger.js";
+import { heavyRoundBonus, marksmanCritMin, deadlyCriticalDice } from "./gunslinger.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
    (see applyClassChoices), so deleting the feature removes its bonus. */
@@ -478,7 +478,7 @@ export function critRange(c, item){
   // Invincible Conqueror: melee weapon attacks crit on 19 or 20.
   if(effectOn(c, "invincible_conqueror") && !(item && isRangedWeapon(item))) min = Math.min(min, 19);
   if(item && isFirearm(item) && classLevelOf(c, "Fighter", "Gunslinger") >= 18) min = Math.min(min, 19);
-  return min;
+  return Math.min(min, marksmanCritMin(c, item));
 }
 export function isFirearm(item){
   var d = weaponDataOf(item);
@@ -644,8 +644,10 @@ export function criticalDamage(c, hit){
   // A Gunslinger class's heavy round: one more die on a critical hit.
   // (rollAttack notes it before the shot spends the round: hit.heavyRound.)
   var heavy = (hit.heavyRound!=null ? hit.heavyRound : hit.item && heavyRoundBonus(c, hit.item)) ? 1 : 0;
-  var out = {qty: hit.qty * 2 + brutal + heavy, die: hit.die, bonus: hit.bonus, brutal: brutal};
+  var deadly = deadlyCriticalDice(c, hit.item);
+  var out = {qty: hit.qty * 2 + brutal + heavy + deadly, die: hit.die, bonus: hit.bonus, brutal: brutal};
   if(heavy) out.heavy = heavy;
+  if(deadly) out.deadly = deadly;
   return out;
 }
 /* Fanatical Focus (Path of the Zealot, barbarian 6): while raging, a

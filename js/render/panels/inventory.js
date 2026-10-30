@@ -5,7 +5,7 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -678,14 +678,15 @@ function deflectMissilesButton(c){
 }
 /* A ranger's or cleric's extra dice on a hit. */
 function rangerButtons(c, name, unarmed){
-  return rangerHitDice(c).concat(clericHitDice(c)).filter(function(d){ return !unarmed || d.unarmed; }).map(function(d){
-    var b = document.createElement("button");
-    b.type = "button"; b.className = "btn small inv-roll-btn inv-fury-btn";
-    b.innerHTML = makeDicesSvg() + d.text;
-    b.title = d.title;
-    b.addEventListener("click", function(){ performRoll(d.die, d.qty, 0, "none", name + ": " + d.label); });
-    return b;
-  });
+  return rangerHitDice(c).concat(clericHitDice(c)).filter(function(d){ return !unarmed || d.unarmed; }).map(function(d){ return hitDieButton(name, d); });
+}
+function hitDieButton(name, d){
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "btn small inv-roll-btn inv-fury-btn";
+  b.innerHTML = makeDicesSvg() + d.text;
+  b.title = d.title;
+  b.addEventListener("click", function(){ performRoll(d.die, d.qty, 0, "none", name + ": " + d.label); });
+  return b;
 }
 /* A Kensei's weapon: Kensei's Shot on a ranged one (monk 3), and Sharpen
    the Blade's bonus with a way to end it (monk 11). */
@@ -1346,6 +1347,7 @@ function renderWeaponCard(c, item, idx){
   kenseiButtons(c, item).forEach(function(b){ actions.appendChild(b); });
   if(!isRangedWeapon(item)) smiteButtons(c, item.name || "Weapon", true).forEach(function(b){ actions.appendChild(b); });
   rangerButtons(c, item.name || "Weapon", false).forEach(function(b){ actions.appendChild(b); });
+  gunslingerHitDice(c, item).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d)); });
   var sneakBtn = sneakAttackWeapon(item) && sneakButton(c, item.name || "Weapon");
   if(sneakBtn) actions.appendChild(sneakBtn);
   // Weapon Bond: a bonded weapon not in hand can be summoned to it.

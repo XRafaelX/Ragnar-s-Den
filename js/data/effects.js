@@ -152,6 +152,9 @@ export var TOGGLE_EFFECTS = [
   {id:"take_aim", name:"Take Aim", className:"Gunslinger", level:3, duration:"Until the end of your turn",
     startLabel:"Take aim", endLabel:"End turn",
     hint:"Bonus action. Only if you haven't moved this turn."},
+  {id:"predicted_critical", name:"Predicted Critical", className:"Gunslinger", subclass:"Marksman", level:14,
+    cost:{resource:"predicted_critical", amount:1}, duration:"Your next firearm attack", startLabel:"Predict",
+    hint:"Before you roll, only for an attack with advantage. The use is spent even if you miss."},
   // Tasha's Cauldron (p. 57), checked on 5etools' data 2026-10-29.
   {id:"natures_veil", name:"Nature's Veil", className:"Ranger", level:10, variant:"Nature's Veil",
     cost:{resource:"natures_veil", amount:1}, duration:"Until the start of your next turn",

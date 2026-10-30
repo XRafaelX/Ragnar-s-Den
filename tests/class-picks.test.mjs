@@ -70,10 +70,10 @@ test("profs data: real skills, tools, languages, abilities and weapon filters", 
   const all = everyProfs();
   assert.ok(all.length >= 30, "about thirty features give or ask for proficiencies, got " + all.length);
   for(const [where, def] of all){
-    for(const k of Object.keys(def)) assert.ok(["skills", "expertise", "languages", "help", "pick"].includes(k), where + ": unknown field " + k);
-    (def.skills || []).concat(def.expertise || []).forEach((s) => assert.ok(SKILL_NAMES.includes(s), where + ": skill " + s));
+    for(const k of Object.keys(def)) assert.ok(["skills", "expertise", "skillOrExpertise", "languages", "help", "pick"].includes(k), where + ": unknown field " + k);
+    (def.skills || []).concat(def.expertise || [], def.skillOrExpertise || []).forEach((s) => assert.ok(SKILL_NAMES.includes(s), where + ": skill " + s));
     (def.languages || []).forEach((l) => assert.ok(LANGUAGE_LIST.includes(l), where + ": language " + l));
-    assert.ok((def.skills || def.expertise || def.languages || def.pick || []).length, where + ": gives nothing");
+    assert.ok((def.skills || def.expertise || def.skillOrExpertise || def.languages || def.pick || []).length, where + ": gives nothing");
     for(const slot of def.pick || []){
       assert.ok(["skill", "expertise", "tool", "language", "save", "weapon", "skillOrLanguage", "skillOrTool", "spell", "choice"].includes(slot.kind), where + ": kind " + slot.kind);
       if(slot.kind === "choice"){

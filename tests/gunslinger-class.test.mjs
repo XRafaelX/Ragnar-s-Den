@@ -199,3 +199,57 @@ test("Master of the Barrel: any kind loads, paid for by any stack of the right w
   assert.ok(H.spendRound(c, pistol));
   assert.equal(c.inventory.length, 1);
 });
+
+/* ---- Phase 3: the Marksman ---- */
+import { entryGrants, applyClassPicks, revertClassPicks } from "../js/core/class-picks.js";
+
+function marksman(level, extra = {}){ return slinger(level, "Marksman", extra); }
+
+test("Expert Sniper: Perception, or expertise if the character already has it, undone cleanly", () => {
+  const grantOf = (c) => entryGrants(c.classes[0], false).find((g) => g.name === "Expert Sniper");
+  const fresh = marksman(1);
+  fresh.skillProfs = {};
+  applyClassPicks(fresh, fresh.classes[0], grantOf(fresh), []);
+  assert.deepEqual([fresh.skillProfs.Perception.prof, fresh.skillProfs.Perception.expertise], [true, false]);
+  const had = marksman(1);
+  had.skillProfs = { Perception: { prof: true, expertise: false } };
+  applyClassPicks(had, had.classes[0], grantOf(had), []);
+  assert.deepEqual([had.skillProfs.Perception.prof, had.skillProfs.Perception.expertise], [true, true]);
+  revertClassPicks(had, had.classes[0], grantOf(had).key);
+  assert.deepEqual([had.skillProfs.Perception.prof, had.skillProfs.Perception.expertise], [true, false], "the proficiency it found stays");
+});
+
+test("Marksman: critical range 19 from 3, 18 from 18, firearms only", () => {
+  const rifle = gun("Long Gun"), bow = { name: "Longbow", type: "weapon" };
+  assert.equal(H.critRange(marksman(2), rifle), 20);
+  assert.equal(H.critRange(marksman(3), rifle), 19);
+  assert.equal(H.critRange(marksman(17), rifle), 19);
+  assert.equal(H.critRange(marksman(18), rifle), 18);
+  assert.equal(H.critRange(marksman(18), bow), 20);
+  assert.equal(H.critRange(slinger(18, "Outlaw"), rifle), 20);
+});
+
+test("Deadly Critical: one more firearm die on a critical hit, from 18", () => {
+  const hit = { qty: 1, die: 12, bonus: 3, item: gun("Long Gun") };
+  assert.equal(H.criticalDamage(marksman(17), hit).qty, 2);
+  assert.equal(H.criticalDamage(marksman(18), hit).qty, 3);
+  assert.equal(H.criticalDamage(marksman(18), hit).deadly, 1);
+  // With a heavy round too.
+  assert.equal(H.criticalDamage(marksman(18), Object.assign({ heavyRound: true }, hit)).qty, 4);
+});
+
+test("Vital Points: 1d6 from 7, 2d6 from 18, firearms only", () => {
+  assert.deepEqual(H.gunslingerHitDice(marksman(6), gun("Pistol")), []);
+  assert.equal(H.gunslingerHitDice(marksman(7), gun("Pistol"))[0].text, "Vital Points +1d6");
+  assert.equal(H.gunslingerHitDice(marksman(18), gun("Pistol"))[0].text, "Vital Points +2d6");
+  assert.deepEqual(H.gunslingerHitDice(marksman(18), { name: "Longbow", type: "weapon" }), []);
+  assert.deepEqual(H.gunslingerHitDice(slinger(18, "Outlaw"), gun("Pistol")), []);
+});
+
+test("Marksman resources: Expert Sniper once, Predicted Critical half the proficiency bonus from 14", () => {
+  const res = (lv) => Object.fromEntries(H.characterResources(marksman(lv)).filter((r) => /expert_sniper|predicted_critical/.test(r.key)).map((r) => [r.key.split(":")[1], r.max]));
+  assert.deepEqual(res(1), { expert_sniper: 1 });
+  assert.deepEqual(res(14), { expert_sniper: 1, predicted_critical: 2 });
+  assert.deepEqual(res(17), { expert_sniper: 1, predicted_critical: 3 });
+  assert.ok(TOGGLE_EFFECTS.some((e) => e.id === "predicted_critical" && e.subclass === "Marksman" && e.level === 14 && e.cost.resource === "predicted_critical"));
+});

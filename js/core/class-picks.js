@@ -26,6 +26,8 @@ import { totalLevel } from "./basics.js";
    `multiclassProfs`, an option in js/data/class-options.js):
      skills      skills given outright (nothing if already proficient)
      expertise   skills whose proficiency bonus is doubled outright
+     skillOrExpertise  skills given outright, or expertise in one the
+                 character already has (Expert Sniper's Perception)
      languages   languages learned outright
      help        one plain line shown above the pickers
      pick        [slot]: the choices, each
@@ -555,6 +557,7 @@ export function applyClassPicks(c, cl, grant, slots){
     });
   });
   if(!c.skillProfs) c.skillProfs = {};
+  (def.skillOrExpertise||[]).forEach(function(sk){ (c.skillProfs[sk] && c.skillProfs[sk].prof ? expertise : skills).push(sk); });
   skills.concat(expertise).forEach(function(sk){
     var e = c.skillProfs[sk] || {prof: false, expertise: false};
     if(!e.prof){ e.prof = true; applied.skills.push(sk); }

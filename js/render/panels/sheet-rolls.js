@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, skillCheck, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
 import { useNextCheck } from "../../core/magic-items.js";
@@ -22,6 +22,11 @@ import { performRoll, logRoll } from "../../dice/dice.js";
 export function rollAttack(c, bonus, mode, label, hit){
   var aim = hasFocusedAim(c) || !!(hit && hit.item && magicArrows(c, hit.item)), gun = hit && hit.item && firearmStats(hit.item, c);
   if(gun && gun.reload) hit.item.shots = (Number(hit.item.shots)||0) + 1;
+  // Predicted Critical (Marksman 14): this firearm attack is the one.
+  if(gun && effectOn(c, "predicted_critical")){
+    hit.predicted = true;
+    endEffect(c, "predicted_critical");
+  }
   // A Gunslinger class gun fires its loaded round (noted first: the last
   // one unloads the gun).
   var round = gun && gun.set==="gunslinger" && loadedRound(c, hit.item);
@@ -200,7 +205,18 @@ function attackFollowUp(c, r, aim, hit){
   var gun = hit && hit.item && firearmStats(hit.item, c);
   if(gun && r && r.natural <= gun.misfire) return {lead: "Misfire! The attack misses and the " + (hit.item.name || "firearm") + " jams. " + (gun.set==="gunslinger" ? "Clear it on its card." : "Repair it on its card."), options: []};
   if(hit && r && r.natural >= (hit.critMin || 20)) return hit.noDamage ? {lead: "Critical hit! The round deals no damage.", options: []} : criticalHit(c, hit);
+  if(hit && r && hit.predicted && !hit.noDamage) return Object.assign(criticalHit(c, hit), {lead: "Predicted Critical: if it hits, it's a critical hit."});
   var opts = [];
+  // Expert Sniper (Marksman 1): the Perception bonus, once per long rest.
+  if(hit && resourceLeft(c, "Gunslinger:expert_sniper") > 0){
+    var sniper = skillCheck(c, "Perception").value;
+    opts.push({label: fmtMod(sniper) + " (Expert Sniper)", title: "Add your Perception bonus to this attack roll. Once per long rest.",
+      use: function(){
+        if(!spendResource(c, "Gunslinger:expert_sniper", 1)) return null;
+        save(); renderAll();
+        return {bonus: sniper, log: "Expert Sniper"};
+      }});
+  }
   // A roll with no card of its own to roll damage from (a caught missile).
   if(hit && hit.offerDamage) opts.push({label: "Hit? Damage " + hit.qty + "d" + hit.die + (hit.bonus ? (hit.bonus > 0 ? "+" : "") + hit.bonus : ""), title: "Roll the damage",
     use: function(){ performRoll(hit.die, hit.qty, hit.bonus, "none", hit.label + ": Damage"); return {silent: true}; }});
@@ -292,7 +308,7 @@ function criticalHit(c, hit){
   if(hit.melee && hasImprovedSmite(c) && hit.item) extra.push({label: "Improved Divine Smite 2d8", title: "On a critical hit, its die is doubled too",
     use: function(){ performRoll(8, 2, 0, "none", hit.label + ": Improved Divine Smite (critical)"); return {silent: true}; }});
   // The dice a ranger's or cleric's hit adds are doubled too.
-  rangerHitDice(c).concat(clericHitDice(c)).filter(function(d){ return hit.item || d.unarmed; }).forEach(function(d){
+  rangerHitDice(c).concat(clericHitDice(c), gunslingerHitDice(c, hit.item)).filter(function(d){ return hit.item || d.unarmed; }).forEach(function(d){
     extra.push({label: d.name + " " + 2 * d.qty + "d" + d.die, title: "On a critical hit, these dice are doubled too",
       use: function(){ performRoll(d.die, 2 * d.qty, 0, "none", hit.label + ": " + d.label + " (critical)"); return {silent: true}; }});
   });
@@ -303,7 +319,7 @@ function criticalHit(c, hit){
 }
 function critOption(c, hit, crit){
   return {label: "Roll " + crit.qty + "d" + crit.die + (crit.bonus ? (crit.bonus > 0 ? "+" : "") + crit.bonus : "") + " damage",
-      title: "Critical hit: the damage dice twice" + (crit.brutal ? ", plus " + crit.brutal + " more from Brutal Critical" : "") + (crit.heavy ? ", plus one more for the heavy round" : "") + ", then your bonus once",
+      title: "Critical hit: the damage dice twice" + (crit.brutal ? ", plus " + crit.brutal + " more from Brutal Critical" : "") + (crit.heavy ? ", plus one more for the heavy round" : "") + (crit.deadly ? ", plus one more from Deadly Critical" : "") + ", then your bonus once",
       use: function(){
         // Hemorrhaging Critical (gunslinger 18): half again at the end of the target's next turn.
         var bleed = hit.item && firearmStats(hit.item, c) && hemorrhagingCritical(c);

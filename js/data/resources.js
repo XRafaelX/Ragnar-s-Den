@@ -318,6 +318,15 @@ export var SUBCLASS_RESOURCES = {
         hint:"Cast Telekinesis without a slot. Make a weapon attack as a bonus action each turn you concentrate on it. More uses cost a Psionic Energy die."}
     ]
   },
+  "Gunslinger": {
+    "Marksman": [
+      {id:"expert_sniper", name:"Expert Sniper", level:1, max:always(1), reset:always("long"),
+        hint:"After you see an attack roll, add your Perception bonus to it. The dice tray offers it."},
+      {id:"predicted_critical", name:"Predicted Critical", level:14,
+        max:function(lv, m){ return Math.floor(m.pb / 2); }, reset:always("long"),
+        hint:"Before a firearm attack with advantage: a hit becomes a critical hit. Start it on Active effects."}
+    ]
+  },
   "Monk": {
     "Way of the Open Hand": [
       {id:"wholeness_of_body", name:"Wholeness of Body", level:6, max:always(1), reset:always("long"),

@@ -5,13 +5,13 @@
    (SUBCLASS_CASTERS in ../spells-known.js). */
 export var GUNSLINGER_SUBCLASSES = [
   {name:"Marksman", blurb:"A calm, precise shot who finds the weak spot and turns hits into critical hits.", features:{
-    1:[{name:"Expert Sniper", text:"You gain proficiency in Perception, or expertise if you already have it (double your proficiency bonus). Once per long rest, after you see an attack roll, you can add your Perception bonus to it."}],
+    1:[{name:"Expert Sniper", profs:{skillOrExpertise:["Perception"]}, text:"You gain proficiency in Perception, or expertise if you already have it (double your proficiency bonus). Once per long rest, after you see an attack roll, you can add your Perception bonus to it. The dice tray offers it."}],
     3:[{name:"Improved Critical", text:"Your firearm attacks score a critical hit on a roll of 19 or 20."}],
-    7:[{name:"Vital Points", text:"Once on each of your turns, your firearm attacks deal an extra 1d6 damage to a creature that is missing any of its hit points."}],
-    14:[{name:"Predicted Critical", text:"When you make a firearm attack roll with advantage, you can decide before rolling to turn a hit into a critical hit. The use is spent whether you hit or not. You can do this a number of times equal to half your proficiency bonus (rounded down), and you get them back on a long rest."}],
+    7:[{name:"Vital Points", text:"Once on each of your turns, your firearm attacks deal an extra 1d6 damage to a creature that is missing any of its hit points. Roll it from the firearm's card."}],
+    14:[{name:"Predicted Critical", text:"When you make a firearm attack roll with advantage, you can decide before rolling to turn a hit into a critical hit. The use is spent whether you hit or not. You can do this a number of times equal to half your proficiency bonus (rounded down), and you get them back on a long rest. Start it on the Active effects card."}],
     18:[
       {name:"Deadly Critical", replaces:"Improved Critical", text:"Your firearm attacks score a critical hit on a roll of 18, 19 or 20. On a critical hit, roll one of the firearm's damage dice one more time and add it to the extra damage."},
-      {name:"Vital Points", replaces:"Vital Points", text:"Once on each of your turns, your firearm attacks deal an extra 2d6 damage to a creature that is missing any of its hit points."}
+      {name:"Vital Points", replaces:"Vital Points", text:"Once on each of your turns, your firearm attacks deal an extra 2d6 damage to a creature that is missing any of its hit points. Roll it from the firearm's card."}
     ]
   }},
   {name:"Outlaw", blurb:"A dirty fighter who settles things up close with quick draws, tricks and a hard stare.", features:{

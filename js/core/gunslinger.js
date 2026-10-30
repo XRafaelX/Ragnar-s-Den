@@ -60,3 +60,28 @@ export function spendRound(c, item){
   if(r.kind==="spell" || !loadedStack(c, item)) delete item.round;
   return true;
 }
+
+/* ---- Marksman (the subclass's firearm features) ---- */
+function isFirearmItem(item){
+  var d = weaponDataOf(item);
+  return !!(item && item.type==="weapon" && d && d.category==="firearm");
+}
+/* Improved Critical (3) and Deadly Critical (18): a firearm's critical
+   range, 20 without them. */
+export function marksmanCritMin(c, item){
+  var lv = isFirearmItem(item) ? classLevelOf(c, "Gunslinger", "Marksman") : 0;
+  return lv >= 18 ? 18 : lv >= 3 ? 19 : 20;
+}
+/* Deadly Critical (18): one more of the firearm's dice on a critical hit. */
+export function deadlyCriticalDice(c, item){
+  return isFirearmItem(item) && classLevelOf(c, "Gunslinger", "Marksman") >= 18 ? 1 : 0;
+}
+/* The extra dice a hit with this firearm adds, shaped like rangerHitDice:
+   Vital Points (7), 1d6 and 2d6 from 18. */
+export function gunslingerHitDice(c, item){
+  var lv = isFirearmItem(item) ? classLevelOf(c, "Gunslinger", "Marksman") : 0;
+  if(lv < 7) return [];
+  var qty = lv >= 18 ? 2 : 1;
+  return [{id: "vital", name: "Vital Points", text: "Vital Points +" + qty + "d6", qty: qty, die: 6, label: "Vital Points",
+    title: "Once on each of your turns, against a creature that is missing any hit points"}];
+}
