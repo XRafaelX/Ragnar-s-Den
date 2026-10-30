@@ -3,7 +3,8 @@
    Intervention and Blessing of the Forge (checked against the Player's
    Handbook, Dungeon Master's Guide, Sword Coast Adventurer's Guide,
    Xanathar's Guide and Tasha's Cauldron on 5etools' data 2026-10-30; the
-   Fate Domain isn't in that data and keeps its text as it was).
+   Fate Domain against Unearthed Arcana: Wonders of the Multiverse, the
+   same day).
 
    A Channel Divinity action has the same shape as a paladin's
    (js/core/paladin.js), with `pool` naming the cleric's uses. */
@@ -44,6 +45,11 @@ export function clericHitDice(c){
 /* Guided Strike's pool for this character (War Domain 2), "" without it. */
 export function warGuidedStrike(c){
   return classLevelOf(c, "Cleric", "War Domain") >= 2 && resourceLeft(c, CHANNEL) > 0 ? CHANNEL : "";
+}
+/* Insightful Striking's d6 is waiting for your next attack roll (Fate
+   Domain 6). */
+export function insightfulAttack(c){
+  return !!(c.effects && c.effects.insightful_striking==="Your next attack roll");
 }
 /* The healing a Twilight Sanctuary gives at the end of a turn. */
 export function sanctuaryBonus(c){
@@ -132,6 +138,6 @@ export function clericChannels(c){
     out.push(act("Arcane Abjuration", "An action: one celestial, elemental, fey or fiend within 30 feet that can see or hear you makes a WIS save (DC " + dc + ")" + turned + (banish ? " Off its home plane and CR " + banish + " or lower, it's banished for 1 minute instead." : ""), {log: saveLog("WIS")}));
   }
   if(sub==="Grave Domain") out.push(act("Path to the Grave", "An action: curse a creature you can see within 30 feet until the end of your next turn. The next hit on it by you or an ally deals double damage.", {log: "The next hit on that creature deals double damage."}));
-  if(sub==="Fate Domain") out.push(act("Strands of Fate", "A bonus action, with your concentration for up to 1 minute: your reaction gives another creature's attack roll or ability check advantage or disadvantage.", {log: "Up to 1 minute, with your concentration."}));
+  if(sub==="Fate Domain") out.push(act("Strands of Fate", "A bonus action, with your concentration for up to 1 minute: your reaction gives another creature's attack roll or ability check advantage or disadvantage.", {effect: "strands_of_fate"}));
   return out;
 }

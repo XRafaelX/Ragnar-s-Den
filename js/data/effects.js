@@ -110,6 +110,15 @@ export var TOGGLE_EFFECTS = [
     hint:"An action. You can dismiss it with another action."},
   {id:"emboldening_bond", name:"Emboldening Bond", className:"Cleric", subclass:"Peace Domain", level:1, cost:{resource:"emboldening_bond", amount:1}, duration:"10 minutes",
     startLabel:"Bond", hint:"An action. The d4 is offered after your rolls, once per turn."},
+  // Fate Domain (Unearthed Arcana: Wonders of the Multiverse, 2022, pp. 2
+  // and 3), checked against the PDF 2026-10-30.
+  {id:"ties_that_bind", name:"Ties That Bind", className:"Cleric", subclass:"Fate Domain", level:1, cost:{resource:"ties_that_bind", amount:1}, duration:"1 hour", staysUp:true,
+    startLabel:"Bind", hint:"An action, touching a creature or object. To bind something else, end this and bind again."},
+  {id:"strands_of_fate", name:"Strands of Fate", className:"Cleric", subclass:"Fate Domain", level:2, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 minute",
+    hint:"Needs your concentration, as a spell does."},
+  {id:"insightful_striking", name:"Insightful Striking", className:"Cleric", subclass:"Fate Domain", level:6, cost:{resource:"insightful_striking", amount:1}, duration:"Until the end of your next turn",
+    choose:{placeholder:"Choose one...", options:["Your next attack roll", "Its next saving throw"]},
+    hint:"A bonus action, on a creature you can see within 30 ft."},
   // Paladin oaths (Player's Handbook pp. 85 to 87, Dungeon Master's Guide
   // p. 97, Sword Coast Adventurer's Guide p. 132, Xanathar's Guide pp. 37
   // and 38, Tasha's Cauldron pp. 53 and 54), checked on 5etools' data

@@ -113,12 +113,15 @@ export function healingNote(c, name){
 }
 /* What a druid's circle adds to other spells, for their cards: Enhanced
    Bond's d8 on fire damage, and what Mighty Summoner and Foul Conjuration
-   do to the beasts and fey a spell brings. */
+   do to the beasts and fey a spell brings. And Omens and Portents (Fate
+   Domain 1): once its free Augury is used, until a long rest. */
+var OMENS_SPELLS = ["Augury", "Commune", "Divination"];
 var SUMMON_SPELLS = ["Conjure Animals", "Conjure Woodland Beings", "Conjure Fey", "Summon Beast", "Summon Fey", "Find Familiar", "Find Steed", "Find Greater Steed"];
 export function circleSpellNote(c, name){
   var spell = catalogSpellName((name||"").trim()), d = SPELL_DATA[spell], notes = [];
   if(!d) return "";
   if(hasEnhancedBond(c) && /\bfire\b[^.]*damage/i.test(d.summary)) notes.push("Enhanced Bond: add a d8 to one damage roll.");
+  if(OMENS_SPELLS.indexOf(spell)!==-1 && classLevelOf(c, "Cleric", "Fate Domain") >= 1 && (c.resourcesUsed||{})["Cleric:omens_and_portents"] > 0) notes.push("Omens and Portents: 25 percent less chance of no answer or a random reading, until your long rest.");
   if(SUMMON_SPELLS.indexOf(spell)!==-1){
     if(classLevelOf(c, "Druid", "Circle of the Shepherd") >= 6) notes.push("Mighty Summoner: beasts and fey it brings get 2 extra hit points per Hit Die, and their natural weapons count as magical.");
     if(classLevelOf(c, "Druid", "Circle of the Blighted") >= 10) notes.push("Foul Conjuration: beasts and fey it brings are immune to necrotic and poison damage and to being poisoned. At 0 hit points they explode, CON save DC " + druidDc(c) + ".");

@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
+import { druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -207,6 +207,13 @@ function effectSummary(c, id){
   if(id==="steps_of_night") return "Fly " + computeSpeed(c).value + " ft";
   if(id==="corona_of_light") return "Bright light 60 ft · enemies in it have disadvantage on saves against spells that deal fire or radiant damage";
   if(id==="emboldening_bond") return "A d4 on attack rolls, ability checks and saves within " + (classLevelOf(c, "Cleric", "Peace Domain") >= 17 ? 60 : 30) + " ft of a bonded creature, once per turn";
+  if(id==="ties_that_bind") return "Sense its direction and movement while on your plane · unwilling: WIS save DC " + clericDc(c) + " · once per turn, +1d6 when a spell with a slot damages or heals it";
+  if(id==="strands_of_fate") return "Your reaction: advantage or disadvantage on an attack roll or ability check by another creature you can see";
+  if(id==="insightful_striking"){
+    var glimpse = c.effects && c.effects.insightful_striking;
+    return !glimpse ? "+1d6 on your next attack roll against it, or -1d6 on its next save against your spell"
+      : insightfulAttack(c) ? "+1d6 on your next attack roll against it, offered after the roll" : "It subtracts 1d6 from its next save against a spell you cast";
+  }
   if(id==="favored_foe") return "+1d" + favoredFoeDie(c) + " on the first hit each turn against it, on your weapon's card";
   if(id==="primeval_awareness"){
     var mins = Number(c.effects && c.effects.primeval_awareness)||0;
@@ -311,6 +318,12 @@ function appendRolls(c, id, info){
       buttons.push(ease);
     });
   }
+  if(id==="ties_that_bind") buttons.push(rollButton(makeDicesSvg(), "Extra 1d6", function(){ performRoll(6, 1, 0, "none", "Ties That Bind: extra damage or healing"); }));
+  if(id==="insightful_striking" && !insightfulAttack(c)) buttons.push(rollButton(makeDicesSvg(), "Its save -1d6", function(){
+    performRoll(6, 1, 0, "none", "Insightful Striking: subtract from its saving throw");
+    endEffect(c, "insightful_striking");
+    save(); renderAll();
+  }));
   if(id==="elder_champion"){
     var regain = rollButton("", "Regain 10 HP", function(){
       c.hp.current = Math.min(maxHp(c), (Number(c.hp.current)||0) + 10);

@@ -1,13 +1,13 @@
 /* Class automation Phase 7, the Cleric (2026-10-30): every feature checked
-   against the books on 5etools' data (the Fate Domain isn't in it and keeps
-   its text), and what the sheet now does with the ones that were text
+   against the books on 5etools' data (the Fate Domain against Unearthed
+   Arcana: Wonders of the Multiverse), and what the sheet now does with the ones that were text
    only: Divine Strike, the Channel Divinity list, Divine Intervention,
    Blessing of the Forge, the domains' effects and the notes on healing
    spells. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as H from "../js/core/helpers.js";
-import { healingNote } from "../js/core/spell-scaling.js";
+import { healingNote, circleSpellNote } from "../js/core/spell-scaling.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
 import { CLASSES_INFO } from "../js/data/classes.js";
 import { SUBCLASSES } from "../js/data/progression.js";
@@ -260,4 +260,69 @@ test("War Caster goes on the saves card, for CON saves", () => {
   assert.deepEqual(H.situationalSaveAdvantages(c, "con").map((a) => a.name), ["War Caster"]);
   assert.deepEqual(H.situationalSaveAdvantages(c, "wis"), []);
   assert.equal(H.saveRollMode(c, "con").mode, "none", "only for concentration, so not on every CON save");
+});
+
+/* The Fate Domain, against Unearthed Arcana: Wonders of the Multiverse
+   (2022), pages 2 and 3. */
+test("the Fate Domain, as the playtest prints it", () => {
+  const has = (lv, name) => feature(cleric("Fate Domain", lv), name);
+  const domain = (lv) => H.featureSpells(cleric("Fate Domain", lv)).filter((s) => s.feature === "Domain Spells").map((s) => s.name);
+  assert.deepEqual(domain(1), ["Dissonant Whispers", "Heroism"]);
+  assert.deepEqual(domain(9), ["Dissonant Whispers", "Heroism", "See Invisibility", "Warding Bond", "Beacon of Hope", "Clairvoyance", "Death Ward", "Divination", "Commune", "Geas"]);
+  for(const [lv, name] of [[1, "Omens and Portents"], [1, "Ties That Bind"], [6, "Insightful Striking"], [8, "Potent Spellcasting"], [17, "Visions of the Future"]]){
+    assert.ok(has(lv, name), name + " at " + lv);
+    if(lv > 1) assert.ok(!has(lv - 1, name), name + " not before");
+  }
+  const c = cleric("Fate Domain", 9);
+  assert.equal(resource(c, "Cleric:ties_that_bind").max, H.profBonus(c));
+  assert.equal(resource(c, "Cleric:insightful_striking").max, H.profBonus(c));
+  assert.equal(resource(c, "Cleric:omens_and_portents").max, 1);
+  assert.equal(resource(cleric("Fate Domain", 17), "Cleric:visions_of_the_future").max, 1);
+});
+
+test("Strands of Fate: a Channel Divinity that stays up, and falling ends it", () => {
+  const c = cleric("Fate Domain", 2);
+  const a = action(c, "Strands of Fate");
+  assert.equal(a.effect, "strands_of_fate");
+  assert.ok(H.useChannelAction(c, a));
+  assert.ok(H.effectOn(c, "strands_of_fate"));
+  assert.equal(channel(c), 0);
+  H.endAllEffects(c, true);
+  assert.ok(!H.effectOn(c, "strands_of_fate"), "concentration doesn't outlast you");
+});
+
+test("Ties That Bind: spends a use, outlasts your falling, a rest ends it", () => {
+  const c = cleric("Fate Domain", 1);
+  assert.ok(H.startEffect(c, "ties_that_bind"));
+  assert.equal(H.resourceLeft(c, "Cleric:ties_that_bind"), 1);
+  H.endAllEffects(c, true);
+  assert.ok(H.effectOn(c, "ties_that_bind"), "nothing in the feature ends it at 0 hit points");
+  H.endAllEffects(c);
+  assert.ok(!H.effectOn(c, "ties_that_bind"));
+  assert.ok(H.startEffect(c, "ties_that_bind"));
+  H.endEffect(c, "ties_that_bind");
+  assert.equal(H.startEffect(c, "ties_that_bind"), false, "no uses left");
+});
+
+test("Insightful Striking: from 6th level, one choice, and only the attack roll waits for an attack", () => {
+  assert.equal(H.startEffect(cleric("Fate Domain", 5), "insightful_striking", "Your next attack roll"), false);
+  const c = cleric("Fate Domain", 6);
+  assert.equal(H.insightfulAttack(c), false);
+  assert.ok(H.startEffect(c, "insightful_striking", "Your next attack roll"));
+  assert.equal(H.resourceLeft(c, "Cleric:insightful_striking"), 2);
+  assert.equal(H.insightfulAttack(c), true);
+  H.endEffect(c, "insightful_striking");
+  assert.ok(H.startEffect(c, "insightful_striking", "Its next saving throw"));
+  assert.equal(H.insightfulAttack(c), false);
+});
+
+test("Omens and Portents: the 25 percent shows once the free Augury is used, on the spells the book names", () => {
+  const c = cleric("Fate Domain", 9);
+  assert.equal(circleSpellNote(c, "Augury"), "");
+  c.resourcesUsed["Cleric:omens_and_portents"] = 1;
+  for(const s of ["Augury", "Commune", "Divination"]) assert.match(circleSpellNote(c, s), /^Omens and Portents: 25 percent less chance/, s);
+  assert.equal(circleSpellNote(c, "Bless"), "");
+  const life = cleric("Life Domain", 9);
+  life.resourcesUsed["Cleric:omens_and_portents"] = 1;
+  assert.equal(circleSpellNote(life, "Augury"), "", "another domain doesn't get it");
 });

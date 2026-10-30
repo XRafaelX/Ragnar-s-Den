@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
 import { useNextCheck } from "../../core/magic-items.js";
@@ -282,6 +282,14 @@ function attackFollowUp(c, r, aim, hit){
   // Emboldening Bond (Peace Domain 1): a d4, once per turn.
   if(effectOn(c, "emboldening_bond")) opts.push({label: "+1d4 (Emboldening Bond)", title: "Once per turn, while a bonded creature is within range",
     use: function(){ var got = Math.floor(Math.random() * 4) + 1; return {bonus: got, log: "Emboldening Bond (rolled " + got + ")"}; }});
+  // Insightful Striking (Fate Domain 6): a d6 on the next attack roll against the creature chosen.
+  if(insightfulAttack(c)) opts.push({label: "+1d6 (Insightful Striking)", title: "On your next attack roll against the creature you chose",
+    use: function(){
+      var got = Math.floor(Math.random() * 6) + 1;
+      endEffect(c, "insightful_striking");
+      save(); renderAll();
+      return {bonus: got, log: "Insightful Striking (rolled " + got + ")"};
+    }});
   // Foe Slayer (ranger 20): +WIS against a favored enemy, once on each of your turns.
   var slayer = foeSlayer(c);
   if(slayer > 0 && hit){
