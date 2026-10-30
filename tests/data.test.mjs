@@ -14,7 +14,7 @@ import { MONSTER_GROUPS, MONSTER_DATA } from "../js/data/monsters.js";
 
 const CLASSES = Object.keys(CLASS_PROGRESSION);
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
-const FEATURE_KEYS = new Set(["name", "text", "replaces", "saveDc", "skillBonus", "skillDouble", "resist", "saveNote", "sense", "chip", "immune", "conditionImmune", "attuneLimit", "speed", "speedWhen", "initiative", "acHeavyArmor", "grants",
+const FEATURE_KEYS = new Set(["name", "text", "replaces", "saveDc", "rollButton", "skillBonus", "skillDouble", "resist", "saveNote", "sense", "chip", "immune", "conditionImmune", "attuneLimit", "speed", "speedWhen", "initiative", "acHeavyArmor", "grants",
   "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellChoice", "speeds", "darkvision", "extraSpellList", "halfProficiency", "styleChoice", "profs", "advantage",
   "spellLabel", "spellTip", "spellAbility"]);
 const LONG_DASH = /[–—]/;

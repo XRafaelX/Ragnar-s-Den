@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, emptyBodyResistance, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -10,6 +10,7 @@ import { restoreCompanions, wildCompanionHours, summonWildCompanion } from "../.
 import { showActionToast } from "../../ui/toast.js";
 import { WILD_SURGES } from "../../data/effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
+import { channelPicker, layOnHandsRow } from "./paladin.js";
 import { useNextCheck, magicItemsOnLongRest, endTimedBoons, coinResistances } from "../../core/magic-items.js";
 import { infusionResistances } from "../../core/infusion-effects.js";
 import { renderDeathSaves } from "./death-saves.js";
@@ -195,13 +196,33 @@ export function renderVitalsPanel(c){
 
   hpBox.appendChild(hpActionsRow);
 
+  // Protective Spirit (Oath of Redemption 15): at the end of your turn,
+  // below half your hit points.
+  var spirit = protectiveSpirit(c, hpMax);
+  if(spirit){
+    var spiritBtn = document.createElement("button");
+    spiritBtn.type = "button"; spiritBtn.className = "btn small inv-roll-btn hp-spirit-btn";
+    spiritBtn.innerHTML = makeDiceSvg();
+    spiritBtn.appendChild(document.createTextNode("Protective Spirit 1d6+" + spirit.bonus));
+    spiritBtn.title = "At the end of your turn in combat, below half your hit points and not incapacitated";
+    spiritBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var roll = Math.floor(Math.random()*6)+1, healed = roll + spirit.bonus;
+      c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, hpMax);
+      logRoll("Protective Spirit (1d6+" + spirit.bonus + ")", roll + " +" + spirit.bonus + " = " + healed + " HP healed");
+      save(); renderSidebar(); renderAll();
+      flashHpNum("hp-heal");
+    });
+    hpBox.appendChild(spiritBtn);
+  }
+
   // Damage resistances and immunities from the race (Mountain Born, Poison
   // Immunity) and items (Resistant Armor, Duality), only when there are
   // any; where each comes from is in the tooltip. A type the character is
   // immune to isn't listed as resisted too.
   var wards = raceWards(c);
   var immuneTypes = wards.immune.map(function(r){ return r.type; });
-  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c), featureResistances(c), emptyBodyResistance(c))
+  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c), featureResistances(c), effectResistances(c))
     .filter(function(r){ return immuneTypes.indexOf(r.type.toLowerCase())===-1; });
   var resistAll = resistsAllDamage(c); // Petrified
   if(resistAll) resist = [{type: "all damage", source: resistAll}];
@@ -968,7 +989,7 @@ function kiPicker(c){
   });
   function find(id){ return actions.find(function(a){ return a.id===id; }); }
   var wrap = document.createElement("div");
-  wrap.className = "ki-pick";
+  wrap.className = "res-pick";
   wrap.appendChild(themedPicker({key: "ki:spend", groups: groups, value: "", placeholder: "Spend ki on...", ariaLabel: "Spend ki on", sheet: true,
     reasonFor: function(id){ return kiActionProblem(c, find(id)); },
     detailFor: function(id){ return find(id).detail; },
@@ -1252,6 +1273,8 @@ function renderResourcesCard(c, resources){
     }
     // Everything ki can pay for, in one list.
     if(r.key==="Monk:ki") info.appendChild(kiPicker(c));
+    if(r.key==="Paladin:channel_divinity") info.appendChild(channelPicker(c));
+    if(r.key==="Paladin:lay_on_hands") info.appendChild(layOnHandsRow(c));
     // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
     // plus the proficiency bonus of healing.
     var qh = r.key==="Monk:ki" && quickenedHealing(c);

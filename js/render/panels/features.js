@@ -1,5 +1,6 @@
 import { save } from "../../core/state.js";
-import { getAllCharacterFeatures, unseenUnlockCount, maxHp } from "../../core/helpers.js";
+import { getAllCharacterFeatures, unseenUnlockCount, maxHp, fmtMod } from "../../core/helpers.js";
+import { performRoll } from "../../dice/dice.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { openFeatEditor } from "./feat-picker.js";
 import { openCompendium } from "../compendium.js";
@@ -238,6 +239,16 @@ export function renderFeaturesPanel(c){
       markIfNew(card, titleGrp, item.id);
 
       top.appendChild(titleGrp);
+
+      // A roll with no other home (Vigilant Rebuke).
+      if(item.roll){
+        var fr = item.roll, frBtn = document.createElement("button");
+        frBtn.type = "button"; frBtn.className = "btn small inv-roll-btn ff-roll-btn";
+        frBtn.textContent = fr.qty + "d" + fr.die + fmtMod(fr.bonus);
+        frBtn.title = "Roll " + fr.label;
+        frBtn.addEventListener("click", function(){ performRoll(fr.die, fr.qty, fr.bonus, "none", fr.label); });
+        titleGrp.appendChild(frBtn);
+      }
 
       // Edit and Remove live in the details sheet the card opens.
       var sheetActions = [];

@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod } from "../../core/helpers.js";
+import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
@@ -13,10 +13,12 @@ import { rollAttack } from "./sheet-rolls.js";
    where they apply (AC, speed, skills, saves, senses, weapon damage), so
    the card itself only says what's on and rolls what has no other home. */
 export function renderEffectsCard(c){
-  var effects = characterEffects(c);
+  // (One started from the Channel Divinity list only shows while it's on.)
+  var shown = function(){ return characterEffects(c).filter(function(e){ return e.on || !e.def.channel; }); };
+  var effects = shown();
   if(!effects.length) return null;
   // Symbiotic Entity ends with its temporary HP; an undone level takes the feature away.
-  if(pruneEffects(c)){ save(); effects = characterEffects(c); }
+  if(pruneEffects(c)){ save(); effects = shown(); }
 
   var card = makeCard("Active effects");
   var list = document.createElement("div");
@@ -90,6 +92,7 @@ function effectRow(c, e){
 }
 
 function costText(e){
+  if(e.slot) return ordinal(e.slot) + "-level slot";
   if(!e.def.cost || (e.resource && e.resource.max===Infinity)) return "Free";
   var n = e.def.cost.amount;
   if(e.def.cost.resource==="ki") return n + " ki";
@@ -122,6 +125,22 @@ function effectSummary(c, id){
   }
   if(id==="raven_queen_resistance") return "Resistance to all damage";
   if(id==="sunlight") return "Disadvantage on attack rolls and Perception checks";
+  if(id==="sacred_weapon"){
+    var sacred = (c.inventory||[]).find(function(i){ return i.id===c.sacredWeapon; });
+    return "+" + Math.max(1, mod(abilityScore(c, "cha"))) + " to attack rolls with " + (sacred ? sacred.name || "your weapon" : "your weapon") + " · it's magical · bright light 20 ft";
+  }
+  if(id==="vow_of_enmity") return "Advantage on attack rolls against that creature" + (classLevelOf(c, "Paladin", "Oath of Vengeance") >= 15 ? " · Soul of Vengeance: when it attacks, your reaction is a melee weapon attack against it" : "");
+  if(id==="emissary_of_peace") return "+5 to Persuasion checks";
+  if(id==="peerless_athlete") return "Advantage on Athletics and Acrobatics · carry twice as much · +10 ft on long and high jumps";
+  if(id==="watchers_will") return "Advantage on INT, WIS and CHA saves, for you and the creatures you chose";
+  if(id==="holy_nimbus") return "10 radiant to each enemy that starts its turn in the bright light · advantage on saves against spells cast by fiends or undead";
+  if(id==="elder_champion") return "1-action paladin spells as a bonus action · enemies within 10 ft have disadvantage on saves against your paladin spells and Channel Divinity";
+  if(id==="avenging_angel") return "Fly 60 ft · 30-ft aura: WIS save DC " + paladinDc(c) + " or frightened of you, and attacks against it have advantage";
+  if(id==="invincible_conqueror") return "Resistance to all damage · one more attack with the Attack action · melee attacks crit on 19 or 20";
+  if(id==="dread_lord") return "30-ft aura of gloom · creatures that rely on sight have disadvantage on attacks against you and those you choose";
+  if(id==="living_legend") return "Advantage on CHA checks · one miss on each of your turns hits · reroll a failed save";
+  if(id==="exalted_champion") return "Resistance to nonmagical bludgeoning, piercing and slashing · advantage on WIS saves · allies within 30 ft: advantage on WIS saves and death saves";
+  if(id==="mortal_bulwark") return "Truesight 120 ft · advantage on attacks against aberrations, celestials, elementals, fey and fiends · on a hit, CHA save DC " + paladinDc(c) + " or banished";
   if(id==="empty_body") return "Invisible · advantage on attack rolls · resistance to all damage but force";
   if(id==="shadow_step") return "Advantage on your first melee attack this turn";
   if(id==="cloak_of_shadows") return "Invisible · advantage on attack rolls";
@@ -168,6 +187,21 @@ function appendRolls(c, id, info){
     });
     de.title = "Reaction, when you take acid, cold, fire, force, lightning or thunder damage";
     buttons.push(de);
+  }
+  if(id==="elder_champion"){
+    var regain = rollButton("", "Regain 10 HP", function(){
+      c.hp.current = Math.min(maxHp(c), (Number(c.hp.current)||0) + 10);
+      logRoll("Elder Champion", "Regained 10 HP at the start of your turn.");
+      save(); renderAll();
+    });
+    regain.title = "At the start of each of your turns";
+    regain.disabled = (Number(c.hp.current)||0) >= maxHp(c);
+    buttons.push(regain);
+  }
+  if(id==="dread_lord"){
+    var dreadCha = mod(abilityScore(c, "cha")), dreadAtk = profBonus(c) + dreadCha;
+    buttons.push(rollButton(makeDicesSvg(), "Aura 4d10 psychic", function(){ performRoll(10, 4, 0, "none", "Dread Lord: a frightened enemy starts its turn in the aura (Psychic)"); }));
+    buttons.push(rollButton(makeDiceSvg(), "Shadows " + fmtMod(dreadAtk), function(){ rollAttack(c, dreadAtk, "none", "Dread Lord: shadows attack", {qty: 3, die: 10, bonus: dreadCha, label: "Dread Lord shadows (Necrotic)", offerDamage: true}); }));
   }
   if(id==="symbiotic_entity"){
     var halo = haloOfSporesDie(c);

@@ -56,6 +56,8 @@ export function skillCheck(c, skill, passive){
   var entry = c.skillProfs && c.skillProfs[skill] || {};
   var pb = profBonus(c);
   var value = ab.mod, breakdown = ab.label + " (" + fmtMod(ab.mod) + ")";
+  // Emissary of Peace: +5 to Persuasion for 10 minutes.
+  var emissary = skill==="Persuasion" && effectOn(c, "emissary_of_peace") ? 5 : 0;
   // Features that double the proficiency bonus for this skill (Royal Envoy's Persuasion).
   var doubled = featureSkillFlags(c, "skillDouble").find(function(x){ return x.value===skill; });
   if(entry.prof){
@@ -66,6 +68,7 @@ export function skillCheck(c, skill, passive){
     var half = halfProficiency(c, key);
     if(half){ value += half.value; breakdown += " + " + half.name + " (" + fmtMod(half.value) + ")"; }
   }
+  if(emissary){ value += emissary; breakdown += " + Emissary of Peace (+5)"; }
   // Features that add an ability modifier to this skill (Elegant Courtier: WIS to Persuasion).
   featureSkillFlags(c, "skillBonus").forEach(function(x){
     if(x.value.skill!==skill) return;
@@ -128,6 +131,7 @@ export function skillRollMode(c, skill, passive){
   if(!passive) list.push(nextCheckAdvantage(c));
   if(skill==="Stealth") list.push(stealthCheck(c));
   if(skill==="Acrobatics" && effectOn(c, "bladesong")) list.push({mode: "adv", reason: "Bladesong"});
+  if((skill==="Athletics" || skill==="Acrobatics") && effectOn(c, "peerless_athlete")) list.push({mode: "adv", reason: "Peerless Athlete"});
   if((skill==="Insight" || skill==="Intimidation") && effectOn(c, "astral_visage")) list.push({mode: "adv", reason: "Wisdom of the Spirit (Visage of the Astral Self)"});
   if(skill==="Perception") list = list.concat(effectRolls(c, "perception"));
   // Elegant Maneuver (Swashbuckler 13): the next Acrobatics or Athletics check.
@@ -160,6 +164,9 @@ export function advantagesFor(c){
     out.push({name: "Soul trinket", on: "save", abilities: ["con"]});
   // Giant's Might (Rune Knight): advantage on Strength checks and saves while it's on.
   if(effectOn(c, "giants_might")) out.push({name: "Giant's Might", on: "save", abilities: ["str"]}, {name: "Giant's Might", on: "check", abilities: ["str"]});
+  if(effectOn(c, "watchers_will")) out.push({name: "Watcher's Will", on: "save", abilities: ["int", "wis", "cha"]});
+  if(effectOn(c, "exalted_champion")) out.push({name: "Exalted Champion", on: "save", abilities: ["wis"]});
+  if(effectOn(c, "living_legend")) out.push({name: "Living Legend", on: "check", abilities: ["cha"]});
   return out;
 }
 function covers(a, on, key){ return a.on===on && (on==="initiative" || a.abilities==="all" || a.abilities.indexOf(key)!==-1); }

@@ -15,6 +15,7 @@ import { abilityScore, abilityScores } from "./ability-scores.js";
 import { conditionRolls } from "./conditions.js";
 import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver, weaponAttackEffect } from "./effects.js";
 import { sharpenBonus } from "./monk.js";
+import { sacredWeaponBonus, auraOfHate } from "./paladin.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
    (see applyClassChoices), so deleting the feature removes its bonus. */
@@ -200,7 +201,7 @@ export function unarmedStrike(c){
   }
   // Ki-Empowered Strikes (monk 6): they count as magical.
   if(monk && classLevelOf(c, "Monk") >= 6) parts.push("Magic");
-  var bonus = abilityMod + holsterDamageBonus(c);
+  var bonus = abilityMod + holsterDamageBonus(c) + auraOfHate(c);
   // Rage: melee weapon attacks with STR, not in heavy armor.
   var barb = barbarianClassEntry(c);
   var heavy = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
@@ -309,7 +310,7 @@ export function chosenWeaponFeature(c){
 /* A magic weapon: marked magic on the sheet (a Flame Tongue, a +0
    weapon), with a magic bonus, or holding an active artificer infusion. */
 export function isMagicWeapon(c, item){
-  if(item.magic || magicBonusOf(item) > 0 || shillelaghOn(c, item)) return true;
+  if(item.magic || magicBonusOf(item) > 0 || shillelaghOn(c, item) || sacredWeaponBonus(c, item) > 0) return true;
   var active = c.infusions && c.infusions.active || [];
   return !!item.id && active.some(function(a){ return a.itemId===item.id; });
 }
@@ -330,10 +331,10 @@ export function powerAttackOn(c, item){
 export function weaponAttackBonus(c, item){
   var pb = item.proficient ? profBonus(c) : 0;
   var archery = isRangedWeapon(item) && hasFightingStyle(c, "Archery") ? 2 : 0;
-  return weaponAbilityMod(c, item) + pb + magicBonusOf(item) + sharpenBonus(c, item) + archery - (powerAttackOn(c, item) ? 5 : 0) + coinAttackBonus(c);
+  return weaponAbilityMod(c, item) + pb + magicBonusOf(item) + sharpenBonus(c, item) + sacredWeaponBonus(c, item) + archery - (powerAttackOn(c, item) ? 5 : 0) + coinAttackBonus(c);
 }
 export function weaponDamageBonus(c, item){
-  return weaponAbilityMod(c, item) + magicBonusOf(item) + sharpenBonus(c, item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
+  return weaponAbilityMod(c, item) + magicBonusOf(item) + sharpenBonus(c, item) + auraOfHate(c, item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
     + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0);
 }
 /* A weapon with the thrown property (a dagger, a handaxe, a dart). */
@@ -471,6 +472,8 @@ export function barbarianNaturalWeapons(c){
 export function critRange(c, item){
   var champ = classLevelOf(c, "Fighter", "Champion");
   var min = champ >= 15 ? 18 : champ >= 3 ? 19 : 20;
+  // Invincible Conqueror: melee weapon attacks crit on 19 or 20.
+  if(effectOn(c, "invincible_conqueror") && !(item && isRangedWeapon(item))) min = Math.min(min, 19);
   if(item && isFirearm(item) && classLevelOf(c, "Fighter", "Gunslinger") >= 18) min = Math.min(min, 19);
   return min;
 }
@@ -496,7 +499,8 @@ export function attacksPerAction(c){
     if(cl.name==="Fighter") n = Math.max(n, lv >= 20 ? 4 : lv >= 11 ? 3 : lv >= 5 ? 2 : 1);
     if(classFeatureList(cl).some(function(f){ return f.name==="Extra Attack"; })) n = Math.max(n, 2);
   });
-  return n;
+  // Invincible Conqueror: one more.
+  return effectOn(c, "invincible_conqueror") ? n + 1 : n;
 }
 /* Every tool the character is proficient with, in the Information tab's
    order: classes, race, background, a tool picked in place of one given

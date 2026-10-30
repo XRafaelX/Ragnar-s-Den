@@ -14,6 +14,8 @@
    startLabel / endLabel: the button's words in place of Start / End.
    requires: other effects that must be on first; ending one of those
      ends this too (Awakened Astral Self needs the arms and the visage).
+   channel: started from the Channel Divinity list, shown here only while on.
+   slotCost: a spell slot of this level can pay instead once the uses are gone.
    duration: shown on the card.
    hint: what it does, kept short; the card adds the worked-out numbers. */
 export var TOGGLE_EFFECTS = [
@@ -45,6 +47,37 @@ export var TOGGLE_EFFECTS = [
   {id:"fighting_spirit", name:"Fighting Spirit", className:"Fighter", subclass:"Samurai", level:3,
     cost:{resource:"fighting_spirit", amount:1}, duration:"Until the end of your turn",
     hint:"Bonus action on your turn."},
+  // Paladin oaths (Player's Handbook pp. 85 to 87, Dungeon Master's Guide
+  // p. 97, Sword Coast Adventurer's Guide p. 132, Xanathar's Guide pp. 37
+  // and 38, Tasha's Cauldron pp. 53 and 54), checked on 5etools' data
+  // 2026-10-30. channel: started from the Channel Divinity list, so the
+  // card only shows it while it's on.
+  {id:"sacred_weapon", name:"Sacred Weapon", className:"Paladin", subclass:"Oath of Devotion", level:3, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 minute",
+    hint:"Ends if you drop the weapon or fall unconscious. You can end it on your turn as part of any other action."},
+  {id:"vow_of_enmity", name:"Vow of Enmity", className:"Paladin", subclass:"Oath of Vengeance", level:3, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 minute",
+    hint:"Ends early if the creature drops to 0 hit points or falls unconscious."},
+  {id:"emissary_of_peace", name:"Emissary of Peace", className:"Paladin", subclass:"Oath of Redemption", level:3, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"10 minutes",
+    hint:"Already added to your Persuasion."},
+  {id:"peerless_athlete", name:"Peerless Athlete", className:"Paladin", subclass:"Oath of Glory", level:3, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"10 minutes",
+    hint:"The advantage is already on your skills."},
+  {id:"watchers_will", name:"Watcher's Will", className:"Paladin", subclass:"Oath of the Watchers", level:3, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 minute",
+    hint:"The advantage is already on your saves."},
+  {id:"holy_nimbus", name:"Holy Nimbus", className:"Paladin", subclass:"Oath of Devotion", level:20, cost:{resource:"holy_nimbus", amount:1}, duration:"1 minute",
+    hint:"An action."},
+  {id:"elder_champion", name:"Elder Champion", className:"Paladin", subclass:"Oath of the Ancients", level:20, cost:{resource:"elder_champion", amount:1}, duration:"1 minute",
+    hint:"An action."},
+  {id:"avenging_angel", name:"Avenging Angel", className:"Paladin", subclass:"Oath of Vengeance", level:20, cost:{resource:"avenging_angel", amount:1}, duration:"1 hour",
+    hint:"An action."},
+  {id:"invincible_conqueror", name:"Invincible Conqueror", className:"Paladin", subclass:"Oath of Conquest", level:20, cost:{resource:"invincible_conqueror", amount:1}, duration:"1 minute",
+    hint:"An action."},
+  {id:"dread_lord", name:"Dread Lord", className:"Paladin", subclass:"Oathbreaker", level:20, cost:{resource:"dread_lord", amount:1}, duration:"1 minute",
+    hint:"An action. The shadows' attack is a bonus action."},
+  {id:"living_legend", name:"Living Legend", className:"Paladin", subclass:"Oath of Glory", level:20, cost:{resource:"living_legend", amount:1}, slotCost:5, duration:"1 minute",
+    hint:"A bonus action. The hit and the reroll are offered after those rolls."},
+  {id:"exalted_champion", name:"Exalted Champion", className:"Paladin", subclass:"Oath of the Crown", level:20, cost:{resource:"exalted_champion", amount:1}, duration:"1 hour",
+    hint:"An action. Ends early if you are incapacitated or die."},
+  {id:"mortal_bulwark", name:"Mortal Bulwark", className:"Paladin", subclass:"Oath of the Watchers", level:20, cost:{resource:"mortal_bulwark", amount:1}, slotCost:5, duration:"1 minute",
+    hint:"A bonus action."},
   // Monk (Player's Handbook pp. 76 to 80, Xanathar's Guide p. 34), checked
   // on 5etools' data 2026-10-30.
   {id:"empty_body", name:"Empty Body", className:"Monk", level:18, cost:{resource:"ki", amount:4}, duration:"1 minute",

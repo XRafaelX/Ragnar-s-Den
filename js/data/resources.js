@@ -81,7 +81,7 @@ export var CLASS_RESOURCES = {
       max:function(lv){ return lv*5; }, reset:always("long"),
       hint:"Action: restore hit points from this pool, or spend 5 to cure a disease or poison."},
     {id:"channel_divinity", name:"Channel Divinity", level:3, max:always(1), reset:always("short"),
-      hint:"Use one of your Sacred Oath's Channel Divinity options."},
+      hint:function(lv, m){ return "Your Channel Divinity save DC is " + (8 + m.pb + m.cha) + "."; }},
     {id:"harness_divine_power", name:"Harness Divine Power", level:3, variant:"Harness Divine Power",
       max:function(lv){ return lv>=15 ? 3 : lv>=7 ? 2 : 1; }, reset:always("long"),
       hint:"Bonus action: spend a Channel Divinity to get back a spent spell slot."},
@@ -353,7 +353,7 @@ export var SUBCLASS_RESOURCES = {
     "Oath of Glory": [
       {id:"glorious_defense", name:"Glorious Defense", level:15,
         max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
-        hint:"Reaction when you or a creature within 10 ft is hit: add CHA mod to its AC. If the attack misses, make a weapon attack against the attacker."},
+        hint:function(lv, m){ return "Reaction when you or a creature within 10 ft is hit: +" + atLeastOne(m.cha) + " to its AC against that attack. If the attack misses, make a weapon attack against the attacker."; }},
       {id:"living_legend", name:"Living Legend", level:20, max:always(1), reset:always("long"),
         hint:"Bonus action for 1 minute: advantage on CHA checks, turn one miss per turn into a hit, reroll failed saves. More uses cost a 5th-level slot."}
     ],

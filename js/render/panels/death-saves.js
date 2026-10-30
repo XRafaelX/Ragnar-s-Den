@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
-import { computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition } from "../../core/helpers.js";
+import { computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource } from "../../core/helpers.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playDiceRattle, playDeathSaveSuccess, playDeathSaveFail, playStabilized, playDeath, playRevive } from "../../ui/sound.js";
 
@@ -111,24 +111,12 @@ export function renderDeathSaves(c){
 
   // Mastery of Death (Way of Long Death 11): 1 ki for 1 hit point instead.
   if(classLevelOf(c, "Monk", "Way of Long Death") >= 11 && !dead){
-    var mastery = document.createElement("button");
-    mastery.type = "button";
-    mastery.className = "btn small primary ds-mastery";
-    mastery.textContent = "Mastery of Death · 1 ki";
-    mastery.title = kiLeft(c) >= 1 ? "When you're reduced to 0 hit points: have 1 hit point instead (no action)" : "No ki left";
-    mastery.disabled = kiLeft(c) < 1;
-    mastery.addEventListener("click", function(e){
-      e.stopPropagation();
-      if(!spendKi(c, 1)) return;
-      c.hp.current = 1;
-      c.deathSaves = {success: 0, fail: 0};
-      removeCondition(c, "prone");
-      logRoll("Mastery of Death", "1 hit point instead of 0 (1 ki).");
-      showActionToast("Mastery of Death: you have 1 hit point instead.");
-      playRevive();
-      save(); renderSidebar(); renderAll();
-    });
-    box.appendChild(mastery);
+    box.appendChild(backToOne(c, "ds-mastery", "Mastery of Death · 1 ki", kiLeft(c) >= 1, "No ki left", function(){ return spendKi(c, 1); }, "1 hit point instead of 0 (1 ki)."));
+  }
+  // Undying Sentinel (Oath of the Ancients 15): 1 hit point instead, once per long rest.
+  if(classLevelOf(c, "Paladin", "Oath of the Ancients") >= 15 && !dead){
+    var sentinel = resourceLeft(c, "Paladin:undying_sentinel") > 0;
+    box.appendChild(backToOne(c, "ds-sentinel", "Undying Sentinel", sentinel, "Used until a long rest", function(){ return spendResource(c, "Paladin:undying_sentinel", 1); }, "1 hit point instead of 0."));
   }
 
   var status = document.createElement("div");
@@ -143,6 +131,29 @@ export function renderDeathSaves(c){
   box.appendChild(status);
 
   return box;
+}
+
+/* A feature that leaves you on 1 hit point instead of 0. */
+function backToOne(c, cls, label, ready, whyNot, pay, log){
+  var name = label.split(" · ")[0];
+  var b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn small primary " + cls;
+  b.textContent = label;
+  b.title = ready ? "When you're reduced to 0 hit points: have 1 hit point instead (no action)" : whyNot;
+  b.disabled = !ready;
+  b.addEventListener("click", function(e){
+    e.stopPropagation();
+    if(!pay()) return;
+    c.hp.current = 1;
+    c.deathSaves = {success: 0, fail: 0};
+    removeCondition(c, "prone");
+    logRoll(name, log);
+    showActionToast(name + ": you have 1 hit point instead.");
+    playRevive();
+    save(); renderSidebar(); renderAll();
+  });
+  return b;
 }
 
 /* Relentless Rage (barbarian 11): dropping to 0 HP while raging, a

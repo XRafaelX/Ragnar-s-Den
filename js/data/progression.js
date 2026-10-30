@@ -258,7 +258,7 @@ export var CLASS_PROGRESSION = {
       ],
       9: [{name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 15 feet while you wear no armor and no shield. (Added to your speed while that's true.) You can also move along vertical surfaces and across liquids on your turn without falling during the move."}],
       10: [
-        {name:"Purity of Body", text:"You are immune to disease and poison.", immune:["poison"], conditionImmune:["poisoned"]},
+        {name:"Purity of Body", text:"You are immune to disease and poison.", immune:["poison", "disease"], conditionImmune:["poisoned"]},
         {name:"Unarmored Movement", replaces:"Unarmored Movement", text:"Your speed increases by 20 feet while you wear no armor and no shield. (Added to your speed while that's true.) You can also move along vertical surfaces and across liquids on your turn without falling during the move.", speed:5, speedWhen:"unarmored"}
       ],
       11: [{name:"Martial Arts", replaces:"Martial Arts", text:"Use DEX instead of STR for unarmed strikes and monk weapons, which deal 1d8 damage. When you take the Attack action with them, you can make one unarmed strike as a bonus action."}],
@@ -292,12 +292,12 @@ export var CLASS_PROGRESSION = {
       2: [
         {name:"Fighting Style", text:"Adopt a fighting style: Defense (+1 AC in armor), Dueling (+2 damage with a one-handed weapon and nothing in the other hand), Great Weapon Fighting (reroll 1s and 2s on two-handed damage) or Protection (impose disadvantage on an attack against an ally next to you)."},
         {name:"Spellcasting", text:"You can now cast paladin spells using Charisma. Each day you prepare 3 spells from the paladin list (more as you level), changing them after a long rest."},
-        {name:"Divine Smite", text:"When you hit with a melee weapon attack, spend a spell slot to deal an extra 2d8 radiant damage, +1d8 per slot level above 1st (to a maximum of 5d8), and +1d8 against undead or fiends."}
+        {name:"Divine Smite", text:"When you hit with a melee weapon attack, spend a spell slot to deal an extra 2d8 radiant damage, +1d8 per slot level above 1st (to a maximum of 5d8), and +1d8 against undead or fiends (to a maximum of 6d8). Use it from the button on your melee weapon's card."}
       ],
-      3: [{name:"Divine Health", text:"You are immune to disease."}],
+      3: [{name:"Divine Health", text:"You are immune to disease.", immune:["disease"]}],
       5: [{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}],
-      6: [{name:"Aura of Protection", text:"While you're conscious, whenever you or a friendly creature within 10 feet of you makes a saving throw, it gains a bonus equal to your CHA modifier (minimum +1). It's already added to your own saves. The range becomes 30 feet at level 18.", saveBonus:"cha"}],
-      10: [{name:"Aura of Courage", text:"While you're conscious, you and friendly creatures within 10 feet of you can't be frightened. The range becomes 30 feet at level 18."}],
+      6: [{name:"Aura of Protection", text:"While you're conscious, whenever you or a friendly creature within 10 feet of you makes a saving throw, it gains a bonus equal to your CHA modifier (minimum +1). It's already added to your own saves. The range becomes 30 feet at level 18.", saveBonus:"cha", chip:function(x){ return "+" + Math.max(1, x.mods.cha) + " within " + (x.lv >= 18 ? 30 : 10) + " ft"; }}],
+      10: [{name:"Aura of Courage", text:"While you're conscious, you and friendly creatures within 10 feet of you can't be frightened. The range becomes 30 feet at level 18.", conditionImmune:["frightened"], chip:function(x){ return "Within " + (x.lv >= 18 ? 30 : 10) + " ft"; }}],
       11: [{name:"Improved Divine Smite", text:"Whenever you hit a creature with a melee weapon, it takes an extra 1d8 radiant damage. This stacks with Divine Smite."}],
       14: [{name:"Cleansing Touch", text:"As an action, end one spell on yourself or on a willing creature you touch. Uses equal to your CHA modifier (minimum 1) per long rest."}]
     }

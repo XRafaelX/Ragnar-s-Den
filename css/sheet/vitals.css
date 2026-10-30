@@ -468,3 +468,12 @@
 .fx-note.warn{color:var(--oxblood);}
 .fx-note .alert-svg{width:13px;height:13px;flex-shrink:0;}
 .fx-rolls{margin-top:8px;}
+
+/* Paladin: the Divine Smite and Lay on Hands sheets. */
+.pal-ticks{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 14px;}
+.pal-tick{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;}
+.pal-sheet-list{display:flex;flex-direction:column;gap:8px;}
+.pal-sheet-btn{justify-content:center;width:100%;min-height:42px;}
+.pal-amount{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;margin:0 0 14px;}
+.hp-spirit-btn{margin-top:8px;}
+.ff-roll-btn{margin-left:6px;}

@@ -44,21 +44,30 @@ export function effectOn(c, id){
   if(id==="symbiotic_entity" && !((Number(c.hp && c.hp.temp)||0) > 0)) return false;
   return !effectBlocked(c, id);
 }
+function spellSlotLeft(c, level){
+  var s = c.spellcasting && c.spellcasting.slots && c.spellcasting.slots[level];
+  return s ? (Number(s.max)||0) - (Number(s.used)||0) : 0;
+}
 /* The effects this character has, for the card: {def, on, blocked,
-   resource (the class resource it spends), why (it can't start, or "")}. */
+   resource (the class resource it spends), why (it can't start, or ""),
+   slot (the spell slot level that pays for it instead, or 0)}. */
 export function characterEffects(c){
   var resources = characterResources(c);
   var flags = c.effects || {};
   return TOGGLE_EFFECTS.filter(function(def){ return effectClass(c, def); }).map(function(def){
     var res = def.cost && resources.find(function(r){ return r.key===(def.race ? "race" : def.className)+":"+def.cost.resource; });
     var on = !!flags[def.id];
-    var why = "";
+    var why = "", slot = 0;
     if(!on){
       var missing = (def.requires||[]).filter(function(r){ return !flags[r]; });
       if(missing.length) why = "Needs " + missing.map(function(r){ return effectDef(r).name; }).join(" and ") + " first.";
-      else if(def.cost && (!res || res.max - res.used < def.cost.amount)) why = "Not enough " + (res ? res.name : def.cost.resource) + " left.";
+      else if(def.cost && (!res || res.max - res.used < def.cost.amount)){
+        // Living Legend: a spell slot of that level pays once the use is gone.
+        if(def.slotCost && spellSlotLeft(c, def.slotCost)) slot = def.slotCost;
+        else why = "Not enough " + (res ? res.name : def.cost.resource) + " left.";
+      }
     }
-    return {def: def, on: on, blocked: on ? effectBlocked(c, def.id) : "", resource: res, why: why};
+    return {def: def, on: on, blocked: on ? effectBlocked(c, def.id) : "", resource: res, why: why, slot: slot};
   });
 }
 /* Switch an effect on: pay its cost and, for Symbiotic Entity, gain its
@@ -66,7 +75,8 @@ export function characterEffects(c){
 export function startEffect(c, id){
   var e = characterEffects(c).find(function(x){ return x.def.id===id; });
   if(!e || e.on || e.why) return false;
-  if(e.resource && e.resource.max!==Infinity){
+  if(e.slot) c.spellcasting.slots[e.slot].used = (Number(c.spellcasting.slots[e.slot].used)||0) + 1;
+  else if(e.resource && e.resource.max!==Infinity){
     if(!c.resourcesUsed) c.resourcesUsed = {};
     c.resourcesUsed[e.resource.key] = e.resource.used + e.def.cost.amount;
   }
@@ -135,6 +145,7 @@ export function effectRolls(c, kind, ability){
   // Assassinate and Versatile Trickster: advantage on attack rolls while they're on.
   if(kind==="attack" && effectOn(c, "assassinate")) out.push({mode: "adv", reason: "Assassinate"});
   if(kind==="attack" && effectOn(c, "versatile_trickster")) out.push({mode: "adv", reason: "Versatile Trickster"});
+  if(kind==="attack" && effectOn(c, "vow_of_enmity")) out.push({mode: "adv", reason: "Vow of Enmity"});
   return out;
 }
 /* Steady Aim: on, with its advantage not yet used ("used" once an
@@ -506,9 +517,13 @@ export function weaponAttackEffect(c){
 /* An attack was rolled: what it uses up. Shadow Step's advantage goes
    with the next melee attack, Cloak of Shadows ends with any attack.
    True if either changed. */
-/* Empty Body's resistance, for the HP card's line. */
-export function emptyBodyResistance(c){
-  return effectOn(c, "empty_body") ? [{type: "all damage but force", source: "Empty Body"}] : [];
+/* Resistances from what's switched on, for the HP card's line. */
+export function effectResistances(c){
+  var out = [];
+  if(effectOn(c, "empty_body")) out.push({type: "all damage but force", source: "Empty Body"});
+  if(effectOn(c, "invincible_conqueror")) out.push({type: "all damage", source: "Invincible Conqueror"});
+  if(effectOn(c, "exalted_champion")) out.push({type: "nonmagical bludgeoning, piercing and slashing", source: "Exalted Champion"});
+  return out;
 }
 export function attackEndsEffects(c, melee){
   var changed = false;

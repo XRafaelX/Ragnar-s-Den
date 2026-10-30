@@ -168,10 +168,10 @@ test("Kensei weapons are what was picked, and count as monk weapons", () => {
 
 test("Empty Body: invisible, resistance to all but force", () => {
   const c = monk("Way of the Open Hand", 18);
-  assert.deepEqual(H.emptyBodyResistance(c), []);
+  assert.deepEqual(H.effectResistances(c), []);
   assert.ok(H.startEffect(c, "empty_body"));
   assert.equal(ki(c), 14);
-  assert.equal(H.emptyBodyResistance(c)[0].type, "all damage but force");
+  assert.equal(H.effectResistances(c)[0].type, "all damage but force");
   assert.ok(H.effectRolls(c, "attack").some((r) => r.mode === "adv" && /Empty Body/.test(r.reason)));
 });
 

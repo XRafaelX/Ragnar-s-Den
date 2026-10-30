@@ -19,7 +19,7 @@ import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
 import { infusionSpeedParts } from "./infusion-effects.js";
 import { abilityScore, abilityScores, abilityScoreDetail, baseScore } from "./ability-scores.js";
-import { conditionSpeed, hpMaxHalved } from "./conditions.js";
+import { conditionSpeed, hpMaxHalved, activeConditions } from "./conditions.js";
 
 /* ---------------- Feats the sheet applies ----------------
    Feats are matched by name. Their bonuses are worked out when shown
@@ -355,10 +355,12 @@ export function computeSave(c, key){
   var ability = checkAbility(c, key);
   var abilityMod = ability.mod;
   var grantedBy = null, bonuses = [];
+  var unconscious = activeConditions(c).some(function(x){ return x.def.id==="unconscious"; });
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
       if(!grantedBy && f.grants && (f.grants.savingThrows||[]).indexOf(key)!==-1) grantedBy = f.name;
-      if(f.saveBonus && !bonuses.some(function(b){ return b.name===f.name; })){
+      // (Aura of Protection needs you conscious.)
+      if(f.saveBonus && !unconscious && !bonuses.some(function(b){ return b.name===f.name; })){
         bonuses.push({name:f.name, value: Math.max(1, mod(abilityScore(c, f.saveBonus)))});
       }
     });
@@ -417,6 +419,7 @@ export function getCharacterSenses(c){
   var dv = computeDarkvision(c);
   // (A class feature's own sense too: a rogue's Blindsense.)
   var extra = styleSenses(c).concat(invocationSenses(c));
+  if(effectOn(c, "mortal_bulwark")) extra.push("Truesight 120 ft");
   (c.classes||[]).forEach(function(cl){ classFeatureList(cl).forEach(function(f){ if(f.sense && extra.indexOf(f.sense)===-1) extra.push(f.sense); }); });
   if(!dv.range && extra.length) return extra.join(", ");
   return [dv.range ? "Darkvision " + dv.range + " ft" : "No darkvision"].concat(extra).join(", ");

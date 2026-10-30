@@ -1,5 +1,7 @@
 import { save } from "../../core/state.js";
-import { useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor } from "../../core/helpers.js";
+import { useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, hasGuidedStrike, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod } from "../../core/helpers.js";
+import { abilityScore } from "../../core/ability-scores.js";
+import { openSmiteSheet } from "./paladin.js";
 import { useNextCheck } from "../../core/magic-items.js";
 import { renderAll } from "../sheet.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
@@ -114,7 +116,8 @@ function checkFollowUp(c, r, opts){
 /* ability: the save's ability (Bulwark only helps with INT, WIS and CHA). */
 export function rollSave(c, bonus, mode, label, ability){
   var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c);
-  performRoll(20, 1, bonus, mode, label, fanatic || indom || diamond ? function(){ return saveFollowUp(c, ability); } : null);
+  var oath = livingLegendOn(c) || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
+  performRoll(20, 1, bonus, mode, label, fanatic || indom || diamond || oath ? function(){ return saveFollowUp(c, ability); } : null);
 }
 /* After a save: Fanatical Focus (once per rage) and Indomitable (a use;
    a Banneret's Bulwark lets an ally who failed the same INT, WIS or CHA
@@ -141,7 +144,19 @@ function saveFollowUp(c, ability){
         return {reroll: true, log: "Diamond Soul (1 ki)"};
       }});
   }
-  return opts.length ? {lead: "Failed?", hint: "Failed? Tap to reroll.", options: opts} : null;
+  if(livingLegendOn(c)){
+    opts.push({label: "Reroll (Living Legend)", title: "Your reaction: reroll this saving throw. You must use the new roll.",
+      use: function(){ return {reroll: true, log: "Living Legend"}; }});
+  }
+  var failed = opts.length;
+  // Vigilant Rebuke (Oath of the Watchers 15): a reaction after a success.
+  if(ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15){
+    var rebuke = mod(abilityScore(c, "cha"));
+    opts.push({label: "Saved? Vigilant Rebuke 2d8" + fmtMod(rebuke), title: "Your reaction: force damage to the creature that forced the save",
+      use: function(){ performRoll(8, 2, rebuke, "none", "Vigilant Rebuke (Force)"); return {silent: true}; }});
+  }
+  if(!opts.length) return null;
+  return failed ? {lead: "Failed?", hint: "Failed? Tap to reroll.", options: opts} : {lead: "", hint: "Saved? Tap for Vigilant Rebuke.", options: opts};
 }
 /* Diamond Soul (monk 14): a ki point left to reroll a failed save. */
 function hasDiamondSoul(c){
@@ -156,7 +171,7 @@ function attackFollowUp(c, r, aim, hit){
   if(hit && r && r.natural >= (hit.critMin || 20)) return criticalHit(c, hit);
   var opts = [];
   // A roll with no card of its own to roll damage from (a caught missile).
-  if(hit && hit.offerDamage) opts.push({label: "Hit? Damage 1d" + hit.die + (hit.bonus ? (hit.bonus > 0 ? "+" : "") + hit.bonus : ""), title: "Roll the damage",
+  if(hit && hit.offerDamage) opts.push({label: "Hit? Damage " + hit.qty + "d" + hit.die + (hit.bonus ? (hit.bonus > 0 ? "+" : "") + hit.bonus : ""), title: "Roll the damage",
     use: function(){ performRoll(hit.die, hit.qty, hit.bonus, "none", hit.label + ": Damage"); return {silent: true}; }});
   // Assassinate (Assassin 3): any hit against a surprised creature is a critical hit.
   if(hit && r && effectOn(c, "assassinate")){
@@ -168,6 +183,20 @@ function attackFollowUp(c, r, aim, hit){
   // (Soulknife 9), Master Duelist's reroll with advantage (Swashbuckler
   // 17), Stroke of Luck's hit (rogue 20).
   if(hasFocusedAim(c)) opts = opts.concat(focusedAim(c).options);
+  // Guided Strike (Oath of Conquest 3): +10 after seeing the roll.
+  if(hasGuidedStrike(c)){
+    opts.push({label: "+10 (Guided Strike)", title: "Spend your Channel Divinity to add 10 to this attack roll",
+      use: function(){
+        if(!spendChannel(c)) return null;
+        save(); renderAll();
+        return {bonus: 10, log: "Guided Strike (Channel Divinity)"};
+      }});
+  }
+  // Living Legend (Oath of Glory 20): one miss on each of your turns hits.
+  if(hit && livingLegendOn(c)){
+    opts.push({label: "Living Legend: it hits", title: "Once on each of your turns, a weapon attack that missed hits instead",
+      use: function(){ return {bonus: 0, log: "Living Legend: the miss is a hit"}; }});
+  }
   if(hit && hit.item && magicArrows(c, hit.item)){
     opts.push({label: "Curving Shot", title: "A bonus action: reroll this attack against a different target within 60 feet of the first",
       use: function(){ return {reroll: true, log: "Curving Shot (a different target)"}; }});
@@ -213,6 +242,11 @@ function criticalHit(c, hit){
   var sa = hit.sneak && sneakAttack(c);
   var extra = sa ? [{label: "Sneak Attack " + 2 * sa.dice + "d6", title: "On a critical hit, Sneak Attack's dice are doubled too",
     use: function(){ performRoll(6, 2 * sa.dice, 0, "none", hit.label + ": Sneak Attack (critical)"); return {silent: true}; }}] : [];
+  // A paladin's melee hit: the smites' dice are doubled too.
+  if(hit.melee && hasImprovedSmite(c) && hit.item) extra.push({label: "Improved Divine Smite 2d8", title: "On a critical hit, its die is doubled too",
+    use: function(){ performRoll(8, 2, 0, "none", hit.label + ": Improved Divine Smite (critical)"); return {silent: true}; }});
+  if(hit.melee && smiteSlots(c).length) extra.push({label: "Divine Smite", title: "Spend a spell slot: the dice are doubled on a critical hit",
+    use: function(){ openSmiteSheet(c, hit.label, true); return {silent: true}; }});
   return {lead: "Critical hit!", hint: "",
     options: extra.length ? [critOption(c, hit, crit)].concat(extra) : [critOption(c, hit, crit)]};
 }

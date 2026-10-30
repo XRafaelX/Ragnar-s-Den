@@ -120,7 +120,7 @@ export function classSpellAbility(cl){
                    (Intimidating Presence: {save:"wis", ability:"cha"};
                    save "" when its effects ask for different saves),
                    shown as a chip on its Features card (featureDcs) */
-var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellLabel", "spellTip", "spellAbility", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit", "saveDc", "skillBonus", "skillDouble", "resist", "saveNote", "sense", "chip", "immune", "conditionImmune"];
+var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellLabel", "spellTip", "spellAbility", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit", "saveDc", "rollButton", "skillBonus", "skillDouble", "resist", "saveNote", "sense", "chip", "immune", "conditionImmune"];
 
 /* ---- Optional features that replace one of the class's own ----
    Tasha's Favored Foe for a ranger's Favored Enemy, Deft Explorer for
@@ -435,6 +435,12 @@ function featureChip(c, cl, f){
   var text = f.chip({lv: Number(cl.level)||1, pb: profBonus(c), mods: mods});
   return {chip: text, line: f.name + ": " + text + "."};
 }
+/* The roll a feature has its own button for on its card (Vigilant
+   Rebuke), worked out: {qty, die, bonus, label}, or null. */
+export function featureRoll(c, f){
+  var r = f.rollButton;
+  return r ? {qty: r.qty, die: r.die, bonus: r.ability ? mod(abilityScore(c, r.ability)) : 0, label: r.label} : null;
+}
 export function featureDcs(c, f){
   var pb = profBonus(c);
   return [].concat(f.saveDc || []).map(function(d){
@@ -507,6 +513,7 @@ export function getAllCharacterFeatures(c){
         source: (f.subclass ? cl.subclass : "Class · " + cl.name) + " · Lv " + f.level,
         text: f.text + (picked ? "\n\nYour picks: " + picked + "." : "") + (dcs.length ? "\n\n" + dcs.map(function(d){ return d.line; }).join("\n") : ""),
         dcs: dcs,
+        roll: featureRoll(c, f),
         category: "class",
         isDerived: true
       });
