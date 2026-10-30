@@ -2,7 +2,7 @@
    data/spell-scaling.js). */
 import { SPELL_SCALING } from "../data/spell-scaling.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
-import { totalLevel, computeSpellSlots, ordinal, mod, hasFeat, hasBlessedStrikes } from "./helpers.js";
+import { totalLevel, computeSpellSlots, ordinal, mod, hasFeat, hasBlessedStrikes, classLevelOf } from "./helpers.js";
 import { eldritchBlastSummary } from "./invocations.js";
 import { classFeatureList } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
@@ -89,6 +89,20 @@ function empoweredNote(c, name, owner){
   return m ? "Empowered Evocation: " + (m>0 ? "plus " + m : "minus " + (-m)) + " to one damage roll." : "";
 }
 
+/* What a Life or Grave cleric adds to a healing spell, for its card. "" for
+   any other spell or character. */
+var HEALING_SPELLS = ["Cure Wounds", "Healing Word", "Prayer of Healing", "Aura of Vitality", "Mass Healing Word", "Mass Cure Wounds", "Heal", "Regenerate", "Power Word Heal", "Healing Spirit", "Mass Heal", "Goodberry"];
+export function healingNote(c, name){
+  var spell = catalogSpellName((name||"").trim()), d = SPELL_DATA[spell];
+  if(!d || HEALING_SPELLS.indexOf(spell)===-1) return "";
+  var life = classLevelOf(c, "Cleric", "Life Domain"), grave = classLevelOf(c, "Cleric", "Grave Domain");
+  var dice = /\d+d\d+/.test(d.summary), notes = [];
+  if(life >= 1) notes.push("Disciple of Life: plus " + (2 + d.level) + " hit points to each creature, and 1 more per slot level above " + ordinal(d.level) + ".");
+  if(life >= 6) notes.push("Blessed Healer: you regain the same when it heals someone else.");
+  if(life >= 17 && dice) notes.push("Supreme Healing: use the highest number on each die.");
+  if(grave >= 1 && dice) notes.push("Circle of Mortality: use the highest number on each die for a creature at 0 hit points.");
+  return notes.join(" ");
+}
 /* A spell's range as the character has it. Spell Sniper doubles the range
    of a spell that needs an attack roll (a spell attack in the summary),
    when that range is a distance. */

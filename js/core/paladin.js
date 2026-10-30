@@ -13,6 +13,7 @@ import { classLevelOf } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
 import { effectOn, resourceLeft, spendResource, spellSlotsLeft, startEffect } from "./effects.js";
 import { isRangedWeapon } from "./equipment.js";
+import { warGuidedStrike } from "./cleric.js";
 
 var CHANNEL = "Paladin:channel_divinity";
 function chaAtLeastOne(c){
@@ -43,12 +44,14 @@ export function inspiringSmite(c){
   var lv = classLevelOf(c, "Paladin", "Oath of Glory");
   return lv >= 3 && resourceLeft(c, CHANNEL) > 0 ? {bonus: lv} : null;
 }
-/* Guided Strike (Oath of Conquest 3): +10 to an attack roll you just saw. */
-export function hasGuidedStrike(c){
-  return classLevelOf(c, "Paladin", "Oath of Conquest") >= 3 && resourceLeft(c, CHANNEL) > 0;
+/* Guided Strike (Oath of Conquest 3, War Domain 2): +10 to an attack roll
+   you just saw. The Channel Divinity pool it spends from, or "". */
+export function guidedStrikePool(c){
+  if(classLevelOf(c, "Paladin", "Oath of Conquest") >= 3 && resourceLeft(c, CHANNEL) > 0) return CHANNEL;
+  return warGuidedStrike(c);
 }
-export function spendChannel(c){
-  return spendResource(c, CHANNEL, 1);
+export function spendChannel(c, pool){
+  return spendResource(c, pool || CHANNEL, 1);
 }
 
 /* ---- Numbers the oaths change ---- */
@@ -134,7 +137,7 @@ export function channelActions(c){
 /* Why an action can't be taken now, or "". */
 export function channelProblem(c, a){
   if(a.reason) return a.reason;
-  return resourceLeft(c, CHANNEL) > 0 ? "" : "Used until a rest";
+  return resourceLeft(c, a.pool || CHANNEL) > 0 ? "" : "Used until a rest";
 }
 /* Pay for it, and start its effect if it has one. True if it was used. */
 export function useChannelAction(c, a){
@@ -142,7 +145,8 @@ export function useChannelAction(c, a){
   if(a.effect){
     if(!startEffect(c, a.effect)) return false;
     if(a.sacred) c.sacredWeapon = a.sacred;
+    if(a.ages) c.agesSkill = a.ages;
     return true;
   }
-  return spendChannel(c);
+  return spendChannel(c, a.pool);
 }

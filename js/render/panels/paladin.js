@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, maxHp, ordinal, smiteDice, smiteSlots, spendSpellSlot, inspiringSmite, spendChannel, hasImprovedSmite, channelActions, channelProblem, useChannelAction, resourceLeft, spendLayOnHands, removeCondition, activeConditions } from "../../core/helpers.js";
+import { clamp, maxHp, ordinal, smiteDice, smiteSlots, spendSpellSlot, inspiringSmite, spendChannel, hasImprovedSmite, channelActions, clericChannels, channelProblem, useChannelAction, resourceLeft, spendLayOnHands, removeCondition, activeConditions } from "../../core/helpers.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeDicesSvg } from "../../ui/svg-icons.js";
@@ -121,8 +121,8 @@ export function smiteButtons(c, name, improved){
 }
 
 /* ---- Channel Divinity ---- */
-export function channelPicker(c){
-  var actions = channelActions(c), groups = {"": []};
+export function channelPicker(c, className){
+  var actions = className==="Cleric" ? clericChannels(c) : channelActions(c), groups = {"": []};
   actions.forEach(function(a){
     var g = a.group || "";
     if(!groups[g]) groups[g] = [];
@@ -131,13 +131,13 @@ export function channelPicker(c){
   function find(id){ return actions.find(function(a){ return a.id===id; }); }
   var wrap = document.createElement("div");
   wrap.className = "res-pick";
-  wrap.appendChild(themedPicker({key: "channel:use", groups: groups, value: "", placeholder: "Use Channel Divinity on...", ariaLabel: "Use Channel Divinity on", sheet: true,
+  wrap.appendChild(themedPicker({key: "channel:" + className, groups: groups, value: "", placeholder: "Use Channel Divinity on...", ariaLabel: "Use Channel Divinity on", sheet: true,
     reasonFor: function(id){ return channelProblem(c, find(id)); },
     detailFor: function(id){ return find(id).detail; },
     onPick: function(id){
       var a = find(id);
       if(!useChannelAction(c, a)) return;
-      logRoll("Channel Divinity: " + (a.group || a.name), a.log || "Used.");
+      if(a.log!=="") logRoll("Channel Divinity: " + (a.group || a.name), a.log || "Used.");
       save(); renderAll();
       if(a.roll) performRoll(a.roll.die, a.roll.qty, a.roll.bonus, "none", a.roll.label, a.healSelf ? function(r){ return r ? healYourself(c, r.total) : null; } : null);
     }}));

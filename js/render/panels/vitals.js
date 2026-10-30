@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -11,6 +11,7 @@ import { showActionToast } from "../../ui/toast.js";
 import { WILD_SURGES } from "../../data/effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { channelPicker, layOnHandsRow } from "./paladin.js";
+import { interventionRow, forgePicker } from "./cleric.js";
 import { useNextCheck, magicItemsOnLongRest, endTimedBoons, coinResistances } from "../../core/magic-items.js";
 import { infusionResistances } from "../../core/infusion-effects.js";
 import { renderDeathSaves } from "./death-saves.js";
@@ -222,7 +223,7 @@ export function renderVitalsPanel(c){
   // immune to isn't listed as resisted too.
   var wards = raceWards(c);
   var immuneTypes = wards.immune.map(function(r){ return r.type; });
-  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c), featureResistances(c), effectResistances(c), drakeResistance(c))
+  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c), featureResistances(c), effectResistances(c), drakeResistance(c), saintResistance(c))
     .filter(function(r){ return immuneTypes.indexOf(r.type.toLowerCase())===-1; });
   var resistAll = resistsAllDamage(c); // Petrified
   if(resistAll) resist = [{type: "all damage", source: resistAll}];
@@ -600,6 +601,7 @@ export function renderVitalsPanel(c){
     } : null);
     // Initiative is a DEX check: Duality's next-check advantage is used.
     var used = useNextCheck(c);
+    if(effectOn(c, "vigilant_blessing")){ endEffect(c, "vigilant_blessing"); used = true; }
     // Relentless, Tireless Spirit...: one use back if none were left.
     var back = regainOnInitiative(c);
     if(back.length){ logRoll("Initiative", "Regained one use of " + back.join(", ") + "."); showActionToast("Regained one use of " + back.join(", ") + "."); }
@@ -756,6 +758,8 @@ export function renderVitalsPanel(c){
         var items = magicItemsOnLongRest(c);
         items.recharged = items.recharged.concat(infusionsOnLongRest(c));
         restoreResources(c, "long");
+        forgeOnLongRest(c);
+        interventionOnLongRest(c);
         restoreCompanions(c);
         var elixirs = elixirsOnLongRest(c);
         logRoll("Long rest taken", "HP and spell slots restored. "+recovered+" hit dice recovered."+
@@ -1189,7 +1193,18 @@ function renderResourcesCard(c, resources){
         if(slotPay){ spendSpellSlot(c, slotPay); save(); renderAll(); }
         else setUsed(r.used+1);
         var least = r.roll.min || 0;
-        performRoll(r.roll.die, r.roll.qty || 1, r.roll.bonus || 0, "none", r.roll.label, r.roll.min || r.roll.temp ? {
+        // Destructive Wrath: a Channel Divinity for the maximum.
+        var wrath = r.key==="Cleric:wrath_of_the_storm" && resourceLeft(c, "Cleric:channel_divinity") > 0;
+        performRoll(r.roll.die, r.roll.qty || 1, r.roll.bonus || 0, "none", r.roll.label, wrath ? function(x){
+          if(!x) return null;
+          var top = (r.roll.qty || 1) * r.roll.die;
+          return x.total >= top ? null : {lead: "Destructive Wrath:", options: [{label: "Maximum " + top + " (Channel Divinity)", title: "Spend your Channel Divinity to deal the maximum instead",
+            use: function(){
+              if(!spendChannel(c, "Cleric:channel_divinity")) return null;
+              save(); renderAll();
+              return {bonus: top - x.total, log: "Destructive Wrath"};
+            }}]};
+        } : r.roll.min || r.roll.temp ? {
           adjust: least ? function(x){ return x.total < least ? {total: least, note: "at least " + least} : null; } : null,
           // Temporary hit points don't stack: keep the higher.
           onResult: r.roll.temp ? function(x){
@@ -1303,7 +1318,10 @@ function renderResourcesCard(c, resources){
     }
     // Everything ki can pay for, in one list.
     if(r.key==="Monk:ki") info.appendChild(kiPicker(c));
-    if(r.key==="Paladin:channel_divinity") info.appendChild(channelPicker(c));
+    if(r.key==="Paladin:channel_divinity") info.appendChild(channelPicker(c, "Paladin"));
+    if(r.key==="Cleric:channel_divinity") info.appendChild(channelPicker(c, "Cleric"));
+    if(r.key==="Cleric:divine_intervention") info.appendChild(interventionRow(c, r));
+    if(r.key==="Cleric:blessing_of_the_forge" && remaining > 0) info.appendChild(forgePicker(c, r));
     if(r.key==="Paladin:lay_on_hands") info.appendChild(layOnHandsRow(c));
     // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
     // plus the proficiency bonus of healing.

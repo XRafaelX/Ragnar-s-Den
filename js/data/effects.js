@@ -66,6 +66,24 @@ export var TOGGLE_EFFECTS = [
     startLabel:"Mark", hint:"A bonus action, on a creature you can see within 60 feet. Marking another ends it on the first."},
   {id:"writhing_tide", name:"Writhing Tide", className:"Ranger", subclass:"Swarmkeeper", level:7, cost:{resource:"writhing_tide", amount:1}, duration:"1 minute",
     hint:"A bonus action. Ends early if you are incapacitated."},
+  // Cleric domains (Player's Handbook pp. 59 to 63, Tasha's Cauldron pp. 32
+  // and 34), checked on 5etools' data 2026-10-30.
+  {id:"knowledge_of_the_ages", name:"Knowledge of the Ages", className:"Cleric", subclass:"Knowledge Domain", level:2, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"10 minutes",
+    hint:"Already added to that skill."},
+  {id:"invoke_duplicity", name:"Invoke Duplicity", className:"Cleric", subclass:"Trickery Domain", level:2, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 minute",
+    hint:"Needs your concentration, as a spell does."},
+  {id:"trickery_cloak", name:"Cloak of Shadows", className:"Cleric", subclass:"Trickery Domain", level:6, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"Until the end of your next turn",
+    hint:"Ends if you attack or cast a spell."},
+  {id:"twilight_sanctuary", name:"Twilight Sanctuary", className:"Cleric", subclass:"Twilight Domain", level:2, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 minute",
+    hint:"Ends early if you are incapacitated or die."},
+  {id:"vigilant_blessing", name:"Vigilant Blessing", className:"Cleric", subclass:"Twilight Domain", level:1, duration:"Your next initiative",
+    startLabel:"Bless", hint:"An action, on a creature you touch. Switch it on when that's you."},
+  {id:"steps_of_night", name:"Steps of Night", className:"Cleric", subclass:"Twilight Domain", level:6, cost:{resource:"steps_of_night", amount:1}, duration:"1 minute",
+    hint:"A bonus action, in dim light or darkness."},
+  {id:"corona_of_light", name:"Corona of Light", className:"Cleric", subclass:"Light Domain", level:17, duration:"1 minute",
+    hint:"An action. You can dismiss it with another action."},
+  {id:"emboldening_bond", name:"Emboldening Bond", className:"Cleric", subclass:"Peace Domain", level:1, cost:{resource:"emboldening_bond", amount:1}, duration:"10 minutes",
+    startLabel:"Bond", hint:"An action. The d4 is offered after your rolls, once per turn."},
   // Paladin oaths (Player's Handbook pp. 85 to 87, Dungeon Master's Guide
   // p. 97, Sword Coast Adventurer's Guide p. 132, Xanathar's Guide pp. 37
   // and 38, Tasha's Cauldron pp. 53 and 54), checked on 5etools' data

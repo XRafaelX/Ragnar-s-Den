@@ -96,9 +96,9 @@ test("Turn the Tide rolls 1d6 + CHA, and Guided Strike and Inspiring Smite wait 
   assert.deepEqual([roll.qty, roll.die, roll.bonus], [1, 6, 3]);
   const conquest = paladin("Oath of Conquest", 3);
   assert.equal(H.channelProblem(conquest, action(conquest, "Guided Strike")), "Offered after an attack roll");
-  assert.ok(H.hasGuidedStrike(conquest));
+  assert.ok(H.guidedStrikePool(conquest));
   conquest.resourcesUsed["Paladin:channel_divinity"] = 1;
-  assert.ok(!H.hasGuidedStrike(conquest));
+  assert.ok(!H.guidedStrikePool(conquest));
   const glory = paladin("Oath of Glory", 5);
   assert.equal(H.channelProblem(glory, action(glory, "Inspiring Smite")), "Offered after a Divine Smite");
   assert.equal(H.inspiringSmite(glory).bonus, 5);

@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, hasGuidedStrike, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense } from "../../core/helpers.js";
+import { useSteadyAim, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { openSmiteSheet } from "./paladin.js";
 import { useNextCheck } from "../../core/magic-items.js";
@@ -86,6 +86,8 @@ function checkFollowUp(c, r, opts){
   // Supernatural Defense (Monster Slayer 7): escaping your prey's grapple.
   if((opts.skill==="Athletics" || opts.skill==="Acrobatics") && hasSupernaturalDefense(c)) out.push({label: "+1d6 (Supernatural Defense)", title: "When you're escaping the grapple of your Slayer's Prey target",
     use: function(){ var got = Math.floor(Math.random() * 6) + 1; return {bonus: got, log: "Supernatural Defense (rolled " + got + ")"}; }});
+  if(effectOn(c, "emboldening_bond")) out.push({label: "+1d4 (Emboldening Bond)", title: "Once per turn, while a bonded creature is within range",
+    use: function(){ var got = Math.floor(Math.random() * 4) + 1; return {bonus: got, log: "Emboldening Bond (rolled " + got + ")"}; }});
   // Draconic Presence (Ascendant Dragon 3): only used up by a success.
   if((opts.skill==="Intimidation" || opts.skill==="Persuasion") && resourceLeft(c, "Monk:draconic_presence") > 0){
     out.push({label: "Draconic Presence: reroll", title: "Reaction: reroll this check. It's only used up if the reroll succeeds: tap it back on Vitals if it didn't.",
@@ -119,7 +121,7 @@ function checkFollowUp(c, r, opts){
 /* ability: the save's ability (Bulwark only helps with INT, WIS and CHA). */
 export function rollSave(c, bonus, mode, label, ability){
   var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c);
-  var oath = livingLegendOn(c) || hasSupernaturalDefense(c) || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
+  var oath = livingLegendOn(c) || hasSupernaturalDefense(c) || effectOn(c, "emboldening_bond") || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
   performRoll(20, 1, bonus, mode, label, fanatic || indom || diamond || oath ? function(){ return saveFollowUp(c, ability); } : null);
 }
 /* After a save: Fanatical Focus (once per rage) and Indomitable (a use;
@@ -151,6 +153,8 @@ function saveFollowUp(c, ability){
     opts.push({label: "Reroll (Living Legend)", title: "Your reaction: reroll this saving throw. You must use the new roll.",
       use: function(){ return {reroll: true, log: "Living Legend"}; }});
   }
+  if(effectOn(c, "emboldening_bond")) opts.push({label: "+1d4 (Emboldening Bond)", title: "Once per turn, while a bonded creature is within range",
+    use: function(){ var got = Math.floor(Math.random() * 4) + 1; return {bonus: got, log: "Emboldening Bond (rolled " + got + ")"}; }});
   // Supernatural Defense (Monster Slayer 7): your prey forced this save.
   if(hasSupernaturalDefense(c)) opts.push({label: "+1d6 (Supernatural Defense)", title: "When the target of your Slayer's Prey forces this save",
     use: function(){ var got = Math.floor(Math.random() * 6) + 1; return {bonus: got, log: "Supernatural Defense (rolled " + got + ")"}; }});
@@ -190,14 +194,18 @@ function attackFollowUp(c, r, aim, hit){
   // 17), Stroke of Luck's hit (rogue 20).
   if(hasFocusedAim(c)) opts = opts.concat(focusedAim(c).options);
   // Guided Strike (Oath of Conquest 3): +10 after seeing the roll.
-  if(hasGuidedStrike(c)){
+  var guided = guidedStrikePool(c);
+  if(guided){
     opts.push({label: "+10 (Guided Strike)", title: "Spend your Channel Divinity to add 10 to this attack roll",
       use: function(){
-        if(!spendChannel(c)) return null;
+        if(!spendChannel(c, guided)) return null;
         save(); renderAll();
         return {bonus: 10, log: "Guided Strike (Channel Divinity)"};
       }});
   }
+  // Emboldening Bond (Peace Domain 1): a d4, once per turn.
+  if(effectOn(c, "emboldening_bond")) opts.push({label: "+1d4 (Emboldening Bond)", title: "Once per turn, while a bonded creature is within range",
+    use: function(){ var got = Math.floor(Math.random() * 4) + 1; return {bonus: got, log: "Emboldening Bond (rolled " + got + ")"}; }});
   // Foe Slayer (ranger 20): +WIS against a favored enemy, once on each of your turns.
   var slayer = foeSlayer(c);
   if(slayer > 0 && hit){
@@ -262,6 +270,11 @@ function criticalHit(c, hit){
   // A paladin's melee hit: the smites' dice are doubled too.
   if(hit.melee && hasImprovedSmite(c) && hit.item) extra.push({label: "Improved Divine Smite 2d8", title: "On a critical hit, its die is doubled too",
     use: function(){ performRoll(8, 2, 0, "none", hit.label + ": Improved Divine Smite (critical)"); return {silent: true}; }});
+  // The dice a ranger's or cleric's hit adds are doubled too.
+  rangerHitDice(c).concat(clericHitDice(c)).filter(function(d){ return hit.item || d.unarmed; }).forEach(function(d){
+    extra.push({label: d.name + " " + 2 * d.qty + "d" + d.die, title: "On a critical hit, these dice are doubled too",
+      use: function(){ performRoll(d.die, 2 * d.qty, 0, "none", hit.label + ": " + d.label + " (critical)"); return {silent: true}; }});
+  });
   if(hit.melee && smiteSlots(c).length) extra.push({label: "Divine Smite", title: "Spend a spell slot: the dice are doubled on a critical hit",
     use: function(){ openSmiteSheet(c, hit.label, true); return {silent: true}; }});
   return {lead: "Critical hit!", hint: "",

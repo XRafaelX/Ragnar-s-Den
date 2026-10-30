@@ -168,9 +168,9 @@ export var CLASS_PROGRESSION = {
     ],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:[], tools:[], note:""},
     features: {
-      2: [{name:"Channel Divinity", text:"Channel divine power once per short or long rest. Every cleric has Turn Undead (action: each undead within 30 feet that can see or hear you makes a WIS save or is turned for 1 minute or until it takes damage), and your domain adds another option."}],
-      5: [{name:"Destroy Undead", text:"When an undead of challenge rating 1/2 or lower fails its save against your Turn Undead, it is destroyed instantly (CR 1 at level 8, CR 2 at 11, CR 3 at 14, CR 4 at 17)."}],
-      6: [{name:"Channel Divinity", replaces:"Channel Divinity", text:"Channel divine power twice per short or long rest (three times from level 18). Every cleric has Turn Undead (action: each undead within 30 feet that can see or hear you makes a WIS save or is turned for 1 minute or until it takes damage), and your domain adds another option."}],
+      2: [{name:"Channel Divinity", saveDc:{save:"wis", ability:"wis"}, text:"Channel divine power once per short or long rest. Every cleric has Turn Undead (action: each undead within 30 feet that can see or hear you makes a WIS save or is turned for 1 minute or until it takes damage), and your domain adds another option."}],
+      5: [{name:"Destroy Undead", chip:function(x){ return "CR " + (x.lv >= 17 ? "4" : x.lv >= 14 ? "3" : x.lv >= 11 ? "2" : x.lv >= 8 ? "1" : "1/2") + " or lower"; }, text:"When an undead of challenge rating 1/2 or lower fails its save against your Turn Undead, it is destroyed instantly (CR 1 at level 8, CR 2 at 11, CR 3 at 14, CR 4 at 17)."}],
+      6: [{name:"Channel Divinity", replaces:"Channel Divinity", saveDc:{save:"wis", ability:"wis"}, text:"Channel divine power twice per short or long rest (three times from level 18). Every cleric has Turn Undead (action: each undead within 30 feet that can see or hear you makes a WIS save or is turned for 1 minute or until it takes damage), and your domain adds another option."}],
       10: [{name:"Divine Intervention", text:"As an action, describe the help you seek and roll percentile dice. If you roll equal to or lower than your cleric level, your deity intervenes (the DM chooses how). If it does, you can't use this again for 7 days. Otherwise you can after a long rest. From level 20 the call succeeds automatically."}]
     }
   },

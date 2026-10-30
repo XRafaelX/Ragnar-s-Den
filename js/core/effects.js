@@ -158,6 +158,7 @@ export function effectRolls(c, kind, ability){
   // Empty Body and Cloak of Shadows: invisible, so advantage on attack rolls.
   if(kind==="attack" && effectOn(c, "empty_body")) out.push({mode: "adv", reason: "Empty Body: you're invisible"});
   if(kind==="attack" && effectOn(c, "cloak_of_shadows")) out.push({mode: "adv", reason: "Cloak of Shadows: you're invisible"});
+  if(kind==="attack" && effectOn(c, "trickery_cloak")) out.push({mode: "adv", reason: "Cloak of Shadows: you're invisible"});
   // Assassinate and Versatile Trickster: advantage on attack rolls while they're on.
   if(kind==="attack" && effectOn(c, "assassinate")) out.push({mode: "adv", reason: "Assassinate"});
   if(kind==="attack" && effectOn(c, "versatile_trickster")) out.push({mode: "adv", reason: "Versatile Trickster"});
@@ -545,6 +546,7 @@ export function attackEndsEffects(c, melee){
   var changed = false;
   if(melee && effectOn(c, "shadow_step")){ endEffect(c, "shadow_step"); changed = true; }
   if(effectOn(c, "cloak_of_shadows")){ endEffect(c, "cloak_of_shadows"); changed = true; }
+  if(effectOn(c, "trickery_cloak")){ endEffect(c, "trickery_cloak"); changed = true; }
   return changed;
 }
 

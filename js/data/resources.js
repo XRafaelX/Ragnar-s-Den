@@ -47,12 +47,12 @@ export var CLASS_RESOURCES = {
   "Cleric": [
     {id:"channel_divinity", name:"Channel Divinity", level:2,
       max:function(lv){ return lv>=18 ? 3 : lv>=6 ? 2 : 1; }, reset:always("short"),
-      hint:"Turn Undead or your domain's Channel Divinity option."},
+      hint:function(lv, m){ return "Your Channel Divinity save DC is " + (8 + m.pb + m.wis) + "."; }},
     {id:"harness_divine_power", name:"Harness Divine Power", level:2, variant:"Harness Divine Power",
       max:function(lv){ return lv>=18 ? 3 : lv>=6 ? 2 : 1; }, reset:always("long"),
       hint:"Bonus action: spend a Channel Divinity to get back a spent spell slot."},
     {id:"divine_intervention", name:"Divine Intervention", level:10, max:always(1), reset:always("manual"),
-      hint:"Action: roll d100. At or under your cleric level (always from level 20), your deity helps. Regain after 7 days if it worked, or after a long rest if it didn't."}
+      hint:"Action: describe the help you seek. If your deity answers, you can't call again for 7 days. Otherwise a long rest gives you another try."}
   ],
   "Druid": [
     {id:"wild_shape", name:"Wild Shape", level:2,
@@ -592,10 +592,11 @@ export var SUBCLASS_RESOURCES = {
     "Tempest Domain": [
       {id:"wrath_of_the_storm", name:"Wrath of the Storm", level:1,
         max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
-        hint:"Reaction when hit by a creature within 5 ft: it takes 2d8 lightning or thunder damage (DEX save for half)."}
+        roll:{die:8, qtyAt:function(){ return 2; }, button:"Wrath", label:"Wrath of the Storm (half on a success)"},
+        hint:function(lv, m){ return "Reaction when hit by a creature within 5 ft: lightning or thunder damage, DEX save DC " + (8 + m.pb + m.wis) + " for half."; }}
     ],
     "Twilight Domain": [
-      {id:"eyes_of_night", name:"Eyes of Night (Share)", level:1, max:always(1), reset:always("long"),
+      {id:"eyes_of_night", name:"Eyes of Night (Share)", level:1, max:always(1), reset:always("long"), slotMin:1,
         hint:"Action: share your 300-ft darkvision for 1 hour with up to WIS mod willing creatures within 10 ft. More uses cost a spell slot."},
       {id:"steps_of_night", name:"Steps of Night", level:6,
         max:function(lv, m){ return m.pb; }, reset:always("long"),

@@ -58,6 +58,8 @@ export function skillCheck(c, skill, passive){
   var key = SKILL_ABILITY[skill] || "str";
   var ab = checkAbility(c, key);
   var entry = c.skillProfs && c.skillProfs[skill] || {};
+  // Knowledge of the Ages: proficient with the chosen skill for 10 minutes.
+  if(!entry.prof && c.agesSkill===skill && effectOn(c, "knowledge_of_the_ages")) entry = {prof: true, expertise: false};
   var pb = profBonus(c);
   var value = ab.mod, breakdown = ab.label + " (" + fmtMod(ab.mod) + ")";
   // Emissary of Peace: +5 to Persuasion. Hide in Plain Sight: +10 to Stealth.
@@ -219,7 +221,7 @@ export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)]
 /* Initiative is a DEX check: Feral Instinct's or a Helm of Awareness's
    advantage, Duality's next ability check, and armor worn without
    proficiency's and conditions' disadvantage. */
-export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex"), nextCheckAdvantage(c), infusionInitiative(c)].concat(alwaysAdvantage(c, "initiative"), conditionRolls(c, "check"))); }
+export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex"), nextCheckAdvantage(c), infusionInitiative(c), effectOn(c, "vigilant_blessing") ? {mode: "adv", reason: "Vigilant Blessing"} : null].concat(alwaysAdvantage(c, "initiative"), conditionRolls(c, "check"))); }
 /* A weapon attack: disadvantage in armor you aren't proficient with when
    it uses STR or DEX (not INT from Battle Ready or CHA from Hex Warrior),
    and what conditions do to attack rolls. */

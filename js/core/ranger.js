@@ -28,7 +28,7 @@ export function favoredFoeDie(c){
 export function rangerHitDice(c){
   var out = [], walker = classLevelOf(c, "Ranger", "Horizon Walker");
   function add(id, name, qty, die, type, title, unarmed){
-    out.push({id: id, text: name + " +" + qty + "d" + die, qty: qty, die: die, label: name + (type ? " (" + type + ")" : ""), title: title, unarmed: !!unarmed});
+    out.push({id: id, name: name, text: name + " +" + qty + "d" + die, qty: qty, die: die, label: name + (type ? " (" + type + ")" : ""), title: title, unarmed: !!unarmed});
   }
   var foe = favoredFoeDie(c);
   if(foe && effectOn(c, "favored_foe")) add("foe", "Favored Foe", 1, foe, "", "The first time on each of your turns that you hit the marked creature", true);
