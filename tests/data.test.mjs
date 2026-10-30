@@ -145,7 +145,7 @@ function checkResource(r, where, ids){
   assert.ok(!ids.has(r.id), where + ": duplicate id " + r.id);
   ids.add(r.id);
   // (A hint can be worked out from the level and modifiers: the ki save DC.)
-  const hint = typeof r.hint === "function" ? r.hint(5, { pb: 3, wis: 3 }) : r.hint;
+  const hint = typeof r.hint === "function" ? r.hint(5, { pb: 3, wis: 3, cha: 3 }, {}) : r.hint;
   assert.ok(r.name && !LONG_DASH.test(r.name + hint), where + " " + r.id + ": name or long dash");
   assert.ok(typeof hint === "string" && hint.length > 10, where + " " + r.id + ": hint");
   assert.ok(Number.isInteger(r.level) && r.level >= 1 && r.level <= MAX_LEVEL, where + " " + r.id + ": level");

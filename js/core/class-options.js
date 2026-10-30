@@ -155,8 +155,8 @@ export function optionEffects(c){
         var o = set.options.find(function(x){ return x.name===e.name; });
         if(!o) return;
         var speeds = (o.speeds||[]).filter(function(sp){ return !sp.level || lv >= sp.level; });
-        if(o.darkvision || speeds.length || o.rageSpeed){
-          out.push({name: o.name + " (" + set.label + ")", darkvision: o.darkvision ? {range: o.darkvision} : null, speeds: speeds, rageSpeed: o.rageSpeed || 0});
+        if(o.darkvision || speeds.length || o.rageSpeed || o.saveNote){
+          out.push({name: o.name + " (" + set.label + ")", optionName: o.name, saveNote: o.saveNote || null, darkvision: o.darkvision ? {range: o.darkvision} : null, speeds: speeds, rageSpeed: o.rageSpeed || 0});
         }
       });
     });

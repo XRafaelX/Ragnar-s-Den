@@ -4,6 +4,7 @@
    because it also has an on/off state.
 
    level: class level the resource unlocks at.
+   slotMin: a spell slot of this level or higher pays once the uses are gone.
    max(lv, m): uses at class level `lv`; `m` holds the character's ability
      modifiers ({str, dex, con, int, wis, cha}).
    reset(lv): "short" or "long"; the rest that restores it (a short rest
@@ -81,7 +82,7 @@ export var CLASS_RESOURCES = {
       max:function(lv){ return lv*5; }, reset:always("long"),
       hint:"Action: restore hit points from this pool, or spend 5 to cure a disease or poison."},
     {id:"channel_divinity", name:"Channel Divinity", level:3, max:always(1), reset:always("short"),
-      hint:function(lv, m){ return "Your Channel Divinity save DC is " + (8 + m.pb + m.cha) + "."; }},
+      hint:function(lv, m, cl){ return cl.subclass==="Oath of Glory" ? "Use one of your Sacred Oath's Channel Divinity options." : "Your Channel Divinity save DC is " + (8 + m.pb + m.cha) + "."; }},
     {id:"harness_divine_power", name:"Harness Divine Power", level:3, variant:"Harness Divine Power",
       max:function(lv){ return lv>=15 ? 3 : lv>=7 ? 2 : 1; }, reset:always("long"),
       hint:"Bonus action: spend a Channel Divinity to get back a spent spell slot."},
@@ -91,8 +92,9 @@ export var CLASS_RESOURCES = {
   ],
   "Ranger": [
     {id:"favored_foe", name:"Favored Foe", level:1, variant:"Favored Foe", max:function(lv, m){ return m.pb; }, reset:always("long"),
-      hint:"When you hit a creature, mark it for 1 minute (concentration): once on each of your turns, your hit deals an extra 1d4 damage to it (1d6 from level 6, 1d8 from 14)."},
+      hint:"When you hit a creature, mark it for 1 minute (concentration) from Active effects. The extra damage is on your weapon's card."},
     {id:"tireless", name:"Tireless", level:10, variant:"Deft Explorer", max:function(lv, m){ return m.pb; }, reset:always("long"),
+      roll:{die:8, bonusAbility:"wis", min:1, temp:true, button:"Temporary HP", label:"Tireless: temporary HP"},
       hint:"Action: gain temporary hit points equal to 1d8 + your WIS modifier (minimum 1)."},
     {id:"natures_veil", name:"Nature's Veil", level:10, variant:"Nature's Veil", max:function(lv, m){ return m.pb; }, reset:always("long"),
       hint:"Bonus action: turn invisible until the start of your next turn."},
@@ -380,10 +382,11 @@ export var SUBCLASS_RESOURCES = {
         hint:"Bonus action: cast Etherealness on yourself until the end of the turn."}
     ],
     "Drakewarden": [
-      {id:"summon_drake", name:"Drake Companion (Summon)", level:3, max:always(1), reset:always("long"),
+      {id:"summon_drake", name:"Drake Companion (Summon)", level:3, max:always(1), reset:always("long"), slotMin:1,
         hint:"Action: summon your drake. More summons cost a 1st-level or higher spell slot."},
-      {id:"drakes_breath", name:"Drake's Breath", level:11, max:always(1), reset:always("long"),
-        hint:"Action: 30-ft cone, DEX save, 8d6 (10d6 from level 15). More uses cost a 3rd-level or higher slot."},
+      {id:"drakes_breath", name:"Drake's Breath", level:11, max:always(1), reset:always("long"), slotMin:3,
+        roll:{die:6, qtyAt:function(lv){ return lv>=15 ? 10 : 8; }, button:"Breathe", label:"Drake's Breath (half on a success)"},
+        hint:function(lv, m){ return "Action: 30-ft cone, DEX save DC " + (8 + m.pb + m.wis) + ". More uses cost a 3rd-level or higher slot."; }},
       {id:"reflexive_resistance", name:"Reflexive Resistance", level:15, max:function(lv, m){ return m.pb; }, reset:always("long"),
         hint:"Reaction: give yourself or your drake resistance to damage taken within 30 ft of each other."}
     ],

@@ -9,9 +9,9 @@
    {qty, die, bonus, label}, healSelf (the roll can heal you too), reason
    (why it can't be used now)}. */
 import { mod, profBonus } from "./basics.js";
-import { classLevelOf, computeSpellSlots } from "./class-features.js";
+import { classLevelOf } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
-import { effectOn, resourceLeft, spendResource, startEffect } from "./effects.js";
+import { effectOn, resourceLeft, spendResource, spellSlotsLeft, startEffect } from "./effects.js";
 import { isRangedWeapon } from "./equipment.js";
 
 var CHANNEL = "Paladin:channel_divinity";
@@ -30,23 +30,9 @@ export function smiteDice(slotLevel, undead, crit){
   var n = Math.min(5, slotLevel + 1) + (undead ? 1 : 0);
   return crit ? 2 * n : n;
 }
-/* The slots a smite can spend, lowest first: [{level, left, pact}]. A
-   warlock's pact slots count too. */
+/* The slots a smite can spend: a warlock's pact slots count too. */
 export function smiteSlots(c){
-  if(classLevelOf(c, "Paladin") < 2) return [];
-  var sc = c.spellcasting || {}, slots = sc.slots || {}, out = [];
-  for(var l = 1; l <= 9; l++){
-    var s = slots[l], left = s ? (Number(s.max)||0) - (Number(s.used)||0) : 0;
-    if(left > 0) out.push({level: l, left: left, pact: false});
-  }
-  var pact = sc.pact, level = (computeSpellSlots(c.classes).pact || {}).slotLevel;
-  var pactLeft = pact ? (Number(pact.max)||0) - (Number(pact.used)||0) : 0;
-  if(pactLeft > 0 && level) out.push({level: level, left: pactLeft, pact: true});
-  return out;
-}
-export function spendSmiteSlot(c, slot){
-  var s = slot.pact ? c.spellcasting.pact : c.spellcasting.slots[slot.level];
-  s.used = (Number(s.used)||0) + 1;
+  return classLevelOf(c, "Paladin") >= 2 ? spellSlotsLeft(c) : [];
 }
 /* Improved Divine Smite (paladin 11): 1d8 radiant on every melee weapon hit. */
 export function hasImprovedSmite(c){

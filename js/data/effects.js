@@ -16,6 +16,9 @@
      ends this too (Awakened Astral Self needs the arms and the visage).
    channel: started from the Channel Divinity list, shown here only while on.
    slotCost: a spell slot of this level can pay instead once the uses are gone.
+   slotPick: the player picks a spell slot to pay with (Primeval Awareness).
+   replacedBy: a Tasha's feature that replaces it (the entry using that loses it).
+   option: {set, name}, only with that class option known (Hunter's picks).
    duration: shown on the card.
    hint: what it does, kept short; the card adds the worked-out numbers. */
 export var TOGGLE_EFFECTS = [
@@ -47,6 +50,22 @@ export var TOGGLE_EFFECTS = [
   {id:"fighting_spirit", name:"Fighting Spirit", className:"Fighter", subclass:"Samurai", level:3,
     cost:{resource:"fighting_spirit", amount:1}, duration:"Until the end of your turn",
     hint:"Bonus action on your turn."},
+  // Ranger (Player's Handbook pp. 91 to 93, Xanathar's Guide pp. 41 to 43,
+  // Tasha's Cauldron pp. 56 to 60), checked on 5etools' data 2026-10-30.
+  {id:"favored_foe", name:"Favored Foe", className:"Ranger", level:1, variant:"Favored Foe", cost:{resource:"favored_foe", amount:1}, duration:"1 minute",
+    startLabel:"Mark", hint:"Needs your concentration, as a spell does."},
+  {id:"primeval_awareness", name:"Primeval Awareness", className:"Ranger", level:3, replacedBy:"Primal Awareness", slotPick:true, duration:"1 minute per slot level",
+    startLabel:"Sense", hint:"An action. It doesn't reveal where they are or how many."},
+  {id:"hide_in_plain_sight", name:"Hide in Plain Sight", className:"Ranger", level:10, replacedBy:"Nature's Veil", duration:"Until you move or act",
+    startLabel:"Camouflage", endLabel:"Move", hint:"1 minute to make, against a solid surface at least as tall and wide as you."},
+  {id:"dread_ambusher", name:"Dread Ambusher", className:"Ranger", subclass:"Gloom Stalker", level:3, duration:"Your first turn of combat",
+    startLabel:"First turn", endLabel:"Done", hint:"Each combat, at the start of your first turn."},
+  {id:"multiattack_defense", name:"Multiattack Defense", className:"Ranger", subclass:"Hunter", level:7, option:{set:"defensiveTactics", name:"Multiattack Defense"}, duration:"Rest of this turn",
+    startLabel:"Hit", endLabel:"Done", hint:"When a creature hits you with an attack."},
+  {id:"slayers_prey", name:"Slayer's Prey", className:"Ranger", subclass:"Monster Slayer", level:3, duration:"Until a rest",
+    startLabel:"Mark", hint:"A bonus action, on a creature you can see within 60 feet. Marking another ends it on the first."},
+  {id:"writhing_tide", name:"Writhing Tide", className:"Ranger", subclass:"Swarmkeeper", level:7, cost:{resource:"writhing_tide", amount:1}, duration:"1 minute",
+    hint:"A bonus action. Ends early if you are incapacitated."},
   // Paladin oaths (Player's Handbook pp. 85 to 87, Dungeon Master's Guide
   // p. 97, Sword Coast Adventurer's Guide p. 132, Xanathar's Guide pp. 37
   // and 38, Tasha's Cauldron pp. 53 and 54), checked on 5etools' data

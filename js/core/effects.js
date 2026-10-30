@@ -4,7 +4,7 @@
 import { TOGGLE_EFFECTS, WILD_SURGES } from "../data/effects.js";
 import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
-import { classLevelOf, usesVariant } from "./class-features.js";
+import { classLevelOf, computeSpellSlots, usesVariant } from "./class-features.js";
 import { isRangedWeapon } from "./equipment.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { knownOptions } from "./class-options.js";
@@ -24,7 +24,8 @@ function effectClass(c, def){
   if(def.race) return def.race.indexOf(c.race)!==-1 && totalLevel(c) >= def.level;
   return (c.classes||[]).find(function(cl){
     return cl.name===def.className && (!def.subclass || cl.subclass===def.subclass) && (Number(cl.level)||1) >= def.level &&
-      (!def.variant || usesVariant(cl, def.variant));
+      (!def.variant || usesVariant(cl, def.variant)) && !(def.replacedBy && usesVariant(cl, def.replacedBy)) &&
+      (!def.option || knownOptions(cl, def.option.set).some(function(e){ return e.name===def.option.name; }));
   });
 }
 /* Why an effect that's switched on gives nothing right now, or "". */
@@ -48,6 +49,19 @@ function spellSlotLeft(c, level){
   var s = c.spellcasting && c.spellcasting.slots && c.spellcasting.slots[level];
   return s ? (Number(s.max)||0) - (Number(s.used)||0) : 0;
 }
+/* The spell slots left, lowest first: [{level, left, pact}]. */
+export function spellSlotsLeft(c){
+  var out = [];
+  for(var l = 1; l <= 9; l++) if(spellSlotLeft(c, l) > 0) out.push({level: l, left: spellSlotLeft(c, l), pact: false});
+  var sc = c.spellcasting || {}, pact = sc.pact, level = (computeSpellSlots(c.classes).pact || {}).slotLevel;
+  var pactLeft = pact ? (Number(pact.max)||0) - (Number(pact.used)||0) : 0;
+  if(pactLeft > 0 && level) out.push({level: level, left: pactLeft, pact: true});
+  return out;
+}
+export function spendSpellSlot(c, slot){
+  var s = slot.pact ? c.spellcasting.pact : c.spellcasting.slots[slot.level];
+  s.used = (Number(s.used)||0) + 1;
+}
 /* The effects this character has, for the card: {def, on, blocked,
    resource (the class resource it spends), why (it can't start, or ""),
    slot (the spell slot level that pays for it instead, or 0)}. */
@@ -61,6 +75,7 @@ export function characterEffects(c){
     if(!on){
       var missing = (def.requires||[]).filter(function(r){ return !flags[r]; });
       if(missing.length) why = "Needs " + missing.map(function(r){ return effectDef(r).name; }).join(" and ") + " first.";
+      else if(def.slotPick && !spellSlotsLeft(c).some(function(s){ return !s.pact; })) why = "No spell slots left.";
       else if(def.cost && (!res || res.max - res.used < def.cost.amount)){
         // Living Legend: a spell slot of that level pays once the use is gone.
         if(def.slotCost && spellSlotLeft(c, def.slotCost)) slot = def.slotCost;
@@ -72,16 +87,17 @@ export function characterEffects(c){
 }
 /* Switch an effect on: pay its cost and, for Symbiotic Entity, gain its
    temporary HP (they don't stack: keep the higher). False if it can't. */
-export function startEffect(c, id){
+export function startEffect(c, id, slotLevel){
   var e = characterEffects(c).find(function(x){ return x.def.id===id; });
   if(!e || e.on || e.why) return false;
+  if(e.def.slotPick) c.spellcasting.slots[slotLevel].used = (Number(c.spellcasting.slots[slotLevel].used)||0) + 1;
   if(e.slot) c.spellcasting.slots[e.slot].used = (Number(c.spellcasting.slots[e.slot].used)||0) + 1;
   else if(e.resource && e.resource.max!==Infinity){
     if(!c.resourcesUsed) c.resourcesUsed = {};
     c.resourcesUsed[e.resource.key] = e.resource.used + e.def.cost.amount;
   }
   if(!c.effects) c.effects = {};
-  c.effects[id] = true;
+  c.effects[id] = e.def.slotPick ? slotLevel : true;
   if(id==="symbiotic_entity"){
     if(!c.hp) c.hp = {max:0, current:0, temp:0};
     c.hp.temp = Math.max(Number(c.hp.temp)||0, symbioticTempHp(c));

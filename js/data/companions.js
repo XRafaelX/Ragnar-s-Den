@@ -238,10 +238,10 @@ export var COMPANIONS = [
           return {name: a.name, toHit: (Number(a.toHit)||0) + x.pb, dice: a.dice || "1d4", bonus: (Number(a.bonus)||0) + x.pb, damageType: a.damageType || "", text: a.text || ""};
         }),
         traits:(b.traits ? [{text: b.traits}] : [])
-          .concat([{name:"Commands", text:"It acts on your initiative but only when you command it: your action has it Attack, Dash, Disengage, Dodge or Help" +
+          .concat([{name:"Commands", text:"It acts on your initiative but only when you command it: your action has it Attack, Dash, Disengage or Help, and it Dodges with no command" +
             (x.lv >= 5 ? " (and you make one weapon attack when it attacks)" : "") + "." +
-            (x.lv >= 7 ? " A bonus action can command Dash, Disengage, Dodge or Help when it doesn't attack. Its attacks are magical." : "") +
-            (x.lv >= 11 ? " It makes two attacks when you command it to Attack." : "")}])
+            (x.lv >= 7 ? " A bonus action can command Dash, Disengage or Help when it doesn't attack. Its attacks are magical." : "") +
+            (x.lv >= 11 ? " It makes two attacks, or its Multiattack, when you command it to Attack." : "")}])
       };
     }},
   // A Cavalier's mount: one of the PHB's mounts, bought or found in play

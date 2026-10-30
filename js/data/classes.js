@@ -473,7 +473,7 @@ Object.assign(CLASSES_INFO["Monk"], {
    come with a choice each (`profs`; the lists are in feature-picks.js),
    asked on the wizard's Class Features step and again at later levels. */
 CLASSES_INFO["Ranger"].features = [
-  {name:"Favored Enemy", text:"Choose a favored enemy (a type of creature, or two races of humanoid): you have advantage on Wisdom (Survival) checks to track them and on Intelligence checks to recall information about them, and you learn one language they speak, if they speak one. You choose another at ranger levels 6 and 14.", profs:favoredEnemyProfs()},
+  {name:"Favored Enemy", advantage:{on:"skill", skills:["Survival","Arcana","History","Nature","Religion"], when:"to track your favored enemies or recall information about them"}, text:"Choose a favored enemy (a type of creature, or two races of humanoid): you have advantage on Wisdom (Survival) checks to track them and on Intelligence checks to recall information about them, and you learn one language they speak, if they speak one. You choose another at ranger levels 6 and 14.", profs:favoredEnemyProfs()},
   {name:"Natural Explorer", text:"Choose a favored terrain. Your proficiency bonus is doubled for Intelligence and Wisdom checks about it that use a skill you're proficient in. Travelling there for an hour or more: difficult terrain doesn't slow your group, you can't become lost except by magic, you stay alert while doing other things, you can move stealthily at a normal pace when alone, you find twice as much food, and you learn the exact number and sizes of creatures you track and how long ago they passed. You choose another at ranger levels 6 and 10.", profs:favoredTerrainProfs()}
 ];
 

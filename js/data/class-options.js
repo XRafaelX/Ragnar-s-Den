@@ -153,7 +153,7 @@ export var OPTION_SETS = [
     options:[
       {name:"Escape the Horde", source:"PHB", text:"Opportunity attacks against you have disadvantage."},
       {name:"Multiattack Defense", source:"PHB", text:"When a creature hits you with an attack, you gain a +4 bonus to AC against all later attacks by that creature for the rest of the turn."},
-      {name:"Steel Will", source:"PHB", text:"You have advantage on saving throws against being frightened."}
+      {name:"Steel Will", source:"PHB", saveNote:{abilities:["str","dex","con","int","wis","cha"], text:"Advantage on saves against being frightened."}, text:"You have advantage on saving throws against being frightened."}
     ]
   },
   {
@@ -170,7 +170,7 @@ export var OPTION_SETS = [
     known:{15:1}, swap:"never", card:"hunter", cardLabel:"Hunter's choices",
     help:"Your last line of defense.",
     options:[
-      {name:"Evasion", source:"PHB", text:"When an effect lets you make a Dexterity save to take only half damage, you take no damage on a success and half on a failure."},
+      {name:"Evasion", source:"PHB", saveNote:{abilities:["dex"], text:"When a Dexterity save would halve the damage, you take none on a success and half on a failure."}, text:"When an effect lets you make a Dexterity save to take only half damage, you take no damage on a success and half on a failure."},
       {name:"Stand Against the Tide", source:"PHB", text:"When a hostile creature misses you with a melee attack, you can use your reaction to make it repeat the same attack against another creature (other than itself) of your choice."},
       {name:"Uncanny Dodge", source:"PHB", text:"When an attacker you can see hits you with an attack, you can use your reaction to halve the attack's damage against you."}
     ]

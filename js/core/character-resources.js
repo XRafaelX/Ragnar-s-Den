@@ -68,11 +68,11 @@ export function characterResources(c){
       if(runes) max = runes * (lv>=15 ? 2 : 1);
       // (A roll's die can grow with level: superiority dice d8, d10, d12.)
       // (And a roll can add an ability modifier: Protective Field's INT.)
-      var roll = r.roll ? Object.assign({}, r.roll, r.roll.dieAt ? {die: r.roll.dieAt(lv)} : {}, r.roll.bonusAbility ? {bonus: m[r.roll.bonusAbility]} : {}) : null;
+      var roll = r.roll ? Object.assign({}, r.roll, r.roll.dieAt ? {die: r.roll.dieAt(lv)} : {}, r.roll.qtyAt ? {qty: r.roll.qtyAt(lv)} : {}, r.roll.bonusAbility ? {bonus: m[r.roll.bonusAbility]} : {}) : null;
       list.push({
-        key: key, name: r.name, source: d.source, hint: typeof r.hint==="function" ? r.hint(lv, m) : r.hint, pool: !!r.pool,
+        key: key, name: r.name, source: d.source, hint: typeof r.hint==="function" ? r.hint(lv, m, cl) : r.hint, pool: !!r.pool,
         max: max, used: max===Infinity ? 0 : clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
-        reset: r.reset(lv), roll: roll, heal: r.heal ? r.heal(lv, m) : 0,
+        reset: r.reset(lv), roll: roll, heal: r.heal ? r.heal(lv, m) : 0, slotMin: r.slotMin || 0,
         initiativeRegain: r.initiativeRegain && lv >= r.initiativeRegain ? (r.initiativeAmount || 1) : 0
       });
     });

@@ -8,6 +8,8 @@ import { mod, fmtMod, profBonus, combineRolls } from "./basics.js";
 import { barbarianClassEntry } from "./character-resources.js";
 import { classFeatureList } from "./class-features.js";
 import { effectOn, effectRolls, weaponAttackEffect } from "./effects.js";
+import { otherworldlyGlamour } from "./ranger.js";
+import { optionEffects } from "./class-options.js";
 import { weaponAbility, armorPenalty, isRangedWeapon } from "./equipment.js";
 import { hasFeat } from "./vitals.js";
 import { nextCheckAdvantage } from "./magic-items.js";
@@ -46,6 +48,8 @@ export function abilityCheck(c, key){
   var value = ab.mod, breakdown = ab.label + " (" + fmtMod(ab.mod) + ")";
   var half = halfProficiency(c, key);
   if(half){ value += half.value; breakdown += " + " + half.name + " (" + fmtMod(half.value) + ")"; }
+  var glamour = key==="cha" ? otherworldlyGlamour(c) : 0;
+  if(glamour){ value += glamour; breakdown += " + Otherworldly Glamour (" + fmtMod(glamour) + ")"; }
   return {value: value, label: ab.label, breakdown: breakdown, roll: checkRollMode(c, key)};
 }
 /* A skill check: its ability, then proficiency (doubled with expertise)
@@ -56,8 +60,9 @@ export function skillCheck(c, skill, passive){
   var entry = c.skillProfs && c.skillProfs[skill] || {};
   var pb = profBonus(c);
   var value = ab.mod, breakdown = ab.label + " (" + fmtMod(ab.mod) + ")";
-  // Emissary of Peace: +5 to Persuasion for 10 minutes.
-  var emissary = skill==="Persuasion" && effectOn(c, "emissary_of_peace") ? 5 : 0;
+  // Emissary of Peace: +5 to Persuasion. Hide in Plain Sight: +10 to Stealth.
+  var effectBonus = skill==="Persuasion" && effectOn(c, "emissary_of_peace") ? {name: "Emissary of Peace", value: 5}
+    : skill==="Stealth" && effectOn(c, "hide_in_plain_sight") ? {name: "Hide in Plain Sight", value: 10} : null;
   // Features that double the proficiency bonus for this skill (Royal Envoy's Persuasion).
   var doubled = featureSkillFlags(c, "skillDouble").find(function(x){ return x.value===skill; });
   if(entry.prof){
@@ -68,7 +73,9 @@ export function skillCheck(c, skill, passive){
     var half = halfProficiency(c, key);
     if(half){ value += half.value; breakdown += " + " + half.name + " (" + fmtMod(half.value) + ")"; }
   }
-  if(emissary){ value += emissary; breakdown += " + Emissary of Peace (+5)"; }
+  if(effectBonus){ value += effectBonus.value; breakdown += " + " + effectBonus.name + " (" + fmtMod(effectBonus.value) + ")"; }
+  var glamour = key==="cha" ? otherworldlyGlamour(c) : 0;
+  if(glamour){ value += glamour; breakdown += " + Otherworldly Glamour (" + fmtMod(glamour) + ")"; }
   // Features that add an ability modifier to this skill (Elegant Courtier: WIS to Persuasion).
   featureSkillFlags(c, "skillBonus").forEach(function(x){
     if(x.value.skill!==skill) return;
@@ -193,6 +200,8 @@ export function saveNotes(c){
       if(f.saveNote && !out.some(function(x){ return x.name===f.name; })) out.push(Object.assign({name: f.name}, f.saveNote));
     });
   });
+  // A picked option's (a Hunter's Steel Will).
+  optionEffects(c).forEach(function(f){ if(f.saveNote) out.push(Object.assign({name: f.optionName}, f.saveNote)); });
   return out;
 }
 /* Reliable Talent (rogue 11): a proficient check's d20 of 9 or lower

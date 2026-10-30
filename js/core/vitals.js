@@ -117,6 +117,7 @@ export function computeSpeed(c){
   var inArmor = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
   if(model && model.speed && inArmor) parts.push({name: "Powered Steps", value: model.speed});
   if(effectOn(c, "bladesong")) parts.push({name: "Bladesong", value: 10});
+  if(effectOn(c, "dread_ambusher")) parts.push({name: "Dread Ambusher", value: 10});
   // A Heavy Holster with no knives in it: +20 ft.
   parts = parts.concat(holsterSpeedParts(c));
   // Arcane Propulsion Armor, worn: +5 ft.
@@ -251,6 +252,8 @@ export function computeArmorClass(c){
   base += defense;
   // Agile Parry (Kensei 3): +2 until the start of your next turn.
   if(effectOn(c, "agile_parry")){ base += 2; breakdown += " + Agile Parry (+2)"; short += " + Agile Parry"; }
+  // Multiattack Defense (Hunter 7): +4 against that creature for the turn.
+  if(effectOn(c, "multiattack_defense")){ base += 4; breakdown += " + Multiattack Defense (+4)"; short += " + Multiattack Defense"; }
   // A race's own bonus (Warforged's Integrated Protection).
   var raceAc = RACE_DATA[c.race] && Number(RACE_DATA[c.race].acBonus) || 0;
   if(raceAc){

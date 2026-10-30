@@ -1,5 +1,6 @@
 import { save } from "../../core/state.js";
-import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc } from "../../core/helpers.js";
+import { fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft } from "../../core/helpers.js";
+import { themedPicker } from "../../ui/themed-picker.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
@@ -87,12 +88,32 @@ function effectRow(c, e){
     save(); renderAll();
   });
   ctrl.appendChild(btn);
+  // Primeval Awareness: the slot picked is what pays.
+  if(def.slotPick && !e.on){
+    if(!e.why) info.appendChild(slotPicker(c, def));
+    return row;
+  }
   row.appendChild(ctrl);
   return row;
+}
+function slotPicker(c, def){
+  var wrap = document.createElement("div");
+  wrap.className = "res-pick";
+  var items = spellSlotsLeft(c).filter(function(s){ return !s.pact; }).map(function(s){
+    return {value: String(s.level), label: ordinal(s.level) + "-level slot: " + s.level + (s.level===1 ? " minute" : " minutes")};
+  });
+  wrap.appendChild(themedPicker({key: "effect:" + def.id, groups: {"": items}, value: "", placeholder: "Spend a spell slot...", ariaLabel: "Spend a spell slot on " + def.name,
+    onPick: function(v){
+      if(!startEffect(c, def.id, Number(v))) return;
+      logRoll(def.name, "Sensing for " + v + (v==="1" ? " minute." : " minutes."));
+      save(); renderAll();
+    }}));
+  return wrap;
 }
 
 function costText(e){
   if(e.slot) return ordinal(e.slot) + "-level slot";
+  if(e.def.slotPick) return "A spell slot";
   if(!e.def.cost || (e.resource && e.resource.max===Infinity)) return "Free";
   var n = e.def.cost.amount;
   if(e.def.cost.resource==="ki") return n + " ki";
@@ -125,6 +146,19 @@ function effectSummary(c, id){
   }
   if(id==="raven_queen_resistance") return "Resistance to all damage";
   if(id==="sunlight") return "Disadvantage on attack rolls and Perception checks";
+  if(id==="favored_foe") return "+1d" + favoredFoeDie(c) + " on the first hit each turn against it, on your weapon's card";
+  if(id==="primeval_awareness"){
+    var mins = Number(c.effects && c.effects.primeval_awareness)||0;
+    return (mins ? "For " + mins + (mins===1 ? " minute" : " minutes") + ": sense" : "Sense") + " aberrations, celestials, dragons, elementals, fey, fiends and undead within 1 mile, or 6 in your favored terrain";
+  }
+  if(id==="hide_in_plain_sight") return "+10 to Stealth while you stay there, without moving or taking actions or reactions";
+  if(id==="dread_ambusher") return "+10 ft speed · one more attack with the Attack action · +1d8 on that attack's hit, on your weapon's card";
+  if(id==="multiattack_defense") return "+4 AC against that creature's later attacks this turn";
+  if(id==="slayers_prey"){
+    var slayer = classLevelOf(c, "Ranger", "Monster Slayer");
+    return "+1d6 on the first hit each turn, on your weapon's card" + (slayer >= 7 ? " · +1d6 on saves it forces, offered after the roll" : "") + (slayer >= 15 ? " · Slayer's Counter: your reaction is a weapon attack before the save, and a hit means you succeed" : "");
+  }
+  if(id==="writhing_tide") return "Fly 10 ft and hover";
   if(id==="sacred_weapon"){
     var sacred = (c.inventory||[]).find(function(i){ return i.id===c.sacredWeapon; });
     return "+" + Math.max(1, mod(abilityScore(c, "cha"))) + " to attack rolls with " + (sacred ? sacred.name || "your weapon" : "your weapon") + " · it's magical · bright light 20 ft";

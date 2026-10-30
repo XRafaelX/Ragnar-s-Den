@@ -22,6 +22,10 @@ function downAtZero(c){
   if(c.extraTurn) return false;
   return (Number(hp.current)||0) <= 0 && (Number(hp.max)||0) > 0 && !((Number(c.deathSaves && c.deathSaves.fail)||0) >= 3);
 }
+function rangerLevel(c){
+  var cl = (c.classes||[]).find(function(x){ return x.name==="Ranger"; });
+  return cl ? Number(cl.level)||1 : 0;
+}
 function rageLevel(c, subclass){
   var cl = (c.classes||[]).find(function(x){ return x.name==="Barbarian" && x.subclass===subclass; });
   return cl ? Number(cl.level)||1 : 0;
@@ -68,6 +72,8 @@ export function conditionRolls(c, kind, ability){
   activeConditions(c).forEach(function(x){
     var d = x.def;
     var mode = kind==="attack" ? d.attack : kind==="check" ? d.checks : (d.saves || {})[ability];
+    // Feral Senses (ranger 18): not seeing a target gives no disadvantage.
+    if(kind==="attack" && d.id==="blinded" && rangerLevel(c) >= 18) mode = "";
     if(mode) out.push({mode: mode, reason: d.name});
   });
   var ex = exhaustionLevel(c);

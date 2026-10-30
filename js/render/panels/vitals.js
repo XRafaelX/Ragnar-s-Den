@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit } from "../../core/helpers.js";
+import { clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -222,7 +222,7 @@ export function renderVitalsPanel(c){
   // immune to isn't listed as resisted too.
   var wards = raceWards(c);
   var immuneTypes = wards.immune.map(function(r){ return r.type; });
-  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c), featureResistances(c), effectResistances(c))
+  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c), featureResistances(c), effectResistances(c), drakeResistance(c))
     .filter(function(r){ return immuneTypes.indexOf(r.type.toLowerCase())===-1; });
   var resistAll = resistsAllDamage(c); // Petrified
   if(resistAll) resist = [{type: "all damage", source: resistAll}];
@@ -707,6 +707,8 @@ export function renderVitalsPanel(c){
     var resNote = restored.length ? " Restored: "+restored.join(", ")+"." : "";
     var ended = endAllEffects(c).concat(endTimedBoons(c));
     if(ended.length) resNote += " Ended: "+ended.join(", ")+".";
+    var rested = tirelessRest(c);
+    if(rested!==null) resNote += " Tireless: exhaustion down to level "+rested+".";
     logRoll("Short rest taken", "Spend hit dice as needed to heal."+pactNote+resNote);
     save(); renderAll();
     restScene("short");
@@ -1169,6 +1171,9 @@ function renderResourcesCard(c, resources){
     hint.className = "res-hint";
     hint.textContent = r.hint + (r.source ? " ("+r.source+")" : "");
     info.appendChild(hint);
+    // A spell slot pays once the uses are gone (Drake's Breath).
+    var slotPay = r.slotMin && remaining<=0 ? spellSlotsLeft(c).find(function(s){ return s.level >= r.slotMin; }) : null;
+    var slotWords = slotPay ? " (" + ordinal(slotPay.level) + "-level slot)" : "";
     // A use that rolls a die (Warding Maneuver's d8): spends one and rolls.
     if(r.roll && r.max!==Infinity){
       var rolls = document.createElement("div");
@@ -1176,16 +1181,41 @@ function renderResourcesCard(c, resources){
       var rollBtn = document.createElement("button");
       rollBtn.type = "button"; rollBtn.className = "btn small inv-roll-btn res-roll-btn";
       rollBtn.innerHTML = makeDiceSvg();
-      rollBtn.appendChild(document.createTextNode((r.roll.button || "Use") + " · 1d" + r.roll.die + (r.roll.bonus ? fmtMod(r.roll.bonus) : "")));
+      rollBtn.appendChild(document.createTextNode((r.roll.button || "Use") + " · " + (r.roll.qty || 1) + "d" + r.roll.die + (r.roll.bonus ? fmtMod(r.roll.bonus) : "") + slotWords));
       var unarmed = r.roll.needs==="meleeOrShield" && !wieldsMeleeWeaponOrShield(c);
-      rollBtn.disabled = remaining<=0 || unarmed;
-      rollBtn.title = remaining<=0 ? "None left" : unarmed ? "Needs a melee weapon or a shield in hand" : "Spend one and roll 1d" + r.roll.die;
+      rollBtn.disabled = (remaining<=0 && !slotPay) || unarmed;
+      rollBtn.title = remaining<=0 && !slotPay ? "None left" : unarmed ? "Needs a melee weapon or a shield in hand" : "Spend one and roll " + (r.roll.qty || 1) + "d" + r.roll.die;
       rollBtn.addEventListener("click", function(){
-        setUsed(r.used+1);
-        performRoll(r.roll.die, 1, r.roll.bonus || 0, "none", r.roll.label, r.roll.min ? {adjust: function(x){ return x.total < r.roll.min ? {total: r.roll.min, note: "at least " + r.roll.min} : null; }} : null);
+        if(slotPay){ spendSpellSlot(c, slotPay); save(); renderAll(); }
+        else setUsed(r.used+1);
+        var least = r.roll.min || 0;
+        performRoll(r.roll.die, r.roll.qty || 1, r.roll.bonus || 0, "none", r.roll.label, r.roll.min || r.roll.temp ? {
+          adjust: least ? function(x){ return x.total < least ? {total: least, note: "at least " + least} : null; } : null,
+          // Temporary hit points don't stack: keep the higher.
+          onResult: r.roll.temp ? function(x){
+            var got = Math.max(x.total, least);
+            if(got > (Number(c.hp.temp)||0)){ c.hp.temp = got; save(); renderSidebar(); renderAll(); }
+          } : null
+        } : null);
       });
       rolls.appendChild(rollBtn);
       info.appendChild(rolls);
+    }
+    // No roll: the slot just pays (summoning the drake again).
+    if(slotPay && !r.roll){
+      var again = document.createElement("div");
+      again.className = "inv-roll-actions fx-rolls";
+      var againBtn = document.createElement("button");
+      againBtn.type = "button"; againBtn.className = "btn small inv-roll-btn res-roll-btn";
+      againBtn.textContent = "Again" + slotWords;
+      againBtn.title = "Spend a spell slot to use it again";
+      againBtn.addEventListener("click", function(){
+        spendSpellSlot(c, slotPay);
+        logRoll(r.name, "Used again with a " + ordinal(slotPay.level) + "-level spell slot.");
+        save(); renderAll();
+      });
+      again.appendChild(againBtn);
+      info.appendChild(again);
     }
     // Second Wind (fighter 1): a use for 1d10 + fighter level, and
     // Rallying Cry's healing for allies (Banneret 3).

@@ -499,8 +499,8 @@ export function attacksPerAction(c){
     if(cl.name==="Fighter") n = Math.max(n, lv >= 20 ? 4 : lv >= 11 ? 3 : lv >= 5 ? 2 : 1);
     if(classFeatureList(cl).some(function(f){ return f.name==="Extra Attack"; })) n = Math.max(n, 2);
   });
-  // Invincible Conqueror: one more.
-  return effectOn(c, "invincible_conqueror") ? n + 1 : n;
+  // Invincible Conqueror and Dread Ambusher's first turn: one more.
+  return n + (effectOn(c, "invincible_conqueror") ? 1 : 0) + (effectOn(c, "dread_ambusher") ? 1 : 0);
 }
 /* Every tool the character is proficient with, in the Information tab's
    order: classes, race, background, a tool picked in place of one given

@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, maxHp, ordinal, smiteDice, smiteSlots, spendSmiteSlot, inspiringSmite, spendChannel, hasImprovedSmite, channelActions, channelProblem, useChannelAction, resourceLeft, spendLayOnHands, removeCondition, activeConditions } from "../../core/helpers.js";
+import { clamp, maxHp, ordinal, smiteDice, smiteSlots, spendSpellSlot, inspiringSmite, spendChannel, hasImprovedSmite, channelActions, channelProblem, useChannelAction, resourceLeft, spendLayOnHands, removeCondition, activeConditions } from "../../core/helpers.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeDicesSvg } from "../../ui/svg-icons.js";
@@ -67,7 +67,7 @@ export function openSmiteSheet(c, name, crit){
       var n = smiteDice(s.level, state.undead, state.crit);
       var what = ordinal(s.level) + (s.pact ? "-level pact slot" : "-level slot");
       list.appendChild(sheetButton(what + ": " + n + "d8 (" + s.left + " left)", function(){
-        spendSmiteSlot(c, s);
+        spendSpellSlot(c, s);
         close();
         save(); renderAll();
         performRoll(8, n, 0, "none", name + ": Divine Smite (Radiant)", function(r){ return r ? smiteFollowUp(c) : null; });

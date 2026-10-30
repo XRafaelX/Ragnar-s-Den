@@ -36,7 +36,7 @@ test("Divine Smite slots: what's left, lowest first, nothing before 2nd level, p
   assert.deepEqual(H.smiteSlots(paladin("", 1)), []);
   const c = paladin("Oath of Devotion", 5);
   assert.deepEqual(H.smiteSlots(c).map((s) => [s.level, s.left]), [[1, 4], [2, 2]]);
-  H.spendSmiteSlot(c, H.smiteSlots(c)[1]);
+  H.spendSpellSlot(c, H.smiteSlots(c)[1]);
   assert.equal(c.spellcasting.slots[2].used, 1);
   c.spellcasting.slots[1].used = 4;
   assert.deepEqual(H.smiteSlots(c).map((s) => [s.level, s.left]), [[2, 1]]);
@@ -45,7 +45,7 @@ test("Divine Smite slots: what's left, lowest first, nothing before 2nd level, p
   multi.spellcasting.pact = { max: 2, used: 0 };
   const pact = H.smiteSlots(multi).find((s) => s.pact);
   assert.deepEqual([pact.level, pact.left], [2, 2]);
-  H.spendSmiteSlot(multi, pact);
+  H.spendSpellSlot(multi, pact);
   assert.equal(multi.spellcasting.pact.used, 1);
 });
 
@@ -78,7 +78,9 @@ test("Channel Divinity: two options per oath, with the DC, for 3rd level and up"
 test("the Channel Divinity feature shows the DC, except the oath with no save", () => {
   assert.equal(feature(paladin("Oath of Vengeance", 5), "Channel Divinity").dcs[0].chip, "DC 14");
   assert.deepEqual(feature(paladin("Oath of Glory", 5), "Channel Divinity").dcs, []);
-  assert.equal(H.characterResources(paladin("", 5)).find((r) => r.key === "Paladin:channel_divinity").hint, "Your Channel Divinity save DC is 14.");
+  const hint = (c) => H.characterResources(c).find((r) => r.key === "Paladin:channel_divinity").hint;
+  assert.equal(hint(paladin("", 5)), "Your Channel Divinity save DC is 14.");
+  assert.equal(hint(paladin("Oath of Glory", 5)), "Use one of your Sacred Oath's Channel Divinity options.");
 });
 
 test("using it: spent once, then it says why not, back after a rest's reset", () => {
