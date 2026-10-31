@@ -11,13 +11,13 @@ import { characterPickedProfs, raceChoiceEffects } from "./class-picks.js";
 import { invocationSpeedSources, invocationSenses } from "./invocations.js";
 import { optionEffects } from "./class-options.js";
 import { styleSenses } from "./fighting-styles.js";
-import { mod, fmtMod, totalLevel, profBonus } from "./basics.js";
+import { mod, fmtMod, totalLevel, profBonus, clamp } from "./basics.js";
 import { halfProficiency, checkAbility } from "./checks.js";
 import { findSubclass, classFeatureList } from "./class-features.js";
 import { effectOn, bladesongBonus, wildSurgeNow } from "./effects.js";
 import { twilightShroud } from "./cleric.js";
 import { defensiveFlourish } from "./bard.js";
-import { stoneBenefit } from "./wizard.js";
+import { stoneBenefit, wardLeft } from "./wizard.js";
 import { soulOfArtificeBonus } from "./artificer.js";
 import { wildForm, wildShapeSpeeds, wildShapeArmorClass, wildShapeSenses, incarnationAc } from "./druid.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
@@ -71,6 +71,27 @@ export function maxHp(c){
 }
 export function fullMaxHp(c){
   return (Number(c.hp && c.hp.max)||0) + toughBonus(c) + raceHpBonus(c) + itemConHpBonus(c);
+}
+/* Hit points left after n damage, without taking it: the Arcane Ward and
+   temporary hit points soak it first, as the HP card does. */
+export function hpAfterDamage(c, n){
+  var cur = Number(c.hp && c.hp.current)||0;
+  var soak = wardLeft(c) + (Number(c.hp && c.hp.temp)||0);
+  return Math.max(0, cur - Math.max(0, n - soak));
+}
+/* The most one change of hit points can be: {down} damage takes you to 0
+   through the ward and temp HP, {up} healing to full. */
+export function hpChangeLimits(c){
+  var cur = Number(c.hp && c.hp.current)||0;
+  var soak = wardLeft(c) + (Number(c.hp && c.hp.temp)||0);
+  return {down: cur + soak, up: Math.max(0, maxHp(c) - cur)};
+}
+/* Dragging the HP bar `dx` pixels across a box `width` wide: the whole
+   width is the hit point maximum. Negative is damage, positive healing. */
+export function hpDragChange(c, dx, width){
+  var max = maxHp(c), lim = hpChangeLimits(c);
+  if(!(width > 0) || !(max > 0)) return 0;
+  return clamp(Math.round(dx / width * max), -lim.down, lim.up);
 }
 /* Walking speed gained from features that only count out of armor
    (`speedWhen`: "unarmored" for Unarmored Movement, "noHeavyArmor" for

@@ -28,6 +28,10 @@ var WARD = "Wizard:arcane_ward";
 export function wardUp(c){
   return !!c.arcaneWard && school(c, "School of Abjuration") >= 2;
 }
+/* Hit points the ward has left to soak (0 when it isn't up). */
+export function wardLeft(c){
+  return wardUp(c) ? resourceLeft(c, WARD) : 0;
+}
 /* The ward takes damage before you. What's left for you. */
 export function wardAbsorb(c, n){
   if(!wardUp(c)) return n;

@@ -45,6 +45,28 @@
 }
 /* Dying: no bar, the radial gradient handles it */
 .hp-vital-box.is-dying::before{display:none;}
+/* Dragging the box sideways changes HP; a vertical swipe still scrolls. */
+.hp-vital-box{touch-action:pan-y;-webkit-user-select:none;user-select:none;cursor:ew-resize;}
+.hp-vital-box input{-webkit-user-select:text;user-select:text;}
+.hp-vital-box.hp-dragging{cursor:grabbing;}
+.hp-vital-box.hp-dragging::before{transition:none;}
+.hp-vital-box.is-dying.hp-dragging::before{display:block;}
+/* A grip on the bar's edge, so it reads as something to pull. */
+.hp-vital-box::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  left:clamp(5px, var(--hp-pct, 100%), calc(100% - 5px));
+  width:4px;height:26px;
+  transform:translate(-50%,-50%);
+  border-radius:2px;
+  background:color-mix(in srgb, var(--brass) 45%, transparent);
+  pointer-events:none;
+  z-index:0;
+}
+.hp-vital-box.hp-low::after{background:color-mix(in srgb, var(--oxblood) 50%, transparent);}
+.hp-vital-box.is-dying:not(.hp-dragging)::after{display:none;}
+.hp-hero-display:focus-visible{outline:2px solid var(--brass);outline-offset:4px;border-radius:6px;}
 /* Ensure all HP box children sit above the fill bar */
 .hp-vital-box > *{position:relative;z-index:1;}
 
@@ -67,6 +89,15 @@
   60%{transform:scale(.96);}
   100%{transform:scale(1);color:var(--text-on-parch);text-shadow:none;}
 }
+/* "−23" / "+8" while dragging or holding an arrow. */
+.hp-hero-display{position:relative;}
+.hp-delta-bubble{
+  position:absolute;left:100%;top:50%;transform:translate(8px,-50%);
+  font-family:var(--sans);font-size:13px;font-weight:700;white-space:nowrap;pointer-events:none;
+  color:var(--oxblood);background:color-mix(in srgb, var(--oxblood) 14%, transparent);
+  border:1px solid color-mix(in srgb, var(--oxblood) 40%, transparent);border-radius:12px;padding:2px 8px;
+}
+.hp-delta-bubble.is-heal{color:var(--moss);background:color-mix(in srgb, var(--moss) 14%, transparent);border-color:color-mix(in srgb, var(--moss) 40%, transparent);}
 .hp-temp-badge{
   font-size:11px;font-family:var(--sans);font-weight:600;color:#60a5fa;
   background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.3);

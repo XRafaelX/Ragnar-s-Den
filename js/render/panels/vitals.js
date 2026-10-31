@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn } from "../../core/helpers.js";
+import { useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -175,6 +175,110 @@ export function renderVitalsPanel(c){
     });
   }
 
+  // ---- Dragging the bar, holding an arrow ----
+  // Both only show the change while the finger is down (the bar, the
+  // number and a "−23" bubble). Letting go takes it in one go through
+  // applyDamage / applyHeal, so temp HP, the ward and Wild Shape still count.
+  var deltaBubble = document.createElement("span");
+  deltaBubble.className = "hp-delta-bubble";
+  deltaBubble.hidden = true;
+  heroDisplay.appendChild(deltaBubble);
+
+  function previewChange(d){
+    var shown = d < 0 ? hpAfterDamage(c, -d) : clamp(hpCur + d, 0, hpMax);
+    var pct = hpMax > 0 ? clamp(shown / hpMax, 0, 1) * 100 : 0;
+    curSpan.textContent = shown;
+    hpBox.style.setProperty("--hp-pct", pct + "%");
+    hpBox.classList.toggle("hp-low", pct <= 30 && shown > 0);
+    deltaBubble.hidden = !d;
+    deltaBubble.textContent = d < 0 ? "\u2212" + (-d) : "+" + d;
+    deltaBubble.classList.toggle("is-heal", d > 0);
+  }
+  function commitChange(d){
+    if(d < 0) applyDamage(-d);
+    else if(d > 0) applyHeal(d);
+    else previewChange(0);
+  }
+  function clampChange(d){ var lim = hpChangeLimits(c); return clamp(d, -lim.down, lim.up); }
+
+  // Sideways only: a vertical swipe still scrolls the page (touch-action: pan-y).
+  var drag = null;
+  hpBox.title = "Drag sideways: left to take damage, right to heal";
+  hpBox.addEventListener("pointerdown", function(e){
+    if(e.button > 0 || e.target.closest("button, input, select, a, .death-saves, .hp-sub-row")) return;
+    drag = {id: e.pointerId, x: e.clientX, y: e.clientY, on: false, d: 0};
+  });
+  hpBox.addEventListener("pointermove", function(e){
+    if(!drag || e.pointerId !== drag.id) return;
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if(!drag.on){
+      if(Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)){ drag = null; return; }
+      if(Math.abs(dx) < 8) return;
+      // Counted from here, so the first few pixels don't jump a point.
+      drag.on = true; drag.x = e.clientX; dx = 0;
+      try { hpBox.setPointerCapture(e.pointerId); } catch(err){}
+      hpBox.classList.add("hp-dragging");
+    }
+    drag.d = hpDragChange(c, dx, hpBox.clientWidth);
+    previewChange(drag.d);
+  });
+  function endDrag(e, apply){
+    if(!drag || e.pointerId !== drag.id) return;
+    var was = drag; drag = null;
+    if(!was.on) return;
+    hpBox.classList.remove("hp-dragging");
+    if(apply) commitChange(was.d); else previewChange(0);
+  }
+  hpBox.addEventListener("pointerup", function(e){ endDrag(e, true); });
+  hpBox.addEventListener("pointercancel", function(e){ endDrag(e, false); });
+
+  // Keyboard: the number is a slider (arrows 1, Page Up / Down 10).
+  heroDisplay.tabIndex = 0;
+  heroDisplay.setAttribute("role", "slider");
+  heroDisplay.setAttribute("aria-label", "Hit points");
+  heroDisplay.setAttribute("aria-valuemin", "0");
+  heroDisplay.setAttribute("aria-valuemax", String(hpMax));
+  heroDisplay.setAttribute("aria-valuenow", String(hpCur));
+  heroDisplay.setAttribute("aria-valuetext", hpCur + " of " + hpMax + " hit points");
+  heroDisplay.addEventListener("keydown", function(e){
+    var step = {ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, PageDown: -10, PageUp: 10}[e.key];
+    if(!step) return;
+    e.preventDefault();
+    var d = clampChange(step);
+    if(!d) return;
+    commitChange(d);
+    var again = document.querySelector(".hp-vital-box .hp-hero-display");
+    if(again) again.focus();
+  });
+
+  // Press and hold an arrow: it keeps counting, faster the longer it's held.
+  function holdToRepeat(btn, sign){
+    var timer = null, held = 0, skipClick = false;
+    btn.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+    btn.addEventListener("pointerdown", function(e){
+      if(e.button > 0) return;
+      held = 0;
+      try { btn.setPointerCapture(e.pointerId); } catch(err){}
+      var steps = 0;
+      timer = setTimeout(function tick(){
+        steps++;
+        held = clampChange(sign * steps);
+        previewChange(held);
+        timer = setTimeout(tick, steps < 5 ? 170 : steps < 15 ? 90 : 45);
+      }, 420);
+    });
+    function release(){
+      clearTimeout(timer); timer = null;
+      if(!held) return;
+      var d = held; held = 0; skipClick = true;
+      // After the click this release makes, which mustn't add one more.
+      setTimeout(function(){ skipClick = false; commitChange(d); }, 0);
+    }
+    btn.addEventListener("pointerup", release);
+    btn.addEventListener("pointercancel", release);
+    return function(){ return skipClick; };
+  }
+
   hpBox.appendChild(heroDisplay);
 
   // ---- Quick HP buttons: ↓ (damage) · Full · ↑ (heal) ----
@@ -187,7 +291,8 @@ export function renderVitalsPanel(c){
   dmg1Btn.title = "Take 1 damage";
   dmg1Btn.setAttribute("aria-label", "Take 1 damage");
   dmg1Btn.innerHTML = makeStatArrowSvg("down");
-  dmg1Btn.addEventListener("click", function(e){ e.stopPropagation(); applyDamage(1); });
+  var dmgHeld = holdToRepeat(dmg1Btn, -1);
+  dmg1Btn.addEventListener("click", function(e){ e.stopPropagation(); if(!dmgHeld()) applyDamage(1); });
   hpActionsRow.appendChild(dmg1Btn);
 
   var fullBtn = document.createElement("button");
@@ -209,7 +314,8 @@ export function renderVitalsPanel(c){
   heal1Btn.title = "Heal 1 HP";
   heal1Btn.setAttribute("aria-label", "Heal 1 HP");
   heal1Btn.innerHTML = makeStatArrowSvg("up");
-  heal1Btn.addEventListener("click", function(e){ e.stopPropagation(); applyHeal(1); });
+  var healHeld = holdToRepeat(heal1Btn, 1);
+  heal1Btn.addEventListener("click", function(e){ e.stopPropagation(); if(!healHeld()) applyHeal(1); });
   hpActionsRow.appendChild(heal1Btn);
 
   hpBox.appendChild(hpActionsRow);
