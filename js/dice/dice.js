@@ -10,6 +10,8 @@ var toastTimer = null;
 var previewDie = 20;      // die shown in the un-rolled preview (the last one rolled)
 var rolling = false;      // a roll animation is in flight
 var previewPending = false; // Qty/adv changed mid-roll; redraw once it settles
+var keptFollow = null;    // a hit's buttons still to use (see keptAfter)
+var followOwner = null;   // whose buttons are under the result
 
 export function getDieSvg(die, value){
   var valStr = value != null ? String(value) : "?";
@@ -149,6 +151,11 @@ function setAdvMode(mode){
   renderDicePreview();
 }
 
+/* Lots of dice on the stage are drawn smaller, so the result stays in the tray. */
+function fitStage(stage, count){
+  stage.classList.toggle("many-dice", count > 6);
+}
+
 function markSelectedDie(){
   document.querySelectorAll(".die-btn").forEach(function(btn){
     btn.classList.toggle("selected", Number(btn.getAttribute("data-die")) === previewDie);
@@ -198,6 +205,7 @@ export function renderDicePreview(){
     stage.appendChild(w);
     wrappers.push(w);
   }
+  fitStage(stage, count);
 
   markSelectedDie();
 }
@@ -213,7 +221,10 @@ export function renderDicePreview(){
    {bonus, log}, and the total grows by the bonus, or {reroll: true, log,
    adv} and the same dice are rolled again (with advantage when adv is
    "adv"), or {silent: true} when it rolled
-   something of its own (null when it can't). One per roll.
+   something of its own (null when it can't). One per roll, unless the
+   option has keep: a hit's damage dice are all rolled (see keptAfter).
+   An entry {heading} in options is a line of its own between them ("" for
+   just a new line).
    adjust(result) can change the total before it's shown: {total, note}
    (Indomitable Might's Strength score in place of a lower total).
    onResult(result) is told the final result once the dice settle (a
@@ -224,6 +235,8 @@ export function performRoll(die, qty, modifier, adv, label, extra){
   var adjust = extra && typeof extra==="object" ? extra.adjust || null : null;
   var onResult = extra && typeof extra==="object" ? extra.onResult || null : null;
   lastRollConfig = { die: die, qty: qty, modifier: modifier, adv: adv, label: label, followUp: extra || null };
+  // The next d20 is the next thing happening: a hit's buttons are done with.
+  if(die === 20) keptFollow = null;
   previewDie = die;
   rolling = true;
   markSelectedDie();
@@ -281,6 +294,7 @@ export function performRoll(die, qty, modifier, adv, label, extra){
   // Render dice tokens in the animation stage
   var stage = document.getElementById("dice-stage");
   stage.innerHTML = "";
+  fitStage(stage, diceCount);
 
   var tokenElements = [];
   for(var d = 0; d < diceCount; d++){
@@ -304,8 +318,9 @@ export function performRoll(die, qty, modifier, adv, label, extra){
   badgeSlot.innerHTML = "";
   var followEl = followUpSlot();
   followEl.innerHTML = "";
+  showKept(followEl);
   detailEl.textContent = (label ? label + ": " : "") + "Rolling…";
-  rollAgainBtn.style.display = "none";
+  rollAgainBtn.style.visibility = "hidden";
 
   // Rapidly cycle random numbers during roll animation
   var cycleInterval = setInterval(function(){
@@ -386,10 +401,12 @@ export function performRoll(die, qty, modifier, adv, label, extra){
 
     detailEl.textContent = (label ? label + ": " : "") + summary;
     rollAgainBtn.style.display = "inline-flex";
+    rollAgainBtn.style.visibility = "";
 
     logRoll(label || ("d" + die), full);
     if(onResult) onResult({total: finalTotal, natural: natural, values: finalValues});
     var follow = followUp && followUp({total: finalTotal, natural: natural, values: finalValues});
+    followEl.innerHTML = "";
     if(follow) renderFollowUp(followEl, follow, function(res){
       // A reroll (Magical Guidance): the same roll again, and it stands
       // (an adjustment still applies to it, but no second follow-up).
@@ -406,6 +423,8 @@ export function performRoll(die, qty, modifier, adv, label, extra){
       detailEl.textContent += " " + fmtMod(res.bonus) + " = " + finalTotal;
       logRoll(label || ("d" + die), res.log + ": " + fmtMod(res.bonus) + ", now " + finalTotal);
     });
+    showKept(followEl);
+    showResult();
   }, totalDelay);
   rollAnimationTimers.push(finalTimer);
 
@@ -415,7 +434,8 @@ export function performRoll(die, qty, modifier, adv, label, extra){
   } else {
     // Show smooth floating toast on screen (it says where a follow-up is:
     // tapping the toast opens the tray).
-    var ahead = followUp && followUp(null);
+    // (followUp(null, seen): seen is the roll, for a hint that fits it.)
+    var ahead = followUp && followUp(null, {total: finalTotal, natural: natural, values: finalValues});
     showFloatingToast(die, finalTotal, summary + (ahead && ahead.hint ? " · " + ahead.hint : ""), label, isCrit, isFail);
   }
 }
@@ -431,12 +451,36 @@ function followUpSlot(){
   }
   return el;
 }
-function renderFollowUp(el, follow, onUsed){
+/* A screen too short for the tray scrolls it: the result stays in view,
+   with what can be done with it. */
+function showResult(){
+  var tray = document.getElementById("dice-tray");
+  if(tray.scrollHeight > tray.clientHeight) tray.querySelector(".roll-result-area").scrollIntoView({block: "nearest"});
+}
+function followLead(el, text){
   var lead = document.createElement("span");
   lead.className = "roll-follow-lead";
-  lead.textContent = follow.lead;
+  lead.textContent = text;
   el.appendChild(lead);
+}
+/* A critical hit's buttons are one each: rolling the damage leaves Sneak
+   Attack and Divine Smite waiting. Tapping an option with keep leaves the
+   others with keep, less any whose tag is in its drops (Disarm stands in
+   for the damage roll), and they stay under the result until the next
+   d20. An option with later opens a sheet: it stays too, until use's
+   done() says the sheet was used, so closing the sheet loses nothing. */
+function keptAfter(options, opt){
+  var drops = opt.drops || [];
+  return options.filter(function(o){ return o.keep && o !== opt && drops.indexOf(o.tag) === -1; });
+}
+function showKept(el){
+  if(keptFollow && keptFollow.length) renderFollowUp(el, {lead: "Also on this hit:", options: keptFollow}, function(){});
+}
+function renderFollowUp(el, follow, onUsed){
+  followOwner = getActive();
+  if(follow.lead) followLead(el, follow.lead);
   follow.options.forEach(function(opt){
+    if(opt.heading != null){ followLead(el, opt.heading); return; }
     var b = document.createElement("button");
     b.type = "button";
     b.className = "btn-roll-again btn-roll-follow";
@@ -444,9 +488,12 @@ function renderFollowUp(el, follow, onUsed){
     if(opt.title) b.title = opt.title;
     b.disabled = !!opt.disabled;
     b.addEventListener("click", function(){
-      var res = opt.use();
-      if(!res) return;
+      var before = keptFollow;
+      if(opt.keep) keptFollow = opt.later ? follow.options.filter(function(o){ return o.keep; }) : keptAfter(follow.options, opt);
+      var res = opt.use(function(){ keptFollow = keptAfter(keptFollow || [], opt); });
+      if(!res){ keptFollow = before; return; }
       el.innerHTML = "";
+      showKept(el);
       onUsed(res);
     });
     el.appendChild(b);
@@ -467,6 +514,13 @@ export function logRoll(label, detail){
 
 export function renderRollLog(){
   var c = getActive();
+  // Another character's sheet: the last one's buttons would spend its uses.
+  if(followOwner && followOwner !== c){
+    followOwner = null;
+    keptFollow = null;
+    var follow = document.getElementById("roll-follow-up");
+    if(follow) follow.innerHTML = "";
+  }
   var el = document.getElementById("roll-log");
   if(!el) return;
   el.innerHTML = "";

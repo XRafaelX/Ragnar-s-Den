@@ -50,8 +50,9 @@ function tick(text, on, onChange){
 }
 
 /* ---- Divine Smite ---- */
-/* name: what hit, for the roll's label. crit starts with Critical hit on. */
-export function openSmiteSheet(c, name, crit){
+/* name: what hit, for the roll's label. crit starts with Critical hit on.
+   done (optional) is told when a slot is spent. */
+export function openSmiteSheet(c, name, crit, done){
   var state = {crit: !!crit, undead: false};
   openBottomSheet(function(body, refresh, close){
     sheetTop(body, "Divine Smite", close);
@@ -70,6 +71,7 @@ export function openSmiteSheet(c, name, crit){
         spendSpellSlot(c, s);
         close();
         save(); renderAll();
+        if(done) done();
         performRoll(8, n, 0, "none", name + ": Divine Smite (Radiant)", function(r){ return r ? smiteFollowUp(c) : null; });
       }));
     });

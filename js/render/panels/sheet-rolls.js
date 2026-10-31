@@ -48,7 +48,7 @@ export function rollAttack(c, bonus, mode, label, hit){
   // Master of the Barrel (gunslinger 20): a firearm's d20 of 9 or lower counts as a 10.
   var barrel = gun && classLevelOf(c, "Gunslinger") >= 20, trance = tranceOn(c);
   performRoll(20, 1, bonus, mode, label, {
-    followUp: function(r){ return attackFollowUp(c, r, aim, hit); },
+    followUp: function(r, seen){ return attackFollowUp(c, r, aim, hit, seen); },
     adjust: barrel || trance ? function(r){ return r.natural!=null && r.natural < 10 ? {total: r.total + 10 - r.natural, note: barrel ? "Master of the Barrel" : "Trance of Order"} : null; } : null,
     onResult: gun ? function(r){ firearmResult(c, hit.item, gun, r); } : null
   });
@@ -246,6 +246,8 @@ function saveFollowUp(c, ability, r){
       use: function(){ performRoll(8, 2, rebuke, "none", "Vigilant Rebuke (Force)"); return {silent: true}; }});
   }
   if(!opts.length) return null;
+  // (Vigilant Rebuke says "Saved?": a line of its own under "Failed?".)
+  if(failed && opts.length > failed) opts.splice(failed, 0, {heading: ""});
   return failed ? {lead: "Failed?", hint: "Failed? Tap for options.", options: opts} : {lead: "", hint: "Saved? Tap for Vigilant Rebuke.", options: opts};
 }
 /* Flash of Genius (artificer 7): INT on a check or a save. */
@@ -293,12 +295,15 @@ function hasDiamondSoul(c){
 }
 
 /* After an attack roll: critical damage on a natural 20, else Focused
-   Aim's +2, +4 or +6 for 1, 2 or 3 ki. (r is null for the toast's hint.) */
-function attackFollowUp(c, r, aim, hit){
-  var gun = hit && hit.item && firearmStats(hit.item, c);
-  if(gun && r && r.natural <= gun.misfire) return {lead: "Misfire! The attack misses and the " + (hit.item.name || "firearm") + " jams. " + (gun.set==="gunslinger" ? "Clear it on its card." : "Repair it on its card."), options: []};
+   Aim's +2, +4 or +6 for 1, 2 or 3 ki. (r is null for the toast's hint,
+   and seen is the roll then: a hit that's certain isn't "Missed?".) */
+function attackFollowUp(c, r, aim, hit, seen){
+  var gun = hit && hit.item && firearmStats(hit.item, c), roll = r || seen;
+  if(gun && roll && roll.natural <= gun.misfire) return {lead: "Misfire! The attack misses and the " + (hit.item.name || "firearm") + " jams. " + (gun.set==="gunslinger" ? "Clear it on its card." : "Repair it on its card."), hint: "Misfire!", options: []};
   if(hit && r && hit.rigged) return {lead: "Playing Dirty: the target makes a DC 14 Wisdom save or is blinded until the start of your next turn.", options: []};
-  if(hit && r && r.natural >= (hit.critMin || 20)) return hit.noDamage ? {lead: "Critical hit! The round deals no damage.", options: []} : withPinpoint(c, hit, criticalHit(c, hit), criticalDamage(c, hit).qty);
+  if(hit && roll && roll.natural >= (hit.critMin || 20)) return hit.noDamage ? {lead: "Critical hit! The round deals no damage.", hint: "", options: []} : withPinpoint(c, hit, criticalHit(c, hit, roll), criticalDamage(c, hit).qty);
+  // A natural 20 with no weapon card behind it (a spell attack) simply hits.
+  if(!hit && roll && roll.natural===20) return null;
   if(hit && r && hit.predicted && !hit.noDamage) return withPinpoint(c, hit, Object.assign(criticalHit(c, hit), {lead: "Predicted Critical: if it hits, it's a critical hit."}), criticalDamage(c, hit).qty);
   var opts = !hit || hit.noDamage ? [] : pinpointOptions(c, hit, hit.qty);
   // The Eldritch Gunman's enchanted firearm: Runic Bind on a hit, Veil of
@@ -426,10 +431,14 @@ function attackFollowUp(c, r, aim, hit){
   if(!opts.length) return null;
   // Only Focused Aim's three: named in the lead, as before.
   var onlyAim = opts.every(function(o){ return / ki\)$/.test(o.label); });
-  // (Pinpoint Control's are for a hit: "Missed?" would read wrong over them.)
-  if(opts.some(function(o){ return /^(Hit\? (Disarm|Hobble|Interrupt|Runic)|Missed\? Veil)/.test(o.label); })) return {lead: "", hint: "Tap for more options.", options: opts};
+  // (Those for a hit come first: "Missed?" would read wrong over them.)
+  var named = opts.filter(saysWhen), rest = opts.filter(function(o){ return !saysWhen(o); });
+  if(named.length) return {lead: "", hint: "Tap for more options.", options: rest.length ? named.concat([{heading: "Missed?"}], rest) : named};
   return {lead: onlyAim ? "Missed? Focused Aim:" : "Missed?", hint: onlyAim ? "Missed? Tap for Focused Aim." : "Missed? Tap for more options.", options: opts};
 }
+/* Options that say when they apply go first. "Missed?" only heads the rest. */
+var SAYS_WHEN = /^(Hit\?|Missed\?|Surprised target\?)/;
+function saysWhen(o){ return SAYS_WHEN.test(o.label); }
 /* A tray option that only tells the player what happens, logged. pay
    (optional) spends what it costs, false if it can't. */
 function reminder(label, title, name, text, pay){
@@ -471,10 +480,18 @@ function pinpointOptions(c, hit, qty){
     effect("Hit? Interrupt", "If the target is concentrating, it makes the concentration save against this attack with disadvantage", "Interrupt: the target has disadvantage on its concentration save against this attack.")
   ];
 }
+/* On a critical hit each is its own button (see keptAfter in dice.js): one
+   Pinpoint Control a shot, and Disarm stands in for the damage roll. */
 function withPinpoint(c, hit, follow, qty){
-  return Object.assign({}, follow, {options: follow.options.concat(pinpointOptions(c, hit, qty))});
+  var pins = pinpointOptions(c, hit, qty).map(function(o){
+    var disarm = /Disarm/.test(o.label);
+    return Object.assign({}, o, {keep: true, tag: disarm ? "disarm" : "pinpoint", drops: disarm ? ["pinpoint", "damage"] : ["pinpoint", "disarm"]});
+  });
+  return Object.assign({}, follow, {options: follow.options.concat(pins)});
 }
-function criticalHit(c, hit){
+/* roll: the attack roll, when there is one. The tray's badge already calls
+   a natural 20 a critical hit, but not a 19 from Improved Critical. */
+function criticalHit(c, hit, roll){
   var crit = criticalDamage(c, hit);
   var sa = hit.sneak && sneakAttack(c);
   var extra = sa ? [{label: "Sneak Attack " + 2 * sa.dice + "d6", title: "On a critical hit, Sneak Attack's dice are doubled too",
@@ -493,15 +510,15 @@ function criticalHit(c, hit){
         return {silent: true};
       }});
   });
-  if(hit.item && bladeFlourish(c)) extra.push({label: "Blade Flourish", title: "On a critical hit, its die is doubled too",
-    use: function(){ openFlourishSheet(c, hit.label, true); return {silent: true}; }});
-  if(hit.melee && smiteSlots(c).length) extra.push({label: "Divine Smite", title: "Spend a spell slot: the dice are doubled on a critical hit",
-    use: function(){ openSmiteSheet(c, hit.label, true); return {silent: true}; }});
-  return {lead: "Critical hit!", hint: "",
-    options: extra.length ? [critOption(c, hit, crit)].concat(extra) : [critOption(c, hit, crit)]};
+  if(hit.item && bladeFlourish(c)) extra.push({label: "Blade Flourish", title: "On a critical hit, its die is doubled too", later: true,
+    use: function(done){ openFlourishSheet(c, hit.label, true, done); return {silent: true}; }});
+  if(hit.melee && smiteSlots(c).length) extra.push({label: "Divine Smite", title: "Spend a spell slot: the dice are doubled on a critical hit", later: true,
+    use: function(done){ openSmiteSheet(c, hit.label, true, done); return {silent: true}; }});
+  return {lead: roll && roll.natural===20 ? "" : "Critical hit!", hint: "Critical hit! Tap for the damage.",
+    options: [critOption(c, hit, crit)].concat(extra).map(function(o){ return Object.assign(o, {keep: true}); })};
 }
 function critOption(c, hit, crit){
-  return {label: "Roll " + crit.qty + "d" + crit.die + (crit.bonus ? (crit.bonus > 0 ? "+" : "") + crit.bonus : "") + " damage",
+  return {tag: "damage", drops: ["disarm"], label: "Roll " + crit.qty + "d" + crit.die + (crit.bonus ? (crit.bonus > 0 ? "+" : "") + crit.bonus : "") + " damage",
       title: "Critical hit: the damage dice twice" + (crit.brutal ? ", plus " + crit.brutal + " more from Brutal Critical" : "") + (crit.heavy ? ", plus one more for the heavy round" : "") + (crit.deadly ? ", plus one more from Deadly Critical" : "") + ", then your bonus once",
       use: function(){
         // Hemorrhaging Critical (gunslinger 18): half again at the end of the target's next turn.

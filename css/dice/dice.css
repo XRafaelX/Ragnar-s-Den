@@ -16,6 +16,12 @@
 
 #dice-tray{
   position:fixed;right:22px;bottom:calc(88px + env(safe-area-inset-bottom, 0px));width:320px;max-width:calc(100vw - 28px);
+  /* One height whatever the roll adds, so the dice never move: the history
+     gives up its room to the follow-up buttons. Too short a screen scrolls. */
+  --tray-room:calc(100vh - 96px - env(safe-area-inset-bottom, 0px));
+  --tray-room:calc(100dvh - 96px - env(safe-area-inset-bottom, 0px));
+  height:min(600px, var(--tray-room));
+  overflow-x:hidden;overflow-y:auto;
   background:linear-gradient(180deg, #221c32 0%, var(--ink-deep) 100%);
   border:1px solid var(--rule);border-radius:12px;
   box-shadow:0 16px 40px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
@@ -25,6 +31,7 @@
   transition:opacity .22s ease, transform .22s cubic-bezier(0.16, 1, 0.3, 1);
   display:flex;flex-direction:column;gap:10px;
 }
+#dice-tray > *{flex:none;}
 #dice-tray.open{
   opacity:1;pointer-events:auto;
   transform:translateY(0) scale(1);
@@ -120,6 +127,8 @@
   flex-wrap:wrap;gap:10px;perspective:800px;position:relative;
   box-shadow:inset 0 2px 8px rgba(0,0,0,0.5);overflow:hidden;
 }
+#dice-stage.many-dice{gap:6px;padding:8px;}
+#dice-stage.many-dice .dice-token{width:34px;height:34px;}
 .stage-placeholder{
   font-size:11.5px;color:var(--text-on-ink-dim);text-align:center;
   font-style:italic;opacity:0.75;user-select:none;
@@ -266,7 +275,7 @@
 /* What can still be done with the roll (Focused Aim's ki after a miss). */
 #roll-follow-up{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;margin-top:6px;}
 #roll-follow-up:empty{display:none;}
-.roll-follow-lead{font-size:11.5px;color:var(--text-on-ink-dim);}
+.roll-follow-lead{flex:0 0 100%;font-size:11.5px;color:var(--text-on-ink-dim);text-align:center;}
 .btn-roll-follow{padding:4px 10px;}
 .btn-roll-follow:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;}
 .btn-roll-follow:disabled:hover{background:color-mix(in srgb, var(--brass) 18%, transparent);color:var(--brass-bright);}
@@ -281,10 +290,21 @@
   box-shadow:0 4px 12px color-mix(in srgb, var(--brass) 35%, transparent);
 }
 .btn-roll-again:active{transform:scale(0.95);}
+/* With buttons above it, Roll Again steps back: they're what's next. */
+#roll-follow-up:not(:empty) + .roll-actions-row .btn-roll-again{
+  background:transparent;border-color:var(--rule);color:var(--text-on-ink-dim);font-weight:500;
+}
+#roll-follow-up:not(:empty) + .roll-actions-row .btn-roll-again:hover{color:var(--text-on-ink);border-color:var(--brass);box-shadow:none;}
 
 /* Roll Log */
-.roll-log-wrapper{
+#dice-tray > .roll-log-wrapper{
+  flex:1 1 0;min-height:0;overflow:hidden;container-type:size;
   border-top:1px solid color-mix(in srgb, var(--brass) 20%, transparent);padding-top:8px;
+  display:flex;flex-direction:column;
+}
+/* No room for a line of it: no half a heading either. */
+@container (max-height:52px){
+  .roll-log-header, #roll-log{display:none;}
 }
 .roll-log-header{
   display:flex;align-items:center;justify-content:space-between;
@@ -297,7 +317,7 @@
 }
 .clear-log-btn:hover{color:var(--text-on-ink);background:rgba(255,255,255,.08);}
 #roll-log{
-  max-height:110px;overflow-y:auto;font-size:11.5px;color:var(--text-on-ink-dim);
+  flex:1 1 auto;min-height:0;overflow-y:auto;font-size:11.5px;color:var(--text-on-ink-dim);
 }
 #roll-log div{padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
 #roll-log .rl-label{color:var(--text-on-ink);font-weight:500;}
@@ -336,5 +356,6 @@
 
 @media (max-width:800px){
   #dice-tray{right:12px;left:12px;width:auto;max-width:none;bottom:calc(84px + env(safe-area-inset-bottom, 0px));}
+  #dice-tray{--tray-room:calc(100vh - 92px - env(safe-area-inset-bottom, 0px));--tray-room:calc(100dvh - 92px - env(safe-area-inset-bottom, 0px));}
   #dice-fab{right:16px;bottom:calc(16px + env(safe-area-inset-bottom, 0px));}
 }

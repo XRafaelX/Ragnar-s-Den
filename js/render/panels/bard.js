@@ -163,7 +163,7 @@ function sessionPicker(c, r){
 
 /* ---- Blade Flourish ---- */
 /* name: what hit. crit: the die is doubled on a critical hit. */
-export function openFlourishSheet(c, name, crit){
+export function openFlourishSheet(c, name, crit, done){
   var fl = bladeFlourish(c);
   if(!fl) return;
   var state = {free: !fl.left};
@@ -184,6 +184,7 @@ export function openFlourishSheet(c, name, crit){
         if(!state.free && !spendBardic(c)) return;
         close();
         save(); renderAll();
+        if(done) done();
         performRoll(die, qty, 0, "none", name + ": " + o.id, {onResult: function(r){
           if(o.id!=="Defensive Flourish") return;
           // (A critical hit doubles the damage, not the AC.)
