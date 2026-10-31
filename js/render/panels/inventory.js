@@ -7,7 +7,7 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, attacksPerAction, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -1992,12 +1992,10 @@ function handsSummary(c){
   var txt = document.createElement("span");
   txt.className = "inv-hands-text";
   var dual = dualWieldHands(c);
-  // Extra Attack: how many attacks the Attack action makes.
-  var attacks = attacksPerAction(c);
   txt.textContent = "Hands "+Math.min(h.used, 9)+"/2" + (dual ? " · Main: "+dual.main.name+" · Off-hand: "+dual.off.name
     : h.items.length ? " · "+h.items.map(function(i){
     return i.name + (itemHands(i)===2 ? " (two-handed)" : "");
-  }).join(", ") : " · nothing in hand") + (attacks > 1 ? " · " + attacks + " attacks per Attack action" : "");
+  }).join(", ") : " · nothing in hand");
   row.appendChild(txt);
   if(dual){
     var swapBtn = document.createElement("button");

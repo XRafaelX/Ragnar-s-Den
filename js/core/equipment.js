@@ -525,6 +525,23 @@ export function attacksPerAction(c){
   // Invincible Conqueror and Dread Ambusher's first turn: one more.
   return n + (effectOn(c, "invincible_conqueror") ? 1 : 0) + (effectOn(c, "dread_ambusher") ? 1 : 0);
 }
+/* The bonus-action attacks the character can make after the Attack
+   action, for the Attacks box: off-hand, Martial Arts and Flurry of Blows,
+   Polearm Master, Crossbow Expert and Frenzy. A list of short lines. */
+export function bonusActionAttacks(c){
+  var out = [];
+  var dual = dualWieldHands(c);
+  if(dual) out.push("Off-hand attack with your " + dual.off.name);
+  var monk = classLevelOf(c, "Monk");
+  if(monk) out.push(monk >= 2 ? "An unarmed strike (Martial Arts), or two for 1 ki (Flurry of Blows)" : "An unarmed strike (Martial Arts)");
+  var held = handsInUse(c).items.map(function(i){ return baseWeaponName(i) || ""; });
+  if(hasFeat(c, "Polearm Master") && held.some(function(n){ return /^(Glaive|Halberd|Quarterstaff|Spear)$/.test(n); }))
+    out.push("A 1d4 hit with the other end of your polearm (Polearm Master)");
+  if(hasFeat(c, "Crossbow Expert") && held.indexOf("Hand Crossbow")!==-1)
+    out.push("A shot with your hand crossbow after a one-handed attack (Crossbow Expert)");
+  if(c.rage && c.rage.active && c.rage.frenzy) out.push("A melee weapon attack (Frenzy)");
+  return out;
+}
 /* Every tool the character is proficient with, in the Information tab's
    order: classes, race, background, a tool picked in place of one given
    twice, feats. */

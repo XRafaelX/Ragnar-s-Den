@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits } from "../../core/helpers.js";
+import { useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -65,6 +65,22 @@ function showRefilled(c, before, startDelay){
 }
 
 /* ---- Vitals panel ---- */
+/* Attacks: how many the Attack action makes, with Action Surge and the
+   bonus-action attacks in its tooltip. */
+function attacksBox(c){
+  var n = attacksPerAction(c);
+  var box = document.createElement("div");
+  box.className = "vital-box vital-mini attacks-vital-box";
+  box.innerHTML = '<div class="lbl">Attacks</div><div class="init-hero-val vital-plain-val"></div><div class="vital-hint">per Attack action</div>';
+  box.querySelector(".init-hero-val").textContent = n;
+  var tip = ["When you take the Attack action, you make " + (n > 1 ? n + " weapon attacks." : "one weapon attack.")];
+  if(classLevelOf(c, "Fighter") >= 2) tip.push("Action Surge lets you take the Attack action again for " + (n > 1 ? n + " more." : "one more."));
+  var bonus = bonusActionAttacks(c);
+  if(bonus.length) tip.push("As a bonus action:\n" + bonus.map(function(b){ return "\u2022 " + b; }).join("\n"));
+  box.title = tip.join("\n\n");
+  return box;
+}
+
 export function renderVitalsPanel(c){
   var panel = document.createElement("div");
   // Max HP with Tough's and Dwarven Toughness's bonus; c.hp.max is the
@@ -77,7 +93,7 @@ export function renderVitalsPanel(c){
   // Conditions and exhaustion open from the header; what's on shows below the grid.
   card.querySelector("h3").appendChild(renderConditionsButton(c));
   var grid = document.createElement("div");
-  grid.className = "vitals-grid";
+  grid.className = "vitals-grid vitals-main";
 
   // HP box
   var hpBox = document.createElement("div");
@@ -741,9 +757,11 @@ export function renderVitalsPanel(c){
   if(speed.hindered) speedHint = speed.hindered.zero || "Halved (exhaustion)";
   var speedBox = smallVital("Speed","speed",null,speedHint,5," ft",speed.value - (Number(c.speed)||0));
   if(speed.hindered) speedBox.classList.add("speed-hindered");
-  // Fly, swim and climb speeds under walking speed; conditional ones say when.
+  // Fly, swim and climb speeds on their own line under the boxes (so a
+  // long condition doesn't stretch the row); conditional ones say when.
+  var others = null;
   if(speed.others.length){
-    var others = document.createElement("div");
+    others = document.createElement("div");
     others.className = "speed-others";
     speed.others.forEach(function(o){
       var line = document.createElement("div");
@@ -760,14 +778,13 @@ export function renderVitalsPanel(c){
       }
       others.appendChild(line);
     });
-    // Inside the hint row: the mini boxes share a 4-row subgrid (label,
-    // value, hint, stepper), so an extra child would land on the stepper.
-    speedBox.querySelector(".vital-hint").appendChild(others);
   }
   speedBox.classList.add("speed-vital-box");
   grid.appendChild(speedBox);
+  grid.appendChild(attacksBox(c));
 
   card.appendChild(grid);
+  if(others) card.appendChild(others);
   var conditionChips = renderConditionsStrip(c);
   if(conditionChips) card.appendChild(conditionChips);
   panel.appendChild(card);

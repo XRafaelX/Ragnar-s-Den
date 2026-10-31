@@ -58,6 +58,24 @@ test("Extra Attack: attacks per Attack action", () => {
   assert.deepEqual([4, 5, 11, 20].map((lv) => H.attacksPerAction(fighter("Champion", lv))), [1, 2, 3, 4]);
 });
 
+test("bonus-action attacks for the Attacks box: off-hand, Martial Arts, Polearm Master, Crossbow Expert, Frenzy", () => {
+  const gear = (name, extra = {}) => Object.assign({ id: name, name, type: "weapon", qty: 1, equipped: true, ability: "str", proficient: true, notes: "" }, extra);
+  assert.deepEqual(H.bonusActionAttacks(fighter("Champion", 5, { inventory: [sword] })), [], "one weapon, no feats: none");
+  const dual = H.bonusActionAttacks(fighter("Champion", 1, { inventory: [gear("Shortsword"), gear("Handaxe")] }));
+  assert.deepEqual(dual, ["Off-hand attack with your Handaxe"]);
+  const pam = fighter("Champion", 4, { inventory: [gear("Glaive")], feats: [{ id: "p", name: "Polearm Master" }] });
+  assert.match(H.bonusActionAttacks(pam)[0], /Polearm Master/);
+  pam.inventory[0].equipped = false;
+  assert.deepEqual(H.bonusActionAttacks(pam), [], "only with the polearm in hand");
+  const cbe = fighter("Champion", 4, { inventory: [gear("Hand Crossbow", { ability: "dex" })], feats: [{ id: "x", name: "Crossbow Expert" }] });
+  assert.match(H.bonusActionAttacks(cbe)[0], /Crossbow Expert/);
+  const monk = (lv) => fighter("", lv, { classes: [{ name: "Monk", level: lv }] });
+  assert.deepEqual(H.bonusActionAttacks(monk(1)), ["An unarmed strike (Martial Arts)"]);
+  assert.match(H.bonusActionAttacks(monk(2))[0], /Flurry of Blows/);
+  const berserk = fighter("", 3, { classes: [{ name: "Barbarian", subclass: "Path of the Berserker", level: 3 }], rage: { active: true, frenzy: true } });
+  assert.deepEqual(H.bonusActionAttacks(berserk), ["A melee weapon attack (Frenzy)"]);
+});
+
 test("firearms: misfire and reload, the repair check", () => {
   assert.deepEqual(H.firearmStats(revolver), { misfire: 1, reload: 4 });
   assert.deepEqual(H.firearmStats(Object.assign({}, revolver, { proficient: false })), { misfire: 2, reload: 4 }, "+1 misfire without proficiency");

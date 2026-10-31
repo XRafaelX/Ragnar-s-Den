@@ -1,7 +1,9 @@
-/* Vitals: HP, AC, initiative, speed, death saves, rests. */
+/* Vitals: HP, AC, initiative, speed, attacks, death saves, rests. */
 
 /* Vitals */
 .vitals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+/* The vitals card: AC, Initiative, Speed and Attacks under HP */
+.vitals-grid.vitals-main{grid-template-columns:repeat(4,1fr);}
 .vital-box{
   position:relative;
   border:1px solid var(--rule);border-radius:8px;padding:12px 10px;text-align:center;
@@ -170,9 +172,15 @@
   vertical-align:middle;opacity:0.65;
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a8fb5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z'/%3E%3C/svg%3E") center/contain no-repeat;
 }
+.attacks-vital-box .lbl::before{
+  content:"";
+  display:inline-block;width:11px;height:11px;margin-right:4px;
+  vertical-align:middle;opacity:0.65;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a8fb5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 17.5 3 6V3h3l11.5 11.5'/%3E%3Cpath d='m13 19 6-6'/%3E%3Cpath d='m16 16 4 4'/%3E%3Cpath d='m19 21 2-2'/%3E%3C/svg%3E") center/contain no-repeat;
+}
 
-/* AC / Initiative / Speed share the grid's rows via subgrid, so labels,
-   hero numbers, hints and controls line up across the three boxes no matter
+/* AC / Initiative / Speed / Attacks share the grid's rows via subgrid, so labels,
+   hero numbers, hints and controls line up across the four boxes no matter
    how long any one hint is. */
 .vital-mini{justify-content:flex-start;}
 .vital-mini .lbl{white-space:nowrap;}
@@ -188,6 +196,7 @@
 
 @media (max-width:560px){
   .vitals-grid{gap:8px;}
+  .vitals-grid.vitals-main{grid-template-columns:repeat(2,1fr);}
   .vital-box{padding:10px 6px;}
   .vital-box.hp-vital-box{padding:12px 10px;}
   .vital-mini .lbl{font-size:10px;letter-spacing:.04em;}
@@ -484,11 +493,14 @@
 .res-count{font-size:13px;color:var(--text-on-parch-dim);}
 .res-count b{font-size:18px;color:var(--text-on-parch);font-family:var(--serif);font-weight:normal;}
 
-/* Speed box: fly, swim and climb speeds under walking speed */
-.speed-others{display:flex;flex-direction:column;gap:3px;margin:6px 0 4px;font-size:12px;text-align:center;}
+/* Fly, swim and climb speeds: a line under the vitals boxes, each speed
+   with when it applies */
+.speed-others{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 20px;margin-top:12px;padding:8px 12px;
+  border:1px solid var(--rule);border-radius:8px;background:rgba(255,255,255,.04);font-size:12px;line-height:1.4;text-align:center;}
 .speed-other b{color:var(--text-on-parch);font-weight:600;}
 .speed-other.conditional b{color:var(--text-on-parch-dim);font-weight:500;}
-.speed-when{display:block;font-size:10.5px;line-height:1.3;color:var(--text-on-parch-dim);}
+.speed-when{margin-left:6px;font-size:11px;color:var(--text-on-parch-dim);}
+@media (max-width:560px){.speed-others{margin-top:8px;}}
 
 /* Active effects (Bladesong, Astral Self, Symbiotic Entity) */
 .fx-row{align-items:flex-start;border:1px solid transparent;}
