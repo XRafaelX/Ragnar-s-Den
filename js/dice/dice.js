@@ -66,12 +66,12 @@ export function showFloatingToast(die, finalTotal, summary, label, isCrit, isFai
   var dieSvg = getDieSvg(die, finalTotal);
 
   var badgeHtml = "";
-  if(isCrit) badgeHtml = '<span class="crit-badge crit-success" style="font-size:9.5px;padding:2px 6px;">NAT 20</span>';
-  else if(isFail) badgeHtml = '<span class="crit-badge crit-fail" style="font-size:9.5px;padding:2px 6px;">NAT 1</span>';
+  if(isCrit) badgeHtml = '<span class="crit-badge crit-success">NAT 20</span>';
+  else if(isFail) badgeHtml = '<span class="crit-badge crit-fail">NAT 1</span>';
 
   toast.innerHTML = '<div class="toast-die-mini">' + dieSvg + '</div>' +
     '<div class="toast-info">' +
-      '<div class="toast-title">' + escapeHtml(titleText) + ' ' + badgeHtml + '</div>' +
+      '<div class="toast-title"><span>' + escapeHtml(titleText) + '</span>' + badgeHtml + '</div>' +
       '<div class="toast-total">' + finalTotal + '</div>' +
       '<div class="toast-detail">' + escapeHtml(summary) + '</div>' +
     '</div>';

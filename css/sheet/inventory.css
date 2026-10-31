@@ -407,14 +407,39 @@
 /* An older sheet's one-time offer of its background's starting gear. */
 .bgk-offer-text{margin:4px 0 10px;font-size:13.5px;color:var(--text-on-parch);}
 .bgk-offer-actions{display:flex;gap:8px;flex-wrap:wrap;}
+/* A firearm's panel on its card, set apart from the roll buttons: shots
+   and Reload on one line, the round loaded under them. A gun that can't
+   fire states the problem in red, with its buttons under the text. */
+.gun-panel{display:flex;flex-direction:column;gap:8px;margin-top:2px;padding:8px 10px;border:1px solid var(--rule);border-radius:8px;background:rgba(0,0,0,.16);}
+.inv-firearm{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.gun-status{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;min-width:0;}
+.gun-status-text{font-size:13px;font-weight:600;color:var(--text-on-parch);}
+.gun-status-note{flex-basis:100%;font-size:11.5px;color:var(--text-on-parch-dim);}
+.inv-firearm .inv-roll-btn{flex:none;}
+.inv-firearm.is-empty .gun-status-text{color:var(--brass-bright);}
+.inv-firearm.is-fault{flex-wrap:wrap;justify-content:flex-start;gap:8px;}
+.inv-firearm.is-fault .gun-status-text{flex:1 1 100%;color:color-mix(in srgb, var(--oxblood) 45%, var(--text-on-parch));}
+.inv-firearm + .gun-round{padding-top:8px;border-top:1px solid var(--rule);}
+
 /* The Gunslinger class (Spikael's homebrew): the round loaded in a class
-   firearm (a picker, an elemental type beside it, a quiet line on what it
-   does) and the Bulletsmith card's batch: plain or heavy, then a stepper
-   per round kind. */
-.gun-round{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
-.gun-round-pickers{display:flex;flex-wrap:wrap;gap:8px;}
+   firearm (one tappable line that opens the sheet of rounds, a quiet line
+   on what it does) and the Bulletsmith card's batch: plain or heavy, then
+   a stepper per round kind. */
+.gun-round{display:flex;flex-direction:column;gap:4px;}
+.gun-round-pickers{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
 .gun-round-field{flex:1 1 180px;max-width:280px;min-width:0;}
+.gun-round-pick{flex:1;min-width:0;min-height:32px;display:flex;align-items:center;gap:8px;margin:0 -6px;padding:4px 6px;border:none;border-radius:6px;background:none;color:var(--text-on-parch);font-size:13px;text-align:left;cursor:pointer;}
+.gun-round-pick:hover{background:color-mix(in srgb, var(--brass) 12%, transparent);}
+.gun-round-pick:focus-visible{outline:2px solid var(--brass-bright);outline-offset:1px;}
+.gun-round-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gun-round-left{flex:none;font-size:12px;color:var(--text-on-parch-dim);}
+.gun-round-pick svg{flex:none;width:14px;height:14px;color:var(--text-on-parch-dim);}
 .gun-round .gun-round-note{margin:0;}
+/* The sheet of rounds (its tiles are the enchantment sheet's). */
+.enchant-tile .round-tile-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;color:var(--text-on-parch);}
+.enchant-tile .round-tile-left{flex:none;font-size:12px;color:var(--text-on-parch-dim);}
+.round-element-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+.round-element{align-items:center;font-size:13px;font-weight:600;}
 .bs-lead{font-size:13px;color:var(--text-on-parch-dim);margin:0 0 10px;}
 .bs-weight{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
 .bs-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 16px;margin-bottom:10px;}

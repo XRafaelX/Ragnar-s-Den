@@ -9,8 +9,8 @@
    Bulletsmith card that crafts rounds (Novice, Handy, Elemental and
    Occult Bulletsmith). */
 import { save } from "../../core/state.js";
-import { clamp, mod, fmtMod, maxHp, skillCheck, profBonus, classLevelOf, roundStacks, loadedRound, loadedStack, takesHeavyRounds, roundsHaveNoType, canRigRound, roundRigged, RIGGED_ROUND_NOTE, hasApplyingPressure, enchantmentOf, setEnchantment } from "../../core/helpers.js";
-import { ROUND_KINDS, ROUND_ELEMENTS, FIREARM_ENCHANTMENTS, roundBatchSize, roundStackName } from "../../data/gunslinger-rounds.js";
+import { clamp, mod, fmtMod, maxHp, skillCheck, profBonus, classLevelOf, roundStacks, loadedRound, takesHeavyRounds, roundsHaveNoType, canRigRound, roundRigged, RIGGED_ROUND_NOTE, hasApplyingPressure, enchantmentOf, setEnchantment } from "../../core/helpers.js";
+import { ROUND_KINDS, ROUND_ELEMENTS, HEAVY_ROUND_DAMAGE, FIREARM_ENCHANTMENTS, roundBatchSize, roundStackName } from "../../data/gunslinger-rounds.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { SPELL_DATA } from "../../data/spells.js";
 import { spendCoins } from "../../core/coins.js";
@@ -18,7 +18,7 @@ import { themedPicker } from "../../ui/themed-picker.js";
 import { showActionToast } from "../../ui/toast.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { makeDiceSvg } from "../../ui/svg-icons.js";
+import { makeDiceSvg, makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollCheck } from "./sheet-rolls.js";
 
@@ -145,50 +145,75 @@ export function openEnchantSheet(c, item, done){
 }
 
 /* ---- The loaded round, on a class firearm's card ---- */
-function roundValue(r){ return r ? [r.kind, r.element || "", r.spell || ""].join("|") : ""; }
 function stackValue(s){ return [s.round, s.element || "", s.spell || ""].join("|"); }
 
-/* The Round picker (the carried stacks that fit the gun, or with Master
-   of the Barrel any kind), the elemental type picker and a line on what
-   the round does. null for any other weapon. */
-export function gunRoundRow(c, item, redraw){
-  if(item.firearmSet!=="gunslinger") return null;
-  var free = roundsHaveNoType(c), stacks = roundStacks(c, item), heavy = takesHeavyRounds(item);
-  var items = [{value: "", label: "Plain shot (no round)", muted: true}];
-  if(free){
+/* What a class firearm can load: a plain shot, then the carried stacks that
+   fit it, or with Master of the Barrel any kind from one shared count (spell
+   rounds stay their own). */
+function roundChoices(c, item){
+  var stacks = roundStacks(c, item), heavy = takesHeavyRounds(item);
+  var out = [{name: "Plain shot"}];
+  function fromStack(s){ return {kind: s.round, element: s.element || "", spell: s.spell || "", name: s.name, left: Number(s.qty)||0}; }
+  if(roundsHaveNoType(c)){
     var any = stacks.filter(function(s){ return s.round!=="spell"; }).reduce(function(n, s){ return n + (Number(s.qty)||0); }, 0);
     Object.keys(ROUND_KINDS).forEach(function(k){
-      if(k!=="spell") items.push({value: k + "||", label: (heavy ? "Heavy " : "") + ROUND_KINDS[k].name + " round (" + any + " left)"});
+      if(k!=="spell") out.push({kind: k, name: roundStackName(k, heavy), left: any});
     });
-    stacks.filter(function(s){ return s.round==="spell"; }).forEach(function(s){ items.push({value: stackValue(s), label: s.name + " (" + s.qty + ")"}); });
-  } else {
-    var seen = {};
-    stacks.forEach(function(s){
-      var v = stackValue(s);
-      if(seen[v]) return;
-      seen[v] = true;
-      items.push({value: v, label: s.name + " (" + s.qty + ")"});
-    });
+    stacks.filter(function(s){ return s.round==="spell"; }).forEach(function(s){ out.push(fromStack(s)); });
+    return out;
   }
-  var round = loadedRound(c, item), current = roundValue(item.round);
+  var seen = {};
+  stacks.forEach(function(s){
+    var v = stackValue(s);
+    if(seen[v]) return;
+    seen[v] = true;
+    out.push(fromStack(s));
+  });
+  return out;
+}
+/* Is this the choice the gun holds? An elemental stack without a type of
+   its own matches the round whatever type it was loaded as. */
+function isLoadedChoice(choice, r){
+  if(!choice.kind || !r) return !choice.kind && !r;
+  return choice.kind===r.kind && (choice.spell || "")===(r.spell || "") && (!choice.element || choice.element===r.element);
+}
+
+/* The Round line: what's loaded and how many are left, opening the sheet
+   that changes it, with Rig it beside it and a line on what the round does.
+   null for any other weapon, or with nothing to load. */
+export function gunRoundRow(c, item, redraw){
+  if(item.firearmSet!=="gunslinger") return null;
+  var choices = roundChoices(c, item), round = loadedRound(c, item), canRig = canRigRound(c);
+  if(choices.length < 2 && !round && !canRig) return null;
   var wrap = document.createElement("div");
   wrap.className = "gun-round";
   var row = document.createElement("div");
   row.className = "gun-round-pickers";
-  var field = document.createElement("div");
-  field.className = "field gun-round-field";
-  field.appendChild(themedPicker({
-    key: "gunRound:" + (item.id || item.name), groups: {"": items}, value: items.some(function(i){ return i.value===current; }) ? current : "",
-    placeholder: "Round", ariaLabel: "Round loaded in the " + (item.name || "firearm"), search: false, sheet: true,
-    onPick: function(v){
-      if(!v) delete item.round;
-      else { var p = v.split("|"); item.round = {kind: p[0]}; if(p[1]) item.round.element = p[1]; if(p[2]) item.round.spell = p[2]; }
-      redraw();
+  if(choices.length > 1 || round){
+    var r = round && item.round, held = choices.find(function(ch){ return isLoadedChoice(ch, r); });
+    var name = round ? (round.element ? roundStackName(round.kind, round.heavy, round.element) : held ? held.name : roundStackName(round.kind, round.heavy, "", round.spell)) : held.name;
+    var left = round ? (held ? held.left + " left" : "None left") : "";
+    var pick = document.createElement("button");
+    pick.type = "button";
+    pick.className = "gun-round-pick";
+    pick.setAttribute("aria-label", "Round loaded in the " + (item.name || "firearm") + ": " + name + (left ? ", " + left : "") + ". Change it");
+    pick.title = "Choose what this gun fires";
+    var nameEl = document.createElement("span");
+    nameEl.className = "gun-round-name";
+    nameEl.textContent = name;
+    pick.appendChild(nameEl);
+    if(left){
+      var leftEl = document.createElement("span");
+      leftEl.className = "gun-round-left";
+      leftEl.textContent = left;
+      pick.appendChild(leftEl);
     }
-  }));
-  row.appendChild(field);
+    pick.insertAdjacentHTML("beforeend", makeStatArrowSvg("down"));
+    pick.addEventListener("click", function(){ openRoundSheet(c, item, redraw); });
+    row.appendChild(pick);
+  }
   // Playing Dirty (Outlaw 14): rig the next shot.
-  if(canRigRound(c)){
+  if(canRig){
     var rig = document.createElement("div");
     rig.className = "inv-roll-actions gun-rig";
     button(rig, roundRigged(c, item) ? "Don't rig it" : "Rig it", "Once per turn: the next shot is a blinding flash", false, function(){
@@ -196,20 +221,6 @@ export function gunRoundRow(c, item, redraw){
       redraw();
     });
     row.appendChild(rig);
-  }
-  // An elemental round takes its damage type when it's loaded.
-  if(round && round.def.elemental){
-    var stack = loadedStack(c, item);
-    if(!(stack && stack.element)){
-      var el = document.createElement("div");
-      el.className = "field gun-round-field";
-      el.appendChild(themedPicker({
-        key: "gunElement:" + (item.id || item.name), groups: {"": ROUND_ELEMENTS}, value: round.element || "", placeholder: "Damage type",
-        ariaLabel: "The elemental round's damage type", search: false, sheet: true,
-        onPick: function(v){ item.round.element = v; redraw(); }
-      }));
-      row.appendChild(el);
-    }
   }
   wrap.appendChild(row);
   var note = roundRigged(c, item) ? RIGGED_ROUND_NOTE : roundNote(c, round);
@@ -220,6 +231,90 @@ export function gunRoundRow(c, item, redraw){
     wrap.appendChild(p);
   }
   return wrap;
+}
+
+/* What a choice does, for its tile in the sheet. */
+function roundEffect(c, item, choice){
+  if(!choice.kind) return "The gun's own " + (item.damageType || "Piercing").toLowerCase() + " shot.";
+  var def = ROUND_KINDS[choice.kind];
+  if(def.spell) return roundNote(c, {def: def, spell: choice.spell});
+  var text = def.elemental
+    ? (choice.element ? "Deals " + choice.element.toLowerCase() + " damage." : "Pick its damage type when you load it: " + ROUND_ELEMENTS.join(", ").toLowerCase() + ".")
+    : def.note || "Deals " + def.damageType.toLowerCase() + " damage.";
+  return text + (takesHeavyRounds(item) && !def.noDamage ? " Heavy: +" + HEAVY_ROUND_DAMAGE + " damage, and a die more on a critical hit." : "");
+}
+
+/* Loading a round: a tile per choice in a bottom sheet. An elemental round
+   with no type of its own asks for one before it's loaded. */
+function openRoundSheet(c, item, done){
+  var asking = null;
+  openBottomSheet(function(body, refresh, close){
+    function load(choice, element){
+      if(!choice.kind) delete item.round;
+      else {
+        item.round = {kind: choice.kind};
+        if(element) item.round.element = element;
+        if(choice.spell) item.round.spell = choice.spell;
+      }
+      close(); save(); done();
+    }
+    var h = document.createElement("h3");
+    h.className = "enchant-title";
+    body.appendChild(h);
+    if(asking){
+      var chosen = asking;
+      h.textContent = "Pick the damage type";
+      var grid = document.createElement("div");
+      grid.className = "round-element-grid";
+      ROUND_ELEMENTS.forEach(function(el){
+        var on = !!item.round && item.round.kind===chosen.kind && item.round.element===el;
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "enchant-tile round-element" + (on ? " selected" : "");
+        b.setAttribute("aria-pressed", String(on));
+        b.textContent = el;
+        b.addEventListener("click", function(){ load(chosen, el); });
+        grid.appendChild(b);
+      });
+      body.appendChild(grid);
+      var back = document.createElement("div");
+      back.className = "inv-roll-actions";
+      button(back, "Back", "Choose a different round", false, function(){ asking = null; refresh(); });
+      body.appendChild(back);
+      return;
+    }
+    h.textContent = "Load the " + (item.name || "firearm");
+    var list = document.createElement("div");
+    list.className = "enchant-list";
+    var r = loadedRound(c, item) && item.round;
+    roundChoices(c, item).forEach(function(choice){
+      var on = isLoadedChoice(choice, r);
+      var tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "enchant-tile" + (on ? " selected" : "");
+      tile.setAttribute("aria-pressed", String(on));
+      var head = document.createElement("span");
+      head.className = "round-tile-head";
+      var name = document.createElement("strong");
+      name.textContent = choice.name;
+      head.appendChild(name);
+      if(choice.kind){
+        var left = document.createElement("span");
+        left.className = "round-tile-left";
+        left.textContent = choice.left + " left";
+        head.appendChild(left);
+      }
+      var text = document.createElement("span");
+      text.textContent = roundEffect(c, item, choice);
+      tile.appendChild(head); tile.appendChild(text);
+      tile.addEventListener("click", function(){
+        if(choice.kind && ROUND_KINDS[choice.kind].elemental && !choice.element){ asking = choice; refresh(); return; }
+        load(choice, choice.element);
+      });
+      list.appendChild(tile);
+    });
+    body.appendChild(list);
+  });
 }
 function roundNote(c, round){
   if(!round) return "";

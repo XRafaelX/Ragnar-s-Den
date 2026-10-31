@@ -2,7 +2,7 @@ import { save } from "../../core/state.js";
 import { openFlourishSheet } from "./bard.js";
 import { artificerHitDice } from "../../core/artificer.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg } from "../../ui/svg-icons.js";
+import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg, makeReloadSvg } from "../../ui/svg-icons.js";
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
@@ -853,61 +853,101 @@ function divineFuryButton(c, name){
 /* A firearm's state (the Gunslinger's rules): shots left before a reload,
    or a misfire to repair with tinker's tools (DC 8 + its misfire score,
    a broken gun on a failure). Rapid Repair (gunslinger 10) repairs for a
-   grit point as a bonus action, Lightning Reload (15) reloads as one. */
+   grit point as a bonus action, Lightning Reload (15) reloads as one.
+   A healthy gun shows a pip per shot on the left and Reload on the right,
+   filled in only when the gun is empty. A gun that can't fire says what's
+   wrong, with the way out as the main button. */
 function firearmRow(c, item, gun, idx){
   var row = document.createElement("div");
-  row.className = "inv-roll-actions inv-firearm";
-  var label = document.createElement("span");
-  label.className = "inv-holster-count";
-  var slinger = c.classes.find(function(cl){ return cl.name==="Fighter" && cl.subclass==="Gunslinger"; });
-  var slLv = slinger ? Number(slinger.level)||1 : 0;
+  row.className = "inv-firearm";
+  row.dataset.idx = idx;
   function btn(text, title, onClick, disabled){
     var b = smallButton(text, title, onClick);
     b.disabled = !!disabled;
     row.appendChild(b);
     return b;
   }
-  if(gun.set==="gunslinger") return classFirearmRow(c, item, gun, idx, row, label, btn);
-  if(item.broken){
-    label.textContent = "Broken: mend it out of combat at a quarter of its cost.";
+  function fault(text){
+    row.classList.add("is-fault");
+    var label = document.createElement("span");
+    label.className = "gun-status-text";
+    label.textContent = text;
     row.appendChild(label);
-    btn("Mended", "It has been mended", function(){ delete item.broken; item.shots = 0; logRoll(item.name || "Firearm", "Mended."); redrawKeeping(idx); });
+  }
+  function fix(text, title, onClick){ btn(text, title, onClick).classList.add("primary"); }
+  function shots(reloadTitle, alsoReload){
+    var left = gun.reload ? Math.max(0, gun.reload - (Number(item.shots)||0)) : 0;
+    var status = document.createElement("div");
+    status.className = "gun-status";
+    if(gun.reload){
+      var pips = document.createElement("span");
+      pips.className = "inv-holster-pips";
+      pips.setAttribute("aria-hidden", "true");
+      for(var i = 0; i < gun.reload; i++){
+        var pip = document.createElement("span");
+        pip.className = "res-pip" + (i < left ? " full" : "");
+        pips.appendChild(pip);
+      }
+      status.appendChild(pips);
+      var count = document.createElement("span");
+      count.className = "gun-status-text";
+      count.textContent = !left ? "Empty" : gun.reload===1 ? "Loaded" : "Shots " + left + " of " + gun.reload;
+      status.appendChild(count);
+    }
+    if(gun.misfire){
+      var note = document.createElement("span");
+      note.className = "gun-status-note";
+      note.textContent = "Misfires on " + (gun.misfire > 1 ? "1 to " + gun.misfire : "a 1");
+      status.appendChild(note);
+    }
+    row.appendChild(status);
+    if(!gun.reload) return;
+    var reload = btn("Reload", reloadTitle, function(){
+      item.shots = 0;
+      if(alsoReload) alsoReload();
+      logRoll(item.name || "Firearm", "Reloaded.");
+      redrawKeeping(idx);
+      pipsRefilled(document.querySelector('.inv-firearm[data-idx="' + idx + '"] .inv-holster-pips'), left, gun.reload);
+    }, left===gun.reload);
+    reload.insertAdjacentHTML("afterbegin", makeReloadSvg());
+    if(!left){ row.classList.add("is-empty"); reload.classList.add("primary"); }
+  }
+  var ui = {btn: btn, fault: fault, fix: fix, shots: shots};
+  if(gun.set==="gunslinger") return classFirearmRow(c, item, gun, idx, row, ui);
+  var slinger = c.classes.find(function(cl){ return cl.name==="Fighter" && cl.subclass==="Gunslinger"; });
+  var slLv = slinger ? Number(slinger.level)||1 : 0;
+  if(item.broken){
+    fault("Broken: mend it out of combat at a quarter of its cost.");
+    fix("Mended", "It has been mended", function(){ delete item.broken; item.shots = 0; logRoll(item.name || "Firearm", "Mended."); redrawKeeping(idx); });
     return row;
   }
   if(item.misfired){
-    var fix = firearmRepair(c, item);
-    label.textContent = "Misfired: repair with tinker's tools, DC " + fix.dc + ".";
-    row.appendChild(label);
+    var repair = firearmRepair(c, item);
+    fault("Misfired: repair with tinker's tools, DC " + repair.dc + ".");
     var roll = function(how){
-      performRoll(20, 1, fix.bonus, "none", "Repair " + (item.name || "firearm") + " (tinker's tools, DC " + fix.dc + ")", {onResult: function(r){
+      performRoll(20, 1, repair.bonus, "none", "Repair " + (item.name || "firearm") + " (tinker's tools, DC " + repair.dc + ")", {onResult: function(r){
         delete item.misfired;
-        if(r.total < fix.dc) item.broken = true;
-        logRoll(item.name || "Firearm", (r.total >= fix.dc ? "Repaired" : "The repair failed: it's broken") + " (" + r.total + " vs DC " + fix.dc + ", " + how + ").");
+        if(r.total < repair.dc) item.broken = true;
+        logRoll(item.name || "Firearm", (r.total >= repair.dc ? "Repaired" : "The repair failed: it's broken") + " (" + r.total + " vs DC " + repair.dc + ", " + how + ").");
         save(); renderAll();
       }});
     };
-    btn("Repair " + fmtMod(fix.bonus), "An action: a tinker's tools check (" + fix.ability + (fix.proficient ? " + proficiency" : ", not proficient") + "). On a failure the gun breaks.", function(){ roll("an action"); });
+    fix("Repair " + fmtMod(repair.bonus), "An action: a tinker's tools check (" + repair.ability + (repair.proficient ? " + proficiency" : ", not proficient") + "). On a failure the gun breaks.", function(){ roll("an action"); });
     if(slLv >= 10){
       var grit = characterResources(c).find(function(r){ return r.key==="Fighter:grit_points"; });
-      var left = grit ? grit.max - grit.used : 0;
-      btn("Rapid Repair · 1 grit", left > 0 ? "A bonus action: spend a grit point to make the repair check." : "No grit points left", function(){
+      var gritLeft = grit ? grit.max - grit.used : 0;
+      btn("Rapid Repair · 1 grit", gritLeft > 0 ? "A bonus action: spend a grit point to make the repair check." : "No grit points left", function(){
         c.resourcesUsed[grit.key] = grit.used + 1;
         roll("Rapid Repair, 1 grit");
-      }, left <= 0);
+      }, gritLeft <= 0);
     }
     return row;
   }
-  var left = Math.max(0, gun.reload - (Number(item.shots)||0));
-  label.textContent = "Shots " + left + " of " + gun.reload + " · misfires on " + (gun.misfire > 1 ? "1 to " + gun.misfire : "a 1");
-  row.appendChild(label);
-  btn("Reload", slLv >= 15 ? "A bonus action (Lightning Reload). You need a free hand." : "Spend one attack or an action. You need a free hand.", function(){
-    item.shots = 0;
+  shots(slLv >= 15 ? "A bonus action (Lightning Reload). You need a free hand." : "Spend one attack or an action. You need a free hand.", function(){
     // Outlaw's Grit: reloading reloads both firearms in hand.
     var hands = classLevelOf(c, "Gunslinger", "Outlaw") ? dualWieldHands(c) : null;
     if(hands && (hands.main===item || hands.off===item)){ hands.main.shots = 0; hands.off.shots = 0; }
-    logRoll(item.name || "Firearm", "Reloaded.");
-    redrawKeeping(idx);
-  }, left===gun.reload);
+  });
   return row;
 }
 /* The Gunslinger class's own guns: a misfire (an optional rule) never
@@ -915,11 +955,10 @@ function firearmRow(c, item, gun, idx){
    loading gun fires once per reload, free once per turn with Master of
    Arms (gunslinger 2). Nothing to show for a gun that neither reloads
    nor misfires (the Pistol): null. */
-function classFirearmRow(c, item, gun, idx, row, label, btn){
+function classFirearmRow(c, item, gun, idx, row, ui){
   if(item.misfired){
-    label.textContent = "Misfired: clearing it takes an action.";
-    row.appendChild(label);
-    btn("Clear it", "An action. It always works.", function(){
+    ui.fault("Misfired: clearing it takes an action.");
+    ui.fix("Clear it", "An action. It always works.", function(){
       delete item.misfired;
       logRoll(item.name || "Firearm", "Cleared the misfire.");
       redrawKeeping(idx);
@@ -927,17 +966,7 @@ function classFirearmRow(c, item, gun, idx, row, label, btn){
     return row;
   }
   if(!gun.reload && !gun.misfire) return null;
-  var left = gun.reload ? Math.max(0, gun.reload - (Number(item.shots)||0)) : 0;
-  label.textContent = [gun.reload ? "Shots " + left + " of " + gun.reload : "", gun.misfire ? "misfires on " + (gun.misfire > 1 ? "1 to " + gun.misfire : "a 1") : ""]
-    .filter(Boolean).join(" · ");
-  row.appendChild(label);
-  if(gun.reload){
-    btn("Reload", classLevelOf(c, "Gunslinger") >= 2 ? "Once per turn this is a free action (Master of Arms)." : "Load the next round.", function(){
-      item.shots = 0;
-      logRoll(item.name || "Firearm", "Reloaded.");
-      redrawKeeping(idx);
-    }, left===gun.reload);
-  }
+  ui.shots(classLevelOf(c, "Gunslinger") >= 2 ? "Once per turn this is a free action (Master of Arms)." : "Load the next round.");
   return row;
 }
 /* Sneak Attack (rogue 1): its dice once per turn, on a finesse or ranged
@@ -1548,11 +1577,16 @@ function renderWeaponCard(c, item, idx){
     }
   }
   card.appendChild(actions);
+  // A firearm's panel: its shots or misfire, and a class gun's loaded round.
   var gunRow = gun && firearmRow(c, item, gun, idx);
-  if(gunRow) card.appendChild(gunRow);
-  // A Gunslinger class gun's loaded round.
   var roundRow = gunRoundRow(c, item, function(){ redrawKeeping(idx); });
-  if(roundRow) card.appendChild(roundRow);
+  if(gunRow || roundRow){
+    var gunPanel = document.createElement("div");
+    gunPanel.className = "gun-panel";
+    if(gunRow) gunPanel.appendChild(gunRow);
+    if(roundRow) gunPanel.appendChild(roundRow);
+    card.appendChild(gunPanel);
+  }
   // A magic weapon with charges (Hammer of Thunderbolts, Mace of Terror).
   var charges = chargesBlock(c, item, idx);
   if(charges) card.appendChild(charges);

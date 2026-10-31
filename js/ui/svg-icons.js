@@ -16,6 +16,11 @@ export function makeDicesSvg(){
   return '<svg class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="12" height="12" x="2" y="10" rx="2" ry="2"/><path d="m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6"/><path d="M6 18h.01"/><path d="M10 14h.01"/><path d="M15 6h.01"/><path d="M18 9h.01"/></svg>';
 }
 
+/* Circular arrow (Lucide "rotate-ccw", ISC license): a firearm's Reload. */
+export function makeReloadSvg(){
+  return '<svg class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
+}
+
 /* Warning triangle (Lucide "triangle-alert", ISC license): a rule the
    character is breaking or a roll made at disadvantage (the Inventory's
    equip warnings, Stealth in noisy armor). Replaces the ⚠ character. */
