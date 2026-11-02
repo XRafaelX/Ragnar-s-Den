@@ -82,8 +82,9 @@ test("the Faith list: every pantheon's gods with a known alignment and domains",
   for(const g of DEITY_GROUPS){
     const names = g.gods.map((d) => d[0]);
     assert.equal(new Set(names).size, names.length, g.label + " has no repeats");
-    for(const [text, al, domains] of g.gods){
+    for(const [text, al, domains, symbol] of g.gods){
       assert.ok(ALIGNMENT_NAMES[al], text + " alignment");
+      assert.ok(symbol && symbol.length > 2, text + " holy symbol");
       assert.ok(/^[A-Z][a-z]+(, [A-Z][a-z]+)*$/.test(domains), text + " domains");
       assert.ok(!/[;–—]/.test(text), text + " plain text");
     }
@@ -91,4 +92,25 @@ test("the Faith list: every pantheon's gods with a known alignment and domains",
   const c = newCharacter("Faithful");
   storyShape(c).faith = "Pelor, the Dawn Father (healing, sun)";
   assert.equal(storyShape(c).faith, "Pelor, the Dawn Father (healing, sun)", "kept as written");
+});
+
+test("the Faith sheet: gods read for their cards, pantheon tabs, a cleric's domain", async () => {
+  const { readGod, faithTabs, clericDomains, godsForDomains } = await import("../js/core/faith.js");
+  const pelor = readGod(["Pelor, the Dawn Father (healing, sun)", "NG", "Life, Light, Nature", "Bright, eight-pointed star"]);
+  assert.deepEqual([pelor.name, pelor.title, pelor.about, pelor.moral, pelor.alignmentName, pelor.domains],
+    ["Pelor", "the Dawn Father", "healing, sun", "good", "Neutral Good", ["Life", "Light", "Nature"]]);
+  const lath = readGod(["Lathander, god of birth and renewal", "NG", "Life, Light", "Road traveling into a sunrise"]);
+  assert.deepEqual([lath.name, lath.title, lath.about], ["Lathander", "", "god of birth and renewal"]);
+  const asm = readGod(["Asmodeus, the Lord of the Nine Hells", "LE", "Trickery, War", "Crown"]);
+  assert.deepEqual([asm.name, asm.title, asm.about, asm.moral], ["Asmodeus", "the Lord of the Nine Hells", "", "evil"]);
+  assert.equal(readGod(["Gond, god of craft", "N", "Knowledge", "Cog"]).moral, "neutral");
+  const tabs = faithTabs();
+  assert.deepEqual(tabs.map((t) => t.label), ["Forgotten Realms", "Exandria", "Elves, dwarves & more"]);
+  assert.deepEqual(tabs[1].sections.map((s) => s.label), ["Prime Deities", "Betrayer Gods"]);
+  assert.deepEqual(clericDomains({ classes: [{ name: "Fighter", subclass: "Champion" }, { name: "Cleric", subclass: "Life Domain" }] }), ["Life"]);
+  assert.deepEqual(clericDomains({ classes: [{ name: "Cleric", subclass: "" }] }), []);
+  const life = godsForDomains(["Life"]).map((g) => g.name);
+  assert.ok(life.includes("Lathander") && life.includes("Pelor") && life.includes("Yondalla") && !life.includes("Tempus"), life.join(", "));
+  assert.equal(godsForDomains(["Twilight"]).length, 0, "no god suggests Twilight");
+  assert.ok(godsForDomains(["Grave"]).every((g) => g.domains.includes("Grave")) && godsForDomains(["Grave"]).length === 3);
 });

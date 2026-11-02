@@ -127,9 +127,45 @@
 .story-opt{display:flex;gap:10px;align-items:flex-start;text-align:left;padding:8px 10px;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--text-on-parch);font:inherit;font-size:13.5px;line-height:1.4;cursor:pointer;}
 .story-opt:hover,.story-opt:focus-visible{background:var(--rule);outline:none;}
 .story-opt.selected{border-color:var(--brass);}
-.story-opt-note{display:block;font-size:12px;color:var(--text-on-parch-dim);}
-.story-opt-group{position:sticky;top:0;z-index:1;margin:8px 0 2px;padding:4px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--brass-bright);background:var(--parchment);}
-.story-opt-group:first-child{margin-top:0;}
 .story-opt-roll{flex:0 0 1.6em;color:var(--text-on-parch-dim);font-variant-numeric:tabular-nums;}
 .story-own-label{margin:12px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);}
 .story-own{width:100%;box-sizing:border-box;resize:vertical;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--field-bg, transparent);color:var(--text-on-parch);font:inherit;font-size:14px;}
+
+/* The Faith sheet: a tab per pantheon, the gods as cards in a list of one
+   height (switching tabs never moves the sheet). */
+.faith-tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:4px 0 10px;padding-bottom:2px;}
+.faith-tabs::-webkit-scrollbar{display:none;}
+.faith-tabs.fade-end{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);}
+.faith-tabs .ff-pill{flex:none;white-space:nowrap;font-size:12px;padding:4px 12px;display:inline-flex;align-items:center;gap:5px;}
+.faith-tab-star{display:inline-flex;width:12px;height:12px;}
+.faith-tab-star svg{width:12px;height:12px;fill:currentColor;}
+.faith-list{height:min(52vh, 460px);overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px 4px 2px 0;}
+.faith-section{margin:6px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--brass-bright);}
+.faith-section:first-child{margin-top:0;}
+.faith-god{--hue:#9fb0c8;position:relative;display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;padding:10px 12px;
+  border:1px solid var(--rule);border-radius:10px;cursor:pointer;color:var(--text-on-parch);font:inherit;
+  background:linear-gradient(135deg, color-mix(in srgb, var(--hue) 9%, transparent), transparent 60%), var(--field-bg);
+  transition:border-color .15s, transform .15s, box-shadow .15s;}
+.faith-god.is-good{--hue:#e3b75a;}
+.faith-god.is-evil{--hue:#e0607a;}
+.faith-god:hover,.faith-god:focus-visible{outline:none;border-color:color-mix(in srgb, var(--hue) 70%, transparent);transform:translateY(-1px);
+  box-shadow:0 4px 14px color-mix(in srgb, var(--hue) 14%, transparent);}
+.faith-god.selected{border-color:var(--brass);box-shadow:inset 3px 0 0 var(--brass);}
+/* The alignment as a medallion. */
+.faith-align{flex:none;display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;
+  border:1.5px solid color-mix(in srgb, var(--hue) 75%, transparent);color:var(--hue);
+  background:radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--hue) 28%, transparent), color-mix(in srgb, var(--hue) 6%, transparent) 70%);
+  font-size:12px;font-weight:700;letter-spacing:.04em;box-shadow:0 0 10px color-mix(in srgb, var(--hue) 18%, transparent);}
+.faith-main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;}
+.faith-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 7px;padding-right:18px;}
+.faith-name{font-family:var(--serif);font-size:16.5px;font-weight:700;line-height:1.25;}
+.faith-title{font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--brass-bright);}
+.faith-about{font-size:12.5px;color:var(--text-on-parch-dim);}
+.faith-symbol{display:flex;gap:6px;align-items:flex-start;font-size:12.5px;line-height:1.35;color:var(--text-on-parch);opacity:.85;}
+.faith-symbol svg{flex:none;width:11px;height:11px;margin-top:3px;fill:var(--hue);}
+.faith-domains{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;}
+.faith-domain{padding:1px 8px;border:1px solid var(--rule);border-radius:999px;font-size:11px;color:var(--text-on-parch-dim);}
+.faith-domain.is-mine{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 22%, transparent);color:var(--text-on-parch);font-weight:600;}
+.faith-tick{position:absolute;top:9px;right:10px;display:inline-flex;width:16px;height:16px;color:var(--brass-bright);}
+.faith-tick svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+@media (prefers-reduced-motion: reduce){ .faith-god{transition:none;} .faith-god:hover{transform:none;} }
