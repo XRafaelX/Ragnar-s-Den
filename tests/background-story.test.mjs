@@ -79,15 +79,17 @@ test("the card draws for any background, and an older sheet gets an empty story"
 test("the Faith list: every pantheon's gods with a known alignment and domains", async () => {
   const { DEITY_GROUPS, ALIGNMENT_NAMES } = await import("../js/data/deities.js");
   const { DEITY_ICONS } = await import("../js/data/deity-icons.js");
-  assert.deepEqual(DEITY_GROUPS.map((g) => g.gods.length), [37, 12, 9, 24]);
+  assert.deepEqual(DEITY_GROUPS.map((g) => g.gods.length), [8, 6, 7, 6, 1, 1, 37, 12, 9, 24]);
   for(const g of DEITY_GROUPS){
     const names = g.gods.map((d) => d[0]);
     assert.equal(new Set(names).size, names.length, g.label + " has no repeats");
     for(const [text, al, domains, symbol, icon] of g.gods){
       assert.ok(ALIGNMENT_NAMES[al], text + " alignment");
       assert.ok(/^M[\d.\s,a-zA-Z-]+$/.test(DEITY_ICONS[icon] || ""), text + " has an icon (" + icon + ")");
-      assert.ok(symbol && symbol.length > 2, text + " holy symbol");
-      assert.ok(/^[A-Z][a-z]+(, [A-Z][a-z]+)*$/.test(domains), text + " domains");
+      // Drecland's book gives no domains, and four of its gods no symbol.
+      const drec = g.label.startsWith("Drecland");
+      assert.ok(symbol ? symbol.length > 2 : drec && /^(Cognus|Fresi|Toppleguff|Vaatni)/.test(text), text + " holy symbol");
+      assert.ok(drec ? domains === "" : /^[A-Z][a-z]+(, [A-Z][a-z]+)*$/.test(domains), text + " domains");
       assert.ok(!/[;–—]/.test(text), text + " plain text");
     }
   }
@@ -107,8 +109,13 @@ test("the Faith sheet: gods read for their cards, pantheon tabs, a cleric's doma
   assert.deepEqual([asm.name, asm.title, asm.about, asm.moral], ["Asmodeus", "the Lord of the Nine Hells", "", "evil"]);
   assert.equal(readGod(["Gond, god of craft", "N", "Knowledge", "Cog"]).moral, "neutral");
   const tabs = faithTabs();
-  assert.deepEqual(tabs.map((t) => t.label), ["Forgotten Realms", "Exandria", "Elves, dwarves & more"]);
-  assert.deepEqual(tabs[1].sections.map((s) => s.label), ["Prime Deities", "Betrayer Gods"]);
+  assert.deepEqual(tabs.map((t) => t.label), ["Drecland", "Forgotten Realms", "Exandria", "Elves, dwarves & more"]);
+  assert.deepEqual(tabs[0].sections.map((s) => s.label), ["Pantheon of the Sun", "Pantheon of the Moon", "Pantheon of the Soul", "Pantheon of the Know", "Soul and Know", "Without a pantheon"]);
+  const sorilios = tabs[0].sections[0].gods.find((g) => g.name === "Sorilios");
+  assert.deepEqual([sorilios.alignmentName, sorilios.moral, sorilios.domains, sorilios.about], ["Good", "good", [], "god of the sun"]);
+  const ara = readGod(["Arakthar, the Auric Dragon (honour and pride)", "LG", "", "A claw", "lorc/scales"]);
+  assert.deepEqual([ara.name, ara.title, ara.about], ["Arakthar", "the Auric Dragon", "honour and pride"]);
+  assert.deepEqual(tabs[2].sections.map((s) => s.label), ["Prime Deities", "Betrayer Gods"]);
   assert.deepEqual(clericDomains({ classes: [{ name: "Fighter", subclass: "Champion" }, { name: "Cleric", subclass: "Life Domain" }] }), ["Life"]);
   assert.deepEqual(clericDomains({ classes: [{ name: "Cleric", subclass: "" }] }), []);
   const life = godsForDomains(["Life"]).map((g) => g.name);
@@ -148,7 +155,8 @@ test("the Faith sheet: gods of your own, an older own-words faith, the search", 
   assert.equal(godByText("Sol, goddess of the harvest"), null, "not without the character");
   assert.equal(godsForDomains(["Nature"], d)[0].name, "Sol", "your own first in the domain's tab");
   // The search: every word, any field, accents ignored, grouped like the tabs.
-  assert.deepEqual(searchGods("harvest", d).map((x) => x.label), ["Your gods"]);
+  assert.deepEqual(searchGods("harvest", d).map((x) => x.label), ["Your gods", "Drecland: Pantheon of the Moon"], "Sol and Ceresia");
+  assert.equal(searchGods("vaatnid", d)[0].gods[0].name, "Vaatniδ", "Vaatniδ found without the δ");
   const sun = searchGods("sun", d);
   assert.ok(sun.some((x) => x.label === "Exandria: Prime Deities" && x.gods.some((y) => y.name === "Pelor")), "Pelor by what he rules");
   assert.ok(searchGods("selune", d)[0].gods[0].name === "Selûne", "accents ignored");

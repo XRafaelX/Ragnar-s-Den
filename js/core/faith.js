@@ -31,7 +31,7 @@ export function readGod(entry){
     alignmentName: ALIGNMENT_NAMES[al] || al,
     // Good, Neutral or Evil: colours the badge.
     moral: moralOf(al),
-    domains: entry[2].split(/,\s*/), symbol: entry[3] || "", icon: entry[4] || ""};
+    domains: entry[2] ? entry[2].split(/,\s*/) : [], symbol: entry[3] || "", icon: entry[4] || ""};
 }
 
 /* What the tile keeps for a god of your own: "Sol, goddess of the
@@ -137,10 +137,11 @@ export function godsForDomains(domains, c){
 export function searchGods(query, c){
   var words = String(query || "").toLowerCase().split(/\s+/).filter(Boolean);
   if(!words.length) return [];
+  // Accents don't count (selune finds Selûne), and Vaatniδ's δ is a d.
+  function plain(t){ return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/δ/g, "d"); }
   function hit(g){
-    var hay = [g.name, g.title, g.about, g.alignmentName, g.domains.join(" "), g.symbol].join(" ").toLowerCase()
-      .normalize("NFD").replace(/[̀-ͯ]/g, "");
-    return words.every(function(w){ return hay.indexOf(w.normalize("NFD").replace(/[̀-ͯ]/g, "")) !== -1; });
+    var hay = plain([g.name, g.title, g.about, g.alignmentName, g.domains.join(" "), g.symbol].join(" "));
+    return words.every(function(w){ return hay.indexOf(plain(w)) !== -1; });
   }
   var out = [{label: "Your gods", gods: customGods(c).filter(hit)}];
   faithTabs().forEach(function(t){

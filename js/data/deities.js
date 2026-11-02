@@ -6,9 +6,13 @@
      Forgotten Realms, Nonhuman Deities: Player's Handbook, Appendix B
      Prime Deities, Betrayer Gods: Explorer's Guide to Wildemount,
        chapter 1, Pantheon of Exandria (titles from each god's section,
-       province and symbol from its table; Tal'Dorei Reborn shares these gods) */
+       province and symbol from its table; Tal'Dorei Reborn shares these gods)
+     Drecland: Michael Hobson's private campaign book, kept apart in
+       deities-drecland.js. PRIVATE: remove it before publishing. */
+import { DRECLAND_GROUPS } from "./deities-drecland.js";
 
-export var DEITY_GROUPS = [
+// PRIVATE (Drecland), first: our own campaign's gods. See deities-drecland.js.
+export var DEITY_GROUPS = DRECLAND_GROUPS.concat([
   {label: "Forgotten Realms", gods: [
     ["Auril, goddess of winter", "NE", "Nature, Tempest", "Six-pointed snowflake", "lorc/snowflake-2"],
     ["Azuth, god of wizards", "LN", "Knowledge", "Left hand pointing upward, outlined in fire", "lorc/magic-palm"],
@@ -99,7 +103,8 @@ export var DEITY_GROUPS = [
     ["Tiamat, dragon goddess of evil", "LE", "Trickery", "Dragon head with five claw marks", "lorc/claw-slashes"],
     ["Yondalla, halfling goddess of fertility and protection", "LG", "Life", "Shield", "delapouite/heart-shield"]
   ]}
-];
+]);
 
-export var ALIGNMENT_NAMES = {LG: "Lawful Good", NG: "Neutral Good", CG: "Chaotic Good", LN: "Lawful Neutral",
+/* "G" is plain Good, as some campaign books give it (Drecland). */
+export var ALIGNMENT_NAMES = {G: "Good", LG: "Lawful Good", NG: "Neutral Good", CG: "Chaotic Good", LN: "Lawful Neutral",
   N: "Neutral", CN: "Chaotic Neutral", LE: "Lawful Evil", NE: "Neutral Evil", CE: "Chaotic Evil"};

@@ -26,8 +26,14 @@ export var CREDITS = [
   {
     tag: "Icons",
     label: "God icons",
-    text: "The icons for the gods on the Faith card are by Lorc, Delapouite, Caro Asercion and GeneralAce135, from game-icons.net, licensed under CC BY 3.0.",
+    text: "The icons for the gods on the Faith card are by Lorc, Delapouite, Caro Asercion, GeneralAce135 and Skoll, from game-icons.net, licensed under CC BY 3.0.",
     link: {text: "game-icons.net", href: "https://game-icons.net/"}
+  },
+  // PRIVATE: remove with js/data/deities-drecland.js before publishing.
+  {
+    tag: "Setting",
+    label: "Drecland gods",
+    text: "The gods of Drecland are from the Drecland Encyclopedia by Michael Hobson, shared for our own games.",
   },
   {
     tag: "Icon",
