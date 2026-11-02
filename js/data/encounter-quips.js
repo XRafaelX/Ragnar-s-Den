@@ -110,6 +110,16 @@ export var ENCOUNTER_QUIPS = {
     "Round 5. Thirty seconds have passed in the game.",
     "Round 5. The fight is warming up."
   ],
+  // Just past round 5: the fight is dragging, time to end it.
+  round6: [
+    "Round 6. This fight is dragging on, Panai. End it before the snacks run out.",
+    "Round 6. The dice are bored. End it.",
+    "Round 6. The monsters are checking their watches. Time to wrap this up.",
+    "Round 6. Even the goblins want to go home. Finish the fight.",
+    "Round 6. This combat has been going on longer than some campaigns. End it, Panai.",
+    "Round 6. Drop the monsters to 1 hit point and let the players feel like heroes. End it.",
+    "Round 6. The bard has run out of rhymes for this fight. Time to end it."
+  ],
   round10: [
     "Round 10. One minute in the game. A lot longer at the table.",
     "Round 10. Spells that last 1 minute end about now."

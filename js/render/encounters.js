@@ -711,9 +711,9 @@ function downQuip(m, dmg, before, vars){
   return chance(0.4) ? quip("slain", vars) : m.name + " is down.";
 }
 
-/* Rounds 5, 10, 20, then every 10th. */
+/* Rounds 5, 6 (the nudge to end it), 10, 20, then every 10th. */
 function roundQuip(round){
-  if(round === 5 || round === 10 || round === 20) return quip("round" + round);
+  if(round === 5 || round === 6 || round === 10 || round === 20) return quip("round" + round);
   return round > 20 && round % 10 === 0 ? quip("roundLong", { round: round }) : null;
 }
 

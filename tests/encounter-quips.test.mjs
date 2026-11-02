@@ -6,7 +6,7 @@ import { ENCOUNTER_QUIPS } from "../js/data/encounter-quips.js";
 
 const FILL_INS = {
   dead: ["name", "kind"], slain: ["name", "kind"], oneShot: ["name", "kind"], low: ["name", "kind"],
-  fullHeal: ["name", "kind"], victory: [], round5: [], round10: [], round20: [], back: [],
+  fullHeal: ["name", "kind"], victory: [], round5: [], round6: [], round10: [], round20: [], back: [],
   many10: [], many20: [], many50: [], roundLong: ["round"], reset: ["enc"], deleted: ["enc"],
   overkill: ["name", "kind", "dmg", "left", "over", "hp"], exact: ["name", "kind", "dmg", "left", "over", "hp"],
   big: ["name", "kind", "dmg", "left", "over", "hp"], revive: ["name", "kind", "dmg", "left", "over", "hp"],
@@ -33,4 +33,5 @@ test("a joke about a kill still says the monster is down", () => {
   }
   for(const line of ENCOUNTER_QUIPS.victory) assert.ok(line.startsWith("Victory!"), line);
   for(const line of ENCOUNTER_QUIPS.fullHeal) assert.match(line, /full/i, line);
+  for(const line of ENCOUNTER_QUIPS.round6) assert.match(line, /end it|wrap|finish/i, `round6 asks to end the fight: "${line}"`);
 });
