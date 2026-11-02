@@ -3,8 +3,8 @@
    Haunted One's Harrowing Event), as tiles of plain text. Each tile can
    be rolled on its table or edited in a sheet (pick an entry, or write
    your own). "Roll the rest" fills the empty ones. A Faith tile picks the
-   god the character follows from the pantheons (faith-sheet.js) or takes
-   your own words. Optional: nothing asks for them (see
+   god the character follows from the pantheons, or a god of your own
+   (faith-sheet.js). Optional: nothing asks for them (see
    js/core/background-story.js). */
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -14,7 +14,7 @@ import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { storyShape, storyTables, entryRoll, rollStory } from "../../core/background-story.js";
 import { DEITY_GROUPS } from "../../data/deities.js";
 import { openFaithSheet } from "./faith-sheet.js";
-import { godByText, godIconSvg } from "../../core/faith.js";
+import { godByText, godIconSvg, faithShape } from "../../core/faith.js";
 
 var PENCIL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 // An ideal ends with its alignment: "(Lawful)", "(Any)".
@@ -26,15 +26,15 @@ var FAITH_TABLE = {choose: true, entries: [].concat.apply([], DEITY_GROUPS.map(f
 /* The tiles: {label, table, get(), set(v), avoid() (a second trait
    differs from the first)}. */
 function storyRows(c){
-  var s = storyShape(c), t = storyTables(c.background);
+  var s = faithShape(c), t = storyTables(c.background);
   var personality = [
     {label: "Personality trait", table: t.traits, get: function(){ return s.traits[0]; }, set: function(v){ s.traits[0] = v; }, avoid: function(){ return s.traits[1]; }},
     {label: "Personality trait", table: t.traits, get: function(){ return s.traits[1]; }, set: function(v){ s.traits[1] = v; }, avoid: function(){ return s.traits[0]; }},
     {label: "Ideal", table: t.ideal, ideal: true, get: function(){ return s.ideal; }, set: function(v){ s.ideal = v; }},
     {label: "Bond", table: t.bond, get: function(){ return s.bond; }, set: function(v){ s.bond = v; }},
     {label: "Flaw", table: t.flaw, get: function(){ return s.flaw; }, set: function(v){ s.flaw = v; }},
-    {label: "Faith", table: FAITH_TABLE, faith: true, get: function(){ return s.faith; }, set: function(v){ s.faith = v; },
-      open: function(){ openFaithSheet(c, s.faith, function(v){ s.faith = v; save(); renderAll(); }); }}
+    {label: "Faith", table: FAITH_TABLE, faith: true, c: c, get: function(){ return s.faith; }, set: function(v){ s.faith = v; },
+      open: function(){ openFaithSheet(c, function(){ save(); renderAll(); }); }}
   ];
   var story = t.story.map(function(st){
     return {label: st.label, table: st, get: function(){ return s.tables[st.label] || ""; }, set: function(v){ s.tables[st.label] = v; }};
@@ -105,7 +105,7 @@ function tile(row){
   var edit = ce("button", "story-icon");
   edit.type = "button";
   edit.innerHTML = PENCIL;
-  edit.title = row.faith ? "Choose a god or write your own" : row.table ? "Choose from the table or write your own" : "Write your own";
+  edit.title = row.faith ? "Choose a god or add your own" : row.table ? "Choose from the table or write your own" : "Write your own";
   edit.setAttribute("aria-label", "Edit " + row.label.toLowerCase());
   edit.addEventListener("click", function(){ openRow(row); });
   acts.appendChild(edit);
@@ -125,13 +125,14 @@ function tile(row){
       body.appendChild(document.createTextNode(" " + text.slice(dot + 2)));
     } else body.textContent = text;
     if(m){ var tag = ce("span", "story-tag"); tag.textContent = m[1]; body.appendChild(tag); }
-  } else if(row.faith && godByText(value)){
-    // A god from the list: its icon in the medallion's colour beside it.
-    var god = godByText(value);
+  } else if(row.faith && godByText(value, row.c)){
+    // A god from the list or your own: its icon in the medallion's colour
+    // beside it.
+    var god = godByText(value, row.c);
     t.classList.add("has-god", "is-" + god.moral);
     var ic = ce("span", "story-god-icon");
     ic.innerHTML = godIconSvg(god);
-    ic.title = god.alignmentName;
+    if(god.alignmentName) ic.title = god.alignmentName;
     body.appendChild(ic);
     body.appendChild(document.createTextNode(value));
   } else body.textContent = value;

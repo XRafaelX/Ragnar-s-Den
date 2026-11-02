@@ -179,3 +179,56 @@
 .story-god-icon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;color:var(--hue);
   border:1px solid color-mix(in srgb, var(--hue) 60%, transparent);background:color-mix(in srgb, var(--hue) 12%, transparent);}
 .story-god-icon svg{width:18px;height:18px;}
+/* Search and +, above the tabs; both step back while the god form is open. */
+.faith-search-row{display:flex;gap:8px;align-items:center;margin:4px 0 10px;}
+.faith-search-row.is-off,.faith-tabs.is-off{opacity:.4;pointer-events:none;}
+.faith-search{flex:1;display:flex;align-items:center;gap:8px;min-width:0;padding:0 10px;height:36px;border:1px solid var(--rule);border-radius:8px;background:var(--field-bg);color:var(--text-on-parch-dim);cursor:text;}
+.faith-search:focus-within{border-color:var(--brass);color:var(--text-on-parch);}
+.faith-search svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
+.faith-search-input{flex:1;min-width:0;border:0;outline:none;background:transparent;color:var(--text-on-parch);font:inherit;font-size:14px;}
+.faith-search-input::placeholder{color:var(--text-on-parch-dim);}
+.faith-add{flex:none;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--brass);border-radius:8px;background:var(--brass);color:#fff;cursor:pointer;transition:background .15s, transform .15s;}
+.faith-add:hover,.faith-add:focus-visible{background:var(--brass-hover);outline:none;transform:translateY(-1px);}
+.faith-add svg{width:20px;height:20px;}
+/* While searching, the tabs dim: the results come from all of them. */
+.faith-tabs.is-searching .ff-pill{opacity:.6;}
+.faith-empty{display:flex;flex-direction:column;align-items:center;gap:10px;margin:28px 0;text-align:center;color:var(--text-on-parch-dim);font-size:14px;}
+.faith-empty p{margin:0;}
+.faith-empty .btn svg{width:15px;height:15px;margin-right:5px;vertical-align:-3px;}
+/* A card of your own: a pencil in its corner, the tick beside it. */
+.faith-god-wrap{position:relative;}
+.faith-god.is-own .faith-head{padding-right:62px;}
+.faith-god.is-own .faith-tick{right:44px;}
+.faith-edit{position:absolute;top:6px;right:6px;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:0;border-radius:6px;background:transparent;color:var(--text-on-parch-dim);cursor:pointer;}
+.faith-edit:hover,.faith-edit:focus-visible{background:var(--rule);color:var(--text-on-parch);outline:none;}
+.faith-edit svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+/* The god form, in the list's place. */
+.faith-form{display:flex;flex-direction:column;gap:12px;padding:2px 2px 4px;}
+.faith-form .faith-section{margin:0;}
+.faith-field{display:flex;flex-direction:column;gap:5px;}
+.faith-field-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);}
+.faith-input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--field-bg);color:var(--text-on-parch);font:inherit;font-size:14px;}
+.faith-input:focus{outline:none;border-color:var(--brass);}
+.faith-domain-picks .faith-domain{cursor:pointer;background:transparent;font:inherit;font-size:12px;padding:3px 10px;}
+.faith-domain-picks .faith-domain:hover,.faith-domain-picks .faith-domain:focus-visible{outline:none;border-color:var(--brass);color:var(--text-on-parch);}
+.faith-domain-picks .faith-domain.is-on{border-color:var(--brass);background:var(--brass);color:#fff;font-weight:600;}
+.faith-icon-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(40px, 1fr));gap:6px;max-height:142px;overflow-y:auto;padding:2px;}
+.faith-icon-pick{display:inline-flex;align-items:center;justify-content:center;aspect-ratio:1;border:1px solid var(--rule);border-radius:8px;background:var(--field-bg);color:var(--text-on-parch-dim);cursor:pointer;}
+.faith-icon-pick svg{width:22px;height:22px;}
+.faith-icon-pick:hover,.faith-icon-pick:focus-visible{outline:none;color:var(--text-on-parch);border-color:var(--brass);}
+.faith-icon-pick.selected{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 25%, var(--field-bg));color:#fff;}
+.faith-error{margin:0;min-height:1.2em;font-size:13px;color:var(--oxblood);}
+.faith-error:empty{min-height:0;}
+.faith-form-actions{margin-top:0;}
+.faith-delete{margin-right:auto;}
+.faith-delete.is-armed{color:var(--oxblood);border-color:var(--oxblood);}
+.faith-actions{margin-top:10px;}
+.faith-align-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:6px;}
+.faith-align-pick{--hue:#9fb0c8;min-height:36px;padding:4px 6px;border:1px solid color-mix(in srgb, var(--hue) 35%, transparent);border-radius:8px;
+  background:color-mix(in srgb, var(--hue) 6%, var(--field-bg));color:var(--text-on-parch-dim);font:inherit;font-size:12.5px;line-height:1.2;cursor:pointer;transition:border-color .15s, background .15s;}
+.faith-align-pick.is-good{--hue:#e3b75a;}
+.faith-align-pick.is-evil{--hue:#e0607a;}
+.faith-align-pick:hover,.faith-align-pick:focus-visible{outline:none;border-color:var(--hue);color:var(--text-on-parch);}
+.faith-align-pick.selected{border-color:var(--hue);background:color-mix(in srgb, var(--hue) 24%, var(--field-bg));color:var(--hue);font-weight:700;}
+/* Clear my faith keeps its place but hides while the form is open. */
+.faith-form-open .faith-actions{visibility:hidden;}

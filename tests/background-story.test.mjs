@@ -121,3 +121,40 @@ test("the Faith sheet: gods read for their cards, pantheon tabs, a cleric's doma
   assert.equal(godIconSvg(null), "");
   assert.ok(godsForDomains(["Grave"]).every((g) => g.domains.includes("Grave")) && godsForDomains(["Grave"]).length === 3);
 });
+
+test("the Faith sheet: gods of your own, an older own-words faith, the search", async () => {
+  const { faithShape, customGods, customGodText, godByText, godIconSvg, godsForDomains, searchGods } = await import("../js/core/faith.js");
+  // An older faith in the player's own words becomes a god of their own.
+  const c = newCharacter("Faithful");
+  c.story = { traits: ["", ""], ideal: "", bond: "", flaw: "", faith: "The old gods of my village", tables: {} };
+  faithShape(c);
+  assert.deepEqual(c.story.customGods, [{ name: "The old gods of my village", title: "", alignment: "", domains: [], symbol: "", icon: "" }]);
+  faithShape(c);
+  assert.equal(c.story.customGods.length, 1, "only once");
+  const old = godByText("The old gods of my village", c);
+  assert.ok(old.custom && old.moral === "neutral" && /viewBox="0 0 24 24"/.test(godIconSvg(old)), "shown with the star");
+  // A listed faith stays as it is.
+  const d = newCharacter("Devout");
+  d.story = { traits: ["", ""], ideal: "", bond: "", flaw: "", faith: "Pelor, the Dawn Father (healing, sun)", tables: {} };
+  assert.deepEqual(faithShape(d).customGods, []);
+  // A god of one's own.
+  const sol = { name: "Sol", title: "goddess of the harvest", alignment: "CG", domains: ["Life", "Nature"], symbol: "a golden sheaf", icon: "lorc/wheat" };
+  d.story.customGods.push(sol);
+  assert.equal(customGodText(sol), "Sol, goddess of the harvest");
+  assert.equal(customGodText({ name: " Sol " }), "Sol");
+  const g = customGods(d)[0];
+  assert.deepEqual([g.name, g.about, g.alignmentName, g.moral, g.index], ["Sol", "goddess of the harvest", "Chaotic Good", "good", 0]);
+  assert.equal(godByText("Sol, goddess of the harvest", d).icon, "lorc/wheat");
+  assert.equal(godByText("Sol, goddess of the harvest"), null, "not without the character");
+  assert.equal(godsForDomains(["Nature"], d)[0].name, "Sol", "your own first in the domain's tab");
+  // The search: every word, any field, accents ignored, grouped like the tabs.
+  assert.deepEqual(searchGods("harvest", d).map((x) => x.label), ["Your gods"]);
+  const sun = searchGods("sun", d);
+  assert.ok(sun.some((x) => x.label === "Exandria: Prime Deities" && x.gods.some((y) => y.name === "Pelor")), "Pelor by what he rules");
+  assert.ok(searchGods("selune", d)[0].gods[0].name === "Selûne", "accents ignored");
+  assert.deepEqual(searchGods("chaotic evil trickery", d).flatMap((x) => x.gods.map((y) => y.name)).sort(),
+    ["Beshaba", "Cyric", "Lolth", "Lolth", "Tharizdun", "Zehir"].sort(), "all words, alignment and domain");
+  assert.ok(searchGods("spider", d).some((x) => x.label === "Elves, dwarves & more"), "by holy symbol");
+  assert.deepEqual(searchGods("zzzz", d), []);
+  assert.deepEqual(searchGods("   ", d), []);
+});
