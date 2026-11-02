@@ -70,8 +70,25 @@ test("Tal'Dorei backgrounds: book tables, and the lists a feature says to choose
 test("the card draws for any background, and an older sheet gets an empty story", (t) => {
   const c = newCharacter("Test");
   delete c.story;
-  assert.deepEqual(storyShape(c), { traits: ["", ""], ideal: "", bond: "", flaw: "", tables: {} });
+  assert.deepEqual(storyShape(c), { traits: ["", ""], ideal: "", bond: "", flaw: "", faith: "", tables: {} });
   withFakeDom(t, () => {
     for(const bg of ["Haunted One", "City Watch", "Investigator (Ravenloft)", "Feylost"]){ c.background = bg; assert.ok(renderPersonalityCard(c), bg); }
   });
+});
+
+test("the Faith list: every pantheon's gods with a known alignment and domains", async () => {
+  const { DEITY_GROUPS, ALIGNMENT_NAMES } = await import("../js/data/deities.js");
+  assert.deepEqual(DEITY_GROUPS.map((g) => g.gods.length), [37, 12, 9, 24]);
+  for(const g of DEITY_GROUPS){
+    const names = g.gods.map((d) => d[0]);
+    assert.equal(new Set(names).size, names.length, g.label + " has no repeats");
+    for(const [text, al, domains] of g.gods){
+      assert.ok(ALIGNMENT_NAMES[al], text + " alignment");
+      assert.ok(/^[A-Z][a-z]+(, [A-Z][a-z]+)*$/.test(domains), text + " domains");
+      assert.ok(!/[;–—]/.test(text), text + " plain text");
+    }
+  }
+  const c = newCharacter("Faithful");
+  storyShape(c).faith = "Pelor, the Dawn Father (healing, sun)";
+  assert.equal(storyShape(c).faith, "Pelor, the Dawn Father (healing, sun)", "kept as written");
 });

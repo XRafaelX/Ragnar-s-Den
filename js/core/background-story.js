@@ -1,8 +1,9 @@
 /* ---------------- Background story ----------------
    The character's personality traits, ideal, bond and flaw, and its
    background's own story tables (js/data/background-stories.js), kept as
-   text on c.story = {traits: [two], ideal, bond, flaw, tables: {label:
-   text}}. A value is a table entry or the player's own words; changing
+   text on c.story = {traits: [two], ideal, bond, flaw, faith, tables:
+   {label: text}}. Faith is the god the character follows (any class,
+   flavour only, see js/data/deities.js). A value is a table entry or the player's own words; changing
    background keeps what was written. */
 import { BACKGROUND_STORIES, BACKGROUND_STORIES_FROM } from "../data/background-stories.js";
 
@@ -10,7 +11,7 @@ export function storyShape(c){
   var s = c.story && typeof c.story === "object" ? c.story : {};
   if(!Array.isArray(s.traits)) s.traits = [];
   while(s.traits.length < 2) s.traits.push("");
-  ["ideal", "bond", "flaw"].forEach(function(k){ if(typeof s[k] !== "string") s[k] = ""; });
+  ["ideal", "bond", "flaw", "faith"].forEach(function(k){ if(typeof s[k] !== "string") s[k] = ""; });
   if(!s.tables || typeof s.tables !== "object") s.tables = {};
   c.story = s;
   return s;

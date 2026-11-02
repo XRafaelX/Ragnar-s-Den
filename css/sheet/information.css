@@ -88,12 +88,14 @@
 /* Personality card: tiles of plain text, two columns on wider screens. */
 .story-from{margin:0 0 10px;font-size:12px;color:var(--text-on-parch-dim);}
 .story-grid{display:grid;grid-template-columns:1fr;gap:10px;}
-/* Wider screens: the two traits side by side, then ideal, bond and flaw;
+/* Wider screens: the two traits side by side, then ideal, bond and flaw,
+   faith on a row of its own;
    story tables two to a row. */
 @media (min-width:700px){
   .story-grid.is-personality{grid-template-columns:repeat(6,1fr);}
   .story-grid.is-personality .story-tile{grid-column:span 2;}
   .story-grid.is-personality .story-tile:nth-child(-n+2){grid-column:span 3;}
+  .story-grid.is-personality .story-tile:nth-child(6){grid-column:1 / -1;}
   .story-grid.is-story{grid-template-columns:repeat(2,1fr);}
 }
 .story-section{margin:16px 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);}
@@ -125,6 +127,9 @@
 .story-opt{display:flex;gap:10px;align-items:flex-start;text-align:left;padding:8px 10px;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--text-on-parch);font:inherit;font-size:13.5px;line-height:1.4;cursor:pointer;}
 .story-opt:hover,.story-opt:focus-visible{background:var(--rule);outline:none;}
 .story-opt.selected{border-color:var(--brass);}
+.story-opt-note{display:block;font-size:12px;color:var(--text-on-parch-dim);}
+.story-opt-group{position:sticky;top:0;z-index:1;margin:8px 0 2px;padding:4px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--brass-bright);background:var(--parchment);}
+.story-opt-group:first-child{margin-top:0;}
 .story-opt-roll{flex:0 0 1.6em;color:var(--text-on-parch-dim);font-variant-numeric:tabular-nums;}
 .story-own-label{margin:12px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);}
 .story-own{width:100%;box-sizing:border-box;resize:vertical;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--field-bg, transparent);color:var(--text-on-parch);font:inherit;font-size:14px;}

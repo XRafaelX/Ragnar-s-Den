@@ -2,18 +2,30 @@
    ideal, a bond and a flaw, then the background's own story tables (a
    Haunted One's Harrowing Event), as tiles of plain text. Each tile can
    be rolled on its table or edited in a sheet (pick an entry, or write
-   your own). "Roll the rest" fills the empty ones. Optional: nothing asks
-   for them (see js/core/background-story.js). */
+   your own). "Roll the rest" fills the empty ones. A Faith tile picks the
+   god the character follows from the pantheons (js/data/deities.js) or
+   takes your own words. Optional: nothing asks for them (see
+   js/core/background-story.js). */
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { ce } from "../../core/helpers.js";
 import { makeDiceSvg, makeCheckSvg } from "../../ui/svg-icons.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { storyShape, storyTables, entryRoll, rollStory } from "../../core/background-story.js";
+import { DEITY_GROUPS, ALIGNMENT_NAMES } from "../../data/deities.js";
 
 var PENCIL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 // An ideal ends with its alignment: "(Lawful)", "(Any)".
 var ALIGNMENT = /\s*\(([A-Za-z ,]+)\)\s*$/;
+
+/* The Faith tile's list: chosen, never rolled, grouped by pantheon. A
+   god's line under its name gives its alignment and suggested domains. */
+var FAITH_TABLE = {choose: true,
+  groups: DEITY_GROUPS.map(function(g){
+    return {label: g.label, entries: g.gods.map(function(d){ return d[0]; }),
+      notes: g.gods.map(function(d){ return (ALIGNMENT_NAMES[d[1]] || d[1]) + " · " + d[2]; })};
+  })};
+FAITH_TABLE.entries = [].concat.apply([], FAITH_TABLE.groups.map(function(g){ return g.entries; }));
 
 /* The tiles: {label, table, get(), set(v), avoid() (a second trait
    differs from the first)}. */
@@ -24,7 +36,8 @@ function storyRows(c){
     {label: "Personality trait", table: t.traits, get: function(){ return s.traits[1]; }, set: function(v){ s.traits[1] = v; }, avoid: function(){ return s.traits[0]; }},
     {label: "Ideal", table: t.ideal, ideal: true, get: function(){ return s.ideal; }, set: function(v){ s.ideal = v; }},
     {label: "Bond", table: t.bond, get: function(){ return s.bond; }, set: function(v){ s.bond = v; }},
-    {label: "Flaw", table: t.flaw, get: function(){ return s.flaw; }, set: function(v){ s.flaw = v; }}
+    {label: "Flaw", table: t.flaw, get: function(){ return s.flaw; }, set: function(v){ s.flaw = v; }},
+    {label: "Faith", table: FAITH_TABLE, faith: true, get: function(){ return s.faith; }, set: function(v){ s.faith = v; }}
   ];
   var story = t.story.map(function(st){
     return {label: st.label, table: st, get: function(){ return s.tables[st.label] || ""; }, set: function(v){ s.tables[st.label] = v; }};
@@ -95,7 +108,7 @@ function tile(row){
   var edit = ce("button", "story-icon");
   edit.type = "button";
   edit.innerHTML = PENCIL;
-  edit.title = row.table ? "Choose from the table or write your own" : "Write your own";
+  edit.title = row.faith ? "Choose a god or write your own" : row.table ? "Choose from the table or write your own" : "Write your own";
   edit.setAttribute("aria-label", "Edit " + row.label.toLowerCase());
   edit.addEventListener("click", function(){ openStorySheet(row); });
   acts.appendChild(edit);
@@ -103,7 +116,7 @@ function tile(row){
   t.appendChild(head);
   var body = ce("p", "story-text");
   if(!value){
-    body.textContent = row.table ? "Not chosen yet" : "Write your own";
+    body.textContent = row.faith ? "No god chosen yet" : row.table ? "Not chosen yet" : "Write your own";
   } else if(row.ideal){
     // "Tradition. The ancient traditions... (Lawful)": the ideal's name in
     // bold, its alignment as a tag.
@@ -143,15 +156,23 @@ function openStorySheet(row){
     function done(v){ row.set(v); save(); close(); renderAll(); }
     if(row.table){
       var list = ce("div", "story-opts");
-      row.table.entries.forEach(function(text, i){
+      var option = function(text, i, note){
         var o = ce("button", "story-opt" + (text === current ? " selected" : ""));
         o.type = "button";
         var tx = ce("span"); tx.textContent = text;
+        if(note){ var sub = ce("span", "story-opt-note"); sub.textContent = note; tx.appendChild(sub); }
         if(!row.table.choose){ var n = ce("span", "story-opt-roll"); n.textContent = entryRoll(row.table, i); o.appendChild(n); }
         o.appendChild(tx);
         o.addEventListener("click", function(){ done(text); });
         list.appendChild(o);
-      });
+      };
+      if(row.table.groups){
+        row.table.groups.forEach(function(g){
+          var gh = ce("p", "story-opt-group"); gh.textContent = g.label;
+          list.appendChild(gh);
+          g.entries.forEach(function(text, i){ option(text, i, g.notes && g.notes[i]); });
+        });
+      } else row.table.entries.forEach(function(text, i){ option(text, i); });
       body.appendChild(list);
     }
     var own = ce("p", "story-own-label");
