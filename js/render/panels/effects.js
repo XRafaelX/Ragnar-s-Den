@@ -60,7 +60,7 @@ function effectRow(c, e){
   text.setAttribute("role", "button");
   text.tabIndex = 0;
   text.title = "Read it all";
-  text.setAttribute("aria-label", def.name + ": read it all");
+  text.setAttribute("aria-label", "Read all of " + def.name);
   var now = document.createElement("div");
   now.className = "fx-now";
   now.textContent = summary;

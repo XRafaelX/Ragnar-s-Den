@@ -397,11 +397,11 @@ export var CLASS_PROGRESSION = {
       profs:{pick:[{kind:"skill", label:"Gain proficiency in one skill from the rogue's list", options:["Acrobatics","Athletics","Deception","Insight","Intimidation","Investigation","Perception","Performance","Persuasion","Sleight of Hand","Stealth"]},
         {kind:"expertise", count:2, tools:["Thieves' tools"]}]}},
     features: {
-      2: [{name:"Cunning Action", text:"You can Dash, Disengage or Hide as a bonus action on each of your turns."}],
+      2: [{name:"Cunning Action", remind:{when:"bonus", line:"Dash, Disengage or Hide"}, text:"You can Dash, Disengage or Hide as a bonus action on each of your turns."}],
       3: [{name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 2d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage on the attack roll, or if another enemy of the target is within 5 feet of it (and you don't have disadvantage)."}],
       5: [
         {name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 3d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage on the attack roll, or if another enemy of the target is within 5 feet of it (and you don't have disadvantage)."},
-        {name:"Uncanny Dodge", text:"Reaction when an attacker you can see hits you: halve the attack's damage."}
+        {name:"Uncanny Dodge", remind:{when:"reaction", line:"Halve the damage when an attacker you can see hits you"}, text:"Reaction when an attacker you can see hits you: halve the attack's damage."}
       ],
       6: [{name:"Expertise", replaces:"Expertise", text:"Your proficiency bonus is doubled for four of your skill proficiencies (or three and thieves' tools): the two from level 1 plus two more you choose now. They're marked with expertise on the Abilities & Skills tab.",
         profs:{pick:[{kind:"expertise", count:2, tools:["Thieves' tools"]}]}}],
@@ -421,7 +421,7 @@ export var CLASS_PROGRESSION = {
         {name:"Slippery Mind", text:"You gain proficiency in Wisdom saving throws (already applied to your saves).", grants:{savingThrows:["wis"]}}
       ],
       17: [{name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 9d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage on the attack roll, or if another enemy of the target is within 5 feet of it (and you don't have disadvantage)."}],
-      18: [{name:"Elusive", text:"While you aren't incapacitated, no attack roll has advantage against you."}],
+      18: [{name:"Elusive", remind:{when:"always", line:"No attack roll has advantage against you while you aren't incapacitated"}, text:"While you aren't incapacitated, no attack roll has advantage against you."}],
       19: [{name:"Sneak Attack", replaces:"Sneak Attack", text:"Once per turn, deal an extra 10d6 damage to a creature you hit with a finesse or ranged weapon if you have advantage on the attack roll, or if another enemy of the target is within 5 feet of it (and you don't have disadvantage)."}],
       20: [{name:"Stroke of Luck", text:"If your attack misses a target within range, you can turn the miss into a hit, or if you fail an ability check, you can treat the d20 roll as a 20. Once per short or long rest."}]
     }

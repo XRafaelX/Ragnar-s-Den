@@ -30,7 +30,8 @@ var featureSearchQuery = "";
 
 /* A feature's or feat's full description, in a bottom sheet: its name,
    its source, the whole text, and Edit / Remove where it has them. */
-function openFeatureSheet(item, actions){
+export function openFeatureSheet(item, actions){
+  actions = actions || [];
   openBottomSheet(function(body, refresh, close){
     var header = document.createElement("div");
     header.className = "bs-header";

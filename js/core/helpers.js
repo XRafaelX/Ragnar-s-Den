@@ -32,4 +32,5 @@ export * from "./warlock.js";
 export * from "./wizard.js";
 export * from "./conditions.js";
 export * from "./gunslinger.js";
+export * from "./reminders.js";
 export * from "./shadow-stalker.js"; // PRIVATE (Spikael)

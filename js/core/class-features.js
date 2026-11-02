@@ -121,7 +121,7 @@ export function classSpellAbility(cl){
                    (Intimidating Presence: {save:"wis", ability:"cha"};
                    save "" when its effects ask for different saves),
                    shown as a chip on its Features card (featureDcs) */
-var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellLabel", "spellTip", "spellAbility", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit", "saveDc", "rollButton", "skillBonus", "skillDouble", "resist", "saveNote", "sense", "chip", "immune", "conditionImmune"];
+var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellLabel", "spellTip", "spellAbility", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit", "saveDc", "rollButton", "skillBonus", "skillDouble", "resist", "saveNote", "sense", "chip", "immune", "conditionImmune", "remind"];
 
 /* ---- Optional features that replace one of the class's own ----
    Tasha's Favored Foe for a ranger's Favored Enemy, Deft Explorer for
