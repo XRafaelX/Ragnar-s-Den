@@ -78,12 +78,14 @@ test("the card draws for any background, and an older sheet gets an empty story"
 
 test("the Faith list: every pantheon's gods with a known alignment and domains", async () => {
   const { DEITY_GROUPS, ALIGNMENT_NAMES } = await import("../js/data/deities.js");
+  const { DEITY_ICONS } = await import("../js/data/deity-icons.js");
   assert.deepEqual(DEITY_GROUPS.map((g) => g.gods.length), [37, 12, 9, 24]);
   for(const g of DEITY_GROUPS){
     const names = g.gods.map((d) => d[0]);
     assert.equal(new Set(names).size, names.length, g.label + " has no repeats");
-    for(const [text, al, domains, symbol] of g.gods){
+    for(const [text, al, domains, symbol, icon] of g.gods){
       assert.ok(ALIGNMENT_NAMES[al], text + " alignment");
+      assert.ok(/^M[\d.\s,a-zA-Z-]+$/.test(DEITY_ICONS[icon] || ""), text + " has an icon (" + icon + ")");
       assert.ok(symbol && symbol.length > 2, text + " holy symbol");
       assert.ok(/^[A-Z][a-z]+(, [A-Z][a-z]+)*$/.test(domains), text + " domains");
       assert.ok(!/[;–—]/.test(text), text + " plain text");
@@ -95,7 +97,7 @@ test("the Faith list: every pantheon's gods with a known alignment and domains",
 });
 
 test("the Faith sheet: gods read for their cards, pantheon tabs, a cleric's domain", async () => {
-  const { readGod, faithTabs, clericDomains, godsForDomains } = await import("../js/core/faith.js");
+  const { readGod, faithTabs, clericDomains, godsForDomains, godByText, godIconSvg } = await import("../js/core/faith.js");
   const pelor = readGod(["Pelor, the Dawn Father (healing, sun)", "NG", "Life, Light, Nature", "Bright, eight-pointed star"]);
   assert.deepEqual([pelor.name, pelor.title, pelor.about, pelor.moral, pelor.alignmentName, pelor.domains],
     ["Pelor", "the Dawn Father", "healing, sun", "good", "Neutral Good", ["Life", "Light", "Nature"]]);
@@ -112,5 +114,10 @@ test("the Faith sheet: gods read for their cards, pantheon tabs, a cleric's doma
   const life = godsForDomains(["Life"]).map((g) => g.name);
   assert.ok(life.includes("Lathander") && life.includes("Pelor") && life.includes("Yondalla") && !life.includes("Tempus"), life.join(", "));
   assert.equal(godsForDomains(["Twilight"]).length, 0, "no god suggests Twilight");
+  const p = godByText("Pelor, the Dawn Father (healing, sun)");
+  assert.equal(p.icon, "lorc/sun");
+  assert.ok(/^<svg viewBox="0 0 512 512"[^>]*><path fill="currentColor" d="M/.test(godIconSvg(p)));
+  assert.equal(godByText("The old gods of my village"), null, "own words: no god");
+  assert.equal(godIconSvg(null), "");
   assert.ok(godsForDomains(["Grave"]).every((g) => g.domains.includes("Grave")) && godsForDomains(["Grave"]).length === 3);
 });

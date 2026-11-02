@@ -1,13 +1,14 @@
 /* The Faith tile's sheet (Personality card): the gods as cards, a tab
    per pantheon. A cleric with a domain gets a first tab of the gods who
-   suit it, and that domain lit on every card. Each card: an alignment
-   badge (gold good, grey neutral, red evil), the name and title, what
-   the god rules, the holy symbol and the suggested domains. Tap one to
+   suit it, and that domain lit on every card. Each card: the god's icon
+   on a medallion (gold good, grey neutral, red evil), the name and title,
+   its alignment and what it rules, the holy symbol and the suggested
+   domains. Tap one to
    choose it, or write your own below. The list keeps one height, so
    switching tabs never moves the sheet. */
 import { ce } from "../../core/helpers.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
-import { faithTabs, clericDomains, godsForDomains } from "../../core/faith.js";
+import { faithTabs, clericDomains, godsForDomains, godIconSvg } from "../../core/faith.js";
 
 var SYMBOL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4Z"/></svg>';
 var TICK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -100,7 +101,8 @@ function godCard(g, selected, mine, pick){
   card.type = "button";
   card.setAttribute("aria-pressed", selected ? "true" : "false");
   var badge = ce("span", "faith-align");
-  badge.textContent = g.alignment;
+  badge.innerHTML = godIconSvg(g);
+  if(!badge.innerHTML) badge.textContent = g.alignment;
   badge.title = g.alignmentName;
   card.appendChild(badge);
   var main = ce("span", "faith-main");
@@ -109,7 +111,12 @@ function godCard(g, selected, mine, pick){
   head.appendChild(name);
   if(g.title){ var t = ce("span", "faith-title"); t.textContent = g.title; head.appendChild(t); }
   main.appendChild(head);
-  if(g.about){ var a = ce("span", "faith-about"); a.textContent = g.about.charAt(0).toUpperCase() + g.about.slice(1); main.appendChild(a); }
+  // "Neutral Good · Healing, sun": the alignment in the medallion's colour.
+  var a = ce("span", "faith-about");
+  var al = ce("span", "faith-alignment"); al.textContent = g.alignmentName;
+  a.appendChild(al);
+  if(g.about) a.appendChild(document.createTextNode(" · " + g.about.charAt(0).toUpperCase() + g.about.slice(1)));
+  main.appendChild(a);
   if(g.symbol){
     var sym = ce("span", "faith-symbol");
     sym.title = "Holy symbol";

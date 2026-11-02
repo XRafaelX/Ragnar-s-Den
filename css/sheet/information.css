@@ -152,10 +152,12 @@
   box-shadow:0 4px 14px color-mix(in srgb, var(--hue) 14%, transparent);}
 .faith-god.selected{border-color:var(--brass);box-shadow:inset 3px 0 0 var(--brass);}
 /* The alignment as a medallion. */
-.faith-align{flex:none;display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;
+.faith-align{flex:none;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;
   border:1.5px solid color-mix(in srgb, var(--hue) 75%, transparent);color:var(--hue);
   background:radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--hue) 28%, transparent), color-mix(in srgb, var(--hue) 6%, transparent) 70%);
   font-size:12px;font-weight:700;letter-spacing:.04em;box-shadow:0 0 10px color-mix(in srgb, var(--hue) 18%, transparent);}
+.faith-align svg{width:24px;height:24px;filter:drop-shadow(0 0 3px color-mix(in srgb, var(--hue) 35%, transparent));}
+.faith-alignment{color:var(--hue);font-weight:600;}
 .faith-main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;}
 .faith-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 7px;padding-right:18px;}
 .faith-name{font-family:var(--serif);font-size:16.5px;font-weight:700;line-height:1.25;}
@@ -169,3 +171,11 @@
 .faith-tick{position:absolute;top:9px;right:10px;display:inline-flex;width:16px;height:16px;color:var(--brass-bright);}
 .faith-tick svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
 @media (prefers-reduced-motion: reduce){ .faith-god{transition:none;} .faith-god:hover{transform:none;} }
+/* The Faith tile with a god from the list: its icon beside the name. */
+.story-tile.has-god{--hue:#9fb0c8;}
+.story-tile.has-god.is-good{--hue:#e3b75a;}
+.story-tile.has-god.is-evil{--hue:#e0607a;}
+.story-tile.has-god .story-text{display:flex;align-items:center;gap:9px;}
+.story-god-icon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;color:var(--hue);
+  border:1px solid color-mix(in srgb, var(--hue) 60%, transparent);background:color-mix(in srgb, var(--hue) 12%, transparent);}
+.story-god-icon svg{width:18px;height:18px;}

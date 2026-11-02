@@ -14,6 +14,7 @@ import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { storyShape, storyTables, entryRoll, rollStory } from "../../core/background-story.js";
 import { DEITY_GROUPS } from "../../data/deities.js";
 import { openFaithSheet } from "./faith-sheet.js";
+import { godByText, godIconSvg } from "../../core/faith.js";
 
 var PENCIL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 // An ideal ends with its alignment: "(Lawful)", "(Any)".
@@ -124,6 +125,15 @@ function tile(row){
       body.appendChild(document.createTextNode(" " + text.slice(dot + 2)));
     } else body.textContent = text;
     if(m){ var tag = ce("span", "story-tag"); tag.textContent = m[1]; body.appendChild(tag); }
+  } else if(row.faith && godByText(value)){
+    // A god from the list: its icon in the medallion's colour beside it.
+    var god = godByText(value);
+    t.classList.add("has-god", "is-" + god.moral);
+    var ic = ce("span", "story-god-icon");
+    ic.innerHTML = godIconSvg(god);
+    ic.title = god.alignmentName;
+    body.appendChild(ic);
+    body.appendChild(document.createTextNode(value));
   } else body.textContent = value;
   if(value){
     body.tabIndex = 0;

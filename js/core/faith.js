@@ -3,6 +3,7 @@
    read for display, and which of them suit a cleric's domain. Flavour
    only: nothing on the sheet depends on the god chosen. */
 import { DEITY_GROUPS, ALIGNMENT_NAMES } from "../data/deities.js";
+import { DEITY_ICONS } from "../data/deity-icons.js";
 
 /* One god for display: "Pelor, the Dawn Father (healing, sun)" gives
    name "Pelor", title "the Dawn Father", about "healing, sun"; a Player's
@@ -19,7 +20,23 @@ export function readGod(entry){
     alignmentName: ALIGNMENT_NAMES[al] || al,
     // Good, Neutral or Evil: colours the badge.
     moral: /G$/.test(al) ? "good" : /E$/.test(al) ? "evil" : "neutral",
-    domains: entry[2].split(/,\s*/), symbol: entry[3] || ""};
+    domains: entry[2].split(/,\s*/), symbol: entry[3] || "", icon: entry[4] || ""};
+}
+
+/* A god's icon as an SVG string (filled with the text colour), or "". */
+export function godIconSvg(g){
+  var d = g && DEITY_ICONS[g.icon];
+  return d ? '<svg viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>' : "";
+}
+
+/* The god a saved faith names, or null for the player's own words. */
+export function godByText(text){
+  if(!text) return null;
+  for(var i = 0; i < DEITY_GROUPS.length; i++){
+    var d = DEITY_GROUPS[i].gods.find(function(e){ return e[0] === text; });
+    if(d) return readGod(d);
+  }
+  return null;
 }
 
 /* The pantheons as tabs: {label, sections: [{label, gods}]}. Exandria's

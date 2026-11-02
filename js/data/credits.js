@@ -24,6 +24,12 @@ export var CREDITS = [
     link: {text: "game-icons.net", href: "https://game-icons.net/"}
   },
   {
+    tag: "Icons",
+    label: "God icons",
+    text: "The icons for the gods on the Faith card are by Lorc, Delapouite, Caro Asercion and GeneralAce135, from game-icons.net, licensed under CC BY 3.0.",
+    link: {text: "game-icons.net", href: "https://game-icons.net/"}
+  },
+  {
     tag: "Icon",
     label: "Angel coin icon",
     text: "\"angel-wings\" from SVG Repo.",
