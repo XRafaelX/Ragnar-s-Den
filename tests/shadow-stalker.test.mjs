@@ -64,12 +64,31 @@ test("Shadow Walk: once per long rest, +10 ft speed, advantage, Sneak Attack rer
   assert.equal(resource(thief, "shadow_walk"), undefined);
 });
 
+test("Encroaching Shadows: Inside a wound needs Shadow Walk and ends with it", () => {
+  const c = rogue(9);
+  assert.equal(H.insideWound(c), false);
+  assert.equal(H.startEffect(c, "inside_wound"), false, "only while you are a shadow");
+  assert.match(H.characterEffects(c).find((e) => e.def.id === "inside_wound").why, /Shadow Walk/);
+  H.startEffect(c, "shadow_walk");
+  H.startEffect(c, "inside_wound");
+  assert.equal(H.insideWound(c), true);
+  H.endEffect(c, "shadow_walk");
+  assert.equal(H.insideWound(c), false, "returning from the shadow ends it");
+  assert.ok(!H.characterEffects(rogue(8)).some((e) => e.id === "inside_wound"), "from level 9");
+});
+
 test("Living Shadows: half the WIS modifier (rounded down, at least 1) per long rest, from level 17", () => {
   assert.equal(H.livingShadows(rogue(16)), null);
   const uses = (wis) => resource(rogue(17, { abilities: { str: 10, dex: 18, con: 14, int: 12, wis, cha: 10 } }), "living_shadows").max;
   assert.deepEqual([8, 12, 14, 18, 20].map(uses), [1, 1, 1, 2, 2]);
   const c = rogue(17);
+  assert.equal(H.livingShadows(c), null, "only while a clone is out");
+  assert.equal(H.cloneOut(c), false);
+  H.startEffect(c, "shadow_clone");
+  assert.equal(H.cloneOut(c), true);
   assert.deepEqual(H.livingShadows(c), { key: "Rogue:living_shadows", left: 1 });
+  H.endEffect(c, "shadow_clone");
+  assert.equal(H.livingShadows(c), null, "destroyed");
   assert.equal(resource(c, "living_shadows").reset, "long");
 });
 

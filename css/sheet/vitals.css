@@ -507,6 +507,18 @@
 .fx-row.on{border-color:var(--brass);box-shadow:0 0 10px color-mix(in srgb, var(--brass) 30%, transparent);}
 .fx-row .res-name{gap:6px;}
 .fx-now{font-size:13px;line-height:1.45;margin-top:4px;}
+/* On the card: two lines of what it does and one of the hint, cut with
+   "…"; a tap opens the whole text. A long duration chip stays one line. */
+.fx-text{cursor:pointer;border-radius:4px;}
+.fx-text:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.fx-text .fx-now{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;}
+.fx-text .res-hint{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;line-clamp:1;overflow:hidden;}
+@media (hover:hover){ .fx-text:hover .fx-now{color:var(--brass-bright);} }
+.fx-row .res-name .res-reset{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.fx-row .res-name{min-width:0;}
+.fx-sheet-now{font-size:14px;line-height:1.55;margin:0 0 12px;}
+.fx-sheet-now p{margin:0 0 6px;}
+.fx-sheet-hint{font-size:13px;line-height:1.55;color:var(--text-on-parch-dim);margin:0 0 10px;}
 .fx-note{font-size:12px;color:var(--text-on-parch-dim);margin-top:6px;display:flex;align-items:center;gap:5px;}
 .fx-note.warn{color:var(--oxblood);}
 .fx-note .alert-svg{width:13px;height:13px;flex-shrink:0;}

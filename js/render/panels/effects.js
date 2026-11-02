@@ -1,6 +1,7 @@
 import { save } from "../../core/state.js";
 import { wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
+import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeDiceSvg, makeDicesSvg, makeAlertSvg } from "../../ui/svg-icons.js";
@@ -51,14 +52,27 @@ function effectRow(c, e){
   name.appendChild(duration);
   info.appendChild(name);
 
+  // What it does, cut to two lines and the hint to one ("…"): a tap (or
+  // Enter) opens the whole text in a bottom sheet.
+  var summary = effectSummary(c, def.id);
+  var text = document.createElement("div");
+  text.className = "fx-text";
+  text.setAttribute("role", "button");
+  text.tabIndex = 0;
+  text.title = "Read it all";
+  text.setAttribute("aria-label", def.name + ": read it all");
   var now = document.createElement("div");
   now.className = "fx-now";
-  now.textContent = effectSummary(c, def.id);
-  info.appendChild(now);
+  now.textContent = summary;
+  if(summary) text.appendChild(now);
   var hint = document.createElement("div");
   hint.className = "res-hint";
   hint.textContent = def.hint;
-  info.appendChild(hint);
+  if(def.hint) text.appendChild(hint);
+  function openText(){ openEffectSheet(e, summary, costText(e)); }
+  text.addEventListener("click", openText);
+  text.addEventListener("keydown", function(ev){ if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); openText(); } });
+  info.appendChild(text);
 
   if(e.blocked || (!e.on && e.why)){
     var note = document.createElement("div");
@@ -116,6 +130,53 @@ function effectRow(c, e){
   row.appendChild(ctrl);
   return row;
 }
+/* An effect's whole text: what it does now, how to use it, the cost and
+   how long it lasts, and why it can't start (if it can't). */
+function openEffectSheet(e, summary, cost){
+  var def = e.def;
+  openBottomSheet(function(body, refresh, close){
+    var header = document.createElement("div");
+    header.className = "bs-header";
+    var title = document.createElement("div");
+    title.className = "bs-title";
+    title.textContent = def.name;
+    header.appendChild(title);
+    var closeBtn = document.createElement("button");
+    closeBtn.className = "bs-close"; closeBtn.textContent = "✕"; closeBtn.title = "Close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.addEventListener("click", close);
+    header.appendChild(closeBtn);
+    body.appendChild(header);
+    var sub = document.createElement("p");
+    sub.className = "bs-subtitle";
+    sub.textContent = [cost, def.duration].filter(Boolean).join(" · ");
+    body.appendChild(sub);
+    // One sentence a line, so a long effect reads like a short list.
+    if(summary){
+      var now = document.createElement("div");
+      now.className = "fx-sheet-now";
+      summary.split(/\. (?=\S)/).forEach(function(line){
+        var p = document.createElement("p");
+        p.textContent = line;
+        now.appendChild(p);
+      });
+      body.appendChild(now);
+    }
+    if(def.hint){
+      var hint = document.createElement("p");
+      hint.className = "fx-sheet-hint";
+      hint.textContent = def.hint;
+      body.appendChild(hint);
+    }
+    var why = e.blocked || (!e.on && e.why);
+    if(why){
+      var note = document.createElement("p");
+      note.className = "fx-sheet-hint";
+      note.textContent = why;
+      body.appendChild(note);
+    }
+  });
+}
 function choicePicker(c, def, on){
   var wrap = document.createElement("div");
   wrap.className = "res-pick";
@@ -159,63 +220,63 @@ function costText(e){
 function effectSummary(c, id){
   if(id==="bladesong"){
     var b = fmtMod(bladesongBonus(c));
-    var lines = [b + " AC", "+10 ft speed", "advantage on Acrobatics", b + " to CON saves to keep concentration"];
-    if(hasSongOfVictory(c)) lines.push(b + " melee weapon damage (Song of Victory)");
-    return lines.join(" · ");
+    var lines = [b + " AC and +10 ft speed", "Advantage on Acrobatics checks", b + " to CON saves to keep concentration"];
+    if(hasSongOfVictory(c)) lines.push(b + " to melee weapon damage (Song of Victory)");
+    return lines.join(". ");
   }
   if(id==="astral_arms"){
     var arms = astralArmsAttack(c);
-    return "Astral arms: " + fmtMod(arms.attack) + " to hit, 1d" + arms.die + fmtMod(arms.damage) + " force, reach 10 ft · WIS for Strength checks and saves";
+    return "Astral arms: " + fmtMod(arms.attack) + " to hit, 1d" + arms.die + fmtMod(arms.damage) + " force, reach 10 ft. You use WIS for Strength checks and saves";
   }
-  if(id==="astral_visage") return "Astral Sight 120 ft · advantage on Insight and Intimidation";
+  if(id==="astral_visage") return "Astral Sight 120 ft and advantage on Insight and Intimidation checks";
   if(id==="awakened_astral_self") return "+2 AC (Armor of the Spirit)";
   if(id==="symbiotic_entity"){
     var halo = haloOfSporesDie(c);
-    return "+" + symbioticTempHp(c) + " temporary HP · Halo of Spores 2d" + halo + " necrotic · melee weapon attacks +1d6 necrotic";
+    return "+" + symbioticTempHp(c) + " temporary HP. Halo of Spores deals 2d" + halo + " necrotic, and your melee weapon attacks deal 1d6 more necrotic";
   }
   if(id==="third_eye") return {"Darkvision": "Darkvision 60 ft", "Ethereal Sight": "See into the Ethereal Plane within 60 ft", "Greater Comprehension": "Read any language", "See Invisibility": "See invisible creatures and objects within 10 ft in your line of sight"}[c.effects && c.effects.third_eye] || "One sight of your choice";
-  if(id==="arcane_deflection") return "+2 AC against that attack · cantrips only until the end of your next turn" + (deflectingShroud(c) ? " · Deflecting Shroud: up to three creatures within 60 ft take " + deflectingShroud(c) + " force damage" : "");
+  if(id==="arcane_deflection") return "+2 AC against that attack. You can only cast cantrips until the end of your next turn" + (deflectingShroud(c) ? ". Deflecting Shroud: up to three creatures within 60 ft take " + deflectingShroud(c) + " force damage" : "");
   if(id==="durable_magic") return "+2 AC and +2 to all saving throws";
   if(id==="adjust_density"){
     var dense = c.effects && c.effects.adjust_density, size = classLevelOf(c, "Wizard", "Graviturgy Magic") >= 10 ? "Huge" : "Large";
-    return (size + " or smaller") + " · " + (dense==="Doubled" ? "Weight doubled: speed -10 ft, advantage on STR checks and saves" : dense==="Halved" ? "Weight halved: speed +10 ft, jumps twice as far, disadvantage on STR checks and saves" : "Halve or double its weight");
+    return "On a " + size + " or smaller target. " + (dense==="Doubled" ? "Its weight is doubled: -10 ft speed and advantage on STR checks and saves" : dense==="Halved" ? "Its weight is halved: +10 ft speed, jumps twice as far and disadvantage on STR checks and saves" : "Halve or double its weight");
   }
   if(id==="event_horizon") return "A hostile creature starting its turn within 30 ft: STR save DC " + wizardDc(c) + " or 2d10 force and speed 0 until the start of its next turn. On a success, half damage and each foot of movement costs 2 extra feet";
   if(id==="hexblades_curse") return "+" + profBonus(c) + " to damage rolls and a critical hit on 19 or 20 against the cursed target. Your weapon cards already include them";
-  if(id==="misty_escape") return "Invisible · advantage on attack rolls · ends if you attack or cast a spell";
+  if(id==="misty_escape") return "You're invisible and have advantage on attack rolls. It ends if you attack or cast a spell";
   if(id==="entropic_ward") return "Its attack has disadvantage. If it misses, your next attack against it has advantage. End this if it hit";
-  if(id==="tentacle_of_the_deeps") return tentacleDice(c) + "d8 cold, and its speed drops 10 ft until the start of your next turn · a bonus action moves it 30 ft and attacks again" + (classLevelOf(c, "Warlock", "The Fathomless") >= 6 ? " · Guardian Coil: your reaction reduces damage within 10 ft of it" : "");
+  if(id==="tentacle_of_the_deeps") return tentacleDice(c) + "d8 cold, and its speed drops 10 ft until the start of your next turn. A bonus action moves it 30 ft and attacks again" + (classLevelOf(c, "Warlock", "The Fathomless") >= 6 ? ". Guardian Coil: your reaction reduces damage taken within 10 ft of it" : "");
   if(id==="elemental_flight") return "Fly 30 ft and hover";
-  if(id==="bottled_respite") return "Up to " + 2 * profBonus(c) + " hours · you hear the area around the vessel" + (classLevelOf(c, "Warlock", "The Genie") >= 10 ? " · up to five willing creatures with you · 10 minutes inside is a short rest, and Hit Dice heal " + profBonus(c) + " more" : "");
-  if(id==="form_of_dread") return "Immune to frightened · once per turn on a hit: WIS save DC " + warlockDc(c) + " or frightened of you until the end of your next turn" + (classLevelOf(c, "Warlock", "The Undead") >= 10 ? " · immune to necrotic damage" : "");
-  if(id==="spirit_projection") return "Your body is unconscious and damage to one affects the other · resistance to bludgeoning, piercing and slashing · fly at your walking speed · conjuration and necromancy spells need no verbal, somatic or costless material components";
+  if(id==="bottled_respite") return "Up to " + 2 * profBonus(c) + " hours, and you can hear the area around the vessel" + (classLevelOf(c, "Warlock", "The Genie") >= 10 ? ". Up to five willing creatures can come with you. 10 minutes inside counts as a short rest, and your Hit Dice heal " + profBonus(c) + " more" : "");
+  if(id==="form_of_dread") return "You can't be frightened. Once per turn when you hit, the target makes a WIS save (DC " + warlockDc(c) + ") or is frightened of you until the end of your next turn" + (classLevelOf(c, "Warlock", "The Undead") >= 10 ? ". You're immune to necrotic damage" : "");
+  if(id==="spirit_projection") return "Your body is unconscious, and damage to one affects the other. You resist bludgeoning, piercing and slashing damage and fly at your walking speed. Conjuration and necromancy spells need no verbal, somatic or costless material components";
   if(id==="elemental_affinity") return "Resistance to " + (dragonType(c) || "your ancestry's") + " damage";
   if(id==="dragon_wings") return "Fly " + computeSpeed(c).value + " ft";
   if(id==="draconic_presence"){
     var dread = c.effects && c.effects.draconic_presence;
-    return "60-ft aura · a hostile creature starting its turn in it: WIS save DC " + sorcererDc(c) + " or " + (dread==="Fear" ? "frightened" : "charmed") + " until it ends · a success makes it immune for 24 hours";
+    return "A 60-ft aura. A hostile creature that starts its turn in it makes a WIS save (DC " + sorcererDc(c) + ") or is " + (dread==="Fear" ? "frightened" : "charmed") + " until the aura ends. A creature that succeeds is immune for 24 hours";
   }
   if(id==="tides_of_chaos") return "Advantage on your next attack roll, ability check or saving throw";
-  if(id==="trance_of_order") return "Attack rolls against you can't have advantage · a d20 of 9 or lower counts as a 10 on your attacks, checks and saves";
+  if(id==="trance_of_order") return "Attack rolls against you can't have advantage. On your attacks, checks and saves, a d20 of 9 or lower counts as a 10";
   if(id==="telepathic_speech"){
     var mind = classLevelOf(c, "Sorcerer", "Aberrant Mind");
-    return "For " + mind + (mind===1 ? " minute" : " minutes") + ", within " + Math.max(1, mod(abilityScore(c, "cha"))) + " miles · you each need a language the other knows";
+    return "For " + mind + (mind===1 ? " minute" : " minutes") + ", within " + Math.max(1, mod(abilityScore(c, "cha"))) + " miles. You each need to know a language the other knows";
   }
   if(id==="revelation_in_flesh"){
     var body = [].concat(c.effects && c.effects.revelation_in_flesh || []), speed = computeSpeed(c).value;
-    return body.map(function(b){ return b==="Sight" ? "See invisible creatures within 60 ft" : b==="Flight" ? "Fly " + speed + " ft and hover" : b==="Water" ? "Swim " + 2 * speed + " ft, breathe underwater" : b==="Pliable" ? "Through 1-inch gaps, 5 ft of movement escapes restraints or a grapple" : ""; }).filter(Boolean).join(" · ") || "One benefit for each sorcery point";
+    return body.map(function(b){ return b==="Sight" ? "See invisible creatures within 60 ft" : b==="Flight" ? "Fly " + speed + " ft and hover" : b==="Water" ? "Swim " + 2 * speed + " ft and breathe underwater" : b==="Pliable" ? "Squeeze through 1-inch gaps, and spend 5 ft of movement to escape restraints or a grapple" : ""; }).filter(Boolean).join(". ") || "One benefit for each sorcery point";
   }
   if(id==="otherworldly_wings") return "Fly 30 ft";
-  if(id==="umbral_form") return "Resistance to all damage but force and radiant · move through creatures and objects as difficult terrain · 5 force damage if you end your turn in an object";
+  if(id==="umbral_form") return "Resistance to all damage but force and radiant. You move through creatures and objects as difficult terrain, but take 5 force damage if you end your turn inside an object";
   if(id==="bastion_of_law") return bastionDice(c) + "d8 left";
-  if(id==="wind_soul_shared") return "Your flying speed is 30 ft · up to " + (3 + mod(abilityScore(c, "cha"))) + " creatures within 30 ft fly 30 ft";
-  if(id==="lunar_light") return "Bright light 10 ft, dim light 10 ft more · advantage on Investigation and Perception in it, for you and creatures you choose";
+  if(id==="wind_soul_shared") return "Your flying speed is 30 ft, and up to " + (3 + mod(abilityScore(c, "cha"))) + " creatures within 30 ft can fly 30 ft too";
+  if(id==="lunar_light") return "Bright light for 10 ft and dim light for 10 ft more. You and creatures you choose have advantage on Investigation and Perception in it";
   if(id==="countercharm") return "Advantage on saves against being frightened or charmed, for you and friendly creatures within 30 ft";
   if(id==="defensive_flourish") return "+" + (Number(c.effects && c.effects.defensive_flourish)||0) + " AC";
-  if(id==="mantle_of_majesty") return "Command as a bonus action each turn without a spell slot, DC " + bardDc(c) + " · creatures charmed by you fail the save";
+  if(id==="mantle_of_majesty") return "Cast Command as a bonus action each turn without a spell slot (DC " + bardDc(c) + "). Creatures charmed by you fail the save";
   if(id==="unbreakable_majesty") return "The first time a creature tries to attack you on a turn: CHA save DC " + bardDc(c) + " or it can't, and picks a new target. If it saves, disadvantage on saves against your spells on your next turn";
-  if(id==="shadow_disguise") return "You look like the dead person and know what it would tell a casual acquaintance · +5 to Deception against Insight";
-  if(id==="spreading_spores") return "A creature entering the cube or starting its turn there: CON save DC " + druidDc(c) + " or your Halo of Spores damage, once per turn · no Halo of Spores reaction while it lasts";
+  if(id==="shadow_disguise") return "You look like the dead person and know what it would tell a casual acquaintance. +5 to Deception checks against Insight";
+  if(id==="spreading_spores") return "A creature that enters the cube or starts its turn there makes a CON save (DC " + druidDc(c) + ") or takes your Halo of Spores damage, once per turn. You can't use the Halo of Spores reaction while it lasts";
   if(id==="starry_form"){
     var star = c.effects && c.effects.starry_form, wisMod = mod(abilityScore(c, "wis")), dice = starryDice(c) + "d8" + fmtMod(wisMod);
     var stars = star==="Archer" ? ["A luminous arrow as you start and as a bonus action on later turns, 60 ft, " + dice + " radiant"]
@@ -224,9 +285,9 @@ function effectSummary(c, id){
       : ["Archer, Chalice or Dragon"];
     if(star && canChangeConstellation(c)) stars.push("You can change it at the start of each turn");
     if(star && classLevelOf(c, "Druid", "Circle of Stars") >= 14) stars.push("Resistance to bludgeoning, piercing and slashing");
-    return stars.join(" · ");
+    return stars.join(". ");
   }
-  if(id==="wildfire_spirit") return "On arrival, each creature within 10 ft of it but you: DEX save DC " + druidDc(c) + " or 2d6 fire" + (classLevelOf(c, "Druid", "Circle of Wildfire") >= 6 ? " · Enhanced Bond: +1d8 to one roll of a fire or healing spell, which can start from the spirit" : "");
+  if(id==="wildfire_spirit") return "On arrival, each creature within 10 ft of it, other than you, makes a DEX save (DC " + druidDc(c) + ") or takes 2d6 fire" + (classLevelOf(c, "Druid", "Circle of Wildfire") >= 6 ? ". Enhanced Bond: +1d8 to one roll of a fire or healing spell, which can start from the spirit" : "");
   if(id==="hearth_of_moonlight") return "+5 to Stealth and Perception in the sphere, for you and your allies";
   if(id==="spirit_totem"){
     var spirit = c.effects && c.effects.spirit_totem, shepherd = classLevelOf(c, "Druid", "Circle of the Shepherd");
@@ -235,13 +296,13 @@ function effectSummary(c, id){
       : spirit==="Unicorn" ? ["Advantage on checks to detect creatures in the aura", "A healing spell with a slot: creatures you choose in the aura regain " + shepherd + " hit points"]
       : ["Bear, Hawk or Unicorn"];
     if(spirit && shepherd >= 10) aura.push("Guardian Spirit: your summoned beasts and fey that end their turn in it regain " + Math.floor(shepherd / 2) + " hit points");
-    return aura.join(" · ");
+    return aura.join(". ");
   }
   if(id==="defile_ground"){
     var defile = defileGround(c);
-    return defile.radius + "-ft radius · difficult terrain for hostile creatures · +1d" + defile.die + " necrotic the first time on a turn a creature in it takes damage from an attack or spell";
+    return "A " + defile.radius + "-ft radius of difficult terrain for hostile creatures. The first time on a turn a creature in it takes damage from an attack or spell, it takes 1d" + defile.die + " more necrotic";
   }
-  if(id==="shell_defense") return "+4 AC · advantage on STR and CON saves · disadvantage on DEX saves · speed 0";
+  if(id==="shell_defense") return "+4 AC, but your speed is 0. Advantage on STR and CON saves, disadvantage on DEX saves";
   if(id==="chromatic_warding"){
     var b = draconicBreath(c);
     return "Immune to " + (b ? b.damage.toLowerCase() : "your ancestry's") + " damage";
@@ -249,14 +310,14 @@ function effectSummary(c, id){
   if(id==="raven_queen_resistance") return "Resistance to all damage";
   if(id==="sunlight") return "Disadvantage on attack rolls and Perception checks";
   if(id==="knowledge_of_the_ages") return "Proficient with " + (c.agesSkill || "the skill you chose");
-  if(id==="invoke_duplicity") return (classLevelOf(c, "Cleric", "Trickery Domain") >= 17 ? "Up to four illusions of you" : "An illusion of you") + " · move as a bonus action, 30 ft · cast spells from its space · advantage on attacks when you and it are both within 5 ft of a creature that can see it";
-  if(id==="trickery_cloak") return "Invisible · advantage on attack rolls";
-  if(id==="twilight_sanctuary") return "When a turn ends in the sphere: temporary hit points, or end charmed or frightened" + (classLevelOf(c, "Cleric", "Twilight Domain") >= 17 ? " · Twilight Shroud: half cover in it for you and your allies, +2 to AC and DEX saves" : "");
+  if(id==="invoke_duplicity") return (classLevelOf(c, "Cleric", "Trickery Domain") >= 17 ? "Up to four illusions of you" : "An illusion of you") + ". Move it 30 ft as a bonus action and cast spells from its space. Advantage on attacks when you and it are both within 5 ft of a creature that can see it";
+  if(id==="trickery_cloak") return "You're invisible and have advantage on attack rolls";
+  if(id==="twilight_sanctuary") return "When a turn ends in the sphere, a creature gets temporary hit points or stops being charmed or frightened" + (classLevelOf(c, "Cleric", "Twilight Domain") >= 17 ? ". Twilight Shroud: you and your allies have half cover in it, +2 to AC and DEX saves" : "");
   if(id==="vigilant_blessing") return "Advantage on your next initiative roll";
   if(id==="steps_of_night") return "Fly " + computeSpeed(c).value + " ft";
-  if(id==="corona_of_light") return "Bright light 60 ft · enemies in it have disadvantage on saves against spells that deal fire or radiant damage";
+  if(id==="corona_of_light") return "Bright light for 60 ft. Enemies in it have disadvantage on saves against spells that deal fire or radiant damage";
   if(id==="emboldening_bond") return "A d4 on attack rolls, ability checks and saves within " + (classLevelOf(c, "Cleric", "Peace Domain") >= 17 ? 60 : 30) + " ft of a bonded creature, once per turn";
-  if(id==="ties_that_bind") return "Sense its direction and movement while on your plane · unwilling: WIS save DC " + clericDc(c) + " · once per turn, +1d6 when a spell with a slot damages or heals it";
+  if(id==="ties_that_bind") return "You sense its direction and movement while you're on the same plane. An unwilling target makes a WIS save (DC " + clericDc(c) + "). Once per turn, +1d6 when a spell with a slot damages or heals it";
   if(id==="strands_of_fate") return "Your reaction: advantage or disadvantage on an attack roll or ability check by another creature you can see";
   if(id==="insightful_striking"){
     var glimpse = c.effects && c.effects.insightful_striking;
@@ -269,50 +330,56 @@ function effectSummary(c, id){
     return (mins ? "For " + mins + (mins===1 ? " minute" : " minutes") + ": sense" : "Sense") + " aberrations, celestials, dragons, elementals, fey, fiends and undead within 1 mile, or 6 in your favored terrain";
   }
   if(id==="hide_in_plain_sight") return "+10 to Stealth while you stay there, without moving or taking actions or reactions";
-  if(id==="dread_ambusher") return "+10 ft speed · one more attack with the Attack action · +1d8 on that attack's hit, on your weapon's card";
+  if(id==="dread_ambusher") return "+10 ft speed and one more attack with the Attack action. That attack deals 1d8 more on a hit, on your weapon's card";
   if(id==="multiattack_defense") return "+4 AC against that creature's later attacks this turn";
   if(id==="slayers_prey"){
     var slayer = classLevelOf(c, "Ranger", "Monster Slayer");
-    return "+1d6 on the first hit each turn, on your weapon's card" + (slayer >= 7 ? " · +1d6 on saves it forces, offered after the roll" : "") + (slayer >= 15 ? " · Slayer's Counter: your reaction is a weapon attack before the save, and a hit means you succeed" : "");
+    return "+1d6 on your first hit against it each turn, on your weapon's card" + (slayer >= 7 ? ". +1d6 on your saves against it, offered after the roll" : "") + (slayer >= 15 ? ". Slayer's Counter: when it forces you to save, your reaction is a weapon attack, and a hit means you succeed" : "");
   }
   if(id==="writhing_tide") return "Fly 10 ft and hover";
   if(id==="sacred_weapon"){
     var sacred = (c.inventory||[]).find(function(i){ return i.id===c.sacredWeapon; });
-    return "+" + Math.max(1, mod(abilityScore(c, "cha"))) + " to attack rolls with " + (sacred ? sacred.name || "your weapon" : "your weapon") + " · it's magical · bright light 20 ft";
+    return "+" + Math.max(1, mod(abilityScore(c, "cha"))) + " to attack rolls with " + (sacred ? sacred.name || "your weapon" : "your weapon") + ", which counts as magical and sheds bright light for 20 ft";
   }
-  if(id==="vow_of_enmity") return "Advantage on attack rolls against that creature" + (classLevelOf(c, "Paladin", "Oath of Vengeance") >= 15 ? " · Soul of Vengeance: when it attacks, your reaction is a melee weapon attack against it" : "");
+  if(id==="vow_of_enmity") return "Advantage on attack rolls against that creature" + (classLevelOf(c, "Paladin", "Oath of Vengeance") >= 15 ? ". Soul of Vengeance: when it attacks, your reaction is a melee weapon attack against it" : "");
   if(id==="emissary_of_peace") return "+5 to Persuasion checks";
-  if(id==="peerless_athlete") return "Advantage on Athletics and Acrobatics · carry twice as much · +10 ft on long and high jumps";
+  if(id==="peerless_athlete") return "Advantage on Athletics and Acrobatics checks. You carry twice as much and jump 10 ft farther";
   if(id==="watchers_will") return "Advantage on INT, WIS and CHA saves, for you and the creatures you chose";
-  if(id==="holy_nimbus") return "10 radiant to each enemy that starts its turn in the bright light · advantage on saves against spells cast by fiends or undead";
-  if(id==="elder_champion") return "1-action paladin spells as a bonus action · enemies within 10 ft have disadvantage on saves against your paladin spells and Channel Divinity";
-  if(id==="avenging_angel") return "Fly 60 ft · 30-ft aura: WIS save DC " + paladinDc(c) + " or frightened of you, and attacks against it have advantage";
-  if(id==="invincible_conqueror") return "Resistance to all damage · one more attack with the Attack action · melee attacks crit on 19 or 20";
-  if(id==="dread_lord") return "30-ft aura of gloom · creatures that rely on sight have disadvantage on attacks against you and those you choose";
-  if(id==="living_legend") return "Advantage on CHA checks · one miss on each of your turns hits · reroll a failed save";
-  if(id==="exalted_champion") return "Resistance to nonmagical bludgeoning, piercing and slashing · advantage on WIS saves · allies within 30 ft: advantage on WIS saves and death saves";
-  if(id==="mortal_bulwark") return "Truesight 120 ft · advantage on attacks against aberrations, celestials, elementals, fey and fiends · on a hit, CHA save DC " + paladinDc(c) + " or banished";
-  if(id==="empty_body") return "Invisible · advantage on attack rolls · resistance to all damage but force";
+  if(id==="holy_nimbus") return "Each enemy that starts its turn in the bright light takes 10 radiant. Advantage on saves against spells cast by fiends or undead";
+  if(id==="elder_champion") return "Paladin spells that take an action take a bonus action. Enemies within 10 ft have disadvantage on saves against your paladin spells and Channel Divinity";
+  if(id==="avenging_angel") return "Fly 60 ft. A 30-ft aura: a WIS save (DC " + paladinDc(c) + ") or frightened of you, and attacks against it have advantage";
+  if(id==="invincible_conqueror") return "Resistance to all damage and one more attack with the Attack action. Your melee attacks score a critical hit on 19 or 20";
+  if(id==="dread_lord") return "A 30-ft aura of gloom. Creatures that rely on sight have disadvantage on attacks against you and the creatures you choose";
+  if(id==="living_legend") return "Advantage on CHA checks. Once on each of your turns, a miss can hit instead, and you can reroll a failed save";
+  if(id==="exalted_champion") return "Resistance to nonmagical bludgeoning, piercing and slashing, and advantage on WIS saves. Allies within 30 ft have advantage on WIS saves and death saves";
+  if(id==="mortal_bulwark") return "Truesight 120 ft and advantage on attacks against aberrations, celestials, elementals, fey and fiends. On a hit, a CHA save (DC " + paladinDc(c) + ") or it's banished";
+  if(id==="empty_body") return "You're invisible and have advantage on attack rolls. Resistance to all damage but force";
   if(id==="shadow_step") return "Advantage on your first melee attack this turn";
-  if(id==="cloak_of_shadows") return "Invisible · advantage on attack rolls";
+  if(id==="cloak_of_shadows") return "You're invisible and have advantage on attack rolls";
   if(id==="agile_parry") return "+2 AC while the weapon is in your hand";
-  if(id==="assassinate") return "Advantage on attack rolls · critical damage on any hit against a surprised creature";
+  if(id==="assassinate") return "Advantage on attack rolls, and any hit against a surprised creature is a critical hit";
   if(id==="versatile_trickster") return "Advantage on attack rolls against that creature";
   if(id==="elegant_maneuver") return "Advantage on your next Acrobatics or Athletics check";
-  if(id==="insightful_fighting") return "Sneak Attack against that creature without advantage" + (classLevelOf(c, "Rogue", "Inquisitive") >= 17 ? " · +3d6 Sneak Attack (Eye for Weakness)" : "");
-  if(id==="shadow_walk") return "+10 ft speed · advantage on attacks · Sneak Attack rerolls 1s and 2s · physical attacks can't target you · Stealth succeeds in the dark";
-  if(id==="ghost_walk") return "Fly 10 ft and hover · attack rolls against you have disadvantage · move through creatures and objects";
+  if(id==="insightful_fighting") return "Sneak Attack against that creature without advantage" + (classLevelOf(c, "Rogue", "Inquisitive") >= 17 ? ", with 3d6 more (Eye for Weakness)" : "");
+  if(id==="shadow_walk") return "+10 ft speed and advantage on attacks. Sneak Attack dice of 1 or 2 are rolled again. Physical attacks can't target you, and Stealth checks in dim light or darkness succeed";
+  if(id==="shadow_clone"){
+    var ss = classLevelOf(c, "Rogue", "Shadow Stalker");
+    return "Swap places with it as a bonus action, or as a reaction when you're attacked, and it takes the hit. Your attacks can come from its space" +
+      (ss >= 9 ? ". You can create it in a shadow up to 60 ft away" : "") + (ss >= 13 ? ". It can look exactly like you" : "") + (ss >= 17 ? ". It attacks too (Living Shadows)" : "");
+  }
+  if(id==="inside_wound") return "Your next attack hits automatically and deals Sneak Attack damage";
+  if(id==="ghost_walk") return "Fly 10 ft and hover, and attack rolls against you have disadvantage. You move through creatures and objects";
   if(id==="giants_might"){
     var gm = classLevelOf(c, "Fighter", "Rune Knight");
-    return (gm >= 18 ? "Large or Huge (reach +5 ft while Huge)" : "Large") + " · advantage on Strength checks and saves · +1d" + (gm >= 18 ? 10 : gm >= 10 ? 8 : 6) + " damage once on each of your turns";
+    return "You grow " + (gm >= 18 ? "Large or Huge (+5 ft reach while Huge)" : "Large") + ". Advantage on Strength checks and saves, and +1d" + (gm >= 18 ? 10 : gm >= 10 ? 8 : 6) + " damage once on each of your turns";
   }
-  if(id==="fighting_spirit") return "Advantage on weapon attack rolls · +" + fightingSpiritTempHp(c) + " temporary HP";
-  if(id==="reckless_attack") return "Advantage on Strength melee weapon attacks · attacks against you have advantage";
-  if(id==="natures_veil") return "Invisible · advantage on your attack rolls · attacks against you have disadvantage";
+  if(id==="fighting_spirit") return "Advantage on weapon attack rolls and +" + fightingSpiritTempHp(c) + " temporary HP";
+  if(id==="reckless_attack") return "Advantage on Strength melee weapon attacks, but attacks against you have advantage too";
+  if(id==="natures_veil") return "You're invisible: advantage on your attack rolls, and attacks against you have disadvantage";
   if(id==="predicted_critical") return "A hit with your next firearm attack is a critical hit";
   if(id==="luck_of_the_draw") return "An extra reaction until the start of your next turn";
-  if(id==="duel") return "Neither of you can target anyone else · both move at once, in a straight line";
-  if(id==="steady_aim" || id==="take_aim") return c.effects[id]==="used" ? "Advantage used · speed 0" : "Advantage on your next attack roll · speed 0";
+  if(id==="duel") return "Neither of you can target anyone else. You both move at once, in a straight line";
+  if(id==="steady_aim" || id==="take_aim") return c.effects[id]==="used" ? "Advantage used. Your speed is 0 until the end of your turn" : "Advantage on your next attack roll. Your speed is 0 until the end of your turn";
   return "";
 }
 function hasSongOfVictory(c){

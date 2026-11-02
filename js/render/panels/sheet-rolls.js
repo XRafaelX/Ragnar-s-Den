@@ -8,7 +8,7 @@ import { useNextCheck } from "../../core/magic-items.js";
 import { renderAll } from "../sheet.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { showActionToast } from "../../ui/toast.js";
-import { shadowWalkReroll, livingShadows } from "../../core/shadow-stalker.js";
+import { shadowWalkReroll, livingShadows, insideWound } from "../../core/shadow-stalker.js";
 
 /* ---------------- Attack rolls, ability checks and saves ----------------
    Every attack roll on the sheet (weapons, unarmed strikes, spell
@@ -25,7 +25,15 @@ import { shadowWalkReroll, livingShadows } from "../../core/shadow-stalker.js";
    given), and the weapon (a firearm counts its shots and can misfire). */
 export function rollAttack(c, bonus, mode, label, hit){
   var aim = hasFocusedAim(c) || !!(hit && hit.item && magicArrows(c, hit.item)), gun = hit && hit.item && firearmStats(hit.item, c);
-  if(hit) hit.rollMode = mode; // (Intuition needs no disadvantage.)
+  if(hit){ hit.rollMode = mode; hit.attackBonus = bonus; } // (Intuition needs no disadvantage. Living Shadows repeats it.)
+  // Encroaching Shadows (Shadow Stalker 9): from inside a wound the attack
+  // hits on its own and deals Sneak Attack damage.
+  if(hit && !gun && !hit.noDamage && insideWound(c)){
+    endEffect(c, "inside_wound");
+    save(); renderAll();
+    woundHit(c, hit);
+    return;
+  }
   if(gun && gun.reload) hit.item.shots = (Number(hit.item.shots)||0) + 1;
   // Predicted Critical (Marksman 14): this firearm attack is the one.
   if(gun && effectOn(c, "predicted_critical")){
@@ -55,6 +63,21 @@ export function rollAttack(c, bonus, mode, label, hit){
   });
   var ended = attackEndsEffects(c, !!(hit && hit.melee)), tides = useTides(c);
   if(useSteadyAim(c) || gun || ended || tides){ save(); renderAll(); }
+}
+/* An attack from inside a creature's wound: no d20, the damage straight
+   away, then its Sneak Attack (and the clone's attack, Living Shadows). */
+function woundHit(c, hit){
+  logRoll(hit.label, "Attacked from inside a wound: an automatic hit.");
+  var sa = sneakAttack(c);
+  performRoll(hit.die, hit.qty, hit.bonus, "none", hit.label + ": Damage (an automatic hit from inside the wound)", {followUp: function(r){
+    if(!r) return null;
+    var opts = [];
+    if(sa) opts.push({label: "Sneak Attack " + sa.dice + "d6", title: "An attack from inside a wound deals Sneak Attack damage", keep: true,
+      use: function(){ rollSneak(c, sa.dice, hit.label + ": Sneak Attack"); return {silent: true}; }});
+    var clone = cloneAttackOption(c, hit);
+    if(clone) opts.push(Object.assign(clone, {keep: true}));
+    return {lead: "Inside the wound:", hint: "", options: opts};
+  }});
 }
 /* A firearm's roll (the Gunslinger's rules): at or under its misfire
    score it misfires, and the gun is jammed until repaired. Vicious Intent
@@ -302,7 +325,13 @@ function attackFollowUp(c, r, aim, hit, seen){
   var gun = hit && hit.item && firearmStats(hit.item, c), roll = r || seen;
   if(gun && roll && roll.natural <= gun.misfire) return {lead: "Misfire! The attack misses and the " + (hit.item.name || "firearm") + " jams. " + (gun.set==="gunslinger" ? "Clear it on its card." : "Repair it on its card."), hint: "Misfire!", options: []};
   if(hit && r && hit.rigged) return {lead: "Playing Dirty: the target makes a DC 14 Wisdom save or is blinded until the start of your next turn.", options: []};
-  if(hit && roll && roll.natural >= (hit.critMin || 20)) return hit.noDamage ? {lead: "Critical hit! The round deals no damage.", hint: "", options: []} : withPinpoint(c, hit, criticalHit(c, hit, roll), criticalDamage(c, hit).qty);
+  if(hit && roll && roll.natural >= (hit.critMin || 20)){
+    if(hit.noDamage) return {lead: "Critical hit! The round deals no damage.", hint: "", options: []};
+    var critFollow = withPinpoint(c, hit, criticalHit(c, hit, roll), criticalDamage(c, hit).qty);
+    var critClone = cloneAttackOption(c, hit);
+    if(critClone) critFollow.options.push(Object.assign(critClone, {keep: true}));
+    return critFollow;
+  }
   // A natural 20 with no weapon card behind it (a spell attack) simply hits.
   if(!hit && roll && roll.natural===20) return null;
   if(hit && r && hit.predicted && !hit.noDamage) return withPinpoint(c, hit, Object.assign(criticalHit(c, hit), {lead: "Predicted Critical: if it hits, it's a critical hit."}), criticalDamage(c, hit).qty);
@@ -384,6 +413,9 @@ function attackFollowUp(c, r, aim, hit, seen){
     opts.push({label: "+" + slayer + " (Foe Slayer)", title: "Once on each of your turns, against one of your favored enemies",
       use: function(){ return {bonus: slayer, log: "Foe Slayer"}; }});
   }
+  // Living Shadows (Shadow Stalker 17): the clone attacks too.
+  var clone = cloneAttackOption(c, hit);
+  if(clone) opts.push(clone);
   // Stalker's Flurry (Gloom Stalker 11): another attack after a miss, once on each of your turns.
   if(hit && hit.item && hasStalkersFlurry(c)){
     opts.push({label: "Stalker's Flurry: attack again", title: "Once on each of your turns: another weapon attack as part of the same action",
@@ -493,20 +525,22 @@ function withPinpoint(c, hit, follow, qty){
 /* A Sneak Attack roll, also the critical one (sheet-rolls.js) and the clone's. */
 export function rollSneak(c, dice, label){
   performRoll(6, dice, 0, "none", label, {adjust: shadowWalkReroll(c),
-    followUp: function(r){ return r ? wailsFollowUp(c) || livingShadowsFollowUp(c) : null; }});
+    followUp: function(r){ return r ? wailsFollowUp(c) : null; }});
 }
-/* Living Shadows (Shadow Stalker 17): the clone hit the same creature, and
-   if either attack deals Sneak Attack damage both do. A use rolls it. */
-function livingShadowsFollowUp(c){
-  var ls = livingShadows(c), sa = sneakAttack(c);
-  if(!ls || !ls.left || !sa) return null;
-  return {lead: "Living Shadows:", hint: "", options: [{label: "Clone's Sneak Attack " + sa.dice + "d6", title: "Your shadow clone also hit the same creature. Spends a use (" + ls.left + " left)",
+/* Living Shadows (Shadow Stalker 17): on the Attack action the clone
+   also attacks the same creature. A use rolls its attack, with the same
+   bonus. If either attack deals Sneak Attack damage, both do: the card's
+   Sneak Attack button rolls it for the clone's hit too. */
+function cloneAttackOption(c, hit){
+  var ls = livingShadows(c);
+  if(!ls || !ls.left || !hit || !hit.item || hit.clone || hit.attackBonus==null) return null;
+  return {label: "Clone attacks too (Living Shadows)", title: "Your shadow clone attacks the same creature, if it can reach it. Spends a use (" + ls.left + " left)",
     use: function(){
       if(!spendResource(c, ls.key, 1)) return null;
       save(); renderAll();
-      performRoll(6, sa.dice, 0, "none", "Living Shadows: the clone's Sneak Attack", {adjust: shadowWalkReroll(c)});
+      rollAttack(c, hit.attackBonus, hit.rollMode, hit.label + ": Clone's attack (Living Shadows)", Object.assign({}, hit, {clone: true}));
       return {silent: true};
-    }}]};
+    }};
 }
 /* Wails from the Grave (Phantom 3) right after Sneak Attack damage: a use
    or a soul trinket (Tokens of the Departed, 9) for half the dice of

@@ -33,8 +33,10 @@ export function isRangedWeapon(item){
 /* ---------------- Equipping: one armor, two hands ----------------
    A character wears at most one suit of armor and carries at most one
    shield, and has two hands: a shield takes one, a weapon takes one, a
-   two-handed weapon takes both (a stack like "Dagger ×2" counts as one
-   weapon in hand). */
+   two-handed weapon takes both. A stack like "Dagger ×2" is one weapon in
+   one hand, unless the player holds one in each hand (`bothHands`, for a
+   stack of two or more weapons fit for two-weapon fighting): then it
+   fills both hands and its card also rolls the off-hand attack. */
 function isBodyArmor(i){ return i.type==="armor" && i.category!=="shield"; }
 function isShield(i){ return i.type==="armor" && i.category==="shield"; }
 function isTwoHanded(item){
@@ -43,8 +45,28 @@ function isTwoHanded(item){
 }
 export function itemHands(item){
   if(isShield(item)) return 1;
-  if(item.type==="weapon") return isTwoHanded(item) ? 2 : 1;
+  if(item.type==="weapon") return isTwoHanded(item) || stackInBothHands(item) ? 2 : 1;
   return 0;
+}
+/* A stack held one in each hand (see above). */
+export function stackInBothHands(item){
+  return !!(item && item.type==="weapon" && item.bothHands && (Number(item.qty)||1) >= 2 && !isTwoHanded(item));
+}
+/* Can this stack go one in each hand? Two or more light melee weapons (or
+   any one-handed melee ones with Dual Wielder). */
+export function canHoldStackInBothHands(c, item){
+  if(!item || item.type!=="weapon" || (Number(item.qty)||1) < 2 || isTwoHanded(item) || isRangedWeapon(item)) return false;
+  var d = weaponDataOf(item);
+  return /\blight\b/i.test(((d && d.properties) || "") + " " + (item.notes || "")) || hasFeat(c, "Dual Wielder");
+}
+/* Hold the stack one in each hand, or just one. {ok, message}. */
+export function setBothHands(c, item, on){
+  if(!on){ delete item.bothHands; return {ok: true, message: ""}; }
+  if(!canHoldStackInBothHands(c, item)) return {ok: false, message: "You can only hold two light melee weapons, one in each hand."};
+  var other = handsInUse(c, item).items;
+  if(item.equipped && other.length) return {ok: false, message: "Your other hand is holding " + other.map(function(i){ return i.name; }).join(" and ") + ". Unequip it first."};
+  item.bothHands = true;
+  return {ok: true, message: ""};
 }
 /* What's in the character's hands right now. */
 export function handsInUse(c, except){
@@ -404,6 +426,9 @@ function offHandCapable(c, item){
    until they pick, the weapon with less average damage is the off-hand.
    {main, off} or null when not wielding two. */
 export function dualWieldHands(c){
+  // A stack held one in each hand: both are the same weapon.
+  var stack = (c.inventory||[]).find(function(i){ return i.equipped && stackInBothHands(i) && offHandCapable(c, i); });
+  if(stack) return {main: stack, off: stack, stack: true};
   var pair = (c.inventory||[]).filter(function(i){ return offHandCapable(c, i); });
   if(pair.length!==2 || isFirearm(pair[0])!==isFirearm(pair[1])) return null;
   if(pair[0].offHand!==pair[1].offHand) return pair[0].offHand ? {main: pair[1], off: pair[0]} : {main: pair[0], off: pair[1]};
@@ -413,7 +438,7 @@ export function dualWieldHands(c){
 /* Swap which weapon is in the off-hand. */
 export function swapHands(c){
   var hands = dualWieldHands(c);
-  if(!hands) return;
+  if(!hands || hands.stack) return;
   delete hands.off.offHand;
   hands.main.offHand = true;
 }
@@ -422,7 +447,9 @@ export function offHandAttack(c, item){
   if(!hands || hands.off!==item) return null;
   var ab = weaponAbilityMod(c, item);
   var style = hasFightingStyle(c, "Two-Weapon Fighting");
-  return {damage: weaponDamageBonus(c, item) - (style || ab < 0 ? 0 : ab), style: style};
+  var out = {damage: weaponDamageBonus(c, item) - (style || ab < 0 ? 0 : ab), style: style};
+  if(hands.stack) out.stack = true; // one stack in both hands: the card rolls both
+  return out;
 }
 /* Dueling: +2 damage with a melee weapon held in one hand while no other
    weapon is held (a shield or a free hand is fine). Judged against what
@@ -430,7 +457,7 @@ export function offHandAttack(c, item){
    "Dagger ×2" is one weapon in hand, as for the hands count. */
 export function duelingBonus(c, item){
   if(item.type!=="weapon" || isRangedWeapon(item) || isTwoHanded(item)) return 0;
-  if(!hasFightingStyle(c, "Dueling")) return 0;
+  if(!hasFightingStyle(c, "Dueling") || stackInBothHands(item)) return 0;
   var other = (c.inventory||[]).some(function(i){ return i!==item && i.equipped && i.type==="weapon"; });
   return other ? 0 : 2;
 }

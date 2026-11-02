@@ -6,8 +6,10 @@
      deal Sneak Attack damage.
    - Shadow Walk (Shadow Stalker 3): while it's on, Sneak Attack dice of 1
      or 2 are rolled again and the new roll stands.
-   - Living Shadows (Shadow Stalker 17): the clone's Sneak Attack, a use
-     each time. */
+   - Living Shadows (Shadow Stalker 17): the clone's attack, a use each
+     time.
+   - Inside a wound (Encroaching Shadows, Shadow Stalker 9): the next
+     attack hits without a roll and deals Sneak Attack damage. */
 import { baseWeaponName } from "../data/weapons.js";
 import { classLevelOf } from "./class-features.js";
 import { hasFeat } from "./vitals.js";
@@ -36,9 +38,20 @@ export function shadowWalkReroll(c){
   };
 }
 
-/* Living Shadows: {key, left} at Shadow Stalker 17, or null. */
+/* Inside a creature's wound: the next attack hits on its own. */
+export function insideWound(c){
+  return shadowStalkerLevel(c) >= 9 && effectOn(c, "inside_wound");
+}
+
+/* A shadow clone is out (Shadow Clones, tracked on Active effects). */
+export function cloneOut(c){
+  return shadowStalkerLevel(c) >= 3 && effectOn(c, "shadow_clone");
+}
+
+/* Living Shadows: {key, left} at Shadow Stalker 17 while the clone is
+   out, or null. */
 export function livingShadows(c){
-  if(shadowStalkerLevel(c) < 17) return null;
+  if(shadowStalkerLevel(c) < 17 || !cloneOut(c)) return null;
   var key = "Rogue:living_shadows";
   return {key: key, left: Math.max(0, resourceLeft(c, key))};
 }

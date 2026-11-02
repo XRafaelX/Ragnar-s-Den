@@ -7,7 +7,7 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack, rollSneak } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -1307,6 +1307,11 @@ function renderWeaponCard(c, item, idx){
   atkBtn.type = "button"; atkBtn.className = "btn small inv-roll-btn";
   atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(atkBonus) + (atkRoll.mode==="dis" ? " (Dis)" : atkRoll.mode==="adv" ? " (Adv)" : "");
   if(atkRoll.reason) atkBtn.title = atkRoll.reason;
+  // Encroaching Shadows: from inside a wound it hits without a roll.
+  if(insideWound(c) && !firearmStats(item, c)){
+    atkBtn.innerHTML = makeDiceSvg() + "Attack: automatic hit";
+    atkBtn.title = "You're inside a wound: the attack hits and deals Sneak Attack damage";
+  }
   // A firearm that's jammed, broken or out of shots can't fire.
   var gun = firearmStats(item, c);
   var gunStop = gun && (item.broken ? "Broken: mend it out of combat at a quarter of its cost" : item.misfired ? (gun.set==="gunslinger" ? "Misfired: clear it first" : "Misfired: repair it first")
@@ -1315,7 +1320,7 @@ function renderWeaponCard(c, item, idx){
   atkBtn.addEventListener("click", function(){
     // (parsed and dmgBonus are worked out below, before any click.)
     rollAttack(c, atkBonus, atkRoll.mode, (item.name||"Weapon") + ": Attack",
-      parsed ? {qty: parsed.qty, die: parsed.die, bonus: off ? off.damage : dmgBonus, melee: !isRangedWeapon(item), label: item.name || "Weapon", critMin: critRange(c, item), item: item, sneak: sneakAttackWeapon(item, c)} : null);
+      parsed ? {qty: parsed.qty, die: parsed.die, bonus: off && !off.stack ? off.damage : dmgBonus, melee: !isRangedWeapon(item), label: item.name || "Weapon", critMin: critRange(c, item), item: item, sneak: sneakAttackWeapon(item, c)} : null);
   });
   actions.appendChild(atkBtn);
 
@@ -1343,7 +1348,7 @@ function renderWeaponCard(c, item, idx){
     dmgBtn.disabled = true;
     dmgBtn.title = "Enter damage dice like \"1d8\" to roll";
   }
-  if(!off) actions.appendChild(dmgBtn);
+  if(!off || off.stack) actions.appendChild(dmgBtn);
 
   // Thrown: a ranged attack, when its numbers differ (Archery, Thrown
   // Weapon Fighting, rage).
@@ -2001,7 +2006,9 @@ function withInfusion(c, card, item, idx){
 /* ---- Inventory panel ---- */
 /* "Hands 2/2 · Longsword, Shield": what's held, as two hand pips. A
    shield (listed under Armor) counts too. Two-weapon fighting names the
-   main hand and the off-hand, with a Swap hands button. */
+   main hand and the off-hand, with a Swap hands button. A stack of light
+   weapons in hand ("Dagger ×2") gets a button to hold one in each hand,
+   and back to one. */
 function handsSummary(c){
   var h = handsInUse(c);
   var row = document.createElement("div");
@@ -2017,12 +2024,29 @@ function handsSummary(c){
   var txt = document.createElement("span");
   txt.className = "inv-hands-text";
   var dual = dualWieldHands(c);
-  txt.textContent = "Hands "+Math.min(h.used, 9)+"/2" + (dual ? " · Main: "+dual.main.name+" · Off-hand: "+dual.off.name
+  txt.textContent = "Hands "+Math.min(h.used, 9)+"/2" + (dual && dual.stack ? " · " + dual.main.name + " in each hand"
+    : dual ? " · Main: "+dual.main.name+" · Off-hand: "+dual.off.name
     : h.items.length ? " · "+h.items.map(function(i){
     return i.name + (itemHands(i)===2 ? " (two-handed)" : "");
   }).join(", ") : " · nothing in hand");
   row.appendChild(txt);
-  if(dual){
+  // A stack of light weapons: one in each hand, or just one.
+  var stack = h.items.find(function(i){ return canHoldStackInBothHands(c, i); });
+  if(stack && (stackInBothHands(stack) || h.used===1)){
+    var both = stackInBothHands(stack);
+    var bothBtn = document.createElement("button");
+    bothBtn.type = "button"; bothBtn.className = "btn small inv-swap-hands-btn inv-both-hands-btn";
+    bothBtn.innerHTML = makeSwapSvg() + (both ? "Hold just one" : "One in each hand");
+    bothBtn.title = both ? "Put one " + stack.name + " away and free a hand"
+      : "Hold a " + stack.name + " in each hand for two-weapon fighting: the card adds the off-hand attack";
+    bothBtn.addEventListener("click", function(){
+      var res = setBothHands(c, stack, !both);
+      if(!res.ok){ showActionToast(res.message, true); return; }
+      save(); renderAll();
+    });
+    row.appendChild(bothBtn);
+  }
+  if(dual && !dual.stack){
     var swapBtn = document.createElement("button");
     swapBtn.type = "button"; swapBtn.className = "btn small inv-swap-hands-btn";
     swapBtn.innerHTML = makeSwapSvg() + "Swap hands";

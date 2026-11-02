@@ -122,3 +122,36 @@ test("two-weapon fighting needs two light melee weapons in hand (Dual Wielder: a
   const great = weapon("Greatsword");
   assert.equal(H.offHandAttack(fighter([], [great, a], { feats: [{ id: "dw", name: "Dual Wielder" }] }), great), null, "never a two-handed one");
 });
+
+test("a stack of light weapons can be held one in each hand (Dagger ×2)", () => {
+  const stack = weapon("Dagger", { qty: 2 });
+  const c = fighter([], [stack]);
+  assert.equal(H.handsInUse(c).used, 1, "one hand by default");
+  assert.equal(H.canHoldStackInBothHands(c, stack), true);
+  assert.deepEqual(H.setBothHands(c, stack, true), { ok: true, message: "" });
+  assert.equal(H.handsInUse(c).used, 2, "both hands");
+  assert.deepEqual(H.dualWieldHands(c), { main: stack, off: stack, stack: true });
+  assert.deepEqual(H.offHandAttack(c, stack), { damage: 0, style: false, stack: true }, "the card rolls the off-hand too");
+  // Both hands full: a shortbow is refused, as is a shield.
+  const bow = weapon("Shortbow", { equipped: false });
+  c.inventory.push(bow);
+  assert.equal(H.tryEquip(c, bow).ok, false);
+  // One dagger thrown away: back to one hand.
+  stack.qty = 1;
+  assert.equal(H.handsInUse(c).used, 1);
+  assert.equal(H.dualWieldHands(c), null);
+  stack.qty = 2;
+  assert.deepEqual(H.setBothHands(c, stack, false), { ok: true, message: "" });
+  assert.equal(H.handsInUse(c).used, 1);
+  // Not with the other hand busy, not for a stack of longswords or javelins.
+  const busy = fighter([], [weapon("Dagger", { qty: 2 }), weapon("Shortsword")]);
+  assert.match(H.setBothHands(busy, busy.inventory[0], true).message, /other hand is holding Shortsword/);
+  assert.equal(H.canHoldStackInBothHands(fighter([], []), weapon("Longsword", { qty: 2 })), false);
+  assert.equal(H.canHoldStackInBothHands(fighter([], [], { feats: [{ id: "dw", name: "Dual Wielder" }] }), weapon("Longsword", { qty: 2 })), true);
+  assert.equal(H.canHoldStackInBothHands(fighter([], []), weapon("Javelin", { qty: 3 })), false, "not light");
+  // Dueling stops with a dagger in each hand.
+  const duel = fighter(["Dueling"], [weapon("Dagger", { qty: 2 })]);
+  assert.equal(H.duelingBonus(duel, duel.inventory[0]), 2);
+  H.setBothHands(duel, duel.inventory[0], true);
+  assert.equal(H.duelingBonus(duel, duel.inventory[0]), 0);
+});
