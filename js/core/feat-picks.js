@@ -259,7 +259,8 @@ export function campaignFeatsAt(c, level){
 
 /* Why this character can't take the feat ("" if they can), from its
    `requires`: race (or `size`, for "a Small race"), character level,
-   another feat (and its option). who: {race, size, level, feats}, size
+   another feat (and its option), the Sneak Attack feature (a rogue
+   level). who: {race, size, level, feats, classes (class names)}, size
    defaulting to the race's. A homebrew race is never ruled out. */
 export function featRequiresReason(def, who){
   var r = def && def.requires;
@@ -274,6 +275,7 @@ export function featRequiresReason(def, who){
     var has = (who.feats||[]).some(function(f){ return f.name===r.feat && (!r.option || (f.picks && f.picks.option===r.option)); });
     if(!has) return "needs " + r.feat + (r.option ? " (" + r.option + ")" : "");
   }
+  if(r.sneakAttack && (who.classes||[]).indexOf("Rogue")===-1) return "needs Sneak Attack (a rogue level)";
   return "";
 }
 

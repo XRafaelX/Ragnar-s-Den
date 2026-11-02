@@ -41,7 +41,7 @@ var FEAT_SOURCES = {
   MTF:"Mordenkainen's Tome of Foes", ERLW:"Eberron: Rising from the Last War", FTD:"Fizban's Treasury of Dragons",
   SCC:"Strixhaven: A Curriculum of Chaos", DSotDQ:"Dragonlance: Shadow of the Dragon Queen",
   BGG:"Bigby Presents: Glory of the Giants", PAitM:"Planescape: Adventures in the Multiverse", BMT:"The Book of Many Things",
-  GUN:"Gunslinger (fan content)"
+  GUN:"Gunslinger (fan content)", SPK:"Spikael's homebrew"
 };
 
 function fillFeatSection(section){

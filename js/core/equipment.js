@@ -17,6 +17,7 @@ import { conditionRolls } from "./conditions.js";
 import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver, weaponAttackEffect } from "./effects.js";
 import { sharpenBonus } from "./monk.js";
 import { sacredWeaponBonus, auraOfHate } from "./paladin.js";
+import { reaperScythe } from "./shadow-stalker.js";
 import { heavyRoundBonus, marksmanCritMin, deadlyCriticalDice, outlawGritBonus, outlawDualFirearm, arcaneInfusionBonus, arcaneInfusionOn } from "./gunslinger.js";
 
 /* Fighting styles live on the sheet as features tagged `fightingStyle`
@@ -156,6 +157,8 @@ export function isMonkWeaponFor(c, item){
 export function weaponDamageDice(c, item){
   var own = parseDiceNotation(item.damageDice);
   if(!own) return null;
+  // Reaper: a scythe swung with Dexterity deals 1d6.
+  if(reaperDex(c, item)) return {qty: 1, die: 6, martialArts: false, reaper: true};
   // Shillelagh: the weapon's damage die becomes a d8.
   if(own.qty===1 && own.die < 8 && shillelaghOn(c, item)) own = {qty: 1, die: 8};
   if(martialArtsApplies(c, item)){
@@ -271,6 +274,8 @@ export function weaponAbility(c, item){
   var ab = abilityScores(c);
   var allowed = item.ability==="dex" ? ["dex"] : item.ability==="finesse" ? ["str", "dex"] : ["str"];
   if(martialArtsApplies(c, item) || revenantBladeApplies(c, item)) allowed = ["str", "dex"];
+  // Reaper: Dexterity for a scythe, only when it's higher (it costs the d8).
+  if(reaperScythe(c, item) && mod(ab.dex) > mod(ab.str) && allowed.indexOf("dex")===-1) allowed.push("dex");
   // Shillelagh: the spellcasting ability can stand in for Strength.
   if(shillelaghOn(c, item)) shillelaghAbilities(c).forEach(function(k){ if(allowed.indexOf(k)===-1) allowed.push(k); });
   // A feature tagged `magicWeaponAbility` lets magic weapons (see
@@ -288,6 +293,12 @@ export function weaponAbility(c, item){
   return {mod: best, keys: allowed.filter(function(k, i){ return allowed.indexOf(k)===i && mod(ab[k])===best; })};
 }
 export function weaponAbilityMod(c, item){ return weaponAbility(c, item).mod; }
+/* Reaper: this scythe attacks with Dexterity (so it deals 1d6). */
+export function reaperDex(c, item){
+  if(!reaperScythe(c, item)) return false;
+  var keys = weaponAbility(c, item).keys;
+  return keys.indexOf("dex")!==-1 && keys.indexOf("str")===-1;
+}
 /* Revenant Blade: a double-bladed scimitar has the finesse property when
    the character wields it. */
 export function revenantBladeApplies(c, item){
@@ -613,9 +624,10 @@ export function sneakAttack(c){
   var eye = classLevelOf(c, "Rogue", "Inquisitive") >= 17 && effectOn(c, "insightful_fighting") ? 3 : 0;
   return {dice: Math.ceil(lv / 2) + eye, eye: eye};
 }
-export function sneakAttackWeapon(item){
+export function sneakAttackWeapon(item, c){
   if(!item || item.psychicBlade) return !!item;
   if(item.type!=="weapon") return false;
+  if(c && reaperScythe(c, item)) return true;
   var d = weaponDataOf(item);
   return isRangedWeapon(item) || item.ability==="finesse" || !!(d && d.finesse) || /\bfinesse\b/i.test(item.notes || "");
 }

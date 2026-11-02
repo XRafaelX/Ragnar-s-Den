@@ -60,6 +60,13 @@ export var CREDITS = [
     private: true, // hidden with private content (js/core/private-content.js)
     text: "The Gunslinger class was created by Spikael and is used with his permission."
   },
+  // PRIVATE: remove with js/data/shadow-stalker.js before publishing.
+  {
+    tag: "Homebrew",
+    label: "Shadow Stalker",
+    private: true, // hidden with private content (js/core/private-content.js)
+    text: "The Shadow Stalker rogue subclass, the Reaper feat and the Scythe were created by Spikael and are used with his permission."
+  },
   {
     tag: "Team",
     label: "Made by",

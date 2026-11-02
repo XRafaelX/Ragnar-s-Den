@@ -111,6 +111,13 @@ export function stepApplicable(id){
    CAMPAIGN_FEATS). lu.bonusFeatName / lu.bonusFeatPicks hold the choice.
    A feat's prerequisites still apply, and the feat taken instead of an
    ability increase on this same level-up counts as already had. */
+/* The character's classes once this level-up is done (a feat that needs
+   Sneak Attack asks for a rogue level). */
+export function levelUpClassNames(){
+  var names = (lu.c.classes||[]).map(function(cl){ return cl.name; });
+  if(lu.className && names.indexOf(lu.className)===-1) names.push(lu.className);
+  return names;
+}
 export function bonusFeatChoices(){ return campaignFeatsAt(lu.c, totalLevel(lu.c) + 1); }
 function asiFeatNow(){
   return target().asi && lu.asiMode==="feat" && lu.featName ? {name: lu.featName, picks: lu.featPicks || {}} : null;
@@ -119,7 +126,7 @@ export function bonusFeatReason(def){
   var c = lu.c, now = asiFeatNow();
   if((c.feats||[]).some(function(f){ return f.name===def.name; })) return "you have it";
   if(now && now.name===def.name) return "picked as your feat this level";
-  return featRequiresReason(def, {race: c.race, size: raceSize(c), level: totalLevel(c) + 1, feats: (c.feats||[]).concat(now ? [now] : [])});
+  return featRequiresReason(def, {race: c.race, size: raceSize(c), level: totalLevel(c) + 1, feats: (c.feats||[]).concat(now ? [now] : []), classes: levelUpClassNames()});
 }
 
 /* ---- Warlock: Pact Boon and invocations ----
@@ -459,7 +466,7 @@ export function validate(id){
   if(id==="asi"){
     if(lu.asiMode==="feat"){
       if(!lu.featName) return "Pick a feat, or switch to raising ability scores.";
-      var blocked = featRequiresReason(featDef(lu.featName), {race: lu.c.race, size: raceSize(lu.c), level: totalLevel(lu.c) + 1, feats: lu.c.feats || []});
+      var blocked = featRequiresReason(featDef(lu.featName), {race: lu.c.race, size: raceSize(lu.c), level: totalLevel(lu.c) + 1, feats: lu.c.feats || [], classes: levelUpClassNames()});
       return blocked ? lu.featName+" "+blocked+". Pick another feat." : null;
     }
     var can = asiPointsAvailable();

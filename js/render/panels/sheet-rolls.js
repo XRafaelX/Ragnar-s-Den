@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud } from "../../core/helpers.js";
 import { flashOfGenius, artificerHitDice } from "../../core/artificer.js";
 import { openFlourishSheet } from "./bard.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -8,6 +8,7 @@ import { useNextCheck } from "../../core/magic-items.js";
 import { renderAll } from "../sheet.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { showActionToast } from "../../ui/toast.js";
+import { shadowWalkReroll, livingShadows } from "../../core/shadow-stalker.js";
 
 /* ---------------- Attack rolls, ability checks and saves ----------------
    Every attack roll on the sheet (weapons, unarmed strikes, spell
@@ -489,13 +490,51 @@ function withPinpoint(c, hit, follow, qty){
   });
   return Object.assign({}, follow, {options: follow.options.concat(pins)});
 }
+/* A Sneak Attack roll, also the critical one (sheet-rolls.js) and the clone's. */
+export function rollSneak(c, dice, label){
+  performRoll(6, dice, 0, "none", label, {adjust: shadowWalkReroll(c),
+    followUp: function(r){ return r ? wailsFollowUp(c) || livingShadowsFollowUp(c) : null; }});
+}
+/* Living Shadows (Shadow Stalker 17): the clone hit the same creature, and
+   if either attack deals Sneak Attack damage both do. A use rolls it. */
+function livingShadowsFollowUp(c){
+  var ls = livingShadows(c), sa = sneakAttack(c);
+  if(!ls || !ls.left || !sa) return null;
+  return {lead: "Living Shadows:", hint: "", options: [{label: "Clone's Sneak Attack " + sa.dice + "d6", title: "Your shadow clone also hit the same creature. Spends a use (" + ls.left + " left)",
+    use: function(){
+      if(!spendResource(c, ls.key, 1)) return null;
+      save(); renderAll();
+      performRoll(6, sa.dice, 0, "none", "Living Shadows: the clone's Sneak Attack", {adjust: shadowWalkReroll(c)});
+      return {silent: true};
+    }}]};
+}
+/* Wails from the Grave (Phantom 3) right after Sneak Attack damage: a use
+   or a soul trinket (Tokens of the Departed, 9) for half the dice of
+   necrotic to a second creature, both with Death's Friend (17). */
+function wailsFollowUp(c){
+  var w = wailsFromTheGrave(c);
+  if(!w || (!w.usesLeft && !w.trinkets)) return null;
+  var opts = [];
+  function wail(how, pay){
+    return {label: "Wails " + w.dice + "d6 necrotic" + how, title: "A second creature within 30 feet of the first takes it" + (w.both ? ", and the first one too (Death's Friend)" : ""),
+      use: function(){
+        pay();
+        save(); renderAll();
+        performRoll(6, w.dice, 0, "none", "Wails from the Grave (Necrotic)" + (w.both ? ", to both creatures" : ""));
+        return {silent: true};
+      }};
+  }
+  if(w.usesLeft) opts.push(wail("", function(){ c.resourcesUsed[w.key] = w.used + 1; }));
+  if(w.trinkets) opts.push(wail(" (a soul trinket)", function(){ c.soulTrinkets = w.trinkets - 1; }));
+  return {lead: "Wails from the Grave:", hint: "", options: opts};
+}
 /* roll: the attack roll, when there is one. The tray's badge already calls
    a natural 20 a critical hit, but not a 19 from Improved Critical. */
 function criticalHit(c, hit, roll){
   var crit = criticalDamage(c, hit);
   var sa = hit.sneak && sneakAttack(c);
   var extra = sa ? [{label: "Sneak Attack " + 2 * sa.dice + "d6", title: "On a critical hit, Sneak Attack's dice are doubled too",
-    use: function(){ performRoll(6, 2 * sa.dice, 0, "none", hit.label + ": Sneak Attack (critical)"); return {silent: true}; }}] : [];
+    use: function(){ rollSneak(c, 2 * sa.dice, hit.label + ": Sneak Attack (critical)"); return {silent: true}; }}] : [];
   // A paladin's melee hit: the smites' dice are doubled too.
   if(hit.melee && hasImprovedSmite(c) && hit.item) extra.push({label: "Improved Divine Smite 2d8", title: "On a critical hit, its die is doubled too",
     use: function(){ performRoll(8, 2, 0, "none", hit.label + ": Improved Divine Smite (critical)"); return {silent: true}; }});

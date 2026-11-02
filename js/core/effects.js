@@ -212,6 +212,7 @@ export function effectRolls(c, kind, ability){
   if(kind==="attack" && effectOn(c, "assassinate")) out.push({mode: "adv", reason: "Assassinate"});
   if(kind==="attack" && effectOn(c, "versatile_trickster")) out.push({mode: "adv", reason: "Versatile Trickster"});
   if(kind==="attack" && effectOn(c, "vow_of_enmity")) out.push({mode: "adv", reason: "Vow of Enmity"});
+  if(kind==="attack" && effectOn(c, "shadow_walk")) out.push({mode: "adv", reason: "Shadow Walk: you're a shadow"});
   return out;
 }
 /* Steady Aim (a rogue's) and Take Aim (a gunslinger's): on, with its

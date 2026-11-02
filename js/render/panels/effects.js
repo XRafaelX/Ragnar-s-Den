@@ -300,6 +300,7 @@ function effectSummary(c, id){
   if(id==="versatile_trickster") return "Advantage on attack rolls against that creature";
   if(id==="elegant_maneuver") return "Advantage on your next Acrobatics or Athletics check";
   if(id==="insightful_fighting") return "Sneak Attack against that creature without advantage" + (classLevelOf(c, "Rogue", "Inquisitive") >= 17 ? " · +3d6 Sneak Attack (Eye for Weakness)" : "");
+  if(id==="shadow_walk") return "+10 ft speed · advantage on attacks · Sneak Attack rerolls 1s and 2s · physical attacks can't target you · Stealth succeeds in the dark";
   if(id==="ghost_walk") return "Fly 10 ft and hover · attack rolls against you have disadvantage · move through creatures and objects";
   if(id==="giants_might"){
     var gm = classLevelOf(c, "Fighter", "Rune Knight");

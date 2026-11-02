@@ -57,8 +57,9 @@
      unarmoredAc    AC without armor is this + DEX (Dragon Hide)
      darkvision     {range, add}, like class features' (Keenness of the
                     Stone Giant)
-     requires       {races, raceLabel, level, feat, option}: who can take
-                    it; the pickers grey it out for everyone else. A
+     requires       {races, raceLabel, level, feat, option, sneakAttack}: who
+                    can take it; the pickers grey it out for everyone else.
+                    sneakAttack: only a rogue (the Sneak Attack feature). A
                     homebrew race is never ruled out. */
 import { PHB_FEATS } from "./feats/phb.js";
 import { TASHA_FEATS } from "./feats/tasha.js";
@@ -67,8 +68,10 @@ import { OTHER_BOOK_FEATS } from "./feats/other-books.js";
 import { DRAGONLANCE_FEATS } from "./feats/dragonlance.js";
 import { GIANTS_FEATS } from "./feats/giants.js";
 import { PLANESCAPE_FEATS } from "./feats/planescape.js";
+// PRIVATE: Spikael's Reaper feat (see ./shadow-stalker.js). Remove before publishing.
+import { REAPER_FEAT } from "./shadow-stalker.js";
 
-export var FEATS_CATALOG = [].concat(PHB_FEATS, TASHA_FEATS, XANATHAR_FEATS, OTHER_BOOK_FEATS, DRAGONLANCE_FEATS, GIANTS_FEATS, PLANESCAPE_FEATS);
+export var FEATS_CATALOG = [].concat(PHB_FEATS, TASHA_FEATS, XANATHAR_FEATS, OTHER_BOOK_FEATS, DRAGONLANCE_FEATS, GIANTS_FEATS, PLANESCAPE_FEATS, [REAPER_FEAT]);
 
 /* Campaign rules that hand out feats. The DM decides whether a campaign
    uses them, so they are set per character (c.campaign):

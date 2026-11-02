@@ -5,11 +5,16 @@
    Gunslinger write-up's Reload and Misfire scores, plus its fire lance.
    Firearms are their own category: neither simple nor martial, so only a
    proficiency in firearms covers them. `treatAs`: the book says to treat
-   it as that weapon, so proficiency with one covers the other. */
+   it as that weapon, so proficiency with one covers the other.
+   The Scythe is Spikael's PRIVATE homebrew (./shadow-stalker.js): remove
+   it from Martial Melee and WEAPON_DATA, and its import, before publishing.
+   `special`: a rule of its own, shown in the weapon's details. */
+import { SCYTHE } from "./shadow-stalker.js";
+
 export var WEAPON_GROUPS = {
   "Simple Melee": ["Club","Dagger","Greatclub","Handaxe","Javelin","Light Hammer","Mace","Quarterstaff","Sickle","Spear"],
   "Simple Ranged": ["Light Crossbow","Dart","Shortbow","Sling"],
-  "Martial Melee": ["Battleaxe","Double-Bladed Scimitar","Fire Lance","Flail","Glaive","Greataxe","Greatsword","Halberd","Khopesh","Lance","Longsword","Maul","Morningstar","Pike","Rapier","Scimitar","Shortsword","Trident","Two-Handed Khopesh","War Pick","Warhammer","Whip"],
+  "Martial Melee": ["Battleaxe","Double-Bladed Scimitar","Fire Lance","Flail","Glaive","Greataxe","Greatsword","Halberd","Khopesh","Lance","Longsword","Maul","Morningstar","Pike","Rapier","Scimitar","Scythe","Shortsword","Trident","Two-Handed Khopesh","War Pick","Warhammer","Whip"],
   "Martial Ranged": ["Blowgun","Hand Crossbow","Heavy Crossbow","Longbow","Net"],
   "Firearms": ["Pistol","Revolver","Pepperbox","Musket"]
 };
@@ -52,6 +57,7 @@ export var WEAPON_DATA = {
   "Pike":            {damageDice:"1d10", damageType:"Piercing",    weight:18, category:"martial", finesse:false, ranged:false, properties:"Heavy, reach, two-handed"},
   "Rapier":          {damageDice:"1d8",  damageType:"Piercing",    weight:2,  category:"martial", finesse:true,  ranged:false, properties:"Finesse"},
   "Scimitar":        {damageDice:"1d6",  damageType:"Slashing",    weight:3,  category:"martial", finesse:true,  ranged:false, properties:"Finesse, light"},
+  "Scythe":          SCYTHE, // PRIVATE
   "Shortsword":      {damageDice:"1d6",  damageType:"Piercing",    weight:2,  category:"martial", finesse:true,  ranged:false, properties:"Finesse, light"},
   "Trident":         {damageDice:"1d6",  damageType:"Piercing",    weight:4,  category:"martial", finesse:false, ranged:false, properties:"Thrown (20/60), versatile (1d8)"},
   // Plane Shift: Amonkhet: "two-handed khopeshes (treat as a greatsword)".

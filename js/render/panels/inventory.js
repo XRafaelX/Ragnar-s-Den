@@ -5,9 +5,9 @@ import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg, makeCoinFaceSvg, makeInfoSvg, makeSwapSvg, makeReloadSvg } from "../../ui/svg-icons.js";
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
-import { rollAttack } from "./sheet-rolls.js";
+import { rollAttack, rollSneak } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, wailsFromTheGrave, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -25,6 +25,7 @@ import { itemCharges, spendCharges, potionHealing, drinkPotion } from "../../cor
 import { magicItemDef, magicItemActive, needsAttunement, holsterKnives, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, closeEmptyFlip, endBoon, activeBoons, boonLabel, weaponFlames, flamesOn } from "../../core/magic-items.js";
 import { pipChanged, pipsRefilled, flash } from "../../ui/fx.js";
 import { abilityScore } from "../../core/ability-scores.js";
+import { weaponDataOf } from "../../data/weapons.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 var ARMOR_CATEGORIES = [
@@ -502,8 +503,11 @@ function openGearSheet(c, item, idx){
 function openWeaponSheet(c, item, idx){
   openBottomSheet(function(body, refresh, close){
     var abilityLabel = item.ability==="finesse" || revenantBladeApplies(c, item) ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
+    // Reaper: a scythe swung with Dexterity, for 1d6.
+    var reaper = reaperDex(c, item);
+    if(reaper) abilityLabel = "DEX (Reaper)";
     var subtitleParts = [];
-    if(item.damageDice) subtitleParts.push(item.damageDice + (item.damageType ? " " + item.damageType : ""));
+    if(item.damageDice) subtitleParts.push((reaper ? "1d6" : item.damageDice) + (item.damageType ? " " + item.damageType : ""));
     subtitleParts.push(abilityLabel);
     subtitleParts.push(item.proficient ? "Proficient" : "Not proficient");
     if(item.notes) subtitleParts.push(item.notes);
@@ -603,6 +607,9 @@ function openWeaponSheet(c, item, idx){
 
     body.appendChild(details);
 
+    // A weapon's own rule (the Scythe's cleave).
+    var wd = weaponDataOf(item);
+    if(wd && wd.special) body.appendChild(magicItemText(wd.special));
     var def = magicItemDef(item);
     if(def) body.appendChild(magicItemText(def.text));
   });
@@ -971,7 +978,8 @@ function classFirearmRow(c, item, gun, idx, row, ui){
 }
 /* Sneak Attack (rogue 1): its dice once per turn, on a finesse or ranged
    weapon's card (or a psychic blade's). After the roll the dice tray
-   offers a Phantom's Wails from the Grave. */
+   offers a Phantom's Wails from the Grave or a Shadow Stalker's clone
+   (Living Shadows). A Shadow Stalker who is a shadow rerolls 1s and 2s. */
 function sneakButton(c, name){
   var sa = sneakAttack(c);
   if(!sa) return null;
@@ -980,28 +988,8 @@ function sneakButton(c, name){
   b.innerHTML = makeDicesSvg() + "Sneak Attack " + sa.dice + "d6";
   b.title = "Once per turn, when you hit with advantage, or when another enemy of the target is next to it and you don't have disadvantage" +
     (sa.eye ? ". Includes Eye for Weakness's 3d6 while Insightful Fighting is on." : "");
-  b.addEventListener("click", function(){ performRoll(6, sa.dice, 0, "none", name + ": Sneak Attack", function(r){ return r ? wailsFollowUp(c) : null; }); });
+  b.addEventListener("click", function(){ rollSneak(c, sa.dice, name + ": Sneak Attack"); });
   return b;
-}
-/* Wails from the Grave (Phantom 3) right after Sneak Attack damage: a use
-   or a soul trinket (Tokens of the Departed, 9) for half the dice of
-   necrotic to a second creature, both with Death's Friend (17). */
-function wailsFollowUp(c){
-  var w = wailsFromTheGrave(c);
-  if(!w || (!w.usesLeft && !w.trinkets)) return null;
-  var opts = [];
-  function wail(how, pay){
-    return {label: "Wails " + w.dice + "d6 necrotic" + how, title: "A second creature within 30 feet of the first takes it" + (w.both ? ", and the first one too (Death's Friend)" : ""),
-      use: function(){
-        pay();
-        save(); renderAll();
-        performRoll(6, w.dice, 0, "none", "Wails from the Grave (Necrotic)" + (w.both ? ", to both creatures" : ""));
-        return {silent: true};
-      }};
-  }
-  if(w.usesLeft) opts.push(wail("", function(){ c.resourcesUsed[w.key] = w.used + 1; }));
-  if(w.trinkets) opts.push(wail(" (a soul trinket)", function(){ c.soulTrinkets = w.trinkets - 1; }));
-  return {lead: "Wails from the Grave:", hint: "", options: opts};
 }
 /* A Soulknife's psychic blade: the bonus action's second blade (1d4) and
    Psychic Teleportation (9, a Psionic Energy die times 10 feet). */
@@ -1256,6 +1244,9 @@ function renderWeaponCard(c, item, idx){
   // Martial Arts: a monk weapon uses the better of STR and DEX, and the
   // Martial Arts die when it's bigger than the weapon's.
   if(martialArtsApplies(c, item)) abilityLabel = "Martial Arts (STR or DEX)";
+  // Reaper: a scythe swung with Dexterity, for 1d6.
+  var reaper = reaperDex(c, item);
+  if(reaper) abilityLabel = "DEX (Reaper)";
   var maDice = weaponDamageDice(c, item);
   if(maDice && maDice.martialArts) abilityLabel += " · Martial Arts d" + maDice.die;
   // Shillelagh: the spellcasting ability can replace Strength, and the die is a d8.
@@ -1267,7 +1258,7 @@ function renderWeaponCard(c, item, idx){
   // A Gunslinger class gun deals its loaded round's damage type.
   var round = loadedRound(c, item);
   var dmgType = (round && round.damageType) || (cleave && cleave.type) || item.damageType;
-  if(item.damageDice) subtitleParts.push((shil && maDice ? maDice.qty + "d" + maDice.die : item.damageDice) + (dmgType ? " " + dmgType : ""));
+  if(item.damageDice) subtitleParts.push(((shil || reaper) && maDice ? maDice.qty + "d" + maDice.die : item.damageDice) + (dmgType ? " " + dmgType : ""));
   subtitleParts.push(abilityLabel);
   subtitleParts.push(item.proficient ? "Proficient" : "Not proficient");
   if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
@@ -1324,7 +1315,7 @@ function renderWeaponCard(c, item, idx){
   atkBtn.addEventListener("click", function(){
     // (parsed and dmgBonus are worked out below, before any click.)
     rollAttack(c, atkBonus, atkRoll.mode, (item.name||"Weapon") + ": Attack",
-      parsed ? {qty: parsed.qty, die: parsed.die, bonus: off ? off.damage : dmgBonus, melee: !isRangedWeapon(item), label: item.name || "Weapon", critMin: critRange(c, item), item: item, sneak: sneakAttackWeapon(item)} : null);
+      parsed ? {qty: parsed.qty, die: parsed.die, bonus: off ? off.damage : dmgBonus, melee: !isRangedWeapon(item), label: item.name || "Weapon", critMin: critRange(c, item), item: item, sneak: sneakAttackWeapon(item, c)} : null);
   });
   actions.appendChild(atkBtn);
 
@@ -1423,7 +1414,7 @@ function renderWeaponCard(c, item, idx){
   gunslingerHitDice(c, item).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d)); });
   var pressure = pressureButton(c, item);
   if(pressure) actions.appendChild(pressure);
-  var sneakBtn = sneakAttackWeapon(item) && sneakButton(c, item.name || "Weapon");
+  var sneakBtn = sneakAttackWeapon(item, c) && sneakButton(c, item.name || "Weapon");
   if(sneakBtn) actions.appendChild(sneakBtn);
   // Weapon Bond: a bonded weapon not in hand can be summoned to it.
   if(item.bonded && !item.equipped && classLevelOf(c, "Fighter", "Eldritch Knight") >= 3){

@@ -784,6 +784,14 @@ export var SUBCLASS_RESOURCES = {
         max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
         hint:"Action: sense illusions, shapechangers and other deceptive magic within 30 ft."}
     ],
+    // Spikael's PRIVATE homebrew (js/data/shadow-stalker.js): remove before publishing.
+    "Shadow Stalker": [
+      {id:"shadow_walk", name:"Shadow Walk", level:3, max:always(1), reset:always("long"),
+        hint:"Action, in dim light or darkness or next to a wall: become a shadow until you take an action or a reaction. Start it on the Active effects card."},
+      {id:"living_shadows", name:"Living Shadows", level:17,
+        max:function(lv, m){ return atLeastOne(Math.floor(m.wis / 2)); }, reset:always("long"),
+        hint:"When you take the Attack action, your shadow clone also attacks the same creature. If either attack deals Sneak Attack damage, both do."}
+    ],
     "Misfortune Bringer": [
       {id:"jinx_points", name:"Jinx Points", level:3,
         max:function(lv){ return lv>=13 ? 6 : 4; }, reset:always("short"),

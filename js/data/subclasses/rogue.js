@@ -1,6 +1,10 @@
 /* Rogue subclasses: the full feature list for each one, keyed by class
    level. Assembled into SUBCLASSES in ../progression.js; see the comment
-   there for the feature fields and flags. */
+   there for the feature fields and flags.
+   The last one, Shadow Stalker, is Spikael's PRIVATE homebrew (see
+   ../shadow-stalker.js): remove it and its import before publishing. */
+import { SHADOW_STALKER } from "../shadow-stalker.js";
+
 export var ROGUE_SUBCLASSES = [
   {name:"Thief", blurb:"A burglar and treasure hunter.", features:{
     3:[
@@ -93,5 +97,6 @@ export var ROGUE_SUBCLASSES = [
     9:[{name:"Steal Luck", text:"When a creature within 30 feet makes an attack roll, saving throw or ability check with advantage, you can use your reaction to remove the advantage from that roll and regain 1 expended Jinx Point. Once per short or long rest."}],
     13:[{name:"Curse Caster", text:"As an action, spend 3 Jinx Points to cast Bestow Curse without a spell slot, using Charisma as your spellcasting ability. You also gain 2 more Jinx Points (already added on the sheet).", spells:["Bestow Curse"], spellKind:"free", spellLabel:"3 Jinx Points", spellTip:"Curse Caster: as an action, spend 3 Jinx Points to cast it without a spell slot.", spellAbility:"cha"}],
     17:[{name:"Improved Steal Luck", text:"You can use Steal Luck three times, regaining all uses when you finish a short or long rest."}]
-  }}
+  }},
+  SHADOW_STALKER // PRIVATE
 ];

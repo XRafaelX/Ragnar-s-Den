@@ -272,6 +272,11 @@ export var TOGGLE_EFFECTS = [
   {id:"ghost_walk", name:"Ghost Walk", className:"Rogue", subclass:"Phantom", level:13,
     cost:{resource:"ghost_walk", amount:1}, duration:"10 minutes",
     hint:"Bonus action. You take 1d10 force damage if you end your turn inside a creature or an object."},
+  // Spikael's PRIVATE homebrew (js/data/shadow-stalker.js): remove before publishing.
+  {id:"shadow_walk", name:"Shadow Walk", className:"Rogue", subclass:"Shadow Stalker", level:3,
+    cost:{resource:"shadow_walk", amount:1}, duration:"Until you take an action or a reaction",
+    startLabel:"Become a shadow", endLabel:"Return",
+    hint:"An action, in dim light, darkness or next to a wall. Your next action or reaction still happens, then you return."},
   // Tasha's Cauldron (p. 62), checked on 5etools' data 2026-10-29. The
   // advantage goes with the next attack roll, the speed stays 0 until End turn.
   {id:"steady_aim", name:"Steady Aim", className:"Rogue", level:3, variant:"Steady Aim", duration:"Until the end of your turn",

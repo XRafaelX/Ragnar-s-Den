@@ -146,6 +146,7 @@ export function computeSpeed(c){
   if(model && model.speed && inArmor) parts.push({name: "Powered Steps", value: model.speed});
   if(effectOn(c, "bladesong")) parts.push({name: "Bladesong", value: 10});
   if(effectOn(c, "dread_ambusher")) parts.push({name: "Dread Ambusher", value: 10});
+  if(effectOn(c, "shadow_walk")) parts.push({name: "Shadow Walk", value: 10});
   // A Heavy Holster with no knives in it: +20 ft.
   parts = parts.concat(holsterSpeedParts(c));
   // Arcane Propulsion Armor, worn: +5 ft.

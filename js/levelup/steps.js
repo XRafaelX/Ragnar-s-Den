@@ -25,7 +25,7 @@ import { featDef, featNeedsChoice, emptyPicks, featPicksSummary, featRequiresRea
 import { renderFeatPicks } from "../ui/feat-picks.js";
 import { fillFeatList } from "../ui/feat-list.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
-import { lu, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
+import { lu, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
 
 export function stepClass(container){
   var c = lu.c;
@@ -591,7 +591,7 @@ export function stepAsi(container){
     nextBox.textContent = def ? (featNeedsChoice(def) ? lu.featName+": next, you'll choose what it gives you." : lu.featName+": nothing to choose, the sheet applies it.") : "";
     nextBox.hidden = !def;
   }
-  var who = {race: c.race, size: raceSize(c), level: totalLevel(c) + 1, feats: c.feats || []};
+  var who = {race: c.race, size: raceSize(c), level: totalLevel(c) + 1, feats: c.feats || [], classes: levelUpClassNames()};
   // A feat for another race, a higher level or after another feat is
   // greyed out at the end of the list, with why.
   function fill(){
