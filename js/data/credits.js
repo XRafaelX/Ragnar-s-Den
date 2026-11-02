@@ -33,6 +33,7 @@ export var CREDITS = [
   {
     tag: "Setting",
     label: "Drecland gods",
+    private: true, // hidden with private content (js/core/private-content.js)
     text: "The gods of Drecland are from the Drecland Encyclopedia by Michael Hobson, shared for our own games.",
   },
   {
@@ -56,6 +57,7 @@ export var CREDITS = [
   {
     tag: "Homebrew",
     label: "Gunslinger class",
+    private: true, // hidden with private content (js/core/private-content.js)
     text: "The Gunslinger class was created by Spikael and is used with his permission."
   },
   {

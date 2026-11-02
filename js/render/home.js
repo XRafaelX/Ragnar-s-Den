@@ -110,7 +110,9 @@ function rollCenterDie(btn){
     if(num) num.textContent = "20";
     playDiceLand(1);
     landingBurst();
-    toggleDiceTray();
+    // Quick taps that followed (the private content switch, ui/private-egg.js)
+    // keep the tray shut: on a phone it would cover the die.
+    if(btn.dataset.noTray !== "1") toggleDiceTray();
   }, ROLL_LAND_MS);
   setTimeout(function(){ btn.classList.remove("rolling"); }, ROLL_MS);
 }

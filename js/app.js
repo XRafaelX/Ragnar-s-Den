@@ -1,4 +1,4 @@
-import { state, save, load } from "./core/state.js";
+import { state, save, load, allCharacters } from "./core/state.js";
 import { uid, escapeHtml } from "./core/helpers.js";
 import { exportFullBackup, exportCharacters } from "./ui/export-file.js";
 import { setupSidebar } from "./render/sidebar.js";
@@ -24,6 +24,8 @@ import { loadCustomSpells, importCustomSpells } from "./core/custom-spells.js";
 import { loadEncounters, importEncounters } from "./core/encounters.js";
 import { APP_VERSION } from "./version.js";
 import { setupUpdates } from "./ui/update-prompt.js";
+import { applyPrivateContent } from "./core/private-content.js";
+import { setupPrivateEgg } from "./ui/private-egg.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
@@ -200,6 +202,8 @@ export function setupTopLevel(){
               c.spells.forEach(function(sp){ if(sp.homebrewId) sp.homebrewId = spellIds[sp.homebrewId] || null; });
               state.characters.push(c);
             });
+            // An imported character using hidden private content is set aside.
+            applyPrivateContent();
             save();
             renderAll();
             playAdd();
@@ -256,15 +260,19 @@ export function init(){
   loadCustomSpells();
   loadEncounters();
   state.characters.forEach(ensureShape);
+  // Michael's private content hidden or shown as this device chose (after
+  // shaping, so characters set aside are shaped too).
+  applyPrivateContent();
   setupTopLevel();
   setupDiceTray();
+  setupPrivateEgg();
   setupMobileNav();
   setupHomeMenu();
   setupAvatarUpload();
   setupAvatarCropper();
   setupBackdropUpload();
   renderAll();
-  maybeStartTutorial(state.characters.length > 0);
+  maybeStartTutorial(allCharacters().length > 0);
 
   setupUpdates();
 }

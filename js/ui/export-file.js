@@ -1,4 +1,4 @@
-import { state } from "../core/state.js";
+import { state, allCharacters } from "../core/state.js";
 import { backupFileName } from "../core/helpers.js";
 import { homebrewForCharacters } from "../core/backup.js";
 import { getCustomSubclasses } from "../core/custom-subclasses.js";
@@ -32,9 +32,10 @@ function downloadJson(data, fileName){
   setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
 }
 
-/* Every character plus all homebrew made in the Compendium. */
+/* Every character (hidden private ones too, so a move to a new device
+   keeps them) plus all homebrew made in the Compendium. */
 export function exportFullBackup(){
-  var backup = Object.assign({version:2, appVersion:APP_VERSION, characters:state.characters}, homebrewLibrary(),
+  var backup = Object.assign({version:2, appVersion:APP_VERSION, characters:allCharacters()}, homebrewLibrary(),
     {customMonsters:getCustomMonsters(), encounters:getEncounters()});
   downloadJson(backup, backupFileName(new Date(), APP_VERSION));
 }

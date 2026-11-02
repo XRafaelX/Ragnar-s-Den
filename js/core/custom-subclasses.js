@@ -1,5 +1,5 @@
 import { SUBCLASSES } from "../data/progression.js";
-import { state, save } from "./state.js";
+import { state, save, allCharacters } from "./state.js";
 import { uid } from "./helpers.js";
 
 /* ---------------- Custom (homebrew) subclasses ----------------
@@ -80,7 +80,7 @@ export function saveCustomSubclass(entry){
   if(old && (old.name!==clean.name || old.className!==clean.className)){
     // Characters store the subclass by name: follow the rename, and drop
     // it from characters if it moved to another class.
-    state.characters.forEach(function(c){
+    allCharacters().forEach(function(c){
       (c.classes||[]).forEach(function(cl){
         if(cl.name===old.className && cl.subclass===old.name) cl.subclass = cl.name===clean.className ? clean.name : "";
       });

@@ -1,7 +1,7 @@
 import { RACES, RACE_TRAITS, RACE_LANGUAGES, raceSummary } from "../data/races.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_TOOLS } from "../data/backgrounds.js";
-import { state, save } from "./state.js";
+import { state, save, allCharacters } from "./state.js";
 import { uid } from "./helpers.js";
 
 /* ---------------- Custom (homebrew) races and backgrounds ----------------
@@ -118,7 +118,7 @@ export function saveHomebrew(kind, entry){
   if(old && old.name!==clean.name){
     // Characters store it by name: follow the rename.
     var field = KINDS[kind].field;
-    state.characters.forEach(function(c){ if(c[field]===old.name) c[field] = clean.name; });
+    allCharacters().forEach(function(c){ if(c[field]===old.name) c[field] = clean.name; });
     save();
   }
   if(old) lists[kind][lists[kind].indexOf(old)] = clean; else lists[kind].push(clean);

@@ -1,6 +1,6 @@
 import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
 import { ARMOR_GROUPS, ARMOR_DATA } from "../data/armor.js";
-import { state, save } from "./state.js";
+import { state, save, allCharacters } from "./state.js";
 import { uid } from "./helpers.js";
 
 /* ---------------- Custom (homebrew) weapons and armor ----------------
@@ -117,7 +117,7 @@ export function itemNameProblem(kind, name, ownId){
 
 function copiesOf(entry){
   var out = [];
-  state.characters.forEach(function(c){
+  allCharacters().forEach(function(c){
     (c.inventory||[]).forEach(function(i){ if(i.homebrewId===entry.id) out.push({c:c, item:i}); });
   });
   return out;

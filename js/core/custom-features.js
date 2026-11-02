@@ -1,5 +1,5 @@
 import { FEATS_CATALOG } from "../data/feats.js";
-import { state, save } from "./state.js";
+import { state, save, allCharacters } from "./state.js";
 import { uid } from "./helpers.js";
 
 /* ---------------- Custom (homebrew) feats and features ----------------
@@ -124,7 +124,7 @@ export function saveCustom(kind, entry){
   if(old){
     lists[kind][lists[kind].indexOf(old)] = clean;
     var changed = false;
-    state.characters.forEach(function(c){
+    allCharacters().forEach(function(c){
       (c[k.charList]||[]).forEach(function(f){ if(f.homebrewId===clean.id){ k.apply(f, clean); changed = true; } });
     });
     if(changed) save();

@@ -12,7 +12,7 @@ import { renderAll } from "../sheet.js";
 import { openInfoModal } from "../../ui/info-modal.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../../data/classes.js";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL } from "../../data/progression.js";
-import { HIT_DICE_BY_CLASS } from "../../data/abilities-skills.js";
+import { HIT_DICE_BY_CLASS, CLASS_LIST } from "../../data/abilities-skills.js";
 import { classFeatureList, escapeHtml } from "../../core/helpers.js";
 import { facts, textField } from "../../ui/homebrew-form.js";
 import { save } from "../../core/state.js";
@@ -99,11 +99,15 @@ function showSubclass(className, sub){
 
 /* ---- Catalog sections ---- */
 export function classSection(){
-  var data = {};
-  Object.keys(CLASS_ROLES).forEach(function(g){ CLASS_ROLES[g].forEach(function(n){ data[n] = CLASSES_INFO[n] || {}; }); });
+  var data = {}, groups = {};
+  // Only classes in CLASS_LIST: hidden private ones (js/core/private-content.js) are out of it.
+  Object.keys(CLASS_ROLES).forEach(function(g){
+    groups[g] = CLASS_ROLES[g].filter(function(n){ return CLASS_LIST.indexOf(n) !== -1; });
+    groups[g].forEach(function(n){ data[n] = CLASSES_INFO[n] || {}; });
+  });
   return {
     key:"classes", label:"Classes", searchPlaceholder:"Search classes…",
-    groups:CLASS_ROLES, data:data,
+    groups:groups, data:data,
     renderSub:function(name, d){ return d.blurb || ""; },
     renderRight:function(name, d){ return ["d"+(HIT_DICE_BY_CLASS[name]||8), d.primaryAbilityLabel ? d.primaryAbilityLabel.split(" (")[0] : (ABILITY_NAME[d.primaryAbility]||"")]; },
     searchText:function(name, d){ return name+" "+(d.blurb||""); },
@@ -116,7 +120,8 @@ export function classSection(){
 function fillSubclassSection(section){
   var groups = {}, data = {};
   Object.keys(SUBCLASSES).sort().forEach(function(cls){
-    if(!SUBCLASSES[cls].length) return;
+    // A hidden private class's subclasses go with it.
+    if(!SUBCLASSES[cls].length || CLASS_LIST.indexOf(cls) === -1) return;
     groups[cls] = SUBCLASSES[cls].map(function(sub){
       // A custom one may share a name with another class's subclass.
       var key = data[sub.name] ? sub.name+" ("+cls+")" : sub.name;

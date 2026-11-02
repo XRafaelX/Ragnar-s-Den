@@ -1,5 +1,5 @@
 import { SPELL_DATA, SPELL_GROUPS, spellLevelLabel } from "../data/spells.js";
-import { state, save } from "./state.js";
+import { state, save, allCharacters } from "./state.js";
 import { uid } from "./helpers.js";
 
 /* ---------------- Custom (homebrew) spells ----------------
@@ -116,7 +116,7 @@ export function spellNameProblem(name, ownId){
 /* Returns all characters whose spells include a copy linked to this entry. */
 function copiesOf(entry){
   var out = [];
-  state.characters.forEach(function(c){
+  allCharacters().forEach(function(c){
     (c.spells || []).forEach(function(sp){
       if(sp.homebrewId === entry.id) out.push({ c: c, spell: sp });
     });
