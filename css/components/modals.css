@@ -121,6 +121,7 @@
     border-color: var(--brass);
   }
 }
+.data-option-card:disabled { opacity: .45; cursor: not-allowed; }
 .data-option-icon {
   flex: none;
   width: 40px;
@@ -151,6 +152,42 @@
   margin-top: 2px;
   white-space: normal;
 }
+/* Export characters: a tick list that replaces the option cards in place. */
+.data-pick[hidden], .data-modal-options[hidden] { display: none; }
+.data-pick-all {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 12px 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-on-parch-dim);
+  cursor: pointer;
+}
+.data-pick-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.data-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  cursor: pointer;
+}
+.data-pick-row.on { border-color: var(--brass); }
+.data-pick .chk, .data-pick-row .chk {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--brass);
+}
+.data-pick-row > span { min-width: 0; }
+.data-pick #data-pick-export:disabled { opacity: .45; cursor: not-allowed; }
 .data-option-card > span:not(.data-option-icon) {
   display: flex;
   flex-direction: column;

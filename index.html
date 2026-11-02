@@ -85,11 +85,16 @@
   <div id="sidebar">
     <div id="sidebar-header">
       <h1 id="sidebar-home-link" title="Back to home menu">Ragnar's Den</h1>
-      <p>Your characters, kept offline.</p>
+      <p id="sidebar-sub">Your characters, kept offline.</p>
     </div>
     <ul id="char-list"></ul>
     <div id="sidebar-footer">
       <button class="btn primary" id="new-char-btn">+ New Character</button>
+      <div id="select-bar" hidden>
+        <button class="btn" id="select-cancel" aria-label="Stop selecting" title="Stop selecting">✕</button>
+        <button class="btn" id="select-export">Export</button>
+        <button class="btn danger" id="select-delete">Delete</button>
+      </div>
       <button class="btn small ghost" id="data-btn">
         <svg class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -394,6 +399,17 @@
         <span class="data-option-label">Export backup</span>
         <span class="data-option-desc">Save a backup file to your device.</span>
       </button>
+      <button class="data-option-card" id="data-export-pick-btn" aria-label="Export characters">
+        <span class="data-option-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <polyline points="16 11 18 13 22 9"/>
+          </svg>
+        </span>
+        <span class="data-option-label">Export characters</span>
+        <span class="data-option-desc">Pick which characters to save.</span>
+      </button>
       <button class="data-option-card" id="data-import-btn" aria-label="Import backup">
         <span class="data-option-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -405,6 +421,17 @@
         <span class="data-option-label">Import backup</span>
         <span class="data-option-desc">Restore from a backup file.</span>
       </button>
+    </div>
+    <div class="data-pick" id="data-pick" hidden>
+      <label class="data-pick-all">
+        <input type="checkbox" class="chk" id="data-pick-all">
+        <span>Select all</span>
+      </label>
+      <div class="data-pick-list" id="data-pick-list"></div>
+      <div class="actions">
+        <button class="btn ghost" id="data-pick-back">Back</button>
+        <button class="btn primary" id="data-pick-export" disabled>Export</button>
+      </div>
     </div>
   </div>
 </div>

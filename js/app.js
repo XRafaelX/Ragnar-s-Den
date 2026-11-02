@@ -1,5 +1,7 @@
 import { state, save, load } from "./core/state.js";
-import { uid, backupFileName } from "./core/helpers.js";
+import { uid, escapeHtml } from "./core/helpers.js";
+import { exportFullBackup, exportCharacters } from "./ui/export-file.js";
+import { setupSidebar } from "./render/sidebar.js";
 import { ensureShape } from "./core/character.js";
 import { confirmDialog } from "./ui/confirm-modal.js";
 import { setupMobileNav, closeSidebarMobile } from "./ui/mobile-nav.js";
@@ -13,13 +15,13 @@ import { setupAvatarUpload } from "./ui/avatar.js";
 import { setupAvatarCropper } from "./ui/avatar-crop.js";
 import { setupBackdropUpload } from "./ui/backdrop.js";
 import { maybeStartTutorial, startTutorial } from "./ui/tutorial.js";
-import { loadCustomSubclasses, getCustomSubclasses, importCustomSubclasses } from "./core/custom-subclasses.js";
-import { loadHomebrew, getHomebrew, importHomebrew } from "./core/custom-homebrew.js";
-import { loadCustomFeatures, getCustom, importCustom } from "./core/custom-features.js";
-import { loadCustomItems, getCustomItems, importCustomItems } from "./core/custom-items.js";
-import { loadCustomMonsters, getCustomMonsters, importCustomMonsters } from "./core/custom-monsters.js";
-import { loadCustomSpells, getCustomSpells, importCustomSpells } from "./core/custom-spells.js";
-import { loadEncounters, getEncounters, importEncounters } from "./core/encounters.js";
+import { loadCustomSubclasses, importCustomSubclasses } from "./core/custom-subclasses.js";
+import { loadHomebrew, importHomebrew } from "./core/custom-homebrew.js";
+import { loadCustomFeatures, importCustom } from "./core/custom-features.js";
+import { loadCustomItems, importCustomItems } from "./core/custom-items.js";
+import { loadCustomMonsters, importCustomMonsters } from "./core/custom-monsters.js";
+import { loadCustomSpells, importCustomSpells } from "./core/custom-spells.js";
+import { loadEncounters, importEncounters } from "./core/encounters.js";
 import { APP_VERSION } from "./version.js";
 import { setupUpdates } from "./ui/update-prompt.js";
 
@@ -31,6 +33,7 @@ export function setupTopLevel(){
     openAbout(true);
   });
   document.getElementById("new-char-btn").addEventListener("click", openWizard);
+  setupSidebar();
   document.getElementById("theme-btn").addEventListener("click", openThemeModal);
   document.getElementById("tutorial-btn").addEventListener("click", function(){
     // The tour points at the home screen, so go there and close the
@@ -52,7 +55,19 @@ export function setupTopLevel(){
 
   /* --- Data modal (import / export) --- */
   var dataModal = document.getElementById("data-modal");
-  function openDataModal(){ dataModal.classList.add("open"); }
+  var dataTitle = document.getElementById("data-modal-title");
+  var dataOptions = dataModal.querySelector(".data-modal-options");
+  var dataPick = document.getElementById("data-pick");
+  function showDataOptions(){
+    dataTitle.textContent = "Import & Export";
+    dataOptions.hidden = false;
+    dataPick.hidden = true;
+  }
+  function openDataModal(){
+    showDataOptions();
+    document.getElementById("data-export-pick-btn").disabled = !state.characters.length;
+    dataModal.classList.add("open");
+  }
   function closeDataModal(){ dataModal.classList.remove("open"); }
   document.getElementById("data-btn").addEventListener("click", openDataModal);
   document.getElementById("data-modal-close").addEventListener("click", closeDataModal);
@@ -60,20 +75,64 @@ export function setupTopLevel(){
 
   document.getElementById("data-export-btn").addEventListener("click", function(){
     closeDataModal();
-    // Characters plus homebrew made in the Compendium. (Older backups were
-    // just the characters array; import still accepts those.)
-    var backup = {version:2, appVersion:APP_VERSION, characters:state.characters, customSubclasses:getCustomSubclasses(),
-      customRaces:getHomebrew("race"), customBackgrounds:getHomebrew("background"), customFeats:getCustom("feat"), customFeatures:getCustom("feature"),
-      customWeapons:getCustomItems("weapon"), customArmor:getCustomItems("armor"), customMonsters:getCustomMonsters(), customSpells:getCustomSpells(), encounters:getEncounters()};
-    var blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = backupFileName(new Date(), APP_VERSION);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    exportFullBackup();
+  });
+
+  /* Export characters: tick the ones to save. The file is a normal
+     backup (Import backup reads it) holding just those characters and
+     the homebrew they use. */
+  var pickList = document.getElementById("data-pick-list");
+  var pickAll = document.getElementById("data-pick-all");
+  var pickExport = document.getElementById("data-pick-export");
+  var picked = {};
+  function pickedChars(){ return state.characters.filter(function(c){ return picked[c.id]; }); }
+  function syncPick(){
+    var n = pickedChars().length;
+    pickAll.checked = n===state.characters.length;
+    pickAll.indeterminate = n>0 && n<state.characters.length;
+    pickExport.disabled = !n;
+    pickExport.textContent = n ? "Export "+n+" character"+(n>1 ? "s" : "") : "Export";
+    pickList.querySelectorAll(".data-pick-row").forEach(function(row){
+      var on = !!picked[row.dataset.id];
+      row.classList.toggle("on", on);
+      row.querySelector(".chk").checked = on;
+    });
+  }
+  document.getElementById("data-export-pick-btn").addEventListener("click", function(){
+    picked = {};
+    if(state.activeId) picked[state.activeId] = true;
+    pickList.innerHTML = "";
+    state.characters.forEach(function(c){
+      var row = document.createElement("label");
+      row.className = "char-picker-row data-pick-row";
+      row.dataset.id = c.id;
+      var clsText = (c.classes||[]).map(function(cl){ return (cl.name||"?")+" "+(cl.level||1); }).join(" / ");
+      row.innerHTML =
+        '<input type="checkbox" class="chk">'+
+        '<span><span class="cpr-name">'+escapeHtml(c.name||"Unnamed")+'</span>'+
+        '<span class="cpr-meta">'+escapeHtml([c.race, clsText].filter(Boolean).join(" · "))+'</span></span>';
+      row.querySelector(".chk").addEventListener("change", function(e){
+        if(e.target.checked) picked[c.id] = true; else delete picked[c.id];
+        syncPick();
+      });
+      pickList.appendChild(row);
+    });
+    dataTitle.textContent = "Export characters";
+    dataOptions.hidden = true;
+    dataPick.hidden = false;
+    syncPick();
+  });
+  pickAll.addEventListener("change", function(){
+    picked = {};
+    if(pickAll.checked) state.characters.forEach(function(c){ picked[c.id] = true; });
+    syncPick();
+  });
+  document.getElementById("data-pick-back").addEventListener("click", showDataOptions);
+  pickExport.addEventListener("click", function(){
+    var chars = pickedChars();
+    if(!chars.length) return;
+    closeDataModal();
+    exportCharacters(chars);
   });
 
   document.getElementById("data-import-btn").addEventListener("click", function(){

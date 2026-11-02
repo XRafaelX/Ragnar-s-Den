@@ -104,3 +104,40 @@
   }
   #sidebar.open{margin-left:0;box-shadow:0 0 30px rgba(0,0,0,.5);}
 }
+
+/* ---------- Select (hold) and reorder (hold and drag) ---------- */
+#char-list{position:relative;}
+#char-list li{
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+  transition:transform .15s ease;
+}
+#char-list li.pressing{transform:scale(.97);transition:transform .55s ease-out;}
+#char-list li.held{transform:scale(.97);border-color:var(--brass);}
+#char-list li.dragging{
+  z-index:2;transition:none;cursor:grabbing;
+  background:var(--ink);border-color:var(--brass);
+  box-shadow:0 8px 22px rgba(0,0,0,.5);
+}
+#char-list.reordering, #char-list.reordering li{cursor:grabbing;}
+.char-row-avatar{position:relative;flex:none;}
+.char-check{
+  position:absolute;inset:0;border-radius:50%;
+  display:none;align-items:center;justify-content:center;
+  border:2px solid var(--text-on-ink-dim);background:rgba(0,0,0,.35);color:#fff;
+}
+.char-check svg{width:16px;height:16px;visibility:hidden;}
+#sidebar.selecting .char-check{display:flex;}
+#sidebar.selecting li.selected .char-check{background:var(--brass);border-color:var(--brass);}
+#sidebar.selecting li.selected .char-check svg{visibility:visible;}
+/* While selecting, the highlight shows what is picked, not which sheet is open. */
+#sidebar.selecting #char-list li.active{background:transparent;border-color:transparent;}
+#sidebar.selecting #char-list li.selected{
+  background:color-mix(in srgb, var(--brass) 18%, transparent);
+  border-color:var(--brass);
+}
+/* Takes the New Character button's place at the same height. */
+#select-bar{display:flex;gap:6px;}
+#select-bar[hidden]{display:none;}
+#select-bar .btn{flex:1;font-weight:600;}
+#select-bar #select-cancel{flex:none;width:40px;color:var(--text-on-ink-dim);border-color:var(--rule);}
+#new-char-btn[hidden]{display:none;}
