@@ -537,12 +537,47 @@
 .ff-roll-btn{margin-left:6px;}
 
 /* ---- Remember: bonus actions, reactions, always on ---- */
-.rm-group + .rm-group{margin-top:12px;}
-.rm-head{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--brass);margin:0 0 6px;}
-.rm-row{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-radius:6px;background:var(--parchment-dim);cursor:pointer;}
-.rm-row + .rm-row{margin-top:4px;}
+/* The Hide / Show pill in the title (like the Conditions button), and the
+   body folding to nothing under it. */
+.rm-toggle{
+  padding:4px 12px;border-radius:999px;border:1px solid var(--rule);background:rgba(255,255,255,.04);
+  color:var(--text-on-parch-dim);font-family:var(--sans);font-size:12px;font-weight:600;line-height:15px;cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.rm-toggle:hover{border-color:var(--brass);color:var(--brass-bright);}
+.rm-toggle:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.rm-card h3{transition:margin-bottom .25s ease;}
+.rm-card.folded h3{margin-bottom:0;}
+.rm-body{display:grid;grid-template-rows:1fr;transition:grid-template-rows .25s ease, opacity .2s ease;}
+.rm-card.folded .rm-body{grid-template-rows:0fr;opacity:0;}
+.rm-inner{min-height:0;overflow:hidden;padding:3px;margin:-3px;} /* (room for the rows' focus ring) */
+@media (prefers-reduced-motion: reduce){ .rm-card h3, .rm-body, .rm-toggle{transition:none;} }
+/* Groups: side by side when there's room, stacked on a phone. Each sets
+   its colour (--rm-hue): amber bonus actions, blue reactions, green
+   always on. */
+.rm-groups{display:grid;grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));gap:14px 16px;align-items:start;}
+.rm-bonus{--rm-hue:#f2b544;}
+.rm-reaction{--rm-hue:#5fb4ee;}
+.rm-always{--rm-hue:#6cc28a;}
+.rm-head{display:flex;align-items:center;gap:7px;margin:0 0 8px;padding-bottom:6px;
+  border-bottom:1px solid color-mix(in srgb, var(--rm-hue) 30%, transparent);
+  font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:color-mix(in srgb, var(--rm-hue) 85%, white);}
+.rm-icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;flex:none;
+  color:var(--rm-hue);background:color-mix(in srgb, var(--rm-hue) 16%, transparent);}
+.rm-icon-svg{width:13px;height:13px;display:block;}
+.rm-count{margin-left:auto;min-width:20px;padding:1px 7px;border-radius:999px;text-align:center;letter-spacing:0;
+  font-size:11px;font-weight:600;color:var(--text-on-parch-dim);background:rgba(255,255,255,.06);}
+.rm-list{display:flex;flex-direction:column;gap:6px;}
+.rm-row{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 12px;border-radius:8px;cursor:pointer;
+  background:var(--parchment-dim);border:1px solid transparent;box-shadow:inset 3px 0 0 var(--rm-hue);
+  transition:border-color .15s, background .15s;}
 .rm-row:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
-.rm-text{flex:1;min-width:0;font-size:13px;line-height:1.45;color:var(--text-on-parch-dim);
+.rm-text{flex:1;min-width:0;}
+.rm-name{font-size:13px;font-weight:600;line-height:1.35;color:var(--text-on-parch);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rm-line{margin-top:2px;font-size:12.5px;line-height:1.45;color:var(--text-on-parch-dim);
   display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;}
-.rm-name{font-weight:600;color:var(--text-on-parch);}
-@media (hover:hover){ .rm-row:hover .ff-more{color:var(--brass-bright);transform:translateX(2px);} }
+@media (hover:hover){
+  .rm-row:hover{border-color:color-mix(in srgb, var(--rm-hue) 45%, transparent);background:color-mix(in srgb, var(--rm-hue) 7%, var(--parchment-dim));}
+  .rm-row:hover .ff-more{color:var(--rm-hue);transform:translateX(2px);}
+}
+@media (prefers-reduced-motion: reduce){ .rm-row{transition:none;} }
