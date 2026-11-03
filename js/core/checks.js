@@ -3,7 +3,7 @@
    advantage or disadvantage. */
 import { SKILLS } from "../data/abilities-skills.js";
 import { ARMOR_DATA } from "../data/armor.js";
-import { RACE_DATA, TRAIT_ADVANTAGES, TRAIT_HALF_PROFICIENCY } from "../data/race-data.js";
+import { RACE_DATA, TRAIT_ADVANTAGES, TRAIT_HALF_PROFICIENCY, TRAIT_CHECK_D4 } from "../data/race-data.js";
 import { mod, fmtMod, profBonus, combineRolls } from "./basics.js";
 import { barbarianClassEntry } from "./character-resources.js";
 import { classFeatureList } from "./class-features.js";
@@ -268,3 +268,11 @@ export function attackRollMode(c, item){
 /* An attack with no weapon card (a spell attack, the astral arms): only
    conditions change it (Poisoned, Invisible, exhaustion). */
 export function plainAttackRollMode(c){ return combineRolls(conditionRolls(c, "attack").concat(effectRolls(c, "attack"))); }
+
+/* A Dragonmark's d4 on this skill check (Warder's Intuition on
+   Investigation...): the trait's name, or "". */
+export function raceCheckD4(c, skill){
+  if(!skill) return "";
+  var t = ((RACE_DATA[c.race] || {}).traits || []).find(function(t){ return (TRAIT_CHECK_D4[t.name] || []).indexOf(skill)!==-1; });
+  return t ? t.name : "";
+}

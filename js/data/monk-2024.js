@@ -29,7 +29,7 @@ export var MONK_2024 = {
   ],
   features: {
     2: [
-      {name:"Monk's Focus", remind:{when:"bonus", line:"Disengage or Dash for free (Patient Defense, Step of the Wind), or spend Focus for more"}, text:"You have Focus Points equal to your monk level, and get them all back on a short or long rest. Flurry of Blows: spend 1 Focus to make two unarmed strikes as a bonus action. Patient Defense: take the Disengage action as a bonus action, or spend 1 Focus to take both Disengage and Dodge. Step of the Wind: take the Dash action as a bonus action, or spend 1 Focus to take both Disengage and Dash, and your jump distance doubles this turn. Save DC = 8 + proficiency + WIS.", saveDc:{save:"", ability:"wis"}},
+      {name:"Monk's Focus", remind:{when:"bonus", line:"Disengage or Dash free (Patient Defense, Step of the Wind), or pay Focus for more"}, text:"You have Focus Points equal to your monk level, and get them all back on a short or long rest. Flurry of Blows: spend 1 Focus to make two unarmed strikes as a bonus action. Patient Defense: take the Disengage action as a bonus action, or spend 1 Focus to take both Disengage and Dodge. Step of the Wind: take the Dash action as a bonus action, or spend 1 Focus to take both Disengage and Dash, and your jump distance doubles this turn. Save DC = 8 + proficiency + WIS.", saveDc:{save:"", ability:"wis"}},
       movement(10, {speed:10}),
       {name:"Uncanny Metabolism", text:"When you roll initiative, you can get back all your spent Focus Points. When you do, roll your Martial Arts die and regain hit points equal to your monk level plus the roll. Once per long rest."}
     ],

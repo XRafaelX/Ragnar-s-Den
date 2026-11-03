@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud, isMonk2024, kiWord } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, raceCheckD4, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud, isMonk2024, kiWord } from "../../core/helpers.js";
 import { flashOfGenius, artificerHitDice } from "../../core/artificer.js";
 import { openFlourishSheet } from "./bard.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -103,13 +103,15 @@ export function rollCheck(c, bonus, mode, label, ability, opts){
   var reliable = opts.proficient && reliableTalent(c);
   var trance = tranceOn(c);
   var dragon = ((ability==="int" || ability==="wis") && starryDragon(c)) || silverTongue(c, opts.skill) || trance;
+  var mark = raceCheckD4(c, opts.skill); // a Dragonmark's d4
   opts.mode = mode; // (Intuition needs no disadvantage.)
   performRoll(20, 1, bonus, mode, label, {
     followUp: function(r){ return checkFollowUp(c, r, opts); },
-    adjust: might || reliable || dragon ? function(r){
+    adjust: might || reliable || dragon || mark ? function(r){
       var total = r.total, notes = [];
       // Reliable Talent: a d20 of 9 or lower counts as a 10.
       if((reliable || dragon) && r.natural!=null && r.natural < 10){ total += 10 - r.natural; notes.push(reliable ? "Reliable Talent" : trance ? "Trance of Order" : silverTongue(c, opts.skill) ? "Silver Tongue" : "Starry Form: Dragon"); }
+      if(mark){ var d4 = Math.floor(Math.random() * 4) + 1; total += d4; notes.push(mark + " +" + d4); }
       if(might && total < might){ total = might; notes.push("Indomitable Might"); }
       return notes.length ? {total: total, note: notes.join(", ")} : null;
     } : null

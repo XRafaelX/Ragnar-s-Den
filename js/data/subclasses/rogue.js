@@ -8,7 +8,7 @@ import { SHADOW_STALKER } from "../shadow-stalker.js";
 export var ROGUE_SUBCLASSES = [
   {name:"Thief", blurb:"A burglar and treasure hunter.", features:{
     3:[
-      {name:"Fast Hands", remind:{when:"bonus", line:"A Sleight of Hand check, thieves' tools on a lock or trap, or the Use an Object action"}, text:"You can use the bonus action from Cunning Action to make a DEX (Sleight of Hand) check, use thieves' tools to disarm a trap or open a lock, or take the Use an Object action."},
+      {name:"Fast Hands", remind:{when:"bonus", line:"Sleight of Hand, thieves' tools on a lock or trap, or the Use an Object action"}, text:"You can use the bonus action from Cunning Action to make a DEX (Sleight of Hand) check, use thieves' tools to disarm a trap or open a lock, or take the Use an Object action."},
       {name:"Second-Story Work", remind:{when:"always", line:"Your running jumps cover extra feet equal to your DEX modifier"}, text:"Climbing costs you no extra movement, and your running jumps cover extra feet equal to your DEX modifier.", speeds:[{type:"climb", value:"walk"}]}
     ],
     9:[{name:"Supreme Sneak", text:"You have advantage on DEX (Stealth) checks if you move no more than half your speed on the same turn.", advantage:{on:"skill", skills:["Stealth"], when:"if you move no more than half your speed this turn"}}],
@@ -35,7 +35,7 @@ export var ROGUE_SUBCLASSES = [
   }},
   {name:"Swashbuckler", blurb:"A daring duelist who fights with flair and wins with charm.", features:{
     3:[
-      {name:"Fancy Footwork", remind:{when:"always", line:"After you make a melee attack, that creature can't make opportunity attacks against you this turn"}, text:"During your turn, if you make a melee attack against a creature, it can't make opportunity attacks against you for the rest of your turn."},
+      {name:"Fancy Footwork", remind:{when:"always", line:"A creature you attack in melee can't make opportunity attacks against you this turn"}, text:"During your turn, if you make a melee attack against a creature, it can't make opportunity attacks against you for the rest of your turn."},
       {name:"Rakish Audacity", remind:{when:"always", line:"Sneak Attack without advantage when you're the only one within 5 feet of the target"}, text:"Add your CHA modifier to your initiative (already added on the sheet). You can also use Sneak Attack without advantage against a creature within 5 feet of you if no other creature is within 5 feet of you and you don't have disadvantage on the attack roll.", initiative:"cha"}
     ],
     9:[{name:"Panache", text:"As an action, make a CHA (Persuasion) check contested by a creature's WIS (Insight). It must be able to hear you and share a language with you. If it is hostile and you win, for 1 minute it has disadvantage on attack rolls against targets other than you and can't make opportunity attacks against anyone but you, ending if your companions attack it or affect it with a spell, or if you are more than 60 feet apart. If it isn't hostile and you win, it is charmed by you for 1 minute, regarding you as a friendly acquaintance, ending if you or your companions harm it."}],
@@ -62,7 +62,7 @@ export var ROGUE_SUBCLASSES = [
   }},
   {name:"Scout", blurb:"An expert skirmisher and survivalist who strikes from range and keeps moving.", features:{
     3:[
-      {name:"Skirmisher", remind:{when:"reaction", line:"When an enemy ends its turn next to you, move half your speed without opportunity attacks"}, text:"When an enemy ends its turn within 5 feet of you, you can use your reaction to move up to half your speed without provoking opportunity attacks."},
+      {name:"Skirmisher", remind:{when:"reaction", line:"When an enemy ends its turn next to you, move half your speed without provoking"}, text:"When an enemy ends its turn within 5 feet of you, you can use your reaction to move up to half your speed without provoking opportunity attacks."},
       {name:"Survivalist", text:"You gain proficiency in Nature and Survival, and your proficiency bonus is doubled for checks using them.", profs:{skills:["Nature","Survival"], expertise:["Nature","Survival"]}}
     ],
     9:[{name:"Superior Mobility", text:"Your walking speed increases by 10 feet. (Already added to your speed.) If you have a climbing or swimming speed, those also increase by 10 feet.", speeds:[{type:"climb", bonus:10},{type:"swim", bonus:10}], speed:10}],
@@ -91,7 +91,7 @@ export var ROGUE_SUBCLASSES = [
   }},
   {name:"Misfortune Bringer", blurb:"Manipulates probability to curse foes with bad luck and capitalize on their failures.", features:{
     3:[
-      {name:"Evil Eye", remind:{when:"bonus", line:"Mark a creature within 60 feet. It saves or you can Sneak Attack it without advantage"}, text:"As a bonus action, choose a creature you can see within 60 feet. It makes a CHA save against your misfortune save DC (8 + proficiency bonus + CHA modifier) or is marked by your evil eye for 1 minute, or until you mark a different creature. You can deal Sneak Attack damage to a marked creature as long as you don't have disadvantage on the attack roll.", saveDc:{save:"cha", ability:"cha"}},
+      {name:"Evil Eye", remind:{when:"bonus", line:"Mark a creature within 60 feet. If it fails a save, Sneak Attack needs no advantage"}, text:"As a bonus action, choose a creature you can see within 60 feet. It makes a CHA save against your misfortune save DC (8 + proficiency bonus + CHA modifier) or is marked by your evil eye for 1 minute, or until you mark a different creature. You can deal Sneak Attack damage to a marked creature as long as you don't have disadvantage on the attack roll.", saveDc:{save:"cha", ability:"cha"}},
       {name:"Misfortunist", text:"You learn two misfortunes of your choice, and one more at rogue levels 9, 13 and 17. When you finish a long rest you can swap one you know for another. You have 4 Jinx Points to fuel them (6 from level 13), regained on a short or long rest. Each misfortune targets the creature marked by your Evil Eye. The level-up asks you to pick them, and the Misfortunes card on the Features & Feats tab lists them with their costs and your save DC."}
     ],
     9:[{name:"Steal Luck", text:"When a creature within 30 feet makes an attack roll, saving throw or ability check with advantage, you can use your reaction to remove the advantage from that roll and regain 1 expended Jinx Point. Once per short or long rest."}],

@@ -232,7 +232,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Mounted Combatant",
-    remind: {when: "always", line: "While mounted, advantage in melee against unmounted creatures smaller than your mount"},
+    remind: {when: "always", line: "While mounted, advantage in melee on unmounted creatures smaller than your mount"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",
@@ -291,7 +291,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Sentinel",
-    remind: {when: "reaction", line: "Strike a creature within 5 feet that attacks an ally. Your opportunity attacks stop it"},
+    remind: {when: "reaction", line: "Attack a creature within 5 feet that attacks an ally. Your opportunity hits stop it"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",

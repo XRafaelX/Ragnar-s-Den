@@ -50,7 +50,7 @@ test("every reminder is one short, plain sentence with a known group", () => {
   for(const { where, f, r } of lines){
     const { when, line } = r;
     assert.ok(["bonus", "reaction", "always"].includes(when), where + " " + f.name + ": when " + when);
-    assert.ok(line && line.length <= 110, where + " " + f.name + ": a short line (" + (line || "").length + ")");
+    assert.ok(line && line.length <= 84, where + " " + f.name + ": short enough for two lines on a phone (" + (line || "").length + ")");
     assert.ok(!/[;·–—]/.test(line), where + " " + f.name + ": no semicolons, dots or long dashes");
     assert.ok(!/\.$/.test(line) && /^[A-Z]/.test(line), where + " " + f.name + ": starts with a capital, no full stop");
   }
@@ -410,4 +410,13 @@ test("race traits' reminders (2026-11-03)", async () => {
   const rows = H.characterReminders(race("Half-Orc", { name: "Rogue", subclass: "", level: 2 }));
   assert.deepEqual(rows.map((x) => x.name), ["Savage Attacks", "Cunning Action"], "race traits from level 1");
   assert.equal(rows[0].source, "Race · Half-Orc");
+});
+
+test("a Dragonmark's d4 on its skill checks", () => {
+  const marked = (race) => { const c = newCharacter("D"); c.race = race; c.classes = [{ name: "Fighter", subclass: "", level: 1 }]; return ensureShape(c); };
+  assert.equal(H.raceCheckD4(marked("Human (Mark of Finding)"), "Perception"), "Hunter's Intuition");
+  assert.equal(H.raceCheckD4(marked("Human (Mark of Finding)"), "Survival"), "Hunter's Intuition");
+  assert.equal(H.raceCheckD4(marked("Human (Mark of Finding)"), "Athletics"), "");
+  assert.equal(H.raceCheckD4(marked("Dwarf (Mark of Warding)"), "Investigation"), "Warder's Intuition");
+  assert.equal(H.raceCheckD4(marked("Human"), "Perception"), "");
 });

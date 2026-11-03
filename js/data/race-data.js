@@ -894,6 +894,24 @@ export var RACE_TRAIT_REMINDS = {
   "Speed Burst": {when:"bonus", line:"With both hands free, 5 feet more walking speed this turn"}
 };
 
+/* Dragonmark traits that add a d4 to some skill checks (Eberron: Rising
+   from the Last War), added to the roll on its own: {trait: [skills]}.
+   Their tool checks aren't rolled on the sheet. */
+export var TRAIT_CHECK_D4 = {
+  "Artisan's Intuition": ["Arcana"],
+  "Cunning Intuition": ["Performance", "Stealth"],
+  "Deductive Intuition": ["Investigation", "Insight"],
+  "Ever Hospitable": ["Persuasion"],
+  "Gifted Scribe": ["History"],
+  "Hunter's Intuition": ["Perception", "Survival"],
+  "Intuitive Motion": ["Acrobatics"],
+  "Medical Intuition": ["Medicine"],
+  "Sentinel's Intuition": ["Insight", "Perception"],
+  "Warder's Intuition": ["Investigation"],
+  "Wild Intuition": ["Animal Handling", "Nature"],
+  "Windwright's Intuition": ["Acrobatics"]
+};
+
 /* Save DCs a trait sets, worked out on its Features card: {ability
    ("pick" for the ability chosen on the trait), label, when (only once
    this option is picked)}, or a list of them. */
