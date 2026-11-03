@@ -248,6 +248,10 @@ export var TOGGLE_EFFECTS = [
   // on 5etools' data 2026-10-30.
   {id:"empty_body", name:"Empty Body", className:"Monk", edition:"2014", level:18, cost:{resource:"ki", amount:4}, duration:"1 minute",
     hint:"An action."},
+  // The 2024 monk (Player's Handbook 2024, p. 103), checked on 5etools'
+  // data 2026-11-03.
+  {id:"superior_defense", name:"Superior Defense", className:"Monk", edition:"2024", level:18, cost:{resource:"ki", amount:3}, duration:"1 minute", endsIncapacitated:true,
+    hint:"At the start of your turn."},
   {id:"shadow_step", name:"Shadow Step", className:"Monk", subclass:"Way of Shadow", level:6, duration:"This turn",
     startLabel:"Step", endLabel:"Done",
     hint:"Bonus action, in dim light or darkness: teleport up to 60 feet to another such space. Your next melee attack uses it up."},

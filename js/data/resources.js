@@ -91,7 +91,10 @@ export var CLASS_RESOURCES = {
     // spends Focus.
     {id:"ki", name:"Focus Points", level:2, pool:true, edition:"2024",
       max:function(lv){ return lv; }, reset:always("short"),
-      hint:function(lv, m){ return "Your Focus save DC is " + (8 + m.pb + m.wis) + "."; }}
+      hint:function(lv, m){ return "Your Focus save DC is " + (8 + m.pb + m.wis) + "."; }},
+    // Offered when you roll initiative (see uncannyMetabolism in core/monk.js).
+    {id:"uncanny_metabolism", name:"Uncanny Metabolism", level:2, edition:"2024", max:always(1), reset:always("long"),
+      hint:"When you roll initiative: all your Focus Points back, and heal your Martial Arts die + monk level."}
   ],
   "Paladin": [
     {id:"divine_sense", name:"Divine Sense", level:1,

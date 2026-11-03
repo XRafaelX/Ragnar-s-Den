@@ -598,6 +598,7 @@ export function weaponAttackEffect(c){
 export function effectResistances(c){
   var out = [];
   if(effectOn(c, "empty_body")) out.push({type: "all damage but force", source: "Empty Body"});
+  if(effectOn(c, "superior_defense")) out.push({type: "all damage but force", source: "Superior Defense"});
   if(effectOn(c, "invincible_conqueror")) out.push({type: "all damage", source: "Invincible Conqueror"});
   if(effectOn(c, "exalted_champion")) out.push({type: "nonmagical bludgeoning, piercing and slashing", source: "Exalted Champion"});
   if(effectOn(c, "starry_form") && classLevelOf(c, "Druid", "Circle of Stars") >= 14) out.push({type: "bludgeoning, piercing and slashing", source: "Full of Stars"});

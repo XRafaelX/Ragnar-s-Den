@@ -8,11 +8,12 @@
    bonus, label}, temp (temporary HP), useKey (a resource it spends instead
    of ki while one is left), payKey (a resource it spends as well), sharpen
    (Sharpen the Blade's bonus), reason (why it can't be used now)}. */
-import { mod, profBonus } from "./basics.js";
+import { mod, profBonus, clamp } from "./basics.js";
 import { classLevelOf, isMonk2024, classVariants } from "./class-features.js";
 import { MONK_2024_SWAPS } from "../data/monk-2024.js";
 import { abilityScore } from "./ability-scores.js";
-import { martialArtsDie, resourceLeft } from "./effects.js";
+import { martialArtsDie, resourceLeft, spendResource } from "./effects.js";
+import { maxHp } from "./vitals.js";
 import { characterPickedProfs } from "./class-picks.js";
 import { allKnownOptions } from "./class-options.js";
 import { optionSetDef } from "../data/class-options.js";
@@ -48,6 +49,37 @@ export function setMonkEdition(c, on){
     delete cl.bodyAndMind;
   }
   return true;
+}
+/* ---- Rolling initiative (2024 monk) ----
+   Uncanny Metabolism (monk 2): all Focus back and a Martial Arts die +
+   monk level of healing, once per long rest. Offered only when it would
+   give something (Focus spent or hit points missing). {die, bonus} or null. */
+export function uncannyMetabolism(c){
+  var lv = classLevelOf(c, "Monk");
+  if(!isMonk2024(c) || lv < 2 || resourceLeft(c, "Monk:uncanny_metabolism") < 1) return null;
+  var spent = Number((c.resourcesUsed||{})["Monk:ki"]) > 0, hurt = (Number(c.hp && c.hp.current)||0) < maxHp(c);
+  return spent || hurt ? {die: martialArtsDie(c), bonus: lv} : null;
+}
+/* Use it with the die rolled: the hit points healed. */
+export function useUncannyMetabolism(c, roll){
+  var um = uncannyMetabolism(c);
+  if(!um || !spendResource(c, "Monk:uncanny_metabolism", 1)) return 0;
+  c.resourcesUsed["Monk:ki"] = 0;
+  var before = Number(c.hp.current)||0;
+  c.hp.current = clamp(before + roll + um.bonus, 0, maxHp(c));
+  return c.hp.current - before;
+}
+/* Perfect Focus (monk 15): rolling initiative without Uncanny Metabolism
+   brings Focus back up to 4 when you have 3 or fewer. The points it gives. */
+export function perfectFocusGain(c){
+  if(!isMonk2024(c) || classLevelOf(c, "Monk") < 15) return 0;
+  var left = resourceLeft(c, "Monk:ki");
+  return left >= 0 && left <= 3 ? 4 - left : 0;
+}
+export function usePerfectFocus(c){
+  var n = perfectFocusGain(c);
+  if(n) c.resourcesUsed["Monk:ki"] = Math.max(0, (Number(c.resourcesUsed["Monk:ki"])||0) - n);
+  return n;
 }
 /* "Focus" for a 2024 monk, "ki" otherwise, for labels. */
 export function kiWord(c){ return isMonk2024(c) ? "Focus" : "ki"; }
@@ -114,7 +146,9 @@ export function kiActions(c){
   out.push({id: "flurry", name: "Flurry of Blows", cost: 1, detail: flurry, log: flurry});
   if(focus){
     var patient = "Take both the Disengage and Dodge actions as a bonus action." + (lv >= 10 ? " Heightened Focus: you also gain temporary hit points equal to two rolls of your Martial Arts die." : "");
-    out.push({id: "patient", name: "Patient Defense", cost: 1, detail: patient, log: patient});
+    // (Heightened Focus rolls the temporary hit points: `temp` on the roll.)
+    out.push({id: "patient", name: "Patient Defense", cost: 1, detail: patient, log: patient,
+      roll: lv >= 10 ? {qty: 2, die: die, bonus: 0, label: "Patient Defense: temporary hit points", temp: true} : null});
   }
   else out.push({id: "patient", name: "Patient Defense", cost: 1, detail: "Take the Dodge action as a bonus action.", log: "The Dodge action as a bonus action."});
   var step = focus ? "Take both the Disengage and Dash actions as a bonus action, and your jump distance doubles this turn." : "Disengage or Dash as a bonus action, and your jump distance doubles this turn.";

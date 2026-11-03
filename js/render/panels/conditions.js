@@ -81,6 +81,22 @@ export function renderConditionsStrip(c){
     });
     strip.appendChild(calm);
   });
+  // Self-Restoration (2024 monk 10): at the end of each of your turns, end
+  // one of charmed, frightened or poisoned.
+  if(classLevelOf(c, "Monk") >= 10 && isMonk2024(c)) list.forEach(function(x){
+    if(["charmed", "frightened", "poisoned"].indexOf(x.def.id)===-1) return;
+    var mend = document.createElement("button");
+    mend.type = "button";
+    mend.className = "btn small cond-stillness";
+    mend.textContent = "Self-Restoration: end " + x.def.name;
+    mend.title = "At the end of your turn, end one of charmed, frightened or poisoned on yourself";
+    mend.addEventListener("click", function(){
+      removeCondition(c, x.def.id);
+      logRoll("Self-Restoration", x.def.name + " ended.");
+      save(); renderAll();
+    });
+    strip.appendChild(mend);
+  });
   return strip;
 }
 

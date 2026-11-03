@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, kiWord } from "../../core/helpers.js";
+import { useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, kiWord, uncannyMetabolism, useUncannyMetabolism, perfectFocusGain, usePerfectFocus } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -736,9 +736,28 @@ export function renderVitalsPanel(c){
     if(e.target.closest(".stat-stepper") || e.target.closest("button")) return;
     // Thief's Reflexes (Thief 17): a second turn at the initiative minus 10.
     var reflexes = classLevelOf(c, "Rogue", "Thief") >= 17;
-    performRoll(20,1,initTotal,initRoll.mode,"Initiative", reflexes ? function(r){
-      return r ? {lead: "Thief's Reflexes: a second turn in the first round at initiative " + (r.total - 10) + " (not when you're surprised).", options: []} : null;
-    } : null);
+    // A 2024 monk: Uncanny Metabolism offered after the roll (with Perfect
+    // Focus as the other choice), or Perfect Focus at once when it's used up.
+    var um = uncannyMetabolism(c), pf = perfectFocusGain(c), pfNow = !um && pf ? usePerfectFocus(c) : 0;
+    var follow = reflexes || um ? function(r){
+      if(!r) return null;
+      var lead = reflexes ? "Thief's Reflexes: a second turn in the first round at initiative " + (r.total - 10) + " (not when you're surprised)." : "";
+      var options = !um ? [] : [{label: "Uncanny Metabolism: all Focus, heal 1d" + um.die + "+" + um.bonus, title: "Get all your Focus Points back and regain 1d" + um.die + " + " + um.bonus + " hit points. Once per long rest.",
+        use: function(){
+          var roll = Math.floor(Math.random() * um.die) + 1, healed = useUncannyMetabolism(c, roll);
+          logRoll("Uncanny Metabolism (1d" + um.die + "+" + um.bonus + ")", "All Focus Points back. " + roll + " +" + um.bonus + " = " + (roll + um.bonus) + " (" + healed + " HP healed).");
+          save(); renderAll();
+          return {silent: true};
+        }}].concat(pf ? [{label: "Perfect Focus: Focus back up to 4", title: "Keep Uncanny Metabolism for later and get Focus Points back until you have 4.",
+        use: function(){
+          var n = usePerfectFocus(c);
+          logRoll("Perfect Focus", n + " Focus Point" + (n===1 ? "" : "s") + " back (4 now).");
+          save(); renderAll();
+          return {silent: true};
+        }}] : []);
+      return {lead: lead || "When you roll initiative:", options: options};
+    } : null;
+    performRoll(20,1,initTotal,initRoll.mode,"Initiative", follow);
     // Initiative is a DEX check: Duality's next-check advantage is used.
     var used = useNextCheck(c);
     if(useTides(c)) used = true;
@@ -746,7 +765,8 @@ export function renderVitalsPanel(c){
     // Relentless, Tireless Spirit...: one use back if none were left.
     var back = regainOnInitiative(c);
     if(back.length){ logRoll("Initiative", "Regained one use of " + back.join(", ") + "."); showActionToast("Regained one use of " + back.join(", ") + "."); }
-    if(used || back.length){ save(); renderAll(); }
+    if(pfNow){ logRoll("Perfect Focus", pfNow + " Focus Point" + (pfNow===1 ? "" : "s") + " back (4 now)."); showActionToast("Perfect Focus: Focus Points back up to 4."); }
+    if(used || back.length || pfNow){ save(); renderAll(); }
   });
   grid.appendChild(initBox);
 
@@ -1179,7 +1199,12 @@ function kiPicker(c){
       if(a.log) logRoll(name, a.log + " (" + paid + ")");
       save(); renderAll();
       if(a.sharpen) showActionToast(a.sharpen.name + " sharpened: +" + a.sharpen.bonus + " to attack and damage for 1 minute.");
-      if(a.roll) performRoll(a.roll.die, a.roll.qty, a.roll.bonus, "none", a.roll.label);
+      // A roll that gives temporary hit points (Heightened Focus): the
+      // higher of what you have and the roll, as they don't stack.
+      if(a.roll && a.roll.temp) performRoll(a.roll.die, a.roll.qty, a.roll.bonus, "none", a.roll.label, {onResult: function(r){
+        if(r.total > (Number(c.hp.temp)||0)){ c.hp.temp = r.total; save(); renderAll(); }
+      }});
+      else if(a.roll) performRoll(a.roll.die, a.roll.qty, a.roll.bonus, "none", a.roll.label);
     }}));
   return wrap;
 }

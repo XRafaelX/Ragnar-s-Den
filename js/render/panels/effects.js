@@ -353,6 +353,7 @@ function effectSummary(c, id){
   if(id==="living_legend") return "Advantage on CHA checks. Once on each of your turns, a miss can hit instead, and you can reroll a failed save";
   if(id==="exalted_champion") return "Resistance to nonmagical bludgeoning, piercing and slashing, and advantage on WIS saves. Allies within 30 ft have advantage on WIS saves and death saves";
   if(id==="mortal_bulwark") return "Truesight 120 ft and advantage on attacks against aberrations, celestials, elementals, fey and fiends. On a hit, a CHA save (DC " + paladinDc(c) + ") or it's banished";
+  if(id==="superior_defense") return "Resistance to all damage but force. Ends early if you're incapacitated";
   if(id==="empty_body") return "You're invisible and have advantage on attack rolls. Resistance to all damage but force";
   if(id==="shadow_step") return "Advantage on your first melee attack this turn";
   if(id==="cloak_of_shadows") return "You're invisible and have advantage on attack rolls";

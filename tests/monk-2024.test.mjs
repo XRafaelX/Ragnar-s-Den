@@ -143,3 +143,67 @@ test("2024 data: plain text, no long dashes or semicolons, a starting kit", () =
   const kit = MONK_2024.equipment.choiceGroups[0].options;
   assert.deepEqual(kit.map((o) => o.coins.gp), [11, 50]);
 });
+
+/* Phase 2 (2026-11-03): the 2024 class features at work. */
+test("Uncanny Metabolism: once per long rest, only when it gives something", () => {
+  const c = m24(6);
+  assert.equal(H.uncannyMetabolism(c), null, "full Focus and full HP: not offered");
+  c.resourcesUsed = { "Monk:ki": 5 };
+  c.hp.current = 20;
+  assert.deepEqual(H.uncannyMetabolism(c), { die: 8, bonus: 6 });
+  assert.equal(H.useUncannyMetabolism(c, 3), 9, "a 3 on the d8 + 6");
+  assert.equal(c.hp.current, 29);
+  assert.equal(H.resourceLeft(c, "Monk:ki"), 6, "all Focus back");
+  c.resourcesUsed["Monk:ki"] = 2;
+  assert.equal(H.uncannyMetabolism(c), null, "used until a long rest");
+  H.restoreResources(c, "long");
+  c.resourcesUsed = { "Monk:ki": 2 };
+  assert.ok(H.uncannyMetabolism(c), "back after a long rest");
+  assert.equal(H.uncannyMetabolism(monk(6, {}, "")), null, "not for a 2014 monk");
+  const um = H.characterResources(c).find((r) => r.key === "Monk:uncanny_metabolism");
+  assert.equal(um.max, 1);
+  assert.equal(um.reset, "long");
+});
+
+test("Uncanny Metabolism doesn't heal past the maximum", () => {
+  const c = m24(2);
+  c.hp.current = c.hp.max - 1;
+  assert.equal(H.useUncannyMetabolism(c, 6), 1);
+  assert.equal(c.hp.current, c.hp.max);
+});
+
+test("Perfect Focus: back up to 4 at monk 15, only with 3 or fewer", () => {
+  const c = m24(15);
+  c.resourcesUsed = { "Monk:ki": 14 };
+  assert.equal(H.perfectFocusGain(c), 3);
+  assert.equal(H.usePerfectFocus(c), 3);
+  assert.equal(H.resourceLeft(c, "Monk:ki"), 4);
+  assert.equal(H.perfectFocusGain(c), 0, "4 left: nothing");
+  const low = m24(14);
+  low.resourcesUsed = { "Monk:ki": 14 };
+  assert.equal(H.perfectFocusGain(low), 0, "not before 15");
+});
+
+test("Heightened Focus: Patient Defense rolls two Martial Arts dice of temporary HP", () => {
+  const act = (c) => H.kiActions(c).find((a) => a.id === "patient");
+  assert.equal(act(m24(9)).roll, null);
+  assert.deepEqual(act(m24(11)).roll, { qty: 2, die: 10, bonus: 0, label: "Patient Defense: temporary hit points", temp: true });
+});
+
+test("Superior Defense: 3 Focus, resistance to all but force, ends when incapacitated", () => {
+  const c = m24(18);
+  c.effects = { superior_defense: true };
+  assert.ok(H.effectResistances(c).some((r) => r.source === "Superior Defense" && r.type === "all damage but force"));
+  assert.deepEqual(H.endIncapacitatedEffects(c), ["Superior Defense"]);
+
+});
+
+test("the Active effects card: Superior Defense for a 2024 monk 18, Empty Body for a 2014 one", () => {
+  const ids = (c) => H.characterEffects(c).map((e) => e.def.id);
+  assert.ok(ids(m24(18)).includes("superior_defense") && !ids(m24(18)).includes("empty_body"));
+  assert.ok(!ids(m24(17)).includes("superior_defense"));
+  assert.ok(ids(monk(18)).includes("empty_body") && !ids(monk(18)).includes("superior_defense"));
+  const c = m24(18);
+  assert.ok(H.startEffect(c, "superior_defense"));
+  assert.equal(H.resourceLeft(c, "Monk:ki"), 15, "3 Focus paid");
+});
