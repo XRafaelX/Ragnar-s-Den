@@ -1,4 +1,4 @@
-# Ragnar's Den · Character Creator v3.0.0
+# Ragnar's Den · Character Creator v4.0.0
 
 An offline-first, browser-based D&D 5e character creator and interactive character sheet. No accounts, no ads, and no internet connection required after initial load.
 
@@ -33,7 +33,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - Integrated spell selection for spellcasting classes (cantrips and leveled spells), including always-prepared class spells and domain spell choices.
 - **Interactive Character Sheet**:
   - **Identity & Banner**: Dynamic character card with custom avatar upload, built-in image cropper, custom banner backdrops, inspiration toggle, passive perception, character title, and level indicator.
-  - **Vitals**: Real-time HP tracking (Current, Max, Temp), hit dice tracker, death saving throws, armor class with full breakdown tooltip, initiative, and rests.
+  - **Vitals**: Real-time HP tracking (Current, Max, Temp): drag the HP bar sideways (left for damage, right for healing) or hold an arrow to count faster, hit dice tracker, death saving throws, armor class with full breakdown tooltip, initiative, and rests.
   - **Abilities & Skills**: Ability scores, modifiers, saving throws, and skill proficiencies with proficiency and expertise markers.
   - **Features & Traits**: Class features, racial traits, feats, and custom feature creation with "NEW" indicator badges on level-up.
   - **Spellbook & Slots**: Track cantrips and prepared spells, filter by spell level, manage spell slot usage (including multiclassing and Warlock Pact Magic), and toggle prepared state on long rest.
@@ -44,7 +44,11 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Magic items**: All 340 magic items of the SRD 5.1 plus the DM's own (grouped as Panais Magic Items), added from the Inventory tab. Attunement follows the rules (3 items, 4 to 6 for an artificer, never two copies), and what an item does works on the sheet while it should: weapon and armor bonuses, Ring of Protection, items that set or raise an ability score, charges regained at dawn, potions that roll their healing, Flame Tongue lit while held.
   - **Firearms and new weapons**: The DMG's pistol and musket in their own category (proficiency from the Gunner feat), the double-bladed scimitar and Revenant Blade, and Plane Shift: Amonkhet's khopesh and two-handed khopesh (treated as a longsword and a greatsword, so proficiency with one covers the other).
   - **Conditions**: The fourteen conditions and six levels of exhaustion, behind a button on the Hit points card. What they do is applied by itself: disadvantage on attacks or checks, automatic STR and DEX save failures, speed 0, lower passive scores, and a long rest that takes off a level of exhaustion.
-  - **Active Effects**: Toggle on/off effects like Bladesong, the Astral Self, and Symbiotic Entity — each costs the appropriate class resource.
+  - **Active Effects**: Toggle on/off effects like Bladesong, the Astral Self, and Symbiotic Entity, each paid with the right class resource.
+  - **Remember card**: A card on the Vitals tab for the features new players forget mid-fight, grouped as Bonus actions, Reactions and Always on: Cunning Action, Uncanny Dodge, a paladin's auras, Sentinel, Polearm Master, a halfling's Lucky and many more from every class, subclass, fighting style, invocation, feat and race. Only what the sheet doesn't already apply or show is listed, a tap opens the full text, and experienced players can fold the card away per character.
+  - **Class features at work**: Every class's and subclass's features were checked against the books and put to work on the sheet wherever there's something to work out: buttons on weapon and spell cards, uses on the Vitals tab, Active effects, rerolls and follow-ups in the dice tray. That includes all 15 of Tasha's optional class features (Primal Awareness, Nature's Veil, Steady Aim, Focused Aim, Quickened Healing, Dedicated Weapon, Harness Divine Power, Blessed Strikes, Wild Companion, Magical Guidance and more).
+  - **2014 or 2024 Monk**: Each monk picks the 2014 rules or the 2024 rules (on the Class step's Optional rules, the Information tab, or when multiclassing into monk). A 2024 monk gets Focus Points, the d6 to d12 Martial Arts die, Uncanny Metabolism, Deflect Attacks, Heightened Focus, Superior Defense, Self-Restoration and the four 2024 Warriors (Open Hand, Shadow, Elements, Mercy), plus the older subclasses that have no 2024 version, reading Focus for ki. The Compendium's Monk page switches between the two.
+  - **Race traits at work**: A race's resistances, innate spells (with their free casts and save DC), speeds, senses and effects go on the sheet by themselves, and every trait's text was rewritten against the books' wording. A dragonmark's Intuition die is added to its skill checks.
   - **Death Saves**: Track successes and failures with automatic stabilization.
   - **Companions**: Full companion panel for Steel Defender, Eldritch Cannon, Drake Companion, Wildfire Spirit, Beast Master beast, Tasha's primal beasts and Blighted Sapling, with HP tracking, beast form entry, and long rest restoration. Find Familiar's forms and Pact of the Chain's familiars use the SRD's stat blocks, a Cavalier gets a Mount card, and a new companion shows a NEW dot on the Companions tab until it's opened.
   - **Artificer Infusions**: Dedicated infusions tab and picker for Artificer characters.
@@ -53,7 +57,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Race proficiencies**: What a race's traits give goes on the sheet by itself: an elf's Perception and weapon training, a dwarf's weapons and armor, a gnome's tinker's tools, a githyanki's swords. Traits with a choice (a dwarf's tool, a kenku's or lizardfolk's two skills, a hobgoblin's two martial weapons, a githyanki's skill or tool, a satyr's instrument) are picked on the wizard's Race Traits step, and older characters pick them on the Features tab's Feature choices card. Race weapons count as proficient on the Inventory tab, and the Information tab lists the race's weapons, armor and tools.
   - **Class tool choices**: A first artificer's artisan's tools, a bard's three instruments and a monk's tool or instrument are picked on the creation wizard's Class Features step (or on the Feature choices card for an older sheet), and the Information tab lists them in place of the "of your choice" line. A sheet from before keeps its earlier picks.
   - **Background equipment**: The creation wizard's Equipment step shows what the background starts with (every one of the 102 checked against its published page) and asks for its choices: a prayer book or a prayer wheel, which artisan's tools (starting on the ones the background's proficiency picked), a Dimir Operative's secondary guild. Trinkets are rolled on their own table, with Roll again or a pick from the list: the Player's Handbook's, Curse of Strahd's Gothic Trinkets (Haunted One), Van Richten's Horror Trinkets (Ravenloft Investigator) and the Feywild Trinkets (Feylost, Witchlight Hand). The new character carries it all and has its coins in the purse; a belaying pin arrives as a club to attack with. A character made before this gets a one-time card at the top of the Inventory tab: Add it (with the same choices and rolls) or No thanks, and the card doesn't come back.
-  - **Personality and background story**: A Personality card on the Information tab with two personality traits, an ideal, a bond and a flaw, and the background's own story tables (a Haunted One's Harrowing Event, a Criminal's Specialty, a Feylost's Fey Mark, Ravnica contacts...), from each background's published page. Each tile rolls on its table or opens a sheet to pick an entry or write your own; Roll all fills the empty ones. Sword Coast backgrounds use the Player's Handbook tables their page names; nothing asks for these at creation.
+  - **Personality and background story**: A Personality card on the Information tab with two personality traits, an ideal, a bond and a flaw, and the background's own story tables (a Haunted One's Harrowing Event, a Criminal's Specialty, a Feylost's Fey Mark, Ravnica contacts...), from each background's published page. Each tile rolls on its table or opens a sheet to pick an entry or write your own; Roll all fills the empty ones. A Faith tile picks a god from the Player's Handbook's pantheons or Wildemount's Pantheon of Exandria (or one of your own), shown as a card with its holy symbol, alignment and domains. Sword Coast backgrounds use the Player's Handbook tables their page names; nothing asks for these at creation.
   - **Background proficiencies**: A background's tools go on the sheet (an Urchin's disguise kit and thieves' tools), and its choices are picked on the wizard's Skills step: a gaming set, an instrument, artisan's tools, "an instrument or artisan's tools", an Urban Bounty Hunter's two different kinds, a Guild Merchant's navigator's tools or extra language, and a House Agent's house, which sets its two tools from the House Tool Proficiencies table. A background's own language (a Rune Carver's Giant) is added for you, and a Ravnica guild's language comes from its short list. Older characters pick their background's tools on the Features tab's Feature choices card, which also offers to correct skills this app once had wrong (a Lorehold Student's Arcana for Religion). All 98 backgrounds were checked against the published pages.
   - **Proficiencies gained twice**: As the Basic Rules allow, a skill or tool two sources give (an elf's Perception and a Far Traveler's, a rogue's thieves' tools and an Urchin's) earns a pick of another of the same kind, asked on the wizard's Skills step or the Feature choices card, and a pick list that runs short (a kenku whose class and background already cover its skills) offers any other skill or tool so no pick is lost.
   - **Unarmed strikes and monk weapons**: An unarmed strike card on the Inventory tab for characters who use one: a monk (the Martial Arts die and DEX while unarmored), a race with natural weapons (a tabaxi's claws, a minotaur's horns, a lizardfolk's bite) and a Tavern Brawler; rage and Song of Victory add to it. A monk weapon rolls the Martial Arts die once it's bigger than its own. Starting equipment that says "any simple weapon" or "any martial melee weapon" is a weapon picker in the creation wizard (weapons the class can't use greyed out), so the new character starts with a real weapon.
@@ -65,12 +69,13 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Optional rules**: Set once at the start of character creation, on the Class step's Optional rules card (Tasha's optional class features and the campaign books, with a line saying what Tasha's adds for the chosen class), and changed later on the Information tab's card. Later wizard steps only note what Tasha's would add while it's off; turning it off drops the picks only it allows. Tasha's optional class features: Tasha's extra fighting styles, Metamagic, maneuvers, invocations and Pact of the Talisman, the 65 spells Tasha's Additional Spells adds to the class lists (marked "Tasha's optional" in the spell pickers, the level-up and the wizard's Spells step, which has the switch too), plus swapping a style, Metamagic option or maneuver at Ability Score Improvement levels.
   - **Journal & Information**: Rich notes, backstory, physical characteristics, proficiencies (languages, weapons, armor, tools), and custom notes.
 - **Monsters Browser**:
-  - Searchable monster compendium of 331 monsters in 13 categories, with full stat blocks.
+  - Searchable monster compendium of 331 monsters in 13 categories, with full stat blocks, each checked against the Monster Manual.
   - Customize and create your own monsters for encounters.
 - **Encounters** (for the DM):
   - Named encounters saved in this browser, ready to prepare before a session and run again later with Reset (or Duplicate).
   - Add monsters from the Monster Catalog (homebrew too); each gets a box with its AC, speed and hit points, and a trail of every HP value it went through, like on paper. Boxes can be renamed.
   - Type in the players' names, then drag monster boxes into the numbered turn order (mouse or finger) and drag lines to reorder. Next turn moves down the line, skips downed monsters and counts rounds.
+  - Conditions on monsters: the fourteen conditions plus Hexed, Cursed, Slowed, Asleep and Blessed, shown as chips on each box (asking what the caster chose where a spell needs it).
   - Encounters are included in backup export and import.
 - **Compendium & Reference Overlays**:
   - Built-in searchable compendium for Races, Classes, Subclasses, Backgrounds, Alignments, Feats, Spells, Weapons, Armor, and Infusions.
@@ -89,14 +94,16 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
 - **Built-in Dice Roller Tray**:
   - Floating dice tray supporting d4, d6, d8, d10, d12, d20, and d100.
   - Multiplier controls, flat modifiers, advantage and disadvantage toggles, dice re-rolling, and an interactive roll history log.
+  - The tray keeps one height so the dice never jump. After a roll it offers what a feature allows next (critical damage, Focused Aim after a miss, Magical Guidance's reroll and more), and a hit's buttons stay until each is used.
 - **UI & Customization**:
   - **Themes & Palettes**: Theme selector with multiple color palettes and themed dropdown pickers.
   - **Interactive Sound Effects**: Audio feedback for dice rolls, leveling, buttons, and character actions.
   - **Onboarding Tutorial**: Interactive step-by-step guided tour highlighting major features.
   - **Responsive Design**: Mobile-friendly layout with slide-out sidebar navigation, bottom sheets, and desktop-optimized panel grids.
+  - **About**: Credits for every source and asset, the privacy policy and the license, in the About dialog.
 - **Offline & Local Storage**:
   - Stores character sheets and custom homebrew in browser `localStorage`.
-  - Export and import full vault backups as JSON files, named by date, time and app version (`ragnars-den-backup_2026-10-19_2145_v3.0.0.json`).
+  - Export and import full vault backups as JSON files, named by date, time and app version (`ragnars-den-backup_2026-11-03_2145_v4.0.0.json`).
   - PWA installable on desktop and mobile devices with Service Worker offline caching (`sw.js`).
 
 ---
@@ -171,7 +178,7 @@ The app needs no build step. `package.json` exists only to run the tests and has
 
 ## Testing
 
-Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/` and completes in well under a second. **452 tests, 0 failures.**
+Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/` and completes in a few seconds. **844 tests, 0 failures.**
 
 - `coins.test.mjs` — coin parsing, spending, change-giving, and formatting.
 - `data.test.mjs`: class, subclass and resource data is complete and well-formed. Every subclass reaches its top level, `replaces` points at a real earlier feature, feature flags use known names and valid values, every Resources card entry belongs to a subclass that exists, counters stay sane at every level, the spell catalog is well formed (524 spells, every class's count, artificer spells at every level, Tasha's Additional Spells kept off the class lists until the switch is on), and text has no long dashes.
@@ -207,6 +214,15 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 - `gunslinger.test.mjs`: the Gunslinger archetype (features, firearm and tinker's tools proficiency, trick shots and grit points, Quickdraw's initiative, the firearms and fire lance, Sidearm Mastery's +2 damage)
 - `weapons-languages.test.mjs`: firearms and Gunner, infusion targets, the double-bladed scimitar and Revenant Blade, and every language a race or background teaches.
 - `backup-name.test.mjs`: the backup file's name (local date, time and app version).
+- `backup.test.mjs`: exporting chosen characters: only those characters and the homebrew they use, and the export file's name.
+- `barbarian.test.mjs`, `fighter.test.mjs`, `rogue.test.mjs`, `monk.test.mjs`, `paladin.test.mjs`, `ranger.test.mjs`, `cleric.test.mjs`, `druid.test.mjs`, `bard.test.mjs`, `sorcerer.test.mjs`, `warlock.test.mjs`, `wizard.test.mjs`, `artificer.test.mjs`: one file per class, every class and subclass feature checked against the books and what the sheet does with it.
+- `monk-2024.test.mjs`: the 2014 or 2024 monk choice, the 2024 class features and Focus Points, the four 2024 Warriors, older subclasses' wording, and multiclassing into a 2024 monk.
+- `tasha-additions.test.mjs`: Tasha's optional class features: when each is offered, swaps and additions, and what each does on the sheet.
+- `reminders.test.mjs`: the Remember card: which features carry a reminder, groups and order, picks that change a line, lines that fit the card, and nothing the sheet already applies.
+- `hp-drag.test.mjs`: changing hit points by dragging the HP bar or holding an arrow (the whole bar is the maximum, it stops at 0 and at full, temporary HP and the Arcane Ward soak damage first, a Wild Shape form's own bar).
+- `race-automation.test.mjs`, `race-spells.test.mjs`, `race-texts.test.mjs`: race traits the sheet applies (effects, resistances, speeds, senses), the innate spells traits give, and the trait texts against the books.
+- `shillelagh.test.mjs`: Shillelagh's club or quarterstaff (spellcasting ability and a d8 while it's on, only in hand, ended by a rest or 0 hit points).
+- `encounter-quips.test.mjs`: the combat tracker's jokes (plain sentences, only known fill-ins).
 - `feats.test.mjs`: the feat catalog (106 feats; every spell, option set, race and feat an entry names exists) and what the newer feats do: Linguist's languages, tool and weapon proficiencies, spell feats with their kinds, casting ability and free casts, Strixhaven Initiate's college, the Dragonlance, giant and Planescape chains and who can take them, racial feats, Squat Nimbleness, Dragon Hide, darkvision, proficiency-bonus uses, Rune Shaper's runes, Fighting Initiate, Eldritch Adept, Metamagic Adept, Magic Initiate's class, cantrips and spell, the backgrounds that give a feat, campaign bonus feats, and the wording rules for feat and spell text (plain sentences, no semicolons, dashes or shorthand).
 
 `tests/setup.mjs` gives the browser modules just enough of `window`, `document` and `localStorage` to load in Node. The tests check data and calculations, not rendering — use the checklist below for the screens.
@@ -245,7 +261,7 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 ├── js/
 │   ├── app.js                         # Application entry point: event listeners, import/export, init()
 │   ├── bootstrap.bundle.min.js        # Bootstrap 5 JavaScript bundle
-│   ├── version.js                     # App release version (APP_VERSION = "3.0.0")
+│   ├── version.js                     # App release version (APP_VERSION = "4.0.0")
 │   ├── core/
 │   │   ├── artificer.js               # Armor model weapons, elixir brewing and rolling
 │   │   ├── character.js               # Character factory and schema migration (ensureShape)
