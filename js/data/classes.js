@@ -443,7 +443,7 @@ Object.assign(CLASSES_INFO["Druid"], {
 
 CLASSES_INFO["Monk"].features = [
   {name:"Unarmored Defense", text:"While wearing no armor and no shield, AC equals 10 + DEX modifier + WIS modifier."},
-  {name:"Martial Arts", text:"Use DEX for unarmed strikes and monk weapons (1d4 damage). Bonus action unarmed strike after Attack action."}
+  {name:"Martial Arts", remind:{when:"bonus", line:"An unarmed strike after you take the Attack action with an unarmed strike or monk weapon"}, text:"Use DEX for unarmed strikes and monk weapons (1d4 damage). Bonus action unarmed strike after Attack action."}
 ];
 
 export var ARTISAN_TOOLS = ["Alchemist's supplies","Brewer's supplies","Calligrapher's supplies","Carpenter's tools","Cartographer's tools","Cobbler's tools","Cook's utensils","Glassblower's tools","Jeweler's tools","Leatherworker's tools","Mason's tools","Painter's supplies","Potter's tools","Smith's tools","Tinker's tools","Weaver's tools","Woodcarver's tools"];

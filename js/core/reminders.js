@@ -24,8 +24,11 @@ export function characterReminders(c){
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
       if(!f.remind || out.some(function(x){ return x.name===f.name; })) return;
-      out.push({name: f.name, when: f.remind.when, line: f.remind.line, text: f.text, level: f.level,
-        source: (f.subclass ? cl.subclass : "Class · " + cl.name) + " · Lv " + f.level});
+      // (By the level the reminder first came at: Martial Arts at 1, not
+      // its upgrade at 17, and walking up walls at 9.)
+      var lv = f.remindLevel || f.level;
+      out.push({name: f.name, when: f.remind.when, line: f.remind.line, text: f.text, level: lv,
+        source: (f.subclass ? cl.subclass : "Class · " + cl.name) + " · Lv " + lv});
     });
   });
   // By the level they come at, class and subclass features mixed.

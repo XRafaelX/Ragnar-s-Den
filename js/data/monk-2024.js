@@ -17,7 +17,7 @@ function movement(n, extra){
 }
 function martialArts(die){
   // (The level 1 version replaces nothing.)
-  return {name:"Martial Arts", replaces:die > 6 ? "Martial Arts" : "", text:"While you wear no armor and no shield, and are unarmed or using only monk weapons (simple melee weapons and martial melee weapons with the light property): your unarmed strikes and monk weapons can deal 1d" + die + " in place of their normal damage, you can use DEX instead of STR for their attack and damage rolls (and for the save DC of a grapple or shove), and you can make an unarmed strike as a bonus action."};
+  return {name:"Martial Arts", replaces:die > 6 ? "Martial Arts" : "", remind:{when:"bonus", line:"An unarmed strike, while you wear no armor and no shield"}, text:"While you wear no armor and no shield, and are unarmed or using only monk weapons (simple melee weapons and martial melee weapons with the light property): your unarmed strikes and monk weapons can deal 1d" + die + " in place of their normal damage, you can use DEX instead of STR for their attack and damage rolls (and for the save DC of a grapple or shove), and you can make an unarmed strike as a bonus action."};
 }
 
 export var MONK_2024 = {
@@ -29,12 +29,12 @@ export var MONK_2024 = {
   ],
   features: {
     2: [
-      {name:"Monk's Focus", text:"You have Focus Points equal to your monk level, and get them all back on a short or long rest. Flurry of Blows: spend 1 Focus to make two unarmed strikes as a bonus action. Patient Defense: take the Disengage action as a bonus action, or spend 1 Focus to take both Disengage and Dodge. Step of the Wind: take the Dash action as a bonus action, or spend 1 Focus to take both Disengage and Dash, and your jump distance doubles this turn. Save DC = 8 + proficiency + WIS.", saveDc:{save:"", ability:"wis"}},
+      {name:"Monk's Focus", remind:{when:"bonus", line:"Disengage or Dash for free (Patient Defense, Step of the Wind), or spend Focus for more"}, text:"You have Focus Points equal to your monk level, and get them all back on a short or long rest. Flurry of Blows: spend 1 Focus to make two unarmed strikes as a bonus action. Patient Defense: take the Disengage action as a bonus action, or spend 1 Focus to take both Disengage and Dodge. Step of the Wind: take the Dash action as a bonus action, or spend 1 Focus to take both Disengage and Dash, and your jump distance doubles this turn. Save DC = 8 + proficiency + WIS.", saveDc:{save:"", ability:"wis"}},
       movement(10, {speed:10}),
       {name:"Uncanny Metabolism", text:"When you roll initiative, you can get back all your spent Focus Points. When you do, roll your Martial Arts die and regain hit points equal to your monk level plus the roll. Once per long rest."}
     ],
-    3: [{name:"Deflect Attacks", text:"Reaction when an attack hits you and its damage includes bludgeoning, piercing or slashing: reduce the attack's total damage by 1d10 + DEX modifier + monk level. If that brings it to 0, you can spend 1 Focus to redirect it: a creature you can see within 5 feet (melee attack) or within 60 feet and not behind total cover (ranged attack) makes a DEX save or takes two rolls of your Martial Arts die + DEX modifier, of the attack's damage type.", saveDc:{save:"dex", ability:"wis"}}],
-    4: [{name:"Slow Fall", text:"Reaction when you fall: reduce the falling damage by five times your monk level.", chip:function(x){ return "Reduces falls by " + 5 * x.lv; }}],
+    3: [{name:"Deflect Attacks", remind:{when:"reaction", line:"When an attack hits you, reduce its damage (the roll is on the unarmed strike card)"}, text:"Reaction when an attack hits you and its damage includes bludgeoning, piercing or slashing: reduce the attack's total damage by 1d10 + DEX modifier + monk level. If that brings it to 0, you can spend 1 Focus to redirect it: a creature you can see within 5 feet (melee attack) or within 60 feet and not behind total cover (ranged attack) makes a DEX save or takes two rolls of your Martial Arts die + DEX modifier, of the attack's damage type.", saveDc:{save:"dex", ability:"wis"}}],
+    4: [{name:"Slow Fall", remind:{when:"reaction", line:"When you fall, take 5 less damage for each monk level"}, text:"Reaction when you fall: reduce the falling damage by five times your monk level.", chip:function(x){ return "Reduces falls by " + 5 * x.lv; }}],
     5: [
       {name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."},
       {name:"Stunning Strike", text:"Once per turn, when you hit a creature with a monk weapon or an unarmed strike, you can spend 1 Focus: it makes a Constitution save. On a failure it is stunned until the start of your next turn. On a success its speed is halved until the start of your next turn, and the next attack roll against it before then has advantage.", saveDc:{save:"con", ability:"wis"}},
@@ -49,7 +49,7 @@ export var MONK_2024 = {
       speeds:[{type:"climb", value:"walk", when:"walls and liquids, on your turn, no armor or shield"}]}],
     10: [
       {name:"Heightened Focus", text:"Flurry of Blows makes three unarmed strikes for 1 Focus instead of two. When you spend Focus on Patient Defense, you also gain temporary hit points equal to two rolls of your Martial Arts die. When you spend Focus on Step of the Wind, you can take a willing Large or smaller creature within 5 feet along with you until the end of your turn, and its movement doesn't provoke opportunity attacks."},
-      {name:"Self-Restoration", text:"At the end of each of your turns, you can end one of these conditions on yourself: charmed, frightened or poisoned. Going without food and drink doesn't give you exhaustion."},
+      {name:"Self-Restoration", remind:{when:"always", line:"At the end of each turn, end charmed, frightened or poisoned on yourself"}, text:"At the end of each of your turns, you can end one of these conditions on yourself: charmed, frightened or poisoned. Going without food and drink doesn't give you exhaustion."},
       movement(20, {replaces:"Unarmored Movement", speed:5})
     ],
     11: [martialArts(10)],
@@ -109,7 +109,7 @@ export var MONK_2024_SUBCLASSES = [
   {name:"Warrior of the Open Hand", edition:"2024", blurb:"Master of unarmed combat who pushes, trips and heals.", features:{
     3:[{name:"Open Hand Technique", text:"Whenever you hit a creature with an attack from Flurry of Blows, you can impose one effect: Addle (it can't make opportunity attacks until the start of its next turn), Push (it makes a STR save or is pushed up to 15 feet away from you) or Topple (it makes a DEX save or falls prone).", saveDc:{save:"", ability:"wis"}}],
     6:[{name:"Wholeness of Body", text:"As a bonus action, roll your Martial Arts die and regain hit points equal to the roll + your WIS modifier (at least 1). You can do this a number of times equal to your WIS modifier (at least once), and get them all back on a long rest."}],
-    11:[{name:"Fleet Step", text:"When you take a bonus action other than Step of the Wind, you can also use Step of the Wind right after it."}],
+    11:[{name:"Fleet Step", remind:{when:"bonus", line:"After any other bonus action, use Step of the Wind too"}, text:"When you take a bonus action other than Step of the Wind, you can also use Step of the Wind right after it."}],
     17:[{name:"Quivering Palm", text:"When you hit a creature with an unarmed strike, you can spend 4 Focus to start harmless vibrations in its body that last a number of days equal to your monk level. To end them, take an action, or give up one of your attacks when you take the Attack action, while you're both on the same plane: it makes a CON save, taking 10d12 force damage on a failure or half as much on a success. Only one creature at a time, and you can end them harmlessly with no action.", saveDc:{save:"con", ability:"wis"}}]
   }},
   {name:"Warrior of Shadow", edition:"2024", blurb:"A ninja who hides in darkness and steps from shadow to shadow.", features:{

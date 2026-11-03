@@ -267,7 +267,13 @@ export function classFeatureList(cl, uptoLevel){
     // (The Spells tab's tag on an older subclass's spell: "2 Focus".)
     if(isSub && focus){ if(item.spellLabel) item.spellLabel = focusWording(item.spellLabel); if(item.spellTip) item.spellTip = focusWording(item.spellTip); }
     var at = f.replaces ? list.findIndex(function(x){ return x.name===f.replaces; }) : -1;
-    if(at!==-1){ item.id = list[at].id; item.upgraded = true; list[at] = item; }
+    // (An upgrade with the same reminder keeps the level that reminder came
+    // at, `remindLevel`: Martial Arts' bonus strike at 1, not 17.)
+    if(at!==-1){
+      var was = list[at];
+      if(item.remind && was.remind && was.remind.line===item.remind.line) item.remindLevel = was.remindLevel || was.level;
+      item.id = was.id; item.upgraded = true; list[at] = item;
+    }
     else list.push(item);
   }
   return list;

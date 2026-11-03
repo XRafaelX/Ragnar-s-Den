@@ -17,6 +17,11 @@ function allFeatures(){
   for(const [cls, p] of Object.entries(CLASS_PROGRESSION)){
     for(const [lv, list] of Object.entries(p.features || {})) for(const f of list) out.push({ where: cls + " " + lv, f });
     for(const v of p.variants || []) for(const [lv, list] of Object.entries(v.features || {})) for(const f of list) out.push({ where: cls + " " + v.name + " " + lv, f });
+    // Another rules edition's features (the 2024 Monk).
+    for(const [ed, e] of Object.entries(p.editions || {})){
+      for(const f of e.level1 || []) out.push({ where: cls + " " + ed + " 1", f });
+      for(const [lv, list] of Object.entries(e.features || {})) for(const f of list) out.push({ where: cls + " " + ed + " " + lv, f });
+    }
   }
   for(const [cls, subs] of Object.entries(SUBCLASSES)) for(const s of subs) for(const [lv, list] of Object.entries(s.features || {})) for(const f of list) out.push({ where: s.name + " " + lv, f });
   return out;
@@ -68,4 +73,34 @@ test("a multiclass lists each class's reminders once", () => {
   c.classes = [{ name: "Rogue", subclass: "Mastermind", level: 13 }, { name: "Fighter", subclass: "Champion", level: 2 }];
   const names = H.characterReminders(ensureShape(c)).map((x) => x.name);
   assert.deepEqual(names, ["Cunning Action", "Master of Tactics", "Uncanny Dodge", "Misdirection"], "by level");
+});
+
+function monk(sub, lv, edition){
+  const c = newCharacter("M");
+  c.classes = [Object.assign({ name: "Monk", subclass: sub, level: lv }, edition ? { edition } : {})];
+  return ensureShape(c);
+}
+test("a 2014 monk's reminders (2026-11-03)", () => {
+  const r = H.characterReminders(monk("Way of Shadow", 17));
+  const by = (when) => r.filter((x) => x.when === when).map((x) => x.name);
+  assert.deepEqual(by("bonus"), ["Martial Arts"]);
+  assert.deepEqual(by("reaction"), ["Deflect Missiles", "Slow Fall", "Opportunist"]);
+  assert.deepEqual(by("always"), ["Unarmored Movement", "Tongue of the Sun and Moon", "Timeless Body"], "by the level each reminder came at");
+  assert.match(r.find((x) => x.name === "Unarmored Movement").source, /Lv 9$/, "walls from 9");
+  assert.match(r.find((x) => x.name === "Martial Arts").source, /Lv 1$/);
+  assert.deepEqual(H.characterReminders(monk("", 8)).map((x) => x.name), ["Martial Arts", "Deflect Missiles", "Slow Fall"], "walls from 9");
+  const t = monk("", 3);
+  t.tashaOptional = true;
+  H.syncTashaAdditions(t);
+  assert.ok(H.characterReminders(t).some((x) => x.name === "Ki-Fueled Attack"), "Tasha's Ki-Fueled Attack");
+});
+test("a 2024 monk's reminders: none of the 2014 ones", () => {
+  const r = H.characterReminders(monk("Warrior of the Open Hand", 18, "2024"));
+  const by = (when) => r.filter((x) => x.when === when).map((x) => x.name);
+  assert.deepEqual(by("bonus"), ["Martial Arts", "Monk's Focus", "Fleet Step"]);
+  assert.deepEqual(by("reaction"), ["Deflect Attacks", "Slow Fall"]);
+  assert.deepEqual(by("always"), ["Self-Restoration"]);
+  assert.match(r.find((x) => x.name === "Martial Arts").line, /no armor and no shield/);
+  assert.match(r.find((x) => x.name === "Fleet Step").source, /^Warrior of the Open Hand · Lv 11/);
+  assert.deepEqual(H.characterReminders(monk("", 1, "2024")).map((x) => x.name), ["Martial Arts"], "the bonus strike from level 1");
 });
