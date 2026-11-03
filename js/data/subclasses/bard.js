@@ -13,10 +13,10 @@ export var BARD_SUBCLASSES = [
   {name:"College of Valor", blurb:"A battle-bard who inspires heroics on the front line.", features:{
     3:[
       {name:"Bonus Proficiencies", text:"Proficiency with medium armor, shields and martial weapons.", grants:{armor:["Medium armor","Shields"], weapons:["Martial weapons"]}},
-      {name:"Combat Inspiration", text:"A creature with one of your Bardic Inspiration dice can roll it and add the number to a weapon damage roll it just made. Or, when an attack roll is made against it, it can use its reaction to roll the die and add the number to its AC against that attack, after seeing the roll but before knowing whether it hits."}
+      {name:"Combat Inspiration", remind:{when:"always", line:"A creature you inspire can add the die to weapon damage, or to its AC as a reaction"}, text:"A creature with one of your Bardic Inspiration dice can roll it and add the number to a weapon damage roll it just made. Or, when an attack roll is made against it, it can use its reaction to roll the die and add the number to its AC against that attack, after seeing the roll but before knowing whether it hits."}
     ],
     6:[{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}],
-    14:[{name:"Battle Magic", text:"When you use your action to cast a bard spell, you can make one weapon attack as a bonus action."}]
+    14:[{name:"Battle Magic", remind:{when:"bonus", line:"After you cast a bard spell with your action, one weapon attack"}, text:"When you use your action to cast a bard spell, you can make one weapon attack as a bonus action."}]
   }},
   {name:"College of Eloquence", blurb:"A master orator whose words never miss and always inspire.", features:{
     3:[
@@ -24,7 +24,7 @@ export var BARD_SUBCLASSES = [
       {name:"Unsettling Words", text:"As a bonus action, expend one Bardic Inspiration die and choose a creature you can see within 60 feet. Roll the die. The creature subtracts the result from the next saving throw it makes before the start of your next turn."}
     ],
     6:[
-      {name:"Unfailing Inspiration", text:"When a creature adds your Bardic Inspiration die to a roll and fails, it keeps the die. It isn't expended."},
+      {name:"Unfailing Inspiration", remind:{when:"always", line:"A creature who adds your die and still fails keeps the die"}, text:"When a creature adds your Bardic Inspiration die to a roll and fails, it keeps the die. It isn't expended."},
       {name:"Universal Speech", text:"As an action, choose up to a number of creatures equal to your CHA modifier (minimum 1) within 60 feet. For 1 hour they magically understand you, regardless of language. Once per long rest, or expend a spell slot of any level to use it again."}
     ],
     14:[

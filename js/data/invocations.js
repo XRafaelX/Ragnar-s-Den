@@ -24,6 +24,8 @@
                 invocations and Pact of the Talisman): offered only to a
                 character using them (c.tashaOptional)
      sight      a sense shown with the character's senses ("Devil's Sight 120 ft")
+     remind     {when, line} for the Vitals tab's Remember card, like a
+                class feature's (js/core/reminders.js)
    Anything else an invocation does stays as its text on the card. */
 export var INVOCATIONS = [
   /* ---- Player's Handbook ---- */
@@ -51,7 +53,7 @@ export var INVOCATIONS = [
     text:"You can cast detect magic at will, without expending a spell slot."},
   {name:"Eldritch Spear", source:"PHB", needs:"eldritchBlast", blast:{range:300},
     text:"When you cast eldritch blast, its range is 300 feet."},
-  {name:"Eyes of the Rune Keeper", source:"PHB",
+  {name:"Eyes of the Rune Keeper", remind:{when:"always", line:"You can read all writing"}, source:"PHB",
     text:"You can read all writing."},
   {name:"Fiendish Vigor", source:"PHB", spells:[{name:"False Life", kind:"atwill"}],
     text:"You can cast false life on yourself at will as a 1st-level spell, without expending a spell slot or material components."},
@@ -93,7 +95,7 @@ export var INVOCATIONS = [
     text:"You can see the true form of any shapechanger or creature concealed by illusion or transmutation magic while the creature is within 30 feet of you and within line of sight."},
 
   /* ---- Xanathar's Guide to Everything ---- */
-  {name:"Aspect of the Moon", source:"XGE", pact:"Pact of the Tome",
+  {name:"Aspect of the Moon", remind:{when:"always", line:"You need no sleep, and nothing can make you sleep"}, source:"XGE", pact:"Pact of the Tome",
     text:"You no longer need to sleep and can't be forced to sleep by any means. To gain the benefits of a long rest, you can spend all 8 hours doing light activity, such as reading your Book of Shadows and keeping watch."},
   {name:"Cloak of Flies", source:"XGE", level:5, uses:{max:"1", reset:"short"},
     text:"As a bonus action, you surround yourself with a magical aura of buzzing flies that extends 5 feet from you (not through total cover), until you're incapacitated or dismiss it as a bonus action. It gives you advantage on Charisma (Intimidation) checks but disadvantage on all other Charisma checks. Any other creature that starts its turn in the aura takes poison damage equal to your Charisma modifier (minimum 0). Once per short or long rest."},
@@ -103,7 +105,7 @@ export var INVOCATIONS = [
     text:"As an action, you can see through solid objects to a range of 30 feet, and within that range you have darkvision if you don't already. This lasts for 1 minute or until your concentration ends (as if concentrating on a spell). Objects look like ghostly, transparent images. Once per short or long rest."},
   {name:"Gift of the Depths", source:"XGE", level:5, speeds:[{type:"swim", value:"walk"}], spells:[{name:"Water Breathing", kind:"free"}],
     text:"You can breathe underwater, and you gain a swimming speed equal to your walking speed. You can also cast water breathing once without expending a spell slot, regaining the ability when you finish a long rest."},
-  {name:"Gift of the Ever-Living Ones", source:"XGE", pact:"Pact of the Chain",
+  {name:"Gift of the Ever-Living Ones", remind:{when:"always", line:"With your familiar within 100 feet, healing dice you roll for yourself count as max"}, source:"XGE", pact:"Pact of the Chain",
     text:"Whenever you regain hit points while your familiar is within 100 feet of you, treat any dice rolled to determine the hit points you regain as having rolled their maximum value for you."},
   {name:"Grasp of Hadar", source:"XGE", needs:"eldritchBlast", blast:{rider:"pull 10 ft (once per turn)"},
     text:"Once on each of your turns when you hit a creature with your eldritch blast, you can move that creature in a straight line 10 feet closer to you."},
@@ -111,9 +113,9 @@ export var INVOCATIONS = [
     text:"You can use any weapon you summon with Pact of the Blade as a spellcasting focus for your warlock spells. The weapon gains a +1 bonus to its attack and damage rolls, unless it is a magic weapon that already has a bonus to those rolls. The weapon you conjure can also be a shortbow, longbow, light crossbow, or heavy crossbow."},
   {name:"Lance of Lethargy", source:"XGE", needs:"eldritchBlast", blast:{rider:"-10 ft speed (once per turn)"},
     text:"Once on each of your turns when you hit a creature with your eldritch blast, you can reduce that creature's speed by 10 feet until the end of your next turn."},
-  {name:"Maddening Hex", source:"XGE", level:5, needs:"hex",
+  {name:"Maddening Hex", remind:{when:"bonus", line:"Psychic damage to your cursed target and creatures you choose within 5 feet of it"}, source:"XGE", level:5, needs:"hex",
     text:"As a bonus action, you cause a psychic disturbance around the target cursed by your hex spell or by a warlock feature of yours, such as Hexblade's Curse or Sign of Ill Omen. The cursed target and each creature of your choice you can see within 5 feet of it take psychic damage equal to your Charisma modifier (minimum 1). You must be able to see the cursed target, and it must be within 30 feet of you."},
-  {name:"Relentless Hex", source:"XGE", level:7, needs:"hex",
+  {name:"Relentless Hex", remind:{when:"bonus", line:"Teleport up to 30 feet to a space within 5 feet of your cursed target"}, source:"XGE", level:7, needs:"hex",
     text:"As a bonus action, you can magically teleport up to 30 feet to an unoccupied space you can see within 5 feet of the target cursed by your hex spell or by a warlock feature of yours, such as Hexblade's Curse or Sign of Ill Omen. You must be able to see the cursed target."},
   {name:"Shroud of Shadow", source:"XGE", level:15, spells:[{name:"Invisibility", kind:"atwill"}],
     text:"You can cast invisibility at will, without expending a spell slot."},
@@ -135,7 +137,7 @@ export var INVOCATIONS = [
     text:"When you cast find familiar, the familiar gains a flying or swimming speed (your choice) of 40 feet. As a bonus action, you can command it to take the Attack action. Its weapon attacks count as magical for overcoming resistance and immunity, and any saving throw it forces uses your spell save DC. When it takes damage, you can use your reaction to give it resistance to that damage."},
   {name:"Protection of the Talisman", source:"TCE", optional:true, level:7, pact:"Pact of the Talisman", uses:{max:"pb", reset:"long", name:"Talisman save d4"},
     text:"When the wearer of your talisman fails a saving throw, they can add a d4 to the roll, potentially turning the save into a success. This can be used a number of times equal to your proficiency bonus, regained when you finish a long rest."},
-  {name:"Rebuke of the Talisman", source:"TCE", optional:true, pact:"Pact of the Talisman",
+  {name:"Rebuke of the Talisman", remind:{when:"reaction", line:"When your talisman's wearer is hit, deal psychic damage to the attacker and push it"}, source:"TCE", optional:true, pact:"Pact of the Talisman",
     text:"When the wearer of your talisman is hit by an attacker you can see within 30 feet of you, you can use your reaction to deal psychic damage to the attacker equal to your proficiency bonus and push it up to 10 feet away from the talisman's wearer."},
   {name:"Undying Servitude", source:"TCE", optional:true, level:5, spells:[{name:"Animate Dead", kind:"free"}],
     text:"You can cast animate dead without using a spell slot. Once you do so, you can't cast it in this way again until you finish a long rest."}

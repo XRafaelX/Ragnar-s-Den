@@ -71,6 +71,8 @@ import { PLANESCAPE_FEATS } from "./feats/planescape.js";
 // PRIVATE: Spikael's Reaper feat (see ./shadow-stalker.js). Remove before publishing.
 import { REAPER_FEAT } from "./shadow-stalker.js";
 
+/* `remind` ({when, line}): the feat's row on the Vitals tab's Remember
+   card, like a class feature's (js/core/reminders.js). */
 export var FEATS_CATALOG = [].concat(PHB_FEATS, TASHA_FEATS, XANATHAR_FEATS, OTHER_BOOK_FEATS, DRAGONLANCE_FEATS, GIANTS_FEATS, PLANESCAPE_FEATS, [REAPER_FEAT]);
 
 /* Campaign rules that hand out feats. The DM decides whether a campaign

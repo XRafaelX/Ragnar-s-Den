@@ -47,6 +47,7 @@ export var TASHA_FEATS = [
   },
   {
     name: "Crusher",
+    remind: {when: "always", line: "Once per turn, your bludgeoning damage can move the target 5 feet"},
     source: "TCE",
     ability:["str","con"],
     prerequisite: "None",
@@ -74,6 +75,7 @@ export var TASHA_FEATS = [
   },
   {
     name: "Gunner",
+    remind: {when: "always", line: "An enemy within 5 feet doesn't give your ranged attacks disadvantage"},
     source: "TCE",
     ability:["dex"], weaponProfs:["Firearms"],
     prerequisite: "None",
@@ -92,6 +94,7 @@ export var TASHA_FEATS = [
   },
   {
     name: "Piercer",
+    remind: {when: "always", line: "Once per turn, reroll one piercing damage die. A crit adds one more die"},
     source: "TCE",
     ability:["str","dex"],
     prerequisite: "None",
@@ -101,6 +104,7 @@ export var TASHA_FEATS = [
   },
   {
     name: "Poisoner",
+    remind: {when: "bonus", line: "Coat a weapon in poison"},
     source: "TCE",
     tools:["Poisoner's kit"],
     prerequisite: "None",
@@ -121,6 +125,7 @@ export var TASHA_FEATS = [
   },
   {
     name: "Slasher",
+    remind: {when: "always", line: "Once per turn, your slashing damage cuts the target's speed by 10 feet"},
     source: "TCE",
     ability:["str","dex"],
     prerequisite: "None",
@@ -130,6 +135,7 @@ export var TASHA_FEATS = [
   },
   {
     name: "Telekinetic",
+    remind: {when: "bonus", line: "Shove a creature within 30 feet 5 feet toward or away from you (a STR save)"},
     source: "TCE",
     ability:["int","wis","cha"],
     grantsSpells:["Mage Hand"],

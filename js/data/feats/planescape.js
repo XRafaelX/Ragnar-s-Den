@@ -43,6 +43,7 @@ export var PLANESCAPE_FEATS = [
   },
   {
     name: "Cohort of Chaos",
+    remind: {when: "always", line: "On a 1 or 20 for an attack or save, roll a d4 for a Chaotic Flare"},
     source: "PAitM",
     ability:["str","dex","con","int","wis","cha"],
     requires:{level:4, feat:"Scion of the Outer Planes", option:"Chaotic Outer Plane"},

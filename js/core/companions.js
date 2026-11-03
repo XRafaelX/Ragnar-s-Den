@@ -1,6 +1,7 @@
 import { COMPANIONS } from "../data/companions.js";
 import { mod, profBonus, classSpellAbility, clamp, totalLevel, featureSpells, usesVariant } from "./helpers.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
+import { knownInvocations } from "./invocations.js";
 
 /* ---------------- Companions ----------------
    The companions the character has now (see js/data/companions.js), with
@@ -23,11 +24,19 @@ export function characterCompanions(c){
     var castMod = mods[(cl && classSpellAbility(cl)) || "int"] || 0;
     var saved = companionState(c, def.id);
     var stats = def.stats({lv: cl ? Number(cl.level)||1 : totalLevel(c), pb: pb, mods: mods, spellAttack: pb + castMod, spellDC: 8 + pb + castMod,
-      choice: saved.choice || "", beast: saved.beast || null, chain: !!(req && req.chain), wild: (req && req.wild) || 0, wildOnly: !!(req && req.wildOnly)});
+      choice: saved.choice || "", beast: saved.beast || null, chain: !!(req && req.chain), wild: (req && req.wild) || 0, wildOnly: !!(req && req.wildOnly),
+      invocations: req && req.chain ? warlockInvocationNames(c) : []});
     out.push({def: def, stats: stats, choice: saved.choice || "", hasBeast: !!saved.beast, hp: stats ? companionHp(c, def.id, stats) : [],
       source: req ? req.source : "", options: companionOptions(def, req),
       name: saved.name || "", title: saved.title || "", image: saved.image || ""});
   });
+  return out;
+}
+/* The invocations a warlock knows, by name (Voice and Investment of the
+   Chain Master change the familiar). */
+function warlockInvocationNames(c){
+  var out = [];
+  (c.classes||[]).forEach(function(cl){ if(cl.name==="Warlock") knownInvocations(cl).forEach(function(e){ out.push(e.name); }); });
   return out;
 }
 /* A companion that comes from a spell or a Pact Boon (a familiar):

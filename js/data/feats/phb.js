@@ -4,6 +4,7 @@
 export var PHB_FEATS = [
   {
     name: "Alert",
+    remind: {when: "always", line: "You can't be surprised, and being unseen gives no one advantage against you"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",
@@ -12,6 +13,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Athlete",
+    remind: {when: "always", line: "Standing up from prone costs only 5 feet, and climbing costs no extra"},
     source: "PHB",
     ability:["str","dex"],
     prerequisite: "None",
@@ -30,6 +32,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Charger",
+    remind: {when: "bonus", line: "After you Dash, a melee weapon attack or a shove"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",
@@ -38,6 +41,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Crossbow Expert",
+    remind: {when: "always", line: "An enemy within 5 feet doesn't give your ranged attacks disadvantage"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",
@@ -46,6 +50,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Defensive Duelist",
+    remind: {when: "reaction", line: "When a melee attack hits you, add your proficiency bonus to AC (finesse weapon)"},
     source: "PHB",
     prerequisite: "Dexterity 13 or higher",
     category: "Defense",
@@ -89,6 +94,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Grappler",
+    remind: {when: "always", line: "Advantage on attack rolls against a creature you're grappling"},
     source: "PHB",
     prerequisite: "Strength 13 or higher",
     category: "Combat",
@@ -97,6 +103,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Great Weapon Master",
+    remind: {when: "bonus", line: "After a melee critical hit or a kill, one more melee weapon attack"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",
@@ -165,6 +172,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Mage Slayer",
+    remind: {when: "reaction", line: "When a creature within 5 feet casts a spell, make a melee weapon attack against it"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",
@@ -206,6 +214,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Mobile",
+    remind: {when: "always", line: "A creature you attack in melee can't make opportunity attacks against you this turn"},
     source: "PHB",
     prerequisite: "None",
     category: "Movement",
@@ -223,6 +232,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Mounted Combatant",
+    remind: {when: "always", line: "While mounted, advantage in melee against unmounted creatures smaller than your mount"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",
@@ -240,6 +250,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Polearm Master",
+    remind: {when: "reaction", line: "With a polearm, a creature entering your reach provokes an opportunity attack"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",
@@ -271,6 +282,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Savage Attacker",
+    remind: {when: "always", line: "Once per turn, reroll a melee weapon's damage dice and use either total"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",
@@ -279,6 +291,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Sentinel",
+    remind: {when: "reaction", line: "Strike a creature within 5 feet that attacks an ally. Your opportunity attacks stop it"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",
@@ -287,6 +300,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Sharpshooter",
+    remind: {when: "always", line: "Long range gives no disadvantage, and you ignore half and three-quarters cover"},
     source: "PHB",
     prerequisite: "None",
     category: "Combat",
@@ -295,6 +309,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Shield Master",
+    remind: {when: "bonus", line: "After the Attack action, shove a creature within 5 feet with your shield"},
     source: "PHB",
     prerequisite: "None",
     category: "Defense",
@@ -312,6 +327,7 @@ export var PHB_FEATS = [
   },
   {
     name: "Skulker",
+    remind: {when: "always", line: "You can hide when only lightly obscured, and a missed shot doesn't reveal you"},
     source: "PHB",
     prerequisite: "Dexterity 13 or higher",
     category: "Utility",
@@ -355,6 +371,7 @@ export var PHB_FEATS = [
   },
   {
     name: "War Caster",
+    remind: {when: "reaction", line: "Cast a spell at a creature that provokes an opportunity attack, instead of attacking"},
     source: "PHB",
     prerequisite: "The ability to cast at least one spell",
     advantage: {on: "save", abilities: ["con"], when: "to keep concentrating on a spell when you take damage"},

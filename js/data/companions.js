@@ -344,6 +344,10 @@ export var COMPANIONS = [
         {name:"Shared senses", text:"Within 100 feet you can talk with it telepathically, and as an action see through its eyes and hear what it hears until the start of your next turn. It can deliver your touch spells with its reaction."},
         {name:"Dismiss", text:"As an action you can send it to a pocket dimension and later recall it within 30 feet. At 0 hit points it vanishes until you cast Find Familiar again."}];
       if(x.chain) rules.push({name:"Pact of the Chain", text:"When you take the Attack action, you can forgo one of your attacks so that it attacks once with its reaction."});
+      // The chain pact's invocations (PHB, Tasha's; checked on 5etools' data 2026-11-03).
+      var invs = x.invocations || [];
+      if(invs.indexOf("Voice of the Chain Master")!==-1) rules.push({name:"Voice of the Chain Master", text:"On the same plane, you can talk with it telepathically and perceive through its senses, and while you do, speak through it in your own voice."});
+      if(invs.indexOf("Investment of the Chain Master")!==-1) rules.push({name:"Investment of the Chain Master", text:"When you cast Find Familiar, it gets a flying or swimming speed of 40 feet (your choice). As a bonus action, you can command it to take the Attack action. Its weapon attacks count as magical, and its saves use your spell save DC. When it takes damage, your reaction can give it resistance to that damage."});
       if(x.wild) rules.push({name:"Wild Companion", text:"Summoned with a use of Wild Shape, it's a fey and disappears after " + x.wild + (x.wild===1 ? " hour" : " hours") + ". Summon it from Wild Shape on the Vitals tab."});
       return {
         type: b.size + " " + (b.type!=="beast" ? b.type : x.wildOnly ? "fey" : "celestial, fey or fiend") + ": " + x.choice.toLowerCase(),

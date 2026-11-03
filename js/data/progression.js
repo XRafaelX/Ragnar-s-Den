@@ -73,7 +73,7 @@ export var CLASS_PROGRESSION = {
       7: [{name:"Flash of Genius", text:"When you or a creature you can see within 30 feet makes an ability check or saving throw, you can use your reaction to add your INT modifier to the roll. Uses equal to your INT modifier (minimum 1) per long rest."}],
       10: [{name:"Magic Item Adept", attuneLimit:4, text:"You can attune to up to four magic items at once, and crafting a common or uncommon magic item takes you a quarter of the normal time and half the gold."}],
       11: [{name:"Spell-Storing Item", text:"When you finish a long rest, touch a simple or martial weapon or a spellcasting focus and store a 1st- or 2nd-level artificer spell with a casting time of 1 action in it. A creature holding it can use an action to produce the spell, using your spellcasting ability modifier. It holds twice your INT modifier (minimum 2) uses, until they're spent or you store another spell."}],
-      14: [{name:"Magic Item Savant", attuneLimit:5, text:"You can attune to up to five magic items at once, and you ignore all class, race, spell and level requirements on attuning to or using a magic item."}],
+      14: [{name:"Magic Item Savant", remind:{when:"always", line:"You ignore class, race, spell and level requirements on magic items"}, attuneLimit:5, text:"You can attune to up to five magic items at once, and you ignore all class, race, spell and level requirements on attuning to or using a magic item."}],
       18: [{name:"Magic Item Master", attuneLimit:6, text:"You can attune to up to six magic items at once."}],
       20: [{name:"Soul of Artifice", text:"You gain a +1 bonus to all saving throws per magic item you are attuned to. When you are reduced to 0 hit points but not killed outright, you can use your reaction to end one of your artifice infusions and drop to 1 hit point instead."}]
     }
@@ -92,7 +92,7 @@ export var CLASS_PROGRESSION = {
         }},
       {name:"Instinctive Pounce", adds:true, level:7, blurb:"Move up to half your speed as part of the bonus action you take to enter your rage.",
         features:{
-          7: [{name:"Instinctive Pounce", text:"As part of the bonus action you take to enter your rage, you can move up to half your speed."}]
+          7: [{name:"Instinctive Pounce", remind:{when:"bonus", line:"Move up to half your speed as part of entering your rage"}, text:"As part of the bonus action you take to enter your rage, you can move up to half your speed."}]
         }}
     ],
     multiclassProfs: {armor:["Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:""},
@@ -124,7 +124,7 @@ export var CLASS_PROGRESSION = {
     variants: [
       {name:"Magical Inspiration", adds:true, level:2, blurb:"Your Bardic Inspiration die can boost a spell's healing or damage.",
         features:{
-          2: [{name:"Magical Inspiration", text:"If a creature has a Bardic Inspiration die from you and casts a spell that restores hit points or deals damage, it can roll that die and choose one target affected by the spell. Add the number rolled to the hit points that target regains or the damage it takes. The Bardic Inspiration die is then lost."}]
+          2: [{name:"Magical Inspiration", remind:{when:"always", line:"A creature you inspire can add the die to a spell's healing or damage"}, text:"If a creature has a Bardic Inspiration die from you and casts a spell that restores hit points or deals damage, it can roll that die and choose one target affected by the spell. Add the number rolled to the hit points that target regains or the damage it takes. The Bardic Inspiration die is then lost."}]
         }}
     ],
     multiclassProfs: {armor:["Light armor"], weapons:[], tools:[], note:"",
@@ -320,8 +320,8 @@ export var CLASS_PROGRESSION = {
       ],
       3: [{name:"Divine Health", text:"You are immune to disease.", immune:["disease"]}],
       5: [{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}],
-      6: [{name:"Aura of Protection", text:"While you're conscious, whenever you or a friendly creature within 10 feet of you makes a saving throw, it gains a bonus equal to your CHA modifier (minimum +1). It's already added to your own saves. The range becomes 30 feet at level 18.", saveBonus:"cha", chip:function(x){ return "+" + Math.max(1, x.mods.cha) + " within " + (x.lv >= 18 ? 30 : 10) + " ft"; }}],
-      10: [{name:"Aura of Courage", text:"While you're conscious, you and friendly creatures within 10 feet of you can't be frightened. The range becomes 30 feet at level 18.", conditionImmune:["frightened"], chip:function(x){ return "Within " + (x.lv >= 18 ? 30 : 10) + " ft"; }}],
+      6: [{name:"Aura of Protection", remind:{when:"always", line:"Friends in your aura add your CHA modifier to their saves, while you're conscious"}, text:"While you're conscious, whenever you or a friendly creature within 10 feet of you makes a saving throw, it gains a bonus equal to your CHA modifier (minimum +1). It's already added to your own saves. The range becomes 30 feet at level 18.", saveBonus:"cha", chip:function(x){ return "+" + Math.max(1, x.mods.cha) + " within " + (x.lv >= 18 ? 30 : 10) + " ft"; }}],
+      10: [{name:"Aura of Courage", remind:{when:"always", line:"Friends in your aura can't be frightened, while you're conscious"}, text:"While you're conscious, you and friendly creatures within 10 feet of you can't be frightened. The range becomes 30 feet at level 18.", conditionImmune:["frightened"], chip:function(x){ return "Within " + (x.lv >= 18 ? 30 : 10) + " ft"; }}],
       11: [{name:"Improved Divine Smite", text:"Whenever you hit a creature with a melee weapon, it takes an extra 1d8 radiant damage. This stacks with Divine Smite."}],
       14: [{name:"Cleansing Touch", text:"As an action, end one spell on yourself or on a willing creature you touch. Uses equal to your CHA modifier (minimum 1) per long rest."}]
     }
@@ -378,7 +378,7 @@ export var CLASS_PROGRESSION = {
       ],
       14: [
         {name:"Favored Enemy", advantage:{on:"skill", skills:["Survival","Arcana","History","Nature","Religion"], when:"to track your favored enemies or recall information about them"}, replaces:"Favored Enemy", text:"Your favored enemies (each a type of creature, or two humanoid races): you have advantage on WIS (Survival) checks to track them and INT checks to recall information about them, and you learn a language each speaks, if they speak one. You choose your third now.", profs:favoredEnemyProfs("Choose a third favored enemy")},
-        {name:"Vanish", text:"You can take the Hide action as a bonus action, and you can't be tracked by nonmagical means unless you choose to leave a trail."}
+        {name:"Vanish", remind:{when:"bonus", line:"Take the Hide action, and you can't be tracked except by magic"}, text:"You can take the Hide action as a bonus action, and you can't be tracked by nonmagical means unless you choose to leave a trail."}
       ],
       18: [{name:"Feral Senses", sense:"Feral Senses 30 ft", text:"Attacking a creature you can't see doesn't give you disadvantage, and you know where any invisible creature within 30 feet of you is, as long as it isn't hidden from you and you aren't blinded or deafened."}],
       20: [{name:"Foe Slayer", chip:function(x){ return "+" + x.mods.wis + " attack or damage"; }, text:"Once on each of your turns, you can add your WIS modifier to the attack roll or the damage roll of an attack against one of your favored enemies, choosing before or after the roll but before its effects."}]

@@ -870,6 +870,30 @@ export var TRAIT_ADVANTAGES = {
   "Telepathic Insight": {on:"save", abilities:["wis","cha"]}
 };
 
+/* What the Vitals tab's Remember card says about a race trait, like a
+   class feature's `remind` (js/core/reminders.js): {when ("bonus",
+   "reaction", "always"), line}. Only traits the sheet doesn't already
+   apply or show (advantage, resistances, resource rows, Active effects).
+   Texts checked on 5etools' data in the race review, 2026-10-22. */
+export var RACE_TRAIT_REMINDS = {
+  "Lucky": {when:"always", line:"When you roll a 1 on the d20 for an attack, check or save, reroll it"},
+  "Halfling Nimbleness": {when:"always", line:"You can move through the space of any creature larger than you"},
+  "Mask of the Wild": {when:"always", line:"You can hide when only lightly obscured by foliage, rain, snow or mist"},
+  "Savage Attacks": {when:"always", line:"On a melee critical hit, roll one of the weapon's damage dice once more"},
+  "Long-Limbed": {when:"always", line:"Your melee attacks on your turn have 5 feet more reach"},
+  "Surprise Attack": {when:"always", line:"Hit a surprised creature on your first turn for 2d6 extra damage, once per combat"},
+  "Charge": {when:"bonus", line:"After moving 30 feet straight and a melee hit, a hooves attack against the target"},
+  "Nimble Escape": {when:"bonus", line:"Disengage or Hide"},
+  "Lucky Footwork": {when:"reaction", line:"When you fail a DEX save, add a d4 to it"},
+  "Goring Rush": {when:"bonus", line:"After you Dash and move 20 feet, a melee attack with your horns"},
+  "Hammering Horns": {when:"bonus", line:"After a melee hit in the Attack action, shove the creature 10 feet (a STR save)"},
+  "Aggressive": {when:"bonus", line:"Move up to your speed toward an enemy you can see or hear"},
+  "Dexterous Feet": {when:"bonus", line:"Use your feet to handle an object, a door or a container"},
+  "Glide": {when:"reaction", line:"When you fall 10 feet or more, glide sideways and take no damage"},
+  "Khenra Twins": {when:"always", line:"With your twin alive and in sight, reroll a 1 on an attack, check or save"},
+  "Speed Burst": {when:"bonus", line:"With both hands free, 5 feet more walking speed this turn"}
+};
+
 /* Save DCs a trait sets, worked out on its Features card: {ability
    ("pick" for the ability chosen on the trait), label, when (only once
    this option is picked)}, or a list of them. */

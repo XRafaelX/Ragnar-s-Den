@@ -7,6 +7,7 @@ import { HALFLINGS, DWARVES, GNOMES, ELVES, HALF_ELVES, HALF_ORCS, HUMANS, TIEFL
 export var XANATHAR_FEATS = [
   {
     name: "Bountiful Luck",
+    remind: {when: "reaction", line: "When an ally within 30 feet rolls a 1 on the d20, let it reroll"},
     source: "XGE",
     requires:{races:HALFLINGS, raceLabel:"a halfling"},
     prerequisite: "Halfling",
@@ -47,6 +48,7 @@ export var XANATHAR_FEATS = [
   },
   {
     name: "Dwarven Fortitude",
+    remind: {when: "always", line: "When you take the Dodge action, spend a Hit Die to heal"},
     source: "XGE",
     ability:["con"],
     requires:{races:DWARVES, raceLabel:"a dwarf"},
@@ -57,6 +59,7 @@ export var XANATHAR_FEATS = [
   },
   {
     name: "Elven Accuracy",
+    remind: {when: "always", line: "With advantage on a DEX, INT, WIS or CHA attack, reroll one of the dice"},
     source: "XGE",
     ability:["dex","int","wis","cha"],
     requires:{races:ELVES.concat(HALF_ELVES), raceLabel:"an elf or half-elf"},

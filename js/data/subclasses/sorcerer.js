@@ -64,13 +64,13 @@ export var SORCERER_SUBCLASSES = [
   {name:"Storm Sorcery", blurb:"Innate magic of elemental air that lets you ride the winds and call down lightning and thunder.", features:{
     1:[
       {name:"Wind Speaker", text:"You can speak, read and write Primordial, which lets you understand and be understood by speakers of its dialects: Aquan, Auran, Ignan and Terran.", profs:{languages:["Primordial"]}},
-      {name:"Tempestuous Magic", text:"Immediately before or after you cast a spell of 1st level or higher, you can use a bonus action to fly up to 10 feet without provoking opportunity attacks."}
+      {name:"Tempestuous Magic", remind:{when:"bonus", line:"Right before or after you cast a spell with a slot, fly 10 feet without provoking"}, text:"Immediately before or after you cast a spell of 1st level or higher, you can use a bonus action to fly up to 10 feet without provoking opportunity attacks."}
     ],
     6:[
       {name:"Heart of the Storm", resist:["lightning", "thunder"], text:"You have resistance to lightning and thunder damage. Whenever you start casting a spell of 1st level or higher that deals lightning or thunder damage, creatures of your choice that you can see within 10 feet of you take lightning or thunder damage (your choice) equal to half your sorcerer level."},
       {name:"Storm Guide", text:"If it's raining, you can use an action to stop rain falling in a 20-foot-radius sphere centered on you (end it as a bonus action). If it's windy, you can use a bonus action each round to choose the wind's direction in a 100-foot-radius sphere centered on you, until the end of your next turn. Neither changes the wind's speed."}
     ],
-    14:[{name:"Storm's Fury", saveDc:{save:"str", ability:"cha"}, chip:function(x){ return x.lv + " lightning"; }, text:"When a creature hits you with a melee attack, you can use your reaction to deal lightning damage to it equal to your sorcerer level. It must also make a STR save against your spell save DC or be pushed up to 20 feet straight away from you."}],
+    14:[{name:"Storm's Fury", remind:{when:"reaction", line:"When a melee attack hits you, deal lightning damage to the attacker and push it"}, saveDc:{save:"str", ability:"cha"}, chip:function(x){ return x.lv + " lightning"; }, text:"When a creature hits you with a melee attack, you can use your reaction to deal lightning damage to it equal to your sorcerer level. It must also make a STR save against your spell save DC or be pushed up to 20 feet straight away from you."}],
     18:[{name:"Wind Soul", immune:["lightning", "thunder"], text:"You are immune to lightning and thunder damage, and you gain a magical flying speed of 60 feet. As an action, you can reduce your flying speed to 30 feet for 1 hour and choose up to 3 + your CHA modifier creatures within 30 feet. They gain a magical flying speed of 30 feet for 1 hour. Once you share your flight this way, you can't do so again until you finish a short or long rest.", speeds:[{type:"fly", value:60}]}]
   }},
   {name:"Lunar Sorcery", blurb:"Draws power from the moons, shifting between full, new and crescent phases.", features:{

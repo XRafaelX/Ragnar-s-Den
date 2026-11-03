@@ -23,10 +23,10 @@ export var FIGHTER_SUBCLASSES = [
       {name:"Spellcasting", text:"You cast wizard spells with Intelligence, using a third of your fighter level for spell slots. You learn two wizard cantrips (a third at level 10) and three 1st-level wizard spells, two of which must be abjuration or evocation. You learn more as you level, and spells learned at levels 8, 14 and 20 can come from any school."},
       {name:"Weapon Bond", text:"In a 1-hour ritual (it can be during a short rest), bond with a weapon within your reach. You can't be disarmed of it unless you are incapacitated, and if it's on the same plane you can summon it to your hand as a bonus action. You can have up to two bonded weapons but summon only one at a time. Bonding a third breaks one of the other bonds."}
     ],
-    7:[{name:"War Magic", text:"When you use your action to cast a cantrip, you can make one weapon attack as a bonus action."}],
-    10:[{name:"Eldritch Strike", text:"When you hit a creature with a weapon attack, it has disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn."}],
+    7:[{name:"War Magic", remind:{when:"bonus", line:"After you cast a cantrip with your action, one weapon attack"}, text:"When you use your action to cast a cantrip, you can make one weapon attack as a bonus action."}],
+    10:[{name:"Eldritch Strike", remind:{when:"always", line:"A hit gives the target disadvantage on its next save against your spell"}, text:"When you hit a creature with a weapon attack, it has disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn."}],
     15:[{name:"Arcane Charge", text:"When you use Action Surge, you can teleport up to 30 feet to an unoccupied space you can see, before or after the extra action."}],
-    18:[{name:"War Magic", replaces:"War Magic", text:"When you use your action to cast a spell (Improved War Magic, any spell rather than only cantrips), you can make one weapon attack as a bonus action."}]
+    18:[{name:"War Magic", replaces:"War Magic", remind:{when:"bonus", line:"After you cast a spell with your action, one weapon attack"}, text:"When you use your action to cast a spell (Improved War Magic, any spell rather than only cantrips), you can make one weapon attack as a bonus action."}]
   }},
   {name:"Echo Knight", blurb:"Conjures a duplicate from a parallel timeline to fight alongside you.", features:{
     3:[
@@ -57,9 +57,9 @@ export var FIGHTER_SUBCLASSES = [
       {name:"Unwavering Mark", text:"When you hit a creature with a melee weapon attack, you mark it until the end of your next turn (ending early if you are incapacitated or die, or someone else marks it). While within 5 feet of you, a marked creature has disadvantage on attack rolls that don't target you. If it deals damage to anyone other than you, you can make a special melee weapon attack against it as a bonus action on your next turn, with advantage, dealing extra damage equal to half your fighter level on a hit. You can make that special attack a number of times equal to your STR or DEX modifier, whichever is higher (minimum 1), per long rest."}
     ],
     7:[{name:"Warding Maneuver", text:"When you or a creature you can see within 5 feet of you is hit by an attack while you wield a melee weapon or shield, you can use your reaction to roll a d8 and add it to the target's AC against that attack. If it still hits, the target has resistance to its damage. Uses equal to your CON modifier (minimum 1) per long rest."}],
-    10:[{name:"Hold the Line", text:"Creatures provoke an opportunity attack from you when they move 5 feet or more while within your reach, and a creature you hit with an opportunity attack has its speed reduced to 0 until the end of the current turn."}],
+    10:[{name:"Hold the Line", remind:{when:"always", line:"Moving within your reach provokes your opportunity attacks, and a hit stops the mover"}, text:"Creatures provoke an opportunity attack from you when they move 5 feet or more while within your reach, and a creature you hit with an opportunity attack has its speed reduced to 0 until the end of the current turn."}],
     15:[{name:"Ferocious Charger", text:"If you move at least 10 feet in a straight line right before attacking a creature and hit it, it makes a STR save (DC 8 + proficiency bonus + STR or DEX modifier, whichever is higher) or is knocked prone. Once on each of your turns."}],
-    18:[{name:"Vigilant Defender", text:"In combat you get a special reaction that you can take once on every creature's turn except yours. You can only use it to make an opportunity attack, and not on a turn where you use your normal reaction."}]
+    18:[{name:"Vigilant Defender", remind:{when:"reaction", line:"One extra opportunity attack on each other creature's turn"}, text:"In combat you get a special reaction that you can take once on every creature's turn except yours. You can only use it to make an opportunity attack, and not on a turn where you use your normal reaction."}]
   }},
   {name:"Samurai", blurb:"A disciplined warrior whose unyielding will powers devastating strikes.", features:{
     3:[
@@ -69,7 +69,7 @@ export var FIGHTER_SUBCLASSES = [
     ],
     7:[{name:"Elegant Courtier", text:"Add your WIS modifier to CHA (Persuasion) checks. You also gain proficiency in Wisdom saving throws, or in Intelligence or Charisma saves (your choice) if you already have Wisdom.", skillBonus:{skill:"Persuasion", ability:"wis"}, profs:{pick:[{kind:"save", options:["wis"], fallback:["int","cha"]}]}}],
     10:[{name:"Tireless Spirit", text:"When you roll initiative and have no uses of Fighting Spirit left, you regain one."}],
-    15:[{name:"Rapid Strike", text:"If you take the Attack action and have advantage on an attack roll against a target, you can forgo that advantage to make an additional weapon attack against the same target as part of the same action. Once per turn."}],
+    15:[{name:"Rapid Strike", remind:{when:"always", line:"Once per turn, give up advantage on an attack to make one more attack at that target"}, text:"If you take the Attack action and have advantage on an attack roll against a target, you can forgo that advantage to make an additional weapon attack against the same target as part of the same action. Once per turn."}],
     18:[{name:"Strength Before Death", text:"When damage reduces you to 0 hit points but doesn't kill you outright, you can use your reaction to delay falling unconscious and immediately take an extra turn, interrupting the current one. During it, taking damage still causes death saving throw failures and three failures still kill you. When the extra turn ends, you fall unconscious if you still have 0 hit points. Once per long rest."}]
   }},
   {name:"Arcane Archer", blurb:"Weaves elven magic into arrows for spectacular, magical trick shots.", features:{

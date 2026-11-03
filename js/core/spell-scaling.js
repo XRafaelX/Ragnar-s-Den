@@ -111,6 +111,8 @@ export function healingNote(c, name){
   if(totemSpirit(c)==="Unicorn") notes.push("Unicorn Spirit: with a spell slot, each creature you choose in the aura also regains " + classLevelOf(c, "Druid", "Circle of the Shepherd") + " hit points.");
   if(hasEnhancedBond(c)) notes.push("Enhanced Bond: add a d8 to one healing roll.");
   if(classLevelOf(c, "Sorcerer", "Divine Soul") >= 6) notes.push("Empowered Healing: 1 sorcery point rerolls any of the dice, once per turn.");
+  // Spell Breaker (Arcana Domain 6): with a slot, on an ally.
+  if(classLevelOf(c, "Cleric", "Arcana Domain") >= 6 && d.level >= 1) notes.push("Spell Breaker: you can also end one spell on an ally it heals, of the slot's level or lower.");
   return notes.join(" ");
 }
 /* What a druid's circle or a bard's college adds to other spells, for
@@ -135,6 +137,18 @@ export function circleSpellNote(c, name){
   if(storm && d.level >= 1 && /\b(lightning|thunder)\b[^.]*damage/i.test(d.summary)) notes.push("Heart of the Storm: creatures you choose within 10 feet take " + storm + " lightning or thunder damage as you start casting.");
   if(classLevelOf(c, "Sorcerer", "Wild Magic") >= 18 && /\b\d+d\d+\b/.test(d.summary) && /damage/i.test(d.summary)) notes.push("Spell Bombardment: once per turn, when a die rolls its highest number, roll one of them again and add it.");
   if(classLevelOf(c, "Sorcerer", "Aberrant Mind") >= 6 && d.level >= 1 && featureSpells(c).some(function(s){ return s.name===spell && s.feature==="Psionic Spells"; })) notes.push("Psionic Sorcery: you can cast it with " + d.level + (d.level===1 ? " sorcery point" : " sorcery points") + " instead of a slot, with no components.");
+  // Elemental Adept (one per damage type picked) and Flames of Phlegethos.
+  (c.feats||[]).forEach(function(f){
+    var type = f.name==="Elemental Adept" && f.picks && f.picks.option;
+    if(type && new RegExp("\\b" + type + "\\b[^.]*damage", "i").test(d.summary)) notes.push("Elemental Adept: it ignores resistance to " + type.toLowerCase() + " damage, and a 1 on its " + type.toLowerCase() + " damage dice counts as a 2.");
+    if(f.name==="Flames of Phlegethos" && /\bfire\b[^.]*damage/i.test(d.summary)) notes.push("Flames of Phlegethos: reroll any 1 on its fire damage dice, and you can wreathe yourself in flames.");
+  });
+  // Moon Fire (Lunar Sorcery 1), and Reaper and Improved Reaper (Death
+  // Domain 1 and 17): one target becomes two.
+  if(spell==="Sacred Flame" && classLevelOf(c, "Sorcerer", "Lunar Sorcery") >= 1) notes.push("Moon Fire: you can target two creatures within 5 feet of each other.");
+  var death = classLevelOf(c, "Cleric", "Death Domain");
+  if(d.school==="Necromancy" && (d.level===0 ? death >= 1 : death >= 17 && d.level <= 5))
+    notes.push((d.level ? "Improved Reaper" : "Reaper") + ": if it targets only one creature, it can target two within 5 feet of each other" + (d.level ? ", with components for each." : "."));
   // Wizard schools.
   var school = function(n){ return classLevelOf(c, "Wizard", n); };
   if(school("School of Evocation") >= 2 && d.school==="Evocation" && /\bsave\b/i.test(d.summary)) notes.push("Sculpt Spells: up to " + (1 + d.level) + (d.level ? " creatures" : " creature") + " you can see automatically succeed, and take no damage on a half-damage save.");

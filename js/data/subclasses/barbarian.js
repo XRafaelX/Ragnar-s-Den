@@ -6,7 +6,7 @@ export var BARBARIAN_SUBCLASSES = [
     3:[{name:"Frenzy", text:"When you rage, you can choose to frenzy. For the rest of that rage, on each of your turns after this one you can make a single melee weapon attack as a bonus action. When the rage ends, you suffer one level of exhaustion."}],
     6:[{name:"Mindless Rage", text:"You can't be charmed or frightened while raging. If you are charmed or frightened when you enter your rage, the effect is suspended for the rage's duration."}],
     10:[{name:"Intimidating Presence", text:"As an action, frighten one creature you can see within 30 feet that can see or hear you. It makes a WIS save (DC 8 + proficiency bonus + CHA modifier) or is frightened of you until the end of your next turn. On later turns you can use your action to extend this until the end of your next turn. The effect ends if the creature ends its turn out of your line of sight or more than 60 feet away. If it succeeds on its save, you can't use this on it again for 24 hours.", saveDc:{save:"wis", ability:"cha"}}],
-    14:[{name:"Retaliation", text:"When you take damage from a creature within 5 feet of you, you can use your reaction to make a melee weapon attack against it."}]
+    14:[{name:"Retaliation", remind:{when:"reaction", line:"When a creature within 5 feet damages you, make a melee weapon attack against it"}, text:"When you take damage from a creature within 5 feet of you, you can use your reaction to make a melee weapon attack against it."}]
   }},
   {name:"Path of the Totem Warrior", blurb:"Draws strength from a spirit animal guide.", features:{
     3:[
@@ -79,7 +79,7 @@ export var BARBARIAN_SUBCLASSES = [
       {name:"Elemental Cleaver", text:"When you enter your rage, infuse one weapon you're holding with acid, cold, fire, lightning or thunder until the rage ends. It deals that damage type instead of its normal type plus an extra 1d6 damage of that type, gains the thrown property (range 20/60) and flies back to your hand right after you throw it. As a bonus action on later turns of the rage, you can change the damage type."}
     ],
     10:[
-      {name:"Mighty Impel", text:"Bonus action while raging: choose one Medium or smaller creature within your reach and move it to an unoccupied space you can see within 30 feet of you. An unwilling creature makes a Strength save (DC 8 + proficiency bonus + STR modifier) to avoid it. A creature moved into the air falls and takes falling damage as normal.", saveDc:{save:"str", ability:"str"}}
+      {name:"Mighty Impel", remind:{when:"bonus", line:"While raging, move a creature in your reach up to 30 feet (a STR save if unwilling)"}, text:"Bonus action while raging: choose one Medium or smaller creature within your reach and move it to an unoccupied space you can see within 30 feet of you. An unwilling creature makes a Strength save (DC 8 + proficiency bonus + STR modifier) to avoid it. A creature moved into the air falls and takes falling damage as normal.", saveDc:{save:"str", ability:"str"}}
     ],
     14:[
       {name:"Demiurgic Colossus", text:"While raging, Giant Stature increases your reach by 10 feet instead of 5, and you can choose to become Large or Huge if there's room. Mighty Impel can now move Large or smaller creatures, and the extra damage from Elemental Cleaver increases to 2d6."}
@@ -96,12 +96,16 @@ export var BARBARIAN_SUBCLASSES = [
       {name:"Shielding Storm", text:"Each creature of your choice has the damage resistance you gained from Storm Soul while it is in your Storm Aura."}
     ],
     14:[
-      {name:"Raging Storm", text:"Your aura gains a stronger effect while raging. Desert: right after a creature in your aura hits you with an attack, use your reaction to force it to make a DEX save. On a failure it takes fire damage equal to half your barbarian level. Sea: when you hit a creature in your aura, use your reaction to force it to make a STR save. On a failure it is knocked prone. Tundra: whenever your aura's effect activates, choose one creature in it. It makes a STR save or its speed becomes 0 until the start of your next turn.", saveDc:{save:"", ability:"con"}}
+      // (Desert's reaction is a button on the Rage card.)
+      {name:"Raging Storm", remind:{pick:"stormEnvironment", by:{
+          Sea:{when:"reaction", line:"When you hit a creature in your aura, it makes a STR save or falls prone"},
+          Tundra:{when:"bonus", line:"When your aura activates, one creature in it makes a STR save or its speed becomes 0"}}},
+        text:"Your aura gains a stronger effect while raging. Desert: right after a creature in your aura hits you with an attack, use your reaction to force it to make a DEX save. On a failure it takes fire damage equal to half your barbarian level. Sea: when you hit a creature in your aura, use your reaction to force it to make a STR save. On a failure it is knocked prone. Tundra: whenever your aura's effect activates, choose one creature in it. It makes a STR save or its speed becomes 0 until the start of your next turn.", saveDc:{save:"", ability:"con"}}
     ]
   }},
   {name:"Path of the Battlerager", blurb:"A dwarven berserker who charges into battle clad in spiked armor.", features:{
     3:[
-      {name:"Battlerager Armor", text:"Traditionally for dwarves only (ask your DM). While wearing spiked armor and raging, you can use a bonus action to make one melee attack with your armor spikes against a creature within 5 feet: 1d4 + STR piercing damage on a hit. When you use the Attack action to grapple and succeed, the target also takes 3 piercing damage."}
+      {name:"Battlerager Armor", remind:{when:"bonus", line:"While raging in spiked armor, one melee attack with your armor spikes"}, text:"Traditionally for dwarves only (ask your DM). While wearing spiked armor and raging, you can use a bonus action to make one melee attack with your armor spikes against a creature within 5 feet: 1d4 + STR piercing damage on a hit. When you use the Attack action to grapple and succeed, the target also takes 3 piercing damage."}
     ],
     6:[
       {name:"Reckless Abandon", text:"When you use Reckless Attack while raging, you gain temporary hit points equal to your CON modifier (minimum 1). They vanish when your rage ends."}

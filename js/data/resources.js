@@ -665,7 +665,8 @@ export var SUBCLASS_RESOURCES = {
     "Light Domain": [
       {id:"warding_flare", name:"Warding Flare", level:1,
         max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
-        hint:"Reaction: impose disadvantage on an attack against you from a creature within 30 ft."}
+        // (Improved Flare, Light 6: for other creatures too.)
+        hint:function(lv){ return "Reaction: impose disadvantage on an attack " + (lv >= 6 ? "against you or another creature" : "against you") + " from a creature within 30 ft."; }}
     ],
     "War Domain": [
       {id:"war_priest", name:"War Priest", level:1,
