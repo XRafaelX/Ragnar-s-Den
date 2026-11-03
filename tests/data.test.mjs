@@ -142,8 +142,10 @@ test("subclasses: complete, unique, well formed", () => {
 
 function checkResource(r, where, ids){
   assert.ok(/^[a-z0-9_]+$/.test(r.id), where + ": bad id " + r.id);
-  assert.ok(!ids.has(r.id), where + ": duplicate id " + r.id);
-  ids.add(r.id);
+  // (One id per edition: the 2014 Ki Points and 2024 Focus Points share "ki".)
+  const idKey = r.id + (r.edition ? "@" + r.edition : "");
+  assert.ok(!ids.has(idKey) && !(r.edition && ids.has(r.id)), where + ": duplicate id " + r.id);
+  ids.add(idKey);
   // (A hint can be worked out from the level and modifiers: the ki save DC.)
   const hint = typeof r.hint === "function" ? r.hint(5, { pb: 3, wis: 3, cha: 3 }, {}) : r.hint;
   assert.ok(r.name && !LONG_DASH.test(r.name + hint), where + " " + r.id + ": name or long dash");

@@ -84,9 +84,14 @@ export var CLASS_RESOURCES = {
       hint:"Reroll a failed saving throw. You must use the new roll."}
   ],
   "Monk": [
-    {id:"ki", name:"Ki Points", level:2, pool:true,
+    {id:"ki", name:"Ki Points", level:2, pool:true, edition:"2014",
       max:function(lv){ return lv; }, reset:always("short"), initiativeRegain:20, initiativeAmount:4,
-      hint:function(lv, m){ return "Your ki save DC is " + (8 + m.pb + m.wis) + "."; }}
+      hint:function(lv, m){ return "Your ki save DC is " + (8 + m.pb + m.wis) + "."; }},
+    // The 2024 monk's Focus Points keep the ki id, so whatever spends ki
+    // spends Focus.
+    {id:"ki", name:"Focus Points", level:2, pool:true, edition:"2024",
+      max:function(lv){ return lv; }, reset:always("short"),
+      hint:function(lv, m){ return "Your Focus save DC is " + (8 + m.pb + m.wis) + "."; }}
   ],
   "Paladin": [
     {id:"divine_sense", name:"Divine Sense", level:1,

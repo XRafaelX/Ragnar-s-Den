@@ -8,7 +8,7 @@ import { featProficiencies, featDef, featSpellEntries, featCastAbility } from ".
 import { characterPickedProfs, characterChoices, raceProficiencies, backgroundProficiencies, overlapTools } from "./class-picks.js";
 import { mod, profBonus, parseDiceNotation, combineRolls } from "./basics.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
-import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant } from "./class-features.js";
+import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024 } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
@@ -133,10 +133,15 @@ export function autoEquipLoadout(items){
 
 /* ---------------- Weapon attack & damage bonuses ---------------- */
 /* A monk weapon: a shortsword, or a simple melee weapon that isn't
-   two-handed or heavy. */
-export function isMonkWeapon(item){
-  if(baseWeaponName(item)==="Shortsword") return true;
+   two-handed or heavy. For a 2024 monk (`rules2024`): any simple melee
+   weapon, or a martial melee weapon with the light property. */
+export function isMonkWeapon(item, rules2024){
   var d = weaponDataOf(item);
+  if(rules2024){
+    if(!d || d.ranged) return false;
+    return d.category==="simple" || (d.category==="martial" && /\blight\b/i.test(d.properties || ""));
+  }
+  if(baseWeaponName(item)==="Shortsword") return true;
   if(!d || d.category!=="simple" || d.ranged) return false;
   return !/two-handed|heavy/i.test(d.properties || "");
 }
@@ -170,7 +175,7 @@ export function martialArtsApplies(c, item){
 }
 export function isMonkWeaponFor(c, item){
   var dedicated = item.dedicated && hasDedicatedWeapon(c) && !dedicateProblem(item);
-  return isMonkWeapon(item) || !!dedicated || characterPickedProfs(c).monkWeapons.indexOf(baseWeaponName(item))!==-1;
+  return isMonkWeapon(item, isMonk2024(c)) || !!dedicated || characterPickedProfs(c).monkWeapons.indexOf(baseWeaponName(item))!==-1;
 }
 /* The damage dice a weapon rolls: its own, or the Martial Arts die when
    that's bigger ("You can roll a d4 in place of the normal damage of your
@@ -226,8 +231,9 @@ export function unarmedStrike(c){
     parts.push("Martial Arts d" + ma);
     if(dex > abilityMod){ abilityMod = dex; ability = "DEX"; }
   }
-  // Ki-Empowered Strikes (monk 6): they count as magical.
-  if(monk && classLevelOf(c, "Monk") >= 6) parts.push("Magic");
+  // Ki-Empowered Strikes (monk 6): they count as magical. The 2024
+  // monk's Empowered Strikes can deal force damage instead.
+  if(monk && classLevelOf(c, "Monk") >= 6) parts.push(isMonk2024(c) ? "Force or normal damage" : "Magic");
   var bonus = abilityMod + holsterDamageBonus(c) + auraOfHate(c);
   // Rage: melee weapon attacks with STR, not in heavy armor.
   var barb = barbarianClassEntry(c);
@@ -571,7 +577,10 @@ export function bonusActionAttacks(c){
   var dual = dualWieldHands(c);
   if(dual) out.push("Off-hand attack with your " + dual.off.name);
   var monk = classLevelOf(c, "Monk");
-  if(monk) out.push(monk >= 2 ? "An unarmed strike (Martial Arts), or two for 1 ki (Flurry of Blows)" : "An unarmed strike (Martial Arts)");
+  if(monk){
+    var focus = isMonk2024(c), strikes = focus && monk >= 10 ? "three" : "two";
+    out.push(monk >= 2 ? "An unarmed strike (Martial Arts), or " + strikes + " for 1 " + (focus ? "Focus" : "ki") + " (Flurry of Blows)" : "An unarmed strike (Martial Arts)");
+  }
   var held = handsInUse(c).items.map(function(i){ return baseWeaponName(i) || ""; });
   if(hasFeat(c, "Polearm Master") && held.some(function(n){ return /^(Glaive|Halberd|Quarterstaff|Spear)$/.test(n); }))
     out.push("A 1d4 hit with the other end of your polearm (Polearm Master)");
@@ -776,6 +785,8 @@ export function isProficientWithWeapon(c, weaponName, category){
       var wl = w.toLowerCase();
       if(category==="simple" && wl==="simple weapons") return true;
       if(category==="martial" && wl==="martial weapons") return true;
+      // (The 2024 monk's.)
+      if(category==="martial" && wl==="martial weapons with the light property") return /\blight\b/i.test((WEAPON_DATA[weaponName] || {}).properties || "");
       if(category==="firearm" && wl==="firearms") return true;
       return weaponName && wl.indexOf(weaponName.toLowerCase()) !== -1;
     });

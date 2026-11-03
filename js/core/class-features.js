@@ -24,6 +24,41 @@ export function characterIsCaster(c){
   });
 }
 
+/* ---------------- Rules editions ----------------
+   A class with another rules edition (the 2024 Monk) keeps it on the
+   class entry as cl.edition ("2024"); no edition is the 2014 class. The
+   edition's data (CLASS_PROGRESSION[name].editions) replaces the level 1
+   features, the progression, the Tasha's extras and the proficiencies. */
+export function classEdition(cl){
+  var prog = cl && CLASS_PROGRESSION[cl.name];
+  return (prog && prog.editions && cl.edition && prog.editions[cl.edition]) || null;
+}
+/* Whether a class has a 2024 version to choose. */
+export function classHasEdition(className, edition){
+  var prog = CLASS_PROGRESSION[className];
+  return !!(prog && prog.editions && prog.editions[edition]);
+}
+/* The class entry of a class using that edition, or null. */
+export function editionEntry(c, className, edition){
+  return (c && c.classes || []).find(function(cl){ return cl.name===className && cl.edition===edition; }) || null;
+}
+/* Whether the character's monk follows the 2024 rules. */
+export function isMonk2024(c){ return !!editionEntry(c, "Monk", "2024"); }
+/* The subclasses a class entry can take: one marked with an `edition`
+   only for that edition (the 2014 Way of the Open Hand, the 2024 Warrior
+   of the Open Hand), the rest for both, its own edition's first. */
+export function subclassesFor(className, edition){
+  var list = SUBCLASSES[className] || [];
+  if(!list.some(function(s){ return s.edition; })) return list;
+  var ed = edition || "2014";
+  var fits = list.filter(function(s){ return !s.edition || s.edition===ed; });
+  return fits.filter(function(s){ return s.edition===ed; }).concat(fits.filter(function(s){ return s.edition!==ed; }));
+}
+/* An older monk subclass on a 2024 monk reads Focus where it says ki. */
+export function focusWording(text){
+  return String(text || "").replace(/\bki points\b/gi, "Focus Points").replace(/\bki point\b/gi, "Focus Point").replace(/\bKi\b/g, "Focus").replace(/\bki\b/g, "Focus");
+}
+
 /* ---------------- Levelling / subclass helpers ---------------- */
 export function findSubclass(className, subclassName){
   if(!subclassName) return null;
@@ -129,7 +164,10 @@ var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProfic
    one keeps it as cl.variants[replaced feature] = variant name. An
    addition (a rogue's Steady Aim) replaces nothing and is kept under its
    own name. */
-export function classVariants(className){
+export function classVariants(className, cl){
+  // (A class entry on another edition has that edition's: none for the 2024 Monk.)
+  var ed = cl && classEdition(cl);
+  if(ed) return ed.variants || [];
   return (CLASS_PROGRESSION[className] || {}).variants || [];
 }
 /* The swaps the player chooses (not the additions), only the ones
@@ -137,7 +175,7 @@ export function classVariants(className){
    a swap for a subclass feature comes resolved for it (and is left out
    when its subclass has none of those features). */
 export function classVariantSwaps(className, level, cl){
-  return classVariants(className).filter(function(v){ return !v.adds && (level==null || (v.level||1)===level); })
+  return classVariants(className, cl).filter(function(v){ return !v.adds && (level==null || (v.level||1)===level); })
     .map(function(v){ return cl ? variantFor(cl, v) : v; }).filter(Boolean);
 }
 /* A swap for a subclass feature (Blessed Strikes for a domain's Divine
@@ -166,7 +204,7 @@ function variantKey(v){ return v.adds ? v.name : v.replaces; }
 /* The variants a class entry uses. */
 export function activeVariants(cl){
   var picked = (cl && cl.variants) || {};
-  return classVariants(cl && cl.name).map(function(v){ return variantFor(cl, v); })
+  return classVariants(cl && cl.name, cl).map(function(v){ return variantFor(cl, v); })
     .filter(function(v){ return v && picked[variantKey(v)]===v.name; });
 }
 /* Tasha's additions follow the switch: every class entry at the level
@@ -174,7 +212,7 @@ export function activeVariants(cl){
 export function syncTashaAdditions(c){
   var changed = false;
   (c.classes||[]).forEach(function(cl){
-    classVariants(cl.name).forEach(function(v){
+    classVariants(cl.name, cl).forEach(function(v){
       if(!v.adds) return;
       var want = !!c.tashaOptional && (Number(cl.level)||1) >= (v.level||1);
       if(want===!!(cl.variants && cl.variants[v.name])) return;
@@ -193,7 +231,8 @@ export function usesVariant(cl, name){
    with any variant the entry uses in place of the feature it replaces
    (at every level that feature appears). */
 export function classFeaturesAt(cl, lv){
-  var info = CLASSES_INFO[cl.name], prog = CLASS_PROGRESSION[cl.name];
+  var info = CLASSES_INFO[cl.name], prog = CLASS_PROGRESSION[cl.name], ed = classEdition(cl);
+  if(ed){ info = {features: ed.level1}; prog = ed; }
   var base = lv===1 ? (info && info.features) || [] : (prog && prog.features[lv]) || [];
   var variants = activeVariants(cl);
   if(!variants.length) return base;
@@ -209,6 +248,8 @@ export function classFeaturesAt(cl, lv){
 export function classFeatureList(cl, uptoLevel){
   var level = uptoLevel!=null ? uptoLevel : (Number(cl.level)||1);
   var list = [];
+  // (An older subclass on a 2024 monk says Focus for ki.)
+  var focus = cl.name==="Monk" && !!classEdition(cl);
   var sub = findSubclass(cl.name, cl.subclass);
   for(var lv=1; lv<=level; lv++){
     classFeaturesAt(cl, lv).forEach(function(f){ addFeature(f, lv, false); });
@@ -221,7 +262,7 @@ export function classFeatureList(cl, uptoLevel){
     }
   }
   function addFeature(f, atLevel, isSub){
-    var item = {id:(isSub ? "sub_" : "class_")+cl.name+"_"+f.name, name:f.name, text:f.text, level:atLevel, subclass:isSub};
+    var item = {id:(isSub ? "sub_" : "class_")+cl.name+"_"+f.name, name:f.name, text:isSub && focus ? focusWording(f.text) : f.text, level:atLevel, subclass:isSub};
     FEATURE_FLAGS.forEach(function(k){ if(f[k]) item[k] = f[k]; });
     var at = f.replaces ? list.findIndex(function(x){ return x.name===f.replaces; }) : -1;
     if(at!==-1){ item.id = list[at].id; item.upgraded = true; list[at] = item; }
@@ -276,10 +317,10 @@ export function classProficiencies(c, idx){
   var cl = (c.classes||[])[idx];
   if(!cl) return null;
   var base;
-  var prog = CLASS_PROGRESSION[cl.name];
-  if(idx===0 || !prog) base = CLASS_PROFICIENCIES[cl.name] || null;
+  var prog = CLASS_PROGRESSION[cl.name], ed = classEdition(cl);
+  if(idx===0 || !prog) base = (ed && ed.proficiencies) || CLASS_PROFICIENCIES[cl.name] || null;
   else {
-    var m = prog.multiclassProfs;
+    var m = (ed && ed.multiclassProfs) || prog.multiclassProfs;
     base = {armor:m.armor, weapons:m.weapons, tools:m.tools, savingThrows:[], note:m.note};
   }
   // Features tagged `grants` (a subclass's tool or armor proficiency) add

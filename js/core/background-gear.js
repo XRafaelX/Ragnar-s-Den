@@ -110,7 +110,7 @@ export function fillKitPicks(background, picks, ctx, rng){
 }
 
 /* ---- Items ---- */
-function gearItem(name, over){
+export function gearItem(name, over){
   var d = GEAR_DATA[name] || {}, n = (over && over.qty) || d.qty || 1;
   return {name: (over && over.name) || name, type: "gear", qty: n, equipped: false,
     notes: (over && over.notes) || d.notes || "", weight: d.weight ? d.weight / (d.qty || 1) : 0};

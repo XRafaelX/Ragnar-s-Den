@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud, isMonk2024, kiWord } from "../../core/helpers.js";
 import { flashOfGenius, artificerHitDice } from "../../core/artificer.js";
 import { openFlourishSheet } from "./bard.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -231,11 +231,13 @@ function saveFollowUp(c, ability, r){
       }});
   }
   if(hasDiamondSoul(c)){
-    opts.push({label: "Reroll (Diamond Soul, 1 ki)", title: "Spend 1 ki to reroll this saving throw. You must use the new roll.",
+    // (The 2024 monk's Disciplined Survivor works the same way, for 1 Focus.)
+    var soul = isMonk2024(c) ? "Disciplined Survivor, 1 Focus" : "Diamond Soul, 1 ki";
+    opts.push({label: "Reroll (" + soul + ")", title: "Spend 1 " + kiWord(c) + " to reroll this saving throw. You must use the new roll.",
       use: function(){
         if(!spendKi(c, 1)) return null;
         save(); renderAll();
-        return {reroll: true, log: "Diamond Soul (1 ki)"};
+        return {reroll: true, log: soul.replace(", ", " (") + ")"};
       }});
   }
   if(livingLegendOn(c)){

@@ -10,12 +10,12 @@ import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/ali
 import { POINT_BUY_COSTS } from "../data/misc.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDicesSvg, makePlusSvg } from "../ui/svg-icons.js";
-import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME } from "../ui/dlc-shelf.js";
+import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, MONK_2024_CARD, MONK_2024_OUTCOME } from "../ui/dlc-shelf.js";
 import { getDieSvg } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
-import { currentClassInfo, wizardState, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, refreshWizardProgress } from "./wizard-core.js";
+import { currentClassInfo, wizardState, wizardEdition, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, refreshWizardProgress } from "./wizard-core.js";
 import { backgroundFeatGrant, backgroundFeatLabel, campaignLevel1Feats } from "../core/feat-picks.js";
 import { CAMPAIGN_FEATS } from "../data/feats.js";
 import { FIGHTING_STYLES } from "../data/classes.js";
@@ -323,25 +323,28 @@ export function wizardStepClass(container){
    add something they're hiding. */
 var rulesShelfOpen = false, rulesShelfTapped = "";
 function optionalRulesShelf(){
-  var books = Object.keys(CAMPAIGN_FEATS), gunslinger = wizardState.classId==="Gunslinger";
+  var books = Object.keys(CAMPAIGN_FEATS), gunslinger = wizardState.classId==="Gunslinger", monk = wizardState.classId==="Monk";
   var wrap = ce("div", "card opt-rules-card wiz-opt-rules");
   var tapped = rulesShelfTapped;
   rulesShelfTapped = "";
   wrap.appendChild(dlcShelf({
-    id: "wiz-dlc-panel", title: "Optional rules", wide: true, open: rulesShelfOpen || !!wizardState.tashaOptional || !!wizardState.campaign, fresh: tapped,
+    id: "wiz-dlc-panel", title: "Optional rules", wide: true, open: rulesShelfOpen || !!wizardState.tashaOptional || !!wizardState.campaign || !!wizardEdition(), fresh: tapped,
     onToggle: function(open){ rulesShelfOpen = open; },
     lead: "Extra rules from other books. Ask your DM whether your table uses them, then tap one to turn it on. You can change this later on the Information tab.",
     sub: function(){
       var on = (wizardState.tashaOptional ? ["Tasha's optional class features"] : []).concat(CAMPAIGN_FEATS[wizardState.campaign] ? [wizardState.campaign] : [])
-        .concat(gunslinger && wizardState.gunMisfire ? ["firearm misfires"] : []);
-      return on.length ? "Using " + on.join(" and ") : "Tasha's Cauldron and the campaign books. Most new players leave these off.";
+        .concat(gunslinger && wizardState.gunMisfire ? ["firearm misfires"] : []).concat(wizardEdition() ? ["the 2024 monk"] : []);
+      return on.length ? "Using " + on.join(" and ") : monk ? "Tasha's Cauldron, the campaign books and the 2024 monk. Ask your DM which ones your table uses."
+        : "Tasha's Cauldron and the campaign books. Most new players leave these off.";
     },
     cards: [{key: "tasha", series: "Tasha's Cauldron of Everything", title: "Optional class features", switchLabel: "Use Tasha's optional class features",
-      perks: ["More class options", "Additional spells", "Swaps at level-up"]}].concat(gunslinger ? [GUN_MISFIRE_CARD] : []).concat(books.map(campaignBookCard)),
-    isOn: function(k){ return k==="tasha" ? !!wizardState.tashaOptional : k==="gunMisfire" ? !!wizardState.gunMisfire : wizardState.campaign===k; },
+      perks: ["More class options", "Additional spells", "Swaps at level-up"]}].concat(gunslinger ? [GUN_MISFIRE_CARD] : []).concat(monk ? [MONK_2024_CARD] : []).concat(books.map(campaignBookCard)),
+    isOn: function(k){ return k==="tasha" ? !!wizardState.tashaOptional : k==="gunMisfire" ? !!wizardState.gunMisfire : k==="monk2024" ? !!wizardState.monk2024 : wizardState.campaign===k; },
     onTap: function(k){
       if(k==="tasha") setWizardTasha(!wizardState.tashaOptional);
       else if(k==="gunMisfire") wizardState.gunMisfire = !wizardState.gunMisfire;
+      // (The two monks start with different gear, so the gear picks start over.)
+      else if(k==="monk2024"){ wizardState.monk2024 = !wizardState.monk2024; wizardState.equipment = {}; }
       else wizardState.campaign = wizardState.campaign===k ? "" : k;
       rulesShelfOpen = true;
       rulesShelfTapped = k;
@@ -350,8 +353,9 @@ function optionalRulesShelf(){
     },
     outcome: function(){
       var lines = [];
-      if(wizardState.tashaOptional) lines.push("<b>Tasha's:</b> " + escapeHtml(tashaAddsFor(wizardState.classId)));
+      if(wizardState.tashaOptional) lines.push("<b>Tasha's:</b> " + escapeHtml(tashaAddsFor(wizardState.classId, wizardEdition())));
       if(gunslinger && wizardState.gunMisfire) lines.push(GUN_MISFIRE_OUTCOME);
+      if(wizardEdition()) lines.push(MONK_2024_OUTCOME);
       if(CAMPAIGN_FEATS[wizardState.campaign]) lines.push("<b>" + escapeHtml(wizardState.campaign) + ":</b> a free feat if your background has none of its own (see the Background step)." +
         (CAMPAIGN_FEATS[wizardState.campaign].level4 ? " Another at level 4." : ""));
       return lines.join("<br>");
@@ -363,10 +367,10 @@ function optionalRulesShelf(){
    unlocks with it: replacement features, fighting styles, class options
    (Metamagic, maneuvers, invocations and Pact of the Talisman), added
    spells, the Versatility swaps and Cantrip Formulas. */
-export function tashaAddsFor(className){
+export function tashaAddsFor(className, edition){
   if(!className) return "pick a class above to see what it adds.";
   var bits = [], prog = CLASS_PROGRESSION[className] || {};
-  classVariants(className).forEach(function(v){ bits.push(v.adds ? v.name + " at level " + v.level : v.name + " in place of " + v.replaces); });
+  classVariants(className, {name: className, edition: edition}).forEach(function(v){ bits.push(v.adds ? v.name + " at level " + v.level : v.name + " in place of " + v.replaces); });
   var styles = classStyleList(className).filter(function(n){ return (FIGHTING_STYLES[n]||{}).optional; }).length;
   if(styles) bits.push(plural(styles, "more fighting style"));
   OPTION_SETS.forEach(function(set){

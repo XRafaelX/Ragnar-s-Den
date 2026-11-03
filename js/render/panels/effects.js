@@ -209,7 +209,7 @@ function costText(e){
   if(e.def.slotPick) return "A spell slot";
   if(!e.def.cost || (e.resource && e.resource.max===Infinity)) return "Free";
   var n = e.def.cost.amount;
-  if(e.def.cost.resource==="ki") return n + " ki";
+  if(e.def.cost.resource==="ki") return n + (e.resource && /Focus/.test(e.resource.name) ? " Focus" : " ki");
   if(e.def.cost.resource==="wild_shape") return n + " Wild Shape";
   if(e.def.cost.resource==="sorcery_points") return n + (n===1 ? " point" : " points");
   if(e.points) return e.points + " points";

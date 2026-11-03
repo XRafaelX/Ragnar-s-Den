@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks } from "../../core/helpers.js";
+import { useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, kiWord } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -1159,7 +1159,8 @@ function wildSurgeBlock(c){
    it and rolls its dice, if it has any. */
 function kiPicker(c){
   var actions = kiActions(c), groups = {"": []};
-  function cost(a){ return a.useKey && a.freeUse ? "1 use" : a.cost ? a.cost + " ki" : "Free"; }
+  var word = kiWord(c);
+  function cost(a){ return a.useKey && a.freeUse ? "1 use" : a.cost ? a.cost + " " + word : "Free"; }
   actions.forEach(function(a){
     var g = a.group || "";
     if(!groups[g]) groups[g] = [];
@@ -1168,7 +1169,7 @@ function kiPicker(c){
   function find(id){ return actions.find(function(a){ return a.id===id; }); }
   var wrap = document.createElement("div");
   wrap.className = "res-pick";
-  wrap.appendChild(themedPicker({key: "ki:spend", groups: groups, value: "", placeholder: "Spend ki on...", ariaLabel: "Spend ki on", sheet: true,
+  wrap.appendChild(themedPicker({key: "ki:spend", groups: groups, value: "", placeholder: "Spend " + word + " on...", ariaLabel: "Spend " + word + " on", sheet: true,
     reasonFor: function(id){ return kiActionProblem(c, find(id)); },
     detailFor: function(id){ return find(id).detail; },
     onPick: function(id){

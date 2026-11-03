@@ -22,7 +22,7 @@ import { showActionToast } from "../ui/toast.js";
 import { featDef, featHasPicks, applyFeatPicks, revertFeatPicks, featSpellEntries, campaignFeatCopy } from "../core/feat-picks.js";
 import { applyLearn, undoLearn } from "../core/spells-known.js";
 import { preparedAt } from "../data/spells-known.js";
-import { lu, learnActive, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, cantripSwapOut, expertiseSwap, close, swapOutStyle, styleCantripOffer, featureAbilityBonus, hpGain } from "./session.js";
+import { lu, luEdition, learnActive, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, cantripSwapOut, expertiseSwap, close, swapOutStyle, styleCantripOffer, featureAbilityBonus, hpGain } from "./session.js";
 
 /* ---------------- Apply & undo ---------------- */
 function slotSnapshot(c){
@@ -117,6 +117,7 @@ export function finish(){
     record.prevVariants = entry.variants ? Object.assign({}, entry.variants) : null; // undo puts them back
   } else {
     entry = {name: lu.className, subclass: "", level: 1};
+    if(luEdition()) entry.edition = luEdition(); // a 2024 monk
     c.classes.push(entry);
   }
   // Favored Foe in place of Favored Enemy, Primal Awareness, Steady Aim.

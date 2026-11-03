@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { maxHp, activeConditions, exhaustionLevel, exhaustionSummary, addCondition, removeCondition, conditionDef, raceConditionImmunity, rageSuspends, classLevelOf, endIncapacitatedEffects } from "../../core/helpers.js";
+import { maxHp, activeConditions, exhaustionLevel, exhaustionSummary, addCondition, removeCondition, conditionDef, raceConditionImmunity, rageSuspends, classLevelOf, isMonk2024, endIncapacitatedEffects } from "../../core/helpers.js";
 import { CONDITIONS, EXHAUSTION_LEVELS, EXHAUSTION_RULES } from "../../data/conditions.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -67,7 +67,7 @@ export function renderConditionsStrip(c){
   }
   list.forEach(function(x){ strip.appendChild(conditionChip(c, x)); });
   // Stillness of Mind (monk 7): an action ends one charmed or frightened effect.
-  if(classLevelOf(c, "Monk") >= 7) list.forEach(function(x){
+  if(classLevelOf(c, "Monk") >= 7 && !isMonk2024(c)) list.forEach(function(x){
     if(x.def.id!=="charmed" && x.def.id!=="frightened") return;
     var calm = document.createElement("button");
     calm.type = "button";

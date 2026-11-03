@@ -4,8 +4,7 @@
 import { ABILITIES, CLASS_LIST } from "../data/abilities-skills.js";
 import { CLASSES_INFO } from "../data/classes.js";
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
-import { SUBCLASSES } from "../data/progression.js";
-import { mod, fmtMod, ce, escapeHtml, totalLevel, profBonus, ordinal, spellHeldBy, variantBase } from "../core/helpers.js";
+import { mod, fmtMod, ce, escapeHtml, totalLevel, profBonus, ordinal, spellHeldBy, variantBase, subclassesFor } from "../core/helpers.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { invocationsKnownAt, invocationDef, pactBoonDef } from "../data/invocations.js";
 import { optionsKnownAt } from "../data/class-options.js";
@@ -25,7 +24,7 @@ import { featDef, featNeedsChoice, emptyPicks, featPicksSummary, featRequiresRea
 import { renderFeatPicks } from "../ui/feat-picks.js";
 import { fillFeatList } from "../ui/feat-list.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
-import { lu, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
+import { lu, luEdition, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
 
 export function stepClass(container){
   var c = lu.c;
@@ -138,7 +137,7 @@ export function stepSubclass(container){
   var label = t.prog.subclassLabel || "Subclass";
   var card = stepCard(container, "Choose your "+label,
     "<b>Your "+escapeHtml(label)+"</b> is your "+escapeHtml(lu.className)+"'s specialisation. It shapes your play style and grants extra features now and at later levels. This choice is permanent, so pick the one that sounds most fun.");
-  var list = SUBCLASSES[lu.className] || [];
+  var list = subclassesFor(lu.className, luEdition());
   list.forEach(function(sub){
     var opt = ce("div","wiz-equip-option"+(lu.subclass===sub.name?" selected":""));
     var feats = [];

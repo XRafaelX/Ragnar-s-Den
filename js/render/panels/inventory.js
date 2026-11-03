@@ -7,7 +7,7 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack, rollSneak } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -672,7 +672,7 @@ function renderUnarmedCard(c, u){
   fighterWeaponButtons(c, u.name).forEach(function(b){ actions.appendChild(b); });
   if(!u.ranged && /unarmed strike/i.test(u.name)) smiteButtons(c, u.name, false).forEach(function(b){ actions.appendChild(b); });
   if(/unarmed strike/i.test(u.name)) rangerButtons(c, u.name, true).forEach(function(b){ actions.appendChild(b); });
-  var deflect = u.name==="Unarmed strike" && deflectMissilesButton(c);
+  var deflect = u.name==="Unarmed strike" && (isMonk2024(c) ? deflectAttacksButton(c) : deflectMissilesButton(c));
   if(deflect) actions.appendChild(deflect);
   if(u.psychicBlade){
     var bladeSneak = sneakButton(c, u.name);
@@ -703,6 +703,33 @@ function deflectMissilesButton(c){
           if(!spendKi(c, 1)) return null;
           save(); renderAll();
           rollAttack(c, dex + profBonus(c), "none", "Caught missile: Attack", {qty: 1, die: die, bonus: dex, label: "Caught missile", offerDamage: true});
+          return {silent: true};
+        }}]};
+    });
+  });
+  return b;
+}
+/* Deflect Attacks (2024 monk 3): a reaction when an attack hits with
+   bludgeoning, piercing or slashing damage (any type from Deflect Energy
+   at monk 13). If the damage drops to 0, 1 Focus redirects it: a creature
+   makes a DEX save or takes two Martial Arts dice + DEX of its type. */
+function deflectAttacksButton(c){
+  var lv = classLevelOf(c, "Monk");
+  if(lv < 3) return null;
+  var dex = mod(abilityScore(c, "dex")), bonus = dex + lv;
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "btn small inv-roll-btn inv-fury-btn";
+  b.innerHTML = makeDicesSvg() + "Deflect Attacks 1d10" + fmtMod(bonus);
+  b.title = "Reaction when an attack hits you" + (lv >= 13 ? "" : " with bludgeoning, piercing or slashing damage") + ": reduce its damage by this much";
+  b.addEventListener("click", function(){
+    performRoll(10, 1, bonus, "none", "Deflect Attacks: damage reduced", function(r){
+      if(!r) return null;
+      var left = kiLeft(c), die = martialArtsDie(c), dc = kiSaveDc(c);
+      return {lead: "Down to 0? You can redirect it:", options: [{label: "Redirect it (1 Focus)", disabled: left < 1, title: left < 1 ? "No Focus left" : "A creature within 5 feet (melee) or 60 feet (ranged) makes a DEX save (DC " + dc + ") or takes this, of the attack's damage type",
+        use: function(){
+          if(!spendKi(c, 1)) return null;
+          save(); renderAll();
+          performRoll(die, 2, dex, "none", "Deflect Attacks: redirected (DEX save DC " + dc + ")");
           return {silent: true};
         }}]};
     });

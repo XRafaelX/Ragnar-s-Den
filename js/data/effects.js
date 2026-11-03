@@ -246,7 +246,7 @@ export var TOGGLE_EFFECTS = [
     hint:"A bonus action."},
   // Monk (Player's Handbook pp. 76 to 80, Xanathar's Guide p. 34), checked
   // on 5etools' data 2026-10-30.
-  {id:"empty_body", name:"Empty Body", className:"Monk", level:18, cost:{resource:"ki", amount:4}, duration:"1 minute",
+  {id:"empty_body", name:"Empty Body", className:"Monk", edition:"2014", level:18, cost:{resource:"ki", amount:4}, duration:"1 minute",
     hint:"An action."},
   {id:"shadow_step", name:"Shadow Step", className:"Monk", subclass:"Way of Shadow", level:6, duration:"This turn",
     startLabel:"Step", endLabel:"Done",

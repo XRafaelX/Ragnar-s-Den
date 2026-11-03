@@ -9,7 +9,8 @@
    of ki while one is left), payKey (a resource it spends as well), sharpen
    (Sharpen the Blade's bonus), reason (why it can't be used now)}. */
 import { mod, profBonus } from "./basics.js";
-import { classLevelOf } from "./class-features.js";
+import { classLevelOf, isMonk2024, classVariants } from "./class-features.js";
+import { MONK_2024_SWAPS } from "../data/monk-2024.js";
 import { abilityScore } from "./ability-scores.js";
 import { martialArtsDie, resourceLeft } from "./effects.js";
 import { characterPickedProfs } from "./class-picks.js";
@@ -18,6 +19,38 @@ import { optionSetDef } from "../data/class-options.js";
 import { magicBonusOf } from "./magic-items.js";
 import { baseWeaponName } from "../data/weapons.js";
 
+/* Switch the character's monk to the 2024 rules (on) or back to 2014.
+   Open Hand, Shadow, Four Elements and Mercy become their other
+   edition's version, Tasha's monk extras go (2024) or come back with the
+   switch (syncTashaAdditions, done by the caller), and a level 20 monk
+   gains or loses Body and Mind's +4 DEX and WIS. True if anything changed. */
+export function setMonkEdition(c, on){
+  var cl = (c.classes||[]).find(function(x){ return x.name==="Monk"; });
+  if(!cl || !!on===(cl.edition==="2024")) return false;
+  var back = {};
+  Object.keys(MONK_2024_SWAPS).forEach(function(k){ back[MONK_2024_SWAPS[k]] = k; });
+  if(on){
+    classVariants("Monk").forEach(function(v){ if(cl.variants) delete cl.variants[v.adds ? v.name : v.replaces]; });
+    cl.edition = "2024";
+    if(MONK_2024_SWAPS[cl.subclass]) cl.subclass = MONK_2024_SWAPS[cl.subclass];
+    if((Number(cl.level)||1) >= 20){
+      var gain = {};
+      ["dex", "wis"].forEach(function(k){
+        var was = Number(c.abilities[k])||10, now = Math.min(25, was + 4);
+        if(now > was){ c.abilities[k] = now; gain[k] = now - was; }
+      });
+      cl.bodyAndMind = gain;
+    }
+  } else {
+    delete cl.edition;
+    if(back[cl.subclass]) cl.subclass = back[cl.subclass];
+    Object.keys(cl.bodyAndMind || {}).forEach(function(k){ c.abilities[k] = (Number(c.abilities[k])||10) - cl.bodyAndMind[k]; });
+    delete cl.bodyAndMind;
+  }
+  return true;
+}
+/* "Focus" for a 2024 monk, "ki" otherwise, for labels. */
+export function kiWord(c){ return isMonk2024(c) ? "Focus" : "ki"; }
 export function kiSaveDc(c){
   return 8 + profBonus(c) + mod(abilityScore(c, "wis"));
 }
@@ -69,25 +102,36 @@ export function kiActions(c){
   if(lv < 2) return [];
   var dc = kiSaveDc(c), die = martialArtsDie(c), wis = mod(abilityScore(c, "wis")), dex = mod(abilityScore(c, "dex"));
   var way = function(name, level){ return classLevelOf(c, "Monk", name) >= level; };
-  var out = [];
-  var flurry = "Two unarmed strikes as a bonus action, right after the Attack action.";
+  var out = [], focus = isMonk2024(c);
+  // The 2024 monk: Flurry needs no Attack action first (three strikes from
+  // monk 10), Patient Defense and Step of the Wind give two actions.
+  var flurry = focus ? (lv >= 10 ? "Three" : "Two") + " unarmed strikes as a bonus action." : "Two unarmed strikes as a bonus action, right after the Attack action.";
   if(way("Way of the Open Hand", 3)) flurry += " Open Hand Technique: on a hit, DEX save (DC " + dc + ") or prone, STR save or pushed 15 feet, or it can't take reactions until the end of your next turn.";
   if(way("Way of Mercy", 11)) flurry += " Each strike can be Hand of Healing for free, and Hand of Harm costs no ki with a strike.";
   else if(way("Way of Mercy", 3)) flurry += " One strike can be Hand of Healing for free.";
   if(way("Way of the Drunken Master", 3)) flurry += " You also get the Disengage action and +10 feet of walking speed this turn.";
   if(way("Way of the Drunken Master", 17)) flurry += " Up to five attacks, if each one targets a different creature.";
   out.push({id: "flurry", name: "Flurry of Blows", cost: 1, detail: flurry, log: flurry});
-  out.push({id: "patient", name: "Patient Defense", cost: 1, detail: "Take the Dodge action as a bonus action.", log: "The Dodge action as a bonus action."});
-  var step = "Disengage or Dash as a bonus action, and your jump distance doubles this turn.";
+  if(focus){
+    var patient = "Take both the Disengage and Dodge actions as a bonus action." + (lv >= 10 ? " Heightened Focus: you also gain temporary hit points equal to two rolls of your Martial Arts die." : "");
+    out.push({id: "patient", name: "Patient Defense", cost: 1, detail: patient, log: patient});
+  }
+  else out.push({id: "patient", name: "Patient Defense", cost: 1, detail: "Take the Dodge action as a bonus action.", log: "The Dodge action as a bonus action."});
+  var step = focus ? "Take both the Disengage and Dash actions as a bonus action, and your jump distance doubles this turn." : "Disengage or Dash as a bonus action, and your jump distance doubles this turn.";
+  if(focus && lv >= 10) step += " Heightened Focus: you can take a willing Large or smaller creature within 5 feet along with you, and its movement doesn't provoke opportunity attacks.";
   if(way("Way of the Ascendant Dragon", 6)) step += " Wings Unfurled can give you a flying speed this turn.";
   out.push({id: "step", name: "Step of the Wind", cost: 1, detail: step, log: step});
-  if(lv >= 5) out.push({id: "stun", name: "Stunning Strike", cost: 1, detail: "On a melee weapon hit: CON save DC " + dc + " or stunned until the end of your next turn.", log: "CON save DC " + dc + " or stunned until the end of your next turn."});
+  if(lv >= 5 && focus){
+    var stun = "Once per turn, on a hit with a monk weapon or an unarmed strike: CON save DC " + dc + ". On a failure it is stunned until the start of your next turn. On a success its speed is halved and the next attack against it has advantage, until the start of your next turn.";
+    out.push({id: "stun", name: "Stunning Strike", cost: 1, detail: stun, log: stun});
+  }
+  else if(lv >= 5) out.push({id: "stun", name: "Stunning Strike", cost: 1, detail: "On a melee weapon hit: CON save DC " + dc + " or stunned until the end of your next turn.", log: "CON save DC " + dc + " or stunned until the end of your next turn."});
   if(way("Way of the Open Hand", 17)){
     out.push({id: "quiver", name: "Quivering Palm", cost: 3, detail: "On an unarmed hit: start the vibrations, which last " + lv + " days.", log: "Vibrations started. They last " + lv + " days."});
     out.push({id: "quiver-end", name: "Quivering Palm: end it", cost: 0, detail: "An action: CON save DC " + dc + ". On a failure it drops to 0 hit points, on a success it takes 10d10 necrotic.",
       roll: {qty: 10, die: 10, bonus: 0, label: "Quivering Palm: necrotic if it saves (CON DC " + dc + ")"}});
   }
-  if(lv >= 18) out.push({id: "astral", name: "Astral Projection", cost: 8, detail: "Empty Body: cast Astral Projection without material components. You can't take any other creatures with you.", log: "Astral Projection, on yourself only."});
+  if(lv >= 18 && !focus) out.push({id: "astral", name: "Astral Projection", cost: 8, detail: "Empty Body: cast Astral Projection without material components. You can't take any other creatures with you.", log: "Astral Projection, on yourself only."});
   if(way("Way of Shadow", 3)) [
     ["Darkness", "Magical darkness in a 15-foot radius for up to 10 minutes (concentration)."],
     ["Darkvision", "A willing creature you touch gains darkvision out to 60 feet for 8 hours."],
@@ -149,7 +193,7 @@ export function kiActions(c){
 export function kiActionProblem(c, a){
   if(a.reason) return a.reason;
   if(a.useKey && a.freeUse) return "";
-  return resourceLeft(c, "Monk:ki") < a.cost ? "Needs " + a.cost + " ki" : "";
+  return resourceLeft(c, "Monk:ki") < a.cost ? "Needs " + a.cost + " " + kiWord(c) : "";
 }
 /* Pay for it: a use of its own while one is left, else ki. True if paid. */
 export function payKiAction(c, a){

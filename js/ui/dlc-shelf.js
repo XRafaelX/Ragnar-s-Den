@@ -119,6 +119,13 @@ export var GUN_MISFIRE_CARD = {key: "gunMisfire", series: "Gunslinger class", ti
   text: "The Handcannon, Long Gun and Spread Shot jam on an attack roll of 1. Clearing a jam takes an action and always works. Master of Arms (gunslinger level 2) stops your guns from misfiring."};
 export var GUN_MISFIRE_OUTCOME = "<b>Misfires:</b> your Handcannon, Long Gun and Spread Shot jam on a roll of 1 until Master of Arms at gunslinger level 2. Clearing a jam takes an action.";
 
+/* The 2024 Monk (a monk class entry's edition "2024", see
+   js/data/monk-2024.js), offered only to a character with the class. */
+export var MONK_2024_CARD = {key: "monk2024", series: "Player's Handbook 2024", title: "2024 Monk", switchLabel: "Use the 2024 monk",
+  perks: ["Focus Points", "Bigger Martial Arts dice", "New features"],
+  text: "The 2024 rules for the monk: Focus Points in place of ki, Martial Arts dice from a d6 up to a d12, Uncanny Metabolism, Deflect Attacks and the 2024 subclasses. Tasha's monk extras don't apply, since the 2024 monk has its own."};
+export var MONK_2024_OUTCOME = "<b>2024 Monk:</b> Focus Points in place of ki, Martial Arts from a d6, and the 2024 features, gear and subclasses.";
+
 /* A campaign book (see CAMPAIGN_FEATS) as a shelf card: "Dragonlance"
    over its title, and what it gives. */
 export function campaignBookCard(k){

@@ -14,6 +14,7 @@ import { DRUID_SUBCLASSES } from "./subclasses/druid.js";
 import { FIGHTER_SUBCLASSES } from "./subclasses/fighter.js";
 import { GUNSLINGER_SUBCLASSES } from "./subclasses/gunslinger.js";
 import { MONK_SUBCLASSES } from "./subclasses/monk.js";
+import { MONK_2024, MONK_2024_SUBCLASSES, MONK_2024_SWAPS } from "./monk-2024.js";
 import { PALADIN_SUBCLASSES } from "./subclasses/paladin.js";
 import { RANGER_SUBCLASSES } from "./subclasses/ranger.js";
 import { ROGUE_SUBCLASSES } from "./subclasses/rogue.js";
@@ -489,7 +490,9 @@ export var SUBCLASSES = {
   "Druid": DRUID_SUBCLASSES,
   "Fighter": FIGHTER_SUBCLASSES,
   "Gunslinger": GUNSLINGER_SUBCLASSES,
-  "Monk": MONK_SUBCLASSES,
+  // The 2014 subclasses with a 2024 version are 2014 only (`edition`), and
+  // the 2024 ones 2024 only; the rest suit both (see subclassesFor).
+  "Monk": MONK_SUBCLASSES.map(function(s){ if(MONK_2024_SWAPS[s.name]) s.edition = "2014"; return s; }).concat(MONK_2024_SUBCLASSES),
   "Paladin": PALADIN_SUBCLASSES,
   "Ranger": RANGER_SUBCLASSES,
   "Rogue": ROGUE_SUBCLASSES,
@@ -500,6 +503,10 @@ export var SUBCLASSES = {
 
 /* What to do about spells after reaching a class level; shown in the
    "you unlocked" popup so new players know what to pick. */
+/* A class's other rules editions, chosen per class entry (cl.edition):
+   only the monk has one, the 2024 Monk (js/data/monk-2024.js). */
+CLASS_PROGRESSION["Monk"].editions = {"2024": MONK_2024};
+
 export var SPELL_TIPS = {
   "Artificer": {1:"Pick 2 artificer cantrips. You prepare 2 artificer spells each day.", 2:"Learn 4 infusions and infuse up to 2 items in the Artifice infusions card on the Features tab.", 5:"2nd-level artificer spells are now available to prepare.", 6:"Learn 2 more infusions (6 known, up to 3 infused items).", 9:"3rd-level artificer spells are now available to prepare.", 10:"Learn 1 new artificer cantrip. Learn 2 more infusions (8 known, up to 4 infused items).", 13:"4th-level artificer spells are now available to prepare.", 14:"Learn 1 new artificer cantrip. Learn 2 more infusions (10 known, up to 5 infused items).", 17:"5th-level artificer spells are now available to prepare.", 18:"Learn 2 more infusions (12 known, up to 6 infused items)."},
   "Bard": {1:"Pick 2 bard cantrips and 4 1st-level bard spells.", 2:"Learn 1 new bard spell.", 3:"Learn 1 new bard spell.", 4:"Learn 1 new bard spell and 1 new cantrip.", 5:"Learn 1 new bard spell. 3rd-level spells are now available.", 6:"Learn 1 new bard spell.", 7:"Learn 1 new bard spell. 4th-level spells are now available.", 8:"Learn 1 new bard spell.", 9:"Learn 1 new bard spell. 5th-level spells are now available.", 10:"Learn 2 spells from any class (Magical Secrets) and 1 new cantrip.", 11:"Learn 1 new bard spell. 6th-level spells are now available.", 13:"Learn 1 new bard spell. 7th-level spells are now available.", 14:"Learn 2 spells from any class (Magical Secrets).", 15:"Learn 1 new bard spell. 8th-level spells are now available.", 17:"Learn 1 new bard spell. 9th-level spells are now available.", 18:"Learn 2 spells from any class (Magical Secrets)."},

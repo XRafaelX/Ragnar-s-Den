@@ -40,6 +40,15 @@ export function abilityName(key){
   var found = ABILITIES.find(function(a){ return a[0]===key; });
   return found ? found[1] : key;
 }
+/* The rules edition of the class levelling now (or `className`): the
+   class entry's, or for a class being added, the one picked for it on
+   this level-up (lu.edition). Undefined for the 2014 class. */
+export function luEdition(className){
+  var name = className || lu.className;
+  var ex = (lu.c.classes||[]).find(function(cl){ return cl.name===name; });
+  if(ex) return ex.edition || undefined;
+  return name===lu.className ? lu.edition || undefined : undefined;
+}
 export function progFor(name){ return CLASS_PROGRESSION[name] || {prereq:[], asiLevels:[4,8,12,16,19], features:{}}; }
 
 export function xpForNextLevel(c){ return XP_THRESHOLDS[totalLevel(c)+1]; }
@@ -163,7 +172,7 @@ export function variantOffers(){
    Blessed Strikes: in place of Divine Strike or Potent Spellcasting). */
 export function offerEntry(){
   var t = target();
-  return {name: lu.className, subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : "")};
+  return {name: lu.className, edition: luEdition(), subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : "")};
 }
 /* The class entry's variants after this level: the ones it had, the
    offers as picked now (an older pick for the same feature, from a level
@@ -175,7 +184,7 @@ function entryVariants(){
     delete out[v.replaces];
     if(lu.variants[v.replaces]===v.name) out[v.replaces] = v.name;
   });
-  syncTashaAdditions({tashaOptional: lu.c.tashaOptional, classes: [{name: lu.className, level: t.newLevel, variants: out}]});
+  syncTashaAdditions({tashaOptional: lu.c.tashaOptional, classes: [{name: lu.className, edition: luEdition(), level: t.newLevel, variants: out}]});
   return out;
 }
 function entryAfter(){
@@ -187,7 +196,7 @@ function entryAfter(){
     choice.picks.slice(0, n).filter(Boolean).forEach(function(name){ list.push({name: name}); });
     options[plan.set.id] = list;
   });
-  return {name: lu.className, level: t.newLevel, options: options, profPicks: t.existing && t.existing.profPicks, variants: entryVariants(),
+  return {name: lu.className, edition: luEdition(), level: t.newLevel, options: options, profPicks: t.existing && t.existing.profPicks, variants: entryVariants(),
     subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : "")};
 }
 /* Every grant gained now, with or without a choice. */
@@ -301,7 +310,7 @@ export function chosenSubclass(){ return lu.subclass || ""; }
    level-up). Asked on the Spells step, saved on the class entry. */
 export function dueSpellChoices(){
   var t = target();
-  var entry = {name: lu.className, level: t.newLevel,
+  var entry = {name: lu.className, edition: luEdition(), level: t.newLevel,
     subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : ""),
     spellChoices: t.existing && t.existing.spellChoices};
   return classSpellChoices(entry).filter(function(x){ return !x.pick; });
@@ -321,7 +330,7 @@ export function dueSpellChoices(){
 export function learnEntry(){
   var t = target();
   var choices = Object.assign({}, t.existing && t.existing.spellChoices, lu.spellChoices);
-  return {name: lu.className, level: t.newLevel, spellChoices: choices,
+  return {name: lu.className, edition: luEdition(), level: t.newLevel, spellChoices: choices,
     subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : "")};
 }
 export function currentLearnPlan(){ return learnPlan(lu.c, learnEntry(), !target().existing); }
@@ -615,7 +624,7 @@ export function gainLabels(className, subclass, level){
   // Favored Enemy. For the class levelling now, as picked on this level-up.)
   var entry = (lu.c.classes||[]).find(function(cl){ return cl.name===className; });
   var variants = lu.className===className ? entryVariants() : entry ? entry.variants : null;
-  var labels = classFeaturesGainedAt({name:className, subclass:subclass, level:level, variants:variants}, level).map(function(f){ return f.name; });
+  var labels = classFeaturesGainedAt({name:className, edition:luEdition(className), subclass:subclass, level:level, variants:variants}, level).map(function(f){ return f.name; });
   if(prog.subclassLevel && level >= prog.subclassLevel && !subclass) labels.unshift("Choose "+prog.subclassLabel);
   if(prog.asiLevels.indexOf(level)!==-1) labels.push("Ability Score Improvement");
   return labels;
@@ -708,7 +717,7 @@ export function conModAfterAsi(){
    changes the class entry. */
 export function featureAbilityBonus(){
   var t = target();
-  var entry = {name: lu.className, level: t.newLevel,
+  var entry = {name: lu.className, edition: luEdition(), level: t.newLevel,
     subclass: (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : "")};
   var out = {};
   classFeaturesGainedAt(entry, t.newLevel).forEach(function(f){

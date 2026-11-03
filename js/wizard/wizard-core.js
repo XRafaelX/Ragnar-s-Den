@@ -5,10 +5,10 @@ import { BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_LANGUAGE_RULES } from
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
 import { LANGUAGES, ANY_LANGUAGES } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
-import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, originListSpells, classVariantSwaps, classFeaturesAt, isProficientWithWeapon } from "../core/helpers.js";
+import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, originListSpells, classVariantSwaps, classFeaturesAt, isProficientWithWeapon, classEdition } from "../core/helpers.js";
 import { weaponDataOf } from "../data/weapons.js";
 import { armorProficiencies } from "../core/equipment.js";
-import { backgroundKit, addBackgroundKit } from "../core/background-gear.js";
+import { backgroundKit, addBackgroundKit, gearItem } from "../core/background-gear.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
 import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason, featHasPicks, featDef, emptyPicks, backgroundFeatGrant, backgroundFeatCopy, backgroundFeatPicks, campaignLevel1Feats, campaignFeatCopy } from "../core/feat-picks.js";
@@ -36,7 +36,16 @@ import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons
 export var WIZARD_STEP_IDS = ["class","race","background","alignment","abilities","raceChoices","skills","feat","featPicks","bgFeat","choices","languages","cantrips","spells","equipment","review"];
 export var wizardState = null;
 
-export function currentClassInfo(){ return wizardState && CLASSES_INFO[wizardState.classId]; }
+export function currentClassInfo(){
+  var info = wizardState && CLASSES_INFO[wizardState.classId];
+  // A 2024 monk: that edition's level 1 features and starting gear.
+  var ed = info && wizardEdition() && classEdition({name: wizardState.classId, edition: wizardEdition()});
+  return ed ? Object.assign({}, info, {features: ed.level1, equipment: ed.equipment}) : info;
+}
+/* The rules edition picked for the class ("2024" for a 2024 monk), or "". */
+export function wizardEdition(){
+  return wizardState && wizardState.monk2024 && wizardState.classId==="Monk" ? "2024" : "";
+}
 
 /* The class's level-1 subclass pick (Cleric's Divine Domain), if it has one. */
 export function subclassChoice(info){
@@ -57,7 +66,7 @@ function wizardClassEntry(subclass){
   // the sheet's shape.
   var profPicks = {}, made = wizardState.classChoices.profPicks || {};
   Object.keys(made).forEach(function(key){ profPicks[key] = {slots: made[key]}; });
-  return {name: wizardState.classId, level: 1,
+  return {name: wizardState.classId, level: 1, edition: wizardEdition() || undefined,
     subclass: subclass!=null ? subclass : (ch && wizardState.classChoices[ch.id]) || "",
     spellChoices: wizardState.classChoices.spellChoices || {}, profPicks: profPicks, variants: wizardVariants()};
 }
@@ -790,9 +799,22 @@ export function requestCloseWizard(){
   });
 }
 
+/* What a picked gear option adds beyond its items (the 2024 monk's): its
+   coins, and the tool picked for the class's tool proficiency. */
+function addEquipmentExtras(c, info, chosenKeys){
+  info.equipment.choiceGroups.forEach(function(group, gi){
+    var opt = group.options.find(function(o){ return o.key===chosenKeys[gi]; });
+    if(!opt) return;
+    if(!c.currency) c.currency = {cp: 0, sp: 0, ep: 0, gp: 0, pp: 0};
+    Object.keys(opt.coins || {}).forEach(function(k){ c.currency[k] = (Number(c.currency[k]) || 0) + opt.coins[k]; });
+    var start = opt.starterTool && c.classes[0].profPicks && c.classes[0].profPicks.starting;
+    var tool = start && start.slots && (start.slots[0] || [])[0];
+    if(tool) c.inventory.push(gearItem(tool));
+  });
+}
 export function finishWizard(){
   var w = wizardState;
-  var info = CLASSES_INFO[w.classId];
+  var info = currentClassInfo();
   var c = newCharacter((w.name||"").trim());
   c.title = (w.title||"").trim();
   c.race = w.race;
@@ -802,6 +824,7 @@ export function finishWizard(){
   c.background = w.background;
   c.alignment = w.alignment;
   c.classes = [{name:w.classId, subclass:"", level:1}];
+  if(wizardEdition()) c.classes[0].edition = wizardEdition(); // the 2024 monk
   if(Object.keys(wizardVariants()).length) c.classes[0].variants = wizardVariants(); // Favored Foe in place of Favored Enemy
   if(w.tashaOptional) c.tashaOptional = true;
   if(w.gunMisfire && w.classId==="Gunslinger") c.gunMisfire = true;
@@ -887,6 +910,8 @@ export function finishWizard(){
     var slots = ((w.classChoices.profPicks||{})[g.key] || []).map(function(s){ return (s||[]).slice(); });
     applyClassPicks(c, c.classes[0], g, fillSlots(g.def, slots, classPickContext(c, c.classes[0], g.key)));
   });
+  // The gear option's coins and the tool just picked (the 2024 monk's kit).
+  addEquipmentExtras(c, info, w.equipment);
 
   if(info.spellcasting){
     var sc = info.spellcasting;

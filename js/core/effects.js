@@ -7,7 +7,7 @@ import { stoneBenefit } from "./wizard.js";
 import { TOGGLE_EFFECTS, WILD_SURGES } from "../data/effects.js";
 import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
-import { classLevelOf, computeSpellSlots, usesVariant } from "./class-features.js";
+import { classLevelOf, computeSpellSlots, usesVariant, classEdition } from "./class-features.js";
 import { isRangedWeapon } from "./equipment.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { knownOptions } from "./class-options.js";
@@ -27,6 +27,7 @@ function effectClass(c, def){
   if(def.race) return def.race.indexOf(c.race)!==-1 && totalLevel(c) >= def.level;
   return (c.classes||[]).find(function(cl){
     return cl.name===def.className && (!def.subclass || cl.subclass===def.subclass) && (Number(cl.level)||1) >= def.level &&
+      (!def.edition || (cl.edition || "2014")===def.edition) &&
       (!def.variant || usesVariant(cl, def.variant)) && !(def.replacedBy && usesVariant(cl, def.replacedBy)) &&
       (!def.option || knownOptions(cl, def.option.set).some(function(e){ return e.name===def.option.name; }));
   });
@@ -247,6 +248,9 @@ export function haloOfSporesDie(c){
 /* The Martial Arts die by monk level (d4, d6 from 5, d8 from 11, d10 from 17). */
 export function martialArtsDie(c){
   var lv = classLevelOf(c, "Monk");
+  // (The 2024 monk's runs d6 to d12.)
+  var ed = classEdition((c.classes||[]).find(function(cl){ return cl.name==="Monk"; }));
+  if(ed && ed.martialArtsDie) return ed.martialArtsDie(lv);
   return lv>=17 ? 10 : lv>=11 ? 8 : lv>=5 ? 6 : 4;
 }
 /* An unarmed strike with the astral arms: the best of STR, DEX and WIS,

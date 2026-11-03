@@ -1,5 +1,5 @@
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL, XP_THRESHOLDS } from "../data/progression.js";
-import { ce, escapeHtml, totalLevel, classFeatureList, maxHp } from "../core/helpers.js";
+import { ce, escapeHtml, totalLevel, classFeatureList, maxHp, subclassesFor } from "../core/helpers.js";
 import { save } from "../core/state.js";
 import { renderAll } from "../render/sheet.js";
 import { openInfoModal } from "../ui/info-modal.js";
@@ -175,7 +175,7 @@ export function openSubclassPicker(c, cl){
     var p = ce("p","lu-note");
     p.textContent = "Your "+prog.subclassLabel+" is your "+cl.name+"'s specialisation, gained at level "+prog.subclassLevel+". Pick one to add its features to your sheet.";
     body.appendChild(p);
-    (SUBCLASSES[cl.name]||[]).forEach(function(sub){
+    subclassesFor(cl.name, cl.edition).forEach(function(sub){
       var opt = ce("div","wiz-equip-option"+(cl.subclass===sub.name?" selected":""));
       opt.innerHTML = "<b>"+escapeHtml(sub.name)+"</b><div class='lu-sub-blurb'>"+escapeHtml(sub.blurb)+"</div>";
       opt.addEventListener("click", function(){ choose(sub.name); });

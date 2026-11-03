@@ -48,6 +48,8 @@ export function characterResources(c){
     defs.forEach(function(d){
       var r = d.def;
       if(lv < r.level) return;
+      // One edition's uses (2014 Ki Points, 2024 Focus Points) only for it.
+      if(r.edition && (cl.edition || "2014")!==r.edition) return;
       // Armor-model uses (Defensive Field) only for that model.
       if(r.armorModel && cl.armorModel!==r.armorModel) return;
       // An optional feature's uses (Favored Foe) only for a ranger using it.
