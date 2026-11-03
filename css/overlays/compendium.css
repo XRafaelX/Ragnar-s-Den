@@ -27,6 +27,15 @@
 }
 .cmp-sub-link:hover{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 10%, transparent);}
 .cmp-sub-link strong{font-size:13.5px;}
+/* A class with a 2024 version (the monk): the 2014 / 2024 switch, and the
+   tag on a subclass for one edition only. */
+.cmp-edition{display:inline-flex;margin-bottom:12px;background:rgba(0,0,0,0.3);border:1px solid color-mix(in srgb, var(--brass) 25%, transparent);border-radius:6px;padding:2px;}
+.cmp-edition button{border:none;background:transparent;color:var(--text-on-parch-dim);border-radius:4px;padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s ease;}
+.cmp-edition button:hover{color:var(--text-on-parch);}
+.cmp-edition button.on{background:var(--brass);color:#fff;font-weight:600;box-shadow:0 2px 6px color-mix(in srgb, var(--brass) 40%, transparent);}
+@media (prefers-reduced-motion: reduce){ .cmp-edition button{transition:none;} }
+.cmp-edition-tag{margin-left:8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:1px 7px;border-radius:8px;vertical-align:2px;
+  color:var(--brass);border:1px solid color-mix(in srgb, var(--brass) 55%, transparent);}
 .cmp-sub-link span{font-size:12px;color:var(--text-on-parch-dim);}
 .cmp-desc{font-size:13px;line-height:1.6;white-space:pre-line;margin:0;}
 .cmp-back{margin-top:4px;}

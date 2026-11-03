@@ -13,7 +13,7 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES } from "../../data/classes.js";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL } from "../../data/progression.js";
 import { HIT_DICE_BY_CLASS, CLASS_LIST } from "../../data/abilities-skills.js";
-import { classFeatureList, escapeHtml } from "../../core/helpers.js";
+import { classFeatureList, escapeHtml, classHasEdition, classEdition, subclassesFor } from "../../core/helpers.js";
 import { facts, textField } from "../../ui/homebrew-form.js";
 import { save } from "../../core/state.js";
 import { session, ABILITY_NAME, abilityList, block, featureList, closeInfo } from "./shared.js";
@@ -25,12 +25,36 @@ var CLASS_ROLES = {
 };
 var CASTER_LABEL = {full:"Full caster", half:"Half caster", artificer:"Half caster", pact:"Pact Magic", third:"One-third caster"};
 
-function showClass(name){
+/* A subclass for one rules edition only gets a tag ("2024", "2014"). */
+function editionTag(sub){
+  return sub.edition ? "<span class='cmp-edition-tag'>" + escapeHtml(sub.edition) + " only</span>" : "";
+}
+/* A class with a 2024 version (the monk) opens on the 2014 one with a
+   switch at the top; the 2024 one swaps in its features, proficiencies and
+   subclasses (the older ones it can take listed after its own). */
+function showClass(name, edition){
   var info = CLASSES_INFO[name] || {};
   var prog = CLASS_PROGRESSION[name] || {};
-  var profs = CLASS_PROFICIENCIES[name] || {};
+  var ed = edition ? classEdition({name: name, edition: edition}) : null;
+  var profs = (ed && ed.proficiencies) || CLASS_PROFICIENCIES[name] || {};
   openInfoModal(name, function(body){
-    block(body, "", "<p class='cmp-lead'>"+escapeHtml(info.blurb||"")+"</p>"+facts([
+    if(classHasEdition(name, "2024")){
+      var bar = document.createElement("div");
+      bar.className = "cmp-edition";
+      bar.setAttribute("role", "group");
+      bar.setAttribute("aria-label", "Rules edition");
+      [["", "2014 rules"], ["2024", "2024 rules"]].forEach(function(o){
+        var b = document.createElement("button");
+        b.type = "button";
+        b.textContent = o[1];
+        b.className = (edition || "")===o[0] ? "on" : "";
+        b.setAttribute("aria-pressed", (edition || "")===o[0] ? "true" : "false");
+        b.addEventListener("click", function(){ if((edition || "")!==o[0]) showClass(name, o[0]); });
+        bar.appendChild(b);
+      });
+      body.appendChild(bar);
+    }
+    block(body, "", "<p class='cmp-lead'>"+escapeHtml((ed && ed.blurb) || info.blurb || "")+"</p>"+facts([
       ["Hit die", "d"+(HIT_DICE_BY_CLASS[name]||8)],
       ["Primary ability", info.primaryAbilityLabel || ABILITY_NAME[info.primaryAbility] || ""],
       ["Saving throws", abilityList(profs.savingThrows || info.savingThrows)],
@@ -43,8 +67,8 @@ function showClass(name){
       ["Tools", (profs.tools||[]).join(", ") || "None"],
       ["Skills", info.skillChoices ? "Choose "+info.skillChoices.count+" from "+info.skillChoices.options.join(", ") : ""]
     ]));
-    block(body, "Class features (levels 1 to "+MAX_LEVEL+")", featureList(classFeatureList({name:name, level:MAX_LEVEL, subclass:""})));
-    var subs = SUBCLASSES[name] || [];
+    block(body, "Class features (levels 1 to "+MAX_LEVEL+")", featureList(classFeatureList({name:name, level:MAX_LEVEL, subclass:"", edition:edition || undefined})));
+    var subs = subclassesFor(name, edition);
     if(subs.length){
       var list = document.createElement("div");
       list.className = "cmp-sub-list";
@@ -52,8 +76,8 @@ function showClass(name){
         var b = document.createElement("button");
         b.type = "button";
         b.className = "cmp-sub-link";
-        b.innerHTML = "<strong>"+escapeHtml(sub.name)+"</strong><span>"+escapeHtml(sub.blurb)+"</span>";
-        b.addEventListener("click", function(){ showSubclass(name, sub); });
+        b.innerHTML = "<strong>"+escapeHtml(sub.name)+editionTag(sub)+"</strong><span>"+escapeHtml(sub.blurb)+"</span>";
+        b.addEventListener("click", function(){ showSubclass(name, sub, edition); });
         list.appendChild(b);
       });
       block(body, (prog.subclassLabel || "Subclasses")+" ("+subs.length+")", "");
@@ -62,7 +86,7 @@ function showClass(name){
   });
 }
 
-function showSubclass(className, sub){
+function showSubclass(className, sub, edition){
   var prog = CLASS_PROGRESSION[className] || {};
   openInfoModal(sub.name, function(body){
     if(sub.custom){
@@ -81,7 +105,10 @@ function showSubclass(className, sub){
     block(body, "", "<p class='cmp-lead'>"+escapeHtml(sub.blurb||"")+"</p>"+facts([
       ["Class", className],
       [prog.subclassLabel || "Subclass", prog.subclassLevel ? "Chosen at "+className+" level "+prog.subclassLevel : ""],
-      ["Spellcasting", sub.casterType==="third" ? "One-third caster ("+ABILITY_NAME[sub.spellAbility]+")" : ""]
+      ["Spellcasting", sub.casterType==="third" ? "One-third caster ("+ABILITY_NAME[sub.spellAbility]+")" : ""],
+      ["Rules", sub.edition==="2024" ? "Player's Handbook 2024, for a 2024 " + className.toLowerCase() + " only"
+        : sub.edition==="2014" ? "For a 2014 " + className.toLowerCase() + " only"
+        : classHasEdition(className, "2024") ? "For a 2014 or 2024 " + className.toLowerCase() : ""]
     ]));
     var features = [];
     Object.keys(sub.features||{}).map(Number).sort(function(a, b){ return a-b; }).forEach(function(lv){
@@ -92,7 +119,7 @@ function showSubclass(className, sub){
     back.type = "button";
     back.className = "btn small ghost cmp-back";
     back.textContent = "← All about the "+className;
-    back.addEventListener("click", function(){ showClass(className); });
+    back.addEventListener("click", function(){ showClass(className, edition || (sub.edition==="2024" ? "2024" : "")); });
     body.appendChild(back);
   });
 }
@@ -140,9 +167,9 @@ export function subclassSection(){
     renderSub:function(name, d){ return d.sub.blurb || ""; },
     renderRight:function(name, d){
       var prog = CLASS_PROGRESSION[d.cls] || {};
-      return [d.cls, (d.sub.custom ? "Custom · " : "")+(prog.subclassLevel ? "From level "+prog.subclassLevel : "")];
+      return [d.cls + (d.sub.edition ? " " + d.sub.edition : ""), (d.sub.custom ? "Custom · " : "")+(prog.subclassLevel ? "From level "+prog.subclassLevel : "")];
     },
-    searchText:function(name, d){ return name+" "+d.cls+" "+(d.sub.blurb||"")+(d.sub.custom ? " custom homebrew" : ""); },
+    searchText:function(name, d){ return name+" "+d.cls+" "+(d.sub.blurb||"")+(d.sub.custom ? " custom homebrew" : "")+(d.sub.edition ? " " + d.sub.edition : ""); },
     onAdd:function(name, d){ showSubclass(d.cls, d.sub); return false; },
     renderCustomForm:function(container){ buildSubclassForm(container); }
   };

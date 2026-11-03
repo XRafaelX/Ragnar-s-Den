@@ -22,6 +22,7 @@ function martialArts(die){
 
 export var MONK_2024 = {
   label: "2024 Monk",
+  blurb: "A martial artist who fights unarmed with supernatural speed and focus.",
   level1: [
     {name:"Unarmored Defense", text:"While wearing no armor and no shield, AC equals 10 + DEX modifier + WIS modifier."},
     martialArts(6)
