@@ -672,6 +672,16 @@ function renderUnarmedCard(c, u){
   fighterWeaponButtons(c, u.name).forEach(function(b){ actions.appendChild(b); });
   if(!u.ranged && /unarmed strike/i.test(u.name)) smiteButtons(c, u.name, false).forEach(function(b){ actions.appendChild(b); });
   if(/unarmed strike/i.test(u.name)) rangerButtons(c, u.name, true).forEach(function(b){ actions.appendChild(b); });
+  // Elemental Epitome (2024 Elements 17): one more Martial Arts die on an
+  // unarmed hit, once on each of your turns, while attuned.
+  if(u.name==="Unarmed strike" && effectOn(c, "elemental_epitome")){
+    var epi = document.createElement("button"), epiDie = martialArtsDie(c);
+    epi.type = "button"; epi.className = "btn small inv-roll-btn inv-fury-btn";
+    epi.innerHTML = makeDicesSvg() + "Epitome +1d" + epiDie;
+    epi.title = "Elemental Epitome: once on each of your turns, an unarmed hit deals one more Martial Arts die, of the same type";
+    epi.addEventListener("click", function(){ performRoll(epiDie, 1, 0, "none", "Elemental Epitome: extra damage"); });
+    actions.appendChild(epi);
+  }
   var deflect = u.name==="Unarmed strike" && (isMonk2024(c) ? deflectAttacksButton(c) : deflectMissilesButton(c));
   if(deflect) actions.appendChild(deflect);
   if(u.psychicBlade){

@@ -639,6 +639,7 @@ export function resetChoicesFor(name){
   lu.pactBoon = ""; lu.pactSpells = []; lu.invPicks = []; lu.invSpells = {}; lu.swapOut = ""; lu.optChoices = {}; lu.profPicks = {}; lu.variants = {};
   lu.asi = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; lu.featName = ""; lu.featPicks = null; lu.asiMode = "asi";
   lu.hpRoll = null; lu.hpMethod = "avg";
+  lu.edition = ""; // (a new monk starts as the 2014 one until the 2024 one is picked)
 }
 
 /* Styles this class may pick now that the character doesn't already have

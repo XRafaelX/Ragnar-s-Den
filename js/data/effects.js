@@ -5,7 +5,9 @@
    where they apply (AC, speed, saves, skills, senses, attacks). A rest or
    dropping to 0 HP ends them all.
 
-   className / subclass / level: who has it (class level, not total).
+   className / subclass / level: who has it (class level, not total). A
+     subclass can be a list (Shadow Step: the 2014 and 2024 Shadow monks).
+   edition: only for a class entry on that rules edition ("2014", "2024").
    variant: only for a class entry using that Tasha's feature (Steady Aim).
    race / level: or a race's (character level): [race names].
    cost: {resource, amount}, a resource id from resources.js on the same
@@ -252,7 +254,15 @@ export var TOGGLE_EFFECTS = [
   // data 2026-11-03.
   {id:"superior_defense", name:"Superior Defense", className:"Monk", edition:"2024", level:18, cost:{resource:"ki", amount:3}, duration:"1 minute", endsIncapacitated:true,
     hint:"At the start of your turn."},
-  {id:"shadow_step", name:"Shadow Step", className:"Monk", subclass:"Way of Shadow", level:6, duration:"This turn",
+  {id:"elemental_attunement", name:"Elemental Attunement", className:"Monk", subclass:"Warrior of the Elements", level:3, cost:{resource:"ki", amount:1}, duration:"10 minutes", endsIncapacitated:true,
+    startLabel:"Attune", hint:"At the start of your turn."},
+  {id:"elemental_epitome", name:"Elemental Epitome", className:"Monk", subclass:"Warrior of the Elements", level:17, duration:"While attuned", requires:["elemental_attunement"],
+    choose:{placeholder:"Choose a resistance...", options:["Acid", "Cold", "Fire", "Lightning", "Thunder"]},
+    hint:"You can change the damage type at the start of each of your turns."},
+  {id:"shadow_cloak", name:"Cloak of Shadows", className:"Monk", subclass:"Warrior of Shadow", level:17, cost:{resource:"ki", amount:3}, duration:"1 minute", endsIncapacitated:true,
+    startLabel:"Shroud", endLabel:"Step out",
+    hint:"A Magic action, entirely in dim light or darkness. It also ends if you end your turn in bright light."},
+  {id:"shadow_step", name:"Shadow Step", className:"Monk", subclass:["Way of Shadow", "Warrior of Shadow"], level:6, duration:"This turn",
     startLabel:"Step", endLabel:"Done",
     hint:"Bonus action, in dim light or darkness: teleport up to 60 feet to another such space. Your next melee attack uses it up."},
   {id:"cloak_of_shadows", name:"Cloak of Shadows", className:"Monk", subclass:"Way of Shadow", level:11, duration:"Until you attack or cast a spell",

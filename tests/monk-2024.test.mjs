@@ -207,3 +207,92 @@ test("the Active effects card: Superior Defense for a 2024 monk 18, Empty Body f
   assert.ok(H.startEffect(c, "superior_defense"));
   assert.equal(H.resourceLeft(c, "Monk:ki"), 15, "3 Focus paid");
 });
+
+/* Phase 3 (2026-11-03): the four 2024 subclasses at work. */
+const acts = (c) => H.kiActions(c);
+const act = (c, id) => acts(c).find((a) => a.id === id);
+
+test("Warrior of the Open Hand: technique, Wholeness of Body, Fleet Step, Quivering Palm", () => {
+  assert.match(act(m24(3, "Warrior of the Open Hand"), "flurry").detail, /Addle.*Push \(STR save DC 13.*Topple \(DEX save DC 13/);
+  const res = (c) => H.characterResources(c).find((r) => r.key === "Monk:wholeness_of_body");
+  assert.equal(res(m24(5, "Warrior of the Open Hand")), undefined);
+  const w = res(m24(6, "Warrior of the Open Hand"));
+  assert.deepEqual([w.max, w.reset, w.roll.die, w.roll.bonus, w.roll.heal, w.roll.min], [3, "long", 8, 3, true, 1], "WIS 16: 3 uses of 1d8 + 3");
+  assert.equal(res(m24(17, "Warrior of the Open Hand")).roll.die, 12);
+  assert.equal(H.characterResources(monk(6, {}, "Way of the Open Hand")).find((r) => r.key === "Monk:wholeness_of_body").heal, 18, "the 2014 one is untouched");
+  assert.match(act(m24(11, "Warrior of the Open Hand"), "step").detail, /Fleet Step/);
+  const c = m24(17, "Warrior of the Open Hand");
+  assert.equal(act(c, "quiver24").cost, 4);
+  assert.deepEqual(act(c, "quiver24-end").roll.qty + "d" + act(c, "quiver24-end").roll.die, "10d12");
+  assert.ok(!act(c, "quiver"), "not the 2014 version");
+});
+
+test("Warrior of Shadow: Darkness for 1 Focus, Minor Illusion, darkvision, Shadow Step, Cloak of Shadows", () => {
+  const c = m24(3, "Warrior of Shadow");
+  assert.equal(act(c, "shadow24-darkness").cost, 1);
+  assert.ok(!acts(c).some((a) => a.group === "Shadow Arts"), "not the 2014 four spells for 2 ki");
+  const names = H.featureSpells(c).map((s) => s.name);
+  assert.ok(names.includes("Minor Illusion") && names.includes("Darkness"), names.join(", "));
+  assert.match(String(H.getCharacterSenses(c)), /Darkvision 60 ft/);
+  c.race = "Hill Dwarf";
+  assert.match(String(H.getCharacterSenses(c)), /Darkvision 120 ft/, "60 more for a race with darkvision");
+  const ids = (x) => H.characterEffects(x).map((e) => e.def.id);
+  assert.ok(ids(m24(6, "Warrior of Shadow")).includes("shadow_step"));
+  assert.ok(act(m24(11, "Warrior of Shadow"), "improved-step"));
+  const k = m24(17, "Warrior of Shadow");
+  assert.ok(ids(k).includes("shadow_cloak") && !ids(k).includes("cloak_of_shadows"));
+  assert.ok(H.startEffect(k, "shadow_cloak"));
+  assert.equal(H.resourceLeft(k, "Monk:ki"), 14, "3 Focus");
+  assert.equal(act(k, "flurry").cost, 0, "Flurry free while shrouded");
+  assert.ok(H.effectRolls(k, "attack").some((r) => /Cloak of Shadows/.test(r.reason)));
+  assert.deepEqual(H.endIncapacitatedEffects(k), ["Cloak of Shadows"]);
+});
+
+test("Warrior of the Elements: attunement, Elementalism, Elemental Burst, Stride, Epitome", () => {
+  const c = m24(11, "Warrior of the Elements", {});
+  assert.ok(H.featureSpells(c).some((s) => s.name === "Elementalism"));
+  assert.ok(H.startEffect(c, "elemental_attunement"));
+  assert.equal(H.resourceLeft(c, "Monk:ki"), 10, "1 Focus");
+  const u = H.unarmedStrike(c);
+  assert.match(u.type, /force/);
+  assert.match(u.type, /thunder/);
+  assert.ok(u.parts.some((p) => /Reach 15 ft/.test(p)));
+  const sp = H.computeSpeed(c).others;
+  assert.ok(sp.some((o) => o.type === "fly" && !o.when) && sp.some((o) => o.type === "swim" && !o.when), JSON.stringify(sp));
+  const b = act(c, "burst");
+  assert.deepEqual([b.cost, b.roll.qty, b.roll.die], [2, 3, 10]);
+  const e = m24(17, "Warrior of the Elements");
+  assert.ok(!H.startEffect(e, "elemental_epitome", "Fire") || !H.effectOn(e, "elemental_epitome"), "needs the attunement first");
+  H.startEffect(e, "elemental_attunement");
+  e.effects.elemental_epitome = "Fire";
+  assert.ok(H.effectResistances(e).some((r) => r.type === "fire" && r.source === "Elemental Epitome"));
+  assert.match(act(e, "step").detail, /Elemental Epitome: \+20 feet/);
+});
+
+test("Warrior of Mercy: Hand of Harm and Healing, flurry uses, Ultimate Mercy", () => {
+  const c = m24(6, "Warrior of Mercy");
+  assert.deepEqual([act(c, "harm24").cost, act(c, "harm24").roll.die, act(c, "harm24").roll.bonus], [1, 8, 3]);
+  assert.match(act(c, "harm24").detail, /poison/);
+  assert.match(act(c, "heal24").detail, /blinded, deafened, paralyzed, poisoned or stunned/);
+  assert.equal(act(c, "heal24-flurry").cost, 0);
+  assert.ok(!act(c, "harm24-flurry"), "the free Hand of Harm comes at 11");
+  const k = m24(11, "Warrior of Mercy");
+  assert.equal(H.characterResources(k).find((r) => r.key === "Monk:flurry_of_healing_and_harm").max, 3);
+  const free = act(k, "harm24-flurry");
+  assert.ok(H.payKiAction(k, free));
+  assert.equal(H.resourceLeft(k, "Monk:ki"), 11, "no Focus");
+  assert.equal(H.resourceLeft(k, "Monk:flurry_of_healing_and_harm"), 2, "a use");
+  k.resourcesUsed["Monk:flurry_of_healing_and_harm"] = 3;
+  assert.equal(H.kiActionProblem(k, act(k, "harm24-flurry")), "Used up until a long rest");
+  const u = m24(17, "Warrior of Mercy");
+  assert.equal(act(u, "ultimate24").cost, 5);
+  assert.equal(act(u, "ultimate24").roll.qty, 4);
+  assert.ok(H.classProficiencies(u, 0).tools.includes("Herbalism kit"));
+});
+
+test("older subclasses on a 2024 monk say Focus on the Spells tab and Vitals", () => {
+  const c = m24(6, "Way of the Sun Soul");
+  const arc = H.classFeatureList(c.classes[0]).find((f) => f.name === "Searing Arc Strike");
+  assert.ok(!/\bki\b/.test(arc.spellLabel + " " + arc.spellTip + " " + arc.text), arc.spellLabel);
+  assert.equal(H.kiWord(c), "Focus");
+});

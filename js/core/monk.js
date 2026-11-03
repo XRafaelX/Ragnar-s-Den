@@ -12,7 +12,7 @@ import { mod, profBonus, clamp } from "./basics.js";
 import { classLevelOf, isMonk2024, classVariants } from "./class-features.js";
 import { MONK_2024_SWAPS } from "../data/monk-2024.js";
 import { abilityScore } from "./ability-scores.js";
-import { martialArtsDie, resourceLeft, spendResource } from "./effects.js";
+import { martialArtsDie, resourceLeft, spendResource, effectOn } from "./effects.js";
 import { maxHp } from "./vitals.js";
 import { characterPickedProfs } from "./class-picks.js";
 import { allKnownOptions } from "./class-options.js";
@@ -141,9 +141,16 @@ export function kiActions(c){
   if(way("Way of the Open Hand", 3)) flurry += " Open Hand Technique: on a hit, DEX save (DC " + dc + ") or prone, STR save or pushed 15 feet, or it can't take reactions until the end of your next turn.";
   if(way("Way of Mercy", 11)) flurry += " Each strike can be Hand of Healing for free, and Hand of Harm costs no ki with a strike.";
   else if(way("Way of Mercy", 3)) flurry += " One strike can be Hand of Healing for free.";
+  // The 2024 subclasses.
+  if(way("Warrior of the Open Hand", 3)) flurry += " Open Hand Technique: on a hit, Addle (it can't make opportunity attacks until the start of its next turn), Push (STR save DC " + dc + " or pushed 15 feet) or Topple (DEX save DC " + dc + " or prone).";
+  if(way("Warrior of Mercy", 11)) flurry += " Flurry of Healing and Harm: each strike can be Hand of Healing, and Hand of Harm can come with a strike, without spending Focus (uses on Vitals).";
+  else if(way("Warrior of Mercy", 3)) flurry += " One strike can be Hand of Healing, with no Focus for the healing.";
   if(way("Way of the Drunken Master", 3)) flurry += " You also get the Disengage action and +10 feet of walking speed this turn.";
   if(way("Way of the Drunken Master", 17)) flurry += " Up to five attacks, if each one targets a different creature.";
-  out.push({id: "flurry", name: "Flurry of Blows", cost: 1, detail: flurry, log: flurry});
+  // (Cloak of Shadows, 2024 Shadow 17: Flurry costs nothing while it's on.)
+  var cloaked = effectOn(c, "shadow_cloak");
+  if(cloaked) flurry += " Cloak of Shadows: no Focus needed.";
+  out.push({id: "flurry", name: "Flurry of Blows", cost: cloaked ? 0 : 1, detail: flurry, log: flurry});
   if(focus){
     var patient = "Take both the Disengage and Dodge actions as a bonus action." + (lv >= 10 ? " Heightened Focus: you also gain temporary hit points equal to two rolls of your Martial Arts die." : "");
     // (Heightened Focus rolls the temporary hit points: `temp` on the roll.)
@@ -154,6 +161,8 @@ export function kiActions(c){
   var step = focus ? "Take both the Disengage and Dash actions as a bonus action, and your jump distance doubles this turn." : "Disengage or Dash as a bonus action, and your jump distance doubles this turn.";
   if(focus && lv >= 10) step += " Heightened Focus: you can take a willing Large or smaller creature within 5 feet along with you, and its movement doesn't provoke opportunity attacks.";
   if(way("Way of the Ascendant Dragon", 6)) step += " Wings Unfurled can give you a flying speed this turn.";
+  if(way("Warrior of the Open Hand", 11)) step += " Fleet Step: you can also use it right after any other bonus action.";
+  if(effectOn(c, "elemental_epitome")) step += " Elemental Epitome: +20 feet this turn, and each creature you choose takes a Martial Arts die of elemental damage when you move within 5 feet of it (once per turn).";
   out.push({id: "step", name: "Step of the Wind", cost: 1, detail: step, log: step});
   if(lv >= 5 && focus){
     var stun = "Once per turn, on a hit with a monk weapon or an unarmed strike: CON save DC " + dc + ". On a failure it is stunned until the start of your next turn. On a success its speed is halved and the next attack against it has advantage, until the start of your next turn.";
@@ -187,6 +196,31 @@ export function kiActions(c){
       roll: {qty: 1, die: die, bonus: wis, label: "Hand of Healing: hit points restored"}});
   }
   if(way("Way of Mercy", 17)) out.push({id: "ultimate", name: "Hand of Ultimate Mercy", cost: 5, payKey: "Monk:hand_of_ultimate_mercy", detail: "An action: bring back a creature that died within 24 hours. Once per long rest.",
+    roll: {qty: 4, die: 10, bonus: wis, label: "Hand of Ultimate Mercy: hit points regained"}, reason: resourceLeft(c, "Monk:hand_of_ultimate_mercy") > 0 ? "" : "Used until a long rest"});
+  // ---- The 2024 subclasses (Player's Handbook 2024, pp. 104 to 107) ----
+  if(way("Warrior of the Open Hand", 17)){
+    out.push({id: "quiver24", name: "Quivering Palm", cost: 4, detail: "On an unarmed hit: start harmless vibrations that last " + lv + " days. Only one creature at a time.", log: "Vibrations started. They last " + lv + " days."});
+    out.push({id: "quiver24-end", name: "Quivering Palm: end it", cost: 0, detail: "An action, or give up one attack of the Attack action: CON save DC " + dc + ", 10d12 force damage on a failure, half on a success.",
+      roll: {qty: 10, die: 12, bonus: 0, label: "Quivering Palm: force damage (CON DC " + dc + ", half on a success)"}});
+  }
+  if(way("Warrior of Shadow", 3)) out.push({id: "shadow24-darkness", name: "Darkness", cost: 1, detail: "Cast Darkness without components. You can see within it, and you can move its area to a space within 60 feet at the start of each of your turns.", log: "Cast Darkness."});
+  if(way("Warrior of Shadow", 11)) out.push({id: "improved-step", name: "Improved Shadow Step", cost: 1, detail: "With Shadow Step: you don't need to start and end in dim light or darkness, and you can make an unarmed strike right after you teleport.", log: "Shadow Step without the darkness, with an unarmed strike after it."});
+  if(way("Warrior of the Elements", 6)) out.push({id: "burst", name: "Elemental Burst", cost: 2, detail: "A Magic action: a 20-foot-radius sphere within 120 feet, acid, cold, fire, lightning or thunder. DEX save DC " + dc + " for half.",
+    roll: {qty: 3, die: die, bonus: 0, label: "Elemental Burst (DEX DC " + dc + ", half on a success)"}});
+  if(way("Warrior of Mercy", 3)){
+    var touch24 = way("Warrior of Mercy", 6), harmRoll = {qty: 1, die: die, bonus: wis, label: "Hand of Harm (Necrotic)"}, healRoll = {qty: 1, die: die, bonus: wis, label: "Hand of Healing: hit points restored"};
+    var harmText = "Once per turn, on an unarmed hit: extra necrotic damage." + (touch24 ? " Physician's Touch: you can also poison it until the end of your next turn." : "");
+    var healText = (touch24 ? " Physician's Touch: you can also end blinded, deafened, paralyzed, poisoned or stunned." : "");
+    out.push({id: "harm24", name: "Hand of Harm", cost: 1, detail: harmText, roll: harmRoll});
+    out.push({id: "heal24", name: "Hand of Healing", cost: 1, detail: "A Magic action: restore hit points to a creature you touch." + healText, roll: healRoll});
+    out.push({id: "heal24-flurry", name: "Hand of Healing in a Flurry", cost: 0, detail: "In place of one Flurry of Blows strike, with no Focus for the healing." + healText, roll: healRoll});
+    if(way("Warrior of Mercy", 11)){
+      var mercyLeft = resourceLeft(c, "Monk:flurry_of_healing_and_harm") > 0 ? "" : "Used up until a long rest";
+      out.push({id: "harm24-flurry", name: "Hand of Harm with a Flurry strike", cost: 0, payKey: "Monk:flurry_of_healing_and_harm", reason: mercyLeft, detail: "Flurry of Healing and Harm: with a Flurry of Blows strike that deals damage, no Focus. Still once per turn." + (touch24 ? " You can also poison it." : ""), roll: harmRoll});
+      out.push({id: "heal24-more", name: "Hand of Healing on another Flurry strike", cost: 0, payKey: "Monk:flurry_of_healing_and_harm", reason: mercyLeft, detail: "Flurry of Healing and Harm: another strike of the same Flurry becomes Hand of Healing, no Focus." + healText, roll: healRoll});
+    }
+  }
+  if(way("Warrior of Mercy", 17)) out.push({id: "ultimate24", name: "Hand of Ultimate Mercy", cost: 5, payKey: "Monk:hand_of_ultimate_mercy", detail: "A Magic action: bring back a creature that died within 24 hours, free of blinded, deafened, paralyzed, poisoned and stunned. Once per long rest.",
     roll: {qty: 4, die: 10, bonus: wis, label: "Hand of Ultimate Mercy: hit points regained"}, reason: resourceLeft(c, "Monk:hand_of_ultimate_mercy") > 0 ? "" : "Used until a long rest"});
   if(way("Way of the Drunken Master", 6)) out.push({id: "redirect", name: "Redirect Attack", cost: 1, detail: "Reaction: when a creature misses you with a melee attack, it hits another creature of your choice within 5 feet of you.", log: "The missed attack hits another creature within 5 feet of you."});
   if(way("Way of the Drunken Master", 11)) out.push({id: "luck", name: "Drunkard's Luck", cost: 2, detail: "Cancel the disadvantage on an ability check, attack roll or saving throw.", log: "Disadvantage cancelled for that roll."});

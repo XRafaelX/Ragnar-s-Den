@@ -248,17 +248,18 @@ test("spell catalog: well formed, with the Player's Handbook, Xanathar's, Tasha'
     assert.ok(d.summary.length > 15 && !LONG_DASH.test(name + d.summary + d.material), name + ": summary");
     // Only a guild spell (Encode Thoughts) and the Gunslinger class's
     // Eldritch Gunman spells (always known, see js/data/subclasses/gunslinger.js)
-    // are on no class list. Wildemount's dunamancy spells are on the
+    // are on no class list, and the 2024 Elementalism (a Warrior of the
+    // Elements' cantrip, js/data/monk-2024.js). Wildemount's dunamancy spells are on the
     // "Dunamancy" list, opened by two wizard subclasses.
-    assert.ok((d.classes.length || d.source === "GGR" || d.source === "GSL") && d.classes.every((c) => casters.includes(c) || (c === "Dunamancy" && d.source === "EGW")), name + ": classes " + d.classes);
+    assert.ok((d.classes.length || d.source === "GGR" || d.source === "GSL" || d.source === "XPHB") && d.classes.every((c) => casters.includes(c) || (c === "Dunamancy" && d.source === "EGW")), name + ": classes " + d.classes);
     assert.deepEqual(d.classes, d.classes.slice().sort(), name + ": classes in order");
     d.classes.forEach((c) => { count[c] = (count[c] || 0) + 1; });
   }
-  assert.equal(Object.keys(SPELL_DATA).length, 546, "PHB 361 + XGE 95 + TCE 21 + 67 from other books + 2 from the Gunslinger class");
+  assert.equal(Object.keys(SPELL_DATA).length, 547, "PHB 361 + XGE 95 + TCE 21 + 67 from other books + 2 from the Gunslinger class + Elementalism (2024)");
   assert.deepEqual(count, { Artificer: 102, Bard: 152, Cleric: 126, Druid: 161, Paladin: 51, Ranger: 61, Sorcerer: 223, Warlock: 138, Wizard: 358, Dunamancy: 15 });
   // The other books' spells name their book; the core ones don't.
   const fromBooks = Object.entries(SPELL_DATA).filter(([, d]) => d.source);
-  assert.equal(fromBooks.length, 69); // with the Gunslinger class's two
+  assert.equal(fromBooks.length, 70); // with the Gunslinger class's two and Elementalism
   fromBooks.forEach(([n, d]) => assert.ok(SPELL_SOURCES[d.source], n + ": source " + d.source));
   assert.deepEqual([SPELL_DATA["Silvery Barbs"].source, SPELL_DATA["Silvery Barbs"].castingTime, SPELL_DATA["Wristpocket"].ritual], ["SCC", "1 reaction", true]);
   // An artificer has spells to prepare at every level it casts.

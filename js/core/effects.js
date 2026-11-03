@@ -26,7 +26,7 @@ function effectDef(id){
 function effectClass(c, def){
   if(def.race) return def.race.indexOf(c.race)!==-1 && totalLevel(c) >= def.level;
   return (c.classes||[]).find(function(cl){
-    return cl.name===def.className && (!def.subclass || cl.subclass===def.subclass) && (Number(cl.level)||1) >= def.level &&
+    return cl.name===def.className && (!def.subclass || [].concat(def.subclass).indexOf(cl.subclass)!==-1) && (Number(cl.level)||1) >= def.level &&
       (!def.edition || (cl.edition || "2014")===def.edition) &&
       (!def.variant || usesVariant(cl, def.variant)) && !(def.replacedBy && usesVariant(cl, def.replacedBy)) &&
       (!def.option || knownOptions(cl, def.option.set).some(function(e){ return e.name===def.option.name; }));
@@ -205,7 +205,7 @@ export function effectRolls(c, kind, ability){
   if(kind==="attack" && effectOn(c, "natures_veil")) out.push({mode: "adv", reason: "Nature's Veil: you're invisible"});
   // Empty Body and Cloak of Shadows: invisible, so advantage on attack rolls.
   if(kind==="attack" && effectOn(c, "empty_body")) out.push({mode: "adv", reason: "Empty Body: you're invisible"});
-  if(kind==="attack" && effectOn(c, "cloak_of_shadows")) out.push({mode: "adv", reason: "Cloak of Shadows: you're invisible"});
+  if(kind==="attack" && (effectOn(c, "cloak_of_shadows") || effectOn(c, "shadow_cloak"))) out.push({mode: "adv", reason: "Cloak of Shadows: you're invisible"});
   if(kind==="attack" && effectOn(c, "trickery_cloak")) out.push({mode: "adv", reason: "Cloak of Shadows: you're invisible"});
   if(kind==="attack" && effectOn(c, "misty_escape")) out.push({mode: "adv", reason: "Misty Escape: you're invisible"});
   if(kind==="attack" && effectOn(c, "entropic_ward")) out.push({mode: "adv", reason: "Entropic Ward"});
@@ -599,6 +599,8 @@ export function effectResistances(c){
   var out = [];
   if(effectOn(c, "empty_body")) out.push({type: "all damage but force", source: "Empty Body"});
   if(effectOn(c, "superior_defense")) out.push({type: "all damage but force", source: "Superior Defense"});
+  // Elemental Epitome: the damage type picked (kept in c.effects).
+  if(effectOn(c, "elemental_epitome") && typeof c.effects.elemental_epitome==="string") out.push({type: c.effects.elemental_epitome.toLowerCase(), source: "Elemental Epitome"});
   if(effectOn(c, "invincible_conqueror")) out.push({type: "all damage", source: "Invincible Conqueror"});
   if(effectOn(c, "exalted_champion")) out.push({type: "nonmagical bludgeoning, piercing and slashing", source: "Exalted Champion"});
   if(effectOn(c, "starry_form") && classLevelOf(c, "Druid", "Circle of Stars") >= 14) out.push({type: "bludgeoning, piercing and slashing", source: "Full of Stars"});

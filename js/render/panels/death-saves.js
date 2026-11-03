@@ -5,7 +5,7 @@ import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
-import { searingVengeanceReady, necroticHuskReady, spendForRests, mod, strengthOfTheGrave, blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource } from "../../core/helpers.js";
+import { searingVengeanceReady, necroticHuskReady, spendForRests, mod, strengthOfTheGrave, blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource, kiWord } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playDiceRattle, playDeathSaveSuccess, playDeathSaveFail, playStabilized, playDeath, playRevive } from "../../ui/sound.js";
@@ -115,7 +115,8 @@ export function renderDeathSaves(c){
 
   // Mastery of Death (Way of Long Death 11): 1 ki for 1 hit point instead.
   if(classLevelOf(c, "Monk", "Way of Long Death") >= 11 && !dead){
-    box.appendChild(backToOne(c, "ds-mastery", "Mastery of Death · 1 ki", kiLeft(c) >= 1, "No ki left", function(){ return spendKi(c, 1); }, "1 hit point instead of 0 (1 ki)."));
+    var kw = kiWord(c);
+    box.appendChild(backToOne(c, "ds-mastery", "Mastery of Death · 1 " + kw, kiLeft(c) >= 1, "No " + kw + " left", function(){ return spendKi(c, 1); }, "1 hit point instead of 0 (1 " + kw + ")."));
   }
   // Blazing Revival (Wildfire 14): the spirit drops to 0 and you rise with half your hit points.
   if(blazingRevivalReady(c) && !dead){

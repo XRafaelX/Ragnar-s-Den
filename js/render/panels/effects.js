@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition } from "../../core/helpers.js";
+import { wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -353,6 +353,11 @@ function effectSummary(c, id){
   if(id==="living_legend") return "Advantage on CHA checks. Once on each of your turns, a miss can hit instead, and you can reroll a failed save";
   if(id==="exalted_champion") return "Resistance to nonmagical bludgeoning, piercing and slashing, and advantage on WIS saves. Allies within 30 ft have advantage on WIS saves and death saves";
   if(id==="mortal_bulwark") return "Truesight 120 ft and advantage on attacks against aberrations, celestials, elementals, fey and fiends. On a hit, a CHA save (DC " + paladinDc(c) + ") or it's banished";
+  if(id==="elemental_attunement") return "Unarmed strikes reach 10 feet farther and can deal acid, cold, fire, lightning or thunder damage. On such a hit, a STR save (DC " + kiSaveDc(c) + ") or you move it up to 10 feet toward or away from you" +
+    (classLevelOf(c, "Monk") >= 11 ? ". Fly and swim speeds equal to your speed" : "");
+  if(id==="elemental_epitome") return "Resistance to " + (typeof c.effects.elemental_epitome==="string" ? c.effects.elemental_epitome.toLowerCase() : "the type you pick") +
+    ". Step of the Wind: +20 feet and a Martial Arts die to creatures you pass. Once per turn, an unarmed hit deals one more Martial Arts die";
+  if(id==="shadow_cloak") return "You're invisible, can move through occupied spaces as difficult terrain, and Flurry of Blows costs no Focus";
   if(id==="superior_defense") return "Resistance to all damage but force. Ends early if you're incapacitated";
   if(id==="empty_body") return "You're invisible and have advantage on attack rolls. Resistance to all damage but force";
   if(id==="shadow_step") return "Advantage on your first melee attack this turn";

@@ -264,6 +264,8 @@ export function classFeatureList(cl, uptoLevel){
   function addFeature(f, atLevel, isSub){
     var item = {id:(isSub ? "sub_" : "class_")+cl.name+"_"+f.name, name:f.name, text:isSub && focus ? focusWording(f.text) : f.text, level:atLevel, subclass:isSub};
     FEATURE_FLAGS.forEach(function(k){ if(f[k]) item[k] = f[k]; });
+    // (The Spells tab's tag on an older subclass's spell: "2 Focus".)
+    if(isSub && focus){ if(item.spellLabel) item.spellLabel = focusWording(item.spellLabel); if(item.spellTip) item.spellTip = focusWording(item.spellTip); }
     var at = f.replaces ? list.findIndex(function(x){ return x.name===f.replaces; }) : -1;
     if(at!==-1){ item.id = list[at].id; item.upgraded = true; list[at] = item; }
     else list.push(item);

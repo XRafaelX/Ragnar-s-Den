@@ -232,8 +232,14 @@ export function unarmedStrike(c){
     if(dex > abilityMod){ abilityMod = dex; ability = "DEX"; }
   }
   // Ki-Empowered Strikes (monk 6): they count as magical. The 2024
-  // monk's Empowered Strikes can deal force damage instead.
-  if(monk && classLevelOf(c, "Monk") >= 6) parts.push(isMonk2024(c) ? "Force or normal damage" : "Magic");
+  // monk's Empowered Strikes can deal force damage instead, and Elemental
+  // Attunement (2024 Elements 3) an element, with 10 feet more reach.
+  if(monk && classLevelOf(c, "Monk") >= 6 && !isMonk2024(c)) parts.push("Magic");
+  if(monk && isMonk2024(c) && !armored){
+    var types = [type].concat(classLevelOf(c, "Monk") >= 6 ? ["force"] : [], effectOn(c, "elemental_attunement") ? ["acid", "cold", "fire", "lightning", "thunder"] : []);
+    if(types.length > 1) type = types.slice(0, -1).join(", ") + " or " + types[types.length - 1];
+    if(effectOn(c, "elemental_attunement")) parts.push("Reach 15 ft (Elemental Attunement)");
+  }
   var bonus = abilityMod + holsterDamageBonus(c) + auraOfHate(c);
   // Rage: melee weapon attacks with STR, not in heavy armor.
   var barb = barbarianClassEntry(c);

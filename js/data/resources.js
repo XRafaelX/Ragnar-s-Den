@@ -357,6 +357,20 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Monk": {
+    // The 2024 subclasses (Player's Handbook 2024, pp. 104 to 107).
+    "Warrior of the Open Hand": [
+      {id:"wholeness_of_body", name:"Wholeness of Body", level:6,
+        max:function(lv, m){ return Math.max(1, m.wis); }, reset:always("long"),
+        roll:{qty:1, dieAt:function(lv){ return lv>=17 ? 12 : lv>=11 ? 10 : 8; }, bonusAbility:"wis", heal:true, min:1, button:"Heal", label:"Wholeness of Body: hit points regained"},
+        hint:"Bonus action: regain your Martial Arts die + WIS modifier hit points (at least 1)."}
+    ],
+    "Warrior of Mercy": [
+      {id:"flurry_of_healing_and_harm", name:"Flurry of Healing and Harm", level:11,
+        max:function(lv, m){ return Math.max(1, m.wis); }, reset:always("long"),
+        hint:"With Flurry of Blows: Hand of Healing on each strike, or Hand of Harm with a strike, without spending Focus."},
+      {id:"hand_of_ultimate_mercy", name:"Hand of Ultimate Mercy", level:17, max:always(1), reset:always("long"),
+        hint:"Magic action, 5 Focus: revive a creature dead under 24 hours with 4d10 + WIS mod HP."}
+    ],
     "Way of the Open Hand": [
       {id:"wholeness_of_body", name:"Wholeness of Body", level:6, max:always(1), reset:always("long"),
         heal:function(lv){ return 3 * lv; },

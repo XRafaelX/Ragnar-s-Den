@@ -4,7 +4,7 @@
 import { ABILITIES, CLASS_LIST } from "../data/abilities-skills.js";
 import { CLASSES_INFO } from "../data/classes.js";
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
-import { mod, fmtMod, ce, escapeHtml, totalLevel, profBonus, ordinal, spellHeldBy, variantBase, subclassesFor } from "../core/helpers.js";
+import { mod, fmtMod, ce, escapeHtml, totalLevel, profBonus, ordinal, spellHeldBy, variantBase, subclassesFor, classHasEdition } from "../core/helpers.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
 import { invocationsKnownAt, invocationDef, pactBoonDef } from "../data/invocations.js";
 import { optionsKnownAt } from "../data/class-options.js";
@@ -64,6 +64,19 @@ export function stepClass(container){
     mcGrid.appendChild(box);
   });
   mcCard.appendChild(mcGrid);
+  // A new monk: the 2014 or the 2024 rules (see js/data/monk-2024.js).
+  if(!c.classes.some(function(cl){ return cl.name===lu.className; }) && classHasEdition(lu.className, "2024")){
+    var which = ce("p","lu-choice-title");
+    which.textContent = "Which " + lu.className.toLowerCase() + "? Ask your DM which rules your table uses.";
+    mcCard.appendChild(which);
+    [["", "2014 " + lu.className, "The Player's Handbook 2014 monk: ki points, Martial Arts from a d4."],
+     ["2024", "2024 " + lu.className, "The Player's Handbook 2024 monk: Focus Points, Martial Arts from a d6 and the 2024 features."]].forEach(function(o){
+      var opt = ce("div","wiz-equip-option"+((lu.edition||"")===o[0]?" selected":""));
+      opt.innerHTML = "<b>"+escapeHtml(o[1])+"</b><div class='lu-sub-blurb'>"+escapeHtml(o[2])+"</div>";
+      opt.addEventListener("click", function(){ lu.edition = o[0]; render(); });
+      mcCard.appendChild(opt);
+    });
+  }
 }
 
 export function stepStyle(container){

@@ -566,6 +566,10 @@ export var SPELL_DATA = {
   // Cantrips (Encode Thoughts is on no class list: a Dimir Operative's
   // guild spell, see js/data/origin-spells.js)
   "Encode Thoughts": s(0,"Enc",A,"Self","S","8 hours","","Turn a memory, idea or message from your mind (or thoughts you are reading with a spell like Detect Thoughts) into a glowing thought strand you can carry. Casting the spell while holding a strand shows you what it holds.",{source:"GGR"}),
+  // The 2024 Warrior of the Elements' cantrip (Player's Handbook 2024,
+  // p. 270, checked on 5etools' spells-xphb.json 2026-11-03): on no class
+  // list here, since the classes still follow the 2014 lists.
+  "Elementalism": s(0,"Tra",A,"30 feet","V, S","Instantaneous","","Control the elements within range with one effect. Beckon Air: a breeze in a 5-foot cube that stirs dust and closes open doors. Beckon Earth: a thin layer of dust or sand over a 5-foot square, or one word written in dirt or sand. Beckon Fire: harmless embers and colored, scented smoke in a 5-foot cube that can light candles, torches or lamps. Beckon Water: cool mist in a 5-foot cube, or 1 cup of clean water that evaporates after 1 minute. Sculpt Element: dirt, sand, fire, smoke, mist or water in a 1-foot cube takes a crude shape for 1 hour.",{source:"XPHB"}),
   // The Gunslinger class's Eldritch Gunman (Spikael's homebrew, books/gun_3
   // and gun_4.webp): on no class list, the subclass always knows them.
   "Ready Arms!": s(0,"Con",A,"Self","V, S",CONC1M,"","A spectral firearm of any form floats by your side and fires at a creature you choose. Make a ranged spell attack. On a hit, it deals 1d4 piercing damage. Until the spell ends, you can fire any firearms you created with it as a bonus action.",{source:"GSL"}),
@@ -651,7 +655,7 @@ export var SPELL_DATA = {
 export var SPELL_SOURCES = {
   AI:"Acquisitions Inc.", BMT:"The Book of Many Things", EGW:"Wildemount", FTD:"Fizban's Treasury", GGR:"Ravnica",
   IDRotF:"Icewind Dale", LLoK:"Lost Laboratory of Kwalish", PAitM:"Planescape", SAiS:"Spelljammer", SCC:"Strixhaven",
-  FRHoF:"Heroes of Faerûn", GSL:"Gunslinger class", EFA:"Forge of the Artificer", "AitFR-AVT":"A Verdant Tomb"
+  FRHoF:"Heroes of Faerûn", GSL:"Gunslinger class", XPHB:"Player's Handbook 2024", EFA:"Forge of the Artificer", "AitFR-AVT":"A Verdant Tomb"
 };
 
 /* Summaries the catalog used to have for a spell, before they were

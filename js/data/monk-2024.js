@@ -44,7 +44,8 @@ export var MONK_2024 = {
       movement(15, {replaces:"Unarmored Movement", speed:5})
     ],
     7: [{name:"Evasion", text:"When an effect lets you make a DEX save to take half damage, you take no damage on a success and half on a failure. Not while you're incapacitated.", saveNote:{abilities:["dex"], text:"When a Dexterity save would halve the damage, you take none on a success and half on a failure"}}],
-    9: [{name:"Acrobatic Movement", text:"While you wear no armor and no shield, you can move along vertical surfaces and across liquids on your turn without falling during the move."}],
+    9: [{name:"Acrobatic Movement", text:"While you wear no armor and no shield, you can move along vertical surfaces and across liquids on your turn without falling during the move.",
+      speeds:[{type:"climb", value:"walk", when:"walls and liquids, on your turn, no armor or shield"}]}],
     10: [
       {name:"Heightened Focus", text:"Flurry of Blows makes three unarmed strikes for 1 Focus instead of two. When you spend Focus on Patient Defense, you also gain temporary hit points equal to two rolls of your Martial Arts die. When you spend Focus on Step of the Wind, you can take a willing Large or smaller creature within 5 feet along with you until the end of your turn, and its movement doesn't provoke opportunity attacks."},
       {name:"Self-Restoration", text:"At the end of each of your turns, you can end one of these conditions on yourself: charmed, frightened or poisoned. Going without food and drink doesn't give you exhaustion."},
@@ -123,10 +124,11 @@ export var MONK_2024_SUBCLASSES = [
   {name:"Warrior of the Elements", edition:"2024", blurb:"Wraps strikes and bursts in elemental power.", features:{
     3:[
       {name:"Elemental Attunement", text:"At the start of your turn, you can spend 1 Focus to fill yourself with elemental energy for 10 minutes, or until you're incapacitated. While it lasts, your unarmed strikes have 10 feet more reach, and when one hits you can make it deal acid, cold, fire, lightning or thunder damage. When you do, you can also make the target take a STR save: on a failure you move it up to 10 feet toward or away from you.", saveDc:{save:"str", ability:"wis"}},
-      {name:"Manipulate Elements", text:"You know the Elementalism cantrip, with Wisdom as your spellcasting ability."}
+      {name:"Manipulate Elements", text:"You know the Elementalism cantrip, with Wisdom as your spellcasting ability.", spells:["Elementalism"], spellKind:"known", spellAbility:"wis"}
     ],
     6:[{name:"Elemental Burst", text:"As a Magic action, spend 2 Focus to burst elemental energy in a 20-foot-radius sphere centered on a point within 120 feet. Choose acid, cold, fire, lightning or thunder. Each creature in it makes a DEX save, taking three rolls of your Martial Arts die of that type on a failure, or half as much on a success.", saveDc:{save:"dex", ability:"wis"}}],
-    11:[{name:"Stride of the Elements", text:"While Elemental Attunement is on, you also have a fly speed and a swim speed equal to your speed."}],
+    11:[{name:"Stride of the Elements", text:"While Elemental Attunement is on, you also have a fly speed and a swim speed equal to your speed.",
+      speeds:[{type:"fly", value:"walk", when:"Elemental Attunement", effect:"elemental_attunement"}, {type:"swim", value:"walk", when:"Elemental Attunement", effect:"elemental_attunement"}]}],
     17:[{name:"Elemental Epitome", text:"While Elemental Attunement is on, you also gain these benefits. Damage Resistance: resistance to acid, cold, fire, lightning or thunder, your choice, which you can change at the start of each of your turns. Destructive Stride: when you use Step of the Wind, your speed increases by 20 feet until the end of the turn, and any creature you choose takes one roll of your Martial Arts die of acid, cold, fire, lightning or thunder damage (your choice) when you enter a space within 5 feet of it, once per turn per creature. Empowered Strikes: once on each of your turns, an unarmed strike hit deals one extra roll of your Martial Arts die, of the same type."}]
   }},
   {name:"Warrior of Mercy", edition:"2024", blurb:"A masked healer who brings a swift end to enemies.", features:{
