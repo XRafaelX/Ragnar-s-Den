@@ -272,6 +272,17 @@
   font-size:11.5px;color:var(--text-on-ink-dim);
   text-align:center;min-height:16px;line-height:1.3;
 }
+/* The rolled dice as chips: faces apart from the modifier. */
+.rd-dice{display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;vertical-align:middle;}
+.rd-die{
+  min-width:22px;padding:1px 6px;border-radius:999px;text-align:center;
+  border:1px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  background:color-mix(in srgb, var(--brass) 14%, transparent);
+  color:var(--text-on-ink);font-weight:600;line-height:1.35;font-variant-numeric:tabular-nums;
+}
+.rd-dropped{background:transparent;border-color:var(--rule);color:var(--text-on-ink-dim);text-decoration:line-through;opacity:.6;}
+.rd-mod{color:var(--text-on-ink);font-weight:600;margin-left:2px;}
+.rd-adv{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--brass-bright);margin-right:2px;}
 .roll-actions-row{margin-top:4px;}
 /* What can still be done with the roll (Focused Aim's ki after a miss). */
 #roll-follow-up{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;margin-top:6px;}
@@ -319,9 +330,23 @@
 .clear-log-btn:hover{color:var(--text-on-ink);background:rgba(255,255,255,.08);}
 #roll-log{
   flex:1 1 auto;min-height:0;overflow-y:auto;font-size:11.5px;color:var(--text-on-ink-dim);
+  /* Room for the scrollbar: a phone draws it over the content, on the totals. */
+  padding-right:12px;
 }
-#roll-log div{padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+#roll-log > div{padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
 #roll-log .rl-label{color:var(--text-on-ink);font-weight:500;}
+/* A row: the name and the dice on the left, the total in a column at the right. */
+#roll-log .rl-row{display:flex;align-items:center;gap:10px;padding:5px 0;}
+#roll-log .rl-main{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:3px 8px;}
+#roll-log .rl-detail{color:var(--text-on-ink-dim);}
+#roll-log .rl-total{
+  flex:none;min-width:26px;text-align:right;font-family:var(--serif);font-size:15px;font-weight:bold;
+  color:var(--brass-bright);line-height:1.2;font-variant-numeric:tabular-nums;
+}
+#roll-log .rd-dice{justify-content:flex-start;gap:3px;}
+#roll-log .rd-die{min-width:18px;padding:0 5px;font-size:10.5px;}
+#roll-log .rd-mod{font-size:10.5px;}
+#roll-log .rd-adv{font-size:9px;}
 
 /* Floating Roll Toast Notification */
 .floating-roll-toast{
@@ -347,7 +372,9 @@
 .floating-roll-toast .toast-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--text-on-ink-dim);font-weight:600;}
 .floating-roll-toast .crit-badge{flex:none;margin:0;padding:2px 6px;font-size:9.5px;line-height:1.2;white-space:nowrap;}
 .floating-roll-toast .toast-total{font-family:var(--serif);font-size:22px;color:var(--brass-bright);font-weight:bold;line-height:1.1;}
-.floating-roll-toast .toast-detail{font-size:10.5px;color:var(--text-on-ink-dim);}
+.floating-roll-toast .toast-detail{font-size:10.5px;color:var(--text-on-ink-dim);max-width:300px;margin-top:2px;}
+.floating-roll-toast .rd-dice{justify-content:flex-start;gap:3px;}
+.floating-roll-toast .rd-die{min-width:19px;padding:0 5px;}
 
 /* Un-rolled preview dice on the tray stage */
 .dice-token.idle svg .die-text{fill:var(--text-on-ink-dim);}

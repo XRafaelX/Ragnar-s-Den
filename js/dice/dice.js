@@ -59,7 +59,21 @@ export function animateNumberCount(el, targetVal, duration){
   requestAnimationFrame(animFrame);
 }
 
-export function showFloatingToast(die, finalTotal, summary, label, isCrit, isFail){
+/* The rolled dice as chips, apart from the modifier. With advantage or
+   disadvantage both d20s show and the dropped one is struck through. */
+function diceChipsHtml(values, modifier, adv, droppedIdx){
+  var html = adv !== "none" ? '<span class="rd-adv">' + (adv === "adv" ? "Advantage" : "Disadvantage") + "</span>" : "";
+  values.forEach(function(v, i){
+    html += i === droppedIdx
+      ? '<span class="rd-die rd-dropped" title="Dropped">' + v + "</span>"
+      : '<span class="rd-die">' + v + "</span>";
+  });
+  if(modifier) html += '<span class="rd-mod">' + fmtMod(modifier) + "</span>";
+  return '<span class="rd-dice">' + html + "</span>";
+}
+
+/* detailHtml: the dice chips and any hint, already escaped (may be empty). */
+export function showFloatingToast(die, finalTotal, detailHtml, label, isCrit, isFail){
   var toast = document.getElementById("floating-roll-toast");
   if(!toast) return;
   if(toastTimer){ clearTimeout(toastTimer); toastTimer = null; }
@@ -75,7 +89,7 @@ export function showFloatingToast(die, finalTotal, summary, label, isCrit, isFai
     '<div class="toast-info">' +
       '<div class="toast-title"><span>' + escapeHtml(titleText) + '</span>' + badgeHtml + '</div>' +
       '<div class="toast-total">' + finalTotal + '</div>' +
-      '<div class="toast-detail">' + escapeHtml(summary) + '</div>' +
+      (detailHtml ? '<div class="toast-detail">' + detailHtml + '</div>' : '') +
     '</div>';
 
   toast.classList.add("show");
@@ -284,12 +298,21 @@ export function performRoll(die, qty, modifier, adv, label, extra){
   var natural = die === 20 && qty === 1 ? (isAdvDis ? chosenValue : finalValues[0]) : null;
   var adjusted = adjust && adjust({total: finalTotal, natural: natural, values: finalValues});
   // "[4] +3 = 7 → 18 (Indomitable Might)"
+  var adjustNote = "";
   if(adjusted && adjusted.total !== finalTotal){
-    summary += " = " + finalTotal + " \u2192 " + adjusted.total + " (" + adjusted.note + ")";
+    adjustNote = "= " + finalTotal + " \u2192 " + adjusted.total + " (" + adjusted.note + ")";
+    summary += " " + adjustNote;
     finalTotal = adjusted.total;
     showsTotal = false;
   }
   var full = showsTotal ? summary + " = " + finalTotal : summary;
+  // On screen the dice are chips (the log keeps the text above). One die
+  // and nothing added shows no breakdown: it would only repeat the total.
+  var chipsAll = diceChipsHtml(finalValues, modifier, isAdvDis ? adv : "none", droppedIdx) +
+    (adjustNote ? ' <span class="rd-note">' + escapeHtml(adjustNote) + '</span>' : "");
+  var chips = (diceCount === 1 && !modifier && !adjustNote) ? "" : chipsAll;
+  var detailWith = function(c){ return (label ? escapeHtml(label) + (c ? ": " : "") : "") + c; };
+  var bonusNotes = "";
 
   // Render dice tokens in the animation stage
   var stage = document.getElementById("dice-stage");
@@ -399,11 +422,15 @@ export function performRoll(die, qty, modifier, adv, label, extra){
       playFail();
     }
 
-    detailEl.textContent = (label ? label + ": " : "") + summary;
+    detailEl.innerHTML = detailWith(chips);
     rollAgainBtn.style.display = "inline-flex";
     rollAgainBtn.style.visibility = "";
 
-    logRoll(label || ("d" + die), full);
+    // (The dice go with the text, so the history can draw them as chips.)
+    var rollData = {v: finalValues, m: modifier, t: finalTotal};
+    if(isAdvDis){ rollData.a = adv; rollData.x = droppedIdx; }
+    if(adjustNote) rollData.n = adjustNote;
+    logRoll(label || ((qty > 1 ? qty : "") + "d" + die), full, rollData);
     if(onResult) onResult({total: finalTotal, natural: natural, values: finalValues});
     var follow = followUp && followUp({total: finalTotal, natural: natural, values: finalValues});
     followEl.innerHTML = "";
@@ -420,7 +447,9 @@ export function performRoll(die, qty, modifier, adv, label, extra){
       if(res.silent) return;
       finalTotal += res.bonus;
       resultEl.textContent = finalTotal;
-      detailEl.textContent += " " + fmtMod(res.bonus) + " = " + finalTotal;
+      // (The dice show again under a bonus, even for one plain die.)
+      bonusNotes += ' <span class="rd-note">' + fmtMod(res.bonus) + " = " + finalTotal + "</span>";
+      detailEl.innerHTML = detailWith(chipsAll) + bonusNotes;
       logRoll(label || ("d" + die), res.log + ": " + fmtMod(res.bonus) + ", now " + finalTotal);
     });
     showKept(followEl);
@@ -436,7 +465,8 @@ export function performRoll(die, qty, modifier, adv, label, extra){
     // tapping the toast opens the tray).
     // (followUp(null, seen): seen is the roll, for a hint that fits it.)
     var ahead = followUp && followUp(null, {total: finalTotal, natural: natural, values: finalValues});
-    showFloatingToast(die, finalTotal, summary + (ahead && ahead.hint ? " · " + ahead.hint : ""), label, isCrit, isFail);
+    var hint = ahead && ahead.hint ? escapeHtml(ahead.hint) : "";
+    showFloatingToast(die, finalTotal, chips + (chips && hint ? " · " : "") + hint, label, isCrit, isFail);
   }
 }
 
@@ -500,9 +530,12 @@ function renderFollowUp(el, follow, onUsed){
   });
 }
 
-export function logRoll(label, detail){
+/* roll (optional, from performRoll): the dice behind the text, {v: values,
+   m: modifier, t: total, a: "adv"|"dis", x: the dropped die, n: a note}. */
+export function logRoll(label, detail, roll){
   var c = getActive();
   var entry = {ts: nowStamp(), label: label, detail: detail};
+  if(roll) entry.roll = roll;
   if(c){
     c.rollLog = c.rollLog || [];
     c.rollLog.unshift(entry);
@@ -529,11 +562,42 @@ export function renderRollLog(){
     el.innerHTML = '<div style="font-size:11px;color:var(--text-on-ink-dim);font-style:italic;padding:4px 0;">No rolls yet</div>';
     return;
   }
-  logArr.forEach(function(entry){
-    var d = document.createElement("div");
-    d.innerHTML = '<span class="rl-label">'+escapeHtml(entry.label)+'</span>: '+escapeHtml(entry.detail);
-    el.appendChild(d);
-  });
+  el.innerHTML = logArr.map(rollLogRowHtml).join("");
+}
+
+/* A history row: the name, the dice as chips and the total at the right.
+   One die with nothing added shows just the total. An entry that isn't a
+   plain roll (Arcane Ward is up, a reroll) keeps its sentence. */
+function rollLogRowHtml(entry){
+  var r = entry.roll || parseLoggedRoll(entry.detail);
+  var label = '<span class="rl-label">' + escapeHtml(entry.label) + "</span>";
+  if(!r) return '<div class="rl-row"><div class="rl-main">' + label + '<span class="rl-detail">' + escapeHtml(entry.detail || "") + "</span></div></div>";
+  var plain = r.v.length === 1 && !r.m && !r.n;
+  return '<div class="rl-row"><div class="rl-main">' + label +
+    (plain ? "" : diceChipsHtml(r.v, r.m, r.a || "none", r.x == null ? -1 : r.x)) +
+    (r.n ? '<span class="rl-detail">' + escapeHtml(r.n) + "</span>" : "") +
+    '</div><span class="rl-total">' + r.t + "</span></div>";
+}
+
+/* Rolls saved before the dice were kept with them: read them back from
+   the text ("[2, 6] +3 = 11", "[17, 8] adv \u2192 17 +5 = 22"). */
+function parseLoggedRoll(text){
+  // A feature's change at the end ("= 6 \u2192 20 (Indomitable Might)").
+  var tail = / (= -?\d+ \u2192 (-?\d+) \(.+\))$/.exec(text || "");
+  if(tail){
+    var r = parseLoggedRoll(text.slice(0, tail.index));
+    if(r){ r.n = tail[1]; r.t = Number(tail[2]); }
+    return r;
+  }
+  var m = /^\[(\d+), (\d+)\] (adv|dis) \u2192 (\d+)(?: ([+-]\d+))?(?: = (-?\d+))?$/.exec(text || "");
+  if(m){
+    var v = [Number(m[1]), Number(m[2])], kept = Number(m[4]), mod = Number(m[5] || 0);
+    return {v: v, m: mod, a: m[3], x: v[0] === kept ? 1 : 0, t: m[6] != null ? Number(m[6]) : kept + mod};
+  }
+  m = /^\[(\d+(?:, \d+)*)\](?: ([+-]\d+))?(?: = (-?\d+))?$/.exec(text || "");
+  if(!m) return null;
+  var vals = m[1].split(", ").map(Number), add = Number(m[2] || 0);
+  return {v: vals, m: add, t: m[3] != null ? Number(m[3]) : vals.reduce(function(a, b){ return a + b; }, 0) + add};
 }
 
 export function openDiceTray(){
