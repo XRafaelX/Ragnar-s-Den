@@ -247,7 +247,10 @@ export function haloOfSporesDie(c){
 }
 /* The Martial Arts die by monk level (d4, d6 from 5, d8 from 11, d10 from 17). */
 export function martialArtsDie(c){
-  var lv = classLevelOf(c, "Monk");
+  return martialArtsDieAt(c, classLevelOf(c, "Monk"));
+}
+/* The character's Martial Arts die at a given monk level (its table). */
+export function martialArtsDieAt(c, lv){
   // (The 2024 monk's runs d6 to d12.)
   var ed = classEdition((c.classes||[]).find(function(cl){ return cl.name==="Monk"; }));
   if(ed && ed.martialArtsDie) return ed.martialArtsDie(lv);

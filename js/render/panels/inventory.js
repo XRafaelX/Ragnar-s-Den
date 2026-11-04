@@ -7,7 +7,7 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack, rollSneak } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor, martialArtsDieAt } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -632,6 +632,7 @@ function renderUnarmedCard(c, u){
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = [(u.die ? "1d" + u.die : "1") + " " + u.type, u.ability, "Proficient"].concat(u.parts).join(" · ");
+  linkMartialArts(subtitle, c);
   card.appendChild(subtitle);
   var actions = document.createElement("div");
   actions.className = "inv-roll-actions";
@@ -1318,6 +1319,81 @@ function breathBlock(card, c, r, o){
   card.appendChild(block);
 }
 
+/* "Martial Arts d6" and "Martial Arts (STR or DEX)" in a card's line under
+   its name: a tap opens what the Martial Arts die is (new players meet the
+   words with no explanation). */
+var MARTIAL_ARTS_WORDS = /(Martial Arts(?: d\d+| \(STR or DEX\)))/;
+function linkMartialArts(el, c){
+  if(!MARTIAL_ARTS_WORDS.test(el.textContent)) return;
+  var bits = el.textContent.split(MARTIAL_ARTS_WORDS);
+  el.textContent = "";
+  bits.forEach(function(bit){
+    if(!bit) return;
+    if(!MARTIAL_ARTS_WORDS.test(bit)){ el.appendChild(document.createTextNode(bit)); return; }
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "inv-term-link";
+    b.textContent = bit;
+    b.title = "What's the Martial Arts die?";
+    b.setAttribute("aria-haspopup", "dialog");
+    b.addEventListener("click", function(){ openMartialArtsSheet(c); });
+    el.appendChild(b);
+  });
+}
+/* Martial Arts explained: the die and what it does, the table by monk
+   level with the character's row marked, and when it grows next. */
+function openMartialArtsSheet(c){
+  var lv = classLevelOf(c, "Monk"), now = martialArtsDieAt(c, lv), is2024 = isMonk2024(c);
+  var steps = [[1, 4], [5, 10], [11, 16], [17, 20]];
+  var next = steps.find(function(st){ return st[0] > lv; });
+  openBottomSheet(function(body, refresh, close){
+    var header = document.createElement("div");
+    header.className = "bs-header";
+    var title = document.createElement("div");
+    title.className = "bs-title";
+    title.textContent = "Martial Arts";
+    header.appendChild(title);
+    var closeBtn = document.createElement("button");
+    closeBtn.className = "bs-close"; closeBtn.textContent = "✕"; closeBtn.title = "Close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.addEventListener("click", close);
+    header.appendChild(closeBtn);
+    body.appendChild(header);
+    var sub = document.createElement("p");
+    sub.className = "bs-subtitle";
+    sub.textContent = "Monk " + lv + " · your Martial Arts die is a d" + now;
+    body.appendChild(sub);
+    var text = document.createElement("div");
+    text.className = "inv-breath-details";
+    [
+      "The Martial Arts die is the monk's own damage die. Your unarmed strikes and monk weapons can roll it in place of their normal damage, and it grows as you gain monk levels. The Damage buttons roll it for you.",
+      is2024
+        ? "Monk weapons are simple melee weapons and martial melee weapons with the light property. With them and your unarmed strikes you can use DEX instead of STR, and you can make an unarmed strike as a bonus action."
+        : "Monk weapons are shortswords and simple melee weapons that aren't two-handed or heavy. With them and your unarmed strikes you can use DEX instead of STR, and after the Attack action with one of them you can make an unarmed strike as a bonus action.",
+      "All of this works only while you wear no armor and hold no shield. Some other monk features roll the Martial Arts die too, and the sheet always uses the right size."
+    ].forEach(function(t){ var para = document.createElement("p"); para.textContent = t; text.appendChild(para); });
+    body.appendChild(text);
+    var table = document.createElement("table");
+    table.className = "inv-ma-table";
+    table.innerHTML = "<thead><tr><th>Monk level</th><th>Martial Arts die</th></tr></thead>";
+    var tbody = document.createElement("tbody");
+    steps.forEach(function(st){
+      var tr = document.createElement("tr");
+      var mine = lv >= st[0] && lv <= st[1];
+      if(mine) tr.className = "now";
+      var a = document.createElement("td"), d = document.createElement("td");
+      a.textContent = st[0] + " to " + st[1] + (mine ? " (you)" : "");
+      d.textContent = "d" + martialArtsDieAt(c, st[0]);
+      tr.appendChild(a); tr.appendChild(d);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    body.appendChild(table);
+    var nextP = document.createElement("p");
+    nextP.className = "inv-ma-next";
+    nextP.textContent = next ? "It becomes a d" + martialArtsDieAt(c, next[0]) + " at monk level " + next[0] + "." : "This is the biggest it gets.";
+    body.appendChild(nextP);
+  });
+}
 /* A breath's full details, in a bottom sheet: its name, the dragon and
    its line, then a paragraph each (how the save works, the DC's make-up,
    uses, how it grows). */
@@ -1406,6 +1482,7 @@ function renderWeaponCard(c, item, idx){
   var subtitle = document.createElement("div");
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");
+  linkMartialArts(subtitle, c);
   card.appendChild(subtitle);
 
   if(item.notes){

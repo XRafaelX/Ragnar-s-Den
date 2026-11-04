@@ -350,3 +350,9 @@ test("hit-time monk options: Open Hand Technique, Elemental Attunement's push, H
   assert.equal(H.kiAction(monk(2), "deflect-throw"), null);
   assert.equal(H.kiAction(m24(5), "deflect-throw"), null, "the 2024 monk redirects instead");
 });
+
+test("the Martial Arts die at each monk level, for the sheet that explains it", () => {
+  assert.deepEqual([1, 5, 11, 17].map((lv) => H.martialArtsDieAt(m24(3), lv)), [6, 8, 10, 12], "2024: d6 to d12");
+  assert.deepEqual([1, 5, 11, 17].map((lv) => H.martialArtsDieAt(monk(3), lv)), [4, 6, 8, 10], "2014: d4 to d10");
+  assert.equal(H.martialArtsDie(m24(5)), 8);
+});

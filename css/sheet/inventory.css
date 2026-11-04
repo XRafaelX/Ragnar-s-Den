@@ -401,6 +401,22 @@
     border-style:dashed;border-color:color-mix(in srgb, var(--brass) 55%, transparent);}
 }
 
+/* A rules word in a card's line that opens its explanation (Martial Arts). */
+.inv-term-link{
+  background:none;border:none;padding:0;margin:0;font:inherit;color:var(--brass-bright);cursor:pointer;
+  text-decoration:underline dotted;text-underline-offset:3px;
+}
+.inv-term-link:hover{text-decoration-style:solid;}
+.inv-term-link:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;border-radius:3px;}
+/* The Martial Arts sheet's table, the character's row marked. */
+.inv-ma-table{width:100%;border-collapse:collapse;font-size:14px;margin:4px 0 10px;}
+.inv-ma-table th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);font-weight:600;text-align:left;padding:6px 10px;border-bottom:1px solid var(--rule);}
+.inv-ma-table td{padding:7px 10px;border-bottom:1px solid var(--rule);}
+.inv-ma-table tr.now td{background:color-mix(in srgb, var(--brass) 18%, transparent);color:var(--brass-bright);font-weight:600;}
+.inv-ma-table tr.now td:first-child{border-radius:6px 0 0 6px;}
+.inv-ma-table tr.now td:last-child{border-radius:0 6px 6px 0;}
+.inv-ma-next{font-size:13px;color:var(--text-on-parch-dim);margin:0;}
+
 /* Artificer cards (Inventory tab): Arcane Armor model, experimental elixirs */
 .art-intro{font-size:12.5px;color:var(--text-on-parch-dim);margin:0 0 10px;line-height:1.45;}
 .art-switch{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
