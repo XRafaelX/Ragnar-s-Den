@@ -103,6 +103,8 @@ export function healingNote(c, name){
   if(life >= 6) notes.push("Blessed Healer: you regain the same when it heals someone else.");
   if(life >= 17 && dice) notes.push("Supreme Healing: use the highest number on each die.");
   if(grave >= 1 && dice) notes.push("Circle of Mortality: use the highest number on each die for a creature at 0 hit points.");
+  // Healer (2024): Healing Rerolls.
+  if(dice && hasFeat(c, "Healer (2024)")) notes.push("Healer: reroll any die that rolls a 1, and use the new roll.");
   // Druid: what's on right now. These need a spell slot, so not a cantrip's or a free cast.
   if(starryConstellation(c)==="Chalice"){
     var wis = mod(abilityScore(c, "wis"));

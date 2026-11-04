@@ -1,6 +1,7 @@
 /* ---------------- Level-up: the step screens ----------------
    One function per step of the dialog. Each draws its screen into the
    container it is given and writes the player's choices into `lu`. */
+import { featOffered, usesRules2024 } from "../core/feats-2024.js";
 import { ABILITIES, CLASS_LIST } from "../data/abilities-skills.js";
 import { CLASSES_INFO } from "../data/classes.js";
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
@@ -610,7 +611,8 @@ export function stepAsi(container){
   // greyed out at the end of the list, with why.
   function fill(){
     fillFeatList(list, {
-      feats: FEATS_CATALOG.filter(function(f){ return f.repeatable || !(c.feats||[]).some(function(x){ return x.name===f.name; }); }),
+      // (The 2024 Origin feats only for a character on the 2024 rules.)
+      feats: FEATS_CATALOG.filter(function(f){ return featOffered(f, usesRules2024(c)) && (f.repeatable || !(c.feats||[]).some(function(x){ return x.name===f.name; })); }),
       query: lu.featQuery, selected: lu.featName, reason: function(f){ return featRequiresReason(f, who); },
       open: lu.featBlockedOpen,
       onToggle: function(){ lu.featBlockedOpen = !lu.featBlockedOpen; fill(); },

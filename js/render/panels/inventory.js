@@ -6,7 +6,8 @@ import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack, rollSneak } from "./sheet-rolls.js";
-import { smiteButtons } from "./paladin.js";
+import { smiteButtons, sheetTop, lead as sheetLead, sheetButton } from "./paladin.js";
+import { hitDicePools, spendHitDie } from "../../core/character-resources.js";
 import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor, martialArtsDieAt } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
@@ -26,6 +27,7 @@ import { magicItemDef, magicItemActive, needsAttunement, holsterKnives, attunePr
 import { pipChanged, pipsRefilled, flash } from "../../ui/fx.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { weaponDataOf } from "../../data/weapons.js";
+import { savageFollowUp, joinFollowUp, hasBattleMedic, isHealersKit, healingRerollAdjust, healSelf, brawlerRerolls } from "../../core/feats-2024.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 var ARMOR_CATEGORIES = [
@@ -649,7 +651,8 @@ function renderUnarmedCard(c, u){
   dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
   if(u.die){
     dmgBtn.innerHTML = makeDicesSvg() + "Damage 1d" + u.die + fmtMod(u.bonus);
-    dmgBtn.addEventListener("click", function(){ performRoll(u.die, 1, u.bonus, "none", u.name + ": Damage (" + u.type + ")"); });
+    // (Tavern Brawler (2024) rolls a 1 again.)
+    dmgBtn.addEventListener("click", function(){ performRoll(u.die, 1, u.bonus, "none", u.name + ": Damage (" + u.type + ")", uHit && uHit.unarmed ? {adjust: brawlerRerolls(c, u.die)} : null); });
   } else {
     // A plain unarmed strike deals a flat 1 + STR: nothing to roll.
     dmgBtn.innerHTML = makeDicesSvg() + "Damage " + Math.max(0, 1 + u.bonus);
@@ -1546,7 +1549,8 @@ function renderWeaponCard(c, item, idx){
     dmgBtn.innerHTML = makeDicesSvg() + "Damage " + parsed.qty + "d" + parsed.die + fmtMod(dmgBonus);
     dmgBtn.addEventListener("click", function(){
       var sights = calibratedSights(c, item, parsed.die);
-      performRoll(parsed.die, parsed.qty, dmgBonus, "none", (item.name||"Weapon") + ": Damage" + (dmgType ? " (" + dmgType + ")" : ""), sights ? {adjust: sights} : null);
+      performRoll(parsed.die, parsed.qty, dmgBonus, "none", (item.name||"Weapon") + ": Damage" + (dmgType ? " (" + dmgType + ")" : ""),
+        joinFollowUp(sights ? {adjust: sights} : null, savageFollowUp(c, !isRangedWeapon(item), parsed.die, parsed.qty, dmgBonus)));
     });
   } else {
     dmgBtn.innerHTML = makeDicesSvg() + "Damage";
@@ -1574,7 +1578,8 @@ function renderWeaponCard(c, item, idx){
       tDmg.type = "button"; tDmg.className = "btn small inv-roll-btn inv-thrown-btn";
       tDmg.innerHTML = makeDicesSvg() + "Thrown " + parsed.qty + "d" + parsed.die + fmtMod(thrown.damage);
       tDmg.title = "Thrown, a ranged attack: " + thrown.parts.join(", ");
-      tDmg.addEventListener("click", function(){ performRoll(parsed.die, parsed.qty, thrown.damage, "none", dmgLabel); });
+      // (A throw is a ranged attack: only the 2024 Savage Attacker applies.)
+      tDmg.addEventListener("click", function(){ performRoll(parsed.die, parsed.qty, thrown.damage, "none", dmgLabel, joinFollowUp(null, savageFollowUp(c, false, parsed.die, parsed.qty, thrown.damage))); });
       actions.appendChild(tDmg);
     }
   }
@@ -1592,7 +1597,8 @@ function renderWeaponCard(c, item, idx){
       : "Two-weapon fighting: after attacking with a weapon in your other hand, a bonus action attack with this one. Its damage leaves out your ability modifier (unless it's negative).";
     offBtn.addEventListener("click", function(){
       var sights = calibratedSights(c, item, parsed.die);
-      performRoll(parsed.die, parsed.qty, off.damage, "none", (item.name||"Weapon") + ": Off-hand damage" + (item.damageType ? " (" + item.damageType + ")" : ""), sights ? {adjust: sights} : null);
+      performRoll(parsed.die, parsed.qty, off.damage, "none", (item.name||"Weapon") + ": Off-hand damage" + (item.damageType ? " (" + item.damageType + ")" : ""),
+        joinFollowUp(sights ? {adjust: sights} : null, savageFollowUp(c, !isRangedWeapon(item), parsed.die, parsed.qty, off.damage)));
     });
     // (On the off-hand weapon's card it stands in for Damage.)
     if(!off.stack) offBtn.classList.add("inv-main-btn");
@@ -2177,8 +2183,53 @@ function renderGearCard(c, item, idx){
   card.appendChild(subtitle);
   var drink = drinkButton(c, item);
   if(drink) card.appendChild(drink);
+  var medic = battleMedicButton(c, item);
+  if(medic) card.appendChild(medic);
 
   return card;
+}
+
+/* Healer (2024)'s Battle Medic, on a healer's kit's card: a sheet to tend
+   yourself (one of your Hit Dice is spent and the healing added) or
+   another creature (its Hit Die rolled for it). The die plus your
+   proficiency bonus; a 1 is rolled again (Healing Rerolls). */
+function battleMedicButton(c, item){
+  if(!hasBattleMedic(c) || !isHealersKit(item)) return null;
+  var actions = document.createElement("div");
+  actions.className = "inv-roll-actions";
+  actions.appendChild(smallButton("Battle Medic (Hit Die " + fmtMod(profBonus(c)) + ")", "A Utilize action: spend one use of the kit to heal a creature within 5 feet", function(){ openBattleMedicSheet(c); }));
+  return actions;
+}
+function openBattleMedicSheet(c){
+  var pb = profBonus(c);
+  openBottomSheet(function(body, refresh, close){
+    sheetTop(body, "Battle Medic", close);
+    sheetLead(body, "Spend one use of your healer's kit to tend a creature within 5 feet. It spends one of its Hit Dice: roll it, and it regains the roll " + fmtMod(pb) + ". A 1 is rolled again.");
+    var list = document.createElement("div");
+    list.className = "pal-sheet-list";
+    var mine = hitDicePools(c).filter(function(p){ return p.used < p.total; });
+    mine.forEach(function(p){
+      list.appendChild(sheetButton("Yourself: one of your d" + p.die + " (" + (p.total - p.used) + " left)", function(){
+        if(!spendHitDie(c, p.die)) return;
+        close();
+        save(); renderAll();
+        performRoll(p.die, 1, pb, "none", "Battle Medic: yourself (d" + p.die + " " + fmtMod(pb) + ")", {adjust: healingRerollAdjust(p.die, pb), onResult: function(r){
+          var got = healSelf(c, r.total, maxHp(c));
+          logRoll("Battle Medic", "Healed " + got + " (a d" + p.die + " Hit Die)");
+          showActionToast("You regain " + got + " hit points.");
+          save(); renderAll();
+        }});
+      }));
+    });
+    if(!mine.length) list.appendChild(sheetButton("Yourself: no Hit Dice left", function(){}, true));
+    [6, 8, 10, 12].forEach(function(d){
+      list.appendChild(sheetButton("Another creature's d" + d + " Hit Die", function(){
+        close();
+        performRoll(d, 1, pb, "none", "Battle Medic: the creature regains (d" + d + " " + fmtMod(pb) + ")", {adjust: healingRerollAdjust(d, pb)});
+      }));
+    });
+    body.appendChild(list);
+  });
 }
 
 /* A magic item's charges (a wand, a staff): a pip each (a count past

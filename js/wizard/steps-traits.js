@@ -6,7 +6,8 @@ import { BACKGROUND_INFO } from "../data/backgrounds.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { themedPicker } from "../ui/themed-picker.js";
-import { wizardBgScoreRule } from "./wizard-core.js";
+import { wizardBgScoreRule, wizardRules2024 } from "./wizard-core.js";
+import { featOffered } from "../core/feats-2024.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, subclassChoice, subclassesThatGive, raceChoiceDef, raceAbilityAmounts, raceAbilityIncreases, raceAbilityPicksNeeded, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
   wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardRaceSkills,
   wizardBackgroundGrants, wizardBackgroundPickGrants, wizardBgSlots, wizardBgPickContext,
@@ -319,7 +320,8 @@ export function wizardStepFeat(container){
   }
   function fill(){
     fillFeatList(list, {
-      feats: FEATS_CATALOG, query: wizardState.featQuery, selected: rc.feat, reason: featPrereqReason,
+      // (The 2024 Origin feats only under the 2024 rules.)
+      feats: FEATS_CATALOG.filter(function(f){ return featOffered(f, wizardRules2024()); }), query: wizardState.featQuery, selected: rc.feat, reason: featPrereqReason,
       open: !!wizardState.featBlockedOpen,
       onToggle: function(){ wizardState.featBlockedOpen = !wizardState.featBlockedOpen; fill(); },
       onPick: function(f){

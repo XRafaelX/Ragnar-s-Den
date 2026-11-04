@@ -1,3 +1,4 @@
+import { savageFollowUp, joinFollowUp, brawlerRerolls, hasBrawler2024, luckyChoice, luckyRoll } from "../../core/feats-2024.js";
 import { save } from "../../core/state.js";
 import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, raceCheckD4, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud, isMonk2024, kiWord, openHandTechniques, elementalPushDc } from "../../core/helpers.js";
 import { flashOfGenius, artificerHitDice } from "../../core/artificer.js";
@@ -57,7 +58,7 @@ export function rollAttack(c, bonus, mode, label, hit){
   // Master of the Barrel (gunslinger 20): a firearm's d20 of 9 or lower counts as a 10.
   var barrel = gun && classLevelOf(c, "Gunslinger") >= 20, trance = tranceOn(c);
   performRoll(20, 1, bonus, mode, label, {
-    followUp: function(r, seen){ return attackFollowUp(c, r, aim, hit, seen); },
+    followUp: function(r, seen){ return withLucky(c, mode, bonus, r, attackFollowUp(c, r, aim, hit, seen)); },
     adjust: barrel || trance ? function(r){ return r.natural!=null && r.natural < 10 ? {total: r.total + 10 - r.natural, note: barrel ? "Master of the Barrel" : "Trance of Order"} : null; } : null,
     onResult: gun ? function(r){ firearmResult(c, hit.item, gun, r); } : null
   });
@@ -106,7 +107,7 @@ export function rollCheck(c, bonus, mode, label, ability, opts){
   var mark = raceCheckD4(c, opts.skill); // a Dragonmark's d4
   opts.mode = mode; // (Intuition needs no disadvantage.)
   performRoll(20, 1, bonus, mode, label, {
-    followUp: function(r){ return checkFollowUp(c, r, opts); },
+    followUp: function(r){ return withLucky(c, mode, bonus, r, checkFollowUp(c, r, opts)); },
     adjust: might || reliable || dragon || mark ? function(r){
       var total = r.total, notes = [];
       // Reliable Talent: a d20 of 9 or lower counts as a 10.
@@ -200,7 +201,7 @@ export function rollSave(c, bonus, mode, label, ability){
   var oath = livingLegendOn(c) || hasSupernaturalDefense(c) || effectOn(c, "emboldening_bond") || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
   var dragon = ability==="con" && starryDragon(c), favored = favoredByTheGods(c) || resourceLeft(c, "Warlock:dark_ones_own_luck") > 0 || chronalShiftLeft(c) > 0 || hasArcaneDeflection(c) || !!flashOfGenius(c), trance = tranceOn(c);
   performRoll(20, 1, bonus, mode, label, {
-    followUp: fanatic || indom || diamond || oath || will || dragon || favored ? function(r){ return saveFollowUp(c, ability, r); } : null,
+    followUp: fanatic || indom || diamond || oath || will || dragon || favored || luckyChoice(c, mode) ? function(r){ return withLucky(c, mode, bonus, r, fanatic || indom || diamond || oath || will || dragon || favored ? saveFollowUp(c, ability, r) : null); } : null,
     adjust: trance ? function(r){ return r.natural!=null && r.natural < 10 ? {total: r.total + 10 - r.natural, note: "Trance of Order"} : null; } : null
   });
   if(useTides(c)){ save(); renderAll(); }
@@ -297,6 +298,21 @@ function chronalOption(c){
       return {reroll: true, log: "Chronal Shift"};
     }};
 }
+/* Lucky (the 2014 feat or the 2024 one): after a d20 roll, a point for
+   another d20, the higher kept (js/core/feats-2024.js). It joins the
+   roll's other follow-ups; modifier: the roll's bonus. */
+function withLucky(c, mode, modifier, r, follow){
+  var luck = r && r.natural!=null && luckyChoice(c, mode);
+  if(!luck || resourceLeft(c, luck.key) <= 0) return follow;
+  var opt = {label: luck.label, title: luck.title, use: function(){
+    if(!spendResource(c, luck.key, 1)) return null;
+    save(); renderAll();
+    var lr = luckyRoll(r.total - modifier);
+    return {bonus: lr.bonus, log: luck.log + " (rolled " + lr.got + (lr.got===20 ? ", a natural 20" : "") + ", kept " + (lr.bonus ? "it" : "the first") + ")"};
+  }};
+  follow = follow || {options: []};
+  return Object.assign({}, follow, {options: (follow.options || []).concat([opt])});
+}
 /* Dark One's Own Luck (Fiend 6): a d10 on a check or a save. */
 function ownLuckOption(c){
   return {label: "+1d10 (Dark One's Own Luck)", title: "Once per short or long rest",
@@ -347,7 +363,7 @@ function attackFollowUp(c, r, aim, hit, seen){
   // until used (the card behind the tray isn't needed in between).
   if(hit && hit.flurry){
     opts.unshift({label: "Hit? Damage " + hit.qty + "d" + hit.die + (hit.bonus ? (hit.bonus > 0 ? "+" : "") + hit.bonus : ""), title: "Roll this strike's damage", keep: true, tag: "damage",
-      use: function(){ performRoll(hit.die, hit.qty, hit.bonus, "none", hit.label + ": Damage"); return {silent: true}; }});
+      use: function(){ performRoll(hit.die, hit.qty, hit.bonus, "none", hit.label + ": Damage", hit.unarmed ? {adjust: brawlerRerolls(c, hit.die)} : null); return {silent: true}; }});
     var next = flurryNext(c, hit);
     if(next) opts.splice(1, 0, next);
   }
@@ -496,6 +512,9 @@ function monkHitOptions(c, hit){
   if(hit.flurry) openHandTechniques(c).forEach(function(t){
     out.push(Object.assign(reminder("Hit? " + t.name, "Open Hand Technique: one of the three on a Flurry of Blows hit", "Open Hand Technique", t.text), {keep: true, tag: "open-hand", drops: ["open-hand"]}));
   });
+  // Tavern Brawler (2024): once per turn, the hit also pushes the target 5 feet.
+  if(hasBrawler2024(c)) out.push(Object.assign(reminder("Hit? Push 5 feet (Tavern Brawler)", "Once per turn, on an unarmed hit as part of the Attack action",
+    "Tavern Brawler", "The target is pushed 5 feet away from you."), {keep: true, tag: "brawler-push"}));
   var push = elementalPushDc(c);
   if(push) out.push(Object.assign(reminder("Hit? Elemental push (STR DC " + push + ")", "If the strike dealt acid, cold, fire, lightning or thunder damage: on a failed save you move the target up to 10 feet toward or away from you",
     "Elemental Attunement", "STR save DC " + push + " or you move it up to 10 feet."), {keep: true, tag: "elemental-push"}));
@@ -639,9 +658,11 @@ function critOption(c, hit, crit){
       use: function(){
         // Hemorrhaging Critical (gunslinger 18): half again at the end of the target's next turn.
         var bleed = hit.item && firearmStats(hit.item, c) && hemorrhagingCritical(c);
-        performRoll(crit.die, crit.qty, crit.bonus, "none", hit.label + ": Critical damage", {followUp: bleed ? function(r){
+        performRoll(crit.die, crit.qty, crit.bonus, "none", hit.label + ": Critical damage", joinFollowUp({followUp: bleed ? function(r){
           return r ? {lead: "Hemorrhaging Critical: " + Math.floor(r.total / 2) + " more damage to the target at the end of its next turn.", options: []} : null;
-        } : null, adjust: hit.item ? calibratedSights(c, hit.item, crit.die) : null});
+        } : null, adjust: hit.item ? calibratedSights(c, hit.item, crit.die) : hit.unarmed ? brawlerRerolls(c, crit.die) : null},
+          // Savage Attacker: the critical's dice rolled again, either kept.
+          hit.item ? savageFollowUp(c, hit.melee, crit.die, crit.qty, crit.bonus) : null));
         return {bonus: 0, log: "Critical hit", silent: true};
       }};
 }

@@ -258,3 +258,68 @@ test("level-up: Magic Initiate (2024) swaps one spell for another of the same le
   withFakeDom(t, () => { LU.openLevelUp(c); applicable = LU.stepApplicable("featSpells"); LU.close(); });
   assert.equal(applicable, false);
 });
+
+/* ---- Savage Attacker, Healer (2024), and who sees the Origin feats ---- */
+import * as F24 from "../js/core/feats-2024.js";
+import { healingNote } from "../js/core/spell-scaling.js";
+
+test("Savage Attacker: the 2024 feat on any weapon, the 2014 one on melee; rolling again keeps the higher", () => {
+  assert.equal(F24.savageAttacker(char(1, ["Savage Attacker (2024)"]), false), "2024");
+  assert.equal(F24.savageAttacker(char(1, ["Savage Attacker"]), true), "2014");
+  assert.equal(F24.savageAttacker(char(1, ["Savage Attacker"]), false), "", "2014: not a ranged attack");
+  assert.equal(F24.savageFollowUp(char(1, []), true, 8, 1, 3), null);
+  const follow = F24.savageFollowUp(char(1, ["Savage Attacker (2024)"]), false, 6, 2, 3, () => 0.99); // rolls 6, 6
+  assert.match(follow(null).hint, /Savage Attacker/);
+  const opt = follow({ total: 3 + 5, values: [2, 3] }).options[0];
+  assert.equal(opt.label, "Savage Attacker: roll again");
+  assert.deepEqual(opt.use(), { bonus: 7, log: "Savage Attacker [6, 6], kept the new roll" });
+  // A worse second roll changes nothing.
+  assert.deepEqual(F24.savageReroll(6, 2, 10, () => 0), { bonus: 0, log: "Savage Attacker [1, 1], kept the first roll" });
+  // Joined to a roll's own follow-up: both show.
+  const joined = F24.joinFollowUp({ adjust: "a", followUp: () => ({ lead: "Hemorrhaging", options: [{ label: "x" }] }) }, () => ({ options: [{ label: "y" }] }));
+  assert.equal(joined.adjust, "a");
+  assert.deepEqual(joined.followUp({}).options.map((o) => o.label), ["x", "y"]);
+  assert.equal(F24.joinFollowUp(null, null), null);
+});
+
+test("Healer (2024): Battle Medic's roll plus proficiency, a 1 rolled again; healing spells say so", () => {
+  const c = char(5, ["Healer (2024)"]);
+  assert.equal(F24.hasBattleMedic(c), true);
+  assert.equal(F24.hasBattleMedic(char(5, ["Healer"])), false);
+  assert.ok(F24.isHealersKit({ name: "Healer's Kit" }) && !F24.isHealersKit({ name: "Herbalism Kit" }));
+  const seq = (...xs) => { let i = 0; return () => xs[i++]; };
+  assert.deepEqual(F24.battleMedicRoll(c, 10, seq(0, 0.55)), { first: 1, roll: 6, rerolled: true, total: 9 });
+  assert.deepEqual(F24.battleMedicRoll(c, 10, seq(0.35)), { first: 4, roll: 4, rerolled: false, total: 7 });
+  const adj = F24.healingRerollAdjust(8, 3, () => 0.5);
+  assert.equal(adj({ values: [5] }), null);
+  assert.deepEqual(adj({ values: [1] }), { total: 8, note: "Healing Rerolls: the 1 rolled again, 5" });
+  c.hp = { max: 30, current: 25, temp: 0 };
+  assert.equal(F24.healSelf(c, 9, 30), 5, "up to the maximum");
+  assert.match(healingNote(char(3, ["Healer (2024)"]), "Cure Wounds"), /Healer: reroll any die that rolls a 1/);
+  assert.doesNotMatch(healingNote(char(3, ["Healer"]), "Cure Wounds"), /Healer:/);
+});
+
+test("the 2024 Origin feats are offered only to characters on the 2024 rules", () => {
+  assert.equal(F24.usesRules2024({ background: "Soldier" }), false);
+  assert.equal(F24.usesRules2024({ background: "Soldier", rules2024: true }), true);
+  assert.equal(F24.usesRules2024({ background: "Sage (2024)" }), true);
+  assert.equal(F24.featOffered(FP.featDef("Alert (2024)"), false), false);
+  assert.equal(F24.featOffered(FP.featDef("Crafter"), true), true);
+  assert.equal(F24.featOffered(FP.featDef("Alert"), false), true, "2014 feats for everyone");
+});
+
+test("Tavern Brawler (2024): a 1 on unarmed damage rolled again; Lucky: the 2014 feat on any roll, the 2024 one's advantage only on a plain roll", () => {
+  assert.equal(F24.brawlerRerolls(char(1, ["Tavern Brawler"]), 4), null, "the 2014 feat doesn't reroll");
+  const adj = F24.brawlerRerolls(char(1, ["Tavern Brawler (2024)"]), 4, () => 0.75); // rolls a 4
+  assert.equal(adj({ total: 3, values: [2] }), null);
+  assert.deepEqual(adj({ total: 2, values: [1] }), { total: 5, note: "Tavern Brawler: the 1 rolled again, 4" });
+  assert.deepEqual(F24.rerollOnes(6, "X", () => 0)({ total: 2, values: [1, 1] }), { total: 2, note: "X: the 1s rolled again, 1, 1" });
+  // Lucky.
+  assert.equal(F24.luckyChoice(char(1, []), "none"), null);
+  assert.equal(F24.luckyChoice(char(1, ["Lucky (2024)"]), "none").key, "feat:luck_points_2024");
+  assert.equal(F24.luckyChoice(char(1, ["Lucky (2024)"]), "adv"), null, "already advantage");
+  assert.equal(F24.luckyChoice(char(1, ["Lucky (2024)"]), "dis"), null, "advantage would only cancel it");
+  assert.equal(F24.luckyChoice(char(1, ["Lucky"]), "dis").key, "feat:luck_points", "2014: any roll");
+  assert.deepEqual(F24.luckyRoll(7, () => 0.7), { got: 15, bonus: 8 });
+  assert.deepEqual(F24.luckyRoll(15, () => 0.3), { got: 7, bonus: 0 });
+});
