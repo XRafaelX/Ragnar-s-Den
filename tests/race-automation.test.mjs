@@ -102,7 +102,7 @@ test("a Simic Hybrid's enhancements: one at 1st level, a second at 5th, and what
   const text = card(spit, "Animal Enhancement (5th Level)").text;
   assert.match(text, /^Acid Spit: As an action, spray acid/);
   assert.doesNotMatch(text, /• Carapace/, "only the picked option's line");
-  assert.match(text, /Acid Spit save DC 14 \(8 \+ proficiency \+3 \+ Constitution \+3\)\./);
+  assert.match(text, /Acid Spit save DC 14 \(8 \+ 3 \(proficiency\) \+ 3 \(Constitution\)\)\./);
   // A 1st-level option taken at 5th shows its own line.
   const both = makeChar("Simic Hybrid", 5, { [first]: [["Manta Glide"]], [second]: [["Nimble Climber"]] });
   assert.match(card(both, "Animal Enhancement (5th Level)").text, /^Nimble Climber: You have a climbing speed equal to your walking speed\./);
@@ -114,7 +114,7 @@ test("an aasimar's subrace, a shifter's type and a kender's Taunt ability", () =
   assert.match(text, /• Fallen \(Necrotic Shroud\)/);
   assert.doesNotMatch(text, /Your picks/, "the card shows the choice itself");
   assert.doesNotMatch(text, /Protector|Scourge/);
-  assert.match(text, /Necrotic Shroud save DC 13 \(8 \+ proficiency \+2 \+ Charisma \+3\)\./);
+  assert.match(text, /Necrotic Shroud save DC 13 \(8 \+ 2 \(proficiency\) \+ 3 \(Charisma\)\)\./);
   assert.doesNotMatch(card(makeChar("Aasimar", 3, { "race:Celestial Revelation:pick": [["Protector"]] }), "Celestial Revelation").text, /save DC/);
   assert.ok(CP.pendingClassPicks(makeChar("Aasimar")).some((g) => g.name === "Celestial Revelation"), "an older aasimar is asked");
   const beast = makeChar("Shifter", 1, { "race:Shifter Type:pick": [["Beasthide"], ["Athletics"]] });
@@ -123,6 +123,6 @@ test("an aasimar's subrace, a shifter's type and a kender's Taunt ability", () =
   const kender = makeChar("Kender", 1);
   assert.doesNotMatch(card(kender, "Taunt").text, /save DC \d/, "no DC before the ability is picked");
   const picked = makeChar("Kender", 1, { "race:Taunt:pick": [["Charisma"]] });
-  assert.match(card(picked, "Taunt").text, /Taunt save DC 13 \(8 \+ proficiency \+2 \+ Charisma \+3\)\./);
-  assert.match(card(makeChar("Leonin"), "Daunting Roar").text, /Daunting Roar save DC 13 \(8 \+ proficiency \+2 \+ Constitution \+3\)\./);
+  assert.match(card(picked, "Taunt").text, /Taunt save DC 13 \(8 \+ 2 \(proficiency\) \+ 3 \(Charisma\)\)\./);
+  assert.match(card(makeChar("Leonin"), "Daunting Roar").text, /Daunting Roar save DC 13 \(8 \+ 2 \(proficiency\) \+ 3 \(Constitution\)\)\./);
 });

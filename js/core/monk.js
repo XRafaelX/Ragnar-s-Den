@@ -257,6 +257,35 @@ export function kiActions(c){
   }
   return out;
 }
+/* One of the monk's ki actions by id ("flurry", "stun"), or null. */
+export function kiAction(c, id){
+  return kiActions(c).find(function(a){ return a.id===id; }) || null;
+}
+/* Flurry of Blows' unarmed strikes: two, three from 2024 monk 10
+   (Heightened Focus). */
+export function flurryStrikes(c){
+  return isMonk2024(c) && classLevelOf(c, "Monk") >= 10 ? 3 : 2;
+}
+/* Stunning Strike (monk 5) with this weapon: the 2024 monk's needs a monk
+   weapon (or an unarmed strike, item null), the 2014 monk's any melee
+   weapon attack. */
+export function canStunWith(c, item, monkWeapon, ranged){
+  if(classLevelOf(c, "Monk") < 5) return false;
+  if(!item) return true;
+  return isMonk2024(c) ? !!monkWeapon : !ranged;
+}
+/* The 2024 Unarmed Strike's Grapple and Shove (2024 monk only: the 2014
+   rules contest them with Athletics, no DC): the target saves with STR or
+   DEX, its choice, against 8 + STR + proficiency. Dexterous Attacks lets
+   the monk use DEX instead while wearing no armor and holding no shield.
+   {dc, ability: "STR"|"DEX"} or null. */
+export function grappleShoveDc(c){
+  if(!isMonk2024(c)) return null;
+  var str = mod(abilityScore(c, "str")), dex = mod(abilityScore(c, "dex"));
+  var geared = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
+  var useDex = !geared && dex > str;
+  return {dc: 8 + profBonus(c) + (useDex ? dex : str), ability: useDex ? "DEX" : "STR"};
+}
 /* Why an action can't be taken now, or "". */
 export function kiActionProblem(c, a){
   if(a.reason) return a.reason;

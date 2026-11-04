@@ -490,6 +490,27 @@
   transition:background .15s ease;
 }
 .res-pip.full{background:var(--brass);}
+/* "Spend ... on" lists (Focus, sorcery points, Bardic Inspiration, ...):
+   a boxed brass button sized to its text, like the Hit Dice tiles, not a
+   bare underlined field. */
+.res-pick{margin-top:8px;}
+.res-pick .tp{width:auto;max-width:100%;display:inline-block;}
+.res-pick .tp-field .tp-trigger{
+  width:auto;max-width:100%;gap:10px;padding:6px 10px 6px 12px;border-radius:6px;
+  border:1px solid color-mix(in srgb, var(--brass) 60%, transparent);
+  background:color-mix(in srgb, var(--brass) 12%, transparent);
+  font-size:13px;font-weight:500;transition:border-color .15s ease, background .15s ease;
+}
+/* Bootstrap's own .placeholder (half opacity, wait cursor) would fade it. */
+.res-pick .tp-trigger.placeholder{opacity:1;cursor:pointer;min-height:0;}
+.res-pick .tp-trigger.placeholder .tp-value{color:var(--text-on-parch);}
+.res-pick .tp-chevron{stroke:var(--brass-bright);}
+/* The open list is wider than the button so the descriptions read in a
+   few lines, not a tall narrow column. (A phone opens it as a sheet.) */
+.res-pick .tp-menu:not(.tp-sheet){right:auto;width:min(440px, calc(100vw - 32px));}
+.res-pick .tp-field .tp-trigger:hover,.res-pick .tp-field .tp-trigger:focus-visible,.res-pick .tp-field.open .tp-trigger{
+  border-color:var(--brass-bright);background:color-mix(in srgb, var(--brass) 22%, transparent);
+}
 .res-count{font-size:13px;color:var(--text-on-parch-dim);}
 .res-count b{font-size:18px;color:var(--text-on-parch);font-family:var(--serif);font-weight:normal;}
 

@@ -354,7 +354,7 @@ test("wizard: a dragonborn picks a draconic ancestry, and the sheet works out th
   assert.match(CP.racePicksText(c), /^Draconic Ancestry: Green dragon$/);
   // CON 16 (14 + nothing from the race), level 1: DC 8 + 3 + 2.
   c.abilities.con = 16;
-  assert.equal(draconicBreathText(c), "Breath Weapon (Green dragon): 15 ft cone, CON save DC 13 (8 + CON +3 + proficiency +2), 2d6 poison damage (half on a success). Once per short or long rest. 3d6 from level 6.\nDamage Resistance: poison.");
+  assert.equal(draconicBreathText(c), "Breath Weapon (Green dragon): 15 ft cone, CON save DC 13 (8 + 2 (proficiency) + 3 (Constitution)), 2d6 poison damage (half on a success). Once per short or long rest. 3d6 from level 6.\nDamage Resistance: poison.");
   assert.deepEqual(draconicBreath(c), { dragon: "Green dragon", damage: "Poison", area: "15 ft cone", save: "CON", die: 6, dice: 2, next: { level: 6, dice: 3 },
     con: 3, pb: 2, dc: 13, uses: 1, reset: "short", attack: false, resistance: true, metallic: false });
   // The race's Features cards: the dragon on the ancestry's, the breath and resistance worked out on theirs.
@@ -366,7 +366,7 @@ test("wizard: a dragonborn picks a draconic ancestry, and the sheet works out th
   const g = raceGrant(c, "Draconic Ancestry");
   assert.deepEqual(CP.classPicksDetails(g, g.cl.profPicks[g.key]), ["Poison: 15 ft cone breath, CON save, and resistance to poison damage"]);
   c.classes[0].level = 11;
-  assert.match(draconicBreathText(c), /CON save DC 15 \(8 \+ CON \+3 \+ proficiency \+4\), 4d6 poison damage \(half on a success\)\. Once per short or long rest\. 5d6 from level 16\./);
+  assert.match(draconicBreathText(c), /CON save DC 15 \(8 \+ 4 \(proficiency\) \+ 3 \(Constitution\)\), 4d6 poison damage \(half on a success\)\. Once per short or long rest\. 5d6 from level 16\./);
   c.classes[0].level = 16;
   assert.match(draconicBreathText(c), /5d6 poison damage \(half on a success\)\. Once per short or long rest\.\n/, "no next step at the top");
   // Not picked yet (an older dragonborn): nothing to show, and the Feature choices card asks.
@@ -449,7 +449,7 @@ test("Fizban's breath: 1d10 growing at 5, 11 and 17, DEX save, proficiency bonus
   const b = draconicBreath(dragonborn("Dragonborn (Chromatic)", "Blue", 1));
   assert.deepEqual([b.damage, b.area, b.save, b.dc, b.reset, b.attack, b.next], ["Lightning", "5 by 30 ft line", "DEX", 12, "long", true, { level: 5, dice: 2 }]);
   assert.equal(draconicBreathText(dragonborn("Dragonborn (Gem)", "Topaz", 5, 16)),
-    "Breath Weapon (Topaz dragon): 15 ft cone, in place of one attack, DEX save DC 14 (8 + CON +3 + proficiency +3), 2d10 necrotic damage (half on a success). 3 uses per long rest (your proficiency bonus). 3d10 from level 11.\nDamage Resistance: necrotic.");
+    "Breath Weapon (Topaz dragon): 15 ft cone, in place of one attack, DEX save DC 14 (8 + 3 (proficiency) + 3 (Constitution)), 2d10 necrotic damage (half on a success). 3 uses per long rest (your proficiency bonus). 3d10 from level 11.\nDamage Resistance: necrotic.");
   // Uses: the proficiency bonus, all back on a long rest only.
   const c = dragonborn("Dragonborn (Metallic)", "Gold", 5);
   const res = (key) => characterResources(c).find((r) => r.key === key);

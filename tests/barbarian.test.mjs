@@ -22,7 +22,7 @@ const seq = (...v) => { let i = 0; return () => v[i++]; };
 test("save DCs on feature cards: Intimidating Presence, Mighty Impel, Infectious Fury", () => {
   const dcOf = (c, name) => H.getAllCharacterFeatures(c).find((f) => f.name === name).dcs[0];
   const b = barb("Path of the Berserker", 10);
-  assert.deepEqual([dcOf(b, "Intimidating Presence").chip, dcOf(b, "Intimidating Presence").line], ["WIS DC 12", "Wisdom save DC 12 (8 + proficiency +4 + Charisma +0)."]);
+  assert.deepEqual([dcOf(b, "Intimidating Presence").chip, dcOf(b, "Intimidating Presence").line], ["WIS DC 12", "Wisdom save DC 12 (8 + 4 (proficiency) + 0 (Charisma))."]);
   assert.match(H.getAllCharacterFeatures(b).find((f) => f.name === "Intimidating Presence").text, /Wisdom save DC 12/);
   assert.equal(dcOf(barb("Path of the Giant", 10), "Mighty Impel").chip, "STR DC 16");
   assert.equal(dcOf(barb("Path of the Beast", 10), "Infectious Fury").chip, "WIS DC 15");

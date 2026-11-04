@@ -334,12 +334,22 @@ function attackFollowUp(c, r, aim, hit, seen){
     var critFollow = withPinpoint(c, hit, criticalHit(c, hit, roll), criticalDamage(c, hit).qty);
     var critClone = cloneAttackOption(c, hit);
     if(critClone) critFollow.options.push(Object.assign(critClone, {keep: true}));
+    var critNext = flurryNext(c, hit);
+    if(critNext) critFollow.options.push(critNext);
     return critFollow;
   }
   // A natural 20 with no weapon card behind it (a spell attack) simply hits.
   if(!hit && roll && roll.natural===20) return null;
   if(hit && r && hit.predicted && !hit.noDamage) return withPinpoint(c, hit, Object.assign(criticalHit(c, hit), {lead: "Predicted Critical: if it hits, it's a critical hit."}), criticalDamage(c, hit).qty);
   var opts = !hit || hit.noDamage ? [] : pinpointOptions(c, hit, hit.qty);
+  // Flurry of Blows: the strike's damage, and the next strike, both kept
+  // until used (the card behind the tray isn't needed in between).
+  if(hit && hit.flurry){
+    opts.unshift({label: "Hit? Damage " + hit.qty + "d" + hit.die + (hit.bonus ? (hit.bonus > 0 ? "+" : "") + hit.bonus : ""), title: "Roll this strike's damage", keep: true, tag: "damage",
+      use: function(){ performRoll(hit.die, hit.qty, hit.bonus, "none", hit.label + ": Damage"); return {silent: true}; }});
+    var next = flurryNext(c, hit);
+    if(next) opts.splice(1, 0, next);
+  }
   // The Eldritch Gunman's enchanted firearm: Runic Bind on a hit, Veil of
   // Smoke on a miss.
   var ench = hit && !hit.noDamage && enchantmentOf(c, hit.item);
@@ -473,8 +483,19 @@ function attackFollowUp(c, r, aim, hit, seen){
   if(named.length) return {lead: "", hint: "Tap for more options.", options: rest.length ? named.concat([{heading: "Missed?"}], rest) : named};
   return {lead: onlyAim ? "Missed? Focused Aim:" : "Missed?", hint: onlyAim ? "Missed? Tap for Focused Aim." : "Missed? Tap for more options.", options: opts};
 }
+/* Flurry of Blows' next strike (hit.flurry: {n, of}), or null after the
+   last one. It rolls with the same bonus and advantage as the first. */
+function flurryNext(c, hit){
+  if(!hit || !hit.flurry || hit.flurry.n >= hit.flurry.of) return null;
+  var n = hit.flurry.n + 1, of = hit.flurry.of;
+  return {label: "Next strike (" + n + " of " + of + ")", title: "Flurry of Blows: roll the next unarmed strike", keep: true, tag: "flurry",
+    use: function(){
+      rollAttack(c, hit.attackBonus, hit.rollMode, "Flurry of Blows: strike " + n + " of " + of, Object.assign({}, hit, {flurry: {n: n, of: of}}));
+      return {silent: true};
+    }};
+}
 /* Options that say when they apply go first. "Missed?" only heads the rest. */
-var SAYS_WHEN = /^(Hit\?|Missed\?|Surprised target\?)/;
+var SAYS_WHEN = /^(Hit\?|Missed\?|Surprised target\?|Next strike)/;
 function saysWhen(o){ return SAYS_WHEN.test(o.label); }
 /* A tray option that only tells the player what happens, logged. pay
    (optional) spends what it costs, false if it can't. */

@@ -7,7 +7,7 @@ import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack, rollSneak } from "./sheet-rolls.js";
 import { smiteButtons } from "./paladin.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -682,6 +682,15 @@ function renderUnarmedCard(c, u){
     epi.addEventListener("click", function(){ performRoll(epiDie, 1, 0, "none", "Elemental Epitome: extra damage"); });
     actions.appendChild(epi);
   }
+  // The monk's strikes: Flurry of Blows, Stunning Strike, Grapple / Shove.
+  if(/unarmed strike/i.test(u.name)){
+    var flurry = flurryButton(c, u, uHit);
+    if(flurry) actions.appendChild(flurry);
+    var uStun = stunButton(c, null);
+    if(uStun) actions.appendChild(uStun);
+    var grapple = grappleShoveButton(c);
+    if(grapple) actions.appendChild(grapple);
+  }
   var deflect = u.name==="Unarmed strike" && (isMonk2024(c) ? deflectAttacksButton(c) : deflectMissilesButton(c));
   if(deflect) actions.appendChild(deflect);
   if(u.psychicBlade){
@@ -693,6 +702,63 @@ function renderUnarmedCard(c, u){
   return card;
 }
 
+/* Flurry of Blows (monk 2): pays its Focus (ki), then rolls the first
+   unarmed strike. The tray offers each strike's damage and the next
+   strike, so the whole flurry is rolled from there. */
+function flurryButton(c, u, uHit){
+  var a = kiAction(c, "flurry");
+  if(!a || !uHit) return null;
+  var n = flurryStrikes(c), cost = a.cost ? a.cost + " " + kiWord(c) : "free", problem = kiActionProblem(c, a);
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "btn small inv-roll-btn inv-fury-btn";
+  b.innerHTML = makeDiceSvg() + "Flurry of Blows · " + cost;
+  b.disabled = !!problem;
+  b.title = problem || a.detail;
+  b.addEventListener("click", function(){
+    if(!payKiAction(c, a)) return;
+    logRoll("Flurry of Blows", a.log + " (" + cost + ")");
+    save(); renderAll();
+    rollAttack(c, u.attack, u.roll ? u.roll.mode : "none", "Flurry of Blows: strike 1 of " + n, Object.assign({}, uHit, {flurry: {n: 1, of: n}}));
+  });
+  return b;
+}
+/* Stunning Strike (monk 5), on a hit: pays its Focus (ki) and says what
+   the target saves against. item null for an unarmed strike. */
+function stunButton(c, item){
+  if(!canStunWith(c, item, item && isMonkWeaponFor(c, item), item && isRangedWeapon(item))) return null;
+  var a = kiAction(c, "stun");
+  if(!a) return null;
+  var cost = a.cost + " " + kiWord(c), problem = kiActionProblem(c, a);
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "btn small inv-roll-btn inv-mark-btn";
+  b.textContent = "Stunning Strike · DC " + kiSaveDc(c);
+  b.disabled = !!problem;
+  b.title = problem || "On a hit, for " + cost + ": " + a.detail;
+  b.addEventListener("click", function(){
+    if(!payKiAction(c, a)) return;
+    logRoll("Stunning Strike", a.log + " (" + cost + ")");
+    save(); renderAll();
+    // (The toast stays one line on a phone: the whole rule is in the history.)
+    showActionToast("Stunning Strike: CON save DC " + kiSaveDc(c) + ".");
+  });
+  return b;
+}
+/* Grapple and Shove, the 2024 Unarmed Strike's other two options: the DC
+   (Dexterous Attacks lets a monk use DEX). Nothing to roll, the target saves. */
+function grappleShoveButton(c){
+  var g = grappleShoveDc(c);
+  if(!g) return null;
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "btn small inv-roll-btn inv-mark-btn";
+  b.textContent = "Grapple / Shove · DC " + g.dc;
+  b.title = "An unarmed strike can grapple or shove instead of dealing damage. DC 8 + " + g.ability + " + proficiency" + (g.ability==="DEX" ? " (Dexterous Attacks)" : "") + ".";
+  b.addEventListener("click", function(){
+    var text = "The target makes a STR or DEX save (its choice), DC " + g.dc + ". Grapple: on a failure it's grappled, and escaping it is DC " + g.dc + " too. Only a target no more than one size larger than you, and you need a hand free. Shove: on a failure you push it 5 feet away or knock it prone.";
+    logRoll("Grapple / Shove", text);
+    showActionToast("Grapple / Shove: STR or DEX save, DC " + g.dc + ".");
+  });
+  return b;
+}
 /* Deflect Missiles (monk 3): a reaction when hit by a ranged weapon attack.
    If the damage drops to 0 the monk can catch it and, for 1 ki, throw it
    back (range 20/60, proficient, it counts as a monk weapon). */
@@ -1451,6 +1517,8 @@ function renderWeaponCard(c, item, idx){
   if(blessBtn) actions.appendChild(blessBtn);
   fighterWeaponButtons(c, item.name || "Weapon").forEach(function(b){ actions.appendChild(b); });
   kenseiButtons(c, item).forEach(function(b){ actions.appendChild(b); });
+  var wStun = stunButton(c, item);
+  if(wStun) actions.appendChild(wStun);
   if(!isRangedWeapon(item)) smiteButtons(c, item.name || "Weapon", true).forEach(function(b){ actions.appendChild(b); });
   rangerButtons(c, item.name || "Weapon", false).forEach(function(b){ actions.appendChild(b); });
   gunslingerHitDice(c, item).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d)); });

@@ -296,3 +296,26 @@ test("older subclasses on a 2024 monk say Focus on the Spells tab and Vitals", (
   assert.ok(!/\bki\b/.test(arc.spellLabel + " " + arc.spellTip + " " + arc.text), arc.spellLabel);
   assert.equal(H.kiWord(c), "Focus");
 });
+
+test("the monk's strikes on the unarmed strike card (2026-11-04, checked on 5etools' XPHB data)", () => {
+  // Flurry of Blows: two strikes, three from 2024 monk 10 (Heightened Focus); always two for 2014.
+  assert.deepEqual([H.flurryStrikes(m24(2)), H.flurryStrikes(m24(9)), H.flurryStrikes(m24(10)), H.flurryStrikes(monk(20))], [2, 2, 3, 2]);
+  assert.equal(H.kiAction(m24(2), "flurry").cost, 1);
+  assert.equal(H.kiAction(m24(1), "flurry"), null, "no Focus before level 2");
+  // Stunning Strike from 5: 2024 a monk weapon or an unarmed strike, 2014 any melee weapon.
+  assert.equal(H.canStunWith(m24(4), null), false);
+  assert.equal(H.canStunWith(m24(5), null), true);
+  assert.equal(H.canStunWith(m24(5), {}, true, false), true, "2024: a monk weapon");
+  assert.equal(H.canStunWith(m24(5), {}, false, false), false, "2024: not a greatsword");
+  assert.equal(H.canStunWith(monk(5), {}, false, false), true, "2014: any melee weapon");
+  assert.equal(H.canStunWith(monk(5), {}, false, true), false, "2014: not a bow");
+  // Grapple / Shove: 8 + STR or (Dexterous Attacks) DEX + proficiency, 2024 only.
+  assert.equal(H.grappleShoveDc(monk(5)), null, "2014: contested Athletics, no DC");
+  assert.deepEqual(H.grappleShoveDc(m24(5)), { dc: 15, ability: "DEX" }, "8 + DEX 4 + proficiency 3");
+  const armored = m24(5);
+  armored.inventory = [{ id: "a", name: "Leather", type: "armor", category: "light", equipped: true }];
+  assert.deepEqual(H.grappleShoveDc(armored), { dc: 11, ability: "STR" }, "in armor: STR");
+  const strong = m24(1);
+  strong.abilities.str = 18; strong.abilities.dex = 12;
+  assert.deepEqual(H.grappleShoveDc(strong), { dc: 14, ability: "STR" }, "the higher of the two");
+});

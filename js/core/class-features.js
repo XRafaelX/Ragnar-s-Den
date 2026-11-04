@@ -383,9 +383,15 @@ export function draconicBreath(c){
     uses: kind.uses==="pb" ? pb : 1, reset: kind.uses==="pb" ? "long" : "short",
     attack: !!kind.attack, resistance: !!kind.resistance, metallic: !!kind.metallic && lv >= 5};
 }
-/* "8 + CON +2 + proficiency +2": how the breath's save DC is made up. */
+/* How a save DC is made up, each number named: "8 + 2 (proficiency) +
+   3 (Charisma)", a minus for a negative modifier: "8 + 2 (proficiency) -
+   1 (Wisdom)". */
+export function dcSum(pb, m, name){
+  return "8 + " + pb + " (proficiency) " + (m < 0 ? "- " + (-m) : "+ " + m) + " (" + name + ")";
+}
+/* "8 + 2 (proficiency) + 3 (Constitution)": how the breath's save DC is made up. */
 export function breathDcFormula(b){
-  return "8 + CON " + fmtMod(b.con) + " + proficiency " + fmtMod(b.pb);
+  return dcSum(b.pb, b.con, "Constitution");
 }
 /* "Once per short or long rest" or "3 uses per long rest (your proficiency bonus)". */
 export function breathUsesText(b){
@@ -469,8 +475,8 @@ function pickedOptionText(t, values){
 var ABILITY_OF = {Intelligence: "int", Wisdom: "wis", Charisma: "cha", Strength: "str", Dexterity: "dex", Constitution: "con"};
 function abilityName(key){ return Object.keys(ABILITY_OF).find(function(k){ return ABILITY_OF[k]===key; }) || key.toUpperCase(); }
 /* The save DCs a class feature sets (its saveDc), worked out: [{dc, save,
-   chip: "WIS DC 13", line: "Wisdom save DC 13 (8 + proficiency +3 +
-   Charisma +2)."}]. */
+   chip: "WIS DC 13", line: "Wisdom save DC 13 (8 + 3 (proficiency) +
+   2 (Charisma))."}]. */
 /* Damage resistances class features give ([{type, source}]): their
    `resist`, always on. */
 export function featureResistances(c){
@@ -498,11 +504,11 @@ export function featureDcs(c, f){
     var m = mod(abilityScore(c, d.ability)), dc = 8 + pb + m;
     // (No save named: the feature's effects ask for different ones, "DC 13".)
     return {dc: dc, save: d.save || "", chip: (d.save ? d.save.toUpperCase() + " " : "") + "DC " + dc,
-      line: (d.save ? abilityName(d.save) + " save" : "Save") + " DC " + dc + " (8 + proficiency " + fmtMod(pb) + " + " + abilityName(d.ability) + " " + fmtMod(m) + ")."};
+      line: (d.save ? abilityName(d.save) + " save" : "Save") + " DC " + dc + " (" + dcSum(pb, m, abilityName(d.ability)) + ")."};
   });
 }
 /* The save DCs a trait sets (TRAIT_DCS), worked out: "Taunt save DC 13
-   (8 + proficiency +2 + Charisma +3)." Waits for an ability still to be
+   (8 + 2 (proficiency) + 3 (Charisma))." Waits for an ability still to be
    picked, or for the option the DC belongs to. */
 function traitDcLines(c, t, values){
   return [].concat(TRAIT_DCS[t.name] || []).map(function(dc){
@@ -511,7 +517,7 @@ function traitDcLines(c, t, values){
     if(!ability) return "";
     var m = mod(abilityScore(c, ability)), pb = profBonus(c);
     var name = Object.keys(ABILITY_OF).find(function(k){ return ABILITY_OF[k]===ability; });
-    return dc.label + " " + (8 + pb + m) + " (8 + proficiency " + fmtMod(pb) + " + " + name + " " + fmtMod(m) + ").";
+    return dc.label + " " + (8 + pb + m) + " (" + dcSum(pb, m, name) + ").";
   });
 }
 /* What the race's traits protect against: {resist, immune,

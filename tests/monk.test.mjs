@@ -42,6 +42,15 @@ test("ki save DC: 8 + proficiency + WIS, on the feature cards too", () => {
   assert.equal(dcOf(monk("Way of the Open Hand", 5), "Stunning Strike"), "CON DC 14");
 });
 
+test("a save DC's make-up names each number, a minus for a negative modifier", () => {
+  const line = (c) => H.getAllCharacterFeatures(c).find((f) => f.name === "Stunning Strike").dcs[0].line;
+  assert.equal(line(monk("Way of the Open Hand", 5)), "Constitution save DC 14 (8 + 3 (proficiency) + 3 (Wisdom)).");
+  const low = monk("Way of the Open Hand", 5);
+  low.abilities.wis = 8;
+  assert.equal(line(low), "Constitution save DC 10 (8 + 3 (proficiency) - 1 (Wisdom)).");
+  assert.equal(H.dcSum(2, 0, "Wisdom"), "8 + 2 (proficiency) + 0 (Wisdom)");
+});
+
 test("the ki list: nothing before 2nd level, then by level", () => {
   assert.deepEqual(H.kiActions(monk("", 1)), []);
   assert.deepEqual(ids(monk("", 2)), ["flurry", "patient", "step"]);
