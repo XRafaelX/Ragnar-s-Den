@@ -1,5 +1,6 @@
 /* ---------------- Feats Catalog ----------------
-   The 2014 rules' feats, one file per source book in ./feats/ and joined
+   The 2014 rules' feats (and the 2024 Player's Handbook's Origin feats
+   its backgrounds give), one file per source book in ./feats/ and joined
    here into the one list the app uses (custom feats are added to it at
    run time, see js/core/custom-features.js). `source` says which book.
    What taking a feat changes on the sheet (see js/core/feat-picks.js):
@@ -14,8 +15,9 @@
      weapons        weapon proficiencies to pick (Weapon Master)
      weaponProfs    weapon proficiencies it grants outright (Gunner)
      tools          tool proficiencies it grants outright (Chef)
-     toolPicks      {count, group}: tools to pick, from one group of
-                    TOOL_GROUPS when `group` is set (Artificer Initiate)
+     toolPicks      {count, group, only}: tools to pick, from one group of
+                    TOOL_GROUPS when `group` is set (Artificer Initiate),
+                    or just the `only` ones of it (Crafter)
      languages      languages it teaches outright (Fey Teleportation)
      languagePicks  languages to pick (Linguist)
      option         {label, options, details}: one choice that is kept and
@@ -68,12 +70,13 @@ import { OTHER_BOOK_FEATS } from "./feats/other-books.js";
 import { DRAGONLANCE_FEATS } from "./feats/dragonlance.js";
 import { GIANTS_FEATS } from "./feats/giants.js";
 import { PLANESCAPE_FEATS } from "./feats/planescape.js";
+import { PHB_2024_FEATS } from "./feats/phb2024.js";
 // PRIVATE: Spikael's Reaper feat (see ./shadow-stalker.js). Remove before publishing.
 import { REAPER_FEAT } from "./shadow-stalker.js";
 
 /* `remind` ({when, line}): the feat's row on the Vitals tab's Remember
    card, like a class feature's (js/core/reminders.js). */
-export var FEATS_CATALOG = [].concat(PHB_FEATS, TASHA_FEATS, XANATHAR_FEATS, OTHER_BOOK_FEATS, DRAGONLANCE_FEATS, GIANTS_FEATS, PLANESCAPE_FEATS, [REAPER_FEAT]);
+export var FEATS_CATALOG = [].concat(PHB_FEATS, TASHA_FEATS, XANATHAR_FEATS, OTHER_BOOK_FEATS, DRAGONLANCE_FEATS, GIANTS_FEATS, PLANESCAPE_FEATS, PHB_2024_FEATS, [REAPER_FEAT]);
 
 /* Campaign rules that hand out feats. The DM decides whether a campaign
    uses them, so they are set per character (c.campaign):

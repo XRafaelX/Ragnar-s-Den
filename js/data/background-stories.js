@@ -665,5 +665,13 @@ export var BACKGROUND_STORIES_FROM = {
   "Urban Bounty Hunter": "Criminal",
   "Uthgardt Tribe Member": "Outlander",
   "Waterdhavian Noble": "Noble",
-  "Investigator": "Soldier"
- };
+  "Investigator": "Soldier",
+  // The 2024 Player's Handbook has no personality tables: its backgrounds
+  // roll on their 2014 namesake's (story tables too), and the new ones on
+  // the closest 2014 background's traits, ideals, bonds and flaws.
+  "Acolyte (2024)": "Acolyte", "Charlatan (2024)": "Charlatan", "Criminal (2024)": "Criminal",
+  "Entertainer (2024)": "Entertainer", "Hermit (2024)": "Hermit", "Noble (2024)": "Noble",
+  "Sage (2024)": "Sage", "Sailor (2024)": "Sailor", "Soldier (2024)": "Soldier",
+  "Artisan (2024)": "Guild Artisan", "Merchant (2024)": "Guild Artisan", "Farmer (2024)": "Folk Hero",
+  "Guard (2024)": "Soldier", "Guide (2024)": "Outlander", "Scribe (2024)": "Sage", "Wayfarer (2024)": "Urchin"
+};

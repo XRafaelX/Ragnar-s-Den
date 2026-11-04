@@ -29,7 +29,9 @@ export function storyTables(background){
   var from = BACKGROUND_STORIES_FROM[background] || "";
   var own = BACKGROUND_STORIES[background] || {};
   var base = from ? BACKGROUND_STORIES[from] || {} : own;
-  var out = {from: from, story: (VARIANTS.indexOf(background) !== -1 ? base.story : own.story) || []};
+  // (A 2024 background is its 2014 namesake's variant: "Sage (2024)".)
+  var variant = VARIANTS.indexOf(background) !== -1 || background === from + " (2024)";
+  var out = {from: from, story: (variant ? base.story : own.story) || []};
   ["traits", "ideal", "bond", "flaw"].forEach(function(k){ out[k] = base[k] || null; });
   return out;
 }

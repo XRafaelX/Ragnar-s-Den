@@ -8,7 +8,7 @@ import { TITLE_MAX } from "../ui/char-title.js";
 import { SPELL_DATA, spellDataForClass, tashaAddsSpell, tashaSpellCount } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeDiceSvg } from "../ui/svg-icons.js";
-import { wizardExtraSpellTag, wizardOriginSpells, wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, wizardRaceGrants, wizardRacePickGrants, wizardRaceSlots, wizardRaceSkills, wizardBackgroundGrants, wizardBgSlots, wizardOverlapGrants, wizardOverlapSlots } from "./wizard-core.js";
+import { wizardExtraSpellTag, wizardOriginSpells, wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, backgroundAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, wizardRaceGrants, wizardRacePickGrants, wizardRaceSlots, wizardRaceSkills, wizardBackgroundGrants, wizardBgSlots, wizardOverlapGrants, wizardOverlapSlots } from "./wizard-core.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { featPicksSummary } from "../core/feat-picks.js";
 import { classPicksSummary } from "../core/class-picks.js";
@@ -217,7 +217,8 @@ export function wizardStepReview(container){
   var raceHp = race && Number(race.hpPerLevel) || 0; // Dwarven Toughness
   // Tough from the background (Wildspacer) or the race's feat: 2 at level 1.
   var bgGrant = wizardBackgroundFeat(), raceDefHp = raceChoiceDef();
-  var toughHp = (bgGrant && bgGrant.def && bgGrant.def.name==="Tough") || (raceDefHp && raceDefHp.feat && wizardState.raceChoices.feat==="Tough") ? 2 : 0;
+  var isTough = function(n){ return n==="Tough" || n==="Tough (2024)"; };
+  var toughHp = (bgGrant && bgGrant.def && isTough(bgGrant.def.name)) || (raceDefHp && raceDefHp.feat && isTough(wizardState.raceChoices.feat)) ? 2 : 0;
   var hp = HIT_DICE_BY_CLASS[wizardState.classId] + conMod + hpBonus + raceHp + toughHp;
   // Same AC math as the sheet, run on the gear and picks chosen so far.
   var preview = {
@@ -247,6 +248,10 @@ export function wizardStepReview(container){
   var raceInc = raceAbilityIncreases();
   var raceIncKeys = ABILITIES.map(function(a){ return a[0]; }).filter(function(k){ return raceInc[k]; });
   if(raceIncKeys.length) row("Race increases", raceIncKeys.map(function(k){ return k.toUpperCase()+" "+fmtMod(raceInc[k]); }).join(", "));
+  // (A 2024 background's, in their place.)
+  var bgInc = backgroundAbilityIncreases();
+  var bgIncKeys = ABILITIES.map(function(a){ return a[0]; }).filter(function(k){ return bgInc[k]; });
+  if(bgIncKeys.length) row("Background increases", bgIncKeys.map(function(k){ return k.toUpperCase()+" "+fmtMod(bgInc[k]); }).join(", "));
   var raceDef = raceChoiceDef();
   if(raceDef){
     var rc = wizardState.raceChoices;

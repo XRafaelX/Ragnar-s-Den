@@ -6,6 +6,7 @@ import { BACKGROUND_INFO } from "../data/backgrounds.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { themedPicker } from "../ui/themed-picker.js";
+import { wizardBgScoreRule } from "./wizard-core.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, subclassChoice, subclassesThatGive, raceChoiceDef, raceAbilityAmounts, raceAbilityIncreases, raceAbilityPicksNeeded, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
   wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardRaceSkills,
   wizardBackgroundGrants, wizardBackgroundPickGrants, wizardBgSlots, wizardBgPickContext,
@@ -166,6 +167,12 @@ export function wizardStepRaceChoices(container){
   card.innerHTML = "<h3><span>Race Traits</span></h3>";
   var explain = ce("div","wiz-explain");
   explain.innerHTML = "<b>Why this matters:</b> As a <b>"+escapeHtml(wizardState.race)+"</b> you choose some of your traits yourself instead of getting fixed ones. These picks let you shape exactly the character you want.";
+  // A 2024 background raises the scores instead of the race (picked on
+  // Ability Scores), so the race's score picks are left out here.
+  if(wizardBgScoreRule()){
+    def = {feat: def.feat};
+    explain.innerHTML += " Under the 2024 rules your background raised your ability scores, so the race's increases are left out.";
+  }
   card.appendChild(explain);
 
   var number = 0;
@@ -384,7 +391,8 @@ export function wizardStepBgFeat(container){
   card.innerHTML = "<h3><span>Background Feat</span></h3>";
   var explain = ce("div","wiz-explain");
   explain.innerHTML = "<b>From your "+escapeHtml(wizardState.background)+" background:</b> you start with the <b>"+escapeHtml(feat.name)+"</b> feat. "+
-    escapeHtml(feat.summary || "")+" Choose what it gives you. The sheet applies it for you.";
+    escapeHtml(feat.summary || "")+(grant.option && feat.option ? " Your background sets the "+escapeHtml(feat.option.label.toLowerCase())+": <b>"+escapeHtml(grant.option)+"</b>." : "")+
+    " Choose what it gives you. The sheet applies it for you.";
   card.appendChild(explain);
   var ctx = wizardFeatContext({forBackgroundFeat:true});
   if(grant.option) ctx.lockedOption = grant.option;
@@ -407,9 +415,12 @@ export function wizardStepBgFeat(container){
    make its picks. */
 function wizardStepFeatChoice(container, grant){
   var card = ce("div","card");
-  card.innerHTML = "<h3><span>"+(grant.campaign ? "Campaign Feat" : "Background Feat")+"</span></h3>";
+  card.innerHTML = "<h3><span>"+(grant.campaign ? "Campaign Feat" : grant.origin ? "Origin Feat" : "Background Feat")+"</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = grant.campaign
+  explain.innerHTML = grant.origin
+    ? "<b>From the 2024 rules:</b> your "+escapeHtml(wizardState.background)+" background doesn't come with a feat, so you choose an Origin feat. "+
+      "Tough (more hit points) and Alert (better initiative) are simple picks."
+    : grant.campaign
     ? "<b>From your "+escapeHtml(CAMPAIGN_FEATS[grant.campaign].label)+" campaign:</b> your background doesn't come with a feat, so you choose one of these. "+
       "Tough is the simple pick: more hit points at every level."
     : "<b>From your "+escapeHtml(wizardState.background)+" background:</b> you choose one of these feats.";
@@ -426,7 +437,7 @@ function wizardStepFeatChoice(container, grant){
       (taken ? "<div class='lu-sub-feats'>You already took it as your "+escapeHtml(wizardState.race)+" feat.</div>" : "")+"</div>";
     function choose(){
       if(taken) return;
-      wizardState[grant.campaign ? "campaignFeat" : "bgFeatChoice"] = name;
+      wizardState[grant.campaign ? "campaignFeat" : grant.origin ? "originFeat" : "bgFeatChoice"] = name;
       var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
       renderWizard();
     }

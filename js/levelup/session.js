@@ -12,11 +12,11 @@ import { levelUpGrants, grantHasChoices, grantHasSpells, classPickContext, class
 import { styleDueAt, classStyleList, availableStyleNames, versatilityStyleSwap, styleFeatures, stylePicksProblem, styleCantripSwap } from "../core/fighting-styles.js";
 import { showActionToast } from "../ui/toast.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons.js";
-import { featDef, featNeedsChoice, featPicksProblem, featRequiresReason, featSpellEntries, campaignFeatsAt } from "../core/feat-picks.js";
+import { featDef, featNeedsChoice, featPicksProblem, featRequiresReason, featSpellEntries, campaignFeatsAt, featSpellGroups } from "../core/feat-picks.js";
 import { featPicksContext } from "../ui/feat-picks.js";
 import { learnPlan, swapSection, cantripSwapSection, learnProblem } from "../core/spells-known.js";
 import { finish } from "./apply.js";
-import { stepClass, stepStyle, stepSubclass, stepSpells, stepCantrips, stepLearn, stepInvocations, stepOptions, stepProfs, stepAsi, stepFeatPicks, stepBonusFeat, stepBonusFeatPicks, stepHp, stepReview } from "./steps.js";
+import { stepClass, stepStyle, stepSubclass, stepSpells, stepCantrips, stepLearn, stepInvocations, stepOptions, stepProfs, stepAsi, stepFeatPicks, stepBonusFeat, stepBonusFeatPicks, stepFeatSpells, stepHp, stepReview } from "./steps.js";
 
 /* ---------------- Level-up flow ----------------
    A short guided flow in the same full-screen overlay as the creation
@@ -32,8 +32,8 @@ import { stepClass, stepStyle, stepSubclass, stepSpells, stepCantrips, stepLearn
    at class level 4 (a feat's own picks, when it has any, on a Feat
    picks step after it), then hit points. Applying it records what changed in
    c.levelHistory so the last level-up can be undone. */
-var STEP_IDS = ["class","subclass","style","spells","cantrips","learn","invocations","options","profs","asi","featPicks","bonusFeat","bonusFeatPicks","hp","review"];
-var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Subclass spells", cantrips:"Cantrips", learn:"New spells", invocations:"Invocations", options:"Options", profs:"Proficiencies", asi:"Abilities", featPicks:"Feat picks", bonusFeat:"Campaign feat", bonusFeatPicks:"Campaign feat picks", hp:"Hit points", review:"Review"};
+var STEP_IDS = ["class","subclass","style","spells","cantrips","learn","invocations","options","profs","asi","featPicks","bonusFeat","bonusFeatPicks","featSpells","hp","review"];
+var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Subclass spells", cantrips:"Cantrips", learn:"New spells", invocations:"Invocations", options:"Options", profs:"Proficiencies", asi:"Abilities", featPicks:"Feat picks", bonusFeat:"Campaign feat", bonusFeatPicks:"Campaign feat picks", featSpells:"Feat spells", hp:"Hit points", review:"Review"};
 export var lu = null;
 
 export function abilityName(key){
@@ -112,7 +112,35 @@ export function stepApplicable(id){
   if(id==="featPicks") return t.asi && lu.asiMode==="feat" && !!lu.featName && featNeedsChoice(featDef(lu.featName));
   if(id==="bonusFeat") return bonusFeatChoices().length > 0;
   if(id==="bonusFeatPicks") return bonusFeatChoices().length > 0 && !!lu.bonusFeatName && featNeedsChoice(featDef(lu.bonusFeatName));
+  if(id==="featSpells") return spellChangeFeats().length > 0;
   return true;
+}
+
+/* ---- A feat's Spell Change ----
+   Magic Initiate (2024): at each level-up one of the spells picked for
+   it can be swapped for another of the same level from its list. The
+   character's feats that allow it, and the swaps chosen this level-up
+   (lu.featSwaps = {featId: {index, to}}; index "" keeps them all), as
+   [{feat, index, from, to}] with `to` picked. */
+export function spellChangeFeats(){
+  return (lu.c.feats||[]).filter(function(f){
+    var d = featDef(f.name);
+    return d && d.spellChange && f.picks && (f.picks.spells||[]).some(Boolean);
+  });
+}
+/* The spells one of a feat's picks can become: same group (level),
+   not one the feat already has. */
+export function spellChangeOptions(feat, index){
+  var def = featDef(feat.name), spells = feat.picks.spells || [];
+  var g = featSpellGroups(def, feat.picks).filter(function(x){ return index >= x.offset; }).pop();
+  return g ? g.options.filter(function(n){ return spells.indexOf(n)===-1; }) : [];
+}
+export function featSpellSwaps(){
+  if(!stepApplicable("featSpells")) return [];
+  return spellChangeFeats().map(function(f){
+    var sw = (lu.featSwaps||{})[f.id] || {}, i = sw.index==="" || sw.index==null ? -1 : Number(sw.index);
+    return i===-1 || !sw.to ? null : {feat: f, index: i, from: f.picks.spells[i], to: sw.to};
+  }).filter(Boolean);
 }
 
 /* ---- A campaign's bonus feat ----
@@ -489,6 +517,10 @@ export function validate(id){
     return bonusWhy ? lu.bonusFeatName+": "+bonusWhy+". Pick another." : null;
   }
   if(id==="bonusFeatPicks") return featPicksProblem(featDef(lu.bonusFeatName), lu.bonusFeatPicks, bonusFeatCtx()) || null;
+  if(id==="featSpells"){
+    var open = spellChangeFeats().find(function(f){ var sw = (lu.featSwaps||{})[f.id]; return sw && sw.index!=="" && sw.index!=null && !sw.to; });
+    return open ? "Pick the spell that replaces "+open.picks.spells[Number(lu.featSwaps[open.id].index)]+", or keep your spells." : null;
+  }
   if(id==="hp"){
     if(lu.hpRolling) return "Wait for the die to land.";
     return (lu.hpMethod==="avg" || lu.hpRoll!=null) ? null : "Take the average or roll your hit die.";
@@ -510,7 +542,7 @@ export function openLevelUp(c){
     c: c, step:"class",
     className: c.classes.length===1 ? c.classes[0].name : null,
     subclass:"", style:"",
-    asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featBlockedOpen:true, featPicks:null, bonusFeatName:"", bonusFeatPicks:null, spellChoices:{},
+    asiMode:"asi", asi:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, featName:"", featQuery:"", featBlockedOpen:true, featPicks:null, bonusFeatName:"", bonusFeatPicks:null, featSwaps:{}, spellChoices:{},
     pactBoon:"", pactSpells:[], invPicks:[], invSpells:{}, swapOut:"", optChoices:{}, profPicks:{}, variants:{}, learnPicks:{}, learnSwap:"", versatilityPick:"", versatilitySkill:"",
     stylePicks:{options:[], spells:[]}, styleSwapOut:"", styleCantripOut:"", styleCantripIn:"",
     hpMethod:"avg", hpRoll:null
@@ -554,7 +586,7 @@ export function render(){
   var inner = ce("div"); inner.id = "wizard-body-inner";
   body.appendChild(inner);
   overlay.appendChild(body);
-  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, cantrips:stepCantrips, learn:stepLearn, invocations:stepInvocations, options:stepOptions, profs:stepProfs, asi:stepAsi, featPicks:stepFeatPicks, bonusFeat:stepBonusFeat, bonusFeatPicks:stepBonusFeatPicks, hp:stepHp, review:stepReview})[lu.step](inner);
+  ({class:stepClass, subclass:stepSubclass, style:stepStyle, spells:stepSpells, cantrips:stepCantrips, learn:stepLearn, invocations:stepInvocations, options:stepOptions, profs:stepProfs, asi:stepAsi, featPicks:stepFeatPicks, bonusFeat:stepBonusFeat, bonusFeatPicks:stepBonusFeatPicks, featSpells:stepFeatSpells, hp:stepHp, review:stepReview})[lu.step](inner);
 
   var errorBox = ce("div","wiz-error");
   overlay.appendChild(errorBox);
@@ -749,6 +781,6 @@ export function hpGain(){
 export function toughGain(){
   var t = target();
   var race = raceHpPerLevel(lu.c);
-  if(hasFeat(lu.c, "Tough")) return 2 + race;
-  return (t.asi && lu.asiMode==="feat" && lu.featName==="Tough" ? 2 * (totalLevel(lu.c)+1) : 0) + race;
+  if(hasFeat(lu.c, "Tough") || hasFeat(lu.c, "Tough (2024)")) return 2 + race;
+  return (t.asi && lu.asiMode==="feat" && (lu.featName==="Tough" || lu.featName==="Tough (2024)") ? 2 * (totalLevel(lu.c)+1) : 0) + race;
 }

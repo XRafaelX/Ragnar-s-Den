@@ -172,6 +172,7 @@ function profCount(def){ return def.skillsOrTools || def.skills || 0; }
 /* The tools a feat's toolPicks can choose from. */
 export function featToolChoices(def){
   var g = def && def.toolPicks && def.toolPicks.group;
+  if(def && def.toolPicks && def.toolPicks.only) return def.toolPicks.only.slice();
   if(g) return TOOL_GROUPS[g].slice();
   return Object.keys(TOOL_GROUPS).reduce(function(all, k){ return all.concat(TOOL_GROUPS[k]); }, []);
 }
@@ -194,6 +195,8 @@ export function backgroundFeatLabel(background){
   var g = backgroundFeatGrant(background);
   if(!g) return "";
   if(g.choices) return g.choices.slice(0, -1).join(", ") + " or " + g.choices[g.choices.length-1];
+  // "Magic Initiate (2024, Cleric)" rather than two sets of brackets.
+  if(g.option && /\)$/.test(g.def.name)) return g.def.name.replace(/\)$/, ", " + g.option + ")");
   return g.def.name + (g.option ? " (" + g.option + ")" : "");
 }
 /* The character's copy of that feat (`chosen` picks one of its choices):
@@ -226,6 +229,32 @@ export function backgroundFeatMissing(c){
   return (c.feats||[]).some(function(f){ return f.name===g.def.name; }) ? null : g;
 }
 
+/* ---- The 2024 character rules' Origin feat ----
+   Under the 2024 rules (c.rules2024, an Optional rules card), a
+   background without a feat of its own gives an Origin feat of the
+   player's choice (Player's Handbook 2024, p. 38). The copy is tagged
+   `origin2024`. */
+export function originFeatNames(){
+  return FEATS_CATALOG.filter(function(f){ return f.origin; }).map(function(f){ return f.name; });
+}
+/* The Origin feats this background leaves open: all of them when it has
+   no feat of its own, else none. */
+export function originFeatChoices(background){
+  return background && !backgroundFeatGrant(background) ? originFeatNames() : [];
+}
+export function originFeatCopy(def, background){
+  return {id: uid(), name: def.name, prerequisite: def.prerequisite, category: def.category, summary: def.summary,
+    description: def.description, source: "SRD", origin2024: true, from: background};
+}
+/* Its choices when the character uses the 2024 rules and hasn't taken it
+   nor said no to it, else null. */
+export function originFeatMissing(c){
+  if(!c || !c.rules2024 || c.originFeatSkipped===c.background) return null;
+  var choices = originFeatChoices(c.background);
+  if(!choices.length || (c.feats||[]).some(function(f){ return f.origin2024; })) return null;
+  return {choices: choices};
+}
+
 /* ---- A campaign's bonus feats (see CAMPAIGN_FEATS) ----
    The character's copy of one: `campaign` names the campaign and
    `campaignLevel` the level it was given at (1 or 4). */
@@ -243,6 +272,8 @@ export function campaignLevel1Feats(campaign, background){
    without (a campaign switched on after creation): {campaign, choices},
    leaving out feats the character has anyway. Else null. */
 export function campaignFeatMissing(c){
+  // (The 2024 rules' Origin feat takes its place.)
+  if(c.rules2024 && originFeatChoices(c.background).length) return null;
   var choices = campaignLevel1Feats(c.campaign, c.background);
   if(!choices.length || c.campaignFeatSkipped===c.campaign) return null;
   if((c.feats||[]).some(function(f){ return f.campaignLevel===1; })) return null;

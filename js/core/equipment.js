@@ -206,7 +206,7 @@ export function weaponDamageDice(c, item){
 export function unarmedStrike(c){
   var nat = RACE_DATA[c.race] && RACE_DATA[c.race].unarmed;
   var monk = (c.classes||[]).some(function(cl){ return cl.name==="Monk"; });
-  var brawler = hasFeat(c, "Tavern Brawler");
+  var brawler = hasFeat(c, "Tavern Brawler") || hasFeat(c, "Tavern Brawler (2024)");
   var styled = hasFightingStyle(c, "Unarmed Fighting");
   if(!nat && !monk && !brawler && !styled) return null;
   var ab = abilityScores(c), str = mod(ab.str), dex = mod(ab.dex);

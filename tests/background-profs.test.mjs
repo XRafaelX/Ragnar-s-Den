@@ -43,7 +43,7 @@ const open = (c, g, i, slots = []) => CP.slotOptions(g.def, slots, i, ctxOf(c, g
    ================================================================ */
 test("background data: every tool is a real tool, every kind a group or tool, every background covered", () => {
   const names = Object.keys(BACKGROUND_TOOLS);
-  assert.equal(names.length, 102);
+  assert.equal(names.length, 118); // 102, and the 2024 Player's Handbook's 16
   // Every background is in a group, has its info and a language count.
   const grouped = Object.values(BACKGROUNDS).flat();
   assert.deepEqual([...grouped].sort(), [...names].sort());

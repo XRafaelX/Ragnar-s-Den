@@ -38,9 +38,9 @@ const featUses = (c) => H.characterResources(c).filter((r) => r.key.startsWith("
 const ctxOf = (c) => ({ abilities: c.abilities, skillProfs: c.skillProfs, languages: c.languages, pb: H.profBonus(c) });
 const problem = (name, picks, ctx = {}) => FP.featPicksProblem(FP.featDef(name), { ...FP.emptyPicks(FP.featDef(name)), ...picks }, ctx);
 
-test("feat catalog: 107 feats, well formed, naming only things that exist", () => {
-  assert.equal(FEATS_CATALOG.length, 107);
-  assert.equal(new Set(FEATS_CATALOG.map((f) => f.name)).size, 107);
+test("feat catalog: 117 feats, well formed, naming only things that exist", () => {
+  assert.equal(FEATS_CATALOG.length, 117);
+  assert.equal(new Set(FEATS_CATALOG.map((f) => f.name)).size, 117);
   const bySource = {};
   for(const f of FEATS_CATALOG){
     assert.ok(f.source, f.name + ": source book");
@@ -61,6 +61,7 @@ test("feat catalog: 107 feats, well formed, naming only things that exist", () =
     if(f.grantsByOption) assert.deepEqual(Object.keys(f.grantsByOption), f.option.options, f.name + ": spells per option");
     if(f.optionPicks) assert.ok(optionSetDef(f.optionPicks.set), f.name + ": option set");
     if(f.toolPicks && f.toolPicks.group) assert.ok(FP.TOOL_GROUPS[f.toolPicks.group], f.name + ": tool group");
+    if(f.toolPicks && f.toolPicks.only) assert.ok(f.toolPicks.only.every((t) => FP.TOOL_GROUPS[f.toolPicks.group].includes(t)), f.name + ": only tools of its group");
     // Who can take it: real races, a real feat and one of its options.
     const r = f.requires;
     if(r){
@@ -72,7 +73,7 @@ test("feat catalog: 107 feats, well formed, naming only things that exist", () =
     }
     if(f.castAbility && f.castAbility.feat) assert.ok(FP.featDef(f.castAbility.feat), f.name + ": cast ability from " + f.castAbility.feat);
   }
-  assert.deepEqual(bySource, { PHB: 42, TCE: 15, XGE: 15, MTF: 1, ERLW: 2, FTD: 3, SCC: 2, BMT: 1, GUN: 1, SPK: 1, DSotDQ: 9, BGG: 8, PAitM: 7 });
+  assert.deepEqual(bySource, { PHB: 42, TCE: 15, XGE: 15, MTF: 1, ERLW: 2, FTD: 3, SCC: 2, BMT: 1, GUN: 1, SPK: 1, DSotDQ: 9, BGG: 8, PAitM: 7, XPHB: 10 });
   for(const name of Object.keys(FEAT_RESOURCES)) assert.ok(FP.featDef(name), "resource for a feat that isn't there: " + name);
 });
 
@@ -366,7 +367,7 @@ test("backgrounds that give a feat: which one, the book's choice for it, and the
     assert.ok(def, name + ": feat " + info.feat.name);
     if(info.feat.option) assert.ok(def.option.options.includes(info.feat.option), name + ": option " + info.feat.option);
   }
-  assert.equal(count, 15);
+  assert.equal(count, 31); // 15 older ones and the 2024 Player's Handbook's 16
   // The copy remembers where it came from and keeps the book's choice.
   const copy = FP.backgroundFeatCopy("Astral Drifter");
   assert.equal(copy.from, "Astral Drifter");

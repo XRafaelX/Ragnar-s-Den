@@ -5,6 +5,10 @@ export var BACKGROUNDS = {
     "Hermit","Noble","Outlander","Sage","Sailor","Soldier","Urchin",
     "Gladiator","Knight","Spy"
   ],
+  "Player's Handbook (2024)": [
+    "Acolyte (2024)","Artisan (2024)","Charlatan (2024)","Criminal (2024)","Entertainer (2024)","Farmer (2024)","Guard (2024)","Guide (2024)",
+    "Hermit (2024)","Merchant (2024)","Noble (2024)","Sage (2024)","Sailor (2024)","Scribe (2024)","Soldier (2024)","Wayfarer (2024)"
+  ],
   "Forgotten Realms (SCAG / ToA)": [
     "Anthropologist","Archaeologist","City Watch","Clan Crafter","Cloistered Scholar","Courtier",
     "Faction Agent","Far Traveler","Inheritor","Knight of the Order","Mercenary Veteran",
@@ -229,7 +233,29 @@ export var BACKGROUND_INFO = {
   "Shade Fanatic": {skills:["Deception","Intimidation"], blurb:"Grants Deception and Intimidation, plus a forgery kit and Netherese. You stay loyal to Netheril and seek other Shade loyalists around Hillsfar.",
     feature:{name:"Secret Society", text:"You have a special way of communicating with others who feel the same way you do about the Shade. When you enter a village or larger city you can identify contacts who will give you information on those that would hinder your goals and those that would help you, simply because of your desire to see the Shade Enclave return in all its glory."}},
   "Trade Sheriff": {skills:["Investigation","Persuasion"], blurb:"Grants Investigation and Persuasion, plus thieves' tools and Elvish. You keep Hillsfar's trade routes clear of bandits and enforce the Great Law of Trade.",
-    feature:{name:"Investigative Services", text:"You can invoke your rank to allow you access to a crime scene or to requisition equipment or horses on a temporary basis. When you enter a town or village around Hillsfar you can identify a contact who will give you information on the local rumors and would help you simply because of your desire to get answers and information for anyone wanting to disrupt trade."}}
+    feature:{name:"Investigative Services", text:"You can invoke your rank to allow you access to a crime scene or to requisition equipment or horses on a temporary basis. When you enter a town or village around Hillsfar you can identify a contact who will give you information on the local rumors and would help you simply because of your desire to get answers and information for anyone wanting to disrupt trade."}},
+  /* ---- Player's Handbook (2024) ----
+     The 2024 rules' backgrounds (checked against the printed book, chapter 4,
+     on 2026-11-04). Each
+     raises three scores (`abilities`: +2 and +1, or +1 to all three) in
+     place of the race's increases, and gives an Origin feat (a Magic
+     Initiate's spell list fixed by the book). No languages, no feature. */
+  "Acolyte (2024)": {edition:"2024", abilities:["int", "wis", "cha"], feat:{name:"Magic Initiate (2024)", option:"Cleric"}, skills:["Insight", "Religion"], blurb:"Grants Insight and Religion, calligrapher's supplies, and the Magic Initiate feat (Cleric spells). Raises Intelligence, Wisdom and Charisma (+2 and +1, or +1 to all three). You served in a temple and learned to channel a little divine power."},
+  "Artisan (2024)": {edition:"2024", abilities:["str", "dex", "int"], feat:{name:"Crafter"}, skills:["Investigation", "Persuasion"], blurb:"Grants Investigation and Persuasion, one type of artisan's tools, and the Crafter feat. Raises Strength, Dexterity and Intelligence (+2 and +1, or +1 to all three). You grew up in an artisan's workshop and learned a craft of your own."},
+  "Charlatan (2024)": {edition:"2024", abilities:["dex", "con", "cha"], feat:{name:"Skilled (2024)"}, skills:["Deception", "Sleight of Hand"], blurb:"Grants Deception and Sleight of Hand, a forgery kit, and the Skilled feat. Raises Dexterity, Constitution and Charisma (+2 and +1, or +1 to all three). You worked the taverns selling comforting lies, sham potions and forged records."},
+  "Criminal (2024)": {edition:"2024", abilities:["dex", "con", "int"], feat:{name:"Alert (2024)"}, skills:["Sleight of Hand", "Stealth"], blurb:"Grants Sleight of Hand and Stealth, thieves' tools, and the Alert feat. Raises Dexterity, Constitution and Intelligence (+2 and +1, or +1 to all three). You made a living in dark alleys, cutting purses and burgling shops."},
+  "Entertainer (2024)": {edition:"2024", abilities:["str", "dex", "cha"], feat:{name:"Musician"}, skills:["Acrobatics", "Performance"], blurb:"Grants Acrobatics and Performance, one musical instrument, and the Musician feat. Raises Strength, Dexterity and Charisma (+2 and +1, or +1 to all three). You followed fairs and carnivals, and you still thrive on applause."},
+  "Farmer (2024)": {edition:"2024", abilities:["str", "con", "wis"], feat:{name:"Tough (2024)"}, skills:["Animal Handling", "Nature"], blurb:"Grants Animal Handling and Nature, carpenter's tools, and the Tough feat. Raises Strength, Constitution and Wisdom (+2 and +1, or +1 to all three). You grew up close to the land, tending animals and working the earth."},
+  "Guard (2024)": {edition:"2024", abilities:["str", "int", "wis"], feat:{name:"Alert (2024)"}, skills:["Athletics", "Perception"], blurb:"Grants Athletics and Perception, one gaming set, and the Alert feat. Raises Strength, Intelligence and Wisdom (+2 and +1, or +1 to all three). You stood watch on a wall, looking out for raiders and in for troublemakers."},
+  "Guide (2024)": {edition:"2024", abilities:["dex", "con", "wis"], feat:{name:"Magic Initiate (2024)", option:"Druid"}, skills:["Stealth", "Survival"], blurb:"Grants Stealth and Survival, cartographer's tools, and the Magic Initiate feat (Druid spells). Raises Dexterity, Constitution and Wisdom (+2 and +1, or +1 to all three). You came of age in the wilds, guiding nature priests who taught you some of their magic."},
+  "Hermit (2024)": {edition:"2024", abilities:["con", "wis", "cha"], feat:{name:"Healer (2024)"}, skills:["Medicine", "Religion"], blurb:"Grants Medicine and Religion, an herbalism kit, and the Healer feat. Raises Constitution, Wisdom and Charisma (+2 and +1, or +1 to all three). You lived in seclusion, far from any settlement, pondering the mysteries of creation."},
+  "Merchant (2024)": {edition:"2024", abilities:["con", "int", "cha"], feat:{name:"Lucky (2024)"}, skills:["Animal Handling", "Persuasion"], blurb:"Grants Animal Handling and Persuasion, navigator's tools, and the Lucky feat. Raises Constitution, Intelligence and Charisma (+2 and +1, or +1 to all three). You were apprenticed to a trader and earned a living buying and selling goods."},
+  "Noble (2024)": {edition:"2024", abilities:["str", "int", "cha"], feat:{name:"Skilled (2024)"}, skills:["History", "Persuasion"], blurb:"Grants History and Persuasion, one gaming set, and the Skilled feat. Raises Strength, Intelligence and Charisma (+2 and +1, or +1 to all three). You were raised in a castle, with wealth, a fine education and lessons in leadership."},
+  "Sage (2024)": {edition:"2024", abilities:["con", "int", "wis"], feat:{name:"Magic Initiate (2024)", option:"Wizard"}, skills:["Arcana", "History"], blurb:"Grants Arcana and History, calligrapher's supplies, and the Magic Initiate feat (Wizard spells). Raises Constitution, Intelligence and Wisdom (+2 and +1, or +1 to all three). You traveled between manors and monasteries for their libraries, learning lore and a little magic."},
+  "Sailor (2024)": {edition:"2024", abilities:["str", "dex", "wis"], feat:{name:"Tavern Brawler (2024)"}, skills:["Acrobatics", "Perception"], blurb:"Grants Acrobatics and Perception, navigator's tools, and the Tavern Brawler feat. Raises Strength, Dexterity and Wisdom (+2 and +1, or +1 to all three). You lived as a seafarer, through mighty storms and countless ports of call."},
+  "Scribe (2024)": {edition:"2024", abilities:["dex", "int", "wis"], feat:{name:"Skilled (2024)"}, skills:["Investigation", "Perception"], blurb:"Grants Investigation and Perception, calligrapher's supplies, and the Skilled feat. Raises Dexterity, Intelligence and Wisdom (+2 and +1, or +1 to all three). You learned to write with a clear hand in a scriptorium, monastery or government office."},
+  "Soldier (2024)": {edition:"2024", abilities:["str", "dex", "con"], feat:{name:"Savage Attacker (2024)"}, skills:["Athletics", "Intimidation"], blurb:"Grants Athletics and Intimidation, one gaming set, and the Savage Attacker feat. Raises Strength, Dexterity and Constitution (+2 and +1, or +1 to all three). You trained for war as soon as you were grown, and battle is in your blood."},
+  "Wayfarer (2024)": {edition:"2024", abilities:["dex", "wis", "cha"], feat:{name:"Lucky (2024)"}, skills:["Insight", "Stealth"], blurb:"Grants Insight and Stealth, thieves' tools, and the Lucky feat. Raises Dexterity, Wisdom and Charisma (+2 and +1, or +1 to all three). You grew up on the streets, but you never lost your pride or your hope."}
 };
 
 /* Tool (and vehicle) proficiencies each background grants, for the
@@ -316,7 +342,24 @@ export var BACKGROUND_TOOLS = {
   "Mulmaster Aristocrat":"One type of artistic artisan's tools, one musical instrument", "Phlan Refugee":"One type of artisan's tools",
   "Cormanthor Refugee":"One type of artisan's tools", "Gate Urchin":"Thieves' tools, one musical instrument",
   "Hillsfar Merchant":"Land and water vehicles", "Hillsfar Smuggler":"Forgery kit", "Secret Identity":"Disguise kit, forgery kit",
-  "Shade Fanatic":"Forgery kit", "Trade Sheriff":"Thieves' tools"
+  "Shade Fanatic":"Forgery kit", "Trade Sheriff":"Thieves' tools",
+  /* ---- Player's Handbook (2024) ---- */
+  "Acolyte (2024)":"Calligrapher's supplies",
+  "Artisan (2024)":"One type of artisan's tools",
+  "Charlatan (2024)":"Forgery kit",
+  "Criminal (2024)":"Thieves' tools",
+  "Entertainer (2024)":"One musical instrument",
+  "Farmer (2024)":"Carpenter's tools",
+  "Guard (2024)":"One gaming set",
+  "Guide (2024)":"Cartographer's tools",
+  "Hermit (2024)":"Herbalism kit",
+  "Merchant (2024)":"Navigator's tools",
+  "Noble (2024)":"One gaming set",
+  "Sage (2024)":"Calligrapher's supplies",
+  "Sailor (2024)":"Navigator's tools",
+  "Scribe (2024)":"Calligrapher's supplies",
+  "Soldier (2024)":"One gaming set",
+  "Wayfarer (2024)":"Thieves' tools"
 };
 /* Some backgrounds let the player pick skills: `skillChoice` describes it
    (Compendium) and `skillPick` {count, options} is what the creation
@@ -398,7 +441,10 @@ export var BACKGROUND_LANGUAGES = {
   "Phlan Insurgent":0, "Stojanow Prisoner":0, "Ticklebelly Nomad":0, "Caravan Specialist":1,
   "Earthspur Miner":0, "Harborfolk":0, "Mulmaster Aristocrat":0, "Phlan Refugee":1,
   "Cormanthor Refugee":0, "Gate Urchin":0, "Hillsfar Merchant":0, "Hillsfar Smuggler":1,
-  "Secret Identity":0, "Shade Fanatic":0, "Trade Sheriff":0
+  "Secret Identity":0, "Shade Fanatic":0, "Trade Sheriff":0,
+
+  /* ---- Player's Handbook (2024): no languages (the 2024 rules give them at creation, not by background) ---- */
+  "Acolyte (2024)":0, "Artisan (2024)":0, "Charlatan (2024)":0, "Criminal (2024)":0, "Entertainer (2024)":0, "Farmer (2024)":0, "Guard (2024)":0, "Guide (2024)":0, "Hermit (2024)":0, "Merchant (2024)":0, "Noble (2024)":0, "Sage (2024)":0, "Sailor (2024)":0, "Scribe (2024)":0, "Soldier (2024)":0, "Wayfarer (2024)":0
 };
 
 /* ---------------- Tool proficiencies, for the sheet ----------------
@@ -517,7 +563,24 @@ export var BACKGROUND_PROFS = {
   "Hillsfar Smuggler": {tools:["Forgery kit"]},
   "Secret Identity": {tools:["Disguise kit","Forgery kit"]},
   "Shade Fanatic": {tools:["Forgery kit"]},
-  "Trade Sheriff": {tools:["Thieves' tools"]}
+  "Trade Sheriff": {tools:["Thieves' tools"]},
+  // Player's Handbook (2024).
+  "Acolyte (2024)": {tools:["Calligrapher's supplies"]},
+  "Artisan (2024)": {pick:[ARTISAN]},
+  "Charlatan (2024)": {tools:["Forgery kit"]},
+  "Criminal (2024)": {tools:["Thieves' tools"]},
+  "Entertainer (2024)": {pick:[INSTRUMENT]},
+  "Farmer (2024)": {tools:["Carpenter's tools"]},
+  "Guard (2024)": {pick:[GAMING]},
+  "Guide (2024)": {tools:["Cartographer's tools"]},
+  "Hermit (2024)": {tools:["Herbalism kit"]},
+  "Merchant (2024)": {tools:["Navigator's tools"]},
+  "Noble (2024)": {pick:[GAMING]},
+  "Sage (2024)": {tools:["Calligrapher's supplies"]},
+  "Sailor (2024)": {tools:["Navigator's tools"]},
+  "Scribe (2024)": {tools:["Calligrapher's supplies"]},
+  "Soldier (2024)": {pick:[GAMING]},
+  "Wayfarer (2024)": {tools:["Thieves' tools"]}
 };
 
 /* Languages a background names (`fixed`: a Rune Carver's Giant; one

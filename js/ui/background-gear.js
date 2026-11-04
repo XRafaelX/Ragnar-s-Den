@@ -14,8 +14,10 @@ export function renderKitPicker(background, picks, ctx, keyPrefix, onChange){
   fillKitPicks(background, picks, ctx);
   var res = kitItems(background, picks, ctx);
   var list = ce("p", "bgk-items");
-  list.textContent = res.items.map(function(i){ return (i.qty > 1 ? i.qty + " × " : "") + i.name; }).join(", ") +
-    (coinsText(res.coins) ? ", and " + coinsText(res.coins) : "") + ".";
+  var names = res.items.map(function(i){ return (i.qty > 1 ? i.qty + " × " : "") + i.name; }).join(", ");
+  // (Just coins for a 2024 background's gold in place of its kit.)
+  var coins = coinsText(res.coins);
+  list.textContent = (names && coins ? names + ", and " + coins : names || coins.charAt(0).toUpperCase() + coins.slice(1)) + ".";
   box.appendChild(list);
   res.notes.forEach(function(t){ var p = ce("p", "bgk-note"); p.textContent = t; box.appendChild(p); });
   kitSlots(background, picks).forEach(function(s){

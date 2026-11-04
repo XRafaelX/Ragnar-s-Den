@@ -15,7 +15,7 @@ export var LANGUAGES = {
     "Aquan","Auran","Ignan","Terran"
   ],
   "Setting": [
-    "Aarakocra","Aven","Gith","Grung","Khenra","Kraul","Leonin","Loxodon","Merfolk","Minotaur","Naga","Netherese","Quori","Siren","Vampire","Vedalken"
+    "Aarakocra","Aven","Common Sign Language","Gith","Grung","Khenra","Kraul","Leonin","Loxodon","Merfolk","Minotaur","Naga","Netherese","Quori","Siren","Vampire","Vedalken"
   ],
   "Secret": [
     "Druidic","Thieves' Cant"
@@ -46,4 +46,7 @@ export function languagePickerGroups(exoticOnly){
   });
   return out;
 }
+/* The 2024 Player's Handbook's Standard Languages table (p. 37) after
+   Common: the 2024 character rules' two languages come from these. */
+export var STANDARD_LANGUAGES_2024 = ["Common Sign Language","Draconic","Dwarvish","Elvish","Giant","Gnomish","Goblin","Halfling","Orc"];
 export var ANY_LANGUAGES = ANY_GROUPS.reduce(function(all, g){ return all.concat(LANGUAGES[g]); }, []);

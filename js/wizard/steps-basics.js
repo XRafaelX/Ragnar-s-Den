@@ -10,12 +10,12 @@ import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/ali
 import { POINT_BUY_COSTS } from "../data/misc.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDicesSvg, makePlusSvg } from "../ui/svg-icons.js";
-import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, MONK_2024_CARD, MONK_2024_OUTCOME } from "../ui/dlc-shelf.js";
+import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, MONK_2024_CARD, MONK_2024_OUTCOME, RULES_2024_CARD, RULES_2024_OUTCOME } from "../ui/dlc-shelf.js";
 import { getDieSvg } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
-import { currentClassInfo, wizardState, wizardEdition, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, refreshWizardProgress } from "./wizard-core.js";
+import { currentClassInfo, wizardState, wizardEdition, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, refreshWizardProgress, wizardBgScoreRule, backgroundAbilityIncreases, backgroundIncreaseTotal, nextBgIncrease, tapBgIncrease, BG_INCREASE_POINTS } from "./wizard-core.js";
 import { backgroundFeatGrant, backgroundFeatLabel, campaignLevel1Feats } from "../core/feat-picks.js";
 import { CAMPAIGN_FEATS } from "../data/feats.js";
 import { FIGHTING_STYLES } from "../data/classes.js";
@@ -282,7 +282,13 @@ export function backgroundExplainHtml(name){
   // No feat of its own: the campaign's, when one is set below.
   var camp = wizardState && campaignLevel1Feats(wizardState.campaign, name);
   if(!grant && camp && camp.length) feat = " <b>Campaign feat:</b> "+escapeHtml(camp.join(" or "))+", picked on a later step.";
-  return "<b>"+escapeHtml(name)+":</b> "+(info ? info.blurb : BACKGROUND_INFO_FALLBACK)+feat;
+  // The 2024 character rules: an Origin feat in its place.
+  var rules2024 = wizardState && wizardState.rules2024;
+  if(!grant && rules2024) feat = " <b>Origin feat:</b> one of your choice (2024 rules), picked on a later step.";
+  // Under the 2024 rules the background raises the scores, in place of the race.
+  var scores = info && info.edition==="2024" ? " <b>2024 rules:</b> this background raises your ability scores instead of your race. You'll choose how on the Ability Scores step."
+    : rules2024 ? " <b>2024 rules:</b> your background raises your ability scores instead of your race. You'll choose which on the Ability Scores step." : "";
+  return "<b>"+escapeHtml(name)+":</b> "+(info ? info.blurb : BACKGROUND_INFO_FALLBACK)+feat+scores;
 }
 
 export function alignmentExplainHtml(name){
@@ -328,21 +334,22 @@ function optionalRulesShelf(){
   var tapped = rulesShelfTapped;
   rulesShelfTapped = "";
   wrap.appendChild(dlcShelf({
-    id: "wiz-dlc-panel", title: "Optional rules", wide: true, open: rulesShelfOpen || !!wizardState.tashaOptional || !!wizardState.campaign || !!wizardEdition(), fresh: tapped,
+    id: "wiz-dlc-panel", title: "Optional rules", wide: true, open: rulesShelfOpen || !!wizardState.tashaOptional || !!wizardState.campaign || !!wizardEdition() || !!wizardState.rules2024, fresh: tapped,
     onToggle: function(open){ rulesShelfOpen = open; },
     lead: "Extra rules from other books. Ask your DM whether your table uses them, then tap one to turn it on. You can change this later on the Information tab.",
     sub: function(){
-      var on = (wizardState.tashaOptional ? ["Tasha's optional class features"] : []).concat(CAMPAIGN_FEATS[wizardState.campaign] ? [wizardState.campaign] : [])
+      var on = (wizardState.tashaOptional ? ["Tasha's optional class features"] : []).concat(wizardState.rules2024 ? ["the 2024 character rules"] : []).concat(CAMPAIGN_FEATS[wizardState.campaign] ? [wizardState.campaign] : [])
         .concat(gunslinger && wizardState.gunMisfire ? ["firearm misfires"] : []).concat(wizardEdition() ? ["the 2024 monk"] : []);
-      return on.length ? "Using " + on.join(" and ") : monk ? "Tasha's Cauldron, the campaign books and the 2024 monk. Ask your DM which ones your table uses."
-        : "Tasha's Cauldron and the campaign books. Most new players leave these off.";
+      return on.length ? "Using " + on.join(" and ") : monk ? "Tasha's Cauldron, the 2024 rules, the campaign books and the 2024 monk. Ask your DM which ones your table uses."
+        : "Tasha's Cauldron, the 2024 character rules and the campaign books. Most new players leave these off.";
     },
     cards: [{key: "tasha", series: "Tasha's Cauldron of Everything", title: "Optional class features", switchLabel: "Use Tasha's optional class features",
-      perks: ["More class options", "Additional spells", "Swaps at level-up"]}].concat(gunslinger ? [GUN_MISFIRE_CARD] : []).concat(monk ? [MONK_2024_CARD] : []).concat(books.map(campaignBookCard)),
-    isOn: function(k){ return k==="tasha" ? !!wizardState.tashaOptional : k==="gunMisfire" ? !!wizardState.gunMisfire : k==="monk2024" ? !!wizardState.monk2024 : wizardState.campaign===k; },
+      perks: ["More class options", "Additional spells", "Swaps at level-up"]}, RULES_2024_CARD].concat(gunslinger ? [GUN_MISFIRE_CARD] : []).concat(monk ? [MONK_2024_CARD] : []).concat(books.map(campaignBookCard)),
+    isOn: function(k){ return k==="tasha" ? !!wizardState.tashaOptional : k==="rules2024" ? !!wizardState.rules2024 : k==="gunMisfire" ? !!wizardState.gunMisfire : k==="monk2024" ? !!wizardState.monk2024 : wizardState.campaign===k; },
     onTap: function(k){
       if(k==="tasha") setWizardTasha(!wizardState.tashaOptional);
       else if(k==="gunMisfire") wizardState.gunMisfire = !wizardState.gunMisfire;
+      else if(k==="rules2024") wizardState.rules2024 = !wizardState.rules2024;
       // (The two monks start with different gear, so the gear picks start over.)
       else if(k==="monk2024"){ wizardState.monk2024 = !wizardState.monk2024; wizardState.equipment = {}; }
       else wizardState.campaign = wizardState.campaign===k ? "" : k;
@@ -354,6 +361,7 @@ function optionalRulesShelf(){
     outcome: function(){
       var lines = [];
       if(wizardState.tashaOptional) lines.push("<b>Tasha's:</b> " + escapeHtml(tashaAddsFor(wizardState.classId, wizardEdition())));
+      if(wizardState.rules2024) lines.push(RULES_2024_OUTCOME);
       if(gunslinger && wizardState.gunMisfire) lines.push(GUN_MISFIRE_OUTCOME);
       if(wizardEdition()) lines.push(MONK_2024_OUTCOME);
       if(CAMPAIGN_FEATS[wizardState.campaign]) lines.push("<b>" + escapeHtml(wizardState.campaign) + ":</b> a free feat if your background has none of its own (see the Background step)." +
@@ -465,6 +473,7 @@ function campaignOutcomeHtml(){
   if(!bg) return "Choose a background above to see what this gives you."+later;
   var own = backgroundFeatGrant(bg);
   if(own) return "Your "+escapeHtml(bg)+" background already comes with its own feat (<b>"+escapeHtml(backgroundFeatLabel(bg))+"</b>), so this adds nothing now."+later;
+  if(wizardState.rules2024) return "The 2024 character rules already give you an Origin feat, so this adds nothing now."+later;
   var names = campaignLevel1Feats(wizardState.campaign, bg).map(function(n){ return "<b>"+escapeHtml(n)+"</b>"; });
   return "You get a free feat: "+names.join(" or ")+". You'll choose on a later step."+later;
 }
@@ -499,6 +508,8 @@ export function wizardStepAlignment(container){
 
 /* What the race adds on top of these scores, for the Ability Scores step. */
 function raceBonusNote(){
+  var rule = wizardBgScoreRule();
+  if(rule) return " Your "+escapeHtml(wizardState.background)+" background raises "+(rule.any ? "some" : "three")+" of them, below.";
   var race = RACE_DATA[wizardState.race], def = raceChoiceDef();
   var picks = def && (def.abilityBonus || def.abilityPreset);
   var fixed = Object.keys(raceAbilityIncreases({fixedOnly:true})).length;
@@ -560,6 +571,65 @@ export function wizardStepAbilities(container){
   }
 
   container.appendChild(card);
+  if(wizardBgScoreRule()) container.appendChild(backgroundIncreasesCard());
+}
+
+/* The background's increases under the 2024 rules: 3 points over a 2024
+   background's three scores, or any scores for an older one. A tap on a
+   score gives +1, another makes it +2, another takes it back, so the
+   points end as +2 and +1 or as +1 to three (js/wizard/wizard-core.js
+   nextBgIncrease). A meter of three pips says how many are left; each
+   tile shows its name ("Main" for the class's main ability), the score
+   and modifier before and after, and its +1/+2 badge. */
+function backgroundIncreasesCard(){
+  var rule = wizardBgScoreRule(), inc = backgroundAbilityIncreases(), total = backgroundIncreaseTotal();
+  var left = BG_INCREASE_POINTS - total;
+  var main = (currentClassInfo() || {}).primaryAbility;
+  var card = ce("div", "card bg-inc-card");
+  card.innerHTML = "<h3><span>Background increases</span></h3>";
+
+  var names = rule.abilities.map(abilityFullName);
+  var lead = ce("p", "bgi-lead");
+  lead.innerHTML = "<b>"+escapeHtml(wizardState.background)+"</b> raises "+
+    (rule.any ? "the scores you choose" : escapeHtml(names.slice(0, 2).join(", ")+" or "+names[2]))+
+    ", in place of your race's increases (2024 rules). Tap a score for +1, tap it again for +2.";
+  card.appendChild(lead);
+
+  // The points: three pips, filled as they're given.
+  var meter = ce("div", "bgi-meter");
+  meter.setAttribute("aria-live", "polite");
+  var pips = "";
+  for(var i = 0; i < BG_INCREASE_POINTS; i++) pips += "<span class='bgi-pip"+(i < total ? " on" : "")+"'></span>";
+  var given = Object.keys(inc).sort(function(a, b){ return inc[b] - inc[a]; }).map(function(k){ return "+"+inc[k]+" "+k.toUpperCase(); }).join(", ");
+  meter.innerHTML = "<span class='bgi-pips' aria-hidden='true'>"+pips+"</span>"+
+    "<span class='bgi-help bg-inc-help'>"+(left ? left+" point"+(left===1 ? "" : "s")+" left" : "Done: "+escapeHtml(given))+"</span>";
+  card.appendChild(meter);
+
+  var grid = ce("div", "bgi-grid bg-inc-grid"+(rule.any ? " bgi-six" : ""));
+  rule.abilities.forEach(function(key){
+    var base = Number(wizardState.abilities[key])||10, amt = inc[key]||0, isOn = !!amt, now = Math.min(20, base + amt);
+    var stuck = !isOn && !nextBgIncrease(key); // nothing left to give it
+    var tile = document.createElement("button");
+    tile.type = "button";
+    tile.className = "bgi-tile"+(isOn ? " on" : "")+(stuck ? " off" : "")+(key===main ? " main" : "");
+    tile.disabled = stuck;
+    tile.setAttribute("aria-pressed", isOn ? "true" : "false");
+    tile.setAttribute("aria-label", abilityFullName(key)+" "+base+(isOn ? ", raised by "+amt+" to "+now : "")+(key===main ? ", your class's main ability" : ""));
+    var modNow = fmtMod(mod(now)), modWas = fmtMod(mod(base));
+    // (The full name, or STR, DEX... on a phone.)
+    tile.innerHTML = "<span class='bgi-name'><span class='bgi-long'>"+escapeHtml(abilityFullName(key))+"</span><span class='bgi-short' aria-hidden='true'>"+key.toUpperCase()+"</span>"+(key===main ? "<em class='bgi-long' title='Your class&#39;s main ability'>Main</em><em class='bgi-short bgi-star' title='Your class&#39;s main ability' aria-hidden='true'>★</em>" : "")+"</span>"+
+      (isOn ? "<span class='bgi-badge'>+"+amt+"</span>" : "")+
+      "<span class='bgi-score'>"+(isOn ? "<s>"+base+"</s><span class='bgi-arrow' aria-hidden='true'>→</span>" : "")+"<b>"+now+"</b></span>"+
+      "<span class='bgi-mod'>mod "+(isOn && modNow!==modWas ? modWas+" → <b>"+modNow+"</b>" : modNow)+"</span>";
+    tile.addEventListener("click", function(){
+      tapBgIncrease(key);
+      var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+      renderWizard();
+    });
+    grid.appendChild(tile);
+  });
+  card.appendChild(grid);
+  return card;
 }
 
 /* Race, background and alignment: a labelled themed dropdown with the

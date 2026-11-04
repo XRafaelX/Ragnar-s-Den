@@ -498,3 +498,53 @@ button.wiz-feat-group[aria-expanded="true"]::before{transform:rotate(90deg);}
 .wiz-tasha-note{margin:6px 0 12px;font-size:12px;color:var(--text-on-parch-dim);}
 .wiz-campaign-note{margin:12px 0 0;font-size:13px;color:var(--text-on-parch);}
 .wiz-opt-rules{margin-top:14px;}
+
+/* The background's ability increases under the 2024 rules (Ability
+   Scores step): a lead line, a meter of three points, a tile per score. */
+.bgi-lead{font-size:13.5px;color:var(--text-on-parch-dim);margin:2px 0 12px;line-height:1.5;}
+.bgi-lead b{color:var(--text-on-parch);}
+.bgi-meter{display:flex;align-items:center;gap:10px;margin-bottom:12px;min-height:22px;}
+.bgi-pips{display:inline-flex;gap:5px;}
+.bgi-pip{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--rule);transition:background .2s ease, border-color .2s ease, transform .2s ease;}
+.bgi-pip.on{background:var(--brass);border-color:var(--brass);transform:scale(1.08);}
+.bgi-help{font-size:12.5px;color:var(--text-on-parch-dim);}
+.bgi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.bgi-grid.bgi-six{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;}
+@media (max-width:700px){ .bgi-grid.bgi-six{grid-template-columns:repeat(3,minmax(0,1fr));} }
+/* Six scores: STR, DEX... and a star for Main, so the row fits. */
+.bgi-six .bgi-long{display:none;}
+.bgi-six .bgi-short{display:inline;}
+.bgi-six .bgi-badge{top:7px;right:7px;min-width:26px;height:20px;font-size:11.5px;padding:0 5px;}
+.bgi-six .bgi-score b{font-size:23px;}
+.bgi-six .bgi-tile{padding:10px 11px;}
+.bgi-tile{position:relative;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;border-radius:10px;text-align:left;font:inherit;
+  border:1px solid var(--rule);background:var(--parchment-dim);color:var(--text-on-parch);cursor:pointer;
+  transition:border-color .15s ease, background .15s ease, transform .1s ease, box-shadow .15s ease;}
+.bgi-tile:hover:not(:disabled){border-color:var(--brass);}
+.bgi-tile:active:not(:disabled){transform:scale(.97);}
+.bgi-tile:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.bgi-name{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-on-parch-dim);}
+.bgi-short{display:none;}
+.bgi-tile.on .bgi-name{padding-right:30px;}
+.bgi-name em.bgi-star{border:0;padding:0;font-size:12px;letter-spacing:0;color:var(--brass-bright);}
+.bgi-name em{font-style:normal;font-size:9.5px;letter-spacing:.06em;padding:1px 6px;border-radius:999px;border:1px solid var(--brass);color:var(--brass-bright);}
+.bgi-score{display:flex;align-items:baseline;gap:6px;font-family:var(--serif);line-height:1.15;}
+.bgi-score b{font-size:26px;font-weight:400;}
+.bgi-score s{font-size:15px;color:var(--text-on-parch-dim);text-decoration-thickness:1px;}
+.bgi-arrow{font-size:13px;color:var(--text-on-parch-dim);}
+.bgi-mod{font-size:12px;color:var(--text-on-parch-dim);}
+.bgi-mod b{color:var(--brass-bright);font-weight:700;}
+.bgi-badge{position:absolute;top:9px;right:9px;min-width:30px;height:22px;padding:0 7px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--brass);color:#fff;font-size:12.5px;font-weight:700;}
+.bgi-tile.on{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 18%, var(--parchment-dim));box-shadow:0 0 14px color-mix(in srgb, var(--brass) 28%, transparent);}
+.bgi-tile.on .bgi-name{color:var(--brass-bright);}
+.bgi-tile.off{opacity:.45;cursor:not-allowed;}
+.bgi-tile:disabled.on{opacity:1;cursor:default;}
+@media (max-width:560px){
+  .bgi-tile{padding:10px 10px;}
+  .bgi-score b{font-size:22px;}
+  .bgi-badge{top:7px;right:7px;min-width:26px;height:20px;font-size:11.5px;padding:0 5px;}
+  .bgi-name{font-size:10.5px;letter-spacing:.06em;}
+  .bgi-long{display:none;}
+  .bgi-short{display:inline;}
+}

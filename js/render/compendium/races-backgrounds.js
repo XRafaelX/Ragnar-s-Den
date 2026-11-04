@@ -51,12 +51,14 @@ function showBackground(name){
   var info = BACKGROUND_INFO[name];
   openInfoModal(name, function(body){
     if(info && info.custom) customBar(body, function(){ editHomebrew("background", info.id); }, function(){ confirmDeleteHomebrew("background", info.id); });
-    block(body, "", "<p class='cmp-lead'>"+escapeHtml(info ? (info.blurb || "A custom background.") : BACKGROUND_INFO_FALLBACK)+"</p>"+facts([
+    // A 2024 background's three scores (in place of the race's increases).
+    var scores = info && info.edition==="2024" && info.abilities ? [["Ability scores", info.abilities.map(function(k){ return k.toUpperCase(); }).join(", ") + ": +2 and +1, or +1 to each (instead of your race's)"]] : [];
+    block(body, "", "<p class='cmp-lead'>"+escapeHtml(info ? (info.blurb || "A custom background.") : BACKGROUND_INFO_FALLBACK)+"</p>"+facts(scores.concat([
       ["Skills", info ? backgroundSkills(info) : "Two of your choice"],
       ["Tools", BACKGROUND_TOOLS[name] || "Check your sourcebook"],
       ["Languages", backgroundLanguages(name)]
     ].concat(BACKGROUND_WEAPONS[name] ? [["Weapons", BACKGROUND_WEAPONS[name].join(", ")]] : [],
-      backgroundFeatLabel(name) ? [["Feat", backgroundFeatLabel(name)]] : [])));
+      backgroundFeatLabel(name) ? [["Feat", backgroundFeatLabel(name)]] : []))));
     if(backgroundFeatures(info).length) block(body, "Feature", featureList(backgroundFeatures(info)));
   });
 }

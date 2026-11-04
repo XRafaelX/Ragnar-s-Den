@@ -22,7 +22,7 @@ import { showActionToast } from "../ui/toast.js";
 import { featDef, featHasPicks, applyFeatPicks, revertFeatPicks, featSpellEntries, campaignFeatCopy } from "../core/feat-picks.js";
 import { applyLearn, undoLearn } from "../core/spells-known.js";
 import { preparedAt } from "../data/spells-known.js";
-import { lu, luEdition, learnActive, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, cantripSwapOut, expertiseSwap, close, swapOutStyle, styleCantripOffer, featureAbilityBonus, hpGain } from "./session.js";
+import { lu, luEdition, featSpellSwaps, learnActive, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, cantripSwapOut, expertiseSwap, close, swapOutStyle, styleCantripOffer, featureAbilityBonus, hpGain } from "./session.js";
 
 /* ---------------- Apply & undo ---------------- */
 function slotSnapshot(c){
@@ -83,6 +83,11 @@ export function finish(){
   };
 
   var bonusFeatDue = stepApplicable("bonusFeat"); // asked before the feats below change the answer
+  // Magic Initiate (2024)'s Spell Change: the swaps, recorded for undo.
+  record.featSpellSwaps = featSpellSwaps().map(function(x){
+    x.feat.picks.spells[x.index] = x.to;
+    return {featId: x.feat.id, index: x.index, from: x.from, to: x.to};
+  });
   var feat = null;
   if(t.asi && lu.asiMode==="feat"){
     var f = FEATS_CATALOG.find(function(x){ return x.name===lu.featName; });
@@ -309,6 +314,10 @@ export function undoLastLevelUp(c){
       }
     }
     if(rec.asi) Object.keys(rec.asi).forEach(function(k){ c.abilities[k] = (Number(c.abilities[k])||10) - rec.asi[k]; });
+    (rec.featSpellSwaps||[]).forEach(function(r){
+      var f = (c.feats||[]).find(function(x){ return x.id===r.featId; });
+      if(f && f.picks && (f.picks.spells||[])[r.index]===r.to) f.picks.spells[r.index] = r.from;
+    });
     if(rec.featId){
       var featToRevert = c.feats.find(function(f){ return f.id===rec.featId; });
       if(featToRevert) revertFeatPicks(c, featToRevert);

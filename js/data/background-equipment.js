@@ -21,7 +21,8 @@
      {trinket, label, count}  rolled (or chosen) on a table in
                               js/data/trinkets.js
      {none}                   a pick's option with nothing to carry
-   coins: {gp, sp, pp}. Variants share their base background's kit
+   coins: {gp, sp, pp}. orGold: the 2024 backgrounds' other choice, that
+   many gold pieces in place of the whole kit and its coins. Variants share their base background's kit
    (BACKGROUND_EQUIPMENT_SAME_AS). */
 
 function g(gear, name, extra){ var o = {gear: gear}; if(name) o.name = name; return Object.assign(o, extra || {}); }
@@ -188,7 +189,27 @@ export var BACKGROUND_EQUIPMENT = {
   "Hillsfar Smuggler": {coins: {gp: 5}, items: ["Forgery Kit", COMMON]},
   "Secret Identity": {coins: {gp: 5}, items: ["Disguise Kit", "Forgery Kit", COMMON]},
   "Shade Fanatic": {coins: {gp: 15}, items: ["Forgery Kit", n("Transparent cylinder of shadow that has no opening"), "Signet Ring", FINE]},
-  "Trade Sheriff": {coins: {gp: 17}, items: ["Thieves' Tools", n("Gray cloak"), n("Sheriff's insignia (badge)"), FINE]}
+  "Trade Sheriff": {coins: {gp: 17}, items: ["Thieves' Tools", n("Gray cloak"), n("Sheriff's insignia (badge)"), FINE]},
+
+  /* Player's Handbook (2024): the kit (A), or 50 gp instead (B), from the
+     printed equipment lines (the 2024 Player's Handbook, chapter 4, checked
+     against the book on 2026-11-04). */
+  "Acolyte (2024)": {orGold: 50, coins: {gp: 8}, items: ["Calligrapher's Supplies", g("Book", "Book (prayers)"), HOLY, g("Parchment (one sheet)", "Parchment", {qty: 10}), "Robes"]},
+  "Artisan (2024)": {orGold: 50, coins: {gp: 32}, items: [group("Artisan's tools", [ARTISAN]), g("Pouch", "", {qty: 2}), TRAVELER]},
+  "Charlatan (2024)": {orGold: 50, coins: {gp: 15}, items: ["Forgery Kit", COSTUME, FINE]},
+  "Criminal (2024)": {orGold: 50, coins: {gp: 16}, items: [w("Dagger"), w("Dagger"), "Thieves' Tools", "Crowbar", g("Pouch", "", {qty: 2}), TRAVELER]},
+  "Entertainer (2024)": {orGold: 50, coins: {gp: 11}, items: [group("Musical instrument", [INSTRUMENT]), g(COSTUME, "", {qty: 2}), "Mirror, Steel", "Perfume (vial)", TRAVELER]},
+  "Farmer (2024)": {orGold: 50, coins: {gp: 30}, items: [w("Sickle"), "Carpenter's Tools", "Healer's Kit", "Pot, Iron", "Shovel", TRAVELER]},
+  "Guard (2024)": {orGold: 50, coins: {gp: 12}, items: [w("Spear"), w("Light Crossbow"), "Crossbow Bolts", group("Gaming set", [GAMING]), "Lantern, Hooded", "Manacles", "Quiver", TRAVELER]},
+  "Guide (2024)": {orGold: 50, coins: {gp: 3}, items: [w("Shortbow"), "Arrows", "Cartographer's Tools", "Bedroll", "Quiver", "Tent, Two-person", TRAVELER]},
+  "Hermit (2024)": {orGold: 50, coins: {gp: 16}, items: [w("Quarterstaff"), "Herbalism Kit", "Bedroll", g("Book", "Book (philosophy)"), "Lamp", g("Oil (flask)", "", {qty: 3}), TRAVELER]},
+  "Merchant (2024)": {orGold: 50, coins: {gp: 22}, items: ["Navigator's Tools", g("Pouch", "", {qty: 2}), TRAVELER]},
+  "Noble (2024)": {orGold: 50, coins: {gp: 29}, items: [group("Gaming set", [GAMING]), FINE, "Perfume (vial)"]},
+  "Sage (2024)": {orGold: 50, coins: {gp: 8}, items: [w("Quarterstaff"), "Calligrapher's Supplies", g("Book", "Book (history)"), g("Parchment (one sheet)", "Parchment", {qty: 8}), "Robes"]},
+  "Sailor (2024)": {orGold: 50, coins: {gp: 20}, items: [w("Dagger"), "Navigator's Tools", "Rope, Hempen (50 feet)", TRAVELER]},
+  "Scribe (2024)": {orGold: 50, coins: {gp: 23}, items: ["Calligrapher's Supplies", FINE, "Lamp", g("Oil (flask)", "", {qty: 3}), g("Parchment (one sheet)", "Parchment", {qty: 12})]},
+  "Soldier (2024)": {orGold: 50, coins: {gp: 14}, items: [w("Spear"), w("Shortbow"), "Arrows", group("Gaming set", [GAMING]), "Healer's Kit", "Quiver", TRAVELER]},
+  "Wayfarer (2024)": {orGold: 50, coins: {gp: 16}, items: [w("Dagger"), w("Dagger"), "Thieves' Tools", group("Gaming set", [GAMING]), "Bedroll", g("Pouch", "", {qty: 2}), TRAVELER]}
 };
 
 /* Variants with their base background's kit. */

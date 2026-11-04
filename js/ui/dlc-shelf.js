@@ -119,6 +119,14 @@ export var GUN_MISFIRE_CARD = {key: "gunMisfire", series: "Gunslinger class", ti
   text: "The Handcannon, Long Gun and Spread Shot jam on an attack roll of 1. Clearing a jam takes an action and always works. Master of Arms (gunslinger level 2) stops your guns from misfiring."};
 export var GUN_MISFIRE_OUTCOME = "<b>Misfires:</b> your Handcannon, Long Gun and Spread Shot jam on a roll of 1 until Master of Arms at gunslinger level 2. Clearing a jam takes an action.";
 
+/* The 2024 Player's Handbook's character rules (p. 38) for older races
+   and backgrounds (wizardState.rules2024 / c.rules2024). The 2024
+   backgrounds follow them whatever this says. */
+export var RULES_2024_CARD = {key: "rules2024", series: "Player's Handbook 2024", title: "2024 character rules", switchLabel: "Use the 2024 character rules",
+  perks: ["Scores from your background", "An Origin feat", "Three languages"],
+  text: "Your background, not your race, raises your ability scores (+2 to one and +1 to another, or +1 to three). A background without a feat of its own gives an Origin feat of your choice, and every character knows Common and two more languages. The 2024 backgrounds always work this way."};
+export var RULES_2024_OUTCOME = "<b>2024 rules:</b> your background raises your scores in place of your race, a background without a feat gives an Origin feat, and you know at least three languages.";
+
 /* The 2024 Monk (a monk class entry's edition "2024", see
    js/data/monk-2024.js), offered only to a character with the class. */
 export var MONK_2024_CARD = {key: "monk2024", series: "Player's Handbook 2024", title: "2024 Monk", switchLabel: "Use the 2024 monk",

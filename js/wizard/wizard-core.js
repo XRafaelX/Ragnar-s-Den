@@ -3,7 +3,7 @@ import { CLASSES_INFO, CLASS_PROFICIENCIES, FIGHTING_STYLES } from "../data/clas
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
 import { BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_LANGUAGE_RULES } from "../data/backgrounds.js";
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
-import { LANGUAGES, ANY_LANGUAGES } from "../data/languages.js";
+import { LANGUAGES, ANY_LANGUAGES, STANDARD_LANGUAGES_2024 } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, originListSpells, classVariantSwaps, classFeaturesAt, isProficientWithWeapon, classEdition } from "../core/helpers.js";
 import { weaponDataOf } from "../data/weapons.js";
@@ -11,7 +11,7 @@ import { armorProficiencies } from "../core/equipment.js";
 import { backgroundKit, addBackgroundKit, gearItem } from "../core/background-gear.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
-import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason, featHasPicks, featDef, emptyPicks, backgroundFeatGrant, backgroundFeatCopy, backgroundFeatPicks, campaignLevel1Feats, campaignFeatCopy } from "../core/feat-picks.js";
+import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason, featHasPicks, featDef, emptyPicks, backgroundFeatGrant, backgroundFeatCopy, backgroundFeatPicks, campaignLevel1Feats, campaignFeatCopy, originFeatChoices, originFeatCopy } from "../core/feat-picks.js";
 import { stylePicksProblem, makeStyleFeature } from "../core/fighting-styles.js";
 import { entryGrants, grantHasChoices, classPickContext, classPicksProblem, fillSlots, applyClassPicks, raceGrantsFor, raceGrants, raceEntry,
   backgroundGrantsFor, backgroundGrants, backgroundEntry, overlapGrants, overlapEntry } from "../core/class-picks.js";
@@ -370,6 +370,8 @@ export function raceAbilityAmounts(){
    fixedOnly leaves the picks out. */
 export function raceAbilityIncreases(opts){
   var out = {};
+  // A 2024 background's increases replace the race's (the 2024 rules).
+  if(wizardBgScoreRule()) return out;
   function add(k, n){ if(n) out[k] = (out[k]||0) + n; }
   var race = RACE_DATA[wizardState.race];
   var fixed = race && race.asi || {};
@@ -393,7 +395,7 @@ export function raceAbilityIncreases(opts){
    need no picks. */
 export function raceAbilityPicksNeeded(){
   var def = raceChoiceDef();
-  if(!def || !def.abilityBonus) return 0;
+  if(!def || !def.abilityBonus || wizardBgScoreRule()) return 0;
   var fixed = raceAbilityIncreases({fixedOnly:true}), exclude = def.abilityBonus.exclude || [];
   var room = ABILITIES.filter(function(a){
     var k = a[0];
@@ -402,8 +404,74 @@ export function raceAbilityPicksNeeded(){
   return Math.min(raceAbilityAmounts().length, room);
 }
 
+/* ---- The 2024 rules' ability increases ----
+   Under the 2024 rules the background, not the race, raises the scores
+   (Player's Handbook 2024, p. 38): a 2024 background its three
+   `abilities` (+2 and +1, or +1 to each), an older one any scores (+2 and
+   +1, or +1 to three) when the 2024 character rules are on
+   (wizardState.rules2024, an Optional rules card). The race's increases
+   are left out either way. Kept in wizardState.bgAbilities = {background,
+   inc: {ability: 1 or 2}}, started afresh for another background. */
+var ALL_SCORES = ["str","dex","con","int","wis","cha"];
+export function wizardBackground2024(){
+  var info = wizardState && BACKGROUND_INFO[wizardState.background];
+  return info && info.edition==="2024" && info.abilities ? info : null;
+}
+/* Whether the 2024 character rules apply: switched on, or a 2024 background. */
+export function wizardRules2024(){ return !!(wizardState && (wizardState.rules2024 || wizardBackground2024())); }
+/* Which scores the background raises: {abilities, any} (any: an older
+   background under the 2024 rules, any of the six), or null. */
+export function wizardBgScoreRule(){
+  var w = wizardState;
+  if(!w || !w.background) return null;
+  var info = wizardBackground2024();
+  if(info) return {abilities: info.abilities.slice(), any: false};
+  return w.rules2024 ? {abilities: ALL_SCORES.slice(), any: true} : null;
+}
+export function wizardBgAbilities(){
+  var w = wizardState;
+  if(!w.bgAbilities || w.bgAbilities.background!==w.background || !w.bgAbilities.inc) w.bgAbilities = {background: w.background, inc: {}};
+  return w.bgAbilities;
+}
+/* {ability: amount} the background gives so far ({} when it gives none). */
+export function backgroundAbilityIncreases(){
+  var rule = wizardBgScoreRule(), out = {};
+  if(!rule) return out;
+  var inc = wizardBgAbilities().inc;
+  rule.abilities.forEach(function(k){ var n = Number(inc[k])||0; if(n===1 || n===2) out[k] = n; });
+  return out;
+}
+/* The background's 3 points: how many are given so far. */
+export var BG_INCREASE_POINTS = 3;
+export function backgroundIncreaseTotal(){
+  var inc = backgroundAbilityIncreases();
+  return Object.keys(inc).reduce(function(a, k){ return a + inc[k]; }, 0);
+}
+/* What a tap on a score makes its bonus: 0 to +1, +1 to +2, +2 back to
+   0. A +1 can't become +2 when that would pass the 3 points (a +2 and
+   +1, or three +1s) or take the score past 20: it goes back to 0. A score
+   at 0 stays there once the points are spent. */
+export function nextBgIncrease(key){
+  var inc = backgroundAbilityIncreases(), cur = inc[key]||0, total = backgroundIncreaseTotal();
+  var base = Number(wizardState.abilities[key])||10;
+  if(cur===2) return 0;
+  if(cur===1) return total < BG_INCREASE_POINTS && base + 2 <= 20 ? 2 : 0;
+  return total < BG_INCREASE_POINTS && base < 20 ? 1 : 0;
+}
+export function tapBgIncrease(key){
+  var st = wizardBgAbilities(), n = nextBgIncrease(key);
+  if(n) st.inc[key] = n; else delete st.inc[key];
+}
+/* What's still to give, as a sentence ("" when done). */
+export function backgroundAbilitiesProblem(){
+  if(!wizardBgScoreRule()) return "";
+  var left = BG_INCREASE_POINTS - backgroundIncreaseTotal();
+  return left > 0 ? "Your "+wizardState.background+" background has "+left+" more point"+(left===1 ? "" : "s")+" to give: tap a score for +1, tap it again for +2." : "";
+}
+
 /* The scores the character will actually have: the base scores from the
-   Ability Scores step plus the race's increases (kept within 1 to 20),
+   Ability Scores step plus the race's increases (or a 2024 background's
+   in their place, kept within 1 to 20),
    plus the Race Traits feat's +1. Everything downstream (HP, AC, spell
    counts, the review) reads these. withoutFeat leaves the feat's +1 out:
    for feat prerequisites, and for the finished sheet, where
@@ -412,7 +480,8 @@ export function raceAbilityPicksNeeded(){
 export function finalAbilities(opts){
   var out = {};
   Object.keys(wizardState.abilities).forEach(function(k){ out[k] = wizardState.abilities[k]; });
-  var inc = raceAbilityIncreases();
+  var inc = raceAbilityIncreases(), bgInc = backgroundAbilityIncreases();
+  Object.keys(bgInc).forEach(function(k){ inc[k] = (inc[k]||0) + bgInc[k]; });
   Object.keys(inc).forEach(function(k){ out[k] = Math.max(1, Math.min(20, (Number(out[k])||10) + inc[k])); });
   var def = raceChoiceDef();
   var fp = def && def.feat && !(opts && opts.withoutFeat) && wizardState.raceChoices.featPicks;
@@ -495,6 +564,13 @@ export function languagePlan(){
   var slots = [];
   function addSlots(n, source, help, exotic){ for(var i=0;i<(n||0);i++) slots.push({source:source, help:help||"", exotic:!!exotic}); }
   addSlots(race.choose, w.race || "Race", race.note);
+  // The 2024 rules: at least Common and two standard languages (p. 37),
+  // the race's counting towards them; picks top up the rest.
+  if(wizardRules2024()){
+    var top = Math.max(0, 3 - race.fixed.length - (race.choose || 0)), at = slots.length;
+    addSlots(top, "the 2024 rules", "Every character knows Common and two languages from the Standard Languages table.");
+    slots.slice(at).forEach(function(s){ s.options = STANDARD_LANGUAGES_2024; });
+  }
   // Languages the background names (a Rune Carver's Giant); one already
   // known becomes a free pick instead.
   var bgRules = BACKGROUND_LANGUAGE_RULES[w.background] || {};
@@ -531,7 +607,8 @@ export function isStepApplicable(id){
   }
   if(id==="languages") return languagePlan().slots.length > 0;
   // (Ability picks, a feat, or a trait's choice: a dwarf's tool, a kenku's skills.)
-  if(id==="raceChoices") return !!raceChoiceDef() || wizardRacePickGrants().length > 0;
+  // With a 2024 background the race's score picks are gone, its feat stays.
+  if(id==="raceChoices") return (!!raceChoiceDef() && (!wizardBgScoreRule() || !!raceChoiceDef().feat)) || wizardRacePickGrants().length > 0;
   // A race's feat (Variant Human) gets its own step, and the feat's own
   // picks (Fey Touched's spell, Skilled's skills) one more, only when it has any.
   if(id==="feat") return !!(raceChoiceDef() && raceChoiceDef().feat);
@@ -571,6 +648,9 @@ export function wizardBackgroundFeat(){
   if(!w) return null;
   var own = backgroundFeatGrant(w.background, w.bgFeatChoice);
   if(own) return own;
+  // The 2024 character rules: an Origin feat of the player's choice.
+  var origin = w.rules2024 ? originFeatChoices(w.background) : [];
+  if(origin.length) return {def: origin.indexOf(w.originFeat)!==-1 ? featDef(w.originFeat) : null, option: "", choices: origin, origin: true};
   var choices = campaignLevel1Feats(w.campaign, w.background);
   if(!choices.length) return null;
   return {def: choices.indexOf(w.campaignFeat)!==-1 ? featDef(w.campaignFeat) : null, option: "", choices: choices, campaign: w.campaign};
@@ -581,7 +661,7 @@ export function wizardBackgroundFeatPicks(){
   var g = wizardBackgroundFeat(), w = wizardState;
   if(!g || !g.def) return null;
   if(!w.bgFeat || w.bgFeat.background!==w.background || (w.bgFeat.name || g.def.name)!==g.def.name){
-    w.bgFeat = {background: w.background, name: g.def.name, picks: g.campaign ? emptyPicks(g.def) : backgroundFeatPicks(w.background, g.def.name)};
+    w.bgFeat = {background: w.background, name: g.def.name, picks: g.campaign || g.origin ? emptyPicks(g.def) : backgroundFeatPicks(w.background, g.def.name)};
   }
   return w.bgFeat.picks;
 }
@@ -594,6 +674,7 @@ export function wizardFeat(){
 export function wizardStepTitle(id){
   // The same step asks for a campaign's feat when the background has none.
   if(id==="bgFeat" && wizardBackgroundFeat() && wizardBackgroundFeat().campaign) return "Campaign Feat";
+  if(id==="bgFeat" && wizardBackgroundFeat() && wizardBackgroundFeat().origin) return "Origin Feat";
   return {
     class:"Choose a Class", race:"Choose a Race", background:"Choose a Background",
     alignment:"Choose an Alignment",
@@ -632,7 +713,7 @@ export function validateStep(id){
       var allAssigned = ABILITIES.every(function(a){ return wizardState.assignIdx[a[0]]!=null; });
       if(!allAssigned) return "Assign a score to every ability.";
     }
-    return null;
+    return backgroundAbilitiesProblem() || null;
   }
   if(id==="skills"){
     if(wizardState.skillChoices.length!==info.skillChoices.count) return "Choose "+info.skillChoices.count+" skills from your class list.";
@@ -652,6 +733,7 @@ export function validateStep(id){
   }
   if(id==="raceChoices"){
     var def = raceChoiceDef() || {}, rc = wizardState.raceChoices;
+    if(wizardBgScoreRule()) def = {feat: def.feat}; // (its scores come from the background)
     if(def.abilityBonus){
       var n = raceAbilityPicksNeeded(), exclude = def.abilityBonus.exclude || [];
       var ab = rc.abilities.slice(0, raceAbilityAmounts().length).filter(Boolean);
@@ -671,7 +753,7 @@ export function validateStep(id){
   }
   if(id==="bgFeat"){
     var bgf = wizardBackgroundFeat();
-    if(!bgf.def) return "Pick "+bgf.choices.join(" or ")+" as your "+(bgf.campaign ? "campaign" : "background")+" feat.";
+    if(!bgf.def) return bgf.origin ? "Pick an Origin feat." : "Pick "+bgf.choices.join(" or ")+" as your "+(bgf.campaign ? "campaign" : "background")+" feat.";
     var raceFeat = isStepApplicable("feat") && wizardFeat();
     if(bgf.choices && raceFeat===bgf.def) return "You already took "+bgf.def.name+" as your "+wizardState.race+" feat. Pick another.";
     return featPicksProblem(bgf.def, wizardBackgroundFeatPicks(), wizardFeatContext({forBackgroundFeat:true})) || null;
@@ -732,7 +814,8 @@ export function validateStep(id){
     var notExotic = plan.slots.find(function(slot, i){ return slot.exotic && standardLower.indexOf((picks[i]||"").trim().toLowerCase())!==-1; });
     if(notExotic) return "Your "+notExotic.source+" background needs an exotic language (Abyssal, Celestial, Draconic, Infernal...).";
     var offList = plan.slots.find(function(slot, i){ return slot.options && slot.options.indexOf((picks[i]||"").trim())===-1; });
-    if(offList) return "Your "+offList.source+" background's language is one of "+offList.options.join(", ")+".";
+    if(offList) return offList.source==="the 2024 rules" ? "Under the 2024 rules this one comes from the Standard Languages table: "+offList.options.join(", ")+"."
+      : "Your "+offList.source+" background's language is one of "+offList.options.join(", ")+".";
     return null;
   }
   if(id==="equipment"){
@@ -777,7 +860,7 @@ export function openWizard(){
     bgPicks:{}, bgGear:{}, overlapPicks:{},
     classChoices:{},
     raceChoices:{abilities:[], alt:false, preset:"", profPicks:{}, feat:"", featPicks:null},
-    bgFeat:null, bgFeatChoice:"", campaign:"", campaignFeat:"",
+    bgFeat:null, bgFeatChoice:"", campaign:"", campaignFeat:"", rules2024:false, originFeat:"",
     languageChoices:[],
     equipment:{},
     spellChoices:{cantrips:[], spells:[]}
@@ -827,6 +910,7 @@ export function finishWizard(){
   if(wizardEdition()) c.classes[0].edition = wizardEdition(); // the 2024 monk
   if(Object.keys(wizardVariants()).length) c.classes[0].variants = wizardVariants(); // Favored Foe in place of Favored Enemy
   if(w.tashaOptional) c.tashaOptional = true;
+  if(w.rules2024) c.rules2024 = true;
   if(w.gunMisfire && w.classId==="Gunslinger") c.gunMisfire = true;
   var fa = finalAbilities({withoutFeat:true}); // applyRaceChoices adds the feat's +1
   c.abilities = {str:fa.str, dex:fa.dex, con:fa.con, int:fa.int, wis:fa.wis, cha:fa.cha};
@@ -846,7 +930,7 @@ export function finishWizard(){
   var grant = wizardBackgroundFeat();
   if(CAMPAIGN_FEATS[w.campaign]) c.campaign = w.campaign;
   if(grant && grant.def){
-    var bgFeat = grant.campaign ? campaignFeatCopy(grant.def, grant.campaign, 1) : backgroundFeatCopy(w.background, grant.def.name);
+    var bgFeat = grant.campaign ? campaignFeatCopy(grant.def, grant.campaign, 1) : grant.origin ? originFeatCopy(grant.def, w.background) : backgroundFeatCopy(w.background, grant.def.name);
     c.feats.push(bgFeat);
     if(featHasPicks(grant.def)) applyFeatPicks(c, bgFeat, wizardBackgroundFeatPicks());
   }

@@ -38,7 +38,7 @@ export function hasFeat(c, name){
    Tough's 2 per character level and the race's hpPerLevel (Dwarven
    Toughness: 1 per level), worked out so they follow levels and feats. */
 export function toughBonus(c){
-  return hasFeat(c, "Tough") ? 2 * totalLevel(c) : 0;
+  return hasFeat(c, "Tough") || hasFeat(c, "Tough (2024)") ? 2 * totalLevel(c) : 0;
 }
 export function raceHpPerLevel(c){
   var race = RACE_DATA[c.race];
@@ -58,7 +58,7 @@ export function itemConHpBonus(c){
 export function hpBonuses(c){
   var out = [];
   var tough = toughBonus(c), race = raceHpBonus(c), item = itemConHpBonus(c);
-  if(tough) out.push({name:"Tough", value:tough});
+  if(tough) out.push({name:hasFeat(c, "Tough") ? "Tough" : "Tough (2024)", value:tough});
   if(race) out.push({name:(RACE_DATA[c.race].hpTrait || c.race), value:race});
   if(item) out.push({name:abilityScoreDetail(c, "con").sources.join(" and "), value:item});
   return out;
@@ -388,6 +388,11 @@ export function computeInitiative(c){
   });
   if(hasFeat(c, "Alert")){
     value += 5; breakdown += " + Alert (+5)"; short += " + Alert";
+  }
+  // The 2024 feat adds the proficiency bonus instead.
+  if(hasFeat(c, "Alert (2024)")){
+    var alertPb = profBonus(c);
+    value += alertPb; breakdown += " + Alert (" + fmtMod(alertPb) + ")"; short += " + PB";
   }
   if(c.race==="Harengon"){
     var pb = profBonus(c);

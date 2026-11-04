@@ -24,7 +24,9 @@ import { featDef, featNeedsChoice, emptyPicks, featPicksSummary, featRequiresRea
 import { renderFeatPicks } from "../ui/feat-picks.js";
 import { fillFeatList } from "../ui/feat-list.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
-import { lu, luEdition, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
+import { SPELL_DATA } from "../data/spells.js";
+function spellLevelOf(n){ return (SPELL_DATA[n] || {}).level; }
+import { lu, luEdition, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain, spellChangeFeats, spellChangeOptions, featSpellSwaps } from "./session.js";
 
 export function stepClass(container){
   var c = lu.c;
@@ -668,6 +670,41 @@ export function stepBonusFeatPicks(container){
   if(!lu.bonusFeatPicks) lu.bonusFeatPicks = emptyPicks(def);
   card.appendChild(renderFeatPicks(def, lu.bonusFeatPicks, bonusFeatCtx(), render));
 }
+/* Feat spells: Magic Initiate (2024)'s Spell Change, one optional swap
+   per feat: which spell goes, then what replaces it (same level, same list). */
+export function stepFeatSpells(container){
+  var card = stepCard(container, "Feat spells",
+    "<b>Spell Change:</b> each time you gain a level, you can replace one spell you chose for Magic Initiate with another of the same level from its list. You don't have to.");
+  spellChangeFeats().forEach(function(f){
+    var sw = lu.featSwaps[f.id] = lu.featSwaps[f.id] || {index: "", to: ""};
+    var spells = f.picks.spells || [], list = f.picks.option || f.lockedOption || "";
+    var row = ce("div", "bgk-slot");
+    var title = ce("p", "lu-choice-title");
+    // "Magic Initiate (2024, Wizard list)".
+    title.textContent = list ? (/\)$/.test(f.name) ? f.name.replace(/\)$/, ", " + list + " list)") : f.name + " (" + list + " list)") : f.name;
+    row.appendChild(title);
+    var out = ce("div", "field fp-field");
+    out.appendChild(themedPicker({
+      key: "featswap:" + f.id, ariaLabel: "Spell to replace", search: false, value: sw.index==="" ? "keep" : sw.index,
+      groups: {"": [{value: "keep", label: "Keep my spells"}].concat(spells.map(function(n, i){
+        return n ? {value: String(i), label: "Replace " + n + ((spellLevelOf(n)===0) ? " (cantrip)" : " (level " + spellLevelOf(n) + ")")} : null;
+      }).filter(Boolean))},
+      onPick: function(v){ sw.index = v==="keep" ? "" : v; sw.to = ""; render(); }
+    }));
+    row.appendChild(out);
+    if(sw.index!==""){
+      var opts = spellChangeOptions(f, Number(sw.index));
+      var into = ce("div", "field fp-field");
+      into.appendChild(themedPicker({
+        key: "featswapto:" + f.id, ariaLabel: "New spell", placeholder: "Choose the new spell", search: opts.length > 12, sheet: opts.length > 12,
+        groups: {"": opts.map(function(n){ return {value: n, label: n}; })}, value: sw.to,
+        onPick: function(v){ sw.to = v; render(); }
+      }));
+      row.appendChild(into);
+    }
+    card.appendChild(row);
+  });
+}
 export function stepHp(container){
   var t = target();
   var conMod = conModAfterAsi();
@@ -800,6 +837,7 @@ export function stepReview(container){
     var bonusPicked = featPicksSummary(featDef(lu.bonusFeatName), lu.bonusFeatPicks);
     items.push("Campaign feat: "+lu.bonusFeatName+(bonusPicked ? " ("+bonusPicked+")" : ""));
   }
+  featSpellSwaps().forEach(function(x){ items.push(x.feat.name+" spell swap: "+x.from+" → "+x.to); });
   items.push("Max HP +"+(hpGain()+toughGain()));
   var newPb = Math.floor(totalLevel(c)/4)+2;
   if(newPb!==profBonus(c)) items.push("Proficiency bonus "+fmtMod(profBonus(c))+" → "+fmtMod(newPb));

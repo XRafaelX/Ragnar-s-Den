@@ -40,7 +40,7 @@ var FEAT_SOURCES = {
   PHB:"Player's Handbook", TCE:"Tasha's Cauldron of Everything", XGE:"Xanathar's Guide to Everything",
   MTF:"Mordenkainen's Tome of Foes", ERLW:"Eberron: Rising from the Last War", FTD:"Fizban's Treasury of Dragons",
   SCC:"Strixhaven: A Curriculum of Chaos", DSotDQ:"Dragonlance: Shadow of the Dragon Queen",
-  BGG:"Bigby Presents: Glory of the Giants", PAitM:"Planescape: Adventures in the Multiverse", BMT:"The Book of Many Things",
+  BGG:"Bigby Presents: Glory of the Giants", XPHB:"Player's Handbook (2024)", PAitM:"Planescape: Adventures in the Multiverse", BMT:"The Book of Many Things",
   GUN:"Gunslinger (fan content)", SPK:"Spikael's homebrew"
 };
 

@@ -12,7 +12,9 @@ import { renderInvocationsCard } from "./invocations.js";
 import { renderOptionSetCards } from "./class-options.js";
 import { renderClassPicksCard } from "./class-picks.js";
 import { featPicksPending, featAppliedSummary, revertFeatPicks, featHasPicks, featNeedsChoice, applyFeatPicks,
-  backgroundFeatMissing, backgroundFeatCopy, backgroundFeatPicks, backgroundFeatLabel, campaignFeatMissing, campaignFeatCopy, featDef, emptyPicks } from "../../core/feat-picks.js";
+  backgroundFeatMissing, backgroundFeatCopy, backgroundFeatPicks, backgroundFeatLabel, campaignFeatMissing, campaignFeatCopy, featDef, emptyPicks,
+  originFeatMissing, originFeatCopy } from "../../core/feat-picks.js";
+import { themedPicker } from "../../ui/themed-picker.js";
 import { openFeatPicksModal } from "../../ui/feat-picks.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { makeChevronRightSvg } from "../../ui/svg-icons.js";
@@ -398,6 +400,37 @@ export function renderFeaturesPanel(c){
         campSkip.addEventListener("click", function(){ c.campaignFeatSkipped = c.campaign; save(); renderAll(); });
         campOffer.appendChild(campSkip);
         card.appendChild(campOffer);
+      }
+
+      // The 2024 rules' Origin feat, for a background without a feat (the
+      // rules switched on after creation): picked from one list.
+      var origin = item.category==="background" && item.isDerived && !owed && originFeatMissing(c);
+      if(origin){
+        var originOffer = document.createElement("div");
+        originOffer.className = "ff-picks-pending";
+        originOffer.appendChild(document.createTextNode("Under the 2024 rules a background without a feat gives an Origin feat of your choice."));
+        var pickWrap = document.createElement("div");
+        pickWrap.className = "field fp-field";
+        pickWrap.appendChild(themedPicker({
+          key: "origin-feat", ariaLabel: "Origin feat", placeholder: "Choose an Origin feat", search: false,
+          groups: {"": origin.choices.map(function(n){ return {value: n, label: n + ": " + (featDef(n).summary || "")}; })},
+          onPick: function(name){
+            var def = featDef(name), copy = originFeatCopy(def, c.background);
+            if(!c.feats) c.feats = [];
+            c.feats.push(copy);
+            if(featHasPicks(def) && !featNeedsChoice(def)) applyFeatPicks(c, copy, emptyPicks(def));
+            save(); renderAll(); playAdd();
+            if(featNeedsChoice(def)) openFeatPicksModal(c, copy, function(){ save(); renderAll(); });
+          }
+        }));
+        originOffer.appendChild(pickWrap);
+        var originSkip = document.createElement("button");
+        originSkip.type = "button";
+        originSkip.className = "btn small ghost";
+        originSkip.textContent = "Not for this character";
+        originSkip.addEventListener("click", function(){ c.originFeatSkipped = c.background; save(); renderAll(); });
+        originOffer.appendChild(originSkip);
+        card.appendChild(originOffer);
       }
 
       // A feat whose +1 or skills were never applied (taken before the

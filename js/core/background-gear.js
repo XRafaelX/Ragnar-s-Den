@@ -8,7 +8,8 @@
    than once adds "5#1", "5#2"; a Dimir Operative's secondary guild is
    "guild" and that guild's own slots "guild/3". Values: a pick's option
    index ("0"), a group's tool name ("Smith's Tools"), a trinket's entry
-   number on its table ("37"), the guild's background name. */
+   number on its table ("37"), the guild's background name. A 2024
+   background's kit-or-gold choice is "gold": "kit" or "gold". */
 import { BACKGROUND_EQUIPMENT, BACKGROUND_EQUIPMENT_SAME_AS, RAVNICA_GUILD_BACKGROUNDS } from "../data/background-equipment.js";
 import { GEAR_DATA, GEAR_GROUPS } from "../data/gear.js";
 import { WEAPON_DATA, GUNSLINGER_FIREARMS, hasGunslingerClass } from "../data/weapons.js";
@@ -61,6 +62,13 @@ export function kitSlots(background, picks, prefix){
   var kit = backgroundKit(background), out = [];
   picks = picks || {}; prefix = prefix || "";
   if(!kit) return out;
+  // A 2024 background: the kit, or gold in its place (then nothing else to ask).
+  if(kit.orGold && !prefix){
+    out.push({key: "gold", kind: "pick", label: "Equipment or gold", options: [
+      {value: "kit", label: "The equipment" + (coinsText(kit.coins) ? " and " + coinsText(kit.coins) : "")},
+      {value: "gold", label: kit.orGold + " gp instead"}]});
+    if(picks.gold === "gold") return out;
+  }
   function visit(e, key){
     if(!e || typeof e === "string" || Array.isArray(e)) return;
     if(e.pick){
@@ -138,6 +146,7 @@ export function kitItems(background, picks, ctx, rng){
   var out = {items: [], coins: {}, notes: []};
   if(!kit) return out;
   picks = fillKitPicks(background, Object.assign({}, picks || {}), ctx, rng);
+  if(kit.orGold && picks.gold === "gold"){ out.coins.gp = kit.orGold; return out; }
   function add(e, key){
     if(!e) return;
     if(typeof e === "string"){ out.items.push(gearItem(e)); return; }

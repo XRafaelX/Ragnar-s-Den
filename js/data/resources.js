@@ -841,6 +841,11 @@ export var FEAT_RESOURCES = {
     {id:"luck_points", name:"Luck Points", max:always(3), reset:always("long"),
       hint:"Spend one to roll an extra d20 on an attack roll, ability check or saving throw, or on an attack against you. You choose which d20 counts."}
   ],
+  // The 2024 feat: as many points as the proficiency bonus.
+  "Lucky (2024)": [
+    {id:"luck_points_2024", name:"Luck Points", max:profBonusUses(), reset:always("long"),
+      hint:"Spend one for advantage on a d20 roll, or to give disadvantage to an attack roll against you."}
+  ],
   "Martial Adept": [
     {id:"superiority_dice", name:"Superiority Die", max:always(1), reset:always("short"),
       joins:"Fighter:superiority_dice", joinHint:"Includes Martial Adept's extra die (a d6).",
