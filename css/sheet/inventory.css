@@ -391,6 +391,16 @@
   .inv-power-feat{display:inline;margin-right:8px;}
 }
 
+/* A weapon card with many buttons, on a phone (foldExtras in render/
+   panels/inventory.js): the extras after the first three fold behind
+   "More (n)", which opens them in place in the same row. */
+.inv-more-btn{display:none;}
+@media (max-width:600px){
+  .inv-roll-actions:not(.inv-unfolded) > .inv-overflow{display:none;}
+  .inv-roll-actions > .inv-more-btn{display:inline-flex;color:var(--brass-bright);
+    border-style:dashed;border-color:color-mix(in srgb, var(--brass) 55%, transparent);}
+}
+
 /* Artificer cards (Inventory tab): Arcane Armor model, experimental elixirs */
 .art-intro{font-size:12.5px;color:var(--text-on-parch-dim);margin:0 0 10px;line-height:1.45;}
 .art-switch{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}

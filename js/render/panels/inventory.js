@@ -642,6 +642,7 @@ function renderUnarmedCard(c, u){
   // (A plain unarmed strike has no dice to double on a critical hit.)
   var uHit = u.die ? {qty: 1, die: u.die, bonus: u.bonus, melee: !u.ranged, label: u.name, critMin: critRange(c), sneak: !!u.psychicBlade, psychicBlade: !!u.psychicBlade} : null;
   atkBtn.addEventListener("click", function(){ rollAttack(c, u.attack, u.roll ? u.roll.mode : "none", u.name + ": Attack", uHit); });
+  atkBtn.classList.add("inv-main-btn");
   actions.appendChild(atkBtn);
   var dmgBtn = document.createElement("button");
   dmgBtn.type = "button"; dmgBtn.className = "btn small inv-roll-btn";
@@ -654,6 +655,7 @@ function renderUnarmedCard(c, u){
     dmgBtn.disabled = true;
     dmgBtn.title = "A plain unarmed strike deals 1 + STR " + u.type.toLowerCase() + " damage, no dice";
   }
+  dmgBtn.classList.add("inv-main-btn");
   actions.appendChild(dmgBtn);
   // Unarmed Fighting: 1d4 to a creature you're grappling, each turn.
   if(u.grappleDie){
@@ -672,6 +674,15 @@ function renderUnarmedCard(c, u){
   fighterWeaponButtons(c, u.name).forEach(function(b){ actions.appendChild(b); });
   if(!u.ranged && /unarmed strike/i.test(u.name)) smiteButtons(c, u.name, false).forEach(function(b){ actions.appendChild(b); });
   if(/unarmed strike/i.test(u.name)) rangerButtons(c, u.name, true).forEach(function(b){ actions.appendChild(b); });
+  // The monk's strikes first (on a phone the first three stay in view): Flurry of Blows, Stunning Strike, Grapple / Shove.
+  if(/unarmed strike/i.test(u.name)){
+    var flurry = flurryButton(c, u, uHit);
+    if(flurry) actions.appendChild(flurry);
+    var uStun = stunButton(c, null);
+    if(uStun) actions.appendChild(uStun);
+    var grapple = grappleShoveButton(c);
+    if(grapple) actions.appendChild(grapple);
+  }
   // Elemental Epitome (2024 Elements 17): one more Martial Arts die on an
   // unarmed hit, once on each of your turns, while attuned.
   if(u.name==="Unarmed strike" && effectOn(c, "elemental_epitome")){
@@ -682,15 +693,6 @@ function renderUnarmedCard(c, u){
     epi.addEventListener("click", function(){ performRoll(epiDie, 1, 0, "none", "Elemental Epitome: extra damage"); });
     actions.appendChild(epi);
   }
-  // The monk's strikes: Flurry of Blows, Stunning Strike, Grapple / Shove.
-  if(/unarmed strike/i.test(u.name)){
-    var flurry = flurryButton(c, u, uHit);
-    if(flurry) actions.appendChild(flurry);
-    var uStun = stunButton(c, null);
-    if(uStun) actions.appendChild(uStun);
-    var grapple = grappleShoveButton(c);
-    if(grapple) actions.appendChild(grapple);
-  }
   var deflect = u.name==="Unarmed strike" && (isMonk2024(c) ? deflectAttacksButton(c) : deflectMissilesButton(c));
   if(deflect) actions.appendChild(deflect);
   if(u.psychicBlade){
@@ -698,6 +700,7 @@ function renderUnarmedCard(c, u){
     if(bladeSneak) actions.appendChild(bladeSneak);
     soulknifeButtons(c, u).forEach(function(b){ actions.appendChild(b); });
   }
+  foldExtras(actions, "unarmed:" + u.name);
   card.appendChild(actions);
   return card;
 }
@@ -1425,6 +1428,7 @@ function renderWeaponCard(c, item, idx){
     rollAttack(c, atkBonus, atkRoll.mode, (item.name||"Weapon") + ": Attack",
       parsed ? {qty: parsed.qty, die: parsed.die, bonus: off && !off.stack ? off.damage : dmgBonus, melee: !isRangedWeapon(item), label: item.name || "Weapon", critMin: critRange(c, item), item: item, sneak: sneakAttackWeapon(item, c)} : null);
   });
+  atkBtn.classList.add("inv-main-btn");
   actions.appendChild(atkBtn);
 
   // (A monk weapon rolls the Martial Arts die when it's bigger.)
@@ -1451,6 +1455,7 @@ function renderWeaponCard(c, item, idx){
     dmgBtn.disabled = true;
     dmgBtn.title = "Enter damage dice like \"1d8\" to roll";
   }
+  dmgBtn.classList.add("inv-main-btn");
   if(!off || off.stack) actions.appendChild(dmgBtn);
 
   // Thrown: a ranged attack, when its numbers differ (Archery, Thrown
@@ -1491,6 +1496,8 @@ function renderWeaponCard(c, item, idx){
       var sights = calibratedSights(c, item, parsed.die);
       performRoll(parsed.die, parsed.qty, off.damage, "none", (item.name||"Weapon") + ": Off-hand damage" + (item.damageType ? " (" + item.damageType + ")" : ""), sights ? {adjust: sights} : null);
     });
+    // (On the off-hand weapon's card it stands in for Damage.)
+    if(!off.stack) offBtn.classList.add("inv-main-btn");
     actions.appendChild(offBtn);
   }
 
@@ -1677,6 +1684,7 @@ function renderWeaponCard(c, item, idx){
       actions.appendChild(pickBtn);
     }
   }
+  foldExtras(actions, "weapon:" + (item.id || idx));
   card.appendChild(actions);
   // A firearm's panel: its shots or misfire, and a class gun's loaded round.
   var gunRow = gun && firearmRow(c, item, gun, idx);
@@ -1946,6 +1954,39 @@ function damageBoonButton(item, b){
     save(); renderAll();
   });
   return btn;
+}
+/* A weapon card with many buttons, on a phone (600px and narrower, in
+   the CSS): with five or more besides Attack and Damage (.inv-main-btn)
+   and the switches (aria-pressed: Great Weapon Master, Shillelagh,
+   Ignite), those after the first three fold away behind "More (n)" at the
+   end of the row. It opens them in place, in the same row, and becomes
+   "Less". Open stays open through a redraw (key: the card). A wider
+   screen shows them all and no button. */
+var FOLD_AFTER = 3;
+var unfolded = {};
+function foldExtras(actions, key){
+  var buttons = Array.prototype.filter.call(actions.children, function(b){ return b.tagName==="BUTTON"; });
+  var extras = buttons.filter(function(b){ return !b.classList.contains("inv-main-btn") && !b.hasAttribute("aria-pressed"); });
+  if(extras.length < FOLD_AFTER + 2) return;
+  var folded = extras.slice(FOLD_AFTER);
+  folded.forEach(function(b){ b.classList.add("inv-overflow"); });
+  var more = document.createElement("button");
+  more.type = "button"; more.className = "btn small inv-roll-btn inv-more-btn";
+  function draw(){
+    var open = !!unfolded[key];
+    actions.classList.toggle("inv-unfolded", open);
+    more.textContent = open ? "Less" : "More (" + folded.length + ")";
+    more.setAttribute("aria-expanded", open ? "true" : "false");
+    more.title = open ? "Hide the extra buttons again" : "Show " + folded.length + " more buttons";
+  }
+  more.addEventListener("click", function(){
+    if(unfolded[key]) delete unfolded[key]; else unfolded[key] = true;
+    draw();
+  });
+  draw();
+  // After the last folded one: the row's end when open, right after the
+  // first three when closed. Switches stay after it.
+  folded[folded.length - 1].after(more);
 }
 function smallButton(label, title, onClick){
   var b = document.createElement("button");
