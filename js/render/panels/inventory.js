@@ -640,7 +640,7 @@ function renderUnarmedCard(c, u){
   atkBtn.innerHTML = makeDiceSvg() + "Attack " + fmtMod(u.attack) + (u.roll && u.roll.mode==="dis" ? " (Dis)" : u.roll && u.roll.mode==="adv" ? " (Adv)" : "");
   if(u.roll && u.roll.reason) atkBtn.title = u.roll.reason;
   // (A plain unarmed strike has no dice to double on a critical hit.)
-  var uHit = u.die ? {qty: 1, die: u.die, bonus: u.bonus, melee: !u.ranged, label: u.name, critMin: critRange(c), sneak: !!u.psychicBlade, psychicBlade: !!u.psychicBlade} : null;
+  var uHit = u.die ? {qty: 1, die: u.die, bonus: u.bonus, melee: !u.ranged, label: u.name, critMin: critRange(c), sneak: !!u.psychicBlade, psychicBlade: !!u.psychicBlade, unarmed: /unarmed strike/i.test(u.name)} : null;
   atkBtn.addEventListener("click", function(){ rollAttack(c, u.attack, u.roll ? u.roll.mode : "none", u.name + ": Attack", uHit); });
   atkBtn.classList.add("inv-main-btn");
   actions.appendChild(atkBtn);
@@ -680,6 +680,8 @@ function renderUnarmedCard(c, u){
     if(flurry) actions.appendChild(flurry);
     var uStun = stunButton(c, null);
     if(uStun) actions.appendChild(uStun);
+    var harm = handOfHarmButton(c);
+    if(harm) actions.appendChild(harm);
     var grapple = grappleShoveButton(c);
     if(grapple) actions.appendChild(grapple);
   }
@@ -746,6 +748,24 @@ function stunButton(c, item){
   });
   return b;
 }
+/* Hand of Harm (Mercy monk 3, 2014 and 2024), once per turn on an unarmed
+   hit: pays its Focus (ki) and rolls the necrotic damage. */
+function handOfHarmButton(c){
+  var a = kiAction(c, "harm24") || kiAction(c, "harm");
+  if(!a) return null;
+  var cost = a.cost + " " + kiWord(c), problem = kiActionProblem(c, a);
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "btn small inv-roll-btn inv-fury-btn";
+  b.innerHTML = makeDicesSvg() + "Hand of Harm · " + cost;
+  b.disabled = !!problem;
+  b.title = problem || "On a hit, for " + cost + ": " + a.detail;
+  b.addEventListener("click", function(){
+    if(!payKiAction(c, a)) return;
+    save(); renderAll();
+    performRoll(a.roll.die, a.roll.qty, a.roll.bonus, "none", a.roll.label + " (" + cost + ")");
+  });
+  return b;
+}
 /* Grapple and Shove, the 2024 Unarmed Strike's other two options: the DC
    (Dexterous Attacks lets a monk use DEX). Nothing to roll, the target saves. */
 function grappleShoveButton(c){
@@ -804,7 +824,8 @@ function deflectAttacksButton(c){
     performRoll(10, 1, bonus, "none", "Deflect Attacks: damage reduced", function(r){
       if(!r) return null;
       var left = kiLeft(c), die = martialArtsDie(c), dc = kiSaveDc(c);
-      return {lead: "Down to 0? You can redirect it:", options: [{label: "Redirect it (1 Focus)", disabled: left < 1, title: left < 1 ? "No Focus left" : "A creature within 5 feet (melee) or 60 feet (ranged) makes a DEX save (DC " + dc + ") or takes this, of the attack's damage type",
+      // (The DC in the lead, where a phone shows it: no hover title there.)
+      return {lead: "Down to 0? Redirect it: the target makes a DEX save, DC " + dc + ".", options: [{label: "Redirect it (1 Focus)", disabled: left < 1, title: left < 1 ? "No Focus left" : "A creature within 5 feet (melee) or 60 feet (ranged) makes a DEX save (DC " + dc + ") or takes this, of the attack's damage type",
         use: function(){
           if(!spendKi(c, 1)) return null;
           save(); renderAll();

@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, raceCheckD4, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud, isMonk2024, kiWord } from "../../core/helpers.js";
+import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, raceCheckD4, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud, isMonk2024, kiWord, openHandTechniques, elementalPushDc } from "../../core/helpers.js";
 import { flashOfGenius, artificerHitDice } from "../../core/artificer.js";
 import { openFlourishSheet } from "./bard.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -336,6 +336,7 @@ function attackFollowUp(c, r, aim, hit, seen){
     if(critClone) critFollow.options.push(Object.assign(critClone, {keep: true}));
     var critNext = flurryNext(c, hit);
     if(critNext) critFollow.options.push(critNext);
+    critFollow.options = critFollow.options.concat(monkHitOptions(c, hit));
     return critFollow;
   }
   // A natural 20 with no weapon card behind it (a spell attack) simply hits.
@@ -350,6 +351,9 @@ function attackFollowUp(c, r, aim, hit, seen){
     var next = flurryNext(c, hit);
     if(next) opts.splice(1, 0, next);
   }
+  // Open Hand Technique and Elemental Attunement's push, after the strike's own buttons.
+  var monkHits = monkHitOptions(c, hit);
+  if(monkHits.length) Array.prototype.splice.apply(opts, [hit && hit.flurry ? (flurryNext(c, hit) ? 2 : 1) : 0, 0].concat(monkHits));
   // The Eldritch Gunman's enchanted firearm: Runic Bind on a hit, Veil of
   // Smoke on a miss.
   var ench = hit && !hit.noDamage && enchantmentOf(c, hit.item);
@@ -482,6 +486,20 @@ function attackFollowUp(c, r, aim, hit, seen){
   var named = opts.filter(saysWhen), rest = opts.filter(function(o){ return !saysWhen(o); });
   if(named.length) return {lead: "", hint: "Tap for more options.", options: rest.length ? named.concat([{heading: "Missed?"}], rest) : named};
   return {lead: onlyAim ? "Missed? Focused Aim:" : "Missed?", hint: onlyAim ? "Missed? Tap for Focused Aim." : "Missed? Tap for more options.", options: opts};
+}
+/* A monk's unarmed hit, reminders kept with the strike's other buttons:
+   Open Hand Technique on a Flurry of Blows strike (one of the three: the
+   others go once one is used) and Elemental Attunement's push. */
+function monkHitOptions(c, hit){
+  if(!hit || !hit.unarmed) return [];
+  var out = [];
+  if(hit.flurry) openHandTechniques(c).forEach(function(t){
+    out.push(Object.assign(reminder("Hit? " + t.name, "Open Hand Technique: one of the three on a Flurry of Blows hit", "Open Hand Technique", t.text), {keep: true, tag: "open-hand", drops: ["open-hand"]}));
+  });
+  var push = elementalPushDc(c);
+  if(push) out.push(Object.assign(reminder("Hit? Elemental push (STR DC " + push + ")", "If the strike dealt acid, cold, fire, lightning or thunder damage: on a failed save you move the target up to 10 feet toward or away from you",
+    "Elemental Attunement", "STR save DC " + push + " or you move it up to 10 feet."), {keep: true, tag: "elemental-push"}));
+  return out;
 }
 /* Flurry of Blows' next strike (hit.flurry: {n, of}), or null after the
    last one. It rolls with the same bonus and advantage as the first. */

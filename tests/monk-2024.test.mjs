@@ -319,3 +319,34 @@ test("the monk's strikes on the unarmed strike card (2026-11-04, checked on 5eto
   strong.abilities.str = 18; strong.abilities.dex = 12;
   assert.deepEqual(H.grappleShoveDc(strong), { dc: 14, ability: "STR" }, "the higher of the two");
 });
+
+test("Deflect Attacks' redirect in the Spend Focus list (2024 monk 3, DEX save against the Focus DC)", () => {
+  const a = H.kiAction(m24(3), "deflect-redirect");
+  assert.equal(a.cost, 1);
+  assert.match(a.detail, /DEX save, DC 13/);
+  assert.match(a.detail, /bludgeoning, piercing or slashing/);
+  assert.deepEqual([a.roll.qty, a.roll.die, a.roll.bonus], [2, 6, 4], "two Martial Arts dice + DEX");
+  assert.ok(!/bludgeoning, piercing/.test(H.kiAction(m24(13), "deflect-redirect").detail), "any damage type from 13 (Deflect Energy)");
+  assert.equal(H.kiAction(m24(2), "deflect-redirect"), null, "not before 3");
+  assert.equal(H.kiAction(monk(5), "deflect-redirect"), null, "not for the 2014 monk");
+});
+
+test("hit-time monk options: Open Hand Technique, Elemental Attunement's push, Hand of Harm, Deflect Missiles' throw back", () => {
+  // Open Hand Technique (2024: Topple, Push, Addle; 2014: prone, push, no reactions), DC 8 + 3 + 3.
+  assert.deepEqual(H.openHandTechniques(m24(5, "Warrior of the Open Hand")).map((t) => t.name), ["Topple (DEX DC 14)", "Push (STR DC 14)", "Addle"]);
+  assert.deepEqual(H.openHandTechniques(monk(5, {}, "Way of the Open Hand")).map((t) => t.name), ["Prone (DEX DC 14)", "Push (STR DC 14)", "No reactions"]);
+  assert.deepEqual(H.openHandTechniques(m24(5, "Warrior of Shadow")), []);
+  // Elemental Attunement's push only while it's on.
+  const el = m24(5, "Warrior of the Elements");
+  assert.equal(H.elementalPushDc(el), 0);
+  el.effects = { elemental_attunement: true };
+  assert.equal(H.elementalPushDc(el), 14);
+  // Hand of Harm: 1 Focus, Martial Arts die + WIS necrotic.
+  const harm = H.kiAction(m24(3, "Warrior of Mercy"), "harm24");
+  assert.deepEqual([harm.cost, harm.roll.qty, harm.roll.die, harm.roll.bonus], [1, 1, 6, 3]);
+  // Deflect Missiles' throw back (2014 monk 3): 1 ki, DEX + proficiency to hit, Martial Arts die + DEX.
+  const thr = H.kiAction(monk(3), "deflect-throw");
+  assert.deepEqual([thr.cost, thr.attack.bonus, thr.attack.hit.die, thr.attack.hit.bonus], [1, 6, 4, 4]);
+  assert.equal(H.kiAction(monk(2), "deflect-throw"), null);
+  assert.equal(H.kiAction(m24(5), "deflect-throw"), null, "the 2024 monk redirects instead");
+});

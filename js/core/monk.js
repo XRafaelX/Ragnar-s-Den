@@ -164,6 +164,20 @@ export function kiActions(c){
   if(way("Warrior of the Open Hand", 11)) step += " Fleet Step: you can also use it right after any other bonus action.";
   if(effectOn(c, "elemental_epitome")) step += " Elemental Epitome: +20 feet this turn, and each creature you choose takes a Martial Arts die of elemental damage when you move within 5 feet of it (once per turn).";
   out.push({id: "step", name: "Step of the Wind", cost: 1, detail: step, log: step});
+  // Deflect Missiles' throw back (2014 monk 3), also on the unarmed strike
+  // card after the reduction roll: a ranged attack, so it rolls to hit.
+  if(lv >= 3 && !focus){
+    out.push({id: "deflect-throw", name: "Deflect Missiles: throw it back", cost: 1, detail: "When Deflect Missiles brings a ranged weapon attack's damage to 0 and you catch the missile: throw it back as part of the same reaction, a ranged attack (20/60 feet) with proficiency, as a monk weapon.",
+      log: "Caught the missile and threw it back.",
+      attack: {bonus: dex + profBonus(c), hit: {qty: 1, die: die, bonus: dex, label: "Caught missile", offerDamage: true}}});
+  }
+  // Deflect Attacks' redirect (2024 monk 3), also on the unarmed strike
+  // card after the reduction roll. Any damage type from monk 13 (Deflect Energy).
+  if(lv >= 3 && focus){
+    var redirect = "When Deflect Attacks brings an attack's damage to 0" + (lv >= 13 ? "" : " (bludgeoning, piercing or slashing)") + ": a creature you can see within 5 feet (melee attack) or 60 feet and not behind total cover (ranged attack) makes a DEX save, DC " + dc + ", or takes two rolls of your Martial Arts die + DEX, of the attack's damage type.";
+    out.push({id: "deflect-redirect", name: "Deflect Attacks: redirect", cost: 1, detail: redirect, log: "Redirected: the target makes a DEX save, DC " + dc + ".",
+      roll: {qty: 2, die: die, bonus: dex, label: "Deflect Attacks: redirected (DEX save DC " + dc + ")"}});
+  }
   if(lv >= 5 && focus){
     var stun = "Once per turn, on a hit with a monk weapon or an unarmed strike: CON save DC " + dc + ". On a failure it is stunned until the start of your next turn. On a success its speed is halved and the next attack against it has advantage, until the start of your next turn.";
     out.push({id: "stun", name: "Stunning Strike", cost: 1, detail: stun, log: stun});
@@ -285,6 +299,26 @@ export function grappleShoveDc(c){
   var geared = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
   var useDex = !geared && dex > str;
   return {dc: 8 + profBonus(c) + (useDex ? dex : str), ability: useDex ? "DEX" : "STR"};
+}
+/* Open Hand Technique, on a hit from Flurry of Blows (2014 Way of the
+   Open Hand 3, 2024 Warrior of the Open Hand 3): one of three effects,
+   [{name, text}] or []. */
+export function openHandTechniques(c){
+  var dc = kiSaveDc(c);
+  if(classLevelOf(c, "Monk", "Warrior of the Open Hand") >= 3) return [
+    {name: "Topple (DEX DC " + dc + ")", text: "Topple: DEX save DC " + dc + " or it falls prone."},
+    {name: "Push (STR DC " + dc + ")", text: "Push: STR save DC " + dc + " or it's pushed up to 15 feet away."},
+    {name: "Addle", text: "Addle: no opportunity attacks until the start of its next turn."}];
+  if(classLevelOf(c, "Monk", "Way of the Open Hand") >= 3) return [
+    {name: "Prone (DEX DC " + dc + ")", text: "DEX save DC " + dc + " or it falls prone."},
+    {name: "Push (STR DC " + dc + ")", text: "STR save DC " + dc + " or it's pushed up to 15 feet away."},
+    {name: "No reactions", text: "It can't take reactions until the end of your next turn."}];
+  return [];
+}
+/* Elemental Attunement's push (2024 Warrior of the Elements 3), on an
+   unarmed hit of an elemental type while it's on: the STR save DC, or 0. */
+export function elementalPushDc(c){
+  return effectOn(c, "elemental_attunement") ? kiSaveDc(c) : 0;
 }
 /* Why an action can't be taken now, or "". */
 export function kiActionProblem(c, a){

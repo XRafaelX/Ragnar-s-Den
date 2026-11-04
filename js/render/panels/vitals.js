@@ -10,6 +10,7 @@ import { restoreCompanions, wildCompanionHours, summonWildCompanion } from "../.
 import { showActionToast } from "../../ui/toast.js";
 import { WILD_SURGES } from "../../data/effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
+import { rollAttack } from "./sheet-rolls.js";
 import { channelPicker, layOnHandsRow } from "./paladin.js";
 import { interventionRow, forgePicker } from "./cleric.js";
 import { gunslingerResourceRow } from "./gunslinger.js";
@@ -1205,6 +1206,8 @@ function kiPicker(c){
         if(r.total > (Number(c.hp.temp)||0)){ c.hp.temp = r.total; save(); renderAll(); }
       }});
       else if(a.roll) performRoll(a.roll.die, a.roll.qty, a.roll.bonus, "none", a.roll.label);
+      // (A caught missile thrown back: an attack, its damage offered on a hit.)
+      else if(a.attack) rollAttack(c, a.attack.bonus, "none", a.attack.hit.label + ": Attack", Object.assign({}, a.attack.hit));
     }}));
   return wrap;
 }
