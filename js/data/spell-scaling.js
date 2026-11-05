@@ -384,3 +384,96 @@ export var SPELL_SCALING = {
   "Elminster's Effulgent Spheres": { per: "one more sphere",
     at: function(k){ return (6 + k) + " spheres"; } }
 };
+
+/* ---- The 2024 Player's Handbook's spells ----
+   How a spell grows when its 2024 version (js/data/spells-2024.js) grows
+   differently, swapped in with the spell for a character on the 2024
+   rules (js/core/spell-edition.js). null: it doesn't grow in 2024 (Sleep,
+   Color Spray). Checked against the book's Cantrip Upgrade and Using a
+   Higher-Level Spell Slot texts, level by level (from 2026-11-05). */
+export var SPELL_SCALING_2024 = {
+  /* ---- Cantrips ---- */
+  "Chill Touch": cantrip(10, "necrotic damage"),
+  "Shillelagh": { at: function(n){ return "a " + ["d8", "d10", "d12", "2d6"][n-1] + " damage die"; } },
+  "Sorcerous Burst": cantrip(8, "damage of the chosen type"),
+  "Spare the Dying": { at: function(n){ return "a range of " + (15 * Math.pow(2, n-1)) + " feet"; } },
+  "Starry Wisp": cantrip(8, "radiant damage"),
+  "True Strike": { at: function(n){ return n > 1 ? "+" + (n-1) + "d6 radiant damage on the hit" : "the weapon's damage"; } },
+  "Vicious Mockery": cantrip(6, "psychic damage"),
+  /* ---- 1st level ---- */
+  "Color Spray": null,
+  "Sleep": null,
+  "Cure Wounds": { per: "+2d8 healing",
+    at: function(k){ return (2 + 2*k) + "d8 + your spellcasting modifier hit points"; } },
+  "Healing Word": { per: "+2d4 healing",
+    at: function(k){ return (2 + 2*k) + "d4 + your spellcasting modifier hit points"; } },
+  "Divine Smite": { per: "+1d8 radiant damage",
+    at: function(k){ return (2 + k) + "d8 radiant damage, or " + (3 + k) + "d8 against a fiend or undead"; } },
+  "False Life": { per: "+5 temporary hit points",
+    at: function(k){ return "2d4 + " + (4 + 5*k) + " temporary hit points"; } },
+  "Hail of Thorns": dmg(1, 10, 1, "piercing damage"),
+  "Hex": steps("lasts up to 4 hours with a 2nd-level slot, 8 hours with 3rd or 4th, 24 hours with 5th or higher",
+    "lasts up to 1 hour", [[5, "lasts up to 24 hours"], [3, "lasts up to 8 hours"], [2, "lasts up to 4 hours"]]),
+  "Inflict Wounds": dmg(2, 10, 1, "necrotic damage"),
+  "Jump": targets(1, "creature", "creatures"),
+  "Searing Smite": { per: "+1d6 fire damage, on the hit and each turn",
+    at: function(k){ return (1 + k) + "d6 fire damage on the hit, then " + (1 + k) + "d6 each turn"; } },
+  "Tasha's Hideous Laughter": targets(1, "creature", "creatures"),
+  "Thunderous Smite": dmg(2, 6, 1, "thunder damage"),
+  "Witch Bolt": { per: "+1d12 lightning damage on the first hit",
+    at: function(k){ return (2 + k) + "d12 lightning damage on the first hit, then 1d12 each turn"; } },
+  "Wrathful Smite": dmg(1, 6, 1, "necrotic damage"),
+  /* ---- 2nd level ---- */
+  "Arcane Vigor": { per: "one more Hit Die to roll",
+    at: function(k){ return "up to " + (2 + k) + " Hit Dice"; } },
+  "Find Steed": { per: "a stronger steed",
+    at: function(k, slot){ return "a steed of spell level " + slot; } },
+  "Flame Blade": { per: "+1d6 fire damage",
+    at: function(k){ return (3 + k) + "d6 + your spellcasting modifier fire damage"; } },
+  "Magic Weapon": steps("+2 with a 3rd- to 5th-level slot, +3 with 6th or higher", "+1", [[6, "+3"], [3, "+2"]]),
+  "Shining Smite": dmg(2, 6, 1, "radiant damage"),
+  "Spider Climb": targets(1, "creature", "creatures"),
+  "Spiritual Weapon": { per: "+1d8 force damage",
+    at: function(k){ return (1 + k) + "d8 + your spellcasting modifier force damage"; } },
+  /* ---- 3rd level ---- */
+  "Blinding Smite": dmg(3, 8, 1, "radiant damage"),
+  "Conjure Animals": dmg(3, 10, 1, "slashing damage"),
+  "Conjure Barrage": dmg(5, 8, 1, "force damage"),
+  "Counterspell": null,
+  "Gaseous Form": targets(1, "creature", "creatures"),
+  "Hunger of Hadar": { per: "+1d6 cold or acid damage (your choice)",
+    at: function(k){ return "2d6 cold and 2d6 acid damage, with " + k + "d6 more on the one you choose"; } },
+  "Major Image": steps("with a 4th-level slot or higher, it lasts until dispelled, with no concentration", "concentration, up to 10 minutes", [[4, "lasts until dispelled, with no concentration"]]),
+  "Mass Healing Word": { per: "+1d4 healing",
+    at: function(k){ return (2 + k) + "d4 + your spellcasting modifier hit points"; } },
+  /* ---- 4th level ---- */
+  "Conjure Minor Elementals": dmg(2, 8, 1, "extra damage"),
+  "Conjure Woodland Beings": dmg(5, 8, 1, "force damage"),
+  "Freedom of Movement": targets(1, "creature", "creatures"),
+  "Giant Insect": { per: "a stronger insect",
+    at: function(k, slot){ return "an insect of spell level " + slot; } },
+  "Grasping Vine": targets(1, "creature grappled", "creatures grappled"),
+  "Ice Storm": { per: "+1d10 bludgeoning damage",
+    at: function(k){ return (2 + k) + "d10 bludgeoning and 4d6 cold damage"; } },
+  "Staggering Smite": dmg(4, 6, 1, "psychic damage"),
+  /* ---- 5th level ---- */
+  "Animate Objects": { per: "+1d4 slam damage (+1d6 for a Large object, +1d12 for a Huge one)",
+    at: function(k){ return "+" + k + "d4 slam damage (+" + k + "d6 for a Large object, +" + k + "d12 for a Huge one)"; } },
+  "Bigby's Hand": { per: "+2d8 to the fist and +2d6 to the crush",
+    at: function(k){ return (5 + 2*k) + "d8 force damage from the fist, " + (4 + 2*k) + "d6 + your spellcasting modifier from the crush"; } },
+  "Conjure Elemental": dmg(8, 8, 1, "damage of the spirit's type"),
+  "Flame Strike": { per: "+1d6 fire and +1d6 radiant damage",
+    at: function(k){ return (5 + k) + "d6 fire and " + (5 + k) + "d6 radiant damage"; } },
+  "Jallarzi's Storm of Radiance": { per: "+1d10 radiant and +1d10 thunder damage",
+    at: function(k){ return (2 + k) + "d10 radiant and " + (2 + k) + "d10 thunder damage"; } },
+  "Mass Cure Wounds": { per: "+1d8 healing",
+    at: function(k){ return (5 + k) + "d8 + your spellcasting modifier hit points"; } },
+  "Summon Dragon": { per: "a stronger spirit",
+    at: function(k, slot){ return "a dragon spirit of spell level " + slot; } },
+  /* ---- 6th and 7th level ---- */
+  "Circle of Death": dmg(8, 8, 2, "necrotic damage"),
+  "Conjure Fey": { per: "+1d12 psychic damage",
+    at: function(k){ return (3 + k) + "d12 + your spellcasting modifier psychic damage"; } },
+  "Conjure Celestial": { per: "+1d12 healing and radiant damage",
+    at: function(k){ return (4 + k) + "d12 + your spellcasting modifier hit points, or " + (6 + k) + "d12 radiant damage"; } }
+};

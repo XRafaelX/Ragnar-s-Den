@@ -3,6 +3,7 @@
    dialog is closed). It is set only here; the step screens and the apply
    code read it and change its fields. This module also says which steps
    apply, what each still needs before Next, and draws the dialog shell. */
+import { useSpellsOf } from "../core/spell-edition.js";
 import { ABILITIES, SKILLS, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASS_PROGRESSION, MAX_LEVEL, XP_THRESHOLDS } from "../data/progression.js";
 import { mod, ce, escapeHtml, totalLevel, classFeaturesGainedAt, classVariantSwaps, syncTashaAdditions, wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFeat, raceHpPerLevel, classSpellChoices, spellHeldBy } from "../core/helpers.js";
@@ -556,6 +557,7 @@ export function validate(id){
 
 /* ---- Open / navigate ---- */
 export function openLevelUp(c){
+  useSpellsOf(c); // (its spells: 2014, or the 2024 rules' versions)
   if(totalLevel(c) >= MAX_LEVEL){
     showActionToast("Level "+MAX_LEVEL+" is the highest level.", true);
     return;

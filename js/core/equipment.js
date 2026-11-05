@@ -6,8 +6,9 @@ import { RACE_DATA } from "../data/race-data.js";
 import { WEAPON_DATA, weaponDataOf, baseWeaponName, hasHeavyProperty } from "../data/weapons.js";
 import { featProficiencies, featDef, featSpellEntries, featCastAbility } from "./feat-picks.js";
 import { characterPickedProfs, characterChoices, raceProficiencies, backgroundProficiencies, overlapTools } from "./class-picks.js";
-import { mod, profBonus, parseDiceNotation, combineRolls } from "./basics.js";
+import { mod, profBonus, parseDiceNotation, combineRolls, totalLevel } from "./basics.js";
 import { weaponMastery } from "./weapon-mastery.js";
+import { characterSpellEdition } from "./spell-edition.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
 import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024 } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
@@ -187,8 +188,9 @@ export function weaponDamageDice(c, item){
   if(!own) return null;
   // Reaper: a scythe swung with Dexterity deals 1d6.
   if(reaperDex(c, item)) return {qty: 1, die: 6, martialArts: false, reaper: true};
-  // Shillelagh: the weapon's damage die becomes a d8.
-  if(own.qty===1 && own.die < 8 && shillelaghOn(c, item)) own = {qty: 1, die: 8};
+  // Shillelagh: the weapon's damage die becomes a d8 (the 2024 spell's
+  // grows: a d10 at level 5, a d12 at 11, 2d6 at 17).
+  if(own.qty===1 && own.die < 8 && shillelaghOn(c, item)) own = shillelaghDie(c);
   if(martialArtsApplies(c, item)){
     var ma = martialArtsDie(c);
     if(ma * 1 > own.qty * own.die) return {qty: 1, die: ma, martialArts: true};
@@ -281,6 +283,12 @@ export function shillelaghAbilities(c){
     if(ab && out.indexOf(ab)===-1) out.push(ab);
   });
   return out;
+}
+/* Shillelagh's damage die: a d8, or for the 2024 spell by character level. */
+export function shillelaghDie(c){
+  if(characterSpellEdition(c)!=="2024") return {qty: 1, die: 8};
+  var lv = totalLevel(c);
+  return lv >= 17 ? {qty: 2, die: 6} : {qty: 1, die: lv >= 11 ? 12 : lv >= 5 ? 10 : 8};
 }
 /* A club or quarterstaff the character can cast Shillelagh on. */
 export function canShillelagh(c, item){

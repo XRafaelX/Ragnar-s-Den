@@ -1,3 +1,4 @@
+import { setSpellEdition } from "../core/spell-edition.js";
 import { ABILITIES, SKILLS, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES, FIGHTING_STYLES } from "../data/classes.js";
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
@@ -1130,6 +1131,8 @@ export function refreshWizardProgress(){
 }
 
 export function renderWizard(){
+  // The new character's spells: the 2024 versions under the 2024 rules or with a 2024 class.
+  setSpellEdition(wizardRules2024() || wizardEdition()==="2024" ? "2024" : "2014");
   var overlay = document.getElementById("wizard-overlay");
   var keepScroll = wizardScrollSave("create:"+wizardState.step);
   overlay.innerHTML = "";

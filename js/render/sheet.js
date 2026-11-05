@@ -1,3 +1,4 @@
+import { useSpellsOf } from "../core/spell-edition.js";
 import { state, getActive, save } from "../core/state.js";
 import { hasSpellsTab, fmtMod, profBonus, unseenUnlockCount } from "../core/helpers.js";
 import { renderSidebar } from "./sidebar.js";
@@ -92,6 +93,8 @@ function setupTabsEdgeFade(tabsBar){
 export function renderAll(){
   renderSidebar();
   var c = getActive();
+  // The spells this character reads: 2014, or the 2024 rules' versions.
+  useSpellsOf(c);
   applyBackdrop(c);
   var empty = document.getElementById("empty-state");
   var sheet = document.getElementById("sheet");
