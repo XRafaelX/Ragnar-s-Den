@@ -103,21 +103,21 @@ export function renderFeatPicks(def, picks, ctx, onChange){
   if(def.ability && def.ability.length){
     var choose = def.ability.length > 1;
     box.appendChild(label(choose
-      ? (def.saveProf ? "Raise one ability by 1 and gain proficiency in its saving throws" : "Raise one ability by 1 (max 20)")
-      : "Raises " + ABILITIES.find(function(a){ return a[0]===def.ability[0]; })[1] + " by 1 (max 20)"));
+      ? (def.saveProf ? "Raise one ability by 1 and gain proficiency in its saving throws" : "Raise one ability by 1 (max " + (def.abilityMax || 20) + ")")
+      : "Raises " + ABILITIES.find(function(a){ return a[0]===def.ability[0]; })[1] + " by 1 (max " + (def.abilityMax || 20) + ")"));
     var grid = ce("div", "rt-ab-grid fp-ab-grid");
     // Two or three options stay tile-sized; all six use the wizard's grid
     // (three columns on phones).
     if(def.ability.length < 6) grid.style.gridTemplateColumns = "repeat(" + def.ability.length + ", minmax(0, 110px))";
     ABILITIES.filter(function(a){ return def.ability.indexOf(a[0])!==-1; }).forEach(function(a){
       var key = a[0], base = Number(ctx.abilities && ctx.abilities[key])||10;
-      var isOn = picks.ability===key, atMax = base>=20;
+      var isOn = picks.ability===key, atMax = base>=(def.abilityMax || 20);
       var tile = document.createElement("button");
       tile.type = "button";
       tile.className = "rt-ab" + (isOn ? " on" : "") + (atMax && !isOn ? " off" : "");
       tile.disabled = !choose;
       tile.setAttribute("aria-pressed", isOn ? "true" : "false");
-      tile.setAttribute("aria-label", a[1] + " " + base + (atMax ? ", already 20" : ", raise to " + (base + 1)));
+      tile.setAttribute("aria-label", a[1] + " " + base + (atMax ? ", already " + (def.abilityMax || 20) : ", raise to " + (base + 1)));
       tile.innerHTML = "<span class='rt-ab-lbl'>" + a[1].slice(0,3).toUpperCase() + "</span>" +
         "<span class='rt-ab-score'>" + (isOn && !atMax ? "<s>" + base + "</s> " + (base + 1) : base) + "</span>" +
         "<span class='rt-ab-mod'>" + (atMax ? "max" : isOn ? "+1" : fmtMod(mod(base))) + "</span>";
@@ -143,7 +143,8 @@ export function renderFeatPicks(def, picks, ctx, onChange){
 
   var n = def.skillsOrTools || def.skills || 0;
   if(n){
-    box.appendChild(label(def.skillOptions ? "Gain proficiency in " + def.skillOptions.join(" or ")
+    box.appendChild(label(def.orExpertise ? "Gain proficiency in " + def.skillOptions.join(", ").replace(/, ([^,]+)$/, " or $1") + ", or expertise in one you know"
+      : def.skillOptions ? "Gain proficiency in " + def.skillOptions.join(" or ")
       : def.skillsOrTools ? "Gain proficiency in " + n + " skills or tools" : "Gain proficiency in " + (n > 1 ? n + " skills" : "a skill")));
     var groups = def.skillOptions ? {"": def.skillOptions} : def.skillsOrTools ? Object.assign({"Skills": SKILL_NAMES}, TOOL_GROUPS) : {"": SKILL_NAMES};
     for(var i = 0; i < n; i++) (function(i){
@@ -153,13 +154,15 @@ export function renderFeatPicks(def, picks, ctx, onChange){
         groups: groups, value: picks.skills[i] || "", search: def.skillOptions ? false : undefined,
         reasonFor: function(v){
           var e = ctx.skillProfs && ctx.skillProfs[v];
+          // (Keen Mind, Observant: a known skill takes expertise instead.)
+          if(def.orExpertise) return e && e.expertise ? "expertise" : "";
           if(e && e.prof) return "known";
           return v!==picks.skills[i] && picks.skills.indexOf(v)!==-1 ? "picked" : "";
         },
         onPick: function(v){
           picks.skills[i] = v;
           // An expertise pick that leaned on a replaced skill no longer fits.
-          picks.expertise = picks.expertise.filter(function(x){ return !expertiseReason(ctx, picks, x); });
+          picks.expertise = picks.expertise.filter(function(x){ return !expertiseReason(ctx, picks, x, def); });
           onChange();
         }
       })));
@@ -170,14 +173,30 @@ export function renderFeatPicks(def, picks, ctx, onChange){
     if(j===0) box.appendChild(label("Expertise: double your proficiency bonus in one skill you're proficient in"));
     box.appendChild(field(themedPicker({
       key: "feat:" + def.name + ":expertise:" + j, ariaLabel: def.name + " expertise",
-      placeholder: "Choose a skill", groups: {"": expertiseOptions(ctx, picks)}, value: picks.expertise[j] || "",
+      placeholder: "Choose a skill", groups: {"": expertiseOptions(ctx, picks, def)}, value: picks.expertise[j] || "",
       reasonFor: function(v){
         if(v!==picks.expertise[j] && picks.expertise.indexOf(v)!==-1) return "picked";
-        return expertiseReason(ctx, picks, v)==="expert" ? "expertise" : "";
+        return expertiseReason(ctx, picks, v, def)==="expert" ? "expertise" : "";
       },
       onPick: function(v){ picks.expertise[j] = v; onChange(); }
     })));
   })(j);
+
+  // Boon of Energy Resistance: two damage types (kept in picks.options).
+  if(def.damagePicks){
+    if(!picks.options) picks.options = [];
+    var dp = def.damagePicks;
+    box.appendChild(label("Gain resistance to " + dp.count + " damage types (you can change them after a long rest)"));
+    for(var d = 0; d < dp.count; d++) (function(d){
+      box.appendChild(field(themedPicker({
+        key: "feat:" + def.name + ":damage:" + d, ariaLabel: def.name + " damage type " + (d + 1), placeholder: "Choose a damage type",
+        groups: {"": dp.options}, value: picks.options[d] || "", search: false,
+        reasonFor: function(v){ return v!==picks.options[d] && picks.options.indexOf(v)!==-1 ? "picked" : ""; },
+        onPick: function(v){ picks.options[d] = v; onChange(); }
+      })));
+    })(d);
+  }
+  if(def.allSkills) box.appendChild(textNote("You gain proficiency in every skill."));
 
   // Tools of its own (Prodigy; Artificer Initiate's artisan's tools).
   if(def.toolPicks){

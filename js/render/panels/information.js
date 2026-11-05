@@ -7,7 +7,7 @@ import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, backgroundFeatures } from ".
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
 import { classFeatureList, classProficiencies, classVariants, variantFor, syncTashaAdditions, escapeHtml, raceTraitFeatures, characterToolProfs, isMonk2024, setMonkEdition } from "../../core/helpers.js";
 import { featProficiencies, backgroundFeatGrant, backgroundFeatLabel, campaignFeatMissing, originFeatMissing } from "../../core/feat-picks.js";
-import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, MONK_2024_CARD, MONK_2024_OUTCOME, RULES_2024_CARD } from "../../ui/dlc-shelf.js";
+import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, MONK_2024_CARD, MONK_2024_OUTCOME, RULES_2024_CARD, rules2024Lock } from "../../ui/dlc-shelf.js";
 import { hasGunslingerClass } from "../../data/weapons.js";
 import { characterPickedProfs, raceProficiencies, backgroundProficiencies, syncClassPicks } from "../../core/class-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
@@ -16,6 +16,8 @@ import { playAdd, playDelete } from "../../ui/sound.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { renderPersonalityCard } from "./personality.js";
 import { CAMPAIGN_FEATS } from "../../data/feats.js";
+import { RACE_DATA } from "../../data/race-data.js";
+import { usesRules2024 } from "../../core/feats-2024.js";
 
 /* ---- Information panel ----
    A calm "About the character" summary. Proficiencies & Languages are
@@ -369,7 +371,7 @@ function optionalRulesCard(c){
     onToggle: function(open){ rulesOpen[c.id] = open; },
     lead: "Extra rules from other books. Your DM decides whether your table uses them: tap one to turn it on, and tap it again to turn it off.",
     sub: function(){
-      var on = (c.tashaOptional ? ["Tasha's optional class features"] : []).concat(c.rules2024 ? ["the 2024 character rules"] : []).concat(CAMPAIGN_FEATS[c.campaign] ? [c.campaign] : [])
+      var on = (c.tashaOptional ? ["Tasha's optional class features"] : []).concat(usesRules2024(c) ? ["the 2024 character rules"] : []).concat(CAMPAIGN_FEATS[c.campaign] ? [c.campaign] : [])
         .concat(gunslinger && c.gunMisfire ? ["firearm misfires"] : []).concat(isMonk2024(c) ? ["the 2024 monk"] : []);
       return on.length ? "Using " + on.join(" and ") : "Tasha's Cauldron, the 2024 character rules" + (monk ? ", the campaign books and the 2024 monk" : " and the campaign books") + " are in here. None are in use.";
     },
@@ -384,6 +386,8 @@ function optionalRulesCard(c){
         return def;
       })),
     isOn: function(k){ return k==="tasha" ? !!c.tashaOptional : k==="rules2024" ? !!c.rules2024 : k==="gunMisfire" ? !!c.gunMisfire : k==="monk2024" ? isMonk2024(c) : c.campaign===k; },
+    // (A 2024 species or background holds the 2024 rules on.)
+    locked: function(k){ return k==="rules2024" ? rules2024Lock((RACE_DATA[c.race] || {}).edition, (BACKGROUND_INFO[c.background] || {}).edition) : ""; },
     onTap: function(k){
       // Steady Aim and Primal Knowledge come and go with it (and the skill picked for that).
       if(k==="tasha"){ c.tashaOptional = !c.tashaOptional; if(syncTashaAdditions(c)) syncClassPicks(c); }
@@ -405,7 +409,7 @@ function optionalRulesCard(c){
           (additions.length ? " You also gain " + escapeHtml(additions.map(function(v){ return v.name; }).join(" and ")) + "." : ""));
       }
       // (A sheet's scores and languages were set when it was made: only the feat follows the switch.)
-      if(c.rules2024){
+      if(usesRules2024(c)){
         var originOwed = originFeatMissing(c);
         lines.push("<b>2024 rules:</b> " + (originOwed ? "your Origin feat is waiting on the Features tab."
           : backgroundFeatGrant(c.background) ? "your " + escapeHtml(c.background) + " background already comes with its own feat."

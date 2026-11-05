@@ -842,6 +842,32 @@ export var FEAT_RESOURCES = {
       hint:"Spend one to roll an extra d20 on an attack roll, ability check or saving throw, or on an attack against you. You choose which d20 counts."}
   ],
   // The 2024 feat: as many points as the proficiency bonus.
+  // The 2024 General feats and Epic Boons (Player's Handbook 2024, pp.
+  // 202-211, checked against the book 2026-11-05).
+  "Chef (2024)": [
+    {id:"bolstering_treats", name:"Bolstering Treats", max:profBonusUses(), reset:always("long"),
+      hint:"Treats you cooked after a long rest or an hour's work. Eating one is a bonus action for temporary hit points equal to your proficiency bonus."}
+  ],
+  "Mage Slayer (2024)": [
+    {id:"guarded_mind", name:"Guarded Mind", max:always(1), reset:always("short"),
+      hint:"When you fail an Intelligence, Wisdom or Charisma save, succeed instead."}
+  ],
+  "Ritual Caster (2024)": [
+    {id:"quick_ritual", name:"Quick Ritual", max:always(1), reset:always("long"),
+      hint:"Cast a prepared ritual spell at its normal casting time, without a spell slot."}
+  ],
+  "Boon of Fate": [
+    {id:"improve_fate", name:"Improve Fate", max:always(1), reset:always("short"), initiativeRegain:true, initiativeAmount:1,
+      roll:{qty:2, die:4, button:"Roll", label:"Improve Fate: bonus or penalty to the d20"},
+      hint:"After a d20 test by you or a creature within 60 feet, add or take away 2d4. Back when you roll initiative."}
+  ],
+  "Boon of Recovery": [
+    {id:"last_stand", name:"Last Stand", max:always(1), reset:always("long"),
+      hint:"When you would drop to 0 HP, drop to 1 instead and regain half your hit point maximum."},
+    {id:"recover_vitality", name:"Recover Vitality", max:always(10), reset:always("long"), pool:true,
+      roll:{die:10, heal:true, button:"Heal", label:"Recover Vitality: hit points regained"},
+      hint:"Bonus action: spend dice from the pool and regain the hit points rolled."}
+  ],
   "Lucky (2024)": [
     {id:"luck_points_2024", name:"Luck Points", max:profBonusUses(), reset:always("long"),
       hint:"Spend one for advantage on a d20 roll, or to give disadvantage to an attack roll against you."}
@@ -1099,5 +1125,50 @@ export var RACE_RESOURCES = {
   "Reborn": [
     {id:"knowledge_past_life", name:"Knowledge from a Past Life", max:profBonusUses(), reset:always("long"),
       hint:"Add a d6 to a skill check after seeing the d20."}
+  ],
+  /* The 2024 species (Player's Handbook 2024, pp. 186-197, checked
+     against the book 2026-11-05). A roll's qtyPb rolls as many dice as
+     the proficiency bonus. A dragonborn's breath is on Inventory. */
+  "Aasimar (2024)": [
+    {id:"healing_hands_2024", name:"Healing Hands", max:ONCE, reset:always("long"),
+      roll:{die:4, qtyPb:true, button:"Heal", label:"Healing Hands: hit points regained"},
+      hint:"Action: touch a creature. It regains the hit points you roll."},
+    {id:"celestial_revelation_2024", name:"Celestial Revelation", level:3, max:ONCE, reset:always("long"),
+      hint:function(lv, m){ return "Bonus action: transform for 1 minute. Once a turn, " + m.pb + " extra damage to one target."; }}
+  ],
+  "Dragonborn (2024)": [
+    {id:"draconic_flight", name:"Draconic Flight", level:5, max:ONCE, reset:always("long"),
+      hint:"Bonus action: spectral wings for 10 minutes, flying at your speed."}
+  ],
+  "Dwarf (2024)": [
+    {id:"stonecunning", name:"Stonecunning", max:profBonusUses(), reset:always("long"),
+      hint:"Bonus action: tremorsense 60 ft for 10 minutes, while on or touching stone."}
+  ],
+  "Goliath (2024)": GIANT_BOON_USES([
+    ["Cloud's Jaunt", "Bonus action: teleport up to 30 ft to a space you can see."],
+    ["Fire's Burn", "When you hit with an attack roll: 1d10 extra fire damage.", {die:10, label:"Fire's Burn (fire damage)"}],
+    ["Frost's Chill", "When you hit with an attack roll: 1d6 extra cold damage, and its speed drops 10 ft until your next turn.", {die:6, label:"Frost's Chill (cold damage)"}],
+    ["Hill's Tumble", "When you hit a Large or smaller creature with an attack roll: knock it prone."],
+    ["Stone's Endurance", "Reaction when you take damage: reduce it by 1d12 + your CON modifier.", {die:12, bonusAbility:"con", label:"Stone's Endurance: damage reduced"}],
+    ["Storm's Thunder", "Reaction when a creature within 60 ft damages you: 1d8 thunder damage to it.", {die:8, label:"Storm's Thunder (thunder damage)"}]
+  ]).concat([
+    {id:"large_form", name:"Large Form", level:5, max:ONCE, reset:always("long"),
+      hint:"Bonus action: become Large for 10 minutes, with advantage on STR checks and 10 ft more speed."}
+  ]),
+  "Orc (2024)": [
+    {id:"adrenaline_rush", name:"Adrenaline Rush", max:profBonusUses(), reset:always("short"),
+      hint:function(lv, m){ return "Bonus action: Dash, and gain " + m.pb + " temporary hit points."; }},
+    {id:"relentless_endurance_2024", name:"Relentless Endurance", max:ONCE, reset:always("long"),
+      hint:"When you drop to 0 HP but aren't killed outright, drop to 1 HP instead."}
   ]
 };
+/* A 2024 goliath's Giant Ancestry: the boon picked, proficiency bonus
+   times a long rest, with a roll button when it has dice. */
+function GIANT_BOON_USES(rows){
+  return rows.map(function(r){
+    var out = {id:"giant_" + r[0].toLowerCase().replace(/'/g, "").replace(/[^a-z]+/g, "_").replace(/_$/, ""), name:r[0], choice:{id:"giantAncestry", value:r[0]},
+      max:profBonusUses(), reset:always("long"), hint:r[1]};
+    if(r[2]) out.roll = Object.assign({button:"Roll"}, r[2]);
+    return out;
+  });
+}

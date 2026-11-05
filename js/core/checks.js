@@ -15,7 +15,7 @@ import { wildForm, wildShapeSkill, totemSpirit } from "./druid.js";
 import { optionEffects } from "./class-options.js";
 import { weaponAbility, armorPenalty, isRangedWeapon, isHeavyWeapon } from "./equipment.js";
 import { raceSize } from "./class-picks.js";
-import { featDef } from "./feat-picks.js";
+import { featDef, usesRules2024 } from "./feat-picks.js";
 import { hasFeat } from "./vitals.js";
 import { nextCheckAdvantage } from "./magic-items.js";
 import { infusionInitiative } from "./infusion-effects.js";
@@ -190,6 +190,8 @@ export function advantagesFor(c){
     out.push({name: "Soul trinket", on: "save", abilities: ["con"]});
   // Giant's Might (Rune Knight): advantage on Strength checks and saves while it's on.
   if(effectOn(c, "giants_might")) out.push({name: "Giant's Might", on: "save", abilities: ["str"]}, {name: "Giant's Might", on: "check", abilities: ["str"]});
+  // Large Form (a 2024 goliath's): advantage on Strength checks.
+  if(effectOn(c, "large_form")) out.push({name: "Large Form", on: "check", abilities: ["str"]});
   if(effectOn(c, "watchers_will")) out.push({name: "Watcher's Will", on: "save", abilities: ["int", "wis", "cha"]});
   if(effectOn(c, "exalted_champion")) out.push({name: "Exalted Champion", on: "save", abilities: ["wis"]});
   if(effectOn(c, "living_legend")) out.push({name: "Living Legend", on: "check", abilities: ["cha"]});
@@ -252,6 +254,18 @@ export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex
 /* A weapon attack: disadvantage in armor you aren't proficient with when
    it uses STR or DEX (not INT from Battle Ready or CHA from Hex Warrior),
    and what conditions do to attack rolls. */
+/* A heavy weapon's disadvantage, or null. The 2014 rules: too big for a
+   Small or Tiny creature. The 2024 rules (Player's Handbook 2024, p. 213):
+   a heavy melee weapon needs Strength 13, a heavy ranged one Dexterity 13,
+   whatever your size. */
+export function heavyWeaponPenalty(c, item){
+  if(!isHeavyWeapon(item)) return null;
+  if(usesRules2024(c) || (c.classes||[]).some(function(cl){ return cl.edition==="2024"; })){
+    var ranged = isRangedWeapon(item), key = ranged ? "dex" : "str";
+    return (Number(abilityScore(c, key))||10) < 13 ? {mode: "dis", reason: "Heavy weapon: " + (ranged ? "Dexterity" : "Strength") + " under 13"} : null;
+  }
+  return /^(Small|Tiny)$/.test(raceSize(c)) ? {mode: "dis", reason: "Heavy weapon: you're " + raceSize(c)} : null;
+}
 export function attackRollMode(c, item){
   // Only when every best choice is STR or DEX (on a tie with INT from
   // Battle Ready, the player attacks with INT and avoids it).
@@ -261,8 +275,7 @@ export function attackRollMode(c, item){
   var reckless = effectOn(c, "reckless_attack") && !isRangedWeapon(item) && keys.indexOf("str")!==-1 ? {mode: "adv", reason: "Reckless Attack"} : null;
   // Shadow Step: advantage on the next melee attack.
   var step = effectOn(c, "shadow_step") && !isRangedWeapon(item) ? {mode: "adv", reason: "Shadow Step"} : null;
-  // A heavy weapon is too big for a Small or Tiny creature to use well.
-  var bulky = isHeavyWeapon(item) && /^(Small|Tiny)$/.test(raceSize(c)) ? {mode: "dis", reason: "Heavy weapon: you're " + raceSize(c)} : null;
+  var bulky = heavyWeaponPenalty(c, item);
   return combineRolls([physical ? armorPenalty(c, "str") : null, reckless, step, bulky, weaponAttackEffect(c)].concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
 }
 /* An attack with no weapon card (a spell attack, the astral arms): only

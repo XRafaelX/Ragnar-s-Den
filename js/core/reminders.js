@@ -74,10 +74,11 @@ export function characterReminders(c){
     return fs ? Math.min(lv, fs.level) : lv;
   }, 99);
   if(styleLv===99) styleLv = 1;
+  // (A 2024 Fighting Style feat's feature carries its own wording.)
   styleFeatures(c).forEach(function(f){
-    var def = styleDef(f.fightingStyle), r = def && def.remind;
+    var def = styleDef(f.fightingStyle), r = f.remind || (def && def.remind);
     if(!r || out.some(function(x){ return x.name===f.fightingStyle; })) return;
-    out.push({name: f.fightingStyle, when: r.when, line: r.line, text: def.text, level: styleLv, source: "Fighting Style"});
+    out.push({name: f.fightingStyle, when: r.when, line: r.line, text: f.remind ? f.text : def.text, level: styleLv, source: "Fighting Style"});
   });
   // Eldritch invocations, at the warlock level each needs (2 at the least).
   var invs = [];

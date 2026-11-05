@@ -32,7 +32,7 @@ test("race spell data: every spell is in the catalog, levels and uses make sense
     for(const x of spec.list){
       const e = typeof x === "string" ? { name: x } : x;
       assert.ok(SPELL_DATA[catalogSpellName(e.name)], where + ": " + e.name);
-      assert.ok(!e.use || ["known", "long", "short", "atwill"].includes(e.use), where + ": use " + e.use);
+      assert.ok(!e.use || ["known", "long", "short", "atwill", "pb"].includes(e.use), where + ": use " + e.use);
       assert.ok(!e.from || [3, 5].includes(e.from), where + ": from " + e.from);
       if(e.at) assert.ok(e.at > SPELL_DATA[catalogSpellName(e.name)].level, where + ": " + e.name + " at " + e.at);
     }

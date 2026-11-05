@@ -71,6 +71,8 @@ import { totalLevel } from "./basics.js";
                  "mastery" (still prepared as usual; Spell Mastery)
        ability   (spell) the ability it is cast with, for a class that
                  has none of its own (Giant's Power: "wis")
+       initial   (spell) what a slot never filled starts on (a 2024 High
+                 Elf's Prestidigitation, which can be swapped later)
        kindLabel, note  (spell) its tag and a line for the Spells tab
        id, options or groups, details, custom, noun  (choice) a pick from
                  a named list that the sheet only shows (a favored enemy,
@@ -433,6 +435,12 @@ export function fillSlots(def, slots, ctx){
       return o && !o.reason && all.indexOf(v)===n;
     }).slice(0, slot.count || 1);
     var openOpts = opts.filter(function(o){ return !o.reason; });
+    // A slot never filled starts on its `initial` pick (a High Elf's
+    // Prestidigitation). It stays unfilled (null) while it asks nothing yet.
+    if(slot.initial && slots[i]==null){
+      if(!openOpts.length){ slots[i] = null; return; }
+      if(openOpts.some(function(o){ return o.value===slot.initial; })) cur = [slot.initial];
+    }
     slots[i] = !slot.optional && openOpts.length <= (slot.count || 1) ? openOpts.map(function(o){ return o.value; }) : cur;
   });
   slots.length = (def.pick||[]).length;

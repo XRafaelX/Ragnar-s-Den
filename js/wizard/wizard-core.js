@@ -417,8 +417,14 @@ export function wizardBackground2024(){
   var info = wizardState && BACKGROUND_INFO[wizardState.background];
   return info && info.edition==="2024" && info.abilities ? info : null;
 }
-/* Whether the 2024 character rules apply: switched on, or a 2024 background. */
-export function wizardRules2024(){ return !!(wizardState && (wizardState.rules2024 || wizardBackground2024())); }
+/* A 2024 species picked (Player's Handbook 2024): its data, or null. */
+export function wizardRace2024(){
+  var d = wizardState && RACE_DATA[wizardState.race];
+  return d && d.edition==="2024" ? d : null;
+}
+/* Whether the 2024 character rules apply: switched on, a 2024 background
+   or a 2024 species. */
+export function wizardRules2024(){ return !!(wizardState && (wizardState.rules2024 || wizardBackground2024() || wizardRace2024())); }
 /* Which scores the background raises: {abilities, any} (any: an older
    background under the 2024 rules, any of the six), or null. */
 export function wizardBgScoreRule(){
@@ -426,7 +432,7 @@ export function wizardBgScoreRule(){
   if(!w || !w.background) return null;
   var info = wizardBackground2024();
   if(info) return {abilities: info.abilities.slice(), any: false};
-  return w.rules2024 ? {abilities: ALL_SCORES.slice(), any: true} : null;
+  return wizardRules2024() ? {abilities: ALL_SCORES.slice(), any: true} : null;
 }
 export function wizardBgAbilities(){
   var w = wizardState;
@@ -521,7 +527,7 @@ export function featPrereqReason(feat){
   var blocked = featRequiresReason(feat, {race: wizardState.race, size: sizePick && sizePick[0] && sizePick[0][0], level: 1, feats: [], classes: wizardState.classId ? [wizardState.classId] : []});
   if(blocked) return blocked;
   var bg = wizardBackgroundFeat();
-  if(bg && bg.def===feat && !feat.repeatable) return bg.campaign ? "it's your campaign feat" : "your background already gives it";
+  if(bg && bg.def===feat && !feat.repeatable) return bg.campaign ? "it's your campaign feat" : bg.origin ? "it's your background's Origin feat" : "your background already gives it";
   var req = feat.prerequisite || "None";
   if(req==="None") return "";
   var ab = finalAbilities({withoutFeat:true}), info = currentClassInfo() || {};
@@ -649,7 +655,7 @@ export function wizardBackgroundFeat(){
   var own = backgroundFeatGrant(w.background, w.bgFeatChoice);
   if(own) return own;
   // The 2024 character rules: an Origin feat of the player's choice.
-  var origin = w.rules2024 ? originFeatChoices(w.background) : [];
+  var origin = wizardRules2024() ? originFeatChoices(w.background) : [];
   if(origin.length) return {def: origin.indexOf(w.originFeat)!==-1 ? featDef(w.originFeat) : null, option: "", choices: origin, origin: true};
   var choices = campaignLevel1Feats(w.campaign, w.background);
   if(!choices.length) return null;

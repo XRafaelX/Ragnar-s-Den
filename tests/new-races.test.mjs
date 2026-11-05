@@ -39,7 +39,7 @@ test("every listed race has its data, and every race's choices, resources and la
     (RACE_LANGUAGES[r].fixed || []).forEach((l) => assert.ok(LANGUAGE_LIST.includes(l), r + ": language " + l));
     assert.ok(RACE_DATA[r].source && RACE_DATA[r].traits.length, r + ": source and traits");
   }
-  assert.equal(listed.length, 115);
+  assert.equal(listed.length, 125, "115 older races and the ten 2024 species");
   assert.equal(RACES["Plane Shift (Magic: The Gathering)"].length, 14);
   assert.deepEqual(RACES.Lineages, ["Custom Lineage", "Dhampir", "Hexblood", "Reborn"]);
   assert.equal(RACES["Dragonmarks (Eberron)"].length, 13);
@@ -116,7 +116,7 @@ test("Custom Lineage: the size is the player's, and Small struggles with heavy w
 
 test("every race that's Small or Medium asks, and the feats follow the size picked", () => {
   const choosers = Object.keys(RACE_DATA).filter((r) => RACE_DATA[r].size === "Small or Medium");
-  assert.deepEqual(choosers.sort(), ["Custom Lineage", "Dhampir", "Hadozee", "Harengon", "Hexblood", "Owlin", "Plasmoid", "Reborn", "Thri-kreen"]);
+  assert.deepEqual(choosers.sort(), ["Aasimar (2024)", "Custom Lineage", "Dhampir", "Hadozee", "Harengon", "Hexblood", "Human (2024)", "Owlin", "Plasmoid", "Reborn", "Thri-kreen", "Tiefling (2024)"]);
   choosers.forEach((r) => assert.ok(RACE_DATA[r].traits.some((t) => t.name === "Size" && t.profs.pick[0].id === "size"), r + " asks for a size"));
   const sized = (race, size) => makeChar(race, { racePicks: { profPicks: { "race:Size:pick": { slots: [[size]] } } } });
   assert.equal(CP.raceSize(sized("Dhampir", "Small")), "Small");

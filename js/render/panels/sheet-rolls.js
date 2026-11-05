@@ -1,5 +1,8 @@
 import { savageFollowUp, joinFollowUp, brawlerRerolls, hasBrawler2024, luckyChoice, luckyRoll } from "../../core/feats-2024.js";
 import { save } from "../../core/state.js";
+import { weaponMastery, toppleDc } from "../../core/weapon-mastery.js";
+import { weaponAbilityMod } from "../../core/equipment.js";
+import { WEAPON_DATA, baseWeaponName } from "../../data/weapons.js";
 import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, raceCheckD4, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud, isMonk2024, kiWord, openHandTechniques, elementalPushDc } from "../../core/helpers.js";
 import { flashOfGenius, artificerHitDice } from "../../core/artificer.js";
 import { openFlourishSheet } from "./bard.js";
@@ -352,7 +355,7 @@ function attackFollowUp(c, r, aim, hit, seen){
     if(critClone) critFollow.options.push(Object.assign(critClone, {keep: true}));
     var critNext = flurryNext(c, hit);
     if(critNext) critFollow.options.push(critNext);
-    critFollow.options = critFollow.options.concat(monkHitOptions(c, hit));
+    critFollow.options = critFollow.options.concat(monkHitOptions(c, hit), masteryOptions(c, hit, true));
     return critFollow;
   }
   // A natural 20 with no weapon card behind it (a spell attack) simply hits.
@@ -367,6 +370,8 @@ function attackFollowUp(c, r, aim, hit, seen){
     var next = flurryNext(c, hit);
     if(next) opts.splice(1, 0, next);
   }
+  // The weapon's mastery property (Topple, Graze, Cleave...).
+  opts = opts.concat(masteryOptions(c, hit, false));
   // Open Hand Technique and Elemental Attunement's push, after the strike's own buttons.
   var monkHits = monkHitOptions(c, hit);
   if(monkHits.length) Array.prototype.splice.apply(opts, [hit && hit.flurry ? (flurryNext(c, hit) ? 2 : 1) : 0, 0].concat(monkHits));
@@ -530,6 +535,40 @@ function flurryNext(c, hit){
       rollAttack(c, hit.attackBonus, hit.rollMode, "Flurry of Blows: strike " + n + " of " + of, Object.assign({}, hit, {flurry: {n: n, of: of}}));
       return {silent: true};
     }};
+}
+/* A weapon's mastery property in the tray (weapon mastery, Player's
+   Handbook 2024 p. 214), when the character can use it: the hit ones say
+   what happens (Topple with its DC), Graze on a miss deals the ability
+   modifier, and Cleave rolls the second attack (its damage without the
+   modifier, unless negative; not again from that one). hit: the attack's
+   card data. crit: a natural 20 (no "Missed?"). */
+function masteryOptions(c, hit, crit){
+  var m = hit && hit.item && !hit.noDamage && !hit.cleave && weaponMastery(c, hit.item);
+  if(!m || m.when==="extra") return [];
+  var ab = weaponAbilityMod(c, hit.item);
+  var type = (hit.item.damageType || (WEAPON_DATA[baseWeaponName(hit.item)] || {}).damageType || "").toLowerCase();
+  if(m.when==="miss"){
+    if(crit || ab <= 0) return [];
+    return [reminder("Missed? Graze: " + ab + " " + type + " damage", m.short, "Graze",
+      "Graze: the attack missed, and the target still takes " + ab + " " + type + " damage.")];
+  }
+  if(m.name==="Cleave"){
+    return [{label: "Hit? Cleave: attack a second creature", title: m.short + ". Its damage leaves out your ability modifier (unless it's negative). Once a turn.", tag: "cleave",
+      use: function(){
+        rollAttack(c, hit.attackBonus, "none", (hit.item.name || "Weapon") + ": Cleave",
+          Object.assign({}, hit, {bonus: hit.bonus - Math.max(0, ab), offerDamage: true, cleave: true, label: (hit.item.name || "Weapon") + " (Cleave)"}));
+        return {silent: true};
+      }}];
+  }
+  var lines = {
+    Topple: "Topple: the target makes a DC " + toppleDc(c, ab) + " Constitution saving throw or falls prone.",
+    Push: "Push: the target (Large or smaller) is pushed up to 10 feet straight away from you.",
+    Sap: "Sap: the target has disadvantage on its next attack roll before the start of your next turn.",
+    Slow: "Slow: the target's speed drops by 10 feet until the start of your next turn.",
+    Vex: "Vex: you have advantage on your next attack roll against the target before the end of your next turn."
+  };
+  var label = "Hit? " + m.name + (m.name==="Topple" ? " (CON DC " + toppleDc(c, ab) + ")" : "");
+  return [Object.assign(reminder(label, m.short, "Mastery: " + m.name, lines[m.name]), {keep: true, tag: "mastery"})];
 }
 /* Options that say when they apply go first. "Missed?" only heads the rest. */
 var SAYS_WHEN = /^(Hit\?|Missed\?|Surprised target\?|Next strike)/;

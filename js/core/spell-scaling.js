@@ -183,7 +183,11 @@ export function circleSpellNote(c, name){
 export function spellRangeText(c, name, range){
   var d = SPELL_DATA[catalogSpellName((name||"").trim())];
   var m = /^([\d,]+) feet$/.exec(range||"");
-  if(!m || !d || !/spell attack/i.test(d.summary) || !hasFeat(c, "Spell Sniper")) return range;
+  if(!m || !d || !/spell attack/i.test(d.summary)) return range;
+  // The 2024 feat: 60 feet more, for a range of at least 10 feet.
+  if(hasFeat(c, "Spell Sniper (2024)") && !hasFeat(c, "Spell Sniper") && Number(m[1].replace(/,/g, "")) >= 10)
+    return String(Number(m[1].replace(/,/g, "")) + 60).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " feet (60 more from Spell Sniper)";
+  if(!hasFeat(c, "Spell Sniper")) return range;
   var ft = String(Number(m[1].replace(/,/g, "")) * 2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return ft + " feet (doubled by Spell Sniper)";
 }

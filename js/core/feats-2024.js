@@ -9,19 +9,35 @@
    Battle Medic (Healer (2024)): a healer's kit use, the creature spends a
    Hit Die and regains that roll plus your proficiency bonus; Healing
    Rerolls rolls a 1 again (the new roll stands). */
-import { BACKGROUND_INFO } from "../data/backgrounds.js";
+import { usesRules2024, featDef } from "./feat-picks.js";
 import { hasFeat } from "./vitals.js";
 import { profBonus } from "./basics.js";
 
-/* Whether the character plays by the 2024 character rules: switched on
-   (c.rules2024) or with a 2024 background. */
-export function usesRules2024(c){
-  return !!(c && (c.rules2024 || ((BACKGROUND_INFO[c.background] || {}).edition === "2024")));
-}
-/* The 2024 Origin feats are offered (at level-up, a race's feat) only to
-   a character on the 2024 rules; every other feat to everyone. */
+/* Whether the character plays by the 2024 character rules (kept with
+   the Origin feat code in feat-picks.js). */
+export { usesRules2024 };
+/* The 2024 Player's Handbook's feats (Origin, General, Fighting Style,
+   Epic Boon: source "XPHB") are offered (at level-up, a race's feat) only
+   to a character on the 2024 rules; every other feat to everyone. */
 export function featOffered(def, rules2024){
-  return !def || !def.origin || !!rules2024;
+  return !def || (def.source!=="XPHB" && !def.origin) || !!rules2024;
+}
+
+/* ---- The 2024 General feats and Epic Boons ---- */
+/* Durable (2024): advantage on death saving throws. */
+export function featDeathSaveAdvantage(c){
+  return (c.feats||[]).some(function(f){ var d = featDef(f.name); return !!(d && d.deathSaveAdvantage); });
+}
+/* Damage types a feat's picks resist (Boon of Energy Resistance), as
+   [{type, source}]. */
+export function featResistances(c){
+  var out = [];
+  (c.feats||[]).forEach(function(f){
+    var d = featDef(f.name);
+    if(!d || !d.damagePicks || !f.picks) return;
+    (f.picks.options||[]).forEach(function(t){ if(t) out.push({type: t.toLowerCase(), source: d.name}); });
+  });
+  return out;
 }
 
 /* ---- Savage Attacker ---- */

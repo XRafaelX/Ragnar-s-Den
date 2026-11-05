@@ -1,6 +1,6 @@
 /* ---------------- Feats Catalog ----------------
-   The 2014 rules' feats (and the 2024 Player's Handbook's Origin feats
-   its backgrounds give), one file per source book in ./feats/ and joined
+   The 2014 rules' feats (and the 2024 Player's Handbook's, for
+   characters on the 2024 rules), one file per source book in ./feats/ and joined
    here into the one list the app uses (custom feats are added to it at
    run time, see js/core/custom-features.js). `source` says which book.
    What taking a feat changes on the sheet (see js/core/feat-picks.js):
@@ -59,7 +59,8 @@
      unarmoredAc    AC without armor is this + DEX (Dragon Hide)
      darkvision     {range, add}, like class features' (Keenness of the
                     Stone Giant)
-     requires       {races, raceLabel, level, feat, option, sneakAttack}: who
+     requires       {races, raceLabel, level, feat, option, sneakAttack, and the
+                    2024 feats' scores, spellcasting, armor, style}: who
                     can take it; the pickers grey it out for everyone else.
                     sneakAttack: only a rogue (the Sneak Attack feature). A
                     homebrew race is never ruled out. */
@@ -71,12 +72,13 @@ import { DRAGONLANCE_FEATS } from "./feats/dragonlance.js";
 import { GIANTS_FEATS } from "./feats/giants.js";
 import { PLANESCAPE_FEATS } from "./feats/planescape.js";
 import { PHB_2024_FEATS } from "./feats/phb2024.js";
+import { PHB_2024_GENERAL_FEATS, PHB_2024_STYLE_FEATS, PHB_2024_BOONS } from "./feats/phb2024-general.js";
 // PRIVATE: Spikael's Reaper feat (see ./shadow-stalker.js). Remove before publishing.
 import { REAPER_FEAT } from "./shadow-stalker.js";
 
 /* `remind` ({when, line}): the feat's row on the Vitals tab's Remember
    card, like a class feature's (js/core/reminders.js). */
-export var FEATS_CATALOG = [].concat(PHB_FEATS, TASHA_FEATS, XANATHAR_FEATS, OTHER_BOOK_FEATS, DRAGONLANCE_FEATS, GIANTS_FEATS, PLANESCAPE_FEATS, PHB_2024_FEATS, [REAPER_FEAT]);
+export var FEATS_CATALOG = [].concat(PHB_FEATS, TASHA_FEATS, XANATHAR_FEATS, OTHER_BOOK_FEATS, DRAGONLANCE_FEATS, GIANTS_FEATS, PLANESCAPE_FEATS, PHB_2024_FEATS, PHB_2024_GENERAL_FEATS, PHB_2024_STYLE_FEATS, PHB_2024_BOONS, [REAPER_FEAT]);
 
 /* Campaign rules that hand out feats. The DM decides whether a campaign
    uses them, so they are set per character (c.campaign):

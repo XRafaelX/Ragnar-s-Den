@@ -7,6 +7,7 @@ import { renderSidebar } from "../sidebar.js";
 import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
 import { searingVengeanceReady, necroticHuskReady, spendForRests, mod, strengthOfTheGrave, blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource, kiWord } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
+import { featDeathSaveAdvantage } from "../../core/feats-2024.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playDiceRattle, playDeathSaveSuccess, playDeathSaveFail, playStabilized, playDeath, playRevive } from "../../ui/sound.js";
 
@@ -379,8 +380,9 @@ function rollDeathSave(c, btn){
   btn.disabled = true;
   var value = Math.floor(Math.random()*20) + 1;
   // A Phantom's soul trinket (Tokens of the Departed): advantage on death saves.
+  // Durable (2024): advantage on death saving throws too.
   var t = soulTrinkets(c);
-  if(t && t.held) value = Math.max(value, Math.floor(Math.random()*20) + 1);
+  if((t && t.held) || featDeathSaveAdvantage(c)) value = Math.max(value, Math.floor(Math.random()*20) + 1);
   var text = btn.querySelector(".die-text");
   var motion = !reducedMotion();
   playDiceRattle();

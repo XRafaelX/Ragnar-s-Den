@@ -9,9 +9,10 @@ import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from
 import { featDef, featPicksSummary, featPickDetail } from "./feat-picks.js";
 import { uid, mod, fmtMod, totalLevel, profBonus } from "./basics.js";
 import { halfProficiency } from "./checks.js";
-import { pickedProfs, featurePicksText, raceTraitPicksText, backgroundPicksText, backgroundGrants } from "./class-picks.js";
+import { pickedProfs, featurePicksText, raceTraitPicksText, backgroundPicksText, backgroundGrants, raceChoiceEffects } from "./class-picks.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { effectOn } from "./effects.js";
+import { featResistances } from "./feats-2024.js";
 
 export function characterIsCaster(c){
   return (c.classes||[]).some(function(cl){
@@ -511,7 +512,7 @@ export function featureDcs(c, f){
    (8 + 2 (proficiency) + 3 (Charisma))." Waits for an ability still to be
    picked, or for the option the DC belongs to. */
 function traitDcLines(c, t, values){
-  return [].concat(TRAIT_DCS[t.name] || []).map(function(dc){
+  return [].concat(t.dcs || TRAIT_DCS[t.name] || []).map(function(dc){
     if(dc.when && values.indexOf(dc.when)===-1) return "";
     var ability = dc.ability==="pick" ? values.map(function(v){ return ABILITY_OF[v]; }).filter(Boolean)[0] : dc.ability;
     if(!ability) return "";
@@ -532,6 +533,12 @@ export function raceWards(c){
     Object.keys(out).forEach(function(k){
       (t[k] || []).forEach(function(v){ out[k].push({type: v, source: t.name}); });
     });
+  });
+  // A feat's picked damage types (Boon of Energy Resistance).
+  featResistances(c).forEach(function(w){ out.resist.push(w); });
+  // A race choice's (a 2024 tiefling's legacy: poison, necrotic or fire).
+  raceChoiceEffects(c).forEach(function(e){
+    (e.resist || []).forEach(function(v){ out.resist.push({type: v, source: e.trait || e.name}); });
   });
   var b = draconicBreath(c);
   if(b && b.resistance){

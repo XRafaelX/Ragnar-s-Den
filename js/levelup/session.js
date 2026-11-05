@@ -14,6 +14,9 @@ import { showActionToast } from "../ui/toast.js";
 import { makeMoveLeftSvg, makeMoveRightSvg, makeAlertSvg } from "../ui/svg-icons.js";
 import { featDef, featNeedsChoice, featPicksProblem, featRequiresReason, featSpellEntries, campaignFeatsAt, featSpellGroups } from "../core/feat-picks.js";
 import { featPicksContext } from "../ui/feat-picks.js";
+import { armorProficiencies } from "../core/equipment.js";
+import { abilityScore } from "../core/ability-scores.js";
+import { classCasterType } from "../core/class-features.js";
 import { learnPlan, swapSection, cantripSwapSection, learnProblem } from "../core/spells-known.js";
 import { finish } from "./apply.js";
 import { stepClass, stepStyle, stepSubclass, stepSpells, stepCantrips, stepLearn, stepInvocations, stepOptions, stepProfs, stepAsi, stepFeatPicks, stepBonusFeat, stepBonusFeatPicks, stepFeatSpells, stepHp, stepReview } from "./steps.js";
@@ -155,6 +158,29 @@ export function levelUpClassNames(){
   if(lu.className && names.indexOf(lu.className)===-1) names.push(lu.className);
   return names;
 }
+/* Who is taking a feat at this level-up, for featRequiresReason: the
+   race, size, new level, feats and classes, and for the 2024 feats the
+   scores, spellcasting, armor training and fighting styles. `feats`:
+   the feats to count (the default: the character's). */
+export function featWho(feats){
+  var c = lu.c, names = levelUpClassNames();
+  var armor = armorProficiencies(c), training = [];
+  ["light", "medium", "heavy"].forEach(function(k){ if(armor.indexOf("all armor")!==-1 || armor.indexOf(k + " armor")!==-1) training.push(k); });
+  if(armor.some(function(a){ return a.indexOf("shield")!==-1; })) training.push("shield");
+  var scores = {};
+  ABILITIES.forEach(function(a){ scores[a[0]] = abilityScore(c, a[0]); });
+  // The Fighting Style feature: a class that gives one at its level (the
+  // class being levelled counted at its new level).
+  var hasStyleFeature = names.some(function(n){
+    var fs = (CLASS_PROGRESSION[n] || {}).fightingStyle, cl = (c.classes||[]).find(function(x){ return x.name===n; });
+    var lv = (cl ? Number(cl.level)||1 : 0) + (n===lu.className || (!lu.className && cl===(c.classes||[])[0]) ? 1 : 0);
+    return !!fs && lv >= fs.level;
+  });
+  return {race: c.race, size: raceSize(c), level: totalLevel(c) + 1, feats: feats || c.feats || [], classes: names,
+    scores: scores, armor: training, hasStyleFeature: hasStyleFeature,
+    styles: styleFeatures(c).map(function(f){ return f.fightingStyle; }),
+    spellcasting: names.some(function(n){ var cl = (c.classes||[]).find(function(x){ return x.name===n; }) || {name: n, level: 1}; return !!classCasterType(cl); })};
+}
 export function bonusFeatChoices(){ return campaignFeatsAt(lu.c, totalLevel(lu.c) + 1); }
 function asiFeatNow(){
   return target().asi && lu.asiMode==="feat" && lu.featName ? {name: lu.featName, picks: lu.featPicks || {}} : null;
@@ -163,7 +189,7 @@ export function bonusFeatReason(def){
   var c = lu.c, now = asiFeatNow();
   if((c.feats||[]).some(function(f){ return f.name===def.name; })) return "you have it";
   if(now && now.name===def.name) return "picked as your feat this level";
-  return featRequiresReason(def, {race: c.race, size: raceSize(c), level: totalLevel(c) + 1, feats: (c.feats||[]).concat(now ? [now] : []), classes: levelUpClassNames()});
+  return featRequiresReason(def, featWho((c.feats||[]).concat(now ? [now] : [])));
 }
 
 /* ---- Warlock: Pact Boon and invocations ----
@@ -503,7 +529,7 @@ export function validate(id){
   if(id==="asi"){
     if(lu.asiMode==="feat"){
       if(!lu.featName) return "Pick a feat, or switch to raising ability scores.";
-      var blocked = featRequiresReason(featDef(lu.featName), {race: lu.c.race, size: raceSize(lu.c), level: totalLevel(lu.c) + 1, feats: lu.c.feats || [], classes: levelUpClassNames()});
+      var blocked = featRequiresReason(featDef(lu.featName), featWho());
       return blocked ? lu.featName+" "+blocked+". Pick another feat." : null;
     }
     var can = asiPointsAvailable();

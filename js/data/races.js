@@ -32,6 +32,11 @@ export var RACES = {
   ],
   "Lineages": [
     "Custom Lineage","Dhampir","Hexblood","Reborn"
+  ],
+  // Picking one of these turns the 2024 character rules on.
+  "Player's Handbook (2024)": [
+    "Aasimar (2024)","Dragonborn (2024)","Dwarf (2024)","Elf (2024)","Gnome (2024)",
+    "Goliath (2024)","Halfling (2024)","Human (2024)","Orc (2024)","Tiefling (2024)"
   ]
 };
 
@@ -55,12 +60,14 @@ export var RACE_TRAITS = {
 /* One-line summary built from a RACE_DATA entry: "+2 DEX, +1 CHA.
    Darkvision 60ft. Speed 30 ft, climb 20 ft. Feline Agility, …". */
 export function raceSummary(d){
-  var bits = [raceAsiText(d)];
-  if(d.darkvision) bits.push((d.darkvision>=120 ? "Superior darkvision " : "Darkvision ")+d.darkvision+"ft");
+  // (A 2024 species has none: the wizard says the background gives them.)
+  var bits = d.edition==="2024" ? [] : [raceAsiText(d)];
+  if(d.darkvision) bits.push((d.darkvision>=120 && d.edition!=="2024" ? "Superior darkvision " : "Darkvision ")+d.darkvision+"ft");
   var sp = d.speed || {};
   if(sp.walk!==30 || sp.fly || sp.swim || sp.climb) bits.push("Speed "+raceSpeedText(d));
   var names = (d.traits||[]).map(function(t){ return t.name; }).filter(Boolean);
-  return bits.filter(Boolean).join(". ")+"."+(names.length ? " "+names.join(", ")+"." : "");
+  bits = bits.filter(Boolean);
+  return [bits.length ? bits.join(". ")+"." : "", names.length ? names.join(", ")+"." : ""].filter(Boolean).join(" ");
 }
 /* Expanded races get their one-line summary from RACE_DATA (the core
    ones above keep their hand-written lines). */
@@ -104,13 +111,14 @@ export var RACE_LANGUAGES_FALLBACK = {fixed:["Common"], choose:1,
      amounts the player can switch to (+1 to three scores instead).
    abilityPreset: {label, options:{name: {asi}}}: a fixed set of increases
      picked by subrace or type (Aasimar, Shifter).
-   feat: a feat.
+   feat: a feat; {origin: true} for an Origin feat (a 2024 human's Versatile).
    Skills, tools and weapons a race lets you choose are on its traits
    (`profs` in RACE_DATA), like class features' (see js/core/class-picks.js). */
 var PLUS_TWO_ONE = {amounts:[2, 1], alt:[1, 1, 1]};
 var FERAL = {label:"Ability scores", options:{"Standard":{cha:2, int:1}, "Feral":{dex:2, int:1}}};
 export var RACE_CHOICES = {
   "Variant Human":{abilityBonus:{amounts:[1, 1]}, feat:true},
+  "Human (2024)":{feat:{origin:true}},
   "Half-Elf":{abilityBonus:{amounts:[1, 1], exclude:["cha"]}},
   "Half-Elf (Variant)":{abilityBonus:{amounts:[1, 1], exclude:["cha"]}},
   "Aetherborn":{abilityBonus:{amounts:[1, 1], exclude:["cha"]}},

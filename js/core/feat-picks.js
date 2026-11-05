@@ -49,10 +49,12 @@ export function featDef(name){
 /* Anything taking this feat changes on the sheet. */
 function hasChoices(def){
   return !!(def.skills || def.skillsOrTools || def.expertise || def.weapons || def.option || def.spellPick || def.optionPicks ||
-    def.toolPicks || def.languagePicks || Array.isArray(def.castAbility) || def.stylePick || def.invocationPick);
+    def.toolPicks || def.languagePicks || Array.isArray(def.castAbility) || def.stylePick || def.invocationPick || def.damagePicks);
 }
+/* (A fighting style feat has nothing to choose but its style feature to add,
+   and Boon of Skill its skills.) */
 export function featHasPicks(def){
-  return !!def && !!((def.ability && def.ability.length) || (def.languages && def.languages.length) || hasChoices(def));
+  return !!def && !!((def.ability && def.ability.length) || (def.languages && def.languages.length) || def.style || def.allSkills || hasChoices(def));
 }
 /* Something the player has to choose (not just a fixed +1). */
 export function featNeedsChoice(def){
@@ -76,7 +78,9 @@ export function featSpellGroups(def, picks, ctx){
   if(!def || !def.spellPick) return [];
   var offset = 0;
   return [].concat(def.spellPick).map(function(g){
-    var count = g.count==="halfPb" ? Math.max(1, Math.floor(((ctx && ctx.pb) || 2) / 2)) : g.count;
+    var pb = (ctx && ctx.pb) || 2;
+    // (Ritual Caster (2024): as many as the proficiency bonus.)
+    var count = g.count==="halfPb" ? Math.max(1, Math.floor(pb / 2)) : g.count==="pb" ? pb : g.count;
     var src = g.byOption ? g.byOption[(picks && picks.option) || ""] : g;
     var out = {count: count, level: g.level, label: g.label, plural: g.plural || g.label + "s", use: g.use || (g.level===0 ? "known" : "long"),
       tags: g.tags || null, offset: offset, options: src ? spellChoices(g, src) : []};
@@ -229,8 +233,15 @@ export function backgroundFeatMissing(c){
   return (c.feats||[]).some(function(f){ return f.name===g.def.name; }) ? null : g;
 }
 
+/* Whether the character plays by the 2024 character rules: switched on
+   (c.rules2024), or with a 2024 background or species. */
+export function usesRules2024(c){
+  return !!(c && (c.rules2024 || ((BACKGROUND_INFO[c.background] || {}).edition === "2024") || ((RACE_DATA[c.race] || {}).edition === "2024")));
+}
+
 /* ---- The 2024 character rules' Origin feat ----
-   Under the 2024 rules (c.rules2024, an Optional rules card), a
+   Under the 2024 rules (usesRules2024: the Optional rules card, or a
+   2024 background or species), a
    background without a feat of its own gives an Origin feat of the
    player's choice (Player's Handbook 2024, p. 38). The copy is tagged
    `origin2024`. */
@@ -249,7 +260,7 @@ export function originFeatCopy(def, background){
 /* Its choices when the character uses the 2024 rules and hasn't taken it
    nor said no to it, else null. */
 export function originFeatMissing(c){
-  if(!c || !c.rules2024 || c.originFeatSkipped===c.background) return null;
+  if(!c || !usesRules2024(c) || c.originFeatSkipped===c.background) return null;
   var choices = originFeatChoices(c.background);
   if(!choices.length || (c.feats||[]).some(function(f){ return f.origin2024; })) return null;
   return {choices: choices};
@@ -273,7 +284,7 @@ export function campaignLevel1Feats(campaign, background){
    leaving out feats the character has anyway. Else null. */
 export function campaignFeatMissing(c){
   // (The 2024 rules' Origin feat takes its place.)
-  if(c.rules2024 && originFeatChoices(c.background).length) return null;
+  if(usesRules2024(c) && originFeatChoices(c.background).length) return null;
   var choices = campaignLevel1Feats(c.campaign, c.background);
   if(!choices.length || c.campaignFeatSkipped===c.campaign) return null;
   if((c.feats||[]).some(function(f){ return f.campaignLevel===1; })) return null;
@@ -307,6 +318,15 @@ export function featRequiresReason(def, who){
     if(!has) return "needs " + r.feat + (r.option ? " (" + r.option + ")" : "");
   }
   if(r.sneakAttack && (who.classes||[]).indexOf("Rogue")===-1) return "needs Sneak Attack (a rogue level)";
+  // The 2024 feats' prerequisites, checked when `who` says (the level-up does).
+  if(r.scores && who.scores && !r.scores.some(function(k){ return (Number(who.scores[k])||0) >= 13; }))
+    return "needs " + r.scores.map(function(k){ return k.toUpperCase(); }).join(" or ") + " 13";
+  if(r.spellcasting && who.spellcasting===false) return "needs the Spellcasting or Pact Magic feature";
+  if(r.armor && who.armor && who.armor.indexOf(r.armor)===-1) return r.armor==="shield" ? "needs shield training" : "needs " + r.armor + " armor training";
+  if(r.style && who.styles){
+    if(!who.hasStyleFeature) return "needs the Fighting Style feature";
+    if(who.styles.indexOf(def.style)!==-1) return "you have this style";
+  }
   return "";
 }
 
@@ -328,6 +348,11 @@ export function featPicksProblem(def, picks, ctx){
     if(stylePicks) return stylePicks;
   }
   if(def.invocationPick && featInvocationChoices(ctx).indexOf(picks.option)===-1) return "Pick an eldritch invocation for "+def.name+".";
+  // Boon of Energy Resistance: its damage types, kept in picks.options.
+  if(def.damagePicks){
+    var dn = def.damagePicks.count, types = (picks.options||[]).slice(0, dn).filter(function(x){ return def.damagePicks.options.indexOf(x)!==-1; });
+    if(types.length < dn || new Set(types).size < dn) return "Pick "+dn+" different damage types for "+def.name+".";
+  }
   if(def.ability && def.ability.length && def.ability.indexOf(picks.ability)===-1) return "Pick the ability "+def.name+" raises.";
   if(Array.isArray(def.castAbility) && def.castAbility.indexOf(picks.castAbility)===-1) return "Pick the spellcasting ability for "+def.name+".";
   var n = profCount(def);
@@ -340,7 +365,9 @@ export function featPicksProblem(def, picks, ctx){
     if(open.length && open.indexOf(chosen[0])===-1) return "You're already proficient in "+chosen[0]+". Pick "+open.join(" or ")+".";
   } else {
     if(chosen.length < n || new Set(chosen).size < n) return "Pick "+(n===1 ? "a skill" : n+" different "+noun)+" for "+def.name+".";
-    if(chosen.some(function(x){ return isSkill(x) && hasProf(ctx, x); })) return "Pick "+noun+" you're not already proficient in.";
+    // (Keen Mind and Observant give expertise in one already known.)
+    if(!def.orExpertise && chosen.some(function(x){ return isSkill(x) && hasProf(ctx, x); })) return "Pick "+noun+" you're not already proficient in.";
+    if(def.orExpertise && chosen.some(function(x){ var e = ctx && ctx.skillProfs && ctx.skillProfs[x]; return e && e.expertise; })) return "You already have expertise in "+chosen[0]+". Pick another skill.";
   }
   var tn = def.toolPicks ? def.toolPicks.count : 0;
   var tools = (picks.tools||[]).slice(0, tn).filter(function(x){ return featToolChoices(def).indexOf(x)!==-1; });
@@ -352,7 +379,7 @@ export function featPicksProblem(def, picks, ctx){
   if(knownLang) return "You already know "+knownLang+". Pick another language.";
   var exp = (picks.expertise||[]).slice(0, def.expertise||0).filter(Boolean);
   if(exp.length < (def.expertise||0)) return "Pick a skill for "+def.name+"'s expertise.";
-  if(exp.some(function(x){ return expertiseReason(ctx, picks, x); })) return "Pick a skill you're proficient in and don't already have expertise in.";
+  if(exp.some(function(x){ return expertiseReason(ctx, picks, x, def); })) return "Pick a skill you're proficient in and don't already have expertise in.";
   var w = def.weapons || 0;
   var weapons = (picks.weapons||[]).slice(0, w).filter(Boolean);
   if(weapons.length < w || new Set(weapons).size < w) return "Pick "+w+" different weapons for "+def.name+".";
@@ -384,15 +411,16 @@ function knowsLanguage(ctx, lang){
   var lower = (lang||"").toLowerCase();
   return ((ctx && ctx.languages) || []).some(function(l){ return (l||"").toLowerCase()===lower; });
 }
-/* Why a skill can't take this feat's expertise ("" if it can). */
-export function expertiseReason(ctx, picks, skill){
+/* Why a skill can't take this feat's expertise ("" if it can). A feat
+   giving every skill (Boon of Skill) makes them all proficient. */
+export function expertiseReason(ctx, picks, skill, def){
   var e = ctx && ctx.skillProfs && ctx.skillProfs[skill];
   if(e && e.expertise) return "expert";
-  return hasProf(ctx, skill) || (picks.skills||[]).indexOf(skill)!==-1 ? "" : "not proficient";
+  return (def && def.allSkills) || hasProf(ctx, skill) || (picks.skills||[]).indexOf(skill)!==-1 ? "" : "not proficient";
 }
 /* Skills an expertise pick can go to: proficient ones plus this feat's own skill picks. */
-export function expertiseOptions(ctx, picks){
-  return SKILL_NAMES.filter(function(sk){ return hasProf(ctx, sk) || (picks.skills||[]).indexOf(sk)!==-1; });
+export function expertiseOptions(ctx, picks, def){
+  return SKILL_NAMES.filter(function(sk){ return (def && def.allSkills) || hasProf(ctx, sk) || (picks.skills||[]).indexOf(sk)!==-1; });
 }
 
 /* Short text for the picks: "Dexterity +1, Stealth, expertise in Arcana". */
@@ -407,7 +435,8 @@ export function featPicksSummary(def, picks){
   (picks.tools||[]).filter(Boolean).forEach(function(s){ bits.push(s); });
   (def.languages||[]).concat((picks.languages||[]).filter(Boolean)).forEach(function(s){ bits.push(s); });
   featSpellEntries(def, picks).forEach(function(e){ bits.push(e.name); });
-  (picks.options||[]).filter(Boolean).forEach(function(s){ bits.push(s); });
+  (picks.options||[]).filter(Boolean).forEach(function(s){ bits.push(def.damagePicks ? "resistance to " + s.toLowerCase() : s); });
+  if(def.allSkills) bits.push("every skill");
   if(picks.castAbility) bits.push("spells cast with "+abilityName(picks.castAbility));
   return bits.join(", ");
 }
@@ -426,15 +455,19 @@ export function applyFeatPicks(c, feat, picks){
   var applied = {abilities:{}, skills:[], expertise:[], weaponItems:[], languages:[]};
   var k = feat.picks.ability;
   if(k){
-    var was = Number(c.abilities[k])||10, now = Math.min(20, was + 1);
+    // (An Epic Boon's +1 can reach 30.)
+    var was = Number(c.abilities[k])||10, now = Math.min(def.abilityMax || 20, was + 1);
     if(now !== was){ c.abilities[k] = now; applied.abilities[k] = now - was; }
   }
   if(!c.skillProfs) c.skillProfs = {};
   // An invocation's skills (Eldritch Adept: Beguiling Influence) too.
   var inv = def.invocationPick && invocationDef(feat.picks.option);
-  feat.picks.skills.filter(isSkill).concat((inv && inv.skills) || []).forEach(function(sk){
+  // Boon of Skill: every skill.
+  feat.picks.skills.filter(isSkill).concat((inv && inv.skills) || [], def.allSkills ? SKILL_NAMES : []).forEach(function(sk){
     var entry = c.skillProfs[sk] || {prof:false, expertise:false};
     if(!entry.prof){ entry.prof = true; applied.skills.push(sk); }
+    // Keen Mind, Observant: a skill already known gets expertise.
+    else if(def.orExpertise && feat.picks.skills.indexOf(sk)!==-1 && !entry.expertise && applied.skills.indexOf(sk)===-1){ entry.expertise = true; applied.expertise.push(sk); }
     c.skillProfs[sk] = entry;
   });
   feat.picks.expertise.forEach(function(sk){
@@ -456,8 +489,11 @@ export function applyFeatPicks(c, feat, picks){
   });
   // Fighting Initiate's style: a style feature like a class's, so its
   // bonus is worked out the same way.
-  if(def.stylePick && feat.picks.option){
-    var style = makeStyleFeature(feat.picks.option, {options: feat.picks.options, spells: []});
+  // A 2024 Fighting Style feat: its style, in the book's 2024 words.
+  if(def.style || (def.stylePick && feat.picks.option)){
+    var style = makeStyleFeature(def.style || feat.picks.option, {options: feat.picks.options, spells: []});
+    if(def.styleText) style.text = def.styleText;
+    if(def.styleRemind) style.remind = def.styleRemind;
     style.id = uid(); style.source = "Feat · " + feat.name;
     if(!Array.isArray(c.features)) c.features = [];
     c.features.push(style);

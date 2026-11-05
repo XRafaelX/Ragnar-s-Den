@@ -7,6 +7,7 @@ import { WEAPON_DATA, weaponDataOf, baseWeaponName, hasHeavyProperty } from "../
 import { featProficiencies, featDef, featSpellEntries, featCastAbility } from "./feat-picks.js";
 import { characterPickedProfs, characterChoices, raceProficiencies, backgroundProficiencies, overlapTools } from "./class-picks.js";
 import { mod, profBonus, parseDiceNotation, combineRolls } from "./basics.js";
+import { weaponMastery } from "./weapon-mastery.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
 import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024 } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
@@ -57,7 +58,7 @@ export function stackInBothHands(item){
 export function canHoldStackInBothHands(c, item){
   if(!item || item.type!=="weapon" || (Number(item.qty)||1) < 2 || isTwoHanded(item) || isRangedWeapon(item)) return false;
   var d = weaponDataOf(item);
-  return /\blight\b/i.test(((d && d.properties) || "") + " " + (item.notes || "")) || hasFeat(c, "Dual Wielder");
+  return /\blight\b/i.test(((d && d.properties) || "") + " " + (item.notes || "")) || hasFeat(c, "Dual Wielder") || hasFeat(c, "Dual Wielder (2024)");
 }
 /* Hold the stack one in each hand, or just one. {ok, message}. */
 export function setBothHands(c, item, on){
@@ -370,6 +371,17 @@ export function powerAttackFeat(c, item){
   if(isRangedWeapon(item)) return hasFeat(c, "Sharpshooter") ? "Sharpshooter" : null;
   return isHeavyWeapon(item) && hasFeat(c, "Great Weapon Master") ? "Great Weapon Master" : null;
 }
+/* Polearm Master (2024)'s weapons: a quarterstaff, a spear, or a weapon
+   with the heavy and reach properties (a glaive, a halberd, a pike). */
+export function polearm2024(item){
+  var name = baseWeaponName(item) || "", d = weaponDataOf(item), props = ((d && d.properties) || "") + " " + (item.notes || "");
+  return /^(Quarterstaff|Spear)$/.test(name) || (isHeavyWeapon(item) && /\breach\b/i.test(props));
+}
+/* Great Weapon Master (2024): extra damage equal to the proficiency
+   bonus with a heavy weapon (in the Attack action, where its card rolls). */
+export function gwm2024Bonus(c, item){
+  return item && item.type==="weapon" && isHeavyWeapon(item) && hasFeat(c, "Great Weapon Master (2024)") ? profBonus(c) : 0;
+}
 export function isHeavyWeapon(item){
   var d = weaponDataOf(item);
   return hasHeavyProperty(((d && d.properties) || "") + " " + (item.notes || ""));
@@ -384,7 +396,7 @@ export function weaponAttackBonus(c, item){
   return weaponAbilityMod(c, item) + pb + magicBonusOf(item) + pactWeaponBonus(c, item) + sharpenBonus(c, item) + sacredWeaponBonus(c, item) + archery - (powerAttackOn(c, item) ? 5 : 0) + coinAttackBonus(c);
 }
 export function weaponDamageBonus(c, item){
-  return weaponAbilityMod(c, item) + magicBonusOf(item) + pactWeaponBonus(c, item) + hexCurseBonus(c) + sharpenBonus(c, item) + auraOfHate(c, item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
+  return weaponAbilityMod(c, item) + magicBonusOf(item) + pactWeaponBonus(c, item) + hexCurseBonus(c) + sharpenBonus(c, item) + auraOfHate(c, item) + (powerAttackOn(c, item) ? 10 : 0) + songOfVictoryBonus(c, item) + rageDamageBonus(c, item) + duelingBonus(c, item) + gwm2024Bonus(c, item) + sidearmMasteryBonus(c, item) + holsterDamageBonus(c)
     + (isRangedWeapon(item) ? thrownStyleBonus(c, item) : 0) + heavyRoundBonus(c, item) + outlawGritBonus(c, item) + arcaneInfusionBonus(c, item);
 }
 /* A weapon with the thrown property (a dagger, a handaxe, a dart). */
@@ -430,7 +442,7 @@ function offHandCapable(c, item){
   if(item.type==="weapon" && item.equipped && outlawDualFirearm(c, item)) return true;
   if(item.type!=="weapon" || !item.equipped || isRangedWeapon(item) || isTwoHanded(item)) return false;
   var d = weaponDataOf(item);
-  return /\blight\b/i.test(((d && d.properties) || "") + " " + (item.notes || "")) || hasFeat(c, "Dual Wielder");
+  return /\blight\b/i.test(((d && d.properties) || "") + " " + (item.notes || "")) || hasFeat(c, "Dual Wielder") || hasFeat(c, "Dual Wielder (2024)");
 }
 /* With two such weapons in hand, one is the main hand (its card rolls the
    Attack action's damage) and the other the off-hand (its card rolls the
@@ -460,6 +472,9 @@ export function offHandAttack(c, item){
   var ab = weaponAbilityMod(c, item);
   var style = hasFightingStyle(c, "Two-Weapon Fighting");
   var out = {damage: weaponDamageBonus(c, item) - (style || ab < 0 ? 0 : ab), style: style};
+  // Nick (weapon mastery): made as part of the Attack action.
+  var m = weaponMastery(c, item);
+  if(m && m.name==="Nick") out.nick = true;
   if(hands.stack) out.stack = true; // one stack in both hands: the card rolls both
   return out;
 }
@@ -581,7 +596,8 @@ export function attacksPerAction(c){
 export function bonusActionAttacks(c){
   var out = [];
   var dual = dualWieldHands(c);
-  if(dual) out.push("Off-hand attack with your " + dual.off.name);
+  // (With Nick it's part of the Attack action, not a bonus action.)
+  if(dual && (weaponMastery(c, dual.off) || {}).name!=="Nick") out.push("Off-hand attack with your " + dual.off.name);
   var monk = classLevelOf(c, "Monk");
   if(monk){
     var focus = isMonk2024(c), strikes = focus && monk >= 10 ? "three" : "two";
@@ -590,6 +606,9 @@ export function bonusActionAttacks(c){
   var held = handsInUse(c).items.map(function(i){ return baseWeaponName(i) || ""; });
   if(hasFeat(c, "Polearm Master") && held.some(function(n){ return /^(Glaive|Halberd|Quarterstaff|Spear)$/.test(n); }))
     out.push("A 1d4 hit with the other end of your polearm (Polearm Master)");
+  // The 2024 feat: a quarterstaff, a spear, or any heavy reach weapon.
+  else if(hasFeat(c, "Polearm Master (2024)") && handsInUse(c).items.some(function(i){ return polearm2024(i); }))
+    out.push("A 1d4 hit with the other end of your weapon (Polearm Master)");
   if(hasFeat(c, "Crossbow Expert") && held.indexOf("Hand Crossbow")!==-1)
     out.push("A shot with your hand crossbow after a one-handed attack (Crossbow Expert)");
   if(c.rage && c.rage.active && c.rage.frenzy) out.push("A melee weapon attack (Frenzy)");
@@ -778,7 +797,8 @@ export function isProficientWithWeapon(c, weaponName, category){
   var alike = (WEAPON_DATA[weaponName] || {}).treatAs;
   if(alike && isProficientWithWeapon(c, alike, category)) return true;
   // Weapon Master's picks, and Gunner's firearms.
-  if(featProficiencies(c).weapons.some(function(w){ return (weaponName && w.name===weaponName) || (category==="firearm" && w.name==="Firearms"); })) return true;
+  // (Martial Weapon Training: every martial weapon.)
+  if(featProficiencies(c).weapons.some(function(w){ return (weaponName && w.name===weaponName) || (category==="firearm" && w.name==="Firearms") || (category==="martial" && w.name==="Martial weapons"); })) return true;
   // The race's weapon training (an elf's longbow, a hobgoblin's picks, a
   // giff's firearms) and the background's (a Rifle Corps member's firearms).
   var given = raceProficiencies(c).weapons.concat(backgroundProficiencies(c).weapons);

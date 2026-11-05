@@ -10,12 +10,12 @@ import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/ali
 import { POINT_BUY_COSTS } from "../data/misc.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDicesSvg, makePlusSvg } from "../ui/svg-icons.js";
-import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, MONK_2024_CARD, MONK_2024_OUTCOME, RULES_2024_CARD, RULES_2024_OUTCOME } from "../ui/dlc-shelf.js";
+import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, MONK_2024_CARD, MONK_2024_OUTCOME, RULES_2024_CARD, RULES_2024_OUTCOME, rules2024Lock } from "../ui/dlc-shelf.js";
 import { getDieSvg } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker } from "../ui/themed-picker.js";
 import { openCompendium } from "../render/compendium.js";
-import { currentClassInfo, wizardState, wizardEdition, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, refreshWizardProgress, wizardBgScoreRule, backgroundAbilityIncreases, backgroundIncreaseTotal, nextBgIncrease, tapBgIncrease, BG_INCREASE_POINTS } from "./wizard-core.js";
+import { currentClassInfo, wizardState, wizardEdition, renderWizard, abilityFullName, raceChoiceDef, raceAbilityIncreases, refreshWizardProgress, wizardBgScoreRule, backgroundAbilityIncreases, backgroundIncreaseTotal, nextBgIncrease, tapBgIncrease, BG_INCREASE_POINTS, wizardRules2024 } from "./wizard-core.js";
 import { backgroundFeatGrant, backgroundFeatLabel, campaignLevel1Feats } from "../core/feat-picks.js";
 import { CAMPAIGN_FEATS } from "../data/feats.js";
 import { FIGHTING_STYLES } from "../data/classes.js";
@@ -269,7 +269,9 @@ export function wizardPointBuyUI(container){
 
 export function raceExplainHtml(name){
   if(!name) return "<b>Why this matters:</b> Race affects your ability score bonuses and grants special traits like darkvision or resistances. Pick one to see what it does.";
-  return "<b>"+escapeHtml(name)+":</b> "+(RACE_TRAITS[name] || RACE_TRAIT_FALLBACK);
+  // A 2024 species turns the 2024 character rules on.
+  var rules = (RACE_DATA[name] || {}).edition==="2024" ? " <b>2024 rules:</b> this species uses the 2024 character rules. Your background raises your ability scores, and you know Common and two more languages." : "";
+  return "<b>"+escapeHtml(name)+":</b> "+(RACE_TRAITS[name] || RACE_TRAIT_FALLBACK)+rules;
 }
 
 export function backgroundExplainHtml(name){
@@ -283,7 +285,7 @@ export function backgroundExplainHtml(name){
   var camp = wizardState && campaignLevel1Feats(wizardState.campaign, name);
   if(!grant && camp && camp.length) feat = " <b>Campaign feat:</b> "+escapeHtml(camp.join(" or "))+", picked on a later step.";
   // The 2024 character rules: an Origin feat in its place.
-  var rules2024 = wizardState && wizardState.rules2024;
+  var rules2024 = wizardRules2024();
   if(!grant && rules2024) feat = " <b>Origin feat:</b> one of your choice (2024 rules), picked on a later step.";
   // Under the 2024 rules the background raises the scores, in place of the race.
   var scores = info && info.edition==="2024" ? " <b>2024 rules:</b> this background raises your ability scores instead of your race. You'll choose how on the Ability Scores step."
@@ -334,11 +336,11 @@ function optionalRulesShelf(){
   var tapped = rulesShelfTapped;
   rulesShelfTapped = "";
   wrap.appendChild(dlcShelf({
-    id: "wiz-dlc-panel", title: "Optional rules", wide: true, open: rulesShelfOpen || !!wizardState.tashaOptional || !!wizardState.campaign || !!wizardEdition() || !!wizardState.rules2024, fresh: tapped,
+    id: "wiz-dlc-panel", title: "Optional rules", wide: true, open: rulesShelfOpen || !!wizardState.tashaOptional || !!wizardState.campaign || !!wizardEdition() || wizardRules2024(), fresh: tapped,
     onToggle: function(open){ rulesShelfOpen = open; },
     lead: "Extra rules from other books. Ask your DM whether your table uses them, then tap one to turn it on. You can change this later on the Information tab.",
     sub: function(){
-      var on = (wizardState.tashaOptional ? ["Tasha's optional class features"] : []).concat(wizardState.rules2024 ? ["the 2024 character rules"] : []).concat(CAMPAIGN_FEATS[wizardState.campaign] ? [wizardState.campaign] : [])
+      var on = (wizardState.tashaOptional ? ["Tasha's optional class features"] : []).concat(wizardRules2024() ? ["the 2024 character rules"] : []).concat(CAMPAIGN_FEATS[wizardState.campaign] ? [wizardState.campaign] : [])
         .concat(gunslinger && wizardState.gunMisfire ? ["firearm misfires"] : []).concat(wizardEdition() ? ["the 2024 monk"] : []);
       return on.length ? "Using " + on.join(" and ") : monk ? "Tasha's Cauldron, the 2024 rules, the campaign books and the 2024 monk. Ask your DM which ones your table uses."
         : "Tasha's Cauldron, the 2024 character rules and the campaign books. Most new players leave these off.";
@@ -346,6 +348,8 @@ function optionalRulesShelf(){
     cards: [{key: "tasha", series: "Tasha's Cauldron of Everything", title: "Optional class features", switchLabel: "Use Tasha's optional class features",
       perks: ["More class options", "Additional spells", "Swaps at level-up"]}, RULES_2024_CARD].concat(gunslinger ? [GUN_MISFIRE_CARD] : []).concat(monk ? [MONK_2024_CARD] : []).concat(books.map(campaignBookCard)),
     isOn: function(k){ return k==="tasha" ? !!wizardState.tashaOptional : k==="rules2024" ? !!wizardState.rules2024 : k==="gunMisfire" ? !!wizardState.gunMisfire : k==="monk2024" ? !!wizardState.monk2024 : wizardState.campaign===k; },
+    // (A 2024 species or background holds the 2024 rules on.)
+    locked: function(k){ return k==="rules2024" ? rules2024Lock((RACE_DATA[wizardState.race] || {}).edition, (BACKGROUND_INFO[wizardState.background] || {}).edition) : ""; },
     onTap: function(k){
       if(k==="tasha") setWizardTasha(!wizardState.tashaOptional);
       else if(k==="gunMisfire") wizardState.gunMisfire = !wizardState.gunMisfire;
@@ -361,7 +365,7 @@ function optionalRulesShelf(){
     outcome: function(){
       var lines = [];
       if(wizardState.tashaOptional) lines.push("<b>Tasha's:</b> " + escapeHtml(tashaAddsFor(wizardState.classId, wizardEdition())));
-      if(wizardState.rules2024) lines.push(RULES_2024_OUTCOME);
+      if(wizardRules2024()) lines.push(RULES_2024_OUTCOME);
       if(gunslinger && wizardState.gunMisfire) lines.push(GUN_MISFIRE_OUTCOME);
       if(wizardEdition()) lines.push(MONK_2024_OUTCOME);
       if(CAMPAIGN_FEATS[wizardState.campaign]) lines.push("<b>" + escapeHtml(wizardState.campaign) + ":</b> a free feat if your background has none of its own (see the Background step)." +
@@ -473,7 +477,7 @@ function campaignOutcomeHtml(){
   if(!bg) return "Choose a background above to see what this gives you."+later;
   var own = backgroundFeatGrant(bg);
   if(own) return "Your "+escapeHtml(bg)+" background already comes with its own feat (<b>"+escapeHtml(backgroundFeatLabel(bg))+"</b>), so this adds nothing now."+later;
-  if(wizardState.rules2024) return "The 2024 character rules already give you an Origin feat, so this adds nothing now."+later;
+  if(wizardRules2024()) return "The 2024 character rules already give you an Origin feat, so this adds nothing now."+later;
   var names = campaignLevel1Feats(wizardState.campaign, bg).map(function(n){ return "<b>"+escapeHtml(n)+"</b>"; });
   return "You get a free feat: "+names.join(" or ")+". You'll choose on a later step."+later;
 }

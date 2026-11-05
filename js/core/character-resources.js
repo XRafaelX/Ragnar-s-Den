@@ -91,11 +91,13 @@ export function characterResources(c){
     // One a choice gives (a Simic Hybrid's Acid Spit) once it's picked.
     if(r.choice && raceChoiceValues(c, r.choice.id).indexOf(r.choice.value)===-1) return;
     var key = "race:"+r.id, max = r.max(charLv, m);
+    // A roll on its row (Healing Hands' d4s, a goliath's boon): qty or
+    // the proficiency bonus's worth of dice, plus a modifier.
+    var roll = r.roll ? Object.assign({}, r.roll, r.roll.qtyPb ? {qty: m.pb} : {}, r.roll.bonusAbility ? {bonus: m[r.roll.bonusAbility]} : {}) : null;
     list.push({
-      // "Chromatic Dragonborn", not "Dragonborn (Chromatic)": Vitals puts the source in brackets.
-      key: key, name: r.name, source: c.race.replace(/^(.+) \((.+)\)$/, "$2 $1"), hint: r.hint, pool: false,
+      key: key, name: r.name, source: raceSource(c), hint: typeof r.hint==="function" ? r.hint(charLv, m) : r.hint, pool: false,
       max: max, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
-      reset: r.reset(charLv)
+      reset: r.reset(charLv), roll: roll, heal: r.heal ? r.heal(charLv, m) : 0
     });
   });
   // Feats with uses. One that `joins` a class pool adds to it when the
@@ -114,10 +116,13 @@ export function characterResources(c){
         pool.hint += " " + r.joinHint;
         return;
       }
+      // A roll on its row (Boon of Fate's 2d4, Boon of Recovery's d10s), and
+      // uses back on initiative (Boon of Fate).
+      var roll = r.roll ? Object.assign({}, r.roll, r.roll.bonusAbility ? {bonus: m[r.roll.bonusAbility]} : {}) : null;
       list.push({
-        key: key, name: typeof r.name==="function" ? r.name(feat) : r.name, source: featName, hint: r.hint, pool: !!r.pool,
+        key: key, name: typeof r.name==="function" ? r.name(feat) : r.name, source: featName, hint: typeof r.hint==="function" ? r.hint(0, m) : r.hint, pool: !!r.pool,
         max: max, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
-        reset: r.reset(0)
+        reset: r.reset(0), roll: roll, initiativeRegain: r.initiativeRegain ? (r.initiativeAmount || max) : 0
       });
     });
   });
@@ -141,13 +146,15 @@ export function characterResources(c){
   // A free cast of each of the race's once-a-rest spells (Drow Magic's
   // Darkness, Firbolg Magic's Detect Magic), from the level it arrives.
   raceSpellEntries(c).forEach(function(e){
-    if(e.use!=="long" && e.use!=="short") return;
+    if(e.use!=="long" && e.use!=="short" && e.use!=="pb") return;
     var key = "race:spell:" + slug(e.name);
     if(list.some(function(x){ return x.key===key; })) return;
+    // (A forest gnome's Speak with Animals: proficiency bonus times a long rest.)
+    var uses = e.use==="pb" ? m.pb : 1;
     list.push({
-      key: key, name: e.name + " (" + e.feature + ")", source: c.race.replace(/^(.+) \((.+)\)$/, "$2 $1"), pool: false,
-      hint: "Cast " + e.name + " once without a spell slot." + (e.slots ? " Casting it with a slot you have doesn't use this." : ""),
-      max: 1, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, 1), reset: e.use
+      key: key, name: e.name + " (" + e.feature + ")", source: raceSource(c), pool: false,
+      hint: "Cast " + e.name + (uses > 1 ? " without a spell slot." : " once without a spell slot.") + (e.slots ? " Casting it with a slot you have doesn't use this." : ""),
+      max: uses, used: clamp(Number((c.resourcesUsed||{})[key])||0, 0, uses), reset: e.use==="pb" ? "long" : e.use
     });
   });
   // A dragonborn's Breath Weapon (once per short or long rest, or a
@@ -218,6 +225,12 @@ export function regainOnInitiative(c){
 }
 /* Restore resources on a rest. A long rest restores everything except
    "manual" ones; a short rest only what recharges on one. Returns the names restored. */
+/* The race as a resource row's source: "Chromatic Dragonborn", not
+   "Dragonborn (Chromatic)" (Vitals puts the source in brackets), and a
+   2024 species by its name ("Orc"). */
+function raceSource(c){
+  return (c.race || "").replace(/ \(2024\)$/, "").replace(/^(.+) \((.+)\)$/, "$2 $1");
+}
 function slug(text){ return (text||"").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, ""); }
 export function restoreResources(c, restType){
   var restored = [];

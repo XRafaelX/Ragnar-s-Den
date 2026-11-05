@@ -22,6 +22,9 @@ import { CAMPAIGN_FEATS } from "../data/feats.js";
                `switchLabel` names the card as an on/off switch for
                screen readers (otherwise it is a pressed button)
      isOn(key) whether a card is in use
+     locked(key)  optional: why a card is held on ("On for your 2024
+               species"), or "". It shows as on, says why, and a tap
+               does nothing
      onTap(key)  the card was tapped: change the state. The shelf then
                refreshes itself, unless the caller redraws everything
      outcome() html for the line under the cards ("" hides it)
@@ -62,6 +65,7 @@ export function dlcShelf(opts){
       (def.text ? "<span class='wiz-dlc-desc'>"+escapeHtml(def.text)+"</span>" : "")+
       "<span class='wiz-dlc-state'></span>";
     card.addEventListener("click", function(){
+      if(opts.locked && opts.locked(def.key)) return;
       opts.onTap(def.key);
       refresh(def.key);
     });
@@ -77,12 +81,15 @@ export function dlcShelf(opts){
   function refresh(tapped){
     var any = false;
     opts.cards.forEach(function(def){
-      var on = !!opts.isOn(def.key), card = cards[def.key];
+      var why = (opts.locked && opts.locked(def.key)) || "";
+      var on = !!why || !!opts.isOn(def.key), card = cards[def.key];
       any = any || on;
       card.classList.toggle("on", on);
+      card.classList.toggle("locked", !!why);
       card.classList.toggle("fresh", on && tapped===def.key);
       card.setAttribute(def.switchLabel ? "aria-checked" : "aria-pressed", on ? "true" : "false");
-      card.querySelector(".wiz-dlc-state").textContent = on ? "In use. Tap to turn off" : "Tap to use";
+      if(why) card.setAttribute("aria-disabled", "true"); else card.removeAttribute("aria-disabled");
+      card.querySelector(".wiz-dlc-state").textContent = why || (on ? "In use. Tap to turn off" : "Tap to use");
     });
     wrap.classList.toggle("has-book", any);
     sub.textContent = opts.sub();
@@ -121,10 +128,15 @@ export var GUN_MISFIRE_OUTCOME = "<b>Misfires:</b> your Handcannon, Long Gun and
 
 /* The 2024 Player's Handbook's character rules (p. 38) for older races
    and backgrounds (wizardState.rules2024 / c.rules2024). The 2024
-   backgrounds follow them whatever this says. */
+   backgrounds and species follow them whatever this says (the card is
+   then held on, see rules2024Lock). */
 export var RULES_2024_CARD = {key: "rules2024", series: "Player's Handbook 2024", title: "2024 character rules", switchLabel: "Use the 2024 character rules",
   perks: ["Scores from your background", "An Origin feat", "Three languages"],
-  text: "Your background, not your race, raises your ability scores (+2 to one and +1 to another, or +1 to three). A background without a feat of its own gives an Origin feat of your choice, and every character knows Common and two more languages. The 2024 backgrounds always work this way."};
+  text: "Your background, not your race, raises your ability scores (+2 to one and +1 to another, or +1 to three). A background without a feat of its own gives an Origin feat of your choice, and every character knows Common and two more languages. The 2024 backgrounds and species always work this way."};
+/* Why the 2024 rules card is held on: a 2024 species or background, or "". */
+export function rules2024Lock(raceEdition, backgroundEdition){
+  return raceEdition==="2024" ? "On for your 2024 species" : backgroundEdition==="2024" ? "On for your 2024 background" : "";
+}
 export var RULES_2024_OUTCOME = "<b>2024 rules:</b> your background raises your scores in place of your race, a background without a feat gives an Origin feat, and you know at least three languages.";
 
 /* The 2024 Monk (a monk class entry's edition "2024", see

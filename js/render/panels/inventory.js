@@ -1,3 +1,5 @@
+import { weaponMastery, masteryKind, weaponMasterSwitch } from "../../core/weapon-mastery.js";
+import { WEAPON_MASTERY } from "../../data/weapon-mastery.js";
 import { save } from "../../core/state.js";
 import { openFlourishSheet } from "./bard.js";
 import { artificerHitDice } from "../../core/artificer.js";
@@ -9,7 +11,7 @@ import { rollAttack, rollSneak } from "./sheet-rolls.js";
 import { smiteButtons, sheetTop, lead as sheetLead, sheetButton } from "./paladin.js";
 import { hitDicePools, spendHitDie } from "../../core/character-resources.js";
 import { totalLevel } from "../../core/basics.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor, martialArtsDieAt } from "../../core/helpers.js";
+import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, gwm2024Bonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor, martialArtsDieAt } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -76,6 +78,22 @@ function dedicateEntry(c, item, idx){
       var on = !item.dedicated;
       setDedicatedWeapon(c, item, on);
       showActionToast(on ? (item.name || "It") + " now counts as a monk weapon." : (item.name || "It") + " is an ordinary weapon again.");
+      redrawKeeping(idx);
+    }
+  };
+}
+/* Weapon Master (2024): use this weapon's mastery in place of the kind
+   picked before (the feat lets you change it after a long rest). */
+function masteryEntry(c, item, idx){
+  var feat = item.type==="weapon" && weaponMasterSwitch(c, item);
+  if(!feat) return null;
+  var kind = masteryKind(item), prop = WEAPON_MASTERY[kind];
+  return {
+    label: "Use its mastery: " + prop,
+    title: "Weapon Master: switch your mastery to the " + kind.toLowerCase() + " (" + prop + "). You can change it whenever you finish a long rest.",
+    onClick: function(){
+      feat.picks = Object.assign({}, feat.picks || {}, {option: kind});
+      showActionToast("Weapon Master: your mastery is now the " + kind.toLowerCase() + "'s " + prop + ".");
       redrawKeeping(idx);
     }
   };
@@ -376,6 +394,7 @@ function itemHeader(c, item, idx, onOpenDetails, noEquip){
     attuneEntry(c, item, idx),
     endInfusionEntry(c, item),
     dedicateEntry(c, item, idx),
+    masteryEntry(c, item, idx),
     bondEntry(c, item, idx),
     enchantEntry(c, item, idx),
     {label:"Edit details", onClick:onOpenDetails},
@@ -1345,6 +1364,35 @@ function linkMartialArts(el, c){
 }
 /* Martial Arts explained: the die and what it does, the table by monk
    level with the character's row marked, and when it grows next. */
+/* A weapon's mastery property, in a bottom sheet: what it does, and
+   where the tray offers it. */
+function openMasterySheet(c, item, m){
+  openBottomSheet(function(body, refresh, close){
+    var header = document.createElement("div");
+    header.className = "bs-header";
+    var title = document.createElement("div");
+    title.className = "bs-title";
+    title.textContent = "Mastery: " + m.name;
+    header.appendChild(title);
+    var closeBtn = document.createElement("button");
+    closeBtn.className = "bs-close"; closeBtn.textContent = "✕"; closeBtn.title = "Close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.addEventListener("click", close);
+    header.appendChild(closeBtn);
+    body.appendChild(header);
+    var sub = document.createElement("p");
+    sub.className = "bs-subtitle";
+    sub.textContent = (item.name || m.kind) + " · from " + m.source;
+    body.appendChild(sub);
+    var text = document.createElement("div");
+    text.className = "inv-breath-details";
+    [m.text, m.when==="extra" ? "The off-hand attack's button says when it's part of the Attack action."
+      : "After an attack with it, the dice tray offers it" + (m.when==="miss" ? " on a miss." : " on a hit.")].forEach(function(t){
+      var para = document.createElement("p"); para.textContent = t; text.appendChild(para);
+    });
+    body.appendChild(text);
+  });
+}
 function openMartialArtsSheet(c){
   var lv = classLevelOf(c, "Monk"), now = martialArtsDieAt(c, lv), is2024 = isMonk2024(c);
   var steps = [[1, 4], [5, 10], [11, 16], [17, 20]];
@@ -1478,6 +1526,8 @@ function renderWeaponCard(c, item, idx){
   var rage = rageDamageBonus(c, item);
   if(rage) subtitleParts.push("Rage +" + rage + " damage");
   if(duelingBonus(c, item)) subtitleParts.push("Dueling +2 damage");
+  var gwm = gwm2024Bonus(c, item);
+  if(gwm) subtitleParts.push("Great Weapon Master +" + gwm + " damage");
   if(sidearmMasteryBonus(c, item)) subtitleParts.push("Sidearm Mastery +2 damage");
   if(outlawGritBonus(c, item)) subtitleParts.push("Outlaw's Grit +2 damage");
   if(marshalRange(c, item)) subtitleParts.push(marshalRange(c, item));
@@ -1487,6 +1537,18 @@ function renderWeaponCard(c, item, idx){
   subtitle.className = "inv-card-subtitle";
   subtitle.textContent = subtitleParts.join(" · ");
   linkMartialArts(subtitle, c);
+  // Its mastery property, when the character can use it: a tap explains it.
+  var mastery = weaponMastery(c, item);
+  if(mastery){
+    subtitle.appendChild(document.createTextNode(" · "));
+    var mb = document.createElement("button");
+    mb.type = "button"; mb.className = "inv-term-link inv-mastery-link";
+    mb.textContent = "Mastery: " + mastery.name;
+    mb.title = mastery.short;
+    mb.setAttribute("aria-haspopup", "dialog");
+    mb.addEventListener("click", function(e){ e.stopPropagation(); openMasterySheet(c, item, mastery); });
+    subtitle.appendChild(mb);
+  }
   card.appendChild(subtitle);
 
   if(item.notes){
@@ -1591,9 +1653,12 @@ function renderWeaponCard(c, item, idx){
     offBtn.type = "button"; offBtn.className = "btn small inv-roll-btn inv-offhand-btn";
     offBtn.innerHTML = makeDicesSvg() + "Off-hand " + parsed.qty + "d" + parsed.die + fmtMod(off.damage);
     var offTag = document.createElement("span");
-    offTag.className = "inv-action-tag"; offTag.textContent = "Bonus action";
+    // Nick: the extra attack is part of the Attack action.
+    offTag.className = "inv-action-tag"; offTag.textContent = off.nick ? "Attack action (Nick)" : "Bonus action";
     offBtn.appendChild(offTag);
-    offBtn.title = off.style
+    offBtn.title = off.nick ? "Nick: the light weapon's extra attack, made as part of the Attack action instead of a bonus action (once a turn)."
+      + (off.style ? " Two-Weapon Fighting adds your ability modifier to its damage." : " Its damage leaves out your ability modifier (unless it's negative).")
+      : off.style
       ? "Two-weapon fighting: after attacking with a weapon in your other hand, a bonus action attack with this one. Two-Weapon Fighting adds your ability modifier to its damage."
       : "Two-weapon fighting: after attacking with a weapon in your other hand, a bonus action attack with this one. Its damage leaves out your ability modifier (unless it's negative).";
     offBtn.addEventListener("click", function(){
@@ -1823,7 +1888,7 @@ function inlinePicker(label, items, value, onPick){
 function openArmorSheet(c, item, idx){
   openBottomSheet(function(body, refresh, close){
     var catLabel = (ARMOR_CATEGORIES.find(function(cat){ return cat.key===item.category; })||{}).label || item.category;
-    var acText = armorAcText(item, hasFeat(c, "Medium Armor Master") ? 3 : 2);
+    var acText = armorAcText(item, hasFeat(c, "Medium Armor Master") || hasFeat(c, "Medium Armor Master (2024)") ? 3 : 2);
     var subtitleParts = [acText, catLabel];
     if(item.notes) subtitleParts.push(item.notes);
     sheetHeader(body, item, "Armor name", subtitleParts.join(" · "), close);
@@ -1869,7 +1934,7 @@ function renderArmorCard(c, item, idx){
   if(infLine) card.appendChild(infLine);
 
   var catLabel = (ARMOR_CATEGORIES.find(function(cat){ return cat.key===item.category; })||{}).label || item.category;
-  var acText = armorAcText(item, hasFeat(c, "Medium Armor Master") ? 3 : 2);
+  var acText = armorAcText(item, hasFeat(c, "Medium Armor Master") || hasFeat(c, "Medium Armor Master (2024)") ? 3 : 2);
   var subtitleParts = [acText, catLabel];
   if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
   // The row's own say first (Mithral Armor has none), then its armor's.

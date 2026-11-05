@@ -38,9 +38,9 @@ const featUses = (c) => H.characterResources(c).filter((r) => r.key.startsWith("
 const ctxOf = (c) => ({ abilities: c.abilities, skillProfs: c.skillProfs, languages: c.languages, pb: H.profBonus(c) });
 const problem = (name, picks, ctx = {}) => FP.featPicksProblem(FP.featDef(name), { ...FP.emptyPicks(FP.featDef(name)), ...picks }, ctx);
 
-test("feat catalog: 117 feats, well formed, naming only things that exist", () => {
-  assert.equal(FEATS_CATALOG.length, 117);
-  assert.equal(new Set(FEATS_CATALOG.map((f) => f.name)).size, 117);
+test("feat catalog: 181 feats, well formed, naming only things that exist", () => {
+  assert.equal(FEATS_CATALOG.length, 181, "117, then the 2024 Player's Handbook's 42 General, 10 Fighting Style and 12 Epic Boon feats");
+  assert.equal(new Set(FEATS_CATALOG.map((f) => f.name)).size, 181);
   const bySource = {};
   for(const f of FEATS_CATALOG){
     assert.ok(f.source, f.name + ": source book");
@@ -73,7 +73,7 @@ test("feat catalog: 117 feats, well formed, naming only things that exist", () =
     }
     if(f.castAbility && f.castAbility.feat) assert.ok(FP.featDef(f.castAbility.feat), f.name + ": cast ability from " + f.castAbility.feat);
   }
-  assert.deepEqual(bySource, { PHB: 42, TCE: 15, XGE: 15, MTF: 1, ERLW: 2, FTD: 3, SCC: 2, BMT: 1, GUN: 1, SPK: 1, DSotDQ: 9, BGG: 8, PAitM: 7, XPHB: 10 });
+  assert.deepEqual(bySource, { PHB: 42, TCE: 15, XGE: 15, MTF: 1, ERLW: 2, FTD: 3, SCC: 2, BMT: 1, GUN: 1, SPK: 1, DSotDQ: 9, BGG: 8, PAitM: 7, XPHB: 74 });
   for(const name of Object.keys(FEAT_RESOURCES)) assert.ok(FP.featDef(name), "resource for a feat that isn't there: " + name);
 });
 

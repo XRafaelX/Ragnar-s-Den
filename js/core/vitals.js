@@ -54,11 +54,22 @@ export function itemConHpBonus(c){
   var gain = mod(abilityScore(c, "con")) - mod(baseScore(c, "con"));
   return gain > 0 ? gain * totalLevel(c) : 0;
 }
+/* Hit points a feat adds outright (`hp`: Boon of Fortitude's 40), as
+   [{name, value}]. */
+export function featHpBonuses(c){
+  var out = [];
+  (c.feats||[]).forEach(function(f){
+    var fd = featDef(f.name);
+    if(fd && fd.hp && !out.some(function(x){ return x.name===fd.name; })) out.push({name: fd.name, value: fd.hp});
+  });
+  return out;
+}
 /* The bonuses above that apply, as [{name, value}], for tooltips. */
 export function hpBonuses(c){
   var out = [];
   var tough = toughBonus(c), race = raceHpBonus(c), item = itemConHpBonus(c);
   if(tough) out.push({name:hasFeat(c, "Tough") ? "Tough" : "Tough (2024)", value:tough});
+  out = out.concat(featHpBonuses(c));
   if(race) out.push({name:(RACE_DATA[c.race].hpTrait || c.race), value:race});
   if(item) out.push({name:abilityScoreDetail(c, "con").sources.join(" and "), value:item});
   return out;
@@ -70,7 +81,8 @@ export function maxHp(c){
   return hpMaxHalved(c) ? Math.max(1, Math.floor(full / 2)) : full;
 }
 export function fullMaxHp(c){
-  return (Number(c.hp && c.hp.max)||0) + toughBonus(c) + raceHpBonus(c) + itemConHpBonus(c);
+  return (Number(c.hp && c.hp.max)||0) + toughBonus(c) + raceHpBonus(c) + itemConHpBonus(c) +
+    featHpBonuses(c).reduce(function(a, b){ return a + b.value; }, 0);
 }
 /* Hit points left after n damage, without taking it: the Arcane Ward and
    temporary hit points soak it first, as the HP card does. */
@@ -147,6 +159,7 @@ export function computeSpeed(c){
   if(effectOn(c, "bladesong")) parts.push({name: "Bladesong", value: 10});
   if(effectOn(c, "dread_ambusher")) parts.push({name: "Dread Ambusher", value: 10});
   if(effectOn(c, "shadow_walk")) parts.push({name: "Shadow Walk", value: 10});
+  if(effectOn(c, "large_form")) parts.push({name: "Large Form", value: 10});
   // A Heavy Holster with no knives in it: +20 ft.
   parts = parts.concat(holsterSpeedParts(c));
   // Arcane Propulsion Armor, worn: +5 ft.
@@ -191,9 +204,16 @@ export function computeSpeed(c){
   // A race choice's speed (a Half-Elf (Variant)'s Swim Speed; "walk" for
   // one equal to the walking speed, a Simic Hybrid's Nimble Climber).
   raceChoiceEffects(c).forEach(function(e){ ["fly", "swim", "climb"].forEach(function(t){ if(e[t]) list.push({type: t, value: e[t]==="walk" ? walk : e[t], when: "", source: e.name}); }); });
+  // Wings while they last: a 2024 dragonborn's Draconic Flight and a 2024
+  // aasimar's Heavenly Wings, a fly speed equal to the speed.
+  if(effectOn(c, "draconic_flight")) list.push({type: "fly", value: walk, when: "", source: "Draconic Flight"});
+  if(effectOn(c, "celestial_revelation_2024") && c.effects.celestial_revelation_2024==="Heavenly Wings") list.push({type: "fly", value: walk, when: "", source: "Heavenly Wings"});
   var speedSources = [];
   (c.classes||[]).forEach(function(cl){ speedSources = speedSources.concat(classFeatureList(cl)); });
-  speedSources.concat(invocationSpeedSources(c), optionEffects(c)).forEach(function(f){
+  // Feats tagged `speeds` (Athlete (2024): a climb speed equal to the walking speed).
+  var featSpeeds = [];
+  (c.feats||[]).forEach(function(f){ var fd = featDef(f.name); if(fd && fd.speeds && featSpeeds.indexOf(fd)===-1) featSpeeds.push(fd); });
+  speedSources.concat(invocationSpeedSources(c), optionEffects(c), featSpeeds).forEach(function(f){
     (f.speeds||[]).forEach(function(sp){
       if(sp.bonus){ bonus[sp.type] = (bonus[sp.type]||0) + sp.bonus; return; }
       var value = sp.value==="walk" ? walk : sp.value==="2walk" ? 2 * walk : sp.value;
@@ -245,7 +265,7 @@ export function computeArmorClass(c){
   if(bodyArmor){
     var dexContribution = 0;
     if(bodyArmor.category==="light") dexContribution = dexMod;
-    else if(bodyArmor.category==="medium") dexContribution = Math.min(dexMod, hasFeat(c, "Medium Armor Master") ? 3 : 2);
+    else if(bodyArmor.category==="medium") dexContribution = Math.min(dexMod, hasFeat(c, "Medium Armor Master") || hasFeat(c, "Medium Armor Master (2024)") ? 3 : 2);
     var armorAC = Number(bodyArmor.baseAC)||10;
     var magic = magicBonusOf(bodyArmor);
     base = armorAC + dexContribution + magic;
@@ -452,6 +472,10 @@ export function computeDarkvision(c){
     if(held && (held.slots || []).some(function(s){ return (s || []).length; })) range = 0;
   }
   var sources = range ? [c.race] : [];
+  // A race choice's (a 2024 drow's 120 feet).
+  raceChoiceEffects(c).forEach(function(e){
+    if(e.darkvision > range){ range = e.darkvision; sources.push(e.name); }
+  });
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
       var dv = f.darkvision;
@@ -485,6 +509,9 @@ export function getCharacterSenses(c){
   // (A class feature's own sense too: a rogue's Blindsense.)
   var extra = styleSenses(c).concat(invocationSenses(c));
   if(effectOn(c, "mortal_bulwark")) extra.push("Truesight 120 ft");
+  if(effectOn(c, "stonecunning")) extra.push("Tremorsense 60 ft (on stone)");
+  // Feats tagged `sense` (Skulker (2024)'s blindsight, Boon of Truesight).
+  (c.feats||[]).forEach(function(f){ var fd = featDef(f.name); if(fd && fd.sense && extra.indexOf(fd.sense)===-1) extra.push(fd.sense); });
   if(effectOn(c, "third_eye") && c.effects.third_eye==="Ethereal Sight") extra.push("Ethereal Sight 60 ft");
   if(effectOn(c, "third_eye") && c.effects.third_eye==="See Invisibility") extra.push("See invisibility 10 ft");
   if(effectOn(c, "revelation_in_flesh") && [].concat(c.effects.revelation_in_flesh).indexOf("Sight")!==-1) extra.push("See invisible creatures 60 ft");
@@ -494,8 +521,13 @@ export function getCharacterSenses(c){
 }
 
 /* Heavy Armor Master: nonmagical bludgeoning, piercing and slashing
-   damage is reduced by 3 while wearing heavy armor. */
+   damage is reduced by 3 while wearing heavy armor (the 2024 feat: any
+   such damage from an attack, by the proficiency bonus). */
 export function heavyArmorMasterActive(c){
-  return hasFeat(c, "Heavy Armor Master") &&
+  return (hasFeat(c, "Heavy Armor Master") || hasFeat(c, "Heavy Armor Master (2024)")) &&
     (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
+}
+/* How much it takes off: 3, or the 2024 feat's proficiency bonus. */
+export function heavyArmorMasterAmount(c){
+  return hasFeat(c, "Heavy Armor Master (2024)") ? profBonus(c) : 3;
 }

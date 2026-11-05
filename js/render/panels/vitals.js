@@ -1,5 +1,6 @@
+import { resourcefulOnLongRest } from "../../core/species-2024.js";
 import { save } from "../../core/state.js";
-import { useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, kiWord, uncannyMetabolism, useUncannyMetabolism, perfectFocusGain, usePerfectFocus } from "../../core/helpers.js";
+import { useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, heavyArmorMasterAmount, hasFeat, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, kiWord, uncannyMetabolism, useUncannyMetabolism, perfectFocusGain, usePerfectFocus } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -411,8 +412,10 @@ export function renderVitalsPanel(c){
       hamRow.appendChild(b);
     };
     makeHamBtn("Take", "Take the full damage (temp HP first)", applyDamage);
-    makeHamBtn("Take −3", "Heavy Armor Master: nonmagical B/P/S reduced by 3", function(n){
-      var taken = Math.max(0, n - 3);
+    // (The 2024 feat takes off the proficiency bonus, from any attack's bludgeoning, piercing or slashing.)
+    var hamCut = heavyArmorMasterAmount(c);
+    makeHamBtn("Take −" + hamCut, "Heavy Armor Master: " + (hamCut===3 && !hasFeat(c, "Heavy Armor Master (2024)") ? "nonmagical bludgeoning, piercing or slashing damage" : "bludgeoning, piercing or slashing damage from an attack") + " reduced by " + hamCut, function(n){
+      var taken = Math.max(0, n - hamCut);
       logRoll("Heavy Armor Master", n + " damage reduced to " + taken + ".");
       if(taken > 0) applyDamage(taken); else { save(); renderAll(); flashHpNum("hp-dmg"); }
     });
@@ -934,6 +937,7 @@ export function renderVitalsPanel(c){
         forgeOnLongRest(c);
         interventionOnLongRest(c);
         var omen = omenOnLongRest(c);
+        var inspired = resourcefulOnLongRest(c);
         var surgesMax = characterResources(c).find(function(r){ return r.key==="Wizard:power_surges"; });
         if(surgesMax) surgesOnRest(c, "long", surgesMax.max);
         delete c.overchannels;
@@ -953,6 +957,7 @@ export function renderVitalsPanel(c){
           (items.recharged.length ? " Recharged: "+items.recharged.join(", ")+"." : "")+
           (items.ended.length ? " Ended: "+items.ended.join(", ")+"." : "")+
           (omen ? " Cosmic Omen: " + omen + "." : "")+
+          (inspired ? " Resourceful: you have Heroic Inspiration." : "")+
           (foretold ? " Portent: " + foretold.join(", ") + "." : "")+
           (exhaustionNow!==null ? " Exhaustion down to level "+exhaustionNow+" (with food and drink)." : "")+
           (conditionsEnded.length ? " Conditions ended: "+conditionsEnded.join(", ")+"." : ""));

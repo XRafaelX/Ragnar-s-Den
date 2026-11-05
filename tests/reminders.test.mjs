@@ -60,7 +60,9 @@ test("a reminder never repeats what the sheet already shows", () => {
   for(const { where, f } of allFeatures().filter((x) => x.f.remind)){
     // (War Caster's advantage is on the saves card. Its reminder is the
     // other half of the feat, a spell in place of an opportunity attack.)
-    const besides = f.name === "War Caster" ? ["advantage"] : [];
+    // (The same for the 2024 War Caster, and Skulker (2024)'s blindsight and
+    // Stealth: its reminder is Sniper.)
+    const besides = f.name === "War Caster" || f.name === "War Caster (2024)" ? ["advantage"] : f.name === "Skulker (2024)" ? ["advantage", "sense"] : [];
     for(const k of ["saveNote", "advantage", "skillBonus", "sense", "rollButton"]) assert.ok(!f[k] || besides.includes(k), where + " " + f.name + ": already shown through " + k);
     assert.ok(!resourceNames.has(f.name), where + " " + f.name + ": already a row on Class resources");
     assert.ok(!effectNames.has(f.name), where + " " + f.name + ": already on Active effects");
@@ -381,7 +383,8 @@ test("feats' reminders (2026-11-03), after the class features", () => {
   assert.deepEqual(rows.map((x) => x.name), ["Projected Ward", "War Caster"], "feats after the class features");
   assert.equal(rows[1].source, "Feat");
   assert.match(rows[1].text, /somatic components/, "a tap shows the feat's text");
-  for(const name of Object.keys(FEAT_RESOURCES)) assert.ok(!(FEATS_CATALOG.find((f) => f.name === name) || {}).remind, name + " is already a resource row");
+  // (Mage Slayer (2024)'s row is Guarded Mind, its reminder the other half: Concentration Breaker.)
+  for(const name of Object.keys(FEAT_RESOURCES)) assert.ok(name === "Mage Slayer (2024)" || !(FEATS_CATALOG.find((f) => f.name === name) || {}).remind, name + " is already a resource row");
 });
 test("Elemental Adept and Flames of Phlegethos on the spell cards", () => {
   const wiz = { name: "Wizard", subclass: "", level: 5 };

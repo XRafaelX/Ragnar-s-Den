@@ -6,7 +6,7 @@ import { BACKGROUND_INFO } from "../data/backgrounds.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { mod, fmtMod, escapeHtml, ce } from "../core/helpers.js";
 import { themedPicker } from "../ui/themed-picker.js";
-import { wizardBgScoreRule, wizardRules2024 } from "./wizard-core.js";
+import { wizardBgScoreRule, wizardRules2024, wizardRace2024 } from "./wizard-core.js";
 import { featOffered } from "../core/feats-2024.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, subclassChoice, subclassesThatGive, raceChoiceDef, raceAbilityAmounts, raceAbilityIncreases, raceAbilityPicksNeeded, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
   wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardRaceSkills,
@@ -162,17 +162,20 @@ function checkList(options, chosen, count, takenReason, onChange){
    one (wizardStepFeat, wizardStepFeatPicks). */
 var CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12.5 10 17.5 19 7"/></svg>';
 
+/* "an" before a vowel sound ("an Elf (2024)"), else "a". */
+function aOrAn(word){ return /^[AEIOU]/i.test(word || "") ? "an" : "a"; }
 export function wizardStepRaceChoices(container){
   var def = raceChoiceDef() || {}, rc = wizardState.raceChoices;
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Race Traits</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>Why this matters:</b> As a <b>"+escapeHtml(wizardState.race)+"</b> you choose some of your traits yourself instead of getting fixed ones. These picks let you shape exactly the character you want.";
+  explain.innerHTML = "<b>Why this matters:</b> As "+aOrAn(wizardState.race)+" <b>"+escapeHtml(wizardState.race)+"</b> you choose some of your traits yourself instead of getting fixed ones. These picks let you shape exactly the character you want.";
   // A 2024 background raises the scores instead of the race (picked on
   // Ability Scores), so the race's score picks are left out here.
   if(wizardBgScoreRule()){
     def = {feat: def.feat};
-    explain.innerHTML += " Under the 2024 rules your background raised your ability scores, so the race's increases are left out.";
+    // (A 2024 species has no increases of its own to leave out.)
+    if(!wizardRace2024()) explain.innerHTML += " Under the 2024 rules your background raised your ability scores, so the race's increases are left out.";
   }
   card.appendChild(explain);
 
@@ -283,7 +286,10 @@ export function wizardStepRaceChoices(container){
     var slots = wizardRaceSlots(g.key), ctx = wizardRacePickContext(g);
     fillSlots(g.def, slots, ctx);
     var trait = traits.find(function(t){ return t.name===g.name; });
-    var sec = section(g.name, trait ? trait.text : "", !classPicksProblem(g, slots, ctx));
+    // (A trait listing its options as "• " lines shows only its lead: the
+    // picker's line under it explains the option chosen.)
+    var help = trait ? trait.text.split("\n\u2022 ")[0] : "";
+    var sec = section(g.name, help, !classPicksProblem(g, slots, ctx));
     sec.appendChild(renderClassPicks(g, slots, ctx, function(meta){ if(!(meta && meta.typing)) picked(); }, "race:" + g.key));
   });
 
@@ -300,7 +306,11 @@ export function wizardStepFeat(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Choose a Feat</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>Why this matters:</b> As a <b>"+escapeHtml(wizardState.race)+"</b> you start with a feat, a special talent most characters only get later.";
+  // A 2024 human's Versatile: an Origin feat, Skilled suggested.
+  var originOnly = !!(raceChoiceDef() && raceChoiceDef().feat && raceChoiceDef().feat.origin);
+  explain.innerHTML = originOnly
+    ? "<b>Why this matters:</b> As "+aOrAn(wizardState.race)+" <b>"+escapeHtml(wizardState.race)+"</b> you start with an Origin feat of your choice (Versatile). The book suggests <b>Skilled (2024)</b>: three more skills or tools."
+    : "<b>Why this matters:</b> As "+aOrAn(wizardState.race)+" <b>"+escapeHtml(wizardState.race)+"</b> you start with a feat, a special talent most characters only get later.";
   card.appendChild(explain);
   var search = document.createElement("input");
   search.type = "text"; search.className = "wiz-spell-search";
@@ -321,7 +331,7 @@ export function wizardStepFeat(container){
   function fill(){
     fillFeatList(list, {
       // (The 2024 Origin feats only under the 2024 rules.)
-      feats: FEATS_CATALOG.filter(function(f){ return featOffered(f, wizardRules2024()); }), query: wizardState.featQuery, selected: rc.feat, reason: featPrereqReason,
+      feats: FEATS_CATALOG.filter(function(f){ return originOnly ? f.origin : featOffered(f, wizardRules2024()); }), query: wizardState.featQuery, selected: rc.feat, reason: featPrereqReason,
       open: !!wizardState.featBlockedOpen,
       onToggle: function(){ wizardState.featBlockedOpen = !wizardState.featBlockedOpen; fill(); },
       onPick: function(f){
@@ -430,7 +440,7 @@ function wizardStepFeatChoice(container, grant){
   var raceFeat = wizardState.raceChoices.feat;
   var box = ce("div","fs-options");
   grant.choices.forEach(function(name){
-    var def = featDef(name), taken = raceChoiceDef() && raceChoiceDef().feat && raceFeat===name;
+    var def = featDef(name), taken = raceChoiceDef() && raceChoiceDef().feat && raceFeat===name && !def.repeatable;
     var row = ce("div","wiz-equip-option fs-option"+(grant.def===def ? " selected" : "")+(taken ? " disabled" : ""));
     row.setAttribute("role","button");
     row.tabIndex = taken ? -1 : 0;

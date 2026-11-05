@@ -121,7 +121,7 @@ export function featureSpells(c){
       note: e.ability==="pick" ? lead + " Choose its spellcasting ability on the Features & Feats tab to see its save DC."
         : e.ability ? spellAbilityNote(c, e.ability, lead) : lead };
     if(kind==="free"){
-      fs.kindLabel = e.use==="short" ? "Free 1/short rest" : "Free 1/long rest";
+      fs.kindLabel = e.use==="short" ? "Free 1/short rest" : e.use==="pb" ? "Free (PB)/long rest" : "Free 1/long rest";
       if(!e.slots) fs.limited = true;
     }
     if(e.at) fs.castAt = e.at;
@@ -134,18 +134,20 @@ export function featureSpells(c){
   });
   return out;
 }
-var FEAT_SPELL_KINDS = {long: "free", short: "free", once: "free", atwill: "atwill", ritual: "ritual", known: "known"};
+var FEAT_SPELL_KINDS = {long: "free", short: "free", once: "free", atwill: "atwill", ritual: "ritual", known: "known", prepared: "prepared"};
 var FEAT_SPELL_LEADS = {
   long: "Free once per long rest, or cast it with a spell slot.",
   short: "Free once per short or long rest, or cast it with a spell slot.",
   once: "Once per long rest at its lowest level, without a spell slot.",
   atwill: "At will, without a spell slot.",
   ritual: "Cast it as a ritual.",
+  prepared: "Always prepared. Cast it with a spell slot, or as a ritual.",
   known: "A cantrip you always know from this feat."
 };
 var ABILITY_KEYS = {Intelligence: "int", Wisdom: "wis", Charisma: "cha"};
 /* The race's innate spells the character has at their level: [{name,
-   use ("known", "long", "short" or "atwill"), at, note, ability ("int"...,
+   use ("known", "long", "short", "pb" (proficiency bonus times per long
+   rest: a forest gnome's Speak with Animals) or "atwill"), at, note, ability ("int"...,
    "pick" while its choice is still to make, or ""), slots, components,
    feature}], from its traits' `spells` (and the cantrips picked for
    them) and its choices' (a Tiefling (Variant)'s Hellfire). */
@@ -165,11 +167,21 @@ export function raceSpellEntries(c){
       add(spec, feature, ability, {name: e.name, use: e.use || (data && data.level===0 ? "known" : "long"), at: e.at || 0, note: e.note || ""});
     });
   }
+  function slotsOf(t){
+    var entry = held["race:" + t.name + ":pick"];
+    return entry && !entry.manual ? entry.slots || [] : [];
+  }
+  function abilityPicked(t){
+    var slots = slotsOf(t), chosen = "";
+    ((t.profs && t.profs.pick) || []).forEach(function(slot, i){ if(slot.id==="spellAbility") chosen = ABILITY_KEYS[(slots[i] || [])[0]] || ""; });
+    return chosen;
+  }
+  // The ability picked on any trait: a 2024 tiefling's Otherworldly
+  // Presence and a lineage's spells use the one picked on the lineage.
+  var raceAbility = (d.traits || []).map(abilityPicked).filter(Boolean)[0] || "";
   (d.traits || []).forEach(function(t){
-    var pick = (t.profs && t.profs.pick) || [], entry = held["race:" + t.name + ":pick"];
-    var slots = entry && !entry.manual ? entry.slots || [] : [];
-    var chosen = "";
-    pick.forEach(function(slot, i){ if(slot.id==="spellAbility") chosen = ABILITY_KEYS[(slots[i] || [])[0]] || ""; });
+    var pick = (t.profs && t.profs.pick) || [], slots = slotsOf(t);
+    var chosen = abilityPicked(t) || raceAbility;
     var spec = t.spells || {}, ability = spec.ability==="pick" ? chosen || "pick" : spec.ability || "";
     if(t.spells) addList(spec, t.name, ability);
     pick.forEach(function(slot, i){
@@ -177,7 +189,10 @@ export function raceSpellEntries(c){
       (slots[i] || []).forEach(function(v){ add(spec, t.name, slot.ability || ability, {name: v, note: ""}); });
     });
   });
-  raceChoiceEffects(c).forEach(function(e){ if(e.spells) addList(e.spells, e.name, e.spells.ability || ""); });
+  // (A lineage's spells are its trait's: Elven Lineage, not "Drow".)
+  raceChoiceEffects(c).forEach(function(e){
+    if(e.spells) addList(e.spells, e.trait || e.name, e.spells.ability==="pick" ? raceAbility || "pick" : e.spells.ability || "");
+  });
   return out;
 }
 /* What a race spell's card says before its DC: "Once per long rest
@@ -185,6 +200,7 @@ export function raceSpellEntries(c){
 function raceSpellLead(e){
   var lead = e.use==="known" ? "A cantrip you always know from " + e.feature + "."
     : e.use==="atwill" ? "At will, without a spell slot."
+    : e.use==="pb" ? "Free a number of times equal to your proficiency bonus per long rest" + (e.slots ? ", or cast it with a spell slot." : ".")
     : e.slots ? "Free once per " + (e.use==="short" ? "short or long" : "long") + " rest, or cast it with a spell slot."
     : "Once per " + (e.use==="short" ? "short or long" : "long") + " rest without a spell slot.";
   if(e.at) lead += " Cast as a " + ordinal(e.at) + "-level spell.";

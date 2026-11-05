@@ -62,8 +62,8 @@ var POISON_IMMUNITY = {immune:["poison"], conditionImmune:["poisoned"]};
    cast with the slot's `ability` or the trait's. */
 /* "Small or Medium (your choice)": the pick the sheet reads for the
    character's size (raceSize), which heavy weapons and Squat Nimbleness care about. */
-function SIZE_CHOICE(){
-  return tr("Size", "You are Small or Medium, your choice. Small creatures have disadvantage on attack rolls with heavy weapons.",
+function SIZE_CHOICE(text){
+  return tr("Size", text || "You are Small or Medium, your choice. Small creatures have disadvantage on attack rolls with heavy weapons.",
     {pick:[{kind:"choice", id:"size", noun:"size", label:"Choose your size", options:["Medium","Small"]}]});
 }
 function innate(t, ability, list, more){ t.spells = Object.assign({ability:ability, list:list}, more || {}); return t; }
@@ -195,7 +195,11 @@ export var DRAGONBORN_BREATH = {
   "Dragonborn (Metallic)": Object.assign({}, FIZBAN_BREATH, {trait:"Metallic Ancestry", area:"15 ft cone", metallic:true,
     ancestries:fizbanAncestries({Brass:"Fire", Bronze:"Lightning", Copper:"Acid", Gold:"Fire", Silver:"Cold"})}),
   "Dragonborn (Gem)": Object.assign({}, FIZBAN_BREATH, {trait:"Gem Ancestry", area:"15 ft cone",
-    ancestries:fizbanAncestries({Amethyst:"Force", Crystal:"Radiant", Emerald:"Psychic", Sapphire:"Thunder", Topaz:"Necrotic"})})
+    ancestries:fizbanAncestries({Amethyst:"Force", Crystal:"Radiant", Emerald:"Psychic", Sapphire:"Thunder", Topaz:"Necrotic"})}),
+  // Player's Handbook (2024), p. 187: every dragon, a cone or a line each time.
+  "Dragonborn (2024)": Object.assign({}, FIZBAN_BREATH, {trait:"Draconic Ancestry", area:"15 ft cone or 30 ft line",
+    ancestries:fizbanAncestries({Black:"Acid", Blue:"Lightning", Brass:"Fire", Bronze:"Lightning", Copper:"Acid",
+      Gold:"Fire", Green:"Poison", Red:"Fire", Silver:"Cold", White:"Cold"})})
 };
 /* The ancestry trait's pick, each dragon with what it gives. */
 function ancestryPick(race){
@@ -214,6 +218,29 @@ function fizbanBreathTrait(area){
   return tr("Breath Weapon", "When you take the Attack action on your turn, you can replace one of your attacks with a magical exhalation in a " + area + ". Each creature in it makes a Dexterity saving throw (DC 8 + your Constitution modifier + your proficiency bonus), taking 1d10 damage of your ancestry's type on a failed save, or half as much on a successful one. The damage rises to 2d10 at 5th level, 3d10 at 11th and 4d10 at 17th. You can use it a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest.");
 }
 var FIZBAN_RESISTANCE = tr("Draconic Resistance", "You have resistance to the damage type of your draconic ancestry.");
+
+/* A 2024 species (Player's Handbook 2024): Medium or what `o` says,
+   30 ft unless `o.speed`, Common only, no ability increases. */
+function SPECIES_2024(o, traits){
+  var d = Object.assign({edition:"2024", size:"Medium", darkvision:0, languages:{fixed:["Common"]}, source:"Player's Handbook (2024)"}, o);
+  d.speed = {walk: o.speed || 30};
+  d.traits = traits;
+  return d;
+}
+/* A lineage's or legacy's spells: a cantrip (null when it's picked), a
+   spell from character level 3 and one from 5, cast with the ability
+   picked on the trait, once free per long rest or with spell slots. */
+function LINEAGE_SPELLS(names){
+  var list = [];
+  if(names[0]) list.push(names[0]);
+  list.push({name:names[1], from:3}, {name:names[2], from:5});
+  return {ability:"pick", slots:true, list:list};
+}
+/* A trait's own save DCs, in the TRAIT_DCS shape (for a trait whose name
+   another race uses with a different DC). */
+function dcs(t, dc){ t.dcs = dc; return t; }
+var SIZE_2024 = "You are Small or Medium, chosen when you pick this species. Under the 2024 rules size doesn't affect heavy weapons: they need Strength 13 (melee) or Dexterity 13 (ranged).";
+var GIANT_BOONS = ["Cloud's Jaunt","Fire's Burn","Frost's Chill","Hill's Tumble","Stone's Endurance","Storm's Thunder"];
 
 export var RACE_DATA = {
   /* ---- Standard (SRD / Player's Handbook) ---- */
@@ -843,7 +870,87 @@ export var RACE_DATA = {
     traits:[SIZE_CHOICE(), LINEAGE_SKILLS,
       wards(tr("Deathless Nature", "You have advantage on saving throws against disease and being poisoned, resistance to poison damage, and advantage on death saving throws. You don't need to eat, drink or breathe, and you don't need to sleep. Magic can't put you to sleep. You can finish a long rest in 4 hours spent inactive and motionless, staying conscious.", null,
         {on:"save", abilities:"all", when:"against disease and being poisoned, and death saving throws"}), {resist:["poison"]}),
-      tr("Knowledge from a Past Life", "When you make an ability check that uses a skill, you can roll a d6 right after seeing the d20 and add it to the check. You can do this a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest.")]}
+      tr("Knowledge from a Past Life", "When you make an ability check that uses a skill, you can roll a d6 right after seeing the d20 and add it to the check. You can do this a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest.")]},
+
+  /* ---- Player's Handbook (2024) ----
+     The ten species of chapter 4 (pp. 186-197, checked against the book
+     2026-11-05). `edition: "2024"`: no ability increases (the background
+     gives them) and only Common (the 2024 rules add two more languages).
+     Picking one turns the 2024 character rules on. */
+  "Aasimar (2024)": SPECIES_2024({size:"Small or Medium", darkvision:60}, [SIZE_CHOICE(SIZE_2024),
+    wards(tr("Celestial Resistance", "You have resistance to necrotic and radiant damage."), {resist:["necrotic","radiant"]}),
+    tr("Healing Hands", "As an action, you touch a creature and roll a number of d4s equal to your proficiency bonus. The creature regains that many hit points. Once you use this, you can't again until you finish a long rest."),
+    innate(tr("Light Bearer", "You know the Light cantrip. Charisma is your spellcasting ability for it."), "cha", ["Light"]),
+    dcs(tr("Celestial Revelation", "From character level 3, you can transform as a bonus action. It lasts 1 minute or until you end it (no action needed). Choose the form each time you transform:\n\u2022 Heavenly Wings: two spectral wings give you a fly speed equal to your speed.\n\u2022 Inner Radiance: you shed bright light in a 10-foot radius and dim light 10 feet beyond, and at the end of each of your turns each creature within 10 feet of you takes radiant damage equal to your proficiency bonus.\n\u2022 Necrotic Shroud: creatures other than your allies within 10 feet of you make a Charisma saving throw or are frightened until the end of your next turn.\n\nOnce on each of your turns while transformed, you can deal extra damage equal to your proficiency bonus to one target you damage with an attack or a spell. It's necrotic for Necrotic Shroud and radiant for the other two. Once you transform, you can't again until you finish a long rest."),
+      {ability:"cha", label:"Necrotic Shroud save DC"})]),
+  "Dragonborn (2024)": SPECIES_2024({size:"Medium", darkvision:60}, [
+    tr("Draconic Ancestry", "Choose the kind of dragon you descend from. It sets your Breath Weapon's damage type and the damage type you resist.", ancestryPick("Dragonborn (2024)")),
+    tr("Breath Weapon", "When you take the Attack action on your turn, you can replace one of your attacks with a breath of magical energy, in a 15-foot cone or a 30-foot line 5 feet wide (choose each time). Each creature in the area makes a Dexterity saving throw (DC 8 + your Constitution modifier + your proficiency bonus). It takes 1d10 damage of your ancestry's type on a failed save, or half as much on a success. The damage rises to 2d10 at character level 5, 3d10 at 11 and 4d10 at 17. You can use it a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest."),
+    tr("Damage Resistance", "You have resistance to the damage type of your draconic ancestry."),
+    tr("Draconic Flight", "From character level 5, as a bonus action you sprout spectral wings for 10 minutes, until you retract them (no action needed) or until you're incapacitated. Meanwhile you have a fly speed equal to your speed. Once you use this, you can't again until you finish a long rest.")]),
+  "Dwarf (2024)": SPECIES_2024({size:"Medium", darkvision:120, hpPerLevel:1, hpTrait:"Dwarven Toughness"}, [
+    wards(tr("Dwarven Resilience", "You have resistance to poison damage, and advantage on saving throws you make to avoid or end the poisoned condition.", null,
+      {on:"save", abilities:"all", when:"to avoid or end being poisoned"}), {resist:["poison"]}),
+    tr("Dwarven Toughness", "Your hit point maximum increases by 1, and it increases by 1 more every time you gain a level."),
+    tr("Stonecunning", "As a bonus action, you gain tremorsense out to 60 feet for 10 minutes. You must be on or touching a stone surface, natural or worked, to use it. You can do this a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest.")]),
+  "Elf (2024)": SPECIES_2024({size:"Medium", darkvision:60, choiceEffects:{elvenLineage:{
+      "Drow":{trait:"Elven Lineage", darkvision:120, spells:LINEAGE_SPELLS(["Dancing Lights", "Faerie Fire", "Darkness"])},
+      "High Elf":{trait:"Elven Lineage", spells:LINEAGE_SPELLS([null, "Detect Magic", "Misty Step"])},
+      "Wood Elf":{trait:"Elven Lineage", walk:35, spells:LINEAGE_SPELLS(["Druidcraft", "Longstrider", "Pass without Trace"])}}}}, [
+    innate(tr("Elven Lineage", "Choose a lineage. You get its level 1 benefit, and at character levels 3 and 5 you learn its spells. You always have them prepared. You can cast each once without a spell slot (it comes back after a long rest), and also with spell slots of the right level. Intelligence, Wisdom or Charisma is your spellcasting ability for them (your choice).\n\u2022 Drow: your darkvision reaches 120 feet, and you know the Dancing Lights cantrip. Faerie Fire at level 3, Darkness at level 5.\n\u2022 High Elf: you know the Prestidigitation cantrip, and whenever you finish a long rest you can swap it for another wizard cantrip. Detect Magic at level 3, Misty Step at level 5.\n\u2022 Wood Elf: your speed is 35 feet, and you know the Druidcraft cantrip. Longstrider at level 3, Pass without Trace at level 5.",
+      {pick:[{kind:"choice", id:"elvenLineage", noun:"elven lineage", label:"Choose your elven lineage", options:["Drow","High Elf","Wood Elf"], details:{
+        "Drow":"Darkvision 120 feet and Dancing Lights. Faerie Fire at level 3, Darkness at level 5.",
+        "High Elf":"Prestidigitation, or another wizard cantrip after a long rest. Detect Magic at level 3, Misty Step at level 5.",
+        "Wood Elf":"Speed 35 feet and Druidcraft. Longstrider at level 3, Pass without Trace at level 5."}},
+        ABILITY_PICK,
+        {kind:"spell", level:0, list:"Wizard", initial:"Prestidigitation", label:"Your wizard cantrip (Prestidigitation to start, any other after a long rest)", byChoice:{slot:0, when:"High Elf"}}]}), "pick", []),
+    tr("Fey Ancestry", "You have advantage on saving throws you make to avoid or end the charmed condition.", null, {on:"save", abilities:"all", when:"to avoid or end being charmed"}),
+    tr("Keen Senses", "You have proficiency in the Insight, Perception or Survival skill (your choice).", {pick:[{kind:"skill", options:["Insight","Perception","Survival"]}]}),
+    tr("Trance", "You don't need to sleep, and magic can't put you to sleep. You can finish a long rest in 4 hours spent in a trancelike meditation, during which you stay conscious.")]),
+  "Gnome (2024)": SPECIES_2024({size:"Small", darkvision:60, choiceEffects:{gnomishLineage:{
+      "Forest Gnome":{trait:"Gnomish Lineage", spells:{ability:"pick", slots:true, list:["Minor Illusion", {name:"Speak with Animals", use:"pb"}]}},
+      "Rock Gnome":{trait:"Gnomish Lineage", spells:{ability:"pick", list:["Mending", "Prestidigitation"]}}}}}, [
+    tr("Gnomish Cunning", "You have advantage on Intelligence, Wisdom and Charisma saving throws.", null, {on:"save", abilities:["int","wis","cha"]}),
+    innate(tr("Gnomish Lineage", "Choose a lineage. Intelligence, Wisdom or Charisma is your spellcasting ability for its spells (your choice).\n\u2022 Forest Gnome: you know the Minor Illusion cantrip, and you always have Speak with Animals prepared. You can cast it without a spell slot a number of times equal to your proficiency bonus (all come back after a long rest), and also with any spell slots you have.\n\u2022 Rock Gnome: you know the Mending and Prestidigitation cantrips. You can also spend 10 minutes casting Prestidigitation to build a Tiny clockwork device (AC 5, 1 HP), such as a toy, a fire starter or a music box. Choose one of the spell's effects for it. The device makes that effect whenever someone touches it as a bonus action. You can have three at a time, and each falls apart 8 hours after you make it, or when you take it apart with a touch.",
+      {pick:[{kind:"choice", id:"gnomishLineage", noun:"gnomish lineage", label:"Choose your gnomish lineage", options:["Forest Gnome","Rock Gnome"], details:{
+        "Forest Gnome":"Minor Illusion, and Speak with Animals free a number of times equal to your proficiency bonus.",
+        "Rock Gnome":"Mending and Prestidigitation, and tiny clockwork devices."}},
+        ABILITY_PICK]}), "pick", [])]),
+  "Goliath (2024)": SPECIES_2024({size:"Medium", speed:35}, [
+    tr("Giant Ancestry", "You descend from giants. Choose one of these boons. You can use it a number of times equal to your proficiency bonus, and you regain all uses when you finish a long rest.\n\u2022 Cloud's Jaunt (Cloud Giant): as a bonus action, you magically teleport up to 30 feet to an unoccupied space you can see.\n\u2022 Fire's Burn (Fire Giant): when you hit a target with an attack roll and deal damage to it, you can also deal 1d10 fire damage to it.\n\u2022 Frost's Chill (Frost Giant): when you hit a target with an attack roll and deal damage to it, you can also deal 1d6 cold damage to it and reduce its speed by 10 feet until the start of your next turn.\n\u2022 Hill's Tumble (Hill Giant): when you hit a Large or smaller creature with an attack roll and deal damage to it, you can knock it prone.\n\u2022 Stone's Endurance (Stone Giant): when you take damage, you can use your reaction to roll 1d12, add your Constitution modifier, and reduce the damage by that total.\n\u2022 Storm's Thunder (Storm Giant): when a creature within 60 feet of you damages you, you can use your reaction to deal 1d8 thunder damage to it.",
+      {pick:[{kind:"choice", id:"giantAncestry", noun:"giant ancestry", label:"Choose your giant ancestry", options:GIANT_BOONS, details:{
+        "Cloud's Jaunt":"Cloud Giant. Bonus action: teleport up to 30 feet.",
+        "Fire's Burn":"Fire Giant. On a hit, 1d10 extra fire damage.",
+        "Frost's Chill":"Frost Giant. On a hit, 1d6 extra cold damage and 10 feet less speed.",
+        "Hill's Tumble":"Hill Giant. On a hit, knock a Large or smaller creature prone.",
+        "Stone's Endurance":"Stone Giant. Reaction: take 1d12 + your CON modifier less damage.",
+        "Storm's Thunder":"Storm Giant. Reaction: 1d8 thunder damage to whoever hurt you."}}]}),
+    tr("Large Form", "From character level 5, as a bonus action you can become Large if there's room, for 10 minutes or until you end it (no action needed). Meanwhile you have advantage on Strength checks and your speed increases by 10 feet. Once you use this, you can't again until you finish a long rest."),
+    tr("Powerful Build", "You have advantage on saving throws you make to end the grappled condition, and you count as one size larger when working out your carrying capacity.", null,
+      {on:"save", abilities:"all", when:"to end being grappled"})]),
+  "Halfling (2024)": SPECIES_2024({size:"Small"}, [
+    tr("Brave", "You have advantage on saving throws you make to avoid or end the frightened condition.", null, {on:"save", abilities:"all", when:"to avoid or end being frightened"}),
+    tr("Halfling Nimbleness", "You can move through the space of any creature that is a size larger than you, but you can't stop there."),
+    tr("Luck", "When you roll a 1 on the d20 of an attack roll, ability check or saving throw, you can reroll the die, and you must use the new roll."),
+    tr("Naturally Stealthy", "You can take the Hide action even when the only thing hiding you is a creature at least one size larger than you.")]),
+  "Human (2024)": SPECIES_2024({size:"Small or Medium"}, [SIZE_CHOICE(SIZE_2024),
+    tr("Resourceful", "You gain Heroic Inspiration whenever you finish a long rest."),
+    tr("Skillful", "You gain proficiency in one skill of your choice.", {pick:[{kind:"skill"}]}),
+    tr("Versatile", "You gain an Origin feat of your choice. Skilled is the book's suggestion.")]),
+  "Orc (2024)": SPECIES_2024({size:"Medium", darkvision:120}, [
+    tr("Adrenaline Rush", "You can take the Dash action as a bonus action. When you do, you gain temporary hit points equal to your proficiency bonus. You can do this a number of times equal to your proficiency bonus, and you regain all uses when you finish a short or long rest."),
+    tr("Relentless Endurance", "When you drop to 0 hit points but aren't killed outright, you can drop to 1 hit point instead. Once you use this, you can't again until you finish a long rest.")]),
+  "Tiefling (2024)": SPECIES_2024({size:"Small or Medium", darkvision:60, choiceEffects:{fiendishLegacy:{
+      "Abyssal":{trait:"Fiendish Legacy", resist:["poison"], spells:LINEAGE_SPELLS(["Poison Spray", "Ray of Sickness", "Hold Person"])},
+      "Chthonic":{trait:"Fiendish Legacy", resist:["necrotic"], spells:LINEAGE_SPELLS(["Chill Touch", "False Life", "Ray of Enfeeblement"])},
+      "Infernal":{trait:"Fiendish Legacy", resist:["fire"], spells:LINEAGE_SPELLS(["Fire Bolt", "Hellish Rebuke", "Darkness"])}}}}, [SIZE_CHOICE(SIZE_2024),
+    innate(tr("Fiendish Legacy", "Choose a legacy. You get its level 1 benefit, and at character levels 3 and 5 you learn its spells. You always have them prepared. You can cast each once without a spell slot (it comes back after a long rest), and also with spell slots of the right level. Intelligence, Wisdom or Charisma is your spellcasting ability for them (your choice).\n\u2022 Abyssal: resistance to poison damage, and you know the Poison Spray cantrip. Ray of Sickness at level 3, Hold Person at level 5.\n\u2022 Chthonic: resistance to necrotic damage, and you know the Chill Touch cantrip. False Life at level 3, Ray of Enfeeblement at level 5.\n\u2022 Infernal: resistance to fire damage, and you know the Fire Bolt cantrip. Hellish Rebuke at level 3, Darkness at level 5.",
+      {pick:[{kind:"choice", id:"fiendishLegacy", noun:"fiendish legacy", label:"Choose your fiendish legacy", options:["Abyssal","Chthonic","Infernal"], details:{
+        "Abyssal":"Poison resistance and Poison Spray. Ray of Sickness at level 3, Hold Person at level 5.",
+        "Chthonic":"Necrotic resistance and Chill Touch. False Life at level 3, Ray of Enfeeblement at level 5.",
+        "Infernal":"Fire resistance and Fire Bolt. Hellish Rebuke at level 3, Darkness at level 5."}},
+        ABILITY_PICK]}), "pick", []),
+    innate(tr("Otherworldly Presence", "You know the Thaumaturgy cantrip. It uses the same spellcasting ability as your Fiendish Legacy."), "pick", ["Thaumaturgy"])])
 };
 
 /* Traits renamed to the book's names (2026-10-22): a character's picks
@@ -877,6 +984,7 @@ export var TRAIT_ADVANTAGES = {
    Texts checked on 5etools' data in the race review, 2026-10-22. */
 export var RACE_TRAIT_REMINDS = {
   "Lucky": {when:"always", line:"When you roll a 1 on the d20 for an attack, check or save, reroll it"},
+  "Luck": {when:"always", line:"When you roll a 1 on the d20 for an attack, check or save, reroll it"},
   "Halfling Nimbleness": {when:"always", line:"You can move through the space of any creature larger than you"},
   "Mask of the Wild": {when:"always", line:"You can hide when only lightly obscured by foliage, rain, snow or mist"},
   "Savage Attacks": {when:"always", line:"On a melee critical hit, roll one of the weapon's damage dice once more"},
@@ -914,7 +1022,8 @@ export var TRAIT_CHECK_D4 = {
 
 /* Save DCs a trait sets, worked out on its Features card: {ability
    ("pick" for the ability chosen on the trait), label, when (only once
-   this option is picked)}, or a list of them. */
+   this option is picked)}, or a list of them. A trait's own `dcs` comes
+   first (a 2024 Aasimar's Celestial Revelation has no subrace). */
 export var TRAIT_DCS = {
   "Taunt": {ability:"pick", label:"Taunt save DC"},
   "Daunting Roar": {ability:"con", label:"Daunting Roar save DC"},
@@ -933,6 +1042,7 @@ var ABILITY_SHORT = {str:"STR", dex:"DEX", con:"CON", int:"INT", wis:"WIS", cha:
 /* "+2 DEX, +1 WIS" (or the flexible text). */
 export function raceAsiText(d){
   if(d.asiText) return d.asiText;
+  if(d.edition==="2024") return "Ability scores come from your background";
   var keys = Object.keys(d.asi||{}).filter(function(k){ return d.asi[k]; });
   if(!keys.length) return "No ability score increase";
   if(keys.length===6 && keys.every(function(k){ return d.asi[k]===1; })) return "+1 to every ability score";
@@ -942,7 +1052,7 @@ export function raceAsiText(d){
    choice on top, or "Flexible" when it's all the player's choice. */
 export function raceAsiShort(d){
   var keys = Object.keys(d.asi||{}).filter(function(k){ return d.asi[k]; });
-  if(!keys.length) return d.custom ? "No increase" : "Flexible";
+  if(!keys.length) return d.custom ? "No increase" : d.edition==="2024" ? "Background" : "Flexible";
   if(keys.length===6 && keys.every(function(k){ return d.asi[k]===1; })) return "+1 all";
   var fixed = keys.map(function(k){ return (d.asi[k]>0 ? "+" : "−")+Math.abs(d.asi[k])+" "+ABILITY_SHORT[k]; }).join(", ");
   return d.asiText ? fixed+", +more" : fixed;
