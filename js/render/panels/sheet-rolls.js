@@ -2,6 +2,8 @@ import { savageFollowUp, joinFollowUp, brawlerRerolls, hasBrawler2024, luckyChoi
 import { save } from "../../core/state.js";
 import { weaponMastery, toppleDc } from "../../core/weapon-mastery.js";
 import { weaponAbilityMod } from "../../core/equipment.js";
+import { isFighter2024 } from "../../core/class-features.js";
+import { MASTERY_PROPERTIES } from "../../data/weapon-mastery.js";
 import { WEAPON_DATA, baseWeaponName } from "../../data/weapons.js";
 import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, raceCheckD4, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud, isMonk2024, kiWord, openHandTechniques, elementalPushDc } from "../../core/helpers.js";
 import { flashOfGenius, artificerHitDice } from "../../core/artificer.js";
@@ -138,6 +140,15 @@ function checkFollowUp(c, r, opts){
       use: function(){ return {bonus: 10 - low, log: "Intuition (the d20 counts as 10)"}; }});
   }
   if(hasMagicalGuidance(c)) out = out.concat(magicalGuidance(c).options);
+  // Tactical Mind (2024 fighter 2): a Second Wind for +1d10 on a failed check.
+  if(isFighter2024(c) && classLevelOf(c, "Fighter") >= 2 && resourceLeft(c, "Fighter:second_wind") > 0) out.push({label: "+1d10 (Tactical Mind)",
+    title: "Spend a use of Second Wind and add 1d10. If the check still fails, get the use back on Vitals.",
+    use: function(){
+      if(!spendResource(c, "Fighter:second_wind", 1)) return null;
+      var tm = Math.floor(Math.random() * 10) + 1;
+      save(); renderAll();
+      return {bonus: tm, log: "Tactical Mind (if it still fails, the use comes back)"};
+    }});
   if(resourceLeft(c, "Warlock:dark_ones_own_luck") > 0) out.push(ownLuckOption(c));
   if(chronalShiftLeft(c) > 0) out.push(chronalOption(c));
   if(flashOfGenius(c)) out.push(flashOption(c));
@@ -228,12 +239,14 @@ function saveFollowUp(c, ability, r){
   var left = resourceLeft(c, "Fighter:indomitable");
   if(left > 0){
     var bulwark = ["int", "wis", "cha"].indexOf(ability)!==-1 && classLevelOf(c, "Fighter", "Banneret (Purple Dragon Knight)") >= 15;
-    opts.push({label: "Reroll (Indomitable, " + left + " left)",
-      title: "Reroll this saving throw. You must use the new roll." + (bulwark ? " Bulwark: one ally within 60 feet who failed the same save can reroll too." : ""),
+    // The 2024 fighter's reroll adds the fighter level.
+    var indomBonus = isFighter2024(c) ? classLevelOf(c, "Fighter") : 0;
+    opts.push({label: (indomBonus ? "Reroll +" + indomBonus : "Reroll") + " (Indomitable, " + left + " left)",
+      title: "Reroll this saving throw" + (indomBonus ? " with +" + indomBonus + " (your fighter level)" : "") + ". You must use the new roll." + (bulwark ? " Bulwark: one ally within 60 feet who failed the same save can reroll too." : ""),
       use: function(){
         if(!spendResource(c, "Fighter:indomitable", 1)) return null;
         save(); renderAll();
-        return {reroll: true, log: "Indomitable" + (bulwark ? " (Bulwark: an ally can reroll too)" : "")};
+        return {reroll: true, addModifier: indomBonus, log: "Indomitable" + (bulwark ? " (Bulwark: an ally can reroll too)" : "")};
       }});
   }
   if(hasDiamondSoul(c)){
@@ -544,32 +557,37 @@ function flurryNext(c, hit){
    card data. crit: a natural 20 (no "Missed?"). */
 function masteryOptions(c, hit, crit){
   var m = hit && hit.item && !hit.noDamage && !hit.cleave && weaponMastery(c, hit.item);
-  if(!m || m.when==="extra") return [];
+  if(!m) return [];
+  // Tactical Master (2024 fighter 9): Push, Sap or Slow in place of the weapon's own.
+  var master = isFighter2024(c) && classLevelOf(c, "Fighter") >= 9 ? ["Push", "Sap", "Slow"].filter(function(n){ return n!==m.name; }).map(function(n){
+    return Object.assign(reminder("Hit? " + n + " (Tactical Master)", MASTERY_PROPERTIES[n].short, "Tactical Master", MASTERY_LINES[n]), {keep: true, tag: "mastery"});
+  }) : [];
+  if(m.when==="extra") return master;
   var ab = weaponAbilityMod(c, hit.item);
   var type = (hit.item.damageType || (WEAPON_DATA[baseWeaponName(hit.item)] || {}).damageType || "").toLowerCase();
   if(m.when==="miss"){
-    if(crit || ab <= 0) return [];
-    return [reminder("Missed? Graze: " + ab + " " + type + " damage", m.short, "Graze",
-      "Graze: the attack missed, and the target still takes " + ab + " " + type + " damage.")];
+    if(crit || ab <= 0) return master;
+    return master.concat([reminder("Missed? Graze: " + ab + " " + type + " damage", m.short, "Graze",
+      "Graze: the attack missed, and the target still takes " + ab + " " + type + " damage.")]);
   }
   if(m.name==="Cleave"){
-    return [{label: "Hit? Cleave: attack a second creature", title: m.short + ". Its damage leaves out your ability modifier (unless it's negative). Once a turn.", tag: "cleave",
+    return master.concat([{label: "Hit? Cleave: attack a second creature", title: m.short + ". Its damage leaves out your ability modifier (unless it's negative). Once a turn.", tag: "cleave",
       use: function(){
         rollAttack(c, hit.attackBonus, "none", (hit.item.name || "Weapon") + ": Cleave",
           Object.assign({}, hit, {bonus: hit.bonus - Math.max(0, ab), offerDamage: true, cleave: true, label: (hit.item.name || "Weapon") + " (Cleave)"}));
         return {silent: true};
-      }}];
+      }}]);
   }
-  var lines = {
-    Topple: "Topple: the target makes a DC " + toppleDc(c, ab) + " Constitution saving throw or falls prone.",
-    Push: "Push: the target (Large or smaller) is pushed up to 10 feet straight away from you.",
-    Sap: "Sap: the target has disadvantage on its next attack roll before the start of your next turn.",
-    Slow: "Slow: the target's speed drops by 10 feet until the start of your next turn.",
-    Vex: "Vex: you have advantage on your next attack roll against the target before the end of your next turn."
-  };
+  var line = m.name==="Topple" ? "Topple: the target makes a DC " + toppleDc(c, ab) + " Constitution saving throw or falls prone." : MASTERY_LINES[m.name];
   var label = "Hit? " + m.name + (m.name==="Topple" ? " (CON DC " + toppleDc(c, ab) + ")" : "");
-  return [Object.assign(reminder(label, m.short, "Mastery: " + m.name, lines[m.name]), {keep: true, tag: "mastery"})];
+  return [Object.assign(reminder(label, m.short, "Mastery: " + m.name, line), {keep: true, tag: "mastery"})].concat(master);
 }
+var MASTERY_LINES = {
+  Push: "Push: the target (Large or smaller) is pushed up to 10 feet straight away from you.",
+  Sap: "Sap: the target has disadvantage on its next attack roll before the start of your next turn.",
+  Slow: "Slow: the target's speed drops by 10 feet until the start of your next turn.",
+  Vex: "Vex: you have advantage on your next attack roll against the target before the end of your next turn."
+};
 /* Options that say when they apply go first. "Missed?" only heads the rest. */
 var SAYS_WHEN = /^(Hit\?|Missed\?|Surprised target\?|Next strike)/;
 function saysWhen(o){ return SAYS_WHEN.test(o.label); }

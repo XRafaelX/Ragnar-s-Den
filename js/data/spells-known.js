@@ -59,6 +59,8 @@ var THIRD_SPELLS = [0, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11
 export var SUBCLASS_CASTERS = {
   "Fighter:Eldritch Knight": {list: "Wizard", cantrips: byLevel({3: 2, 10: 3}), spells: THIRD_SPELLS, maxLevel: thirdMax, swap: true,
     schools: ["Abjuration", "Evocation"], anySchoolAt: [3, 8, 14, 20]},
+  // The 2024 Eldritch Knight (p. 97): any school, a spell and a cantrip to swap each level.
+  "Fighter:Eldritch Knight (2024)": {list: "Wizard", cantrips: byLevel({3: 2, 10: 3}), spells: THIRD_SPELLS, maxLevel: thirdMax, swap: true, cantripSwap: "level"},
   "Gunslinger:Eldritch Gunman": {list: "Wizard", cantrips: byLevel({3: 2, 10: 3}), spells: THIRD_SPELLS, maxLevel: thirdMax, swap: true,
     schools: ["Abjuration", "Evocation"], anySchoolAt: [3, 8, 14, 20]},
   "Rogue:Arcane Trickster": {list: "Wizard", cantrips: byLevel({3: 3, 10: 4}), spells: THIRD_SPELLS, maxLevel: thirdMax, swap: true,

@@ -3,7 +3,7 @@
    what each property does (Mastery Properties, p. 214), checked against
    the printed book in books/ on 2026-11-05. Only a character with a
    feature that unlocks a weapon's mastery uses it: the Weapon Master
-   (2024) feat's kind, or a 2024 class's Weapon Mastery (c.weaponMasteries).
+   (2024) feat's kind, or a 2024 class's Weapon Mastery (its "weaponMastery" picks).
    A weapon the book says to treat as another (a khopesh as a longsword)
    uses that one's. The app's Pistol and Musket are the 2024 book's too.
    `when`: "hit" (after a hit), "miss" (after a miss) or "extra" (the

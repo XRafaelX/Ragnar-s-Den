@@ -74,14 +74,20 @@ export var CLASS_RESOURCES = {
       hint:"Skip a Perception roll and use your Wisdom score in its place."}
   ],
   "Fighter": [
-    {id:"second_wind", name:"Second Wind", level:1, max:always(1), reset:always("short"),
+    {id:"second_wind", name:"Second Wind", level:1, edition:"2014", max:always(1), reset:always("short"),
       hint:"Bonus action: regain 1d10 + your fighter level hit points."},
+    // The 2024 fighter's (p. 91): more uses, one back on a short rest.
+    {id:"second_wind", name:"Second Wind", level:1, edition:"2024", max:function(lv){ return lv>=10 ? 4 : lv>=4 ? 3 : 2; }, reset:always("short"), shortRegain:1,
+      hint:function(lv){ return "Bonus action: regain 1d10 + your fighter level hit points." + (lv>=5 ? " Move up to half your speed too (Tactical Shift)." : "") + " One use back on a short rest, all on a long rest."; }},
     {id:"action_surge", name:"Action Surge", level:2,
       max:function(lv){ return lv>=17 ? 2 : 1; }, reset:always("short"),
-      hint:"Take one additional action on your turn (only once per turn)."},
-    {id:"indomitable", name:"Indomitable", level:9,
+      hint:function(lv, m, cl){ return "Take one additional action on your turn" + (cl && cl.edition==="2024" ? ", except the Magic action" : "") + " (only once per turn)."; }},
+    {id:"indomitable", name:"Indomitable", level:9, edition:"2014",
       max:function(lv){ return lv>=17 ? 3 : lv>=13 ? 2 : 1; }, reset:always("long"),
-      hint:"Reroll a failed saving throw. You must use the new roll."}
+      hint:"Reroll a failed saving throw. You must use the new roll."},
+    {id:"indomitable", name:"Indomitable", level:9, edition:"2024",
+      max:function(lv){ return lv>=17 ? 3 : lv>=13 ? 2 : 1; }, reset:always("long"),
+      hint:function(lv){ return "Reroll a failed saving throw with +" + lv + " (your fighter level). You must use the new roll."; }}
   ],
   "Monk": [
     {id:"ki", name:"Ki Points", level:2, pool:true, edition:"2014",
@@ -266,6 +272,33 @@ export var SUBCLASS_RESOURCES = {
       // Survivor (fighter 18): no uses to count, a heal button on its row.
       {id:"survivor", name:"Survivor", level:18, max:always(Infinity), reset:always("long"),
         hint:"At the start of each of your turns, regain 5 + your CON modifier hit points while you have half your hit points or fewer (not at 0)."}
+    ],
+    /* The 2024 subclasses (Player's Handbook 2024, pp. 93 to 99). */
+    "Champion (2024)": [
+      {id:"survivor", name:"Survivor", level:18, max:always(Infinity), reset:always("long"),
+        hint:"At the start of each of your turns, regain 5 + your CON modifier hit points while you have half your hit points or fewer (not at 0)."}
+    ],
+    "Battle Master (2024)": [
+      {id:"superiority_dice", name:"Superiority Dice", level:3,
+        max:function(lv){ return lv>=15 ? 6 : lv>=7 ? 5 : 4; }, reset:always("short"),
+        roll:{die:8, dieAt:function(lv){ return lv>=18 ? 12 : lv>=10 ? 10 : 8; }, label:"Superiority die"},
+        hint:"d8s (d10 from level 10, d12 from level 18) that fuel your maneuvers."},
+      {id:"know_your_enemy", name:"Know Your Enemy", level:7, max:always(1), reset:always("long"),
+        hint:"Bonus action: learn a creature's immunities, resistances and vulnerabilities, within 30 ft. A superiority die gives the use back."}
+    ],
+    "Psi Warrior (2024)": [
+      {id:"psionic_energy_dice", name:"Psionic Energy Dice", level:3, pool:true, shortRegain:1,
+        max:function(lv){ return lv>=17 ? 12 : lv>=13 ? 10 : lv>=9 ? 8 : lv>=5 ? 6 : 4; }, reset:always("short"),
+        roll:{die:6, dieAt:function(lv){ return lv>=17 ? 12 : lv>=11 ? 10 : lv>=5 ? 8 : 6; }, bonusAbility:"int", min:1, label:"Protective Field: damage prevented", button:"Protective Field"},
+        hint:"Fuel Protective Field, Psionic Strike and extra uses of your other psionic features. One back on a short rest, all on a long rest."},
+      {id:"telekinetic_movement", name:"Telekinetic Movement", level:3, max:always(1), reset:always("short"),
+        hint:"Magic action: move a loose Large or smaller object or a willing creature within 30 ft up to 30 ft. More uses cost a Psionic Energy Die."},
+      {id:"psi_powered_leap", name:"Psi-Powered Leap", level:7, max:always(1), reset:always("short"),
+        hint:"Bonus action: fly speed of twice your speed until the end of the turn. More uses cost a Psionic Energy Die."},
+      {id:"bulwark_of_force", name:"Bulwark of Force", level:15, max:always(1), reset:always("long"),
+        hint:"Bonus action: up to INT mod creatures within 30 ft (you included) gain half cover for 1 minute. More uses cost a Psionic Energy Die."},
+      {id:"telekinetic_master", name:"Telekinetic Master", level:18, max:always(1), reset:always("long"),
+        hint:"Cast Telekinesis free, with a weapon attack as a bonus action each turn while you concentrate. More uses cost a Psionic Energy Die."}
     ],
     "Battle Master": [
       {id:"superiority_dice", name:"Superiority Dice", level:3,

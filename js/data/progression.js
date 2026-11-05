@@ -15,6 +15,8 @@ import { FIGHTER_SUBCLASSES } from "./subclasses/fighter.js";
 import { GUNSLINGER_SUBCLASSES } from "./subclasses/gunslinger.js";
 import { MONK_SUBCLASSES } from "./subclasses/monk.js";
 import { MONK_2024, MONK_2024_SUBCLASSES, MONK_2024_SWAPS } from "./monk-2024.js";
+import { FIGHTER_2024, FIGHTER_2024_SUBCLASSES } from "./fighter-2024.js";
+import { BARBARIAN_2024, BARBARIAN_2024_SUBCLASSES } from "./barbarian-2024.js";
 import { PALADIN_SUBCLASSES } from "./subclasses/paladin.js";
 import { RANGER_SUBCLASSES } from "./subclasses/ranger.js";
 import { ROGUE_SUBCLASSES } from "./subclasses/rogue.js";
@@ -484,11 +486,11 @@ export var CLASS_PROGRESSION = {
    (custom-subclasses.js), so SUBCLASSES must stay one shared object. */
 export var SUBCLASSES = {
   "Artificer": ARTIFICER_SUBCLASSES,
-  "Barbarian": BARBARIAN_SUBCLASSES,
+  "Barbarian": BARBARIAN_SUBCLASSES.map(function(s){ if(BARBARIAN_2024.swaps[s.name]) s.edition = "2014"; return s; }).concat(BARBARIAN_2024_SUBCLASSES),
   "Bard": BARD_SUBCLASSES,
   "Cleric": CLERIC_SUBCLASSES,
   "Druid": DRUID_SUBCLASSES,
-  "Fighter": FIGHTER_SUBCLASSES,
+  "Fighter": FIGHTER_SUBCLASSES.map(function(s){ if(FIGHTER_2024.swaps[s.name]) s.edition = "2014"; return s; }).concat(FIGHTER_2024_SUBCLASSES),
   "Gunslinger": GUNSLINGER_SUBCLASSES,
   // The 2014 subclasses with a 2024 version are 2014 only (`edition`), and
   // the 2024 ones 2024 only; the rest suit both (see subclassesFor).
@@ -506,6 +508,8 @@ export var SUBCLASSES = {
 /* A class's other rules editions, chosen per class entry (cl.edition):
    only the monk has one, the 2024 Monk (js/data/monk-2024.js). */
 CLASS_PROGRESSION["Monk"].editions = {"2024": MONK_2024};
+CLASS_PROGRESSION["Fighter"].editions = {"2024": FIGHTER_2024};
+CLASS_PROGRESSION["Barbarian"].editions = {"2024": BARBARIAN_2024};
 
 export var SPELL_TIPS = {
   "Artificer": {1:"Pick 2 artificer cantrips. You prepare 2 artificer spells each day.", 2:"Learn 4 infusions and infuse up to 2 items in the Artifice infusions card on the Features tab.", 5:"2nd-level artificer spells are now available to prepare.", 6:"Learn 2 more infusions (6 known, up to 3 infused items).", 9:"3rd-level artificer spells are now available to prepare.", 10:"Learn 1 new artificer cantrip. Learn 2 more infusions (8 known, up to 4 infused items).", 13:"4th-level artificer spells are now available to prepare.", 14:"Learn 1 new artificer cantrip. Learn 2 more infusions (10 known, up to 5 infused items).", 17:"5th-level artificer spells are now available to prepare.", 18:"Learn 2 more infusions (12 known, up to 6 infused items)."},

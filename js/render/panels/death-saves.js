@@ -8,6 +8,7 @@ import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
 import { searingVengeanceReady, necroticHuskReady, spendForRests, mod, strengthOfTheGrave, blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource, kiWord } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { featDeathSaveAdvantage } from "../../core/feats-2024.js";
+import { isFighter2024 } from "../../core/class-features.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playDiceRattle, playDeathSaveSuccess, playDeathSaveFail, playStabilized, playDeath, playRevive } from "../../ui/sound.js";
 
@@ -380,9 +381,11 @@ function rollDeathSave(c, btn){
   btn.disabled = true;
   var value = Math.floor(Math.random()*20) + 1;
   // A Phantom's soul trinket (Tokens of the Departed): advantage on death saves.
-  // Durable (2024): advantage on death saving throws too.
-  var t = soulTrinkets(c);
-  if((t && t.held) || featDeathSaveAdvantage(c)) value = Math.max(value, Math.floor(Math.random()*20) + 1);
+  // Durable (2024) and a 2024 Champion 18: advantage on death saving throws too.
+  var t = soulTrinkets(c), defy = isFighter2024(c) && classLevelOf(c, "Fighter", "Champion") >= 18;
+  if((t && t.held) || featDeathSaveAdvantage(c) || defy) value = Math.max(value, Math.floor(Math.random()*20) + 1);
+  // (Defy Death: an 18 to 20 counts as a 20.)
+  if(defy && value >= 18) value = 20;
   var text = btn.querySelector(".die-text");
   var motion = !reducedMotion();
   playDiceRattle();

@@ -6,7 +6,7 @@ import { FIGHTING_STYLES } from "../data/classes.js";
 import { escapeHtml, ce, autoEquipLoadout, isProficientWithWeapon } from "../core/helpers.js";
 import { WEAPON_DATA, WEAPON_GROUPS, GUNSLINGER_FIREARMS } from "../data/weapons.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
-import { wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills, wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardKitContext } from "./wizard-core.js";
+import { wizardEdition, wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills, wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardKitContext } from "./wizard-core.js";
 import { renderKitPicker, kitIntroHtml } from "../ui/background-gear.js";
 import { backgroundKit } from "../core/background-gear.js";
 import { renderClassPicks, renderVariantOptions } from "../ui/class-picks.js";
@@ -230,8 +230,9 @@ export function tashaHiddenNote(what){
    rules); a style with its own picks (Superior Technique's maneuver)
    shows them under the list, kept as classChoices[id + "Picks"]. */
 function choiceFightingStyle(card, ch){
-  var tasha = !!wizardState.tashaOptional;
-  var extra = ch.options.filter(function(n){ return (FIGHTING_STYLES[n]||{}).optional; }).length;
+  // (A 2024 class's list is its own: no Tasha's switch for it.)
+  var tasha = !!wizardState.tashaOptional || !!wizardEdition();
+  var extra = wizardEdition() ? 0 : ch.options.filter(function(n){ return (FIGHTING_STYLES[n]||{}).optional; }).length;
   var sNote = extra && tashaHiddenNote("Tasha's Cauldron adds " + extra + " more fighting style" + (extra===1 ? "" : "s") + ".");
   if(sNote) card.appendChild(sNote);
   var noChar = {features: []};
@@ -239,7 +240,7 @@ function choiceFightingStyle(card, ch){
     if(name!==wizardState.classChoices[ch.id]) wizardState.classChoices[ch.id+"Picks"] = {options: [], spells: []};
     wizardState.classChoices[ch.id] = name;
     renderWizard();
-  }));
+  }, !!wizardEdition()));
   var chosen = wizardState.classChoices[ch.id];
   if(chosen && styleNeedsPicks(chosen)){
     var picks = wizardState.classChoices[ch.id+"Picks"] = wizardState.classChoices[ch.id+"Picks"] || {options: [], spells: []};

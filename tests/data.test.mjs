@@ -38,10 +38,11 @@ function checkFeature(f, where){
   if(f.initiative != null) assert.ok([...ABILITIES, "pb"].includes(f.initiative), where + " " + f.name + ": initiative");
   if(f.saveBonus != null) assert.ok(ABILITIES.includes(f.saveBonus), where + " " + f.name + ": saveBonus");
   [].concat(f.saveDc || []).forEach((d) => assert.ok(ABILITIES.includes(d.ability) && (d.save === "" || ABILITIES.includes(d.save)) && /\bDC\b|saving throw|save/i.test(f.text), where + " " + f.name + ": saveDc"));
-  if(f.advantage){
-    assert.ok(["save", "check", "initiative", "skill"].includes(f.advantage.on), where + " " + f.name + ": advantage.on");
-    if(f.advantage.on==="skill") assert.ok(f.advantage.skills.length && f.advantage.skills.every((s) => SKILLS.some((x) => x[0] === s)), where + " " + f.name + ": advantage.skills");
-    else if(f.advantage.on!=="initiative") assert.ok(f.advantage.abilities==="all" || f.advantage.abilities.every((k) => ABILITIES.includes(k)), where + " " + f.name + ": advantage.abilities");
+  // (One or a list: Remarkable Athlete's initiative and Athletics.)
+  for(const adv of [].concat(f.advantage || [])){
+    assert.ok(["save", "check", "initiative", "skill"].includes(adv.on), where + " " + f.name + ": advantage.on");
+    if(adv.on==="skill") assert.ok(adv.skills.length && adv.skills.every((s) => SKILLS.some((x) => x[0] === s)), where + " " + f.name + ": advantage.skills");
+    else if(adv.on!=="initiative") assert.ok(adv.abilities==="all" || adv.abilities.every((k) => ABILITIES.includes(k)), where + " " + f.name + ": advantage.abilities");
   }
   for(const k of ["magicWeaponAbility", "chosenWeaponAbility"]) if(f[k] != null) assert.ok(ABILITIES.includes(f[k]), where + " " + f.name + ": " + k);
   if(f.grants){

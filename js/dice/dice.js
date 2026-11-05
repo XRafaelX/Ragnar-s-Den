@@ -440,7 +440,8 @@ export function performRoll(die, qty, modifier, adv, label, extra){
       if(res.reroll){
         logRoll(label || ("d" + die), res.log + ": rerolled");
         // (Master Duelist rerolls with advantage: res.adv.)
-        performRoll(die, qty, modifier, res.adv || adv, label, adjust ? {adjust: adjust} : null);
+        // (The 2024 Indomitable rerolls with a bonus: res.addModifier.)
+        performRoll(die, qty, modifier + (res.addModifier || 0), res.adv || adv, label, adjust ? {adjust: adjust} : null);
         return;
       }
       // One that rolled something of its own (critical damage) is done.

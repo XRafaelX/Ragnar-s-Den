@@ -1,7 +1,7 @@
 /* ---------------- Weapon mastery on the sheet ----------------
    Which weapons' mastery properties the character can use (the kinds the
    Weapon Master (2024) feat picked, and a 2024 class's Weapon Mastery
-   picks in c.weaponMasteries), and what a weapon's mastery is. The dice
+   picks, the choice "weaponMastery"), and what a weapon's mastery is. The dice
    tray offers each property after an attack with the weapon
    (js/render/panels/sheet-rolls.js), and Nick turns the off-hand attack
    into part of the Attack action. Data: js/data/weapon-mastery.js. */
@@ -9,6 +9,7 @@ import { WEAPON_MASTERY, MASTERY_PROPERTIES } from "../data/weapon-mastery.js";
 import { WEAPON_DATA, baseWeaponName } from "../data/weapons.js";
 import { featDef } from "./feat-picks.js";
 import { profBonus } from "./basics.js";
+import { characterChoices } from "./class-picks.js";
 
 /* The kind of weapon an item is for mastery: its base weapon, or the one
    the book says to treat it as (a khopesh: a longsword). "" if none. */
@@ -27,7 +28,7 @@ export function masteryKinds(c){
     var d = featDef(f.name);
     if(d && d.masteryPick && f.picks) add(f.picks.option, d.name);
   });
-  (c.weaponMasteries||[]).forEach(function(k){ add(k, "Weapon Mastery"); });
+  characterChoices(c, "weaponMastery").forEach(function(k){ add(k, "Weapon Mastery"); });
   return out;
 }
 /* The mastery this weapon gives the character now: {name, when, short,

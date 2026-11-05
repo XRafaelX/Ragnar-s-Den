@@ -1,3 +1,4 @@
+import { PHB_2024_STYLE_FEATS } from "../data/feats/phb2024-general.js";
 import { FIGHTING_STYLES } from "../data/classes.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
 import { SPELL_DATA } from "../data/spells.js";
@@ -61,7 +62,22 @@ export function tashaOnlyStyles(c, options, tasha){
    has the Fighting Style feature, one style may be replaced. */
 export function versatilityStyleSwap(c, className, newLevel){
   var prog = CLASS_PROGRESSION[className] || {};
+  // (A 2024 fighter can replace its style at every fighter level.)
+  if(!!prog.fightingStyle && (c.classes||[]).some(function(cl){ return cl.name===className && cl.edition==="2024"; }) && styleFeatures(c).length > 0) return true;
   return !!c.tashaOptional && !!prog.fightingStyle && (prog.asiLevels||[]).indexOf(newLevel)!==-1 && styleFeatures(c).length > 0;
+}
+
+/* A style from a 2024 class reads as the book's Fighting Style feat
+   (Great Weapon Fighting counts a 1 or 2 as a 3). Run after a class's
+   edition changes or a style is added. */
+export function syncStyleWording(c){
+  var on = (c.classes||[]).some(function(cl){ return cl.edition==="2024" && (CLASS_PROGRESSION[cl.name]||{}).fightingStyle; });
+  (c.features||[]).forEach(function(f){
+    if(!f || !f.fightingStyle || /^Feat/.test(f.source || "")) return;
+    var feat = on && PHB_2024_STYLE_FEATS.find(function(x){ return x.style===f.fightingStyle; });
+    f.text = feat ? feat.styleText : (styleDef(f.fightingStyle)||{}).text || f.text;
+    if(feat && feat.styleRemind) f.remind = feat.styleRemind; else delete f.remind;
+  });
 }
 
 /* ---- A style's own picks ---- */

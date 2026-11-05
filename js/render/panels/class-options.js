@@ -93,7 +93,7 @@ function renderSet(card, c, set, grouped){
    higher; the others count only with the class entry that has them. */
 var SET_DC_ABILITY = {runes: "con", arcaneShots: "int", disciplines: "wis", misfortunes: "cha", stormEnvironment: "con", trickShots: "dex"};
 function setDc(c, set, entry){
-  var ab = set.id==="maneuvers" ? (mod(abilityScore(c, "str")) >= mod(abilityScore(c, "dex")) ? "str" : "dex") : entry && SET_DC_ABILITY[set.id];
+  var ab = set.id==="maneuvers" || set.id==="maneuvers2024" ? (mod(abilityScore(c, "str")) >= mod(abilityScore(c, "dex")) ? "str" : "dex") : entry && SET_DC_ABILITY[set.id];
   return ab ? {ability: ab, dc: 8 + profBonus(c) + mod(abilityScore(c, ab))} : null;
 }
 
@@ -112,7 +112,7 @@ function setFacts(c, set, entry, all){
     if(r) rows.push([label, (r.max - r.used) + " of " + r.max, "back on a " + rest + " rest"]);
   }
   var lv = entry ? Number(entry.level)||1 : 0;
-  if(set.id==="maneuvers"){
+  if(set.id==="maneuvers" || set.id==="maneuvers2024"){
     dc("Maneuver save DC");
     var dice = res.find(function(r){ return r.key==="Fighter:superiority_dice"; }) || res.find(function(r){ return r.key==="feat:superiority_dice"; }) ||
       res.find(function(r){ return r.key==="style:superiority_dice"; });
@@ -183,7 +183,7 @@ function diceNote(c, entry, lv, dice){
     if(lv < 10) return "d10s at fighter level 10";
     if(lv < 15) return "6 dice at fighter level 15";
     if(lv < 18) return "d12s at fighter level 18";
-    return "Regain one on initiative if none left";
+    return entry.subclass==="Battle Master (2024)" ? "Once a turn, a d8 can stand in for a die" : "Regain one on initiative if none left";
   }
   var feat = hasMartialAdept(c), style = hasSuperiorTechnique(c);
   return "From " + (feat && style ? "Martial Adept and Superior Technique" : dice.key==="feat:superiority_dice" ? "Martial Adept" : "Superior Technique");

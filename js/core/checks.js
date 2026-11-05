@@ -174,7 +174,8 @@ export function advantagesFor(c){
     [].concat(a).forEach(function(one){ out.push(Object.assign({name: t.name}, one)); });
   });
   (c.classes||[]).forEach(function(cl){
-    classFeatureList(cl).forEach(function(f){ if(f.advantage) out.push(Object.assign({name: f.name}, f.advantage)); });
+    // (One or a list: Remarkable Athlete's initiative and Athletics.)
+    classFeatureList(cl).forEach(function(f){ if(f.advantage) [].concat(f.advantage).forEach(function(a){ out.push(Object.assign({name: f.name}, a)); }); });
   });
   // Feats tagged `advantage` (War Caster on concentration saves).
   (c.feats||[]).forEach(function(f){

@@ -1,6 +1,7 @@
 import { ce, escapeHtml } from "../core/helpers.js";
 import { makeBookSvg, makeChevronDownSvg, makeCheckSvg } from "./svg-icons.js";
 import { CAMPAIGN_FEATS } from "../data/feats.js";
+import { CLASS_PROGRESSION } from "../data/progression.js";
 
 /* ---------------- "DLC" shelf ----------------
    Optional books kept out of the way behind one tile: the tile (an icon,
@@ -139,12 +140,16 @@ export function rules2024Lock(raceEdition, backgroundEdition){
 }
 export var RULES_2024_OUTCOME = "<b>2024 rules:</b> your background raises your scores in place of your race, a background without a feat gives an Origin feat, and you know at least three languages.";
 
-/* The 2024 Monk (a monk class entry's edition "2024", see
-   js/data/monk-2024.js), offered only to a character with the class. */
-export var MONK_2024_CARD = {key: "monk2024", series: "Player's Handbook 2024", title: "2024 Monk", switchLabel: "Use the 2024 monk",
-  perks: ["Focus Points", "Bigger Martial Arts dice", "New features"],
-  text: "The 2024 rules for the monk: Focus Points in place of ki, Martial Arts dice from a d6 up to a d12, Uncanny Metabolism, Deflect Attacks and the 2024 subclasses. Tasha's monk extras don't apply, since the 2024 monk has its own."};
-export var MONK_2024_OUTCOME = "<b>2024 Monk:</b> Focus Points in place of ki, Martial Arts from a d6, and the 2024 features, gear and subclasses.";
+/* The "2024 class" card: one card that names the class ("2024 Fighter"),
+   for a class with a 2024 version (a class entry's edition "2024", see
+   js/data/fighter-2024.js), offered only to a character with the class.
+   Its key is "class2024:Fighter". */
+export function classEditionCard(className){
+  var ed = CLASS_PROGRESSION[className].editions["2024"];
+  return {key: "class2024:" + className, series: "Player's Handbook 2024", title: ed.label, switchLabel: "Use the 2024 " + className.toLowerCase(),
+    perks: ed.card.perks, text: ed.card.text};
+}
+export function classEditionOutcome(className){ return CLASS_PROGRESSION[className].editions["2024"].card.outcome; }
 
 /* A campaign book (see CAMPAIGN_FEATS) as a shelf card: "Dragonlance"
    over its title, and what it gives. */

@@ -77,6 +77,34 @@ export var OPTION_SETS = [
       {name:"Tactical Assessment", source:"TCE", optional:true, text:"When you make an Intelligence (Investigation), Intelligence (History) or Wisdom (Insight) check, add the superiority die to it."}
     ]
   },
+  /* ---- The 2024 Battle Master's maneuvers (Player's Handbook 2024, pp. 94 to 95) ---- */
+  {
+    id:"maneuvers2024", label:"Maneuvers", noun:"maneuver", className:"Fighter", subclass:"Battle Master (2024)",
+    known:{3:3, 7:5, 10:7, 15:9}, swap:"learn",
+    help:"Special combat moves, each fuelled by a superiority die: an extra effect on a hit, a reaction, or a bonus to a check. One maneuver per attack.",
+    options:[
+      {name:"Ambush", source:"XPHB", text:"When you make a Dexterity (Stealth) check or an initiative roll, spend a die and add it to the roll, unless you're incapacitated."},
+      {name:"Bait and Switch", source:"XPHB", text:"Within 5 feet of a creature on your turn, spend a die and at least 5 feet of movement to switch places with it if it's willing and not incapacitated, with no opportunity attacks. Until the start of your next turn, you or it (your choice) adds the roll to AC."},
+      {name:"Commander's Strike", source:"XPHB", text:"When you take the Attack action, replace one of your attacks and spend a die to direct a willing creature who can see or hear you. It can use its reaction to make one attack with a weapon or an unarmed strike, adding the die to the damage on a hit."},
+      {name:"Commanding Presence", source:"XPHB", text:"When you make a Charisma (Intimidation, Performance or Persuasion) check, spend a die and add it to the roll."},
+      {name:"Disarming Attack", source:"XPHB", save:"str", text:"When you hit with an attack roll, spend a die and add it to the damage. The target makes a Strength save or drops one object of your choice that it's holding, in its space."},
+      {name:"Distracting Strike", source:"XPHB", text:"When you hit with an attack roll, spend a die and add it to the damage. The next attack roll against the target by someone other than you has advantage, if made before the start of your next turn."},
+      {name:"Evasive Footwork", source:"XPHB", text:"As a bonus action, spend a die and take the Disengage action. Add the roll to your AC until the start of your next turn."},
+      {name:"Feinting Attack", source:"XPHB", text:"As a bonus action, spend a die to feint at a creature within 5 feet. You have advantage on your next attack roll against it this turn, and if that attack hits, add the die to the damage."},
+      {name:"Goading Attack", source:"XPHB", save:"wis", text:"When you hit with an attack roll, spend a die and add it to the damage. The target makes a Wisdom save or has disadvantage on attack rolls against anyone but you until the end of your next turn."},
+      {name:"Lunging Attack", source:"XPHB", text:"As a bonus action, spend a die and take the Dash action. If you move at least 5 feet in a straight line right before hitting with a melee attack as part of the Attack action this turn, add the die to the damage."},
+      {name:"Maneuvering Attack", source:"XPHB", text:"When you hit with an attack roll, spend a die and add it to the damage. A willing creature who can see or hear you can use its reaction to move up to half its speed without provoking an opportunity attack from your target."},
+      {name:"Menacing Attack", source:"XPHB", save:"wis", text:"When you hit with an attack roll, spend a die and add it to the damage. The target makes a Wisdom save or is frightened until the end of your next turn."},
+      {name:"Parry", source:"XPHB", text:"When a creature damages you with a melee attack roll, use your reaction and spend a die to reduce the damage by the roll + your Strength or Dexterity modifier (your choice)."},
+      {name:"Precision Attack", source:"XPHB", text:"When you miss with an attack roll, spend a die, roll it and add it to the attack roll, which can make it hit."},
+      {name:"Pushing Attack", source:"XPHB", save:"str", text:"When you hit with an attack roll using a weapon or an unarmed strike, spend a die and add it to the damage. A Large or smaller target makes a Strength save or is pushed up to 15 feet away from you."},
+      {name:"Rally", source:"XPHB", text:"As a bonus action, spend a die to bolster an ally within 30 feet who can see or hear you. It gains temporary hit points equal to the roll + half your fighter level (rounded down)."},
+      {name:"Riposte", source:"XPHB", text:"When a creature misses you with a melee attack roll, use your reaction and spend a die to make a melee attack roll against it with a weapon or an unarmed strike. If you hit, add the die to the damage."},
+      {name:"Sweeping Attack", source:"XPHB", text:"When you hit with a melee attack roll using a weapon or an unarmed strike, spend a die and choose another creature within 5 feet of the target and within your reach. If the attack roll would hit it, it takes damage equal to the roll, of the same type."},
+      {name:"Tactical Assessment", source:"XPHB", text:"When you make an Intelligence (History or Investigation) check or a Wisdom (Insight) check, spend a die and add it to the check."},
+      {name:"Trip Attack", source:"XPHB", save:"str", text:"When you hit with an attack roll using a weapon or an unarmed strike, spend a die and add it to the damage. A Large or smaller target makes a Strength save or falls prone."}
+    ]
+  },
   /* ---- Rune Knight (Tasha's subclass: its runes are standard, not optional) ---- */
   {
     id:"runes", label:"Runes", noun:"rune", className:"Fighter", subclass:"Rune Knight",
@@ -266,7 +294,7 @@ export var OPTION_SETS = [
   }
 ];
 
-export var OPTION_SOURCES = {PHB:"Player's Handbook", XGE:"Xanathar's Guide", TCE:"Tasha's Cauldron",
+export var OPTION_SOURCES = {PHB:"Player's Handbook", XPHB:"Player's Handbook 2024", XGE:"Xanathar's Guide", TCE:"Tasha's Cauldron",
   SCAG:"Sword Coast Adventurer's Guide", GHPG:"Grim Hollow Player's Guide", GUN:"Gunslinger (fan content)"};
 
 export function optionSetDef(id){

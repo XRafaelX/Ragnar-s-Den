@@ -78,7 +78,7 @@ export function characterResources(c){
       list.push({
         key: key, name: r.name, source: d.source, hint: typeof r.hint==="function" ? r.hint(lv, m, cl) : r.hint, pool: !!r.pool,
         max: max, used: max===Infinity ? 0 : clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
-        reset: r.reset(lv), roll: roll, heal: r.heal ? r.heal(lv, m) : 0, slotMin: r.slotMin || 0, againPoints: r.againPoints || 0,
+        reset: r.reset(lv), shortRegain: r.shortRegain || 0, roll: roll, heal: r.heal ? r.heal(lv, m) : 0, slotMin: r.slotMin || 0, againPoints: r.againPoints || 0,
         initiativeRegain: r.initiativeRegain && lv >= r.initiativeRegain ? (r.initiativeAmount || 1) : 0
       });
     });
@@ -195,7 +195,7 @@ export function characterResources(c){
   return list.concat(invocationResources(c, m));
 }
 function classLevelIn(c, name, subclass){
-  var cl = (c.classes||[]).find(function(x){ return x.name===name && x.subclass===subclass; });
+  var cl = (c.classes||[]).find(function(x){ return x.name===name && (x.subclass===subclass || x.subclass===subclass + " (2024)"); });
   return cl ? Number(cl.level)||1 : 0;
 }
 /* Second Wind's healing (1d10 + fighter level) and Rallying Cry's
@@ -238,6 +238,8 @@ export function restoreResources(c, restType){
     if(r.reset==="manual") return;
     if(restType==="short" && r.reset!=="short") return;
     if(r.used>0) restored.push(r.name);
+    // Only some come back on a short rest (2024 Second Wind, Psionic Energy Dice).
+    if(restType==="short" && r.shortRegain && r.used > r.shortRegain){ c.resourcesUsed[r.key] = r.used - r.shortRegain; return; }
     delete c.resourcesUsed[r.key];
   });
   return restored;

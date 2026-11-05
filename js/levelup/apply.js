@@ -2,6 +2,7 @@
    finish() writes the choices in `lu` onto the character and records
    what changed in c.levelHistory, so undoLastLevelUp() can take exactly
    that back. showUnlocked() is the popup that follows. */
+import { syncStyleWording } from "../core/fighting-styles.js";
 import { ABILITIES } from "../data/abilities-skills.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { MAX_LEVEL, XP_THRESHOLDS, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from "../data/progression.js";
@@ -361,6 +362,7 @@ export function undoLastLevelUp(c){
     }
     c.newUnlocks = c.newUnlocks.filter(function(id){ return rec.unlockIds.indexOf(id)===-1; });
     syncClassPicks(c); // proficiencies from features the level gave go with them
+    syncStyleWording(c); // a new style on a 2024 class reads as the 2024 feat
     syncHitDice(c);
     syncInfusions(c);
     save(); renderAll(); playDelete();

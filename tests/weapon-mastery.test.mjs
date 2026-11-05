@@ -1,6 +1,6 @@
 /* Weapon mastery (Player's Handbook 2024, pp. 213-215, checked against
    books/Players_Handbook_2024 on 2026-11-05): each weapon's property, who
-   can use it (Weapon Master (2024), a 2024 class's c.weaponMasteries), Nick
+   can use it (Weapon Master (2024), a 2024 class's picks), Nick
    on the off-hand attack, Topple's DC, and the 2024 Heavy rule. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -59,8 +59,9 @@ test("Weapon Master (2024): one kind's mastery, only while proficient, changed f
   assert.equal(weaponMasterSwitch(c, weapon("Greatsword")), feat);
   assert.equal(weaponMasterSwitch(c, weapon("Net")), null, "no mastery to use");
   // A 2024 class's Weapon Mastery picks count too.
-  c.weaponMasteries = ["Greatsword", "Dagger"];
-  assert.deepEqual(masteryKinds(c).map((x) => x.kind), ["Longsword", "Greatsword", "Dagger"]);
+  c.classes[0].edition = "2024";
+  c.classes[0].profPicks = { "class:Weapon Mastery@1": { slots: [["Greatsword", "Dagger", "Maul"]], applied: {} } };
+  assert.deepEqual(masteryKinds(c).map((x) => x.kind), ["Longsword", "Greatsword", "Dagger", "Maul"]);
 });
 
 test("Topple's DC, and Nick making the off-hand attack part of the Attack action", () => {

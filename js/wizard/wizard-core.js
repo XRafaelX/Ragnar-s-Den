@@ -1,3 +1,4 @@
+import { syncStyleWording } from "../core/fighting-styles.js";
 import { setSpellEdition } from "../core/spell-edition.js";
 import { ABILITIES, SKILLS, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { CLASSES_INFO, CLASS_PROFICIENCIES, FIGHTING_STYLES } from "../data/classes.js";
@@ -6,7 +7,7 @@ import { BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_LANGUAGE_RULES } from
 import { RACE_LANGUAGES, RACE_LANGUAGES_FALLBACK, RACE_CHOICES } from "../data/races.js";
 import { LANGUAGES, ANY_LANGUAGES, STANDARD_LANGUAGES_2024 } from "../data/languages.js";
 import { RACE_DATA } from "../data/race-data.js";
-import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, originListSpells, classVariantSwaps, classFeaturesAt, isProficientWithWeapon, classEdition } from "../core/helpers.js";
+import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset, maxHp, featureSpells, classSpellChoices, classExtraSpellLists, originListSpells, classVariantSwaps, classFeaturesAt, isProficientWithWeapon, classEdition, classHasEdition } from "../core/helpers.js";
 import { weaponDataOf } from "../data/weapons.js";
 import { armorProficiencies } from "../core/equipment.js";
 import { backgroundKit, addBackgroundKit, gearItem } from "../core/background-gear.js";
@@ -39,13 +40,13 @@ export var wizardState = null;
 
 export function currentClassInfo(){
   var info = wizardState && CLASSES_INFO[wizardState.classId];
-  // A 2024 monk: that edition's level 1 features and starting gear.
+  // A 2024 class: that edition's level 1 features, skills, choices and starting gear.
   var ed = info && wizardEdition() && classEdition({name: wizardState.classId, edition: wizardEdition()});
-  return ed ? Object.assign({}, info, {features: ed.level1, equipment: ed.equipment}) : info;
+  return ed ? Object.assign({}, info, {features: ed.level1, equipment: ed.equipment, skillChoices: ed.skillChoices || info.skillChoices, choices: ed.choices || info.choices}) : info;
 }
-/* The rules edition picked for the class ("2024" for a 2024 monk), or "". */
+/* The rules edition picked for the class ("2024" for a 2024 fighter), or "". */
 export function wizardEdition(){
-  return wizardState && wizardState.monk2024 && wizardState.classId==="Monk" ? "2024" : "";
+  return wizardState && wizardState.class2024 && classHasEdition(wizardState.classId, "2024") ? "2024" : "";
 }
 
 /* The class's level-1 subclass pick (Cleric's Divine Domain), if it has one. */
@@ -640,7 +641,7 @@ export function wizardFeatContext(opts){
     languages: (RACE_LANGUAGES[w.race] || RACE_LANGUAGES_FALLBACK).fixed,
     styleReason: function(name){
       if(classStyle===name) return "known";
-      return (FIGHTING_STYLES[name]||{}).optional && !w.tashaOptional ? "Tasha's optional" : "";
+      return (FIGHTING_STYLES[name]||{}).optional && !w.tashaOptional && !wizardEdition() ? "Tasha's optional" : "";
     }};
 }
 /* The feat the new character starts with besides a race's: the chosen
@@ -786,7 +787,7 @@ export function validateStep(id){
     }
     // A style with its own picks (Superior Technique's maneuver).
     var styleCh = (info.choices||[]).find(function(ch){ return ch.kind==="fightingStyle" && wizardState.classChoices[ch.id]; });
-    var stylePick = styleCh && stylePicksProblem(wizardState.classChoices[styleCh.id], wizardState.classChoices[styleCh.id+"Picks"], !!wizardState.tashaOptional, []);
+    var stylePick = styleCh && stylePicksProblem(wizardState.classChoices[styleCh.id], wizardState.classChoices[styleCh.id+"Picks"], !!wizardState.tashaOptional || !!wizardEdition(), []);
     if(stylePick) return stylePick;
     if(missing){
       if(missing.kind==="listPick" && missing.count>1) return "Choose "+missing.count+" different "+missing.label.toLowerCase()+".";
@@ -914,7 +915,7 @@ export function finishWizard(){
   c.background = w.background;
   c.alignment = w.alignment;
   c.classes = [{name:w.classId, subclass:"", level:1}];
-  if(wizardEdition()) c.classes[0].edition = wizardEdition(); // the 2024 monk
+  if(wizardEdition()) c.classes[0].edition = wizardEdition(); // a 2024 class
   if(Object.keys(wizardVariants()).length) c.classes[0].variants = wizardVariants(); // Favored Foe in place of Favored Enemy
   if(w.tashaOptional) c.tashaOptional = true;
   if(w.rules2024) c.rules2024 = true;
@@ -955,6 +956,7 @@ export function finishWizard(){
     delete item.picked;
   });
   applyClassChoices(c, info, w.classChoices);
+  syncStyleWording(c); // (a style on a 2024 class reads as the 2024 feat)
   // The background's tools: given ones and the Skills step's picks.
   var bgHolder = backgroundEntry(c);
   backgroundGrants(c).forEach(function(g){

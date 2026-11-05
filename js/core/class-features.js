@@ -43,6 +43,8 @@ export function classHasEdition(className, edition){
 export function editionEntry(c, className, edition){
   return (c && c.classes || []).find(function(cl){ return cl.name===className && cl.edition===edition; }) || null;
 }
+/* Whether the character's fighter follows the 2024 rules. */
+export function isFighter2024(c){ return !!editionEntry(c, "Fighter", "2024"); }
 /* Whether the character's monk follows the 2024 rules. */
 export function isMonk2024(c){ return !!editionEntry(c, "Monk", "2024"); }
 /* The subclasses a class entry can take: one marked with an `edition`
@@ -359,7 +361,8 @@ export function classProficiencies(c, idx){
   return p;
 }
 export function classLevelOf(c, name, subclass){
-  var cl = (c.classes||[]).find(function(x){ return x.name===name && (!subclass || x.subclass===subclass); });
+  // (A 2024 subclass counts for its 2014 name: what's the same is automated once.)
+  var cl = (c.classes||[]).find(function(x){ return x.name===name && (!subclass || x.subclass===subclass || x.subclass===subclass + " (2024)"); });
   return cl ? Number(cl.level)||1 : 0;
 }
 /* A dragonborn's breath weapon (any kind: DRAGONBORN_BREATH) from the

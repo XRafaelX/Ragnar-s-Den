@@ -657,7 +657,9 @@ export function psionicDie(c){
 export function psionicStrike(c){
   var die = psionicDie(c);
   if(!die) return null;
-  var key = "Fighter:psionic_energy_dice", max = profBonus(c) * 2, used = Math.min(max, Number((c.resourcesUsed||{})[key])||0);
+  // (The 2024 Psi Warrior's count comes from its table.)
+  var entry = (c.classes||[]).find(function(x){ return x.name==="Fighter"; }), flv = Number(entry && entry.level)||1;
+  var key = "Fighter:psionic_energy_dice", max = entry && entry.subclass==="Psi Warrior (2024)" ? (flv>=17 ? 12 : flv>=13 ? 10 : flv>=9 ? 8 : flv>=5 ? 6 : 4) : profBonus(c) * 2, used = Math.min(max, Number((c.resourcesUsed||{})[key])||0);
   var int = mod(abilityScore(c, "int"));
   return {die: die, bonus: int, key: key, used: used, left: max - used,
     thrustDc: classLevelOf(c, "Fighter", "Psi Warrior") >= 7 ? 8 + profBonus(c) + int : 0};

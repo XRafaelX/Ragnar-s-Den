@@ -17,6 +17,7 @@ export * from "./basics.js";
 export * from "./class-features.js";
 export * from "./character-resources.js";
 export * from "./vitals.js";
+export * from "./class-edition.js";
 export * from "./spell-grants.js";
 export * from "./equipment.js";
 export * from "./checks.js";

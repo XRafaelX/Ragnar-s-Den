@@ -22,6 +22,10 @@ function martialArts(die){
 
 export var MONK_2024 = {
   label: "2024 Monk",
+  card: {perks: ["Focus Points", "Bigger Martial Arts dice", "New features"],
+    text: "The 2024 rules for the monk: Focus Points in place of ki, Martial Arts dice from a d6 up to a d12, Uncanny Metabolism, Deflect Attacks and the 2024 subclasses. Tasha's monk extras don't apply, since the 2024 monk has its own.",
+    outcome: "<b>2024 Monk:</b> Focus Points in place of ki, Martial Arts from a d6, and the 2024 features, gear and subclasses."},
+  which: {old: "The Player's Handbook 2014 monk: ki points, Martial Arts from a d4.", now: "The Player's Handbook 2024 monk: Focus Points, Martial Arts from a d6 and the 2024 features."},
   blurb: "A martial artist who fights unarmed with supernatural speed and focus.",
   level1: [
     {name:"Unarmored Defense", text:"While wearing no armor and no shield, AC equals 10 + DEX modifier + WIS modifier."},

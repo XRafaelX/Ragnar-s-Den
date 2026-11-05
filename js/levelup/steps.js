@@ -1,6 +1,7 @@
 /* ---------------- Level-up: the step screens ----------------
    One function per step of the dialog. Each draws its screen into the
    container it is given and writes the player's choices into `lu`. */
+import { CLASS_PROGRESSION as CLASS_EDITIONS } from "../data/progression.js";
 import { featOffered, usesRules2024 } from "../core/feats-2024.js";
 import { ABILITIES, CLASS_LIST } from "../data/abilities-skills.js";
 import { CLASSES_INFO } from "../data/classes.js";
@@ -13,7 +14,7 @@ import { availableInvocations } from "../core/invocations.js";
 import { renderPactBoonOptions, renderInvocationPicker, renderSpellPickPickers, renderHiddenNotes } from "../ui/invocation-picks.js";
 import { themedPicker } from "../ui/themed-picker.js";
 import { planSlots, planContext, knownOptions, availableOptions } from "../core/class-options.js";
-import { classStyleList, styleFeatures, styleNeedsPicks, stylePickChoices } from "../core/fighting-styles.js";
+import { styleFeatures, styleNeedsPicks, stylePickChoices } from "../core/fighting-styles.js";
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
 import { renderOptionPicker, renderTashaNote } from "../ui/option-picks.js";
 import { renderClassPicks, renderVariantOptions } from "../ui/class-picks.js";
@@ -27,7 +28,7 @@ import { fillFeatList } from "../ui/feat-list.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { SPELL_DATA } from "../data/spells.js";
 function spellLevelOf(n){ return (SPELL_DATA[n] || {}).level; }
-import { lu, luEdition, featWho, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain, spellChangeFeats, spellChangeOptions, featSpellSwaps } from "./session.js";
+import { lu, luEdition, styleOptions, featWho, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain, spellChangeFeats, spellChangeOptions, featSpellSwaps } from "./session.js";
 
 export function stepClass(container){
   var c = lu.c;
@@ -72,8 +73,9 @@ export function stepClass(container){
     var which = ce("p","lu-choice-title");
     which.textContent = "Which " + lu.className.toLowerCase() + "? Ask your DM which rules your table uses.";
     mcCard.appendChild(which);
-    [["", "2014 " + lu.className, "The Player's Handbook 2014 monk: ki points, Martial Arts from a d4."],
-     ["2024", "2024 " + lu.className, "The Player's Handbook 2024 monk: Focus Points, Martial Arts from a d6 and the 2024 features."]].forEach(function(o){
+    var whichText = CLASS_EDITIONS[lu.className].editions["2024"].which;
+    [["", "2014 " + lu.className, whichText.old],
+     ["2024", "2024 " + lu.className, whichText.now]].forEach(function(o){
       var opt = ce("div","wiz-equip-option"+((lu.edition||"")===o[0]?" selected":""));
       opt.innerHTML = "<b>"+escapeHtml(o[1])+"</b><div class='lu-sub-blurb'>"+escapeHtml(o[2])+"</div>";
       opt.addEventListener("click", function(){ lu.edition = o[0]; render(); });
@@ -83,15 +85,15 @@ export function stepClass(container){
 }
 
 export function stepStyle(container){
-  var t = target(), tasha = !!lu.c.tashaOptional, card;
+  var t = target(), tasha = !!lu.c.tashaOptional || !!luEdition(), card;
   function pick(name){
     if(name!==lu.style) lu.stylePicks = {options: [], spells: []};
     lu.style = name; render();
   }
   if(t.fightingStyle){
     card = stepCard(container, t.fightingStyle.from==="Fighting Style" ? "Choose a Fighting Style" : t.fightingStyle.from,
-      "<b>Your fighting style</b> is a combat specialty you keep for good. <b>Defense</b>, <b>Archery</b> and <b>Dueling</b> are added to your AC, attacks and damage automatically, and a few others add a sense, a maneuver or cantrips. The rest are reminders on your Features tab.");
-    card.appendChild(renderStyleOptions(lu.c, t.fightingStyle.options, lu.style, tasha, pick));
+      "<b>Your fighting style</b> is a combat specialty you " + (luEdition() ? "can change at any later level in this class" : "keep for good") + ". <b>Defense</b>, <b>Archery</b> and <b>Dueling</b> are added to your AC, attacks and damage automatically, and a few others add a sense, a maneuver or cantrips. The rest are reminders on your Features tab.");
+    card.appendChild(renderStyleOptions(lu.c, styleOptions(), lu.style, tasha, pick, !!luEdition()));
     if(!availableStyles().length){
       var p = ce("p","lu-note");
       p.textContent = "You already know every style this class can pick, so there's nothing to choose.";
@@ -99,6 +101,7 @@ export function stepStyle(container){
     }
   } else if(styleSwapOffered()){
     card = stepCard(container, "Fighting style",
+      luEdition() ? "Whenever you gain a "+escapeHtml(lu.className.toLowerCase())+" level, you can replace your fighting style with another. Most players keep theirs." :
       "<b>Martial Versatility</b> (Tasha's optional features): at this level you may replace one fighting style you know with another from the "+escapeHtml(lu.className.toLowerCase())+"'s list. Most players keep theirs.");
     var field = ce("div","field rt-field fp-field eli-field");
     var options = [{value:"", label:"Keep my fighting style", muted:true}].concat(styleFeatures(lu.c).map(function(f){ return {value:f.id, label:"Replace "+f.fightingStyle}; }));
@@ -108,7 +111,7 @@ export function stepStyle(container){
       onPick: function(v){ lu.styleSwapOut = v; lu.style = ""; lu.stylePicks = {options: [], spells: []}; render(); }
     }));
     card.appendChild(field);
-    if(lu.styleSwapOut) card.appendChild(renderStyleOptions(lu.c, classStyleList(lu.className), lu.style, tasha, pick));
+    if(lu.styleSwapOut) card.appendChild(renderStyleOptions(lu.c, styleOptions(), lu.style, tasha, pick, !!luEdition()));
   }
   if(lu.style && styleNeedsPicks(lu.style)) card.appendChild(renderStylePicks(lu.style, lu.stylePicks, tasha, knownManeuvers(), render, "lu:style",
     function(n){ return spellHeldBy(lu.c, n); }));

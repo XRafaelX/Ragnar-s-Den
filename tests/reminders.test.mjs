@@ -62,7 +62,7 @@ test("a reminder never repeats what the sheet already shows", () => {
     // other half of the feat, a spell in place of an opportunity attack.)
     // (The same for the 2024 War Caster, and Skulker (2024)'s blindsight and
     // Stealth: its reminder is Sniper.)
-    const besides = f.name === "War Caster" || f.name === "War Caster (2024)" ? ["advantage"] : f.name === "Skulker (2024)" ? ["advantage", "sense"] : [];
+    const besides = f.name === "War Caster" || f.name === "War Caster (2024)" ? ["advantage"] : f.name === "Skulker (2024)" ? ["advantage", "sense"] : f.name === "Remarkable Athlete" ? ["advantage"] : [];
     for(const k of ["saveNote", "advantage", "skillBonus", "sense", "rollButton"]) assert.ok(!f[k] || besides.includes(k), where + " " + f.name + ": already shown through " + k);
     assert.ok(!resourceNames.has(f.name), where + " " + f.name + ": already a row on Class resources");
     assert.ok(!effectNames.has(f.name), where + " " + f.name + ": already on Active effects");

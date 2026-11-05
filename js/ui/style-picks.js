@@ -3,6 +3,7 @@ import { SPELL_DATA } from "../data/spells.js";
 import { optionSetDef } from "../data/class-options.js";
 import { styleDef, stylePickChoices, availableStyleNames, tashaOnlyStyles, styleReason } from "../core/fighting-styles.js";
 import { themedPicker } from "./themed-picker.js";
+import { PHB_2024_STYLE_FEATS } from "../data/feats/phb2024-general.js";
 
 /* ---------------- Fighting style pickers ----------------
    Shared by the creation wizard's Class Features step and the level-up's
@@ -10,13 +11,14 @@ import { themedPicker } from "./themed-picker.js";
 
 /* The style options as tappable cards: owned ones greyed out, Tasha's
    optional ones left out unless the character uses them (a note says so).
-   onPick(name). */
-export function renderStyleOptions(c, options, value, tasha, onPick){
+   onPick(name). book2024: read them as the 2024 feats (a 2024 class). */
+export function renderStyleOptions(c, options, value, tasha, onPick, book2024){
   var box = ce("div", "fs-options");
   options.forEach(function(name){
     var why = styleReason(c, name, tasha);
     if(why==="Tasha's optional") return;
-    var def = styleDef(name) || {text: ""};
+    var feat2024 = book2024 && PHB_2024_STYLE_FEATS.find(function(f){ return f.style===name; });
+    var def = feat2024 ? {text: feat2024.styleText} : styleDef(name) || {text: ""};
     var row = ce("div", "wiz-equip-option fs-option" + (value===name ? " selected" : "") + (why ? " disabled" : ""));
     row.setAttribute("role", "button");
     row.tabIndex = why ? -1 : 0;
