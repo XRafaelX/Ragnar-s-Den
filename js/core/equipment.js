@@ -10,13 +10,13 @@ import { mod, profBonus, parseDiceNotation, combineRolls, totalLevel } from "./b
 import { weaponMastery } from "./weapon-mastery.js";
 import { characterSpellEdition } from "./spell-edition.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
-import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024 } from "./class-features.js";
+import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024, isBarbarian2024 } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { conditionRolls } from "./conditions.js";
-import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver, weaponAttackEffect } from "./effects.js";
+import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver, weaponAttackEffect, endRage } from "./effects.js";
 import { sharpenBonus } from "./monk.js";
 import { sacredWeaponBonus, auraOfHate } from "./paladin.js";
 import { reaperScythe } from "./shadow-stalker.js";
@@ -98,7 +98,10 @@ export function tryEquip(c, item){
   }
   swapped.forEach(function(i){ i.equipped = false; delete i.shillelagh; });
   item.equipped = true;
-  return {ok:true, message: swapped.length ? "Took off "+swapped.map(function(i){ return i.name; }).join(", ")+"." : ""};
+  // The 2024 Rage ends when you put on heavy armor.
+  var rageOver = item.category==="heavy" && c.rage && c.rage.active && isBarbarian2024(c);
+  if(rageOver) endRage(c);
+  return {ok:true, message: [swapped.length ? "Took off "+swapped.map(function(i){ return i.name; }).join(", ")+"." : "", rageOver ? "Your Rage ends." : ""].filter(Boolean).join(" ")};
 }
 /* Rule breaks in an existing inventory (older saves could equip freely);
    shown as a warning so the player can fix them. kind: "armor" | "hands". */
@@ -428,7 +431,8 @@ export function thrownAttack(c, item){
   var archery = hasFightingStyle(c, "Archery") ? 2 : 0;
   var style = thrownStyleBonus(c, item), rage = rageDamageBonus(c, item);
   // Giant's Havoc's Crushing Throw (giant 3): rage damage on thrown attacks too.
-  if(rage && classLevelOf(c, "Barbarian", "Path of the Giant") >= 3) rage = 0;
+  // (And every 2024 barbarian: the Rage counts any attack using Strength.)
+  if(rage && (classLevelOf(c, "Barbarian", "Path of the Giant") >= 3 || isBarbarian2024(c))) rage = 0;
   if(!archery && !style && !rage) return null;
   var parts = [];
   if(archery) parts.push("Archery +2 to hit");
@@ -508,7 +512,8 @@ export function sidearmMasteryBonus(c, item){
 /* Rage: + rage damage to melee weapon attacks that use STR, while raging
    and not in heavy armor. */
 export function rageDamageBonus(c, item){
-  if(!c.rage || !c.rage.active || isRangedWeapon(item)) return 0;
+  // (The 2024 Rage: any attack using Strength, so a throw too.)
+  if(!c.rage || !c.rage.active || (isRangedWeapon(item) && !isBarbarian2024(c))) return 0;
   var barb = barbarianClassEntry(c);
   if(!barb) return 0;
   if((c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; })) return 0;
@@ -523,7 +528,9 @@ export function rageDamageBonus(c, item){
 export function divineFury(c){
   if(!c.rage || !c.rage.active) return null;
   var barb = barbarianClassEntry(c), lv = barb ? Number(barb.level)||1 : 0;
-  if(!barb || barb.subclass!=="Path of the Zealot" || lv < 3) return null;
+  if(!barb || !/^Path of the Zealot( \(2024\))?$/.test(barb.subclass) || lv < 3) return null;
+  // (The 2024 Zealot chooses the type each time: `either`.)
+  if(barb.edition==="2024") return {bonus: Math.floor(lv / 2), type: "", either: true};
   return {bonus: Math.floor(lv / 2), type: characterChoices(c, "divineFury")[0] || ""};
 }
 /* Natural weapons and armor spikes some barbarians attack with, shaped
@@ -742,6 +749,7 @@ export function regainGrit(c){
 /* Brutal Critical (barbarian 9): extra weapon damage dice on a critical
    hit with a melee attack, 1 die at 9, 2 at 13, 3 at 17. */
 export function brutalCriticalDice(c){
+  if(isBarbarian2024(c)) return 0; // Brutal Strike took its place.
   var lv = classLevelOf(c, "Barbarian");
   return lv >= 17 ? 3 : lv >= 13 ? 2 : lv >= 9 ? 1 : 0;
 }

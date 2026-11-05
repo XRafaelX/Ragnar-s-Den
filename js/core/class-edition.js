@@ -4,7 +4,7 @@
    subclass with another edition's version becomes it, and so do the picks
    that carry over. The monk's own extras are in js/core/monk.js. */
 import { CLASS_PROGRESSION } from "../data/progression.js";
-import { classVariants, classHasEdition } from "./class-features.js";
+import { classVariants, classHasEdition, subclassesFor } from "./class-features.js";
 import { setMonkEdition } from "./monk.js";
 import { syncStyleWording } from "./fighting-styles.js";
 
@@ -24,6 +24,10 @@ export function setClassEdition(c, className, on){
     delete cl.edition;
     if(back[cl.subclass]) cl.subclass = back[cl.subclass];
   }
+  // A subclass only the other edition has (Path of the World Tree) goes: the
+  // sheet's class chip asks for a new one.
+  var held = subclassesFor(className, on ? "2014" : "2024").find(function(s){ return s.name===cl.subclass; });
+  if(held && held.edition && held.edition!==(on ? "2024" : "2014")) cl.subclass = "";
   Object.keys(OPTION_SETS_SWAP).forEach(function(oldId){
     var from = on ? oldId : OPTION_SETS_SWAP[oldId], to = on ? OPTION_SETS_SWAP[oldId] : oldId;
     if(cl.options && cl.options[from] && !cl.options[to]){ cl.options[to] = cl.options[from]; delete cl.options[from]; }

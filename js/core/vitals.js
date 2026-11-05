@@ -2,6 +2,7 @@
    Numbers worked out when shown, so feats, armor and effects never need
    bookkeeping: hit points, speed, Armor Class, initiative, saving throws
    and senses. */
+import { rageFlySource, wildAspect } from "./barbarian-2024.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { ARMOR_MODELS } from "../data/artificer-extras.js";
 import { ARMOR_DATA, armorDataOf } from "../data/armor.js";
@@ -208,6 +209,12 @@ export function computeSpeed(c){
   // aasimar's Heavenly Wings, a fly speed equal to the speed.
   if(effectOn(c, "draconic_flight")) list.push({type: "fly", value: walk, when: "", source: "Draconic Flight"});
   if(effectOn(c, "celestial_revelation_2024") && c.effects.celestial_revelation_2024==="Heavenly Wings") list.push({type: "fly", value: walk, when: "", source: "Heavenly Wings"});
+  // The 2024 barbarian: Rage of the Gods, Falcon, Panther and Salmon.
+  var rageFly = rageFlySource(c, !!body);
+  if(rageFly) list.push({type: "fly", value: walk, when: "", source: rageFly});
+  var aspect = wildAspect(c);
+  if(aspect==="Panther") list.push({type: "climb", value: walk, when: "", source: "Aspect of the Wilds (Panther)"});
+  if(aspect==="Salmon") list.push({type: "swim", value: walk, when: "", source: "Aspect of the Wilds (Salmon)"});
   var speedSources = [];
   (c.classes||[]).forEach(function(cl){ speedSources = speedSources.concat(classFeatureList(cl)); });
   // Feats tagged `speeds` (Athlete (2024): a climb speed equal to the walking speed).
@@ -484,6 +491,8 @@ export function computeDarkvision(c){
       if(next > range){ range = next; sources.push(f.name); }
     });
   });
+  // Aspect of the Wilds (2024 Wild Heart): 60 ft, or 60 more.
+  if(wildAspect(c)==="Owl"){ range += 60; sources.push("Aspect of the Wilds (Owl)"); }
   // Feats tagged `darkvision` (Keenness of the Stone Giant: 60 ft, or 60 more).
   var seen = [];
   (c.feats||[]).forEach(function(f){

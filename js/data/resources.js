@@ -170,6 +170,20 @@ export var CLASS_RESOURCES = {
 /* Keyed by class, then subclass name (as in SUBCLASSES). */
 export var SUBCLASS_RESOURCES = {
   "Barbarian": {
+    // The 2024 paths (pp. 53 and 56). `rageRestore`: a use of Rage gets it back.
+    "Path of the Berserker (2024)": [
+      {id:"intimidating_presence", name:"Intimidating Presence", level:14, max:always(1), reset:always("long"), rageRestore:true,
+        hint:function(lv, m){ return "Bonus action: each creature you choose within 30 ft makes a WIS save (DC " + (8 + m.str + m.pb) + ") or is frightened for 1 minute."; }}
+    ],
+    "Path of the Zealot (2024)": [
+      {id:"warrior_of_the_gods", name:"Warrior of the Gods", level:3, pool:true, max:function(lv){ return lv>=17 ? 7 : lv>=12 ? 6 : lv>=6 ? 5 : 4; }, reset:always("long"),
+        roll:{die:12, heal:true, button:"Heal", label:"Warrior of the Gods: hit points regained"},
+        hint:"Bonus action: spend dice from the pool and regain the hit points rolled. Tap once for each die."},
+      {id:"zealous_presence", name:"Zealous Presence", level:10, max:always(1), reset:always("long"), rageRestore:true,
+        hint:"Bonus action: up to ten other creatures within 60 ft have advantage on attack rolls and saves until the start of your next turn."},
+      {id:"rage_of_the_gods", name:"Rage of the Gods", level:14, max:always(1), reset:always("long"),
+        hint:"As you enter your Rage, take the form of a divine warrior for 1 minute or until you drop to 0 HP. The Rage card has the button."}
+    ],
     "Path of the Zealot": [
       {id:"zealous_presence", name:"Zealous Presence", level:10, max:always(1), reset:always("long"),
         hint:"Bonus action: up to ten allies within 60 ft have advantage on attack rolls and saves until the start of your next turn."}

@@ -1,6 +1,6 @@
 import { resourcefulOnLongRest } from "../../core/species-2024.js";
 import { save } from "../../core/state.js";
-import { useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, heavyArmorMasterAmount, hasFeat, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, kiWord, uncannyMetabolism, useUncannyMetabolism, perfectFocusGain, usePerfectFocus } from "../../core/helpers.js";
+import { WILDS_OPTIONS, POWER_OPTIONS, wildsChoiceDue, lifeGivingDice, branchesDc, longTravelReady, hasRageOfGods, divineFormOn, revivificationHp, spendRage, ragesLeft, rageOnShortRest, persistentRageReady, usePersistentRage, useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, heavyArmorMasterAmount, hasFeat, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, kiWord, uncannyMetabolism, useUncannyMetabolism, perfectFocusGain, usePerfectFocus } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
@@ -743,7 +743,8 @@ export function renderVitalsPanel(c){
     // A 2024 monk: Uncanny Metabolism offered after the roll (with Perfect
     // Focus as the other choice), or Perfect Focus at once when it's used up.
     var um = uncannyMetabolism(c), pf = perfectFocusGain(c), pfNow = !um && pf ? usePerfectFocus(c) : 0;
-    var follow = reflexes || um ? function(r){
+    var pr = persistentRageReady(c);
+    var follow = reflexes || um || pr ? function(r){
       if(!r) return null;
       var lead = reflexes ? "Thief's Reflexes: a second turn in the first round at initiative " + (r.total - 10) + " (not when you're surprised)." : "";
       var options = !um ? [] : [{label: "Uncanny Metabolism: all Focus, heal 1d" + um.die + "+" + um.bonus, title: "Get all your Focus Points back and regain 1d" + um.die + " + " + um.bonus + " hit points. Once per long rest.",
@@ -759,6 +760,13 @@ export function renderVitalsPanel(c){
           save(); renderAll();
           return {silent: true};
         }}] : []);
+      if(pr) options = options.concat([{label: "Regain all your rages (Persistent Rage)", title: "Get all your uses of Rage back. Once per long rest.",
+        use: function(){
+          if(!usePersistentRage(c)) return null;
+          logRoll("Persistent Rage", "Regained all uses of Rage.");
+          save(); renderAll();
+          return {silent: true};
+        }}]);
       return {lead: lead || "When you roll initiative:", options: options};
     } : null;
     performRoll(20,1,initTotal,initRoll.mode,"Initiative", follow);
@@ -873,6 +881,7 @@ export function renderVitalsPanel(c){
     var pactNote = "";
     if(c.spellcasting.pact && c.spellcasting.pact.used){ c.spellcasting.pact.used = 0; pactNote = " Pact slots restored."; }
     var restored = restoreResources(c, "short");
+    if(rageOnShortRest(c)) restored.push("one use of Rage");
     talesOnRest(c);
     delete c.relentlessUses; // Relentless Rage's DC is back to 10
     var resNote = restored.length ? " Restored: "+restored.join(", ")+"." : "";
@@ -930,6 +939,7 @@ export function renderVitalsPanel(c){
         });
         if(c.spellcasting.pact) c.spellcasting.pact.used = 0;
         c.rage.used = 0;
+        delete c.rage.persistentUsed;
         // Magic items: charges back at dawn, the day's boons over.
         var items = magicItemsOnLongRest(c);
         items.recharged = items.recharged.concat(infusionsOnLongRest(c));
@@ -1005,7 +1015,9 @@ export function renderVitalsPanel(c){
    rule is in the info icon's tooltip. */
 function renderRageCard(c, barbClass){
   var level = barbClass.level||1;
-  var rageMax = barbarianRageMax(level);
+  var rageMax = barbarianRageMax(level, barbClass);
+  var is2024 = barbClass.edition==="2024";
+  var inHeavy = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
   var rageUsed = rageMax===Infinity ? 0 : clamp(c.rage.used||0, 0, rageMax);
   var rageLeft = rageMax===Infinity ? Infinity : rageMax-rageUsed;
   var raging = !!c.rage.active;
@@ -1061,7 +1073,7 @@ function renderRageCard(c, barbClass){
   var dmg = document.createElement("div");
   dmg.className = "rage-stat";
   dmg.innerHTML = '<span class="rage-lbl">Damage</span><span class="rage-val">+'+barbarianRageDamage(level)+'</span>';
-  dmg.title = "Added to Strength melee weapon attacks while raging";
+  dmg.title = is2024 ? "Added to attacks using Strength while raging, with a weapon or an unarmed strike" : "Added to Strength melee weapon attacks while raging";
   main.appendChild(dmg);
 
   var btn = document.createElement("button");
@@ -1069,10 +1081,10 @@ function renderRageCard(c, barbClass){
   btn.className = "btn rage-btn"+(raging ? "" : " primary");
   btn.innerHTML = makeFlameSvg();
   btn.appendChild(document.createTextNode(raging ? "End Rage" : "Enter Rage"));
-  btn.disabled = !raging && rageLeft<=0;
-  if(btn.disabled) btn.title = "No rages left until a long rest";
+  btn.disabled = !raging && (rageLeft<=0 || (is2024 && inHeavy));
+  if(btn.disabled) btn.title = rageLeft > 0 ? "Not while you wear heavy armor" : is2024 ? "No rages left. A short rest gives one back" : "No rages left until a long rest";
   // Instinctive Pounce (Tasha's): the move that comes with entering.
-  else if(!raging && usesVariant(barbClass, "Instinctive Pounce")) btn.title = "Instinctive Pounce: as you enter your rage, you can move up to half your speed (" + Math.floor(computeSpeed(c).value / 2) + " ft).";
+  else if(!raging && (usesVariant(barbClass, "Instinctive Pounce") || (is2024 && level >= 7))) btn.title = "Instinctive Pounce: as you enter your rage, you can move up to half your speed (" + Math.floor(computeSpeed(c).value / 2) + " ft).";
   btn.addEventListener("click", function(){
     if(c.rage.active){
       var notes = endRage(c);
@@ -1217,8 +1229,61 @@ function kiPicker(c){
   return wrap;
 }
 
-function rageActions(c){
+/* A small button for the Rage card. */
+function rageButton(text, title, onClick){
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "btn small inv-roll-btn";
+  b.textContent = text; b.title = title;
+  b.addEventListener("click", function(){ onClick(); save(); renderAll(); });
+  return b;
+}
+/* What the 2024 paths offer while raging: the Wild Heart's choices, the World
+   Tree's temporary hit points, branches and long teleport, the Zealot's form. */
+function rageActions2024(c){
   var out = [];
+  [["wilds", "wilds", "Rage of the Wilds", WILDS_OPTIONS], ["power", "wildsPower", "Power of the Wilds", POWER_OPTIONS]].forEach(function(w){
+    if(!wildsChoiceDue(c, w[0])) return;
+    Object.keys(w[3]).forEach(function(name){
+      out.push(rageButton(name, w[2] + ": " + w[3][name], function(){
+        c.rage[w[1]] = name;
+        logRoll(w[2], name + " for this Rage.");
+      }));
+    });
+  });
+  var life = lifeGivingDice(c);
+  if(life){
+    var lg = rageButton("", "Life-Giving Force: at the start of each of your turns, another creature within 10 feet gains this many temporary hit points. They vanish when your Rage ends.", function(){});
+    lg.innerHTML = makeDiceSvg() + "Life-Giving Force " + life + "d6";
+    lg.addEventListener("click", function(){ performRoll(6, life, 0, "none", "Life-Giving Force: temporary HP for another creature"); });
+    out.push(lg);
+  }
+  var branches = branchesDc(c);
+  if(branches) out.push(rageButton("Branches · STR DC " + branches, "Reaction: when a creature you can see starts its turn within 30 feet, it makes a Strength save or teleports next to you, and you can reduce its speed to 0 until the end of the turn.", function(){
+    logRoll("Branches of the Tree", "Strength save, DC " + branches + ", or the target teleports next to you. Its speed can drop to 0 until the end of the turn.");
+  }));
+  if(longTravelReady(c)) out.push(rageButton("Teleport 150 ft", "Once per Rage: teleport up to 150 feet and bring up to six willing creatures within 10 feet of you.", function(){
+    c.rage.longTravel = true;
+    logRoll("Travel Along the Tree", "Teleported up to 150 feet, with up to six willing creatures.");
+  }));
+  var formKey = "Barbarian:rage_of_the_gods";
+  if(hasRageOfGods(c) && !c.rage.gods && resourceLeft(c, formKey) > 0) out.push(rageButton("Divine warrior form", "Rage of the Gods: as you enter your Rage, for 1 minute or until you drop to 0 hit points. Once per long rest.", function(){
+    spendResource(c, formKey, 1);
+    c.rage.gods = true;
+    logRoll("Rage of the Gods", "Divine warrior form: fly speed, hover, and resistance to necrotic, psychic and radiant damage.");
+  }));
+  if(divineFormOn(c)){
+    var hp = revivificationHp(c);
+    var rev = rageButton("Revivification", "Reaction: when a creature within 30 feet would drop to 0 hit points, spend a use of Rage to set its hit points to " + hp + " instead.", function(){
+      if(!spendRage(c)) return;
+      logRoll("Revivification", "Spent a use of Rage: the creature's hit points become " + hp + " instead of 0.");
+    });
+    rev.disabled = ragesLeft(c) <= 0;
+    out.push(rev);
+  }
+  return out;
+}
+function rageActions(c){
+  var out = rageActions2024(c);
   if(canFrenzy(c)){
     var fz = document.createElement("button");
     fz.type = "button"; fz.className = "btn small inv-roll-btn";
@@ -1524,6 +1589,23 @@ function renderResourcesCard(c, resources){
       info.appendChild(svRow);
     }
     // A use that restores a set number of hit points (Wholeness of Body).
+    // Intimidating Presence, Zealous Presence (2024): a use of Rage gets it back.
+    if(r.rageRestore && r.used > 0){
+      var rageRow = document.createElement("div");
+      rageRow.className = "inv-roll-actions fx-rolls";
+      var rageBack = document.createElement("button");
+      rageBack.type = "button"; rageBack.className = "btn small inv-roll-btn";
+      rageBack.textContent = "Spend a Rage to use it again";
+      rageBack.disabled = ragesLeft(c) <= 0;
+      rageBack.title = rageBack.disabled ? "No rages left" : "No action needed: spend a use of Rage to get this back";
+      rageBack.addEventListener("click", function(){
+        if(!spendRage(c)) return;
+        logRoll(r.name, "Spent a use of Rage to use it again.");
+        setUsed(r.used-1);
+      });
+      rageRow.appendChild(rageBack);
+      info.appendChild(rageRow);
+    }
     if(r.heal && r.max!==Infinity){
       var hr = document.createElement("div");
       hr.className = "inv-roll-actions fx-rolls";

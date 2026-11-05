@@ -1,6 +1,8 @@
 /* ---------------- Checks ----------------
    Ability checks, skills and passive scores, and whether a roll has
    advantage or disadvantage. */
+import { primalStrength } from "./barbarian-2024.js";
+import { isBarbarian2024 } from "./class-features.js";
 import { SKILLS } from "../data/abilities-skills.js";
 import { ARMOR_DATA } from "../data/armor.js";
 import { RACE_DATA, TRAIT_ADVANTAGES, TRAIT_HALF_PROFICIENCY, TRAIT_CHECK_D4 } from "../data/race-data.js";
@@ -20,7 +22,7 @@ import { hasFeat } from "./vitals.js";
 import { nextCheckAdvantage } from "./magic-items.js";
 import { infusionInitiative } from "./infusion-effects.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
-import { conditionRolls } from "./conditions.js";
+import { conditionRolls, activeConditions } from "./conditions.js";
 import { holdsFirearm } from "./gunslinger.js";
 
 /* ---------------- Ability checks and skills ---------------- */
@@ -61,7 +63,9 @@ export function abilityCheck(c, key){
 /* A skill check: its ability, then proficiency (doubled with expertise)
    or, without proficiency, half proficiency. {value, label, breakdown, roll}. */
 export function skillCheck(c, skill, passive){
-  var key = SKILL_ABILITY[skill] || "str";
+  // Primal Knowledge (2024): while raging, some skills can be Strength checks.
+  var primal = primalStrength(c, skill, passive);
+  var key = primal ? "str" : SKILL_ABILITY[skill] || "str";
   var ab = checkAbility(c, key);
   var entry = c.skillProfs && c.skillProfs[skill] || {};
   // Knowledge of the Ages: proficient with the chosen skill for 10 minutes.
@@ -96,7 +100,7 @@ export function skillCheck(c, skill, passive){
     value += m; breakdown += " + " + x.name + " (" + fmtMod(m) + ")";
   });
   if(formBonus!==null && formBonus > value){ value = formBonus; breakdown = wildForm(c).name + "'s bonus (" + fmtMod(formBonus) + ")"; }
-  return {value: value, label: ab.label, breakdown: breakdown, roll: skillRollMode(c, skill, passive)};
+  return {value: value, label: ab.label, ability: key, breakdown: (primal ? "Primal Knowledge: " : "") + breakdown, roll: skillRollMode(c, skill, passive)};
 }
 /* Class features carrying a skill flag: [{name, value}]. */
 function featureSkillFlags(c, flag){
@@ -147,7 +151,8 @@ export function stealthCheck(c){
    aren't proficient with and from conditions (Poisoned, exhaustion).
    {mode: "none"|"dis"|"adv", reason}. */
 export function skillRollMode(c, skill, passive){
-  var list = [armorPenalty(c, SKILL_ABILITY[skill])].concat(alwaysAdvantage(c, "check", SKILL_ABILITY[skill]), skillAdvantage(c, skill), conditionRolls(c, "check"));
+  var abilityKey = primalStrength(c, skill, passive) ? "str" : SKILL_ABILITY[skill];
+  var list = [armorPenalty(c, abilityKey)].concat(alwaysAdvantage(c, "check", abilityKey), skillAdvantage(c, skill), conditionRolls(c, "check"));
   // A boon for the next roll (Duality) isn't part of a passive score.
   if(!passive) list.push(nextCheckAdvantage(c), tidesRoll(c));
   if(skill==="Stealth") list.push(stealthCheck(c));
@@ -216,7 +221,7 @@ function skillAdvantage(c, skill){
 }
 /* The ones that always apply to this roll, as roll modes. */
 function alwaysAdvantage(c, on, key){
-  return advantagesFor(c).filter(function(a){ return !a.when && covers(a, on, key); }).map(function(a){ return {mode: "adv", reason: a.name}; });
+  return advantagesFor(c).filter(function(a){ return !a.when && covers(a, on, key) && !(a.notIncapacitated && activeConditions(c).some(function(x){ return x.def.incapacitated; })); }).map(function(a){ return {mode: "adv", reason: a.name}; });
 }
 /* Situational ones for skills, for reminders: [{name, when, skills}]
    (Supreme Sneak's Stealth when you move no more than half your speed). */
@@ -272,8 +277,9 @@ export function attackRollMode(c, item){
   // Battle Ready, the player attacks with INT and avoids it).
   var keys = weaponAbility(c, item).keys;
   var physical = keys.every(function(k){ return k==="str" || k==="dex"; });
-  // Reckless Attack: advantage on melee weapon attacks that use Strength.
-  var reckless = effectOn(c, "reckless_attack") && !isRangedWeapon(item) && keys.indexOf("str")!==-1 ? {mode: "adv", reason: "Reckless Attack"} : null;
+  // Reckless Attack: advantage on melee weapon attacks that use Strength
+  // (the 2024 barbarian: any attack using Strength, so a throw too).
+  var reckless = effectOn(c, "reckless_attack") && (isBarbarian2024(c) || !isRangedWeapon(item)) && keys.indexOf("str")!==-1 ? {mode: "adv", reason: "Reckless Attack"} : null;
   // Shadow Step: advantage on the next melee attack.
   var step = effectOn(c, "shadow_step") && !isRangedWeapon(item) ? {mode: "adv", reason: "Shadow Step"} : null;
   var bulky = heavyWeaponPenalty(c, item);

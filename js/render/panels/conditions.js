@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { maxHp, activeConditions, exhaustionLevel, exhaustionSummary, addCondition, removeCondition, conditionDef, raceConditionImmunity, rageSuspends, classLevelOf, isMonk2024, endIncapacitatedEffects } from "../../core/helpers.js";
+import { conditionEndsRage, endRage, isBarbarian2024, maxHp, activeConditions, exhaustionLevel, exhaustionSummary, addCondition, removeCondition, conditionDef, raceConditionImmunity, rageSuspends, classLevelOf, isMonk2024, endIncapacitatedEffects } from "../../core/helpers.js";
 import { CONDITIONS, EXHAUSTION_LEVELS, EXHAUSTION_RULES } from "../../data/conditions.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -296,6 +296,12 @@ function startCondition(c, id){
   if(!added.length) return;
   var def = conditionDef(id);
   logRoll(def.name, added.length > 1 ? "And falls prone." : def.short);
+  // The 2024 Rage ends when you are incapacitated (from level 15, unconscious).
+  if(conditionEndsRage(c, def)){
+    endRage(c);
+    logRoll("Rage", "Ended: you are " + def.name.toLowerCase() + ".");
+    showActionToast("Your Rage ends: you are " + def.name.toLowerCase() + ".");
+  }
   if(def.incapacitated) endIncapacitatedEffects(c).forEach(function(name){
     logRoll(name, "Ended: you are incapacitated.");
     showActionToast(name + " ended: you are incapacitated.");
@@ -406,7 +412,7 @@ function openConditionsSheet(c){
       var immune = !cur && raceConditionImmunity(c, d.id);
       // Mindless Rage: charmed and frightened wait until the rage ends.
       var suspended = !cur && rageSuspends(c, d.id);
-      text.lastChild.textContent = cur && cur.auto ? "From 0 HP. Heal to wake up." : immune ? "Immune (" + immune + ")" : suspended ? "Suspended while raging (" + suspended + ")" : d.short;
+      text.lastChild.textContent = cur && cur.auto ? "From 0 HP. Heal to wake up." : immune ? "Immune (" + immune + ")" : suspended ? (isBarbarian2024(c) ? "Immune while raging (" : "Suspended while raging (") + suspended + ")" : d.short;
       tile.appendChild(text);
       tile.setAttribute("aria-pressed", cur ? "true" : "false");
       if((cur && cur.auto) || immune || suspended) tile.disabled = true;

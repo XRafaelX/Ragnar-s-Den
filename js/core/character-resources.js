@@ -78,7 +78,7 @@ export function characterResources(c){
       list.push({
         key: key, name: r.name, source: d.source, hint: typeof r.hint==="function" ? r.hint(lv, m, cl) : r.hint, pool: !!r.pool,
         max: max, used: max===Infinity ? 0 : clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
-        reset: r.reset(lv), shortRegain: r.shortRegain || 0, roll: roll, heal: r.heal ? r.heal(lv, m) : 0, slotMin: r.slotMin || 0, againPoints: r.againPoints || 0,
+        reset: r.reset(lv), shortRegain: r.shortRegain || 0, roll: roll, heal: r.heal ? r.heal(lv, m) : 0, rageRestore: !!r.rageRestore, slotMin: r.slotMin || 0, againPoints: r.againPoints || 0,
         initiativeRegain: r.initiativeRegain && lv >= r.initiativeRegain ? (r.initiativeAmount || 1) : 0
       });
     });
@@ -250,8 +250,9 @@ export function barbarianClassEntry(c){
 export function barbarianRageDamage(level){
   return level>=16 ? 4 : level>=9 ? 3 : 2;
 }
-export function barbarianRageMax(level){
-  if(level>=20) return Infinity;
+/* cl (optional): the class entry. A 2024 barbarian 20 has 6, not unlimited. */
+export function barbarianRageMax(level, cl){
+  if(level>=20 && !(cl && cl.edition==="2024")) return Infinity;
   if(level>=17) return 6;
   if(level>=12) return 5;
   if(level>=6) return 4;

@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
+import { isBarbarian2024, wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -380,7 +380,7 @@ function effectSummary(c, id){
     return "You grow " + (gm >= 18 ? "Large or Huge (+5 ft reach while Huge)" : "Large") + ". Advantage on Strength checks and saves, and +1d" + (gm >= 18 ? 10 : gm >= 10 ? 8 : 6) + " damage once on each of your turns";
   }
   if(id==="fighting_spirit") return "Advantage on weapon attack rolls and +" + fightingSpiritTempHp(c) + " temporary HP";
-  if(id==="reckless_attack") return "Advantage on Strength melee weapon attacks, but attacks against you have advantage too";
+  if(id==="reckless_attack") return "Advantage on " + (isBarbarian2024(c) ? "attack rolls using Strength" : "Strength melee weapon attacks") + ", but attacks against you have advantage too";
   if(id==="natures_veil") return "You're invisible: advantage on your attack rolls, and attacks against you have disadvantage";
   if(id==="predicted_critical") return "A hit with your next firearm attack is a critical hit";
   if(id==="luck_of_the_draw") return "An extra reaction until the start of your next turn";

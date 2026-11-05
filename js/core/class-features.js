@@ -45,6 +45,8 @@ export function editionEntry(c, className, edition){
 }
 /* Whether the character's fighter follows the 2024 rules. */
 export function isFighter2024(c){ return !!editionEntry(c, "Fighter", "2024"); }
+/* A 2024 barbarian (js/core/barbarian-2024.js). */
+export function isBarbarian2024(c){ return !!editionEntry(c, "Barbarian", "2024"); }
 /* Whether the character's monk follows the 2024 rules. */
 export function isMonk2024(c){ return !!editionEntry(c, "Monk", "2024"); }
 /* The subclasses a class entry can take: one marked with an `edition`

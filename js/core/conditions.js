@@ -34,7 +34,7 @@ function rageLevel(c, subclass){
 /* Mindless Rage (Path of the Berserker, barbarian 6): while raging,
    charmed and frightened are suspended. The feature's name, or "". */
 export function rageSuspends(c, id){
-  return (id==="charmed" || id==="frightened") && c.rage && c.rage.active && rageLevel(c, "Path of the Berserker") >= 6 ? "Mindless Rage" : "";
+  return (id==="charmed" || id==="frightened") && c.rage && c.rage.active && (rageLevel(c, "Path of the Berserker") >= 6 || rageLevel(c, "Path of the Berserker (2024)") >= 6) ? "Mindless Rage" : "";
 }
 /* The conditions on now, in the book's order: [{def, auto}], with
    `auto` true for Unconscious from being at 0 HP. */

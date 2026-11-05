@@ -219,6 +219,7 @@ export function renderAbilitiesPanel(c){
     var name = s[0], ab = s[1];
     var entry = c.skillProfs[name] || {prof:false, expertise:false};
     var check = skillCheck(c, name);
+    ab = check.ability || ab; // (Primal Knowledge: Strength while raging.)
     var skillAbility = checkAbility(c, ab);
     var bonus = check.value;
     var row = document.createElement("div");

@@ -11,7 +11,7 @@ import { rollAttack, rollSneak } from "./sheet-rolls.js";
 import { smiteButtons, sheetTop, lead as sheetLead, sheetButton } from "./paladin.js";
 import { hitDicePools, spendHitDie } from "../../core/character-resources.js";
 import { totalLevel } from "../../core/basics.js";
-import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, gwm2024Bonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor, martialArtsDieAt } from "../../core/helpers.js";
+import { brutalStrike, frenzyDice, batteringRoots, weaponAbility, fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, gwm2024Bonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor, martialArtsDieAt } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -690,6 +690,13 @@ function renderUnarmedCard(c, u){
     grapBtn.addEventListener("click", function(){ performRoll(u.grappleDie, 1, 0, "none", "Unarmed Fighting: grappled creature (Bludgeoning)"); });
     actions.appendChild(grapBtn);
   }
+  // Brutal Strike and Frenzy (2024) on an attack using Strength with dice.
+  if(u.die && u.ability==="STR"){
+    var uBrutal = brutalStrikeButton(c, u.roll && u.roll.mode, function(){ rollAttack(c, u.attack, "none", u.name + ": Brutal Strike", Object.assign({}, uHit, {brutal: brutalStrike(c)})); });
+    if(uBrutal) actions.appendChild(uBrutal);
+  }
+  var uFrenzy = u.ability==="STR" && frenzyButton(c, u.name);
+  if(uFrenzy) actions.appendChild(uFrenzy);
   var furyBtn = divineFuryButton(c, u.name);
   if(furyBtn) actions.appendChild(furyBtn);
   var blessBtn = blessedStrikesButton(c, u.name);
@@ -994,6 +1001,33 @@ function cavalierButtons(c, item, atkBonus, atkRoll, parsed, dmgBonus){
 
 /* Divine Fury, while a Zealot rages: its own button rather than part of
    Damage, since it lands only on the first hit each turn. */
+/* Brutal Strike (2024 barbarian 9): this attack gives up its advantage, and
+   the tray offers the extra die and the effects after it. Not on an attack
+   with disadvantage: there Reckless Attack's advantage only cancels it out. */
+function brutalStrikeButton(c, mode, roll){
+  var brutal = brutalStrike(c);
+  if(!brutal) return null;
+  var btn = document.createElement("button");
+  btn.type = "button"; btn.className = "btn small inv-roll-btn";
+  btn.innerHTML = makeDiceSvg() + "Brutal Strike";
+  btn.disabled = mode!=="adv";
+  btn.title = btn.disabled ? "Not on an attack with disadvantage"
+    : "Once on your turn: attack without advantage. On a hit, +" + brutal.dice + "d10 damage and " + (brutal.picks > 1 ? "two different effects" : "one effect") + ". The dice tray offers them.";
+  btn.addEventListener("click", roll);
+  return btn;
+}
+/* Frenzy (2024 Berserker): raging and reckless, the first Strength hit on
+   your turn. Its own button, like Divine Fury. */
+function frenzyButton(c, name){
+  var dice = frenzyDice(c);
+  if(!dice) return null;
+  var btn = document.createElement("button");
+  btn.type = "button"; btn.className = "btn small inv-roll-btn inv-fury-btn";
+  btn.innerHTML = makeDicesSvg() + "Frenzy +" + dice + "d6";
+  btn.title = "Frenzy: extra damage to the first target you hit on your turn with a Strength attack, of the same type";
+  btn.addEventListener("click", function(){ performRoll(6, dice, 0, "none", name + ": Frenzy"); });
+  return btn;
+}
 function divineFuryButton(c, name){
   var fury = divineFury(c);
   if(!fury) return null;
@@ -1001,9 +1035,9 @@ function divineFuryButton(c, name){
   btn.type = "button"; btn.className = "btn small inv-roll-btn inv-fury-btn";
   btn.innerHTML = makeDicesSvg() + "+1d6" + fmtMod(fury.bonus) + (fury.type ? " " + fury.type.toLowerCase() : "");
   btn.title = "Divine Fury: extra damage to the first creature you hit with a weapon attack on each of your turns while raging"
-    + (fury.type ? "" : ". Choose radiant or necrotic on the Features tab");
+    + (fury.either ? ". Necrotic or radiant, your choice each time" : fury.type ? "" : ". Choose radiant or necrotic on the Features tab");
   btn.addEventListener("click", function(){
-    performRoll(6, 1, fury.bonus, "none", name + ": Divine Fury" + (fury.type ? " (" + fury.type + ")" : ""));
+    performRoll(6, 1, fury.bonus, "none", name + ": Divine Fury" + (fury.either ? " (necrotic or radiant)" : fury.type ? " (" + fury.type + ")" : ""));
   });
   return btn;
 }
@@ -1525,6 +1559,7 @@ function renderWeaponCard(c, item, idx){
   if(chosenFeat) subtitleParts.push(chosenFeat.name);
   var rage = rageDamageBonus(c, item);
   if(rage) subtitleParts.push("Rage +" + rage + " damage");
+  if(batteringRoots(c, item)) subtitleParts.push("Reach +10 ft on your turn");
   if(duelingBonus(c, item)) subtitleParts.push("Dueling +2 damage");
   var gwm = gwm2024Bonus(c, item);
   if(gwm) subtitleParts.push("Great Weapon Master +" + gwm + " damage");
@@ -1688,6 +1723,16 @@ function renderWeaponCard(c, item, idx){
     actions.appendChild(bladeBtn);
   }
 
+  // Brutal Strike and Frenzy (2024) on an attack using Strength.
+  if(parsed && weaponAbility(c, item).keys.indexOf("str")!==-1){
+    var wBrutal = brutalStrikeButton(c, atkRoll.mode, function(){
+      rollAttack(c, atkBonus, "none", (item.name||"Weapon") + ": Brutal Strike",
+        {qty: parsed.qty, die: parsed.die, bonus: off && !off.stack ? off.damage : dmgBonus, melee: !isRangedWeapon(item), label: item.name || "Weapon", critMin: critRange(c, item), item: item, sneak: sneakAttackWeapon(item, c), brutal: brutalStrike(c)});
+    });
+    if(wBrutal) actions.appendChild(wBrutal);
+    var wFrenzy = frenzyButton(c, item.name || "Weapon");
+    if(wFrenzy) actions.appendChild(wFrenzy);
+  }
   var furyBtn = divineFuryButton(c, item.name || "Weapon");
   if(furyBtn) actions.appendChild(furyBtn);
   var blessBtn = parsed && blessedStrikesButton(c, item.name || "Weapon");

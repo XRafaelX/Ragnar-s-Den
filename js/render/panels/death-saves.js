@@ -5,7 +5,7 @@ import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
-import { searingVengeanceReady, necroticHuskReady, spendForRests, mod, strengthOfTheGrave, blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource, kiWord } from "../../core/helpers.js";
+import { relentlessHp, searingVengeanceReady, necroticHuskReady, spendForRests, mod, strengthOfTheGrave, blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource, kiWord } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { featDeathSaveAdvantage } from "../../core/feats-2024.js";
 import { isFighter2024 } from "../../core/class-features.js";
@@ -302,7 +302,7 @@ function renderRelentless(c){
   box.appendChild(head);
   var status = document.createElement("div");
   status.className = "ds-status";
-  status.textContent = "You dropped to 0 HP while raging. Make a Constitution save, DC " + dc + ". On a success you drop to 1 HP instead.";
+  status.textContent = "You dropped to 0 HP while raging. Make a Constitution save, DC " + dc + ". On a success you drop to " + relentlessHp(c) + " HP instead.";
   box.appendChild(status);
   var btn = document.createElement("button");
   btn.type = "button";
@@ -315,8 +315,8 @@ function renderRelentless(c){
     performRoll(20, 1, sv.value, mode.mode, "Relentless Rage: CON save (DC " + dc + ")", {onResult: function(r){
       var outcome = resolveRelentlessRage(c, r.total);
       if(outcome==="up"){
-        logRoll("Relentless Rage", "Saved (" + r.total + " vs DC " + dc + "): back up on 1 HP, still raging.");
-        showActionToast("Relentless Rage: you drop to 1 HP instead.");
+        logRoll("Relentless Rage", "Saved (" + r.total + " vs DC " + dc + "): back up on " + relentlessHp(c) + " HP, still raging.");
+        showActionToast("Relentless Rage: you drop to " + relentlessHp(c) + " HP instead.");
         playRevive();
       } else if(outcome==="down"){
         // The rage ends with the fall, unless Rage Beyond Death holds it.

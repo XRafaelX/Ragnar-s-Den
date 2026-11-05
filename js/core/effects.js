@@ -7,7 +7,10 @@ import { stoneBenefit } from "./wizard.js";
 import { TOGGLE_EFFECTS, WILD_SURGES } from "../data/effects.js";
 import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
-import { classLevelOf, computeSpellSlots, usesVariant, classEdition } from "./class-features.js";
+import { classLevelOf, computeSpellSlots, usesVariant, classEdition, isBarbarian2024 } from "./class-features.js";
+import { vitalitySurge, fanaticalBonus, hasTreeTravel, divineFormOn } from "./barbarian-2024.js";
+import { barbarianClassEntry } from "./character-resources.js";
+import { removeCondition } from "./conditions.js";
 import { isRangedWeapon } from "./equipment.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { knownOptions } from "./class-options.js";
@@ -337,14 +340,25 @@ export function useHarnessDivinePower(c, className, level){
    abandon (Reckless Abandon's temporary HP), relentless (a Relentless
    Rage save waiting at 0 HP). c.relentlessUses counts Relentless Rage's
    saves since the last rest (its DC grows by 5 each time). */
-var RAGE_STATE = ["frenzy", "fanatical", "abandon", "relentless", "surge", "surgeChoice", "beast", "cleaver"];
+var RAGE_STATE = ["frenzy", "fanatical", "abandon", "relentless", "surge", "surgeChoice", "beast", "cleaver", "wilds", "wildsPower", "longTravel", "gods"];
 function barbLevel(c, subclass){ return classLevelOf(c, "Barbarian", subclass); }
 /* Enter a rage: what that brings, as notes for the log (a Wild Surge).
    `roll` (sides -> 1..sides) is for tests. */
 export function startRage(c, roll){
   RAGE_STATE.forEach(function(k){ delete c.rage[k]; });
   c.rage.active = true;
-  return barbLevel(c, "Path of Wild Magic") >= 3 ? [rollWildSurge(c, roll)] : [];
+  var notes = barbLevel(c, "Path of Wild Magic") >= 3 ? [rollWildSurge(c, roll)] : [];
+  // Vitality Surge (2024 World Tree): temporary hit points, keeping the higher.
+  var surge = vitalitySurge(c);
+  if(surge){
+    if(surge > (Number(c.hp.temp)||0)) c.hp.temp = surge;
+    notes.push("Vitality Surge: " + surge + " temporary HP");
+  }
+  // Mindless Rage (2024 Berserker): charmed and frightened end.
+  var freed = barbarianClassEntry(c) && barbarianClassEntry(c).subclass==="Path of the Berserker (2024)" && barbLevel(c) >= 6 ? ["charmed", "frightened"].filter(function(id){ return (c.conditions||[]).indexOf(id)!==-1; }) : [];
+  freed.forEach(function(id){ removeCondition(c, id); });
+  if(freed.length) notes.push("Mindless Rage: no longer " + freed.join(" or "));
+  return notes;
 }
 /* The rage ends (the button, a rest, or dropping to 0 HP): what that
    brings, as notes for the log ("Frenzy: 1 level of exhaustion"). */
@@ -375,7 +389,8 @@ export function spiritShield(c){
 /* Frenzy (Path of the Berserker, barbarian 3): while raging, go into a
    frenzy. True if it could. */
 export function canFrenzy(c){
-  return !!(c.rage && c.rage.active) && barbLevel(c, "Path of the Berserker") >= 3 && !c.rage.frenzy;
+  // (The 2014 path. The 2024 Frenzy is extra damage: frenzyDice.)
+  return !!(c.rage && c.rage.active) && barbLevel(c, "Path of the Berserker") >= 3 && !isBarbarian2024(c) && !c.rage.frenzy;
 }
 /* Relentless Rage (barbarian 11): dropping to 0 HP while raging asks for
    a CON save, DC 10 and 5 more for each use since the last rest. */
@@ -386,16 +401,21 @@ export function relentlessRageDc(c){
    you stay conscious and the rage goes on; you die only when it ends with
    you still at 0 HP. */
 export function rageBeyondDeath(c){
-  return !!(c.rage && c.rage.active) && barbLevel(c, "Path of the Zealot") >= 14;
+  // (The 2014 path. The 2024 Zealot has Rage of the Gods.)
+  return !!(c.rage && c.rage.active) && barbLevel(c, "Path of the Zealot") >= 14 && !isBarbarian2024(c);
 }
 /* Dropping to 0 HP while raging: Relentless Rage's save is set up, and the
    rage goes on while that save is waiting or with Rage Beyond Death. True
    when the rage holds (the caller then doesn't end the effects). */
 export function rageAtZero(c){
   if(!(c.rage && c.rage.active)) return false;
+  delete c.rage.gods; // Rage of the Gods lasts until you drop to 0 hit points.
   if(relentlessRageDc(c)) c.rage.relentless = true;
   return !!c.rage.relentless || rageBeyondDeath(c);
 }
+/* The hit points a Relentless Rage save brings you back on: 1, or twice
+   the barbarian level in the 2024 rules. */
+export function relentlessHp(c){ return isBarbarian2024(c) ? 2 * barbLevel(c) : 1; }
 /* The Relentless Rage save's outcome: back to 1 HP on a success, the rage
    still going; on a failure the rage ends (unless Rage Beyond Death holds
    it). Returns "up", "down" or "" when no save was waiting. */
@@ -405,7 +425,7 @@ export function resolveRelentlessRage(c, total){
   delete c.rage.relentless;
   c.relentlessUses = (Number(c.relentlessUses)||0) + 1;
   if(total >= dc){
-    c.hp.current = 1;
+    c.hp.current = relentlessHp(c);
     c.deathSaves = {success: 0, fail: 0};
     return "up";
   }
@@ -430,11 +450,26 @@ function totemPick(c, setId){
   var o = cl && knownOptions(cl, setId)[0];
   return o ? o.name : "";
 }
+/* What the 2024 class and its paths add to the Rage card's chips. */
+function ragePerks2024(c, raging, out){
+  if(!isBarbarian2024(c)) return;
+  var lv = barbLevel(c);
+  if(raging) out.push(lv >= 15 ? "Lasts 10 minutes" : "To keep it going: attack an enemy, force a save or take a bonus action");
+  if(lv >= 3) out.push("Acrobatics, Intimidation, Perception, Stealth & Survival can use Strength");
+  if(!raging) return;
+  var pick = {Eagle: "Bonus action: Disengage and Dash", Wolf: "Allies have advantage attacking enemies within 5 ft of you",
+    Falcon: "Fly at your speed if you wear no armor", Lion: "Enemies within 5 ft have disadvantage attacking anyone else", Ram: "A melee hit can knock a Large or smaller creature prone"};
+  [c.rage.wilds, c.rage.wildsPower].forEach(function(p){ if(pick[p]) out.push(pick[p]); });
+  if(hasTreeTravel(c)) out.push("Bonus action: teleport up to 60 ft");
+  if(divineFormOn(c)) out.push("Fly at your speed and hover", "Resist necrotic, psychic & radiant");
+}
 export function ragePerks(c){
   var raging = !!(c.rage && c.rage.active);
   var heavy = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
   var spirit = totemPick(c, "totemSpirit"), attune = totemPick(c, "totemAttunement");
-  var out = [spirit==="Bear" ? "Resist all damage except psychic" : "Resist bludgeoning, piercing & slashing", "Advantage on Strength checks & saves"];
+  var bear = raging && c.rage.wilds==="Bear";
+  var out = [bear ? "Resist all damage except force, necrotic, psychic & radiant" : spirit==="Bear" ? "Resist all damage except psychic" : "Resist bludgeoning, piercing & slashing", "Advantage on Strength checks & saves"];
+  ragePerks2024(c, raging, out);
   var lv = function(sub){ return barbLevel(c, sub); };
   // Path of the Berserker
   if(raging && c.rage.frenzy) out.push("Frenzy: a melee weapon attack as a bonus action each turn");
@@ -447,8 +482,8 @@ export function ragePerks(c){
   if(attune==="Tiger") out.push("After a 20 ft straight charge, a bonus action melee attack");
   if(attune==="Wolf") out.push("On a melee hit, knock a Large or smaller creature prone (bonus action)");
   // Path of the Zealot
-  if(lv("Path of the Zealot") >= 6 && !(raging && c.rage.fanatical)) out.push("Reroll one failed save (Fanatical Focus)");
-  if(lv("Path of the Zealot") >= 14) out.push("Stay conscious at 0 HP (Rage Beyond Death)");
+  if(lv("Path of the Zealot") >= 6 && !(raging && c.rage.fanatical)) out.push("Reroll one failed save" + (fanaticalBonus(c) ? " with +" + fanaticalBonus(c) : "") + " (Fanatical Focus)");
+  if(lv("Path of the Zealot") >= 14 && !isBarbarian2024(c)) out.push("Stay conscious at 0 HP (Rage Beyond Death)");
   // Path of the Ancestral Guardian
   if(lv("Path of the Ancestral Guardian") >= 3) out.push("The first creature you hit each turn has disadvantage attacking anyone else");
   // Path of the Beast

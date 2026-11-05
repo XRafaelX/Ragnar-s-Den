@@ -35,7 +35,7 @@ export var BARBARIAN_2024 = {
   ],
   features: {
     2: [
-      {name:"Danger Sense", text:"You have advantage on Dexterity saving throws unless you are incapacitated.", advantage:{on:"save", abilities:["dex"]}},
+      {name:"Danger Sense", text:"You have advantage on Dexterity saving throws unless you are incapacitated.", advantage:{on:"save", abilities:["dex"], notIncapacitated:true}},
       {name:"Reckless Attack", text:"When you make your first attack roll on your turn, you can attack recklessly. You have advantage on attack rolls using Strength until the start of your next turn, but attack rolls against you have advantage during that time. Switch it on from Active effects."}
     ],
     3: [{name:"Primal Knowledge", text:"You gain proficiency in another skill from the barbarian's list. While your Rage is active, Acrobatics, Intimidation, Perception, Stealth and Survival checks can be made as Strength checks. The sheet does this for you when your Strength is at least as good.",

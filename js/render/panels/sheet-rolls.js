@@ -2,7 +2,8 @@ import { savageFollowUp, joinFollowUp, brawlerRerolls, hasBrawler2024, luckyChoi
 import { save } from "../../core/state.js";
 import { weaponMastery, toppleDc } from "../../core/weapon-mastery.js";
 import { weaponAbilityMod } from "../../core/equipment.js";
-import { isFighter2024 } from "../../core/class-features.js";
+import { isFighter2024, isBarbarian2024 } from "../../core/class-features.js";
+import { batteringRoots, fanaticalBonus } from "../../core/barbarian-2024.js";
 import { MASTERY_PROPERTIES } from "../../data/weapon-mastery.js";
 import { WEAPON_DATA, baseWeaponName } from "../../data/weapons.js";
 import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, raceCheckD4, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud, isMonk2024, kiWord, openHandTechniques, elementalPushDc } from "../../core/helpers.js";
@@ -213,10 +214,17 @@ function checkFollowUp(c, r, opts){
 export function rollSave(c, bonus, mode, label, ability){
   var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c), will = resourceLeft(c, "Gunslinger:willpower") > 0;
   var oath = livingLegendOn(c) || hasSupernaturalDefense(c) || effectOn(c, "emboldening_bond") || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
+  // Indomitable Might (2024): Strength saving throws too.
+  var might = ability==="str" && isBarbarian2024(c) ? indomitableMight(c) : 0;
   var dragon = ability==="con" && starryDragon(c), favored = favoredByTheGods(c) || resourceLeft(c, "Warlock:dark_ones_own_luck") > 0 || chronalShiftLeft(c) > 0 || hasArcaneDeflection(c) || !!flashOfGenius(c), trance = tranceOn(c);
   performRoll(20, 1, bonus, mode, label, {
     followUp: fanatic || indom || diamond || oath || will || dragon || favored || luckyChoice(c, mode) ? function(r){ return withLucky(c, mode, bonus, r, fanatic || indom || diamond || oath || will || dragon || favored ? saveFollowUp(c, ability, r) : null); } : null,
-    adjust: trance ? function(r){ return r.natural!=null && r.natural < 10 ? {total: r.total + 10 - r.natural, note: "Trance of Order"} : null; } : null
+    adjust: trance || might ? function(r){
+      var total = r.total, notes = [];
+      if(trance && r.natural!=null && r.natural < 10){ total += 10 - r.natural; notes.push("Trance of Order"); }
+      if(might && total < might){ total = might; notes.push("Indomitable Might"); }
+      return notes.length ? {total: total, note: notes.join(", ")} : null;
+    } : null
   });
   if(useTides(c)){ save(); renderAll(); }
 }
@@ -368,7 +376,7 @@ function attackFollowUp(c, r, aim, hit, seen){
     if(critClone) critFollow.options.push(Object.assign(critClone, {keep: true}));
     var critNext = flurryNext(c, hit);
     if(critNext) critFollow.options.push(critNext);
-    critFollow.options = critFollow.options.concat(monkHitOptions(c, hit), masteryOptions(c, hit, true));
+    critFollow.options = critFollow.options.concat(brutalOptions(hit, true), monkHitOptions(c, hit), masteryOptions(c, hit, true));
     return critFollow;
   }
   // A natural 20 with no weapon card behind it (a spell attack) simply hits.
@@ -383,8 +391,9 @@ function attackFollowUp(c, r, aim, hit, seen){
     var next = flurryNext(c, hit);
     if(next) opts.splice(1, 0, next);
   }
-  // The weapon's mastery property (Topple, Graze, Cleave...).
-  opts = opts.concat(masteryOptions(c, hit, false));
+  // Brutal Strike's die and effects, then the weapon's mastery property
+  // (Topple, Graze, Cleave...).
+  opts = opts.concat(brutalOptions(hit, false), masteryOptions(c, hit, false));
   // Open Hand Technique and Elemental Attunement's push, after the strike's own buttons.
   var monkHits = monkHitOptions(c, hit);
   if(monkHits.length) Array.prototype.splice.apply(opts, [hit && hit.flurry ? (flurryNext(c, hit) ? 2 : 1) : 0, 0].concat(monkHits));
@@ -555,6 +564,19 @@ function flurryNext(c, hit){
    modifier, and Cleave rolls the second attack (its damage without the
    modifier, unless negative; not again from that one). hit: the attack's
    card data. crit: a natural 20 (no "Missed?"). */
+/* Brutal Strike (2024 barbarian 9): an attack made with its button. The extra
+   dice are doubled on a critical hit. One effect, two different from level 17:
+   the rest go when that many are used. */
+function brutalOptions(hit, crit){
+  var b = hit && hit.brutal;
+  if(!b || hit.noDamage) return [];
+  var dice = (crit ? 2 : 1) * b.dice, used = 0, when = crit ? "" : "Hit? ";
+  var out = [{label: when + "Brutal Strike +" + dice + "d10", title: "Extra damage of the same type as the attack", keep: true, tag: "brutal-damage",
+    use: function(){ performRoll(10, dice, 0, "none", hit.label + ": Brutal Strike"); return {silent: true}; }}];
+  return out.concat(b.effects.map(function(e){
+    return Object.assign(reminder(when + e.name, e.short, "Brutal Strike", e.line, function(){ used++; return used <= b.picks; }), {keep: true, tag: "brutal", drops: b.picks===1 ? ["brutal"] : []});
+  }));
+}
 function masteryOptions(c, hit, crit){
   var m = hit && hit.item && !hit.noDamage && !hit.cleave && weaponMastery(c, hit.item);
   if(!m) return [];
@@ -562,6 +584,12 @@ function masteryOptions(c, hit, crit){
   var master = isFighter2024(c) && classLevelOf(c, "Fighter") >= 9 ? ["Push", "Sap", "Slow"].filter(function(n){ return n!==m.name; }).map(function(n){
     return Object.assign(reminder("Hit? " + n + " (Tactical Master)", MASTERY_PROPERTIES[n].short, "Tactical Master", MASTERY_LINES[n]), {keep: true, tag: "mastery"});
   }) : [];
+  // Battering Roots (2024 World Tree 10): Push or Topple on top of the weapon's own.
+  if(batteringRoots(c, hit.item)) ["Push", "Topple"].filter(function(n){ return n!==m.name; }).forEach(function(n){
+    var dc = toppleDc(c, weaponAbilityMod(c, hit.item));
+    master.push(Object.assign(reminder("Hit? " + n + (n==="Topple" ? " (CON DC " + dc + ")" : "") + " (Battering Roots)", MASTERY_PROPERTIES[n].short, "Battering Roots",
+      n==="Topple" ? "Topple: the target makes a DC " + dc + " Constitution saving throw or falls prone." : MASTERY_LINES.Push), {keep: true, tag: "mastery"}));
+  });
   if(m.when==="extra") return master;
   var ab = weaponAbilityMod(c, hit.item);
   var type = (hit.item.damageType || (WEAPON_DATA[baseWeaponName(hit.item)] || {}).damageType || "").toLowerCase();
@@ -751,11 +779,11 @@ function magicalGuidance(c){
 /* Fanatical Focus: reroll a failed save while raging, once per rage. */
 function fanaticalFocus(c){
   return {lead: "Failed? Fanatical Focus:", hint: "Failed? Tap to reroll with Fanatical Focus.",
-    options: [{label: "Reroll (once per rage)", title: "Reroll this saving throw. You must use the new roll.",
+    options: [{label: "Reroll" + (fanaticalBonus(c) ? " +" + fanaticalBonus(c) : "") + " (once per rage)", title: "Reroll this saving throw" + (fanaticalBonus(c) ? " with +" + fanaticalBonus(c) + " (your Rage Damage bonus)" : "") + ". You must use the new roll.",
       use: function(){
         if(!fanaticalFocusReady(c)) return null;
         c.rage.fanatical = true;
         save(); renderAll();
-        return {reroll: true, log: "Fanatical Focus"};
+        return {reroll: true, addModifier: fanaticalBonus(c), log: "Fanatical Focus"};
       }}]};
 }
