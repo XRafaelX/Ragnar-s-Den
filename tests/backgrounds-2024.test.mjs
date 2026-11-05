@@ -323,3 +323,9 @@ test("Tavern Brawler (2024): a 1 on unarmed damage rolled again; Lucky: the 2014
   assert.deepEqual(F24.luckyRoll(7, () => 0.7), { got: 15, bonus: 8 });
   assert.deepEqual(F24.luckyRoll(15, () => 0.3), { got: 7, bonus: 0 });
 });
+
+test("the 2014 Healer is told apart from Healer (2024)", () => {
+  assert.equal(F24.hasHealer2014(char(1, ["Healer"])), true);
+  assert.equal(F24.hasHealer2014(char(1, ["Healer (2024)"])), false);
+  assert.equal(F24.hasBattleMedic(char(1, ["Healer"])), false);
+});

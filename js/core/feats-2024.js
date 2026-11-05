@@ -54,6 +54,9 @@ export function savageReroll(die, qty, had, rng){
 
 /* ---- Healer (2024) ---- */
 export function hasBattleMedic(c){ return hasFeat(c, "Healer (2024)"); }
+/* The 2014 Healer: a kit's use restores 1d6 + 4 plus the creature's
+   maximum number of Hit Dice (its level), once per creature per rest. */
+export function hasHealer2014(c){ return hasFeat(c, "Healer"); }
 /* A healer's kit in the pack. */
 export function isHealersKit(item){ return /healer'?s kit/i.test((item && item.name) || ""); }
 /* Healing Rerolls as a dice-tray adjust for one die of `die` plus bonus:

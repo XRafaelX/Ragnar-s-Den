@@ -8,6 +8,7 @@ import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack, rollSneak } from "./sheet-rolls.js";
 import { smiteButtons, sheetTop, lead as sheetLead, sheetButton } from "./paladin.js";
 import { hitDicePools, spendHitDie } from "../../core/character-resources.js";
+import { totalLevel } from "../../core/basics.js";
 import { fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor, martialArtsDieAt } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
@@ -27,7 +28,7 @@ import { magicItemDef, magicItemActive, needsAttunement, holsterKnives, attunePr
 import { pipChanged, pipsRefilled, flash } from "../../ui/fx.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { weaponDataOf } from "../../data/weapons.js";
-import { savageFollowUp, joinFollowUp, hasBattleMedic, isHealersKit, healingRerollAdjust, healSelf, brawlerRerolls } from "../../core/feats-2024.js";
+import { savageFollowUp, joinFollowUp, hasBattleMedic, isHealersKit, healingRerollAdjust, healSelf, brawlerRerolls, hasHealer2014 } from "../../core/feats-2024.js";
 
 var DAMAGE_TYPES = ["Slashing","Piercing","Bludgeoning","Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"];
 var ARMOR_CATEGORIES = [
@@ -2183,7 +2184,7 @@ function renderGearCard(c, item, idx){
   card.appendChild(subtitle);
   var drink = drinkButton(c, item);
   if(drink) card.appendChild(drink);
-  var medic = battleMedicButton(c, item);
+  var medic = battleMedicButton(c, item) || healerButton(c, item);
   if(medic) card.appendChild(medic);
 
   return card;
@@ -2199,6 +2200,38 @@ function battleMedicButton(c, item){
   actions.className = "inv-roll-actions";
   actions.appendChild(smallButton("Battle Medic (Hit Die " + fmtMod(profBonus(c)) + ")", "A Utilize action: spend one use of the kit to heal a creature within 5 feet", function(){ openBattleMedicSheet(c); }));
   return actions;
+}
+/* The 2014 Healer on a healer's kit's card: 1d6 + 4 plus the creature's
+   Hit Dice, on yourself (healed at once) or another creature. */
+function healerButton(c, item){
+  if(!hasHealer2014(c) || !isHealersKit(item)) return null;
+  var actions = document.createElement("div");
+  actions.className = "inv-roll-actions";
+  actions.appendChild(smallButton("Healer (1d6+4 + Hit Dice)", "An action: spend one use of the kit to heal a creature. Each creature once per short or long rest.", function(){ openHealerSheet(c); }));
+  return actions;
+}
+function openHealerSheet(c){
+  var lvl = totalLevel(c);
+  openBottomSheet(function(body, refresh, close){
+    sheetTop(body, "Healer", close);
+    sheetLead(body, "As an action, spend one use of your healer's kit: the creature regains 1d6 + 4 hit points, plus one for each Hit Die it has (its level). Each creature can benefit once per short or long rest. Stabilizing a dying creature with the kit also gives it 1 hit point.");
+    var list = document.createElement("div");
+    list.className = "pal-sheet-list";
+    list.appendChild(sheetButton("Yourself: 1d6 + " + (4 + lvl) + " (4, plus " + lvl + " Hit Dice)", function(){
+      close();
+      performRoll(6, 1, 4 + lvl, "none", "Healer: yourself (1d6 + 4 + " + lvl + " Hit Dice)", {onResult: function(r){
+        var got = healSelf(c, r.total, maxHp(c));
+        logRoll("Healer", "Healed " + got);
+        showActionToast("You regain " + got + " hit points.");
+        save(); renderAll();
+      }});
+    }));
+    list.appendChild(sheetButton("Another creature: 1d6 + 4, plus its level", function(){
+      close();
+      performRoll(6, 1, 4, "none", "Healer: the creature regains this, plus its number of Hit Dice (its level)");
+    }));
+    body.appendChild(list);
+  });
 }
 function openBattleMedicSheet(c){
   var pb = profBonus(c);
