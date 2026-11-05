@@ -12,11 +12,12 @@ var KINDS = Object.keys(WEAPON_MASTERY).sort();
 var KIND_DETAILS = KINDS.reduce(function(o, k){ o[k] = "Its mastery: " + WEAPON_MASTERY[k] + "."; return o; }, {});
 var RANGED_KINDS = ["Blowgun","Dart","Hand Crossbow","Heavy Crossbow","Light Crossbow","Longbow","Musket","Pistol","Shortbow","Sling"];
 /* A Weapon Mastery pick: `count` kinds of weapon, tied across levels by the
-   id. `melee`: melee weapons only (the barbarian's). */
-export function masteryPick(count, melee){
+   id. `melee`: melee weapons only (the barbarian's). `kinds`: the list to offer
+   (the rogue's, those it's proficient with). */
+export function masteryPick(count, melee, kinds){
   var word = melee ? "melee weapon" : "weapon";
   return {kind:"choice", id:"weaponMastery", noun:word, count:count, details:KIND_DETAILS,
-    options:melee ? KINDS.filter(function(k){ return RANGED_KINDS.indexOf(k)===-1; }) : KINDS,
+    options:kinds || melee ? (kinds || KINDS).filter(function(k){ return !melee || RANGED_KINDS.indexOf(k)===-1; }) : KINDS,
     label:count > 1 ? "Choose " + count + " kinds of " + word + " whose mastery you can use" : "Choose one more kind of " + word + " whose mastery you can use"};
 }
 var STYLES = ["Archery","Blind Fighting","Defense","Dueling","Great Weapon Fighting","Interception","Protection","Thrown Weapon Fighting","Two-Weapon Fighting","Unarmed Fighting"];
@@ -29,7 +30,7 @@ export var FIGHTER_2024 = {
     outcome: "<b>2024 Fighter:</b> Weapon Mastery, more Second Wind, Tactical Mind, and the 2024 features, gear and subclasses."},
   which: {old: "The Player's Handbook 2014 fighter.", now: "The Player's Handbook 2024 fighter: Weapon Mastery, more Second Wind and the 2024 features."},
   swaps: {"Champion":"Champion (2024)", "Battle Master":"Battle Master (2024)", "Eldritch Knight":"Eldritch Knight (2024)", "Psi Warrior":"Psi Warrior (2024)"},
-  fightingStyle: {level:1, options:STYLES},
+  fightingStyle: {level:1, options:STYLES, swap:true},
   skillChoices: {count:2, options:["Acrobatics","Animal Handling","Athletics","History","Insight","Intimidation","Perception","Persuasion","Survival"]},
   choices: [
     {id:"fightingStyle", kind:"fightingStyle", label:"Fighting Style",

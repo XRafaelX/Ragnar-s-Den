@@ -9,7 +9,7 @@
    {qty, die, bonus, label}, healSelf (the roll can heal you too), reason
    (why it can't be used now)}. */
 import { mod, profBonus } from "./basics.js";
-import { classLevelOf } from "./class-features.js";
+import { classLevelOf, isPaladin2024 } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
 import { effectOn, resourceLeft, spendResource, spellSlotsLeft, startEffect } from "./effects.js";
 import { isRangedWeapon } from "./equipment.js";
@@ -26,18 +26,41 @@ export function paladinDc(c){
 
 /* ---- Divine Smite (paladin 2) ----
    2d8 for a 1st-level slot, +1d8 per level to 5d8, +1d8 against undead or
-   fiends to 6d8. A critical hit doubles the dice. */
-export function smiteDice(slotLevel, undead, crit){
-  var n = Math.min(5, slotLevel + 1) + (undead ? 1 : 0);
+   fiends to 6d8. A critical hit doubles the dice. The 2024 spell (`spell`)
+   has no such cap. */
+export function smiteDice(slotLevel, undead, crit, spell){
+  var n = (spell ? slotLevel + 1 : Math.min(5, slotLevel + 1)) + (undead ? 1 : 0);
   return crit ? 2 * n : n;
+}
+/* Whether this character can smite: from level 2, or a 2024 paladin at
+   level 1 who prepared the spell. */
+export function smiteKnown(c){
+  var lv = classLevelOf(c, "Paladin");
+  return lv >= 2 || (lv >= 1 && isPaladin2024(c) && (c.spells||[]).some(function(sp){ return sp.name==="Divine Smite"; }));
 }
 /* The slots a smite can spend: a warlock's pact slots count too. */
 export function smiteSlots(c){
-  return classLevelOf(c, "Paladin") >= 2 ? spellSlotsLeft(c) : [];
+  return smiteKnown(c) ? spellSlotsLeft(c) : [];
 }
-/* Improved Divine Smite (paladin 11): 1d8 radiant on every melee weapon hit. */
+/* Paladin's Smite (2024 paladin 2): the casts left without a slot. */
+export function freeSmiteLeft(c){
+  return isPaladin2024(c) ? Math.max(0, resourceLeft(c, "Paladin:paladins_smite")) : 0;
+}
+/* Whether a smite can be paid for right now. */
+export function smiteReady(c){
+  return freeSmiteLeft(c) > 0 || smiteSlots(c).length > 0;
+}
+/* Improved Divine Smite (paladin 11), the 2024 Radiant Strikes: 1d8 radiant
+   on every melee weapon hit, and on an unarmed strike in 2024. */
 export function hasImprovedSmite(c){
   return classLevelOf(c, "Paladin") >= 11;
+}
+export function radiantStrikesName(c){
+  return isPaladin2024(c) ? "Radiant Strikes" : "Improved Divine Smite";
+}
+/* Smite of Protection (2024 Oath of Devotion 15). */
+export function smiteOfProtection(c){
+  return isPaladin2024(c) && classLevelOf(c, "Paladin", "Oath of Devotion") >= 15;
 }
 /* Inspiring Smite (Oath of Glory 3): temporary HP to share after a smite. */
 export function inspiringSmite(c){
@@ -79,6 +102,8 @@ export function livingLegendOn(c){
 }
 
 /* ---- Lay on Hands (paladin 1) ---- */
+/* The conditions Restoring Touch (2024 paladin 14) can end. */
+export var RESTORING_TOUCH = ["blinded", "charmed", "deafened", "frightened", "paralyzed", "stunned"];
 /* Spend `n` from the pool, false if there isn't that much. */
 export function spendLayOnHands(c, n){
   return resourceLeft(c, "Paladin:lay_on_hands") >= n && spendResource(c, "Paladin:lay_on_hands", n);
@@ -89,6 +114,18 @@ export function channelActions(c){
   var lv = classLevelOf(c, "Paladin");
   if(lv < 3) return [];
   var cl = (c.classes||[]).find(function(x){ return x.name==="Paladin"; });
+  return (cl.edition==="2024" ? classChannels2024(c, lv) : []).concat(oathChannels(c, cl, lv));
+}
+/* What every 2024 paladin can spend it on (pp. 110 and 111). */
+function classChannels2024(c, lv){
+  var out = [{id: "Divine Sense", name: "Divine Sense", detail: "A bonus action: for 10 minutes or until you're incapacitated, you know where any celestial, fiend or undead is within 60 feet, and what type it is. You also sense consecrated or desecrated places and objects.", log: "You sense celestials, fiends and undead within 60 feet for 10 minutes."}];
+  if(lv >= 9){
+    var dc = paladinDc(c), n = chaAtLeastOne(c);
+    out.push({id: "Abjure Foes", name: "Abjure Foes", detail: "A Magic action: up to " + n + (n===1 ? " creature" : " creatures") + " you can see within 60 feet make a WIS save (DC " + dc + ") or are frightened for 1 minute or until they take damage. While frightened this way, on its turns a creature can only move, take an action or take a bonus action, one of these.", log: "WIS save DC " + dc + "."});
+  }
+  return out;
+}
+function oathChannels(c, cl, lv){
   var dc = paladinDc(c), cha = chaAtLeastOne(c);
   var turned = " or is turned for 1 minute or until it takes damage. It must move away from you, and for its action it can only Dash, try to escape or Dodge.";
   var turn = function(name, who, sense, extra){
@@ -99,6 +136,20 @@ export function channelActions(c){
     return {id: name, name: name, detail: text, log: log};
   };
   switch(cl.subclass){
+    // The 2024 oaths (pp. 113 to 116).
+    case "Oath of Devotion (2024)":
+      var carried = (c.inventory||[]).filter(function(i){ return i.type==="weapon" && i.equipped && !isRangedWeapon(i); });
+      var imbue = function(){ return "When you take the Attack action: +" + cha + " to attack rolls with this weapon for 10 minutes, and its hits can deal radiant damage."; };
+      return carried.length ? carried.map(function(i){
+        return {id: "sacred-" + i.id, group: "Sacred Weapon", name: i.name || "Weapon", effect: "sacred_weapon", sacred: i.id, detail: imbue()};
+      }) : [{id: "sacred", name: "Sacred Weapon", detail: imbue(), reason: "Hold a melee weapon first"}];
+    case "Oath of Glory (2024)":
+      return [{id: "Peerless Athlete", name: "Peerless Athlete", effect: "peerless_athlete", detail: "A bonus action: for 1 hour, advantage on Athletics and Acrobatics, and your long and high jumps go 10 feet farther."},
+        {id: "Inspiring Smite", name: "Inspiring Smite", detail: "Temporary hit points to share, right after you cast Divine Smite.", reason: "Offered after a Divine Smite"}];
+    case "Oath of the Ancients (2024)":
+      return [save("Nature's Wrath", "A Magic action: each creature you choose that you can see within 15 feet makes a STR save (DC " + dc + ") or is restrained for 1 minute. It repeats the save at the end of each of its turns.", "STR save DC " + dc + ".")];
+    case "Oath of Vengeance (2024)":
+      return [{id: "Vow of Enmity", name: "Vow of Enmity", effect: "vow_of_enmity", detail: "When you take the Attack action: advantage on attack rolls against a creature you can see within 30 feet for 1 minute."}];
     case "Oath of Devotion":
       var held = (c.inventory||[]).filter(function(i){ return i.type==="weapon" && i.equipped; });
       var weapon = held.length ? held.map(function(i){

@@ -708,9 +708,10 @@ export function resetChoicesFor(name){
 export function styleOptions(){
   var t = target();
   var list = t.fightingStyle ? t.fightingStyle.options : classStyleList(lu.className);
-  // (A 2024 class has its own list: no Superior Technique, and no Tasha's switch.)
+  // (A 2024 class has its own list: no Superior Technique, and no Tasha's switch.
+  // A 2024 paladin's has styles the 2014 one doesn't.)
   var ed = luEdition() && ((CLASS_PROGRESSION[lu.className]||{}).editions||{})[luEdition()];
-  return ed && ed.fightingStyle ? list.filter(function(n){ return ed.fightingStyle.options.indexOf(n)!==-1; }) : list;
+  return ed && ed.fightingStyle ? ed.fightingStyle.options.slice() : list;
 }
 export function availableStyles(){ return availableStyleNames(lu.c, styleOptions(), !!lu.c.tashaOptional || !!luEdition()); }
 /* Blessed / Druidic Warrior: a level in the paladin / ranger may change

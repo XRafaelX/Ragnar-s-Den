@@ -553,6 +553,8 @@
 .pal-sheet-head:empty{display:none;}
 .spell-shape-note{margin:0 0 12px;}
 .pal-sheet-btn{justify-content:center;width:100%;min-height:42px;}
+/* A chosen effect in a sheet that picks (Cunning Strike). */
+.pal-sheet-btn[aria-pressed="true"]{background:var(--accent,#8b5cf6);border-color:var(--accent,#8b5cf6);color:#fff;font-weight:700;}
 .pal-amount{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;margin:0 0 14px;}
 .hp-spirit-btn{margin-top:8px;}
 .ff-roll-btn{margin-left:6px;}

@@ -31,7 +31,7 @@ function effectClass(c, def){
   return (c.classes||[]).find(function(cl){
     return cl.name===def.className && (!def.subclass || [].concat(def.subclass).indexOf(cl.subclass)!==-1) && (Number(cl.level)||1) >= def.level &&
       (!def.edition || (cl.edition || "2014")===def.edition) &&
-      (!def.variant || usesVariant(cl, def.variant)) && !(def.replacedBy && usesVariant(cl, def.replacedBy)) &&
+      (!def.variant || usesVariant(cl, def.variant) || (def.variantEdition && cl.edition===def.variantEdition)) && !(def.replacedBy && usesVariant(cl, def.replacedBy)) &&
       (!def.option || knownOptions(cl, def.option.set).some(function(e){ return e.name===def.option.name; }));
   });
 }
@@ -50,9 +50,13 @@ export function effectBlocked(c, id){
   }
   return "";
 }
+/* (An oath's 2014 and 2024 versions share an id, each with its own subclass.) */
+function effectDefFor(c, id){
+  return TOGGLE_EFFECTS.find(function(d){ return d.id===id && effectClass(c, d); });
+}
 export function effectOn(c, id){
-  var def = effectDef(id);
-  if(!def || !(c.effects && c.effects[id]) || !effectClass(c, def)) return false;
+  var def = effectDefFor(c, id);
+  if(!def || !(c.effects && c.effects[id])) return false;
   if((def.requires||[]).some(function(r){ return !effectOn(c, r); })) return false;
   if(id==="symbiotic_entity" && !((Number(c.hp && c.hp.temp)||0) > 0)) return false;
   return !effectBlocked(c, id);
@@ -185,8 +189,8 @@ export function endIncapacitatedEffects(c){
 export function pruneEffects(c){
   var changed = false;
   Object.keys(c.effects||{}).forEach(function(id){
-    var def = effectDef(id);
-    var gone = !def || !effectClass(c, def) || (id==="symbiotic_entity" && !((Number(c.hp && c.hp.temp)||0) > 0));
+    var def = effectDefFor(c, id);
+    var gone = !def || (id==="symbiotic_entity" && !((Number(c.hp && c.hp.temp)||0) > 0));
     if(gone){ endEffect(c, id); changed = true; }
   });
   return changed;
@@ -213,7 +217,7 @@ export function effectRolls(c, kind, ability){
   if(kind==="attack" && effectOn(c, "misty_escape")) out.push({mode: "adv", reason: "Misty Escape: you're invisible"});
   if(kind==="attack" && effectOn(c, "entropic_ward")) out.push({mode: "adv", reason: "Entropic Ward"});
   // Assassinate and Versatile Trickster: advantage on attack rolls while they're on.
-  if(kind==="attack" && effectOn(c, "assassinate")) out.push({mode: "adv", reason: "Assassinate"});
+  if(kind==="attack" && (effectOn(c, "assassinate") || effectOn(c, "assassinate_2024"))) out.push({mode: "adv", reason: "Assassinate"});
   if(kind==="attack" && effectOn(c, "versatile_trickster")) out.push({mode: "adv", reason: "Versatile Trickster"});
   if(kind==="attack" && effectOn(c, "vow_of_enmity")) out.push({mode: "adv", reason: "Vow of Enmity"});
   if(kind==="attack" && effectOn(c, "shadow_walk")) out.push({mode: "adv", reason: "Shadow Walk: you're a shadow"});

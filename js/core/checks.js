@@ -2,7 +2,7 @@
    Ability checks, skills and passive scores, and whether a roll has
    advantage or disadvantage. */
 import { primalStrength } from "./barbarian-2024.js";
-import { isBarbarian2024 } from "./class-features.js";
+import { isBarbarian2024, isPaladin2024 } from "./class-features.js";
 import { SKILLS } from "../data/abilities-skills.js";
 import { ARMOR_DATA } from "../data/armor.js";
 import { RACE_DATA, TRAIT_ADVANTAGES, TRAIT_HALF_PROFICIENCY, TRAIT_CHECK_D4 } from "../data/race-data.js";
@@ -201,6 +201,7 @@ export function advantagesFor(c){
   if(effectOn(c, "watchers_will")) out.push({name: "Watcher's Will", on: "save", abilities: ["int", "wis", "cha"]});
   if(effectOn(c, "exalted_champion")) out.push({name: "Exalted Champion", on: "save", abilities: ["wis"]});
   if(effectOn(c, "living_legend")) out.push({name: "Living Legend", on: "check", abilities: ["cha"]});
+  if(effectOn(c, "holy_nimbus") && isPaladin2024(c)) out.push({name: "Holy Ward", on: "save", abilities: "all", when: "when a fiend or undead forces it"});
   // Lunar Empowerment (Lunar Sorcery 14): by phase.
   var moon = lunarEmpowered(c);
   if(moon==="New Moon") out.push({name: "Lunar Empowerment", on: "skill", skills: ["Stealth"]});
@@ -241,10 +242,10 @@ export function saveNotes(c){
   optionEffects(c).forEach(function(f){ if(f.saveNote) out.push(Object.assign({name: f.optionName}, f.saveNote)); });
   return out;
 }
-/* Reliable Talent (rogue 11): a proficient check's d20 of 9 or lower
+/* Reliable Talent (rogue 11, or 7 in the 2024 rules): a proficient check's d20 of 9 or lower
    counts as a 10. */
 export function reliableTalent(c){
-  return (c.classes||[]).some(function(cl){ return cl.name==="Rogue" && (Number(cl.level)||1) >= 11; });
+  return (c.classes||[]).some(function(cl){ return cl.name==="Rogue" && (Number(cl.level)||1) >= (cl.edition==="2024" ? 7 : 11); });
 }
 /* Situational ones for a save, for reminders: [{name, when}]. */
 export function situationalSaveAdvantages(c, key){

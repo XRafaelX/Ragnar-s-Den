@@ -45,6 +45,10 @@ export function editionEntry(c, className, edition){
 }
 /* Whether the character's fighter follows the 2024 rules. */
 export function isFighter2024(c){ return !!editionEntry(c, "Fighter", "2024"); }
+/* A 2024 rogue (js/core/rogue-2024.js). */
+export function isRogue2024(c){ return !!editionEntry(c, "Rogue", "2024"); }
+/* A 2024 paladin (js/core/paladin.js). */
+export function isPaladin2024(c){ return !!editionEntry(c, "Paladin", "2024"); }
 /* A 2024 barbarian (js/core/barbarian-2024.js). */
 export function isBarbarian2024(c){ return !!editionEntry(c, "Barbarian", "2024"); }
 /* Whether the character's monk follows the 2024 rules. */
@@ -69,11 +73,15 @@ export function findSubclass(className, subclassName){
   if(!subclassName) return null;
   return (SUBCLASSES[className]||[]).find(function(s){ return s.name===subclassName; }) || null;
 }
-/* "full" | "half" | "artificer" | "pact" | "third" | null. A subclass can
-   make a non-caster class a one-third caster (Eldritch Knight etc.). */
+/* "full" | "half" | "halfUp" | "artificer" | "pact" | "third" | null. A
+   subclass can make a non-caster class a one-third caster (Eldritch Knight
+   etc.). "halfUp": a 2024 half caster, casting from level 1 with half its
+   levels rounded up, alone or multiclassed (Player's Handbook 2024, p. 45). */
 export function classCasterType(cl){
   var sub = findSubclass(cl.name, cl.subclass);
   if(sub && sub.casterType) return sub.casterType;
+  var ed = classEdition(cl);
+  if(ed && ed.casterType) return ed.casterType;
   var prog = CLASS_PROGRESSION[cl.name];
   return prog ? prog.casterType : null;
 }
@@ -104,6 +112,8 @@ export function classSpellAbility(cl){
                    them straight from the data)
      saveBonus     ability whose modifier (minimum +1) is added to every
                    saving throw (Aura of Protection: "cha")
+     saveBonusOff  "incapacitated": that bonus stops while incapacitated, not
+                   only while unconscious (the 2024 aura)
      magicWeaponAbility  ability usable for attacks with magic weapons
      chosenWeaponAbility  ability usable with one weapon the player marks
                    as `chosenWeapon` in the inventory (Hex Warrior)
@@ -161,7 +171,7 @@ export function classSpellAbility(cl){
                    (Intimidating Presence: {save:"wis", ability:"cha"};
                    save "" when its effects ask for different saves),
                    shown as a chip on its Features card (featureDcs) */
-var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "spells", "spellKind", "spellLabel", "spellTip", "spellAbility", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit", "saveDc", "rollButton", "skillBonus", "skillDouble", "resist", "saveNote", "sense", "chip", "immune", "conditionImmune", "remind"];
+var FEATURE_FLAGS = ["advantage", "speed", "walkSpeed", "speedWhen", "halfProficiency", "initiative", "acHeavyArmor", "grants", "magicWeaponAbility", "chosenWeaponAbility", "abilityBonus", "abilityMax", "saveBonus", "saveBonusOff", "spells", "spellKind", "spellLabel", "spellTip", "spellAbility", "spellChoice", "speeds", "darkvision", "extraSpellList", "styleChoice", "attuneLimit", "saveDc", "rollButton", "skillBonus", "skillDouble", "resist", "saveNote", "sense", "chip", "immune", "conditionImmune", "remind"];
 
 /* ---- Optional features that replace one of the class's own ----
    Tasha's Favored Foe for a ranger's Favored Enemy, Deft Explorer for
@@ -306,13 +316,13 @@ export function computeSpellSlots(classes){
     var one = casters[0];
     if(one.type==="full") casterLevel = one.level;
     else if(one.type==="half") casterLevel = one.level>=2 ? Math.ceil(one.level/2) : 0;
-    else if(one.type==="artificer") casterLevel = Math.ceil(one.level/2);
+    else if(one.type==="artificer" || one.type==="halfUp") casterLevel = Math.ceil(one.level/2);
     else if(one.type==="third") casterLevel = one.level>=3 ? Math.ceil(one.level/3) : 0;
   } else {
     casters.forEach(function(x){
       if(x.type==="full") casterLevel += x.level;
       else if(x.type==="half") casterLevel += Math.floor(x.level/2);
-      else if(x.type==="artificer") casterLevel += Math.ceil(x.level/2);
+      else if(x.type==="artificer" || x.type==="halfUp") casterLevel += Math.ceil(x.level/2);
       else if(x.type==="third") casterLevel += Math.floor(x.level/3);
     });
   }

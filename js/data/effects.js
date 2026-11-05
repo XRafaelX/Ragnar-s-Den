@@ -246,6 +246,21 @@ export var TOGGLE_EFFECTS = [
     hint:"An action. Ends early if you are incapacitated or die."},
   {id:"mortal_bulwark", name:"Mortal Bulwark", className:"Paladin", subclass:"Oath of the Watchers", level:20, cost:{resource:"mortal_bulwark", amount:1}, slotCost:5, duration:"1 minute",
     hint:"A bonus action."},
+  // The 2024 oaths (Player's Handbook 2024, pp. 113 to 116), under the same ids.
+  {id:"sacred_weapon", name:"Sacred Weapon", className:"Paladin", subclass:"Oath of Devotion (2024)", level:3, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"10 minutes",
+    hint:"You can end it at any time. It ends if you aren't carrying the weapon."},
+  {id:"vow_of_enmity", name:"Vow of Enmity", className:"Paladin", subclass:"Oath of Vengeance (2024)", level:3, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 minute",
+    hint:"If the creature drops to 0 hit points, you can move the vow to another creature within 30 feet."},
+  {id:"peerless_athlete", name:"Peerless Athlete", className:"Paladin", subclass:"Oath of Glory (2024)", level:3, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 hour",
+    hint:"The advantage is already on your skills."},
+  {id:"holy_nimbus", name:"Holy Nimbus", className:"Paladin", subclass:"Oath of Devotion (2024)", level:20, cost:{resource:"holy_nimbus", amount:1}, slotCost:5, duration:"10 minutes",
+    hint:"A bonus action."},
+  {id:"elder_champion", name:"Elder Champion", className:"Paladin", subclass:"Oath of the Ancients (2024)", level:20, cost:{resource:"elder_champion", amount:1}, slotCost:5, duration:"1 minute",
+    hint:"A bonus action."},
+  {id:"avenging_angel", name:"Avenging Angel", className:"Paladin", subclass:"Oath of Vengeance (2024)", level:20, cost:{resource:"avenging_angel", amount:1}, slotCost:5, duration:"10 minutes",
+    hint:"A bonus action."},
+  {id:"living_legend", name:"Living Legend", className:"Paladin", subclass:"Oath of Glory (2024)", level:20, cost:{resource:"living_legend", amount:1}, slotCost:5, duration:"10 minutes",
+    hint:"A bonus action. The hit and the reroll are offered after those rolls."},
   // Monk (Player's Handbook pp. 76 to 80, Xanathar's Guide p. 34), checked
   // on 5etools' data 2026-10-30.
   {id:"empty_body", name:"Empty Body", className:"Monk", edition:"2014", level:18, cost:{resource:"ki", amount:4}, duration:"1 minute",
@@ -276,6 +291,10 @@ export var TOGGLE_EFFECTS = [
   {id:"assassinate", name:"Assassinate", className:"Rogue", subclass:"Assassin", level:3, duration:"The first round of combat",
     startLabel:"Combat starts", endLabel:"First round over",
     hint:"Only against creatures that haven't taken a turn yet. Any hit against a surprised creature is a critical hit."},
+  // The 2024 Assassin's first round (p. 133).
+  {id:"assassinate_2024", name:"Assassinate", className:"Rogue", subclass:"Assassin (2024)", level:3, duration:"The first round of combat",
+    startLabel:"Combat starts", endLabel:"First round over",
+    hint:"Only against creatures that haven't taken a turn yet."},
   {id:"versatile_trickster", name:"Versatile Trickster", className:"Rogue", subclass:"Arcane Trickster", level:13, duration:"Until the end of your turn",
     hint:"Bonus action: pick a creature within 5 feet of your mage hand."},
   {id:"elegant_maneuver", name:"Elegant Maneuver", className:"Rogue", subclass:"Swashbuckler", level:13, duration:"This turn",
@@ -299,7 +318,7 @@ export var TOGGLE_EFFECTS = [
     hint:"While you are a shadow, move into a creature you damaged."},
   // Tasha's Cauldron (p. 62), checked on 5etools' data 2026-10-29. The
   // advantage goes with the next attack roll, the speed stays 0 until End turn.
-  {id:"steady_aim", name:"Steady Aim", className:"Rogue", level:3, variant:"Steady Aim", duration:"Until the end of your turn",
+  {id:"steady_aim", name:"Steady Aim", className:"Rogue", level:3, variant:"Steady Aim", variantEdition:"2024", duration:"Until the end of your turn",
     startLabel:"Take aim", endLabel:"End turn",
     hint:"Bonus action. Only if you haven't moved this turn."},
   // The Gunslinger class (Spikael's homebrew), level 3: Steady Aim's twin.

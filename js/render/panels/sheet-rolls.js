@@ -2,7 +2,10 @@ import { savageFollowUp, joinFollowUp, brawlerRerolls, hasBrawler2024, luckyChoi
 import { save } from "../../core/state.js";
 import { weaponMastery, toppleDc } from "../../core/weapon-mastery.js";
 import { weaponAbilityMod } from "../../core/equipment.js";
-import { isFighter2024, isBarbarian2024 } from "../../core/class-features.js";
+import { isFighter2024, isBarbarian2024, isRogue2024, isPaladin2024 } from "../../core/class-features.js";
+import { radiantStrikesName, smiteReady } from "../../core/paladin.js";
+import { cunningStrike, surprisingStrikes, deathStrikeDc } from "../../core/rogue-2024.js";
+import { openCunningSheet } from "./rogue.js";
 import { batteringRoots, fanaticalBonus } from "../../core/barbarian-2024.js";
 import { MASTERY_PROPERTIES } from "../../data/weapon-mastery.js";
 import { WEAPON_DATA, baseWeaponName } from "../../data/weapons.js";
@@ -212,7 +215,8 @@ function checkFollowUp(c, r, opts){
 }
 /* ability: the save's ability (Bulwark only helps with INT, WIS and CHA). */
 export function rollSave(c, bonus, mode, label, ability){
-  var fanatic = fanaticalFocusReady(c), indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c), will = resourceLeft(c, "Gunslinger:willpower") > 0;
+  var strokeSave = isRogue2024(c) && resourceLeft(c, "Rogue:stroke_of_luck") > 0;
+  var fanatic = fanaticalFocusReady(c) || strokeSave, indom = resourceLeft(c, "Fighter:indomitable") > 0, diamond = hasDiamondSoul(c), will = resourceLeft(c, "Gunslinger:willpower") > 0;
   var oath = livingLegendOn(c) || hasSupernaturalDefense(c) || effectOn(c, "emboldening_bond") || (ability!=="str" && ability!=="dex" && ability!=="con" && classLevelOf(c, "Paladin", "Oath of the Watchers") >= 15);
   // Indomitable Might (2024): Strength saving throws too.
   var might = ability==="str" && isBarbarian2024(c) ? indomitableMight(c) : 0;
@@ -244,6 +248,16 @@ function saveFollowUp(c, ability, r){
       }});
   }
   if(fanaticalFocusReady(c)) opts = opts.concat(fanaticalFocus(c).options);
+  // Stroke of Luck (2024): any failed d20 test, so a save too.
+  if(r && r.natural!=null && r.natural < 20 && isRogue2024(c) && resourceLeft(c, "Rogue:stroke_of_luck") > 0){
+    var nat = r.natural;
+    opts.push({label: "Stroke of Luck: a 20", title: "Turn the roll into a 20 (once per short or long rest)",
+      use: function(){
+        if(!spendResource(c, "Rogue:stroke_of_luck", 1)) return null;
+        save(); renderAll();
+        return {bonus: 20 - nat, log: "Stroke of Luck (the d20 counts as 20)"};
+      }});
+  }
   var left = resourceLeft(c, "Fighter:indomitable");
   if(left > 0){
     var bulwark = ["int", "wis", "cha"].indexOf(ability)!==-1 && classLevelOf(c, "Fighter", "Banneret (Purple Dragon Knight)") >= 15;
@@ -376,7 +390,7 @@ function attackFollowUp(c, r, aim, hit, seen){
     if(critClone) critFollow.options.push(Object.assign(critClone, {keep: true}));
     var critNext = flurryNext(c, hit);
     if(critNext) critFollow.options.push(critNext);
-    critFollow.options = critFollow.options.concat(brutalOptions(hit, true), monkHitOptions(c, hit), masteryOptions(c, hit, true));
+    critFollow.options = critFollow.options.concat(vexOption(c, hit, true), brutalOptions(hit, true), monkHitOptions(c, hit), masteryOptions(c, hit, true));
     return critFollow;
   }
   // A natural 20 with no weapon card behind it (a spell attack) simply hits.
@@ -393,7 +407,7 @@ function attackFollowUp(c, r, aim, hit, seen){
   }
   // Brutal Strike's die and effects, then the weapon's mastery property
   // (Topple, Graze, Cleave...).
-  opts = opts.concat(brutalOptions(hit, false), masteryOptions(c, hit, false));
+  opts = opts.concat(vexOption(c, hit, false), brutalOptions(hit, false), masteryOptions(c, hit, false));
   // Open Hand Technique and Elemental Attunement's push, after the strike's own buttons.
   var monkHits = monkHitOptions(c, hit);
   if(monkHits.length) Array.prototype.splice.apply(opts, [hit && hit.flurry ? (flurryNext(c, hit) ? 2 : 1) : 0, 0].concat(monkHits));
@@ -515,11 +529,13 @@ function attackFollowUp(c, r, aim, hit, seen){
       }});
   }
   if(resourceLeft(c, "Rogue:stroke_of_luck") > 0){
-    opts.push({label: "Stroke of Luck: it hits", title: "Turn the miss into a hit (once per short or long rest)",
+    // (The 2024 rule: the roll becomes a 20.)
+    var luckTo20 = isRogue2024(c) && r && r.natural!=null;
+    opts.push({label: luckTo20 ? "Stroke of Luck: a 20" : "Stroke of Luck: it hits", title: luckTo20 ? "Turn the roll into a 20 (once per short or long rest)" : "Turn the miss into a hit (once per short or long rest)",
       use: function(){
         if(!spendResource(c, "Rogue:stroke_of_luck", 1)) return null;
         save(); renderAll();
-        return {bonus: 0, log: "Stroke of Luck: the miss is a hit"};
+        return luckTo20 ? {bonus: 20 - r.natural, log: "Stroke of Luck (the d20 counts as 20)"} : {bonus: 0, log: "Stroke of Luck: the miss is a hit"};
       }});
   }
   if(!opts.length) return null;
@@ -564,6 +580,11 @@ function flurryNext(c, hit){
    modifier, and Cleave rolls the second attack (its damage without the
    modifier, unless negative; not again from that one). hit: the attack's
    card data. crit: a natural 20 (no "Missed?"). */
+/* A 2024 Soulknife's blade has the Vex mastery. It isn't a weapon card's item. */
+function vexOption(c, hit, crit){
+  if(!hit || !hit.psychicBlade || !isRogue2024(c)) return [];
+  return [Object.assign(reminder((crit ? "" : "Hit? ") + "Vex", MASTERY_PROPERTIES.Vex.short, "Mastery: Vex", MASTERY_LINES.Vex), {keep: true, tag: "mastery"})];
+}
 /* Brutal Strike (2024 barbarian 9): an attack made with its button. The extra
    dice are doubled on a critical hit. One effect, two different from level 17:
    the rest go when that many are used. */
@@ -670,9 +691,20 @@ function withPinpoint(c, hit, follow, qty){
   return Object.assign({}, follow, {options: follow.options.concat(pins)});
 }
 /* A Sneak Attack roll, also the critical one (sheet-rolls.js) and the clone's. */
-export function rollSneak(c, dice, label){
-  performRoll(6, dice, 0, "none", label, {adjust: shadowWalkReroll(c),
-    followUp: function(r){ return r ? wailsFollowUp(c) : null; }});
+export function rollSneak(c, dice, label, more){
+  // The 2024 Assassin's first round: Surprising Strikes and Death Strike.
+  // A Cunning Strike's Poison with Envenom Weapons: its damage on a failed save.
+  var death = deathStrikeDc(c), envenom = more && more.envenom;
+  performRoll(6, dice, surprisingStrikes(c), "none", label, {adjust: shadowWalkReroll(c),
+    followUp: function(r){
+      var follow = r ? wailsFollowUp(c) : null;
+      if(!r || (!death && !envenom)) return follow;
+      follow = Object.assign({options: []}, follow);
+      if(death) follow.lead = "Death Strike: the target makes a DC " + death + " Constitution save or the attack's damage is doubled against it." + (follow.lead ? " " + follow.lead : "");
+      if(envenom) follow.options = follow.options.concat([{label: "Failed? Envenom 2d6 poison", title: "Each failed save against your Poison: this ignores resistance to poison damage", keep: true,
+        use: function(){ performRoll(6, 2, 0, "none", "Envenom Weapons (poison)"); return {silent: true}; }}]);
+      return follow;
+    }});
 }
 /* Living Shadows (Shadow Stalker 17): on the Attack action the clone
    also attacks the same creature. A use rolls its attack, with the same
@@ -716,9 +748,12 @@ function criticalHit(c, hit, roll){
   var sa = hit.sneak && sneakAttack(c);
   var extra = sa ? [{label: "Sneak Attack " + 2 * sa.dice + "d6", title: "On a critical hit, Sneak Attack's dice are doubled too",
     use: function(){ rollSneak(c, 2 * sa.dice, hit.label + ": Sneak Attack (critical)"); return {silent: true}; }}] : [];
+  // Cunning Strike (2024 rogue 5): the dice it gives up go before the doubling.
+  if(sa && cunningStrike(c)) extra.push({label: "Cunning Strike", title: "Give up Sneak Attack dice for an effect, then roll what's left, doubled", later: true,
+    use: function(done){ openCunningSheet(c, hit.label, true, done); return {silent: true}; }});
   // A paladin's melee hit: the smites' dice are doubled too.
-  if(hit.melee && hasImprovedSmite(c) && hit.item) extra.push({label: "Improved Divine Smite 2d8", title: "On a critical hit, its die is doubled too",
-    use: function(){ performRoll(8, 2, 0, "none", hit.label + ": Improved Divine Smite (critical)"); return {silent: true}; }});
+  if(hit.melee && hasImprovedSmite(c) && (hit.item || isPaladin2024(c))) extra.push({label: radiantStrikesName(c) + " 2d8", title: "On a critical hit, its die is doubled too",
+    use: function(){ performRoll(8, 2, 0, "none", hit.label + ": " + radiantStrikesName(c) + " (critical)"); return {silent: true}; }});
   // The dice a ranger's or cleric's hit adds are doubled too.
   rangerHitDice(c).concat(clericHitDice(c), gunslingerHitDice(c, hit.item), druidHitDice(c, hit.melee), bardHitDice(c), warlockHitDice(c, hit.item), artificerHitDice(c, hit.item)).filter(function(d){ return !d.flat && (hit.item || d.unarmed); }).forEach(function(d){
     extra.push({label: d.name + " " + 2 * d.qty + "d" + d.die, title: "On a critical hit, these dice are doubled too",
@@ -732,7 +767,7 @@ function criticalHit(c, hit, roll){
   });
   if(hit.item && bladeFlourish(c)) extra.push({label: "Blade Flourish", title: "On a critical hit, its die is doubled too", later: true,
     use: function(done){ openFlourishSheet(c, hit.label, true, done); return {silent: true}; }});
-  if(hit.melee && smiteSlots(c).length) extra.push({label: "Divine Smite", title: "Spend a spell slot: the dice are doubled on a critical hit", later: true,
+  if(hit.melee && smiteReady(c)) extra.push({label: "Divine Smite", title: "The dice are doubled on a critical hit", later: true,
     use: function(done){ openSmiteSheet(c, hit.label, true, done); return {silent: true}; }});
   return {lead: roll && roll.natural===20 ? "" : "Critical hit!", hint: "Critical hit! Tap for the damage.",
     options: [critOption(c, hit, crit)].concat(extra).map(function(o){ return Object.assign(o, {keep: true}); })};

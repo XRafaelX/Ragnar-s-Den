@@ -27,15 +27,15 @@
    A character using Tasha's optional class features (c.tashaOptional)
    picks from the class list with Tasha's additions, tagged in the lists. */
 import { SPELL_DATA, spellDataForClass, spellOnClassList, tashaAddsSpell, tashaSpellCount, catalogSpellName } from "../data/spells.js";
-import { KNOWN_CASTERS, SUBCLASS_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, PREPARED_CASTERS, preparedAt } from "../data/spells-known.js";
+import { KNOWN_CASTERS, SUBCLASS_CASTERS, EDITION_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, PREPARED_CASTERS, preparedAt } from "../data/spells-known.js";
 import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal } from "./helpers.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
 import { originListSpells } from "./spell-grants.js";
 
-/* The casting rules for a class (or its casting subclass), or null. */
-export function casterDef(className, subclass){
-  return SUBCLASS_CASTERS[className + ":" + (subclass || "")] || KNOWN_CASTERS[className] || null;
+/* The casting rules for a class (or its casting subclass, or its edition), or null. */
+export function casterDef(className, subclass, edition){
+  return SUBCLASS_CASTERS[className + ":" + (subclass || "")] || (edition==="2024" && EDITION_CASTERS[className]) || KNOWN_CASTERS[className] || null;
 }
 /* True when the class knows a fixed set of spells (no preparing). */
 export function knowsSpells(className, subclass){
@@ -109,7 +109,7 @@ export function classKnownSpells(c, className){
   // class's own table already includes (an Arcane Trickster's Mage Hand).
   var free = freeNames(c);
   var entry = (c.classes||[]).find(function(cl){ return cl.name===className; });
-  var def = entry && casterDef(className, entry.subclass);
+  var def = entry && casterDef(className, entry.subclass, entry.edition);
   var own = ((def && def.autoCantrips) || []).map(spellKey);
   var mine = (c.spells||[]).filter(function(sp){
     if(sp.arcanum || sp.bonusSecret) return false;
@@ -172,7 +172,7 @@ function allSpellsOf(levels){
    `entry` is the class entry as it will be (name, subclass, level,
    spellChoices); `existing` says whether the class was already there. */
 export function learnPlan(c, entry, isNewClass){
-  var def = casterDef(entry.name, entry.subclass);
+  var def = casterDef(entry.name, entry.subclass, entry.edition);
   var empty = {sections: [], swap: null, cantripSwap: null, auto: [], granted: [], freed: [], summary: "", note: "", tashaNote: ""};
   if(!def) return empty;
   var lv = Number(entry.level)||1;
@@ -476,7 +476,7 @@ export function swapCantripFormula(c, out, inName){
 export function spellCounts(c){
   var out = [];
   (c.classes||[]).forEach(function(cl){
-    var def = casterDef(cl.name, cl.subclass);
+    var def = casterDef(cl.name, cl.subclass, cl.edition);
     if(!def) return;
     var lv = Number(cl.level)||1;
     var known = classKnownSpells(c, cl.name);
@@ -494,7 +494,7 @@ export function spellCounts(c){
 /* How many spells a preparing class prepares each day (the 2024
    tables, see PREPARED_CASTERS), or 0. */
 export function preparedMax(c, cl){
-  return preparedAt(cl.name, Number(cl.level)||1);
+  return preparedAt(cl.name, Number(cl.level)||1, cl.edition);
 }
 /* True when a sheet spell is always ready: a cantrip, or a spell a
    known caster learned (bards, sorcerers, warlocks and rangers don't
@@ -538,7 +538,7 @@ export function alwaysPrepared(c, sp){
 export function prepareLevelProblem(c, sp){
   var cls = preparingClassFor(c, sp);
   var cl = cls && (c.classes||[]).find(function(x){ return x.name===cls; });
-  var def = cl && casterDef(cl.name, cl.subclass);
+  var def = cl && casterDef(cl.name, cl.subclass, cl.edition);
   if(!def || !def.maxLevel) return null;
   var lv = Number(cl.level)||1, sl = sp.level||0;
   if(sl <= def.maxLevel(lv)) return null;

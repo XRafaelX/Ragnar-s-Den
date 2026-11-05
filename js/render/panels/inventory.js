@@ -8,10 +8,11 @@ import { makeStatArrowSvg, makeDiceSvg, makeDicesSvg, makeAlertSvg, makeCheckSvg
 import { cardMenu } from "../../ui/card-menu.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack, rollSneak } from "./sheet-rolls.js";
+import { openCunningSheet } from "./rogue.js";
 import { smiteButtons, sheetTop, lead as sheetLead, sheetButton } from "./paladin.js";
 import { hitDicePools, spendHitDie } from "../../core/character-resources.js";
 import { totalLevel } from "../../core/basics.js";
-import { brutalStrike, frenzyDice, batteringRoots, weaponAbility, fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, gwm2024Bonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor, martialArtsDieAt } from "../../core/helpers.js";
+import { cunningStrike, surprisingStrikes, isRogue2024, brutalStrike, frenzyDice, batteringRoots, weaponAbility, fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, gwm2024Bonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor, martialArtsDieAt } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -731,6 +732,8 @@ function renderUnarmedCard(c, u){
   if(u.psychicBlade){
     var bladeSneak = sneakButton(c, u.name);
     if(bladeSneak) actions.appendChild(bladeSneak);
+    var bladeCunning = bladeSneak && cunningButton(c, u.name);
+    if(bladeCunning) actions.appendChild(bladeCunning);
     soulknifeButtons(c, u).forEach(function(b){ actions.appendChild(b); });
   }
   foldExtras(actions, "unarmed:" + u.name);
@@ -1170,10 +1173,21 @@ function sneakButton(c, name){
   if(!sa) return null;
   var b = document.createElement("button");
   b.type = "button"; b.className = "btn small inv-roll-btn inv-fury-btn";
-  b.innerHTML = makeDicesSvg() + "Sneak Attack " + sa.dice + "d6";
-  b.title = "Once per turn, when you hit with advantage, or when another enemy of the target is next to it and you don't have disadvantage" +
+  var extra = surprisingStrikes(c);
+  b.innerHTML = makeDicesSvg() + "Sneak Attack " + sa.dice + "d6" + (extra ? fmtMod(extra) : "");
+  b.title = (isRogue2024(c) ? "Once per turn, when you hit with advantage, or when an ally that isn't incapacitated is within 5 feet of the target and you don't have disadvantage" : "Once per turn, when you hit with advantage, or when another enemy of the target is next to it and you don't have disadvantage") + (extra ? ". Surprising Strikes adds your rogue level" : "") +
     (sa.eye ? ". Includes Eye for Weakness's 3d6 while Insightful Fighting is on." : "");
   b.addEventListener("click", function(){ rollSneak(c, sa.dice, name + ": Sneak Attack"); });
+  return b;
+}
+/* Cunning Strike (2024 rogue 5): Sneak Attack with its effects, chosen first. */
+function cunningButton(c, name){
+  if(!cunningStrike(c)) return null;
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "btn small inv-roll-btn inv-fury-btn";
+  b.textContent = "Cunning Strike";
+  b.title = "Give up Sneak Attack dice for an effect, then roll what's left";
+  b.addEventListener("click", function(){ openCunningSheet(c, name, false); });
   return b;
 }
 /* A Soulknife's psychic blade: the bonus action's second blade (1d4) and
@@ -1748,6 +1762,8 @@ function renderWeaponCard(c, item, idx){
   if(pressure) actions.appendChild(pressure);
   var sneakBtn = sneakAttackWeapon(item, c) && sneakButton(c, item.name || "Weapon");
   if(sneakBtn) actions.appendChild(sneakBtn);
+  var cunningBtn = sneakBtn && cunningButton(c, item.name || "Weapon");
+  if(cunningBtn) actions.appendChild(cunningBtn);
   // Weapon Bond: a bonded weapon not in hand can be summoned to it.
   if(item.bonded && !item.equipped && classLevelOf(c, "Fighter", "Eldritch Knight") >= 3){
     var sum = smallButton("Summon", "A bonus action: it teleports to your hand from anywhere on the same plane", function(){

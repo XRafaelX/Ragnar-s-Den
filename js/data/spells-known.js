@@ -54,6 +54,11 @@ export var KNOWN_CASTERS = {
   "Paladin": {list: "Paladin", cantrips: byLevel({}), maxLevel: halfMax}
 };
 
+/* A class's casting rules in another edition (the 2024 paladin casts from level 1). */
+export var EDITION_CASTERS = {
+  "Paladin": {list: "Paladin", cantrips: byLevel({}), maxLevel: function(lv){ return Math.min(5, Math.ceil(Math.ceil(lv / 2) / 2)); }}
+};
+
 var THIRD_SPELLS = [0, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13];
 /* Subclasses that cast (keyed "Class:Subclass"); they use the class level. */
 export var SUBCLASS_CASTERS = {
@@ -63,6 +68,8 @@ export var SUBCLASS_CASTERS = {
   "Fighter:Eldritch Knight (2024)": {list: "Wizard", cantrips: byLevel({3: 2, 10: 3}), spells: THIRD_SPELLS, maxLevel: thirdMax, swap: true, cantripSwap: "level"},
   "Gunslinger:Eldritch Gunman": {list: "Wizard", cantrips: byLevel({3: 2, 10: 3}), spells: THIRD_SPELLS, maxLevel: thirdMax, swap: true,
     schools: ["Abjuration", "Evocation"], anySchoolAt: [3, 8, 14, 20]},
+  // The 2024 Arcane Trickster (p. 132): any school, a spell and a cantrip to swap each level.
+  "Rogue:Arcane Trickster (2024)": {list: "Wizard", cantrips: byLevel({3: 3, 10: 4}), spells: THIRD_SPELLS, maxLevel: thirdMax, swap: true, cantripSwap: "level", autoCantrips: ["Mage Hand"]},
   "Rogue:Arcane Trickster": {list: "Wizard", cantrips: byLevel({3: 3, 10: 4}), spells: THIRD_SPELLS, maxLevel: thirdMax, swap: true,
     schools: ["Enchantment", "Illusion"], anySchoolAt: [3, 8, 14, 20], autoCantrips: ["Mage Hand"]}
 };
@@ -91,8 +98,9 @@ export var PREPARED_CASTERS = {
   "Paladin": {table: HALF_PREPARED, from: 2},
   "Artificer": {table: HALF_PREPARED}
 };
-/* How many spells `className` prepares at class level `lv` (0 if none). */
-export function preparedAt(className, lv){
+/* How many spells `className` prepares at class level `lv` (0 if none).
+   `edition`: a 2024 class casts from level 1. */
+export function preparedAt(className, lv, edition){
   var p = PREPARED_CASTERS[className];
-  return p && lv >= (p.from || 1) ? p.table[Math.min(20, lv)] || 0 : 0;
+  return p && lv >= (edition==="2024" ? 1 : p.from || 1) ? p.table[Math.min(20, lv)] || 0 : 0;
 }

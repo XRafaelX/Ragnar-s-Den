@@ -1,5 +1,6 @@
 /* Data integrity: the class, subclass and resource tables are well formed.
    These catch typos and half-finished entries, not rules mistakes. */
+import { SPELL_DATA_2024 } from "../js/data/spells-2024.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CLASS_PROGRESSION, SUBCLASSES, MAX_LEVEL, XP_THRESHOLDS, SPELL_SLOT_TABLE, PACT_SLOT_TABLE, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from "../js/data/progression.js";
@@ -52,7 +53,7 @@ function checkFeature(f, where){
   const checkSpells = (spells, label) => {
     const names = Array.isArray(spells) ? spells : Object.values(spells).flat();
     assert.ok(names.length, where + " " + label + ": empty spell list");
-    names.forEach((n) => assert.ok(SPELL_DATA[catalogSpellName(n)], where + " " + label + ": spell not in the catalog: " + n));
+    names.forEach((n) => assert.ok(SPELL_DATA[catalogSpellName(n)] || SPELL_DATA_2024[catalogSpellName(n)], where + " " + label + ": spell not in the catalog: " + n));
     if(!Array.isArray(spells)) Object.keys(spells).forEach((k) => assert.ok(+k >= 1 && +k <= MAX_LEVEL, where + " " + label + ": spell level key " + k));
   };
   if(f.spells || f.spellChoice){

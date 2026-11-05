@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, maxHp, ordinal, smiteDice, smiteSlots, spendSpellSlot, inspiringSmite, spendChannel, hasImprovedSmite, channelActions, clericChannels, channelProblem, useChannelAction, resourceLeft, spendLayOnHands, removeCondition, activeConditions } from "../../core/helpers.js";
+import { isPaladin2024, smiteKnown, freeSmiteLeft, smiteReady, radiantStrikesName, smiteOfProtection, spendResource, classLevelOf, RESTORING_TOUCH, clamp, maxHp, ordinal, smiteDice, smiteSlots, spendSpellSlot, inspiringSmite, spendChannel, hasImprovedSmite, channelActions, clericChannels, channelProblem, useChannelAction, resourceLeft, spendLayOnHands, removeCondition, activeConditions } from "../../core/helpers.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeDicesSvg } from "../../ui/svg-icons.js";
@@ -56,7 +56,8 @@ export function openSmiteSheet(c, name, crit, done){
   var state = {crit: !!crit, undead: false};
   openBottomSheet(function(body, refresh, close){
     sheetTop(body, "Divine Smite", close);
-    lead(body, "Spend a spell slot for extra radiant damage on this hit.");
+    var book = isPaladin2024(c);
+    lead(body, book ? "A bonus action right after you hit. It deals extra radiant damage, more with a higher slot." : "Spend a spell slot for extra radiant damage on this hit.");
     var ticks = document.createElement("div");
     ticks.className = "pal-ticks";
     ticks.appendChild(tick("Critical hit (double dice)", state.crit, function(v){ state.crit = v; refresh(); }));
@@ -64,15 +65,26 @@ export function openSmiteSheet(c, name, crit, done){
     body.appendChild(ticks);
     var list = document.createElement("div");
     list.className = "pal-sheet-list";
+    function smite(n, pay){
+      pay();
+      close();
+      if(smiteOfProtection(c)) logRoll("Smite of Protection", "You and your allies have half cover while in your aura, until the start of your next turn.");
+      save(); renderAll();
+      if(done) done();
+      performRoll(8, n, 0, "none", name + ": Divine Smite (Radiant)", function(r){ return r ? smiteFollowUp(c) : null; });
+    }
+    // Paladin's Smite: once per long rest, at the spell's own level.
+    if(freeSmiteLeft(c) > 0){
+      var freeDice = smiteDice(1, state.undead, state.crit, true);
+      list.appendChild(sheetButton("Free cast: " + freeDice + "d8 (once per long rest)", function(){
+        smite(freeDice, function(){ spendResource(c, "Paladin:paladins_smite", 1); });
+      }));
+    }
     smiteSlots(c).forEach(function(s){
-      var n = smiteDice(s.level, state.undead, state.crit);
+      var n = smiteDice(s.level, state.undead, state.crit, book);
       var what = ordinal(s.level) + (s.pact ? "-level pact slot" : "-level slot");
       list.appendChild(sheetButton(what + ": " + n + "d8 (" + s.left + " left)", function(){
-        spendSpellSlot(c, s);
-        close();
-        save(); renderAll();
-        if(done) done();
-        performRoll(8, n, 0, "none", name + ": Divine Smite (Radiant)", function(r){ return r ? smiteFollowUp(c) : null; });
+        smite(n, function(){ spendSpellSlot(c, s); });
       }));
     });
     body.appendChild(list);
@@ -82,7 +94,7 @@ export function openSmiteSheet(c, name, crit, done){
 function smiteFollowUp(c){
   var ins = inspiringSmite(c);
   if(!ins) return null;
-  return {lead: "Inspiring Smite:", options: [{label: "Share 2d8+" + ins.bonus + " temporary HP", title: "A bonus action: your Channel Divinity. Share them among creatures you choose within 30 feet",
+  return {lead: "Inspiring Smite:", options: [{label: "Share 2d8+" + ins.bonus + " temporary HP", title: (isPaladin2024(c) ? "Your" : "A bonus action: your") + " Channel Divinity. Share them among creatures you choose within 30 feet",
     use: function(){
       if(!spendChannel(c)) return null;
       save(); renderAll();
@@ -99,24 +111,26 @@ function smiteFollowUp(c){
     }}]};
 }
 /* The buttons on a melee weapon's card. improved: a real weapon, for
-   Improved Divine Smite (an unarmed strike isn't one). */
+   Improved Divine Smite (an unarmed strike isn't one, but it can use the
+   2024 Radiant Strikes). */
 export function smiteButtons(c, name, improved){
   var out = [];
-  if(!c.classes.some(function(x){ return x.name==="Paladin" && (Number(x.level)||1) >= 2; })) return out;
-  var slots = smiteSlots(c);
+  if(!smiteKnown(c)) return out;
+  var ready = smiteReady(c);
   var b = document.createElement("button");
   b.type = "button"; b.className = "btn small inv-roll-btn inv-fury-btn";
   b.innerHTML = makeDicesSvg() + "Divine Smite";
-  b.disabled = !slots.length;
-  b.title = slots.length ? "After a hit: spend a spell slot for extra radiant damage" : "No spell slots left";
+  b.disabled = !ready;
+  b.title = !ready ? "No spell slots left" : isPaladin2024(c) ? "A bonus action after a hit: extra radiant damage" : "After a hit: spend a spell slot for extra radiant damage";
   b.addEventListener("click", function(){ openSmiteSheet(c, name); });
   out.push(b);
-  if(improved && hasImprovedSmite(c)){
+  if((improved || isPaladin2024(c)) && hasImprovedSmite(c)){
+    var strikes = radiantStrikesName(c);
     var i = document.createElement("button");
     i.type = "button"; i.className = "btn small inv-roll-btn inv-fury-btn";
     i.innerHTML = makeDicesSvg() + "+1d8 radiant";
-    i.title = "Improved Divine Smite: every melee weapon hit deals this too";
-    i.addEventListener("click", function(){ performRoll(8, 1, 0, "none", name + ": Improved Divine Smite (Radiant)"); });
+    i.title = strikes + ": every melee " + (isPaladin2024(c) ? "weapon or unarmed " : "weapon ") + "hit deals this too";
+    i.addEventListener("click", function(){ performRoll(8, 1, 0, "none", name + ": " + strikes + " (Radiant)"); });
     out.push(i);
   }
   return out;
@@ -164,9 +178,9 @@ export function layOnHandsRow(c){
   var left = resourceLeft(c, "Paladin:lay_on_hands");
   var b = document.createElement("button");
   b.type = "button"; b.className = "btn small inv-roll-btn res-roll-btn";
-  b.textContent = "Lay on Hands";
+  b.textContent = isPaladin2024(c) ? "Lay On Hands" : "Lay on Hands";
   b.disabled = left <= 0;
-  b.title = left > 0 ? "An action: heal a creature you touch, or cure a disease or poison" : "The pool is empty until a long rest";
+  b.title = left <= 0 ? "The pool is empty until a long rest" : isPaladin2024(c) ? "A bonus action: heal a creature you touch, or remove the poisoned condition" : "An action: heal a creature you touch, or cure a disease or poison";
   b.addEventListener("click", function(){ openLayOnHands(c); });
   row.appendChild(b);
   return row;
@@ -178,8 +192,9 @@ function openLayOnHands(c){
     var missing = Math.max(0, maxHp(c) - (Number(c.hp.current)||0));
     if(!amount) amount = clamp(missing || left, 1, left);
     amount = clamp(amount, 1, Math.max(1, left));
-    sheetTop(body, "Lay on Hands", close);
-    lead(body, left + " points left in your pool. It has no effect on undead and constructs.");
+    var book = isPaladin2024(c);
+    sheetTop(body, book ? "Lay On Hands" : "Lay on Hands", close);
+    lead(body, left + " points left in your pool." + (book ? "" : " It has no effect on undead and constructs."));
     var field = document.createElement("label");
     field.className = "pal-amount";
     field.appendChild(document.createTextNode("Hit points to restore"));
@@ -208,12 +223,23 @@ function openLayOnHands(c){
       use(n, "Restored " + n + " HP to a creature you touched.");
     }));
     var poisoned = activeConditions(c).some(function(x){ return x.def.id==="poisoned"; });
-    if(poisoned) list.appendChild(sheetButton("Cure your poison (5 points)", function(){
-      use(5, "Neutralized a poison on yourself.", function(){ removeCondition(c, "poisoned"); });
+    if(poisoned) list.appendChild(sheetButton(book ? "Remove your poisoned condition (5 points)" : "Cure your poison (5 points)", function(){
+      use(5, book ? "Removed the poisoned condition from yourself." : "Neutralized a poison on yourself.", function(){ removeCondition(c, "poisoned"); });
     }, left < 5, left < 5 ? "Needs 5 points" : ""));
-    list.appendChild(sheetButton("Cure a disease or poison (5 points)", function(){
-      use(5, "Cured a disease or neutralized a poison.");
+    list.appendChild(sheetButton(book ? "Remove poisoned from someone else (5 points)" : "Cure a disease or poison (5 points)", function(){
+      use(5, book ? "Removed the poisoned condition from a creature you touched." : "Cured a disease or neutralized a poison.");
     }, left < 5, left < 5 ? "Needs 5 points" : ""));
+    // Restoring Touch (2024 paladin 14): 5 points for each condition.
+    if(book && classLevelOf(c, "Paladin") >= 14){
+      activeConditions(c).filter(function(x){ return RESTORING_TOUCH.indexOf(x.def.id)!==-1; }).forEach(function(x){
+        list.appendChild(sheetButton("Remove your " + x.def.id + " condition (5 points)", function(){
+          use(5, "Restoring Touch: removed the " + x.def.id + " condition from yourself.", function(){ removeCondition(c, x.def.id); });
+        }, left < 5, left < 5 ? "Needs 5 points" : ""));
+      });
+      list.appendChild(sheetButton("Remove a condition from someone else (5 points)", function(){
+        use(5, "Restoring Touch: removed a condition from a creature you touched.");
+      }, left < 5, left < 5 ? "Needs 5 points" : "Blinded, charmed, deafened, frightened, paralyzed or stunned. Tap again for each one"));
+    }
     body.appendChild(list);
   });
 }

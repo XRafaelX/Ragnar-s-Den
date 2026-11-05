@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { isBarbarian2024, wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
+import { isPaladin2024, surprisingStrikes, rovingAim, isBarbarian2024, wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -339,14 +339,18 @@ function effectSummary(c, id){
   if(id==="writhing_tide") return "Fly 10 ft and hover";
   if(id==="sacred_weapon"){
     var sacred = (c.inventory||[]).find(function(i){ return i.id===c.sacredWeapon; });
-    return "+" + Math.max(1, mod(abilityScore(c, "cha"))) + " to attack rolls with " + (sacred ? sacred.name || "your weapon" : "your weapon") + ", which counts as magical and sheds bright light for 20 ft";
+    return "+" + Math.max(1, mod(abilityScore(c, "cha"))) + " to attack rolls with " + (sacred ? sacred.name || "your weapon" : "your weapon") +
+      (isPaladin2024(c) ? ". Its hits can deal radiant damage, and it sheds bright light for 20 ft and dim light 20 ft beyond" : ", which counts as magical and sheds bright light for 20 ft");
   }
-  if(id==="vow_of_enmity") return "Advantage on attack rolls against that creature" + (classLevelOf(c, "Paladin", "Oath of Vengeance") >= 15 ? ". Soul of Vengeance: when it attacks, your reaction is a melee weapon attack against it" : "");
+  if(id==="vow_of_enmity") return "Advantage on attack rolls against that creature" + (classLevelOf(c, "Paladin", "Oath of Vengeance") >= 15 ? (isPaladin2024(c) ? ". Soul of Vengeance: right after it attacks, your reaction is a melee attack against it" : ". Soul of Vengeance: when it attacks, your reaction is a melee weapon attack against it") : "");
   if(id==="emissary_of_peace") return "+5 to Persuasion checks";
-  if(id==="peerless_athlete") return "Advantage on Athletics and Acrobatics checks. You carry twice as much and jump 10 ft farther";
+  if(id==="peerless_athlete") return isPaladin2024(c) ? "Advantage on Athletics and Acrobatics checks. Long and high jumps go 10 ft farther" : "Advantage on Athletics and Acrobatics checks. You carry twice as much and jump 10 ft farther";
   if(id==="watchers_will") return "Advantage on INT, WIS and CHA saves, for you and the creatures you chose";
+  if(id==="holy_nimbus" && isPaladin2024(c)) return "An enemy that starts its turn in your aura takes " + (Math.max(0, mod(abilityScore(c, "cha"))) + profBonus(c)) + " radiant damage. Advantage on saves a fiend or undead forces. The aura is filled with sunlight";
   if(id==="holy_nimbus") return "Each enemy that starts its turn in the bright light takes 10 radiant. Advantage on saves against spells cast by fiends or undead";
+  if(id==="elder_champion" && isPaladin2024(c)) return "Spells that take an action can take a bonus action. Enemies in your aura have disadvantage on saves against your spells and Channel Divinity";
   if(id==="elder_champion") return "Paladin spells that take an action take a bonus action. Enemies within 10 ft have disadvantage on saves against your paladin spells and Channel Divinity";
+  if(id==="avenging_angel" && isPaladin2024(c)) return "Fly 60 ft and hover. An enemy that starts its turn in your aura makes a WIS save (DC " + paladinDc(c) + ") or is frightened for 1 minute or until it takes damage, and attacks against it have advantage";
   if(id==="avenging_angel") return "Fly 60 ft. A 30-ft aura: a WIS save (DC " + paladinDc(c) + ") or frightened of you, and attacks against it have advantage";
   if(id==="invincible_conqueror") return "Resistance to all damage and one more attack with the Attack action. Your melee attacks score a critical hit on 19 or 20";
   if(id==="dread_lord") return "A 30-ft aura of gloom. Creatures that rely on sight have disadvantage on attacks against you and the creatures you choose";
@@ -385,6 +389,8 @@ function effectSummary(c, id){
   if(id==="predicted_critical") return "A hit with your next firearm attack is a critical hit";
   if(id==="luck_of_the_draw") return "An extra reaction until the start of your next turn";
   if(id==="duel") return "Neither of you can target anyone else. You both move at once, in a straight line";
+  if(id==="assassinate_2024") return "Advantage on attacks against creatures that haven't had a turn. Sneak Attack hits deal +" + surprisingStrikes(c) + " damage";
+  if(id==="steady_aim" && rovingAim(c)) return c.effects[id]==="used" ? "Advantage used" : "Advantage on your next attack roll";
   if(id==="steady_aim" || id==="take_aim") return c.effects[id]==="used" ? "Advantage used. Your speed is 0 until the end of your turn" : "Advantage on your next attack roll. Your speed is 0 until the end of your turn";
   return "";
 }

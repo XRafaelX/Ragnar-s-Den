@@ -311,7 +311,7 @@ export function wizardStepReview(container){
   if(grants.spells) row("Domain spells", grants.spells.join(", ")+" (always prepared)");
   if(info.spellcasting && info.spellcasting.pact) row("Pact Magic", info.spellcasting.pact.max+" × "+info.spellcasting.pact.slotLevel+"st-level slot, back on a short rest");
   if(info.spellcasting){
-    row("Cantrips", wizardState.spellChoices.cantrips.join(", ") || "None");
+    if(info.spellcasting.cantrips) row("Cantrips", wizardState.spellChoices.cantrips.join(", ") || "None");
     row(info.spellcasting.spellsLabel || "1st-level spells", wizardState.spellChoices.spells.join(", ") || "None");
   }
   card.appendChild(rows);

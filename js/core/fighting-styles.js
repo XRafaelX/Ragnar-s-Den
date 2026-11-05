@@ -58,12 +58,19 @@ export function tashaOnlyStyles(c, options, tasha){
   return options.filter(function(n){ var d = styleDef(n); return d && d.optional && !hasStyle(c, n); }).length;
 }
 
+/* Whether this edition of the class can replace its style at every level. */
+export function styleSwapsEachLevel(className, edition){
+  var ed = edition && ((CLASS_PROGRESSION[className]||{}).editions||{})[edition];
+  return !!(ed && ed.fightingStyle && ed.fightingStyle.swap);
+}
 /* Martial Versatility: with Tasha's on, at an ASI level of a class that
    has the Fighting Style feature, one style may be replaced. */
 export function versatilityStyleSwap(c, className, newLevel){
   var prog = CLASS_PROGRESSION[className] || {};
-  // (A 2024 fighter can replace its style at every fighter level.)
-  if(!!prog.fightingStyle && (c.classes||[]).some(function(cl){ return cl.name===className && cl.edition==="2024"; }) && styleFeatures(c).length > 0) return true;
+  // (A 2024 fighter can replace its style at every fighter level. The other
+  // 2024 classes keep theirs, and Tasha's swap isn't theirs either.)
+  var cl = (c.classes||[]).find(function(x){ return x.name===className && x.edition==="2024"; });
+  if(cl) return styleSwapsEachLevel(className, "2024") && styleFeatures(c).length > 0;
   return !!c.tashaOptional && !!prog.fightingStyle && (prog.asiLevels||[]).indexOf(newLevel)!==-1 && styleFeatures(c).length > 0;
 }
 

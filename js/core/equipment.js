@@ -10,7 +10,7 @@ import { mod, profBonus, parseDiceNotation, combineRolls, totalLevel } from "./b
 import { weaponMastery } from "./weapon-mastery.js";
 import { characterSpellEdition } from "./spell-edition.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
-import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024, isBarbarian2024 } from "./class-features.js";
+import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024, isPaladin2024, isBarbarian2024, isRogue2024 } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
@@ -370,7 +370,7 @@ export function chosenWeaponFeature(c){
 /* A magic weapon: marked magic on the sheet (a Flame Tongue, a +0
    weapon), with a magic bonus, or holding an active artificer infusion. */
 export function isMagicWeapon(c, item){
-  if(item.magic || isPactWeapon(c, item) || magicBonusOf(item) > 0 || shillelaghOn(c, item) || sacredWeaponBonus(c, item) > 0 || arcaneInfusionOn(c, item)) return true;
+  if(item.magic || isPactWeapon(c, item) || magicBonusOf(item) > 0 || shillelaghOn(c, item) || (sacredWeaponBonus(c, item) > 0 && !isPaladin2024(c)) || arcaneInfusionOn(c, item)) return true;
   var active = c.infusions && c.infusions.active || [];
   return !!item.id && active.some(function(a){ return a.itemId===item.id; });
 }
@@ -680,7 +680,9 @@ export function magicArrows(c, item){
 export function soulknifeDie(c){
   var lv = classLevelOf(c, "Rogue", "Soulknife");
   if(lv < 3) return null;
-  var key = "Rogue:psionic_energy_dice", max = profBonus(c) * 2, used = Math.min(max, Number((c.resourcesUsed||{})[key])||0);
+  var entry = (c.classes||[]).find(function(x){ return x.name==="Rogue"; });
+  // (The 2024 Soulknife's dice go by its table, p. 134.)
+  var key = "Rogue:psionic_energy_dice", max = entry && entry.subclass==="Soulknife (2024)" ? (lv>=17 ? 12 : lv>=13 ? 10 : lv>=9 ? 8 : lv>=5 ? 6 : 4) : profBonus(c) * 2, used = Math.min(max, Number((c.resourcesUsed||{})[key])||0);
   return {die: lv >= 17 ? 12 : lv >= 11 ? 10 : lv >= 5 ? 8 : 6, key: key, used: used, left: max - used};
 }
 /* A Sun Soul's Radiant Sun Bolt (monk 3), shaped like an unarmed strike
@@ -717,7 +719,7 @@ export function psychicBlades(c){
   var str = mod(abilityScore(c, "str")), dex = mod(abilityScore(c, "dex")), best = Math.max(str, dex);
   return [{name: "Psychic blade", psychicBlade: true, attack: best + profBonus(c), die: 6, bonus: best, type: "Psychic", ability: dex >= str ? "DEX" : "STR",
     roll: combineRolls([armorPenalty(c, dex >= str ? "dex" : "str")].concat(conditionRolls(c, "attack"), effectRolls(c, "attack"))),
-    parts: ["finesse, thrown (60 ft)", "magic"], secondDie: 4}];
+    parts: ["finesse, thrown (60 ft)", "magic"].concat(isRogue2024(c) ? ["Mastery: Vex"] : []), secondDie: 4}];
 }
 /* Phantom (rogue 9): soul trinkets held (c.soulTrinkets, up to the
    proficiency bonus). {held, max} or null. */
@@ -831,6 +833,8 @@ export function isProficientWithWeapon(c, weaponName, category){
       if(category==="martial" && wl==="martial weapons") return true;
       // (The 2024 monk's.)
       if(category==="martial" && wl==="martial weapons with the light property") return /\blight\b/i.test((WEAPON_DATA[weaponName] || {}).properties || "");
+      // (The 2024 rogue's.)
+      if(category==="martial" && wl==="martial weapons with the finesse or light property") return /\b(light|finesse)\b/i.test((WEAPON_DATA[weaponName] || {}).properties || "") || !!(WEAPON_DATA[weaponName] || {}).finesse;
       if(category==="firearm" && wl==="firearms") return true;
       return weaponName && wl.indexOf(weaponName.toLowerCase()) !== -1;
     });

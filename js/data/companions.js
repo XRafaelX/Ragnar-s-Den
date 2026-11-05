@@ -74,6 +74,11 @@ function primalBeast(kind, x){
   };
 }
 
+/* Find Steed's kinds at each level of the spell. */
+var STEED_OPTIONS = [];
+["Celestial", "Fey", "Fiend"].forEach(function(k){ [2, 3, 4, 5].forEach(function(l){ STEED_OPTIONS.push(k + ", level " + l); }); });
+function steedSlot(option){ return Number(String(option).replace(/\D/g, "")) || 2; }
+
 /* Mounts the DM added for this table (not in the SRD). The War Camel is
    D&D 3.5's (Sandstorm: 4 HD, Str 18 Dex 16 Con 18, two hooves and a
    bite, Sure Feet, Endurance, scent, fights while ridden) brought to 5e,
@@ -329,6 +334,29 @@ export var COMPANIONS = [
         attacks: b.attacks, actions: b.actions || [],
         traits: b.traits ? [].concat(b.traits).map(function(t){ return typeof t==="string" ? {text: t} : t; }) : [],
         riding: rules
+      };
+    }},
+  // Find Steed (Player's Handbook 2024, p. 272): one stat block for each kind,
+  // growing with the spell's level. Faithful Steed's free cast is level 2.
+  {id:"steed", name:"Otherworldly Steed", requires:{spell:"Find Steed", edition:"2024"}, castClass:"Paladin",
+    choice:{label:"Steed", options:STEED_OPTIONS, slotOf:steedSlot,
+      intro:"Choose what your steed is and the level of the spell you cast. Faithful Steed's free cast is level 2."},
+    stats:function(x){
+      if(!x.choice) return null;
+      var kind = x.choice.split(",")[0], lv = steedSlot(x.choice);
+      var damage = {Celestial:"radiant", Fey:"psychic", Fiend:"necrotic"}[kind];
+      var bonus = kind==="Celestial" ? {name:"Healing Touch", text:"Bonus action, once per long rest: one creature within 5 feet of the steed regains hit points.", dice:"2d8", bonus:lv}
+        : kind==="Fey" ? {name:"Fey Step", text:"Bonus action, once per long rest: the steed teleports, along with its rider, to an unoccupied space you choose up to 60 feet away."}
+        : {name:"Fell Glare", text:"Bonus action, once per long rest: one creature within 60 feet the steed can see makes the save or is frightened until the end of your next turn.", save:"WIS " + x.spellDC};
+      return {
+        type:"Large " + kind.toLowerCase() + ", level " + lv + " spell", ac: 10 + lv, hp: 5 + 10 * lv, speed:"60 ft" + (lv >= 4 ? ", fly 60 ft" : ""),
+        abilities:{str:18, dex:12, con:14, int:6, wis:12, cha:8},
+        senses:"passive Perception 11, telepathy 1 mile (only with you)",
+        attacks:[{name:"Otherworldly Slam", toHit: x.spellAttack, dice:"1d8", bonus:lv, damageType:damage, text:"Melee, reach 5 ft."}],
+        actions:[bonus],
+        traits:[{name:"Life Bond", text:"When you regain hit points from a level 1 or higher spell, the steed regains the same number if you're within 5 feet of it."},
+          {name:"Disappearing", text:"It disappears if it drops to 0 hit points or you die, leaving behind anything it was wearing or carrying. Cast the spell again to bring it back or summon a different one."}],
+        riding:[{name:"In combat", text:"It's an ally that shares your initiative, and a controlled mount while you ride it. If you're incapacitated, it takes its turn right after yours and acts on its own to protect you."}]
       };
     }},
   // Find Familiar (PHB) and Pact of the Chain: the familiar's own stat

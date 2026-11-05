@@ -42,7 +42,7 @@ export function currentClassInfo(){
   var info = wizardState && CLASSES_INFO[wizardState.classId];
   // A 2024 class: that edition's level 1 features, skills, choices and starting gear.
   var ed = info && wizardEdition() && classEdition({name: wizardState.classId, edition: wizardEdition()});
-  return ed ? Object.assign({}, info, {features: ed.level1, equipment: ed.equipment, skillChoices: ed.skillChoices || info.skillChoices, choices: ed.choices || info.choices}) : info;
+  return ed ? Object.assign({}, info, {features: ed.level1, equipment: ed.equipment, skillChoices: ed.skillChoices || info.skillChoices, choices: ed.choices || info.choices, spellcasting: ed.spellcasting || info.spellcasting}) : info;
 }
 /* The rules edition picked for the class ("2024" for a 2024 fighter), or "". */
 export function wizardEdition(){
@@ -605,7 +605,8 @@ export function spellPickCount(sc){
 export function isStepApplicable(id){
   if(id==="cantrips" || id==="spells"){
     var info = currentClassInfo();
-    return !!(info && info.spellcasting);
+    // (A 2024 paladin prepares spells but knows no cantrips.)
+    return !!(info && info.spellcasting) && (id!=="cantrips" || info.spellcasting.cantrips > 0);
   }
   if(id==="choices"){
     // A class's own level-1 choices, a feature's proficiency or spell
@@ -1014,7 +1015,7 @@ export function finishWizard(){
     // Preparing casters get a starting prepared list (the class's level-1
     // count: a wizard prepares 4 of their 6 spellbook spells); everyone
     // else knows (and so has prepared) all of theirs.
-    var prepareCount = sc.prepares ? preparedAt(w.classId, 1) : Infinity;
+    var prepareCount = sc.prepares ? preparedAt(w.classId, 1, wizardEdition()) : Infinity;
     // Picked spells carry their class, so the Spells tab and later
     // level-ups can count them (see js/core/spells-known.js).
     w.spellChoices.cantrips.forEach(function(name){

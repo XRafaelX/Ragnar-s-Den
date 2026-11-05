@@ -14,7 +14,7 @@ import { availableInvocations } from "../core/invocations.js";
 import { renderPactBoonOptions, renderInvocationPicker, renderSpellPickPickers, renderHiddenNotes } from "../ui/invocation-picks.js";
 import { themedPicker } from "../ui/themed-picker.js";
 import { planSlots, planContext, knownOptions, availableOptions } from "../core/class-options.js";
-import { styleFeatures, styleNeedsPicks, stylePickChoices } from "../core/fighting-styles.js";
+import { styleFeatures, styleNeedsPicks, stylePickChoices, styleSwapsEachLevel } from "../core/fighting-styles.js";
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
 import { renderOptionPicker, renderTashaNote } from "../ui/option-picks.js";
 import { renderClassPicks, renderVariantOptions } from "../ui/class-picks.js";
@@ -92,7 +92,7 @@ export function stepStyle(container){
   }
   if(t.fightingStyle){
     card = stepCard(container, t.fightingStyle.from==="Fighting Style" ? "Choose a Fighting Style" : t.fightingStyle.from,
-      "<b>Your fighting style</b> is a combat specialty you " + (luEdition() ? "can change at any later level in this class" : "keep for good") + ". <b>Defense</b>, <b>Archery</b> and <b>Dueling</b> are added to your AC, attacks and damage automatically, and a few others add a sense, a maneuver or cantrips. The rest are reminders on your Features tab.");
+      "<b>Your fighting style</b> is a combat specialty you " + (styleSwapsEachLevel(lu.className, luEdition()) ? "can change at any later level in this class" : "keep for good") + ". <b>Defense</b>, <b>Archery</b> and <b>Dueling</b> are added to your AC, attacks and damage automatically, and a few others add a sense, a maneuver or cantrips. The rest are reminders on your Features tab.");
     card.appendChild(renderStyleOptions(lu.c, styleOptions(), lu.style, tasha, pick, !!luEdition()));
     if(!availableStyles().length){
       var p = ce("p","lu-note");
@@ -101,7 +101,7 @@ export function stepStyle(container){
     }
   } else if(styleSwapOffered()){
     card = stepCard(container, "Fighting style",
-      luEdition() ? "Whenever you gain a "+escapeHtml(lu.className.toLowerCase())+" level, you can replace your fighting style with another. Most players keep theirs." :
+      styleSwapsEachLevel(lu.className, luEdition()) ? "Whenever you gain a "+escapeHtml(lu.className.toLowerCase())+" level, you can replace your fighting style with another. Most players keep theirs." :
       "<b>Martial Versatility</b> (Tasha's optional features): at this level you may replace one fighting style you know with another from the "+escapeHtml(lu.className.toLowerCase())+"'s list. Most players keep theirs.");
     var field = ce("div","field rt-field fp-field eli-field");
     var options = [{value:"", label:"Keep my fighting style", muted:true}].concat(styleFeatures(lu.c).map(function(f){ return {value:f.id, label:"Replace "+f.fightingStyle}; }));

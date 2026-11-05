@@ -1597,6 +1597,24 @@ function renderResourcesCard(c, resources){
       info.appendChild(svRow);
     }
     // A use that restores a set number of hit points (Wholeness of Body).
+    // Psychic Veil, Rend Mind (2024): Psionic Energy Dice get it back.
+    if(r.diceRestore && r.used > 0){
+      var dr = r.diceRestore, pool = resourceLeft(c, dr.key);
+      var drRow = document.createElement("div");
+      drRow.className = "inv-roll-actions fx-rolls";
+      var drBtn = document.createElement("button");
+      drBtn.type = "button"; drBtn.className = "btn small inv-roll-btn";
+      drBtn.textContent = "Spend " + dr.count + (dr.count===1 ? " die" : " dice") + " to use it again";
+      drBtn.disabled = pool < dr.count;
+      drBtn.title = drBtn.disabled ? "Not enough Psionic Energy Dice left" : "No action needed: spend Psionic Energy Dice to get this back";
+      drBtn.addEventListener("click", function(){
+        if(!spendResource(c, dr.key, dr.count)) return;
+        logRoll(r.name, "Spent " + dr.count + " Psionic Energy " + (dr.count===1 ? "Die" : "Dice") + " to use it again.");
+        setUsed(r.used-1);
+      });
+      drRow.appendChild(drBtn);
+      info.appendChild(drRow);
+    }
     // Intimidating Presence, Zealous Presence (2024): a use of Rage gets it back.
     if(r.rageRestore && r.used > 0){
       var rageRow = document.createElement("div");

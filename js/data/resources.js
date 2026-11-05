@@ -103,18 +103,28 @@ export var CLASS_RESOURCES = {
       hint:"When you roll initiative: all your Focus Points back, and heal your Martial Arts die + monk level."}
   ],
   "Paladin": [
-    {id:"divine_sense", name:"Divine Sense", level:1,
+    {id:"divine_sense", name:"Divine Sense", level:1, edition:"2014",
       max:function(lv, m){ return atLeastOne(1 + m.cha); }, reset:always("long"),
       hint:"Action: sense celestials, fiends and undead within 60 ft until the end of your next turn."},
-    {id:"lay_on_hands", name:"Lay on Hands", level:1, pool:true,
+    {id:"lay_on_hands", name:"Lay on Hands", level:1, pool:true, edition:"2014",
       max:function(lv){ return lv*5; }, reset:always("long"),
       hint:"Action: restore hit points from this pool, or spend 5 to cure a disease or poison."},
-    {id:"channel_divinity", name:"Channel Divinity", level:3, max:always(1), reset:always("short"),
+    {id:"lay_on_hands", name:"Lay On Hands", level:1, pool:true, edition:"2024",
+      max:function(lv){ return lv*5; }, reset:always("long"),
+      hint:function(lv){ return "Bonus action: restore hit points from this pool, or spend 5 to remove the poisoned condition" + (lv>=14 ? " or another condition." : "."); }},
+    // Paladin's Smite and Faithful Steed (2024): a cast without a slot.
+    {id:"paladins_smite", name:"Divine Smite (free cast)", level:2, edition:"2024", max:always(1), reset:always("long"),
+      hint:"Cast it once without a spell slot. The Divine Smite button on a melee weapon's card offers this."},
+    {id:"faithful_steed", name:"Find Steed (free cast)", level:5, edition:"2024", max:always(1), reset:always("long"),
+      hint:"Cast it once without a spell slot. Track the steed on the Companions tab."},
+    {id:"channel_divinity", name:"Channel Divinity", level:3, edition:"2024", max:function(lv){ return lv>=11 ? 3 : 2; }, reset:always("short"), shortRegain:1,
+      hint:function(lv, m){ return "You regain one use on a short rest. Your save DC is " + (8 + m.pb + m.cha) + "."; }},
+    {id:"channel_divinity", name:"Channel Divinity", level:3, edition:"2014", max:always(1), reset:always("short"),
       hint:function(lv, m, cl){ return cl.subclass==="Oath of Glory" ? "Use one of your Sacred Oath's Channel Divinity options." : "Your Channel Divinity save DC is " + (8 + m.pb + m.cha) + "."; }},
     {id:"harness_divine_power", name:"Harness Divine Power", level:3, variant:"Harness Divine Power",
       max:function(lv){ return lv>=15 ? 3 : lv>=7 ? 2 : 1; }, reset:always("long"),
       hint:"Bonus action: spend a Channel Divinity to get back a spent spell slot."},
-    {id:"cleansing_touch", name:"Cleansing Touch", level:14,
+    {id:"cleansing_touch", name:"Cleansing Touch", level:14, edition:"2014",
       max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
       hint:"Action: end one spell on yourself or a willing creature you touch."}
   ],
@@ -136,7 +146,7 @@ export var CLASS_RESOURCES = {
   ],
   "Rogue": [
     {id:"stroke_of_luck", name:"Stroke of Luck", level:20, max:always(1), reset:always("short"),
-      hint:"Turn a miss into a hit, or treat a failed ability check's d20 as a 20."}
+      hint:function(lv, m, cl){ return cl && cl.edition==="2024" ? "If you fail a d20 test, turn the roll into a 20." : "Turn a miss into a hit, or treat a failed ability check's d20 as a 20."; }}
   ],
   "Warlock": [
     {id:"mystic_arcanum_6", name:"Mystic Arcanum (6th)", level:11, max:always(1), reset:always("long"),
@@ -441,6 +451,29 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Paladin": {
+    // The 2024 oaths (pp. 113 to 116). A level 5 slot pays once the capstone is
+    // spent (the Active effects card offers it).
+    "Oath of Devotion (2024)": [
+      {id:"holy_nimbus", name:"Holy Nimbus", level:20, max:always(1), reset:always("long"),
+        hint:function(lv, m){ return "Bonus action for 10 minutes: enemies starting their turn in your aura take " + (Math.max(0, m.cha) + m.pb) + " radiant damage. More uses cost a level 5 slot."; }}
+    ],
+    "Oath of Glory (2024)": [
+      {id:"glorious_defense", name:"Glorious Defense", level:15,
+        max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
+        hint:function(lv, m){ return "Reaction when you or a creature within 10 ft is hit: +" + atLeastOne(m.cha) + " to its AC against that attack. If it misses, make a weapon attack against the attacker."; }},
+      {id:"living_legend", name:"Living Legend", level:20, max:always(1), reset:always("long"),
+        hint:"Bonus action for 10 minutes: advantage on CHA checks, turn one miss per turn into a hit, reroll failed saves. More uses cost a level 5 slot."}
+    ],
+    "Oath of the Ancients (2024)": [
+      {id:"undying_sentinel", name:"Undying Sentinel", level:15, max:always(1), reset:always("long"),
+        hint:function(lv){ return "When reduced to 0 HP and not killed outright, drop to 1 HP instead and regain " + 3 * lv + " HP."; }},
+      {id:"elder_champion", name:"Elder Champion", level:20, max:always(1), reset:always("long"),
+        hint:"Bonus action for 1 minute: regain 10 HP each turn, cast action spells as bonus actions, enemies in your aura save at disadvantage. More uses cost a level 5 slot."}
+    ],
+    "Oath of Vengeance (2024)": [
+      {id:"avenging_angel", name:"Avenging Angel", level:20, max:always(1), reset:always("long"),
+        hint:"Bonus action for 10 minutes: fly 60 ft and frighten enemies in your aura (WIS save). More uses cost a level 5 slot."}
+    ],
     "Oath of Devotion": [
       {id:"holy_nimbus", name:"Holy Nimbus", level:20, max:always(1), reset:always("long"),
         hint:"Action for 1 minute: 30-ft bright light that deals 10 radiant to enemies starting their turn in it."}
@@ -823,6 +856,22 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Rogue": {
+    // The 2024 subclasses (pp. 132 to 135). `diceRestore`: dice get the use back.
+    "Arcane Trickster (2024)": [
+      {id:"spell_thief", name:"Spell Thief", level:17, max:always(1), reset:always("long"),
+        hint:"Reaction: after a spell targets you, the caster makes an INT save against your spell DC. On a failure you negate it, and if you can cast its level you have it prepared for 8 hours."}
+    ],
+    "Soulknife (2024)": [
+      {id:"psionic_energy_dice", name:"Psionic Energy Dice", level:3, pool:true, shortRegain:1,
+        max:function(lv){ return lv>=17 ? 12 : lv>=13 ? 10 : lv>=9 ? 8 : lv>=5 ? 6 : 4; }, reset:always("short"),
+        hint:"Fuel Psi-Bolstered Knack, Psychic Whispers, Soul Blades, Psychic Veil and Rend Mind. One back on a short rest, all on a long rest."},
+      {id:"psychic_whispers_free", name:"Psychic Whispers (Free Use)", level:3, max:always(1), reset:always("long"),
+        hint:"Your first Psychic Whispers after a long rest doesn't spend a Psionic Energy Die."},
+      {id:"psychic_veil", name:"Psychic Veil", level:13, max:always(1), reset:always("long"), diceRestore:{count:1, key:"Rogue:psionic_energy_dice"},
+        hint:"Magic action: invisible for 1 hour, until you deal damage or force a save."},
+      {id:"rend_mind", name:"Rend Mind", level:17, max:always(1), reset:always("long"), diceRestore:{count:3, key:"Rogue:psionic_energy_dice"},
+        hint:function(lv, m){ return "On a Psychic Blades Sneak Attack: WIS save (DC " + (8 + m.dex + m.pb) + ") or stunned for 1 minute."; }}
+    ],
     "Arcane Trickster": [
       {id:"spell_thief", name:"Spell Thief", level:17, max:always(1), reset:always("long"),
         hint:"Reaction: negate a spell that targets you and steal it for 8 hours (save vs your DC)."}

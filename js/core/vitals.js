@@ -3,6 +3,7 @@
    bookkeeping: hit points, speed, Armor Class, initiative, saving throws
    and senses. */
 import { rageFlySource, wildAspect } from "./barbarian-2024.js";
+import { rovingAim } from "./rogue-2024.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { ARMOR_MODELS } from "../data/artificer-extras.js";
 import { ARMOR_DATA, armorDataOf } from "../data/armor.js";
@@ -246,7 +247,7 @@ export function computeSpeed(c){
   // Grappled, restrained or unable to move: 0, bonuses and all. Exhaustion
   // 2 halves every speed (rounded down), 5 takes it to 0.
   // In a tortle's shell, or after Steady Aim: 0, and it can't increase.
-  var hindered = conditionSpeed(c) || (effectOn(c, "shell_defense") ? {zero: "Shell Defense"} : effectOn(c, "steady_aim") ? {zero: "Steady Aim"} : effectOn(c, "take_aim") ? {zero: "Take Aim"} : null);
+  var hindered = conditionSpeed(c) || (effectOn(c, "shell_defense") ? {zero: "Shell Defense"} : effectOn(c, "steady_aim") && !rovingAim(c) ? {zero: "Steady Aim"} : effectOn(c, "take_aim") ? {zero: "Take Aim"} : null);
   if(hindered){
     var cut = function(v){ return hindered.zero ? 0 : Math.floor(v / 2); };
     walk = cut(walk);
@@ -439,11 +440,12 @@ export function computeSave(c, key){
   var abilityMod = ability.mod;
   var grantedBy = null, bonuses = [];
   var unconscious = activeConditions(c).some(function(x){ return x.def.id==="unconscious"; });
+  var incapacitated = activeConditions(c).some(function(x){ return x.def.incapacitated; });
   (c.classes||[]).forEach(function(cl){
     classFeatureList(cl).forEach(function(f){
       if(!grantedBy && f.grants && (f.grants.savingThrows||[]).indexOf(key)!==-1) grantedBy = f.name;
-      // (Aura of Protection needs you conscious.)
-      if(f.saveBonus && !unconscious && !bonuses.some(function(b){ return b.name===f.name; })){
+      // (Aura of Protection needs you conscious, and the 2024 one not incapacitated.)
+      if(f.saveBonus && !unconscious && !(f.saveBonusOff==="incapacitated" && incapacitated) && !bonuses.some(function(b){ return b.name===f.name; })){
         bonuses.push({name:f.name, value: Math.max(1, mod(abilityScore(c, f.saveBonus)))});
       }
     });

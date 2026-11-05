@@ -8,7 +8,7 @@ import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
 import { relentlessHp, searingVengeanceReady, necroticHuskReady, spendForRests, mod, strengthOfTheGrave, blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource, kiWord } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { featDeathSaveAdvantage } from "../../core/feats-2024.js";
-import { isFighter2024 } from "../../core/class-features.js";
+import { isFighter2024, isPaladin2024 } from "../../core/class-features.js";
 import { showActionToast } from "../../ui/toast.js";
 import { playDiceRattle, playDeathSaveSuccess, playDeathSaveFail, playStabilized, playDeath, playRevive } from "../../ui/sound.js";
 
@@ -248,7 +248,9 @@ export function renderDeathSaves(c){
   // Undying Sentinel (Oath of the Ancients 15): 1 hit point instead, once per long rest.
   if(classLevelOf(c, "Paladin", "Oath of the Ancients") >= 15 && !dead){
     var sentinel = resourceLeft(c, "Paladin:undying_sentinel") > 0;
-    box.appendChild(backToOne(c, "ds-sentinel", "Undying Sentinel", sentinel, "Used until a long rest", function(){ return spendResource(c, "Paladin:undying_sentinel", 1); }, "1 hit point instead of 0."));
+    // (The 2024 feature heals three times the paladin level as well.)
+    var sentinelHeal = isPaladin2024(c) ? 3 * classLevelOf(c, "Paladin") : 0;
+    box.appendChild(backToOne(c, "ds-sentinel", "Undying Sentinel", sentinel, "Used until a long rest", function(){ return spendResource(c, "Paladin:undying_sentinel", 1); }, sentinelHeal ? "1 hit point instead of 0, and " + sentinelHeal + " more." : "1 hit point instead of 0.", sentinelHeal));
   }
 
   var status = document.createElement("div");
@@ -266,22 +268,22 @@ export function renderDeathSaves(c){
 }
 
 /* A feature that leaves you on 1 hit point instead of 0. */
-function backToOne(c, cls, label, ready, whyNot, pay, log){
+function backToOne(c, cls, label, ready, whyNot, pay, log, more){
   var name = label.split(" · ")[0];
   var b = document.createElement("button");
   b.type = "button";
   b.className = "btn small primary " + cls;
   b.textContent = label;
-  b.title = ready ? "When you're reduced to 0 hit points: have 1 hit point instead (no action)" : whyNot;
+  b.title = ready ? "When you're reduced to 0 hit points: have " + (1 + (more || 0)) + (more ? " hit points" : " hit point") + " instead (no action)" : whyNot;
   b.disabled = !ready;
   b.addEventListener("click", function(e){
     e.stopPropagation();
     if(!pay()) return;
-    c.hp.current = 1;
+    c.hp.current = Math.min(1 + (more || 0), maxHp(c));
     c.deathSaves = {success: 0, fail: 0};
     removeCondition(c, "prone");
     logRoll(name, log);
-    showActionToast(name + ": you have 1 hit point instead.");
+    showActionToast(name + ": you have " + c.hp.current + (c.hp.current===1 ? " hit point" : " hit points") + " instead.");
     playRevive();
     save(); renderSidebar(); renderAll();
   });

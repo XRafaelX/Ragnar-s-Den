@@ -17,7 +17,7 @@ import { abilityScore, abilityScores } from "./ability-scores.js";
 import { conduitAbility } from "./gunslinger.js";
 
 /* The spellcasting abilities of the classes that cast spells now (a
-   Paladin or Ranger from level 2, an Eldritch Knight or Arcane Trickster
+   2014 Paladin or Ranger from level 2, an Eldritch Knight or Arcane Trickster
    from 3), one entry per ability: [{ability, classes:[names], dc, attack}].
    A Cleric/Wizard has two; most characters one. */
 export function spellcastingAbilities(c){

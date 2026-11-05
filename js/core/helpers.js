@@ -19,6 +19,7 @@ export * from "./character-resources.js";
 export * from "./vitals.js";
 export * from "./class-edition.js";
 export * from "./barbarian-2024.js";
+export * from "./rogue-2024.js";
 export * from "./spell-grants.js";
 export * from "./equipment.js";
 export * from "./checks.js";

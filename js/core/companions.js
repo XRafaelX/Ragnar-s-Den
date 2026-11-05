@@ -2,6 +2,7 @@ import { COMPANIONS } from "../data/companions.js";
 import { mod, profBonus, classSpellAbility, clamp, totalLevel, featureSpells, usesVariant } from "./helpers.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { knownInvocations } from "./invocations.js";
+import { characterSpellEdition } from "./spell-edition.js";
 
 /* ---------------- Companions ----------------
    The companions the character has now (see js/data/companions.js), with
@@ -21,13 +22,14 @@ export function characterCompanions(c){
     var mods = {};
     ["str","dex","con","int","wis","cha"].forEach(function(k){ mods[k] = mod(abilityScore(c, k)); });
     var pb = profBonus(c);
-    var castMod = mods[(cl && classSpellAbility(cl)) || "int"] || 0;
+    var castCl = cl || (def.castClass && (c.classes||[]).find(function(x){ return x.name===def.castClass; }));
+    var castMod = mods[(castCl && classSpellAbility(castCl)) || "int"] || 0;
     var saved = companionState(c, def.id);
     var stats = def.stats({lv: cl ? Number(cl.level)||1 : totalLevel(c), pb: pb, mods: mods, spellAttack: pb + castMod, spellDC: 8 + pb + castMod,
       choice: saved.choice || "", beast: saved.beast || null, chain: !!(req && req.chain), wild: (req && req.wild) || 0, wildOnly: !!(req && req.wildOnly),
       invocations: req && req.chain ? warlockInvocationNames(c) : []});
     out.push({def: def, stats: stats, choice: saved.choice || "", hasBeast: !!saved.beast, hp: stats ? companionHp(c, def.id, stats) : [],
-      source: req ? req.source : "", options: companionOptions(def, req),
+      source: req ? req.source : "", options: companionOptions(def, req, c),
       name: saved.name || "", title: saved.title || "", image: saved.image || ""});
   });
   return out;
@@ -48,6 +50,8 @@ function companionRequirement(c, r){
   var chain = !!r.pactBoon && (c.classes||[]).some(function(cl){ return cl.name==="Warlock" && cl.pactBoon===r.pactBoon; });
   if(chain) return {source: r.pactBoon, chain: true};
   var wild = r.spell==="Find Familiar" ? wildCompanionHours(c) : 0;
+  // (The 2024 Find Steed's stat block, only with the 2024 spell.)
+  if(r.edition && characterSpellEdition(c)!==r.edition) return wild ? {source: "Wild Companion", chain: false, wild: wild, wildOnly: true} : null;
   var knows = !!r.spell && ((c.spells||[]).some(function(s){ return s.name===r.spell; }) ||
     featureSpells(c).some(function(s){ return s.name===r.spell && s.feature!=="Wild Companion"; }));
   return knows || wild ? {source: knows ? r.spell : "Wild Companion", chain: false, wild: wild, wildOnly: !knows} : null;
@@ -64,10 +68,13 @@ export function summonWildCompanion(c){
 }
 /* The choice's options for this character: a familiar's chain-only forms
    need Pact of the Chain. */
-function companionOptions(def, req){
+function companionOptions(def, req, c){
   if(!def.choice) return [];
   var only = def.choice.chainOnly || [];
-  return def.choice.options.filter(function(o){ return !(only.indexOf(o)!==-1 && !(req && req.chain)); });
+  // (A choice tied to a spell's level: only the levels you have slots for, at least its own.)
+  var slots = (c.spellcasting && c.spellcasting.slots) || {}, top = 2;
+  Object.keys(slots).forEach(function(l){ if(Number(slots[l].max) > 0 && Number(l) > top) top = Number(l); });
+  return def.choice.options.filter(function(o){ return !(only.indexOf(o)!==-1 && !(req && req.chain)) && !(def.choice.slotOf && def.choice.slotOf(o) > top); });
 }
 /* An artificer infusion of this name is on an item now. */
 function infusionActive(c, name){
