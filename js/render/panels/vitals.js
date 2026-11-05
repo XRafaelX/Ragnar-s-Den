@@ -1243,12 +1243,20 @@ function rageActions2024(c){
   var out = [];
   [["wilds", "wilds", "Rage of the Wilds", WILDS_OPTIONS], ["power", "wildsPower", "Power of the Wilds", POWER_OPTIONS]].forEach(function(w){
     if(!wildsChoiceDue(c, w[0])) return;
+    // (Two choices at level 14: each under its own name.)
+    var pick = document.createElement("div");
+    pick.className = "rage-pick";
+    var pickLbl = document.createElement("span");
+    pickLbl.className = "rage-pick-lbl";
+    pickLbl.textContent = w[2];
+    pick.appendChild(pickLbl);
     Object.keys(w[3]).forEach(function(name){
-      out.push(rageButton(name, w[2] + ": " + w[3][name], function(){
+      pick.appendChild(rageButton(name, w[2] + ": " + w[3][name], function(){
         c.rage[w[1]] = name;
         logRoll(w[2], name + " for this Rage.");
       }));
     });
+    out.push(pick);
   });
   var life = lifeGivingDice(c);
   if(life){
