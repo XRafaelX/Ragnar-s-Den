@@ -548,3 +548,27 @@ button.wiz-feat-group[aria-expanded="true"]::before{transform:rotate(90deg);}
   .bgi-long{display:none;}
   .bgi-short{display:inline;}
 }
+
+/* ---- A feat that picks a spell list, then spells (Magic Initiate) ----
+   Numbered steps ticked when done, the list as tiles, the spells as the
+   wizard's spell cards (js/ui/feat-picks.js renderSpellListFeat). */
+.fp-steps{gap:10px;}
+.fp-step{display:flex;align-items:center;gap:10px;margin-top:10px;font-weight:600;font-size:14px;color:var(--text-on-parch);}
+.fp-step:first-child{margin-top:0;}
+.fp-step-n{flex:0 0 auto;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;border:1px solid var(--brass);color:var(--brass-bright);}
+.fp-step-n svg{width:14px;height:14px;}
+.fp-step.done .fp-step-n{background:var(--brass);color:var(--ink, #1a1020);border-color:var(--brass);}
+.fp-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+@media (max-width:560px){ .fp-tiles{grid-template-columns:repeat(2,minmax(0,1fr));} }
+.fp-tile{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border-radius:10px;cursor:pointer;
+  border:1px solid var(--rule);background:transparent;color:var(--text-on-parch);font:inherit;min-width:0;}
+.fp-tile b{font-size:14px;}
+.fp-tile span{font-size:12px;line-height:1.35;color:var(--text-on-parch-dim);}
+.fp-tile:hover:not(:disabled){border-color:var(--brass);}
+.fp-tile.on{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 22%, transparent);box-shadow:0 0 12px color-mix(in srgb, var(--brass) 30%, transparent);}
+.fp-tile:disabled{opacity:.45;cursor:not-allowed;}
+.fp-grid{margin-top:0;}
+.fp-grid .wiz-spell-head h4{display:none;}
+.fp-grid .wiz-spell-head{justify-content:flex-end;}
+.fs-change{align-self:flex-start;margin-top:8px;}

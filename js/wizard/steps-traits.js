@@ -386,9 +386,10 @@ export function wizardStepFeatPicks(container){
   explain.innerHTML = "<b>"+escapeHtml(feat.name)+":</b> "+escapeHtml(feat.summary || "")+" Choose what it gives you. The sheet applies it for you.";
   card.appendChild(explain);
   if(!rc.featPicks) rc.featPicks = emptyPicks(feat);
-  card.appendChild(renderFeatPicks(feat, rc.featPicks, wizardFeatContext(), function(){
+  card.appendChild(renderFeatPicks(feat, rc.featPicks, wizardFeatContext(), function(meta){
     var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
-    renderWizard();
+    // (A spell card ticked: the cards stay as they are.)
+    if(!(meta && meta.soft)) renderWizard();
   }));
   container.appendChild(card);
 }
@@ -402,15 +403,16 @@ export function wizardStepBgFeat(container){
   var card = ce("div","card");
   card.innerHTML = "<h3><span>Background Feat</span></h3>";
   var explain = ce("div","wiz-explain");
-  explain.innerHTML = "<b>From your "+escapeHtml(wizardState.background)+" background:</b> you start with the <b>"+escapeHtml(feat.name)+"</b> feat. "+
+  explain.innerHTML = "<b>From your "+escapeHtml(wizardState.background)+" background:</b> you start with the <b>"+escapeHtml(featListLabel(feat, !!wizardRules2024()))+"</b> feat. "+
     escapeHtml(feat.summary || "")+(grant.option && feat.option ? " Your background sets the "+escapeHtml(feat.option.label.toLowerCase())+": <b>"+escapeHtml(grant.option)+"</b>." : "")+
     " Choose what it gives you. The sheet applies it for you.";
   card.appendChild(explain);
   var ctx = wizardFeatContext({forBackgroundFeat:true});
   if(grant.option) ctx.lockedOption = grant.option;
-  card.appendChild(renderFeatPicks(feat, wizardBackgroundFeatPicks(), ctx, function(){
+  card.appendChild(renderFeatPicks(feat, wizardBackgroundFeatPicks(), ctx, function(meta){
     var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
-    renderWizard();
+    // (A spell card ticked: the cards stay as they are.)
+    if(!(meta && meta.soft)) renderWizard();
   }));
   if(feat.description){
     var more = document.createElement("details");
@@ -439,16 +441,22 @@ function wizardStepFeatChoice(container, grant){
   card.appendChild(explain);
   var raceFeat = wizardState.raceChoices.feat;
   var box = ce("div","fs-options");
+  // Once one is picked, the others fold away so its choices sit right
+  // under it; Change unfolds the list in place.
+  var rules2024 = !!wizardRules2024();
+  var folded = !!grant.def && !wizardState.featListOpen;
   grant.choices.forEach(function(name){
     var def = featDef(name), taken = raceChoiceDef() && raceChoiceDef().feat && raceFeat===name && !def.repeatable;
+    if(folded && grant.def!==def) return;
     var row = ce("div","wiz-equip-option fs-option"+(grant.def===def ? " selected" : "")+(taken ? " disabled" : ""));
     row.setAttribute("role","button");
     row.tabIndex = taken ? -1 : 0;
     row.setAttribute("aria-pressed", grant.def===def ? "true" : "false");
-    row.innerHTML = "<div><strong>"+escapeHtml(name)+"</strong><div class='lu-sub-blurb'>"+escapeHtml(def.summary||"")+"</div>"+
+    row.innerHTML = "<div><strong>"+escapeHtml(featListLabel(def, rules2024))+"</strong><div class='lu-sub-blurb'>"+escapeHtml(def.summary||"")+"</div>"+
       (taken ? "<div class='lu-sub-feats'>You already took it as your "+escapeHtml(wizardState.race)+" feat.</div>" : "")+"</div>";
     function choose(){
       if(taken) return;
+      wizardState.featListOpen = false;
       wizardState[grant.campaign ? "campaignFeat" : grant.origin ? "originFeat" : "bgFeatChoice"] = name;
       var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
       renderWizard();
@@ -458,10 +466,19 @@ function wizardStepFeatChoice(container, grant){
     box.appendChild(row);
   });
   card.appendChild(box);
+  if(folded){
+    var change = document.createElement("button");
+    change.type = "button";
+    change.className = "btn small ghost fs-change";
+    change.textContent = "Change feat";
+    change.addEventListener("click", function(){ wizardState.featListOpen = true; renderWizard(); });
+    card.appendChild(change);
+  }
   if(grant.def && featHasPicks(grant.def)){
-    card.appendChild(renderFeatPicks(grant.def, wizardBackgroundFeatPicks(), wizardFeatContext({forBackgroundFeat:true}), function(){
+    card.appendChild(renderFeatPicks(grant.def, wizardBackgroundFeatPicks(), wizardFeatContext({forBackgroundFeat:true}), function(meta){
       var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
-      renderWizard();
+      // (A spell card ticked: the cards stay as they are.)
+      if(!(meta && meta.soft)) renderWizard();
     }));
   }
   container.appendChild(card);

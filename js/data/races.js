@@ -40,6 +40,41 @@ export var RACES = {
   ]
 };
 
+/* The species the 2024 Player's Handbook rewrote, each with the older
+   races it replaces (a lineage covers the old subraces: High, Wood and
+   Dark Elf are the 2024 Elf's lineages). For a character on the 2024
+   rules the race list shows the 2024 species first under their plain
+   names and moves these to "Older versions (2014)" (raceGroupsFor).
+   Nothing is hidden, and a saved race keeps its name. */
+export var SPECIES_OLDER_2014 = {
+  "Aasimar (2024)": ["Aasimar"],
+  "Dragonborn (2024)": ["Dragonborn"],
+  "Dwarf (2024)": ["Hill Dwarf", "Mountain Dwarf"],
+  "Elf (2024)": ["High Elf", "Wood Elf", "Dark Elf (Drow)"],
+  "Gnome (2024)": ["Rock Gnome", "Forest Gnome"],
+  "Goliath (2024)": ["Goliath"],
+  "Halfling (2024)": ["Lightfoot Halfling", "Stout Halfling"],
+  "Human (2024)": ["Human", "Variant Human"],
+  "Orc (2024)": ["Orc"],
+  "Tiefling (2024)": ["Tiefling"]
+};
+var OLDER_RACES = Object.keys(SPECIES_OLDER_2014).reduce(function(a, k){ return a.concat(SPECIES_OLDER_2014[k]); }, []);
+/* The race list's groups: as they are on the 2014 rules; on the 2024
+   rules the 2024 species first (as "Dwarf"), then the rest, then the
+   older versions (as "Hill Dwarf (2014)"). Items are {value, label}. */
+export function raceGroupsFor(rules2024){
+  if(!rules2024) return RACES;
+  var NEW = "Player's Handbook (2024)", out = {};
+  out[NEW] = (RACES[NEW] || []).map(function(n){ return {value: n, label: n.replace(/ \(2024\)$/, "")}; });
+  Object.keys(RACES).forEach(function(g){
+    if(g===NEW) return;
+    var rest = RACES[g].filter(function(n){ return OLDER_RACES.indexOf(n)===-1; });
+    if(rest.length) out[g] = rest;
+  });
+  out["Older versions (2014)"] = OLDER_RACES.slice().sort().map(function(n){ return {value: n, label: n + " (2014)"}; });
+  return out;
+}
+
 export var RACE_TRAITS = {
   "Human": "+1 to every ability score. No other special traits, so it's flexible and simple to play.",
   "Variant Human": "+1 to two ability scores of your choice, proficiency in one skill of your choice, and a feat at level 1. The most customisable race: build exactly the character you want.",

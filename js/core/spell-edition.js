@@ -28,6 +28,14 @@ export function characterSpellEdition(c){
   return rules || (c.classes||[]).some(function(cl){ return cl && cl.edition==="2024"; }) ? "2024" : "2014";
 }
 export function spellEdition(){ return current; }
+/* The 2014 spells the 2024 book replaced under a new name (its index:
+   "Feeblemind spell. See Befuddlement"). On the 2024 rules they stay on
+   offer, at the end of the lists as "Older version (2014)". */
+var OLDER_SPELLS = {"Feeblemind": "Befuddlement", "Branding Smite": "Shining Smite"};
+/* The 2024 spell that replaced this one, while the 2024 edition is on ("" otherwise). */
+export function newerSpellOf(name){
+  return current==="2024" && OLDER_SPELLS[name] && SPELL_DATA[OLDER_SPELLS[name]] ? OLDER_SPELLS[name] : "";
+}
 /* Switch the catalog to an edition's spells. */
 export function setSpellEdition(edition){
   edition = edition==="2024" ? "2024" : "2014";

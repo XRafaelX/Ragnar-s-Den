@@ -30,6 +30,9 @@ import { SPELL_DATA } from "../data/spells.js";
 function spellLevelOf(n){ return (SPELL_DATA[n] || {}).level; }
 import { lu, luEdition, styleOptions, featWho, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain, spellChangeFeats, spellChangeOptions, featSpellSwaps } from "./session.js";
 
+/* A feat's picks redraw the step, except a spell card ticked (the cards keep their scroll and search). */
+function softRender(meta){ if(!(meta && meta.soft)) render(); }
+
 export function stepClass(container){
   var c = lu.c;
   var card = stepCard(container, "Advance a class",
@@ -646,7 +649,7 @@ export function stepFeatPicks(container){
   var card = stepCard(container, def.name,
     "<b>Your new feat:</b> "+escapeHtml(def.summary || "")+" Choose what it gives you. The sheet applies it, and undoing the level-up takes it back.");
   if(!lu.featPicks) lu.featPicks = emptyPicks(def);
-  card.appendChild(renderFeatPicks(def, lu.featPicks, featCtx(), render));
+  card.appendChild(renderFeatPicks(def, lu.featPicks, featCtx(), softRender));
 }
 /* Campaign feat: the campaign's list as tappable cards, the ones this
    character can't take greyed out with why. */
@@ -681,7 +684,7 @@ export function stepBonusFeatPicks(container){
   var card = stepCard(container, def.name,
     "<b>Your campaign feat:</b> "+escapeHtml(def.summary || "")+" Choose what it gives you. The sheet applies it, and undoing the level-up takes it back.");
   if(!lu.bonusFeatPicks) lu.bonusFeatPicks = emptyPicks(def);
-  card.appendChild(renderFeatPicks(def, lu.bonusFeatPicks, bonusFeatCtx(), render));
+  card.appendChild(renderFeatPicks(def, lu.bonusFeatPicks, bonusFeatCtx(), softRender));
 }
 /* Feat spells: Magic Initiate (2024)'s Spell Change, one optional swap
    per feat: which spell goes, then what replaces it (same level, same list). */

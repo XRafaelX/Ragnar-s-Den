@@ -1,5 +1,6 @@
 import { SPELL_DATA, SPELL_LEVEL_LABELS, SPELL_SOURCES, buildSpellGroups, spellDataForClass, spellLevelLabel, catalogSpellName, tashaAddsSpell } from "../../data/spells.js";
 import { save } from "../../core/state.js";
+import { newerSpellOf } from "../../core/spell-edition.js";
 import { renderAll } from "../sheet.js";
 import { openCatalogPicker, showCatalogCustomView, refreshCatalog } from "../../ui/catalog-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -238,7 +239,20 @@ export function buildCustomSpellForm(container, _closeCustom, onSubmit){
 /* ---- Section descriptor ---- */
 /* listClass: the class whose list the section shows, so the spells
    Tasha's optional Additional Spells adds to it are marked. */
+/* On the 2024 rules, a 2014 spell the book renamed (Feeblemind) moves from
+   its level's group to "Older versions (2014)" at the end. */
+function withOlderGroup(groups){
+  var older = [], out = {};
+  Object.keys(groups).forEach(function(g){
+    var keep = groups[g].filter(function(n){ if(newerSpellOf(n)){ older.push(n); return false; } return true; });
+    if(keep.length) out[g] = keep;
+  });
+  if(!older.length) return groups;
+  out["Older versions (2014)"] = older.sort();
+  return out;
+}
 export function spellSection(key, label, groups, data, onAdd, onCustomSaved, listClass){
+  groups = withOlderGroup(groups);
   return {
     key: key,
     label: label,
@@ -252,7 +266,7 @@ export function spellSection(key, label, groups, data, onAdd, onCustomSaved, lis
     renderSub: function(name, d){
       // A spell from a campaign book says which, so a table can skip it.
       return (d.school || "") + " · " + (d.castingTime || "") + " · " + (d.range || "") + (listClass && tashaAddsSpell(d, listClass) ? " · Tasha's optional" : "") +
-        (SPELL_SOURCES[d.source] ? " · " + SPELL_SOURCES[d.source] : "");
+        (SPELL_SOURCES[d.source] ? " · " + SPELL_SOURCES[d.source] : "") + (newerSpellOf(name) ? " · 2014 version of " + newerSpellOf(name) : "");
     },
     renderDetail: function(name, d){ return d.summary; },
     renderRight: function(name, d){

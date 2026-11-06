@@ -3,7 +3,7 @@
    ability scores, plus the dropdown the first steps share. */
 import { ABILITIES, CLASS_LIST } from "../data/abilities-skills.js";
 import { CLASSES_INFO } from "../data/classes.js";
-import { RACES, RACE_TRAITS, RACE_TRAIT_FALLBACK } from "../data/races.js";
+import { RACES, RACE_TRAITS, RACE_TRAIT_FALLBACK, raceGroupsFor } from "../data/races.js";
 import { RACE_DATA, raceAsiText } from "../data/race-data.js";
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
 import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/alignments.js";
@@ -271,7 +271,10 @@ export function raceExplainHtml(name){
   if(!name) return "<b>Why this matters:</b> Race affects your ability score bonuses and grants special traits like darkvision or resistances. Pick one to see what it does.";
   // A 2024 species turns the 2024 character rules on.
   var rules = (RACE_DATA[name] || {}).edition==="2024" ? " <b>2024 rules:</b> this species uses the 2024 character rules. Your background raises your ability scores, and you know Common and two more languages." : "";
-  return "<b>"+escapeHtml(name)+":</b> "+(RACE_TRAITS[name] || RACE_TRAIT_FALLBACK)+rules;
+  // (Named as the race list shows it: "Dwarf" for Dwarf (2024), "Hill Dwarf (2014)".)
+  var groups = raceGroupsFor(wizardRules2024());
+  var shown = [].concat.apply([], Object.keys(groups).map(function(g){ return groups[g]; })).find(function(x){ return x && x.value===name; });
+  return "<b>"+escapeHtml(shown ? shown.label : name)+":</b> "+(RACE_TRAITS[name] || RACE_TRAIT_FALLBACK)+rules;
 }
 
 export function backgroundExplainHtml(name){
@@ -432,7 +435,8 @@ export function wizardStepRace(container){
 
   // Race Traits picks belong to one race: a different race starts fresh.
   var shownRace = wizardState.race;
-  var dd = wizardDropdown("Race", "race", RACES, wizardState, function(){
+  // (On the 2024 rules: the 2024 species first, the 2014 ones they replace last.)
+  var dd = wizardDropdown("Race", "race", raceGroupsFor(wizardRules2024()), wizardState, function(){
     explain.innerHTML = raceExplainHtml(wizardState.race);
     if(wizardState.race!==shownRace){
       var rc = wizardState.raceChoices;

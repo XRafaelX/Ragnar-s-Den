@@ -18,6 +18,7 @@
 import { SPELL_DATA, SPELL_SOURCES, spellLevelLabel } from "../data/spells.js";
 import { escapeHtml, ce } from "../core/helpers.js";
 import { makeCheckSvg } from "./svg-icons.js";
+import { newerSpellOf } from "../core/spell-edition.js";
 
 export function spellPickGrid(opts){
   var count = opts.count, chosen = opts.chosen, tags = opts.tags || {};
@@ -38,6 +39,13 @@ export function spellPickGrid(opts){
   }
 
   var names = opts.names.filter(function(n){ return SPELL_DATA[n]; });
+  // (On the 2024 rules, a 2014 spell the book renamed goes last, tagged.)
+  var olderTag = function(n){ var nw = newerSpellOf(n); return nw ? "Older version (2014) of " + nw : ""; };
+  names = names.filter(function(n){ return !olderTag(n); }).concat(names.filter(olderTag));
+  var baseTags = tags;
+  tags = {};
+  Object.keys(baseTags).forEach(function(n){ tags[n] = baseTags[n]; });
+  names.forEach(function(n){ if(olderTag(n)) tags[n] = (tags[n] || []).concat([olderTag(n)]); });
   // A pick no longer on offer (a subclass or swap changed) is dropped.
   for(var i=chosen.length-1;i>=0;i--){ if(names.indexOf(chosen[i])===-1) chosen.splice(i,1); }
   if(chosen.length > count) chosen.splice(count);

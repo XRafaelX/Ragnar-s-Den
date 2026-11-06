@@ -16,6 +16,8 @@ import { INVOCATIONS, invocationDef } from "../data/invocations.js";
 import { styleDef, styleReason } from "../core/fighting-styles.js";
 import { warlockEntry, invocationContext, invocationReason } from "../core/invocations.js";
 import { renderStylePicks } from "./style-picks.js";
+import { spellPickGrid } from "./spell-pick-grid.js";
+import { makeCheckSvg } from "./svg-icons.js";
 
 /* ---------------- Feat picks UI ----------------
    The choices block for a feat (see js/core/feat-picks.js), shared by the
@@ -37,6 +39,8 @@ function aOrAn(word){ return (/^[aeiou]/i.test(word) ? "an " : "a ") + word; }
 export function renderFeatPicks(def, picks, ctx, onChange){
   var box = ce("div", "fp-box");
   if(!featHasPicks(def)) return box;
+  // (Magic Initiate and the like: numbered steps, spells as cards.)
+  if(spellListFeat(def)) return renderSpellListFeat(def, picks, ctx, onChange, box);
 
   if(def.option && ctx.lockedOption){
     picks.option = ctx.lockedOption;
@@ -327,6 +331,143 @@ export function renderFeatPicks(def, picks, ctx, onChange){
   }
   return box;
 }
+/* ---- Feats that pick a spell list, then spells from it ----
+   Magic Initiate (both), Ritual Caster, Spell Sniper, Strixhaven
+   Initiate, Initiate of High Sorcery, Divinely Favored: numbered steps,
+   each ticked when done. 1: the list as tiles (with the ability its
+   spells use, as tiles, nothing chosen until tapped), then each spell
+   pick as the wizard's spell cards (search, filters, a tray). Picking a
+   spell calls onChange({soft: true}): the caller re-checks without
+   redrawing, so the cards keep their scroll and search. */
+var LIST_BLURBS = {"Bard": "Charm, illusion and support", "Cleric": "Healing and protection", "Druid": "Nature and the elements",
+  "Sorcerer": "Raw magical power", "Warlock": "Eerie, otherworldly magic", "Wizard": "Arcane tricks and damage"};
+var LIST_ABILITY = {"Bard": "cha", "Cleric": "wis", "Druid": "wis", "Sorcerer": "cha", "Warlock": "cha", "Wizard": "int"};
+export function spellListFeat(def){
+  return !!(def && def.option && def.spellPick && [].concat(def.spellPick).some(function(g){ return g.byOption; }));
+}
+function renderSpellListFeat(def, picks, ctx, onChange, box){
+  box.classList.add("fp-steps");
+  if(!picks.spells) picks.spells = [];
+  var number = 0;
+  function step(title, done){
+    number++;
+    var h = ce("div", "fp-step");
+    var n = ce("span", "fp-step-n");
+    var t = ce("span", "fp-step-title");
+    t.textContent = title;
+    h.appendChild(n); h.appendChild(t);
+    h.mark = function(on){ h.classList.toggle("done", on); n.innerHTML = on ? makeCheckSvg() : String(h.num); };
+    h.num = number;
+    h.mark(done);
+    box.appendChild(h);
+    return h;
+  }
+  var noun = def.option.label.toLowerCase();
+  var isList = noun==="class" || noun==="spell list";
+  // 1. The list (or college, moon...), and the ability its spells use.
+  var abilityChoice = Array.isArray(def.castAbility);
+  var first = step(isList ? "Whose magic?" : "Choose " + aOrAn(noun), !!picks.option && (!abilityChoice || !!picks.castAbility));
+  if(ctx.lockedOption){
+    picks.option = ctx.lockedOption;
+    box.appendChild(textNote(ctx.lockedOption + ", set by your background."));
+  } else {
+    var taken = def.repeatable && ctx.optionsTaken ? ctx.optionsTaken(def.name) : [];
+    var tiles = ce("div", "fp-tiles");
+    def.option.options.forEach(function(v){
+      var why = taken.indexOf(v)!==-1 ? "taken" : "";
+      var t = document.createElement("button");
+      t.type = "button";
+      t.className = "fp-tile" + (picks.option===v ? " on" : "");
+      t.disabled = !!why;
+      t.setAttribute("aria-pressed", picks.option===v ? "true" : "false");
+      var blurb = why ? "You took it already" : LIST_BLURBS[v] || ((def.option.details && def.option.details[v]) || "").split(". ")[0].replace(/\.$/, "");
+      t.innerHTML = "<b></b>" + (blurb ? "<span></span>" : "");
+      t.querySelector("b").textContent = v;
+      if(blurb) t.querySelector("span").textContent = blurb;
+      t.addEventListener("click", function(){
+        if(picks.option===v) return;
+        picks.option = v;
+        // Spells picked from another list no longer fit.
+        var groups = featSpellGroups(def, picks, ctx);
+        picks.spells = (picks.spells||[]).map(function(name, i){
+          var g = groups.filter(function(x){ return i >= x.offset; }).pop();
+          return g && g.options.indexOf(name)!==-1 ? name : "";
+        });
+        onChange();
+      });
+      tiles.appendChild(t);
+    });
+    box.appendChild(tiles);
+  }
+  if(picks.option && def.castAbilityByOption && def.castAbilityByOption[picks.option]){
+    var fixed = ABILITIES.find(function(a){ return a[0]===def.castAbilityByOption[picks.option]; });
+    box.appendChild(textNote("Its spells use " + fixed[1] + "."));
+  }
+  if(abilityChoice){
+    box.appendChild(label("The ability its spells use"));
+    var best = def.castAbility.reduce(function(b, k){
+      var m = mod(Number(ctx.abilities && ctx.abilities[k])||10), bm = mod(Number(ctx.abilities && ctx.abilities[b])||10);
+      return m > bm || (m===bm && LIST_ABILITY[picks.option]===k) ? k : b;
+    }, def.castAbility[0]);
+    var grid = ce("div", "rt-ab-grid fp-ab-grid");
+    grid.style.gridTemplateColumns = "repeat(" + def.castAbility.length + ", minmax(0, 110px))";
+    ABILITIES.filter(function(a){ return def.castAbility.indexOf(a[0])!==-1; }).forEach(function(a){
+      var key = a[0], on = picks.castAbility===key;
+      var tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "rt-ab" + (on ? " on" : "");
+      tile.setAttribute("aria-pressed", on ? "true" : "false");
+      tile.setAttribute("aria-label", a[1] + (key===best ? ", suggested" : ""));
+      tile.innerHTML = "<span class='rt-ab-lbl'>" + a[1].slice(0,3).toUpperCase() + "</span>" +
+        "<span class='rt-ab-score'>" + fmtMod(mod(Number(ctx.abilities && ctx.abilities[key])||10)) + "</span>" +
+        "<span class='rt-ab-mod'>" + (key===best ? "suggested" : "&nbsp;") + "</span>";
+      tile.addEventListener("click", function(){ picks.castAbility = key; onChange(); });
+      grid.appendChild(tile);
+    });
+    box.appendChild(grid);
+  }
+  // Spells it gives outright (a moon's), then the picks.
+  var ownSpell = "from " + def.name;
+  ((def.grantsByOption && def.grantsByOption[picks.option]) || []).concat(def.grantsSpells || []).forEach(function(g){
+    var name = typeof g==="string" ? g : g.name;
+    if(SPELL_DATA[name]) box.appendChild(spellNote(name, "Also learned: "));
+  });
+  var listName = picks.option ? (isList ? "the " + picks.option + " list" : picks.option) : "";
+  featSpellGroups(def, picks, ctx).forEach(function(sp){
+    var what = (sp.count > 1 ? sp.count + " " + sp.plural : aOrAn(sp.label));
+    if(listName) what = what.replace(/that class's list|that list/, listName);
+    var chosen = picks.spells.slice(sp.offset, sp.offset + sp.count).filter(Boolean);
+    var head = step("Choose " + what, chosen.length===sp.count);
+    if(!sp.options.length){
+      box.appendChild(textNote("Choose " + aOrAn(noun) + " above first."));
+      return;
+    }
+    var tags = {};
+    if(sp.tags) Object.keys(sp.tags).forEach(function(n){ tags[n] = [sp.tags[n]]; });
+    var held = ce("div", "fp-held");
+    function heldNotes(){
+      held.innerHTML = "";
+      chosen.forEach(function(n){
+        var h = sp.level > 0 && ctx.spellHeld && ctx.spellHeld(n);
+        if(h && h!==ownSpell) held.appendChild(heldNote(def, n, h, sp.use));
+      });
+    }
+    var grid = spellPickGrid({title: sp.level===0 ? "Cantrips" : "Spells", count: sp.count, names: sp.options, chosen: chosen, tags: tags,
+      taken: function(){ return ctx.spellTaken ? sp.options.filter(function(n){ return chosen.indexOf(n)===-1 && ctx.spellTaken(n); }) : []; },
+      onChange: function(){
+        for(var i = 0; i < sp.count; i++) picks.spells[sp.offset + i] = chosen[i] || "";
+        head.mark(chosen.length===sp.count);
+        heldNotes();
+        onChange({soft: true});
+      }});
+    grid.classList.add("fp-grid");
+    box.appendChild(grid);
+    box.appendChild(held);
+    heldNotes();
+  });
+  return box;
+}
+
 /* The line under a feat's spell the character already has. */
 function heldNote(def, name, held, use){
   var n = ce("p", "fp-spell-note fp-spell-held");
@@ -379,9 +520,9 @@ export function openFeatPicksModal(c, feat, onDone){
     manual.title = "Mark it done without changing the sheet";
     row.appendChild(manual); row.appendChild(apply);
     body.appendChild(row);
-    function draw(){
-      holder.innerHTML = "";
-      holder.appendChild(renderFeatPicks(def, picks, ctx, draw));
+    function draw(meta){
+      // (A spell card ticked: only the Apply button is checked again.)
+      if(!(meta && meta.soft)){ holder.innerHTML = ""; holder.appendChild(renderFeatPicks(def, picks, ctx, draw)); }
       var why = featPicksProblem(def, picks, ctx);
       apply.disabled = !!why;
       problem.textContent = why;
