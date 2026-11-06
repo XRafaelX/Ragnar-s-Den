@@ -481,6 +481,8 @@
   padding:1px 6px;border-radius:8px;border:1px solid var(--rule);color:var(--text-on-parch-dim);
 }
 .res-reset-short{color:var(--brass-bright);border-color:color-mix(in srgb, var(--brass) 60%, transparent);}
+/* No limit (Dark One's Blessing, Archdruid's Wild Shape): filled, so it reads as a state, not a rest. */
+.res-reset-unlimited{color:var(--brass-bright);border-color:color-mix(in srgb, var(--brass) 60%, transparent);background:color-mix(in srgb, var(--brass) 18%, transparent);}
 .res-hint{font-size:12px;color:var(--text-on-parch-dim);line-height:1.45;margin-top:3px;}
 .res-ctrl{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
 .res-pips{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:120px;}

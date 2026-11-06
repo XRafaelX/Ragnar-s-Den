@@ -1449,7 +1449,9 @@ function renderResourcesCard(c, resources){
     var tag = document.createElement("span");
     tag.className = "res-reset res-reset-"+r.reset;
     tag.textContent = r.reset==="short" ? "Short rest" : r.reset==="manual" ? "Manual" : "Long rest";
-    if(r.max!==Infinity) name.appendChild(tag);
+    // (No limit: an Unlimited pill in the rest pill's place, nothing on the right.)
+    if(r.max===Infinity){ tag.className = "res-reset res-reset-unlimited"; tag.textContent = "Unlimited"; }
+    name.appendChild(tag);
     info.appendChild(name);
     var hint = document.createElement("div");
     hint.className = "res-hint";
@@ -1760,18 +1762,15 @@ function renderResourcesCard(c, resources){
     }
     row.appendChild(info);
 
-    var ctrl = document.createElement("div");
-    ctrl.className = "res-ctrl";
-    row.appendChild(ctrl);
-    // Unlimited (Archdruid's Wild Shape): nothing to count or spend.
+    // Unlimited (Archdruid's Wild Shape): nothing to count or spend, so no
+    // controls (the pill by the name says it).
     if(r.max===Infinity){
-      var unlimited = document.createElement("div");
-      unlimited.className = "res-count";
-      unlimited.innerHTML = "<b>Unlimited</b>";
-      ctrl.appendChild(unlimited);
       list.appendChild(row);
       return;
     }
+    var ctrl = document.createElement("div");
+    ctrl.className = "res-ctrl";
+    row.appendChild(ctrl);
     if(!resourceIsNumber(r)){
       var pips = document.createElement("div");
       pips.className = "res-pips";
