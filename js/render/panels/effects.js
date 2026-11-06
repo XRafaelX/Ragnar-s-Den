@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { isPaladin2024, surprisingStrikes, rovingAim, isBarbarian2024, wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
+import { isRanger2024, isPaladin2024, surprisingStrikes, rovingAim, isBarbarian2024, wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -324,6 +324,14 @@ function effectSummary(c, id){
     return !glimpse ? "+1d6 on your next attack roll against it, or -1d6 on its next save against your spell"
       : insightfulAttack(c) ? "+1d6 on your next attack roll against it, offered after the roll" : "It subtracts 1d6 from its next save against a spell you cast";
   }
+  if(id==="hunters_mark"){
+    var markDie = classLevelOf(c, "Ranger") >= 20 ? 10 : 6;
+    return "+1d" + markDie + " force damage each time you hit the marked creature, on your weapon's card. Advantage on Perception and Survival checks to find it" +
+      (classLevelOf(c, "Ranger") >= 17 ? ". Precise Hunter: advantage on attack rolls against it" : "") +
+      (classLevelOf(c, "Ranger", "Hunter") >= 3 ? ". Hunter's Lore: you know its immunities, resistances and vulnerabilities" : "");
+  }
+  if(id==="dread_ambusher" && isRanger2024(c)) return "Your speed is 10 feet higher this turn";
+  if(id==="natures_veil" && isRanger2024(c)) return "You're invisible until the end of your next turn";
   if(id==="favored_foe") return "+1d" + favoredFoeDie(c) + " on the first hit each turn against it, on your weapon's card";
   if(id==="primeval_awareness"){
     var mins = Number(c.effects && c.effects.primeval_awareness)||0;

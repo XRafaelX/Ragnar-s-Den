@@ -74,6 +74,35 @@ function primalBeast(kind, x){
   };
 }
 
+/* The 2024 primal beasts: AC and damage from Wisdom, not the proficiency bonus. */
+var PRIMAL_BEASTS_2024 = {
+  "Beast of the Land": {size:"Medium", hpBase:5, hpPer:5, hd:8, speed:"40 ft, climb 40 ft", senses:"darkvision 60 ft, passive Perception 12",
+    abilities:{str:14, dex:14, con:15, int:8, wis:14, cha:11}, dice:"1d8", bonus:2, damageType:"bludgeoning, piercing or slashing",
+    text:"Melee, reach 5 ft. The damage type is chosen when you summon it. If it moved at least 20 feet straight toward the target first, the target takes an extra 1d6 and is knocked prone if it's Large or smaller."},
+  "Beast of the Sea": {size:"Medium", hpBase:5, hpPer:5, hd:8, speed:"5 ft, swim 60 ft", senses:"darkvision 90 ft, passive Perception 12",
+    abilities:{str:14, dex:14, con:15, int:8, wis:14, cha:11}, dice:"1d6", bonus:2, damageType:"bludgeoning or piercing",
+    trait:{name:"Amphibious", text:"It can breathe air and water."}, grapple:true,
+    text:"Melee, reach 5 ft. The damage type is chosen when you summon it. The target is grappled."},
+  "Beast of the Sky": {size:"Small", hpBase:4, hpPer:4, hd:6, speed:"10 ft, fly 60 ft", senses:"darkvision 60 ft, passive Perception 12",
+    abilities:{str:6, dex:16, con:13, int:8, wis:14, cha:11}, dice:"1d4", bonus:3, damageType:"slashing",
+    trait:{name:"Flyby", text:"It doesn't provoke opportunity attacks when it flies out of an enemy's reach."}, text:"Melee, reach 5 ft."}
+};
+function primalBeast2024(kind, x){
+  var p = PRIMAL_BEASTS_2024[kind], wis = x.mods.wis;
+  var force = x.lv >= 7 ? " It can deal force damage instead (Exceptional Training)." : "";
+  return {
+    type: p.size + " beast (primal), " + x.lv + "d" + p.hd + " hit dice", ac: 13 + wis, hp: p.hpBase + p.hpPer * x.lv, speed: p.speed,
+    abilities: p.abilities, senses: p.senses,
+    attacks:[{name:"Beast's Strike", toHit: x.spellAttack, dice: p.dice, bonus: p.bonus + wis, damageType: p.damageType,
+      text: p.text + (p.grapple ? " Escape DC " + x.spellDC + "." : "") + force + (x.lv >= 11 ? " It strikes twice when you command it (Bestial Fury), and its first hit each turn on your Hunter's Mark target adds that spell's damage as force." : "")}],
+    traits:(p.trait ? [p.trait] : []).concat([
+      {name:"Primal Bond", text:"Add your proficiency bonus (" + plus(x.pb) + ") to any ability check or saving throw it makes. It understands the languages you know."},
+      {name:"Commands", text:"It acts on your turn. It moves and uses its reaction on its own, but only takes the Dodge action unless you take a bonus action to command it, or give up one of your attacks to command its Beast's Strike." +
+        (x.lv >= 7 ? " A bonus action command also lets it Dash, Disengage, Dodge or Help with its own bonus action." : "") + " If you're incapacitated, it acts freely."},
+      {name:"Revive", text:"If it died within the last hour, a Magic action and a spell slot bring it back after 1 minute with all its hit points."}])
+  };
+}
+
 /* Find Steed's kinds at each level of the spell. */
 var STEED_OPTIONS = [];
 ["Celestial", "Fey", "Fiend"].forEach(function(k){ [2, 3, 4, 5].forEach(function(l){ STEED_OPTIONS.push(k + ", level " + l); }); });
@@ -291,6 +320,10 @@ export var COMPANIONS = [
         ]
       };
     }},
+  // The 2024 Beast Master's Primal Companion (Player's Handbook 2024, p. 123).
+  {id:"primal_companion", name:"Primal Companion", cls:"Ranger", subclass:"Beast Master (2024)", level:3,
+    choice:{label:"Beast", options:Object.keys(PRIMAL_BEASTS_2024), intro:"Choose your beast's stat block and what animal it looks like. After a long rest you can summon a different one."},
+    stats:function(x){ return PRIMAL_BEASTS_2024[x.choice] ? primalBeast2024(x.choice, x) : null; }},
   {id:"beast_companion", name:"Ranger's Companion", cls:"Ranger", subclass:"Beast Master", level:3,
     // Tasha's Primal Companion (three fixed beasts) or the PHB companion (your own beast).
     choice:{label:"Companion", options:["Beast of the Land","Beast of the Sea","Beast of the Sky","Your own beast"]},

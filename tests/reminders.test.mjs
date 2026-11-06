@@ -44,7 +44,7 @@ test("every reminder is one short, plain sentence with a known group", () => {
   const tagged = allFeatures().filter((x) => x.f.remind);
   assert.ok(tagged.length >= 17, "the rogue's are tagged");
   // (A pick-based one: each option's reminder.)
-  const lines = [].concat(...tagged.map(({ where, f }) => f.remind.pick
+  const lines = [].concat(...tagged.map(({ where, f }) => f.remind.pick || f.remind.choice
     ? Object.entries(f.remind.by).map(([o, r]) => ({ where: where + " (" + o + ")", f, r }))
     : [{ where, f, r: f.remind }]));
   for(const { where, f, r } of lines){

@@ -7,7 +7,7 @@ import { stoneBenefit } from "./wizard.js";
 import { TOGGLE_EFFECTS, WILD_SURGES } from "../data/effects.js";
 import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
-import { classLevelOf, computeSpellSlots, usesVariant, classEdition, isBarbarian2024 } from "./class-features.js";
+import { classLevelOf, computeSpellSlots, usesVariant, classEdition, isBarbarian2024, isRanger2024 } from "./class-features.js";
 import { vitalitySurge, fanaticalBonus, hasTreeTravel, divineFormOn } from "./barbarian-2024.js";
 import { barbarianClassEntry } from "./character-resources.js";
 import { removeCondition } from "./conditions.js";
@@ -220,6 +220,7 @@ export function effectRolls(c, kind, ability){
   if(kind==="attack" && (effectOn(c, "assassinate") || effectOn(c, "assassinate_2024"))) out.push({mode: "adv", reason: "Assassinate"});
   if(kind==="attack" && effectOn(c, "versatile_trickster")) out.push({mode: "adv", reason: "Versatile Trickster"});
   if(kind==="attack" && effectOn(c, "vow_of_enmity")) out.push({mode: "adv", reason: "Vow of Enmity"});
+  if(kind==="attack" && effectOn(c, "hunters_mark") && isRanger2024(c) && classLevelOf(c, "Ranger") >= 17) out.push({mode: "adv", reason: "Precise Hunter"});
   if(kind==="attack" && effectOn(c, "shadow_walk")) out.push({mode: "adv", reason: "Shadow Walk: you're a shadow"});
   return out;
 }

@@ -22,6 +22,7 @@
    effects, rows on Class resources. tests/reminders.test.mjs keeps it so. */
 import { classFeatureList } from "./class-features.js";
 import { knownOptions } from "./class-options.js";
+import { entryChoices } from "./class-picks.js";
 import { styleFeatures, styleDef } from "./fighting-styles.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
 import { optionDef } from "../data/class-options.js";
@@ -42,6 +43,11 @@ export var REMIND_GROUPS = [
 export function featureRemind(cl, f){
   var r = f.remind;
   if(!r) return null;
+  // (A choice on the Feature choices card: the 2024 Hunter's Prey.)
+  if(r.choice){
+    var picked = entryChoices(cl, r.choice)[0], hit = picked && r.by[picked];
+    return hit ? {when: hit.when, line: hit.line, name: picked, text: f.text} : null;
+  }
   if(!r.pick) return {when: r.when, line: r.line, name: f.name, text: f.text, supersedes: r.supersedes};
   var o = knownOptions(cl, r.pick)[0], by = o && r.by[o.name];
   if(!by) return null;

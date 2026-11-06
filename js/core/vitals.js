@@ -170,9 +170,11 @@ export function computeSpeed(c){
   // difference from the race's own.
   var raceWalk = ((RACE_DATA[c.race] || {}).speed || {}).walk || 30;
   raceChoiceEffects(c).forEach(function(e){ if(e.walk && e.walk > raceWalk) parts.push({name: e.name, value: e.walk - raceWalk}); });
-  // Walking speed a feature adds while the character has it (Roving).
+  // Walking speed a feature adds while the character has it (Roving; the
+  // 2024 one not in heavy armor).
+  var heavyOn = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
   (c.classes||[]).forEach(function(cl){
-    classFeatureList(cl).forEach(function(f){ if(f.walkSpeed) parts.push({name: f.name, value: f.walkSpeed}); });
+    classFeatureList(cl).forEach(function(f){ if(f.walkSpeed && !(f.speedWhen==="noHeavyArmor" && heavyOn)) parts.push({name: f.name, value: f.walkSpeed}); });
   });
   var worn = (c.inventory||[]).filter(function(i){ return i.type==="armor" && i.equipped; });
   var body = worn.find(function(i){ return i.category!=="shield"; });

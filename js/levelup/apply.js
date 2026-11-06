@@ -434,7 +434,7 @@ function showUnlocked(c, s){
     }
 
     var tips = [];
-    var spellTip = s.thirdCaster ? THIRD_CASTER_SPELL_TIPS[s.newClassLevel] : (SPELL_TIPS[s.className]||{})[s.newClassLevel];
+    var spellTip = s.thirdCaster ? THIRD_CASTER_SPELL_TIPS[s.newClassLevel] : prepEd==="2024" ? "" : (SPELL_TIPS[s.className]||{})[s.newClassLevel];
     if(s.learned.length){
       tips.push("You learned "+s.learned.join(", ")+". "+(s.learned.length>1 ? "They're" : "It's")+" on the Spells tab.");
       // What's left of the tip once the picks it asks for are made

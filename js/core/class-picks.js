@@ -1059,6 +1059,20 @@ export function characterPickedProfs(c){
 }
 /* What the character's `choice` slots with this id picked, across all
    its classes ([] for none): a Zealot's Divine Fury damage type. */
+/* The same for one class entry. */
+export function entryChoices(cl, id){
+  var out = [];
+  [false, true].forEach(function(multi){
+    entryGrants(cl, multi).forEach(function(g){
+      var entry = grantEntry(cl, g.key);
+      if(!entry || entry.manual) return;
+      (g.def.pick||[]).forEach(function(s, i){
+        if(s.kind==="choice" && s.id===id) ((entry.slots && entry.slots[i]) || []).forEach(function(v){ if(v && out.indexOf(v)===-1) out.push(v); });
+      });
+    });
+  });
+  return out;
+}
 export function characterChoices(c, id){
   var out = [];
   (c.classes||[]).forEach(function(cl, idx){

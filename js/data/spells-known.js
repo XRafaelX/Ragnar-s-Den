@@ -55,8 +55,10 @@ export var KNOWN_CASTERS = {
 };
 
 /* A class's casting rules in another edition (the 2024 paladin casts from level 1). */
+function halfUpMax(lv){ return Math.min(5, Math.ceil(Math.ceil(lv / 2) / 2)); }
 export var EDITION_CASTERS = {
-  "Paladin": {list: "Paladin", cantrips: byLevel({}), maxLevel: function(lv){ return Math.min(5, Math.ceil(Math.ceil(lv / 2) / 2)); }}
+  "Paladin": {list: "Paladin", cantrips: byLevel({}), maxLevel: halfUpMax},
+  "Ranger": {list: "Ranger", cantrips: byLevel({}), maxLevel: halfUpMax}
 };
 
 var THIRD_SPELLS = [0, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13];
@@ -98,9 +100,16 @@ export var PREPARED_CASTERS = {
   "Paladin": {table: HALF_PREPARED, from: 2},
   "Artificer": {table: HALF_PREPARED}
 };
+/* Classes that prepare spells only in another edition (the 2024 ranger knew
+   a set in 2014). */
+export var EDITION_PREPARED = {"Ranger": {table: HALF_PREPARED}};
+/* The preparing rules for a class in an edition, or null. */
+export function preparingDef(className, edition){
+  return (edition==="2024" && EDITION_PREPARED[className]) || PREPARED_CASTERS[className] || null;
+}
 /* How many spells `className` prepares at class level `lv` (0 if none).
    `edition`: a 2024 class casts from level 1. */
 export function preparedAt(className, lv, edition){
-  var p = PREPARED_CASTERS[className];
+  var p = preparingDef(className, edition);
   return p && lv >= (edition==="2024" ? 1 : p.from || 1) ? p.table[Math.min(20, lv)] || 0 : 0;
 }

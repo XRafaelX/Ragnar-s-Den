@@ -16,7 +16,7 @@ import { coinAttackBonus } from "../../core/magic-items.js";
 import { infusionSpellAttack } from "../../core/infusion-effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner, cantripFormulas, swapCantripFormula } from "../../core/spells-known.js";
-import { PREPARED_CASTERS } from "../../data/spells-known.js";
+import { classPrepares } from "../../core/spells-known.js";
 import { spellScalingLine, spellRangeText, healingNote, circleSpellNote } from "../../core/spell-scaling.js";
 import { abilityScore, abilityScores } from "../../core/ability-scores.js";
 
@@ -870,7 +870,7 @@ export function renderSpellsPanel(c){
   var expanded = all.filter(function(fs){ return fs.kind==="expanded"; });
   if(expanded.length) panel.appendChild(renderPatronSpellsCard(c, expanded));
 
-  var prepares = (c.classes||[]).some(function(cl){ return PREPARED_CASTERS[cl.name]; });
+  var prepares = (c.classes||[]).some(function(cl){ return classPrepares(c, cl.name); });
   var spellCard = makeCard(prepares ? "Known / prepared spells" : "Known spells");
   if(preparingClasses(c).length){
     var prepBtn = ce("button", "btn small ghost");

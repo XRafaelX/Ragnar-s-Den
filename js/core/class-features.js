@@ -47,6 +47,8 @@ export function editionEntry(c, className, edition){
 export function isFighter2024(c){ return !!editionEntry(c, "Fighter", "2024"); }
 /* A 2024 rogue (js/core/rogue-2024.js). */
 export function isRogue2024(c){ return !!editionEntry(c, "Rogue", "2024"); }
+/* A 2024 ranger (js/core/ranger.js). */
+export function isRanger2024(c){ return !!editionEntry(c, "Ranger", "2024"); }
 /* A 2024 paladin (js/core/paladin.js). */
 export function isPaladin2024(c){ return !!editionEntry(c, "Paladin", "2024"); }
 /* A 2024 barbarian (js/core/barbarian-2024.js). */

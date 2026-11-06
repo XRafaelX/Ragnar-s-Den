@@ -38,6 +38,8 @@ function primalCast(spell, level){
     max:always(1), reset:always("long"), hint:"Cast " + spell + " once without a spell slot. Casting it with a slot doesn't use this."};
 }
 
+import { FAVORED_ENEMY_CASTS } from "./ranger-2024.js";
+
 export var CLASS_RESOURCES = {
   "Bard": [
     {id:"bardic_inspiration", name:"Bardic Inspiration", level:1,
@@ -131,6 +133,14 @@ export var CLASS_RESOURCES = {
   "Ranger": [
     {id:"favored_foe", name:"Favored Foe", level:1, variant:"Favored Foe", max:function(lv, m){ return m.pb; }, reset:always("long"),
       hint:"When you hit a creature, mark it for 1 minute (concentration) from Active effects. The extra damage is on your weapon's card."},
+    // The 2024 ranger (pp. 119 and 120).
+    {id:"favored_enemy", name:"Hunter's Mark (free cast)", level:1, edition:"2024", max:function(lv){ return FAVORED_ENEMY_CASTS[Math.min(20, lv)]; }, reset:always("long"),
+      hint:"Cast it without a spell slot. Mark a creature from Hunter's Mark on the Active effects card."},
+    {id:"tireless", name:"Tireless", level:10, edition:"2024", max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+      roll:{die:8, bonusAbility:"wis", min:1, temp:true, button:"Temporary HP", label:"Tireless: temporary HP"},
+      hint:"Magic action: gain temporary hit points equal to 1d8 + your WIS modifier (minimum 1)."},
+    {id:"natures_veil", name:"Nature's Veil", level:14, edition:"2024", max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+      hint:"Bonus action: turn invisible until the end of your next turn, from the Active effects card."},
     {id:"tireless", name:"Tireless", level:10, variant:"Deft Explorer", max:function(lv, m){ return m.pb; }, reset:always("long"),
       roll:{die:8, bonusAbility:"wis", min:1, temp:true, button:"Temporary HP", label:"Tireless: temporary HP"},
       hint:"Action: gain temporary hit points equal to 1d8 + your WIS modifier (minimum 1)."},
@@ -513,6 +523,17 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Ranger": {
+    // The 2024 subclasses (pp. 124 to 126).
+    "Fey Wanderer (2024)": [
+      {id:"fey_reinforcements", name:"Fey Reinforcements (Free Summon Fey)", level:11, max:always(1), reset:always("long"),
+        hint:"Cast Summon Fey without a spell slot. It can skip concentration and last 1 minute."},
+      {id:"misty_wanderer", name:"Misty Wanderer", level:15, max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Cast Misty Step without a spell slot, bringing one willing creature within 5 ft."}
+    ],
+    "Gloom Stalker (2024)": [
+      {id:"dreadful_strike", name:"Dreadful Strike", level:3, max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:function(lv, m){ return "Once per turn on a weapon hit: +" + (lv>=11 ? "2d8" : "2d6") + " psychic, from the weapon card." + (lv>=11 ? " Mass Fear's WIS save DC is " + (8 + m.pb + m.wis) + "." : ""); }}
+    ],
     "Fey Wanderer": [
       {id:"fey_reinforcements", name:"Fey Reinforcements (Free Summon Fey)", level:11, max:always(1), reset:always("long"),
         hint:"Cast Summon Fey without a spell slot. It can skip concentration and last 1 minute."},

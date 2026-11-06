@@ -27,7 +27,7 @@
    A character using Tasha's optional class features (c.tashaOptional)
    picks from the class list with Tasha's additions, tagged in the lists. */
 import { SPELL_DATA, spellDataForClass, spellOnClassList, tashaAddsSpell, tashaSpellCount, catalogSpellName } from "../data/spells.js";
-import { KNOWN_CASTERS, SUBCLASS_CASTERS, EDITION_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, PREPARED_CASTERS, preparedAt } from "../data/spells-known.js";
+import { KNOWN_CASTERS, SUBCLASS_CASTERS, EDITION_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, PREPARED_CASTERS, preparedAt, preparingDef } from "../data/spells-known.js";
 import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal } from "./helpers.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
@@ -501,10 +501,16 @@ export function preparedMax(c, cl){
    prepare). Only spells of preparing classes show a Prepared switch. */
 export function spellNeedsPreparing(c, sp){
   if(!(sp.level||0) || sp.arcanum || alwaysPrepared(c, sp)) return false;
-  if(sp.learnedBy) return !!PREPARED_CASTERS[sp.learnedBy];
+  if(sp.learnedBy) return classPrepares(c, sp.learnedBy);
   var owner = untaggedOwner(c);
-  if(owner) return !!PREPARED_CASTERS[owner];
-  return (c.classes||[]).some(function(cl){ return PREPARED_CASTERS[cl.name]; });
+  if(owner) return classPrepares(c, owner);
+  return (c.classes||[]).some(function(cl){ return classPrepares(c, cl.name); });
+}
+/* Whether the character's class of that name prepares its spells (the 2024
+   ranger does, the 2014 one knows a set). */
+export function classPrepares(c, className){
+  var cl = (c.classes||[]).find(function(x){ return x.name===className; });
+  return !!preparingDef(className, cl && cl.edition);
 }
 
 /* The preparing class a sheet spell belongs to, or "" when it has none
@@ -513,8 +519,8 @@ export function preparingClassFor(c, sp){
   if(!spellNeedsPreparing(c, sp)) return "";
   if(sp.learnedBy) return sp.learnedBy;
   var owner = untaggedOwner(c);
-  if(owner) return PREPARED_CASTERS[owner] ? owner : "";
-  var preparing = (c.classes||[]).filter(function(cl){ return PREPARED_CASTERS[cl.name]; });
+  if(owner) return classPrepares(c, owner) ? owner : "";
+  var preparing = (c.classes||[]).filter(function(cl){ return classPrepares(c, cl.name); });
   return preparing.length===1 ? preparing[0].name : "";
 }
 /* {have, max} prepared today for a preparing class, or null. */

@@ -10,7 +10,7 @@ import { mod, profBonus, parseDiceNotation, combineRolls, totalLevel } from "./b
 import { weaponMastery } from "./weapon-mastery.js";
 import { characterSpellEdition } from "./spell-edition.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
-import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024, isPaladin2024, isBarbarian2024, isRogue2024 } from "./class-features.js";
+import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024, isPaladin2024, isRanger2024, isBarbarian2024, isRogue2024 } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
@@ -603,7 +603,7 @@ export function attacksPerAction(c){
   // Thirsting Blade: twice with the pact weapon.
   if(hasInvocation(c, "Thirsting Blade")) n = Math.max(n, 2);
   // Invincible Conqueror and Dread Ambusher's first turn: one more.
-  return n + (effectOn(c, "invincible_conqueror") ? 1 : 0) + (effectOn(c, "dread_ambusher") ? 1 : 0);
+  return n + (effectOn(c, "invincible_conqueror") ? 1 : 0) + (effectOn(c, "dread_ambusher") && !isRanger2024(c) ? 1 : 0);
 }
 /* The bonus-action attacks the character can make after the Attack
    action, for the Attacks box: off-hand, Martial Arts and Flurry of Blows,

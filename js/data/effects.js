@@ -176,10 +176,18 @@ export var TOGGLE_EFFECTS = [
   // Tasha's Cauldron pp. 56 to 60), checked on 5etools' data 2026-10-30.
   {id:"favored_foe", name:"Favored Foe", className:"Ranger", level:1, variant:"Favored Foe", cost:{resource:"favored_foe", amount:1}, duration:"1 minute",
     startLabel:"Mark", hint:"Needs your concentration, as a spell does."},
-  {id:"primeval_awareness", name:"Primeval Awareness", className:"Ranger", level:3, replacedBy:"Primal Awareness", slotPick:true, duration:"1 minute per slot level",
+  {id:"primeval_awareness", name:"Primeval Awareness", className:"Ranger", edition:"2014", level:3, replacedBy:"Primal Awareness", slotPick:true, duration:"1 minute per slot level",
     startLabel:"Sense", hint:"An action. It doesn't reveal where they are or how many."},
-  {id:"hide_in_plain_sight", name:"Hide in Plain Sight", className:"Ranger", level:10, replacedBy:"Nature's Veil", duration:"Until you move or act",
+  {id:"hide_in_plain_sight", name:"Hide in Plain Sight", className:"Ranger", edition:"2014", level:10, replacedBy:"Nature's Veil", duration:"Until you move or act",
     startLabel:"Camouflage", endLabel:"Move", hint:"1 minute to make, against a solid surface at least as tall and wide as you."},
+  // The 2024 ranger (Player's Handbook 2024, pp. 119 to 126). Hunter's Mark: a
+  // free cast first, then the lowest spell slot left.
+  {id:"hunters_mark", name:"Hunter's Mark", className:"Ranger", edition:"2024", level:1, cost:{resource:"favored_enemy", amount:1}, slotCost:1, slotAtLeast:true, duration:"1 hour",
+    startLabel:"Mark", hint:"A bonus action, on a creature within 90 feet. Needs your concentration. If it drops to 0 hit points, a bonus action moves the mark."},
+  {id:"natures_veil", name:"Nature's Veil", className:"Ranger", edition:"2024", level:14, cost:{resource:"natures_veil", amount:1}, duration:"Until the end of your next turn",
+    startLabel:"Turn invisible", hint:"A bonus action."},
+  {id:"dread_ambusher", name:"Ambusher's Leap", className:"Ranger", subclass:"Gloom Stalker (2024)", level:3, duration:"Your first turn of combat",
+    startLabel:"First turn", endLabel:"Done", hint:"Each combat, at the start of your first turn."},
   {id:"dread_ambusher", name:"Dread Ambusher", className:"Ranger", subclass:"Gloom Stalker", level:3, duration:"Your first turn of combat",
     startLabel:"First turn", endLabel:"Done", hint:"Each combat, at the start of your first turn."},
   {id:"multiattack_defense", name:"Multiattack Defense", className:"Ranger", subclass:"Hunter", level:7, option:{set:"defensiveTactics", name:"Multiattack Defense"}, duration:"Rest of this turn",
