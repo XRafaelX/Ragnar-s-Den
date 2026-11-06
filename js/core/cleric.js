@@ -9,7 +9,9 @@
    A Channel Divinity action has the same shape as a paladin's
    (js/core/paladin.js), with `pool` naming the cleric's uses. */
 import { mod, profBonus } from "./basics.js";
-import { classFeatureList, classLevelOf } from "./class-features.js";
+import { classFeatureList, classLevelOf, choiceEffectsOf } from "./class-features.js";
+import { entryChoices } from "./class-picks.js";
+import { divineSparkDice } from "../data/cleric-2024.js";
 import { abilityScore } from "./ability-scores.js";
 import { resourceLeft, effectOn } from "./effects.js";
 import { SKILLS } from "../data/abilities-skills.js";
@@ -37,10 +39,22 @@ var STRIKE_WORDS = {"War Domain": "the weapon's type", "Nature Domain": "cold, f
    Blessed Strikes has replaced it. */
 export function clericHitDice(c){
   var cl = cleric(c);
+  // (The 2024 cleric's Blessed Strikes, picked at 7.)
+  if(cl && cl.edition==="2024"){
+    if((Number(cl.level)||1) < 7 || entryChoices(cl, "blessedStrikes").indexOf("Divine Strike")===-1) return [];
+    var n = (Number(cl.level)||1) >= 14 ? 2 : 1;
+    return [{id: "divine", name: "Divine Strike", text: "Divine Strike +" + n + "d8", qty: n, die: 8, label: "Divine Strike (Necrotic or Radiant)", unarmed: false,
+      title: "Once on each of your turns when you hit with a weapon attack: necrotic or radiant damage, your choice"}];
+  }
   if(!cl || !classFeatureList(cl).some(function(f){ return f.name==="Divine Strike"; })) return [];
   var qty = (Number(cl.level)||1) >= 14 ? 2 : 1, type = STRIKE_TYPES[cl.subclass] || "";
   return [{id: "divine", name: "Divine Strike", text: "Divine Strike +" + qty + "d8", qty: qty, die: 8, label: "Divine Strike" + (type ? " (" + type + ")" : ""), unarmed: true,
     title: "Once on each of your turns when you hit with a weapon attack" + (STRIKE_WORDS[cl.subclass] ? ": " + STRIKE_WORDS[cl.subclass] + " damage" : "")}];
+}
+/* Potent Spellcasting from the 2024 cleric's Blessed Strikes. */
+export function potentSpellcasting2024(c){
+  var cl = cleric(c);
+  return !!(cl && cl.edition==="2024" && (Number(cl.level)||1) >= 7 && entryChoices(cl, "blessedStrikes").indexOf("Potent Spellcasting")!==-1);
 }
 /* Guided Strike's pool for this character (War Domain 2), "" without it. */
 export function warGuidedStrike(c){
@@ -103,7 +117,32 @@ export function clericChannels(c){
   }
   function saveLog(what){ return what + " save DC " + dc + "."; }
   var turned = " or is turned for 1 minute or until it takes damage. It must move away from you, can't take reactions, and for its action can only Dash, try to escape or Dodge.";
+  if(cl.edition==="2024") return clericChannels2024(c, cl, lv, act, dc).concat(domainChannels(c, cl, lv, act, dc, wis, turned, saveLog));
   var out = [act("Turn Undead", "An action: each undead within 30 feet that can see or hear you makes a WIS save (DC " + dc + ")" + turned + (cr ? " Undead of CR " + cr + " or lower are destroyed instead." : ""), {log: saveLog("WIS")})];
+  return out.concat(domainChannels(c, cl, lv, act, dc, wis, turned, saveLog));
+}
+/* What every 2024 cleric can spend it on (p. 70), then the 2024 domains'. */
+function clericChannels2024(c, cl, lv, act, dc){
+  var m = mod(abilityScore(c, "wis")), n = divineSparkDice(lv), sear = Math.max(1, m);
+  var out = [act("Divine Spark", "A Magic action, on a creature you can see within 30 feet: roll " + n + "d8 + " + m + ". Restore that many hit points, or it makes a CON save (DC " + dc + "), taking necrotic or radiant damage (your choice) on a failure, half on a success.",
+    {roll: {qty: n, die: 8, bonus: m, label: "Divine Spark: heal that much, or CON save DC " + dc + " for necrotic or radiant (half on a success)"}, log: ""})];
+  out.push(act("Turn Undead", "A Magic action: each undead you choose within 30 feet makes a WIS save (DC " + dc + ") or is frightened and incapacitated for 1 minute, moving as far from you as it can. It ends if it takes damage, or if you're incapacitated or die." +
+    (lv >= 5 ? " Sear Undead: each one that fails takes " + sear + "d8 radiant damage." : ""),
+    lv >= 5 ? {roll: {qty: sear, die: 8, bonus: 0, label: "Sear Undead: radiant to each undead that fails (WIS DC " + dc + ")"}, log: ""} : {log: "WIS save DC " + dc + "."}));
+  var sub = cl.subclass;
+  if(sub==="Life Domain (2024)") out.push(act("Preserve Life", "A Magic action: restore up to " + 5 * lv + " hit points, split among bloodied creatures you choose within 30 feet (you can be one). No one goes above half their hit point maximum.", {log: "Up to " + 5 * lv + " hit points shared out."}));
+  if(sub==="Light Domain (2024)") out.push(act("Radiance of the Dawn", "A Magic action: magical darkness within 30 feet ends. Each creature you choose within 30 feet makes a CON save (DC " + dc + "), half on a success.",
+    {roll: {qty: 2, die: 10, bonus: lv, label: "Radiance of the Dawn (CON DC " + dc + ", half on a success)"}, log: ""}));
+  if(sub==="Trickery Domain (2024)") out.push(act("Invoke Duplicity", "A bonus action: an illusion of you within 30 feet for 1 minute. Cast spells from its space, and have advantage on attacks against a creature when you and it are both within 5 feet of it.", {effect: "invoke_duplicity"}));
+  if(sub==="War Domain (2024)"){
+    out.push(act("Guided Strike", "+10 to your own missed attack roll, or an ally's within 30 feet as a reaction.", {reason: "Offered after an attack roll"}));
+    if(lv >= 6) out.push(act("War God's Blessing", "Cast Shield of Faith or Spiritual Weapon without a spell slot. It needs no concentration and lasts 1 minute.", {log: "Shield of Faith or Spiritual Weapon, no slot or concentration, for 1 minute."}));
+  }
+  return out;
+}
+/* An older domain's own Channel Divinity options. */
+function domainChannels(c, cl, lv, act, dc, wis, turned, saveLog){
+  var out = [];
   var sub = cl.subclass;
   var at = function(level){ return lv >= level; };
   if(sub==="Life Domain") out.push(act("Preserve Life", "An action: restore up to " + 5 * lv + " hit points, split among creatures within 30 feet. No one goes above half their hit point maximum, and undead and constructs can't be healed.", {log: "Up to " + 5 * lv + " hit points to share."}));

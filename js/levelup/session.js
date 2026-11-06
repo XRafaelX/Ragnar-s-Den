@@ -17,7 +17,7 @@ import { featDef, featNeedsChoice, featPicksProblem, featRequiresReason, featSpe
 import { featPicksContext } from "../ui/feat-picks.js";
 import { armorProficiencies } from "../core/equipment.js";
 import { abilityScore } from "../core/ability-scores.js";
-import { classCasterType } from "../core/class-features.js";
+import { classCasterType, subclassLevelOf } from "../core/class-features.js";
 import { learnPlan, swapSection, cantripSwapSection, learnProblem } from "../core/spells-known.js";
 import { finish } from "./apply.js";
 import { stepClass, stepStyle, stepSubclass, stepSpells, stepCantrips, stepLearn, stepInvocations, stepOptions, stepProfs, stepAsi, stepFeatPicks, stepBonusFeat, stepBonusFeatPicks, stepFeatSpells, stepHp, stepReview } from "./steps.js";
@@ -82,7 +82,8 @@ export function target(){
   var prog = progFor(lu.className);
   var newLevel = existing ? (Number(existing.level)||1)+1 : 1;
   var hasSub = !!(existing && existing.subclass);
-  var needsSubclass = !!prog.subclassLevel && newLevel >= prog.subclassLevel && !hasSub;
+  var subLevel = subclassLevelOf({name: lu.className, edition: luEdition()});
+  var needsSubclass = !!subLevel && newLevel >= subLevel && !hasSub;
   return {
     existing: existing,
     prog: prog,
@@ -685,7 +686,8 @@ export function gainLabels(className, subclass, level){
   var entry = (lu.c.classes||[]).find(function(cl){ return cl.name===className; });
   var variants = lu.className===className ? entryVariants() : entry ? entry.variants : null;
   var labels = classFeaturesGainedAt({name:className, edition:luEdition(className), subclass:subclass, level:level, variants:variants}, level).map(function(f){ return f.name; });
-  if(prog.subclassLevel && level >= prog.subclassLevel && !subclass) labels.unshift("Choose "+prog.subclassLabel);
+  var subLevel = subclassLevelOf({name: className, edition: luEdition(className)});
+  if(subLevel && level >= subLevel && !subclass) labels.unshift("Choose "+prog.subclassLabel);
   if(prog.asiLevels.indexOf(level)!==-1) labels.push("Ability Score Improvement");
   return labels;
 }

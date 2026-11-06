@@ -49,13 +49,19 @@ export var CLASS_RESOURCES = {
       hint:function(lv){ return "Bonus action: give a creature within 60 ft a d" + (lv>=15 ? 12 : lv>=10 ? 10 : lv>=5 ? 8 : 6) + " to add to one check, attack or save." + (lv>=20 ? " Superior Inspiration: rolling initiative with none left gives you one back." : ""); }}
   ],
   "Cleric": [
-    {id:"channel_divinity", name:"Channel Divinity", level:2,
+    // The 2024 cleric (p. 69): two uses, one back on a short rest.
+    {id:"channel_divinity", name:"Channel Divinity", level:2, edition:"2024",
+      max:function(lv){ return lv>=18 ? 4 : lv>=6 ? 3 : 2; }, reset:always("short"), shortRegain:1,
+      hint:function(lv, m){ return "You regain one use on a short rest. Your save DC is " + (8 + m.pb + m.wis) + "."; }},
+    {id:"divine_intervention", name:"Divine Intervention", level:10, edition:"2024", max:always(1), reset:always("long"),
+      hint:function(lv){ return "Magic action: cast a cleric spell of level 5 or lower without a slot or material components." + (lv>=20 ? " Or Wish, then not again for 2d4 long rests." : ""); }},
+    {id:"channel_divinity", name:"Channel Divinity", level:2, edition:"2014",
       max:function(lv){ return lv>=18 ? 3 : lv>=6 ? 2 : 1; }, reset:always("short"),
       hint:function(lv, m){ return "Your Channel Divinity save DC is " + (8 + m.pb + m.wis) + "."; }},
     {id:"harness_divine_power", name:"Harness Divine Power", level:2, variant:"Harness Divine Power",
       max:function(lv){ return lv>=18 ? 3 : lv>=6 ? 2 : 1; }, reset:always("long"),
       hint:"Bonus action: spend a Channel Divinity to get back a spent spell slot."},
-    {id:"divine_intervention", name:"Divine Intervention", level:10, max:always(1), reset:always("manual"),
+    {id:"divine_intervention", name:"Divine Intervention", level:10, edition:"2014", max:always(1), reset:always("manual"),
       hint:"Action: describe the help you seek. If your deity answers, you can't call again for 7 days. Otherwise a long rest gives you another try."}
   ],
   "Druid": [
@@ -763,6 +769,21 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Cleric": {
+    // The 2024 domains (pp. 73 to 76).
+    "Light Domain (2024)": [
+      {id:"warding_flare", name:"Warding Flare", level:3,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:function(lv){ return lv>=6 ? "short" : "long"; },
+        roll:{die:6, qtyAt:function(){ return 2; }, bonusAbility:"wis", temp:true, from:6, button:"Temporary HP", label:"Improved Warding Flare: temporary HP for the target"},
+        hint:"Reaction: a creature you can see within 30 ft gets disadvantage on its attack roll."},
+      {id:"corona_of_light", name:"Corona of Light", level:17,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Magic action: 60 ft of sunlight for 1 minute, from the Active effects card."}
+    ],
+    "War Domain (2024)": [
+      {id:"war_priest", name:"War Priest", level:3,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("short"),
+        hint:"Bonus action: one attack with a weapon or an unarmed strike."}
+    ],
     "Light Domain": [
       {id:"warding_flare", name:"Warding Flare", level:1,
         max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),

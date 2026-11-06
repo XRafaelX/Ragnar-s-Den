@@ -28,7 +28,7 @@
    picks from the class list with Tasha's additions, tagged in the lists. */
 import { SPELL_DATA, spellDataForClass, spellOnClassList, tashaAddsSpell, tashaSpellCount, catalogSpellName } from "../data/spells.js";
 import { KNOWN_CASTERS, SUBCLASS_CASTERS, EDITION_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, PREPARED_CASTERS, preparedAt, preparingDef } from "../data/spells-known.js";
-import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal } from "./helpers.js";
+import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal, choiceEffectsOf } from "./helpers.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
 import { originListSpells } from "./spell-grants.js";
@@ -226,7 +226,10 @@ export function learnPlan(c, entry, isNewClass){
   // Cantrips (every caster), less any learned for free.
   var auto = (lv===firstCastingLevel(def) ? def.autoCantrips || [] : []).filter(fresh);
   autoKeys = auto.map(spellKey);
-  var cantripNeed = Math.max(0, need(def.cantrips, known.cantrips.length) - auto.length);
+  // (A choice can add a cantrip: the 2024 cleric's Thaumaturge.)
+  var bonusCantrips = choiceEffectsOf(entry).reduce(function(a, e){ return a + (e.cantrips || 0); }, 0);
+  var cantripTable = bonusCantrips ? def.cantrips.map(function(n, i){ return i ? n + bonusCantrips : 0; }) : def.cantrips;
+  var cantripNeed = Math.max(0, need(cantripTable, known.cantrips.length) - auto.length);
   if(cantripNeed){
     var cl = classListNames(entry, def, [0], tasha, c);
     add("cantrips", "cantrip", "New cantrips", countText(cantripNeed, "cantrip", def.list), cantripNeed,

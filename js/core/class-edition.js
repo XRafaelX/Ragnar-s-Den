@@ -32,6 +32,8 @@ export function setClassEdition(c, className, on){
     var from = on ? oldId : OPTION_SETS_SWAP[oldId], to = on ? OPTION_SETS_SWAP[oldId] : oldId;
     if(cl.options && cl.options[from] && !cl.options[to]){ cl.options[to] = cl.options[from]; delete cl.options[from]; }
   });
+  var ed = CLASS_PROGRESSION[className].editions["2024"];
+  if(on && ed.subclassLevel && (Number(cl.level)||1) < ed.subclassLevel) cl.subclass = "";
   syncStyleWording(c);
   return true;
 }

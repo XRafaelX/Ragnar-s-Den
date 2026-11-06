@@ -4,6 +4,7 @@ import { SPELL_SCALING } from "../data/spell-scaling.js";
 import { SPELL_DATA, catalogSpellName } from "../data/spells.js";
 import { profBonus, featureSpells, totalLevel, computeSpellSlots, ordinal, mod, hasFeat, hasBlessedStrikes, classLevelOf } from "./helpers.js";
 import { eldritchBlastSummary } from "./invocations.js";
+import { potentSpellcasting2024 } from "./cleric.js";
 import { classFeatureList } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
 import { dragonType, heartOfTheStorm } from "./sorcerer.js";
@@ -69,6 +70,11 @@ function cantripBonus(c, name, owner){
     if(has && m) out += (m>0 ? ", plus " + m : ", minus " + (-m)) + " from " + feature + extra;
   }
   add("Cleric", "Potent Spellcasting", "wis", "");
+  // (The 2024 cleric's Blessed Strikes choice.)
+  if((!owner || owner==="Cleric") && d.classes.indexOf("Cleric")!==-1 && potentSpellcasting2024(c)){
+    var pm = mod(abilityScore(c, "wis"));
+    if(pm) out += (pm>0 ? ", plus " + pm : ", minus " + (-pm)) + " from Potent Spellcasting";
+  }
   if(d.school==="Evocation") add("Wizard", "Empowered Evocation", "int", " on one damage roll");
   // Blessed Strikes (Tasha's, cleric 8): any damaging cantrip, once per turn.
   if(/damage/i.test(d.summary) && /\d+d\d+/.test(d.summary) && hasBlessedStrikes(c)) out += ", plus 1d8 radiant to one creature it damages, once per turn (Blessed Strikes)";

@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { isRanger2024, isPaladin2024, surprisingStrikes, rovingAim, isBarbarian2024, wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
+import { isCleric2024, isRanger2024, isPaladin2024, surprisingStrikes, rovingAim, isBarbarian2024, wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -310,6 +310,13 @@ function effectSummary(c, id){
   if(id==="raven_queen_resistance") return "Resistance to all damage";
   if(id==="sunlight") return "Disadvantage on attack rolls and Perception checks";
   if(id==="knowledge_of_the_ages") return "Proficient with " + (c.agesSkill || "the skill you chose");
+  if(id==="invoke_duplicity" && isCleric2024(c)){
+    var trick = classLevelOf(c, "Cleric", "Trickery Domain");
+    return "An illusion of you. Cast spells from its space. Advantage on attacks against a creature within 5 ft of you both. Move it 30 ft as a bonus action" +
+      (trick >= 6 ? ", swapping places with it if you like" : "") + (trick >= 17 ? ". Allies have advantage near it too, and when it ends, you or a creature by it regains " + trick + " hit points" : "");
+  }
+  if(id==="blessing_of_the_trickster") return "Advantage on Stealth checks";
+  if(id==="corona_of_light" && isCleric2024(c)) return "Bright light for 60 ft. Enemies in it have disadvantage on saves against Radiance of the Dawn and spells that deal fire or radiant damage";
   if(id==="invoke_duplicity") return (classLevelOf(c, "Cleric", "Trickery Domain") >= 17 ? "Up to four illusions of you" : "An illusion of you") + ". Move it 30 ft as a bonus action and cast spells from its space. Advantage on attacks when you and it are both within 5 ft of a creature that can see it";
   if(id==="trickery_cloak") return "You're invisible and have advantage on attack rolls";
   if(id==="twilight_sanctuary") return "When a turn ends in the sphere, a creature gets temporary hit points or stops being charmed or frightened" + (classLevelOf(c, "Cleric", "Twilight Domain") >= 17 ? ". Twilight Shroud: you and your allies have half cover in it, +2 to AC and DEX saves" : "");

@@ -8,7 +8,7 @@ import { TITLE_MAX } from "../ui/char-title.js";
 import { SPELL_DATA, spellDataForClass, tashaAddsSpell, tashaSpellCount } from "../data/spells.js";
 import { mod, fmtMod, escapeHtml, ce, computeArmorClass } from "../core/helpers.js";
 import { makeDiceSvg } from "../ui/svg-icons.js";
-import { wizardExtraSpellTag, wizardOriginSpells, wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, backgroundAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, wizardRaceGrants, wizardRacePickGrants, wizardRaceSlots, wizardRaceSkills, wizardBackgroundGrants, wizardBgSlots, wizardOverlapGrants, wizardOverlapSlots } from "./wizard-core.js";
+import { wizardCantripCount, wizardExtraSpellTag, wizardOriginSpells, wizardClassGrants, wizardPickSlots, wizardLevel1Features, currentClassInfo, wizardState, applyClassChoices, subclassGrants, spellPickCount, languagePlan, raceChoiceDef, raceAbilityIncreases, backgroundAbilityIncreases, finalAbilities, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardExpandedSpells, wizardGrantedSpells, dropGrantedSpellPicks, wizardExtraListSpells, wizardExtraListName, wizardBackgroundSkills, wizardRaceGrants, wizardRacePickGrants, wizardRaceSlots, wizardRaceSkills, wizardBackgroundGrants, wizardBgSlots, wizardOverlapGrants, wizardOverlapSlots } from "./wizard-core.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { featPicksSummary } from "../core/feat-picks.js";
 import { classPicksSummary } from "../core/class-picks.js";
@@ -101,7 +101,8 @@ export function wizardStepCantrips(container){
   var extraTag = wizardExtraSpellTag;
   dropGrantedSpellPicks();
   var have = alreadyGranted(card, 0, sc.spellList, wizardExtraListSpells(), grants.cantrips);
-  card.appendChild(spellPickSection("Cantrips known", "", sc.cantrips, 0, wizardState.spellChoices.cantrips, sc.spellList, (grants.cantrips||[]).concat(have), wizardExtraListSpells(), extraTag));
+  if(wizardState.spellChoices.cantrips.length > wizardCantripCount(sc)) wizardState.spellChoices.cantrips.length = wizardCantripCount(sc);
+  card.appendChild(spellPickSection("Cantrips known", "", wizardCantripCount(sc), 0, wizardState.spellChoices.cantrips, sc.spellList, (grants.cantrips||[]).concat(have), wizardExtraListSpells(), extraTag));
   container.appendChild(card);
 }
 

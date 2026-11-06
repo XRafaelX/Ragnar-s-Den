@@ -196,7 +196,7 @@ test("book corrections", () => {
 
 test("the wizard's domain table says what each domain's level-1 features say", () => {
   const info = CLASSES_INFO.Cleric, table = info.choices.find((ch) => ch.kind === "subclass").grants;
-  SUBCLASSES.Cleric.forEach((d) => {
+  SUBCLASSES.Cleric.filter((d) => d.edition !== "2024").forEach((d) => {
     const first = d.features[1], row = table[d.name];
     assert.ok(row, d.name + " is in the table");
     const given = first.reduce((a, f) => a.concat((f.grants && f.grants.armor) || [], (f.grants && f.grants.weapons) || []), []);

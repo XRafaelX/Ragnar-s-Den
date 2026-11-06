@@ -44,6 +44,22 @@ export function currentClassInfo(){
   var ed = info && wizardEdition() && classEdition({name: wizardState.classId, edition: wizardEdition()});
   return ed ? Object.assign({}, info, {features: ed.level1, equipment: ed.equipment, skillChoices: ed.skillChoices || info.skillChoices, choices: ed.choices || info.choices, spellcasting: ed.spellcasting || info.spellcasting}) : info;
 }
+/* Cantrips to pick on the Cantrips step: the class's, plus a choice's (the
+   2024 cleric's Thaumaturge). */
+export function wizardCantripCount(sc){
+  var ed = wizardEdition() && classEdition({name: wizardState.classId, edition: wizardEdition()});
+  var n = sc.cantrips || 0;
+  if(!ed || !ed.choiceEffects) return n;
+  var picks = (wizardState.classChoices && wizardState.classChoices.profPicks) || {};
+  (ed.level1 || []).forEach(function(f){
+    ((f.profs && f.profs.pick) || []).forEach(function(p, i){
+      var fx = p.kind==="choice" && ed.choiceEffects[p.id];
+      var got = fx && (picks["class:" + f.name + "@1"] || [])[i];
+      (got || []).forEach(function(v){ if(fx[v] && fx[v].cantrips) n += fx[v].cantrips; });
+    });
+  });
+  return n;
+}
 /* The rules edition picked for the class ("2024" for a 2024 fighter), or "". */
 export function wizardEdition(){
   return wizardState && wizardState.class2024 && classHasEdition(wizardState.classId, "2024") ? "2024" : "";
@@ -840,7 +856,8 @@ export function validateStep(id){
     var csc = info.spellcasting;
     if(!csc) return null;
     dropGrantedSpellPicks();
-    return wizardState.spellChoices.cantrips.length===csc.cantrips ? null : "Choose "+csc.cantrips+" cantrips.";
+    var cn = wizardCantripCount(csc);
+    return wizardState.spellChoices.cantrips.length===cn ? null : "Choose "+cn+" cantrips.";
   }
   if(id==="spells"){
     var sc = info.spellcasting;

@@ -200,6 +200,13 @@ export var TOGGLE_EFFECTS = [
   // and 34), checked on 5etools' data 2026-10-30.
   {id:"knowledge_of_the_ages", name:"Knowledge of the Ages", className:"Cleric", subclass:"Knowledge Domain", level:2, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"10 minutes",
     hint:"Already added to that skill."},
+  // The 2024 domains (Player's Handbook 2024, pp. 73 to 76), under the same ids.
+  {id:"invoke_duplicity", name:"Invoke Duplicity", className:"Cleric", subclass:"Trickery Domain (2024)", level:3, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 minute",
+    hint:"A bonus action. Ends early if you dismiss it or are incapacitated."},
+  {id:"blessing_of_the_trickster", name:"Blessing of the Trickster", className:"Cleric", subclass:"Trickery Domain (2024)", level:3, duration:"Until your next long rest", staysRest:true, staysUp:true,
+    startLabel:"Bless", hint:"A Magic action, on you or a willing creature within 30 feet. Switch it on when that's you."},
+  {id:"corona_of_light", name:"Corona of Light", className:"Cleric", subclass:"Light Domain (2024)", level:17, cost:{resource:"corona_of_light", amount:1}, duration:"1 minute",
+    hint:"A Magic action. You can dismiss it at any time."},
   {id:"invoke_duplicity", name:"Invoke Duplicity", className:"Cleric", subclass:"Trickery Domain", level:2, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"1 minute",
     hint:"Needs your concentration, as a spell does."},
   {id:"trickery_cloak", name:"Cloak of Shadows", className:"Cleric", subclass:"Trickery Domain", level:6, channel:true, cost:{resource:"channel_divinity", amount:1}, duration:"Until the end of your next turn",

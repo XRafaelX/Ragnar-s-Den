@@ -9,7 +9,7 @@ import { CLASS_PROGRESSION, SUBCLASSES, SPELL_SLOT_TABLE, PACT_SLOT_TABLE } from
 import { featDef, featPicksSummary, featPickDetail } from "./feat-picks.js";
 import { uid, mod, fmtMod, totalLevel, profBonus } from "./basics.js";
 import { halfProficiency } from "./checks.js";
-import { pickedProfs, featurePicksText, raceTraitPicksText, backgroundPicksText, backgroundGrants, raceChoiceEffects } from "./class-picks.js";
+import { entryChoices, pickedProfs, featurePicksText, raceTraitPicksText, backgroundPicksText, backgroundGrants, raceChoiceEffects } from "./class-picks.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { effectOn } from "./effects.js";
 import { featResistances } from "./feats-2024.js";
@@ -47,6 +47,24 @@ export function editionEntry(c, className, edition){
 export function isFighter2024(c){ return !!editionEntry(c, "Fighter", "2024"); }
 /* A 2024 rogue (js/core/rogue-2024.js). */
 export function isRogue2024(c){ return !!editionEntry(c, "Rogue", "2024"); }
+/* A 2024 cleric (js/core/cleric.js). */
+export function isCleric2024(c){ return !!editionEntry(c, "Cleric", "2024"); }
+/* The class level a class entry picks its subclass at (a 2024 cleric's
+   domain at 3, the 2014 one's at 1). */
+export function subclassLevelOf(cl){
+  var ed = classEdition(cl);
+  return (ed && ed.subclassLevel) || (CLASS_PROGRESSION[cl && cl.name] || {}).subclassLevel || 0;
+}
+/* What the options picked for an edition's choices do (a 2024 cleric's
+   Divine Order): [{name (the option), grants, cantrips, skillBonus}]. */
+export function choiceEffectsOf(cl){
+  var ed = classEdition(cl), out = [];
+  if(!ed || !ed.choiceEffects) return out;
+  Object.keys(ed.choiceEffects).forEach(function(id){
+    entryChoices(cl, id).forEach(function(v){ var e = ed.choiceEffects[id][v]; if(e) out.push(Object.assign({name: v}, e)); });
+  });
+  return out;
+}
 /* A 2024 ranger (js/core/ranger.js). */
 export function isRanger2024(c){ return !!editionEntry(c, "Ranger", "2024"); }
 /* A 2024 paladin (js/core/paladin.js). */
@@ -274,6 +292,10 @@ export function classFeatureList(cl, uptoLevel){
   if(sub){
     // (A subclass feature a Tasha's swap stands in for, at every level, is left out.)
     var swapped = activeVariants(cl).filter(function(v){ return v.subclassReplaces; }).map(function(v){ return v.replaces; });
+    // (An older subclass's feature that the edition's own replaces: a domain's
+    // Divine Strike under the 2024 cleric's Blessed Strikes.)
+    var edition = classEdition(cl);
+    if(edition && edition.subclassDrops && !sub.edition) swapped = swapped.concat(edition.subclassDrops);
     for(var sl=1; sl<=level; sl++){
       ((sub.features && sub.features[sl]) || []).forEach(function(f){ if(swapped.indexOf(f.name)===-1) addFeature(f, sl, true); });
     }
@@ -353,6 +375,8 @@ export function classProficiencies(c, idx){
   // for a feature (a Battle Master's artisan's tools; see class-picks.js);
   // copies, so the shared data isn't changed.
   var extra = classFeatureList(cl).filter(function(f){ return f.grants; });
+  // (A choice's proficiencies: the 2024 cleric's Protector.)
+  choiceEffectsOf(cl).forEach(function(e){ if(e.grants) extra.push({grants: e.grants}); });
   var picked = pickedProfs(cl, idx > 0);
   // Once the starting tool choices are made, the picks stand in for the
   // "of your choice" line.

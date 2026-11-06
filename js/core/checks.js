@@ -2,7 +2,7 @@
    Ability checks, skills and passive scores, and whether a roll has
    advantage or disadvantage. */
 import { primalStrength } from "./barbarian-2024.js";
-import { isBarbarian2024, isPaladin2024 } from "./class-features.js";
+import { isBarbarian2024, isPaladin2024, choiceEffectsOf } from "./class-features.js";
 import { SKILLS } from "../data/abilities-skills.js";
 import { ARMOR_DATA } from "../data/armor.js";
 import { RACE_DATA, TRAIT_ADVANTAGES, TRAIT_HALF_PROFICIENCY, TRAIT_CHECK_D4 } from "../data/race-data.js";
@@ -99,6 +99,14 @@ export function skillCheck(c, skill, passive){
     var m = mod(abilityScore(c, x.value.ability));
     value += m; breakdown += " + " + x.name + " (" + fmtMod(m) + ")";
   });
+  // (A choice's bonus: the 2024 cleric's Thaumaturge, WIS to Arcana and Religion.)
+  (c.classes||[]).forEach(function(cl){
+    choiceEffectsOf(cl).forEach(function(e){
+      if(!e.skillBonus || e.skillBonus.skills.indexOf(skill)===-1) return;
+      var b = Math.max(e.skillBonus.min || -99, mod(abilityScore(c, e.skillBonus.ability)));
+      value += b; breakdown += " + " + e.name + " (" + fmtMod(b) + ")";
+    });
+  });
   if(formBonus!==null && formBonus > value){ value = formBonus; breakdown = wildForm(c).name + "'s bonus (" + fmtMod(formBonus) + ")"; }
   return {value: value, label: ab.label, ability: key, breakdown: (primal ? "Primal Knowledge: " : "") + breakdown, roll: skillRollMode(c, skill, passive)};
 }
@@ -158,6 +166,7 @@ export function skillRollMode(c, skill, passive){
   if(skill==="Stealth") list.push(stealthCheck(c));
   if(skill==="Acrobatics" && effectOn(c, "bladesong")) list.push({mode: "adv", reason: "Bladesong"});
   if((skill==="Athletics" || skill==="Acrobatics") && effectOn(c, "peerless_athlete")) list.push({mode: "adv", reason: "Peerless Athlete"});
+  if(skill==="Stealth" && effectOn(c, "blessing_of_the_trickster")) list.push({mode: "adv", reason: "Blessing of the Trickster"});
   if((skill==="Insight" || skill==="Intimidation") && effectOn(c, "astral_visage")) list.push({mode: "adv", reason: "Wisdom of the Spirit (Visage of the Astral Self)"});
   if(skill==="Perception") list = list.concat(effectRolls(c, "perception"));
   // Elegant Maneuver (Swashbuckler 13): the next Acrobatics or Athletics check.

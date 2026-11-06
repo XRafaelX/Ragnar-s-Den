@@ -7,6 +7,7 @@ import { playAdd } from "../ui/sound.js";
 import { showActionToast } from "../ui/toast.js";
 import { makeLevelUpSvg, makeUndoSvg } from "../ui/svg-icons.js";
 import { openLevelUp, undoLastLevelUp, applySpellSlots } from "./levelup.js";
+import { subclassLevelOf } from "../core/class-features.js";
 import { syncClassPicks } from "../core/class-picks.js";
 
 var customXpOpen = false;
@@ -152,8 +153,8 @@ export function buildLevelRow(c){
    class has reached its subclass level; covers characters whose level
    was set before subclasses were chosen during level-up. */
 export function subclassEligible(cl){
-  var prog = CLASS_PROGRESSION[cl.name];
-  return !!(prog && prog.subclassLevel && (Number(cl.level)||1) >= prog.subclassLevel);
+  var at = subclassLevelOf(cl);
+  return !!(at && (Number(cl.level)||1) >= at);
 }
 
 /* What a level-up adds for a subclass's features that the sheet keeps as
@@ -173,7 +174,7 @@ export function openSubclassPicker(c, cl){
   var prog = CLASS_PROGRESSION[cl.name];
   openInfoModal(cl.name+": "+prog.subclassLabel, function(body){
     var p = ce("p","lu-note");
-    p.textContent = "Your "+prog.subclassLabel+" is your "+cl.name+"'s specialisation, gained at level "+prog.subclassLevel+". Pick one to add its features to your sheet.";
+    p.textContent = "Your "+prog.subclassLabel+" is your "+cl.name+"'s specialisation, gained at level "+subclassLevelOf(cl)+". Pick one to add its features to your sheet.";
     body.appendChild(p);
     subclassesFor(cl.name, cl.edition).forEach(function(sub){
       var opt = ce("div","wiz-equip-option"+(cl.subclass===sub.name?" selected":""));

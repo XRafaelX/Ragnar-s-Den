@@ -1,6 +1,7 @@
 /* ---------------- Creation wizard: class features, languages, equipment ----------------
    The class's level-1 choices (subclass, fighting style, expertise and
    the like), the Languages step and the starting equipment. */
+import { subclassesFor } from "../core/class-features.js";
 import { SKILLS } from "../data/abilities-skills.js";
 import { FIGHTING_STYLES } from "../data/classes.js";
 import { escapeHtml, ce, autoEquipLoadout, isProficientWithWeapon } from "../core/helpers.js";
@@ -142,7 +143,8 @@ export function wizardStepChoices(container){
 var PROF_LABELS = {heavy:"heavy armor", medium:"medium armor", martial:"martial weapons"};
 
 function choiceSubclass(card, ch){
-  (SUBCLASSES[wizardState.classId]||[]).forEach(function(sub){
+  // (A level 1 subclass is the 2014 class's: no 2024 domain here.)
+  subclassesFor(wizardState.classId, "2014").filter(function(s){ return s.edition!=="2024"; }).forEach(function(sub){
     var grants = ch.grants && ch.grants[sub.name] || {};
     var lvl1 = ((sub.features||{})[1]||[]).map(function(f){ return f.name; });
     var extras = [];
