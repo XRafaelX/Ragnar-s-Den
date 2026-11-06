@@ -47,6 +47,8 @@ export function editionEntry(c, className, edition){
 export function isFighter2024(c){ return !!editionEntry(c, "Fighter", "2024"); }
 /* A 2024 rogue (js/core/rogue-2024.js). */
 export function isRogue2024(c){ return !!editionEntry(c, "Rogue", "2024"); }
+/* A 2024 druid (js/core/druid.js). */
+export function isDruid2024(c){ return !!editionEntry(c, "Druid", "2024"); }
 /* A 2024 cleric (js/core/cleric.js). */
 export function isCleric2024(c){ return !!editionEntry(c, "Cleric", "2024"); }
 /* The class level a class entry picks its subclass at (a 2024 cleric's
@@ -398,9 +400,12 @@ export function classProficiencies(c, idx){
   picked.saves.forEach(function(s){ if(p.savingThrows.indexOf(s.ability)===-1) p.savingThrows.push(s.ability); });
   return p;
 }
+/* A 2024 subclass whose name isn't its 2014 one's plus " (2024)". */
+var SUBCLASS_ALIASES = {"Circle of Stars": "Circle of the Stars (2024)"};
 export function classLevelOf(c, name, subclass){
   // (A 2024 subclass counts for its 2014 name: what's the same is automated once.)
-  var cl = (c.classes||[]).find(function(x){ return x.name===name && (!subclass || x.subclass===subclass || x.subclass===subclass + " (2024)"); });
+  var also = subclass && SUBCLASS_ALIASES[subclass];
+  var cl = (c.classes||[]).find(function(x){ return x.name===name && (!subclass || x.subclass===subclass || x.subclass===subclass + " (2024)" || (!!also && x.subclass===also)); });
   return cl ? Number(cl.level)||1 : 0;
 }
 /* A dragonborn's breath weapon (any kind: DRAGONBORN_BREATH) from the

@@ -8,7 +8,7 @@ import { potentSpellcasting2024 } from "./cleric.js";
 import { classFeatureList } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
 import { dragonType, heartOfTheStorm } from "./sorcerer.js";
-import { druidDc, starryConstellation, starryDice, totemSpirit, hasEnhancedBond } from "./druid.js";
+import { druidDc, starryConstellation, starryDice, totemSpirit, hasEnhancedBond, druidPotentSpellcasting } from "./druid.js";
 
 var CANTRIP_STEPS = [5, 11, 17];
 
@@ -70,6 +70,11 @@ function cantripBonus(c, name, owner){
     if(has && m) out += (m>0 ? ", plus " + m : ", minus " + (-m)) + " from " + feature + extra;
   }
   add("Cleric", "Potent Spellcasting", "wis", "");
+  // (The 2024 druid's Elemental Fury choice.)
+  if((!owner || owner==="Druid") && d.classes.indexOf("Druid")!==-1 && druidPotentSpellcasting(c)){
+    var dm = mod(abilityScore(c, "wis"));
+    if(dm) out += (dm>0 ? ", plus " + dm : ", minus " + (-dm)) + " from Potent Spellcasting";
+  }
   // (The 2024 cleric's Blessed Strikes choice.)
   if((!owner || owner==="Cleric") && d.classes.indexOf("Cleric")!==-1 && potentSpellcasting2024(c)){
     var pm = mod(abilityScore(c, "wis"));

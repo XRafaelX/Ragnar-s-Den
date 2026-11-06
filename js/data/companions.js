@@ -409,7 +409,7 @@ export var COMPANIONS = [
       var invs = x.invocations || [];
       if(invs.indexOf("Voice of the Chain Master")!==-1) rules.push({name:"Voice of the Chain Master", text:"On the same plane, you can talk with it telepathically and perceive through its senses, and while you do, speak through it in your own voice."});
       if(invs.indexOf("Investment of the Chain Master")!==-1) rules.push({name:"Investment of the Chain Master", text:"When you cast Find Familiar, it gets a flying or swimming speed of 40 feet (your choice). As a bonus action, you can command it to take the Attack action. Its weapon attacks count as magical, and its saves use your spell save DC. When it takes damage, your reaction can give it resistance to that damage."});
-      if(x.wild) rules.push({name:"Wild Companion", text:"Summoned with a use of Wild Shape, it's a fey and disappears after " + x.wild + (x.wild===1 ? " hour" : " hours") + ". Summon it from Wild Shape on the Vitals tab."});
+      if(x.wild) rules.push({name:"Wild Companion", text:"Summoned with a use of Wild Shape, it's a fey and disappears " + (x.wild==="long" ? "when you finish a long rest" : "after " + x.wild + (x.wild===1 ? " hour" : " hours")) + ". Summon it from Wild Shape on the Vitals tab."});
       return {
         type: b.size + " " + (b.type!=="beast" ? b.type : x.wildOnly ? "fey" : "celestial, fey or fiend") + ": " + x.choice.toLowerCase(),
         ac: b.ac, hp: b.hp, speed: b.speed, abilities: b.abilities, skills: b.skills, senses: b.senses,

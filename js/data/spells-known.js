@@ -59,7 +59,8 @@ function halfUpMax(lv){ return Math.min(5, Math.ceil(Math.ceil(lv / 2) / 2)); }
 export var EDITION_CASTERS = {
   "Paladin": {list: "Paladin", cantrips: byLevel({}), maxLevel: halfUpMax},
   "Ranger": {list: "Ranger", cantrips: byLevel({}), maxLevel: halfUpMax},
-  "Cleric": {list: "Cleric", cantrips: byLevel({1: 3, 4: 4, 10: 5}), maxLevel: fullMax, cantripSwap: "level"}
+  "Cleric": {list: "Cleric", cantrips: byLevel({1: 3, 4: 4, 10: 5}), maxLevel: fullMax, cantripSwap: "level"},
+  "Druid": {list: "Druid", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: fullMax, cantripSwap: "level"}
 };
 
 var THIRD_SPELLS = [0, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13];

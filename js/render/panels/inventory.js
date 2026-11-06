@@ -872,7 +872,7 @@ function deflectAttacksButton(c){
 }
 /* A ranger's or cleric's extra dice on a hit. */
 function rangerButtons(c, name, unarmed){
-  return rangerHitDice(c).concat(clericHitDice(c), druidHitDice(c, unarmed), bardHitDice(c), unarmed ? warlockHitDice(c, null) : []).filter(function(d){ return !unarmed || d.unarmed; }).map(function(d){ return hitDieButton(name, d, c); });
+  return rangerHitDice(c).concat(clericHitDice(c), unarmed ? druidHitDice(c, true) : [], bardHitDice(c), unarmed ? warlockHitDice(c, null) : []).filter(function(d){ return !unarmed || d.unarmed; }).map(function(d){ return hitDieButton(name, d, c); });
 }
 function hitDieButton(name, d, c){
   var b = document.createElement("button");

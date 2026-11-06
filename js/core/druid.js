@@ -10,7 +10,9 @@
    DEX and CON replace theirs in ability-scores.js; AC, speed, senses and
    skills ask here. */
 import { mod, profBonus } from "./basics.js";
-import { classLevelOf } from "./class-features.js";
+import { classLevelOf, isDruid2024 } from "./class-features.js";
+import { entryChoices } from "./class-picks.js";
+import { LAND_WARDS } from "../data/druid-2024.js";
 import { abilityScore } from "./ability-scores.js";
 import { resourceLeft, effectOn, endEffect } from "./effects.js";
 import { characterResources } from "./character-resources.js";
@@ -32,6 +34,13 @@ function crValue(cr){
    allowed, and the hours a form lasts. */
 export function wildShapeLimit(c){
   var lv = druidLevel(c), moon = circle(c, "Circle of the Moon") > 0;
+  // The 2024 table (p. 81): swimming at any level, no elementals; the Moon's
+  // Circle Forms reach a third of the druid level (p. 86).
+  if(isDruid2024(c)){
+    var cr24 = lv >= 8 ? 1 : lv >= 4 ? 1/2 : 1/4;
+    if(moon) cr24 = Math.max(cr24, Math.floor(lv / 3));
+    return {cr: cr24, fly: lv >= 8, swim: true, elemental: false, hours: Math.max(1, Math.floor(lv / 2))};
+  }
   var cr = lv >= 8 ? 1 : lv >= 4 ? 1/2 : 1/4;
   if(moon) cr = lv >= 6 ? Math.floor(lv / 3) : 1;
   return {cr: cr, fly: lv >= 8, swim: lv >= 4, elemental: moon && lv >= 10, hours: Math.max(1, Math.floor(lv / 2))};
@@ -67,6 +76,15 @@ export function startWildShape(c, name){
   }
   endEffect(c, "symbiotic_entity");
   var form = wildShapeForm(name);
+  // The 2024 Wild Shape keeps your own hit points, with temporary ones on top
+  // (three times the druid level for the Moon). They don't stack: keep the higher.
+  if(isDruid2024(c)){
+    c.wildShape = {form: name, own: true};
+    var temp = wildShapeTempHp(c);
+    if(!c.hp) c.hp = {max: 0, current: 0, temp: 0};
+    if(temp > (Number(c.hp.temp)||0)) c.hp.temp = temp;
+    return true;
+  }
   c.wildShape = {form: name, max: form.hp, normal: c.wildShape ? c.wildShape.normal : Number(c.hp.current)||0};
   c.hp.current = form.hp;
   return true;
@@ -74,7 +92,7 @@ export function startWildShape(c, name){
 /* Back to the character's own shape and hit points. */
 export function endWildShape(c){
   if(!c.wildShape) return;
-  c.hp.current = c.wildShape.normal;
+  if(!c.wildShape.own) c.hp.current = c.wildShape.normal;
   delete c.wildShape;
 }
 /* The form's stat block while transformed, or null. */
@@ -84,7 +102,14 @@ export function wildForm(c){
 /* Damage reaches a form: at 0 hit points you turn back and what's left
    carries over. How much still hits the character, or -1 while the form
    holds. */
+/* The 2024 form's temporary hit points: the druid level, three times it for
+   the Moon (Circle Forms). */
+export function wildShapeTempHp(c){
+  var lv = druidLevel(c);
+  return circle(c, "Circle of the Moon") >= 3 && isDruid2024(c) ? 3 * lv : lv;
+}
 export function wildShapeDamage(c, n){
+  if(c.wildShape && c.wildShape.own) return n;
   var left = (Number(c.hp.current)||0) - n;
   if(left > 0){ c.hp.current = left; return -1; }
   endWildShape(c);
@@ -95,6 +120,10 @@ export function wildShapeArmorClass(c){
   var form = wildForm(c);
   if(!form) return null;
   var value = form.ac, breakdown = form.name + " (" + form.ac + ")", short = form.name;
+  // Circle Forms (2024 Moon 3): 13 + WIS when that's higher.
+  if(isDruid2024(c) && circle(c, "Circle of the Moon") >= 3 && 13 + wisMod(c) > value){
+    value = 13 + wisMod(c); breakdown = "Circle Forms: 13 + WIS (" + wisMod(c) + ")"; short = form.name + " + Circle Forms";
+  }
   if(circle(c, "Circle of the Blighted")){ value += 2; breakdown += " + Blighted Shape (+2)"; short += " + Blighted Shape"; }
   var corrupt = incarnationAc(c);
   if(corrupt){ value += corrupt; breakdown += " + Incarnation of Corruption (+2)"; short += " + Incarnation"; }
@@ -130,11 +159,53 @@ export function wildShapeSkill(c, skill){
 }
 /* Primal Strike (Moon 6). */
 export function hasPrimalStrike(c){
-  return circle(c, "Circle of the Moon") >= 6;
+  return circle(c, "Circle of the Moon") >= 6 && !isDruid2024(c);
 }
-/* Combat Wild Shape (Moon 2): a spell slot heals the form. */
+/* Combat Wild Shape (2014 Moon 2): a spell slot heals the form. */
 export function hasCombatWildShape(c){
-  return circle(c, "Circle of the Moon") >= 2;
+  return circle(c, "Circle of the Moon") >= 2 && !isDruid2024(c);
+}
+/* Improved Circle Forms (2024 Moon 6): WIS to CON saves in a form. */
+export function moonConBonus(c){
+  return c.wildShape && isDruid2024(c) && circle(c, "Circle of the Moon") >= 6 ? wisMod(c) : 0;
+}
+function druidEntry(c){ return (c.classes||[]).find(function(cl){ return cl.name==="Druid"; }) || null; }
+/* Elemental Fury (2024 druid 7): the option picked, or "". */
+export function elementalFury(c){
+  var cl = druidEntry(c);
+  return cl && cl.edition==="2024" && (Number(cl.level)||1) >= 7 ? entryChoices(cl, "elementalFury")[0] || "" : "";
+}
+export function druidPotentSpellcasting(c){ return elementalFury(c)==="Potent Spellcasting"; }
+/* Primal Strike's and Lunar Form's dice on a beast form's attack, shaped
+   like rangerHitDice. */
+export function formHitDice(c){
+  var out = [];
+  if(elementalFury(c)==="Primal Strike"){
+    var n = druidLevel(c) >= 15 ? 2 : 1;
+    out.push({id: "primal_strike", name: "Primal Strike", text: "Primal Strike +" + n + "d8", qty: n, die: 8, label: "Primal Strike (Cold, Fire, Lightning or Thunder)", title: "Once on each of your turns, on a hit"});
+  }
+  if(isDruid2024(c) && circle(c, "Circle of the Moon") >= 14) out.push({id: "lunar_form", name: "Lunar Form", text: "Lunar Form +2d10", qty: 2, die: 10, label: "Lunar Form (Radiant)", title: "Once per turn, on a hit"});
+  return out;
+}
+/* Land's Aid (2024 Land 3): its dice, 2d6, 3d6 from 10, 4d6 from 14. 0 without it. */
+export function landsAidDice(c){
+  var lv = isDruid2024(c) ? circle(c, "Circle of the Land") : 0;
+  return lv >= 14 ? 4 : lv >= 10 ? 3 : lv >= 3 ? 2 : 0;
+}
+/* Nature's Ward (2024 Land 10): the land's damage type, or "". */
+export function landWard(c){
+  var cl = druidEntry(c);
+  if(!cl || cl.edition!=="2024" || cl.subclass!=="Circle of the Land (2024)" || (Number(cl.level)||1) < 10) return "";
+  return LAND_WARDS[(cl.spellChoices||{}).land] || "";
+}
+/* Wrath of the Sea's d6s: the WIS modifier, at least one. */
+export function wrathDice(c){ return Math.max(1, wisMod(c)); }
+/* Resistances from a 2024 circle: Nature's Ward, Stormborn. */
+export function druidResistances(c){
+  var out = [], ward = landWard(c);
+  if(ward) out.push({type: ward, source: "Nature's Ward"});
+  if(effectOn(c, "wrath_of_the_sea") && circle(c, "Circle of the Sea") >= 10) ["cold", "lightning", "thunder"].forEach(function(t){ out.push({type: t, source: "Stormborn"}); });
+  return out;
 }
 /* Beast Spells (druid 18). */
 export function hasBeastSpells(c){
@@ -143,6 +214,8 @@ export function hasBeastSpells(c){
 /* What the Spells tab says while transformed, or "". */
 export function wildShapeSpellNote(c){
   if(!c.wildShape) return "";
+  if(hasBeastSpells(c) && isDruid2024(c)) return "Beast Spells: you can cast spells in this form, except one with a material component that has a cost or is consumed.";
+  if(isDruid2024(c) && circle(c, "Circle of the Moon") >= 3) return "You can cast your Circle of the Moon spells in this form. Other spells wait until you turn back. Concentration keeps going.";
   return hasBeastSpells(c) ? "Beast Spells: you can cast your druid spells in this form, but you can't provide material components."
     : "You can't cast spells in this form. Spells you are already concentrating on keep going.";
 }
@@ -225,6 +298,12 @@ export function useBlazingRevival(c, hpMax){
 /* Symbiotic Entity's extra die on a melee weapon attack, shaped like
    rangerHitDice. */
 export function druidHitDice(c, melee){
+  // Primal Strike (2024 Elemental Fury): any weapon hit, once on each of your turns.
+  var primal = formHitDice(c).filter(function(d){ return d.id==="primal_strike"; }).map(function(d){ return Object.assign({unarmed: false}, d); });
+  if(primal.length) return primal.concat(druidHitDice2014(c, melee));
+  return druidHitDice2014(c, melee);
+}
+function druidHitDice2014(c, melee){
   return melee && effectOn(c, "symbiotic_entity") ? [{id: "symbiotic_entity", name: "Symbiotic Entity", text: "+1d6 necrotic", qty: 1, die: 6,
     label: "Symbiotic Entity (Necrotic)", title: "Symbiotic Entity: extra necrotic damage on a hit", unarmed: true}] : [];
 }

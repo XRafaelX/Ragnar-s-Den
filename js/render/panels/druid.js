@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, fmtMod, maxHp, ordinal, plainAttackRollMode, spellSlotsLeft, spendSpellSlot, wildForm, wildShapeOptions, wildShapeCost, wildShapeProblem, wildShapeLimit, startWildShape, endWildShape, hasPrimalStrike, hasCombatWildShape, naturalRecoveryBudget, recoverableSlots, recoverSlots, balmDiceLimit, setCosmicOmen } from "../../core/helpers.js";
+import { moonConBonus, formHitDice, landsAidDice, druidDc, resourceLeft as characterResourceLeft, clamp, fmtMod, maxHp, ordinal, plainAttackRollMode, spellSlotsLeft, spendSpellSlot, wildForm, wildShapeOptions, wildShapeCost, wildShapeProblem, wildShapeLimit, startWildShape, endWildShape, hasPrimalStrike, hasCombatWildShape, naturalRecoveryBudget, recoverableSlots, recoverSlots, balmDiceLimit, setCosmicOmen } from "../../core/helpers.js";
 import { WILD_SHAPE_ELEMENTALS, wildShapeForm } from "../../data/wild-shapes.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -79,7 +79,8 @@ export function renderWildShapeCard(c){
   info.appendChild(name);
   var now = document.createElement("div");
   now.className = "fx-now";
-  now.textContent = "Your own hit points: " + c.wildShape.normal + (hasPrimalStrike(c) ? " · Your attacks count as magical" : "");
+  now.textContent = c.wildShape.own ? "You keep your own hit points" + (Number(c.hp.temp) ? ", with " + c.hp.temp + " temporary" : "") + (moonConBonus(c) ? ". Improved Circle Forms: +" + moonConBonus(c) + " to CON saves, and radiant damage if you like" : "")
+    : "Your own hit points: " + c.wildShape.normal + (hasPrimalStrike(c) ? " · Your attacks count as magical" : "");
   info.appendChild(now);
   attackRows(c, form).forEach(function(r){ info.appendChild(r); });
   if(hasCombatWildShape(c)){
@@ -121,6 +122,10 @@ function attackRows(c, form){
     var damage = (a.dice ? a.dice + (a.bonus ? fmtMod(a.bonus) : "") : a.bonus) + " " + a.damageType;
     if(parts) row.appendChild(rollBtn(makeDicesSvg(), damage, a.text, function(){ performRoll(hit.die, hit.qty, a.bonus, "none", form.name + ": " + a.name + " (" + a.damageType + ")"); }));
     else { var flat = document.createElement("span"); flat.className = "res-hint"; flat.textContent = damage; row.appendChild(flat); }
+    // (Primal Strike and Lunar Form add to a form's hit.)
+    formHitDice(c).forEach(function(d){
+      row.appendChild(rollBtn(makeDicesSvg(), d.text, d.title, function(){ performRoll(d.die, d.qty, 0, "none", form.name + ": " + d.label); }));
+    });
     return row;
   });
 }
@@ -175,11 +180,88 @@ function openFormSheet(form){
 
 /* ---- Class resources ---- */
 export function druidResourceRow(c, r){
-  if(r.key==="Druid:wild_shape") return wildShapePicker(c, r);
+  if(r.key==="Druid:wild_shape") return wildShapeExtras(c, r, wildShapePicker(c, r));
+  if(r.key==="Druid:wild_resurgence") return resurgenceRow(c, r);
+  if(r.key==="Druid:nature_magician") return natureMagicianRow(c, r);
   if(r.key==="Druid:natural_recovery") return slotRecoveryRow(c, r, naturalRecoveryBudget(c));
   if(r.key==="Druid:cosmic_omen") return omenRow(c, r);
   if(r.key==="Druid:balm_of_the_summer_court") return balmPicker(c, r);
   return null;
+}
+/* The 2024 Wild Shape row: Wild Resurgence's slot for a use (5) and Land's
+   Aid (Land 3) under the form picker. */
+function wildShapeExtras(c, r, picker){
+  var lv = (c.classes||[]).find(function(x){ return x.name==="Druid" && x.edition==="2024"; });
+  if(!lv) return picker;
+  var wrap = document.createElement("div");
+  if(picker) wrap.appendChild(picker);
+  var row = buttonRow(), left = r.max - r.used;
+  if((Number(lv.level)||1) >= 5 && left <= 0){
+    var slots = spellSlotsLeft(c).filter(function(s){ return !s.pact; });
+    var b = rollBtn("", slots.length ? "A " + ordinal(slots[0].level) + "-level slot for a use" : "No slot for a use", "Wild Resurgence: once on each of your turns, spend a spell slot to get a use of Wild Shape back", function(){
+      if(!slots.length) return;
+      spendSpellSlot(c, slots[0]);
+      c.resourcesUsed[r.key] = Math.max(0, r.used - 1);
+      logRoll("Wild Resurgence", "Spent a " + ordinal(slots[0].level) + "-level slot for a use of Wild Shape.");
+      save(); renderAll();
+    });
+    b.disabled = !slots.length;
+    row.appendChild(b);
+  }
+  var aid = landsAidDice(c);
+  if(aid){
+    var a = rollBtn(makeDicesSvg(), "Land's Aid · 1 use", "A Magic action: CON save (DC " + druidDc(c) + ") for " + aid + "d6 necrotic in a 10-ft sphere within 60 ft, half on a success. One creature there regains " + aid + "d6 hit points.", function(){
+      if(left <= 0) return;
+      c.resourcesUsed[r.key] = r.used + 1;
+      save(); renderAll();
+      performRoll(6, aid, 0, "none", "Land's Aid (Necrotic, CON DC " + druidDc(c) + ", half on a success)", function(res){
+        return res ? {lead: "One creature there regains:", options: [{label: "Roll " + aid + "d6 healing", title: "A creature you choose in the sphere", use: function(){ performRoll(6, aid, 0, "none", "Land's Aid: hit points regained"); return {silent: true}; }}]} : null;
+      });
+    });
+    a.disabled = left <= 0;
+    row.appendChild(a);
+  }
+  if(row.childNodes.length) wrap.appendChild(row);
+  return wrap.childNodes.length ? wrap : null;
+}
+/* Wild Resurgence (2024 druid 5): a use of Wild Shape for a level 1 slot. */
+function resurgenceRow(c, r){
+  var ws = characterResourceLeft(c, "Druid:wild_shape"), slot = c.spellcasting && c.spellcasting.slots && c.spellcasting.slots[1];
+  var spent = slot && (Number(slot.used)||0) > 0;
+  var row = buttonRow();
+  var b = rollBtn("", "1 use for a level 1 slot", "No action needed, once per long rest", function(){
+    if(r.used >= r.max || ws <= 0 || !spent) return;
+    c.resourcesUsed["Druid:wild_shape"] = (Number(c.resourcesUsed["Druid:wild_shape"])||0) + 1;
+    c.resourcesUsed[r.key] = r.used + 1;
+    slot.used = Number(slot.used) - 1;
+    logRoll("Wild Resurgence", "Spent a use of Wild Shape for a level 1 spell slot.");
+    save(); renderAll();
+  });
+  b.disabled = r.used >= r.max || ws <= 0 || !spent;
+  if(b.disabled) b.title = r.used >= r.max ? "Used until a long rest" : ws <= 0 ? "No Wild Shape uses left" : "No spent level 1 slot";
+  row.appendChild(b);
+  return row;
+}
+/* Nature Magician (2024 Archdruid): unspent uses into one slot, 2 levels each. */
+function natureMagicianRow(c, r){
+  var ws = characterResourceLeft(c, "Druid:wild_shape"), slots = (c.spellcasting && c.spellcasting.slots) || {}, items = [];
+  for(var n = 1; n <= Math.min(ws, 4); n++){
+    var s = slots[2 * n];
+    if(s && (Number(s.used)||0) > 0) items.push({value: String(n), label: n + (n===1 ? " use" : " uses") + ": a " + ordinal(2 * n) + "-level slot"});
+  }
+  if(r.used >= r.max || !items.length) return null;
+  var wrap = document.createElement("div");
+  wrap.className = "res-pick";
+  wrap.appendChild(themedPicker({key: "nature-magician", groups: {"": items}, value: "", placeholder: "Turn uses into a slot...", ariaLabel: "Nature Magician: turn Wild Shape uses into a spell slot", sheet: true,
+    onPick: function(v){
+      var k = Number(v), slot = c.spellcasting.slots[2 * k];
+      c.resourcesUsed["Druid:wild_shape"] = (Number(c.resourcesUsed["Druid:wild_shape"])||0) + k;
+      c.resourcesUsed[r.key] = r.used + 1;
+      slot.used = Number(slot.used) - 1;
+      logRoll("Nature Magician", "Turned " + k + (k===1 ? " use" : " uses") + " of Wild Shape into a " + ordinal(2 * k) + "-level spell slot.");
+      save(); renderAll();
+    }}));
+  return wrap;
 }
 /* Natural Recovery and Arcane Recovery. */
 export function slotRecoveryRow(c, r, budget){

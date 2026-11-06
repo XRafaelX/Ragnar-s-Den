@@ -29,7 +29,7 @@ function allFeatures(){
       for(const [lv, list] of Object.entries(e.features || {})) for(const f of list) out.push({ where: cls + " " + ed + " " + lv, f });
     }
   }
-  for(const [cls, subs] of Object.entries(SUBCLASSES)) for(const s of subs) for(const [lv, list] of Object.entries(s.features || {})) for(const f of list) out.push({ where: s.name + " " + lv, f });
+  for(const [cls, subs] of Object.entries(SUBCLASSES)) for(const s of subs) for(const [lv, list] of Object.entries(s.features || {})) for(const f of list) out.push({ where: s.name + " " + lv, f, sub: s.name });
   for(const [name, def] of Object.entries(FIGHTING_STYLES)) out.push({ where: "Fighting Style", f: Object.assign({ name }, def) });
   for(const inv of INVOCATIONS) out.push({ where: "Invocation", f: inv });
   for(const feat of FEATS_CATALOG) out.push({ where: "Feat", f: feat });
@@ -57,7 +57,7 @@ test("every reminder is one short, plain sentence with a known group", () => {
 });
 
 test("a reminder never repeats what the sheet already shows", () => {
-  for(const { where, f } of allFeatures().filter((x) => x.f.remind)){
+  for(const { where, f, sub } of allFeatures().filter((x) => x.f.remind)){
     // (War Caster's advantage is on the saves card. Its reminder is the
     // other half of the feat, a spell in place of an opportunity attack.)
     // (The same for the 2024 War Caster, and Skulker (2024)'s blindsight and
@@ -65,7 +65,9 @@ test("a reminder never repeats what the sheet already shows", () => {
     const besides = f.name === "War Caster" || f.name === "War Caster (2024)" ? ["advantage"] : f.name === "Skulker (2024)" ? ["advantage", "sense"] : f.name === "Remarkable Athlete" ? ["advantage"] : [];
     for(const k of ["saveNote", "advantage", "skillBonus", "sense", "rollButton"]) assert.ok(!f[k] || besides.includes(k), where + " " + f.name + ": already shown through " + k);
     assert.ok(!resourceNames.has(f.name), where + " " + f.name + ": already a row on Class resources");
-    assert.ok(!effectNames.has(f.name), where + " " + f.name + ": already on Active effects");
+    // (Within the same subclass: the 2014 Land's Nature's Sanctuary isn't the 2024 one's effect.)
+    const onCard = TOGGLE_EFFECTS.some((e) => e.name === f.name && (!sub || !e.subclass || [].concat(e.subclass).includes(sub)));
+    assert.ok(!onCard, where + " " + f.name + ": already on Active effects");
   }
 });
 

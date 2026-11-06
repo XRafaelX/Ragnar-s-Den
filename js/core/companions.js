@@ -59,6 +59,8 @@ function companionRequirement(c, r){
 /* Wild Companion (Tasha's, druid 2): the hours its familiar lasts (half
    the druid level), or 0 without it. */
 export function wildCompanionHours(c){
+  // (The 2024 druid's: until a long rest.)
+  if((c.classes||[]).some(function(x){ return x.name==="Druid" && x.edition==="2024" && (Number(x.level)||1) >= 2; })) return "long";
   var cl = (c.classes||[]).find(function(x){ return x.name==="Druid" && usesVariant(x, "Wild Companion"); });
   return cl ? Math.max(1, Math.floor((Number(cl.level)||1) / 2)) : 0;
 }

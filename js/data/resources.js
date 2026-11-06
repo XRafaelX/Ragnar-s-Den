@@ -39,6 +39,7 @@ function primalCast(spell, level){
 }
 
 import { FAVORED_ENEMY_CASTS } from "./ranger-2024.js";
+import { wildShapeUses2024 } from "./druid-2024.js";
 
 export var CLASS_RESOURCES = {
   "Bard": [
@@ -65,7 +66,15 @@ export var CLASS_RESOURCES = {
       hint:"Action: describe the help you seek. If your deity answers, you can't call again for 7 days. Otherwise a long rest gives you another try."}
   ],
   "Druid": [
-    {id:"wild_shape", name:"Wild Shape", level:2,
+    // The 2024 druid (pp. 80 and 81): one use back on a short rest, one on
+    // initiative from Archdruid (20).
+    {id:"wild_shape", name:"Wild Shape", level:2, edition:"2024", max:function(lv){ return wildShapeUses2024(lv); }, reset:always("short"), shortRegain:1, initiativeRegain:20,
+      hint:"Bonus action: take a beast form, keeping your hit points. You regain one use on a short rest."},
+    {id:"wild_resurgence", name:"Wild Resurgence (a level 1 slot)", level:5, edition:"2024", max:always(1), reset:always("long"),
+      hint:"Spend a use of Wild Shape to get back a spent level 1 spell slot."},
+    {id:"nature_magician", name:"Nature Magician", level:20, edition:"2024", max:always(1), reset:always("long"),
+      hint:"Turn unspent Wild Shape uses into one spell slot, two slot levels per use."},
+    {id:"wild_shape", name:"Wild Shape", level:2, edition:"2014",
       max:function(lv){ return lv>=20 ? Infinity : 2; }, reset:always("short"),
       hint:"Action (bonus action for Circle of the Moon): turn into a beast you've seen. Unlimited from level 20 (Archdruid)."}
   ],
@@ -848,6 +857,25 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Druid": {
+    // The 2024 circles (pp. 84 to 88).
+    "Circle of the Land (2024)": [
+      {id:"natural_recovery", name:"Natural Recovery", level:6, max:always(1), reset:always("long"),
+        hint:"When you finish a short rest, recover spell slots with a combined level up to half your druid level (rounded up), none level 6 or higher."},
+      {id:"natural_recovery_spell", name:"Natural Recovery (free Circle Spell)", level:6, max:always(1), reset:always("long"),
+        hint:"Cast one of your level 1+ Circle Spells without a spell slot."}
+    ],
+    "Circle of the Moon (2024)": [
+      {id:"moonlight_step", name:"Moonlight Step", level:10, max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"), slotMin:2,
+        hint:"Bonus action: teleport 30 ft, with advantage on your next attack this turn. More uses cost a level 2 or higher slot."}
+    ],
+    "Circle of the Stars (2024)": [
+      {id:"star_map_guiding_bolt", name:"Star Map: Free Guiding Bolt", level:3,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"While holding your star map, cast Guiding Bolt without a spell slot."},
+      {id:"cosmic_omen", name:"Cosmic Omen", level:6,
+        max:function(lv, m){ return atLeastOne(m.wis); }, reset:always("long"),
+        hint:"Reaction: add (Weal, even roll) or subtract (Woe, odd roll) 1d6 from a d20 test within 30 ft. Rolled each long rest."}
+    ],
     "Circle of the Land": [
       {id:"natural_recovery", name:"Natural Recovery", level:2, max:always(1), reset:always("long"),
         hint:"During a short rest, recover spell slots with a combined level up to half your druid level (rounded up), none 6th level or higher."}

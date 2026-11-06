@@ -531,11 +531,15 @@ function attackFollowUp(c, r, aim, hit, seen){
   if(resourceLeft(c, "Rogue:stroke_of_luck") > 0){
     // (The 2024 rule: the roll becomes a 20.)
     var luckTo20 = isRogue2024(c) && r && r.natural!=null;
-    opts.push({label: luckTo20 ? "Stroke of Luck: a 20" : "Stroke of Luck: it hits", title: luckTo20 ? "Turn the roll into a 20 (once per short or long rest)" : "Turn the miss into a hit (once per short or long rest)",
+    opts.push({label: luckTo20 ? "Stroke of Luck: a 20" : "Stroke of Luck: it hits", title: luckTo20 ? "Turn the roll into a 20, a critical hit (once per short or long rest)" : "Turn the miss into a hit (once per short or long rest)",
       use: function(){
         if(!spendResource(c, "Rogue:stroke_of_luck", 1)) return null;
         save(); renderAll();
-        return luckTo20 ? {bonus: 20 - r.natural, log: "Stroke of Luck (the d20 counts as 20)"} : {bonus: 0, log: "Stroke of Luck: the miss is a hit"};
+        // (The 2024 roll of 20 is a critical hit: the rules call a 20 on the
+        // d20 for an attack one, p. 25. The user's ruling, 2026-11-06.)
+        if(!luckTo20) return {bonus: 0, log: "Stroke of Luck: the miss is a hit"};
+        var crit = hit ? attackFollowUp(c, null, aim, hit, Object.assign({}, r, {natural: 20})) : null;
+        return {bonus: 20 - r.natural, log: "Stroke of Luck (the d20 counts as 20, a critical hit)", crit: "Stroke of Luck", next: crit};
       }});
   }
   if(!opts.length) return null;

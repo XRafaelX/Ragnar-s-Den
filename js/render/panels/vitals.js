@@ -21,6 +21,7 @@ import { renderDeathSaves } from "./death-saves.js";
 import { renderEffectsCard } from "./effects.js";
 import { renderRemindCard } from "./reminders.js";
 import { renderWildShapeCard, druidResourceRow } from "./druid.js";
+import { druidResistances } from "../../core/druid.js";
 import { bardResourceRow, songOfRestButton } from "./bard.js";
 import { sorcererResourceRow } from "./sorcerer.js";
 import { warlockResourceRow } from "./warlock.js";
@@ -102,7 +103,7 @@ export function renderVitalsPanel(c){
   var hpBox = document.createElement("div");
   hpBox.className = "vital-box hp-vital-box";
   hpBox.innerHTML = '<div class="lbl">Hit Points</div>';
-  if(c.wildShape) hpBox.querySelector(".lbl").textContent = c.wildShape.form + " hit points";
+  if(c.wildShape && !c.wildShape.own) hpBox.querySelector(".lbl").textContent = c.wildShape.form + " hit points";
 
   // HP fill bar: set the CSS variable so the ::before pseudo-element
   // knows how wide the fill should be. Clamp to [0,100]% and flag low HP.
@@ -156,7 +157,7 @@ export function renderVitalsPanel(c){
     }
     // Wild Shape: the form takes it. At 0 hit points you turn back, and
     // what's left carries over.
-    if(c.wildShape){
+    if(c.wildShape && !c.wildShape.own){
       n = wildShapeDamage(c, n);
       if(n < 0){ save(); renderSidebar(); renderAll(); flashHpNum("hp-dmg"); return; }
       showActionToast(n ? "You turn back, and " + n + " damage carries over." : "You turn back to your own shape.");
@@ -365,7 +366,7 @@ export function renderVitalsPanel(c){
   // immune to isn't listed as resisted too.
   var wards = raceWards(c);
   var immuneTypes = wards.immune.map(function(r){ return r.type; });
-  var resist = wards.resist.concat(infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c), featureResistances(c), effectResistances(c), drakeResistance(c), saintResistance(c))
+  var resist = wards.resist.concat(druidResistances(c), infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c), featureResistances(c), effectResistances(c), drakeResistance(c), saintResistance(c))
     .filter(function(r){ return immuneTypes.indexOf(r.type.toLowerCase())===-1; });
   var resistAll = resistsAllDamage(c); // Petrified
   if(resistAll) resist = [{type: "all damage", source: resistAll}];
@@ -1743,9 +1744,9 @@ function renderResourcesCard(c, resources){
       var wildBtn = document.createElement("button");
       wildBtn.type = "button"; wildBtn.className = "btn small inv-roll-btn res-roll-btn";
       wildBtn.textContent = "Wild Companion · 1 use";
-      var lasts = wildHours + (wildHours===1 ? " hour" : " hours");
+      var lasts = wildHours==="long" ? "until your next long rest" : wildHours + (wildHours===1 ? " hour" : " hours");
       wildBtn.disabled = remaining<=0;
-      wildBtn.title = remaining<=0 ? "No Wild Shape uses left" : "Action: spend a use of Wild Shape to cast Find Familiar. The familiar is a fey and lasts " + lasts + ".";
+      wildBtn.title = remaining<=0 ? "No Wild Shape uses left" : (wildHours==="long" ? "Magic action" : "Action") + ": spend a use of Wild Shape to cast Find Familiar. The familiar is a fey and lasts " + lasts + ".";
       wildBtn.addEventListener("click", function(){
         summonWildCompanion(c);
         logRoll("Wild Companion", "Cast Find Familiar with a use of Wild Shape. The fey familiar lasts " + lasts + ".");

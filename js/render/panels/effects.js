@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { isCleric2024, isRanger2024, isPaladin2024, surprisingStrikes, rovingAim, isBarbarian2024, wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
+import { wrathDice, landWard, isCleric2024, isRanger2024, isPaladin2024, surprisingStrikes, rovingAim, isBarbarian2024, wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -277,6 +277,12 @@ function effectSummary(c, id){
   if(id==="unbreakable_majesty") return "The first time a creature tries to attack you on a turn: CHA save DC " + bardDc(c) + " or it can't, and picks a new target. If it saves, disadvantage on saves against your spells on your next turn";
   if(id==="shadow_disguise") return "You look like the dead person and know what it would tell a casual acquaintance. +5 to Deception checks against Insight";
   if(id==="spreading_spores") return "A creature that enters the cube or starts its turn there makes a CON save (DC " + druidDc(c) + ") or takes your Halo of Spores damage, once per turn. You can't use the Halo of Spores reaction while it lasts";
+  if(id==="wrath_of_the_sea"){
+    var sea = classLevelOf(c, "Druid", "Circle of the Sea");
+    return "A " + (sea >= 6 ? 10 : 5) + "-ft emanation. As a bonus action, a creature in it makes a CON save (DC " + druidDc(c) + ") or takes " + wrathDice(c) + "d6 cold and is pushed 15 ft" +
+      (sea >= 10 ? ". Fly speed equal to your speed, and resistance to cold, lightning and thunder" : "");
+  }
+  if(id==="natures_sanctuary") return "You and your allies have half cover in the cube" + (landWard(c) ? ", and your allies resist " + landWard(c) + " damage there" : "");
   if(id==="starry_form"){
     var star = c.effects && c.effects.starry_form, wisMod = mod(abilityScore(c, "wis")), dice = starryDice(c) + "d8" + fmtMod(wisMod);
     var stars = star==="Archer" ? ["A luminous arrow as you start and as a bonus action on later turns, 60 ft, " + dice + " radiant"]
@@ -523,6 +529,10 @@ function appendRolls(c, id, info){
     buttons.push(rollButton(makeDiceSvg(), "Attack " + fmtMod(tentHit), function(){ rollAttack(c, tentHit, tentRoll.mode, "Tentacle of the Deeps", {qty: tent, die: 8, bonus: 0, label: "Tentacle of the Deeps (Cold)", offerDamage: true}); }));
     buttons.push(rollButton(makeDicesSvg(), "Cold " + tent + "d8", function(){ performRoll(8, tent, 0, "none", "Tentacle of the Deeps (Cold)"); }));
     if(classLevelOf(c, "Warlock", "The Fathomless") >= 6) buttons.push(rollButton(makeDicesSvg(), "Guardian Coil " + tent + "d8", function(){ performRoll(8, tent, 0, "none", "Guardian Coil: damage reduced"); }));
+  }
+  if(id==="wrath_of_the_sea"){
+    var wd = wrathDice(c);
+    buttons.push(rollButton(makeDicesSvg(), "Wrath " + wd + "d6 cold", function(){ performRoll(6, wd, 0, "none", "Wrath of the Sea (Cold, CON save DC " + druidDc(c) + ")"); }));
   }
   if(id==="spreading_spores"){
     var cube = haloOfSporesDie(c);

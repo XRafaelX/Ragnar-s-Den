@@ -15,13 +15,13 @@ import { optionEffects } from "./class-options.js";
 import { styleSenses } from "./fighting-styles.js";
 import { mod, fmtMod, totalLevel, profBonus, clamp } from "./basics.js";
 import { halfProficiency, checkAbility } from "./checks.js";
-import { findSubclass, classFeatureList } from "./class-features.js";
+import { findSubclass, classFeatureList, classLevelOf } from "./class-features.js";
 import { effectOn, bladesongBonus, wildSurgeNow } from "./effects.js";
 import { twilightShroud } from "./cleric.js";
 import { defensiveFlourish } from "./bard.js";
 import { stoneBenefit, wardLeft } from "./wizard.js";
 import { soulOfArtificeBonus } from "./artificer.js";
-import { wildForm, wildShapeSpeeds, wildShapeArmorClass, wildShapeSenses, incarnationAc } from "./druid.js";
+import { wildForm, wildShapeSpeeds, wildShapeArmorClass, wildShapeSenses, incarnationAc, moonConBonus } from "./druid.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
 import { infusionSpeedParts } from "./infusion-effects.js";
@@ -52,7 +52,7 @@ export function raceHpBonus(c){
 /* An item that raises Constitution (an Amulet of Health) raises the hit
    point maximum by the change in modifier for every level. */
 export function itemConHpBonus(c){
-  if(c.wildShape) return 0; // (the form's CON, not an item's)
+  if(c.wildShape && !c.wildShape.own) return 0; // (the form's CON, not an item's)
   var gain = mod(abilityScore(c, "con")) - mod(baseScore(c, "con"));
   return gain > 0 ? gain * totalLevel(c) : 0;
 }
@@ -78,7 +78,7 @@ export function hpBonuses(c){
 }
 /* The hit point maximum, halved (rounded down) from exhaustion level 4. */
 export function maxHp(c){
-  if(c.wildShape) return hpMaxHalved(c) ? Math.max(1, Math.floor(c.wildShape.max / 2)) : c.wildShape.max;
+  if(c.wildShape && !c.wildShape.own) return hpMaxHalved(c) ? Math.max(1, Math.floor(c.wildShape.max / 2)) : c.wildShape.max;
   var full = fullMaxHp(c);
   return hpMaxHalved(c) ? Math.max(1, Math.floor(full / 2)) : full;
 }
@@ -211,6 +211,8 @@ export function computeSpeed(c){
   // Wings while they last: a 2024 dragonborn's Draconic Flight and a 2024
   // aasimar's Heavenly Wings, a fly speed equal to the speed.
   if(effectOn(c, "draconic_flight")) list.push({type: "fly", value: walk, when: "", source: "Draconic Flight"});
+  // Stormborn (Circle of the Sea 10): flying while the Wrath of the Sea is on.
+  if(effectOn(c, "wrath_of_the_sea") && classLevelOf(c, "Druid", "Circle of the Sea") >= 10) list.push({type: "fly", value: walk, when: "", source: "Stormborn"});
   if(effectOn(c, "celestial_revelation_2024") && c.effects.celestial_revelation_2024==="Heavenly Wings") list.push({type: "fly", value: walk, when: "", source: "Heavenly Wings"});
   // The 2024 barbarian: Rage of the Gods, Falcon, Panther and Salmon.
   var rageFly = rageFlySource(c, !!body);
@@ -455,6 +457,9 @@ export function computeSave(c, key){
   // Magic items that add to every save (a Cloak of Protection).
   magicItemSaveBonuses(c).forEach(function(b){ bonuses.push(b); });
   if(effectOn(c, "durable_magic") && !unconscious) bonuses.push({name: "Durable Magic", value: 2});
+  // Improved Circle Forms (2024 Moon 6): WIS to CON saves in a form.
+  var moonCon = key==="con" ? moonConBonus(c) : 0;
+  if(moonCon) bonuses.push({name: "Improved Circle Forms", value: moonCon});
   var artifice = soulOfArtificeBonus(c);
   if(artifice) bonuses.push({name: "Soul of Artifice", value: artifice});
   // Half cover in a Twilight Sanctuary.

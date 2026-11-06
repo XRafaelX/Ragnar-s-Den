@@ -434,7 +434,7 @@ export function performRoll(die, qty, modifier, adv, label, extra){
     if(onResult) onResult({total: finalTotal, natural: natural, values: finalValues});
     var follow = followUp && followUp({total: finalTotal, natural: natural, values: finalValues});
     followEl.innerHTML = "";
-    if(follow) renderFollowUp(followEl, follow, function(res){
+    if(follow) renderFollowUp(followEl, follow, function picked(res){
       // A reroll (Magical Guidance): the same roll again, and it stands
       // (an adjustment still applies to it, but no second follow-up).
       if(res.reroll){
@@ -452,6 +452,17 @@ export function performRoll(die, qty, modifier, adv, label, extra){
       bonusNotes += ' <span class="rd-note">' + fmtMod(res.bonus) + " = " + finalTotal + "</span>";
       detailEl.innerHTML = detailWith(chipsAll) + bonusNotes;
       logRoll(label || ("d" + die), res.log + ": " + fmtMod(res.bonus) + ", now " + finalTotal);
+      // (The roll became a 20: Stroke of Luck. A critical hit, with its buttons.)
+      if(res.crit){
+        badgeSlot.innerHTML = '<span class="crit-badge crit-success">✨ ' + escapeHtml(res.crit) + ': Critical Hit! ✨</span>';
+        playCrit();
+      }
+      if(res.next){
+        followEl.innerHTML = "";
+        renderFollowUp(followEl, res.next, picked);
+        showKept(followEl);
+        showResult();
+      }
     });
     showKept(followEl);
     showResult();
