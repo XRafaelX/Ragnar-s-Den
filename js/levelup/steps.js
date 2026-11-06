@@ -8,9 +8,9 @@ import { CLASSES_INFO } from "../data/classes.js";
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
 import { mod, fmtMod, ce, escapeHtml, totalLevel, profBonus, ordinal, spellHeldBy, variantBase, subclassesFor, classHasEdition } from "../core/helpers.js";
 import { renderSpellChoiceOptions } from "../ui/spell-choice.js";
-import { invocationsKnownAt, invocationDef, pactBoonDef } from "../data/invocations.js";
+import { invocationsKnownAt, invocationDef, pactBoonDef, invocationLabel } from "../data/invocations.js";
 import { optionsKnownAt } from "../data/class-options.js";
-import { availableInvocations } from "../core/invocations.js";
+import { availableInvocations, resolveSpellPick } from "../core/invocations.js";
 import { renderPactBoonOptions, renderInvocationPicker, renderSpellPickPickers, renderHiddenNotes } from "../ui/invocation-picks.js";
 import { themedPicker } from "../ui/themed-picker.js";
 import { planSlots, planContext, knownOptions, availableOptions } from "../core/class-options.js";
@@ -377,15 +377,16 @@ export function stepInvocations(container){
 
   var known = knownNow();
   var need = newInvocationCount();
-  var total = invocationsKnownAt(t.newLevel);
+  var total = invocationsKnownAt(t.newLevel, luEdition() || "");
   var ctx = luInvocationCtx();
   // Only invocations the warlock can take are listed; a pick that no
   // longer qualifies (the Pact Boon changed above) is cleared.
   var availableNames = availableInvocations(ctx).map(function(i){ return i.name; });
   var n = invocationSlots();
   lu.invPicks = lu.invPicks.slice(0, n).map(function(v){ return availableNames.indexOf(v)!==-1 ? v : ""; });
+  var ed2024 = ctx.edition==="2024";
   var favourites = [["Agonizing Blast", "more Eldritch Blast damage"], ["Devil's Sight", "see in magical darkness"], ["Armor of Shadows", "free Mage Armor"]]
-    .filter(function(f){ return availableNames.indexOf(f[0])!==-1; }).slice(0, 2)
+    .filter(function(f){ return availableNames.indexOf(ed2024 ? f[0] + " (2024)" : f[0])!==-1; }).slice(0, 2)
     .map(function(f){ return "<b>"+escapeHtml(f[0])+"</b> ("+escapeHtml(f[1])+")"; });
   var card = stepCard(container, "Eldritch invocations",
     "<b>Invocations</b> are lasting gifts from your patron, such as casting a spell at will or a stronger Eldritch Blast. "+
@@ -404,9 +405,15 @@ export function stepInvocations(container){
     if(inv && inv.spellPick){
       var values = lu.invSpells[inv.name] = lu.invSpells[inv.name] || [];
       var sp = ce("p","lu-choice-title");
-      sp.textContent = inv.name+": choose "+inv.spellPick.count+" "+inv.spellPick.label;
+      // (A 2024 one names a cantrip you know: Agonizing Blast's Eldritch Blast.)
+      sp.textContent = invocationLabel(inv.name)+": choose "+(inv.spellPick.known ? "the "+inv.spellPick.label : inv.spellPick.count+" "+inv.spellPick.label);
       card.appendChild(sp);
-      card.appendChild(renderSpellPickPickers(inv.spellPick, values, "lu:invsp:"+i, render, spellHeldNow));
+      card.appendChild(renderSpellPickPickers(resolveSpellPick(inv.spellPick, ctx, inv.name), values, "lu:invsp:"+i, render, spellHeldNow));
+    }
+    if(inv && inv.featPick){
+      var fp = ce("p","lu-note");
+      fp.textContent = "You choose its Origin feat on the Eldritch invocations card (Features tab) after the level-up.";
+      card.appendChild(fp);
     }
   }
   for(var i=0;i<need;i++) picker(i, need>1 ? "New invocation "+(i+1) : "New invocation");
@@ -421,7 +428,7 @@ export function stepInvocations(container){
     swapHelp.textContent = "Each warlock level you may replace one invocation you know with another you could learn now. Most players keep theirs.";
     card.appendChild(swapHelp);
     var field = ce("div","field rt-field fp-field eli-field");
-    var options = [{value:"", label:"Keep them all", muted:true}].concat(known.map(function(e){ return {value:e.id, label:"Replace "+e.name}; }));
+    var options = [{value:"", label:"Keep them all", muted:true}].concat(known.map(function(e){ return {value:e.id, label:"Replace "+invocationLabel(e.name)}; }));
     field.appendChild(themedPicker({
       key: "lu:swap", ariaLabel: "Invocation to replace", placeholder: "Keep them all", search: false,
       groups: {"": options}, value: lu.swapOut,
@@ -432,7 +439,7 @@ export function stepInvocations(container){
     }));
     card.appendChild(field);
     var replacing = lu.swapOut && known.find(function(e){ return e.id===lu.swapOut; });
-    if(replacing) picker(n-1, "Replacement for "+replacing.name);
+    if(replacing) picker(n-1, "Replacement for "+invocationLabel(replacing.name));
   }
   var hiddenNote = renderHiddenNotes(ctx);
   if(hiddenNote) card.appendChild(hiddenNote);
@@ -812,9 +819,9 @@ export function stepReview(container){
     if(pactDue() && lu.pactBoon) items.push("Pact Boon: "+(pactChange() ? t.existing.pactBoon+" → " : "")+lu.pactBoon+(lu.pactSpells.length ? " ("+lu.pactSpells.filter(Boolean).join(", ")+")" : ""));
     var swapped = lu.swapOut && knownNow().find(function(e){ return e.id===lu.swapOut; });
     var fresh = lu.invPicks.slice(0, invocationSlots()).filter(Boolean);
-    if(swapped && fresh.length) items.push("Invocation swap: "+swapped.name+" → "+fresh[fresh.length-1]);
+    if(swapped && fresh.length) items.push("Invocation swap: "+invocationLabel(swapped.name)+" → "+invocationLabel(fresh[fresh.length-1]));
     var added = swapped ? fresh.slice(0, -1) : fresh;
-    if(added.length) items.push("New invocation"+(added.length>1 ? "s" : "")+": "+added.join(", "));
+    if(added.length) items.push("New invocation"+(added.length>1 ? "s" : "")+": "+added.map(invocationLabel).join(", "));
   }
   if(stepApplicable("options")) optionPlans().forEach(function(plan){
     var choice = optChoice(plan.set.id), n = planSlots(plan, t.existing, choice);

@@ -1,10 +1,13 @@
 import { save } from "../../core/state.js";
 import { escapeHtml, spellHeldBy } from "../../core/helpers.js";
-import { invocationDef, pactBoonDef, INVOCATION_SOURCES } from "../../data/invocations.js";
+import { invocationDef, pactBoonDef, INVOCATION_SOURCES, invocationLabel } from "../../data/invocations.js";
 import {
   warlockEntry, knownInvocations, invocationsDue, invocationContext, invocationReason, invocationBroken,
-  learnInvocation, forgetInvocation, eldritchBlastSummary, customInvocationFeatures, adoptCustomInvocations
+  learnInvocation, forgetInvocation, eldritchBlastSummary, customInvocationFeatures, adoptCustomInvocations,
+  resolveSpellPick, lessonsFeatChoices, lessonsFeat, addLessonsFeat
 } from "../../core/invocations.js";
+import { featDef, featHasPicks, featNeedsChoice, applyFeatPicks, emptyPicks } from "../../core/feat-picks.js";
+import { themedPicker } from "../../ui/themed-picker.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { meter, sectionTitle, hint } from "../../ui/card-parts.js";
 import { renderPactBoonOptions, renderInvocationPicker, renderSpellPickPickers, renderHiddenNotes } from "../../ui/invocation-picks.js";
@@ -33,7 +36,8 @@ export function renderInvocationsCard(c){
   card.classList.add("inf-card", "eli-card");
   card.appendChild(hint("Invocations are lasting gifts from your patron: a spell you can cast at will, a stronger Eldritch Blast, a new sense. You learn more as you level up, and the sheet applies what each one does."));
 
-  if(level < 2){
+  // (A 2024 warlock knows one from level 1.)
+  if(level < 2 && cl.edition!=="2024"){
     var soon = hint("You learn your first two invocations at warlock level 2. The level-up will ask you to pick them.");
     soon.classList.add("inf-note");
     card.appendChild(soon);
@@ -48,7 +52,8 @@ export function renderInvocationsCard(c){
     known.length>due ? "More than your level allows" : known.length<due ? (due-known.length)+" left to learn" : "All learned"));
   card.appendChild(meters);
 
-  if(level >= 3) card.appendChild(pactSection(c, cl));
+  // (The 2024 pacts are invocations.)
+  if(level >= 3 && cl.edition!=="2024") card.appendChild(pactSection(c, cl));
 
   var blast = eldritchBlastSummary(c);
   if(blast) card.appendChild(blastBox(blast));
@@ -138,10 +143,11 @@ function pendingPicks(c, pick, draftKey, onSave){
 
 function invocationEntry(c, cl, e){
   var inv = invocationDef(e.name) || {name:e.name, text:"", source:""};
+  var label = invocationLabel(e.name);
   var entry = document.createElement("div");
   entry.className = "inf-entry is-on eli-entry";
-  entry.appendChild(entryHead(e.name, "Remove", function(){
-    confirmDialog("Remove " + e.name + "?", "Normally you only swap invocations when you level up. Remove it to fix a mistake, then learn the right one below.", function(){
+  entry.appendChild(entryHead(label, "Remove", function(){
+    confirmDialog("Remove " + label + "?", "Normally you only swap invocations when you level up. Remove it to fix a mistake, then learn the right one below.", function(){
       forgetInvocation(c, cl, e.id);
       save(); renderAll(); playDelete();
     });
@@ -154,9 +160,13 @@ function invocationEntry(c, cl, e){
   }
   entry.appendChild(text(inv.text));
   if(inv.spellPick){
-    if((e.spells||[]).length >= inv.spellPick.count) entry.appendChild(tagRow(["Rituals: " + e.spells.join(", ")]));
-    else entry.appendChild(pendingPicks(c, inv.spellPick, e.id, function(values){ e.spells = values; }));
+    // (A 2024 cantrip pick names one the warlock knows; the 2024 Tome holds cantrips and rituals.)
+    var pick = inv.spellPick.known ? resolveSpellPick(inv.spellPick, invocationContext(c, cl), inv.name) : inv.spellPick;
+    var tagLead = inv.spellPick.known ? "For " : inv.spellPick.parts ? "Book of Shadows: " : "Rituals: ";
+    if((e.spells||[]).length >= inv.spellPick.count) entry.appendChild(tagRow([tagLead + e.spells.join(", ")]));
+    else entry.appendChild(pendingPicks(c, pick, e.id, function(values){ e.spells = values; }));
   }
+  if(inv.featPick) entry.appendChild(lessonsFeatBox(c, cl, e));
   var tags = effectTags(inv);
   if(tags.length) entry.appendChild(tagRow(tags));
   var broken = invocationBroken(c, cl, e);
@@ -166,6 +176,34 @@ function invocationEntry(c, cl, e){
     entry.appendChild(warn);
   }
   return entry;
+}
+
+/* Lessons of the First Ones: its Origin feat, picked here (it then sits
+   with your feats, and its own choices open as for any feat). */
+function lessonsFeatBox(c, cl, e){
+  var feat = lessonsFeat(c, e);
+  if(feat) return tagRow(["Feat: " + feat.name + " (Features tab)"]);
+  var wrap = document.createElement("div");
+  wrap.className = "eli-pending";
+  var lead = hint("Choose its Origin feat:");
+  lead.classList.add("inf-note");
+  wrap.appendChild(lead);
+  var field = document.createElement("div");
+  field.className = "field inf-field eli-field";
+  field.appendChild(themedPicker({
+    key: "eli:lessons:" + e.id, ariaLabel: "Origin feat", placeholder: "Choose an Origin feat", search: false, sheet: true,
+    groups: {"": lessonsFeatChoices(c, cl).map(function(n){ return {value: n, label: n + ": " + (featDef(n).summary || "")}; })},
+    onPick: function(name){
+      var def = featDef(name), copy = addLessonsFeat(c, e, name);
+      if(!copy) return;
+      if(featHasPicks(def) && !featNeedsChoice(def)) applyFeatPicks(c, copy, emptyPicks(def));
+      save(); renderAll(); playAdd();
+      // (Loaded when needed: the feat dialog builds its page parts on load.)
+      if(featNeedsChoice(def)) import("../../ui/feat-picks.js").then(function(m){ m.openFeatPicksModal(c, copy, function(){ save(); renderAll(); }); });
+    }
+  }));
+  wrap.appendChild(field);
+  return wrap;
 }
 
 /* Short tags for what the sheet does with it, so it's clear where to look. */
@@ -228,7 +266,7 @@ function learnForm(c, cl){
   btn.addEventListener("click", function(){
     if(!picked) return;
     learnInvocation(c, cl, picked.name, []);
-    showActionToast("Learned " + picked.name + "." + (picked.spellPick ? " Choose its spells on its card." : ""));
+    showActionToast("Learned " + invocationLabel(picked.name) + "." + (picked.spellPick && picked.spellPick.known ? " Choose its cantrip on its card." : picked.spellPick ? " Choose its spells on its card." : picked.featPick ? " Choose its feat on its card." : ""));
     learnPick = "";
     save(); renderAll(); playAdd();
   });

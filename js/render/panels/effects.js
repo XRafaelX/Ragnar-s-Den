@@ -234,6 +234,7 @@ function effectSummary(c, id){
     var halo = haloOfSporesDie(c);
     return "+" + symbioticTempHp(c) + " temporary HP. Halo of Spores deals 2d" + halo + " necrotic, and your melee weapon attacks deal 1d6 more necrotic";
   }
+  if(id==="third_eye" && classLevelOf(c, "Wizard", "Diviner")) return {"Darkvision": "Darkvision 120 ft", "Greater Comprehension": "Read any language", "See Invisibility": "Cast See Invisibility without a spell slot"}[c.effects && c.effects.third_eye] || "";
   if(id==="third_eye") return {"Darkvision": "Darkvision 60 ft", "Ethereal Sight": "See into the Ethereal Plane within 60 ft", "Greater Comprehension": "Read any language", "See Invisibility": "See invisible creatures and objects within 10 ft in your line of sight"}[c.effects && c.effects.third_eye] || "One sight of your choice";
   if(id==="arcane_deflection") return "+2 AC against that attack. You can only cast cantrips until the end of your next turn" + (deflectingShroud(c) ? ". Deflecting Shroud: up to three creatures within 60 ft take " + deflectingShroud(c) + " force damage" : "");
   if(id==="durable_magic") return "+2 AC and +2 to all saving throws";

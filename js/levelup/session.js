@@ -8,6 +8,7 @@ import { ABILITIES, SKILLS, HIT_DICE_BY_CLASS } from "../data/abilities-skills.j
 import { CLASS_PROGRESSION, MAX_LEVEL, XP_THRESHOLDS } from "../data/progression.js";
 import { mod, ce, escapeHtml, totalLevel, classFeaturesGainedAt, classVariantSwaps, syncTashaAdditions, wizardScrollSave, wizardScrollRestore, wizardScrollReset, hasFeat, raceHpPerLevel, classSpellChoices, spellHeldBy } from "../core/helpers.js";
 import { knownInvocations, levelUpPlan, levelUpContext, levelUpProblem } from "../core/invocations.js";
+import { invocationDef } from "../data/invocations.js";
 import { levelUpOptionPlans, planProblem, planSlots, allKnownOptions } from "../core/class-options.js";
 import { levelUpGrants, grantHasChoices, grantHasSpells, classPickContext, classPicksProblem, fillSlots, slotIsFixed, raceSize } from "../core/class-picks.js";
 import { styleDueAt, classStyleList, availableStyleNames, versatilityStyleSwap, styleFeatures, stylePicksProblem, styleCantripSwap } from "../core/fighting-styles.js";
@@ -110,7 +111,8 @@ export function stepApplicable(id){
   if(id==="spells") return dueSpellChoices().length > 0;
   if(id==="cantrips"){ var cp = currentLearnPlan(); return cp.sections.some(onCantripStep) || !!cp.cantripSwap || cp.auto.length > 0; }
   if(id==="learn"){ var lp = currentLearnPlan(); return lp.sections.some(function(x){ return !onCantripStep(x); }) || !!lp.swap; }
-  if(id==="invocations") return lu.className==="Warlock" && t.newLevel >= 2;
+  // (A 2024 warlock learns one from level 1.)
+  if(id==="invocations") return lu.className==="Warlock" && (t.newLevel >= 2 || luEdition()==="2024");
   if(id==="options") return optionPlans().length > 0;
   if(id==="profs") return profGrantsToChoose().length > 0 || variantOffers().length > 0;
   if(id==="asi") return t.asi;
@@ -328,9 +330,9 @@ export function profPicksToApply(){
 }
 
 export function invChoice(){
-  return {pactBoon: lu.pactBoon, pactSpells: lu.pactSpells, picks: lu.invPicks, pickSpells: lu.invSpells, swapOut: lu.swapOut, pactChange: pactChange()};
+  return {pactBoon: lu.pactBoon, pactSpells: lu.pactSpells, picks: lu.invPicks, pickSpells: lu.invSpells, swapOut: lu.swapOut, pactChange: pactChange(), edition: luEdition() || ""};
 }
-function invPlan(){ var t = target(); return levelUpPlan(t.existing, t.newLevel, lu.swapOut, pactChange()); }
+function invPlan(){ var t = target(); return levelUpPlan(t.existing, t.newLevel, lu.swapOut, pactChange(), luEdition() || ""); }
 export function pactDue(){ return invPlan().pactDue; }
 export function knownNow(){ return knownInvocations(target().existing); }
 export function newInvocationCount(){ return invPlan().fresh; }
@@ -342,8 +344,10 @@ function invocationProblem(){
   if(problem) return problem;
   // A Tome cantrip or ritual the character already has (or is learning now).
   var choice = invChoice();
+  // (Not a cantrip a 2024 invocation names: the warlock knows it already.)
   var picked = (pactDue() ? choice.pactSpells||[] : []).concat(Object.keys(choice.pickSpells||{}).reduce(function(a, k){
-    return (choice.picks||[]).indexOf(k)!==-1 ? a.concat(choice.pickSpells[k]) : a; }, [])).filter(Boolean);
+    var d = invocationDef(k);
+    return (choice.picks||[]).indexOf(k)!==-1 && !(d && d.spellPick && d.spellPick.known) ? a.concat(choice.pickSpells[k]) : a; }, [])).filter(Boolean);
   var dup = picked.find(function(n){ return spellHeldNow(n); });
   return dup ? "You already have "+dup+" ("+spellHeldNow(dup)+"). Pick a different spell." : null;
 }

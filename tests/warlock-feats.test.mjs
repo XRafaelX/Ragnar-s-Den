@@ -16,6 +16,8 @@ import { BACKGROUND_INFO, BACKGROUND_LANGUAGES } from "../js/data/backgrounds.js
 import { SPELL_DATA, spellsMatching } from "../js/data/spells.js";
 import { INVOCATIONS, invocationDef, pactBoonDef, invocationsKnownAt } from "../js/data/invocations.js";
 import { withFakeDom } from "./fake-dom.mjs";
+// (The 2014 invocations: the 2024 ones are in tests/warlock-2024.test.mjs.)
+const INVOCATIONS_2014 = INVOCATIONS.filter((i) => !i.edition);
 
 /* A full character from the app's own factory. */
 function makeChar(classes, extra = {}){
@@ -367,12 +369,12 @@ test("warlockEntry and knownInvocations", () => {
 
 test("every invocation's prerequisite, one by one", () => {
   // A warlock 20 with every pact and Eldritch Blast meets them all...
-  for(const inv of INVOCATIONS){
+  for(const inv of INVOCATIONS_2014){
     const c = warlock(20, { spells: [{ name: "Eldritch Blast" }, { name: "Hex" }], tashaOptional: true }, { pactBoon: inv.pact || "Pact of the Blade" });
     assert.equal(reason(c, c.classes[0], inv.name), "", inv.name);
   }
   // ...and each requirement shows when it's missing.
-  for(const inv of INVOCATIONS){
+  for(const inv of INVOCATIONS_2014){
     const c = warlock(2, { spells: [] }, { pactBoon: "" });
     const why = reason(c, c.classes[0], inv.name);
     if(inv.optional) assert.equal(why, "Tasha's optional", inv.name + ": Tasha's optional comes first");
@@ -428,7 +430,7 @@ test("pickers list only what the warlock can take, and say why others are missin
   for(const n of ["Armor of Shadows", "Beast Speech", "Beguiling Influence", "Devil's Sight", "Thief of Five Fates"]) assert.ok(two.includes(n), n);
   for(const n of ["Agonizing Blast", "Ascendant Step", "Bewitching Whispers", "Book of Ancient Secrets", "Lifedrinker", "Maddening Hex", "Thirsting Blade", "Eldritch Mind"]) assert.ok(!two.includes(n), n);
   assert.ok(two.every((n) => reason(c, c.classes[0], n) === ""), "everything listed passes its prerequisite");
-  assert.equal(two.length, INVOCATIONS.filter((i) => !i.level && !i.pact && !i.needs && !i.optional).length, "exactly the ones with no prerequisite, Tasha's left out");
+  assert.equal(two.length, INVOCATIONS_2014.filter((i) => !i.level && !i.pact && !i.needs && !i.optional).length, "exactly the ones with no prerequisite, Tasha's left out");
   // With Tasha's optional features, Eldritch Mind joins them.
   assert.ok(listed(c, { tasha: true }).includes("Eldritch Mind"));
   assert.ok(!notes(c, { tasha: true }).some((n) => /Tasha's Cauldron adds/.test(n)), "and the Tasha's note goes");

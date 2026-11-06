@@ -26,7 +26,11 @@
      sight      a sense shown with the character's senses ("Devil's Sight 120 ft")
      remind     {when, line} for the Vitals tab's Remember card, like a
                 class feature's (js/core/reminders.js)
-   Anything else an invocation does stays as its text on the card. */
+   Anything else an invocation does stays as its text on the card.
+   The 2024 invocations (`edition: "2024"`, js/data/warlock-2024.js) come
+   after them, offered only to a 2024 warlock (and the 2014 ones only to a
+   2014 one). */
+import { INVOCATIONS_2024, INVOCATIONS_KNOWN_2024 } from "./warlock-2024.js";
 export var INVOCATIONS = [
   /* ---- Player's Handbook ---- */
   {name:"Agonizing Blast", source:"PHB", needs:"eldritchBlast", blast:{damage:true},
@@ -141,7 +145,7 @@ export var INVOCATIONS = [
     text:"When the wearer of your talisman is hit by an attacker you can see within 30 feet of you, you can use your reaction to deal psychic damage to the attacker equal to your proficiency bonus and push it up to 10 feet away from the talisman's wearer."},
   {name:"Undying Servitude", source:"TCE", optional:true, level:5, spells:[{name:"Animate Dead", kind:"free"}],
     text:"You can cast animate dead without using a spell slot. Once you do so, you can't cast it in this way again until you finish a long rest."}
-];
+].concat(INVOCATIONS_2024);
 
 /* The Pact Boon at warlock level 3 (Tasha's adds the Talisman). Shaped
    like an invocation for spells, picks and uses. */
@@ -160,11 +164,16 @@ export var PACT_BOONS = [
     text:"Your patron gives you an amulet. When its wearer fails an ability check, they can add a d4 to the roll, potentially turning it into a success. This can be used a number of times equal to your proficiency bonus, regained when you finish a long rest. If you lose the talisman, a 1-hour ceremony gets you a replacement (and destroys the old one)."}
 ];
 
-export var INVOCATION_SOURCES = {PHB:"Player's Handbook", XGE:"Xanathar's Guide", TCE:"Tasha's Cauldron"};
+export var INVOCATION_SOURCES = {PHB:"Player's Handbook", XGE:"Xanathar's Guide", TCE:"Tasha's Cauldron", PHB24:"Player's Handbook 2024"};
 
 /* Invocations known at each warlock level (index = level). */
 var KNOWN = [0,0,2,2,2,3,3,4,4,5,5,5,6,6,6,7,7,7,8,8,8];
-export function invocationsKnownAt(level){ return KNOWN[Math.max(0, Math.min(20, Number(level)||0))]; }
+export function invocationsKnownAt(level, edition){ return (edition==="2024" ? INVOCATIONS_KNOWN_2024 : KNOWN)[Math.max(0, Math.min(20, Number(level)||0))]; }
 
 export function invocationDef(name){ return INVOCATIONS.find(function(i){ return i.name===name; }) || null; }
 export function pactBoonDef(name){ return PACT_BOONS.find(function(p){ return p.name===name; }) || null; }
+/* The name to show: a 2024 invocation without its " (2024)". */
+export function invocationLabel(name){
+  var d = invocationDef(name);
+  return (d && d.label) || String(name || "").replace(/ \(2024\)$/, "");
+}

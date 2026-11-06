@@ -18,6 +18,9 @@ import { styleNeedsPicks } from "../core/fighting-styles.js";
 import { languagePickerGroups } from "../data/languages.js";
 import { SUBCLASSES } from "../data/progression.js";
 import { RACE_DATA } from "../data/race-data.js";
+import { invocationDef } from "../data/invocations.js";
+import { newWarlockContext } from "../core/invocations.js";
+import { renderInvocationPicker, renderSpellPickPickers } from "../ui/invocation-picks.js";
 
 /* What a Rogue-style expertise pick can target: every skill the new
    character is proficient in (class picks + background) plus any tools
@@ -76,6 +79,7 @@ export function wizardStepChoices(container){
     else if(ch.kind==="fightingStyle") choiceFightingStyle(body, ch);
     else if(ch.kind==="listPick") choiceListPick(body, ch);
     else if(ch.kind==="expertise") choiceExpertise(body, ch);
+    else if(ch.kind==="invocation") choiceInvocation(body, ch);
     // Spell picks the subclass asks for now: a genie kind, a Divine Soul's affinity.
     if(ch.kind==="subclass") wizardSpellChoices().forEach(function(x){
       panelBody(x.feature + ": " + x.choice.label).appendChild(renderSpellChoiceOptions(x.choice, x.pick, function(v){
@@ -169,6 +173,28 @@ function choiceSubclass(card, ch){
    instruments, a ranger's favored enemy): dropdowns instead of a wall of
    option cards. With a `count` above 1 the value is an array, one entry
    per dropdown. */
+/* The 2024 warlock's first invocation (only ones with no prerequisite at
+   level 1), and the Book of Shadows' spells for Pact of the Tome. */
+function choiceInvocation(card, ch){
+  var picks = wizardState.classChoices;
+  card.appendChild(renderInvocationPicker({
+    key: "wiz:inv", ctx: newWarlockContext(wizardEdition()), value: picks[ch.id] || "", ariaLabel: ch.label,
+    onPick: function(v){
+      if(v!==picks[ch.id]) picks.invocationSpells = [];
+      picks[ch.id] = v;
+      var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
+      renderWizard();
+    }
+  }));
+  var def = invocationDef(picks[ch.id]);
+  if(def && def.spellPick && !def.spellPick.known){
+    var values = picks.invocationSpells = picks.invocationSpells || [];
+    var title = ce("p", "cf-feature-help");
+    title.textContent = "Choose " + def.spellPick.label + ".";
+    card.appendChild(title);
+    card.appendChild(renderSpellPickPickers(def.spellPick, values, "wiz:invsp", renderWizard));
+  }
+}
 function choiceListPick(card, ch){
   var count = ch.count || 1;
   var noun = ch.label.toLowerCase().replace(/s$/, "");

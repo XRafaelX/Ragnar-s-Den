@@ -155,7 +155,7 @@ export function featStyleChoices(){ return classStyleList("Fighter"); }
 export function featInvocationChoices(ctx){
   if(ctx && ctx.invocationChoices) return ctx.invocationChoices();
   return INVOCATIONS.filter(function(inv){
-    return !inv.level && !inv.pact && !inv.needs && !inv.spellPick && (!inv.optional || (ctx && ctx.tasha));
+    return !inv.edition && !inv.level && !inv.pact && !inv.needs && !inv.spellPick && (!inv.optional || (ctx && ctx.tasha));
   }).map(function(inv){ return inv.name; });
 }
 /* What the picked option does, as "Fire Strike: ..." ("" for none). */

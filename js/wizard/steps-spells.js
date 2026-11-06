@@ -1,6 +1,7 @@
 /* ---------------- Creation wizard: spells and the review ----------------
    The Cantrips and Spells steps and the last screen, which lists
    everything chosen before the character is made. */
+import { invocationLabel } from "../data/invocations.js";
 import { ABILITIES, HIT_DICE_BY_CLASS } from "../data/abilities-skills.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { pickNameIdeas, pickTitleIdeas } from "../data/misc.js";
@@ -294,6 +295,12 @@ export function wizardStepReview(container){
   row("Skills", allSkills.filter(function(sk, i){ return allSkills.indexOf(sk)===i; }).join(", ") || "None");
   (info.choices||[]).forEach(function(ch){
     var v = wizardState.classChoices[ch.id];
+    // (A 2024 invocation: its name, and the Book of Shadows' spells.)
+    if(ch.kind==="invocation" && v){
+      var tome = (wizardState.classChoices.invocationSpells||[]).filter(Boolean);
+      row(ch.label, invocationLabel(v) + (tome.length ? " (" + tome.join(", ") + ")" : ""));
+      return;
+    }
     row(ch.label, Array.isArray(v) ? v.join(", ") : (v || "None"));
   });
   // What the race's traits let you choose (a Custom Lineage's size).

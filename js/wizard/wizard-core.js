@@ -26,6 +26,8 @@ import { characterBorn } from "../ui/fx.js";
 import { SPELL_DATA } from "../data/spells.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import { preparedAt } from "../data/spells-known.js";
+import { invocationDef, invocationLabel } from "../data/invocations.js";
+import { learnInvocation, spellPickComplete } from "../core/invocations.js";
 import {
   buildEquipmentList,
   wizardStepClass, wizardStepRace, wizardStepBackground, wizardStepAlignment,
@@ -797,8 +799,17 @@ export function validateStep(id){
         var allowed = expertiseOptions(ch);
         return !v || v.length!==ch.count || v.some(function(x){ return allowed.indexOf(x)===-1; });
       }
+      // (The 2024 Pact of the Tome's spells are picked with it.)
+      if(ch.kind==="invocation"){
+        var inv = invocationDef(v);
+        return !inv || (!!inv.spellPick && !spellPickComplete(inv.spellPick, wizardState.classChoices.invocationSpells));
+      }
       return !v;
     });
+    if(missing && missing.kind==="invocation"){
+      var picked = invocationDef(wizardState.classChoices[missing.id]);
+      return picked ? "Choose the " + picked.spellPick.label + " for " + invocationLabel(picked.name) + "." : "Choose your Eldritch Invocation.";
+    }
     if(missing && missing.kind==="fightingStyle"){
       return "Choose a "+missing.label+".";
     }
@@ -1114,6 +1125,9 @@ export function applyClassChoices(c, info, picks){
       var text = ch.featureText ? ch.featureText.replace(/\{v\}/g, joined.toLowerCase()) :
         "You're proficient with "+joined.toLowerCase()+": add your proficiency bonus to ability checks you make with them.";
       c.features.push({id:uid(), name:ch.label+": "+joined, source:"Class", text:text, isPassive:true});
+    } else if(ch.kind==="invocation"){
+      // (The 2024 warlock's first invocation, on the class entry.)
+      learnInvocation(c, c.classes[0], v, (picks.invocationSpells||[]).filter(Boolean));
     } else if(ch.kind==="fightingStyle"){
       c.features.push(makeStyleFeature(v, picks[ch.id+"Picks"]));
     } else if(ch.kind==="expertise"){

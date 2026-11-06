@@ -529,7 +529,9 @@ export function computeDarkvision(c){
     if(f.darkvision && f.darkvision.range > range){ range = f.darkvision.range; sources.push(f.name); }
   });
   var seeing = effectOn(c, "third_eye") && c.effects.third_eye==="Darkvision";
-  if((seeing || stoneBenefit(c)==="Darkvision") && range < 60){ range = 60; sources.push(seeing ? "The Third Eye" : "Transmuter's Stone"); }
+  // (The 2024 Diviner's Third Eye: 120 feet.)
+  var eyeRange = seeing && classLevelOf(c, "Wizard", "Diviner") ? 120 : 60;
+  if((seeing || stoneBenefit(c)==="Darkvision") && range < eyeRange){ range = eyeRange; sources.push(seeing ? "The Third Eye" : "Transmuter's Stone"); }
   // Astral Sight sees through any darkness; shown as 120 ft while the visage is out.
   if(effectOn(c, "astral_visage") && range < 120){ range = 120; sources.push("Astral Sight"); }
   return {range: range, sources: sources};
@@ -544,7 +546,7 @@ export function getCharacterSenses(c){
   // Feats tagged `sense` (Skulker (2024)'s blindsight, Boon of Truesight).
   (c.feats||[]).forEach(function(f){ var fd = featDef(f.name); if(fd && fd.sense && extra.indexOf(fd.sense)===-1) extra.push(fd.sense); });
   if(effectOn(c, "third_eye") && c.effects.third_eye==="Ethereal Sight") extra.push("Ethereal Sight 60 ft");
-  if(effectOn(c, "third_eye") && c.effects.third_eye==="See Invisibility") extra.push("See invisibility 10 ft");
+  if(effectOn(c, "third_eye") && c.effects.third_eye==="See Invisibility" && !classLevelOf(c, "Wizard", "Diviner")) extra.push("See invisibility 10 ft");
   if(effectOn(c, "revelation_in_flesh") && [].concat(c.effects.revelation_in_flesh).indexOf("Sight")!==-1) extra.push("See invisible creatures 60 ft");
   (c.classes||[]).forEach(function(cl){ classFeatureList(cl).forEach(function(f){ if(f.sense && extra.indexOf(f.sense)===-1) extra.push(f.sense); }); });
   if(!dv.range && extra.length) return extra.join(", ");

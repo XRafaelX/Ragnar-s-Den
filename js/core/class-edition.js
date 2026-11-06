@@ -7,6 +7,7 @@ import { CLASS_PROGRESSION } from "../data/progression.js";
 import { classVariants, classHasEdition, subclassesFor } from "./class-features.js";
 import { setMonkEdition } from "./monk.js";
 import { syncStyleWording } from "./fighting-styles.js";
+import { convertInvocationsEdition } from "./invocations.js";
 
 /* Maneuvers known carry over under the same names, for those both lists have. */
 var OPTION_SETS_SWAP = {"maneuvers": "maneuvers2024", "metamagic": "metamagic2024"};
@@ -32,6 +33,8 @@ export function setClassEdition(c, className, on){
     var from = on ? oldId : OPTION_SETS_SWAP[oldId], to = on ? OPTION_SETS_SWAP[oldId] : oldId;
     if(cl.options && cl.options[from] && !cl.options[to]){ cl.options[to] = cl.options[from]; delete cl.options[from]; }
   });
+  // (The 2014 invocations become their 2024 versions, the Pact Boon an invocation.)
+  if(className==="Warlock") convertInvocationsEdition(c, cl, on);
   var ed = CLASS_PROGRESSION[className].editions["2024"];
   if(on && ed.subclassLevel && (Number(cl.level)||1) < ed.subclassLevel) cl.subclass = "";
   syncStyleWording(c);

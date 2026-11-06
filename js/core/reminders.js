@@ -27,7 +27,7 @@ import { styleFeatures, styleDef } from "./fighting-styles.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
 import { optionDef } from "../data/class-options.js";
 import { knownInvocations, featInvocations } from "./invocations.js";
-import { invocationDef } from "../data/invocations.js";
+import { invocationDef, invocationLabel } from "../data/invocations.js";
 import { featDef } from "./feat-picks.js";
 import { RACE_DATA, RACE_TRAIT_REMINDS } from "../data/race-data.js";
 import { totalLevel } from "./basics.js";
@@ -93,7 +93,7 @@ export function characterReminders(c){
   });
   invs.concat(featInvocations(c)).forEach(function(d){
     if(!d.remind || out.some(function(x){ return x.name===d.name; })) return;
-    out.push({name: d.name, when: d.remind.when, line: d.remind.line, text: d.text, level: d.level || 2, source: "Eldritch Invocation"});
+    out.push({name: invocationLabel(d.name), when: d.remind.when, line: d.remind.line, text: d.text, level: d.level || 2, source: "Eldritch Invocation"});
   });
   // Race traits (RACE_TRAIT_REMINDS), from level 1 or the level a trait
   // comes at.

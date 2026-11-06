@@ -38,6 +38,7 @@ function allFeatures(){
 const resourceNames = new Set([].concat(
   ...Object.values(CLASS_RESOURCES).map((list) => list.map((r) => r.name)),
   ...Object.values(SUBCLASS_RESOURCES).map((bySub) => [].concat(...Object.values(bySub)).map((r) => r.name))));
+const classRowNames = new Set([].concat(...Object.values(CLASS_RESOURCES).map((list) => list.map((r) => r.name))));
 const effectNames = new Set(TOGGLE_EFFECTS.map((e) => e.name));
 
 test("every reminder is one short, plain sentence with a known group", () => {
@@ -64,7 +65,11 @@ test("a reminder never repeats what the sheet already shows", () => {
     // Stealth: its reminder is Sniper.)
     const besides = f.name === "War Caster" || f.name === "War Caster (2024)" ? ["advantage"] : f.name === "Skulker (2024)" ? ["advantage", "sense"] : f.name === "Remarkable Athlete" ? ["advantage"] : [];
     for(const k of ["saveNote", "advantage", "skillBonus", "sense", "rollButton"]) assert.ok(!f[k] || besides.includes(k), where + " " + f.name + ": already shown through " + k);
-    assert.ok(!resourceNames.has(f.name), where + " " + f.name + ": already a row on Class resources");
+    // (A subclass feature against its own subclass's rows: the 2024
+    // Archfey's Misty Escape has no uses, the 2014 one's does.)
+    const subRows = sub && Object.values(SUBCLASS_RESOURCES).find((bySub) => bySub[sub]);
+    const rows = subRows ? new Set(subRows[sub].map((r) => r.name).concat(...Object.values(CLASS_RESOURCES).map((list) => list.map((r) => r.name)))) : sub ? classRowNames : resourceNames;
+    assert.ok(!rows.has(f.name), where + " " + f.name + ": already a row on Class resources");
     // (Within the same subclass: the 2014 Land's Nature's Sanctuary isn't the 2024 one's effect.)
     // (And within the same edition: the 2014 Countercharm's performance isn't the 2024 reaction.)
     const onCard = TOGGLE_EFFECTS.some((e) => e.name === f.name && (!sub || !e.subclass || [].concat(e.subclass).includes(sub)) && !(ed && e.edition && e.edition !== ed));

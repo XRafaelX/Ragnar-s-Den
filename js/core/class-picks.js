@@ -317,7 +317,8 @@ export function slotOptions(def, slots, i, ctx){
     return slot.expertise ? list : withSwaps(list, SKILL_NAMES, "Any other skill", skillWhy);
   }
   if(slot.kind==="expertise"){
-    var skills = SKILL_NAMES.filter(function(sk){ return ctx.skillProf(sk) || gained.indexOf(sk)!==-1; });
+    // (Some name their skills: the 2024 wizard's Scholar.)
+    var skills = (slot.options || SKILL_NAMES).filter(function(sk){ return ctx.skillProf(sk) || gained.indexOf(sk)!==-1; });
     list = entries(skills, slot.tools ? "Skills" : "", function(v){ return ctx.skillExpert(v) || (def.expertise||[]).indexOf(v)!==-1 ? "expertise" : ""; });
     return list.concat(entries((slot.tools||[]).filter(function(t){ return ctx.hasTool(t); }), "Tools", function(v){ return ctx.toolExpert(v) ? "expertise" : ""; }));
   }

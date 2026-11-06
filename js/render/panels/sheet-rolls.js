@@ -353,7 +353,7 @@ function withLucky(c, mode, modifier, r, follow){
 }
 /* Dark One's Own Luck (Fiend 6): a d10 on a check or a save. */
 function ownLuckOption(c){
-  return {label: "+1d10 (Dark One's Own Luck)", title: "Once per short or long rest",
+  return {label: "+1d10 (Dark One's Own Luck)", title: "Spends one use",
     use: function(){
       if(!spendResource(c, "Warlock:dark_ones_own_luck", 1)) return null;
       var got = Math.floor(Math.random() * 10) + 1;

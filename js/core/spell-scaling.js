@@ -164,9 +164,13 @@ export function circleSpellNote(c, name){
     notes.push((d.level ? "Improved Reaper" : "Reaper") + ": if it targets only one creature, it can target two within 5 feet of each other" + (d.level ? ", with components for each." : "."));
   // Wizard schools.
   var school = function(n){ return classLevelOf(c, "Wizard", n); };
-  if(school("School of Evocation") >= 2 && d.school==="Evocation" && /\bsave\b/i.test(d.summary)) notes.push("Sculpt Spells: up to " + (1 + d.level) + (d.level ? " creatures" : " creature") + " you can see automatically succeed, and take no damage on a half-damage save.");
+  // (The 2024 Evoker sculpts from level 6, and its Spell Breaker covers Dispel Magic.)
+  var evoker = school("Evoker");
+  if((evoker ? evoker >= 6 : school("School of Evocation") >= 2) && d.school==="Evocation" && /\bsave\b/i.test(d.summary)) notes.push("Sculpt Spells: up to " + (1 + d.level) + (d.level ? " creatures" : " creature") + " you can see automatically succeed, and take no damage on a half-damage save.");
   if(school("School of Abjuration") >= 2 && d.school==="Abjuration" && d.level >= 1) notes.push("Arcane Ward: casting it gives your ward " + 2 * d.level + " hit points, or creates it.");
-  if(school("School of Abjuration") >= 10 && (spell==="Counterspell" || spell==="Dispel Magic")) notes.push("Improved Abjuration: add " + profBonus(c) + " to the ability check.");
+  if(school("Abjurer") >= 10 && spell==="Dispel Magic") notes.push("Spell Breaker: cast it as a bonus action, adding " + profBonus(c) + " to the ability check. A failed one doesn't spend the slot.");
+  else if(school("Abjurer") >= 10 && spell==="Counterspell") notes.push("Spell Breaker: if it fails to stop a spell, the slot isn't spent.");
+  else if(school("School of Abjuration") >= 10 && (spell==="Counterspell" || spell==="Dispel Magic")) notes.push("Improved Abjuration: add " + profBonus(c) + " to the ability check.");
   if(school("School of Divination") >= 6 && d.school==="Divination" && d.level >= 2) notes.push("Expert Divination: with a slot, you get back a lower slot, 5th level at most.");
   if(school("School of Necromancy") >= 6 && ["Animate Dead", "Create Undead", "Finger of Death"].indexOf(spell)!==-1) notes.push("Undead Thralls: undead it makes get +" + school("School of Necromancy") + " hit points and +" + profBonus(c) + " to weapon damage." + (spell==="Animate Dead" ? " You can target one more corpse or pile of bones." : ""));
   if(school("School of Conjuration") >= 14 && d.school==="Conjuration" && SUMMON_SPELLS.concat(["Conjure Minor Elementals", "Conjure Elemental", "Conjure Celestial", "Summon Elemental", "Summon Construct"]).indexOf(spell)!==-1) notes.push("Durable Summons: what it brings has 30 temporary hit points.");

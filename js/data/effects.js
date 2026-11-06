@@ -52,6 +52,11 @@ export var TOGGLE_EFFECTS = [
     cost:{resource:"third_eye", amount:1}, duration:"Until a rest", endsIncapacitated:true,
     choose:{placeholder:"Choose a sight...", options:["Darkvision", "Ethereal Sight", "Greater Comprehension", "See Invisibility"]},
     hint:"Action. It ends if you are incapacitated or take a rest."},
+  // (The 2024 Diviner's: a bonus action, darkvision 120 ft, See Invisibility as a free spell.)
+  {id:"third_eye", name:"The Third Eye", className:"Wizard", subclass:"Diviner", level:10,
+    cost:{resource:"third_eye", amount:1}, duration:"Until a rest",
+    choose:{placeholder:"Choose a benefit...", options:["Darkvision", "Greater Comprehension", "See Invisibility"]},
+    hint:"Bonus action. It ends when you start a short or long rest."},
   {id:"arcane_deflection", name:"Arcane Deflection", className:"Wizard", subclass:"War Magic", level:2, duration:"Until the end of your next turn", startLabel:"Deflect",
     hint:"Reaction when you are hit by an attack. A failed save offers +4 in the dice tray."},
   {id:"durable_magic", name:"Durable Magic", className:"Wizard", subclass:"War Magic", level:10, duration:"While you concentrate", startLabel:"Concentrating", endLabel:"Not concentrating",

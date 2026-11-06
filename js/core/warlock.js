@@ -16,12 +16,30 @@ export function warlockDc(c){ return 8 + profBonus(c) + chaMod(c); }
 export function warlockSpellAttack(c){ return profBonus(c) + chaMod(c); }
 /* The warlock knows this invocation. */
 export function hasInvocation(c, name){
-  return (c.classes||[]).some(function(cl){ return cl.name==="Warlock" && knownInvocations(cl).some(function(i){ return i.name===name; }); });
+  // (Either edition's: "Eldritch Mind" finds "Eldritch Mind (2024)" too.)
+  return (c.classes||[]).some(function(cl){ return cl.name==="Warlock" && knownInvocations(cl).some(function(i){ return i.name===name || i.name===name + " (2024)"; }); });
 }
+/* A 2024 warlock (js/data/warlock-2024.js). */
+function warlock2024(c){ return (c.classes||[]).some(function(cl){ return cl.name==="Warlock" && cl.edition==="2024"; }); }
 
 /* ---- Pact of the Blade ---- */
 export function hasPactOfTheBlade(c){
-  return (c.classes||[]).some(function(cl){ return cl.name==="Warlock" && cl.pactBoon==="Pact of the Blade"; });
+  // (The 2024 pact is an invocation.)
+  return (c.classes||[]).some(function(cl){ return cl.name==="Warlock" && cl.pactBoon==="Pact of the Blade"; }) || hasInvocation(c, "Pact of the Blade");
+}
+/* The 2024 Pact of the Blade: Charisma for the pact weapon's attack and damage. */
+export function pactWeaponCha(c, item){
+  return isPactWeapon(c, item) && (c.classes||[]).some(function(cl){ return cl.name==="Warlock" && cl.edition==="2024" && knownInvocations(cl).some(function(i){ return i.name==="Pact of the Blade"; }); });
+}
+/* Pact attacks the Attack action makes: Thirsting Blade 2, Devouring Blade 3. */
+export function pactWeaponAttacks(c){
+  return hasInvocation(c, "Devouring Blade") ? 3 : hasInvocation(c, "Thirsting Blade") ? 2 : 1;
+}
+/* Magical Cunning (2024): the pact slots it gives back, half the maximum
+   (round up), all of them with Eldritch Master (20). */
+export function magicalCunningSlots(c){
+  var pact = c.spellcasting && c.spellcasting.pact, max = pact ? Number(pact.max)||0 : 0;
+  return warlockLevel(c) >= 20 ? max : Math.ceil(max / 2);
 }
 /* A weapon marked as the pact weapon on its card. */
 export function isPactWeapon(c, item){
@@ -42,7 +60,11 @@ function pactSlot(c){
    for an unarmed strike. */
 export function warlockHitDice(c, item){
   var out = [], pb = profBonus(c);
-  if(isPactWeapon(c, item) && hasInvocation(c, "Lifedrinker")){
+  // (The 2024 Lifedrinker: 1d6 of a type you choose, and a Hit Point Die to heal.)
+  if(isPactWeapon(c, item) && hasInvocation(c, "Lifedrinker (2024)")){
+    out.push({id: "lifedrinker", name: "Lifedrinker", text: "+1d6 necrotic, psychic or radiant", qty: 1, die: 6, label: "Lifedrinker (Necrotic, Psychic or Radiant)", title: "Once per turn on a hit with your pact weapon. You can also spend a Hit Point Die to heal.", unarmed: false});
+  }
+  else if(isPactWeapon(c, item) && hasInvocation(c, "Lifedrinker")){
     var drink = Math.max(1, chaMod(c));
     out.push({id: "lifedrinker", name: "Lifedrinker", text: "+" + drink + " necrotic", flat: drink, qty: 0, die: 0, label: "Lifedrinker (Necrotic)", title: "On a hit with your pact weapon", unarmed: false});
   }
@@ -136,7 +158,7 @@ export function necroticHuskReady(c){
 /* Resistances a patron gives by choice or state, for the HP card's line. */
 export function warlockResistances(c){
   var out = [];
-  if(patron(c, "The Fiend") >= 10 && c.fiendishResist) out.push({type: c.fiendishResist.toLowerCase() + " (not from magical or silvered weapons)", source: "Fiendish Resilience"});
+  if(patron(c, "The Fiend") >= 10 && c.fiendishResist) out.push({type: c.fiendishResist.toLowerCase() + (patron(c, "Fiend Patron") ? "" : " (not from magical or silvered weapons)"), source: "Fiendish Resilience"});
   var genie = patron(c, "The Genie") >= 6 && genieDamage(c);
   if(genie) out.push({type: genie, source: "Elemental Gift"});
   if(effectOn(c, "spirit_projection")) out.push({type: "bludgeoning, piercing and slashing", source: "Spirit Projection"});

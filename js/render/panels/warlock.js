@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, maxHp, mod, darkOnesBlessing, DAMAGE_TYPES, spendResource, spendForRests } from "../../core/helpers.js";
+import { clamp, maxHp, mod, darkOnesBlessing, DAMAGE_TYPES, spendResource, spendForRests, magicalCunningSlots, resilienceOnRest, classLevelOf } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -44,6 +44,7 @@ export function warlockResourceRow(c, r){
   if(r.key==="Warlock:fiendish_resilience") return fiendishPicker(c);
   if(r.key==="Warlock:healing_light") return healingLightPicker(c, r);
   if(r.key==="Warlock:eldritch_master") return eldritchMasterRow(c, r);
+  if(r.key==="Warlock:magical_cunning") return magicalCunningRow(c, r);
   if(r.key==="Warlock:grasping_tentacles"){
     var lv = (c.classes||[]).reduce(function(n, cl){ return cl.name==="Warlock" ? Number(cl.level)||1 : n; }, 0);
     return tempButton(c, "Cast it free · +" + lv + " temp HP", lv, "Evard's Black Tentacles without a spell slot", function(){ return spendResource(c, r.key, 1); });
@@ -58,7 +59,9 @@ export function warlockResourceRow(c, r){
 function fiendishPicker(c){
   var wrap = document.createElement("div");
   wrap.className = "res-pick";
-  wrap.appendChild(themedPicker({key: "fiendish", groups: {"": DAMAGE_TYPES}, value: c.fiendishResist || "", placeholder: "Choose a damage type...", ariaLabel: "Fiendish Resilience: damage type",
+  // (The 2024 Fiend Patron: any type but force.)
+  var types = classLevelOf(c, "Warlock", "Fiend Patron") ? DAMAGE_TYPES.filter(function(t){ return t!=="Force"; }) : DAMAGE_TYPES;
+  wrap.appendChild(themedPicker({key: "fiendish", groups: {"": types}, value: c.fiendishResist || "", placeholder: "Choose a damage type...", ariaLabel: "Fiendish Resilience: damage type",
     onPick: function(v){
       c.fiendishResist = v;
       logRoll("Fiendish Resilience", "Resistance to " + v.toLowerCase() + " damage.");
@@ -100,6 +103,22 @@ function eldritchMasterRow(c, r){
     save(); renderAll();
   });
   b.disabled = r.used >= r.max || !(pact && pact.used);
+  row.appendChild(b);
+  return row;
+}
+/* Magical Cunning (2024): a 1 minute rite for half the pact slots (all at
+   20), and Celestial Resilience's temporary hit points. */
+function magicalCunningRow(c, r){
+  var row = buttonRow(), pact = c.spellcasting && c.spellcasting.pact;
+  var used = pact ? Number(pact.used)||0 : 0, back = Math.min(used, magicalCunningSlots(c));
+  var b = rowBtn(back ? "Regain " + back + (back===1 ? " pact slot" : " pact slots") : "Regain pact slots", "A 1 minute rite", function(){
+    if(!spendResource(c, r.key, 1)) return;
+    c.spellcasting.pact.used = used - back;
+    var temp = resilienceOnRest(c);
+    logRoll("Magical Cunning", (back===1 ? "1 pact slot is back." : back + " pact slots are back.") + (temp ? " Celestial Resilience: " + temp.self + " temporary hit points." : ""));
+    save(); renderSidebar(); renderAll();
+  });
+  b.disabled = r.used >= r.max || !back;
   row.appendChild(b);
   return row;
 }

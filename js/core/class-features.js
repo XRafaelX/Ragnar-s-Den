@@ -47,6 +47,10 @@ export function editionEntry(c, className, edition){
 export function isFighter2024(c){ return !!editionEntry(c, "Fighter", "2024"); }
 /* A 2024 rogue (js/core/rogue-2024.js). */
 export function isRogue2024(c){ return !!editionEntry(c, "Rogue", "2024"); }
+/* A 2024 wizard (js/core/wizard.js). */
+export function isWizard2024(c){ return !!editionEntry(c, "Wizard", "2024"); }
+/* A 2024 warlock (js/core/warlock.js, js/core/invocations.js). */
+export function isWarlock2024(c){ return !!editionEntry(c, "Warlock", "2024"); }
 /* A 2024 sorcerer (js/core/sorcerer.js). */
 export function isSorcerer2024(c){ return !!editionEntry(c, "Sorcerer", "2024"); }
 /* A 2024 bard (js/core/bard.js). */
@@ -406,7 +410,9 @@ export function classProficiencies(c, idx){
 }
 /* A 2024 subclass whose name isn't its 2014 one's plus " (2024)". */
 var SUBCLASS_ALIASES = {"Circle of Stars": "Circle of the Stars (2024)", "Aberrant Mind": "Aberrant Sorcery", "Clockwork Soul": "Clockwork Sorcery",
-  "Draconic Bloodline": "Draconic Sorcery", "Wild Magic": "Wild Magic Sorcery"};
+  "Draconic Bloodline": "Draconic Sorcery", "Wild Magic": "Wild Magic Sorcery",
+  "The Archfey": "Archfey Patron", "The Celestial": "Celestial Patron", "The Fiend": "Fiend Patron", "The Great Old One": "Great Old One Patron",
+  "School of Abjuration": "Abjurer", "School of Divination": "Diviner", "School of Evocation": "Evoker", "School of Illusion": "Illusionist"};
 export function classLevelOf(c, name, subclass){
   // (A 2024 subclass counts for its 2014 name: what's the same is automated once.)
   var also = subclass && SUBCLASS_ALIASES[subclass];

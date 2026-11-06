@@ -312,13 +312,16 @@ test("invocations: well formed, spells exist, prerequisites are real", () => {
   const pacts = PACT_BOONS.map((p) => p.name);
   const skills = SKILLS.map((x) => x[0]);
   for(const inv of INVOCATIONS.concat(PACT_BOONS)){
-    assert.ok(!names.has(inv.name), "duplicate " + inv.name);
-    names.add(inv.name);
+    // (The 2024 ones are kept apart: an invocation named like a Pact Boon.)
+    const key = (inv.edition ? "2024:" : "") + inv.name;
+    assert.ok(!names.has(key), "duplicate " + inv.name);
+    names.add(key);
     assert.ok(INVOCATION_SOURCES[inv.source], inv.name + ": source");
     assert.ok(inv.text.length > 20 && !LONG_DASH.test(inv.name + inv.text + (inv.summary || "")), inv.name + ": text");
-    if(inv.level != null) assert.ok([5, 7, 9, 12, 15].includes(inv.level), inv.name + ": level " + inv.level);
+    if(inv.level != null) assert.ok((inv.edition ? [2, 5, 7, 9, 12, 15] : [5, 7, 9, 12, 15]).includes(inv.level), inv.name + ": level " + inv.level);
     if(inv.pact) assert.ok(pacts.includes(inv.pact), inv.name + ": pact " + inv.pact);
-    if(inv.needs) assert.ok(["eldritchBlast", "hex"].includes(inv.needs), inv.name + ": needs");
+    if(inv.needs) assert.ok((inv.edition ? ["damageCantrip", "attackCantrip"] : ["eldritchBlast", "hex"]).includes(inv.needs), inv.name + ": needs");
+    if(inv.requires) assert.ok(INVOCATIONS.some((x) => x.name === inv.requires && x.edition === inv.edition), inv.name + ": requires");
     (inv.spells || []).forEach((sp) => {
       assert.ok(SPELL_DATA[sp.name], inv.name + ": spell " + sp.name);
       assert.ok(["atwill", "free", "slot", "known"].includes(sp.kind), inv.name + ": kind " + sp.kind);
@@ -326,7 +329,8 @@ test("invocations: well formed, spells exist, prerequisites are real", () => {
     (inv.skills || []).forEach((sk) => assert.ok(skills.includes(sk), inv.name + ": skill " + sk));
     if(inv.uses) assert.ok(["1", "pb"].includes(inv.uses.max) && ["short", "long"].includes(inv.uses.reset), inv.name + ": uses");
   }
-  assert.equal(INVOCATIONS.length, 54, "PHB 32 + XGE 14 + TCE 8");
+  assert.equal(INVOCATIONS.filter((i) => !i.edition).length, 54, "PHB 32 + XGE 14 + TCE 8");
+  assert.equal(INVOCATIONS.filter((i) => i.edition === "2024").length, 28, "the 2024 Player's Handbook's 28");
   assert.deepEqual([1, 2, 4, 5, 7, 9, 12, 15, 18, 20].map(invocationsKnownAt), [0, 2, 2, 3, 4, 5, 6, 7, 8, 8]);
 });
 

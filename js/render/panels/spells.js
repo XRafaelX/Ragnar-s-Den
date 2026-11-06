@@ -807,7 +807,8 @@ export function openPrepareSheet(c, onlyWithChoices){
     function cantripFormulasBlock(){
       var box = ce("div", "prep-formulas");
       var head = ce("div", "prep-head");
-      var name = ce("b"); name.textContent = "Cantrip Formulas";
+      var w2024 = (c.classes||[]).some(function(cl){ return cl.name==="Wizard" && cl.edition==="2024"; });
+      var name = ce("b"); name.textContent = w2024 ? "Swap a cantrip" : "Cantrip Formulas";
       head.appendChild(name);
       box.appendChild(head);
       var note = ce("p", "prep-note");
@@ -816,7 +817,7 @@ export function openPrepareSheet(c, onlyWithChoices){
         box.appendChild(note);
         return box;
       }
-      note.textContent = "Tasha's optional features: after a long rest you may replace one wizard cantrip you know with another from the wizard spell list. Most players keep theirs.";
+      note.textContent = (w2024 ? "After a long rest" : "Tasha's optional features: after a long rest") + " you may replace one wizard cantrip you know with another from the wizard spell list. Most players keep theirs.";
       box.appendChild(note);
       var cf = cantripFormulas(c);
       var outField = ce("div", "field rt-field fp-field");

@@ -27,6 +27,7 @@
    A character using Tasha's optional class features (c.tashaOptional)
    picks from the class list with Tasha's additions, tagged in the lists. */
 import { SPELL_DATA, spellDataForClass, spellOnClassList, tashaAddsSpell, tashaSpellCount, catalogSpellName } from "../data/spells.js";
+import { SAVANT_SCHOOLS, SAVANT_LEVELS } from "../data/wizard-2024.js";
 import { KNOWN_CASTERS, SUBCLASS_CASTERS, EDITION_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, PREPARED_CASTERS, preparedAt, preparingDef } from "../data/spells-known.js";
 import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal, choiceEffectsOf } from "./helpers.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
@@ -286,6 +287,16 @@ export function learnPlan(c, entry, isNewClass){
       "Copy " + book + " " + cls + " spells into your spellbook" + upToText(maxLevel) + " You prepare from your spellbook each day.", book,
       {names: bookList.names, tags: tagsFor(bookList.names, bookList.extra)});
   }
+  // A 2024 subclass's Savant (wizard 3, then each new level of slots):
+  // spells of its school added to the spellbook for free.
+  var savant = entry.name==="Wizard" && entry.edition==="2024" && SAVANT_SCHOOLS[entry.subclass];
+  if(savant && (lv===3 || SAVANT_LEVELS.indexOf(lv)!==-1)){
+    var top = lv===3 ? 2 : maxLevel;
+    var schoolList = classListNames(entry, def, range(1, top), tasha, c).names.filter(function(n){ return SPELL_DATA[n].school===savant; });
+    add("savant", "spell", savant + " Savant",
+      lv===3 ? "Add two wizard " + savant.toLowerCase() + " spells of level 2 or lower to your spellbook for free." : "Add one wizard " + savant.toLowerCase() + " spell to your spellbook for free" + upToText(top),
+      lv===3 ? 2 : 1, {names: schoolList});
+  }
   if(entry.name==="Warlock" && MYSTIC_ARCANUM[lv]){
     var arc = MYSTIC_ARCANUM[lv];
     var arcList = classListNames(entry, def, [arc], tasha, c);
@@ -434,7 +445,7 @@ export function applyLearn(c, className, plan, sections, picks, swapOut, cantrip
     if(!d) return;
     var sp = spellFromCatalog(name, d);
     sp.learnedBy = className;
-    sp.prepared = sectionId==="spellbook" ? false : true;
+    sp.prepared = sectionId==="spellbook" || sectionId==="savant" ? false : true;
     if(kind==="arcanum"){ sp.arcanum = true; sp.notes = "Mystic Arcanum: cast it once per long rest without a spell slot."; }
     if(kind==="bonus"){ sp.bonusSecret = true; sp.notes = sectionId==="loreDiscoveries" ? "Magical Discoveries: always prepared, and doesn't count against your spells." : "Additional Magical Secrets: doesn't count against your spells known."; }
     c.spells.push(sp);
@@ -464,7 +475,8 @@ export function undoLearn(c, rec){
    {known: [wizard cantrips], options: [ones to take instead]} or null. */
 export function cantripFormulas(c){
   var wiz = (c.classes||[]).find(function(cl){ return cl.name==="Wizard"; });
-  if(!wiz || !c.tashaOptional || (Number(wiz.level)||1) < 3) return null;
+  // (The 2024 wizard swaps one after every long rest, from level 1.)
+  if(!wiz || (wiz.edition!=="2024" && (!c.tashaOptional || (Number(wiz.level)||1) < 3))) return null;
   var known = classKnownSpells(c, "Wizard").cantrips.map(function(sp){ return sp.name; }).sort();
   if(!known.length) return null;
   var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c));

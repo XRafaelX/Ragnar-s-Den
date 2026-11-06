@@ -193,8 +193,13 @@ export var CLASS_RESOURCES = {
       hint:"Cast your 8th-level arcanum spell without a spell slot."},
     {id:"mystic_arcanum_9", name:"Mystic Arcanum (9th)", level:17, max:always(1), reset:always("long"),
       hint:"Cast your 9th-level arcanum spell without a spell slot."},
-    {id:"eldritch_master", name:"Eldritch Master", level:20, max:always(1), reset:always("long"),
-      hint:"Spend 1 minute to regain all your expended Pact Magic slots."}
+    {id:"eldritch_master", name:"Eldritch Master", level:20, edition:"2014", max:always(1), reset:always("long"),
+      hint:"Spend 1 minute to regain all your expended Pact Magic slots."},
+    // The 2024 warlock (pp. 154 and 155).
+    {id:"magical_cunning", name:"Magical Cunning", level:2, edition:"2024", max:always(1), reset:always("long"),
+      hint:function(lv){ return lv>=20 ? "A 1 minute rite: regain all your spent pact slots (Eldritch Master)." : "A 1 minute rite: regain spent pact slots, up to half your maximum (round up)."; }},
+    {id:"contact_patron", name:"Contact Patron (Free Contact Other Plane)", level:9, edition:"2024", max:always(1), reset:always("long"),
+      hint:"Cast Contact Other Plane without a spell slot to contact your patron. You succeed on its saving throw."}
   ],
   "Wizard": [
     {id:"arcane_recovery", name:"Arcane Recovery", level:1, max:always(1), reset:always("long"),
@@ -700,6 +705,36 @@ export var SUBCLASS_RESOURCES = {
       {id:"entropic_ward", name:"Entropic Ward", level:6, max:always(1), reset:always("short"),
         hint:"Reaction: impose disadvantage on an attack against you. If it misses, advantage on your next attack against it."}
     ],
+    // The 2024 patrons (pp. 159 to 163).
+    "Archfey Patron": [
+      {id:"steps_of_the_fey", name:"Steps of the Fey (Free Misty Step)", level:3, max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
+        roll:{die:10, temp:true, button:"Refreshing Step", label:"Refreshing Step: temporary HP"},
+        hint:"Cast Misty Step without a spell slot. Refreshing Step spends one and rolls 1d10 temporary HP."},
+      {id:"beguiling_defenses", name:"Beguiling Defenses (Halve Damage)", level:10, max:always(1), reset:always("long"), slotMin:1,
+        hint:"Reaction when a creature you see hits you: halve the damage. It makes a WIS save or takes psychic damage equal to what you take. A pact slot uses it again."}
+    ],
+    "Celestial Patron": [
+      {id:"healing_light", name:"Healing Light", level:3, pool:true,
+        max:function(lv){ return 1 + lv; }, reset:always("long"),
+        hint:"Bonus action: spend d6s from this pool (max CHA mod at once) to heal yourself or a creature within 60 ft."},
+      {id:"searing_vengeance", name:"Searing Vengeance", level:14, max:always(1), reset:always("long"),
+        hint:"When you or an ally within 60 ft is about to make a death save: it regains half its max HP. Creatures you choose within 30 ft take 2d8 + CHA radiant."}
+    ],
+    "Fiend Patron": [
+      {id:"dark_ones_blessing", name:"Dark One's Blessing", level:3, max:always(Infinity), reset:always("long"),
+        hint:"When you reduce an enemy to 0 hit points, or someone else does within 10 feet of you."},
+      {id:"fiendish_resilience", name:"Fiendish Resilience", level:10, max:always(Infinity), reset:always("long"),
+        hint:"When you finish a short or long rest, choose a damage type other than force to resist."},
+      {id:"dark_ones_own_luck", name:"Dark One's Own Luck", level:6, max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
+        hint:"Add a d10 to an ability check or saving throw after seeing the roll, once per roll."},
+      {id:"hurl_through_hell", name:"Hurl Through Hell", level:14, max:always(1), reset:always("long"), slotMin:1,
+        roll:{qty:8, die:10, button:"Hurl", label:"Hurl Through Hell (Psychic, not a fiend)"},
+        hint:"Once per turn on a hit: a CHA save or the target goes through the Lower Planes (8d10 psychic unless it's a fiend). A pact slot uses it again."}
+    ],
+    "Great Old One Patron": [
+      {id:"clairvoyant_combatant", name:"Clairvoyant Combatant", level:6, max:always(1), reset:always("short"), slotMin:1,
+        hint:"When you link with Awakened Mind: a WIS save or it has disadvantage on attacks against you, and you advantage on attacks against it. A pact slot uses it again."}
+    ],
     "The Hexblade": [
       {id:"hexblades_curse", name:"Hexblade's Curse", level:1, max:always(1), reset:always("short"),
         hint:"Bonus action: curse a creature within 30 ft: add proficiency to damage, crit on a 19 or 20, regain HP equal to warlock level + CHA when it dies."},
@@ -772,6 +807,32 @@ export var SUBCLASS_RESOURCES = {
     "School of Illusion": [
       {id:"illusory_self", name:"Illusory Self", level:10, max:always(1), reset:always("short"),
         hint:"Reaction: an attack against you automatically misses."}
+    ],
+    // The 2024 subclasses (pp. 172 to 175), sharing the 2014 rows' ids.
+    "Abjurer": [
+      {id:"arcane_ward", name:"Arcane Ward HP", level:3, pool:true, max:function(lv, m){ return lv*2 + m.int; }, reset:always("long"),
+        hint:"Once it's up, it takes damage before you do. An abjuration spell cast with a slot gives it twice the slot's level."}
+    ],
+    "Diviner": [
+      {id:"portent", name:"Portent Dice", level:3,
+        max:function(lv){ return lv>=14 ? 3 : 2; }, reset:always("long"),
+        hint:"Roll these d20s after a long rest and write them down. Replace a d20 test by you or a creature you can see (before it's rolled), once per turn."},
+      {id:"expert_divination", name:"Expert Divination", level:6, max:always(Infinity), reset:always("long"),
+        hint:"When you cast a divination spell with a level 2+ slot: get back a spent slot of a lower level, level 5 at most."},
+      {id:"third_eye", name:"The Third Eye", level:10, max:always(1), reset:always("short"),
+        hint:"Bonus action: darkvision 120 ft, read any language, or See Invisibility without a slot, until your next rest."}
+    ],
+    "Evoker": [
+      {id:"overchannel_free", name:"Overchannel (Free Use)", level:14, max:always(1), reset:always("long"),
+        hint:"Maximize a level 1 to 5 damaging spell with no drawback. Later uses before a long rest deal you 2d12 necrotic per slot level (and more each time)."}
+    ],
+    "Illusionist": [
+      {id:"phantasmal_beast", name:"Phantasmal Creatures (Free Summon Beast)", level:6, max:always(1), reset:always("long"),
+        hint:"Cast Summon Beast as an illusion without a spell slot. The creature has half its hit points."},
+      {id:"phantasmal_fey", name:"Phantasmal Creatures (Free Summon Fey)", level:6, max:always(1), reset:always("long"),
+        hint:"Cast Summon Fey as an illusion without a spell slot. The creature has half its hit points."},
+      {id:"illusory_self", name:"Illusory Self", level:10, max:always(1), reset:always("short"), slotMin:2,
+        hint:"Reaction when a creature hits you with an attack roll: it misses. A level 2+ slot uses it again."}
     ],
     "Bladesinging": [
       {id:"bladesong", name:"Bladesong", level:2,

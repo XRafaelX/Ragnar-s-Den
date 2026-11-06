@@ -47,7 +47,8 @@ function warlockInvocationNames(c){
    hours that familiar lasts, and the source names the feature when the
    druid doesn't know the spell otherwise. */
 function companionRequirement(c, r){
-  var chain = !!r.pactBoon && (c.classes||[]).some(function(cl){ return cl.name==="Warlock" && cl.pactBoon===r.pactBoon; });
+  // (The 2024 pact is an invocation.)
+  var chain = !!r.pactBoon && (c.classes||[]).some(function(cl){ return cl.name==="Warlock" && (cl.pactBoon===r.pactBoon || (cl.invocations||[]).some(function(e){ return e.name===r.pactBoon; })); });
   if(chain) return {source: r.pactBoon, chain: true};
   var wild = r.spell==="Find Familiar" ? wildCompanionHours(c) : 0;
   // (The 2024 Find Steed's stat block, only with the 2024 spell.)

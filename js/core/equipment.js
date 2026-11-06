@@ -1,7 +1,7 @@
 /* ---------------- Equipment ----------------
    Hands and equipping, weapon attack and damage numbers, and weapon and
    armor proficiency. */
-import { isPactWeapon, pactWeaponBonus, hexCurseBonus, hasInvocation } from "./warlock.js";
+import { isPactWeapon, pactWeaponBonus, hexCurseBonus, hasInvocation, pactWeaponCha, pactWeaponAttacks } from "./warlock.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { WEAPON_DATA, weaponDataOf, baseWeaponName, hasHeavyProperty } from "../data/weapons.js";
 import { featProficiencies, featDef, featSpellEntries, featCastAbility } from "./feat-picks.js";
@@ -343,6 +343,8 @@ export function weaponAbility(c, item){
       if(f.chosenWeaponAbility && (item.chosenWeapon || isPactWeapon(c, item))) allowed.push(f.chosenWeaponAbility);
     });
   });
+  // The 2024 Pact of the Blade: Charisma for the bonded weapon.
+  if(pactWeaponCha(c, item) && allowed.indexOf("cha")===-1) allowed.push("cha");
   var best = Math.max.apply(null, allowed.map(function(k){ return mod(ab[k]); }));
   return {mod: best, keys: allowed.filter(function(k, i){ return allowed.indexOf(k)===i && mod(ab[k])===best; })};
 }
@@ -608,8 +610,8 @@ export function attacksPerAction(c){
     if(cl.name==="Fighter") n = Math.max(n, lv >= 20 ? 4 : lv >= 11 ? 3 : lv >= 5 ? 2 : 1);
     if(classFeatureList(cl).some(function(f){ return f.name==="Extra Attack"; })) n = Math.max(n, 2);
   });
-  // Thirsting Blade: twice with the pact weapon.
-  if(hasInvocation(c, "Thirsting Blade")) n = Math.max(n, 2);
+  // Thirsting Blade: twice with the pact weapon (Devouring Blade: three times).
+  n = Math.max(n, pactWeaponAttacks(c));
   // Invincible Conqueror and Dread Ambusher's first turn: one more.
   return n + (effectOn(c, "invincible_conqueror") ? 1 : 0) + (effectOn(c, "dread_ambusher") && !isRanger2024(c) ? 1 : 0);
 }

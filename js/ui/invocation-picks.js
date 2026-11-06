@@ -1,7 +1,7 @@
 import { ce, escapeHtml } from "../core/helpers.js";
-import { PACT_BOONS, INVOCATION_SOURCES } from "../data/invocations.js";
+import { PACT_BOONS, INVOCATION_SOURCES, invocationLabel } from "../data/invocations.js";
 import { SPELL_DATA } from "../data/spells.js";
-import { invocationPrereqText, pickOptions, availableInvocations, hiddenInvocationNotes } from "../core/invocations.js";
+import { invocationPrereqText, pickOptions, pickPart, availableInvocations, hiddenInvocationNotes } from "../core/invocations.js";
 import { themedPicker } from "./themed-picker.js";
 
 /* ---------------- Invocation and Pact Boon pickers ----------------
@@ -36,7 +36,8 @@ export function renderInvocationPicker(opts){
   var available = availableInvocations(opts.ctx);
   var groups = {};
   Object.keys(INVOCATION_SOURCES).forEach(function(src){
-    var names = available.filter(function(i){ return i.source===src; }).map(function(i){ return i.name; });
+    // (A 2024 invocation shows without its " (2024)".)
+    var names = available.filter(function(i){ return i.source===src; }).map(function(i){ return {value: i.name, label: invocationLabel(i.name)}; });
     if(names.length) groups[INVOCATION_SOURCES[src]] = names;
   });
   var field = ce("div", "field inf-field eli-field");
@@ -74,14 +75,16 @@ export function invocationPreview(inv){
    character already has the spell ("known"), which greys it out. */
 export function renderSpellPickPickers(pick, values, key, onChange, held){
   var box = ce("div", "eli-spell-picks");
-  var options = pickOptions(pick);
   for(var i = 0; i < pick.count; i++) (function(i){
+    // (The 2024 Tome: three cantrips then two rituals. A cantrip the
+    // warlock knows for Agonizing Blast isn't greyed for being known.)
+    var options = pickOptions(pick, i), part = pickPart(pick, i);
     var field = ce("div", "field inf-field eli-field");
     field.appendChild(themedPicker({
-      key: key + ":" + i, ariaLabel: pick.label + " " + (i + 1), placeholder: "Choose a spell", search: true,
+      key: key + ":" + i, ariaLabel: (part.label || pick.label) + " " + (i + 1), placeholder: pick.known || (pick.parts && part.level===0) ? "Choose a cantrip" : pick.parts && part.ritual ? "Choose a ritual" : "Choose a spell", search: true,
       groups: {"": options}, value: values[i] || "", sheet: true,
       detailFor: function(v){ return SPELL_DATA[v] ? SPELL_DATA[v].summary || "" : ""; },
-      reasonFor: function(v){ return v!==values[i] && values.indexOf(v)!==-1 ? "picked" : (held && held(v)) || ""; },
+      reasonFor: function(v){ return v!==values[i] && values.indexOf(v)!==-1 ? "picked" : (!pick.known && held && held(v)) || ""; },
       onPick: function(v){ values[i] = v; onChange(); }
     }));
     box.appendChild(field);

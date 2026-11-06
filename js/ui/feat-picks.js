@@ -409,7 +409,8 @@ export function featPicksContext(c){
     invocationChoices: function(){
       var cl = warlockEntry(c), ictx = invocationContext(c, cl);
       return INVOCATIONS.filter(function(inv){
-        if(inv.spellPick || invocationReason(inv, ictx)) return false;
+        // (Eldritch Adept is a 2014 feat: the 2014 invocations.)
+        if(inv.edition || inv.spellPick || invocationReason(Object.assign({}, inv), Object.assign({}, ictx, {edition: ""}))) return false;
         return !!cl || !(inv.level || inv.pact || inv.needs);
       }).map(function(inv){ return inv.name; });
     },
