@@ -5,7 +5,7 @@ import { ABILITIES, CLASS_LIST } from "../data/abilities-skills.js";
 import { CLASSES_INFO } from "../data/classes.js";
 import { RACES, RACE_TRAITS, RACE_TRAIT_FALLBACK, raceGroupsFor } from "../data/races.js";
 import { RACE_DATA, raceAsiText } from "../data/race-data.js";
-import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK } from "../data/backgrounds.js";
+import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, backgroundGroupsFor } from "../data/backgrounds.js";
 import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/alignments.js";
 import { POINT_BUY_COSTS } from "../data/misc.js";
 import { mod, fmtMod, escapeHtml, ce , classHasEdition } from "../core/helpers.js";
@@ -282,8 +282,9 @@ export function backgroundExplainHtml(name){
   var info = BACKGROUND_INFO[name];
   // A background that gives a feat says so (and which choice the book makes for it).
   var grant = backgroundFeatGrant(name);
-  var feat = !grant ? "" : grant.choices ? " <b>Feat:</b> "+escapeHtml(backgroundFeatLabel(name))+", picked on a later step."
-    : " <b>Feat:</b> "+escapeHtml(backgroundFeatLabel(name))+". "+escapeHtml(grant.def.summary);
+  var plain = !!(info && info.edition==="2024"); // (a 2024 background's feat without "(2024)")
+  var feat = !grant ? "" : grant.choices ? " <b>Feat:</b> "+escapeHtml(backgroundFeatLabel(name, plain))+", picked on a later step."
+    : " <b>Feat:</b> "+escapeHtml(backgroundFeatLabel(name, plain))+". "+escapeHtml(grant.def.summary);
   // No feat of its own: the campaign's, when one is set below.
   var camp = wizardState && campaignLevel1Feats(wizardState.campaign, name);
   if(!grant && camp && camp.length) feat = " <b>Campaign feat:</b> "+escapeHtml(camp.join(" or "))+", picked on a later step.";
@@ -293,7 +294,10 @@ export function backgroundExplainHtml(name){
   // Under the 2024 rules the background raises the scores, in place of the race.
   var scores = info && info.edition==="2024" ? " <b>2024 rules:</b> this background raises your ability scores instead of your race. You'll choose how on the Ability Scores step."
     : rules2024 ? " <b>2024 rules:</b> your background raises your ability scores instead of your race. You'll choose which on the Ability Scores step." : "";
-  return "<b>"+escapeHtml(name)+":</b> "+(info ? info.blurb : BACKGROUND_INFO_FALLBACK)+feat+scores;
+  // (Named as the list shows it: "Soldier" for Soldier (2024), "Sage (2014)".)
+  var groups = backgroundGroupsFor(rules2024);
+  var shown = [].concat.apply([], Object.keys(groups).map(function(g){ return groups[g]; })).find(function(x){ return x && x.value===name; });
+  return "<b>"+escapeHtml(shown ? shown.label : name)+":</b> "+(info ? info.blurb : BACKGROUND_INFO_FALLBACK)+feat+scores;
 }
 
 export function alignmentExplainHtml(name){
@@ -460,7 +464,8 @@ export function wizardStepBackground(container){
   // what it gives this background, in a line.
   var campaign = campaignNote();
   var shownBackground = wizardState.background;
-  var dd = wizardDropdown("Background", "background", BACKGROUNDS, wizardState, function(){
+  // (On the 2024 rules: the 2024 backgrounds first, the 2014 ones they replace last.)
+  var dd = wizardDropdown("Background", "background", backgroundGroupsFor(wizardRules2024()), wizardState, function(){
     explain.innerHTML = backgroundExplainHtml(wizardState.background);
     // Tool picks belong to one background: a different one starts fresh.
     if(wizardState.background!==shownBackground){ wizardState.bgPicks = {}; wizardState.bgGear = {}; shownBackground = wizardState.background; }
@@ -480,7 +485,7 @@ function campaignOutcomeHtml(){
   var later = camp.level4 ? " You'll also pick another feat when you reach level 4." : "";
   if(!bg) return "Choose a background above to see what this gives you."+later;
   var own = backgroundFeatGrant(bg);
-  if(own) return "Your "+escapeHtml(bg)+" background already comes with its own feat (<b>"+escapeHtml(backgroundFeatLabel(bg))+"</b>), so this adds nothing now."+later;
+  if(own) return "Your "+escapeHtml(bg)+" background already comes with its own feat (<b>"+escapeHtml(backgroundFeatLabel(bg, (BACKGROUND_INFO[bg]||{}).edition==="2024"))+"</b>), so this adds nothing now."+later;
   if(wizardRules2024()) return "The 2024 character rules already give you an Origin feat, so this adds nothing now."+later;
   var names = campaignLevel1Feats(wizardState.campaign, bg).map(function(n){ return "<b>"+escapeHtml(n)+"</b>"; });
   return "You get a free feat: "+names.join(" or ")+". You'll choose on a later step."+later;

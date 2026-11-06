@@ -195,10 +195,12 @@ export function backgroundFeatGrant(background, chosen){
 }
 /* That feat in words: "Tough", "Strixhaven Initiate (Lorehold)" or
    "Lucky, Magic Initiate or Skilled". "" when there is none. */
-export function backgroundFeatLabel(background){
+/* `plain`: a 2024 feat named without "(2024)" (the 2024 rules' lists). */
+export function backgroundFeatLabel(background, plain){
   var g = backgroundFeatGrant(background);
   if(!g) return "";
   if(g.choices) return g.choices.slice(0, -1).join(", ") + " or " + g.choices[g.choices.length-1];
+  if(plain && / \(2024\)$/.test(g.def.name)) return g.def.name.replace(/ \(2024\)$/, "") + (g.option ? " (" + g.option + ")" : "");
   // "Magic Initiate (2024, Cleric)" rather than two sets of brackets.
   if(g.option && /\)$/.test(g.def.name)) return g.def.name.replace(/\)$/, ", " + g.option + ")");
   return g.def.name + (g.option ? " (" + g.option + ")" : "");

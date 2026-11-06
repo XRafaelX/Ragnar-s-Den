@@ -1,3 +1,4 @@
+import { featListLabel } from "../../ui/feat-list.js";
 import { save } from "../../core/state.js";
 import { escapeHtml, spellHeldBy } from "../../core/helpers.js";
 import { invocationDef, pactBoonDef, INVOCATION_SOURCES, invocationLabel } from "../../data/invocations.js";
@@ -192,7 +193,7 @@ function lessonsFeatBox(c, cl, e){
   field.className = "field inf-field eli-field";
   field.appendChild(themedPicker({
     key: "eli:lessons:" + e.id, ariaLabel: "Origin feat", placeholder: "Choose an Origin feat", search: false, sheet: true,
-    groups: {"": lessonsFeatChoices(c, cl).map(function(n){ return {value: n, label: n + ": " + (featDef(n).summary || "")}; })},
+    groups: {"": lessonsFeatChoices(c, cl).map(function(n){ return {value: n, label: featListLabel(featDef(n), true) + ": " + (featDef(n).summary || "")}; })},
     onPick: function(name){
       var def = featDef(name), copy = addLessonsFeat(c, e, name);
       if(!copy) return;

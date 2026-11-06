@@ -45,6 +45,30 @@ export var BACKGROUNDS = {
   ]
 };
 
+/* The 2014 backgrounds the 2024 Player's Handbook rewrote under the same
+   name (Soldier and Soldier (2024)). For a character on the 2024 rules the
+   background list shows the 2024 ones first under their plain names and
+   moves these to "Older versions (2014)" (backgroundGroupsFor). Nothing is
+   hidden, and a saved background keeps its name. Only same-name pairs: the
+   2024 Artisan or Merchant aren't renamed Guild Artisan or Guild Merchant. */
+var NEW_BACKGROUNDS = "Player's Handbook (2024)";
+export function olderBackgrounds(){
+  var all = [].concat.apply([], Object.keys(BACKGROUNDS).filter(function(g){ return g!==NEW_BACKGROUNDS; }).map(function(g){ return BACKGROUNDS[g]; }));
+  return (BACKGROUNDS[NEW_BACKGROUNDS] || []).map(function(n){ return n.replace(/ \(2024\)$/, ""); }).filter(function(n){ return all.indexOf(n)!==-1; });
+}
+export function backgroundGroupsFor(rules2024){
+  if(!rules2024) return BACKGROUNDS;
+  var older = olderBackgrounds(), out = {};
+  out[NEW_BACKGROUNDS] = (BACKGROUNDS[NEW_BACKGROUNDS] || []).map(function(n){ return {value: n, label: n.replace(/ \(2024\)$/, "")}; });
+  Object.keys(BACKGROUNDS).forEach(function(g){
+    if(g===NEW_BACKGROUNDS) return;
+    var rest = BACKGROUNDS[g].filter(function(n){ return older.indexOf(n)===-1; });
+    if(rest.length) out[g] = rest;
+  });
+  out["Older versions (2014)"] = older.slice().sort().map(function(n){ return {value: n, label: n + " (2014)"}; });
+  return out;
+}
+
 export var BACKGROUND_INFO = {
   "Acolyte": {skills:["Insight","Religion"], blurb:"Grants Insight and Religion, plus a holy symbol and prayer book. You served in a temple."},
   "Charlatan": {skills:["Deception","Sleight of Hand"], blurb:"Grants Deception and Sleight of Hand. You're a practiced con artist and forger."},

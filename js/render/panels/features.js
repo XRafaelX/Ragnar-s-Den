@@ -1,3 +1,4 @@
+import { featListLabel } from "../../ui/feat-list.js";
 import { save } from "../../core/state.js";
 import { getAllCharacterFeatures, unseenUnlockCount, maxHp, fmtMod } from "../../core/helpers.js";
 import { performRoll } from "../../dice/dice.js";
@@ -413,7 +414,8 @@ export function renderFeaturesPanel(c){
         pickWrap.className = "field fp-field";
         pickWrap.appendChild(themedPicker({
           key: "origin-feat", ariaLabel: "Origin feat", placeholder: "Choose an Origin feat", search: false,
-          groups: {"": origin.choices.map(function(n){ return {value: n, label: n + ": " + (featDef(n).summary || "")}; })},
+          // (A 2024 rules character: "Alert", not "Alert (2024)".)
+          groups: {"": origin.choices.map(function(n){ return {value: n, label: featListLabel(featDef(n), true) + ": " + (featDef(n).summary || "")}; })},
           onPick: function(name){
             var def = featDef(name), copy = originFeatCopy(def, c.background);
             if(!c.feats) c.feats = [];
