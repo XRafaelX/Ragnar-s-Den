@@ -60,7 +60,10 @@ export var EDITION_CASTERS = {
   "Paladin": {list: "Paladin", cantrips: byLevel({}), maxLevel: halfUpMax},
   "Ranger": {list: "Ranger", cantrips: byLevel({}), maxLevel: halfUpMax},
   "Cleric": {list: "Cleric", cantrips: byLevel({1: 3, 4: 4, 10: 5}), maxLevel: fullMax, cantripSwap: "level"},
-  "Druid": {list: "Druid", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: fullMax, cantripSwap: "level"}
+  "Druid": {list: "Druid", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: fullMax, cantripSwap: "level"},
+  // (A list that changes one spell per level: learned, with the Prepared Spells column as the count.)
+  "Bard": {list: "Bard", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: fullMax, swap: true, cantripSwap: "level",
+    spells: [0, 4, 5, 6, 7, 9, 10, 11, 12, 14, 15, 16, 16, 17, 17, 18, 18, 19, 20, 21, 22]}
 };
 
 var THIRD_SPELLS = [0, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13];

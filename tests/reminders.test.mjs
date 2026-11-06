@@ -25,8 +25,8 @@ function allFeatures(){
     for(const v of p.variants || []) for(const [lv, list] of Object.entries(v.features || {})) for(const f of list) out.push({ where: cls + " " + v.name + " " + lv, f });
     // Another rules edition's features (the 2024 Monk).
     for(const [ed, e] of Object.entries(p.editions || {})){
-      for(const f of e.level1 || []) out.push({ where: cls + " " + ed + " 1", f });
-      for(const [lv, list] of Object.entries(e.features || {})) for(const f of list) out.push({ where: cls + " " + ed + " " + lv, f });
+      for(const f of e.level1 || []) out.push({ where: cls + " " + ed + " 1", f, ed });
+      for(const [lv, list] of Object.entries(e.features || {})) for(const f of list) out.push({ where: cls + " " + ed + " " + lv, f, ed });
     }
   }
   for(const [cls, subs] of Object.entries(SUBCLASSES)) for(const s of subs) for(const [lv, list] of Object.entries(s.features || {})) for(const f of list) out.push({ where: s.name + " " + lv, f, sub: s.name });
@@ -57,7 +57,7 @@ test("every reminder is one short, plain sentence with a known group", () => {
 });
 
 test("a reminder never repeats what the sheet already shows", () => {
-  for(const { where, f, sub } of allFeatures().filter((x) => x.f.remind)){
+  for(const { where, f, sub, ed } of allFeatures().filter((x) => x.f.remind)){
     // (War Caster's advantage is on the saves card. Its reminder is the
     // other half of the feat, a spell in place of an opportunity attack.)
     // (The same for the 2024 War Caster, and Skulker (2024)'s blindsight and
@@ -66,7 +66,8 @@ test("a reminder never repeats what the sheet already shows", () => {
     for(const k of ["saveNote", "advantage", "skillBonus", "sense", "rollButton"]) assert.ok(!f[k] || besides.includes(k), where + " " + f.name + ": already shown through " + k);
     assert.ok(!resourceNames.has(f.name), where + " " + f.name + ": already a row on Class resources");
     // (Within the same subclass: the 2014 Land's Nature's Sanctuary isn't the 2024 one's effect.)
-    const onCard = TOGGLE_EFFECTS.some((e) => e.name === f.name && (!sub || !e.subclass || [].concat(e.subclass).includes(sub)));
+    // (And within the same edition: the 2014 Countercharm's performance isn't the 2024 reaction.)
+    const onCard = TOGGLE_EFFECTS.some((e) => e.name === f.name && (!sub || !e.subclass || [].concat(e.subclass).includes(sub)) && !(ed && e.edition && e.edition !== ed));
     assert.ok(!onCard, where + " " + f.name + ": already on Active effects");
   }
 });

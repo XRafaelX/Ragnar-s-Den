@@ -1605,12 +1605,13 @@ function renderResourcesCard(c, resources){
       drRow.className = "inv-roll-actions fx-rolls";
       var drBtn = document.createElement("button");
       drBtn.type = "button"; drBtn.className = "btn small inv-roll-btn";
-      drBtn.textContent = "Spend " + dr.count + (dr.count===1 ? " die" : " dice") + " to use it again";
+      var drNoun = dr.noun || ["Psionic Energy Die", "Psionic Energy Dice"], drWord = dr.noun ? (dr.count===1 ? "a " + drNoun[0] : dr.count + " " + drNoun[1]) : dr.count + (dr.count===1 ? " die" : " dice");
+      drBtn.textContent = "Spend " + drWord + " to use it again";
       drBtn.disabled = pool < dr.count;
-      drBtn.title = drBtn.disabled ? "Not enough Psionic Energy Dice left" : "No action needed: spend Psionic Energy Dice to get this back";
+      drBtn.title = drBtn.disabled ? "Not enough " + drNoun[1] + " left" : "No action needed: spend " + drNoun[1] + " to get this back";
       drBtn.addEventListener("click", function(){
         if(!spendResource(c, dr.key, dr.count)) return;
-        logRoll(r.name, "Spent " + dr.count + " Psionic Energy " + (dr.count===1 ? "Die" : "Dice") + " to use it again.");
+        logRoll(r.name, "Spent " + dr.count + " " + (dr.count===1 ? drNoun[0] : drNoun[1]) + " to use it again.");
         setUsed(r.used-1);
       });
       drRow.appendChild(drBtn);

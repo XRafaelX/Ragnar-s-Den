@@ -6,7 +6,7 @@
    A Bardic Inspiration action: {id, name, detail, log, roll: {die, qty,
    bonus, label}, tale (Tales from Beyond rolls on its own table)}. */
 import { mod, profBonus } from "./basics.js";
-import { classLevelOf } from "./class-features.js";
+import { classLevelOf, isBard2024 } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
 import { resourceLeft, spendResource, effectOn } from "./effects.js";
 import { SPIRIT_TALES } from "../data/spirit-tales.js";
@@ -45,7 +45,14 @@ export function bardicActions(c){
   if(college(c, "College of Eloquence") >= 3) out.push({id: "unsettling_words", name: "Unsettling Words",
     detail: "Bonus action: a creature you can see within 60 ft subtracts the die from its next saving throw before the start of your next turn.",
     roll: {die: die, qty: 1, bonus: 0, label: "Unsettling Words: it subtracts this"}});
-  if(college(c, "College of Glamour") >= 3){
+  // The 2024 Glamour's Mantle rolls the die: twice the roll in temporary HP.
+  if(college(c, "College of Glamour") >= 3 && isBard2024(c)) out.push({id: "mantle_of_inspiration", name: "Mantle of Inspiration",
+    detail: "Bonus action: roll the die. Up to " + chaTargets + (chaTargets===1 ? " other creature" : " other creatures") + " within 60 ft each gain twice the roll in temporary hit points, and can use their reaction to move up to their speed without opportunity attacks.",
+    roll: {die: die, qty: 1, bonus: 0, label: "Mantle of Inspiration: each gains twice this in temporary HP"}});
+  if(college(c, "College of Dance") >= 6) out.push({id: "tandem_footwork", name: "Tandem Footwork",
+    detail: "When you roll initiative: roll the die. You and each ally within 30 ft who can see or hear you add it to initiative.",
+    roll: {die: die, qty: 1, bonus: 0, label: "Tandem Footwork: add this to initiative"}});
+  if(college(c, "College of Glamour") >= 3 && !isBard2024(c)){
     var temp = mantleTempHp(bardLevel(c));
     out.push({id: "mantle_of_inspiration", name: "Mantle of Inspiration",
       detail: "Bonus action: up to " + chaTargets + (chaTargets===1 ? " creature" : " creatures") + " you can see within 60 ft gain " + temp + " temporary hit points and can use their reaction to move up to their speed without opportunity attacks.",
@@ -60,6 +67,15 @@ export function bardicProblem(c){
 }
 export function spendBardic(c){
   return spendResource(c, USES, 1);
+}
+
+/* ---- College of Dance (2024) ---- */
+/* Dazzling Footwork: no armor and no shield. The Bardic Inspiration die for
+   unarmed strikes, or 0. */
+export function danceFootwork(c){
+  if(college(c, "College of Dance") < 3) return 0;
+  var worn = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
+  return worn ? 0 : bardicDie(c);
 }
 
 /* ---- College of Lore ---- */

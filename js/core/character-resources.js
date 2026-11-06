@@ -79,7 +79,8 @@ export function characterResources(c){
         key: key, name: r.name, source: d.source, hint: typeof r.hint==="function" ? r.hint(lv, m, cl) : r.hint, pool: !!r.pool,
         max: max, used: max===Infinity ? 0 : clamp(Number((c.resourcesUsed||{})[key])||0, 0, max),
         reset: r.reset(lv), shortRegain: r.shortRegain || 0, roll: roll, heal: r.heal ? r.heal(lv, m) : 0, rageRestore: !!r.rageRestore, diceRestore: r.diceRestore || null, slotMin: r.slotMin || 0, againPoints: r.againPoints || 0,
-        initiativeRegain: r.initiativeRegain && lv >= r.initiativeRegain ? (r.initiativeAmount || 1) : 0
+        initiativeRegain: r.initiativeRegain && lv >= r.initiativeRegain ? (r.initiativeAmount || 1) : 0,
+        initiativeUpTo: r.initiativeUpTo && lv >= r.initiativeRegain ? r.initiativeUpTo : 0
       });
     });
   });
@@ -217,6 +218,12 @@ export function survivorHeal(c){
 export function regainOnInitiative(c){
   var back = [];
   characterResources(c).forEach(function(r){
+    // (Superior Inspiration, 2024: back up to two, whenever fewer are left.)
+    if(r.initiativeUpTo && r.max!==Infinity && r.max - r.used < r.initiativeUpTo){
+      c.resourcesUsed[r.key] = Math.max(0, r.max - r.initiativeUpTo);
+      back.push(r.name);
+      return;
+    }
     if(!r.initiativeRegain || r.max===Infinity || r.used < r.max) return;
     c.resourcesUsed[r.key] = Math.max(0, r.used - r.initiativeRegain);
     back.push(r.name);

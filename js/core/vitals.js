@@ -21,6 +21,7 @@ import { twilightShroud } from "./cleric.js";
 import { defensiveFlourish } from "./bard.js";
 import { stoneBenefit, wardLeft } from "./wizard.js";
 import { soulOfArtificeBonus } from "./artificer.js";
+import { danceFootwork } from "./bard.js";
 import { wildForm, wildShapeSpeeds, wildShapeArmorClass, wildShapeSenses, incarnationAc, moonConBonus } from "./druid.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
 import { holsterSpeedParts, coinAcBonus, magicBonusOf, magicItemAcBonuses, magicItemSaveBonuses } from "./magic-items.js";
@@ -293,6 +294,11 @@ export function computeArmorClass(c){
     if(hasClass("Barbarian")){
       var conMod = mod(abilityScore(c, "con"));
       options.push({value: 10 + dexMod + conMod, breakdown: "Unarmored Defense: 10 + DEX (" + fmtMod(dexMod) + ") + CON (" + fmtMod(conMod) + ")", short: "10 + DEX + CON"});
+    }
+    // Dazzling Footwork (2024 College of Dance 3): no armor, no shield.
+    if(danceFootwork(c) && !items.some(function(i){ return i.category==="shield"; })){
+      var chaDance = mod(abilityScore(c, "cha"));
+      options.push({value: 10 + dexMod + chaDance, breakdown: "Dazzling Footwork: 10 + DEX (" + fmtMod(dexMod) + ") + CHA (" + fmtMod(chaDance) + ")", short: "10 + DEX + CHA"});
     }
     if(hasClass("Monk") && !items.some(function(i){ return i.category==="shield"; })){
       var wisMod = mod(abilityScore(c, "wis"));

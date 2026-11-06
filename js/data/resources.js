@@ -43,7 +43,13 @@ import { wildShapeUses2024 } from "./druid-2024.js";
 
 export var CLASS_RESOURCES = {
   "Bard": [
-    {id:"bardic_inspiration", name:"Bardic Inspiration", level:1,
+    // The 2024 bard (pp. 59 to 61): Superior Inspiration fills up to two on initiative.
+    {id:"bardic_inspiration", name:"Bardic Inspiration", level:1, edition:"2024",
+      max:function(lv, m){ return atLeastOne(m.cha); },
+      reset:function(lv){ return lv>=5 ? "short" : "long"; },
+      initiativeRegain:18, initiativeUpTo:2,
+      hint:function(lv){ return "Bonus action: give a creature within 60 ft a d" + (lv>=15 ? 12 : lv>=10 ? 10 : lv>=5 ? 8 : 6) + ". Within an hour, it adds the roll to a d20 test it fails." + (lv>=18 ? " Rolling initiative brings you back up to two." : ""); }},
+    {id:"bardic_inspiration", name:"Bardic Inspiration", level:1, edition:"2014",
       max:function(lv, m){ return atLeastOne(m.cha); },
       reset:function(lv){ return lv>=5 ? "short" : "long"; },
       initiativeRegain:20,
@@ -276,6 +282,15 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Bard": {
+    // The 2024 college of Glamour (p. 65).
+    "College of Glamour (2024)": [
+      {id:"beguiling_magic", name:"Beguiling Magic", level:3, max:always(1), reset:always("long"), diceRestore:{count:1, key:"Bard:bardic_inspiration", noun:["Bardic Inspiration", "Bardic Inspirations"]},
+        hint:function(lv, m){ return "After an enchantment or illusion spell with a slot: a creature within 60 ft makes a WIS save (DC " + (8 + m.pb + m.cha) + ") or is charmed or frightened for 1 minute."; }},
+      {id:"mantle_of_majesty", name:"Mantle of Majesty", level:6, max:always(1), reset:always("long"),
+        hint:"Bonus action: cast Command without a slot, then again as a bonus action each turn for 1 minute. More uses cost a level 3 or higher slot."},
+      {id:"unbreakable_majesty", name:"Unbreakable Majesty", level:14, max:always(1), reset:always("short"),
+        hint:"Bonus action for 1 minute: the first hit on you each turn needs a CHA save or it misses."}
+    ],
     "College of Eloquence": [
       {id:"universal_speech", name:"Universal Speech", level:6, max:always(1), reset:always("long"),
         slotMin:1,

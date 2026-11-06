@@ -18,6 +18,7 @@ import { abilityScore, abilityScores } from "./ability-scores.js";
 import { conditionRolls } from "./conditions.js";
 import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver, weaponAttackEffect, endRage } from "./effects.js";
 import { sharpenBonus } from "./monk.js";
+import { danceFootwork } from "./bard.js";
 import { sacredWeaponBonus, auraOfHate } from "./paladin.js";
 import { reaperScythe } from "./shadow-stalker.js";
 import { heavyRoundBonus, marksmanCritMin, deadlyCriticalDice, outlawGritBonus, outlawDualFirearm, arcaneInfusionBonus, arcaneInfusionOn } from "./gunslinger.js";
@@ -214,7 +215,8 @@ export function unarmedStrike(c){
   var monk = (c.classes||[]).some(function(cl){ return cl.name==="Monk"; });
   var brawler = hasFeat(c, "Tavern Brawler") || hasFeat(c, "Tavern Brawler (2024)");
   var styled = hasFightingStyle(c, "Unarmed Fighting");
-  if(!nat && !monk && !brawler && !styled) return null;
+  var dancer = danceFootwork(c);
+  if(!nat && !monk && !brawler && !styled && !dancer) return null;
   var ab = abilityScores(c), str = mod(ab.str), dex = mod(ab.dex);
   var die = 0, name = "Unarmed strike", type = "Bludgeoning", parts = [];
   if(nat){ die = nat.die; name = nat.name + " (unarmed strike)"; type = nat.type; parts.push(c.race + " " + nat.name.toLowerCase()); }
@@ -231,6 +233,12 @@ export function unarmedStrike(c){
   // A dhampir's bite uses Constitution in place of Strength.
   if(nat && nat.ability==="con" && die===nat.die){ abilityMod = mod(ab.con); ability = "CON"; }
   var armored = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped; });
+  // Bardic Damage (2024 College of Dance 3): the Bardic Inspiration die, with DEX.
+  if(dancer){
+    if(dancer > die){ die = dancer; name = "Unarmed strike"; type = "Bludgeoning"; }
+    parts.push("Bardic Damage d" + dancer);
+    if(dex > abilityMod){ abilityMod = dex; ability = "DEX"; }
+  }
   if(monk && !armored){
     var ma = martialArtsDie(c);
     if(ma > die){ die = ma; }

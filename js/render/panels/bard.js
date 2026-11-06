@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, maxHp, plainAttackRollMode, resourceLeft, bardicDie, bardicActions, bardicProblem, spendBardic, bladeFlourish, spiritTale, hasMysticalConnection, taleRoll, bardSpellAttack, sessionSpells, songOfRestDie } from "../../core/helpers.js";
+import { spellSlotsLeft, spendSpellSlot, ordinal, clamp, maxHp, plainAttackRollMode, resourceLeft, bardicDie, bardicActions, bardicProblem, spendBardic, bladeFlourish, spiritTale, hasMysticalConnection, taleRoll, bardSpellAttack, sessionSpells, songOfRestDie } from "../../core/helpers.js";
 import { SPIRIT_TALES } from "../../data/spirit-tales.js";
 import { SPELL_DATA } from "../../data/spells.js";
 import { renderAll } from "../sheet.js";
@@ -56,6 +56,27 @@ export function bardResourceRow(c, r){
   if(actions.length > 1) wrap.appendChild(actionPicker(c, actions));
   var tale = spiritTale(c);
   if(tale) wrap.appendChild(taleRow(c, tale));
+  // Font of Inspiration (2024 bard 5): a spell slot for a use, no action needed.
+  var bard = (c.classes||[]).find(function(x){ return x.name==="Bard" && x.edition==="2024" && (Number(x.level)||1) >= 5; });
+  if(bard && r.used > 0){
+    var slots = spellSlotsLeft(c).filter(function(s){ return !s.pact; });
+    var row = document.createElement("div");
+    row.className = "inv-roll-actions fx-rolls";
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn small inv-roll-btn res-roll-btn";
+    b.textContent = slots.length ? "A " + ordinal(slots[0].level) + "-level slot for a use" : "No slot for a use";
+    b.title = "Font of Inspiration: spend a spell slot to regain one use (no action needed)";
+    b.disabled = !slots.length;
+    b.addEventListener("click", function(){
+      if(!slots.length) return;
+      spendSpellSlot(c, slots[0]);
+      c.resourcesUsed[r.key] = Math.max(0, r.used - 1);
+      logRoll("Font of Inspiration", "Spent a " + ordinal(slots[0].level) + "-level slot for a use of Bardic Inspiration.");
+      save(); renderAll();
+    });
+    row.appendChild(b);
+    wrap.appendChild(row);
+  }
   return wrap.childNodes.length ? wrap : null;
 }
 function actionPicker(c, actions){

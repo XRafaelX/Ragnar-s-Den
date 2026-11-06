@@ -239,7 +239,7 @@ export function learnPlan(c, entry, isNewClass){
   if(def.spells && maxLevel){
     var spellNeed = need(def.spells, known.spells.length);
     var levels = range(1, maxLevel);
-    var secrets = entry.name==="Bard" && MAGICAL_SECRETS_LEVELS.indexOf(lv)!==-1 ? Math.min(2, spellNeed) : 0;
+    var secrets = entry.name==="Bard" && entry.edition!=="2024" && MAGICAL_SECRETS_LEVELS.indexOf(lv)!==-1 ? Math.min(2, spellNeed) : 0;
     var anySchool = def.schools && def.anySchoolAt.indexOf(lv)!==-1 ? Math.min(1, spellNeed) : 0;
     var normal = spellNeed - secrets - anySchool;
     var own = classListNames(entry, def, levels, tasha, c);
@@ -266,6 +266,18 @@ export function learnPlan(c, entry, isNewClass){
     add("loreSecrets", "bonus", "Additional Magical Secrets",
       "Your college teaches you " + LORE_SECRETS.count + " spells from any class's list" + upToText(maxLevel) + " They don't count against your spells known.",
       LORE_SECRETS.count, {names: lore, tags: tagsFor(lore, null, otherClassTag("Bard", tasha))});
+  }
+  // Magical Discoveries (2024 Lore 6): two from the Cleric, Druid or Wizard
+  // lists, cantrips too, always prepared.
+  if(entry.name==="Bard" && entry.subclass==="College of Lore (2024)" && lv===6){
+    var found = [];
+    ["Cleric", "Druid", "Wizard"].forEach(function(list){
+      Object.keys(spellDataForClass(list, tasha)).forEach(function(n){ if(found.indexOf(n)===-1 && range(0, maxLevel).indexOf(SPELL_DATA[n].level)!==-1) found.push(n); });
+    });
+    found.sort();
+    add("loreDiscoveries", "bonus", "Magical Discoveries",
+      "Your college teaches you 2 spells from the Cleric, Druid or Wizard lists, cantrips or" + upToText(maxLevel) + " You always have them prepared.", 2,
+      {names: found, tags: tagsFor(found, null, otherClassTag("Bard", tasha))});
   }
   if(def.spellbook && maxLevel){
     var book = lv===1 ? def.spellbook[1] : def.spellbook.else;
@@ -424,7 +436,7 @@ export function applyLearn(c, className, plan, sections, picks, swapOut, cantrip
     sp.learnedBy = className;
     sp.prepared = sectionId==="spellbook" ? false : true;
     if(kind==="arcanum"){ sp.arcanum = true; sp.notes = "Mystic Arcanum: cast it once per long rest without a spell slot."; }
-    if(kind==="bonus"){ sp.bonusSecret = true; sp.notes = "Additional Magical Secrets: doesn't count against your spells known."; }
+    if(kind==="bonus"){ sp.bonusSecret = true; sp.notes = sectionId==="loreDiscoveries" ? "Magical Discoveries: always prepared, and doesn't count against your spells." : "Additional Magical Secrets: doesn't count against your spells known."; }
     c.spells.push(sp);
     rec.added.push(name);
   }

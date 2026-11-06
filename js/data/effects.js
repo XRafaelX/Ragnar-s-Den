@@ -124,7 +124,14 @@ export var TOGGLE_EFFECTS = [
     hint:"Bonus action, in the Full Moon."},
   // Player's Handbook (p. 54) and Xanathar's Guide (pp. 14-16), checked on
   // 5etools' data 2026-10-30.
-  {id:"countercharm", name:"Countercharm", className:"Bard", level:6, duration:"Until the end of your next turn", endsIncapacitated:true,
+  // The 2024 college of Glamour (p. 65), under the same ids.
+  {id:"mantle_of_majesty", name:"Mantle of Majesty", className:"Bard", subclass:"College of Glamour (2024)", level:6,
+    cost:{resource:"mantle_of_majesty", amount:1}, slotCost:3, slotAtLeast:true, duration:"1 minute",
+    hint:"Bonus action, with your concentration as if on a spell. It ends if your concentration does."},
+  {id:"unbreakable_majesty", name:"Unbreakable Majesty", className:"Bard", subclass:"College of Glamour (2024)", level:14,
+    cost:{resource:"unbreakable_majesty", amount:1}, duration:"1 minute", endsIncapacitated:true,
+    hint:"Bonus action. Ends early if you are incapacitated."},
+  {id:"countercharm", name:"Countercharm", className:"Bard", edition:"2014", level:6, duration:"Until the end of your next turn", endsIncapacitated:true,
     hint:"Action: a performance. It ends early if you are incapacitated or silenced, or if you stop it. Friends within 30 ft have to hear you."},
   {id:"defensive_flourish", name:"Defensive Flourish", className:"Bard", subclass:"College of Swords", level:3, channel:true, duration:"Until the start of your next turn",
     hint:"From a Blade Flourish."},

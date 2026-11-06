@@ -273,7 +273,7 @@ export function originListSpells(race, background){
    Soul sorcerer: the cleric list). */
 export function classExtraSpellLists(cl){
   var out = [];
-  classFeatureList(cl).forEach(function(f){ if(f.extraSpellList && out.indexOf(f.extraSpellList)===-1) out.push(f.extraSpellList); });
+  classFeatureList(cl).forEach(function(f){ [].concat(f.extraSpellList || []).forEach(function(l){ if(out.indexOf(l)===-1) out.push(l); }); });
   return out;
 }
 /* The Spells tab shows for casters, and for anyone a feature grants a
