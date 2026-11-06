@@ -15,6 +15,7 @@ import { SPELL_DATA_2024 } from "../data/spells-2024.js";
 import { SPELL_SCALING, SPELL_SCALING_2024 } from "../data/spell-scaling.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { BACKGROUND_INFO } from "../data/backgrounds.js";
+import { setWeaponEdition, useWeaponsOf } from "./weapon-edition.js";
 
 var current = "2014";
 var saved = null; // {spells: {name: 2014 entry or undefined}, scaling: {...}}
@@ -30,6 +31,8 @@ export function spellEdition(){ return current; }
 /* Switch the catalog to an edition's spells. */
 export function setSpellEdition(edition){
   edition = edition==="2024" ? "2024" : "2014";
+  // (The 2024 weapon stats follow the same rule: js/core/weapon-edition.js.)
+  setWeaponEdition(edition);
   if(edition===current) return;
   if(edition==="2024"){
     saved = {spells: {}, scaling: {}};
@@ -72,4 +75,5 @@ function syncSavedSpells(c){
 export function useSpellsOf(c){
   setSpellEdition(characterSpellEdition(c));
   if(c) syncSavedSpells(c);
+  useWeaponsOf(c, characterSpellEdition(c));
 }

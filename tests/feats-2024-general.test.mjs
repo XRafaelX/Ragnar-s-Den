@@ -194,3 +194,15 @@ test("General feats on the sheet: speeds, senses, armor, weapons, damage and spe
   const fam = H.featureSpells(wiz).find((s) => s.name === "Find Familiar");
   assert.equal(fam.kind, "prepared");
 });
+
+test("feats in both books: the 2024 one under the plain name, the 2014 one as (2014)", async () => {
+  const { featListLabel } = await import("../js/ui/feat-list.js");
+  const { featDef } = await import("../js/core/feat-picks.js");
+  assert.equal(featListLabel(featDef("Alert (2024)"), true), "Alert");
+  assert.equal(featListLabel(featDef("Alert"), true), "Alert (2014)");
+  assert.equal(featListLabel(featDef("Speedy"), true), "Speedy", "only in the 2024 book");
+  assert.equal(featListLabel(featDef("Aberrant Dragonmark"), true), "Aberrant Dragonmark", "only in an older book");
+  // On the 2014 rules, the names as they are.
+  assert.equal(featListLabel(featDef("Alert"), false), "Alert");
+  assert.equal(featListLabel(featDef("Alert (2024)"), false), "Alert (2024)");
+});

@@ -16,7 +16,7 @@ import { emptyPicks, featNeedsChoice, featHasPicks, featDef } from "../core/feat
 import { fillSlots, classPicksProblem, grantHasChoices } from "../core/class-picks.js";
 import { renderClassPicks } from "../ui/class-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
-import { fillFeatList } from "../ui/feat-list.js";
+import { fillFeatList, featListLabel } from "../ui/feat-list.js";
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
 
 export function wizardStepSkills(container){
@@ -326,12 +326,12 @@ export function wizardStepFeat(container){
   function drawChosen(){
     chosenBox.innerHTML = "";
     var f = FEATS_CATALOG.find(function(x){ return x.name===rc.feat; });
-    if(f) chosenBox.appendChild(featSummaryBox(f, featPrereqReason(f)));
+    if(f) chosenBox.appendChild(featSummaryBox(f, featPrereqReason(f), featListLabel(f, !!wizardRules2024())));
   }
   function fill(){
     fillFeatList(list, {
       // (The 2024 Origin feats only under the 2024 rules.)
-      feats: FEATS_CATALOG.filter(function(f){ return originOnly ? f.origin : featOffered(f, wizardRules2024()); }), query: wizardState.featQuery, selected: rc.feat, reason: featPrereqReason,
+      feats: FEATS_CATALOG.filter(function(f){ return originOnly ? f.origin : featOffered(f, wizardRules2024()); }), query: wizardState.featQuery, selected: rc.feat, reason: featPrereqReason, rules2024: !!wizardRules2024(),
       open: !!wizardState.featBlockedOpen,
       onToggle: function(){ wizardState.featBlockedOpen = !wizardState.featBlockedOpen; fill(); },
       onPick: function(f){
@@ -350,10 +350,10 @@ export function wizardStepFeat(container){
 /* The picked feat: name, category, prerequisite, the full text tucked
    away, and whether its choices come next (its summary is already in
    its list row, so it isn't repeated on a phone's small screen). */
-function featSummaryBox(feat, why){
+function featSummaryBox(feat, why, label){
   var box = ce("div","rt-feat"+(why ? " blocked" : ""));
   box.innerHTML =
-    "<div class='rt-feat-top'><strong>"+escapeHtml(feat.name)+"</strong><span class='rt-tag'>"+escapeHtml(feat.category)+"</span></div>"+
+    "<div class='rt-feat-top'><strong>"+escapeHtml(label || feat.name)+"</strong><span class='rt-tag'>"+escapeHtml(feat.category)+"</span></div>"+
     (feat.prerequisite && feat.prerequisite!=="None" ? "<div class='rt-feat-req'>Requires: "+escapeHtml(feat.prerequisite)+(why ? " ("+escapeHtml(why)+")" : "")+"</div>" : "");
   if(feat.description){
     var more = document.createElement("details");

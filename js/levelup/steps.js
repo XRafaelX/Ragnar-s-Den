@@ -24,7 +24,7 @@ import { makePlusSvg } from "../ui/svg-icons.js";
 import { openCompendium } from "../render/compendium.js";
 import { featDef, featNeedsChoice, emptyPicks, featPicksSummary, featRequiresReason } from "../core/feat-picks.js";
 import { renderFeatPicks } from "../ui/feat-picks.js";
-import { fillFeatList } from "../ui/feat-list.js";
+import { fillFeatList, featListLabel } from "../ui/feat-list.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { SPELL_DATA } from "../data/spells.js";
 function spellLevelOf(n){ return (SPELL_DATA[n] || {}).level; }
@@ -613,7 +613,8 @@ export function stepAsi(container){
   card.appendChild(nextBox);
   function drawNext(){
     var def = lu.featName && featDef(lu.featName);
-    nextBox.textContent = def ? (featNeedsChoice(def) ? lu.featName+": next, you'll choose what it gives you." : lu.featName+": nothing to choose, the sheet applies it.") : "";
+    var shown = def ? featListLabel(def, usesRules2024(c)) : "";
+    nextBox.textContent = def ? (featNeedsChoice(def) ? shown+": next, you'll choose what it gives you." : shown+": nothing to choose, the sheet applies it.") : "";
     nextBox.hidden = !def;
   }
   var who = featWho();
@@ -623,7 +624,7 @@ export function stepAsi(container){
     fillFeatList(list, {
       // (The 2024 Origin feats only for a character on the 2024 rules.)
       feats: FEATS_CATALOG.filter(function(f){ return featOffered(f, usesRules2024(c)) && (f.repeatable || !(c.feats||[]).some(function(x){ return x.name===f.name; })); }),
-      query: lu.featQuery, selected: lu.featName, reason: function(f){ return featRequiresReason(f, who); },
+      query: lu.featQuery, selected: lu.featName, reason: function(f){ return featRequiresReason(f, who); }, rules2024: usesRules2024(c),
       open: lu.featBlockedOpen,
       onToggle: function(){ lu.featBlockedOpen = !lu.featBlockedOpen; fill(); },
       onPick: function(f){
