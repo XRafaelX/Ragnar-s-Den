@@ -47,6 +47,8 @@ export function editionEntry(c, className, edition){
 export function isFighter2024(c){ return !!editionEntry(c, "Fighter", "2024"); }
 /* A 2024 rogue (js/core/rogue-2024.js). */
 export function isRogue2024(c){ return !!editionEntry(c, "Rogue", "2024"); }
+/* A 2024 sorcerer (js/core/sorcerer.js). */
+export function isSorcerer2024(c){ return !!editionEntry(c, "Sorcerer", "2024"); }
 /* A 2024 bard (js/core/bard.js). */
 export function isBard2024(c){ return !!editionEntry(c, "Bard", "2024"); }
 /* A 2024 druid (js/core/druid.js). */
@@ -403,7 +405,8 @@ export function classProficiencies(c, idx){
   return p;
 }
 /* A 2024 subclass whose name isn't its 2014 one's plus " (2024)". */
-var SUBCLASS_ALIASES = {"Circle of Stars": "Circle of the Stars (2024)"};
+var SUBCLASS_ALIASES = {"Circle of Stars": "Circle of the Stars (2024)", "Aberrant Mind": "Aberrant Sorcery", "Clockwork Soul": "Clockwork Sorcery",
+  "Draconic Bloodline": "Draconic Sorcery", "Wild Magic": "Wild Magic Sorcery"};
 export function classLevelOf(c, name, subclass){
   // (A 2024 subclass counts for its 2014 name: what's the same is automated once.)
   var also = subclass && SUBCLASS_ALIASES[subclass];

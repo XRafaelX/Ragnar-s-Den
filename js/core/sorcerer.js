@@ -7,7 +7,9 @@
    qty, bonus, label}, make (a slot level), burn (a slot), bastion (dice),
    phase, discount}, in the shape of a monk's kiActions. */
 import { mod, profBonus } from "./basics.js";
-import { classLevelOf, classFeatureList } from "./class-features.js";
+import { classLevelOf, classFeatureList, isSorcerer2024 } from "./class-features.js";
+import { entryChoices } from "./class-picks.js";
+import { SLOT_MIN_LEVEL_2024, WILD_SURGE_2024 } from "../data/sorcerer-2024.js";
 import { featurePicksText } from "./class-picks.js";
 import { abilityScore } from "./ability-scores.js";
 import { resourceLeft, spendResource, spellSlotsLeft, spendSpellSlot, effectOn } from "./effects.js";
@@ -48,6 +50,15 @@ export function fontOnLongRest(c){
 /* Sorcerous Restoration (sorcerer 20): 4 points on a short rest. How many
    came back. */
 export function sorcerousRestoration(c){
+  // The 2024 one (5): up to half the level, once per long rest.
+  if(isSorcerer2024(c)){
+    if(sorcererLevel(c) < 5 || resourceLeft(c, "Sorcerer:sorcerous_restoration") <= 0) return 0;
+    var spent = (c.resourcesUsed && c.resourcesUsed[POINTS]) || 0, got = Math.min(spent, Math.floor(sorcererLevel(c) / 2));
+    if(!got) return 0;
+    c.resourcesUsed[POINTS] = spent - got;
+    spendResource(c, "Sorcerer:sorcerous_restoration", 1);
+    return got;
+  }
   if(sorcererLevel(c) < 20) return 0;
   var used = (c.resourcesUsed && c.resourcesUsed[POINTS]) || 0, back = Math.min(4, used);
   if(back) c.resourcesUsed[POINTS] = used - back;
@@ -61,22 +72,23 @@ function highestSlot(c){
 /* Everything sorcery points can pay for. key: the pool (a feat's Metamagic
    Adept points only pay for Metamagic). */
 export function sorceryActions(c, key){
-  var out = [], font = key===POINTS, off = c.lunarDiscount ? 1 : 0;
+  var out = [], font = key===POINTS, off = c.lunarDiscount ? 1 : 0, book = isSorcerer2024(c);
   if(font){
     [1, 2, 3, 4, 5].forEach(function(l){
-      out.push({id: "make" + l, group: "Font of Magic", name: "Make a " + ord(l) + "-level slot", cost: SLOT_COST[l], make: l,
-        detail: "Bonus action. The slot is gone after a long rest.", log: "Made a " + ord(l) + "-level spell slot."});
+      out.push({id: "make" + l, group: "Font of Magic", name: "Make a " + ord(l) + "-level slot", cost: SLOT_COST[l], make: l, minLevel: book ? SLOT_MIN_LEVEL_2024[l] : 0,
+        detail: "Bonus action. The slot is gone after a long rest." + (book ? " From sorcerer level " + SLOT_MIN_LEVEL_2024[l] + "." : ""), log: "Made a " + ord(l) + "-level spell slot."});
     });
     spellSlotsLeft(c).forEach(function(s){
       out.push({id: "burn" + s.level + (s.pact ? "p" : ""), group: "Font of Magic", name: "Turn a " + ord(s.level) + "-level " + (s.pact ? "pact slot" : "slot") + " into " + s.level + (s.level===1 ? " point" : " points"), cost: 0, gain: s.level, burn: s,
         detail: "Bonus action.", log: "Turned a " + ord(s.level) + "-level spell slot into " + s.level + (s.level===1 ? " point." : " points.")});
     });
   }
-  var set = optionSetDef("metamagic");
-  allKnownOptions(c, "metamagic").forEach(function(k){
+  // (The 2024 list, with its own costs: Twinned Spell is 1 point.)
+  var setId = book ? "metamagic2024" : "metamagic", set = optionSetDef(setId);
+  allKnownOptions(c, setId).forEach(function(k){
     var o = set.options.find(function(x){ return x.name===k.name; });
     if(!o) return;
-    if(o.name==="Twinned Spell"){
+    if(o.name==="Twinned Spell" && !book){
       for(var l = 0; l <= highestSlot(c); l++) out.push({id: "twin" + l, group: "Metamagic", name: "Twinned Spell, " + (l ? ord(l) + " level" : "cantrip"), cost: Math.max(0, (l || 1) - off), meta: true, detail: o.text, log: "Twinned Spell."});
       return;
     }
@@ -87,7 +99,7 @@ export function sorceryActions(c, key){
   if(origin(c, "Lunar Sorcery") >= 6 && !c.lunarDiscount && c.lunarPhase) out.push({id: "lunar_boon", group: "Metamagic", name: "Lunar Boons: 1 point off your next Metamagic", cost: 0, discount: true,
     detail: "For a spell of these schools: " + LUNAR_SCHOOLS[c.lunarPhase] + ".", log: "Your next Metamagic costs 1 point less."});
   var mine = "Your sorcery";
-  if(origin(c, "Wild Magic") >= 6) out.push({id: "bend_luck", group: mine, name: "Bend Luck", cost: 2, roll: {die: 4, qty: 1, bonus: 0, label: "Bend Luck: add it or subtract it"},
+  if(origin(c, "Wild Magic") >= 6) out.push({id: "bend_luck", group: mine, name: "Bend Luck", cost: book ? 1 : 2, roll: {die: 4, qty: 1, bonus: 0, label: "Bend Luck: add it or subtract it"},
     detail: "Reaction: when a creature you can see rolls an attack, check or save, add or subtract 1d4 before any effects."});
   if(origin(c, "Clockwork Soul") >= 6) [1, 2, 3, 4, 5].forEach(function(n){
     out.push({id: "bastion" + n, group: mine, name: "Bastion of Law, " + n + "d8", cost: n, bastion: n,
@@ -114,6 +126,7 @@ export function sorceryProblem(c, a, key){
   if(a.gain && r.used <= 0) return "Already full";
   if(a.cost > r.max - r.used) return "Not enough points";
   if(a.make && a.make > 5) return "Too high";
+  if(a.minLevel && sorcererLevel(c) < a.minLevel) return "From sorcerer level " + a.minLevel;
   return "";
 }
 /* Pays and does what the action does. False if it can't. */
@@ -145,6 +158,12 @@ var DRAGON_TYPES = {Black: "acid", Copper: "acid", Blue: "lightning", Bronze: "l
 export function dragonType(c){
   var type = "";
   (c.classes||[]).forEach(function(cl, i){
+    // (The 2024 origin's Elemental Affinity is a choice at level 6.)
+    if(cl.name==="Sorcerer" && cl.subclass==="Draconic Sorcery"){
+      var pick = (Number(cl.level)||1) >= 6 && entryChoices(cl, "draconicAffinity")[0];
+      if(pick) type = pick.toLowerCase();
+      return;
+    }
     if(cl.name!=="Sorcerer" || cl.subclass!=="Draconic Bloodline") return;
     var m = /(Black|Copper|Blue|Bronze|Brass|Gold|Red|Green|Silver|White)/.exec(featurePicksText(cl, i > 0, "Dragon Ancestor", true));
     if(m) type = DRAGON_TYPES[m[1]];
@@ -154,9 +173,15 @@ export function dragonType(c){
 
 /* ---- Wild Magic ---- */
 /* The table's entry for a d100 roll (100 is the 00). */
-export function surgeEntry(roll){
+export function surgeEntry(roll, c){
+  if(c && isSorcerer2024(c)) return WILD_SURGE_2024[Math.ceil(roll / 4) - 1] || null;
   return WILD_SURGE[Math.ceil(roll / 2) - 1] || null;
 }
+/* The surge check's number: a 1 for the 2014 sorcerer, a 20 for the 2024 one. */
+export function surgeCheckNumber(c){ return isSorcerer2024(c) ? 20 : 1; }
+/* Innate Sorcery (2024 sorcerer 1): +1 to the spell save DC and advantage on
+   spell attacks while it's on. */
+export function innateSorceryOn(c){ return effectOn(c, "innate_sorcery"); }
 export function hasControlledChaos(c){
   return origin(c, "Wild Magic") >= 14;
 }

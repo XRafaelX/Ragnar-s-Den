@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { wrathDice, landWard, isCleric2024, isRanger2024, isPaladin2024, surprisingStrikes, rovingAim, isBarbarian2024, wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
+import { isSorcerer2024, wrathDice, landWard, isCleric2024, isRanger2024, isPaladin2024, surprisingStrikes, rovingAim, isBarbarian2024, wizardDc, deflectingShroud, spendSpellSlot, tentacleDice, warlockDc, warlockSpellAttack, hexCurseHealing, dragonType, sorcererDc, bastionDice, bardDc, druidDc, druidSpellAttack, starryDice, canChangeConstellation, hasEnhancedBond, defileGround, fmtMod, characterEffects, startEffect, endEffect, pruneEffects, bladesongBonus, symbioticTempHp, haloOfSporesDie, astralArmsAttack, plainAttackRollMode, draconicBreath, classLevelOf, fightingSpiritTempHp, effectOn, mod, profBonus, maxHp, ordinal, paladinDc, favoredFoeDie, spellSlotsLeft, sanctuaryBonus, insightfulAttack, clericDc, computeSpeed, hasCondition, removeCondition, kiSaveDc } from "../../core/helpers.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -277,6 +277,8 @@ function effectSummary(c, id){
   if(id==="unbreakable_majesty") return "The first time a creature tries to attack you on a turn: CHA save DC " + bardDc(c) + " or it can't, and picks a new target. If it saves, disadvantage on saves against your spells on your next turn";
   if(id==="shadow_disguise") return "You look like the dead person and know what it would tell a casual acquaintance. +5 to Deception checks against Insight";
   if(id==="spreading_spores") return "A creature that enters the cube or starts its turn there makes a CON save (DC " + druidDc(c) + ") or takes your Halo of Spores damage, once per turn. You can't use the Halo of Spores reaction while it lasts";
+  if(id==="innate_sorcery") return "+1 to your sorcerer spell save DC, and advantage on the attack rolls of sorcerer spells" + (classLevelOf(c, "Sorcerer") >= 7 ? ". Up to two Metamagic options on each spell" : "") + (classLevelOf(c, "Sorcerer") >= 20 ? ". One Metamagic option each turn costs no points" : "");
+  if(id==="dragon_wings" && isSorcerer2024(c)) return "Fly 60 ft";
   if(id==="wrath_of_the_sea"){
     var sea = classLevelOf(c, "Druid", "Circle of the Sea");
     return "A " + (sea >= 6 ? 10 : 5) + "-ft emanation. As a bonus action, a creature in it makes a CON save (DC " + druidDc(c) + ") or takes " + wrathDice(c) + "d6 cold and is pushed 15 ft" +

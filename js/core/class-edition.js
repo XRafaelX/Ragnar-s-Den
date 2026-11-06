@@ -9,7 +9,7 @@ import { setMonkEdition } from "./monk.js";
 import { syncStyleWording } from "./fighting-styles.js";
 
 /* Maneuvers known carry over under the same names, for those both lists have. */
-var OPTION_SETS_SWAP = {"maneuvers": "maneuvers2024"};
+var OPTION_SETS_SWAP = {"maneuvers": "maneuvers2024", "metamagic": "metamagic2024"};
 export function setClassEdition(c, className, on){
   if(className==="Monk") return setMonkEdition(c, on);
   var cl = (c.classes||[]).find(function(x){ return x.name===className; });

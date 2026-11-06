@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, maxHp, ordinal, sorceryActions, sorceryProblem, payForSorcery, surgeEntry, hasControlledChaos, regainTides, regainLowestSlot, regainAllPoints, unearthlyRecovery, PHASES, LUNAR_SPELLS, lunarFreeUsed, useLunarFree, setLunarPhase, phenomenonSpent, usePhenomenon, sorcererDc, resourceLeft, spendResource, bastionDice, startEffect } from "../../core/helpers.js";
+import { surgeCheckNumber, clamp, maxHp, ordinal, sorceryActions, sorceryProblem, payForSorcery, surgeEntry, hasControlledChaos, regainTides, regainLowestSlot, regainAllPoints, unearthlyRecovery, PHASES, LUNAR_SPELLS, lunarFreeUsed, useLunarFree, setLunarPhase, phenomenonSpent, usePhenomenon, sorcererDc, resourceLeft, spendResource, bastionDice, startEffect } from "../../core/helpers.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeDiceSvg, makeDicesSvg } from "../../ui/svg-icons.js";
@@ -60,9 +60,10 @@ function pointsPicker(c, key){
 /* ---- Wild Magic ---- */
 function surgeRow(c){
   var row = buttonRow();
-  row.appendChild(rollBtn(makeDiceSvg(), "Surge check d20", "After a sorcerer spell of 1st level or higher, when your DM asks: a 1 means a surge", function(){
+  var surgeOn = surgeCheckNumber(c);
+  row.appendChild(rollBtn(makeDiceSvg(), "Surge check d20", surgeOn===20 ? "Once per turn, right after a sorcerer spell with a spell slot: a 20 means a surge" : "After a sorcerer spell of 1st level or higher, when your DM asks: a 1 means a surge", function(){
     performRoll(20, 1, 0, "none", "Wild Magic Surge check", function(r){
-      if(!r || r.total!==1) return null;
+      if(!r || r.total!==surgeOn) return null;
       return {lead: "A surge!", options: [{label: "Roll on the table", title: "Roll a d100 on the Wild Magic Surge table", use: function(){ rollSurge(c); return {silent: true}; }}]};
     });
   }));
@@ -81,16 +82,18 @@ function rollSurge(c){
     var list = document.createElement("div");
     list.className = "pal-sheet-list";
     rolls.forEach(function(n){
-      var e = surgeEntry(n);
+      var e = surgeEntry(n, c);
       var p = document.createElement("div");
       p.className = "fx-now";
       p.textContent = e.text;
       list.appendChild(p);
       if(e.apply) list.appendChild(sheetButton("Apply it", function(){ applySurge(c, e); close(); }));
+      // (The 2024 table's last row: a d6 picks one of several.)
+      (e.applies || []).forEach(function(x){ list.appendChild(sheetButton(x.label, function(){ applySurge(c, x); close(); })); });
     });
     body.appendChild(list);
   });
-  logRoll("Wild Magic Surge", "Rolled " + rolls.join(" and ") + ": " + rolls.map(function(n){ return surgeEntry(n).text; }).join(" Or: "));
+  logRoll("Wild Magic Surge", "Rolled " + rolls.join(" and ") + ": " + rolls.map(function(n){ return surgeEntry(n, c).text; }).join(" Or: "));
 }
 function applySurge(c, e){
   if(e.apply==="points"){ regainAllPoints(c); logRoll("Wild Magic Surge", "All sorcery points back."); }

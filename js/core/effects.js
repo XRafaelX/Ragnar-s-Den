@@ -7,7 +7,7 @@ import { stoneBenefit } from "./wizard.js";
 import { TOGGLE_EFFECTS, WILD_SURGES } from "../data/effects.js";
 import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
-import { classLevelOf, computeSpellSlots, usesVariant, classEdition, isBarbarian2024, isRanger2024 } from "./class-features.js";
+import { classLevelOf, computeSpellSlots, usesVariant, classEdition, isBarbarian2024, isRanger2024, isSorcerer2024 } from "./class-features.js";
 import { vitalitySurge, fanaticalBonus, hasTreeTravel, divineFormOn } from "./barbarian-2024.js";
 import { barbarianClassEntry } from "./character-resources.js";
 import { removeCondition } from "./conditions.js";
@@ -37,7 +37,7 @@ function effectClass(c, def){
 }
 /* Why an effect that's switched on gives nothing right now, or "". */
 export function effectBlocked(c, id){
-  if(id==="dragon_wings"){
+  if(id==="dragon_wings" && !isSorcerer2024(c)){
     var armor = (c.inventory||[]).find(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
     if(armor) return "Not while you wear " + (armor.name || "armor") + ", unless it's made for them.";
   }
@@ -98,7 +98,8 @@ export function characterEffects(c){
         for(var l = def.slotCost || 10; l <= (def.slotAtLeast ? 9 : def.slotCost || 0) && !slot; l++) if(spellSlotLeft(c, l)) slot = l;
         if(slot){ /* paid in startEffect */ }
         // Trance of Order: sorcery points pay once the use is gone.
-        else if(def.pointsCost && resourceLeft(c, "Sorcerer:sorcery_points") >= def.pointsCost) points = def.pointsCost;
+        // (Sorcery Incarnate: only from a level, `pointsFrom`.)
+        else if(def.pointsCost && (!def.pointsFrom || (Number((effectClass(c, def)||{}).level)||0) >= def.pointsFrom) && resourceLeft(c, "Sorcerer:sorcery_points") >= def.pointsCost) points = def.pointsCost;
         else why = "Not enough " + (res ? res.name : def.cost.resource) + " left.";
       }
     }
@@ -651,6 +652,8 @@ export function effectResistances(c){
   var stone = stoneBenefit(c);
   if(stone && ["Acid", "Cold", "Fire", "Lightning", "Thunder"].indexOf(stone)!==-1) out.push({type: stone.toLowerCase(), source: "Transmuter's Stone"});
   if(effectOn(c, "elemental_affinity")) out.push({type: dragonType(c) || "your ancestry's damage", source: "Elemental Affinity"});
+  // The 2024 Elemental Affinity (Draconic Sorcery 6): always on.
+  if(classLevelOf(c, "Sorcerer", "Draconic Sorcery") >= 6 && isSorcerer2024(c) && dragonType(c)) out.push({type: dragonType(c), source: "Elemental Affinity"});
   if(effectOn(c, "umbral_form")) out.push({type: "all damage but force and radiant", source: "Umbral Form"});
   if(lunarEmpowered(c)==="Crescent Moon") out.push({type: "necrotic", source: "Lunar Empowerment"}, {type: "radiant", source: "Lunar Empowerment"});
   return out;

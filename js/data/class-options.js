@@ -31,7 +31,7 @@
                 see js/core/class-picks.js)}] */
 export var OPTION_SETS = [
   {
-    id:"metamagic", label:"Metamagic", noun:"Metamagic option", className:"Sorcerer", subclass:null,
+    id:"metamagic", label:"Metamagic", noun:"Metamagic option", className:"Sorcerer", subclass:null, edition:"2014",
     known:{3:2, 10:3, 17:4}, swap:"never", versatility:true,
     help:"Ways to twist your spells, paid for with sorcery points. You can use one per spell (Empowered and Seeking can be added to another).",
     options:[
@@ -45,6 +45,24 @@ export var OPTION_SETS = [
       {name:"Twinned Spell", source:"PHB", cost:"spell level (1 for a cantrip)", text:"When a spell targets only one creature and doesn't have a range of self, target a second creature in range with it."},
       {name:"Seeking Spell", source:"TCE", optional:true, cost:"2", text:"If you make an attack roll for a spell and miss, reroll the d20 and use the new roll. You can use this even if you already used another Metamagic option on the spell."},
       {name:"Transmuted Spell", source:"TCE", optional:true, cost:"1", text:"Change a spell's acid, cold, fire, lightning, poison or thunder damage to another of those types."}
+    ]
+  },
+  /* ---- The 2024 sorcerer's Metamagic (Player's Handbook 2024, pp. 141 and 142) ---- */
+  {
+    id:"metamagic2024", label:"Metamagic", noun:"Metamagic option", className:"Sorcerer", subclass:null, edition:"2024",
+    known:{2:2, 10:4, 17:6}, swap:"level",
+    help:"Ways to twist your spells, paid for with sorcery points. One per spell, unless an option says otherwise. Whenever you gain a sorcerer level you can swap one.",
+    options:[
+      {name:"Careful Spell", source:"XPHB", cost:"1", text:"When you cast a spell that forces other creatures to save, choose up to your Charisma modifier of them (minimum one): they automatically succeed, and take no damage if they'd take half on a success."},
+      {name:"Distant Spell", source:"XPHB", cost:"1", text:"Double the range of a spell with a range of 5 feet or more, or make a touch spell's range 30 feet."},
+      {name:"Empowered Spell", source:"XPHB", cost:"1", text:"When you roll damage for a spell, reroll up to your Charisma modifier of the damage dice (minimum one) and use the new rolls. You can add this to another Metamagic option on the spell."},
+      {name:"Extended Spell", source:"XPHB", cost:"1", text:"Double the duration of a spell that lasts 1 minute or longer, to at most 24 hours. With concentration, you have advantage on saves to keep it."},
+      {name:"Heightened Spell", source:"XPHB", cost:"2", text:"When you cast a spell that forces a save, one target has disadvantage on saves against the spell."},
+      {name:"Quickened Spell", source:"XPHB", cost:"2", text:"A spell with a casting time of an action takes a bonus action instead. Not if you've already cast a level 1+ spell this turn, and you can't cast one after it this turn."},
+      {name:"Seeking Spell", source:"XPHB", cost:"1", text:"If you miss with a spell's attack roll, reroll the d20 and use the new roll. You can add this to another Metamagic option on the spell."},
+      {name:"Subtle Spell", source:"XPHB", cost:"1", text:"Cast a spell without verbal, somatic or material components, except material ones that are consumed or have a cost."},
+      {name:"Transmuted Spell", source:"XPHB", cost:"1", text:"Change a spell's acid, cold, fire, lightning, poison or thunder damage to another of those types."},
+      {name:"Twinned Spell", source:"XPHB", cost:"1", text:"A spell that can target one more creature with a higher-level slot (such as Charm Person) is cast as if one level higher."}
     ]
   },
   {

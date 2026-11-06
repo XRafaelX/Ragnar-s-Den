@@ -212,6 +212,8 @@ export function computeSpeed(c){
   // Wings while they last: a 2024 dragonborn's Draconic Flight and a 2024
   // aasimar's Heavenly Wings, a fly speed equal to the speed.
   if(effectOn(c, "draconic_flight")) list.push({type: "fly", value: walk, when: "", source: "Draconic Flight"});
+  // Dragon Wings (2024 Draconic Sorcery 14): fly 60 ft while they're out.
+  if(effectOn(c, "dragon_wings") && classLevelOf(c, "Sorcerer", "Draconic Sorcery") >= 14 && (c.classes||[]).some(function(cl){ return cl.subclass==="Draconic Sorcery"; })) list.push({type: "fly", value: 60, when: "", source: "Dragon Wings"});
   // Stormborn (Circle of the Sea 10): flying while the Wrath of the Sea is on.
   if(effectOn(c, "wrath_of_the_sea") && classLevelOf(c, "Druid", "Circle of the Sea") >= 10) list.push({type: "fly", value: walk, when: "", source: "Stormborn"});
   if(effectOn(c, "celestial_revelation_2024") && c.effects.celestial_revelation_2024==="Heavenly Wings") list.push({type: "fly", value: walk, when: "", source: "Heavenly Wings"});
@@ -306,6 +308,11 @@ export function computeArmorClass(c){
     }
     if(hasClass("Sorcerer", "Draconic Bloodline")){
       options.push({value: 13 + dexMod, breakdown: "Draconic Resilience: 13 + DEX (" + fmtMod(dexMod) + ")", short: "13 + DEX"});
+    }
+    // The 2024 Draconic Resilience: 10 + DEX + CHA.
+    if(hasClass("Sorcerer", "Draconic Sorcery")){
+      var chaDrake = mod(abilityScore(c, "cha"));
+      options.push({value: 10 + dexMod + chaDrake, breakdown: "Draconic Resilience: 10 + DEX (" + fmtMod(dexMod) + ") + CHA (" + fmtMod(chaDrake) + ")", short: "10 + DEX + CHA"});
     }
     // A race's natural armor (Lizardfolk: 13 + DEX, Tortle: 17).
     var nat = RACE_DATA[c.race] && RACE_DATA[c.race].unarmoredAc;

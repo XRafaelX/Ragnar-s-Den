@@ -17,6 +17,8 @@ import { infusionSpellAttack } from "../../core/infusion-effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner, cantripFormulas, swapCantripFormula } from "../../core/spells-known.js";
 import { classPrepares } from "../../core/spells-known.js";
+import { innateSorceryOn } from "../../core/sorcerer.js";
+import { combineRolls } from "../../core/basics.js";
 import { spellScalingLine, spellRangeText, healingNote, circleSpellNote } from "../../core/spell-scaling.js";
 import { abilityScore, abilityScores } from "../../core/ability-scores.js";
 
@@ -267,8 +269,10 @@ function renderSpellcastingCard(c){
   }));
   grid.appendChild(ab.box);
 
-  var dc = statTile("Save DC", "8 + prof + mod");
-  dc.val.textContent = 8+pb+scMod;
+  // (Innate Sorcery, 2024: +1 and advantage for a sorcerer's spells.)
+  var innate = innateSorceryOn(c) && (c.classes||[]).some(function(cl){ return cl.name==="Sorcerer"; });
+  var dc = statTile("Save DC", "8 + prof + mod" + (innate ? " + 1 (Innate Sorcery)" : ""));
+  dc.val.textContent = 8+pb+scMod+(innate ? 1 : 0);
   grid.appendChild(dc.box);
 
   // A boon to attack rolls (Duality's demon side) counts for spells too,
@@ -277,7 +281,7 @@ function renderSpellcastingCard(c){
   var boon = coin + (focus ? focus.value : 0);
   var extras = (coin ? ["Duality " + fmtMod(coin)] : []).concat(focus ? [focus.name + " " + fmtMod(focus.value)] : []);
   // Conditions that change attack rolls (Poisoned, Invisible, exhaustion).
-  var atkRoll = plainAttackRollMode(c);
+  var atkRoll = innate ? combineRolls([plainAttackRollMode(c), {mode: "adv", reason: "Innate Sorcery"}]) : plainAttackRollMode(c);
   var atk = statTile("Spell attack", ["Tap to roll"].concat(extras, rollModeTag(atkRoll)).join(" · "));
   atk.val.textContent = fmtMod(pb+scMod+boon);
   atk.box.classList.add("sc-roll");
@@ -305,15 +309,17 @@ function renderMulticlassCasting(c, byAbility){
     var head = ce("p","sc-class-head"); head.textContent = label;
     card.appendChild(head);
     var grid = ce("div","vitals-grid sc-class-grid");
-    var dc = statTile("Save DC", "8 + prof + " + x.ability.toUpperCase());
-    dc.val.textContent = x.dc;
+    var inn = innateSorceryOn(c) && x.classes.indexOf("Sorcerer")!==-1;
+    var dc = statTile("Save DC", "8 + prof + " + x.ability.toUpperCase() + (inn ? " + 1 (Innate Sorcery)" : ""));
+    dc.val.textContent = x.dc + (inn ? 1 : 0);
     grid.appendChild(dc.box);
-    var atk = statTile("Spell attack", ["Tap to roll"].concat(rollModeTag(atkRoll)).join(" · "));
+    var xRoll = inn ? combineRolls([atkRoll, {mode: "adv", reason: "Innate Sorcery"}]) : atkRoll;
+    var atk = statTile("Spell attack", ["Tap to roll"].concat(rollModeTag(xRoll)).join(" · "));
     atk.val.textContent = fmtMod(x.attack);
     atk.box.classList.add("sc-roll");
     atk.box.setAttribute("role","button"); atk.box.tabIndex = 0;
     atk.box.title = "Roll a " + x.classes.join(" / ") + " spell attack" + (atkRoll.reason ? " (" + atkRoll.reason + ")" : "");
-    function roll(){ rollAttack(c, x.attack, atkRoll.mode, x.classes.join(" / ") + " spell attack"); }
+    function roll(){ rollAttack(c, x.attack, xRoll.mode, x.classes.join(" / ") + " spell attack"); }
     atk.box.addEventListener("click", roll);
     atk.box.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); roll(); } });
     grid.appendChild(atk.box);

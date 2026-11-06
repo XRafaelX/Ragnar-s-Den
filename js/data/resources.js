@@ -171,6 +171,11 @@ export var CLASS_RESOURCES = {
     primalCast("Locate Creature", 13), primalCast("Commune with Nature", 17)
   ],
   "Sorcerer": [
+    // The 2024 sorcerer (pp. 140 and 141).
+    {id:"innate_sorcery", name:"Innate Sorcery", level:1, edition:"2024", max:always(2), reset:always("long"),
+      hint:function(lv){ return "Bonus action for 1 minute: +1 to your sorcerer spell save DC and advantage on sorcerer spell attacks, from the Active effects card." + (lv>=7 ? " With none left, 2 sorcery points start it." : ""); }},
+    {id:"sorcerous_restoration", name:"Sorcerous Restoration", level:5, edition:"2024", max:always(1), reset:always("long"),
+      hint:function(lv){ return "A short rest gives back up to " + Math.floor(lv / 2) + " sorcery points (the rest does it)."; }},
     {id:"sorcery_points", name:"Sorcery Points", level:2, pool:true,
       max:function(lv){ return lv; }, reset:always("long"),
       hint:function(lv){ return "Fuel Metamagic, or turn them into spell slots and back as a bonus action." + (lv>=20 ? " Sorcerous Restoration: 4 come back on a short rest." : ""); }}
@@ -602,6 +607,33 @@ export var SUBCLASS_RESOURCES = {
     ]
   },
   "Sorcerer": {
+    // The 2024 origins (pp. 145 to 150).
+    "Wild Magic Sorcery": [
+      {id:"tides_of_chaos", name:"Tides of Chaos", level:3, max:always(1), reset:always("long"),
+        hint:"Advantage on one d20 test. It comes back when you cast a sorcerer spell with a slot, which also rolls a surge."},
+      {id:"tamed_surge", name:"Tamed Surge", level:18, max:always(1), reset:always("long"),
+        hint:"After a sorcerer spell with a slot: pick any surge effect but the last row."}
+    ],
+    "Clockwork Sorcery": [
+      {id:"restore_balance", name:"Restore Balance", level:3,
+        max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
+        hint:"Reaction: cancel advantage or disadvantage on a d20 roll by a creature within 60 ft."},
+      {id:"trance_of_order", name:"Trance of Order", level:14, max:always(1), reset:always("long"),
+        hint:"Bonus action for 1 minute: no advantage against you, and d20 tests of 9 or lower count as 10. More uses cost 5 sorcery points."},
+      {id:"clockwork_cavalcade", name:"Clockwork Cavalcade", level:18, max:always(1), reset:always("long"), againPoints:7,
+        hint:"Magic action: 30-ft cube heals up to 100 HP, repairs objects and ends spells of level 6 or lower. More uses cost 7 sorcery points."}
+    ],
+    "Aberrant Sorcery": [
+      {id:"warping_implosion", name:"Warping Implosion", level:18, max:always(1), reset:always("long"), againPoints:5,
+        roll:{qty:3, die:10, button:"Implode", label:"Warping Implosion (force, STR save)"},
+        hint:"Magic action: teleport 120 ft. Creatures near your old space take 3d10 force and are pulled (STR save). More uses cost 5 sorcery points."}
+    ],
+    "Draconic Sorcery": [
+      {id:"dragon_wings", name:"Dragon Wings", level:14, max:always(1), reset:always("long"),
+        hint:"Bonus action: fly 60 ft for 1 hour, from the Active effects card. More uses cost 3 sorcery points."},
+      {id:"dragon_companion", name:"Dragon Companion (Free Summon Dragon)", level:18, max:always(1), reset:always("long"),
+        hint:"Cast Summon Dragon without a spell slot. It can skip concentration and last 1 minute."}
+    ],
     "Wild Magic": [
       {id:"tides_of_chaos", name:"Tides of Chaos", level:1, max:always(1), reset:always("long"),
         hint:"Gain advantage on one attack roll, ability check or saving throw. Also comes back when you roll a Wild Magic Surge."}

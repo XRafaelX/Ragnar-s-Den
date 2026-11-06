@@ -23,6 +23,7 @@ import { RANGER_2024, RANGER_2024_SUBCLASSES } from "./ranger-2024.js";
 import { CLERIC_2024, CLERIC_2024_SUBCLASSES } from "./cleric-2024.js";
 import { DRUID_2024, DRUID_2024_SUBCLASSES } from "./druid-2024.js";
 import { BARD_2024, BARD_2024_SUBCLASSES } from "./bard-2024.js";
+import { SORCERER_2024, SORCERER_2024_SUBCLASSES } from "./sorcerer-2024.js";
 import { PALADIN_SUBCLASSES } from "./subclasses/paladin.js";
 import { RANGER_SUBCLASSES } from "./subclasses/ranger.js";
 import { ROGUE_SUBCLASSES } from "./subclasses/rogue.js";
@@ -504,7 +505,7 @@ export var SUBCLASSES = {
   "Paladin": PALADIN_SUBCLASSES.map(function(s){ if(PALADIN_2024.swaps[s.name]) s.edition = "2014"; return s; }).concat(PALADIN_2024_SUBCLASSES),
   "Ranger": RANGER_SUBCLASSES.map(function(s){ if(RANGER_2024.swaps[s.name]) s.edition = "2014"; return s; }).concat(RANGER_2024_SUBCLASSES),
   "Rogue": ROGUE_SUBCLASSES.map(function(s){ if(ROGUE_2024.swaps[s.name]) s.edition = "2014"; return s; }).concat(ROGUE_2024_SUBCLASSES),
-  "Sorcerer": SORCERER_SUBCLASSES,
+  "Sorcerer": SORCERER_SUBCLASSES.map(function(s){ if(SORCERER_2024.swaps[s.name]) s.edition = "2014"; return s; }).concat(SORCERER_2024_SUBCLASSES),
   "Warlock": WARLOCK_SUBCLASSES,
   "Wizard": WIZARD_SUBCLASSES
 };
@@ -522,6 +523,7 @@ CLASS_PROGRESSION["Ranger"].editions = {"2024": RANGER_2024};
 CLASS_PROGRESSION["Cleric"].editions = {"2024": CLERIC_2024};
 CLASS_PROGRESSION["Druid"].editions = {"2024": DRUID_2024};
 CLASS_PROGRESSION["Bard"].editions = {"2024": BARD_2024};
+CLASS_PROGRESSION["Sorcerer"].editions = {"2024": SORCERER_2024};
 
 export var SPELL_TIPS = {
   "Artificer": {1:"Pick 2 artificer cantrips. You prepare 2 artificer spells each day.", 2:"Learn 4 infusions and infuse up to 2 items in the Artifice infusions card on the Features tab.", 5:"2nd-level artificer spells are now available to prepare.", 6:"Learn 2 more infusions (6 known, up to 3 infused items).", 9:"3rd-level artificer spells are now available to prepare.", 10:"Learn 1 new artificer cantrip. Learn 2 more infusions (8 known, up to 4 infused items).", 13:"4th-level artificer spells are now available to prepare.", 14:"Learn 1 new artificer cantrip. Learn 2 more infusions (10 known, up to 5 infused items).", 17:"5th-level artificer spells are now available to prepare.", 18:"Learn 2 more infusions (12 known, up to 6 infused items)."},

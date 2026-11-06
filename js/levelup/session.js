@@ -206,7 +206,7 @@ export function bonusFeatReason(def){
 export function optionPlans(){
   var t = target();
   var sub = (t.existing && t.existing.subclass) || (t.needsSubclass ? chosenSubclass() : "");
-  return levelUpOptionPlans(lu.c, t.existing, lu.className, sub, t.newLevel);
+  return levelUpOptionPlans(lu.c, t.existing, lu.className, sub, t.newLevel, luEdition());
 }
 export function optChoice(setId){
   return lu.optChoices[setId] = lu.optChoices[setId] || {picks: [], swapOut: ""};
@@ -806,7 +806,8 @@ export function hpGain(){
   // Draconic Resilience: +1 HP per sorcerer level, including the level the
   // bloodline is picked on.
   var sub = t.existing && t.existing.subclass || (t.needsSubclass ? chosenSubclass() : "");
-  var draconic = lu.className==="Sorcerer" && sub==="Draconic Bloodline" ? 1 : 0;
+  // (The 2024 origin, picked at 3: 3 then, 1 a level after.)
+  var draconic = lu.className==="Sorcerer" && sub==="Draconic Bloodline" ? 1 : lu.className==="Sorcerer" && sub==="Draconic Sorcery" ? (t.needsSubclass ? t.newLevel : 1) : 0;
   return Math.max(1, base + newCon) + (newCon - oldCon) * totalLevel(lu.c) + draconic;
 }
 /* The share of this level's HP the sheet adds itself (see maxHp): Tough's

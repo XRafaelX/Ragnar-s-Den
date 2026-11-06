@@ -166,7 +166,7 @@ export function subclassExtras(cl, subclassName){
   var sub = (SUBCLASSES[cl.name]||[]).find(function(s){ return s.name===subclassName; });
   var lv = Number(cl.level)||1, speed = 0;
   if(sub) for(var l = 1; l <= lv; l++) ((sub.features && sub.features[l]) || []).forEach(function(f){ if(f.speed) speed += f.speed; });
-  var hp = cl.name==="Sorcerer" && subclassName==="Draconic Bloodline" ? lv : 0;
+  var hp = cl.name==="Sorcerer" && (subclassName==="Draconic Bloodline" || subclassName==="Draconic Sorcery") ? lv : 0;
   return {speed: speed, hp: hp};
 }
 

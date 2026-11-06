@@ -21,7 +21,7 @@ export function entrySets(cl, level){
   if(!cl) return [];
   var lv = level!=null ? level : (Number(cl.level)||1);
   return OPTION_SETS.filter(function(s){
-    return s.className===cl.name && (!s.subclass || s.subclass===cl.subclass) && lv >= optionSetStart(s);
+    return s.className===cl.name && (!s.subclass || s.subclass===cl.subclass) && (!s.edition || (cl.edition || "2014")===s.edition) && lv >= optionSetStart(s);
   });
 }
 export function knownOptions(cl, setId){
@@ -70,8 +70,9 @@ export function tashaOnlyCount(set, ctx){
    subclass: its subclass after it (picked on this level-up, maybe);
    newLevel: the class level it reaches. For each set due, the plan says
    how many new ones to learn and whether one may be swapped. */
-export function levelUpOptionPlans(c, cl, className, subclass, newLevel){
-  var entry = {name: className, subclass: subclass, level: newLevel};
+export function levelUpOptionPlans(c, cl, className, subclass, newLevel, edition){
+  // (The class's edition: the 2024 sorcerer's Metamagic list is its own.)
+  var entry = {name: className, subclass: subclass, level: newLevel, edition: cl ? cl.edition : edition};
   var asi = ((CLASS_PROGRESSION[className]||{}).asiLevels||[]).indexOf(newLevel)!==-1;
   return entrySets(entry, newLevel).map(function(set){
     var known = knownOptions(cl, set.id);
