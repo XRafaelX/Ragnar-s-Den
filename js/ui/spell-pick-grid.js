@@ -14,11 +14,38 @@
                    list on the same step; they're greyed out here
      onChange      called after each pick or drop
    The returned element has refresh() to redraw after another list
-   changes. */
+   changes. Ticking the pick that fills a list scrolls on to the next list
+   on the same screen still waiting for picks (scrollToNextList), so on a
+   phone the next list isn't missed below the fold. */
 import { SPELL_DATA, SPELL_SOURCES, spellLevelLabel } from "../data/spells.js";
 import { escapeHtml, ce } from "../core/helpers.js";
 import { makeCheckSvg } from "./svg-icons.js";
 import { newerSpellOf } from "../core/spell-edition.js";
+
+/* After a list fills up: the next spell list on the same screen that still
+   needs picks slides into view (its numbered step heading for a feat's
+   picks), after a moment so the tick is seen. Nothing moves when every
+   list is done: Next is on screen. An instant jump for reduced motion, or
+   when the next list is far down. */
+export function scrollToNextList(section){
+  var root = section.closest("#wizard-overlay, #info-modal, .modal") || document;
+  var all = Array.prototype.slice.call(root.querySelectorAll(".wiz-spell-section"));
+  var next = all.slice(all.indexOf(section) + 1).find(function(s){
+    var counter = s.querySelector(".wiz-spell-counter");
+    return s.offsetParent!==null && !(counter && counter.classList.contains("complete"));
+  });
+  if(!next) return null;
+  var head = next.previousElementSibling;
+  var target = head && head.classList.contains("fp-step") ? head : next;
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  setTimeout(function(){
+    if(!target.isConnected) return;
+    // (A long way down, past a long list, jumps: a glide would take seconds.)
+    var far = Math.abs(target.getBoundingClientRect().top) > window.innerHeight * 2.5;
+    target.scrollIntoView({behavior: reduce || far ? "auto" : "smooth", block: "start"});
+  }, 350);
+  return target;
+}
 
 export function spellPickGrid(opts){
   var count = opts.count, chosen = opts.chosen, tags = opts.tags || {};
@@ -108,6 +135,7 @@ export function spellPickGrid(opts){
     card.appendChild(cb); card.appendChild(body);
     grid.appendChild(card);
     cb.addEventListener("change", function(){
+      var wasFull = chosen.length >= count;
       var at = chosen.indexOf(name);
       if(cb.checked && at === -1){
         if(chosen.length >= count){ cb.checked = false; return; }
@@ -118,6 +146,7 @@ export function spellPickGrid(opts){
       document.querySelectorAll("#wizard-error, #wizard-overlay .wiz-error").forEach(function(box){ box.classList.remove("show"); });
       refresh();
       if(opts.onChange) opts.onChange();
+      if(!wasFull && chosen.length >= count) scrollToNextList(wrap);
     });
     return {name:name, d:d, card:card, cb:cb};
   });
