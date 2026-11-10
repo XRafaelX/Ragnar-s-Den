@@ -30,6 +30,8 @@ function show(next){
   var firstLook = !map || !next || map.id !== next.id || map.w !== next.w || map.h !== next.h;
   if(!firstLook && !still) startFades(map, next);
   if(firstLook) fades = {};
+  // The DM stepped to another map: it comes out of the fog, like a slide.
+  if(map && next && map.id !== next.id && !still) startFades({ w: next.w, h: next.h, cells: "", revealed: "" }, next);
   map = next;
   document.title = (map ? map.name + " · " : "") + "Players' view";
   goal = target();

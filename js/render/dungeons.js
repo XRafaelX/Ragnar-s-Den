@@ -2,7 +2,7 @@ import {
   getDungeons, getDungeon, createDungeon, saveDungeon, deleteDungeon, duplicateDungeon, dungeonNameProblem,
   paintCells, fillRect, lineCells, clearDungeon, resizeDungeon, resizeLoses, createHistory, contentBounds, isBlank,
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, setDungeonStyle,
-  placeParty, walkParty, removeParty,
+  placeParty, walkParty, removeParty, addMap, removeMap, moveMap, renameMap,
   DUNGEON_SIZES, DUNGEON_STYLES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
 } from "../core/dungeons.js";
 import { drawMap, drawFog, drawSwatch, drawThumbnail, prepareCanvas, fitView, drawPlayersScreen, playersFit, drawParty, MAP_COLORS } from "./dungeon-canvas.js";
@@ -103,7 +103,8 @@ var PLAY_TOOLS = [
 ];
 
 var overlay = null;
-var openId = null;       // the map on the board, null = the list
+var openId = null;       // the dungeon on the board, null = the list
+var lastMap = {};        // dungeon id -> the map last open in it
 var newSize = "medium";  // the size picked for a new map
 var tool = "room";       // the Build tool picked, kept between maps
 var playTool = "reveal"; // the Play tool picked
@@ -289,7 +290,7 @@ function renderList(){
   all.forEach(function(d){
     var card = savedCard(d);
     grid.appendChild(card);
-    thumbs.push({ canvas: card.querySelector(".dg-thumb"), d: d });
+    thumbs.push({ canvas: card.querySelector(".dg-thumb"), d: d.maps[0] });
   });
   wrap.appendChild(grid);
   // Drawn once the cards have their width.
@@ -321,9 +322,9 @@ function savedCard(d){
       render();
     } },
     { label: "Delete", danger: true, onClick: function(){
-      confirmDialog("Delete " + d.name + "?", "This map will be removed. This cannot be undone.", function(){
+      confirmDialog("Delete " + d.name + "?", (d.maps.length > 1 ? "This dungeon and its " + d.maps.length + " maps will be removed." : "This dungeon and its map will be removed.") + " This cannot be undone.", function(){
         deleteDungeon(d.id);
-        stopPresenting(d.id);
+        stopPresenting(d.maps.map(function(m){ return m.id; }));
         playDelete();
         render();
         showActionToast("Deleted " + d.name + ".");
@@ -333,7 +334,7 @@ function savedCard(d){
   card.appendChild(top);
 
   var foot = ce("div", "dg-saved-foot");
-  foot.appendChild(stat("grid", d.w + " × " + d.h + " squares"));
+  foot.appendChild(stat("grid", d.maps.length === 1 ? "1 map" : d.maps.length + " maps"));
   foot.appendChild(stat("clock", timeAgo(d.updated), "dg-when"));
   foot.appendChild(icon("chevron", "dg-go"));
   card.appendChild(foot);
@@ -362,31 +363,39 @@ function timeAgo(t){
   return "Edited " + new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-/* ---- One map's board ----
+/* ---- One dungeon's board ----
+   The board shows one of the dungeon's maps at a time. The arrows at the
+   bottom (or the Left and Right keys) step to the map before or after,
+   like slides, and the players' screen follows if it shows this dungeon.
    `b` holds the open board:
-     d: the dungeon, history: its undo steps,
+     dungeon: the dungeon, d: the map shown, history: that map's undo
+       steps (histories and views keep each map's, so stepping away and
+       back keeps undo and where the DM was looking),
      view: { scale, ox, oy } in CSS pixels (see dungeon-canvas.js),
      pointers: the fingers or mouse down on the map, by pointer id,
      gesture: the drag in progress ({type: "paint" | "room" | "pan" |
        "pinch" | "done", ...}), hover: the square under the mouse. */
-function renderBoard(d){
+function renderBoard(dungeon){
+  var first = dungeon.maps.find(function(m){ return m.id === lastMap[dungeon.id]; }) || dungeon.maps[0];
   b = {
-    d: d, history: createHistory(), view: null, pointers: new Map(), gesture: null,
+    dungeon: dungeon, d: first, histories: {}, views: {}, history: null, view: null, pointers: new Map(), gesture: null,
     hover: null, hoverArea: null, space: false, frame: 0, fitted: false
   };
+  b.history = b.histories[first.id] = createHistory();
+  lastMap[dungeon.id] = first.id;
 
   var head = header(function(){ openId = null; render(); }, "Back to dungeons");
   var name = ce("input", "dg-name-input");
   name.type = "text";
-  name.value = d.name;
+  name.value = dungeon.name;
   name.maxLength = 60;
   name.setAttribute("aria-label", "Dungeon name");
   name.addEventListener("keydown", function(e){ if(e.key === "Enter") name.blur(); });
   name.addEventListener("change", function(){
-    var problem = dungeonNameProblem(name.value, d.id);
-    if(problem){ showActionToast(problem, true); name.value = d.name; return; }
-    d.name = name.value.trim();
-    saveDungeon(d);
+    var problem = dungeonNameProblem(name.value, dungeon.id);
+    if(problem){ showActionToast(problem, true); name.value = dungeon.name; return; }
+    dungeon.name = name.value.trim();
+    saveDungeon(dungeon);
     publish();
   });
   head.appendChild(name);
@@ -403,15 +412,17 @@ function renderBoard(d){
   head.appendChild(b.undoBtn);
   head.appendChild(b.redoBtn);
   head.appendChild(menu([
+    { label: "Maps in this dungeon", onClick: openMapsSheet },
     { label: "Map size", onClick: openSizeSheet },
     { label: "Map style", onClick: openStyleSheet },
     { label: "Remove party marker", onClick: function(){
-      if(!change(function(){ return removeParty(d); })) showActionToast("There is no party marker on this map.");
+      if(!change(function(){ return removeParty(b.d); })) showActionToast("There is no party marker on this map.");
     } },
     { label: "Clear map", danger: true, onClick: function(){
-      if(isBlank(d)){ showActionToast("The map is already empty."); return; }
-      confirmDialog("Clear the whole map?", "Every square goes back to solid rock. You can undo this.", function(){
-        change(function(){ return clearDungeon(d); });
+      if(isBlank(b.d)){ showActionToast("The map is already empty."); return; }
+      var m = b.d;
+      confirmDialog("Clear the whole map?", "Every square of " + m.name + " goes back to solid rock. You can undo this.", function(){
+        if(b && b.d === m) change(function(){ return clearDungeon(m); });
       });
     } }
   ], "Map options"));
@@ -444,6 +455,21 @@ function renderBoard(d){
   zoom.appendChild(zfit);
   zoom.appendChild(zout);
   stage.appendChild(zoom);
+
+  // The dungeon's maps, one after another like slides.
+  var pager = ce("div", "dg-pager");
+  b.prevBtn = button("dg-page-btn", "", function(){ stepMap(-1); }, "Previous map");
+  b.prevBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
+  b.pageLabel = button("dg-page-label", "", openMapsSheet, "Maps in this dungeon");
+  b.pageName = ce("span", "dg-page-name");
+  b.pageCount = ce("span", "dg-page-count");
+  b.pageLabel.appendChild(b.pageName);
+  b.pageLabel.appendChild(b.pageCount);
+  b.nextBtn = button("dg-page-btn", "", function(){ stepMap(1); }, "Next map");
+  pager.appendChild(b.prevBtn);
+  pager.appendChild(b.pageLabel);
+  pager.appendChild(b.nextBtn);
+  stage.appendChild(pager);
   overlay.appendChild(stage);
 
   b.stage = stage;
@@ -606,9 +632,147 @@ function refreshChrome(){
     : "Open the players' view in a new tab. Drag that tab to the TV and make it full screen.";
   b.playersBtn.setAttribute("aria-label", onScreen ? "Player view, showing this map" : "Player view");
   b.preview.classList.toggle("on", mode === "play" && onScreen);
+  refreshPager();
   publish();
   var panning = b.gesture && b.gesture.type === "pan";
   b.canvas.style.cursor = panning ? "grabbing" : (activeTool().id === "move" || b.space ? "grab" : (mode === "play" ? "pointer" : "crosshair"));
+}
+
+/* ---- Stepping between the dungeon's maps ---- */
+var CHEVRON_RIGHT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+var PLUS_SMALL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
+
+/* The map's name and place, the arrows. On the last map in Build the
+   right arrow becomes "+", which adds the next map. */
+function refreshPager(){
+  var maps = b.dungeon.maps, i = maps.indexOf(b.d);
+  b.pageName.textContent = b.d.name;
+  b.pageCount.textContent = (i + 1) + " of " + maps.length;
+  b.prevBtn.disabled = i <= 0;
+  var adds = i === maps.length - 1;
+  b.nextBtn.disabled = adds && mode === "play";
+  b.nextBtn.innerHTML = adds && mode === "build" ? PLUS_SMALL : CHEVRON_RIGHT;
+  var label = adds && mode === "build" ? "Add a map after this one" : "Next map";
+  b.nextBtn.title = label;
+  b.nextBtn.setAttribute("aria-label", label);
+  b.nextBtn.classList.toggle("adds", adds && mode === "build");
+}
+
+/* One map back (-1) or on (+1). Past the last map in Build, adds one. */
+function stepMap(step){
+  if(!b) return;
+  var maps = b.dungeon.maps, i = maps.indexOf(b.d);
+  if(step > 0 && i === maps.length - 1){
+    if(mode === "build") addMapAfter();
+    return;
+  }
+  var next = maps[i + step];
+  if(next) goToMap(next);
+}
+
+function addMapAfter(){
+  var m = addMap(b.dungeon, b.d.id);
+  if(!m){ showActionToast("A dungeon can hold up to 30 maps.", true); return; }
+  saveDungeon(b.dungeon);
+  playAdd();
+  goToMap(m);
+  showActionToast("Added " + m.name + ". Draw it, then use the arrows to move between maps.");
+}
+
+/* Shows another of the dungeon's maps. If the players' tab shows this
+   dungeon, it moves to the new map too. */
+function goToMap(m){
+  if(!b || m === b.d) return;
+  if(b.d) b.views[b.d.id] = b.view;   // null when the open map was just deleted
+  b.gesture = null;
+  b.pointers.clear();
+  b.hover = null;
+  b.hoverArea = null;
+  b.previewKey = null;
+  b.d = m;
+  b.history = b.histories[m.id] || (b.histories[m.id] = createHistory());
+  b.view = b.views[m.id] || null;
+  if(!b.view) fit();
+  lastMap[b.dungeon.id] = m.id;
+  var shown = presentedId();
+  if(shown && shown !== m.id && b.dungeon.maps.some(function(x){ return x.id === shown; })) presentDungeon(m);
+  refreshChrome();
+  draw();
+}
+
+/* The dungeon's maps in a sheet: go to one, rename, reorder, delete, add. */
+function openMapsSheet(){
+  var dungeon = b.dungeon;
+  openBottomSheet(function(body, refresh, closeSheet){
+    body.appendChild(ce("h3", "dg-sheet-title", "Maps in " + dungeon.name));
+    body.appendChild(ce("p", "dg-sheet-help", "Use the arrows under the map to move between them, like slides. The players' screen follows."));
+    var rows = ce("div", "dg-map-rows");
+    dungeon.maps.forEach(function(m, i){
+      var here = b && b.d === m;
+      var row = ce("div", "dg-map-row" + (here ? " here" : ""));
+      row.appendChild(ce("span", "dg-map-num", String(i + 1)));
+      var name = ce("input", "dg-map-name");
+      name.type = "text";
+      name.value = m.name;
+      name.maxLength = 40;
+      name.setAttribute("aria-label", "Name of map " + (i + 1));
+      name.addEventListener("keydown", function(e){ if(e.key === "Enter") name.blur(); });
+      name.addEventListener("change", function(){
+        if(!renameMap(dungeon, m.id, name.value)){ name.value = m.name; return; }
+        saveDungeon(dungeon);
+        if(b) refreshChrome();
+      });
+      row.appendChild(name);
+      var go = button("btn small" + (here ? " ghost" : ""), here ? "Open now" : "Go", function(){
+        closeSheet();
+        if(b && b.dungeon === dungeon) goToMap(m);
+      }, here ? "This map is open" : "Go to " + m.name);
+      go.disabled = here;
+      row.appendChild(go);
+      row.appendChild(iconButton("up", "Move earlier", i === 0, function(){
+        if(moveMap(dungeon, m.id, -1)){ saveDungeon(dungeon); if(b) refreshChrome(); refresh(); }
+      }));
+      row.appendChild(iconButton("down", "Move later", i === dungeon.maps.length - 1, function(){
+        if(moveMap(dungeon, m.id, 1)){ saveDungeon(dungeon); if(b) refreshChrome(); refresh(); }
+      }));
+      row.appendChild(iconButton("trash", "Delete " + m.name, dungeon.maps.length < 2, function(){
+        closeSheet();
+        confirmDialog("Delete " + m.name + "?", "This map of " + dungeon.name + " will be removed. This cannot be undone.", function(){
+          var i0 = dungeon.maps.indexOf(m);
+          if(!removeMap(dungeon, m.id)) return;
+          saveDungeon(dungeon);
+          stopPresenting(m.id);
+          playDelete();
+          if(b && b.dungeon === dungeon){
+            if(b.d === m){ b.d = null; goToMap(dungeon.maps[Math.max(0, i0 - 1)]); }
+            else refreshChrome();
+          }
+          showActionToast("Deleted " + m.name + ".");
+        });
+      }));
+      rows.appendChild(row);
+    });
+    body.appendChild(rows);
+    var actions = ce("div", "dg-sheet-actions");
+    var add = button("btn primary", "Add a map", function(){
+      closeSheet();
+      if(b && b.dungeon === dungeon) addMapAfter();
+    });
+    actions.appendChild(add);
+    body.appendChild(actions);
+  });
+}
+
+var SMALL_ICONS = {
+  up: '<path d="m18 15-6-6-6 6"/>',
+  down: '<path d="m6 9 6 6 6-6"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'
+};
+function iconButton(name, label, disabled, onClick){
+  var btn = button("dg-step dg-map-act" + (name === "trash" ? " danger" : ""), "", onClick, label);
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + SMALL_ICONS[name] + '</svg>';
+  btn.disabled = disabled;
+  return btn;
 }
 
 /* Sends the players' tab the map as it is now, once per frame at most,
@@ -959,7 +1123,8 @@ function onUp(e){
   draw();
 }
 
-/* Ctrl+Z undoes, Ctrl+Shift+Z or Ctrl+Y redoes, holding Space drags. */
+/* Ctrl+Z undoes, Ctrl+Shift+Z or Ctrl+Y redoes, holding Space drags,
+   Left and Right step between the dungeon's maps. */
 function onKey(e){
   if(!b) return;
   var typing = e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA");
@@ -968,6 +1133,8 @@ function onKey(e){
   if((e.ctrlKey || e.metaKey) && key === "z"){ e.preventDefault(); if(e.shiftKey) redo(); else undo(); }
   else if((e.ctrlKey || e.metaKey) && key === "y"){ e.preventDefault(); redo(); }
   else if(e.key === " " && !b.space){ e.preventDefault(); b.space = true; refreshChrome(); draw(); }
+  else if(e.key === "ArrowLeft" && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); stepMap(-1); }
+  else if(e.key === "ArrowRight" && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); stepMap(1); }
 }
 function onKeyUp(e){
   if(b && e.key === " "){ b.space = false; refreshChrome(); draw(); }

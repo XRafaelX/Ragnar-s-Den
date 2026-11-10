@@ -1,12 +1,16 @@
 import { uid } from "./basics.js";
 
 /* ---------------- Dungeons ----------------
-   A DM's dungeon maps, saved in this browser apart from any character.
-   A map is terrain only: where the floor is and what kind of ground it
-   is. What lives in the dungeon stays in the DM's notes.
+   A DM's dungeons, saved in this browser apart from any character. A
+   dungeon is a named set of maps in order (an entrance, a first level, a
+   second level...), and the DM steps through them like slides. A map is
+   terrain only: where the floor is and what kind of ground it is. What
+   lives in the dungeon stays in the DM's notes.
 
    Dungeon shape:
-     { id, name, w, h, cells, revealed, style, party, updated }
+     { id, name, maps: [map, ...], updated }
+   Map shape:
+     { id, name, w, h, cells, revealed, style, party }
 
    The map is a grid of 5 ft squares, `w` wide and `h` tall. `cells` is a
    string of w*h terrain codes (see TERRAIN), row by row from the top
@@ -20,12 +24,13 @@ import { uid } from "./basics.js";
    `revealed` is the fog of war: a string as long as `cells`, "1" for a
    square the players have been shown and "0" for one still in fog. Only
    open ground is ever shown, so a square erased back to rock goes back
-   into fog, and floor painted later starts hidden. */
+   into fog, and floor painted later starts hidden.
 
-/* `party` is the square the players' party stands on, {x, y}, or null.
+   `party` is the square the players' party stands on, {x, y}, or null.
    It is always on open ground: erasing its square takes it off the map.
 
-   Undo steps hold all of that. */
+   Undo steps hold a map's terrain, fog and party. The functions further
+   down that take `d` work on one map. */
 
 export var SHOWN = "1";
 export var FOGGED = "0";
@@ -62,6 +67,7 @@ export var MIN_SIDE = 8;
 export var MAX_SIDE = 80;
 
 var STORAGE_KEY = "ragnarsDen.dungeons.v1";
+var MAX_MAPS = 30;
 
 var list = [];
 
@@ -84,13 +90,35 @@ function side(v, fallback){
   return Math.max(MIN_SIDE, Math.min(MAX_SIDE, n));
 }
 
-/* Shapes a stored or imported dungeon: a size within the limits and a
-   cells string of exactly that size, with anything unknown made rock. */
+/* Shapes a stored or imported dungeon. Before dungeons held several maps
+   (November 2026) each saved entry was one map: such an entry becomes a
+   dungeon of that one map, which keeps the entry's id so a players' tab
+   showing it still finds it. */
 function clean(d){
-  var w = side(d.w, DUNGEON_SIZES[1].w);
-  var h = side(d.h, DUNGEON_SIZES[1].h);
-  var src = typeof d.cells === "string" ? d.cells : "";
-  var seen = typeof d.revealed === "string" ? d.revealed : "";
+  var updated = parseInt(d.updated, 10);
+  var old = !Array.isArray(d.maps);
+  var maps = old
+    ? [cleanMap(Object.assign({}, d, { name: "Map 1" }))]
+    : d.maps.filter(function(m){ return m && typeof m === "object" && !Array.isArray(m); }).slice(0, MAX_MAPS).map(cleanMap);
+  if(!maps.length) maps.push(cleanMap({ name: "Map 1" }));
+  // Every map id once, across the dungeon.
+  var ids = {};
+  maps.forEach(function(m){ if(ids[m.id]) m.id = uid(); ids[m.id] = true; });
+  return {
+    id: old ? String(d.id || uid()) + "-dungeon" : String(d.id || uid()),
+    name: String(d.name || "").trim().slice(0, 60) || "Dungeon",
+    maps: maps,
+    updated: isNaN(updated) ? Date.now() : updated
+  };
+}
+
+/* Shapes one map: a size within the limits and a cells string of exactly
+   that size, with anything unknown made rock. */
+function cleanMap(m){
+  var w = side(m.w, DUNGEON_SIZES[1].w);
+  var h = side(m.h, DUNGEON_SIZES[1].h);
+  var src = typeof m.cells === "string" ? m.cells : "";
+  var seen = typeof m.revealed === "string" ? m.revealed : "";
   var cells = "", revealed = "";
   for(var i = 0; i < w * h; i++){
     var c = src.charAt(i);
@@ -98,17 +126,15 @@ function clean(d){
     cells += c;
     revealed += c !== ROCK && seen.charAt(i) === SHOWN ? SHOWN : FOGGED;
   }
-  var updated = parseInt(d.updated, 10);
   return {
-    id: String(d.id || uid()),
-    name: String(d.name || "").trim().slice(0, 60) || "Dungeon",
+    id: String(m.id || uid()),
+    name: String(m.name || "").trim().slice(0, 40) || "Map",
     w: w,
     h: h,
     cells: cells,
     revealed: revealed,
-    style: DUNGEON_STYLES.some(function(st){ return st.id === d.style; }) ? d.style : "stone",
-    party: cleanParty(d.party, w, h, cells),
-    updated: isNaN(updated) ? Date.now() : updated
+    style: DUNGEON_STYLES.some(function(st){ return st.id === m.style; }) ? m.style : "stone",
+    party: cleanParty(m.party, w, h, cells)
   };
 }
 
@@ -132,6 +158,20 @@ export function getDungeon(id){
   return list.find(function(d){ return d.id === id; }) || null;
 }
 
+/* The map with this id, in any dungeon, or null. */
+export function findMap(mapId){
+  for(var i = 0; i < list.length; i++){
+    var m = list[i].maps.find(function(x){ return x.id === mapId; });
+    if(m) return m;
+  }
+  return null;
+}
+
+/* The dungeon a map belongs to, or null. */
+export function dungeonOfMap(mapId){
+  return list.find(function(d){ return d.maps.some(function(m){ return m.id === mapId; }); }) || null;
+}
+
 /* Returns "" if the name can be used, or why not. */
 export function dungeonNameProblem(name, ownId){
   var lower = String(name || "").trim().toLowerCase();
@@ -140,17 +180,24 @@ export function dungeonNameProblem(name, ownId){
   return clash ? "You already have a dungeon called " + String(name).trim() + "." : "";
 }
 
-/* A new all-rock map. `sizeId` is one of DUNGEON_SIZES (medium if not). */
+function sizeById(sizeId){
+  return DUNGEON_SIZES.find(function(s){ return s.id === sizeId; }) || DUNGEON_SIZES[1];
+}
+
+/* A new dungeon with one all-rock map. `sizeId` is one of DUNGEON_SIZES
+   (medium if not). */
 export function createDungeon(name, sizeId){
-  var size = DUNGEON_SIZES.find(function(s){ return s.id === sizeId; }) || DUNGEON_SIZES[1];
-  var d = clean({ id: uid(), name: name, w: size.w, h: size.h, cells: "" });
+  var size = sizeById(sizeId);
+  var d = clean({ id: uid(), name: name, maps: [{ id: uid(), name: "Map 1", w: size.w, h: size.h }] });
   list.push(d);
   write();
   return d;
 }
 
-/* Saves a dungeon after it was changed in place. */
-export function saveDungeon(d){
+/* Saves a dungeon after it, or one of its maps, was changed in place. */
+export function saveDungeon(dOrMap){
+  var d = Array.isArray(dOrMap.maps) ? dOrMap : dungeonOfMap(dOrMap.id);
+  if(!d) return;
   d.updated = Date.now();
   if(list.indexOf(d) === -1) list.push(d);
   write();
@@ -161,12 +208,14 @@ export function deleteDungeon(id){
   write();
 }
 
-/* A copy under a free name ("Crypt (copy)", "Crypt (copy 2)"). */
+/* A copy under a free name ("Crypt (copy)", "Crypt (copy 2)"), its maps
+   copied too, with new ids. */
 export function duplicateDungeon(id){
   var src = getDungeon(id);
   if(!src) return null;
   var copy = clean(JSON.parse(JSON.stringify(src)));
   copy.id = uid();
+  copy.maps.forEach(function(m){ m.id = uid(); });
   copy.name = freeName(src.name + " (copy)");
   copy.updated = Date.now();
   list.push(copy);
@@ -187,12 +236,69 @@ export function importDungeons(entries){
     if(!raw || typeof raw!=="object" || Array.isArray(raw)) return;
     var d = clean(raw);
     d.id = uid();
+    d.maps.forEach(function(m){ m.id = uid(); });
     if(dungeonNameProblem(d.name, null)) d.name = freeName(d.name + " (imported)");
     list.push(d);
     added++;
   });
   if(added) write();
   return added;
+}
+
+/* ---- public API: a dungeon's maps ----
+   These change the dungeon in place and don't save. */
+
+/* "Map 3", the first number no map of the dungeon uses. */
+function freeMapName(d){
+  var taken = {};
+  d.maps.forEach(function(m){ taken[m.name.toLowerCase()] = true; });
+  var n = d.maps.length + 1;
+  while(taken[("Map " + n).toLowerCase()]) n++;
+  return "Map " + n;
+}
+
+/* Adds a blank map right after `afterId` (at the end if not found), the
+   same size and style as that map. Returns it, or null at MAX_MAPS. */
+export function addMap(d, afterId){
+  if(d.maps.length >= MAX_MAPS) return null;
+  var i = d.maps.findIndex(function(m){ return m.id === afterId; });
+  var like = d.maps[i] || d.maps[d.maps.length - 1];
+  var m = cleanMap({ id: uid(), name: freeMapName(d), w: like.w, h: like.h, style: like.style });
+  d.maps.splice(i === -1 ? d.maps.length : i + 1, 0, m);
+  return m;
+}
+
+/* Takes a map out. A dungeon keeps at least one. */
+export function removeMap(d, mapId){
+  if(d.maps.length < 2) return false;
+  var before = d.maps.length;
+  d.maps = d.maps.filter(function(m){ return m.id !== mapId; });
+  return d.maps.length !== before;
+}
+
+/* Moves a map one place earlier (-1) or later (+1). */
+export function moveMap(d, mapId, step){
+  var i = d.maps.findIndex(function(m){ return m.id === mapId; });
+  var j = i + step;
+  if(i === -1 || j < 0 || j >= d.maps.length) return false;
+  var m = d.maps[i];
+  d.maps[i] = d.maps[j];
+  d.maps[j] = m;
+  return true;
+}
+
+export function renameMap(d, mapId, name){
+  var m = d.maps.find(function(x){ return x.id === mapId; });
+  var clean = String(name || "").trim().slice(0, 40);
+  if(!m || !clean || clean === m.name) return false;
+  m.name = clean;
+  return true;
+}
+
+/* What the players' screen calls a map: the dungeon's name, and the map's
+   too when the dungeon has more than one. */
+export function mapTitle(d, m){
+  return d && d.maps.length > 1 ? d.name + " · " + m.name : (d ? d.name : m.name);
 }
 
 /* ---- public API: reading a map ---- */
@@ -505,7 +611,7 @@ export function toggleArea(d, x, y){
    walls stay under the fog. */
 export var FOG_EDGE = "?";
 
-export function playerView(d){
+export function playerView(d, title){
   var cells = "", revealed = "";
   for(var y = 0; y < d.h; y++){
     for(var x = 0; x < d.w; x++){
@@ -524,7 +630,7 @@ export function playerView(d){
     }
   }
   var party = d.party && isRevealed(d, d.party.x, d.party.y) ? { x: d.party.x, y: d.party.y } : null;
-  return { id: d.id, name: d.name, w: d.w, h: d.h, cells: cells, revealed: revealed, style: d.style, party: party };
+  return { id: d.id, name: title || d.name, w: d.w, h: d.h, cells: cells, revealed: revealed, style: d.style, party: party };
 }
 
 /* The box around every shown square, {x, y, w, h}, or null if nothing

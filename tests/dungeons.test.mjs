@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   loadDungeons, getDungeons, getDungeon, createDungeon, saveDungeon, deleteDungeon, duplicateDungeon, importDungeons,
+  findMap, dungeonOfMap, addMap, removeMap, moveMap, renameMap, mapTitle,
   dungeonNameProblem, cellAt, isOpen, isBlank, contentBounds, passageAxis, paintCells, fillRect, lineCells,
   clearDungeon, resizeDungeon, resizeLoses, createHistory, DUNGEON_SIZES, MIN_SIDE, MAX_SIDE, TERRAIN, ROCK, FLOOR,
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, revealedBounds, FOG_EDGE,
@@ -17,6 +18,9 @@ function fresh(){
   localStorage.clear();
   loadDungeons();
 }
+/* A new dungeon's one map. */
+const newMap = (name, size) => createDungeon(name, size).maps[0];
+
 /* Makes `d` a blank w by h map in place. */
 function blankMap(d, w, h){
   d.w = w; d.h = h; d.cells = ROCK.repeat(w * h); d.revealed = "0".repeat(w * h);
@@ -25,7 +29,7 @@ function blankMap(d, w, h){
    a terrain code is that terrain, anything else is rock. */
 function drawn(rowsIn){
   fresh();
-  const d = createDungeon("Test", "small");
+  const d = newMap("Test", "small");
   blankMap(d, rowsIn[0].length, rowsIn.length);
   rowsIn.forEach((row, y) => [...row].forEach((c, x) => { if(TERRAIN[c] && c !== ROCK) paintCells(d, [[x, y]], c); }));
   return d;
@@ -36,15 +40,18 @@ const fog = (d) => Array.from({ length: d.h }, (_, y) => Array.from({ length: d.
 /* The map as rows of text, for comparing small maps at a glance. */
 const rows = (d) => Array.from({ length: d.h }, (_, y) => d.cells.slice(y * d.w, (y + 1) * d.w));
 
-test("a new dungeon is all rock at the size picked, medium if none", () => {
+test("a new dungeon has one all-rock map at the size picked, medium if none", () => {
   fresh();
-  const d = createDungeon("Crypt", "small");
+  const dg = createDungeon("Crypt", "small");
+  assert.equal(dg.maps.length, 1);
+  const d = dg.maps[0];
+  assert.equal(d.name, "Map 1");
   assert.equal(d.w, 24);
   assert.equal(d.h, 16);
   assert.equal(d.cells.length, 24 * 16);
   assert.ok(isBlank(d));
   assert.equal(contentBounds(d), null);
-  const m = createDungeon("Mine", "nonsense");
+  const m = newMap("Mine", "nonsense");
   assert.equal(m.w, DUNGEON_SIZES[1].w);
   assert.equal(m.h, DUNGEON_SIZES[1].h);
 });
@@ -58,56 +65,108 @@ test("names must be given and not repeat, ignoring case", () => {
   assert.equal(dungeonNameProblem("Tomb", null), "");
 });
 
-test("saved dungeons survive a reload, newest first", async () => {
+test("saved dungeons survive a reload, newest first, and a map saves its dungeon", async () => {
   fresh();
   const a = createDungeon("Crypt", "small");
   await new Promise((r) => setTimeout(r, 5));
   createDungeon("Mine", "small");
-  fillRect(a, 1, 1, 3, 2, FLOOR);
+  fillRect(a.maps[0], 1, 1, 3, 2, FLOOR);
   await new Promise((r) => setTimeout(r, 5));
-  saveDungeon(a);
+  saveDungeon(a.maps[0]);
   loadDungeons();
   assert.deepEqual(getDungeons().map((d) => d.name), ["Crypt", "Mine"]);
-  assert.equal(cellAt(getDungeon(a.id), 2, 2), FLOOR);
+  assert.equal(cellAt(getDungeon(a.id).maps[0], 2, 2), FLOOR);
+  assert.equal(dungeonOfMap(a.maps[0].id).id, a.id);
+  assert.equal(findMap("nope"), null);
 });
 
 test("broken saved data is cleaned: size held to the limits, unknown squares made rock", () => {
   fresh();
   localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([
-    { id: "a", name: "Huge", w: 500, h: 2, cells: "..?" },
+    { id: "a", name: "Huge", maps: [{ id: "m", w: 500, h: 2, cells: "..?" }, null, "x"] },
+    { id: "b", name: "Empty", maps: [] },
     null, [1, 2], "text"
   ]));
   loadDungeons();
-  const all = getDungeons();
-  assert.equal(all.length, 1);
-  const d = all[0];
+  assert.equal(getDungeons().length, 2);
+  const d = findMap("m");
   assert.equal(d.w, MAX_SIDE);
   assert.equal(d.h, MIN_SIDE);
   assert.equal(d.cells.length, MAX_SIDE * MIN_SIDE);
   assert.equal(d.cells.slice(0, 4), ".." + ROCK + ROCK);
+  assert.equal(getDungeon("a").maps.length, 1);
+  assert.equal(getDungeon("b").maps.length, 1, "a dungeon always has a map");
 });
 
-test("delete, duplicate under a free name, and import renaming clashes", () => {
+test("a map saved before dungeons held several maps becomes a one-map dungeon, keeping its id", () => {
+  fresh();
+  localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([
+    { id: "old", name: "Sunken crypt", w: 10, h: 10, cells: "..", revealed: "1", style: "cave", party: { x: 0, y: 0 }, updated: 5 }
+  ]));
+  loadDungeons();
+  const [dg] = getDungeons();
+  assert.equal(dg.name, "Sunken crypt");
+  assert.equal(dg.updated, 5);
+  assert.equal(dg.maps.length, 1);
+  const m = dg.maps[0];
+  assert.equal(m.id, "old", "a players' tab showing it still finds it");
+  assert.equal(m.name, "Map 1");
+  assert.equal(m.cells.slice(0, 2), "..");
+  assert.equal(m.revealed.slice(0, 2), "10");
+  assert.equal(m.style, "cave");
+  assert.deepEqual(m.party, { x: 0, y: 0 });
+  assert.notEqual(dg.id, m.id);
+});
+
+test("delete, duplicate under a free name with new map ids, and import renaming clashes", () => {
   fresh();
   const d = createDungeon("Crypt", "small");
-  fillRect(d, 0, 0, 2, 2, FLOOR);
+  fillRect(d.maps[0], 0, 0, 2, 2, FLOOR);
   saveDungeon(d);
   const c1 = duplicateDungeon(d.id);
   const c2 = duplicateDungeon(d.id);
   assert.equal(c1.name, "Crypt (copy)");
   assert.equal(c2.name, "Crypt (copy 2)");
-  assert.equal(c1.cells, d.cells);
+  assert.equal(c1.maps[0].cells, d.maps[0].cells);
   assert.notEqual(c1.id, d.id);
-  assert.equal(importDungeons([{ name: "Crypt", w: 10, h: 10, cells: "" }, null, "x"]), 1);
+  assert.notEqual(c1.maps[0].id, d.maps[0].id);
+  assert.equal(importDungeons([{ name: "Crypt", w: 10, h: 10, cells: "" }, null, "x"]), 1, "an old single map file imports too");
   assert.ok(getDungeons().some((x) => x.name === "Crypt (imported)"));
   deleteDungeon(d.id);
   assert.equal(getDungeon(d.id), null);
   assert.equal(getDungeons().length, 3);
 });
 
+test("a dungeon's maps: added after the one open, like it, reordered, renamed, removed but never the last", () => {
+  fresh();
+  const dg = createDungeon("Crypt", "small");
+  const first = dg.maps[0];
+  first.style = "cave";
+  const m2 = addMap(dg, first.id);
+  assert.equal(m2.name, "Map 2");
+  assert.equal(m2.w, 24);
+  assert.equal(m2.style, "cave", "same size and style as the map it follows");
+  const m3 = addMap(dg, first.id);
+  assert.deepEqual(dg.maps.map((m) => m.name), ["Map 1", "Map 3", "Map 2"], "right after the one open");
+  assert.equal(moveMap(dg, m3.id, 1), true);
+  assert.deepEqual(dg.maps.map((m) => m.name), ["Map 1", "Map 2", "Map 3"]);
+  assert.equal(moveMap(dg, m3.id, 1), false, "already last");
+  assert.equal(renameMap(dg, m2.id, "  Level 1 "), true);
+  assert.equal(renameMap(dg, m2.id, ""), false);
+  assert.equal(m2.name, "Level 1");
+  assert.equal(mapTitle(dg, m2), "Crypt · Level 1");
+  assert.equal(removeMap(dg, first.id), true);
+  assert.equal(removeMap(dg, m2.id), true);
+  assert.equal(removeMap(dg, m3.id), false, "the last map stays");
+  assert.equal(mapTitle(dg, m3), "Crypt", "one map: just the dungeon's name");
+  for(let i = 0; i < 40; i++) addMap(dg, m3.id);
+  assert.equal(dg.maps.length, 30, "up to 30 maps");
+  assert.equal(addMap(dg, m3.id), null);
+});
+
 test("painting reports a change only when a square changes, and ignores squares off the map", () => {
   fresh();
-  const d = createDungeon("Crypt", "small");
+  const d = newMap("Crypt", "small");
   assert.equal(paintCells(d, [[0, 0], [1, 0]], FLOOR), true);
   assert.equal(paintCells(d, [[0, 0], [1, 0]], FLOOR), false);
   assert.equal(paintCells(d, [[-1, 0], [99, 99]], FLOOR), false);
@@ -121,7 +180,7 @@ test("painting reports a change only when a square changes, and ignores squares 
 
 test("a room fills the box between two corners dragged in any direction, clipped to the map", () => {
   fresh();
-  const d = createDungeon("Crypt", "small");
+  const d = newMap("Crypt", "small");
   blankMap(d, 8, 8);
   assert.equal(fillRect(d, 3, 2, 1, 1, FLOOR), true);
   assert.deepEqual(rows(d).slice(0, 4), ["        ", " ...    ", " ...    ", "        "]);
@@ -148,7 +207,7 @@ test("a brush line steps square by square with no diagonal gaps", () => {
 
 test("a door runs the way of its corridor", () => {
   fresh();
-  const d = createDungeon("Crypt", "small");
+  const d = newMap("Crypt", "small");
   // A corridor running left to right, a door in it.
   paintCells(d, [[1, 1], [2, 1], [3, 1]], FLOOR);
   paintCells(d, [[2, 1]], "+");
@@ -160,7 +219,7 @@ test("a door runs the way of its corridor", () => {
 
 test("resizing keeps the map centred, warns before cutting off floor, and stays in the limits", () => {
   fresh();
-  const d = createDungeon("Crypt", "small");
+  const d = newMap("Crypt", "small");
   blankMap(d, 8, 8);
   fillRect(d, 3, 3, 4, 4, FLOOR);
   assert.equal(resizeLoses(d, 12, 12), false);
@@ -179,7 +238,7 @@ test("resizing keeps the map centred, warns before cutting off floor, and stays 
 
 test("clearing turns the whole map back to rock", () => {
   fresh();
-  const d = createDungeon("Crypt", "small");
+  const d = newMap("Crypt", "small");
   assert.equal(clearDungeon(d), false);
   fillRect(d, 0, 0, 5, 5, FLOOR);
   assert.equal(clearDungeon(d), true);
@@ -188,7 +247,7 @@ test("clearing turns the whole map back to rock", () => {
 
 test("undo and redo walk back and forth through changes, a resize included", () => {
   fresh();
-  const d = createDungeon("Crypt", "small");
+  const d = newMap("Crypt", "small");
   const h = createHistory();
   assert.equal(h.canUndo(), false);
   const start = d.cells;
@@ -220,7 +279,7 @@ test("undo and redo walk back and forth through changes, a resize included", () 
 
 test("undo keeps only the most recent steps", () => {
   fresh();
-  const d = createDungeon("Crypt", "small");
+  const d = newMap("Crypt", "small");
   const h = createHistory(3);
   for(let i = 0; i < 5; i++){
     const before = h.snapshot(d);
@@ -362,7 +421,7 @@ test("saved fog is cleaned: the right length, and never on rock", () => {
     { id: "b", name: "Older", w: 8, h: 8, cells: "." }
   ]));
   loadDungeons();
-  const a = getDungeon("a"), b = getDungeon("b");
+  const a = findMap("a"), b = findMap("b");
   assert.equal(a.revealed.length, 64);
   assert.equal(a.revealed.slice(0, 5), "11000");
   assert.equal(b.revealed, "0".repeat(64));
@@ -410,7 +469,7 @@ test("nothing shown means nothing but rock for the players", () => {
 
 test("a map is drawn in stone unless the DM picks cave, and the players get the same style", () => {
   fresh();
-  const d = createDungeon("Mine", "small");
+  const d = newMap("Mine", "small");
   assert.equal(d.style, "stone");
   assert.equal(setDungeonStyle(d, "cave"), true);
   assert.equal(setDungeonStyle(d, "cave"), false);
@@ -418,11 +477,11 @@ test("a map is drawn in stone unless the DM picks cave, and the players get the 
   assert.equal(playerView(d).style, "cave");
   saveDungeon(d);
   loadDungeons();
-  assert.equal(getDungeon(d.id).style, "cave");
+  assert.equal(findMap(d.id).style, "cave");
   assert.deepEqual(DUNGEON_STYLES.map((st) => st.id), ["stone", "cave"]);
   localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([{ id: "x", name: "Odd", style: "lava" }]));
   loadDungeons();
-  assert.equal(getDungeon("x").style, "stone");
+  assert.equal(findMap("x").style, "stone");
 });
 
 /* ---- the party ---- */
@@ -469,7 +528,7 @@ test("a walk stops at rock", () => {
 
 test("sight reaches 60 feet and is blocked by walls", () => {
   fresh();
-  const d = createDungeon("Hall", "small");
+  const d = newMap("Hall", "small");
   blankMap(d, 30, 3);
   fillRect(d, 0, 1, 29, 1, FLOOR);
   const seen = sightFrom(d, 0, 1).map(([x]) => x);
@@ -512,15 +571,15 @@ test("the players see the party once its square is shown, and saved parties are 
     { id: "c", w: 8, h: 8, cells: "..", party: "here" }
   ]));
   loadDungeons();
-  assert.deepEqual(getDungeon("a").party, { x: 1, y: 0 });
-  assert.equal(getDungeon("b").party, null, "not on rock");
-  assert.equal(getDungeon("c").party, null);
+  assert.deepEqual(findMap("a").party, { x: 1, y: 0 });
+  assert.equal(findMap("b").party, null, "not on rock");
+  assert.equal(findMap("c").party, null);
 });
 
 test("the players' screen fits what is shown, and follows the party once that gets too big", async () => {
   const { playersFit } = await import("../js/render/dungeon-canvas.js");
   fresh();
-  const d = createDungeon("Halls", "large");
+  const d = newMap("Halls", "large");
   fillRect(d, 1, 1, 48, 3, FLOOR);
   setRevealed(d, [[2, 2], [3, 2], [4, 2]], true);
   let cam = playersFit(playerView(d), 1000, 600);
@@ -534,12 +593,12 @@ test("the players' screen fits what is shown, and follows the party once that ge
   removeParty(d);
   cam = playersFit(playerView(d), 1000, 600);
   assert.ok(cam.scale < 25 && cam.x === 25, "no party: the whole hall is fitted");
-  assert.equal(playersFit(playerView(createDungeon("Empty", "small")), 1000, 600), null);
+  assert.equal(playersFit(playerView(newMap("Empty", "small")), 1000, 600), null);
 });
 
 test("in a room only partly shown, hidden floor touching what's shown at a corner stays open fog, never a wall", () => {
   fresh();
-  const d = createDungeon("Hall", "small");
+  const d = newMap("Hall", "small");
   blankMap(d, 8, 8);
   fillRect(d, 1, 1, 6, 6, FLOOR);
   setRevealed(d, [[2, 2], [3, 2], [2, 3]], true);

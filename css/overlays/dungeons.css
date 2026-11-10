@@ -239,6 +239,50 @@
 .dg-preview-label::before{content:"";width:6px;height:6px;border-radius:50%;background:#4ade80;}
 @media (prefers-reduced-motion:reduce){ .dg-preview, .dg-preview.on{transition:none;transform:none;} }
 
+/* The dungeon's maps, like slides: arrows either side of the map's name
+   at the bottom of the board. */
+.dg-pager{
+  position:absolute;left:50%;bottom:calc(16px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);
+  display:flex;align-items:center;gap:2px;padding:4px;border-radius:26px;max-width:calc(100% - 140px);
+  background:rgba(15,12,20,.88);border:1px solid var(--rule);box-shadow:0 6px 18px rgba(0,0,0,.45);
+}
+.dg-page-btn{
+  flex:none;width:38px;height:38px;border-radius:50%;border:none;background:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--text-on-ink);
+  transition:background .15s ease, color .15s ease;
+}
+.dg-page-btn:hover:not(:disabled){background:rgba(255,255,255,.08);color:var(--brass-bright);}
+.dg-page-btn:disabled{opacity:.3;cursor:default;}
+.dg-page-btn svg{width:20px;height:20px;}
+.dg-page-btn.adds{background:color-mix(in srgb, var(--brass) 28%, transparent);color:var(--brass-bright);}
+.dg-page-label{
+  min-width:0;display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 12px;
+  background:none;border:none;border-radius:10px;color:var(--text-on-ink);cursor:pointer;
+}
+.dg-page-label:hover{background:rgba(255,255,255,.06);}
+.dg-page-name{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:700;}
+.dg-page-count{font-size:11px;color:var(--text-on-ink-dim);font-variant-numeric:tabular-nums;}
+
+/* ---- Maps sheet ---- */
+.dg-map-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:4px;}
+.dg-map-row{
+  display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:10px;
+  background:var(--field-bg);border:1px solid var(--rule);
+}
+.dg-map-row.here{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 14%, var(--field-bg));}
+.dg-map-num{flex:none;width:20px;text-align:center;font-size:13px;font-weight:700;color:var(--text-on-parch-dim);}
+.dg-map-row.here .dg-map-num{color:var(--brass-bright);}
+.dg-map-name{
+  flex:1;min-width:0;padding:5px 6px;border-radius:6px;font-size:14px;
+  background:transparent;border:1px solid transparent;color:var(--text-on-parch);
+}
+.dg-map-name:hover{border-color:var(--rule);}
+.dg-map-name:focus{outline:none;border-color:var(--brass);background:var(--parchment);}
+.dg-map-act{width:30px;height:30px;}
+.dg-map-act svg{width:16px;height:16px;}
+.dg-map-act:disabled{opacity:.3;cursor:default;}
+.dg-map-act.danger:hover:not(:disabled){color:var(--oxblood);border-color:var(--oxblood);}
+
 /* ---- Map style sheet ---- */
 .dg-styles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;}
 .dg-style{
@@ -280,7 +324,9 @@
   .dg-name-input{font-size:17px;}
   .dg-players{padding:0 9px;margin-right:0;}
   .dg-players-label{display:none;}
-  .dg-preview{width:150px;height:96px;left:12px;bottom:calc(12px + env(safe-area-inset-bottom, 0px));}
+  .dg-preview{width:150px;height:96px;left:12px;bottom:calc(66px + env(safe-area-inset-bottom, 0px));}
+  .dg-pager{bottom:calc(12px + env(safe-area-inset-bottom, 0px));}
+  .dg-page-name{max-width:120px;}
   .dg-tools{padding:6px 8px;}
   .dg-tool{min-width:52px;}
   .dg-new .btn.primary{flex:1 1 100%;}
