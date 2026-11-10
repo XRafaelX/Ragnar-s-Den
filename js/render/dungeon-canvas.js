@@ -1,4 +1,4 @@
-import { ROCK, cellAt, isOpen, passageAxis, contentBounds } from "../core/dungeons.js";
+import { ROCK, inMap, cellAt, isOpen, isRevealed, passageAxis, contentBounds, revealedBounds } from "../core/dungeons.js";
 
 /* ---------------- Drawing a dungeon map ----------------
    Paints a dungeon (js/core/dungeons.js) onto a 2D canvas in the style
@@ -10,7 +10,9 @@ import { ROCK, cellAt, isOpen, passageAxis, contentBounds } from "../core/dungeo
 
    The map keeps its own colors whatever the app's theme: it is meant to
    read like a map on a TV across the table. Only the space around the
-   map (`outside`) follows the theme.
+   map (`outside`) follows the theme. Each map's `style` picks a palette:
+   Stone has straight walls and hatched rock, Cave has rough walls,
+   stippled rock and earthen floors.
 
    `view` places the map on the canvas, in the canvas's own pixels:
      { scale: pixels per square, ox, oy: where square (0, 0)'s top left
@@ -34,8 +36,27 @@ export var MAP_COLORS = {
   pitEdge: "#3a3340",
   pit: "#17141b",
   rubble: "#8a7f6c",
-  rubbleEdge: "#5b5243"
+  rubbleEdge: "#5b5243",
+  fog: "#0d0b12"
 };
+
+var STYLE_COLORS = {
+  stone: MAP_COLORS,
+  cave: Object.assign({}, MAP_COLORS, {
+    rock: "#2a231f",
+    hatch: "#55483d",
+    rockGrid: "rgba(255,235,210,0.06)",
+    floor: "#cdbb9c",
+    floorGrid: "rgba(70,50,28,0.16)",
+    floorSpeck: "rgba(90,66,40,0.35)",
+    wall: "#1d1713",
+    stairs: "#4d3f30",
+    rubble: "#7d6c57",
+    rubbleEdge: "#4f4234"
+  })
+};
+var C = MAP_COLORS;     // the palette of the map being drawn
+var cave = false;
 
 /* A steady "random" number per square, so hatching and rubble look hand
    drawn but don't jump about between redraws. */
@@ -49,30 +70,28 @@ function hash(x, y, salt){
    too (for building), dm: show secret doors as the DM sees them } */
 export function drawMap(ctx, d, view, opts){
   opts = opts || {};
+  C = STYLE_COLORS[d.style] || MAP_COLORS;
+  cave = d.style === "cave";
   var s = view.scale;
   ctx.save();
   ctx.fillStyle = opts.outside || "#120f1a";
   ctx.fillRect(0, 0, view.width, view.height);
 
-  // Only the squares on screen, plus one around them for the walls.
-  var x0 = Math.max(0, Math.floor(-view.ox / s) - 1);
-  var y0 = Math.max(0, Math.floor(-view.oy / s) - 1);
-  var x1 = Math.min(d.w - 1, Math.ceil((view.width - view.ox) / s));
-  var y1 = Math.min(d.h - 1, Math.ceil((view.height - view.oy) / s));
-  if(x1 < x0 || y1 < y0){ ctx.restore(); return; }
-
+  var r = onScreen(d, view);
+  if(!r){ ctx.restore(); return; }
+  var x0 = r.x0, y0 = r.y0, x1 = r.x1, y1 = r.y1;
   function ex(x){ return Math.round(view.ox + x * s); }
   function ey(y){ return Math.round(view.oy + y * s); }
 
   // Rock under the whole map.
-  ctx.fillStyle = MAP_COLORS.rock;
+  ctx.fillStyle = C.rock;
   ctx.fillRect(ex(0), ey(0), ex(d.w) - ex(0), ey(d.h) - ey(0));
 
   if(opts.grid && s >= 8){
     ctx.beginPath();
     for(var gx = x0; gx <= x1 + 1; gx++){ ctx.moveTo(ex(gx) + 0.5, ey(y0)); ctx.lineTo(ex(gx) + 0.5, ey(y1 + 1)); }
     for(var gy = y0; gy <= y1 + 1; gy++){ ctx.moveTo(ex(x0), ey(gy) + 0.5); ctx.lineTo(ex(x1 + 1), ey(gy) + 0.5); }
-    ctx.strokeStyle = MAP_COLORS.rockGrid;
+    ctx.strokeStyle = C.rockGrid;
     ctx.lineWidth = 1;
     ctx.stroke();
   }
@@ -80,12 +99,14 @@ export function drawMap(ctx, d, view, opts){
   var x, y;
   if(s >= 10){
     for(y = y0; y <= y1; y++) for(x = x0; x <= x1; x++){
-      if(!isOpen(d, x, y) && nearOpen(d, x, y)) hatch(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
+      if(isOpen(d, x, y) || !nearOpen(d, x, y)) continue;
+      if(cave) stipple(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
+      else hatch(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
     }
   }
 
   // Floor, a row of open squares at a time.
-  ctx.fillStyle = MAP_COLORS.floor;
+  ctx.fillStyle = C.floor;
   for(y = y0; y <= y1; y++){
     var run = -1;
     for(x = x0; x <= x1 + 1; x++){
@@ -96,7 +117,7 @@ export function drawMap(ctx, d, view, opts){
   }
 
   // Water fills its squares before the grid goes over it.
-  ctx.fillStyle = MAP_COLORS.water;
+  ctx.fillStyle = C.water;
   for(y = y0; y <= y1; y++) for(x = x0; x <= x1; x++){
     if(cellAt(d, x, y) === "~") ctx.fillRect(ex(x), ey(y), ex(x + 1) - ex(x), ey(y + 1) - ey(y));
   }
@@ -109,9 +130,23 @@ export function drawMap(ctx, d, view, opts){
       if(!isOpen(d, x, y)) continue;
       ctx.rect(ex(x) + 0.5, ey(y) + 0.5, ex(x + 1) - ex(x), ey(y + 1) - ey(y));
     }
-    ctx.strokeStyle = MAP_COLORS.floorGrid;
+    ctx.strokeStyle = C.floorGrid;
     ctx.lineWidth = 1;
     ctx.stroke();
+  }
+
+  // Earthen cave floors are flecked.
+  if(cave && s >= 14){
+    ctx.fillStyle = C.floorSpeck;
+    for(y = y0; y <= y1; y++) for(x = x0; x <= x1; x++){
+      if(cellAt(d, x, y) !== ".") continue;
+      for(var k = 0; k < 3; k++){
+        var r0 = Math.max(0.8, s * 0.025);
+        ctx.beginPath();
+        ctx.arc(ex(x) + s * (0.15 + hash(x, y, 60 + k) * 0.7), ey(y) + s * (0.15 + hash(x, y, 70 + k) * 0.7), r0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
   }
 
   // What's on the floor.
@@ -128,19 +163,178 @@ export function drawMap(ctx, d, view, opts){
   }
 
   // Walls: a thick line on every side where open ground meets rock.
+  // Cave walls bulge in and out a little along each side; the corners
+  // stay put, so neighbouring sides always meet.
+  function wall(ax, ay, bx, by){
+    ctx.moveTo(ex(ax), ey(ay));
+    if(!cave){ ctx.lineTo(ex(bx), ey(by)); return; }
+    var bulge = (hash(ax + bx, ay + by, 80) - 0.5) * s * 0.3;
+    var mx = (ex(ax) + ex(bx)) / 2 + (ay === by ? 0 : bulge), my = (ey(ay) + ey(by)) / 2 + (ay === by ? bulge : 0);
+    ctx.quadraticCurveTo(mx, my, ex(bx), ey(by));
+  }
   ctx.beginPath();
   for(y = y0; y <= y1; y++) for(x = x0; x <= x1; x++){
     if(!isOpen(d, x, y)) continue;
-    if(!isOpen(d, x, y - 1)){ ctx.moveTo(ex(x), ey(y)); ctx.lineTo(ex(x + 1), ey(y)); }
-    if(!isOpen(d, x, y + 1)){ ctx.moveTo(ex(x), ey(y + 1)); ctx.lineTo(ex(x + 1), ey(y + 1)); }
-    if(!isOpen(d, x - 1, y)){ ctx.moveTo(ex(x), ey(y)); ctx.lineTo(ex(x), ey(y + 1)); }
-    if(!isOpen(d, x + 1, y)){ ctx.moveTo(ex(x + 1), ey(y)); ctx.lineTo(ex(x + 1), ey(y + 1)); }
+    if(!isOpen(d, x, y - 1)) wall(x, y, x + 1, y);
+    if(!isOpen(d, x, y + 1)) wall(x, y + 1, x + 1, y + 1);
+    if(!isOpen(d, x - 1, y)) wall(x, y, x, y + 1);
+    if(!isOpen(d, x + 1, y)) wall(x + 1, y, x + 1, y + 1);
   }
-  ctx.strokeStyle = MAP_COLORS.wall;
-  ctx.lineWidth = Math.max(2, s * 0.14);
-  ctx.lineCap = "square";
+  ctx.strokeStyle = C.wall;
+  ctx.lineWidth = Math.max(2, s * (cave ? 0.17 : 0.14));
+  ctx.lineCap = cave ? "round" : "square";
+  ctx.lineJoin = "round";
   ctx.stroke();
 
+  ctx.restore();
+}
+
+/* The squares on screen, plus one around them for the walls, as
+   {x0, y0, x1, y1}, or null if none of the map is. */
+function onScreen(d, view){
+  var s = view.scale;
+  var r = {
+    x0: Math.max(0, Math.floor(-view.ox / s) - 1),
+    y0: Math.max(0, Math.floor(-view.oy / s) - 1),
+    x1: Math.min(d.w - 1, Math.ceil((view.width - view.ox) / s)),
+    y1: Math.min(d.h - 1, Math.ceil((view.height - view.oy) / s))
+  };
+  return r.x1 < r.x0 || r.y1 < r.y0 ? null : r;
+}
+
+/* Fog over every square the players can't see, `alpha` thick (1 hides
+   it completely). Players see the squares shown to them and the rock
+   right beside those (the walls and hatching around a shown room). */
+export function drawFog(ctx, d, view, alpha){
+  var r = onScreen(d, view);
+  if(!r) return;
+  var s = view.scale;
+  function ex(x){ return Math.round(view.ox + x * s); }
+  function ey(y){ return Math.round(view.oy + y * s); }
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = MAP_COLORS.fog;
+  ctx.beginPath();
+  for(var y = r.y0; y <= r.y1; y++){
+    var run = -1;
+    for(var x = r.x0; x <= r.x1 + 1; x++){
+      var fogged = x <= r.x1 && !isSeen(d, x, y);
+      if(fogged && run < 0) run = x;
+      if(!fogged && run >= 0){ ctx.rect(ex(run), ey(y), ex(x) - ex(run), ey(y + 1) - ey(y)); run = -1; }
+    }
+  }
+  // One fill, so the runs don't overlap into darker seams.
+  ctx.fill();
+  ctx.restore();
+}
+
+/* True if the players can see square (x, y): it was shown to them, or it
+   is rock right beside a shown square. */
+export function isSeen(d, x, y){
+  if(isRevealed(d, x, y)) return true;
+  if(isOpen(d, x, y)) return false;
+  for(var dy = -1; dy <= 1; dy++) for(var dx = -1; dx <= 1; dx++) if(isRevealed(d, x + dx, y + dy)) return true;
+  return false;
+}
+
+/* Fog with soft edges, for the players: `amountAt(x, y)` is how thick it
+   is on each square, 0 clear to 1 solid. The amounts go into a tiny
+   picture, one pixel a square with a solid border, which is stretched
+   over the map with smoothing, so the fog thins out across a square
+   instead of stopping at a hard edge. Off the map it is solid. */
+var fogPicture = null;
+export function drawSoftFog(ctx, d, view, amountAt){
+  var w = d.w + 2, h = d.h + 2, s = view.scale;
+  if(!fogPicture) fogPicture = document.createElement("canvas");
+  if(fogPicture.width !== w) fogPicture.width = w;
+  if(fogPicture.height !== h) fogPicture.height = h;
+  var fctx = fogPicture.getContext("2d");
+  var img = fctx.createImageData(w, h), px = img.data;
+  for(var y = -1; y <= d.h; y++){
+    for(var x = -1; x <= d.w; x++){
+      var i = ((y + 1) * w + (x + 1)) * 4;
+      var a = inMap(d, x, y) ? amountAt(x, y) : 1;
+      px[i] = 13; px[i + 1] = 11; px[i + 2] = 18;   // MAP_COLORS.fog
+      px[i + 3] = Math.round(Math.max(0, Math.min(1, a)) * 255);
+    }
+  }
+  fctx.putImageData(img, 0, 0);
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(fogPicture, view.ox - s, view.oy - s, w * s, h * s);
+  ctx.restore();
+}
+
+/* ---- The players' screen ----
+   Drawn the same on the players' tab and in the DM's preview box. The
+   view fits what has been shown, with a little fog around it, and never
+   zooms closer than PLAYERS_MIN_SQUARES squares across. Once so much is
+   shown that fitting it all would take more than PLAYERS_MAX_SQUARES
+   squares across, the view follows the party instead (if there is one). */
+var PLAYERS_PAD = 1.5;
+var PLAYERS_MIN_SQUARES = 10;
+var PLAYERS_MAX_SQUARES = 24;
+
+/* Where to look on a width by height screen: { x, y } the middle in
+   squares and { scale } pixels a square, or null if nothing is shown. */
+export function playersFit(pmap, width, height){
+  var b = pmap && revealedBounds(pmap);
+  if(!b) return null;
+  var bw = b.w + PLAYERS_PAD * 2, bh = b.h + PLAYERS_PAD * 2;
+  var fit = {
+    x: b.x + b.w / 2,
+    y: b.y + b.h / 2,
+    scale: Math.min(width / bw, height / bh, Math.min(width, height) / PLAYERS_MIN_SQUARES)
+  };
+  var close = Math.min(width, height) / PLAYERS_MAX_SQUARES;
+  if(pmap.party && fit.scale < close) return { x: pmap.party.x + 0.5, y: pmap.party.y + 0.5, scale: close };
+  return fit;
+}
+
+/* Draws the players' map (core playerView) looking at `cam` (in this
+   canvas's pixels). `amountAt` can thicken the fog on squares that are
+   fading in; by default seen squares are clear and the rest solid. */
+export function drawPlayersScreen(ctx, pmap, cam, width, height, amountAt){
+  var view = { scale: cam.scale, ox: width / 2 - cam.x * cam.scale, oy: height / 2 - cam.y * cam.scale, width: width, height: height };
+  // Around the map and over all that is hidden is the same solid fog, so
+  // the map's own edges never show.
+  drawMap(ctx, pmap, view, { outside: MAP_COLORS.fog });
+  drawSoftFog(ctx, pmap, view, amountAt || function(x, y){ return isSeen(pmap, x, y) ? 0 : 1; });
+  if(pmap.party) drawParty(ctx, view, pmap.party);
+}
+
+/* The party's marker: a glowing gold token with a figure on it. */
+export function drawParty(ctx, view, party){
+  var s = view.scale;
+  var cx = view.ox + (party.x + 0.5) * s, cy = view.oy + (party.y + 0.5) * s, r = Math.max(5, s * 0.38);
+  ctx.save();
+  ctx.shadowColor = "rgba(255,196,80,0.75)";
+  ctx.shadowBlur = Math.max(6, s * 0.45);
+  var g = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.35, r * 0.1, cx, cy, r);
+  g.addColorStop(0, "#ffe08a");
+  g.addColorStop(1, "#c4851a");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "#3a2406";
+  ctx.lineWidth = Math.max(1.5, s * 0.06);
+  ctx.stroke();
+  if(r >= 8){
+    // Head and shoulders, the shoulders cut off by the token's rim.
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.9, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = "#3a2406";
+    ctx.beginPath();
+    ctx.arc(cx, cy - r * 0.22, r * 0.25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + r * 0.62, r * 0.5, r * 0.42, 0, Math.PI, 0);
+    ctx.fill();
+  }
   ctx.restore();
 }
 
@@ -167,10 +361,21 @@ function hatch(ctx, x, y, px, py, s){
     ctx.moveTo(mx - cos * s * 0.6, my - sin * s * 0.6);
     ctx.lineTo(mx + cos * s * 0.6, my + sin * s * 0.6);
   }
-  ctx.strokeStyle = MAP_COLORS.hatch;
+  ctx.strokeStyle = C.hatch;
   ctx.lineWidth = Math.max(1, s * 0.05);
   ctx.stroke();
   ctx.restore();
+}
+
+/* Cave rock: loose dots instead of hatching. */
+function stipple(ctx, x, y, px, py, s){
+  ctx.fillStyle = C.hatch;
+  for(var i = 0; i < 7; i++){
+    var r = Math.max(0.8, s * (0.025 + hash(x, y, 90 + i) * 0.035));
+    ctx.beginPath();
+    ctx.arc(px + s * hash(x, y, 100 + i), py + s * hash(x, y, 110 + i), r, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 /* A door is a plank across the way through: upright for a corridor
@@ -179,9 +384,9 @@ function drawDoor(ctx, b, axis){
   var long = b.s * 0.78, thick = Math.max(3, b.s * 0.26);
   var w = axis === "h" ? thick : long, h = axis === "h" ? long : thick;
   var x = b.x + (b.s - w) / 2, y = b.y + (b.s - h) / 2;
-  ctx.fillStyle = MAP_COLORS.door;
+  ctx.fillStyle = C.door;
   ctx.fillRect(x, y, w, h);
-  ctx.strokeStyle = MAP_COLORS.doorEdge;
+  ctx.strokeStyle = C.doorEdge;
   ctx.lineWidth = Math.max(1, b.s * 0.05);
   ctx.strokeRect(x, y, w, h);
 }
@@ -190,7 +395,7 @@ function drawDoor(ctx, b, axis){
 function drawSecret(ctx, b, axis){
   var cx = b.x + b.s / 2, cy = b.y + b.s / 2, half = b.s * 0.4;
   ctx.save();
-  ctx.strokeStyle = MAP_COLORS.secret;
+  ctx.strokeStyle = C.secret;
   ctx.lineWidth = Math.max(1.5, b.s * 0.08);
   ctx.setLineDash([Math.max(2, b.s * 0.12), Math.max(2, b.s * 0.08)]);
   ctx.beginPath();
@@ -199,7 +404,7 @@ function drawSecret(ctx, b, axis){
   ctx.stroke();
   ctx.setLineDash([]);
   if(b.s >= 14){
-    ctx.fillStyle = MAP_COLORS.secret;
+    ctx.fillStyle = C.secret;
     ctx.font = "bold " + Math.round(b.s * 0.42) + "px Georgia, serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -212,7 +417,7 @@ function drawSecret(ctx, b, axis){
 /* Steps across the way through, each one a little shorter, so the
    stairs seem to go down. */
 function drawStairs(ctx, b, axis){
-  ctx.strokeStyle = MAP_COLORS.stairs;
+  ctx.strokeStyle = C.stairs;
   ctx.lineWidth = Math.max(1, b.s * 0.06);
   ctx.beginPath();
   var n = 5;
@@ -228,7 +433,7 @@ function drawStairs(ctx, b, axis){
 
 function drawWater(ctx, b, x, y){
   if(b.s < 10) return;
-  ctx.strokeStyle = MAP_COLORS.waterLine;
+  ctx.strokeStyle = C.waterLine;
   ctx.lineWidth = Math.max(1, b.s * 0.05);
   ctx.beginPath();
   var shift = hash(x, y, 2) * 0.3;
@@ -246,9 +451,9 @@ function drawWater(ctx, b, x, y){
 /* A dark hole with a rim, crossed like a pit on a paper map. */
 function drawPit(ctx, b){
   var inset = b.s * 0.12, x = b.x + inset, y = b.y + inset, w = b.s - inset * 2;
-  ctx.fillStyle = MAP_COLORS.pit;
+  ctx.fillStyle = C.pit;
   ctx.fillRect(x, y, w, w);
-  ctx.strokeStyle = MAP_COLORS.pitEdge;
+  ctx.strokeStyle = C.pitEdge;
   ctx.lineWidth = Math.max(1, b.s * 0.06);
   ctx.strokeRect(x, y, w, w);
   if(b.s < 10) return;
@@ -261,8 +466,8 @@ function drawPit(ctx, b){
 /* Loose stones scattered over the square. */
 function drawRubble(ctx, b, x, y){
   var n = b.s < 10 ? 2 : 5;
-  ctx.fillStyle = MAP_COLORS.rubble;
-  ctx.strokeStyle = MAP_COLORS.rubbleEdge;
+  ctx.fillStyle = C.rubble;
+  ctx.strokeStyle = C.rubbleEdge;
   ctx.lineWidth = Math.max(0.75, b.s * 0.03);
   for(var i = 0; i < n; i++){
     var cx = b.x + b.s * (0.18 + hash(x, y, 10 + i) * 0.64);

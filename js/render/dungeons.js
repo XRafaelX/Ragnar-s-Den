@@ -1,9 +1,12 @@
 import {
   getDungeons, getDungeon, createDungeon, saveDungeon, deleteDungeon, duplicateDungeon, dungeonNameProblem,
   paintCells, fillRect, lineCells, clearDungeon, resizeDungeon, resizeLoses, createHistory, contentBounds, isBlank,
-  DUNGEON_SIZES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
+  isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, setDungeonStyle,
+  placeParty, walkParty, removeParty,
+  DUNGEON_SIZES, DUNGEON_STYLES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
 } from "../core/dungeons.js";
-import { drawMap, drawSwatch, drawThumbnail, prepareCanvas, fitView } from "./dungeon-canvas.js";
+import { drawMap, drawFog, drawSwatch, drawThumbnail, prepareCanvas, fitView, drawPlayersScreen, playersFit, drawParty, MAP_COLORS } from "./dungeon-canvas.js";
+import { presentDungeon, publishDungeon, presentedId, stopPresenting } from "../core/dungeon-sync.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { showActionToast } from "../ui/toast.js";
 import { openBottomSheet } from "../ui/bottom-sheet.js";
@@ -15,7 +18,22 @@ import { makeKebabSvg, makeUndoSvg } from "../ui/svg-icons.js";
    squares (js/core/dungeons.js). Two views in one full-page overlay,
    like Encounters: the saved list, and one map's board.
 
-   On the board the DM picks a tool and drags on the map. Room drags out
+   The board has two modes, switched at the start of the tool bar.
+   Build is for drawing the map. Play is for running it: everything the
+   players haven't been shown is under fog (dimmed for the DM), a tap
+   on a room or corridor shows it or hides it again (core areaAt), and
+   a drag shows or hides square by square, depending on whether the
+   first square was hidden. The Party tool puts the party's marker on a
+   square, and dragging it walks them there square by square, showing
+   what they see on the way (core sightFrom). The tool bar keeps its size and place in
+   both modes; only the tools in it change, fading in place.
+
+   Player view opens the players' screen (dungeon-view.html) in a new
+   tab with this map on it, and every change is sent there as it
+   happens (js/core/dungeon-sync.js). While it does, Play mode shows a
+   small box in the corner with exactly what the players see.
+
+   In Build the DM picks a tool and drags on the map. Room drags out
    a box of floor, the brushes paint square by square (a quick stroke
    leaves an unbroken corridor), and walls appear by themselves where
    floor meets rock. Every finished drag is one undo step and is saved
@@ -30,6 +48,7 @@ import { makeKebabSvg, makeUndoSvg } from "../ui/svg-icons.js";
 var SCALE_MIN = 6;      // CSS pixels per square
 var SCALE_MAX = 96;
 var FIT_MAX = 40;       // fitting never zooms in further than this
+var FOG_DM = 0.62;      // how thick the fog looks to the DM
 
 var ICON = {
   plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
@@ -41,6 +60,11 @@ var ICON = {
   map: '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>',
   grid: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/>',
   clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  monitor: '<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
   chevron: '<path d="m9 18 6-6-6-6"/>'
 };
 
@@ -71,10 +95,19 @@ function toolById(id){
   return TOOLS[1][0];
 }
 
+/* Play mode's tools. Show all and Hide all are buttons, not tools. */
+var PLAY_TOOLS = [
+  { id: "move", label: "Move", icon: "hand", help: "Drag to move around the map" },
+  { id: "reveal", label: "Reveal", icon: "eye", help: "Tap a room or corridor to show it to the players, and tap again to hide it. Drag to show or hide square by square" },
+  { id: "party", label: "Party", icon: "users", help: "Tap a square to put the party there. Drag the marker to walk them, and the fog clears as they see more" }
+];
+
 var overlay = null;
 var openId = null;       // the map on the board, null = the list
 var newSize = "medium";  // the size picked for a new map
-var tool = "room";       // the tool picked, kept between maps
+var tool = "room";       // the Build tool picked, kept between maps
+var playTool = "reveal"; // the Play tool picked
+var mode = "build";      // "build" or "play", kept between maps
 var b = null;            // the open board, see renderBoard()
 
 function ce(tag, cls, text){
@@ -227,6 +260,7 @@ function renderList(){
     var d = createDungeon(input.value.trim(), newSize);
     playAdd();
     tool = "room";
+    mode = "build";
     openId = d.id;
     render();
   });
@@ -289,6 +323,7 @@ function savedCard(d){
     { label: "Delete", danger: true, onClick: function(){
       confirmDialog("Delete " + d.name + "?", "This map will be removed. This cannot be undone.", function(){
         deleteDungeon(d.id);
+        stopPresenting(d.id);
         playDelete();
         render();
         showActionToast("Deleted " + d.name + ".");
@@ -337,7 +372,7 @@ function timeAgo(t){
 function renderBoard(d){
   b = {
     d: d, history: createHistory(), view: null, pointers: new Map(), gesture: null,
-    hover: null, space: false, frame: 0, fitted: false
+    hover: null, hoverArea: null, space: false, frame: 0, fitted: false
   };
 
   var head = header(function(){ openId = null; render(); }, "Back to dungeons");
@@ -352,8 +387,14 @@ function renderBoard(d){
     if(problem){ showActionToast(problem, true); name.value = d.name; return; }
     d.name = name.value.trim();
     saveDungeon(d);
+    publish();
   });
   head.appendChild(name);
+
+  b.playersBtn = button("dg-players", "", openPlayerView, null);
+  b.playersBtn.appendChild(icon("monitor"));
+  b.playersBtn.appendChild(ce("span", "dg-players-label", "Player view"));
+  head.appendChild(b.playersBtn);
 
   b.undoBtn = button("dg-head-btn", "", undo, "Undo");
   b.undoBtn.innerHTML = makeUndoSvg();
@@ -363,6 +404,10 @@ function renderBoard(d){
   head.appendChild(b.redoBtn);
   head.appendChild(menu([
     { label: "Map size", onClick: openSizeSheet },
+    { label: "Map style", onClick: openStyleSheet },
+    { label: "Remove party marker", onClick: function(){
+      if(!change(function(){ return removeParty(d); })) showActionToast("There is no party marker on this map.");
+    } },
     { label: "Clear map", danger: true, onClick: function(){
       if(isBlank(d)){ showActionToast("The map is already empty."); return; }
       confirmDialog("Clear the whole map?", "Every square goes back to solid rock. You can undo this.", function(){
@@ -379,6 +424,14 @@ function renderBoard(d){
   stage.appendChild(canvas);
   b.hint = ce("div", "dg-hint", "Pick Room, then drag on the grid to draw your first room.");
   stage.appendChild(b.hint);
+
+  // What the players see, while their tab shows this map in Play.
+  b.preview = ce("div", "dg-preview");
+  b.preview.setAttribute("aria-hidden", "true");
+  b.previewCanvas = ce("canvas", "dg-preview-canvas");
+  b.preview.appendChild(b.previewCanvas);
+  b.preview.appendChild(ce("span", "dg-preview-label", "Players see"));
+  stage.appendChild(b.preview);
 
   var zoom = ce("div", "dg-zoom");
   var zin = button("dg-zoom-btn", "", function(){ zoomBy(1.25); }, "Zoom in");
@@ -418,41 +471,121 @@ function leaveBoard(){
   b = null;
 }
 
+/* The Build / Play switch, then the tools of the mode picked. Both
+   modes' tools sit in the same spot, one faded out, so switching never
+   moves anything else on the screen. */
 function toolBar(){
   var bar = ce("div", "dg-tools");
   bar.setAttribute("role", "toolbar");
   bar.setAttribute("aria-label", "Map tools");
+
+  var modes = ce("div", "dg-mode");
+  modes.setAttribute("role", "radiogroup");
+  modes.setAttribute("aria-label", "Mode");
+  [
+    { id: "build", label: "Build", help: "Build: draw the map" },
+    { id: "play", label: "Play", help: "Play: show the map to your players bit by bit" }
+  ].forEach(function(m){
+    var btn = button("dg-mode-btn" + (m.id === mode ? " on" : ""), m.label, function(){ setMode(m.id); });
+    btn.title = m.help;
+    btn.dataset.mode = m.id;
+    btn.setAttribute("role", "radio");
+    btn.setAttribute("aria-checked", m.id === mode ? "true" : "false");
+    modes.appendChild(btn);
+  });
+  bar.appendChild(modes);
+  bar.appendChild(ce("span", "dg-tool-gap"));
+
+  var sets = ce("div", "dg-sets");
+  var build = ce("div", "dg-set" + (mode === "build" ? " on" : ""));
+  build.dataset.set = "build";
   var outside = cssVar("--parchment", "#241d33");
   TOOLS.forEach(function(group, gi){
-    if(gi) bar.appendChild(ce("span", "dg-tool-gap"));
-    group.forEach(function(t){
-      var btn = button("dg-tool" + (t.id === tool ? " on" : ""), "", function(){ pickTool(t.id); }, t.label + ": " + t.help);
-      btn.dataset.tool = t.id;
-      btn.setAttribute("aria-pressed", t.id === tool ? "true" : "false");
-      if(t.icon) btn.appendChild(icon(t.icon, "dg-tool-pic"));
-      else {
-        var sw = ce("canvas", "dg-tool-pic dg-swatch");
-        sw.setAttribute("aria-hidden", "true");
-        btn.appendChild(sw);
-        drawSwatch(sw, t.code, 26, outside);
-      }
-      btn.appendChild(ce("span", "dg-tool-label", t.label));
-      bar.appendChild(btn);
-    });
+    if(gi) build.appendChild(ce("span", "dg-tool-gap"));
+    group.forEach(function(t){ build.appendChild(toolButton(t, "build", outside)); });
   });
+  sets.appendChild(build);
+
+  var play = ce("div", "dg-set" + (mode === "play" ? " on" : ""));
+  play.dataset.set = "play";
+  PLAY_TOOLS.forEach(function(t){ play.appendChild(toolButton(t, "play")); });
+  play.appendChild(ce("span", "dg-tool-gap"));
+  play.appendChild(actionButton("Show all", "sun", "Show the whole map to the players", function(){
+    if(!change(function(){ return revealAll(b.d, true); })) showActionToast(isBlank(b.d) ? "There is nothing on the map to show yet." : "The players can already see everything.");
+  }));
+  play.appendChild(actionButton("Hide all", "cloud", "Cover the whole map in fog again", function(){
+    if(!change(function(){ return revealAll(b.d, false); })) showActionToast("Everything is already hidden.");
+  }));
+  sets.appendChild(play);
+  bar.appendChild(sets);
+  setInert();
   return bar;
+
+  // The faded out set can't be tabbed to or read out.
+  function setInert(){
+    build.inert = mode !== "build";
+    play.inert = mode !== "play";
+  }
 }
 
-function pickTool(id){
-  tool = id;
-  overlay.querySelectorAll(".dg-tool").forEach(function(btn){
+function toolButton(t, set, outside){
+  var picked = set === "build" ? tool : playTool;
+  var btn = button("dg-tool" + (t.id === picked ? " on" : ""), "", function(){ pickTool(set, t.id); }, t.label + ": " + t.help);
+  btn.dataset.tool = t.id;
+  btn.setAttribute("aria-pressed", t.id === picked ? "true" : "false");
+  if(t.icon) btn.appendChild(icon(t.icon, "dg-tool-pic"));
+  else {
+    var sw = ce("canvas", "dg-tool-pic dg-swatch");
+    sw.setAttribute("aria-hidden", "true");
+    btn.appendChild(sw);
+    drawSwatch(sw, t.code, 26, outside);
+  }
+  btn.appendChild(ce("span", "dg-tool-label", t.label));
+  return btn;
+}
+
+function actionButton(label, iconName, help, onClick){
+  var btn = button("dg-tool dg-action", "", onClick, label + ": " + help);
+  btn.appendChild(icon(iconName, "dg-tool-pic"));
+  btn.appendChild(ce("span", "dg-tool-label", label));
+  return btn;
+}
+
+function pickTool(set, id){
+  if(set === "build") tool = id; else playTool = id;
+  overlay.querySelectorAll('.dg-set[data-set="' + set + '"] .dg-tool[data-tool]').forEach(function(btn){
     var on = btn.dataset.tool === id;
     btn.classList.toggle("on", on);
     btn.setAttribute("aria-pressed", on ? "true" : "false");
   });
   b.hover = null;
+  b.hoverArea = null;
   refreshChrome();
   draw();
+}
+
+function setMode(m){
+  if(!b || m === mode) return;
+  mode = m;
+  overlay.querySelectorAll(".dg-mode-btn").forEach(function(btn){
+    var on = btn.dataset.mode === m;
+    btn.classList.toggle("on", on);
+    btn.setAttribute("aria-checked", on ? "true" : "false");
+  });
+  overlay.querySelectorAll(".dg-set").forEach(function(set){
+    var on = set.dataset.set === m;
+    set.classList.toggle("on", on);
+    set.inert = !on;
+  });
+  b.hover = null;
+  b.hoverArea = null;
+  refreshChrome();
+  draw();
+}
+
+/* The tool in use: Build's or Play's. */
+function activeTool(){
+  return mode === "build" ? toolById(tool) : PLAY_TOOLS.find(function(t){ return t.id === playTool; });
 }
 
 /* Undo and redo buttons, the hint on a blank map, the map's cursor. */
@@ -460,9 +593,44 @@ function refreshChrome(){
   if(!b) return;
   b.undoBtn.disabled = !b.history.canUndo();
   b.redoBtn.disabled = !b.history.canRedo();
-  b.hint.hidden = !isBlank(b.d);
+  var hint = "";
+  if(isBlank(b.d)) hint = mode === "build" ? "Pick Room, then drag on the grid to draw your first room." : "Switch to Build and draw your map first.";
+  else if(mode === "play" && playTool === "party" && !b.d.party) hint = "Tap a square to put the party there.";
+  else if(mode === "play" && !anyRevealed(b.d)) hint = "Tap a room or corridor to show it to your players.";
+  b.hint.textContent = hint;
+  b.hint.hidden = !hint;
+  var onScreen = presentedId() === b.d.id;
+  b.playersBtn.classList.toggle("on", onScreen);
+  b.playersBtn.title = onScreen
+    ? "The players' tab shows this map. Click to bring it back if you closed it."
+    : "Open the players' view in a new tab. Drag that tab to the TV and make it full screen.";
+  b.playersBtn.setAttribute("aria-label", onScreen ? "Player view, showing this map" : "Player view");
+  b.preview.classList.toggle("on", mode === "play" && onScreen);
+  publish();
   var panning = b.gesture && b.gesture.type === "pan";
-  b.canvas.style.cursor = panning ? "grabbing" : (tool === "move" || b.space ? "grab" : "crosshair");
+  b.canvas.style.cursor = panning ? "grabbing" : (activeTool().id === "move" || b.space ? "grab" : (mode === "play" ? "pointer" : "crosshair"));
+}
+
+/* Sends the players' tab the map as it is now, once per frame at most,
+   if this is the map it shows. */
+function publish(){
+  if(!b || b.publishing) return;
+  var board = b;
+  board.publishing = requestAnimationFrame(function(){
+    board.publishing = 0;
+    publishDungeon(board.d);
+  });
+}
+
+/* Puts this map on the players' screen and opens their tab, or brings
+   it back if it is already open (the same tab name reuses it). */
+function openPlayerView(){
+  presentDungeon(b.d);
+  var tab = window.open("dungeon-view.html", "ragnars-den-players");
+  if(!tab) showActionToast("Your browser blocked the new tab. Allow pop-ups for this site, then press Player view again.", true);
+  else showActionToast("The players' view is open in a new tab. Drag it to the TV and make it full screen.");
+  refreshChrome();
+  draw();
 }
 
 /* Runs `fn`, which changes the map and returns true if it did. A real
@@ -479,7 +647,7 @@ function change(fn){
 
 /* Ends a brush stroke that already changed the map as it went. */
 function finishStroke(before){
-  if(before.cells === b.d.cells) return;
+  if(b.history.same(b.d, before)) return;
   b.history.record(before);
   saveDungeon(b.d);
   refreshChrome();
@@ -548,7 +716,10 @@ function paint(){
   var c = prepareCanvas(b.canvas, size.w, size.h);
   var dpr = c.dpr, v = b.view;
   var view = { scale: v.scale * dpr, ox: v.ox * dpr, oy: v.oy * dpr, width: c.width, height: c.height };
-  drawMap(c.ctx, b.d, view, { outside: cssVar("--ink-deep", "#120f1a"), grid: true, dm: true });
+  drawMap(c.ctx, b.d, view, { outside: cssVar("--ink-deep", "#120f1a"), grid: mode === "build", dm: true });
+  if(mode === "play") drawFog(c.ctx, b.d, view, FOG_DM);
+  if(b.d.party) drawParty(c.ctx, view, b.d.party);
+  if(b.preview.classList.contains("on")) paintPreview();
 
   var accent = cssVar("--brass", "#8b5cf6");
   var ctx = c.ctx;
@@ -583,8 +754,19 @@ function paint(){
     }
   }
 
+  // In Play, the area a tap would show or hide, under the mouse.
+  if(mode === "play" && b.hoverArea && !g && !b.space){
+    ctx.save();
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.22;
+    ctx.beginPath();
+    b.hoverArea.forEach(function(p){ ctx.rect(sx(p[0]), sy(p[1]), sx(p[0] + 1) - sx(p[0]), sy(p[1] + 1) - sy(p[1])); });
+    ctx.fill();
+    ctx.restore();
+  }
+
   // The square a brush would paint, under the mouse.
-  if(b.hover && !g && toolById(tool).code !== undefined && !b.space){
+  if(mode === "build" && b.hover && !g && toolById(tool).code !== undefined && !b.space){
     var h = b.hover;
     if(h[0] >= 0 && h[1] >= 0 && h[0] < b.d.w && h[1] < b.d.h){
       ctx.save();
@@ -594,6 +776,23 @@ function paint(){
       ctx.restore();
     }
   }
+}
+
+/* The players' screen in miniature, redrawn only when the map changed. */
+function paintPreview(){
+  var d = b.d, w = b.previewCanvas.clientWidth, h = b.previewCanvas.clientHeight;
+  var key = [w, h, d.w, d.h, d.style, d.cells, d.revealed, d.party ? d.party.x + "," + d.party.y : ""].join("|");
+  if(key === b.previewKey || !w || !h) return;
+  b.previewKey = key;
+  var c = prepareCanvas(b.previewCanvas, w, h);
+  var pmap = playerView(d);
+  var cam = playersFit(pmap, w, h);
+  if(!cam){
+    c.ctx.fillStyle = MAP_COLORS.fog;
+    c.ctx.fillRect(0, 0, c.width, c.height);
+    return;
+  }
+  drawPlayersScreen(c.ctx, pmap, { x: cam.x, y: cam.y, scale: cam.scale * c.dpr }, c.width, c.height);
 }
 
 /* ---- Input ---- */
@@ -612,7 +811,7 @@ function setupInput(canvas){
   canvas.addEventListener("pointerup", onUp);
   canvas.addEventListener("pointercancel", onUp);
   canvas.addEventListener("pointerleave", function(e){
-    if(e.pointerType === "mouse" && b && b.hover){ b.hover = null; draw(); }
+    if(e.pointerType === "mouse" && b && b.hover){ b.hover = null; b.hoverArea = null; draw(); }
   });
   canvas.addEventListener("contextmenu", function(e){ e.preventDefault(); });
   canvas.addEventListener("wheel", function(e){
@@ -635,7 +834,7 @@ function onDown(e){
   if(b.pointers.size === 2){
     // A second finger: whatever the first began becomes a pinch.
     var g = b.gesture;
-    if(g && g.type === "paint" && g.before.cells !== b.d.cells){ b.d.cells = g.before.cells; }
+    if(g && g.before){ b.d.cells = g.before.cells; b.d.revealed = g.before.revealed; publish(); }
     startPinch();
     draw();
     return;
@@ -643,9 +842,18 @@ function onDown(e){
   if(b.pointers.size > 2) return;
 
   var mouseDrag = e.pointerType === "mouse" && (e.button === 1 || e.button === 2);
-  var t = toolById(tool);
+  var t = activeTool();
   if(mouseDrag || t.id === "move" || b.space){
     b.gesture = { type: "pan", last: p };
+  } else if(t.id === "party"){
+    // On the marker: walk them. Anywhere else: put them there, then walk.
+    var to = squareAt(p), was = b.history.snapshot(b.d);
+    if(!b.d.party || !sameSquare(to, [b.d.party.x, b.d.party.y])) placeParty(b.d, to[0], to[1]);
+    b.gesture = { type: "party", last: to, before: was };
+  } else if(t.id === "reveal"){
+    // A tap or a drag: which one is only known once it moves on.
+    var at = squareAt(p);
+    b.gesture = { type: "reveal", start: at, last: at, moved: false, on: !isRevealed(b.d, at[0], at[1]), before: b.history.snapshot(b.d) };
   } else if(t.id === "room"){
     var sq = squareAt(p);
     b.gesture = { type: "room", a: sq, b: sq };
@@ -672,7 +880,11 @@ function onMove(e){
     // A mouse moving with no button down: show the square under it.
     if(e.pointerType === "mouse"){
       var sq = squareAt(p);
-      if(!sameSquare(sq, b.hover)){ b.hover = sq; draw(); }
+      if(!sameSquare(sq, b.hover)){
+        b.hover = sq;
+        b.hoverArea = mode === "play" && playTool === "reveal" ? areaAt(b.d, sq[0], sq[1]) : null;
+        draw();
+      }
     }
     return;
   }
@@ -707,6 +919,21 @@ function onMove(e){
     if(sameSquare(c, g.b)) return;
     g.b = c;
     draw();
+  } else if(g.type === "party"){
+    var step = squareAt(p);
+    if(sameSquare(step, g.last) || !b.d.party) return;
+    g.last = step;
+    walkParty(b.d, step[0], step[1]);
+    refreshChrome();
+    draw();
+  } else if(g.type === "reveal"){
+    var next = squareAt(p);
+    if(sameSquare(next, g.last)) return;
+    g.moved = true;
+    setRevealed(b.d, lineCells(g.last[0], g.last[1], next[0], next[1]), g.on);
+    g.last = next;
+    refreshChrome();
+    draw();
   }
 }
 
@@ -714,7 +941,13 @@ function onUp(e){
   if(!b || !b.pointers.has(e.pointerId)) return;
   b.pointers.delete(e.pointerId);
   var g = b.gesture;
-  if(g && g.type === "paint") finishStroke(g.before);
+  if(g && (g.type === "paint" || g.type === "party" || (g.type === "reveal" && g.moved))) finishStroke(g.before);
+  else if(g && g.type === "reveal" && e.type === "pointerup"){
+    var tap = g.start;
+    b.gesture = null;
+    change(function(){ return toggleArea(b.d, tap[0], tap[1]); });
+    b.hoverArea = b.hover ? areaAt(b.d, b.hover[0], b.hover[1]) : null;
+  }
   else if(g && g.type === "room"){
     var a = g.a, c = g.b;
     b.gesture = null;
@@ -738,6 +971,52 @@ function onKey(e){
 }
 function onKeyUp(e){
   if(b && e.key === " "){ b.space = false; refreshChrome(); draw(); }
+}
+
+/* ---- Map style ---- */
+/* A little sample dungeon to show each style on. */
+var STYLE_SAMPLE = [
+  "          ",
+  " ....     ",
+  " ....+... ",
+  " ~~..   . ",
+  " ....   > ",
+  "          "
+];
+
+function openStyleSheet(){
+  var d = b.d;
+  openBottomSheet(function(body, refresh, closeSheet){
+    body.appendChild(ce("h3", "dg-sheet-title", "Map style"));
+    var tiles = ce("div", "dg-styles");
+    var pics = [];
+    DUNGEON_STYLES.forEach(function(st){
+      var on = d.style === st.id;
+      var tile = button("dg-style" + (on ? " on" : ""), "", function(){
+        closeSheet();
+        if(!b || b.d !== d || !setDungeonStyle(d, st.id)) return;
+        saveDungeon(d);
+        refreshChrome();
+        draw();
+      }, st.label + ": " + st.help);
+      tile.setAttribute("aria-pressed", on ? "true" : "false");
+      var pic = ce("canvas", "dg-style-pic");
+      pic.setAttribute("aria-hidden", "true");
+      tile.appendChild(pic);
+      tile.appendChild(ce("span", "dg-style-name", st.label));
+      tile.appendChild(ce("span", "dg-style-help", st.help));
+      tiles.appendChild(tile);
+      pics.push({ canvas: pic, style: st.id });
+    });
+    body.appendChild(tiles);
+    // Drawn once the sheet has laid the tiles out.
+    requestAnimationFrame(function(){
+      pics.forEach(function(p){
+        var sample = { w: STYLE_SAMPLE[0].length, h: STYLE_SAMPLE.length, cells: STYLE_SAMPLE.join(""), style: p.style };
+        drawThumbnail(p.canvas, sample, p.canvas.clientWidth, p.canvas.clientHeight, MAP_COLORS.rock);
+      });
+    });
+  });
 }
 
 /* ---- Map size ---- */

@@ -6,7 +6,7 @@ import { uid } from "./basics.js";
    is. What lives in the dungeon stays in the DM's notes.
 
    Dungeon shape:
-     { id, name, w, h, cells, updated }
+     { id, name, w, h, cells, revealed, style, party, updated }
 
    The map is a grid of 5 ft squares, `w` wide and `h` tall. `cells` is a
    string of w*h terrain codes (see TERRAIN), row by row from the top
@@ -15,7 +15,20 @@ import { uid } from "./basics.js";
 
    Walls are not painted. Every square that isn't solid rock is open
    ground, and a wall is drawn wherever open ground meets rock, so the
-   DM only paints rooms and corridors and the walls follow. */
+   DM only paints rooms and corridors and the walls follow.
+
+   `revealed` is the fog of war: a string as long as `cells`, "1" for a
+   square the players have been shown and "0" for one still in fog. Only
+   open ground is ever shown, so a square erased back to rock goes back
+   into fog, and floor painted later starts hidden. */
+
+/* `party` is the square the players' party stands on, {x, y}, or null.
+   It is always on open ground: erasing its square takes it off the map.
+
+   Undo steps hold all of that. */
+
+export var SHOWN = "1";
+export var FOGGED = "0";
 
 export var ROCK = " ";
 export var FLOOR = ".";
@@ -32,6 +45,12 @@ export var TERRAIN = {
   "o": { id: "pit", label: "Pit", open: true },
   ":": { id: "rubble", label: "Rubble", open: true }
 };
+
+/* How the map is drawn (see js/render/dungeon-canvas.js). */
+export var DUNGEON_STYLES = [
+  { id: "stone", label: "Stone", help: "Dressed stone and straight walls, like a crypt or a keep" },
+  { id: "cave", label: "Cave", help: "Rough rock walls and earthen floors, like a cavern or a mine" }
+];
 
 /* Map sizes offered when a dungeon is made, in squares. */
 export var DUNGEON_SIZES = [
@@ -71,10 +90,13 @@ function clean(d){
   var w = side(d.w, DUNGEON_SIZES[1].w);
   var h = side(d.h, DUNGEON_SIZES[1].h);
   var src = typeof d.cells === "string" ? d.cells : "";
-  var cells = "";
+  var seen = typeof d.revealed === "string" ? d.revealed : "";
+  var cells = "", revealed = "";
   for(var i = 0; i < w * h; i++){
     var c = src.charAt(i);
-    cells += TERRAIN[c] ? c : ROCK;
+    if(!TERRAIN[c]) c = ROCK;
+    cells += c;
+    revealed += c !== ROCK && seen.charAt(i) === SHOWN ? SHOWN : FOGGED;
   }
   var updated = parseInt(d.updated, 10);
   return {
@@ -83,8 +105,19 @@ function clean(d){
     w: w,
     h: h,
     cells: cells,
+    revealed: revealed,
+    style: DUNGEON_STYLES.some(function(st){ return st.id === d.style; }) ? d.style : "stone",
+    party: cleanParty(d.party, w, h, cells),
     updated: isNaN(updated) ? Date.now() : updated
   };
+}
+
+/* {x, y} on an open square of this map, or null. */
+function cleanParty(p, w, h, cells){
+  if(!p || typeof p !== "object") return null;
+  var x = parseInt(p.x, 10), y = parseInt(p.y, 10);
+  if(isNaN(x) || isNaN(y) || x < 0 || y < 0 || x >= w || y >= h || cells.charAt(y * w + x) === ROCK) return null;
+  return { x: x, y: y };
 }
 
 /* ---- public API: the saved list ---- */
@@ -209,22 +242,31 @@ export function passageAxis(d, x, y){
    if any square actually changed, so the screen saves and records an
    undo step only for real changes. */
 
-function setAt(d, x, y, code, out){
-  if(!inMap(d, x, y)) return;
-  var i = y * d.w + x;
-  if(out[i] === code) return;
-  out[i] = code;
-  out.changed = true;
+/* Changes squares through `fn(set)`, where set(x, y, code) paints one.
+   A square turned to rock goes back into fog. */
+function editCells(d, fn){
+  var cells = d.cells.split(""), seen = d.revealed.split(""), changed = false;
+  fn(function(x, y, code){
+    if(!inMap(d, x, y)) return;
+    var i = y * d.w + x;
+    if(cells[i] === code) return;
+    cells[i] = code;
+    if(code === ROCK) seen[i] = FOGGED;
+    changed = true;
+  });
+  if(!changed) return false;
+  d.cells = cells.join("");
+  d.revealed = seen.join("");
+  if(d.party && !isOpen(d, d.party.x, d.party.y)) d.party = null;
+  return true;
 }
 
 /* Paints `code` on every [x, y] in `points`. */
 export function paintCells(d, points, code){
   if(!TERRAIN[code]) return false;
-  var arr = d.cells.split("");
-  (points || []).forEach(function(p){ setAt(d, p[0], p[1], code, arr); });
-  if(!arr.changed) return false;
-  d.cells = arr.join("");
-  return true;
+  return editCells(d, function(set){
+    (points || []).forEach(function(p){ set(p[0], p[1], code); });
+  });
 }
 
 /* Fills the box between two corner squares (in any order) with `code`. */
@@ -232,11 +274,9 @@ export function fillRect(d, ax, ay, bx, by, code){
   if(!TERRAIN[code]) return false;
   var x0 = Math.max(0, Math.min(ax, bx)), x1 = Math.min(d.w - 1, Math.max(ax, bx));
   var y0 = Math.max(0, Math.min(ay, by)), y1 = Math.min(d.h - 1, Math.max(ay, by));
-  var arr = d.cells.split("");
-  for(var y = y0; y <= y1; y++) for(var x = x0; x <= x1; x++) setAt(d, x, y, code, arr);
-  if(!arr.changed) return false;
-  d.cells = arr.join("");
-  return true;
+  return editCells(d, function(set){
+    for(var y = y0; y <= y1; y++) for(var x = x0; x <= x1; x++) set(x, y, code);
+  });
 }
 
 /* Every square on the straight line between two squares, ends
@@ -258,10 +298,19 @@ export function lineCells(ax, ay, bx, by){
   return out;
 }
 
+/* Returns true if the style changed. */
+export function setDungeonStyle(d, id){
+  if(id === d.style || !DUNGEON_STYLES.some(function(st){ return st.id === id; })) return false;
+  d.style = id;
+  return true;
+}
+
 export function clearDungeon(d){
   var blank = new Array(d.w * d.h + 1).join(ROCK);
   if(d.cells === blank) return false;
   d.cells = blank;
+  d.revealed = new Array(d.w * d.h + 1).join(FOGGED);
+  d.party = null;
   return true;
 }
 
@@ -291,25 +340,33 @@ export function resizeDungeon(d, w, h){
   h = side(h, d.h);
   if(w === d.w && h === d.h) return false;
   var off = resizeOffset(d, w, h);
-  var cells = "";
+  var cells = "", revealed = "";
   for(var y = 0; y < h; y++){
-    for(var x = 0; x < w; x++) cells += cellAt(d, x - off.x, y - off.y);
+    for(var x = 0; x < w; x++){
+      cells += cellAt(d, x - off.x, y - off.y);
+      revealed += isRevealed(d, x - off.x, y - off.y) ? SHOWN : FOGGED;
+    }
   }
+  var party = d.party ? { x: d.party.x + off.x, y: d.party.y + off.y } : null;
   d.w = w;
   d.h = h;
   d.cells = cells;
+  d.revealed = revealed;
+  d.party = party && isOpen(d, party.x, party.y) ? party : null;
   return true;
 }
 
 /* ---- undo ----
-   A step is the map as it was before a change ({w, h, cells}), so undo
-   also brings back a resize or a cleared map. Kept for the screen's
+   A step is the map as it was before a change ({w, h, cells, revealed,
+   party}), so undo also brings back a resize, a cleared map, fog or
+   where the party stood. Kept for the screen's
    session only, not saved. */
 export function createHistory(limit){
   var max = limit || 100;
   var undoSteps = [], redoSteps = [];
-  function snap(d){ return { w: d.w, h: d.h, cells: d.cells }; }
-  function apply(d, s){ d.w = s.w; d.h = s.h; d.cells = s.cells; }
+  function snap(d){ return { w: d.w, h: d.h, cells: d.cells, revealed: d.revealed, party: d.party ? { x: d.party.x, y: d.party.y } : null }; }
+  function apply(d, s){ d.w = s.w; d.h = s.h; d.cells = s.cells; d.revealed = s.revealed; d.party = s.party ? { x: s.party.x, y: s.party.y } : null; }
+  function samePlace(a, b){ return a === b || (!!a && !!b && a.x === b.x && a.y === b.y); }
   return {
     /* Call with the map as it was before the change just made. */
     record: function(before){
@@ -318,6 +375,8 @@ export function createHistory(limit){
       redoSteps = [];
     },
     snapshot: snap,
+    /* True if the map is still as it was in `s`. */
+    same: function(d, s){ return d.w === s.w && d.h === s.h && d.cells === s.cells && d.revealed === s.revealed && samePlace(d.party, s.party); },
     canUndo: function(){ return undoSteps.length > 0; },
     canRedo: function(){ return redoSteps.length > 0; },
     undo: function(d){
@@ -333,4 +392,214 @@ export function createHistory(limit){
       return true;
     }
   };
+}
+
+/* ---- fog of war ---- */
+export function isRevealed(d, x, y){
+  return inMap(d, x, y) && d.revealed.charAt(y * d.w + x) === SHOWN;
+}
+
+/* Shows (`on` true) or hides every [x, y] in `points`. Rock is never
+   shown. */
+export function setRevealed(d, points, on){
+  var seen = d.revealed.split(""), changed = false;
+  (points || []).forEach(function(p){
+    var x = p[0], y = p[1];
+    if(!inMap(d, x, y) || (on && !isOpen(d, x, y))) return;
+    var i = y * d.w + x, v = on ? SHOWN : FOGGED;
+    if(seen[i] === v) return;
+    seen[i] = v;
+    changed = true;
+  });
+  if(!changed) return false;
+  d.revealed = seen.join("");
+  return true;
+}
+
+/* Shows all open ground, or hides everything. */
+export function revealAll(d, on){
+  var seen = "";
+  for(var i = 0; i < d.cells.length; i++) seen += on && d.cells.charAt(i) !== ROCK ? SHOWN : FOGGED;
+  if(seen === d.revealed) return false;
+  d.revealed = seen;
+  return true;
+}
+
+/* True once any square is shown to the players. */
+export function anyRevealed(d){ return d.revealed.indexOf(SHOWN) !== -1; }
+
+/* Ground a person walks through: open, and not a door. Doors split the
+   map into areas. */
+function walkable(d, x, y){
+  var c = cellAt(d, x, y);
+  return c !== ROCK && c !== "+" && c !== "s";
+}
+
+/* Room ground is any walkable square in a 2 by 2 block of walkable
+   squares. The rest is corridor: ground one square wide. */
+function roomGround(d, x, y){
+  for(var oy = -1; oy <= 0; oy++) for(var ox = -1; ox <= 0; ox++){
+    var ax = x + ox, ay = y + oy;
+    if(walkable(d, ax, ay) && walkable(d, ax + 1, ay) && walkable(d, ax, ay + 1) && walkable(d, ax + 1, ay + 1)) return true;
+  }
+  return false;
+}
+
+/* The squares one tap in Play mode shows: the room or corridor around
+   (x, y), as [[x, y], ...].
+   A room is its room ground, joined side by side, plus the doors in its
+   walls and the first square of each corridor leading out, so the
+   players see the ways on. A corridor runs until it reaches a room or a
+   door, plus those doors. Secret doors are left out: they stay walls to
+   the players until the DM taps one itself. A door or secret door is
+   only itself, and rock is nothing. */
+export function areaAt(d, x, y){
+  if(!isOpen(d, x, y)) return [];
+  if(!walkable(d, x, y)) return [[x, y]];
+  var room = roomGround(d, x, y);
+  var inArea = {}, out = [], queue = [[x, y]];
+  inArea[x + "," + y] = true;
+  while(queue.length){
+    var p = queue.shift();
+    out.push(p);
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(s){
+      var nx = p[0] + s[0], ny = p[1] + s[1], key = nx + "," + ny;
+      if(inArea[key] || !walkable(d, nx, ny) || roomGround(d, nx, ny) !== room) return;
+      inArea[key] = true;
+      queue.push([nx, ny]);
+    });
+  }
+  var edge = [];
+  out.forEach(function(p){
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(s){
+      var nx = p[0] + s[0], ny = p[1] + s[1], key = nx + "," + ny;
+      if(inArea[key]) return;
+      var doorway = cellAt(d, nx, ny) === "+";
+      var corridorMouth = room && walkable(d, nx, ny) && !roomGround(d, nx, ny);
+      if(!doorway && !corridorMouth) return;
+      inArea[key] = true;
+      edge.push([nx, ny]);
+    });
+  });
+  return out.concat(edge);
+}
+
+/* What a tap in Play mode does: shows the area around (x, y), or hides
+   it again if the players can already see all of it. */
+export function toggleArea(d, x, y){
+  var area = areaAt(d, x, y);
+  if(!area.length) return false;
+  var allShown = area.every(function(p){ return isRevealed(d, p[0], p[1]); });
+  return setRevealed(d, area, !allShown);
+}
+
+/* ---- what the players see ----
+   The map as the players' tab gets it: the same shape of dungeon, but
+   holding only what has been shown to them, so nothing hidden ever
+   reaches their screen. Shown squares keep their terrain, except a shown
+   secret door, which is just a door to them. A hidden open square
+   touching a shown one (side or corner) becomes FOG_EDGE: open (no wall
+   is drawn between them, so a corridor running on into the dark, or a
+   room only partly in sight, doesn't look walled off) but always under
+   fog. Everything else is rock, far enough from what is shown that its
+   walls stay under the fog. */
+export var FOG_EDGE = "?";
+
+export function playerView(d){
+  var cells = "", revealed = "";
+  for(var y = 0; y < d.h; y++){
+    for(var x = 0; x < d.w; x++){
+      var c = cellAt(d, x, y);
+      if(isRevealed(d, x, y)){
+        cells += c === "s" ? "+" : c;
+        revealed += SHOWN;
+        continue;
+      }
+      revealed += FOGGED;
+      var edge = false;
+      if(c !== ROCK && c !== "s"){
+        for(var oy = -1; oy <= 1 && !edge; oy++) for(var ox = -1; ox <= 1; ox++) if(isRevealed(d, x + ox, y + oy)){ edge = true; break; }
+      }
+      cells += edge ? FOG_EDGE : ROCK;
+    }
+  }
+  var party = d.party && isRevealed(d, d.party.x, d.party.y) ? { x: d.party.x, y: d.party.y } : null;
+  return { id: d.id, name: d.name, w: d.w, h: d.h, cells: cells, revealed: revealed, style: d.style, party: party };
+}
+
+/* The box around every shown square, {x, y, w, h}, or null if nothing
+   is shown. */
+export function revealedBounds(d){
+  var x0 = d.w, y0 = d.h, x1 = -1, y1 = -1;
+  for(var i = 0; i < d.revealed.length; i++){
+    if(d.revealed.charAt(i) !== SHOWN) continue;
+    var x = i % d.w, y = Math.floor(i / d.w);
+    if(x < x0) x0 = x;
+    if(x > x1) x1 = x;
+    if(y < y0) y0 = y;
+    if(y > y1) y1 = y;
+  }
+  return x1 < 0 ? null : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+}
+
+/* ---- the party ----
+   The DM's marker for where the players' characters are. Walking it
+   through the dungeon shows what they can see as they go. */
+export var SIGHT = 12;   // squares the party sees, 60 feet
+
+/* The open squares the party sees from (x, y): within SIGHT squares and
+   with nothing in the way. Rock, doors and secret doors block the view
+   (a door itself is seen, not what is behind it), and a secret door is
+   never seen this way: the DM shows those by tapping them. */
+export function sightFrom(d, x, y){
+  var out = [];
+  for(var ty = y - SIGHT; ty <= y + SIGHT; ty++){
+    for(var tx = x - SIGHT; tx <= x + SIGHT; tx++){
+      var dx = tx - x, dy = ty - y;
+      if(dx * dx + dy * dy > (SIGHT + 0.5) * (SIGHT + 0.5)) continue;
+      var c = cellAt(d, tx, ty);
+      if(c === ROCK || c === "s") continue;
+      if(clearLine(d, x, y, tx, ty)) out.push([tx, ty]);
+    }
+  }
+  return out;
+}
+
+/* True if nothing between two squares (not counting the squares
+   themselves) blocks the view. */
+function clearLine(d, ax, ay, bx, by){
+  var line = lineCells(ax, ay, bx, by);
+  for(var i = 1; i < line.length - 1; i++){
+    if(!walkable(d, line[i][0], line[i][1])) return false;
+  }
+  return true;
+}
+
+/* Puts the party on (x, y) and shows what they see there. Only open
+   ground. Returns true if anything changed. */
+export function placeParty(d, x, y){
+  if(!isOpen(d, x, y)) return false;
+  var moved = !d.party || d.party.x !== x || d.party.y !== y;
+  d.party = { x: x, y: y };
+  var shown = setRevealed(d, sightFrom(d, x, y), true);
+  return moved || shown;
+}
+
+/* Walks the party in a straight line toward (x, y), a square at a time,
+   showing what they see at every step. They stop at rock. Returns true
+   if anything changed. */
+export function walkParty(d, x, y){
+  if(!d.party) return placeParty(d, x, y);
+  var line = lineCells(d.party.x, d.party.y, x, y), changed = false;
+  for(var i = 1; i < line.length; i++){
+    if(!isOpen(d, line[i][0], line[i][1])) break;
+    if(placeParty(d, line[i][0], line[i][1])) changed = true;
+  }
+  return changed;
+}
+
+export function removeParty(d){
+  if(!d.party) return false;
+  d.party = null;
+  return true;
 }

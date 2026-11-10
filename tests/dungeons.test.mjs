@@ -8,13 +8,31 @@ import assert from "node:assert/strict";
 import {
   loadDungeons, getDungeons, getDungeon, createDungeon, saveDungeon, deleteDungeon, duplicateDungeon, importDungeons,
   dungeonNameProblem, cellAt, isOpen, isBlank, contentBounds, passageAxis, paintCells, fillRect, lineCells,
-  clearDungeon, resizeDungeon, resizeLoses, createHistory, DUNGEON_SIZES, MIN_SIDE, MAX_SIDE, TERRAIN, ROCK, FLOOR
+  clearDungeon, resizeDungeon, resizeLoses, createHistory, DUNGEON_SIZES, MIN_SIDE, MAX_SIDE, TERRAIN, ROCK, FLOOR,
+  isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, revealedBounds, FOG_EDGE,
+  setDungeonStyle, DUNGEON_STYLES, placeParty, walkParty, removeParty, sightFrom, SIGHT
 } from "../js/core/dungeons.js";
 
 function fresh(){
   localStorage.clear();
   loadDungeons();
 }
+/* Makes `d` a blank w by h map in place. */
+function blankMap(d, w, h){
+  d.w = w; d.h = h; d.cells = ROCK.repeat(w * h); d.revealed = "0".repeat(w * h);
+}
+/* A map drawn from rows of text, e.g. [" ..+.."]: any character that is
+   a terrain code is that terrain, anything else is rock. */
+function drawn(rowsIn){
+  fresh();
+  const d = createDungeon("Test", "small");
+  blankMap(d, rowsIn[0].length, rowsIn.length);
+  rowsIn.forEach((row, y) => [...row].forEach((c, x) => { if(TERRAIN[c] && c !== ROCK) paintCells(d, [[x, y]], c); }));
+  return d;
+}
+/* The fog as rows of text: "#" shown, "." hidden. */
+const fog = (d) => Array.from({ length: d.h }, (_, y) => Array.from({ length: d.w }, (_, x) => isRevealed(d, x, y) ? "#" : ".").join(""));
+
 /* The map as rows of text, for comparing small maps at a glance. */
 const rows = (d) => Array.from({ length: d.h }, (_, y) => d.cells.slice(y * d.w, (y + 1) * d.w));
 
@@ -104,7 +122,7 @@ test("painting reports a change only when a square changes, and ignores squares 
 test("a room fills the box between two corners dragged in any direction, clipped to the map", () => {
   fresh();
   const d = createDungeon("Crypt", "small");
-  d.w = 8; d.h = 8; d.cells = ROCK.repeat(64);
+  blankMap(d, 8, 8);
   assert.equal(fillRect(d, 3, 2, 1, 1, FLOOR), true);
   assert.deepEqual(rows(d).slice(0, 4), ["        ", " ...    ", " ...    ", "        "]);
   fillRect(d, 6, 6, 20, 20, "~");
@@ -143,7 +161,7 @@ test("a door runs the way of its corridor", () => {
 test("resizing keeps the map centred, warns before cutting off floor, and stays in the limits", () => {
   fresh();
   const d = createDungeon("Crypt", "small");
-  d.w = 8; d.h = 8; d.cells = ROCK.repeat(64);
+  blankMap(d, 8, 8);
   fillRect(d, 3, 3, 4, 4, FLOOR);
   assert.equal(resizeLoses(d, 12, 12), false);
   assert.equal(resizeDungeon(d, 12, 12), true);
@@ -218,4 +236,315 @@ test("undo keeps only the most recent steps", () => {
 
 test("every terrain but rock is open ground", () => {
   Object.entries(TERRAIN).forEach(([code, t]) => assert.equal(t.open, code !== ROCK, t.id));
+});
+
+/* ---- fog of war ---- */
+
+/* Two rooms joined by a corridor with a door in it, a secret door off
+   the right room, and a side passage off the left room. */
+const CRYPT = [
+  "               ",
+  " ...     ....  ",
+  " ...+..  .... s",
+  " ...  ....... .",
+  "  .      ....  ",
+  "  .            "
+];
+
+test("a new map is all fog, and only open ground can be shown", () => {
+  const d = drawn(CRYPT);
+  assert.equal(anyRevealed(d), false);
+  assert.equal(setRevealed(d, [[0, 0]], true), false, "rock stays in fog");
+  assert.equal(setRevealed(d, [[1, 1]], true), true);
+  assert.equal(setRevealed(d, [[1, 1]], true), false, "no change the second time");
+  assert.ok(isRevealed(d, 1, 1));
+  assert.ok(anyRevealed(d));
+  assert.equal(setRevealed(d, [[1, 1]], false), true);
+  assert.equal(anyRevealed(d), false);
+});
+
+test("tapping a room shows the room, its doors and the first square of each corridor out", () => {
+  const d = drawn(CRYPT);
+  assert.equal(toggleArea(d, 2, 2), true);
+  assert.deepEqual(fog(d), [
+    "...............",
+    ".###...........",
+    ".####..........",
+    ".###...........",
+    "..#............",
+    "..............."
+  ]);
+});
+
+test("tapping a corridor shows it up to the rooms and doors at its ends, and those doors", () => {
+  const d = drawn(CRYPT);
+  toggleArea(d, 5, 2);
+  // From the door at (4,2) along to the right room, which stays hidden.
+  assert.deepEqual(fog(d).slice(1, 4), [
+    "...............",
+    "....###........",
+    "......###......"
+  ]);
+  const side = drawn(CRYPT);
+  toggleArea(side, 2, 5);
+  assert.deepEqual(fog(side).slice(3), ["...............", "..#............", "..#............"], "the side passage stops at the room");
+});
+
+test("secret doors stay hidden until tapped themselves", () => {
+  const d = drawn(CRYPT);
+  toggleArea(d, 11, 2);
+  assert.equal(isRevealed(d, 14, 2), false, "the room doesn't give the secret door away");
+  assert.equal(isRevealed(d, 14, 3), false, "nor what is behind it");
+  assert.deepEqual(areaAt(d, 14, 2), [[14, 2]]);
+  toggleArea(d, 14, 2);
+  assert.ok(isRevealed(d, 14, 2));
+  assert.deepEqual(areaAt(d, 0, 0), [], "rock is no area");
+});
+
+test("tapping an area the players can already see hides it again", () => {
+  const d = drawn(CRYPT);
+  toggleArea(d, 2, 2);
+  const shown = d.revealed;
+  assert.equal(toggleArea(d, 2, 1), true);
+  assert.equal(anyRevealed(d), false);
+  // Partly shown: a tap shows the rest rather than hiding.
+  setRevealed(d, [[1, 1]], true);
+  toggleArea(d, 2, 2);
+  assert.equal(d.revealed, shown);
+});
+
+test("show all reveals only open ground, hide all puts everything back in fog", () => {
+  const d = drawn(CRYPT);
+  assert.equal(revealAll(d, true), true);
+  assert.equal(revealAll(d, true), false);
+  assert.ok(isRevealed(d, 14, 2));
+  assert.ok(!isRevealed(d, 0, 0));
+  assert.equal(revealAll(d, false), true);
+  assert.equal(anyRevealed(d), false);
+});
+
+test("erasing a shown square puts it back in fog, and floor painted later starts hidden", () => {
+  const d = drawn(CRYPT);
+  revealAll(d, true);
+  paintCells(d, [[1, 1]], ROCK);
+  assert.equal(isRevealed(d, 1, 1), false);
+  paintCells(d, [[1, 1]], FLOOR);
+  assert.equal(isRevealed(d, 1, 1), false);
+  paintCells(d, [[2, 1]], "~");
+  assert.equal(isRevealed(d, 2, 1), true, "repainting shown ground keeps it shown");
+  clearDungeon(d);
+  assert.equal(anyRevealed(d), false);
+});
+
+test("fog moves with the map when it is resized, and undo brings fog back", () => {
+  const d = drawn(CRYPT);
+  const h = createHistory();
+  let before = h.snapshot(d);
+  toggleArea(d, 2, 2);
+  h.record(before);
+  const shown = fog(d);
+  before = h.snapshot(d);
+  resizeDungeon(d, 19, 9);
+  h.record(before);
+  assert.ok(isRevealed(d, 2 + 2, 2 + 1), "shifted with the map");
+  assert.equal(d.revealed.length, 19 * 9);
+  assert.equal(h.undo(d), true);
+  assert.deepEqual(fog(d), shown);
+  assert.equal(h.same(d, h.snapshot(d)), true);
+  assert.equal(h.undo(d), true);
+  assert.equal(anyRevealed(d), false);
+});
+
+test("saved fog is cleaned: the right length, and never on rock", () => {
+  fresh();
+  localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([
+    { id: "a", name: "Old", w: 8, h: 8, cells: "..  ", revealed: "1111x" },
+    { id: "b", name: "Older", w: 8, h: 8, cells: "." }
+  ]));
+  loadDungeons();
+  const a = getDungeon("a"), b = getDungeon("b");
+  assert.equal(a.revealed.length, 64);
+  assert.equal(a.revealed.slice(0, 5), "11000");
+  assert.equal(b.revealed, "0".repeat(64));
+});
+
+/* ---- the players' view ---- */
+
+test("the players' map holds only what they were shown", () => {
+  const d = drawn(CRYPT);
+  toggleArea(d, 2, 2);
+  const p = playerView(d);
+  assert.equal(p.w, d.w);
+  assert.equal(p.h, d.h);
+  assert.equal(p.revealed, d.revealed);
+  assert.deepEqual(rows(p), [
+    "               ",
+    " ...           ",
+    " ...+?         ",
+    " ...           ",
+    "  .            ",
+    "  ?            "
+  ].map((r) => r.replace(/\?/g, FOG_EDGE)));
+  // The door in the room's wall is shown, the corridor behind it is open fog.
+});
+
+test("a hidden secret door stays rock to the players, a shown one is a plain door", () => {
+  const d = drawn(CRYPT);
+  toggleArea(d, 11, 2);
+  assert.equal(playerView(d).cells.charAt(2 * d.w + 14), ROCK);
+  toggleArea(d, 14, 2);
+  const p = playerView(d);
+  assert.equal(p.cells.charAt(2 * d.w + 14), "+");
+  assert.equal(p.cells.charAt(3 * d.w + 14), FOG_EDGE, "the passage behind it is open but fogged");
+  assert.ok(!p.cells.includes("s"));
+});
+
+test("nothing shown means nothing but rock for the players", () => {
+  const d = drawn(CRYPT);
+  const p = playerView(d);
+  assert.equal(p.cells, ROCK.repeat(d.w * d.h));
+  assert.equal(revealedBounds(d), null);
+  toggleArea(d, 5, 2);
+  assert.deepEqual(revealedBounds(d), { x: 4, y: 2, w: 5, h: 2 });
+});
+
+test("a map is drawn in stone unless the DM picks cave, and the players get the same style", () => {
+  fresh();
+  const d = createDungeon("Mine", "small");
+  assert.equal(d.style, "stone");
+  assert.equal(setDungeonStyle(d, "cave"), true);
+  assert.equal(setDungeonStyle(d, "cave"), false);
+  assert.equal(setDungeonStyle(d, "lava"), false);
+  assert.equal(playerView(d).style, "cave");
+  saveDungeon(d);
+  loadDungeons();
+  assert.equal(getDungeon(d.id).style, "cave");
+  assert.deepEqual(DUNGEON_STYLES.map((st) => st.id), ["stone", "cave"]);
+  localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([{ id: "x", name: "Odd", style: "lava" }]));
+  loadDungeons();
+  assert.equal(getDungeon("x").style, "stone");
+});
+
+/* ---- the party ---- */
+
+test("the party goes only on open ground and sees its room, the doors in its walls and nothing behind them", () => {
+  const d = drawn(CRYPT);
+  assert.equal(placeParty(d, 0, 0), false, "not on rock");
+  assert.equal(d.party, null);
+  assert.equal(placeParty(d, 2, 2), true);
+  assert.deepEqual(d.party, { x: 2, y: 2 });
+  assert.deepEqual(fog(d), [
+    "...............",
+    ".###...........",
+    ".####..........",
+    ".###...........",
+    "..#............",
+    "..#............"
+  ]);
+});
+
+test("walking the party shows what they see at every step, and a secret door stays hidden", () => {
+  const d = drawn(CRYPT);
+  placeParty(d, 2, 2);
+  assert.equal(walkParty(d, 6, 2), true);
+  assert.deepEqual(d.party, { x: 6, y: 2 }, "through the door to the corridor's end");
+  assert.ok(isRevealed(d, 5, 2) && isRevealed(d, 6, 3), "the corridor");
+  assert.equal(isRevealed(d, 10, 3), false, "the right room is round the bend, out of sight");
+  walkParty(d, 6, 3);
+  walkParty(d, 9, 3);
+  assert.deepEqual(d.party, { x: 9, y: 3 });
+  assert.ok(isRevealed(d, 10, 3) && isRevealed(d, 12, 1), "round the bend, the right room");
+  assert.equal(isRevealed(d, 14, 2), false, "but never the secret door");
+  assert.equal(isRevealed(d, 14, 3), false, "nor what is behind it");
+});
+
+test("a walk stops at rock", () => {
+  const d = drawn(CRYPT);
+  placeParty(d, 2, 2);
+  walkParty(d, 2, 0);
+  assert.deepEqual(d.party, { x: 2, y: 1 });
+  walkParty(d, 8, 1);
+  assert.deepEqual(d.party, { x: 3, y: 1 }, "stopped at the room's wall");
+});
+
+test("sight reaches 60 feet and is blocked by walls", () => {
+  fresh();
+  const d = createDungeon("Hall", "small");
+  blankMap(d, 30, 3);
+  fillRect(d, 0, 1, 29, 1, FLOOR);
+  const seen = sightFrom(d, 0, 1).map(([x]) => x);
+  assert.equal(Math.max(...seen), SIGHT, "12 squares down a straight hall");
+  paintCells(d, [[5, 1]], ROCK);
+  assert.equal(Math.max(...sightFrom(d, 0, 1).map(([x]) => x)), 4, "not past a wall");
+});
+
+test("the party moves with the map, leaves it when its square is erased, and undo brings it back", () => {
+  const d = drawn(CRYPT);
+  const h = createHistory();
+  let before = h.snapshot(d);
+  placeParty(d, 2, 2);
+  h.record(before);
+  resizeDungeon(d, 19, 10);
+  assert.deepEqual(d.party, { x: 4, y: 4 });
+  before = h.snapshot(d);
+  paintCells(d, [[4, 4]], ROCK);
+  h.record(before);
+  assert.equal(d.party, null);
+  h.undo(d);
+  assert.deepEqual(d.party, { x: 4, y: 4 });
+  assert.equal(h.same(d, h.snapshot(d)), true);
+  assert.equal(removeParty(d), true);
+  assert.equal(removeParty(d), false);
+  clearDungeon(d);
+  assert.equal(d.party, null);
+});
+
+test("the players see the party once its square is shown, and saved parties are cleaned", () => {
+  const d = drawn(CRYPT);
+  placeParty(d, 2, 2);
+  assert.deepEqual(playerView(d).party, { x: 2, y: 2 });
+  revealAll(d, false);
+  assert.equal(playerView(d).party, null, "hidden square, hidden party");
+  fresh();
+  localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([
+    { id: "a", w: 8, h: 8, cells: "..", party: { x: 1, y: 0 } },
+    { id: "b", w: 8, h: 8, cells: "..", party: { x: 5, y: 5 } },
+    { id: "c", w: 8, h: 8, cells: "..", party: "here" }
+  ]));
+  loadDungeons();
+  assert.deepEqual(getDungeon("a").party, { x: 1, y: 0 });
+  assert.equal(getDungeon("b").party, null, "not on rock");
+  assert.equal(getDungeon("c").party, null);
+});
+
+test("the players' screen fits what is shown, and follows the party once that gets too big", async () => {
+  const { playersFit } = await import("../js/render/dungeon-canvas.js");
+  fresh();
+  const d = createDungeon("Halls", "large");
+  fillRect(d, 1, 1, 48, 3, FLOOR);
+  setRevealed(d, [[2, 2], [3, 2], [4, 2]], true);
+  let cam = playersFit(playerView(d), 1000, 600);
+  assert.equal(cam.x, 3.5, "a little shown: fitted, centred on it");
+  assert.equal(cam.scale, 60, "never closer than 10 squares across");
+  revealAll(d, true);
+  placeParty(d, 40, 2);
+  cam = playersFit(playerView(d), 1000, 600);
+  assert.equal(cam.x, 40.5, "a long hall shown: the view follows the party");
+  assert.equal(cam.scale, 25, "24 squares across the short side");
+  removeParty(d);
+  cam = playersFit(playerView(d), 1000, 600);
+  assert.ok(cam.scale < 25 && cam.x === 25, "no party: the whole hall is fitted");
+  assert.equal(playersFit(playerView(createDungeon("Empty", "small")), 1000, 600), null);
+});
+
+test("in a room only partly shown, hidden floor touching what's shown at a corner stays open fog, never a wall", () => {
+  fresh();
+  const d = createDungeon("Hall", "small");
+  blankMap(d, 8, 8);
+  fillRect(d, 1, 1, 6, 6, FLOOR);
+  setRevealed(d, [[2, 2], [3, 2], [2, 3]], true);
+  const p = playerView(d);
+  const at = (x, y) => p.cells.charAt(y * p.w + x);
+  assert.equal(at(3, 3), FOG_EDGE, "a corner neighbour");
+  assert.equal(at(4, 4), ROCK, "two squares away: rock, under the fog");
 });

@@ -6,8 +6,8 @@
 
 /* `lib` holds the full homebrew lists, keyed like a backup file
    (customSubclasses, customRaces, ...). Returns the same keys, each
-   narrowed to the entries these characters use. Monsters and encounters
-   belong to no character, so they are left out. */
+   narrowed to the entries these characters use. Monsters, encounters and
+   dungeons belong to no character, so they are left out. */
 export function homebrewForCharacters(chars, lib){
   function ids(listName, test){
     var out = {};

@@ -42,6 +42,7 @@ test("only the homebrew the chosen characters use is exported", () => {
   assert.deepEqual(out.customSpells.map(e => e.id), ["p1"]);
   assert.equal(out.customMonsters, undefined);
   assert.equal(out.encounters, undefined);
+  assert.equal(out.dungeons, undefined);
 });
 
 test("a character with no homebrew exports none", () => {

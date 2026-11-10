@@ -44,3 +44,12 @@ test("index.html's scripts and stylesheets exist", () => {
   const missing = refs.filter((r) => !fs.existsSync(path.join(ROOT, r)));
   assert.deepEqual(missing, []);
 });
+
+test("the players' screen page's scripts and stylesheets exist, and it is cached for offline use", () => {
+  const html = fs.readFileSync(path.join(ROOT, "dungeon-view.html"), "utf8");
+  const refs = [...html.matchAll(/(?:src|href)="(?!https?:|#|data:|mailto:)([^"]+\.(?:js|css|png|svg|json|ico|webp))"/g)].map((m) => m[1].replace(/^\.\//, ""));
+  assert.ok(refs.includes("js/dungeon-view.js"), "dungeon-view.html loads its script");
+  assert.deepEqual(refs.filter((r) => !fs.existsSync(path.join(ROOT, r))), []);
+  const hook = fs.readFileSync(path.join(ROOT, ".githooks/pre-commit"), "utf8");
+  assert.match(hook, /APP_FILES='[^']*dungeon-view\\\.html/, "the pre-commit hook lists dungeon-view.html among the offline files");
+});

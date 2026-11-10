@@ -8,6 +8,7 @@ import { getCustomItems } from "../core/custom-items.js";
 import { getCustomMonsters } from "../core/custom-monsters.js";
 import { getCustomSpells } from "../core/custom-spells.js";
 import { getEncounters } from "../core/encounters.js";
+import { getDungeons } from "../core/dungeons.js";
 import { APP_VERSION } from "../version.js";
 
 /* ---------------- Backup files ----------------
@@ -33,10 +34,11 @@ function downloadJson(data, fileName){
 }
 
 /* Every character (hidden private ones too, so a move to a new device
-   keeps them) plus all homebrew made in the Compendium. */
+   keeps them) plus all homebrew made in the Compendium, the DM's
+   encounters and dungeon maps. */
 export function exportFullBackup(){
   var backup = Object.assign({version:2, appVersion:APP_VERSION, characters:allCharacters()}, homebrewLibrary(),
-    {customMonsters:getCustomMonsters(), encounters:getEncounters()});
+    {customMonsters:getCustomMonsters(), encounters:getEncounters(), dungeons:getDungeons()});
   downloadJson(backup, backupFileName(new Date(), APP_VERSION));
 }
 

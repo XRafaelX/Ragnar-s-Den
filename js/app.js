@@ -22,7 +22,8 @@ import { loadCustomItems, importCustomItems } from "./core/custom-items.js";
 import { loadCustomMonsters, importCustomMonsters } from "./core/custom-monsters.js";
 import { loadCustomSpells, importCustomSpells } from "./core/custom-spells.js";
 import { loadEncounters, importEncounters } from "./core/encounters.js";
-import { loadDungeons } from "./core/dungeons.js";
+import { loadDungeons, importDungeons } from "./core/dungeons.js";
+import { setupDungeonSync } from "./core/dungeon-sync.js";
 import { APP_VERSION } from "./version.js";
 import { setupUpdates } from "./ui/update-prompt.js";
 import { applyPrivateContent } from "./core/private-content.js";
@@ -160,6 +161,7 @@ export function setupTopLevel(){
         var monsters = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customMonsters) ? parsed.customMonsters : [];
         var spells = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customSpells) ? parsed.customSpells : [];
         var encounters = !Array.isArray(parsed) && parsed && Array.isArray(parsed.encounters) ? parsed.encounters : [];
+        var dungeons = !Array.isArray(parsed) && parsed && Array.isArray(parsed.dungeons) ? parsed.dungeons : [];
         var extras = [];
         if(homebrew.length) extras.push(homebrew.length+" custom subclass(es)");
         if(races.length) extras.push(races.length+" custom race(s)");
@@ -171,6 +173,7 @@ export function setupTopLevel(){
         if(monsters.length) extras.push(monsters.length+" custom monster(s)");
         if(spells.length) extras.push(spells.length+" custom spell(s)");
         if(encounters.length) extras.push(encounters.length+" encounter(s)");
+        if(dungeons.length) extras.push(dungeons.length+" dungeon map(s)");
         if(!Array.isArray(data)) throw new Error("Invalid format");
         // Shape every character now, on copies, so a broken entry rejects
         // the file before anything is imported.
@@ -194,6 +197,7 @@ export function setupTopLevel(){
             importCustomMonsters(monsters);
             var spellIds = importCustomSpells(spells);
             importEncounters(encounters);
+            importDungeons(dungeons);
             data.forEach(function(c){
               c.feats.forEach(function(f){ if(f.homebrewId) f.homebrewId = featIds[f.homebrewId] || null; });
               c.features.forEach(function(f){ if(f.homebrewId) f.homebrewId = featureIds[f.homebrewId] || null; });
@@ -261,6 +265,7 @@ export function init(){
   loadCustomSpells();
   loadEncounters();
   loadDungeons();
+  setupDungeonSync();
   state.characters.forEach(ensureShape);
   // Michael's private content hidden or shown as this device chose (after
   // shaping, so characters set aside are shaped too).
