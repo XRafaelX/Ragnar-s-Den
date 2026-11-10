@@ -4,6 +4,7 @@ import { openSpellbook } from "./spellbook.js";
 import { openCompendium } from "./compendium.js";
 import { openMonsters } from "./monsters.js";
 import { openEncounters } from "./encounters.js";
+import { openDungeons } from "./dungeons.js";
 import { openInfoModal } from "../ui/info-modal.js";
 import { CREDITS, PRIVACY_SUMMARY } from "../data/credits.js";
 import { makeBookSvg, makeChevronDownSvg, makeChevronRightSvg, makeShieldCheckSvg } from "../ui/svg-icons.js";
@@ -41,10 +42,11 @@ export var RINGS = [
   {
     id: "ring-dm",
     name: "DM Tools",
-    description: "Build an encounter, track turns and hit points, and look up monsters.",
+    description: "Build an encounter, track turns and hit points, look up monsters and draw dungeon maps.",
     nodes: [
       { id: "home-node-encounters", pos: "top", label: "Encounters", title: "Encounters", action: openEncounters },
-      { id: "home-node-monsters", pos: "upper-right", label: "Monsters", title: "Monster Catalog", action: openMonsters }
+      { id: "home-node-monsters", pos: "upper-right", label: "Monsters", title: "Monster Catalog", action: openMonsters },
+      { id: "home-node-dungeons", pos: "lower-right", label: "Dungeons", title: "Dungeon maps", action: openDungeons }
     ]
   }
 ];
@@ -509,6 +511,10 @@ export function setupHomeMenu(){
   });
   if(encountersBtn) encountersBtn.addEventListener("click", function(){
     selectNode(encountersBtn, openEncounters);
+  });
+  var dungeonsBtn = document.getElementById("home-node-dungeons");
+  if(dungeonsBtn) dungeonsBtn.addEventListener("click", function(){
+    selectNode(dungeonsBtn, openDungeons);
   });
 
   var centerBtn = document.getElementById("home-center");

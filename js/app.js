@@ -22,6 +22,7 @@ import { loadCustomItems, importCustomItems } from "./core/custom-items.js";
 import { loadCustomMonsters, importCustomMonsters } from "./core/custom-monsters.js";
 import { loadCustomSpells, importCustomSpells } from "./core/custom-spells.js";
 import { loadEncounters, importEncounters } from "./core/encounters.js";
+import { loadDungeons } from "./core/dungeons.js";
 import { APP_VERSION } from "./version.js";
 import { setupUpdates } from "./ui/update-prompt.js";
 import { applyPrivateContent } from "./core/private-content.js";
@@ -259,6 +260,7 @@ export function init(){
   loadCustomMonsters();
   loadCustomSpells();
   loadEncounters();
+  loadDungeons();
   state.characters.forEach(ensureShape);
   // Michael's private content hidden or shown as this device chose (after
   // shaping, so characters set aside are shaped too).

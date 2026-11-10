@@ -16,9 +16,12 @@
   box-shadow:0 -14px 40px rgba(0,0,0,.6);
   z-index:1151;padding:10px 20px 26px;
   transform:translateY(100%);pointer-events:none;
-  transition:transform .3s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Hidden once it has slid away, or its shadow would peek up over the
+     bottom of every screen. */
+  visibility:hidden;
+  transition:transform .3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s .3s;
 }
-#bottom-sheet.open{transform:translateY(0);pointer-events:auto;}
+#bottom-sheet.open{transform:translateY(0);pointer-events:auto;visibility:visible;transition:transform .3s cubic-bezier(0.16, 1, 0.3, 1);}
 #bottom-sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--rule);margin:2px auto 14px;}
 .bs-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px;}
 .bs-title-input{
