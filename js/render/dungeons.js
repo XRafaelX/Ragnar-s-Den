@@ -475,8 +475,18 @@ function renderBoard(dungeon){
   b.stage = stage;
   b.canvas = canvas;
   setupInput(canvas);
+  // When the board changes size (a window resized, a phone turned), the
+  // middle of the view stays in the middle.
+  var size = { w: 0, h: 0 };
   b.resize = new ResizeObserver(function(){
-    if(!b.fitted && stage.clientWidth){ fit(); b.fitted = true; }
+    if(!b) return;
+    var w = stage.clientWidth, h = stage.clientHeight;
+    if(!b.fitted && w){ fit(); b.fitted = true; }
+    else if(b.view && size.w && w){
+      b.view.ox += (w - size.w) / 2;
+      b.view.oy += (h - size.h) / 2;
+    }
+    size = { w: w, h: h };
     draw();
   });
   b.resize.observe(stage);
