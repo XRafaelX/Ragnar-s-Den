@@ -1,6 +1,7 @@
 import { save } from "../../core/state.js";
 import { moonConBonus, formHitDice, landsAidDice, druidDc, resourceLeft as characterResourceLeft, clamp, fmtMod, maxHp, ordinal, plainAttackRollMode, spellSlotsLeft, spendSpellSlot, wildForm, wildShapeOptions, wildShapeCost, wildShapeProblem, wildShapeLimit, startWildShape, endWildShape, hasPrimalStrike, hasCombatWildShape, naturalRecoveryBudget, recoverableSlots, recoverSlots, balmDiceLimit, setCosmicOmen } from "../../core/helpers.js";
 import { WILD_SHAPE_ELEMENTALS, wildShapeForm } from "../../data/wild-shapes.js";
+import { knownForms, knownFormsMax, learnForm, forgetForm, wildShapeEligible, KNOWN_FORMS_SUGGESTED } from "../../core/druid.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeDiceSvg, makeDicesSvg } from "../../ui/svg-icons.js";
@@ -194,6 +195,7 @@ function wildShapeExtras(c, r, picker){
   var lv = (c.classes||[]).find(function(x){ return x.name==="Druid" && x.edition==="2024"; });
   if(!lv) return picker;
   var wrap = document.createElement("div");
+  wrap.appendChild(knownFormsBlock(c));
   if(picker) wrap.appendChild(picker);
   var row = buttonRow(), left = r.max - r.used;
   if((Number(lv.level)||1) >= 5 && left <= 0){
@@ -223,6 +225,62 @@ function wildShapeExtras(c, r, picker){
   }
   if(row.childNodes.length) wrap.appendChild(row);
   return wrap.childNodes.length ? wrap : null;
+}
+/* The 2024 druid's Known Forms: the chosen ones as chips (× forgets one,
+   to swap it after a long rest), a picker for the rest, and the book's
+   four suggestions in one tap while none are chosen. */
+function knownFormsBlock(c){
+  var box = document.createElement("div");
+  box.className = "ws-known";
+  var known = knownForms(c), max = knownFormsMax(c);
+  var head = document.createElement("div");
+  head.className = "ws-known-head";
+  head.textContent = "Known forms: " + known.length + " of " + max;
+  box.appendChild(head);
+  if(known.length){
+    var chips = document.createElement("div");
+    chips.className = "ws-known-chips";
+    known.forEach(function(n){
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "ws-known-chip";
+      chip.title = "Forget " + n + " (after a long rest you can swap one known form for another)";
+      chip.setAttribute("aria-label", "Forget " + n);
+      chip.innerHTML = "<span></span><span aria-hidden='true'>×</span>";
+      chip.firstChild.textContent = n;
+      chip.addEventListener("click", function(){ forgetForm(c, n); save(); renderAll(); });
+      chips.appendChild(chip);
+    });
+    box.appendChild(chips);
+  }
+  if(known.length < max){
+    var open = wildShapeEligible(c).filter(function(f){ return known.indexOf(f.name)===-1 && WILD_SHAPE_ELEMENTALS.indexOf(f.name)===-1; });
+    if(!known.length){
+      var tip = document.createElement("div");
+      tip.className = "res-hint";
+      tip.textContent = "Choose the " + max + " beasts you can turn into. You can swap one after each long rest.";
+      box.appendChild(tip);
+      var picks = KNOWN_FORMS_SUGGESTED.filter(function(n){ return open.some(function(f){ return f.name===n; }); }).slice(0, max);
+      if(picks.length){
+        var row = buttonRow();
+        row.appendChild(rollBtn("", "Use the book's picks: " + picks.join(", "), "The Player's Handbook's suggestions", function(){
+          picks.forEach(function(n){ learnForm(c, n); });
+          save(); renderAll();
+        }));
+        box.appendChild(row);
+      }
+    }
+    var groups = {};
+    open.forEach(function(f){ (groups["CR " + f.cr] = groups["CR " + f.cr] || []).push({value: f.name, label: f.name}); });
+    var wrap = document.createElement("div");
+    wrap.className = "res-pick";
+    wrap.appendChild(themedPicker({key: "wild-shape-learn", groups: groups, value: "", search: true, sheet: true,
+      placeholder: "Learn a form...", ariaLabel: "Wild Shape: learn a form",
+      detailFor: function(v){ var f = wildShapeForm(v); return "AC " + f.ac + ", " + f.hp + " HP, " + speedText(f); },
+      onPick: function(v){ if(learnForm(c, v)){ save(); renderAll(); } }}));
+    box.appendChild(wrap);
+  }
+  return box;
 }
 /* Wild Resurgence (2024 druid 5): a use of Wild Shape for a level 1 slot. */
 function resurgenceRow(c, r){

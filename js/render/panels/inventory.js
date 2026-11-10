@@ -887,9 +887,29 @@ function hitDieButton(name, d, c){
     if(d.pay || d.paySlot){ save(); renderAll(); }
     // (A flat number has no die to roll: Lifedrinker, Genie's Wrath.)
     if(d.flat) logRoll(name + ": " + d.label, "+" + d.flat + " damage.");
-    else performRoll(d.die, d.qty, 0, "none", name + ": " + d.label);
+    else performRoll(d.die, d.qty, 0, "none", name + ": " + d.label, d.hitDieHeal ? lifedrinkerHeal(c) : null);
   });
   return b;
+}
+/* Lifedrinker (2024): after its damage, spend a Hit Point Die to roll it
+   and regain that much plus your CON modifier (minimum 1). */
+function lifedrinkerHeal(c){
+  return function(x){
+    if(!x) return null;
+    var left = hitDicePools(c).reduce(function(n, p){ return n + p.total - p.used; }, 0);
+    if(!left) return {lead: "No Hit Point Dice left to heal with.", options: []};
+    return {options: [{label: "Spend a Hit Die: heal", title: "Roll one of your Hit Point Dice and regain that much plus your CON modifier (minimum 1)",
+      use: function(){
+        var die = spendHitDie(c);
+        if(!die) return {silent: true};
+        var roll = Math.floor(Math.random() * die) + 1, con = mod(abilityScore(c, "con"));
+        var hp = Math.max(1, roll + con);
+        c.hp.current = Math.min(maxHp(c), (Number(c.hp.current)||0) + hp);
+        logRoll("Lifedrinker", "Spent a d" + die + " Hit Die: rolled " + roll + (con ? (con > 0 ? " + " : " - ") + Math.abs(con) : "") + ", regained " + hp + " hit points.");
+        save(); renderAll();
+        return {silent: true};
+      }}]};
+  };
 }
 /* A Kensei's weapon: Kensei's Shot on a ranged one (monk 3), and Sharpen
    the Blade's bonus with a way to end it (monk 11). */

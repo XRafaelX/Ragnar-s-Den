@@ -62,7 +62,8 @@ export function warlockHitDice(c, item){
   var out = [], pb = profBonus(c);
   // (The 2024 Lifedrinker: 1d6 of a type you choose, and a Hit Point Die to heal.)
   if(isPactWeapon(c, item) && hasInvocation(c, "Lifedrinker (2024)")){
-    out.push({id: "lifedrinker", name: "Lifedrinker", text: "+1d6 necrotic, psychic or radiant", qty: 1, die: 6, label: "Lifedrinker (Necrotic, Psychic or Radiant)", title: "Once per turn on a hit with your pact weapon. You can also spend a Hit Point Die to heal.", unarmed: false});
+    out.push({id: "lifedrinker", name: "Lifedrinker", text: "+1d6 necrotic, psychic or radiant", qty: 1, die: 6, label: "Lifedrinker (Necrotic, Psychic or Radiant)", title: "Once per turn on a hit with your pact weapon. You can also spend a Hit Point Die to heal.", unarmed: false,
+      hitDieHeal: true});
   }
   else if(isPactWeapon(c, item) && hasInvocation(c, "Lifedrinker")){
     var drink = Math.max(1, chaMod(c));

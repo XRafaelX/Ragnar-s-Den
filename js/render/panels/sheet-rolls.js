@@ -9,7 +9,7 @@ import { openCunningSheet } from "./rogue.js";
 import { batteringRoots, fanaticalBonus } from "../../core/barbarian-2024.js";
 import { MASTERY_PROPERTIES } from "../../data/weapon-mastery.js";
 import { WEAPON_DATA, baseWeaponName } from "../../data/weapons.js";
-import { loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, raceCheckD4, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud, isMonk2024, kiWord, openHandTechniques, elementalPushDc } from "../../core/helpers.js";
+import { useVex, readyVex, loadedRound, heavyRoundBonus, spendRound, gunslingerHitDice, roundRigged, calibratedSights, pinpointDc, hasIntuition, INTUITION_SKILLS, enchantmentOf, spellcastingAbilities, skillCheck, useSteadyAim, insightfulAttack, hasFocusedAim, kiLeft, spendKi, hasMagicalGuidance, resourceLeft, spendResource, criticalDamage, indomitableMight, fanaticalFocusReady, firearmStats, viciousIntent, hemorrhagingCritical, regainGrit, classLevelOf, magicArrows, reliableTalent, raceCheckD4, effectOn, endEffect, soulknifeDie, sneakAttack, wailsFromTheGrave, attackEndsEffects, isMonkWeaponFor, guidedStrikePool, spendChannel, smiteSlots, hasImprovedSmite, livingLegendOn, mod, fmtMod, foeSlayer, hasStalkersFlurry, hasSupernaturalDefense, rangerHitDice, clericHitDice, druidHitDice, starryDragon, bardHitDice, bardicDie, spendBardic, bladeFlourish, hasPeerlessSkill, silverTongue, tranceOn, useTides, favoredByTheGods, warlockHitDice, spendSpellSlot, chronalShiftLeft, hasArcaneDeflection, deflectingShroud, isMonk2024, kiWord, openHandTechniques, elementalPushDc } from "../../core/helpers.js";
 import { flashOfGenius, artificerHitDice } from "../../core/artificer.js";
 import { openFlourishSheet } from "./bard.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -72,7 +72,9 @@ export function rollAttack(c, bonus, mode, label, hit){
     onResult: gun ? function(r){ firearmResult(c, hit.item, gun, r); } : null
   });
   var ended = attackEndsEffects(c, !!(hit && hit.melee)), tides = useTides(c);
-  if(useSteadyAim(c) || gun || ended || tides){ save(); renderAll(); }
+  // (Vex ends with this roll, the one it gave advantage to.)
+  var vexed = useVex(c);
+  if(useSteadyAim(c) || gun || ended || tides || vexed){ save(); renderAll(); }
 }
 /* An attack from inside a creature's wound: no d20, the damage straight
    away, then its Sneak Attack (and the clone's attack, Living Shadows). */
@@ -587,7 +589,7 @@ function flurryNext(c, hit){
 /* A 2024 Soulknife's blade has the Vex mastery. It isn't a weapon card's item. */
 function vexOption(c, hit, crit){
   if(!hit || !hit.psychicBlade || !isRogue2024(c)) return [];
-  return [Object.assign(reminder((crit ? "" : "Hit? ") + "Vex", MASTERY_PROPERTIES.Vex.short, "Mastery: Vex", MASTERY_LINES.Vex), {keep: true, tag: "mastery"})];
+  return [Object.assign(reminder((crit ? "" : "Hit? ") + "Vex", MASTERY_PROPERTIES.Vex.short, "Mastery: Vex", MASTERY_LINES.Vex, vexPay(c)), {keep: true, tag: "mastery"})];
 }
 /* Brutal Strike (2024 barbarian 9): an attack made with its button. The extra
    dice are doubled on a critical hit. One effect, two different from level 17:
@@ -633,7 +635,7 @@ function masteryOptions(c, hit, crit){
   }
   var line = m.name==="Topple" ? "Topple: the target makes a DC " + toppleDc(c, ab) + " Constitution saving throw or falls prone." : MASTERY_LINES[m.name];
   var label = "Hit? " + m.name + (m.name==="Topple" ? " (CON DC " + toppleDc(c, ab) + ")" : "");
-  return [Object.assign(reminder(label, m.short, "Mastery: " + m.name, line), {keep: true, tag: "mastery"})].concat(master);
+  return [Object.assign(reminder(label, m.short, "Mastery: " + m.name, line, m.name==="Vex" ? vexPay(c) : null), {keep: true, tag: "mastery"})].concat(master);
 }
 var MASTERY_LINES = {
   Push: "Push: the target (Large or smaller) is pushed up to 10 feet straight away from you.",
@@ -646,6 +648,10 @@ var SAYS_WHEN = /^(Hit\?|Missed\?|Surprised target\?|Next strike)/;
 function saysWhen(o){ return SAYS_WHEN.test(o.label); }
 /* A tray option that only tells the player what happens, logged. pay
    (optional) spends what it costs, false if it can't. */
+/* Vex readies its advantage for the next attack roll (the Active effects card shows it). */
+function vexPay(c){
+  return function(){ readyVex(c); save(); setTimeout(renderAll, 0); return true; };
+}
 function reminder(label, title, name, text, pay){
   return {label: label, title: title, use: function(){
     if(pay && !pay()) return null;

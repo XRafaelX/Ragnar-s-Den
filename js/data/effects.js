@@ -29,8 +29,14 @@
    staysRest: a short rest doesn't end it (Bastion of Law).
    pointsCost: sorcery points can pay instead once the uses are gone.
    duration: shown on the card.
-   hint: what it does, kept short; the card adds the worked-out numbers. */
+   hint: what it does, kept short; the card adds the worked-out numbers.
+   onlyWhenOn: anyone's, shown only while on and started from elsewhere
+     (Vex, from the dice tray after a hit). */
 export var TOGGLE_EFFECTS = [
+  // Weapon Mastery's Vex (2024): "Hit? Vex" in the tray turns it on; the next
+  // attack roll has advantage and uses it up.
+  {id:"vex", name:"Vex", onlyWhenOn:true, level:1, duration:"Until your next attack roll, by the end of your next turn", endLabel:"Not needed",
+    hint:"Advantage on your next attack roll against the creature you hit. If your next attack is against another creature, end it first."},
   {id:"bladesong", name:"Bladesong", className:"Wizard", subclass:"Bladesinging", level:2,
     cost:{resource:"bladesong", amount:1}, duration:"1 minute", endsIncapacitated:true,
     hint:"Ends early if you are incapacitated, don medium or heavy armor or a shield, or attack with a weapon in two hands."},

@@ -5,6 +5,7 @@
 
    level: class level the resource unlocks at.
    slotMin: a spell slot of this level or higher pays once the uses are gone.
+   pactSlot: only a Pact Magic slot pays (the 2024 warlock patrons).
    max(lv, m): uses at class level `lv`; `m` holds the character's ability
      modifiers ({str, dex, con, int, wis, cha}).
    reset(lv): "short" or "long"; the rest that restores it (a short rest
@@ -709,8 +710,8 @@ export var SUBCLASS_RESOURCES = {
     "Archfey Patron": [
       {id:"steps_of_the_fey", name:"Steps of the Fey (Free Misty Step)", level:3, max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
         roll:{die:10, temp:true, button:"Refreshing Step", label:"Refreshing Step: temporary HP"},
-        hint:"Cast Misty Step without a spell slot. Refreshing Step spends one and rolls 1d10 temporary HP."},
-      {id:"beguiling_defenses", name:"Beguiling Defenses (Halve Damage)", level:10, max:always(1), reset:always("long"), slotMin:1,
+        hint:"Cast Misty Step without a spell slot, with one of its effects."},
+      {id:"beguiling_defenses", name:"Beguiling Defenses (Halve Damage)", level:10, max:always(1), reset:always("long"), slotMin:1, pactSlot:true,
         hint:"Reaction when a creature you see hits you: halve the damage. It makes a WIS save or takes psychic damage equal to what you take. A pact slot uses it again."}
     ],
     "Celestial Patron": [
@@ -727,12 +728,12 @@ export var SUBCLASS_RESOURCES = {
         hint:"When you finish a short or long rest, choose a damage type other than force to resist."},
       {id:"dark_ones_own_luck", name:"Dark One's Own Luck", level:6, max:function(lv, m){ return atLeastOne(m.cha); }, reset:always("long"),
         hint:"Add a d10 to an ability check or saving throw after seeing the roll, once per roll."},
-      {id:"hurl_through_hell", name:"Hurl Through Hell", level:14, max:always(1), reset:always("long"), slotMin:1,
+      {id:"hurl_through_hell", name:"Hurl Through Hell", level:14, max:always(1), reset:always("long"), slotMin:1, pactSlot:true,
         roll:{qty:8, die:10, button:"Hurl", label:"Hurl Through Hell (Psychic, not a fiend)"},
         hint:"Once per turn on a hit: a CHA save or the target goes through the Lower Planes (8d10 psychic unless it's a fiend). A pact slot uses it again."}
     ],
     "Great Old One Patron": [
-      {id:"clairvoyant_combatant", name:"Clairvoyant Combatant", level:6, max:always(1), reset:always("short"), slotMin:1,
+      {id:"clairvoyant_combatant", name:"Clairvoyant Combatant", level:6, max:always(1), reset:always("short"), slotMin:1, pactSlot:true,
         hint:"When you link with Awakened Mind: a WIS save or it has disadvantage on attacks against you, and you advantage on attacks against it. A pact slot uses it again."}
     ],
     "The Hexblade": [

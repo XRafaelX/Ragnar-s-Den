@@ -27,6 +27,7 @@ function effectDef(id){
 /* Who has it: the class entry, or for a race's effect the race (from
    the character level it starts at). */
 function effectClass(c, def){
+  if(def.onlyWhenOn) return !!(c.effects && c.effects[def.id]);
   if(def.race) return def.race.indexOf(c.race)!==-1 && totalLevel(c) >= def.level;
   return (c.classes||[]).find(function(cl){
     return cl.name===def.className && (!def.subclass || [].concat(def.subclass).indexOf(cl.subclass)!==-1) && (Number(cl.level)||1) >= def.level &&
@@ -209,6 +210,7 @@ export function effectRolls(c, kind, ability){
   }
   if((kind==="attack" || kind==="perception") && effectOn(c, "sunlight")) out.push({mode: "dis", reason: "Sunlight Sensitivity"});
   if(kind==="attack" && steadyAimReady(c)) out.push({mode: "adv", reason: AIM_EFFECTS[readyAim(c)]});
+  if(kind==="attack" && effectOn(c, "vex")) out.push({mode: "adv", reason: "Vex"});
   if((kind==="attack" || kind==="save") && effectOn(c, "tides_of_chaos")) out.push({mode: "adv", reason: "Tides of Chaos"});
   if(kind==="attack" && effectOn(c, "natures_veil")) out.push({mode: "adv", reason: "Nature's Veil: you're invisible"});
   // Empty Body and Cloak of Shadows: invisible, so advantage on attack rolls.
@@ -241,6 +243,17 @@ export function useSteadyAim(c){
   if(!id) return false;
   c.effects[id] = "used";
   return true;
+}
+/* Vex: an attack was rolled, so its advantage is used. True if it was on. */
+export function useVex(c){
+  if(!(c.effects && c.effects.vex)) return false;
+  delete c.effects.vex;
+  return true;
+}
+/* Vex: a hit that dealt damage readies it. */
+export function readyVex(c){
+  if(!c.effects) c.effects = {};
+  c.effects.vex = true;
 }
 /* Bladesong's bonus to AC and concentration saves (and Song of Victory's damage). */
 export function bladesongBonus(c){

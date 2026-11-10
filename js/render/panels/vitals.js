@@ -1458,9 +1458,10 @@ function renderResourcesCard(c, resources){
     hint.textContent = r.hint + (r.source ? " ("+r.source+")" : "");
     info.appendChild(hint);
     // A spell slot pays once the uses are gone (Drake's Breath), or sorcery points (Warping Implosion).
-    var slotPay = r.slotMin && remaining<=0 ? spellSlotsLeft(c).find(function(s){ return s.level >= r.slotMin; }) : null;
+    // (`pactSlot`: only a Pact Magic slot pays, as the 2024 patrons' features say.)
+    var slotPay = r.slotMin && remaining<=0 ? spellSlotsLeft(c).find(function(s){ return s.level >= r.slotMin && (!r.pactSlot || s.pact); }) : null;
     var pointsPay = r.againPoints && remaining<=0 && resourceLeft(c, "Sorcerer:sorcery_points") >= r.againPoints ? r.againPoints : 0;
-    var slotWords = slotPay ? " (" + ordinal(slotPay.level) + "-level slot)" : pointsPay ? " (" + pointsPay + " points)" : "";
+    var slotWords = slotPay ? " (" + (slotPay.pact && r.pactSlot ? "pact slot" : ordinal(slotPay.level) + "-level slot") + ")" : pointsPay ? " (" + pointsPay + " points)" : "";
     // A use that rolls a die (Warding Maneuver's d8): spends one and rolls.
     if(r.roll && r.max!==Infinity){
       var rolls = document.createElement("div");

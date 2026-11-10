@@ -606,3 +606,12 @@
   .rm-row:hover .ff-more{color:var(--rm-hue);transform:translateX(2px);}
 }
 @media (prefers-reduced-motion: reduce){ .rm-row{transition:none;} }
+
+/* The 2024 druid's Known Forms on the Wild Shape row (js/render/panels/druid.js). */
+.ws-known{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.ws-known-head{font-size:12px;font-weight:600;color:var(--text-on-parch-dim);}
+.ws-known-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.ws-known-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:12px;font:inherit;font-size:12.5px;cursor:pointer;
+  border:1px solid color-mix(in srgb, var(--brass) 60%, transparent);background:color-mix(in srgb, var(--brass) 14%, transparent);color:var(--text-on-parch);}
+.ws-known-chip span:last-child{color:var(--text-on-parch-dim);}
+.ws-known-chip:hover{border-color:var(--brass);}

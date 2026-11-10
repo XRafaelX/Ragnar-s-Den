@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { clamp, maxHp, mod, darkOnesBlessing, DAMAGE_TYPES, spendResource, spendForRests, magicalCunningSlots, resilienceOnRest, classLevelOf } from "../../core/helpers.js";
+import { clamp, maxHp, mod, darkOnesBlessing, DAMAGE_TYPES, spendResource, spendForRests, magicalCunningSlots, resilienceOnRest, classLevelOf, warlockDc, addCondition } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
@@ -45,6 +45,7 @@ export function warlockResourceRow(c, r){
   if(r.key==="Warlock:healing_light") return healingLightPicker(c, r);
   if(r.key==="Warlock:eldritch_master") return eldritchMasterRow(c, r);
   if(r.key==="Warlock:magical_cunning") return magicalCunningRow(c, r);
+  if(r.key==="Warlock:steps_of_the_fey") return stepsOfTheFeyRow(c, r);
   if(r.key==="Warlock:grasping_tentacles"){
     var lv = (c.classes||[]).reduce(function(n, cl){ return cl.name==="Warlock" ? Number(cl.level)||1 : n; }, 0);
     return tempButton(c, "Cast it free · +" + lv + " temp HP", lv, "Evard's Black Tentacles without a spell slot", function(){ return spendResource(c, r.key, 1); });
@@ -120,6 +121,37 @@ function magicalCunningRow(c, r){
   });
   b.disabled = r.used >= r.max || !back;
   row.appendChild(b);
+  return row;
+}
+/* Steps of the Fey (2024 Archfey 3): the effects a free Misty Step can
+   add, each spending a use (Refreshing Step's 1d10 is the row's own roll).
+   From 6, Misty Escape adds Disappearing Step (invisible) and Dreadful Step
+   (2d10 psychic). */
+function stepsOfTheFeyRow(c, r){
+  var row = buttonRow(), dc = warlockDc(c), none = r.used >= r.max;
+  function step(label, title, onUse){
+    var b = rowBtn(label, title, function(){
+      if(!spendResource(c, r.key, 1)) return;
+      onUse();
+      save(); renderSidebar(); renderAll();
+    });
+    b.disabled = none;
+    row.appendChild(b);
+  }
+  step("Taunting Step · DC " + dc, "Creatures within 5 ft of the space you left make a WIS save or have disadvantage on attacks against anyone but you until the start of your next turn", function(){
+    logRoll("Taunting Step", "Creatures within 5 feet of where you left: WIS save DC " + dc + " or disadvantage on attacks against anyone but you until the start of your next turn.");
+    showActionToast("Taunting Step: WIS save DC " + dc + ".");
+  });
+  if(classLevelOf(c, "Warlock", "Archfey Patron") >= 6){
+    step("Disappearing Step", "You are invisible until the start of your next turn, or until right after you attack, deal damage or cast a spell", function(){
+      addCondition(c, "invisible");
+      logRoll("Disappearing Step", "Invisible until the start of your next turn, or until you attack, deal damage or cast a spell.");
+      showActionToast("Disappearing Step: you're invisible (Conditions).");
+    });
+    step("Dreadful Step · 2d10 · DC " + dc, "Creatures within 5 ft of where you left or arrive make a WIS save or take 2d10 psychic damage", function(){
+      performRoll(10, 2, 0, "none", "Dreadful Step (Psychic, WIS DC " + dc + ")");
+    });
+  }
   return row;
 }
 /* Comes back by itself after 1d4 long rests. */

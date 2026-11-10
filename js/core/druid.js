@@ -45,12 +45,51 @@ export function wildShapeLimit(c){
   if(moon) cr = lv >= 6 ? Math.floor(lv / 3) : 1;
   return {cr: cr, fly: lv >= 8, swim: lv >= 4, elemental: moon && lv >= 10, hours: Math.max(1, Math.floor(lv / 2))};
 }
-export function wildShapeOptions(c){
+/* Every form the druid's level (and circle) allows. */
+export function wildShapeEligible(c){
   var limit = wildShapeLimit(c);
   return WILD_SHAPE_FORMS.filter(function(f){
     if(WILD_SHAPE_ELEMENTALS.indexOf(f.name)!==-1) return limit.elemental;
     return crValue(f.cr) <= limit.cr && (limit.fly || !f.speed.fly) && (limit.swim || !f.speed.swim);
   });
+}
+/* ---- The 2024 druid's Known Forms (p. 80) ----
+   Four Beast forms at level 2, six at 4, eight at 8 (the Beast Shapes
+   table), one swapped after each long rest. Saved on the druid's class
+   entry as `wildShapeForms`. Until any is chosen, every eligible form is
+   offered (an older sheet keeps working). */
+export var KNOWN_FORMS_SUGGESTED = ["Rat", "Riding Horse", "Spider", "Wolf"];
+function druid2024Entry(c){
+  return (c.classes||[]).find(function(cl){ return cl.name==="Druid" && cl.edition==="2024"; }) || null;
+}
+export function knownFormsMax(c){
+  var cl = druid2024Entry(c), lv = cl ? Number(cl.level)||1 : 0;
+  return lv >= 8 ? 8 : lv >= 4 ? 6 : lv >= 2 ? 4 : 0;
+}
+/* The forms the druid has chosen ([] for a 2014 druid or none chosen yet). */
+export function knownForms(c){
+  var cl = druid2024Entry(c);
+  return cl && Array.isArray(cl.wildShapeForms) ? cl.wildShapeForms.slice() : [];
+}
+export function learnForm(c, name){
+  var cl = druid2024Entry(c);
+  if(!cl || knownForms(c).length >= knownFormsMax(c) || knownForms(c).indexOf(name)!==-1) return false;
+  if(!wildShapeEligible(c).some(function(f){ return f.name===name; })) return false;
+  cl.wildShapeForms = knownForms(c).concat([name]);
+  return true;
+}
+export function forgetForm(c, name){
+  var cl = druid2024Entry(c);
+  if(!cl) return false;
+  cl.wildShapeForms = knownForms(c).filter(function(n){ return n!==name; });
+  return true;
+}
+/* The forms the druid can take now: a 2024 druid's known ones (once any
+   are chosen) that the level still allows, else every eligible form. */
+export function wildShapeOptions(c){
+  var eligible = wildShapeEligible(c), known = knownForms(c);
+  if(!known.length) return eligible;
+  return eligible.filter(function(f){ return known.indexOf(f.name)!==-1; });
 }
 /* Elemental Wild Shape takes two uses at once. */
 export function wildShapeCost(name){
