@@ -5,6 +5,7 @@ import {
   placeParty, walkParty, removeParty, addMap, removeMap, moveMap, placeMap, renameMap, setSight, toggleDoor, isDoor,
   noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder, cellAt, linkAt, linkStairs, arrivalSquare,
   revealedBounds, mapTitle, isLit, setLit, toggleLitArea, isLocked, lockedAhead, generateMap, createRandomDungeon,
+  fillOval, ovalCells, carveDiagonal, diagonalCells,
   SIGHT_OPTIONS, SIGHT_MAX,
   DUNGEON_SIZES, DUNGEON_STYLES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
 } from "../core/dungeons.js";
@@ -70,6 +71,8 @@ var ICON = {
   point: '<line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/>',
   pause: '<rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>',
   play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+  round: '<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M3 12h18"/>',
+  diagonal: '<path d="M5 19 19 5"/><path d="M5 13v6h6"/><path d="M13 5h6v6"/>',
   eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
   cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
@@ -84,6 +87,8 @@ var TOOLS = [
   ],
   [
     { id: "room", label: "Room", icon: "room", help: "Drag a box to make a room" },
+    { id: "round", label: "Round", icon: "round", help: "Drag a box to make a round room, or an oval one in a long box" },
+    { id: "diagonal", label: "Diagonal", icon: "diagonal", help: "Drag to dig a corridor at 45 degrees. Past the slant it carries straight on" },
     { id: "floor", label: "Floor", code: FLOOR, help: "Paint floor square by square, for corridors and odd shapes" },
     { id: "erase", label: "Erase", icon: "eraser", code: ROCK, help: "Turn squares back into solid rock" }
   ],
@@ -1071,6 +1076,37 @@ function paint(){
     }
   }
 
+  // The round room a Round drag makes: its squares, and the oval.
+  if(g && g.type === "round"){
+    var ov = ovalCells(g.a[0], g.a[1], g.b[0], g.b[1]);
+    ctx.save();
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.28;
+    ctx.beginPath();
+    ov.forEach(function(q){ ctx.rect(sx(q[0]), sy(q[1]), sx(q[0] + 1) - sx(q[0]), sy(q[1] + 1) - sy(q[1])); });
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    var ox0 = Math.min(g.a[0], g.b[0]), ox1 = Math.max(g.a[0], g.b[0]) + 1, oy0 = Math.min(g.a[1], g.b[1]), oy1 = Math.max(g.a[1], g.b[1]) + 1;
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2 * dpr;
+    ctx.beginPath();
+    ctx.ellipse((sx(ox0) + sx(ox1)) / 2, (sy(oy0) + sy(oy1)) / 2, (sx(ox1) - sx(ox0)) / 2, (sy(oy1) - sy(oy0)) / 2, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // The corridor a Diagonal drag digs.
+  if(g && g.type === "diagonal"){
+    var dc = diagonalCells(g.a[0], g.a[1], g.b[0], g.b[1]);
+    ctx.save();
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath();
+    dc.all.forEach(function(q){ ctx.rect(sx(q[0]), sy(q[1]), sx(q[0] + 1) - sx(q[0]), sy(q[1] + 1) - sy(q[1])); });
+    ctx.fill();
+    ctx.restore();
+  }
+
   // While the party is dragged, how far they see: a dashed ring. Only
   // then, so it doesn't sit over the map the rest of the time.
   if(g && g.type === "party" && b.d.party && b.d.sight > 0){
@@ -1561,9 +1597,10 @@ function onDown(e){
     // A tap or a drag: which one is only known once it moves on.
     var at = squareAt(p);
     b.gesture = { type: "reveal", start: at, last: at, moved: false, on: !isRevealed(b.d, at[0], at[1]), before: b.history.snapshot(b.d) };
-  } else if(t.id === "room"){
+  } else if(t.id === "room" || t.id === "round" || t.id === "diagonal"){
+    // A box (or a line, for Diagonal) from where the drag starts to where it is.
     var sq = squareAt(p);
-    b.gesture = { type: "room", a: sq, b: sq };
+    b.gesture = { type: t.id, a: sq, b: sq };
   } else {
     var start = squareAt(p);
     b.gesture = { type: "paint", code: t.code, start: start, startCode: cellAt(b.d, start[0], start[1]), last: start, moved: false, before: b.history.snapshot(b.d) };
@@ -1624,7 +1661,7 @@ function onMove(e){
     b.hover = to;
     refreshChrome();
     draw();
-  } else if(g.type === "room"){
+  } else if(g.type === "room" || g.type === "round" || g.type === "diagonal"){
     var c = squareAt(p);
     if(sameSquare(c, g.b)) return;
     g.b = c;
@@ -1712,10 +1749,14 @@ function onUp(e){
     change(function(){ return toggleArea(b.d, tap[0], tap[1]); });
     b.hoverArea = b.hover ? areaAt(b.d, b.hover[0], b.hover[1]) : null;
   }
-  else if(g && g.type === "room"){
-    var a = g.a, c = g.b;
+  else if(g && (g.type === "room" || g.type === "round" || g.type === "diagonal")){
+    var a = g.a, c = g.b, kind = g.type;
     b.gesture = null;
-    change(function(){ return fillRect(b.d, a[0], a[1], c[0], c[1], FLOOR); });
+    change(function(){
+      if(kind === "round") return fillOval(b.d, a[0], a[1], c[0], c[1]);
+      if(kind === "diagonal") return carveDiagonal(b.d, a[0], a[1], c[0], c[1]);
+      return fillRect(b.d, a[0], a[1], c[0], c[1], FLOOR);
+    });
   }
   // After a pinch the finger still down does nothing until it lifts.
   b.gesture = b.pointers.size ? { type: "done" } : null;

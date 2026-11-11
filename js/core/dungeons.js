@@ -10,7 +10,7 @@ import { uid } from "./basics.js";
    Dungeon shape:
      { id, name, maps: [map, ...], updated }
    Map shape:
-     { id, name, w, h, cells, revealed, style, party, sight, notes, links, lit }
+     { id, name, w, h, cells, revealed, style, party, sight, notes, links, lit, cuts }
 
    The map is a grid of 5 ft squares, `w` wide and `h` tall. `cells` is a
    string of w*h terrain codes (see TERRAIN), row by row from the top
@@ -33,6 +33,13 @@ import { uid } from "./basics.js";
    `notes` are the DM's numbered notes, [{ id, n, x, y, text }], one per
    square at most: what is in room 3, a trap in a corridor. They are the
    DM's only and never reach the players' screen.
+   `cuts` makes curves and diagonals on the square grid: a floor square
+   can be cut in half corner to corner, one half floor and the other
+   rock, with the wall along the cut. One character a square: "0" whole,
+   or which corner is rock, "1" top left, "2" top right, "3" bottom
+   right, "4" bottom left. Only the Round and Diagonal tools cut squares,
+   and only where both sides by that corner are rock. Everything that
+   works by squares (fog, sight, areas) treats a cut square as open.
    `lit` is like `revealed`: "1" for a lit square (a torch-lit hall, a
    sunlit courtyard), which the party sees from any distance, "0" for
    one in the dark. Only open ground is lit.
@@ -157,8 +164,31 @@ function cleanMap(m){
     sight: cleanSight(m.sight),
     notes: cleanNotes(m.notes, w, h),
     links: cleanLinks(m.links, w, h, cells),
-    lit: cleanLit(m.lit, cells)
+    lit: cleanLit(m.lit, cells),
+    cuts: cleanCuts(m.cuts, w, h, cells)
   };
+}
+
+/* A cut on each square ("0" to "4"), kept only on plain floor whose two
+   sides by the cut corner are rock. */
+function cleanCuts(raw, w, h, cells){
+  var src = typeof raw === "string" ? raw : "", out = "";
+  for(var i = 0; i < w * h; i++){
+    var c = src.charAt(i);
+    out += c >= "1" && c <= "4" && cells.charAt(i) === FLOOR && cutFits(cells, w, h, i % w, Math.floor(i / w), c) ? c : "0";
+  }
+  return out;
+}
+
+/* The two neighbours beside each cut corner, as [dx, dy] pairs. */
+var CUT_SIDES = { "1": [[0, -1], [-1, 0]], "2": [[0, -1], [1, 0]], "3": [[0, 1], [1, 0]], "4": [[0, 1], [-1, 0]] };
+
+/* True if both squares beside corner `c` of (x, y) are rock. */
+function cutFits(cells, w, h, x, y, c){
+  return CUT_SIDES[c].every(function(s){
+    var nx = x + s[0], ny = y + s[1];
+    return nx < 0 || ny < 0 || nx >= w || ny >= h || cells.charAt(ny * w + nx) === ROCK;
+  });
 }
 
 /* "1" or "0" for each square, lit only on open ground. */
@@ -463,12 +493,13 @@ export function passageAxis(d, x, y){
 /* Changes squares through `fn(set)`, where set(x, y, code) paints one.
    A square turned to rock goes back into fog. */
 function editCells(d, fn){
-  var cells = d.cells.split(""), seen = d.revealed.split(""), lit = d.lit.split(""), changed = false;
+  var cells = d.cells.split(""), seen = d.revealed.split(""), lit = d.lit.split(""), cuts = d.cuts.split(""), changed = false;
   fn(function(x, y, code){
     if(!inMap(d, x, y)) return;
     var i = y * d.w + x;
-    if(cells[i] === code) return;
+    if(cells[i] === code && cuts[i] === "0") return;
     cells[i] = code;
+    cuts[i] = "0";
     if(code === ROCK){ seen[i] = FOGGED; lit[i] = FOGGED; }
     changed = true;
   });
@@ -476,6 +507,8 @@ function editCells(d, fn){
   d.cells = cells.join("");
   d.revealed = seen.join("");
   d.lit = lit.join("");
+  // A cut whose rock side was painted over is whole again.
+  d.cuts = cleanCuts(cuts.join(""), d.w, d.h, d.cells);
   if(d.party && !isOpen(d, d.party.x, d.party.y)) d.party = null;
   d.links = d.links.filter(function(l){ return cellAt(d, l.x, l.y) === ">"; });
   return true;
@@ -534,6 +567,7 @@ export function clearDungeon(d){
   d.notes = [];
   d.links = [];
   d.lit = new Array(d.w * d.h + 1).join(FOGGED);
+  d.cuts = new Array(d.w * d.h + 1).join("0");
   return true;
 }
 
@@ -563,12 +597,13 @@ export function resizeDungeon(d, w, h){
   h = side(h, d.h);
   if(w === d.w && h === d.h) return false;
   var off = resizeOffset(d, w, h);
-  var cells = "", revealed = "", lit = "";
+  var cells = "", revealed = "", lit = "", cuts = "";
   for(var y = 0; y < h; y++){
     for(var x = 0; x < w; x++){
       cells += cellAt(d, x - off.x, y - off.y);
       revealed += isRevealed(d, x - off.x, y - off.y) ? SHOWN : FOGGED;
       lit += isLit(d, x - off.x, y - off.y) ? SHOWN : FOGGED;
+      cuts += cutAt(d, x - off.x, y - off.y);
     }
   }
   var party = d.party ? { x: d.party.x + off.x, y: d.party.y + off.y } : null;
@@ -577,6 +612,7 @@ export function resizeDungeon(d, w, h){
   d.cells = cells;
   d.revealed = revealed;
   d.lit = lit;
+  d.cuts = cleanCuts(cuts, w, h, cells);
   d.party = party && isOpen(d, party.x, party.y) ? party : null;
   d.notes = d.notes.map(function(n){ return Object.assign({}, n, { x: n.x + off.x, y: n.y + off.y }); })
     .filter(function(n){ return inMap(d, n.x, n.y); });
@@ -594,8 +630,8 @@ export function createHistory(limit){
   var max = limit || 100;
   var undoSteps = [], redoSteps = [];
   function copyNotes(list){ return list.map(function(n){ return Object.assign({}, n); }); }
-  function snap(d){ return { w: d.w, h: d.h, cells: d.cells, revealed: d.revealed, party: d.party ? { x: d.party.x, y: d.party.y } : null, sight: d.sight, notes: copyNotes(d.notes), links: copyNotes(d.links), lit: d.lit }; }
-  function apply(d, s){ d.w = s.w; d.h = s.h; d.cells = s.cells; d.revealed = s.revealed; d.party = s.party ? { x: s.party.x, y: s.party.y } : null; d.sight = s.sight; d.notes = copyNotes(s.notes); d.links = copyNotes(s.links); d.lit = s.lit; }
+  function snap(d){ return { w: d.w, h: d.h, cells: d.cells, revealed: d.revealed, party: d.party ? { x: d.party.x, y: d.party.y } : null, sight: d.sight, notes: copyNotes(d.notes), links: copyNotes(d.links), lit: d.lit, cuts: d.cuts }; }
+  function apply(d, s){ d.w = s.w; d.h = s.h; d.cells = s.cells; d.revealed = s.revealed; d.party = s.party ? { x: s.party.x, y: s.party.y } : null; d.sight = s.sight; d.notes = copyNotes(s.notes); d.links = copyNotes(s.links); d.lit = s.lit; d.cuts = s.cuts; }
   function samePlace(a, b){ return a === b || (!!a && !!b && a.x === b.x && a.y === b.y); }
   return {
     /* Call with the map as it was before the change just made. */
@@ -606,7 +642,7 @@ export function createHistory(limit){
     },
     snapshot: snap,
     /* True if the map is still as it was in `s`. */
-    same: function(d, s){ return d.w === s.w && d.h === s.h && d.cells === s.cells && d.revealed === s.revealed && samePlace(d.party, s.party) && d.sight === s.sight && JSON.stringify(d.notes) === JSON.stringify(s.notes) && JSON.stringify(d.links) === JSON.stringify(s.links) && d.lit === s.lit; },
+    same: function(d, s){ return d.w === s.w && d.h === s.h && d.cells === s.cells && d.revealed === s.revealed && samePlace(d.party, s.party) && d.sight === s.sight && JSON.stringify(d.notes) === JSON.stringify(s.notes) && JSON.stringify(d.links) === JSON.stringify(s.links) && d.lit === s.lit && d.cuts === s.cuts; },
     canUndo: function(){ return undoSteps.length > 0; },
     canRedo: function(){ return redoSteps.length > 0; },
     undo: function(d){
@@ -746,16 +782,18 @@ export function toggleArea(d, x, y){
 export var FOG_EDGE = "?";
 
 export function playerView(d, title){
-  var cells = "", revealed = "";
+  var cells = "", revealed = "", cuts = "";
   for(var y = 0; y < d.h; y++){
     for(var x = 0; x < d.w; x++){
       var c = cellAt(d, x, y);
       if(isRevealed(d, x, y)){
         cells += c === "s" || c === "l" ? "+" : c;
         revealed += SHOWN;
+        cuts += cutAt(d, x, y);
         continue;
       }
       revealed += FOGGED;
+      cuts += "0";
       var edge = false;
       if(c !== ROCK && c !== "s"){
         for(var oy = -1; oy <= 1 && !edge; oy++) for(var ox = -1; ox <= 1; ox++) if(isRevealed(d, x + ox, y + oy)){ edge = true; break; }
@@ -764,7 +802,7 @@ export function playerView(d, title){
     }
   }
   var party = d.party && isRevealed(d, d.party.x, d.party.y) ? { x: d.party.x, y: d.party.y } : null;
-  return { id: d.id, name: title || d.name, w: d.w, h: d.h, cells: cells, revealed: revealed, style: d.style, party: party };
+  return { id: d.id, name: title || d.name, w: d.w, h: d.h, cells: cells, revealed: revealed, cuts: cuts, style: d.style, party: party };
 }
 
 /* The box around every shown square, {x, y, w, h}, or null if nothing
@@ -1092,6 +1130,7 @@ export function generateMap(d, opts){
   d.cells = new Array(size + 1).join(ROCK);
   d.revealed = new Array(size + 1).join(FOGGED);
   d.lit = new Array(size + 1).join(FOGGED);
+  d.cuts = new Array(size + 1).join("0");
   d.party = null;
   d.notes = [];
   d.links = [];
@@ -1233,3 +1272,82 @@ export function createRandomDungeon(sizeId, opts){
   return dg;
 }
 
+
+/* ---- curves and diagonals ---- */
+
+/* The cut on (x, y): "0" whole, or "1" to "4", the corner that is rock. */
+export function cutAt(d, x, y){
+  return inMap(d, x, y) && d.cuts ? d.cuts.charAt(y * d.w + x) || "0" : "0";
+}
+
+/* Cuts the corners of these floor squares where they stick out: a
+   square with rock on two sides that meet at a corner, and open ground
+   on the other two, gets that corner cut. On a stepped edge this turns
+   each step into a slope. */
+function smoothCells(d, points){
+  var cuts = d.cuts.split("");
+  points.forEach(function(p){
+    var x = p[0], y = p[1];
+    if(cellAt(d, x, y) !== FLOOR) return;
+    var n = isOpen(d, x, y - 1), e = isOpen(d, x + 1, y), so = isOpen(d, x, y + 1), w = isOpen(d, x - 1, y);
+    var c = !n && !w && e && so ? "1" : !n && !e && w && so ? "2" : !so && !e && n && w ? "3" : !so && !w && n && e ? "4" : "0";
+    cuts[y * d.w + x] = c;
+  });
+  d.cuts = cuts.join("");
+}
+
+/* The squares of an oval filling the box between two corners (a circle
+   in a square box): every square whose middle is inside it. */
+export function ovalCells(ax, ay, bx, by){
+  var x0 = Math.min(ax, bx), x1 = Math.max(ax, bx), y0 = Math.min(ay, by), y1 = Math.max(ay, by);
+  var cx = (x0 + x1 + 1) / 2, cy = (y0 + y1 + 1) / 2, rx = (x1 - x0 + 1) / 2, ry = (y1 - y0 + 1) / 2;
+  var out = [];
+  for(var y = y0; y <= y1; y++) for(var x = x0; x <= x1; x++){
+    var dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
+    if(dx * dx + dy * dy <= 1.0001) out.push([x, y]);
+  }
+  return out;
+}
+
+/* A round room: the oval in the box, its stepped edge smoothed. Returns
+   true if anything changed. */
+export function fillOval(d, ax, ay, bx, by){
+  var sq = ovalCells(ax, ay, bx, by).filter(function(p){ return inMap(d, p[0], p[1]); });
+  if(!sq.length) return false;
+  var before = d.cells + d.cuts;
+  editCells(d, function(set){ sq.forEach(function(p){ set(p[0], p[1], FLOOR); }); });
+  smoothCells(d, sq);
+  return d.cells + d.cuts !== before;
+}
+
+/* The squares of a corridor from a to b: at 45 degrees for as far as the
+   drag goes both ways, then straight on. The slanted part is a staircase,
+   one step across then one down, which the cuts turn into a straight
+   slope. Returns { all: every square, slant: the staircase squares }. */
+export function diagonalCells(ax, ay, bx, by){
+  var dx = bx - ax, dy = by - ay, sx = dx < 0 ? -1 : 1, sy = dy < 0 ? -1 : 1;
+  var n = Math.min(Math.abs(dx), Math.abs(dy));
+  var slant = [], x = ax, y = ay;
+  slant.push([x, y]);
+  for(var i = 0; i < n; i++){
+    x += sx; slant.push([x, y]);
+    y += sy; slant.push([x, y]);
+  }
+  var all = slant.slice();
+  var rest = lineCells(x, y, bx, by);
+  for(var k = 1; k < rest.length; k++) all.push(rest[k]);
+  return { all: all, slant: slant };
+}
+
+/* A diagonal corridor from a to b. It is dug through rock only, so it
+   never paints over doors or water it crosses. Returns true if anything
+   changed. */
+export function carveDiagonal(d, ax, ay, bx, by){
+  var c = diagonalCells(ax, ay, bx, by);
+  var before = d.cells + d.cuts;
+  editCells(d, function(set){
+    c.all.forEach(function(p){ if(cellAt(d, p[0], p[1]) === ROCK) set(p[0], p[1], FLOOR); });
+  });
+  smoothCells(d, c.slant.filter(function(p){ return inMap(d, p[0], p[1]); }));
+  return d.cells + d.cuts !== before;
+}

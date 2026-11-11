@@ -1,4 +1,4 @@
-import { ROCK, inMap, cellAt, isOpen, isRevealed, passageAxis, contentBounds, revealedBounds } from "../core/dungeons.js";
+import { ROCK, inMap, cellAt, isOpen, isRevealed, passageAxis, contentBounds, revealedBounds, cutAt } from "../core/dungeons.js";
 
 /* ---------------- Drawing a dungeon map ----------------
    Paints a dungeon (js/core/dungeons.js) onto a 2D canvas in the style
@@ -204,6 +204,26 @@ export function drawMap(ctx, d, view, opts){
     else if(code === ":") drawRubble(ctx, box, x, y);
   }
 
+  // Cut squares: the rock half, textured like the rock around it.
+  for(y = y0; y <= y1; y++) for(x = x0; x <= x1; x++){
+    var cut = cutAt(d, x, y);
+    if(cut === "0") continue;
+    var tri = cutTriangle(cut, ex(x), ey(y), ex(x + 1), ey(y + 1));
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(tri[0][0], tri[0][1]); ctx.lineTo(tri[1][0], tri[1][1]); ctx.lineTo(tri[2][0], tri[2][1]);
+    ctx.closePath();
+    ctx.fillStyle = C.rock;
+    ctx.fill();
+    ctx.clip();
+    if(s >= 10){
+      if(T.rock === "hatch") hatch(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
+      else if(T.rock === "stipple") stipple(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
+      else if(T.rock === "leaves") leaves(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
+    }
+    ctx.restore();
+  }
+
   // Walls: a thick line on every side where open ground meets rock.
   // Rough walls bulge in and out a little along each side; the corners
   // stay put, so neighbouring sides always meet.
@@ -215,13 +235,17 @@ export function drawMap(ctx, d, view, opts){
     var mx = (ex(ax) + ex(bx)) / 2 + (ay === by ? 0 : bulge), my = (ey(ay) + ey(by)) / 2 + (ay === by ? bulge : 0);
     ctx.quadraticCurveTo(mx, my, ex(bx), ey(by));
   }
+  // A cut square's wall runs along its cut instead of its two cut sides.
   ctx.beginPath();
   for(y = y0; y <= y1; y++) for(x = x0; x <= x1; x++){
     if(!isOpen(d, x, y)) continue;
-    if(!isOpen(d, x, y - 1)) wall(x, y, x + 1, y);
-    if(!isOpen(d, x, y + 1)) wall(x, y + 1, x + 1, y + 1);
-    if(!isOpen(d, x - 1, y)) wall(x, y, x, y + 1);
-    if(!isOpen(d, x + 1, y)) wall(x + 1, y, x + 1, y + 1);
+    var k = cutAt(d, x, y);
+    if(!isOpen(d, x, y - 1) && k !== "1" && k !== "2") wall(x, y, x + 1, y);
+    if(!isOpen(d, x, y + 1) && k !== "3" && k !== "4") wall(x, y + 1, x + 1, y + 1);
+    if(!isOpen(d, x - 1, y) && k !== "1" && k !== "4") wall(x, y, x, y + 1);
+    if(!isOpen(d, x + 1, y) && k !== "2" && k !== "3") wall(x + 1, y, x + 1, y + 1);
+    if(k === "1" || k === "3") wall(x + 1, y, x, y + 1);
+    else if(k === "2" || k === "4") wall(x, y, x + 1, y + 1);
   }
   ctx.strokeStyle = C.wall;
   ctx.lineWidth = Math.max(2, s * (rough ? 0.17 : 0.14));
@@ -230,6 +254,15 @@ export function drawMap(ctx, d, view, opts){
   ctx.stroke();
 
   ctx.restore();
+}
+
+/* The rock half of a cut square, as three corners, from its edges in
+   pixels: "1" top left, "2" top right, "3" bottom right, "4" bottom left. */
+function cutTriangle(cut, l, t, r, b){
+  if(cut === "1") return [[l, t], [r, t], [l, b]];
+  if(cut === "2") return [[l, t], [r, t], [r, b]];
+  if(cut === "3") return [[r, t], [r, b], [l, b]];
+  return [[l, t], [r, b], [l, b]];
 }
 
 /* The squares on screen, plus one around them for the walls, as

@@ -14,7 +14,7 @@ import {
   setDungeonStyle, DUNGEON_STYLES, placeParty, walkParty, removeParty, sightFrom, SIGHT, setSight, SIGHT_OPTIONS, SIGHT_MAX,
   toggleDoor, isDoor, noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder,
   linkAt, stairsOf, linkStairs, arrivalSquare, isLit, setLit, toggleLitArea, isLocked, lockedAhead,
-  makeRng, generateMap, createRandomDungeon, randomDungeonName
+  makeRng, generateMap, createRandomDungeon, randomDungeonName, cutAt, ovalCells, fillOval, diagonalCells, carveDiagonal
 } from "../js/core/dungeons.js";
 
 function fresh(){
@@ -26,7 +26,7 @@ const newMap = (name, size) => createDungeon(name, size).maps[0];
 
 /* Makes `d` a blank w by h map in place. */
 function blankMap(d, w, h){
-  d.w = w; d.h = h; d.cells = ROCK.repeat(w * h); d.revealed = "0".repeat(w * h); d.lit = "0".repeat(w * h);
+  d.w = w; d.h = h; d.cells = ROCK.repeat(w * h); d.revealed = "0".repeat(w * h); d.lit = "0".repeat(w * h); d.cuts = "0".repeat(w * h);
 }
 /* A map drawn from rows of text, e.g. [" ..+.."]: any character that is
    a terrain code is that terrain, anything else is rock. */
@@ -1060,4 +1060,108 @@ test("pausing the players' screen is saved until resumed", async () => {
   }finally{
     globalThis.BroadcastChannel = channel;
   }
+});
+
+/* ---- round rooms and diagonal corridors ---- */
+
+/* The map as rows: rock " ", whole floor ".", cut squares by corner. */
+const shape = (d, x0, y0, x1, y1) => Array.from({ length: y1 - y0 + 1 }, (_, j) =>
+  Array.from({ length: x1 - x0 + 1 }, (_, i) => {
+    const x = x0 + i, y = y0 + j, c = cutAt(d, x, y);
+    return c !== "0" ? c : cellAt(d, x, y);
+  }).join(""));
+
+test("a round room fills the oval in the box and cuts its stepped edge into slopes", () => {
+  fresh();
+  const d = newMap("Tower", "small");
+  assert.equal(fillOval(d, 2, 2, 8, 8), true);
+  assert.deepEqual(shape(d, 2, 2, 8, 8), [
+    "  1.2  ",
+    " 1...2 ",
+    "1.....2",
+    ".......",
+    "4.....3",
+    " 4...3 ",
+    "  4.3  "
+  ]);
+  assert.equal(fillOval(d, 2, 2, 8, 8), false, "nothing new the second time");
+  assert.equal(ovalCells(0, 0, 6, 2).length, 17, "a wide box makes an oval: its four corners left out");
+});
+
+test("a plain room's corners are never cut", () => {
+  fresh();
+  const d = newMap("Hall", "small");
+  fillRect(d, 2, 2, 6, 5, FLOOR);
+  assert.equal(d.cuts.replace(/0/g, ""), "");
+});
+
+test("a diagonal corridor runs at 45 degrees as far as the drag goes both ways, then straight on", () => {
+  const c = diagonalCells(2, 2, 5, 8);
+  assert.deepEqual(c.slant, [[2, 2], [3, 2], [3, 3], [4, 3], [4, 4], [5, 4], [5, 5]]);
+  assert.deepEqual(c.all.slice(c.slant.length), [[5, 6], [5, 7], [5, 8]], "then straight down");
+  assert.deepEqual(diagonalCells(5, 5, 2, 2).slant.at(-1), [2, 2], "any direction");
+  fresh();
+  const d = newMap("Mine", "small");
+  assert.equal(carveDiagonal(d, 2, 2, 6, 6), true);
+  assert.deepEqual(shape(d, 2, 2, 6, 6), [
+    ".2   ",
+    " 42  ",
+    "  42 ",
+    "   42",
+    "    ."
+  ]);
+  // Every step of the stair is cut into a slope, so the corridor has two
+  // straight walls: the outer corners (top right) and inner ones (bottom left).
+  assert.equal(cutAt(d, 3, 2), "2");
+  assert.equal(cutAt(d, 3, 3), "4");
+  assert.equal(cutAt(d, 4, 3), "2");
+  assert.equal(cutAt(d, 4, 4), "4");
+  assert.equal(cutAt(d, 2, 2), "0", "the ends stay whole");
+});
+
+test("a diagonal corridor is dug through rock only, never over doors or water", () => {
+  fresh();
+  const d = newMap("Mine", "small");
+  paintCells(d, [[3, 2]], "+");
+  carveDiagonal(d, 2, 2, 6, 6);
+  assert.equal(cellAt(d, 3, 2), "+");
+});
+
+test("painting over a cut square, or the rock beside its cut, makes it whole again", () => {
+  fresh();
+  const d = newMap("Mine", "small");
+  carveDiagonal(d, 2, 2, 6, 6);
+  assert.equal(cutAt(d, 3, 2), "2");
+  paintCells(d, [[4, 2]], FLOOR);
+  assert.equal(cutAt(d, 3, 2), "0", "its rock side became floor");
+  assert.equal(cutAt(d, 3, 3), "4");
+  paintCells(d, [[3, 3]], FLOOR);
+  assert.equal(cutAt(d, 3, 3), "0", "painted over with floor: a whole square");
+  paintCells(d, [[4, 4]], ROCK);
+  assert.equal(cutAt(d, 4, 4), "0", "erased");
+});
+
+test("the players get the cuts of what they were shown, and cuts are saved, resized and undone", () => {
+  fresh();
+  const dg = createDungeon("Tower", "small");
+  const d = dg.maps[0];
+  const h = createHistory();
+  const before = h.snapshot(d);
+  fillOval(d, 2, 2, 8, 8);
+  h.record(before);
+  setRevealed(d, [[2, 4], [5, 5]], true);
+  const p = playerView(d);
+  assert.equal(p.cuts.charAt(4 * d.w + 2), "1", "a shown cut square");
+  assert.equal(p.cuts.replace(/0/g, ""), "1", "and nothing else");
+  saveDungeon(d);
+  loadDungeons();
+  const again = findMap(d.id);
+  assert.equal(again.cuts, d.cuts);
+  resizeDungeon(again, 28, 20);
+  assert.equal(cutAt(again, 4, 6), "1", "moved with the map");
+  h.undo(d);
+  assert.equal(d.cuts.replace(/0/g, ""), "");
+  localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([{ id: "a", name: "A", maps: [{ id: "m", w: 8, h: 8, cells: "  .. ...", cuts: "0011x2" }] }]));
+  loadDungeons();
+  assert.equal(findMap("m").cuts.slice(0, 8), "00100000", "only on floor, only where its rock side is rock");
 });
