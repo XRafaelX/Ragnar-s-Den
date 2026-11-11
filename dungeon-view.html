@@ -20,6 +20,13 @@
   <div class="pv-wait-text" id="pv-wait-text"></div>
 </div>
 
+<!-- The DM paused the screen: a cover over the map, which keeps up with
+     every change underneath until the DM resumes. -->
+<div id="pv-pause" aria-live="polite">
+  <div class="pv-wait-name" id="pv-pause-name"></div>
+  <div class="pv-wait-text">The adventure will continue shortly.</div>
+</div>
+
 <button id="pv-full" type="button" title="Full screen (F)" aria-label="Full screen">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path class="pv-enter" d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>

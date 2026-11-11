@@ -9,7 +9,7 @@ import {
   DUNGEON_SIZES, DUNGEON_STYLES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
 } from "../core/dungeons.js";
 import { drawMap, drawFog, drawSwatch, drawThumbnail, prepareCanvas, fitView, drawPlayersScreen, playersFit, drawParty, drawPing, PING_MS, MAP_COLORS, rockColor } from "./dungeon-canvas.js";
-import { presentDungeon, publishDungeon, presentedId, stopPresenting, pointAt } from "../core/dungeon-sync.js";
+import { presentDungeon, publishDungeon, presentedId, stopPresenting, pointAt, isPaused, setPaused } from "../core/dungeon-sync.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { showActionToast } from "../ui/toast.js";
 import { openBottomSheet } from "../ui/bottom-sheet.js";
@@ -68,6 +68,8 @@ var ICON = {
   door: '<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.561Z"/>',
   note: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
   point: '<line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/>',
+  pause: '<rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>',
+  play: '<polygon points="6 3 20 12 6 21 6 3"/>',
   eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
   cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
@@ -433,6 +435,15 @@ function renderBoard(dungeon){
   b.playersBtn.appendChild(ce("span", "dg-players-label", "Player view"));
   head.appendChild(b.playersBtn);
 
+  // Pause covers the players' screen; there from the start (off until
+  // Player view is open), so the header never shifts.
+  b.pauseBtn = button("dg-pause", "", togglePause, null);
+  b.pauseIcon = ce("span", "dg-icon");
+  b.pauseLabel = ce("span", "dg-players-label");
+  b.pauseBtn.appendChild(b.pauseIcon);
+  b.pauseBtn.appendChild(b.pauseLabel);
+  head.appendChild(b.pauseBtn);
+
   b.undoBtn = button("dg-head-btn", "", undo, "Undo");
   b.undoBtn.innerHTML = makeUndoSvg();
   b.redoBtn = button("dg-head-btn dg-redo", "", redo, "Redo");
@@ -663,7 +674,10 @@ function refreshChrome(){
   b.undoBtn.disabled = !b.history.canUndo();
   b.redoBtn.disabled = !b.history.canRedo();
   var hint = "";
-  if(isBlank(b.d)) hint = mode === "build" ? "Pick Room, then drag on the grid to draw your first room." : "Switch to Build and draw your map first.";
+  var dungeonShown = b.dungeon.maps.some(function(m){ return m.id === presentedId(); });
+  var paused = dungeonShown && isPaused();
+  if(paused) hint = "The players' screen is paused. Press Resume (or B) when you're ready.";
+  else if(isBlank(b.d)) hint = mode === "build" ? "Pick Room, then drag on the grid to draw your first room." : "Switch to Build and draw your map first.";
   else if(mode === "play" && playTool === "party" && !b.d.party) hint = "Tap a square to put the party there.";
   else if(mode === "play" && !anyRevealed(b.d)) hint = "Tap a room or corridor to show it to your players.";
   b.hint.textContent = hint;
@@ -675,6 +689,17 @@ function refreshChrome(){
     : "Open the players' view in a new tab. Drag that tab to the TV and make it full screen.";
   b.playersBtn.setAttribute("aria-label", onScreen ? "Player view, showing this map" : "Player view");
   b.preview.classList.toggle("on", mode === "play" && onScreen);
+  b.preview.classList.toggle("paused", paused);
+  b.playersBtn.classList.toggle("paused", paused);
+  b.pauseBtn.disabled = !dungeonShown;
+  b.pauseBtn.classList.toggle("on", paused);
+  b.pauseIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[paused ? "play" : "pause"] + '</svg>';
+  b.pauseLabel.textContent = paused ? "Resume" : "Pause";
+  var pauseHelp = !dungeonShown ? "Pause the players' screen. Open Player view first."
+    : paused ? "Resume: show the map on the players' screen again (B)"
+    : "Pause: cover the players' screen while you get things ready (B)";
+  b.pauseBtn.title = pauseHelp;
+  b.pauseBtn.setAttribute("aria-label", pauseHelp);
   refreshPager();
   // The tool bar's swatches look like the open map's style.
   if(b.swatchStyle !== b.d.style){
@@ -882,6 +907,16 @@ function iconButton(name, label, disabled, onClick){
   btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + SMALL_ICONS[name] + '</svg>';
   btn.disabled = disabled;
   return btn;
+}
+
+/* Pauses or resumes the players' screen, if it shows this dungeon. */
+function togglePause(){
+  if(!b || !b.dungeon.maps.some(function(m){ return m.id === presentedId(); })) return;
+  var on = !isPaused();
+  setPaused(on);
+  showActionToast(on ? "The players' screen is paused. Get things ready, then press Resume." : "The players' screen is back.");
+  refreshChrome();
+  draw();
 }
 
 /* Sends the players' tab the map as it is now, once per frame at most,
@@ -1689,7 +1724,8 @@ function onUp(e){
 }
 
 /* Ctrl+Z undoes, Ctrl+Shift+Z or Ctrl+Y redoes, holding Space drags,
-   Left and Right step between the dungeon's maps. */
+   Left and Right step between the dungeon's maps, B pauses or resumes
+   the players' screen (as B blanks the screen in a slide show). */
 function onKey(e){
   if(!b) return;
   var typing = e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA");
@@ -1698,6 +1734,7 @@ function onKey(e){
   if((e.ctrlKey || e.metaKey) && key === "z"){ e.preventDefault(); if(e.shiftKey) redo(); else undo(); }
   else if((e.ctrlKey || e.metaKey) && key === "y"){ e.preventDefault(); redo(); }
   else if(e.key === " " && !b.space){ e.preventDefault(); b.space = true; refreshChrome(); draw(); }
+  else if(key === "b" && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); togglePause(); }
   else if(e.key === "ArrowLeft" && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); stepMap(-1); }
   else if(e.key === "ArrowRight" && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); stepMap(1); }
 }

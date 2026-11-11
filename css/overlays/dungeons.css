@@ -33,13 +33,13 @@
 .dg-redo svg{transform:scaleX(-1);}
 
 /* Player view: shows when the players' tab has this map. */
-.dg-players{
+.dg-players, .dg-pause{
   flex:none;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 12px;margin-right:4px;
   background:var(--field-bg);border:1px solid var(--rule);border-radius:8px;color:var(--text-on-parch);
   font-size:13px;font-weight:600;cursor:pointer;transition:border-color .15s ease, background .15s ease, color .15s ease;
 }
-.dg-players:hover{border-color:var(--brass);color:var(--brass-bright);}
-.dg-players .dg-icon svg{width:17px;height:17px;}
+.dg-players:hover, .dg-pause:hover{border-color:var(--brass);color:var(--brass-bright);}
+.dg-players .dg-icon svg, .dg-pause .dg-icon svg{width:17px;height:17px;}
 .dg-players.on{border-color:var(--brass);color:var(--brass-bright);background:color-mix(in srgb, var(--brass) 18%, var(--field-bg));}
 .dg-players.on::after{
   content:"";width:7px;height:7px;border-radius:50%;background:#4ade80;margin-left:2px;
@@ -48,6 +48,17 @@
 @media (prefers-reduced-motion:no-preference){
   .dg-players.on::after{animation:dgLive 1.8s ease-in-out infinite;}
 }
+.dg-players.paused::after{background:#f59e0b;animation:none;box-shadow:none;}
+.dg-pause:disabled{opacity:.4;cursor:default;}
+.dg-pause:disabled:hover{border-color:var(--rule);color:var(--text-on-parch);}
+.dg-pause.on{border-color:#f59e0b;color:#fbbf24;background:color-mix(in srgb, #f59e0b 16%, var(--field-bg));}
+/* The Players see box while paused: covered, like the players' screen. */
+.dg-preview.paused::after{
+  content:"Paused";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(13,11,18,.86);color:#fbbf24;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+}
+.dg-preview.paused .dg-preview-label::before{background:#f59e0b;}
+
 @keyframes dgLive{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.55);}50%{box-shadow:0 0 0 4px rgba(74,222,128,0);}}
 
 .dg-menu{position:relative;flex:none;display:flex;}
@@ -384,7 +395,7 @@
 @media (max-width:600px){
   .dg-header{padding:10px 10px;gap:4px;}
   .dg-name-input{font-size:17px;}
-  .dg-players{padding:0 9px;margin-right:0;}
+  .dg-players, .dg-pause{padding:0 9px;margin-right:0;}
   .dg-players-label{display:none;}
   .dg-preview{width:150px;height:96px;left:12px;bottom:calc(66px + env(safe-area-inset-bottom, 0px));}
   .dg-pager{bottom:calc(12px + env(safe-area-inset-bottom, 0px));}

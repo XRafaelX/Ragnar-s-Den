@@ -1,5 +1,5 @@
 import { revealedBounds } from "./core/dungeons.js";
-import { savedPlayerMap, watchAsPlayers } from "./core/dungeon-sync.js";
+import { savedPlayerMap, watchAsPlayers, isPaused } from "./core/dungeon-sync.js";
 import { drawPlayersScreen, playersFit, isSeen, prepareCanvas, drawPing, PING_MS, MAP_COLORS } from "./render/dungeon-canvas.js";
 
 /* ---------------- The players' screen ----------------
@@ -18,6 +18,8 @@ var wait = document.getElementById("pv-wait");
 var waitName = document.getElementById("pv-wait-name");
 var waitText = document.getElementById("pv-wait-text");
 var fullBtn = document.getElementById("pv-full");
+var pauseCover = document.getElementById("pv-pause");
+var pauseName = document.getElementById("pv-pause-name");
 
 var map = null;      // the players' map (core playerView), or null
 var cam = null;      // where the view is: { x, y } the middle in squares, { scale } pixels per square
@@ -38,7 +40,13 @@ function show(next){
   goal = target();
   if(firstLook || !cam || still) cam = goal ? { x: goal.x, y: goal.y, scale: goal.scale } : null;
   waitScreen();
+  pauseName.textContent = map ? map.name : "";
   draw();
+}
+
+/* The DM paused or resumed the screen: the cover fades in or out. */
+function pause(on){
+  pauseCover.classList.toggle("on", !!on);
 }
 
 /* The view that fits what is shown, in CSS pixels, or null. */
@@ -172,4 +180,5 @@ document.addEventListener("visibilitychange", keepAwake);
 keepAwake();
 
 show(savedPlayerMap());
-watchAsPlayers(show, point);
+pause(isPaused());
+watchAsPlayers(show, point, pause);

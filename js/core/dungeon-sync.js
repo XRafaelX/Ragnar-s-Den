@@ -14,10 +14,14 @@ import { loadDungeons, findMap, dungeonOfMap, mapTitle, playerView } from "./dun
      (even halfway through a drag), and saved changes arrive as storage
      events too, in case the channel missed one.
    - The players' tab only ever gets playerView(), the map holding what
-     they were shown and nothing else. */
+     they were shown and nothing else.
+   - The DM can pause the players' screen: it is covered (the map still
+     follows every change underneath) until the DM resumes. Paused is
+     saved too, so a reloaded players' tab stays covered. */
 
 var CHANNEL = "ragnarsDen.dungeonView.v1";
 var PRESENTED_KEY = "ragnarsDen.dungeonOnScreen.v1";
+var PAUSED_KEY = "ragnarsDen.dungeonPaused.v1";
 var DUNGEONS_KEY = "ragnarsDen.dungeons.v1";
 
 var channel = null;
@@ -71,6 +75,20 @@ export function pointAt(d, x, y){
   return true;
 }
 
+/* True while the players' screen is paused. */
+export function isPaused(){
+  try{ return localStorage.getItem(PAUSED_KEY) === "1"; }catch(e){ return false; }
+}
+
+/* Pauses (true) or resumes (false) the players' screen. */
+export function setPaused(on){
+  try{
+    if(on) localStorage.setItem(PAUSED_KEY, "1");
+    else localStorage.removeItem(PAUSED_KEY);
+  }catch(e){}
+  post({ type: "pause", paused: !!on });
+}
+
 /* Any tab of the app answers a players' tab that has just opened, so it
    needn't wait for the next change. */
 export function setupDungeonSync(){
@@ -92,10 +110,11 @@ export function savedPlayerMap(){
   return m ? forPlayers(m) : null;
 }
 
-/* Calls onMap(map or null) whenever the players' map changes, and
-   onPoint({mapId, x, y}) when the DM points at something, and asks the
-   DM's tab for the latest. */
-export function watchAsPlayers(onMap, onPoint){
+/* Calls onMap(map or null) whenever the players' map changes,
+   onPoint({mapId, x, y}) when the DM points at something and
+   onPause(paused) when the DM pauses or resumes, and asks the DM's tab
+   for the latest. */
+export function watchAsPlayers(onMap, onPoint, onPause){
   var ch = getChannel();
   if(ch){
     ch.addEventListener("message", function(e){
@@ -103,10 +122,12 @@ export function watchAsPlayers(onMap, onPoint){
       if(e.data.type === "map" && e.data.map) onMap(e.data.map);
       else if(e.data.type === "none") onMap(null);
       else if(e.data.type === "point" && onPoint) onPoint(e.data);
+      else if(e.data.type === "pause" && onPause) onPause(!!e.data.paused);
     });
   }
   window.addEventListener("storage", function(e){
     if(e.key === DUNGEONS_KEY || e.key === PRESENTED_KEY || e.key === null) onMap(savedPlayerMap());
+    if((e.key === PAUSED_KEY || e.key === null) && onPause) onPause(isPaused());
   });
   post({ type: "hello" });
 }

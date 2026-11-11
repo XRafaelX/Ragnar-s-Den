@@ -1041,3 +1041,23 @@ test("a random dungeon: a free name, one style, two levels whose stairs lead to 
   loadDungeons();
   assert.equal(getDungeons().length, 2, "both saved");
 });
+
+/* ---- pausing the players' screen ---- */
+test("pausing the players' screen is saved until resumed", async () => {
+  // The channel is opened on first use, and a real BroadcastChannel would
+  // keep the test run open, so it stays out of reach for the whole test
+  // (there's no players' tab to talk to here anyway).
+  const channel = globalThis.BroadcastChannel;
+  globalThis.BroadcastChannel = undefined;
+  try{
+    const { isPaused, setPaused } = await import("../js/core/dungeon-sync.js");
+    localStorage.clear();
+    assert.equal(isPaused(), false);
+    setPaused(true);
+    assert.equal(isPaused(), true);
+    setPaused(false);
+    assert.equal(isPaused(), false);
+  }finally{
+    globalThis.BroadcastChannel = channel;
+  }
+});
