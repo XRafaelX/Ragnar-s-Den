@@ -93,6 +93,10 @@
 .dg-input:focus{outline:none;border-color:var(--brass);}
 .dg-new .btn.primary{padding-left:22px;padding-right:22px;}
 
+.dg-roll{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:6px 10px;font-size:13px;}
+.dg-roll .btn-icon-svg{width:16px;height:16px;}
+#bottom-sheet .dg-roll-sizes{margin-bottom:6px;}
+
 /* Small, Medium, Large: one picked. */
 .dg-sizes{display:flex;gap:6px;}
 .dg-size{

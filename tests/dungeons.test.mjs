@@ -13,7 +13,8 @@ import {
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, revealedBounds, FOG_EDGE,
   setDungeonStyle, DUNGEON_STYLES, placeParty, walkParty, removeParty, sightFrom, SIGHT, setSight, SIGHT_OPTIONS, SIGHT_MAX,
   toggleDoor, isDoor, noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder,
-  linkAt, stairsOf, linkStairs, arrivalSquare, isLit, setLit, toggleLitArea, isLocked, lockedAhead
+  linkAt, stairsOf, linkStairs, arrivalSquare, isLit, setLit, toggleLitArea, isLocked, lockedAhead,
+  makeRng, generateMap, createRandomDungeon, randomDungeonName
 } from "../js/core/dungeons.js";
 
 function fresh(){
@@ -955,4 +956,88 @@ test("unlocking opens the door; the players only ever see a closed door until th
   assert.ok(isRevealed(d, 10, 1), "and the party sees through");
   walkParty(d, 9, 1);
   assert.deepEqual(d.party, { x: 9, y: 1 });
+});
+
+/* ---- random dungeons ---- */
+
+/* Every open square reachable from the first one, walking through any
+   door: true if the map is all one piece. */
+function allJoined(d){
+  const open = [];
+  for(let y = 0; y < d.h; y++) for(let x = 0; x < d.w; x++) if(isOpen(d, x, y)) open.push(x + "," + y);
+  if(!open.length) return false;
+  const seen = new Set([open[0]]), queue = [open[0]];
+  while(queue.length){
+    const [x, y] = queue.shift().split(",").map(Number);
+    for(const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]){
+      const k = (x + dx) + "," + (y + dy);
+      if(!seen.has(k) && isOpen(d, x + dx, y + dy)){ seen.add(k); queue.push(k); }
+    }
+  }
+  return seen.size === open.length;
+}
+
+test("a random map: rooms that don't touch, all joined by corridors, with doors and things in them", () => {
+  for(const seed of [1, 2, 3, 42, 99, 2026]){
+    fresh();
+    const d = newMap("Test", "medium");
+    const rooms = generateMap(d, { rng: makeRng(seed), notes: true });
+    assert.ok(rooms.length >= 3, "seed " + seed + ": at least three rooms");
+    assert.ok(allJoined(d), "seed " + seed + ": every room can be reached");
+    assert.ok(/[+ls]/.test(d.cells), "seed " + seed + ": some doors");
+    assert.ok(d.cells.includes(">"), "seed " + seed + ": stairs");
+    assert.ok(d.lit.includes("1"), "seed " + seed + ": a lit room");
+    assert.equal(d.notes.length, Math.min(3, rooms.length), "seed " + seed + ": notes in the first rooms");
+    assert.ok(d.notes.every((n) => n.text.length > 10));
+    for(let i = 0; i < rooms.length; i++) for(let j = i + 1; j < rooms.length; j++){
+      const a = rooms[i], b = rooms[j];
+      const apart = a.x + a.w + 1 <= b.x || b.x + b.w + 1 <= a.x || a.y + a.h + 1 <= b.y || b.y + b.h + 1 <= a.y;
+      assert.ok(apart, "seed " + seed + ": rooms keep rock between them");
+    }
+    assert.ok(rooms.every((o) => o.x >= 1 && o.y >= 1 && o.x + o.w < d.w && o.y + o.h < d.h), "inside the map, with an edge of rock");
+  }
+});
+
+test("the same seed rolls the same map, and more rooms are asked for with 'many' than 'few'", () => {
+  fresh();
+  const a = newMap("A", "large"), b = newMap("B", "large");
+  generateMap(a, { rng: makeRng(7) });
+  generateMap(b, { rng: makeRng(7) });
+  assert.equal(a.cells, b.cells);
+  const few = generateMap(newMap("C", "large"), { rooms: "few", rng: makeRng(5) }).length;
+  const many = generateMap(newMap("D", "large"), { rooms: "many", rng: makeRng(5) }).length;
+  assert.ok(many > few, few + " < " + many);
+});
+
+test("a random map replaces what was there: fog, party, notes and links start fresh", () => {
+  const d = drawn(CRYPT);
+  revealAll(d, true);
+  placeParty(d, 2, 2);
+  addNote(d, 1, 1);
+  generateMap(d, { rng: makeRng(3) });
+  assert.equal(d.revealed.includes("1"), false);
+  assert.equal(d.party, null);
+  assert.equal(d.notes.length, 0, "no notes unless asked");
+});
+
+test("a random dungeon: a free name, one style, two levels whose stairs lead to each other", () => {
+  fresh();
+  const dg = createRandomDungeon("medium", { rng: makeRng(11) });
+  assert.match(dg.name, /^The \w+ \w+/);
+  assert.deepEqual(dg.maps.map((m) => m.name), ["Level 1", "Level 2"]);
+  assert.equal(dg.maps[0].style, dg.maps[1].style);
+  const [one, two] = dg.maps;
+  assert.equal(one.links.length, 1);
+  assert.equal(one.links[0].to, two.id);
+  assert.equal(two.links.length, 1);
+  assert.equal(two.links[0].to, one.id);
+  assert.deepEqual(arrivalSquare(two, one.id), [two.links[0].x, two.links[0].y], "going down, they arrive on the stairs back up");
+  assert.ok(dg.maps.every(allJoined));
+  const again = createRandomDungeon("small", { rng: makeRng(11), levels: 3 });
+  assert.notEqual(again.name, dg.name, "names never repeat");
+  assert.equal(again.maps.length, 3);
+  assert.equal(again.maps[1].links.length, 2, "the middle level leads up and down");
+  assert.ok(randomDungeonName(makeRng(1)).startsWith("The "));
+  loadDungeons();
+  assert.equal(getDungeons().length, 2, "both saved");
 });

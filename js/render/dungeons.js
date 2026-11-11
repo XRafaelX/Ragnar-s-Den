@@ -4,7 +4,7 @@ import {
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, setDungeonStyle,
   placeParty, walkParty, removeParty, addMap, removeMap, moveMap, placeMap, renameMap, setSight, toggleDoor, isDoor,
   noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder, cellAt, linkAt, linkStairs, arrivalSquare,
-  revealedBounds, mapTitle, isLit, setLit, toggleLitArea, isLocked, lockedAhead,
+  revealedBounds, mapTitle, isLit, setLit, toggleLitArea, isLocked, lockedAhead, generateMap, createRandomDungeon,
   SIGHT_OPTIONS, SIGHT_MAX,
   DUNGEON_SIZES, DUNGEON_STYLES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
 } from "../core/dungeons.js";
@@ -14,7 +14,7 @@ import { confirmDialog } from "../ui/confirm-modal.js";
 import { showActionToast } from "../ui/toast.js";
 import { openBottomSheet } from "../ui/bottom-sheet.js";
 import { playAdd, playDelete } from "../ui/sound.js";
-import { makeKebabSvg, makeUndoSvg } from "../ui/svg-icons.js";
+import { makeKebabSvg, makeUndoSvg, makeDiceSvg } from "../ui/svg-icons.js";
 
 /* ---------------- Dungeons ----------------
    The DM's dungeon maps: terrain only, painted on a grid of 5 ft
@@ -119,6 +119,7 @@ var overlay = null;
 var openId = null;       // the dungeon on the board, null = the list
 var lastMap = {};        // dungeon id -> the map last open in it
 var newSize = "medium";  // the size picked for a new map
+var rollRooms = "some";  // how many rooms Random map asks for
 var tool = "room";       // the Build tool picked, kept between maps
 var playTool = "reveal"; // the Play tool picked
 var mode = "build";      // "build" or "play", kept between maps
@@ -279,6 +280,20 @@ function renderList(){
     render();
   });
   panel.appendChild(form);
+
+  // A whole random dungeon, to start from or to try things on.
+  var roll = button("btn ghost dg-roll", "", function(){
+    var dg = createRandomDungeon(newSize);
+    playAdd();
+    tool = "room";
+    mode = "build";
+    openId = dg.id;
+    render();
+    showActionToast("Rolled " + dg.name + ": two levels joined by stairs, with doors, light and a few notes.");
+  }, "Roll a random dungeon at the size picked");
+  roll.innerHTML = makeDiceSvg();
+  roll.appendChild(document.createTextNode("Roll a random dungeon"));
+  panel.appendChild(roll);
   wrap.appendChild(panel);
 
   var all = getDungeons();
@@ -426,6 +441,7 @@ function renderBoard(dungeon){
   head.appendChild(b.redoBtn);
   head.appendChild(menu([
     { label: "Maps in this dungeon", onClick: openMapsSheet },
+    { label: "Random map", onClick: openRandomSheet },
     { label: "Map size", onClick: openSizeSheet },
     { label: "Map style", onClick: openStyleSheet },
     { label: "Save as picture", onClick: openPictureSheet },
@@ -1738,6 +1754,41 @@ function openSightSheet(){
       change(function(){ return setSight(d, squares); });
       refresh();
     }
+  });
+}
+
+/* ---- Random map ----
+   Replaces this map with a random layout (core generateMap). One undo
+   step, so the DM can roll again and again and go back. */
+function openRandomSheet(){
+  var d = b.d;
+  openBottomSheet(function(body, refresh, closeSheet){
+    body.appendChild(ce("h3", "dg-sheet-title", "Random map"));
+    body.appendChild(ce("p", "dg-sheet-help", "Replaces " + d.name + " with random rooms, corridors, doors, water and more. You can undo it, so roll as often as you like."));
+    var sizes = ce("div", "dg-sizes dg-roll-sizes");
+    sizes.setAttribute("role", "radiogroup");
+    sizes.setAttribute("aria-label", "How many rooms");
+    [["few", "Few rooms"], ["some", "Some rooms"], ["many", "Many rooms"]].forEach(function(o){
+      var on = rollRooms === o[0];
+      var chip = button("dg-size" + (on ? " on" : ""), "", function(){ rollRooms = o[0]; refresh(); });
+      chip.dataset.rooms = o[0];
+      chip.setAttribute("role", "radio");
+      chip.setAttribute("aria-checked", on ? "true" : "false");
+      chip.appendChild(ce("span", "dg-size-name", o[1]));
+      sizes.appendChild(chip);
+    });
+    body.appendChild(sizes);
+    var actions = ce("div", "dg-sheet-actions");
+    actions.appendChild(button("btn ghost", "Cancel", closeSheet));
+    actions.appendChild(button("btn primary", "Roll", function(){
+      closeSheet();
+      if(!b || b.d !== d) return;
+      change(function(){ generateMap(d, { rooms: rollRooms }); return true; });
+      fit();
+      draw();
+      showActionToast("Rolled a new layout. Undo brings back the old one.");
+    }));
+    body.appendChild(actions);
   });
 }
 

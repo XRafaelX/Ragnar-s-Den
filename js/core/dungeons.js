@@ -1034,3 +1034,202 @@ export function arrivalSquare(to, fromId){
   var first = stairsOf(to)[0];
   return first || null;
 }
+
+/* ---- random dungeons ----
+   Rolls a map of rooms joined by corridors, for a DM who wants a quick
+   start or a quick test. Every room can be reached: the rooms are joined
+   along the shortest links between them, plus a couple more for loops.
+   Corridor mouths get doors (some locked, a few secret), and rooms get
+   water, a pit, rubble, light, stairs and a few notes to try things on.
+   `rng` returns numbers from 0 to 1 (makeRng gives a repeatable one). */
+
+/* A repeatable random number source from a whole number seed. */
+export function makeRng(seed){
+  var a = (seed >>> 0) || 1;
+  return function(){
+    a = (a + 0x6D2B79F5) >>> 0;
+    var t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+var NAME_START = ["Sunken", "Forgotten", "Ashen", "Whispering", "Drowned", "Hollow", "Shattered", "Black", "Silent", "Burning", "Frozen", "Howling"];
+var NAME_END = ["Crypt", "Vault", "Halls", "Warren", "Temple", "Catacombs", "Keep", "Mine", "Sanctum", "Tombs", "Cistern", "Labyrinth"];
+var NOTE_IDEAS = [
+  "Goblins playing dice around a fire. They haven't noticed anyone yet.",
+  "A rusted chest, locked. Inside: 40 gp and a silver dagger.",
+  "Bones and a torn map showing a door that isn't there.",
+  "A statue of a forgotten god. Its eyes follow whoever moves.",
+  "Webs from wall to wall. A giant spider waits above.",
+  "A fountain of clear, cold water. Drinking it heals 1d4.",
+  "Collapsed shelves. One scroll survived: Burning Hands.",
+  "Scratches on the wall count the days. Someone stopped at 37.",
+  "A cold draught from the north wall. There's a gap behind it.",
+  "An altar stained dark. Candles still warm."
+];
+
+export function randomDungeonName(rng){
+  var r = rng || Math.random;
+  return "The " + NAME_START[Math.floor(r() * NAME_START.length)] + " " + NAME_END[Math.floor(r() * NAME_END.length)];
+}
+
+/* How many rooms "few", "some" and "many" mean on a map this size. */
+function roomTarget(d, amount){
+  var most = Math.max(3, Math.floor(d.w * d.h / 60));
+  return amount === "few" ? Math.max(3, Math.round(most * 0.45)) : amount === "many" ? most : Math.max(3, Math.round(most * 0.7));
+}
+
+/* Replaces map `d` with a random layout. opts: { rooms: "few" | "some" |
+   "many", rng, notes: true to add a few notes }. Returns the rooms,
+   [{ x, y, w, h }], the first one first. */
+export function generateMap(d, opts){
+  opts = opts || {};
+  var r = opts.rng || Math.random;
+  function int(lo, hi){ return lo + Math.floor(r() * (hi - lo + 1)); }
+  var size = d.w * d.h;
+  d.cells = new Array(size + 1).join(ROCK);
+  d.revealed = new Array(size + 1).join(FOGGED);
+  d.lit = new Array(size + 1).join(FOGGED);
+  d.party = null;
+  d.notes = [];
+  d.links = [];
+
+  // Rooms that don't touch: each keeps a ring of rock around it.
+  var want = roomTarget(d, opts.rooms), rooms = [];
+  var maxW = Math.max(3, Math.min(9, Math.floor(d.w / 4))), maxH = Math.max(3, Math.min(7, Math.floor(d.h / 3)));
+  for(var tries = 0; tries < 400 && rooms.length < want; tries++){
+    var w = int(3, maxW), h = int(3, maxH);
+    var x = int(1, d.w - w - 1), y = int(1, d.h - h - 1);
+    var clash = rooms.some(function(o){ return x < o.x + o.w + 2 && o.x < x + w + 2 && y < o.y + o.h + 2 && o.y < y + h + 2; });
+    if(!clash) rooms.push({ x: x, y: y, w: w, h: h });
+  }
+  var roomAt = {};
+  rooms.forEach(function(o){
+    for(var yy = o.y; yy < o.y + o.h; yy++) for(var xx = o.x; xx < o.x + o.w; xx++) roomAt[xx + "," + yy] = true;
+  });
+  editCells(d, function(set){
+    rooms.forEach(function(o){ for(var yy = o.y; yy < o.y + o.h; yy++) for(var xx = o.x; xx < o.x + o.w; xx++) set(xx, yy, FLOOR); });
+  });
+
+  // Join them: the shortest links that reach every room, then a couple
+  // more so there are loops to explore.
+  function mid(o){ return [o.x + Math.floor(o.w / 2), o.y + Math.floor(o.h / 2)]; }
+  function dist(a, b){ var p = mid(a), q = mid(b); return Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]); }
+  var joined = [0], links = [];
+  while(joined.length < rooms.length){
+    var best = null;
+    joined.forEach(function(i){
+      rooms.forEach(function(o, j){
+        if(joined.indexOf(j) !== -1) return;
+        var dd = dist(rooms[i], o);
+        if(!best || dd < best.d) best = { a: i, b: j, d: dd };
+      });
+    });
+    joined.push(best.b);
+    links.push([best.a, best.b]);
+  }
+  for(var extra = 0; extra < 2 && rooms.length > 3; extra++){
+    var a = int(0, rooms.length - 1), b2 = int(0, rooms.length - 1);
+    if(a !== b2) links.push([a, b2]);
+  }
+  editCells(d, function(set){
+    links.forEach(function(l){
+      var p = mid(rooms[l[0]]), q = mid(rooms[l[1]]);
+      var bend = r() < 0.5 ? [q[0], p[1]] : [p[0], q[1]];
+      [[p, bend], [bend, q]].forEach(function(seg){
+        lineCells(seg[0][0], seg[0][1], seg[1][0], seg[1][1]).forEach(function(c){
+          if(cellAt(d, c[0], c[1]) === ROCK) set(c[0], c[1], FLOOR);
+        });
+      });
+    });
+  });
+
+  // Doors where a one-square corridor meets a room.
+  var doorSquares = [];
+  for(var yy = 0; yy < d.h; yy++) for(var xx = 0; xx < d.w; xx++){
+    if(cellAt(d, xx, yy) !== FLOOR || roomAt[xx + "," + yy]) continue;
+    var side = roomAt[(xx - 1) + "," + yy] || roomAt[(xx + 1) + "," + yy];
+    var end = roomAt[xx + "," + (yy - 1)] || roomAt[xx + "," + (yy + 1)];
+    if(side === end) continue;
+    var narrow = side ? !isOpen(d, xx, yy - 1) && !isOpen(d, xx, yy + 1) : !isOpen(d, xx - 1, yy) && !isOpen(d, xx + 1, yy);
+    var nextToDoor = doorSquares.some(function(s){ return Math.abs(s[0] - xx) + Math.abs(s[1] - yy) === 1; });
+    if(narrow && !nextToDoor && r() < 0.65) doorSquares.push([xx, yy]);
+  }
+  editCells(d, function(set){
+    doorSquares.forEach(function(s){
+      var roll = r();
+      set(s[0], s[1], roll < 0.1 ? "l" : roll < 0.17 ? "s" : "+");
+    });
+  });
+
+  // Things in the rooms: water, a pit, rubble, stairs in the last room.
+  editCells(d, function(set){
+    rooms.forEach(function(o, i){
+      if(o.w >= 4 && o.h >= 4 && r() < 0.3){
+        var px = int(o.x + 1, o.x + o.w - 3), py = int(o.y + 1, o.y + o.h - 3);
+        set(px, py, "~"); set(px + 1, py, "~"); set(px, py + 1, "~"); set(px + 1, py + 1, "~");
+      }
+      if(r() < 0.2 && o.w >= 3 && o.h >= 3) set(int(o.x + 1, o.x + o.w - 2), int(o.y + 1, o.y + o.h - 2), "o");
+      if(r() < 0.3) for(var k = 0; k < 3; k++) set(int(o.x, o.x + o.w - 1), int(o.y, o.y + o.h - 1), ":");
+    });
+    var last = rooms[rooms.length - 1];
+    if(last) set(last.x + last.w - 1, last.y + last.h - 1, ">");
+  });
+
+  // Light in the biggest room.
+  var big = rooms.slice().sort(function(p, q){ return q.w * q.h - p.w * p.h; })[0];
+  if(big){
+    var sq = [];
+    for(var ly = big.y; ly < big.y + big.h; ly++) for(var lx = big.x; lx < big.x + big.w; lx++) sq.push([lx, ly]);
+    setLit(d, sq, true);
+  }
+
+  // A few notes.
+  if(opts.notes){
+    var ideas = NOTE_IDEAS.slice();
+    rooms.slice(0, Math.min(3, rooms.length)).forEach(function(o){
+      var note = addNote(d, o.x, o.y);
+      if(note) note.text = ideas.splice(Math.floor(r() * ideas.length), 1)[0];
+    });
+  }
+  return rooms;
+}
+
+/* A new random dungeon of `levels` maps (two if not said), each a random
+   layout of the size picked, all in one random style, their stairs
+   leading from each level to the next. Saved, and returned. */
+export function createRandomDungeon(sizeId, opts){
+  opts = opts || {};
+  var r = opts.rng || Math.random;
+  var name = randomDungeonName(r), n = 2;
+  while(dungeonNameProblem(name, null)) name = randomDungeonName(r) + (n > 5 ? " " + n : ""), n++;
+  var dg = createDungeon(name, sizeId);
+  var style = DUNGEON_STYLES[Math.floor(r() * DUNGEON_STYLES.length)].id;
+  var levels = Math.max(1, Math.min(5, opts.levels || 2));
+  for(var i = 1; i < levels; i++) addMap(dg, dg.maps[dg.maps.length - 1].id);
+  var downAt = [], upAt = [];
+  dg.maps.forEach(function(m, i){
+    m.name = levels > 1 ? "Level " + (i + 1) : m.name;
+    m.style = style;
+    var rooms = generateMap(m, { rooms: "some", rng: r, notes: true });
+    // generateMap puts stairs in the last room's far corner: the way down.
+    var last = rooms[rooms.length - 1];
+    downAt.push(last ? [last.x + last.w - 1, last.y + last.h - 1] : null);
+    // Each level after the first also gets stairs up, in its first room's
+    // corner, where the party arrives.
+    var first = rooms[0];
+    upAt.push(i > 0 && first && rooms.length > 1 && paintCells(m, [[first.x, first.y]], ">") ? [first.x, first.y] : null);
+  });
+  // Each level's way down leads to the next level's way up, and back.
+  for(var k = 0; k + 1 < dg.maps.length; k++){
+    var down = downAt[k], up = upAt[k + 1];
+    if(!down || !up) continue;
+    dg.maps[k].links.push({ x: down[0], y: down[1], to: dg.maps[k + 1].id });
+    dg.maps[k + 1].links.push({ x: up[0], y: up[1], to: dg.maps[k].id });
+  }
+  saveDungeon(dg);
+  return dg;
+}
+
