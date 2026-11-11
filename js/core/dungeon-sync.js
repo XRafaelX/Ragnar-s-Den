@@ -62,6 +62,15 @@ export function publishDungeon(d){
   if(d && d.id === presentedId()) post({ type: "map", map: forPlayers(d) });
 }
 
+/* Points at (x, y) on the players' screen, in squares (fractions
+   allowed), if it shows this map. Returns false if it doesn't. A point is
+   a passing gesture: it isn't saved. */
+export function pointAt(d, x, y){
+  if(!d || d.id !== presentedId()) return false;
+  post({ type: "point", mapId: d.id, x: x, y: y });
+  return true;
+}
+
 /* Any tab of the app answers a players' tab that has just opened, so it
    needn't wait for the next change. */
 export function setupDungeonSync(){
@@ -83,15 +92,17 @@ export function savedPlayerMap(){
   return m ? forPlayers(m) : null;
 }
 
-/* Calls onMap(map or null) whenever the players' map changes, and asks
-   the DM's tab for the latest. */
-export function watchAsPlayers(onMap){
+/* Calls onMap(map or null) whenever the players' map changes, and
+   onPoint({mapId, x, y}) when the DM points at something, and asks the
+   DM's tab for the latest. */
+export function watchAsPlayers(onMap, onPoint){
   var ch = getChannel();
   if(ch){
     ch.addEventListener("message", function(e){
       if(!e.data) return;
       if(e.data.type === "map" && e.data.map) onMap(e.data.map);
       else if(e.data.type === "none") onMap(null);
+      else if(e.data.type === "point" && onPoint) onPoint(e.data);
     });
   }
   window.addEventListener("storage", function(e){

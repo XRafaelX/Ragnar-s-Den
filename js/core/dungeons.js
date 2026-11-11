@@ -10,7 +10,7 @@ import { uid } from "./basics.js";
    Dungeon shape:
      { id, name, maps: [map, ...], updated }
    Map shape:
-     { id, name, w, h, cells, revealed, style, party, sight }
+     { id, name, w, h, cells, revealed, style, party, sight, notes, links }
 
    The map is a grid of 5 ft squares, `w` wide and `h` tall. `cells` is a
    string of w*h terrain codes (see TERRAIN), row by row from the top
@@ -30,9 +30,14 @@ import { uid } from "./basics.js";
    It is always on open ground: erasing its square takes it off the map.
    `sight` is how many squares the party sees on this map (its light, or
    their darkvision), or 0 for no limit (daylight).
+   `notes` are the DM's numbered notes, [{ id, n, x, y, text }], one per
+   square at most: what is in room 3, a trap in a corridor. They are the
+   DM's only and never reach the players' screen.
+   `links` say where stairs lead: [{ x, y, to }], a stairs square and the
+   id of another map of the same dungeon.
 
-   Undo steps hold a map's terrain, fog, party and sight. The functions further
-   down that take `d` work on one map. */
+   Undo steps hold a map's terrain, fog, party, sight and notes. The
+   functions further down that take `d` work on one map. */
 
 export var SHOWN = "1";
 export var FOGGED = "0";
@@ -112,12 +117,14 @@ function clean(d){
   // Every map id once, across the dungeon.
   var ids = {};
   maps.forEach(function(m){ if(ids[m.id]) m.id = uid(); ids[m.id] = true; });
-  return {
+  var dg = {
     id: old ? String(d.id || uid()) + "-dungeon" : String(d.id || uid()),
     name: String(d.name || "").trim().slice(0, 60) || "Dungeon",
     maps: maps,
     updated: isNaN(updated) ? Date.now() : updated
   };
+  pruneLinks(dg);
+  return dg;
 }
 
 /* Shapes one map: a size within the limits and a cells string of exactly
@@ -143,8 +150,68 @@ function cleanMap(m){
     revealed: revealed,
     style: DUNGEON_STYLES.some(function(st){ return st.id === m.style; }) ? m.style : "stone",
     party: cleanParty(m.party, w, h, cells),
-    sight: cleanSight(m.sight)
+    sight: cleanSight(m.sight),
+    notes: cleanNotes(m.notes, w, h),
+    links: cleanLinks(m.links, w, h, cells)
   };
+}
+
+/* Links on stairs squares of this map, one per square. Whether the map
+   they lead to exists is checked by the dungeon (pruneLinks). */
+function cleanLinks(raw, w, h, cells){
+  var taken = {}, out = [];
+  (Array.isArray(raw) ? raw : []).forEach(function(l){
+    if(!l || typeof l !== "object" || !l.to) return;
+    var x = parseInt(l.x, 10), y = parseInt(l.y, 10);
+    if(isNaN(x) || isNaN(y) || x < 0 || y < 0 || x >= w || y >= h || cells.charAt(y * w + x) !== ">" || taken[x + "," + y]) return;
+    taken[x + "," + y] = true;
+    out.push({ x: x, y: y, to: String(l.to) });
+  });
+  return out;
+}
+
+/* Drops links to maps the dungeon doesn't have, or to their own map. */
+function pruneLinks(dg){
+  var ids = {};
+  dg.maps.forEach(function(m){ ids[m.id] = true; });
+  dg.maps.forEach(function(m){
+    m.links = m.links.filter(function(l){ return ids[l.to] && l.to !== m.id; });
+  });
+}
+
+/* After a dungeon's maps get new ids (a copy, an import), its links
+   follow them. `oldIds` are the ids the maps had, in order. */
+function relink(dg, oldIds){
+  var map = {};
+  dg.maps.forEach(function(m, i){ map[oldIds[i]] = m.id; });
+  dg.maps.forEach(function(m){
+    m.links.forEach(function(l){ l.to = map[l.to] || l.to; });
+  });
+  pruneLinks(dg);
+}
+
+/* Notes on squares of this map, one per square, each with its own
+   number; anything broken is dropped. */
+var MAX_NOTES = 99;
+var NOTE_LENGTH = 1000;
+function cleanNotes(raw, w, h){
+  var taken = {}, used = {}, out = [];
+  (Array.isArray(raw) ? raw : []).forEach(function(n){
+    if(!n || typeof n !== "object" || out.length >= MAX_NOTES) return;
+    var x = parseInt(n.x, 10), y = parseInt(n.y, 10), num = parseInt(n.n, 10);
+    if(isNaN(x) || isNaN(y) || x < 0 || y < 0 || x >= w || y >= h || taken[x + "," + y]) return;
+    taken[x + "," + y] = true;
+    out.push({ id: String(n.id || uid()), n: isNaN(num) || num < 1 || used[num] ? 0 : num, x: x, y: y, text: String(n.text || "").slice(0, NOTE_LENGTH) });
+    if(out[out.length - 1].n) used[out[out.length - 1].n] = true;
+  });
+  // Notes with a missing or repeated number get the first ones free.
+  out.forEach(function(n){ if(!n.n){ n.n = lowestFree(used); used[n.n] = true; } });
+  return out;
+}
+function lowestFree(used){
+  var k = 1;
+  while(used[k]) k++;
+  return k;
 }
 
 /* Whole squares from 1 to SIGHT_MAX, or 0 (no limit). Missing is the
@@ -232,7 +299,9 @@ export function duplicateDungeon(id){
   if(!src) return null;
   var copy = clean(JSON.parse(JSON.stringify(src)));
   copy.id = uid();
+  var oldIds = copy.maps.map(function(m){ return m.id; });
   copy.maps.forEach(function(m){ m.id = uid(); });
+  relink(copy, oldIds);
   copy.name = freeName(src.name + " (copy)");
   copy.updated = Date.now();
   list.push(copy);
@@ -253,7 +322,9 @@ export function importDungeons(entries){
     if(!raw || typeof raw!=="object" || Array.isArray(raw)) return;
     var d = clean(raw);
     d.id = uid();
+    var oldIds = d.maps.map(function(m){ return m.id; });
     d.maps.forEach(function(m){ m.id = uid(); });
+    relink(d, oldIds);
     if(dungeonNameProblem(d.name, null)) d.name = freeName(d.name + " (imported)");
     list.push(d);
     added++;
@@ -290,6 +361,7 @@ export function removeMap(d, mapId){
   if(d.maps.length < 2) return false;
   var before = d.maps.length;
   d.maps = d.maps.filter(function(m){ return m.id !== mapId; });
+  pruneLinks(d);
   return d.maps.length !== before;
 }
 
@@ -392,6 +464,7 @@ function editCells(d, fn){
   d.cells = cells.join("");
   d.revealed = seen.join("");
   if(d.party && !isOpen(d, d.party.x, d.party.y)) d.party = null;
+  d.links = d.links.filter(function(l){ return cellAt(d, l.x, l.y) === ">"; });
   return true;
 }
 
@@ -441,10 +514,12 @@ export function setDungeonStyle(d, id){
 
 export function clearDungeon(d){
   var blank = new Array(d.w * d.h + 1).join(ROCK);
-  if(d.cells === blank) return false;
+  if(d.cells === blank && !d.notes.length && !d.party) return false;
   d.cells = blank;
   d.revealed = new Array(d.w * d.h + 1).join(FOGGED);
   d.party = null;
+  d.notes = [];
+  d.links = [];
   return true;
 }
 
@@ -487,6 +562,10 @@ export function resizeDungeon(d, w, h){
   d.cells = cells;
   d.revealed = revealed;
   d.party = party && isOpen(d, party.x, party.y) ? party : null;
+  d.notes = d.notes.map(function(n){ return Object.assign({}, n, { x: n.x + off.x, y: n.y + off.y }); })
+    .filter(function(n){ return inMap(d, n.x, n.y); });
+  d.links = d.links.map(function(l){ return { x: l.x + off.x, y: l.y + off.y, to: l.to }; })
+    .filter(function(l){ return cellAt(d, l.x, l.y) === ">"; });
   return true;
 }
 
@@ -498,8 +577,9 @@ export function resizeDungeon(d, w, h){
 export function createHistory(limit){
   var max = limit || 100;
   var undoSteps = [], redoSteps = [];
-  function snap(d){ return { w: d.w, h: d.h, cells: d.cells, revealed: d.revealed, party: d.party ? { x: d.party.x, y: d.party.y } : null, sight: d.sight }; }
-  function apply(d, s){ d.w = s.w; d.h = s.h; d.cells = s.cells; d.revealed = s.revealed; d.party = s.party ? { x: s.party.x, y: s.party.y } : null; d.sight = s.sight; }
+  function copyNotes(list){ return list.map(function(n){ return Object.assign({}, n); }); }
+  function snap(d){ return { w: d.w, h: d.h, cells: d.cells, revealed: d.revealed, party: d.party ? { x: d.party.x, y: d.party.y } : null, sight: d.sight, notes: copyNotes(d.notes), links: copyNotes(d.links) }; }
+  function apply(d, s){ d.w = s.w; d.h = s.h; d.cells = s.cells; d.revealed = s.revealed; d.party = s.party ? { x: s.party.x, y: s.party.y } : null; d.sight = s.sight; d.notes = copyNotes(s.notes); d.links = copyNotes(s.links); }
   function samePlace(a, b){ return a === b || (!!a && !!b && a.x === b.x && a.y === b.y); }
   return {
     /* Call with the map as it was before the change just made. */
@@ -510,7 +590,7 @@ export function createHistory(limit){
     },
     snapshot: snap,
     /* True if the map is still as it was in `s`. */
-    same: function(d, s){ return d.w === s.w && d.h === s.h && d.cells === s.cells && d.revealed === s.revealed && samePlace(d.party, s.party) && d.sight === s.sight; },
+    same: function(d, s){ return d.w === s.w && d.h === s.h && d.cells === s.cells && d.revealed === s.revealed && samePlace(d.party, s.party) && d.sight === s.sight && JSON.stringify(d.notes) === JSON.stringify(s.notes) && JSON.stringify(d.links) === JSON.stringify(s.links); },
     canUndo: function(){ return undoSteps.length > 0; },
     canRedo: function(){ return redoSteps.length > 0; },
     undo: function(d){
@@ -791,3 +871,98 @@ export function toggleDoor(d, x, y){
 }
 
 export function isDoor(d, x, y){ return isDoorCode(cellAt(d, x, y)); }
+
+/* ---- the DM's notes ---- */
+
+/* The note on square (x, y), or null. */
+export function noteAt(d, x, y){
+  return d.notes.find(function(n){ return n.x === x && n.y === y; }) || null;
+}
+
+/* Adds a note on (x, y) with the lowest number not in use. Returns it,
+   or null if the square has one already, is off the map, or the map is
+   full of notes. */
+export function addNote(d, x, y){
+  if(!inMap(d, x, y) || noteAt(d, x, y) || d.notes.length >= MAX_NOTES) return null;
+  var used = {};
+  d.notes.forEach(function(n){ used[n.n] = true; });
+  var note = { id: uid(), n: lowestFree(used), x: x, y: y, text: "" };
+  d.notes.push(note);
+  return note;
+}
+
+export function setNoteText(d, id, text){
+  var note = d.notes.find(function(n){ return n.id === id; });
+  var clean = String(text || "").slice(0, NOTE_LENGTH);
+  if(!note || note.text === clean) return false;
+  note.text = clean;
+  return true;
+}
+
+/* Moves a note to another free square. */
+export function moveNote(d, id, x, y){
+  var note = d.notes.find(function(n){ return n.id === id; });
+  if(!note || !inMap(d, x, y) || (note.x === x && note.y === y) || noteAt(d, x, y)) return false;
+  note.x = x;
+  note.y = y;
+  return true;
+}
+
+export function removeNote(d, id){
+  var before = d.notes.length;
+  d.notes = d.notes.filter(function(n){ return n.id !== id; });
+  return d.notes.length !== before;
+}
+
+/* The notes in number order. */
+export function notesInOrder(d){
+  return d.notes.slice().sort(function(a, b){ return a.n - b.n; });
+}
+
+/* ---- stairs between maps ---- */
+
+/* The link on stairs square (x, y), or null. */
+export function linkAt(d, x, y){
+  return d.links.find(function(l){ return l.x === x && l.y === y; }) || null;
+}
+
+/* All the stairs squares of a map, [[x, y], ...], top row first. */
+export function stairsOf(d){
+  var out = [];
+  for(var i = 0; i < d.cells.length; i++) if(d.cells.charAt(i) === ">") out.push([i % d.w, Math.floor(i / d.w)]);
+  return out;
+}
+
+/* Says where the stairs on (x, y) of map `m` lead: another map of the
+   dungeon `dg` by id, or nowhere (null). Linking stairs to a map whose
+   stairs don't lead anywhere yet, when it has exactly one staircase,
+   links that one back, so going down and coming up again both work.
+   Returns true if anything changed. */
+export function linkStairs(dg, m, x, y, toId){
+  if(cellAt(m, x, y) !== ">") return false;
+  var target = toId ? dg.maps.find(function(t){ return t.id === toId && t !== m; }) : null;
+  if(toId && !target) return false;
+  var old = linkAt(m, x, y);
+  if(!target){
+    if(!old) return false;
+    m.links = m.links.filter(function(l){ return l !== old; });
+    return true;
+  }
+  if(old && old.to === target.id) return false;
+  if(old) old.to = target.id;
+  else m.links.push({ x: x, y: y, to: target.id });
+  var back = target.links.some(function(l){ return l.to === m.id; });
+  var free = stairsOf(target).filter(function(s){ return !linkAt(target, s[0], s[1]); });
+  if(!back && free.length === 1 && stairsOf(target).length === 1) target.links.push({ x: free[0][0], y: free[0][1], to: m.id });
+  return true;
+}
+
+/* Where the party comes out on map `to` after taking stairs from map
+   `fromId`: the staircase there that leads back, or else its first
+   staircase, or null if it has none. */
+export function arrivalSquare(to, fromId){
+  var back = to.links.find(function(l){ return l.to === fromId; });
+  if(back) return [back.x, back.y];
+  var first = stairsOf(to)[0];
+  return first || null;
+}

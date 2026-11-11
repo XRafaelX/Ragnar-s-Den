@@ -3,11 +3,13 @@ import {
   paintCells, fillRect, lineCells, clearDungeon, resizeDungeon, resizeLoses, createHistory, contentBounds, isBlank,
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, setDungeonStyle,
   placeParty, walkParty, removeParty, addMap, removeMap, moveMap, placeMap, renameMap, setSight, toggleDoor, isDoor,
+  noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder, cellAt, linkAt, linkStairs, arrivalSquare,
+  revealedBounds, mapTitle,
   SIGHT_OPTIONS, SIGHT_MAX,
   DUNGEON_SIZES, DUNGEON_STYLES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
 } from "../core/dungeons.js";
-import { drawMap, drawFog, drawSwatch, drawThumbnail, prepareCanvas, fitView, drawPlayersScreen, playersFit, drawParty, MAP_COLORS } from "./dungeon-canvas.js";
-import { presentDungeon, publishDungeon, presentedId, stopPresenting } from "../core/dungeon-sync.js";
+import { drawMap, drawFog, drawSwatch, drawThumbnail, prepareCanvas, fitView, drawPlayersScreen, playersFit, drawParty, drawPing, PING_MS, MAP_COLORS, rockColor } from "./dungeon-canvas.js";
+import { presentDungeon, publishDungeon, presentedId, stopPresenting, pointAt } from "../core/dungeon-sync.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { showActionToast } from "../ui/toast.js";
 import { openBottomSheet } from "../ui/bottom-sheet.js";
@@ -64,6 +66,8 @@ var ICON = {
   monitor: '<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   door: '<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.561Z"/>',
+  note: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  point: '<line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/>',
   eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
   cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
@@ -84,12 +88,15 @@ var TOOLS = [
   [
     { id: "door", label: "Door", code: "+", help: "Put a door in a corridor or a gap in a wall" },
     { id: "secret", label: "Secret", code: "s", help: "Secret door. Players will see a wall until you reveal it" },
-    { id: "stairs", label: "Stairs", code: ">", help: "Stairs up or down" }
+    { id: "stairs", label: "Stairs", code: ">", help: "Stairs up or down. Tap stairs you have drawn to choose which map of the dungeon they lead to" }
   ],
   [
     { id: "water", label: "Water", code: "~", help: "Water: a pool, a stream or a flooded floor" },
     { id: "pit", label: "Pit", code: "o", help: "A pit or a hole in the floor" },
     { id: "rubble", label: "Rubble", code: ":", help: "Rubble or broken ground (difficult terrain)" }
+  ],
+  [
+    { id: "note", label: "Note", icon: "note", help: "Tap a square to add a numbered note only you can see. Tap a number to read or change it, drag it to move it" }
   ]
 ];
 function toolById(id){
@@ -102,7 +109,8 @@ var PLAY_TOOLS = [
   { id: "move", label: "Move", icon: "hand", help: "Drag to move around the map" },
   { id: "reveal", label: "Reveal", icon: "eye", help: "Tap a room or corridor to show it to the players, and tap again to hide it. Drag to show or hide square by square" },
   { id: "party", label: "Party", icon: "users", help: "Tap a square to put the party there. Drag the marker to walk them, and the fog clears as far as they can see. Set how far in the menu, under Party sight" },
-  { id: "doors", label: "Doors", icon: "door", help: "Tap a door to open or close it. The party sees through open doors, and opens a closed door they walk onto. A secret door opens as a found door" }
+  { id: "doors", label: "Doors", icon: "door", help: "Tap a door to open or close it. The party sees through open doors, and opens a closed door they walk onto. A secret door opens as a found door" },
+  { id: "point", label: "Point", icon: "point", help: "Tap a spot to point at it on the players' screen. Drag to point like a laser pointer" }
 ];
 
 var overlay = null;
@@ -418,12 +426,14 @@ function renderBoard(dungeon){
     { label: "Maps in this dungeon", onClick: openMapsSheet },
     { label: "Map size", onClick: openSizeSheet },
     { label: "Map style", onClick: openStyleSheet },
+    { label: "Save as picture", onClick: openPictureSheet },
+    { label: "Room notes", onClick: openNotesList },
     { label: "Party sight", onClick: openSightSheet },
     { label: "Remove party marker", onClick: function(){
       if(!change(function(){ return removeParty(b.d); })) showActionToast("There is no party marker on this map.");
     } },
     { label: "Clear map", danger: true, onClick: function(){
-      if(isBlank(b.d)){ showActionToast("The map is already empty."); return; }
+      if(isBlank(b.d) && !b.d.notes.length){ showActionToast("The map is already empty."); return; }
       var m = b.d;
       confirmDialog("Clear the whole map?", "Every square of " + m.name + " goes back to solid rock. You can undo this.", function(){
         if(b && b.d === m) change(function(){ return clearDungeon(m); });
@@ -711,6 +721,7 @@ function goToMap(m){
   b.hoverArea = null;
   b.previewKey = null;
   b.d = m;
+  b.pings = [];
   b.history = b.histories[m.id] || (b.histories[m.id] = createHistory());
   b.view = b.views[m.id] || null;
   if(!b.view) fit();
@@ -963,6 +974,14 @@ function paint(){
   drawMap(c.ctx, b.d, view, { outside: cssVar("--ink-deep", "#120f1a"), grid: mode === "build", dm: true });
   if(mode === "play") drawFog(c.ctx, b.d, view, FOG_DM);
   if(b.d.party) drawParty(c.ctx, view, b.d.party);
+  b.d.notes.forEach(function(n){ drawNoteBadge(c.ctx, view, n, dpr); });
+  b.d.links.forEach(function(l){ drawLinkBadge(c.ctx, view, l, dpr); });
+  if(b.pings && b.pings.length){
+    var pnow = performance.now();
+    b.pings = b.pings.filter(function(pg){ return pnow - pg.start < PING_MS; });
+    b.pings.forEach(function(pg){ drawPing(c.ctx, view.ox + pg.x * view.scale, view.oy + pg.y * view.scale, view.scale, (pnow - pg.start) / PING_MS); });
+    if(b.pings.length) draw();
+  }
   if(b.preview.classList.contains("on")) paintPreview();
 
   var accent = cssVar("--brass", "#8b5cf6");
@@ -1054,6 +1073,325 @@ function paintPreview(){
   drawPlayersScreen(c.ctx, pmap, { x: cam.x, y: cam.y, scale: cam.scale * c.dpr }, c.width, c.height);
 }
 
+/* Puts the map back as it was in an undo snapshot (a stroke taken back
+   when a second finger turns it into a pinch). */
+function restore(s){
+  b.d.cells = s.cells;
+  b.d.revealed = s.revealed;
+  b.d.party = s.party ? { x: s.party.x, y: s.party.y } : null;
+  b.d.sight = s.sight;
+  b.d.notes = s.notes.map(function(n){ return Object.assign({}, n); });
+}
+
+/* ---- The DM's notes ----
+   A note shows as its number in a red badge in the top left corner of
+   its square, so it never hides a door, the party or what's on the floor.
+   They are drawn on the DM's board only. */
+function badgeOf(n, scale, ox, oy, dpr){
+  var r = Math.max(9 * dpr, scale * 0.2);
+  return { x: ox + (n.x + 0.06) * scale + r, y: oy + (n.y + 0.06) * scale + r, r: r };
+}
+
+function drawNoteBadge(ctx, view, n, dpr){
+  var bdg = badgeOf(n, view.scale, view.ox, view.oy, dpr);
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.45)";
+  ctx.shadowBlur = 4 * dpr;
+  ctx.fillStyle = "#8b1e30";
+  ctx.beginPath();
+  ctx.arc(bdg.x, bdg.y, bdg.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = Math.max(1.5 * dpr, bdg.r * 0.14);
+  ctx.stroke();
+  ctx.fillStyle = "#fff";
+  ctx.font = "700 " + Math.round(bdg.r * (n.n > 9 ? 0.95 : 1.15)) + "px -apple-system, 'Segoe UI', Roboto, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(String(n.n), bdg.x, bdg.y + bdg.r * 0.06);
+  ctx.restore();
+}
+
+/* The note whose badge is under point p (CSS pixels), or null. */
+function noteHit(p){
+  var v = b.view, best = null, bestDist = Infinity;
+  b.d.notes.forEach(function(n){
+    var bdg = badgeOf(n, v.scale, v.ox, v.oy, 1);
+    var dist = Math.hypot(p.x - bdg.x, p.y - bdg.y);
+    if(dist <= Math.max(bdg.r + 6, 14) && dist < bestDist){ best = n; bestDist = dist; }
+  });
+  return best;
+}
+
+/* One note: its number, its text (saved as it is typed), Delete. */
+function openNoteSheet(note, isNew){
+  var d = b.d;
+  openBottomSheet(function(body, refresh, closeSheet){
+    var head = ce("div", "dg-note-head");
+    var num = ce("span", "dg-note-num", String(note.n));
+    head.appendChild(num);
+    head.appendChild(ce("h3", "dg-sheet-title", "Note " + note.n));
+    body.appendChild(head);
+    body.appendChild(ce("p", "dg-sheet-help", "Only you see this. It is never shown on the players' screen."));
+    var text = ce("textarea", "dg-note-text");
+    text.value = note.text;
+    text.maxLength = 1000;
+    text.rows = 6;
+    text.placeholder = "What's here? Monsters, treasure, traps, what the room looks like...";
+    text.setAttribute("aria-label", "Note " + note.n);
+    text.addEventListener("input", function(){
+      if(setNoteText(d, note.id, text.value)) saveDungeon(d);
+    });
+    body.appendChild(text);
+    var actions = ce("div", "dg-sheet-actions");
+    var del = button("btn ghost dg-danger-text", "Delete note", function(){
+      closeSheet();
+      if(!b || b.d !== d) return;
+      change(function(){ return removeNote(d, note.id); });
+      showActionToast("Deleted note " + note.n + ".");
+    });
+    actions.appendChild(del);
+    actions.appendChild(button("btn primary", "Done", function(){ closeSheet(); if(b) draw(); }));
+    body.appendChild(actions);
+    if(isNew) requestAnimationFrame(function(){ text.focus(); });
+  });
+}
+
+/* Every note on this map, in number order. */
+function openNotesList(){
+  var d = b.d;
+  openBottomSheet(function(body, refresh, closeSheet){
+    body.appendChild(ce("h3", "dg-sheet-title", "Room notes"));
+    var notes = notesInOrder(d);
+    if(!notes.length){
+      body.appendChild(ce("p", "dg-sheet-help", "No notes on " + d.name + " yet. In Build, pick Note and tap a square to add one. Only you will see them."));
+      return;
+    }
+    body.appendChild(ce("p", "dg-sheet-help", "Only you see these. Tap one to read it or change it."));
+    var list = ce("div", "dg-note-list");
+    notes.forEach(function(n){
+      var row = button("dg-note-row", "", function(){ openNoteSheet(n, false); }, null);
+      row.appendChild(ce("span", "dg-note-num", String(n.n)));
+      var first = n.text.split("\n")[0].trim();
+      row.appendChild(ce("span", "dg-note-line" + (first ? "" : " empty"), first || "Nothing written yet"));
+      list.appendChild(row);
+    });
+    body.appendChild(list);
+  });
+}
+
+/* ---- Pointing ----
+   The Point tool's pings, shown on the board and sent to the players'
+   tab. A drag sends one every POINT_GAP ms, so it trails the finger like
+   a laser pointer without flooding the channel. */
+var POINT_GAP = 140;
+
+function pointHere(p, g){
+  var now = performance.now();
+  if(now - g.last < POINT_GAP) return;
+  g.last = now;
+  var x = (p.x - b.view.ox) / b.view.scale, y = (p.y - b.view.oy) / b.view.scale;
+  if(!b.pings) b.pings = [];
+  b.pings.push({ x: x, y: y, start: now });
+  if(b.pings.length > 12) b.pings.shift();
+  if(!pointAt(b.d, x, y) && !b.pointWarned){
+    b.pointWarned = true;
+    showActionToast("Open Player view to point at things on the players' screen.");
+  }
+  draw();
+}
+
+/* ---- Stairs between maps ----
+   Linked stairs show a small blue badge in their bottom right corner,
+   with an arrow and the number of the map they lead to. */
+function drawLinkBadge(ctx, view, l, dpr){
+  var i = b.dungeon.maps.findIndex(function(m){ return m.id === l.to; });
+  if(i === -1) return;
+  var h = Math.max(14 * dpr, view.scale * 0.34), w = h * 1.5;
+  var x = view.ox + (l.x + 0.94) * view.scale - w, y = view.oy + (l.y + 0.94) * view.scale - h;
+  ctx.save();
+  ctx.fillStyle = "#1f5fa8";
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = Math.max(1.2 * dpr, h * 0.09);
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(x, y, w, h, h / 2); else ctx.rect(x, y, w, h);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#fff";
+  ctx.font = "700 " + Math.round(h * 0.62) + "px -apple-system, 'Segoe UI', Roboto, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("→" + (i + 1), x + w / 2, y + h / 2 + h * 0.04);
+  ctx.restore();
+}
+
+/* Where the stairs on (x, y) lead: one of the dungeon's other maps, or
+   nowhere. A dungeon of one map offers to add the next one. */
+function openStairsSheet(x, y){
+  var d = b.d, dungeon = b.dungeon;
+  openBottomSheet(function(body, refresh, closeSheet){
+    body.appendChild(ce("h3", "dg-sheet-title", "Where do these stairs go?"));
+    var others = dungeon.maps.filter(function(m){ return m !== d; });
+    if(!others.length){
+      body.appendChild(ce("p", "dg-sheet-help", "This dungeon has only one map. Add the next one and these stairs will lead to it. When the party walks onto them in Play, they go there."));
+      var actions0 = ce("div", "dg-sheet-actions");
+      actions0.appendChild(button("btn primary", "Add a map and lead there", function(){
+        closeSheet();
+        if(!b || b.d !== d) return;
+        var m = addMap(dungeon, d.id);
+        if(!m){ showActionToast("A dungeon can hold up to 30 maps.", true); return; }
+        change(function(){ return linkStairs(dungeon, d, x, y, m.id); });
+        saveDungeon(dungeon);
+        playAdd();
+        showActionToast("Added " + m.name + ". These stairs lead there.");
+      }));
+      body.appendChild(actions0);
+      return;
+    }
+    body.appendChild(ce("p", "dg-sheet-help", "When the party walks onto these stairs in Play, they go to that map, and the players' screen goes with them."));
+    var current = linkAt(d, x, y);
+    var list = ce("div", "dg-sight-list");
+    list.setAttribute("role", "radiogroup");
+    list.setAttribute("aria-label", "Where the stairs lead");
+    dungeon.maps.forEach(function(m, i){
+      if(m === d) return;
+      list.appendChild(choice(m.name, "Map " + (i + 1), current && current.to === m.id, function(){ pick(m.id, m.name); }));
+    });
+    list.appendChild(choice("Nowhere", "", !current, function(){ pick(null, ""); }));
+    body.appendChild(list);
+
+    function choice(label, place, on, onPick){
+      var row = button("dg-sight" + (on ? " on" : ""), "", onPick, null);
+      row.setAttribute("role", "radio");
+      row.setAttribute("aria-checked", on ? "true" : "false");
+      var words = ce("span", "dg-sight-words");
+      words.appendChild(ce("span", "dg-sight-name", label));
+      row.appendChild(words);
+      if(place) row.appendChild(ce("span", "dg-sight-feet", place));
+      return row;
+    }
+    function pick(toId, name){
+      closeSheet();
+      if(!b || b.d !== d) return;
+      if(change(function(){ return linkStairs(dungeon, d, x, y, toId); })){
+        saveDungeon(dungeon);
+        showActionToast(toId ? "These stairs lead to " + name + "." : "These stairs lead nowhere now.");
+      }
+    }
+  });
+}
+
+/* If the party's move (they were at `from` before it) ended on stairs
+   leading to another map, they take them: they leave this map, the
+   board and the players' screen go to that one, and they come out on
+   its stairs back (or its first staircase). Each map's change is its
+   own undo step there. Standing still on stairs takes nobody anywhere. */
+function takeStairs(from){
+  var p = b.d.party;
+  if(!p || (from && from.x === p.x && from.y === p.y)) return;
+  var link = linkAt(b.d, p.x, p.y);
+  var target = link && b.dungeon.maps.find(function(m){ return m.id === link.to; });
+  if(!target) return;
+  var left = b.d;
+  change(function(){ return removeParty(left); });
+  goToMap(target);
+  var at = arrivalSquare(target, left.id);
+  if(at) change(function(){ return placeParty(target, at[0], at[1]); });
+  showActionToast("The party takes the stairs to " + target.name + ".");
+}
+
+/* ---- Saving a map as a picture ----
+   A PNG of this map, drawn fresh at a good size (PICTURE_SQUARE pixels a
+   square, smaller for a big map so it stays within PICTURE_MAX), with a
+   strip along the bottom naming the dungeon and the map:
+   - "whole": every room, as on the DM's board, with the note numbers
+     and stairs badges, and secret doors marked. For the DM.
+   - "players": what the players have been shown, the rest in fog, and
+     the party. A handout. */
+var PICTURE_SQUARE = 64;
+var PICTURE_MAX = 4096;
+
+function openPictureSheet(){
+  var d = b.d;
+  openBottomSheet(function(body, refresh, closeSheet){
+    body.appendChild(ce("h3", "dg-sheet-title", "Save as picture"));
+    body.appendChild(ce("p", "dg-sheet-help", "Saves " + d.name + " as a picture file you can print or share."));
+    var list = ce("div", "dg-sight-list");
+    list.appendChild(option("Whole map", "Every room and corridor, with your note numbers and secret doors. For you, or for printing.", function(){
+      closeSheet();
+      savePicture(d, "whole");
+    }, isBlank(d)));
+    list.appendChild(option("What the players have seen", "Only what you have shown them, the rest in fog. A handout for the players.", function(){
+      closeSheet();
+      savePicture(d, "players");
+    }, !anyRevealed(d)));
+    body.appendChild(list);
+    function option(label, help, onPick, off){
+      var row = button("dg-sight", "", onPick, null);
+      row.disabled = off;
+      var words = ce("span", "dg-sight-words");
+      words.appendChild(ce("span", "dg-sight-name", label));
+      words.appendChild(ce("span", "dg-sight-help", off ? (label === "Whole map" ? "Draw something on the map first." : "Show the players something in Play first.") : help));
+      row.appendChild(words);
+      return row;
+    }
+  });
+}
+
+/* Draws the picture and hands it to the browser to save. Returns the
+   canvas (for checks). */
+function savePicture(d, kind){
+  var players = kind === "players";
+  var pmap = players ? playerView(d) : null;
+  var area = players ? revealedBounds(pmap) : contentBounds(d);
+  if(!area){ showActionToast(players ? "The players haven't been shown anything on this map yet." : "This map is empty.", true); return null; }
+  var pad = players ? 2 : 1;
+  var box = { x: area.x - pad, y: area.y - pad, w: area.w + pad * 2, h: area.h + pad * 2 };
+  var scale = Math.max(8, Math.min(PICTURE_SQUARE, Math.floor(PICTURE_MAX / Math.max(box.w, box.h))));
+  var width = box.w * scale, height = box.h * scale;
+  var strip = Math.round(Math.max(36, scale * 0.8));
+  var canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height + strip;
+  var ctx = canvas.getContext("2d");
+  if(players){
+    drawPlayersScreen(ctx, pmap, { x: box.x + box.w / 2, y: box.y + box.h / 2, scale: scale }, width, height);
+  } else {
+    var view = { scale: scale, ox: -box.x * scale, oy: -box.y * scale, width: width, height: height };
+    drawMap(ctx, d, view, { outside: rockColor(d.style), dm: true });
+    d.notes.forEach(function(n){ drawNoteBadge(ctx, view, n, scale / 40); });
+    d.links.forEach(function(l){ drawLinkBadge(ctx, view, l, scale / 40); });
+  }
+  // The caption strip.
+  ctx.fillStyle = "#14111b";
+  ctx.fillRect(0, height, width, strip);
+  ctx.fillStyle = "#e8dcc0";
+  ctx.font = Math.round(strip * 0.46) + "px Georgia, 'Palatino Linotype', serif";
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  ctx.fillText(mapTitle(b.dungeon, d), Math.round(strip * 0.4), height + strip / 2);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#8f86a3";
+  ctx.font = Math.round(strip * 0.34) + "px -apple-system, 'Segoe UI', Roboto, sans-serif";
+  ctx.fillText("1 square = 5 ft", width - Math.round(strip * 0.4), height + strip / 2);
+
+  var name = (mapTitle(b.dungeon, d) + (players ? " (players)" : "")).replace(/[\\/:*?"<>|·]+/g, " ").replace(/\s+/g, " ").trim() + ".png";
+  canvas.toBlob(function(blob){
+    if(!blob){ showActionToast("Could not make the picture. The map may be too big for this browser.", true); return; }
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    showActionToast("Saved " + name + ".");
+  }, "image/png");
+  return canvas;
+}
+
 /* ---- Input ---- */
 function point(e){
   var r = b.canvas.getBoundingClientRect();
@@ -1086,14 +1424,15 @@ function setupInput(canvas){
 function onDown(e){
   if(!b || !b.view) return;
   if(e.pointerType === "mouse" && e.button > 2) return;
-  b.canvas.setPointerCapture(e.pointerId);
+  // Capture can fail for a pointer the browser no longer knows; carry on.
+  try{ b.canvas.setPointerCapture(e.pointerId); }catch(err){}
   var p = point(e);
   b.pointers.set(e.pointerId, p);
 
   if(b.pointers.size === 2){
     // A second finger: whatever the first began becomes a pinch.
     var g = b.gesture;
-    if(g && g.before){ b.d.cells = g.before.cells; b.d.revealed = g.before.revealed; publish(); }
+    if(g && g.before){ restore(g.before); publish(); }
     startPinch();
     draw();
     return;
@@ -1102,8 +1441,20 @@ function onDown(e){
 
   var mouseDrag = e.pointerType === "mouse" && (e.button === 1 || e.button === 2);
   var t = activeTool();
+  var hit = !mouseDrag && !b.space && t.id !== "move" ? noteHit(p) : null;
   if(mouseDrag || t.id === "move" || b.space){
     b.gesture = { type: "pan", last: p };
+  } else if(t.id === "note"){
+    // On a note: a tap opens it, a drag moves it. Anywhere else: a tap adds one.
+    var nsq = squareAt(p);
+    var note = hit || noteAt(b.d, nsq[0], nsq[1]);
+    b.gesture = { type: "note", note: note, start: nsq, moved: false, before: b.history.snapshot(b.d) };
+  } else if(mode === "play" && hit){
+    // In Play a tap on a note's number opens it, whatever the tool.
+    b.gesture = { type: "note-read", note: hit, start: p };
+  } else if(t.id === "point"){
+    b.gesture = { type: "point", last: 0 };
+    pointHere(p, b.gesture);
   } else if(t.id === "doors"){
     // A tap opens or closes the door under it.
     var at0 = squareAt(p);
@@ -1125,7 +1476,7 @@ function onDown(e){
     b.gesture = { type: "room", a: sq, b: sq };
   } else {
     var start = squareAt(p);
-    b.gesture = { type: "paint", code: t.code, last: start, before: b.history.snapshot(b.d) };
+    b.gesture = { type: "paint", code: t.code, start: start, startCode: cellAt(b.d, start[0], start[1]), last: start, moved: false, before: b.history.snapshot(b.d) };
     paintCells(b.d, [start], t.code);
   }
   refreshChrome();
@@ -1179,6 +1530,7 @@ function onMove(e){
     if(sameSquare(to, g.last)) return;
     paintCells(b.d, lineCells(g.last[0], g.last[1], to[0], to[1]), g.code);
     g.last = to;
+    g.moved = true;
     b.hover = to;
     refreshChrome();
     draw();
@@ -1187,6 +1539,15 @@ function onMove(e){
     if(sameSquare(c, g.b)) return;
     g.b = c;
     draw();
+  } else if(g.type === "note"){
+    var nto = squareAt(p);
+    if(!g.note || sameSquare(nto, g.start) && !g.moved) return;
+    if(moveNote(b.d, g.note.id, nto[0], nto[1])) g.moved = true;
+    draw();
+  } else if(g.type === "point"){
+    pointHere(p, g);
+  } else if(g.type === "note-read"){
+    if(Math.hypot(p.x - g.start.x, p.y - g.start.y) > 8) b.gesture = { type: "done" };
   } else if(g.type === "party"){
     var step = squareAt(p);
     if(sameSquare(step, g.last) || !b.d.party) return;
@@ -1209,8 +1570,36 @@ function onUp(e){
   if(!b || !b.pointers.has(e.pointerId)) return;
   b.pointers.delete(e.pointerId);
   var g = b.gesture;
-  if(g && (g.type === "paint" || g.type === "party" || (g.type === "reveal" && g.moved))) finishStroke(g.before);
-  else if(g && g.type === "reveal" && e.type === "pointerup"){
+  var up = e.type === "pointerup";
+  // A stroke that changed the map as it went: one undo step. Then a tap
+  // on stairs already drawn (Stairs tool) asks where they lead, and a
+  // party move ending on stairs that lead somewhere takes them there.
+  // Otherwise it was a tap, handled by its tool below.
+  if(g && (g.type === "paint" || g.type === "party" || (g.type === "reveal" && g.moved) || (g.type === "note" && g.moved))){
+    finishStroke(g.before);
+    if(g.type === "paint" && up && !g.moved && g.code === ">" && g.startCode === ">"){
+      var st = g.start;
+      b.gesture = null;
+      openStairsSheet(st[0], st[1]);
+    }
+    else if(g.type === "party" && up) takeStairs(g.before.party);
+  }
+  else if(g && g.type === "note" && up){
+    var tapped = g.note, at = g.start;
+    b.gesture = null;
+    if(!tapped){
+      var made = null;
+      if(!change(function(){ made = addNote(b.d, at[0], at[1]); return !!made; })){
+        showActionToast("A map can hold up to 99 notes.", true);
+      } else tapped = made;
+    }
+    if(tapped) openNoteSheet(tapped, !g.note);
+  }
+  else if(g && g.type === "note-read" && up){
+    b.gesture = null;
+    openNoteSheet(g.note, false);
+  }
+  else if(g && g.type === "reveal" && up){
     var tap = g.start;
     b.gesture = null;
     change(function(){ return toggleArea(b.d, tap[0], tap[1]); });

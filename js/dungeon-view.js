@@ -1,6 +1,6 @@
 import { revealedBounds } from "./core/dungeons.js";
 import { savedPlayerMap, watchAsPlayers } from "./core/dungeon-sync.js";
-import { drawPlayersScreen, playersFit, isSeen, prepareCanvas, MAP_COLORS } from "./render/dungeon-canvas.js";
+import { drawPlayersScreen, playersFit, isSeen, prepareCanvas, drawPing, PING_MS, MAP_COLORS } from "./render/dungeon-canvas.js";
 
 /* ---------------- The players' screen ----------------
    Shows the dungeon the DM presents (js/core/dungeon-sync.js) under
@@ -24,6 +24,7 @@ var cam = null;      // where the view is: { x, y } the middle in squares, { sca
 var goal = null;     // where it is gliding to
 var frame = 0;
 var fades = {};      // square index -> when it started coming out of the fog
+var pings = [];      // the DM pointing: [{ x, y, start }] in squares
 var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function show(next){
@@ -85,7 +86,7 @@ function draw(){
   frame = requestAnimationFrame(function(){
     frame = 0;
     paint();
-    if(glide() || fading) draw();
+    if(glide() || fading || pings.length) draw();
   });
 }
 
@@ -110,7 +111,20 @@ function paint(){
     c.ctx.fillRect(0, 0, c.width, c.height);
     return;
   }
-  drawPlayersScreen(c.ctx, map, { x: cam.x, y: cam.y, scale: cam.scale * c.dpr }, c.width, c.height, fogAmount(performance.now()));
+  var now = performance.now(), scale = cam.scale * c.dpr;
+  drawPlayersScreen(c.ctx, map, { x: cam.x, y: cam.y, scale: scale }, c.width, c.height, fogAmount(now));
+  pings = pings.filter(function(p){ return now - p.start < PING_MS; });
+  pings.forEach(function(p){
+    drawPing(c.ctx, c.width / 2 + (p.x - cam.x) * scale, c.height / 2 + (p.y - cam.y) * scale, scale, (now - p.start) / PING_MS);
+  });
+}
+
+/* The DM points at something on this map. */
+function point(p){
+  if(!map || p.mapId !== map.id) return;
+  pings.push({ x: p.x, y: p.y, start: performance.now() });
+  if(pings.length > 12) pings.shift();
+  draw();
 }
 
 window.addEventListener("resize", function(){
@@ -158,4 +172,4 @@ document.addEventListener("visibilitychange", keepAwake);
 keepAwake();
 
 show(savedPlayerMap());
-watchAsPlayers(show);
+watchAsPlayers(show, point);

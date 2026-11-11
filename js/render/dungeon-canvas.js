@@ -346,6 +346,37 @@ export function drawPlayersScreen(ctx, pmap, cam, width, height, amountAt){
   if(pmap.party) drawParty(ctx, view, pmap.party);
 }
 
+/* A ping: the DM pointing at a spot. Rings spread out from it and fade
+   over PING_MS while a dot stays in the middle. (cx, cy) in canvas
+   pixels, `scale` pixels a square, `t` 0 to 1 through its life. */
+export var PING_MS = 2400;
+export function drawPing(ctx, cx, cy, scale, t){
+  var fade = t < 0.8 ? 1 : 1 - (t - 0.8) / 0.2;
+  ctx.save();
+  for(var k = 0; k < 3; k++){
+    var phase = (t * 1.6 + k / 3) % 1;
+    var r = scale * (0.3 + phase * 1.6);
+    var a = (1 - phase) * fade;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.lineWidth = Math.max(4, scale * 0.14);
+    ctx.strokeStyle = "rgba(20,14,4," + (0.45 * a) + ")";
+    ctx.stroke();
+    ctx.lineWidth = Math.max(2, scale * 0.07);
+    ctx.strokeStyle = "rgba(255,213,107," + a + ")";
+    ctx.stroke();
+  }
+  ctx.globalAlpha = fade;
+  ctx.fillStyle = "#ffd56b";
+  ctx.strokeStyle = "#3a2406";
+  ctx.lineWidth = Math.max(1.5, scale * 0.05);
+  ctx.beginPath();
+  ctx.arc(cx, cy, Math.max(4, scale * 0.16), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
 /* The party's marker: a glowing gold token with a figure on it. */
 export function drawParty(ctx, view, party){
   var s = view.scale;
@@ -615,6 +646,12 @@ function drawRubble(ctx, b, x, y){
     ctx.fill();
     ctx.stroke();
   }
+}
+
+/* The rock color of a map's style, for the space around it in a saved
+   picture, so the picture's edges look like more rock. */
+export function rockColor(style){
+  return (STYLES[style] || STYLES.stone).colors.rock;
 }
 
 /* ---- Small pictures ---- */

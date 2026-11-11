@@ -12,7 +12,8 @@ import {
   clearDungeon, resizeDungeon, resizeLoses, createHistory, DUNGEON_SIZES, MIN_SIDE, MAX_SIDE, TERRAIN, ROCK, FLOOR,
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, revealedBounds, FOG_EDGE,
   setDungeonStyle, DUNGEON_STYLES, placeParty, walkParty, removeParty, sightFrom, SIGHT, setSight, SIGHT_OPTIONS, SIGHT_MAX,
-  toggleDoor, isDoor
+  toggleDoor, isDoor, noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder,
+  linkAt, stairsOf, linkStairs, arrivalSquare
 } from "../js/core/dungeons.js";
 
 function fresh(){
@@ -731,4 +732,139 @@ test("open doors still split areas for a tap, and a room tap shows them", () => 
   assert.ok(isRevealed(d, 4, 2), "the open door in the room's wall is shown");
   assert.equal(isRevealed(d, 5, 2), false, "but not the corridor past it");
   assert.deepEqual(areaAt(d, 4, 2), [[4, 2]], "an open door is only itself");
+});
+
+/* ---- the DM's notes ---- */
+
+test("notes are numbered from 1, one per square, filling gaps left by deleted ones", () => {
+  fresh();
+  const d = newMap("Crypt", "small");
+  const a = addNote(d, 2, 2), b = addNote(d, 5, 5), c = addNote(d, 8, 1);
+  assert.deepEqual([a.n, b.n, c.n], [1, 2, 3]);
+  assert.equal(addNote(d, 2, 2), null, "one note a square");
+  assert.equal(addNote(d, -1, 0), null, "on the map only");
+  assert.equal(removeNote(d, b.id), true);
+  assert.equal(addNote(d, 9, 9).n, 2, "the free number 2 is used again");
+  assert.deepEqual(notesInOrder(d).map((n) => n.n), [1, 2, 3]);
+  assert.equal(noteAt(d, 8, 1), c);
+  assert.equal(noteAt(d, 0, 0), null);
+});
+
+test("a note's text is kept and held to its length, and notes move only to free squares", () => {
+  fresh();
+  const d = newMap("Crypt", "small");
+  const a = addNote(d, 2, 2), b = addNote(d, 4, 4);
+  assert.equal(setNoteText(d, a.id, "Goblin guards. Chest under the bed."), true);
+  assert.equal(setNoteText(d, a.id, "Goblin guards. Chest under the bed."), false);
+  setNoteText(d, b.id, "x".repeat(5000));
+  assert.equal(b.text.length, 1000);
+  assert.equal(moveNote(d, a.id, 4, 4), false, "not onto another note");
+  assert.equal(moveNote(d, a.id, 3, 3), true);
+  assert.equal(noteAt(d, 3, 3).text, "Goblin guards. Chest under the bed.");
+});
+
+test("notes stay the DM's: saved and cleaned, moved with a resize, gone with a cleared map, never in the players' view", () => {
+  fresh();
+  const dg = createDungeon("Crypt", "small");
+  const d = dg.maps[0];
+  const h = createHistory();
+  let before = h.snapshot(d);
+  addNote(d, 2, 2);
+  h.record(before);
+  setNoteText(d, d.notes[0].id, "Secret: the floor is false");
+  saveDungeon(d);
+  loadDungeons();
+  const again = findMap(d.id);
+  assert.equal(again.notes[0].text, "Secret: the floor is false");
+  assert.ok(!JSON.stringify(playerView(again)).includes("Secret"), "the players' map holds no notes");
+  resizeDungeon(again, 30, 20);
+  assert.deepEqual([again.notes[0].x, again.notes[0].y], [5, 4]);
+  clearDungeon(again);
+  assert.equal(again.notes.length, 0);
+  assert.equal(h.undo(d), true);
+  assert.equal(d.notes.length, 0, "undo takes back an added note");
+  localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([{ id: "a", name: "A", maps: [{ id: "m", w: 10, h: 10, notes: [
+    { x: 1, y: 1, n: 4, text: "kept" }, { x: 1, y: 1, n: 5 }, { x: 50, y: 1, n: 6 }, { x: 2, y: 2, n: 4 }, null, { x: 3, y: 3, n: "x" }
+  ] }] }]));
+  loadDungeons();
+  assert.deepEqual(findMap("m").notes.map((n) => [n.x, n.y, n.n]), [[1, 1, 4], [2, 2, 1], [3, 3, 2]], "repeats and broken numbers renumbered");
+});
+
+/* ---- stairs between maps ---- */
+
+/* A dungeon of three maps: stairs at (2,2) on the first, one staircase
+   at (5,5) on the second, two on the third. */
+function levels(){
+  fresh();
+  const dg = createDungeon("Tower", "small");
+  const [a] = dg.maps;
+  const b = addMap(dg, a.id), c = addMap(dg, b.id);
+  fillRect(a, 1, 1, 4, 4, FLOOR); paintCells(a, [[2, 2]], ">");
+  fillRect(b, 4, 4, 7, 7, FLOOR); paintCells(b, [[5, 5]], ">");
+  fillRect(c, 1, 1, 9, 3, FLOOR); paintCells(c, [[2, 2], [8, 2]], ">");
+  return { dg, a, b, c };
+}
+
+test("stairs link to another map of the dungeon, and a lone staircase there links back", () => {
+  const { dg, a, b, c } = levels();
+  assert.deepEqual(stairsOf(c), [[2, 2], [8, 2]]);
+  assert.equal(linkStairs(dg, a, 3, 3, b.id), false, "only stairs can lead somewhere");
+  assert.equal(linkStairs(dg, a, 2, 2, a.id), false, "not to their own map");
+  assert.equal(linkStairs(dg, a, 2, 2, b.id), true);
+  assert.deepEqual(linkAt(a, 2, 2), { x: 2, y: 2, to: b.id });
+  assert.deepEqual(linkAt(b, 5, 5), { x: 5, y: 5, to: a.id }, "linked back by itself");
+  assert.equal(linkStairs(dg, a, 2, 2, b.id), false, "already so");
+  assert.equal(linkStairs(dg, b, 5, 5, c.id), true);
+  assert.equal(c.links.length, 0, "two staircases there: no guessing which one leads back");
+  assert.equal(linkStairs(dg, b, 5, 5, null), true, "and they can lead nowhere again");
+  assert.equal(linkAt(b, 5, 5), null);
+});
+
+test("the party comes out on the stairs leading back, or else the first staircase", () => {
+  const { dg, a, b, c } = levels();
+  linkStairs(dg, a, 2, 2, b.id);
+  assert.deepEqual(arrivalSquare(b, a.id), [5, 5]);
+  linkStairs(dg, c, 8, 2, b.id);
+  assert.deepEqual(arrivalSquare(c, b.id), [8, 2], "the one that leads back");
+  assert.deepEqual(arrivalSquare(c, a.id), [2, 2], "none leads back: the first");
+  const blank = addMap(dg, c.id);
+  assert.equal(arrivalSquare(blank, a.id), null);
+});
+
+test("links go when their stairs or their map do, follow a resize, and survive copies and imports", () => {
+  const { dg, a, b, c } = levels();
+  linkStairs(dg, a, 2, 2, b.id);
+  linkStairs(dg, c, 8, 2, b.id);
+  paintCells(c, [[8, 2]], FLOOR);
+  assert.equal(c.links.length, 0, "stairs painted over: link gone");
+  resizeDungeon(a, 30, 20);
+  assert.deepEqual(linkAt(a, 5, 4), { x: 5, y: 4, to: b.id }, "moved with the map");
+  saveDungeon(dg);
+  const copy = duplicateDungeon(dg.id);
+  const [ca, cb] = copy.maps;
+  assert.equal(linkAt(ca, 5, 4).to, cb.id, "a copy's stairs lead to the copy's maps");
+  importDungeons([JSON.parse(JSON.stringify(dg))]);
+  const imported = getDungeons().find((x) => x.name === "Tower (imported)");
+  assert.equal(linkAt(imported.maps[0], 5, 4).to, imported.maps[1].id, "and an import's to its own");
+  removeMap(dg, b.id);
+  assert.equal(a.links.length, 0, "the map they led to deleted: link gone");
+  localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([{ id: "t", name: "T", maps: [
+    { id: "m1", w: 8, h: 8, cells: ">", links: [{ x: 0, y: 0, to: "m2" }, { x: 1, y: 0, to: "m2" }] },
+    { id: "m2", w: 8, h: 8, links: [{ x: 0, y: 0, to: "nowhere" }] }
+  ] }]));
+  loadDungeons();
+  assert.deepEqual(findMap("m1").links, [{ x: 0, y: 0, to: "m2" }], "only on stairs");
+  assert.deepEqual(findMap("m2").links, [], "only to maps that exist");
+});
+
+test("undo brings back a link along with the stairs", () => {
+  const { dg, a, b } = levels();
+  linkStairs(dg, a, 2, 2, b.id);
+  const h = createHistory();
+  const before = h.snapshot(a);
+  paintCells(a, [[2, 2]], FLOOR);
+  h.record(before);
+  assert.equal(a.links.length, 0);
+  h.undo(a);
+  assert.deepEqual(linkAt(a, 2, 2).to, b.id);
 });
