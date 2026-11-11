@@ -266,9 +266,27 @@
 /* ---- Maps sheet ---- */
 .dg-map-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:4px;}
 .dg-map-row{
-  display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:10px;
+  position:relative;display:flex;align-items:center;gap:6px;padding:6px 8px 6px 4px;border-radius:10px;
   background:var(--field-bg);border:1px solid var(--rule);
 }
+/* Dragging a map: the row lifts and follows the pointer, the others
+   slide out of its way. */
+.dg-map-grip{
+  flex:none;width:26px;height:32px;display:flex;align-items:center;justify-content:center;
+  background:none;border:none;border-radius:6px;color:var(--text-on-parch-dim);
+  cursor:grab;touch-action:none;
+}
+.dg-map-grip:hover:not(:disabled){color:var(--brass-bright);background:rgba(255,255,255,.06);}
+.dg-map-grip:disabled{opacity:.3;cursor:default;}
+.dg-map-grip:focus-visible{outline:2px solid var(--brass);outline-offset:1px;}
+.dg-map-grip svg{width:18px;height:18px;}
+.dg-map-rows.sorting .dg-map-row{transition:transform .18s ease;}
+.dg-map-rows.sorting .dg-map-row.dragging{
+  transition:none;z-index:2;cursor:grabbing;border-color:var(--brass);
+  box-shadow:0 10px 24px rgba(0,0,0,.5);background:var(--parchment-dim);
+}
+.dg-map-rows.sorting{user-select:none;-webkit-user-select:none;}
+@media (prefers-reduced-motion:reduce){ .dg-map-rows.sorting .dg-map-row{transition:none;} }
 .dg-map-row.here{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 14%, var(--field-bg));}
 .dg-map-num{flex:none;width:20px;text-align:center;font-size:13px;font-weight:700;color:var(--text-on-parch-dim);}
 .dg-map-row.here .dg-map-num{color:var(--brass-bright);}

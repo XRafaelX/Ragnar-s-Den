@@ -2,7 +2,7 @@ import {
   getDungeons, getDungeon, createDungeon, saveDungeon, deleteDungeon, duplicateDungeon, dungeonNameProblem,
   paintCells, fillRect, lineCells, clearDungeon, resizeDungeon, resizeLoses, createHistory, contentBounds, isBlank,
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, setDungeonStyle,
-  placeParty, walkParty, removeParty, addMap, removeMap, moveMap, renameMap,
+  placeParty, walkParty, removeParty, addMap, removeMap, moveMap, placeMap, renameMap,
   DUNGEON_SIZES, DUNGEON_STYLES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
 } from "../core/dungeons.js";
 import { drawMap, drawFog, drawSwatch, drawThumbnail, prepareCanvas, fitView, drawPlayersScreen, playersFit, drawParty, MAP_COLORS } from "./dungeon-canvas.js";
@@ -710,16 +710,32 @@ function goToMap(m){
   draw();
 }
 
-/* The dungeon's maps in a sheet: go to one, rename, reorder, delete, add. */
+/* The dungeon's maps in a sheet: go to one, rename, reorder (drag a row
+   by its handle, or the Up and Down keys on the handle), delete, add. */
 function openMapsSheet(){
   var dungeon = b.dungeon;
   openBottomSheet(function(body, refresh, closeSheet){
     body.appendChild(ce("h3", "dg-sheet-title", "Maps in " + dungeon.name));
-    body.appendChild(ce("p", "dg-sheet-help", "Use the arrows under the map to move between them, like slides. The players' screen follows."));
+    body.appendChild(ce("p", "dg-sheet-help", "Drag a map by its handle to change the order. The arrows under the map move between them, like slides, and the players' screen follows."));
     var rows = ce("div", "dg-map-rows");
     dungeon.maps.forEach(function(m, i){
       var here = b && b.d === m;
       var row = ce("div", "dg-map-row" + (here ? " here" : ""));
+      row.dataset.id = m.id;
+      var grip = button("dg-map-grip", "", function(){}, "Drag to move " + m.name + ". The Up and Down keys move it too.");
+      grip.innerHTML = GRIP_SVG;
+      grip.disabled = dungeon.maps.length < 2;
+      grip.addEventListener("pointerdown", function(e){ dragRow(e, row, grip, m); });
+      grip.addEventListener("keydown", function(e){
+        if(e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+        e.preventDefault();
+        e.stopPropagation();
+        if(!moveMap(dungeon, m.id, e.key === "ArrowUp" ? -1 : 1)) return;
+        reordered();
+        var again = body.querySelector('.dg-map-row[data-id="' + m.id + '"] .dg-map-grip');
+        if(again) again.focus();
+      });
+      row.appendChild(grip);
       row.appendChild(ce("span", "dg-map-num", String(i + 1)));
       var name = ce("input", "dg-map-name");
       name.type = "text";
@@ -739,12 +755,6 @@ function openMapsSheet(){
       }, here ? "This map is open" : "Go to " + m.name);
       go.disabled = here;
       row.appendChild(go);
-      row.appendChild(iconButton("up", "Move earlier", i === 0, function(){
-        if(moveMap(dungeon, m.id, -1)){ saveDungeon(dungeon); if(b) refreshChrome(); refresh(); }
-      }));
-      row.appendChild(iconButton("down", "Move later", i === dungeon.maps.length - 1, function(){
-        if(moveMap(dungeon, m.id, 1)){ saveDungeon(dungeon); if(b) refreshChrome(); refresh(); }
-      }));
       row.appendChild(iconButton("trash", "Delete " + m.name, dungeon.maps.length < 2, function(){
         closeSheet();
         confirmDialog("Delete " + m.name + "?", "This map of " + dungeon.name + " will be removed. This cannot be undone.", function(){
@@ -763,6 +773,55 @@ function openMapsSheet(){
       rows.appendChild(row);
     });
     body.appendChild(rows);
+
+    function reordered(){
+      saveDungeon(dungeon);
+      if(b) refreshChrome();
+      refresh();
+    }
+
+    /* Drags a row up or down by its handle. The row follows the pointer,
+       the rows it passes slide out of its way, and letting go puts the
+       map there. Near the sheet's top or bottom edge the sheet scrolls. */
+    function dragRow(e, row, grip, m){
+      if(grip.disabled || (e.pointerType === "mouse" && e.button !== 0)) return;
+      e.preventDefault();
+      var list = Array.prototype.slice.call(rows.children);
+      var from = list.indexOf(row), to = from;
+      var step = list[1].getBoundingClientRect().top - list[0].getBoundingClientRect().top;
+      var sheet = document.getElementById("bottom-sheet");
+      var startY = e.clientY, startScroll = sheet.scrollTop;
+      grip.setPointerCapture(e.pointerId);
+      row.classList.add("dragging");
+      rows.classList.add("sorting");
+      function move(ev){
+        var edge = sheet.getBoundingClientRect();
+        if(ev.clientY < edge.top + 48) sheet.scrollTop -= 12;
+        else if(ev.clientY > edge.bottom - 48) sheet.scrollTop += 12;
+        var dy = ev.clientY - startY + (sheet.scrollTop - startScroll);
+        dy = Math.max(-from * step, Math.min((list.length - 1 - from) * step, dy));
+        row.style.transform = "translateY(" + dy + "px)";
+        to = from + Math.round(dy / step);
+        list.forEach(function(other, i){
+          if(other === row) return;
+          var shift = from < to && i > from && i <= to ? -step : (to < from && i >= to && i < from ? step : 0);
+          other.style.transform = shift ? "translateY(" + shift + "px)" : "";
+        });
+      }
+      function end(ev){
+        grip.removeEventListener("pointermove", move);
+        grip.removeEventListener("pointerup", end);
+        grip.removeEventListener("pointercancel", end);
+        row.classList.remove("dragging");
+        rows.classList.remove("sorting");
+        if(ev.type === "pointerup" && placeMap(dungeon, m.id, to)) reordered();
+        else list.forEach(function(other){ other.style.transform = ""; });
+      }
+      grip.addEventListener("pointermove", move);
+      grip.addEventListener("pointerup", end);
+      grip.addEventListener("pointercancel", end);
+    }
+
     var actions = ce("div", "dg-sheet-actions");
     var add = button("btn primary", "Add a map", function(){
       closeSheet();
@@ -773,9 +832,9 @@ function openMapsSheet(){
   });
 }
 
+var GRIP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
+
 var SMALL_ICONS = {
-  up: '<path d="m18 15-6-6-6 6"/>',
-  down: '<path d="m6 9 6 6 6-6"/>',
   trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'
 };
 function iconButton(name, label, disabled, onClick){

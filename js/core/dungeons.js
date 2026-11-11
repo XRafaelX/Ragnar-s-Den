@@ -287,6 +287,17 @@ export function moveMap(d, mapId, step){
   return true;
 }
 
+/* Moves a map to place `to` (0 first), the others closing up around it,
+   as when it is dragged there. */
+export function placeMap(d, mapId, to){
+  var i = d.maps.findIndex(function(m){ return m.id === mapId; });
+  to = Math.max(0, Math.min(d.maps.length - 1, to));
+  if(i === -1 || i === to) return false;
+  var m = d.maps.splice(i, 1)[0];
+  d.maps.splice(to, 0, m);
+  return true;
+}
+
 export function renameMap(d, mapId, name){
   var m = d.maps.find(function(x){ return x.id === mapId; });
   var clean = String(name || "").trim().slice(0, 40);

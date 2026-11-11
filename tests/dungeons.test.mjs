@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   loadDungeons, getDungeons, getDungeon, createDungeon, saveDungeon, deleteDungeon, duplicateDungeon, importDungeons,
-  findMap, dungeonOfMap, addMap, removeMap, moveMap, renameMap, mapTitle,
+  findMap, dungeonOfMap, addMap, removeMap, moveMap, placeMap, renameMap, mapTitle,
   dungeonNameProblem, cellAt, isOpen, isBlank, contentBounds, passageAxis, paintCells, fillRect, lineCells,
   clearDungeon, resizeDungeon, resizeLoses, createHistory, DUNGEON_SIZES, MIN_SIDE, MAX_SIDE, TERRAIN, ROCK, FLOOR,
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, revealedBounds, FOG_EDGE,
@@ -606,4 +606,18 @@ test("in a room only partly shown, hidden floor touching what's shown at a corne
   const at = (x, y) => p.cells.charAt(y * p.w + x);
   assert.equal(at(3, 3), FOG_EDGE, "a corner neighbour");
   assert.equal(at(4, 4), ROCK, "two squares away: rock, under the fog");
+});
+
+test("a map dragged to a new place: the others close up around it", () => {
+  fresh();
+  const dg = createDungeon("Crypt", "small");
+  for(let i = 0; i < 4; i++) addMap(dg, dg.maps[dg.maps.length - 1].id);
+  const names = () => dg.maps.map((m) => m.name).join(",");
+  assert.equal(names(), "Map 1,Map 2,Map 3,Map 4,Map 5");
+  assert.equal(placeMap(dg, dg.maps[3].id, 0), true);
+  assert.equal(names(), "Map 4,Map 1,Map 2,Map 3,Map 5", "dragged to the top");
+  assert.equal(placeMap(dg, dg.maps[0].id, 9), true);
+  assert.equal(names(), "Map 1,Map 2,Map 3,Map 5,Map 4", "past the end: last");
+  assert.equal(placeMap(dg, dg.maps[2].id, 2), false, "dropped where it was");
+  assert.equal(placeMap(dg, "nope", 0), false);
 });
