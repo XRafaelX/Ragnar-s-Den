@@ -4,7 +4,7 @@ import {
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, setDungeonStyle,
   placeParty, walkParty, removeParty, addMap, removeMap, moveMap, placeMap, renameMap, setSight, toggleDoor, isDoor,
   noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder, cellAt, linkAt, linkStairs, arrivalSquare,
-  revealedBounds, mapTitle,
+  revealedBounds, mapTitle, isLit, setLit, toggleLitArea, isLocked, lockedAhead,
   SIGHT_OPTIONS, SIGHT_MAX,
   DUNGEON_SIZES, DUNGEON_STYLES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
 } from "../core/dungeons.js";
@@ -87,6 +87,7 @@ var TOOLS = [
   ],
   [
     { id: "door", label: "Door", code: "+", help: "Put a door in a corridor or a gap in a wall" },
+    { id: "locked", label: "Locked", code: "l", help: "A locked door. The party can't walk through it until you unlock it in Play with the Doors tool. Players see an ordinary door" },
     { id: "secret", label: "Secret", code: "s", help: "Secret door. Players will see a wall until you reveal it" },
     { id: "stairs", label: "Stairs", code: ">", help: "Stairs up or down. Tap stairs you have drawn to choose which map of the dungeon they lead to" }
   ],
@@ -96,6 +97,7 @@ var TOOLS = [
     { id: "rubble", label: "Rubble", code: ":", help: "Rubble or broken ground (difficult terrain)" }
   ],
   [
+    { id: "light", label: "Light", icon: "sun", help: "Tap a room to light it, or drag to light square by square. The party sees lit ground from any distance. Tap a lit room again to darken it" },
     { id: "note", label: "Note", icon: "note", help: "Tap a square to add a numbered note only you can see. Tap a number to read or change it, drag it to move it" }
   ]
 ];
@@ -972,6 +974,7 @@ function paint(){
   var dpr = c.dpr, v = b.view;
   var view = { scale: v.scale * dpr, ox: v.ox * dpr, oy: v.oy * dpr, width: c.width, height: c.height };
   drawMap(c.ctx, b.d, view, { outside: cssVar("--ink-deep", "#120f1a"), grid: mode === "build", dm: true });
+  drawLitGlow(c.ctx, b.d, view);
   if(mode === "play") drawFog(c.ctx, b.d, view, FOG_DM);
   if(b.d.party) drawParty(c.ctx, view, b.d.party);
   b.d.notes.forEach(function(n){ drawNoteBadge(c.ctx, view, n, dpr); });
@@ -1081,6 +1084,8 @@ function restore(s){
   b.d.party = s.party ? { x: s.party.x, y: s.party.y } : null;
   b.d.sight = s.sight;
   b.d.notes = s.notes.map(function(n){ return Object.assign({}, n); });
+  b.d.links = s.links.map(function(l){ return Object.assign({}, l); });
+  b.d.lit = s.lit;
 }
 
 /* ---- The DM's notes ----
@@ -1392,6 +1397,28 @@ function savePicture(d, kind){
   return canvas;
 }
 
+/* Lit squares glow a warm yellow on the DM's board (the players just
+   see the ground once it is in view). */
+function drawLitGlow(ctx, d, view){
+  if(!d.lit || d.lit.indexOf("1") === -1) return;
+  var s = view.scale;
+  function ex(x){ return Math.round(view.ox + x * s); }
+  function ey(y){ return Math.round(view.oy + y * s); }
+  ctx.save();
+  ctx.fillStyle = "rgba(255,190,70,0.22)";
+  ctx.beginPath();
+  for(var y = 0; y < d.h; y++){
+    var run = -1;
+    for(var x = 0; x <= d.w; x++){
+      var on = x < d.w && isLit(d, x, y);
+      if(on && run < 0) run = x;
+      if(!on && run >= 0){ ctx.rect(ex(run), ey(y), ex(x) - ex(run), ey(y + 1) - ey(y)); run = -1; }
+    }
+  }
+  ctx.fill();
+  ctx.restore();
+}
+
 /* ---- Input ---- */
 function point(e){
   var r = b.canvas.getBoundingClientRect();
@@ -1455,12 +1482,24 @@ function onDown(e){
   } else if(t.id === "point"){
     b.gesture = { type: "point", last: 0 };
     pointHere(p, b.gesture);
+  } else if(t.id === "light"){
+    // A tap or a drag, like Reveal: which one is only known once it moves on.
+    var la = squareAt(p);
+    b.gesture = { type: "light", start: la, last: la, moved: false, on: !isLit(b.d, la[0], la[1]), before: b.history.snapshot(b.d) };
   } else if(t.id === "doors"){
-    // A tap opens or closes the door under it.
+    // A tap opens or closes the door under it. A locked door asks for a
+    // second tap within a few seconds, so none is unlocked by accident.
     var at0 = squareAt(p);
     b.gesture = { type: "done" };
     if(!isDoor(b.d, at0[0], at0[1])) showActionToast("Tap a door to open or close it.");
-    else change(function(){ return toggleDoor(b.d, at0[0], at0[1]); });
+    else if(isLocked(b.d, at0[0], at0[1]) && !(b.unlock && sameSquare(b.unlock.at, at0) && performance.now() - b.unlock.time < 4000)){
+      b.unlock = { at: at0, time: performance.now() };
+      showActionToast("This door is locked. Tap it again to unlock and open it.");
+    }
+    else {
+      b.unlock = null;
+      change(function(){ return toggleDoor(b.d, at0[0], at0[1]); });
+    }
   } else if(t.id === "party"){
     // Puts the party there (on the marker itself: they look around
     // again), then a drag walks them.
@@ -1548,10 +1587,22 @@ function onMove(e){
     pointHere(p, g);
   } else if(g.type === "note-read"){
     if(Math.hypot(p.x - g.start.x, p.y - g.start.y) > 8) b.gesture = { type: "done" };
+  } else if(g.type === "light"){
+    var ln = squareAt(p);
+    if(sameSquare(ln, g.last)) return;
+    g.moved = true;
+    setLit(b.d, lineCells(g.last[0], g.last[1], ln[0], ln[1]), g.on);
+    g.last = ln;
+    refreshChrome();
+    draw();
   } else if(g.type === "party"){
     var step = squareAt(p);
     if(sameSquare(step, g.last) || !b.d.party) return;
     g.last = step;
+    if(!g.lockSaid && lockedAhead(b.d, step[0], step[1])){
+      g.lockSaid = true;
+      showActionToast("That door is locked. Unlock it with the Doors tool.");
+    }
     walkParty(b.d, step[0], step[1]);
     refreshChrome();
     draw();
@@ -1575,7 +1626,7 @@ function onUp(e){
   // on stairs already drawn (Stairs tool) asks where they lead, and a
   // party move ending on stairs that lead somewhere takes them there.
   // Otherwise it was a tap, handled by its tool below.
-  if(g && (g.type === "paint" || g.type === "party" || (g.type === "reveal" && g.moved) || (g.type === "note" && g.moved))){
+  if(g && (g.type === "paint" || g.type === "party" || ((g.type === "reveal" || g.type === "light") && g.moved) || (g.type === "note" && g.moved))){
     finishStroke(g.before);
     if(g.type === "paint" && up && !g.moved && g.code === ">" && g.startCode === ">"){
       var st = g.start;
@@ -1598,6 +1649,11 @@ function onUp(e){
   else if(g && g.type === "note-read" && up){
     b.gesture = null;
     openNoteSheet(g.note, false);
+  }
+  else if(g && g.type === "light" && up){
+    var lt = g.start;
+    b.gesture = null;
+    change(function(){ return toggleLitArea(b.d, lt[0], lt[1]); });
   }
   else if(g && g.type === "reveal" && up){
     var tap = g.start;

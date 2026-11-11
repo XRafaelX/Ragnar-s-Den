@@ -10,7 +10,7 @@ import { uid } from "./basics.js";
    Dungeon shape:
      { id, name, maps: [map, ...], updated }
    Map shape:
-     { id, name, w, h, cells, revealed, style, party, sight, notes, links }
+     { id, name, w, h, cells, revealed, style, party, sight, notes, links, lit }
 
    The map is a grid of 5 ft squares, `w` wide and `h` tall. `cells` is a
    string of w*h terrain codes (see TERRAIN), row by row from the top
@@ -33,6 +33,9 @@ import { uid } from "./basics.js";
    `notes` are the DM's numbered notes, [{ id, n, x, y, text }], one per
    square at most: what is in room 3, a trap in a corridor. They are the
    DM's only and never reach the players' screen.
+   `lit` is like `revealed`: "1" for a lit square (a torch-lit hall, a
+   sunlit courtyard), which the party sees from any distance, "0" for
+   one in the dark. Only open ground is lit.
    `links` say where stairs lead: [{ x, y, to }], a stairs square and the
    id of another map of the same dungeon.
 
@@ -53,6 +56,7 @@ export var TERRAIN = {
   "+": { id: "door", label: "Door", open: true },
   "s": { id: "secret", label: "Secret door", open: true },
   "/": { id: "open-door", label: "Open door", open: true },
+  "l": { id: "locked-door", label: "Locked door", open: true },
   ">": { id: "stairs", label: "Stairs", open: true },
   "~": { id: "water", label: "Water", open: true },
   "o": { id: "pit", label: "Pit", open: true },
@@ -152,8 +156,16 @@ function cleanMap(m){
     party: cleanParty(m.party, w, h, cells),
     sight: cleanSight(m.sight),
     notes: cleanNotes(m.notes, w, h),
-    links: cleanLinks(m.links, w, h, cells)
+    links: cleanLinks(m.links, w, h, cells),
+    lit: cleanLit(m.lit, cells)
   };
+}
+
+/* "1" or "0" for each square, lit only on open ground. */
+function cleanLit(raw, cells){
+  var src = typeof raw === "string" ? raw : "", out = "";
+  for(var i = 0; i < cells.length; i++) out += cells.charAt(i) !== ROCK && src.charAt(i) === SHOWN ? SHOWN : FOGGED;
+  return out;
 }
 
 /* Links on stairs squares of this map, one per square. Whether the map
@@ -451,18 +463,19 @@ export function passageAxis(d, x, y){
 /* Changes squares through `fn(set)`, where set(x, y, code) paints one.
    A square turned to rock goes back into fog. */
 function editCells(d, fn){
-  var cells = d.cells.split(""), seen = d.revealed.split(""), changed = false;
+  var cells = d.cells.split(""), seen = d.revealed.split(""), lit = d.lit.split(""), changed = false;
   fn(function(x, y, code){
     if(!inMap(d, x, y)) return;
     var i = y * d.w + x;
     if(cells[i] === code) return;
     cells[i] = code;
-    if(code === ROCK) seen[i] = FOGGED;
+    if(code === ROCK){ seen[i] = FOGGED; lit[i] = FOGGED; }
     changed = true;
   });
   if(!changed) return false;
   d.cells = cells.join("");
   d.revealed = seen.join("");
+  d.lit = lit.join("");
   if(d.party && !isOpen(d, d.party.x, d.party.y)) d.party = null;
   d.links = d.links.filter(function(l){ return cellAt(d, l.x, l.y) === ">"; });
   return true;
@@ -520,6 +533,7 @@ export function clearDungeon(d){
   d.party = null;
   d.notes = [];
   d.links = [];
+  d.lit = new Array(d.w * d.h + 1).join(FOGGED);
   return true;
 }
 
@@ -549,11 +563,12 @@ export function resizeDungeon(d, w, h){
   h = side(h, d.h);
   if(w === d.w && h === d.h) return false;
   var off = resizeOffset(d, w, h);
-  var cells = "", revealed = "";
+  var cells = "", revealed = "", lit = "";
   for(var y = 0; y < h; y++){
     for(var x = 0; x < w; x++){
       cells += cellAt(d, x - off.x, y - off.y);
       revealed += isRevealed(d, x - off.x, y - off.y) ? SHOWN : FOGGED;
+      lit += isLit(d, x - off.x, y - off.y) ? SHOWN : FOGGED;
     }
   }
   var party = d.party ? { x: d.party.x + off.x, y: d.party.y + off.y } : null;
@@ -561,6 +576,7 @@ export function resizeDungeon(d, w, h){
   d.h = h;
   d.cells = cells;
   d.revealed = revealed;
+  d.lit = lit;
   d.party = party && isOpen(d, party.x, party.y) ? party : null;
   d.notes = d.notes.map(function(n){ return Object.assign({}, n, { x: n.x + off.x, y: n.y + off.y }); })
     .filter(function(n){ return inMap(d, n.x, n.y); });
@@ -578,8 +594,8 @@ export function createHistory(limit){
   var max = limit || 100;
   var undoSteps = [], redoSteps = [];
   function copyNotes(list){ return list.map(function(n){ return Object.assign({}, n); }); }
-  function snap(d){ return { w: d.w, h: d.h, cells: d.cells, revealed: d.revealed, party: d.party ? { x: d.party.x, y: d.party.y } : null, sight: d.sight, notes: copyNotes(d.notes), links: copyNotes(d.links) }; }
-  function apply(d, s){ d.w = s.w; d.h = s.h; d.cells = s.cells; d.revealed = s.revealed; d.party = s.party ? { x: s.party.x, y: s.party.y } : null; d.sight = s.sight; d.notes = copyNotes(s.notes); d.links = copyNotes(s.links); }
+  function snap(d){ return { w: d.w, h: d.h, cells: d.cells, revealed: d.revealed, party: d.party ? { x: d.party.x, y: d.party.y } : null, sight: d.sight, notes: copyNotes(d.notes), links: copyNotes(d.links), lit: d.lit }; }
+  function apply(d, s){ d.w = s.w; d.h = s.h; d.cells = s.cells; d.revealed = s.revealed; d.party = s.party ? { x: s.party.x, y: s.party.y } : null; d.sight = s.sight; d.notes = copyNotes(s.notes); d.links = copyNotes(s.links); d.lit = s.lit; }
   function samePlace(a, b){ return a === b || (!!a && !!b && a.x === b.x && a.y === b.y); }
   return {
     /* Call with the map as it was before the change just made. */
@@ -590,7 +606,7 @@ export function createHistory(limit){
     },
     snapshot: snap,
     /* True if the map is still as it was in `s`. */
-    same: function(d, s){ return d.w === s.w && d.h === s.h && d.cells === s.cells && d.revealed === s.revealed && samePlace(d.party, s.party) && d.sight === s.sight && JSON.stringify(d.notes) === JSON.stringify(s.notes) && JSON.stringify(d.links) === JSON.stringify(s.links); },
+    same: function(d, s){ return d.w === s.w && d.h === s.h && d.cells === s.cells && d.revealed === s.revealed && samePlace(d.party, s.party) && d.sight === s.sight && JSON.stringify(d.notes) === JSON.stringify(s.notes) && JSON.stringify(d.links) === JSON.stringify(s.links) && d.lit === s.lit; },
     canUndo: function(){ return undoSteps.length > 0; },
     canRedo: function(){ return redoSteps.length > 0; },
     undo: function(d){
@@ -643,7 +659,7 @@ export function revealAll(d, on){
 export function anyRevealed(d){ return d.revealed.indexOf(SHOWN) !== -1; }
 
 /* Doors: closed ("+"), secret ("s") and open ("/"). */
-function isDoorCode(c){ return c === "+" || c === "s" || c === "/"; }
+function isDoorCode(c){ return c === "+" || c === "s" || c === "/" || c === "l"; }
 
 /* Ground a person walks through: open, and not a door. Doors, open or
    closed, split the map into areas. */
@@ -656,7 +672,7 @@ function walkable(d, x, y){
    secret door. */
 function seeThrough(d, x, y){
   var c = cellAt(d, x, y);
-  return c !== ROCK && c !== "+" && c !== "s";
+  return c !== ROCK && c !== "+" && c !== "s" && c !== "l";
 }
 
 /* Room ground is any walkable square in a 2 by 2 block of walkable
@@ -698,7 +714,7 @@ export function areaAt(d, x, y){
     [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(s){
       var nx = p[0] + s[0], ny = p[1] + s[1], key = nx + "," + ny;
       if(inArea[key]) return;
-      var doorway = cellAt(d, nx, ny) === "+" || cellAt(d, nx, ny) === "/";
+      var doorway = cellAt(d, nx, ny) === "+" || cellAt(d, nx, ny) === "/" || cellAt(d, nx, ny) === "l";
       var corridorMouth = room && walkable(d, nx, ny) && !roomGround(d, nx, ny);
       if(!doorway && !corridorMouth) return;
       inArea[key] = true;
@@ -735,7 +751,7 @@ export function playerView(d, title){
     for(var x = 0; x < d.w; x++){
       var c = cellAt(d, x, y);
       if(isRevealed(d, x, y)){
-        cells += c === "s" ? "+" : c;
+        cells += c === "s" || c === "l" ? "+" : c;
         revealed += SHOWN;
         continue;
       }
@@ -795,17 +811,21 @@ export function setSight(d, squares){
 }
 
 /* The open squares the party sees from (x, y): within the map's sight
-   and with nothing in the way. Rock, closed doors and secret doors block
+   and with nothing in the way, or lit at any distance. Rock, closed,
+   locked and secret doors block
    the view (a closed door itself is seen, not what is behind it), open
    doors don't, and a secret door is never seen this way: the DM shows
    those by tapping them. */
 export function sightFrom(d, x, y){
   var out = [];
   var reach = d.sight === 0 ? Math.max(d.w, d.h) : (d.sight || SIGHT);
-  for(var ty = y - reach; ty <= y + reach; ty++){
-    for(var tx = x - reach; tx <= x + reach; tx++){
+  // Lit ground is seen from any distance, so look across the whole map
+  // when any of it is lit.
+  var far = d.lit && d.lit.indexOf(SHOWN) !== -1 ? Math.max(d.w, d.h) : reach;
+  for(var ty = y - far; ty <= y + far; ty++){
+    for(var tx = x - far; tx <= x + far; tx++){
       var dx = tx - x, dy = ty - y;
-      if(dx * dx + dy * dy > (reach + 0.5) * (reach + 0.5)) continue;
+      if(dx * dx + dy * dy > (reach + 0.5) * (reach + 0.5) && !isLit(d, tx, ty)) continue;
       var c = cellAt(d, tx, ty);
       if(c === ROCK || c === "s") continue;
       if(clearLine(d, x, y, tx, ty)) out.push([tx, ty]);
@@ -829,7 +849,7 @@ function clearLine(d, ax, ay, bx, by){
    get through, and it stays open behind them. Returns true if anything
    changed. */
 export function placeParty(d, x, y){
-  if(!isOpen(d, x, y)) return false;
+  if(!isOpen(d, x, y) || cellAt(d, x, y) === "l") return false;
   var moved = !d.party || d.party.x !== x || d.party.y !== y;
   if(cellAt(d, x, y) === "+" && paintCells(d, [[x, y]], "/")) moved = true;
   d.party = { x: x, y: y };
@@ -838,13 +858,13 @@ export function placeParty(d, x, y){
 }
 
 /* Walks the party in a straight line toward (x, y), a square at a time,
-   showing what they see at every step. They stop at rock. Returns true
-   if anything changed. */
+   showing what they see at every step. They stop at rock and at a locked
+   door (see lockedAhead). Returns true if anything changed. */
 export function walkParty(d, x, y){
   if(!d.party) return placeParty(d, x, y);
   var line = lineCells(d.party.x, d.party.y, x, y), changed = false;
   for(var i = 1; i < line.length; i++){
-    if(!isOpen(d, line[i][0], line[i][1])) break;
+    if(!isOpen(d, line[i][0], line[i][1]) || cellAt(d, line[i][0], line[i][1]) === "l") break;
     if(placeParty(d, line[i][0], line[i][1])) changed = true;
   }
   return changed;
@@ -856,9 +876,22 @@ export function removeParty(d){
   return true;
 }
 
+/* True if the party's straight walk toward (x, y) stops at a locked
+   door: the first square it can't enter on the way is one. */
+export function lockedAhead(d, x, y){
+  if(!d.party) return false;
+  var line = lineCells(d.party.x, d.party.y, x, y);
+  for(var i = 1; i < line.length; i++){
+    var c = cellAt(d, line[i][0], line[i][1]);
+    if(c === "l") return true;
+    if(c === ROCK) return false;
+  }
+  return false;
+}
+
 /* ---- doors ----
    Opens a closed door or closes an open one. A secret door opens as a
-   found, open door. The door itself is shown to the players, and if the
+   found, open door, and a locked one is unlocked and opened. The door itself is shown to the players, and if the
    party is on the map they see what the opened door lets them see.
    Returns true if (x, y) was a door. */
 export function toggleDoor(d, x, y){
@@ -871,6 +904,41 @@ export function toggleDoor(d, x, y){
 }
 
 export function isDoor(d, x, y){ return isDoorCode(cellAt(d, x, y)); }
+
+export function isLocked(d, x, y){ return cellAt(d, x, y) === "l"; }
+
+/* ---- light ---- */
+export function isLit(d, x, y){
+  return inMap(d, x, y) && !!d.lit && d.lit.charAt(y * d.w + x) === SHOWN;
+}
+
+/* Lights (`on` true) or darkens every [x, y] in `points`. Rock is never
+   lit. If the party is on the map, they see any newly lit ground in
+   their line of sight. Returns true if anything changed. */
+export function setLit(d, points, on){
+  var lit = d.lit.split(""), changed = false;
+  (points || []).forEach(function(p){
+    var x = p[0], y = p[1];
+    if(!inMap(d, x, y) || (on && !isOpen(d, x, y))) return;
+    var i = y * d.w + x, v = on ? SHOWN : FOGGED;
+    if(lit[i] === v) return;
+    lit[i] = v;
+    changed = true;
+  });
+  if(!changed) return false;
+  d.lit = lit.join("");
+  if(d.party) setRevealed(d, sightFrom(d, d.party.x, d.party.y), true);
+  return true;
+}
+
+/* What a tap with the Light tool does: lights the room or corridor
+   around (x, y), or darkens it if all of it is lit already. */
+export function toggleLitArea(d, x, y){
+  var area = areaAt(d, x, y);
+  if(!area.length) return false;
+  var allLit = area.every(function(p){ return isLit(d, p[0], p[1]); });
+  return setLit(d, area, !allLit);
+}
 
 /* ---- the DM's notes ---- */
 

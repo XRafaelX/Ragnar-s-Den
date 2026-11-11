@@ -13,7 +13,7 @@ import {
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, revealedBounds, FOG_EDGE,
   setDungeonStyle, DUNGEON_STYLES, placeParty, walkParty, removeParty, sightFrom, SIGHT, setSight, SIGHT_OPTIONS, SIGHT_MAX,
   toggleDoor, isDoor, noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder,
-  linkAt, stairsOf, linkStairs, arrivalSquare
+  linkAt, stairsOf, linkStairs, arrivalSquare, isLit, setLit, toggleLitArea, isLocked, lockedAhead
 } from "../js/core/dungeons.js";
 
 function fresh(){
@@ -25,7 +25,7 @@ const newMap = (name, size) => createDungeon(name, size).maps[0];
 
 /* Makes `d` a blank w by h map in place. */
 function blankMap(d, w, h){
-  d.w = w; d.h = h; d.cells = ROCK.repeat(w * h); d.revealed = "0".repeat(w * h);
+  d.w = w; d.h = h; d.cells = ROCK.repeat(w * h); d.revealed = "0".repeat(w * h); d.lit = "0".repeat(w * h);
 }
 /* A map drawn from rows of text, e.g. [" ..+.."]: any character that is
    a terrain code is that terrain, anything else is rock. */
@@ -867,4 +867,92 @@ test("undo brings back a link along with the stairs", () => {
   assert.equal(a.links.length, 0);
   h.undo(a);
   assert.deepEqual(linkAt(a, 2, 2).to, b.id);
+});
+
+/* ---- light ---- */
+
+/* A long hall: the party at the left end sees 60 feet. */
+function longHall(){
+  fresh();
+  const d = newMap("Hall", "large");
+  blankMap(d, 50, 3);
+  fillRect(d, 0, 1, 49, 1, FLOOR);
+  return d;
+}
+
+test("lit ground is seen from any distance in line of sight, dark ground only within sight", () => {
+  const d = longHall();
+  setLit(d, [[40, 1], [41, 1]], true);
+  const seen = sightFrom(d, 0, 1).map(([x]) => x);
+  assert.ok(seen.includes(12) && !seen.includes(13), "dark: 60 feet");
+  assert.ok(seen.includes(40) && seen.includes(41), "lit: 200 feet away");
+  paintCells(d, [[30, 1]], "+");
+  assert.ok(!sightFrom(d, 0, 1).some(([x]) => x === 40), "but not through a closed door");
+});
+
+test("only open ground is lit, rock painted over a lit square puts it out, and lighting shows the party more at once", () => {
+  const d = longHall();
+  assert.equal(setLit(d, [[5, 0]], true), false, "rock stays dark");
+  placeParty(d, 0, 1);
+  assert.equal(isRevealed(d, 30, 1), false);
+  assert.equal(setLit(d, [[30, 1]], true), true);
+  assert.ok(isLit(d, 30, 1));
+  assert.ok(isRevealed(d, 30, 1), "lighting it shows it to the party straight away");
+  paintCells(d, [[30, 1]], ROCK);
+  assert.equal(isLit(d, 30, 1), false);
+  setLit(d, [[20, 1]], true);
+  clearDungeon(d);
+  assert.equal(d.lit.includes("1"), false);
+});
+
+test("a tap with the Light tool lights a whole room, and a second tap darkens it", () => {
+  const d = drawn(CRYPT);
+  assert.equal(toggleLitArea(d, 2, 2), true);
+  assert.ok(isLit(d, 1, 1) && isLit(d, 3, 3) && isLit(d, 4, 2), "the room and its door");
+  toggleLitArea(d, 2, 2);
+  assert.equal(d.lit.includes("1"), false);
+});
+
+test("light moves with a resize, comes back with undo, and is cleaned when loaded", () => {
+  const d = longHall();
+  const h = createHistory();
+  const before = h.snapshot(d);
+  setLit(d, [[3, 1]], true);
+  h.record(before);
+  resizeDungeon(d, 54, 7);
+  assert.ok(isLit(d, 5, 3));
+  h.undo(d);
+  assert.equal(d.lit.includes("1"), false);
+  localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([{ id: "a", name: "A", maps: [{ id: "m", w: 8, h: 8, cells: "..", lit: "1111" }, { id: "n", w: 8, h: 8 }] }]));
+  loadDungeons();
+  assert.equal(findMap("m").lit.slice(0, 4), "1100", "never on rock");
+  assert.equal(findMap("n").lit, "0".repeat(64));
+});
+
+/* ---- locked doors ---- */
+
+test("a locked door stops the party's walk and their sight, and they can't stand on it", () => {
+  const d = hallWithDoor();
+  paintCells(d, [[5, 1]], "l");
+  assert.ok(isLocked(d, 5, 1) && isDoor(d, 5, 1));
+  placeParty(d, 0, 1);
+  assert.ok(isRevealed(d, 5, 1) && !isRevealed(d, 6, 1), "they see the door, not past it");
+  assert.equal(lockedAhead(d, 9, 1), true);
+  walkParty(d, 9, 1);
+  assert.deepEqual(d.party, { x: 4, y: 1 }, "the walk stops in front of it");
+  assert.equal(cellAt(d, 5, 1), "l", "and doesn't open it");
+  assert.equal(placeParty(d, 5, 1), false, "not onto it");
+  assert.equal(lockedAhead(d, 4, 0), false, "a wall ahead isn't a lock");
+});
+
+test("unlocking opens the door; the players only ever see a closed door until then", () => {
+  const d = hallWithDoor();
+  paintCells(d, [[5, 1]], "l");
+  placeParty(d, 0, 1);
+  assert.equal(playerView(d).cells.charAt(d.w + 5), "+", "to the players it's just a door");
+  assert.equal(toggleDoor(d, 5, 1), true);
+  assert.equal(cellAt(d, 5, 1), "/", "unlocked and open");
+  assert.ok(isRevealed(d, 10, 1), "and the party sees through");
+  walkParty(d, 9, 1);
+  assert.deepEqual(d.party, { x: 9, y: 1 });
 });

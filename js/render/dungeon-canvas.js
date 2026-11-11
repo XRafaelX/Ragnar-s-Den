@@ -195,6 +195,7 @@ export function drawMap(ctx, d, view, opts){
     if(code === ROCK || code === ".") continue;
     var box = { x: ex(x), y: ey(y), s: ex(x + 1) - ex(x) };
     if(code === "+") drawDoor(ctx, box, passageAxis(d, x, y));
+    else if(code === "l"){ drawDoor(ctx, box, passageAxis(d, x, y)); if(opts.dm) drawLock(ctx, box); }
     else if(code === "/") drawOpenDoor(ctx, box, passageAxis(d, x, y), x, y);
     else if(code === "s"){ if(opts.dm) drawSecret(ctx, box, passageAxis(d, x, y)); }
     else if(code === ">") drawStairs(ctx, box, passageAxis(d, x, y));
@@ -533,6 +534,27 @@ function drawDoor(ctx, b, axis){
   ctx.strokeRect(x, y, w, h);
 }
 
+/* Only the DM sees that a door is locked: a small gold padlock on it. */
+function drawLock(ctx, b){
+  if(b.s < 12) return;
+  var w = b.s * 0.3, h = b.s * 0.22, cx = b.x + b.s / 2, cy = b.y + b.s / 2 + b.s * 0.06;
+  ctx.save();
+  ctx.lineWidth = Math.max(1.5, b.s * 0.06);
+  ctx.strokeStyle = "#3a2406";
+  ctx.beginPath();
+  ctx.arc(cx, cy - h / 2, w * 0.32, Math.PI, 0);
+  ctx.stroke();
+  ctx.fillStyle = "#f2c14e";
+  ctx.fillRect(cx - w / 2, cy - h / 2, w, h);
+  ctx.lineWidth = Math.max(1, b.s * 0.035);
+  ctx.strokeRect(cx - w / 2, cy - h / 2, w, h);
+  ctx.fillStyle = "#3a2406";
+  ctx.beginPath();
+  ctx.arc(cx, cy - h * 0.08, Math.max(1, b.s * 0.03), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 /* An open door: the plank swung back against one wall of the way
    through, along it instead of across it. */
 function drawOpenDoor(ctx, b, axis, x, y){
@@ -687,7 +709,7 @@ export function fitView(box, width, height, pad){
 export function drawSwatch(canvas, code, cssSize, outside, style){
   var c = prepareCanvas(canvas, cssSize, cssSize);
   var mini;
-  if(code === "+" || code === "s" || code === ">") mini = { w: 3, h: 3, cells: "   ." + code + ".   " };
+  if(code === "+" || code === "s" || code === ">" || code === "l") mini = { w: 3, h: 3, cells: "   ." + code + ".   " };
   else mini = { w: 3, h: 3, cells: "    " + code + "    " };
   mini.style = style;
   var view = fitView({ x: 0.55, y: 0.55, w: 1.9, h: 1.9 }, c.width, c.height, 0);
