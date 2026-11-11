@@ -14,6 +14,13 @@
   background:color-mix(in srgb, var(--parchment) 86%, transparent);
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
 }
+/* The blur makes each card its own layer, so a dropdown's list can't rise
+   above the next card on its own (the card below drew over it). The card
+   holding an open list is lifted instead. */
+#main.has-backdrop .card:has(.tp.open, .catalog-row-dropdown.open, .identity-menu.open),
+#main.has-backdrop .identity:has(.tp.open, .catalog-row-dropdown.open, .identity-menu.open){
+  position:relative;z-index:30;
+}
 .theme-override-note{
   display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;
   margin:0 0 14px;padding:12px 14px;font-size:12.5px;line-height:1.45;
