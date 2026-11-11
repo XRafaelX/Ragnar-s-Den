@@ -54,7 +54,12 @@ export var TERRAIN = {
 /* How the map is drawn (see js/render/dungeon-canvas.js). */
 export var DUNGEON_STYLES = [
   { id: "stone", label: "Stone", help: "Dressed stone and straight walls, like a crypt or a keep" },
-  { id: "cave", label: "Cave", help: "Rough rock walls and earthen floors, like a cavern or a mine" }
+  { id: "cave", label: "Cave", help: "Rough rock walls and earthen floors, like a cavern or a mine" },
+  { id: "classic", label: "Classic", help: "White floors on a blue grid, like the maps in old printed adventures" },
+  { id: "wood", label: "Wood", help: "Plank floors and timber walls, like a tavern, a ship or a manor" },
+  { id: "ice", label: "Ice", help: "Frosted floors and rough frozen walls, like a glacier cave" },
+  { id: "volcanic", label: "Volcanic", help: "Dark basalt with glowing cracks, like a fire temple or a forge" },
+  { id: "overgrown", label: "Overgrown", help: "Mossy stones and creeping leaves, like a ruin lost in a forest" }
 ];
 
 /* Map sizes offered when a dungeon is made, in squares. */

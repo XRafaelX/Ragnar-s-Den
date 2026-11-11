@@ -478,7 +478,8 @@ test("a map is drawn in stone unless the DM picks cave, and the players get the 
   saveDungeon(d);
   loadDungeons();
   assert.equal(findMap(d.id).style, "cave");
-  assert.deepEqual(DUNGEON_STYLES.map((st) => st.id), ["stone", "cave"]);
+  assert.deepEqual(DUNGEON_STYLES.map((st) => st.id), ["stone", "cave", "classic", "wood", "ice", "volcanic", "overgrown"]);
+  assert.equal(setDungeonStyle(d, "volcanic"), true);
   localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([{ id: "x", name: "Odd", style: "lava" }]));
   loadDungeons();
   assert.equal(findMap("x").style, "stone");

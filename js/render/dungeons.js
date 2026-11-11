@@ -574,7 +574,8 @@ function toolButton(t, set, outside){
     var sw = ce("canvas", "dg-tool-pic dg-swatch");
     sw.setAttribute("aria-hidden", "true");
     btn.appendChild(sw);
-    drawSwatch(sw, t.code, 26, outside);
+    sw.dataset.code = t.code;
+    drawSwatch(sw, t.code, 26, outside, b && b.d.style);
   }
   btn.appendChild(ce("span", "dg-tool-label", t.label));
   return btn;
@@ -643,6 +644,12 @@ function refreshChrome(){
   b.playersBtn.setAttribute("aria-label", onScreen ? "Player view, showing this map" : "Player view");
   b.preview.classList.toggle("on", mode === "play" && onScreen);
   refreshPager();
+  // The tool bar's swatches look like the open map's style.
+  if(b.swatchStyle !== b.d.style){
+    b.swatchStyle = b.d.style;
+    var outside = cssVar("--parchment", "#241d33");
+    overlay.querySelectorAll(".dg-swatch").forEach(function(sw){ drawSwatch(sw, sw.dataset.code, 26, outside, b.d.style); });
+  }
   publish();
   var panning = b.gesture && b.gesture.type === "pan";
   b.canvas.style.cursor = panning ? "grabbing" : (activeTool().id === "move" || b.space ? "grab" : (mode === "play" ? "pointer" : "crosshair"));

@@ -302,7 +302,7 @@
 .dg-map-act.danger:hover:not(:disabled){color:var(--oxblood);border-color:var(--oxblood);}
 
 /* ---- Map style sheet ---- */
-.dg-styles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;}
+.dg-styles{display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:10px;margin-bottom:8px;}
 .dg-style{
   display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:8px 8px 10px;text-align:left;cursor:pointer;
   background:var(--field-bg);border:1px solid var(--rule);border-radius:10px;color:var(--text-on-parch);
@@ -310,7 +310,7 @@
 }
 .dg-style:hover{border-color:var(--brass);}
 .dg-style.on{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 18%, var(--field-bg));}
-.dg-style-pic{display:block;width:100%;height:96px;border-radius:6px;margin-bottom:4px;}
+.dg-style-pic{display:block;width:100%;height:84px;border-radius:6px;margin-bottom:4px;}
 .dg-style-name{font-size:14px;font-weight:700;}
 .dg-style.on .dg-style-name{color:var(--brass-bright);}
 .dg-style-help{font-size:12px;line-height:1.4;color:var(--text-on-parch-dim);}

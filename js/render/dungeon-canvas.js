@@ -10,9 +10,10 @@ import { ROCK, inMap, cellAt, isOpen, isRevealed, passageAxis, contentBounds, re
 
    The map keeps its own colors whatever the app's theme: it is meant to
    read like a map on a TV across the table. Only the space around the
-   map (`outside`) follows the theme. Each map's `style` picks a palette:
-   Stone has straight walls and hatched rock, Cave has rough walls,
-   stippled rock and earthen floors.
+   map (`outside`) follows the theme. Each map's `style` (see STYLES)
+   picks a palette and three traits: how the rock beside the walls is
+   textured, what detail the floor gets, and whether walls run straight
+   or rough.
 
    `view` places the map on the canvas, in the canvas's own pixels:
      { scale: pixels per square, ox, oy: where square (0, 0)'s top left
@@ -40,23 +41,68 @@ export var MAP_COLORS = {
   fog: "#0d0b12"
 };
 
-var STYLE_COLORS = {
-  stone: MAP_COLORS,
-  cave: Object.assign({}, MAP_COLORS, {
-    rock: "#2a231f",
-    hatch: "#55483d",
-    rockGrid: "rgba(255,235,210,0.06)",
-    floor: "#cdbb9c",
-    floorGrid: "rgba(70,50,28,0.16)",
-    floorSpeck: "rgba(90,66,40,0.35)",
-    wall: "#1d1713",
-    stairs: "#4d3f30",
-    rubble: "#7d6c57",
-    rubbleEdge: "#4f4234"
-  })
+/* rock: "hatch" | "stipple" | "leaves" | "solid"
+   floor: "" | "flecks" | "planks" | "cracks" | "embers" | "tufts"
+   walls: "straight" | "rough" */
+var STYLES = {
+  stone: { colors: MAP_COLORS, rock: "hatch", floor: "", walls: "straight" },
+  cave: {
+    rock: "stipple", floor: "flecks", walls: "rough",
+    colors: Object.assign({}, MAP_COLORS, {
+      rock: "#2a231f", hatch: "#55483d", rockGrid: "rgba(255,235,210,0.06)",
+      floor: "#cdbb9c", floorGrid: "rgba(70,50,28,0.16)", floorDetail: "rgba(90,66,40,0.35)",
+      wall: "#1d1713", stairs: "#4d3f30", rubble: "#7d6c57", rubbleEdge: "#4f4234"
+    })
+  },
+  // White floors, a blue grid and solid blue rock, like old printed modules.
+  classic: {
+    rock: "solid", floor: "", walls: "straight",
+    colors: Object.assign({}, MAP_COLORS, {
+      rock: "#6f9fd8", rockGrid: "rgba(255,255,255,0.2)",
+      floor: "#f7f9fc", floorGrid: "rgba(70,120,200,0.55)",
+      wall: "#1f4e9a", door: "#ffffff", doorEdge: "#1f4e9a", stairs: "#1f4e9a",
+      water: "#a8c8ee", waterLine: "rgba(31,78,154,0.7)",
+      pit: "#c9daf2", pitEdge: "#1f4e9a", rubble: "#c9daf2", rubbleEdge: "#1f4e9a"
+    })
+  },
+  wood: {
+    rock: "solid", floor: "planks", walls: "straight",
+    colors: Object.assign({}, MAP_COLORS, {
+      rock: "#1e1712", rockGrid: "rgba(255,230,200,0.06)",
+      floor: "#b98a55", floorGrid: "rgba(60,35,15,0.3)", floorDetail: "rgba(70,40,15,0.45)",
+      wall: "#2a1a0d", door: "#6b4421", doorEdge: "#1c1006", stairs: "#3b2412",
+      pit: "#120c08", pitEdge: "#3a2614", rubble: "#7b5a38", rubbleEdge: "#3d2a17"
+    })
+  },
+  ice: {
+    rock: "hatch", floor: "cracks", walls: "rough",
+    colors: Object.assign({}, MAP_COLORS, {
+      rock: "#1b2733", hatch: "#3d5468", rockGrid: "rgba(220,240,255,0.07)",
+      floor: "#e3f1f7", floorGrid: "rgba(70,120,150,0.25)", floorDetail: "rgba(100,150,185,0.6)",
+      wall: "#102030", stairs: "#3d5a70", water: "#3f78a6",
+      pit: "#0d1822", pitEdge: "#35506a", rubble: "#a9c4d4", rubbleEdge: "#6d8ea3"
+    })
+  },
+  volcanic: {
+    rock: "stipple", floor: "embers", walls: "rough",
+    colors: Object.assign({}, MAP_COLORS, {
+      rock: "#160f0d", hatch: "#a8401b", rockGrid: "rgba(255,160,120,0.07)",
+      floor: "#5a4d47", floorGrid: "rgba(0,0,0,0.35)", floorDetail: "#ff7a2a",
+      wall: "#0b0706", door: "#5e3a20", doorEdge: "#150b05", stairs: "#1b1311", water: "#3d6a8a",
+      pit: "#0a0605", pitEdge: "#ff6a1f", rubble: "#3a302c", rubbleEdge: "#181210"
+    })
+  },
+  overgrown: {
+    rock: "leaves", floor: "tufts", walls: "straight",
+    colors: Object.assign({}, MAP_COLORS, {
+      rock: "#18231a", hatch: "#3f6338", rockGrid: "rgba(220,255,210,0.06)",
+      floor: "#c3c79f", floorGrid: "rgba(50,70,30,0.25)", floorDetail: "#5f8a3c",
+      wall: "#152013", stairs: "#3f4a2c", rubble: "#7d8064", rubbleEdge: "#45482f"
+    })
+  }
 };
 var C = MAP_COLORS;     // the palette of the map being drawn
-var cave = false;
+var T = STYLES.stone;   // and its traits
 
 /* A steady "random" number per square, so hatching and rubble look hand
    drawn but don't jump about between redraws. */
@@ -70,8 +116,8 @@ function hash(x, y, salt){
    too (for building), dm: show secret doors as the DM sees them } */
 export function drawMap(ctx, d, view, opts){
   opts = opts || {};
-  C = STYLE_COLORS[d.style] || MAP_COLORS;
-  cave = d.style === "cave";
+  T = STYLES[d.style] || STYLES.stone;
+  C = T.colors;
   var s = view.scale;
   ctx.save();
   ctx.fillStyle = opts.outside || "#120f1a";
@@ -100,8 +146,9 @@ export function drawMap(ctx, d, view, opts){
   if(s >= 10){
     for(y = y0; y <= y1; y++) for(x = x0; x <= x1; x++){
       if(isOpen(d, x, y) || !nearOpen(d, x, y)) continue;
-      if(cave) stipple(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
-      else hatch(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
+      if(T.rock === "hatch") hatch(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
+      else if(T.rock === "stipple") stipple(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
+      else if(T.rock === "leaves") leaves(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
     }
   }
 
@@ -135,17 +182,10 @@ export function drawMap(ctx, d, view, opts){
     ctx.stroke();
   }
 
-  // Earthen cave floors are flecked.
-  if(cave && s >= 14){
-    ctx.fillStyle = C.floorSpeck;
+  // The style's floor detail, on plain floor squares.
+  if(T.floor && s >= 14){
     for(y = y0; y <= y1; y++) for(x = x0; x <= x1; x++){
-      if(cellAt(d, x, y) !== ".") continue;
-      for(var k = 0; k < 3; k++){
-        var r0 = Math.max(0.8, s * 0.025);
-        ctx.beginPath();
-        ctx.arc(ex(x) + s * (0.15 + hash(x, y, 60 + k) * 0.7), ey(y) + s * (0.15 + hash(x, y, 70 + k) * 0.7), r0, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      if(cellAt(d, x, y) === ".") floorDetail(ctx, x, y, ex(x), ey(y), ex(x + 1) - ex(x));
     }
   }
 
@@ -163,11 +203,12 @@ export function drawMap(ctx, d, view, opts){
   }
 
   // Walls: a thick line on every side where open ground meets rock.
-  // Cave walls bulge in and out a little along each side; the corners
+  // Rough walls bulge in and out a little along each side; the corners
   // stay put, so neighbouring sides always meet.
+  var rough = T.walls === "rough";
   function wall(ax, ay, bx, by){
     ctx.moveTo(ex(ax), ey(ay));
-    if(!cave){ ctx.lineTo(ex(bx), ey(by)); return; }
+    if(!rough){ ctx.lineTo(ex(bx), ey(by)); return; }
     var bulge = (hash(ax + bx, ay + by, 80) - 0.5) * s * 0.3;
     var mx = (ex(ax) + ex(bx)) / 2 + (ay === by ? 0 : bulge), my = (ey(ay) + ey(by)) / 2 + (ay === by ? bulge : 0);
     ctx.quadraticCurveTo(mx, my, ex(bx), ey(by));
@@ -181,8 +222,8 @@ export function drawMap(ctx, d, view, opts){
     if(!isOpen(d, x + 1, y)) wall(x + 1, y, x + 1, y + 1);
   }
   ctx.strokeStyle = C.wall;
-  ctx.lineWidth = Math.max(2, s * (cave ? 0.17 : 0.14));
-  ctx.lineCap = cave ? "round" : "square";
+  ctx.lineWidth = Math.max(2, s * (rough ? 0.17 : 0.14));
+  ctx.lineCap = rough ? "round" : "square";
   ctx.lineJoin = "round";
   ctx.stroke();
 
@@ -378,6 +419,75 @@ function stipple(ctx, x, y, px, py, s){
   }
 }
 
+/* Leafy rock: small leaves at odd angles. */
+function leaves(ctx, x, y, px, py, s){
+  ctx.fillStyle = C.hatch;
+  for(var i = 0; i < 5; i++){
+    ctx.beginPath();
+    ctx.ellipse(px + s * hash(x, y, 120 + i), py + s * hash(x, y, 130 + i), s * 0.11, s * 0.05, hash(x, y, 140 + i) * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/* The floor detail of one plain floor square, by the style's `floor`. */
+function floorDetail(ctx, x, y, px, py, s){
+  var k;
+  if(T.floor === "flecks"){
+    // Earthen floors: a few flecks of dirt.
+    ctx.fillStyle = C.floorDetail;
+    for(k = 0; k < 3; k++){
+      ctx.beginPath();
+      ctx.arc(px + s * (0.15 + hash(x, y, 60 + k) * 0.7), py + s * (0.15 + hash(x, y, 70 + k) * 0.7), Math.max(0.8, s * 0.025), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if(T.floor === "planks"){
+    // Three boards a square, each with a joint somewhere along it.
+    ctx.strokeStyle = C.floorDetail;
+    ctx.lineWidth = Math.max(1, s * 0.03);
+    ctx.beginPath();
+    for(k = 1; k < 3; k++){ ctx.moveTo(px, py + s * k / 3); ctx.lineTo(px + s, py + s * k / 3); }
+    for(k = 0; k < 3; k++){
+      if(hash(x, y, 150 + k) < 0.45) continue;
+      var jx = px + s * (0.15 + hash(x, y, 160 + k) * 0.7);
+      ctx.moveTo(jx, py + s * k / 3);
+      ctx.lineTo(jx, py + s * (k + 1) / 3);
+    }
+    ctx.stroke();
+  } else if(T.floor === "cracks" || T.floor === "embers"){
+    // A jagged crack across some squares: frost, or glowing embers.
+    if(hash(x, y, 170) < (T.floor === "embers" ? 0.45 : 0.55)) return;
+    var cx = px + s * (0.1 + hash(x, y, 171) * 0.3), cy = py + s * (0.2 + hash(x, y, 172) * 0.6);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    for(k = 0; k < 3; k++){
+      cx += s * (0.15 + hash(x, y, 180 + k) * 0.15);
+      cy += s * (hash(x, y, 190 + k) - 0.5) * 0.35;
+      ctx.lineTo(cx, Math.max(py + 2, Math.min(py + s - 2, cy)));
+    }
+    if(T.floor === "embers"){
+      ctx.strokeStyle = "rgba(255,110,40,0.35)";
+      ctx.lineWidth = Math.max(2, s * 0.09);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = C.floorDetail;
+    ctx.lineWidth = Math.max(1, s * 0.03);
+    ctx.stroke();
+  } else if(T.floor === "tufts"){
+    // Grass and moss pushing up between the stones.
+    ctx.strokeStyle = C.floorDetail;
+    ctx.lineWidth = Math.max(1, s * 0.035);
+    ctx.lineCap = "round";
+    for(k = 0; k < 2; k++){
+      if(hash(x, y, 200 + k) < 0.4) continue;
+      var tx = px + s * (0.2 + hash(x, y, 210 + k) * 0.6), ty = py + s * (0.35 + hash(x, y, 220 + k) * 0.5);
+      ctx.beginPath();
+      for(var b = -1; b <= 1; b++){ ctx.moveTo(tx, ty); ctx.lineTo(tx + b * s * 0.07, ty - s * (0.13 + (b === 0 ? 0.05 : 0))); }
+      ctx.stroke();
+    }
+    ctx.lineCap = "butt";
+  }
+}
+
 /* A door is a plank across the way through: upright for a corridor
    running left to right ("h"), flat for one running up and down. */
 function drawDoor(ctx, b, axis){
@@ -516,11 +626,12 @@ export function fitView(box, width, height, pad){
 /* A tool's swatch: one square of `code` in a small patch of map, the
    way it looks when painted (a door in a short corridor, floor in a
    little room). */
-export function drawSwatch(canvas, code, cssSize, outside){
+export function drawSwatch(canvas, code, cssSize, outside, style){
   var c = prepareCanvas(canvas, cssSize, cssSize);
   var mini;
   if(code === "+" || code === "s" || code === ">") mini = { w: 3, h: 3, cells: "   ." + code + ".   " };
   else mini = { w: 3, h: 3, cells: "    " + code + "    " };
+  mini.style = style;
   var view = fitView({ x: 0.55, y: 0.55, w: 1.9, h: 1.9 }, c.width, c.height, 0);
   drawMap(c.ctx, mini, view, { outside: outside, dm: true });
 }
