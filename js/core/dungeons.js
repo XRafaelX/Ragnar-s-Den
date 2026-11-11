@@ -10,7 +10,7 @@ import { uid } from "./basics.js";
    Dungeon shape:
      { id, name, maps: [map, ...], updated }
    Map shape:
-     { id, name, w, h, cells, revealed, style, party }
+     { id, name, w, h, cells, revealed, style, party, sight }
 
    The map is a grid of 5 ft squares, `w` wide and `h` tall. `cells` is a
    string of w*h terrain codes (see TERRAIN), row by row from the top
@@ -28,8 +28,10 @@ import { uid } from "./basics.js";
 
    `party` is the square the players' party stands on, {x, y}, or null.
    It is always on open ground: erasing its square takes it off the map.
+   `sight` is how many squares the party sees on this map (its light, or
+   their darkvision), or 0 for no limit (daylight).
 
-   Undo steps hold a map's terrain, fog and party. The functions further
+   Undo steps hold a map's terrain, fog, party and sight. The functions further
    down that take `d` work on one map. */
 
 export var SHOWN = "1";
@@ -45,6 +47,7 @@ export var TERRAIN = {
   ".": { id: "floor", label: "Floor", open: true },
   "+": { id: "door", label: "Door", open: true },
   "s": { id: "secret", label: "Secret door", open: true },
+  "/": { id: "open-door", label: "Open door", open: true },
   ">": { id: "stairs", label: "Stairs", open: true },
   "~": { id: "water", label: "Water", open: true },
   "o": { id: "pit", label: "Pit", open: true },
@@ -139,8 +142,17 @@ function cleanMap(m){
     cells: cells,
     revealed: revealed,
     style: DUNGEON_STYLES.some(function(st){ return st.id === m.style; }) ? m.style : "stone",
-    party: cleanParty(m.party, w, h, cells)
+    party: cleanParty(m.party, w, h, cells),
+    sight: cleanSight(m.sight)
   };
+}
+
+/* Whole squares from 1 to SIGHT_MAX, or 0 (no limit). Missing is the
+   default, 60 feet. */
+function cleanSight(v){
+  var n = parseInt(v, 10);
+  if(isNaN(n) || n < 0) return SIGHT;
+  return Math.min(SIGHT_MAX, n);
 }
 
 /* {x, y} on an open square of this map, or null. */
@@ -268,7 +280,7 @@ export function addMap(d, afterId){
   if(d.maps.length >= MAX_MAPS) return null;
   var i = d.maps.findIndex(function(m){ return m.id === afterId; });
   var like = d.maps[i] || d.maps[d.maps.length - 1];
-  var m = cleanMap({ id: uid(), name: freeMapName(d), w: like.w, h: like.h, style: like.style });
+  var m = cleanMap({ id: uid(), name: freeMapName(d), w: like.w, h: like.h, style: like.style, sight: like.sight });
   d.maps.splice(i === -1 ? d.maps.length : i + 1, 0, m);
   return m;
 }
@@ -486,8 +498,8 @@ export function resizeDungeon(d, w, h){
 export function createHistory(limit){
   var max = limit || 100;
   var undoSteps = [], redoSteps = [];
-  function snap(d){ return { w: d.w, h: d.h, cells: d.cells, revealed: d.revealed, party: d.party ? { x: d.party.x, y: d.party.y } : null }; }
-  function apply(d, s){ d.w = s.w; d.h = s.h; d.cells = s.cells; d.revealed = s.revealed; d.party = s.party ? { x: s.party.x, y: s.party.y } : null; }
+  function snap(d){ return { w: d.w, h: d.h, cells: d.cells, revealed: d.revealed, party: d.party ? { x: d.party.x, y: d.party.y } : null, sight: d.sight }; }
+  function apply(d, s){ d.w = s.w; d.h = s.h; d.cells = s.cells; d.revealed = s.revealed; d.party = s.party ? { x: s.party.x, y: s.party.y } : null; d.sight = s.sight; }
   function samePlace(a, b){ return a === b || (!!a && !!b && a.x === b.x && a.y === b.y); }
   return {
     /* Call with the map as it was before the change just made. */
@@ -498,7 +510,7 @@ export function createHistory(limit){
     },
     snapshot: snap,
     /* True if the map is still as it was in `s`. */
-    same: function(d, s){ return d.w === s.w && d.h === s.h && d.cells === s.cells && d.revealed === s.revealed && samePlace(d.party, s.party); },
+    same: function(d, s){ return d.w === s.w && d.h === s.h && d.cells === s.cells && d.revealed === s.revealed && samePlace(d.party, s.party) && d.sight === s.sight; },
     canUndo: function(){ return undoSteps.length > 0; },
     canRedo: function(){ return redoSteps.length > 0; },
     undo: function(d){
@@ -550,9 +562,19 @@ export function revealAll(d, on){
 /* True once any square is shown to the players. */
 export function anyRevealed(d){ return d.revealed.indexOf(SHOWN) !== -1; }
 
-/* Ground a person walks through: open, and not a door. Doors split the
-   map into areas. */
+/* Doors: closed ("+"), secret ("s") and open ("/"). */
+function isDoorCode(c){ return c === "+" || c === "s" || c === "/"; }
+
+/* Ground a person walks through: open, and not a door. Doors, open or
+   closed, split the map into areas. */
 function walkable(d, x, y){
+  var c = cellAt(d, x, y);
+  return c !== ROCK && !isDoorCode(c);
+}
+
+/* Ground the party can see across: anything open but a closed or
+   secret door. */
+function seeThrough(d, x, y){
   var c = cellAt(d, x, y);
   return c !== ROCK && c !== "+" && c !== "s";
 }
@@ -596,7 +618,7 @@ export function areaAt(d, x, y){
     [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function(s){
       var nx = p[0] + s[0], ny = p[1] + s[1], key = nx + "," + ny;
       if(inArea[key]) return;
-      var doorway = cellAt(d, nx, ny) === "+";
+      var doorway = cellAt(d, nx, ny) === "+" || cellAt(d, nx, ny) === "/";
       var corridorMouth = room && walkable(d, nx, ny) && !roomGround(d, nx, ny);
       if(!doorway && !corridorMouth) return;
       inArea[key] = true;
@@ -667,18 +689,43 @@ export function revealedBounds(d){
 /* ---- the party ----
    The DM's marker for where the players' characters are. Walking it
    through the dungeon shows what they can see as they go. */
-export var SIGHT = 12;   // squares the party sees, 60 feet
+export var SIGHT = 12;      // squares the party sees unless the map says otherwise, 60 feet
+export var SIGHT_MAX = 60;  // the most a map can set short of no limit, 300 feet
 
-/* The open squares the party sees from (x, y): within SIGHT squares and
-   with nothing in the way. Rock, doors and secret doors block the view
-   (a door itself is seen, not what is behind it), and a secret door is
-   never seen this way: the DM shows those by tapping them. */
+/* How far the party sees, the usual cases, in squares (0: no limit).
+   Candles and torches light as far again in dim light as in bright,
+   which the party can still see by. */
+export var SIGHT_OPTIONS = [
+  { squares: 2, label: "Candlelight", help: "A candle, or a faint glow" },
+  { squares: 8, label: "Torchlight", help: "A torch or the Light cantrip" },
+  { squares: 12, label: "Lantern or darkvision", help: "A hooded lantern, or most darkvision" },
+  { squares: 24, label: "Superior darkvision", help: "Drow, deep gnomes and some others" },
+  { squares: 0, label: "Daylight", help: "Bright light everywhere. Only walls and doors block the view" }
+];
+
+/* Sets how far the party sees on this map. If the party is on it and
+   now sees further, that is shown straight away. Returns true if
+   anything changed. */
+export function setSight(d, squares){
+  var n = cleanSight(squares);
+  var changed = n !== d.sight;
+  d.sight = n;
+  if(d.party && setRevealed(d, sightFrom(d, d.party.x, d.party.y), true)) changed = true;
+  return changed;
+}
+
+/* The open squares the party sees from (x, y): within the map's sight
+   and with nothing in the way. Rock, closed doors and secret doors block
+   the view (a closed door itself is seen, not what is behind it), open
+   doors don't, and a secret door is never seen this way: the DM shows
+   those by tapping them. */
 export function sightFrom(d, x, y){
   var out = [];
-  for(var ty = y - SIGHT; ty <= y + SIGHT; ty++){
-    for(var tx = x - SIGHT; tx <= x + SIGHT; tx++){
+  var reach = d.sight === 0 ? Math.max(d.w, d.h) : (d.sight || SIGHT);
+  for(var ty = y - reach; ty <= y + reach; ty++){
+    for(var tx = x - reach; tx <= x + reach; tx++){
       var dx = tx - x, dy = ty - y;
-      if(dx * dx + dy * dy > (SIGHT + 0.5) * (SIGHT + 0.5)) continue;
+      if(dx * dx + dy * dy > (reach + 0.5) * (reach + 0.5)) continue;
       var c = cellAt(d, tx, ty);
       if(c === ROCK || c === "s") continue;
       if(clearLine(d, x, y, tx, ty)) out.push([tx, ty]);
@@ -692,16 +739,19 @@ export function sightFrom(d, x, y){
 function clearLine(d, ax, ay, bx, by){
   var line = lineCells(ax, ay, bx, by);
   for(var i = 1; i < line.length - 1; i++){
-    if(!walkable(d, line[i][0], line[i][1])) return false;
+    if(!seeThrough(d, line[i][0], line[i][1])) return false;
   }
   return true;
 }
 
 /* Puts the party on (x, y) and shows what they see there. Only open
-   ground. Returns true if anything changed. */
+   ground. A closed door they step onto opens: they have to open it to
+   get through, and it stays open behind them. Returns true if anything
+   changed. */
 export function placeParty(d, x, y){
   if(!isOpen(d, x, y)) return false;
   var moved = !d.party || d.party.x !== x || d.party.y !== y;
+  if(cellAt(d, x, y) === "+" && paintCells(d, [[x, y]], "/")) moved = true;
   d.party = { x: x, y: y };
   var shown = setRevealed(d, sightFrom(d, x, y), true);
   return moved || shown;
@@ -725,3 +775,19 @@ export function removeParty(d){
   d.party = null;
   return true;
 }
+
+/* ---- doors ----
+   Opens a closed door or closes an open one. A secret door opens as a
+   found, open door. The door itself is shown to the players, and if the
+   party is on the map they see what the opened door lets them see.
+   Returns true if (x, y) was a door. */
+export function toggleDoor(d, x, y){
+  var c = cellAt(d, x, y);
+  if(!isDoorCode(c)) return false;
+  paintCells(d, [[x, y]], c === "/" ? "+" : "/");
+  setRevealed(d, [[x, y]], true);
+  if(d.party) setRevealed(d, sightFrom(d, d.party.x, d.party.y), true);
+  return true;
+}
+
+export function isDoor(d, x, y){ return isDoorCode(cellAt(d, x, y)); }

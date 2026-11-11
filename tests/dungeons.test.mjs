@@ -11,7 +11,8 @@ import {
   dungeonNameProblem, cellAt, isOpen, isBlank, contentBounds, passageAxis, paintCells, fillRect, lineCells,
   clearDungeon, resizeDungeon, resizeLoses, createHistory, DUNGEON_SIZES, MIN_SIDE, MAX_SIDE, TERRAIN, ROCK, FLOOR,
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, revealedBounds, FOG_EDGE,
-  setDungeonStyle, DUNGEON_STYLES, placeParty, walkParty, removeParty, sightFrom, SIGHT
+  setDungeonStyle, DUNGEON_STYLES, placeParty, walkParty, removeParty, sightFrom, SIGHT, setSight, SIGHT_OPTIONS, SIGHT_MAX,
+  toggleDoor, isDoor
 } from "../js/core/dungeons.js";
 
 function fresh(){
@@ -621,4 +622,113 @@ test("a map dragged to a new place: the others close up around it", () => {
   assert.equal(names(), "Map 1,Map 2,Map 3,Map 5,Map 4", "past the end: last");
   assert.equal(placeMap(dg, dg.maps[2].id, 2), false, "dropped where it was");
   assert.equal(placeMap(dg, "nope", 0), false);
+});
+
+test("each map sets how far the party sees: 60 ft unless changed, any range up to 300 ft, or no limit", () => {
+  fresh();
+  const d = newMap("Hall", "small");
+  assert.equal(d.sight, SIGHT, "60 feet to start");
+  blankMap(d, 70, 3);
+  fillRect(d, 0, 1, 69, 1, FLOOR);
+  const far = () => Math.max(...sightFrom(d, 0, 1).map(([x]) => x));
+  assert.equal(far(), 12);
+  assert.equal(setSight(d, 8), true);
+  assert.equal(far(), 8, "torchlight: 40 feet");
+  assert.equal(setSight(d, 8), false);
+  setSight(d, 0);
+  assert.equal(far(), 69, "daylight: no limit");
+  setSight(d, 999);
+  assert.equal(d.sight, SIGHT_MAX);
+  assert.deepEqual(SIGHT_OPTIONS.map((o) => o.squares), [2, 8, 12, 24, 0]);
+});
+
+test("more sight shows more around a party already on the map, as one undo step", () => {
+  fresh();
+  const d = newMap("Hall", "small");
+  blankMap(d, 40, 3);
+  fillRect(d, 0, 1, 39, 1, FLOOR);
+  setSight(d, 2);
+  placeParty(d, 0, 1);
+  assert.ok(isRevealed(d, 2, 1) && !isRevealed(d, 3, 1), "candlelight: 10 feet");
+  const h = createHistory();
+  const before = h.snapshot(d);
+  setSight(d, 8);
+  h.record(before);
+  assert.ok(isRevealed(d, 8, 1) && !isRevealed(d, 9, 1), "torchlight shows 40 feet straight away");
+  h.undo(d);
+  assert.equal(d.sight, 2);
+  assert.ok(!isRevealed(d, 3, 1), "undo takes back the light and what it showed");
+  setSight(d, 0);
+  assert.ok(isRevealed(d, 39, 1));
+  setSight(d, 2);
+  assert.ok(isRevealed(d, 39, 1), "less light doesn't hide what was seen");
+});
+
+test("a new map gets the sight of the map it follows, and saved sight is cleaned", () => {
+  fresh();
+  const dg = createDungeon("Crypt", "small");
+  setSight(dg.maps[0], 8);
+  assert.equal(addMap(dg, dg.maps[0].id).sight, 8);
+  localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([{ id: "a", name: "A", maps: [
+    { id: "m1", sight: 0 }, { id: "m2", sight: -3 }, { id: "m3", sight: "lots" }, { id: "m4", sight: 500 }
+  ] }]));
+  loadDungeons();
+  assert.deepEqual(["m1", "m2", "m3", "m4"].map((id) => findMap(id).sight), [0, SIGHT, SIGHT, SIGHT_MAX]);
+});
+
+/* ---- doors ---- */
+
+/* A hall with a door in it: the party at the left end. */
+function hallWithDoor(){
+  fresh();
+  const d = newMap("Hall", "small");
+  blankMap(d, 20, 3);
+  fillRect(d, 0, 1, 19, 1, FLOOR);
+  paintCells(d, [[5, 1]], "+");
+  return d;
+}
+
+test("a closed door blocks the party's sight, an open one doesn't", () => {
+  const d = hallWithDoor();
+  placeParty(d, 0, 1);
+  assert.ok(isRevealed(d, 5, 1) && !isRevealed(d, 6, 1), "they see the door, not past it");
+  assert.equal(toggleDoor(d, 5, 1), true);
+  assert.equal(cellAt(d, 5, 1), "/");
+  assert.ok(isRevealed(d, 12, 1), "opening it shows what lies beyond, straight away");
+  assert.equal(toggleDoor(d, 5, 1), true);
+  assert.equal(cellAt(d, 5, 1), "+", "and it closes again");
+  assert.ok(isRevealed(d, 12, 1), "closing doesn't hide what was seen");
+  assert.equal(toggleDoor(d, 3, 1), false, "floor is no door");
+  assert.ok(isDoor(d, 5, 1) && !isDoor(d, 4, 1));
+});
+
+test("the party opens a closed door they walk onto, and it stays open behind them", () => {
+  const d = hallWithDoor();
+  placeParty(d, 0, 1);
+  walkParty(d, 8, 1);
+  assert.deepEqual(d.party, { x: 8, y: 1 });
+  assert.equal(cellAt(d, 5, 1), "/");
+  walkParty(d, 0, 1);
+  assert.equal(cellAt(d, 5, 1), "/", "still open");
+});
+
+test("a secret door opens as a found, open door, shown to the players", () => {
+  const d = hallWithDoor();
+  paintCells(d, [[5, 1]], "s");
+  placeParty(d, 0, 1);
+  assert.equal(isRevealed(d, 5, 1), false, "unfound, it stays hidden");
+  toggleDoor(d, 5, 1);
+  assert.equal(cellAt(d, 5, 1), "/");
+  assert.ok(isRevealed(d, 5, 1) && isRevealed(d, 10, 1));
+  assert.equal(playerView(d).cells.charAt(1 * d.w + 5), "/", "the players see it open");
+});
+
+test("open doors still split areas for a tap, and a room tap shows them", () => {
+  const d = drawn(CRYPT);
+  toggleDoor(d, 4, 2);
+  revealAll(d, false);
+  toggleArea(d, 2, 2);
+  assert.ok(isRevealed(d, 4, 2), "the open door in the room's wall is shown");
+  assert.equal(isRevealed(d, 5, 2), false, "but not the corridor past it");
+  assert.deepEqual(areaAt(d, 4, 2), [[4, 2]], "an open door is only itself");
 });

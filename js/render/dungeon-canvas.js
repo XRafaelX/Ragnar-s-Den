@@ -195,6 +195,7 @@ export function drawMap(ctx, d, view, opts){
     if(code === ROCK || code === ".") continue;
     var box = { x: ex(x), y: ey(y), s: ex(x + 1) - ex(x) };
     if(code === "+") drawDoor(ctx, box, passageAxis(d, x, y));
+    else if(code === "/") drawOpenDoor(ctx, box, passageAxis(d, x, y), x, y);
     else if(code === "s"){ if(opts.dm) drawSecret(ctx, box, passageAxis(d, x, y)); }
     else if(code === ">") drawStairs(ctx, box, passageAxis(d, x, y));
     else if(code === "~") drawWater(ctx, box, x, y);
@@ -499,6 +500,26 @@ function drawDoor(ctx, b, axis){
   ctx.strokeStyle = C.doorEdge;
   ctx.lineWidth = Math.max(1, b.s * 0.05);
   ctx.strokeRect(x, y, w, h);
+}
+
+/* An open door: the plank swung back against one wall of the way
+   through, along it instead of across it. */
+function drawOpenDoor(ctx, b, axis, x, y){
+  var long = b.s * 0.62, thick = Math.max(3, b.s * 0.2), inset = b.s * 0.08;
+  var side = hash(x, y, 230) < 0.5;     // which wall it rests against
+  var w, h, px, py;
+  if(axis === "h"){
+    w = long; h = thick; px = b.x + (b.s - long) / 2;
+    py = side ? b.y + inset : b.y + b.s - inset - thick;
+  } else {
+    w = thick; h = long; py = b.y + (b.s - long) / 2;
+    px = side ? b.x + inset : b.x + b.s - inset - thick;
+  }
+  ctx.fillStyle = C.door;
+  ctx.fillRect(px, py, w, h);
+  ctx.strokeStyle = C.doorEdge;
+  ctx.lineWidth = Math.max(1, b.s * 0.05);
+  ctx.strokeRect(px, py, w, h);
 }
 
 /* Only the DM sees a secret door: a dashed line and an S. */

@@ -2,7 +2,8 @@ import {
   getDungeons, getDungeon, createDungeon, saveDungeon, deleteDungeon, duplicateDungeon, dungeonNameProblem,
   paintCells, fillRect, lineCells, clearDungeon, resizeDungeon, resizeLoses, createHistory, contentBounds, isBlank,
   isRevealed, setRevealed, revealAll, anyRevealed, areaAt, toggleArea, playerView, setDungeonStyle,
-  placeParty, walkParty, removeParty, addMap, removeMap, moveMap, placeMap, renameMap,
+  placeParty, walkParty, removeParty, addMap, removeMap, moveMap, placeMap, renameMap, setSight, toggleDoor, isDoor,
+  SIGHT_OPTIONS, SIGHT_MAX,
   DUNGEON_SIZES, DUNGEON_STYLES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
 } from "../core/dungeons.js";
 import { drawMap, drawFog, drawSwatch, drawThumbnail, prepareCanvas, fitView, drawPlayersScreen, playersFit, drawParty, MAP_COLORS } from "./dungeon-canvas.js";
@@ -62,6 +63,7 @@ var ICON = {
   clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
   monitor: '<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  door: '<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.561Z"/>',
   eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
   cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
@@ -99,7 +101,8 @@ function toolById(id){
 var PLAY_TOOLS = [
   { id: "move", label: "Move", icon: "hand", help: "Drag to move around the map" },
   { id: "reveal", label: "Reveal", icon: "eye", help: "Tap a room or corridor to show it to the players, and tap again to hide it. Drag to show or hide square by square" },
-  { id: "party", label: "Party", icon: "users", help: "Tap a square to put the party there. Drag the marker to walk them, and the fog clears as they see more" }
+  { id: "party", label: "Party", icon: "users", help: "Tap a square to put the party there. Drag the marker to walk them, and the fog clears as far as they can see. Set how far in the menu, under Party sight" },
+  { id: "doors", label: "Doors", icon: "door", help: "Tap a door to open or close it. The party sees through open doors, and opens a closed door they walk onto. A secret door opens as a found door" }
 ];
 
 var overlay = null;
@@ -415,6 +418,7 @@ function renderBoard(dungeon){
     { label: "Maps in this dungeon", onClick: openMapsSheet },
     { label: "Map size", onClick: openSizeSheet },
     { label: "Map style", onClick: openStyleSheet },
+    { label: "Party sight", onClick: openSightSheet },
     { label: "Remove party marker", onClick: function(){
       if(!change(function(){ return removeParty(b.d); })) showActionToast("There is no party marker on this map.");
     } },
@@ -994,6 +998,21 @@ function paint(){
     }
   }
 
+  // While the party is dragged, how far they see: a dashed ring. Only
+  // then, so it doesn't sit over the map the rest of the time.
+  if(g && g.type === "party" && b.d.party && b.d.sight > 0){
+    var pr = (b.d.sight + 0.5) * view.scale;
+    ctx.save();
+    ctx.strokeStyle = accent;
+    ctx.globalAlpha = 0.7;
+    ctx.lineWidth = 2 * dpr;
+    ctx.setLineDash([8 * dpr, 6 * dpr]);
+    ctx.beginPath();
+    ctx.arc(view.ox + (b.d.party.x + 0.5) * view.scale, view.oy + (b.d.party.y + 0.5) * view.scale, pr, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // In Play, the area a tap would show or hide, under the mouse.
   if(mode === "play" && b.hoverArea && !g && !b.space){
     ctx.save();
@@ -1085,10 +1104,17 @@ function onDown(e){
   var t = activeTool();
   if(mouseDrag || t.id === "move" || b.space){
     b.gesture = { type: "pan", last: p };
+  } else if(t.id === "doors"){
+    // A tap opens or closes the door under it.
+    var at0 = squareAt(p);
+    b.gesture = { type: "done" };
+    if(!isDoor(b.d, at0[0], at0[1])) showActionToast("Tap a door to open or close it.");
+    else change(function(){ return toggleDoor(b.d, at0[0], at0[1]); });
   } else if(t.id === "party"){
-    // On the marker: walk them. Anywhere else: put them there, then walk.
+    // Puts the party there (on the marker itself: they look around
+    // again), then a drag walks them.
     var to = squareAt(p), was = b.history.snapshot(b.d);
-    if(!b.d.party || !sameSquare(to, [b.d.party.x, b.d.party.y])) placeParty(b.d, to[0], to[1]);
+    placeParty(b.d, to[0], to[1]);
     b.gesture = { type: "party", last: to, before: was };
   } else if(t.id === "reveal"){
     // A tap or a drag: which one is only known once it moves on.
@@ -1122,7 +1148,9 @@ function onMove(e){
       var sq = squareAt(p);
       if(!sameSquare(sq, b.hover)){
         b.hover = sq;
-        b.hoverArea = mode === "play" && playTool === "reveal" ? areaAt(b.d, sq[0], sq[1]) : null;
+        b.hoverArea = mode !== "play" ? null
+          : playTool === "reveal" ? areaAt(b.d, sq[0], sq[1])
+          : playTool === "doors" && isDoor(b.d, sq[0], sq[1]) ? [sq] : null;
         draw();
       }
     }
@@ -1214,6 +1242,58 @@ function onKey(e){
 }
 function onKeyUp(e){
   if(b && e.key === " "){ b.space = false; refreshChrome(); draw(); }
+}
+
+/* ---- Party sight ----
+   How far the party sees on this map: a common case picked from the
+   list, or an exact distance in 5 foot steps. A change applies at once
+   (and shows more around the party if they now see further) and can
+   be undone. */
+function feet(squares){ return squares === 0 ? "No limit" : squares * 5 + " ft"; }
+
+function openSightSheet(){
+  var d = b.d;
+  openBottomSheet(function(body, refresh, closeSheet){
+    body.appendChild(ce("h3", "dg-sheet-title", "Party sight"));
+    body.appendChild(ce("p", "dg-sheet-help", "How far the party can see on " + d.name + " when you move them. Walls and closed doors always block the view."));
+    var list = ce("div", "dg-sight-list");
+    list.setAttribute("role", "radiogroup");
+    list.setAttribute("aria-label", "Party sight");
+    SIGHT_OPTIONS.forEach(function(o){
+      var on = d.sight === o.squares;
+      var row = button("dg-sight" + (on ? " on" : ""), "", function(){ pick(o.squares); }, null);
+      row.setAttribute("role", "radio");
+      row.setAttribute("aria-checked", on ? "true" : "false");
+      var words = ce("span", "dg-sight-words");
+      words.appendChild(ce("span", "dg-sight-name", o.label));
+      words.appendChild(ce("span", "dg-sight-help", o.help));
+      row.appendChild(words);
+      row.appendChild(ce("span", "dg-sight-feet", feet(o.squares)));
+      list.appendChild(row);
+    });
+    body.appendChild(list);
+
+    var exact = ce("div", "dg-side-row dg-sight-exact");
+    exact.appendChild(ce("span", "dg-side-label", "Exactly"));
+    var less = button("dg-step", "", function(){ pick(d.sight === 0 ? SIGHT_MAX : Math.max(1, d.sight - 1)); }, "5 feet less");
+    less.appendChild(icon("minus"));
+    var more = button("dg-step", "", function(){ pick(d.sight === 0 ? 0 : (d.sight >= SIGHT_MAX ? 0 : d.sight + 1)); }, "5 feet more");
+    more.appendChild(icon("plus"));
+    exact.appendChild(less);
+    exact.appendChild(ce("span", "dg-sight-value", feet(d.sight)));
+    exact.appendChild(more);
+    body.appendChild(exact);
+
+    var actions = ce("div", "dg-sheet-actions");
+    actions.appendChild(button("btn primary", "Done", closeSheet));
+    body.appendChild(actions);
+
+    function pick(squares){
+      if(!b || b.d !== d) return;
+      change(function(){ return setSight(d, squares); });
+      refresh();
+    }
+  });
 }
 
 /* ---- Map style ---- */
