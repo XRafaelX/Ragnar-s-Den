@@ -102,3 +102,8 @@ test("a 2024 artificer has no infusions; a multiclass picks a skill", () => {
   assert.ok(mc && mc.def.pick[0].kind === "skill" && mc.def.pick[0].options.includes("Sleight of Hand"));
   assert.equal(entryGrants({ name: "Artificer", level: 1 }, true).some((g) => g.key === "multiclass"), false, "Tasha's: no skill");
 });
+
+test("the artificer's hit die is a d8 (Tasha's and 2024)", async () => {
+  const { HIT_DICE_BY_CLASS } = await import("../js/data/abilities-skills.js");
+  assert.equal(HIT_DICE_BY_CLASS.Artificer, 8);
+});
