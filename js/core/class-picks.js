@@ -121,8 +121,11 @@ export function entryGrants(cl, multiclass, level){
   if(!cl) return [];
   var lv = level!=null ? level : (Number(cl.level)||1);
   var out = [], prog = CLASS_PROGRESSION[cl.name], sub = subclassOf(cl);
-  if(multiclass && prog && prog.multiclassProfs && prog.multiclassProfs.profs){
-    out.push({key: "multiclass", name: cl.name + " training", source: "Multiclass · " + cl.name, level: 1, def: prog.multiclassProfs.profs});
+  // (A 2024 class's own multiclass picks: the 2024 artificer's skill.)
+  var ed = prog && prog.editions && cl.edition && prog.editions[cl.edition];
+  var mc = (ed && ed.multiclassProfs) || (prog && prog.multiclassProfs);
+  if(multiclass && mc && mc.profs){
+    out.push({key: "multiclass", name: cl.name + " training", source: "Multiclass · " + cl.name, level: 1, def: mc.profs});
   }
   // The first class's own tool choices (a bard's three instruments).
   if(!multiclass && prog && prog.startingProfs){

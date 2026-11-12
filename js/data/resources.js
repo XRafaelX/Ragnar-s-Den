@@ -212,8 +212,18 @@ export var CLASS_RESOURCES = {
         hint:"Cast {spell} once at 3rd level without a spell slot. Casting it with a slot doesn't use this."}}
   ],
   "Artificer": [
-    {id:"flash_of_genius", name:"Flash of Genius", level:7, max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+    {id:"flash_of_genius", name:"Flash of Genius", level:7, edition:"2014", max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
       hint:"Reaction: add your INT modifier to an ability check or save by you or a creature within 30 ft."},
+    // The 2024 artificer (Eberron: Forge of the Artificer): only on a failed
+    // roll; Refreshed Genius (14) gives one back on a short rest, Magical
+    // Guidance (20) all of them while attuned to a magic item.
+    {id:"flash_of_genius", name:"Flash of Genius", level:7, edition:"2024", max:function(lv, m){ return atLeastOne(m.int); },
+      reset:function(lv){ return lv>=14 ? "short" : "long"; },
+      shortRegain:function(lv, c){ return lv>=20 && (c.inventory||[]).some(function(i){ return i.attuned; }) ? 0 : 1; },
+      hint:function(lv){ return "Reaction when you or a creature within 30 ft fails a check or save: add your INT modifier." +
+        (lv>=20 ? " A short rest gives every use back while you're attuned to a magic item, else one." : lv>=14 ? " A short rest gives one back." : ""); }},
+    {id:"tinkers_magic", name:"Tinker's Magic", level:1, edition:"2024", max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+      hint:"Magic action with tinker's tools: make an everyday item within 5 ft. It vanishes on your next long rest."},
     {id:"spell_storing_item", name:"Spell-Storing Item (Uses)", level:11, pool:true, max:function(lv, m){ return Math.max(2, m.int * 2); }, reset:always("long"),
       hint:"Uses of the spell stored in your item. Storing a new spell after a long rest resets them."}
   ]

@@ -6,7 +6,8 @@ import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
-import { elixirsOnLongRest, infusionsOnLongRest, artificerLevel } from "../../core/artificer.js";
+import { elixirsOnLongRest, infusionsOnLongRest, artificerLevel, tinkerItemsOnLongRest, makeTinkerItem } from "../../core/artificer.js";
+import { TINKER_ITEMS } from "../../data/artificer-2024.js";
 import { restoreCompanions, wildCompanionHours, summonWildCompanion } from "../../core/companions.js";
 import { showActionToast } from "../../ui/toast.js";
 import { WILD_SURGES } from "../../data/effects.js";
@@ -963,8 +964,10 @@ export function renderVitalsPanel(c){
         delete c.sessionSpell; // Spirit Session's spell goes as a long rest starts.
         restoreCompanions(c);
         var elixirs = elixirsOnLongRest(c);
+        var tinkered = tinkerItemsOnLongRest(c);
         logRoll("Long rest taken", "HP and spell slots restored. "+recovered+" hit dice recovered."+
           (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : "")+
+          (tinkered.length ? " Tinker's Magic items vanished: "+tinkered.join(", ")+"." : "")+
           (items.recharged.length ? " Recharged: "+items.recharged.join(", ")+"." : "")+
           (items.ended.length ? " Ended: "+items.ended.join(", ")+"." : "")+
           (omen ? " Cosmic Omen: " + omen + "." : "")+
@@ -1674,6 +1677,21 @@ function renderResourcesCard(c, resources){
     if(lockRow) info.appendChild(lockRow);
     var wizRow = wizardResourceRow(c, r); // The schools' buttons and pickers
     if(wizRow) info.appendChild(wizRow);
+    // Tinker's Magic (2024 artificer): pick an everyday item to make.
+    if(r.key==="Artificer:tinkers_magic" && remaining > 0){
+      var tinker = document.createElement("div");
+      tinker.className = "res-pick";
+      tinker.appendChild(themedPicker({key: "tinker", groups: {"": TINKER_ITEMS.map(function(t){ return t.name; })}, value: "", search: true,
+        placeholder: "Make an item...", ariaLabel: "Tinker's Magic: item to make",
+        onPick: function(v){
+          var made = makeTinkerItem(c, v);
+          if(!made) return;
+          logRoll("Tinker's Magic", "Made " + made.name + ". It vanishes on your next long rest.");
+          showActionToast(made.name + " added to your inventory until your next long rest.");
+          save(); renderAll();
+        }}));
+      info.appendChild(tinker);
+    }
     // Defensive Field (Armorer, Guardian): temporary HP equal to the artificer level.
     if(r.key==="Artificer:defensive_field"){
       var field = artificerLevel(c);

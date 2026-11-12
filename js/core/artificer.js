@@ -1,5 +1,6 @@
 import { ARMOR_MODELS, ELIXIR_EFFECTS } from "../data/artificer-extras.js";
 import { INFUSIONS, REPLICABLE_ITEMS, infusedItemsAt } from "../data/infusions.js";
+import { TINKER_ITEMS } from "../data/artificer-2024.js";
 import { attuneProblem } from "./magic-items.js";
 import { activeInfusionData, infusionWorks } from "./infusion-effects.js";
 export { activeInfusionData, infusionWorks };
@@ -71,6 +72,13 @@ export function artificerLevel(c){
   var cl = (c.classes||[]).find(function(x){ return x.name==="Artificer"; });
   return cl ? (Number(cl.level)||1) : 0;
 }
+/* A 2024 artificer (Eberron: Forge of the Artificer): plans, not infusions. */
+export function isArtificer2024(c){
+  return (c.classes||[]).some(function(x){ return x.name==="Artificer" && x.edition==="2024"; });
+}
+/* The Tasha's artificer's level (0 for a 2024 one): infusions, Tool
+   Expertise and its Soul of Artifice. */
+function tashaLevel(c){ return isArtificer2024(c) ? 0 : artificerLevel(c); }
 /* The bonus an infusion gives now: +1, or +2 from artificer level 10 for
    the ones that scale. 0 for one without a bonus. */
 export function infusionBonus(c, name){
@@ -344,7 +352,8 @@ export function dropOrphanInfusions(c){
 export function syncInfusions(c){
   var inf = c.infusions;
   if(!inf || !(inf.active||[]).length) return false;
-  if(artificerLevel(c) < 2){
+  // (Below level 2, or a 2024 artificer, who makes items from plans.)
+  if(tashaLevel(c) < 2){
     inf.active.slice().forEach(function(a){ endInfusion(c, a); });
     return true;
   }
@@ -458,16 +467,38 @@ export function flashOfGenius(c){
 }
 /* Soul of Artifice (20): +1 to saves per attuned magic item. */
 export function soulOfArtificeBonus(c){
-  if(artificerLevel(c) < 20) return 0;
+  if(tashaLevel(c) < 20) return 0;
   return (c.inventory||[]).filter(function(i){ return i.attuned; }).length;
 }
 /* Soul of Artifice: an infusion ends and you have 1 hit point instead of 0. */
 export function soulOfArtificeReady(c){
-  return artificerLevel(c) >= 20 && !!(c.infusions && (c.infusions.active||[]).length);
+  return tashaLevel(c) >= 20 && !!(c.infusions && (c.infusions.active||[]).length);
 }
 /* Tool Expertise (6): every tool you're proficient with. */
 export function hasToolExpertise(c){
-  return artificerLevel(c) >= 6;
+  return tashaLevel(c) >= 6;
+}
+
+/* ---- Tinker's Magic (2024 artificer, level 1) ----
+   An everyday item from TINKER_ITEMS, made with a use, kept in the
+   inventory (`tinkered`) until the next long rest. */
+export function makeTinkerItem(c, name){
+  var t = TINKER_ITEMS.find(function(i){ return i.name===name; });
+  if(!t || resourceLeft(c, "Artificer:tinkers_magic") <= 0) return null;
+  var g = (t.gear && GEAR_DATA[t.gear]) || {};
+  var item = {id: uid(), name: t.gear || t.name, type: "gear", qty: 1, equipped: false, weight: g.weight || 0,
+    notes: "Tinker's Magic: vanishes on your next long rest" + (t.notes ? ". " + t.notes : g.notes ? ". " + g.notes : ""), tinkered: true};
+  if(!c.inventory) c.inventory = [];
+  c.inventory.push(item);
+  if(!c.resourcesUsed) c.resourcesUsed = {};
+  c.resourcesUsed["Artificer:tinkers_magic"] = (Number(c.resourcesUsed["Artificer:tinkers_magic"])||0) + 1;
+  return item;
+}
+/* A long rest: the made items vanish. Their names, for the log. */
+export function tinkerItemsOnLongRest(c){
+  var gone = (c.inventory||[]).filter(function(i){ return i.tinkered; }).map(function(i){ return i.name; });
+  if(gone.length) c.inventory = c.inventory.filter(function(i){ return !i.tinkered; });
+  return gone;
 }
 /* Arcane Jolt (Battle Smith 9): 2d6, 4d6 from 15, on a magic weapon's hit.
    Shaped like rangerHitDice, paid with a use. */

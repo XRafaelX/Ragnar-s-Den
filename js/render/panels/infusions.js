@@ -4,7 +4,7 @@ import { INFUSIONS, REPLICABLE_ITEMS, infusionsKnownAt, infusedItemsAt } from ".
 import { makeCard, renderAll } from "../sheet.js";
 import { sectionTitle, hint } from "../../ui/card-parts.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
-import { artificerLevel, endInfusion, infusionTargets, infuseItem, dropOrphanInfusions, armorPartOptions, arcaneArmor, infusionLimits, infusionsToEnd } from "../../core/artificer.js";
+import { artificerLevel, isArtificer2024, endInfusion, infusionTargets, infuseItem, dropOrphanInfusions, armorPartOptions, arcaneArmor, infusionLimits, infusionsToEnd } from "../../core/artificer.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -29,7 +29,8 @@ function infusionData(name){ return INFUSIONS.find(function(i){ return i.name===
 
 export function renderInfusionsCard(c){
   var level = artificerLevel(c);
-  if(level < 2) return null;
+  // (A 2024 artificer makes items from plans instead.)
+  if(level < 2 || isArtificer2024(c)) return null;
   if(!c.infusions) c.infusions = {known:[], active:[]};
   // Infusions point at inventory items by id; older items may not have one.
   (c.inventory||[]).forEach(function(item){ if(!item.id) item.id = uid(); });

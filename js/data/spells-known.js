@@ -68,7 +68,10 @@ export var EDITION_CASTERS = {
     spells: [0, 4, 5, 6, 7, 9, 10, 11, 12, 14, 15, 16, 16, 17, 17, 18, 18, 19, 20, 21, 22]},
   // (The 2024 warlock's Prepared Spells column is the 2014 spells known.)
   "Warlock": {list: "Warlock", cantrips: byLevel({1: 2, 4: 3, 10: 4}), maxLevel: pactMax, swap: true, cantripSwap: "level",
-    spells: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15]}
+    spells: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15]},
+  // The 2024 artificer swaps a cantrip after a long rest, not at a level-up
+  // (cantripFormulas in js/core/spells-known.js).
+  "Artificer": {list: "Artificer", cantrips: byLevel({1: 2, 10: 3, 14: 4}), maxLevel: artificerMax}
 };
 
 var THIRD_SPELLS = [0, 0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13];

@@ -472,26 +472,32 @@ export function undoLearn(c, rec){
    finish a long rest and consult those formulas in your spellbook, you
    can replace one wizard cantrip you know with another cantrip from the
    wizard spell list." Offered in the sheet that opens after a long rest.
-   {known: [wizard cantrips], options: [ones to take instead]} or null. */
-export function cantripFormulas(c){
+   The 2024 wizard and the 2024 artificer swap one after every long rest
+   from level 1, as a class feature.
+   {className, known: [its cantrips], options: [ones to take instead]} or null. */
+function formulaClass(c){
   var wiz = (c.classes||[]).find(function(cl){ return cl.name==="Wizard"; });
-  // (The 2024 wizard swaps one after every long rest, from level 1.)
-  if(!wiz || (wiz.edition!=="2024" && (!c.tashaOptional || (Number(wiz.level)||1) < 3))) return null;
-  var known = classKnownSpells(c, "Wizard").cantrips.map(function(sp){ return sp.name; }).sort();
+  if(wiz && (wiz.edition==="2024" || (c.tashaOptional && (Number(wiz.level)||1) >= 3))) return wiz;
+  return (c.classes||[]).find(function(cl){ return cl.name==="Artificer" && cl.edition==="2024"; }) || null;
+}
+export function cantripFormulas(c){
+  var cl = formulaClass(c);
+  if(!cl) return null;
+  var known = classKnownSpells(c, cl.name).cantrips.map(function(sp){ return sp.name; }).sort();
   if(!known.length) return null;
   var onSheet = (c.spells||[]).map(function(sp){ return spellKey(sp.name); }).concat(grantedNames(c));
-  var options = classListNames(wiz, casterDef("Wizard"), [0], true, c).names.filter(function(n){ return onSheet.indexOf(spellKey(n))===-1; });
-  return {known: known, options: options};
+  var options = classListNames(cl, casterDef(cl.name, "", cl.edition), [0], true, c).names.filter(function(n){ return onSheet.indexOf(spellKey(n))===-1; });
+  return {className: cl.name, known: known, options: options};
 }
 /* Makes the swap: `out` leaves, `inName` takes its place (ready, as
    cantrips are). True when done. */
 export function swapCantripFormula(c, out, inName){
   var cf = cantripFormulas(c);
   if(!cf || cf.known.indexOf(out)===-1 || cf.options.indexOf(inName)===-1) return false;
-  var at = c.spells.findIndex(function(sp){ return sp.name===out && (sp.learnedBy==="Wizard" || !sp.learnedBy); });
+  var at = c.spells.findIndex(function(sp){ return sp.name===out && (sp.learnedBy===cf.className || !sp.learnedBy); });
   if(at===-1) return false;
   var sp = spellFromCatalog(inName, SPELL_DATA[inName]);
-  sp.learnedBy = "Wizard";
+  sp.learnedBy = cf.className;
   sp.prepared = true;
   c.spells.splice(at, 1, sp);
   return true;

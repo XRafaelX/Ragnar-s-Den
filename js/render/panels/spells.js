@@ -807,7 +807,9 @@ export function openPrepareSheet(c, onlyWithChoices){
     function cantripFormulasBlock(){
       var box = ce("div", "prep-formulas");
       var head = ce("div", "prep-head");
-      var w2024 = (c.classes||[]).some(function(cl){ return cl.name==="Wizard" && cl.edition==="2024"; });
+      var cf = cantripFormulas(c), cls = cf.className.toLowerCase();
+      // (Tasha's Cantrip Formulas for a 2014 wizard; a 2024 class's own swap otherwise.)
+      var w2024 = cf.className!=="Wizard" || (c.classes||[]).some(function(cl){ return cl.name==="Wizard" && cl.edition==="2024"; });
       var name = ce("b"); name.textContent = w2024 ? "Swap a cantrip" : "Cantrip Formulas";
       head.appendChild(name);
       box.appendChild(head);
@@ -817,9 +819,8 @@ export function openPrepareSheet(c, onlyWithChoices){
         box.appendChild(note);
         return box;
       }
-      note.textContent = (w2024 ? "After a long rest" : "Tasha's optional features: after a long rest") + " you may replace one wizard cantrip you know with another from the wizard spell list. Most players keep theirs.";
+      note.textContent = (w2024 ? "After a long rest" : "Tasha's optional features: after a long rest") + " you may replace one " + cls + " cantrip you know with another from the " + cls + " spell list. Most players keep theirs.";
       box.appendChild(note);
-      var cf = cantripFormulas(c);
       var outField = ce("div", "field rt-field fp-field");
       outField.appendChild(themedPicker({
         key: "prep:formula-out", ariaLabel: "Cantrip to replace", placeholder: "Keep them all", search: false,
@@ -831,7 +832,7 @@ export function openPrepareSheet(c, onlyWithChoices){
       if(formulaOut){
         var inField = ce("div", "field rt-field fp-field");
         inField.appendChild(themedPicker({
-          key: "prep:formula-in", ariaLabel: "Replacement for " + formulaOut, placeholder: "Pick a wizard cantrip…", search: cf.options.length > 12,
+          key: "prep:formula-in", ariaLabel: "Replacement for " + formulaOut, placeholder: "Pick " + (cls==="artificer" ? "an " : "a ") + cls + " cantrip…", search: cf.options.length > 12,
           groups: {"": cf.options.map(function(n){ return {value: n, label: n}; })}, value: "",
           onPick: function(v){
             if(!swapCantripFormula(c, formulaOut, v)) return;

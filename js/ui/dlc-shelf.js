@@ -154,7 +154,7 @@ export var RULES_2024_OUTCOME = "<b>2024 rules:</b> your background raises your 
    Its key is "class2024:Fighter". */
 export function classEditionCard(className){
   var ed = CLASS_PROGRESSION[className].editions["2024"];
-  return {key: "class2024:" + className, series: "Player's Handbook 2024", title: ed.label, switchLabel: "Use the 2024 " + className.toLowerCase(),
+  return {key: "class2024:" + className, series: ed.series || "Player's Handbook 2024", title: ed.label, switchLabel: "Use the 2024 " + className.toLowerCase(),
     perks: ed.card.perks, text: ed.card.text};
 }
 export function classEditionOutcome(className){ return CLASS_PROGRESSION[className].editions["2024"].card.outcome; }
