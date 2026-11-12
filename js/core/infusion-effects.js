@@ -26,6 +26,12 @@ function artificerLevel(c){
   var cl = (c.classes||[]).find(function(x){ return x.name==="Artificer"; });
   return cl ? (Number(cl.level)||1) : 0;
 }
+/* An Arcane Armor part (Armor Modifications) works only while its armor
+   is worn; any other item is fine. */
+function partWorn(c, item){
+  if(!item.armorPart) return true;
+  return (c.inventory||[]).some(function(i){ return i.id===item.partOf && i.equipped; });
+}
 /* Working infusions by name: [{active, data, item}]. */
 function working(c, name, worn){
   var out = [];
@@ -33,7 +39,7 @@ function working(c, name, worn){
     var d = activeInfusionData(c, a);
     if(!d || d.name!==name) return;
     var item = a.itemId && (c.inventory||[]).find(function(i){ return i.id===a.itemId; });
-    if(!item || !infusionWorks(item, a) || (worn && !item.equipped)) return;
+    if(!item || !infusionWorks(item, a) || (worn && !item.equipped) || !partWorn(c, item)) return;
     out.push({active: a, data: d, item: item});
   });
   return out;

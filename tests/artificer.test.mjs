@@ -8,6 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as H from "../js/core/helpers.js";
 import * as A from "../js/core/artificer.js";
+import { infusionInitiative } from "../js/core/infusion-effects.js";
 import { circleSpellNote } from "../js/core/spell-scaling.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
 
@@ -75,4 +76,106 @@ test("spell cards: Alchemical Savant and Arcane Firearm", () => {
   assert.match(circleSpellNote(art("Artillerist", 5), "Catapult"), /Arcane Firearm/);
   assert.equal(circleSpellNote(art("Artillerist", 4), "Catapult"), "");
   assert.equal(circleSpellNote(art("Artillerist", 5), "Thunderwave"), "", "not an artificer spell");
+});
+
+/* Armor Modifications (Armorer 9, Tasha's; artificer fix Phase 1,
+   2026-11-12): the Arcane Armor's chest piece, boots, helmet and special
+   weapon each take an infusion, and two more items can be infused, but
+   only armor parts. */
+const PLATE = () => ({ id: "p", name: "Plate", type: "armor", category: "heavy", baseAC: 18, equipped: true });
+function armorer(lv, extra = []){
+  const c = art("Armorer", lv, { inventory: [PLATE(), ...extra] });
+  c.classes[0].armorModel = "Guardian";
+  c.infusions = { known: [], active: [] };
+  const learn = (name) => { const k = { id: "k" + c.infusions.known.length, name, note: "" }; c.infusions.known.push(k); return k; };
+  return { c, learn };
+}
+
+test("Armor Modifications: the parts are offered from Armorer 9, only while the armor is worn", () => {
+  const winding = { target: "boots" }, helm = { target: "helmet" }, weapon = { target: "weapon" }, shield = { target: "shield" };
+  assert.deepEqual(A.armorPartOptions(armorer(8).c, winding), [], "not before level 9");
+  const { c } = armorer(9);
+  assert.deepEqual(A.armorPartOptions(c, winding).map((o) => o.label), ["Arcane Armor boots"]);
+  assert.deepEqual(A.armorPartOptions(c, helm).map((o) => o.label), ["Arcane Armor helmet"]);
+  assert.deepEqual(A.armorPartOptions(c, weapon).map((o) => o.label), ["Arcane Armor weapon"]);
+  assert.deepEqual(A.armorPartOptions(c, shield), []);
+  c.inventory[0].equipped = false;
+  assert.deepEqual(A.armorPartOptions(c, winding), [], "no worn armor, no parts");
+  assert.deepEqual(A.infusionLimits(armorer(9).c), { total: 5, parts: 2, general: 3 });
+  assert.deepEqual(A.infusionLimits(armorer(8).c), { total: 3, parts: 0, general: 3 });
+});
+
+test("Armor Modifications: a part is an item while infused, one infusion each, gone when it ends", () => {
+  const { c, learn } = armorer(10);
+  const boots = A.infuseItem(c, learn("Boots of the Winding Path"), { part: "boots" }, 6);
+  assert.equal(boots.part, "boots");
+  const item = c.inventory.find((i) => i.id === boots.itemId);
+  assert.equal(item.name, "Arcane Armor boots");
+  assert.equal(item.partOf, "p");
+  assert.equal(item.attuned, true, "attuned on infusing (it requires attunement)");
+  assert.equal(A.armorPartOptions(c, { target: "boots" })[0].reason, "has Boots of the Winding Path");
+  assert.equal(A.infuseItem(c, learn("Boots of the Winding Path"), { part: "boots" }, 6), null, "one infusion per part");
+  assert.equal(A.infusionTargets(c, { target: "boots" }).length, 0, "the part isn't listed again as a plain item");
+  A.endInfusion(c, boots);
+  assert.ok(!c.inventory.some((i) => i.armorPart), "ending it removes the part item");
+  // The chest piece is the worn armor itself.
+  const chest = A.infuseItem(c, learn("Enhanced Defense"), { itemId: "p" }, 6);
+  assert.equal(chest.part, "chest");
+});
+
+test("Armor Modifications: the two extra items must be armor parts", () => {
+  const extra = ["a", "b", "c", "d"].map((id) => ({ id, name: "Club " + id, type: "weapon", qty: 1 }));
+  const { c, learn } = armorer(9, extra);
+  // Artificer 9: 3 items, plus 2 for armor parts = 5.
+  ["a", "b", "c"].forEach((id) => A.infuseItem(c, learn("Enhanced Weapon"), { itemId: id }, 5));
+  A.infuseItem(c, learn("Boots of the Winding Path"), { part: "boots" }, 5);
+  A.infuseItem(c, learn("Enhanced Weapon"), { part: "weapon" }, 5);
+  assert.equal(c.infusions.active.length, 5, "three items and two parts");
+  // A fourth plain item ends the oldest plain one, not a part.
+  assert.deepEqual(A.infusionsToEnd(c, false, 5).map((a) => a.itemName), ["Club a"]);
+  A.infuseItem(c, learn("Enhanced Weapon"), { itemId: "d" }, 5);
+  assert.deepEqual(c.infusions.active.map((a) => a.itemName), ["Club b", "Club c", "Arcane Armor boots", "Arcane Armor weapon", "Club d"]);
+  // Full: another part ends the oldest infusion of any kind.
+  assert.deepEqual(A.infusionsToEnd(c, true, 5).map((a) => a.itemName), ["Club b"]);
+  A.infuseItem(c, learn("Helm of Awareness"), { part: "helmet" }, 5);
+  assert.equal(c.infusions.active.length, 5);
+  assert.ok(!c.inventory.find((i) => i.id === "b").magicBonus, "Club b lost its +1");
+});
+
+test("Armor Modifications: an infused weapon adds to the armor's weapon, and stays when the model changes", () => {
+  const { c, learn } = armorer(10);
+  const before = A.armorModelWeapon(c);
+  A.infuseItem(c, learn("Enhanced Weapon"), { part: "weapon" }, 6);
+  const gauntlets = A.armorModelWeapon(c);
+  assert.equal(gauntlets.toHit, before.toHit + 2, "+2 from artificer level 10");
+  assert.equal(gauntlets.damageBonus, before.damageBonus + 2);
+  assert.equal(gauntlets.infusion, "Enhanced Weapon");
+  A.setArmorModel(c, "Infiltrator");
+  const launcher = A.armorModelWeapon(c);
+  assert.equal(launcher.name, "Lightning Launcher");
+  assert.equal(launcher.magic, 2, "the infusion carries over to the new model's weapon");
+});
+
+test("Armor Modifications: parts go with the armor, and end below Armorer 9", () => {
+  const { c, learn } = armorer(9);
+  A.infuseItem(c, learn("Enhanced Defense"), { itemId: "p" }, 5);
+  A.infuseItem(c, learn("Helm of Awareness"), { part: "helmet" }, 5);
+  c.classes[0].level = 8;
+  A.syncInfusions(c);
+  assert.deepEqual(c.infusions.active.map((a) => [a.itemName, a.part || ""]), [["Plate", ""]], "the helmet's infusion ends, the chest piece stays as plain armor");
+  assert.ok(!c.inventory.some((i) => i.armorPart));
+  c.classes[0].level = 9;
+  A.infuseItem(c, learn("Helm of Awareness"), { part: "helmet" }, 5);
+  c.inventory = c.inventory.filter((i) => i.id !== "p");
+  assert.equal(A.dropOrphanInfusions(c), true);
+  assert.deepEqual(c.inventory, [], "the helmet went with the armor");
+  assert.deepEqual(c.infusions.active, []);
+});
+
+test("Armor Modifications: a helmet part works only while its armor is worn", () => {
+  const { c, learn } = armorer(10);
+  A.infuseItem(c, learn("Helm of Awareness"), { part: "helmet" }, 6);
+  assert.equal(infusionInitiative(c).mode, "adv");
+  c.inventory[0].equipped = false;
+  assert.equal(infusionInitiative(c), null, "armor off: no advantage");
 });

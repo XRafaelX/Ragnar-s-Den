@@ -1,5 +1,5 @@
 import { ARMOR_MODELS, ELIXIR_EFFECTS } from "../data/artificer-extras.js";
-import { INFUSIONS, REPLICABLE_ITEMS } from "../data/infusions.js";
+import { INFUSIONS, REPLICABLE_ITEMS, infusedItemsAt } from "../data/infusions.js";
 import { attuneProblem } from "./magic-items.js";
 import { activeInfusionData, infusionWorks } from "./infusion-effects.js";
 export { activeInfusionData, infusionWorks };
@@ -39,9 +39,15 @@ export function armorModelWeapon(c){
   var ab = abilityScores(c);
   var useInt = mod(ab.int) > mod(ab[w.ability]);
   var abilityMod = useInt ? mod(ab.int) : mod(ab[w.ability]);
+  // Armor Modifications: an infusion on the armor's weapon (Enhanced
+  // Weapon's +1) counts while the armor is worn.
+  var part = armorPartItem(c, "weapon");
+  var magic = part ? Number(part.magicBonus)||0 : 0;
+  var partInf = part ? infusionOn(c, part) : null;
   return {
     name: w.name, model: cl.armorModel, ability: useInt ? "int" : w.ability,
-    toHit: abilityMod + profBonus(c), damageBonus: abilityMod,
+    toHit: abilityMod + profBonus(c) + magic, damageBonus: abilityMod + magic,
+    magic: magic, infusion: partInf ? String(partInf.name||"").replace(/:.*$/, "") : "",
     dice: parseDiceNotation(w.dice), diceText: w.dice, type: w.type, range: w.range,
     extra: w.extraDice ? parseDiceNotation(w.extraDice) : null, extraText: w.extraDice || "", note: w.note
   };
@@ -79,7 +85,8 @@ export function endInfusion(c, active){
   var item = active.itemId && (c.inventory||[]).find(function(i){ return i.id===active.itemId; });
   if(item && active.bonus) item.magicBonus = (Number(item.magicBonus)||0) - active.bonus;
   if(item && active.attunement) delete item.attuned;
-  if(item && active.made) c.inventory = c.inventory.filter(function(i){ return i!==item; });
+  // A replicated item, or an Arcane Armor part (it's only an item while infused).
+  if(item && (active.made || item.armorPart)) c.inventory = c.inventory.filter(function(i){ return i!==item; });
   c.infusions.active = c.infusions.active.filter(function(a){ return a.id!==active.id; });
 }
 
@@ -111,12 +118,13 @@ var TARGET_KINDS = {
   helmet: function(i){ return /\bhelm(et)?\b/i.test(i.name||""); }
 };
 /* Inventory items of the infusion's kind, each with a reason it can't
-   take the infusion now ("" when it can): already infused, or magic. */
+   take the infusion now ("" when it can): already infused, or magic.
+   Arcane Armor parts are offered by armorPartOptions instead. */
 export function infusionTargets(c, data){
   var match = data && TARGET_KINDS[data.target];
   if(!match) return [];
   var active = (c.infusions && c.infusions.active) || [];
-  return (c.inventory||[]).filter(match).map(function(item){
+  return (c.inventory||[]).filter(function(i){ return !i.armorPart && match(i); }).map(function(item){
     var infused = active.find(function(a){ return a.itemId===item.id; });
     var reason = infused ? "has " + infused.name
       : (item.magic || item.magicItem || (Number(item.magicBonus)||0) > 0) ? "magic item" : "";
@@ -124,17 +132,81 @@ export function infusionTargets(c, data){
   });
 }
 
+/* ---- Armor Modifications (Armorer 9, Tasha's) ----
+   The Arcane Armor counts as four items for infusions: the chest piece
+   (the worn armor itself), boots, helmet and the model's special weapon.
+   The boots, helmet and weapon become inventory items only while infused
+   ({armorPart, partOf: the armor's id}), so attunement, charges and the
+   Inventory card work as for any infused item; ending the infusion
+   removes them. Two more items can be infused, but only armor parts:
+   an entry on a part has `part` ("chest", "boots", "helmet", "weapon"). */
+export var ARMOR_PARTS = {boots: "Arcane Armor boots", helmet: "Arcane Armor helmet", weapon: "Arcane Armor weapon"};
+var PART_FOR_TARGET = {boots: "boots", helmet: "helmet", weapon: "weapon"};
+export function hasArmorModifications(c){ return !!subclassEntry(c, "Artificer", "Armorer", 9); }
+/* The Arcane Armor: the body armor an Armorer 9+ is wearing, or null. */
+export function arcaneArmor(c){
+  if(!hasArmorModifications(c)) return null;
+  return (c.inventory||[]).find(function(i){ return isBodyArmor(i) && i.equipped; }) || null;
+}
+/* The infused boots, helmet or weapon of the armor `armorId` (by default
+   the Arcane Armor worn now), or null. */
+export function armorPartItem(c, part, armorId){
+  if(armorId===undefined){ var worn = arcaneArmor(c); armorId = worn && worn.id; }
+  if(!armorId) return null;
+  return (c.inventory||[]).find(function(i){ return i.armorPart===part && i.partOf===armorId; }) || null;
+}
+/* The armor parts an infusion could go on now: [{part, label, reason}]
+   ("" when free). Empty without Armor Modifications, a worn armor, or a
+   part of the infusion's kind. */
+export function armorPartOptions(c, data){
+  var part = data && PART_FOR_TARGET[data.target];
+  var armor = arcaneArmor(c);
+  if(!part || !armor) return [];
+  var item = armorPartItem(c, part, armor.id), on = item && infusionOn(c, item);
+  return [{part: part, label: ARMOR_PARTS[part], reason: on ? "has " + on.name : ""}];
+}
+/* How many items can be infused at once: `total`, of which `parts` only
+   for armor parts and `general` for anything. `total` defaults to the
+   artificer table plus Armor Modifications' 2. */
+export function infusionLimits(c, total){
+  var parts = hasArmorModifications(c) ? 2 : 0;
+  var t = total!=null ? total : infusedItemsAt(artificerLevel(c)) + parts;
+  return {total: t, parts: parts, general: Math.max(0, t - parts)};
+}
+/* The infusions that end, oldest first, to make room for one more on an
+   armor part (`isPart`) or on anything else. */
+export function infusionsToEnd(c, isPart, total){
+  var lim = infusionLimits(c, total);
+  var left = ((c.infusions && c.infusions.active) || []).slice(), out = [];
+  var general = function(){ return left.filter(function(a){ return !a.part; }); };
+  while(left.length){
+    var victim = !isPart && general().length >= lim.general ? general()[0]
+      : left.length >= lim.total ? left[0] : null;
+    if(!victim) break;
+    out.push(victim);
+    left.splice(left.indexOf(victim), 1);
+  }
+  return out;
+}
+
 /* Put a known infusion on an object. opts: {itemId} for an inventory
-   item, {newItem: "Ring"} to add a plain one first, nothing for Replicate
-   Magic Item (the item is made); `choice` for Resistant Armor's damage
-   type. Past `maxActive` the oldest infusion ends first, as in the rules.
+   item, {newItem: "Ring"} to add a plain one first, {part: "boots"} for
+   an Arcane Armor part, nothing for Replicate Magic Item (the item is
+   made); `choice` for Resistant Armor's damage type. Past `maxActive`
+   (the total) the oldest infusion ends first, as in the rules.
    Returns the new active entry, or null if the item can't take it. */
 export function infuseItem(c, known, opts, maxActive){
   var inf = c.infusions;
   var data = INFUSIONS.find(function(i){ return i.name===known.name; }) || {};
   opts = opts || {};
-  var item = null, made = false;
-  if(data.target==="replica"){
+  var item = null, made = false, part = "";
+  if(opts.part){
+    var po = armorPartOptions(c, data).find(function(o){ return o.part===opts.part; });
+    if(!po || po.reason) return null;
+    part = opts.part;
+    item = {id: uid(), name: ARMOR_PARTS[part], type:"gear", qty:1, equipped:true, notes:"Part of your Arcane Armor", weight:0,
+      armorPart: part, partOf: arcaneArmor(c).id};
+  } else if(data.target==="replica"){
     item = {id: uid(), name: known.note || "Replicated item", type:"gear", qty:1, equipped:false, notes:"", weight:0};
     made = true;
   } else if(opts.newItem){
@@ -144,13 +216,16 @@ export function infuseItem(c, known, opts, maxActive){
     var pick = infusionTargets(c, data).find(function(t){ return t.item.id===opts.itemId; });
     if(!pick || pick.reason) return null;
     item = pick.item;
+    var worn = arcaneArmor(c);
+    if(worn && worn.id===item.id) part = "chest";
   }
-  while(inf.active.length >= maxActive && inf.active.length) endInfusion(c, inf.active[0]);
+  infusionsToEnd(c, !!part, maxActive).forEach(function(a){ endInfusion(c, a); });
   if(!item.id) item.id = uid();
   if(c.inventory.indexOf(item)===-1) c.inventory.push(item);
   var entry = {id: uid(), knownId: known.id, name: known.name + (known.note ? ": "+known.note : ""),
     itemId: item.id, itemName: item.name, bonus: 0, attunement: infusionNeedsAttunement(known.name, known.note)};
   if(made) entry.made = true;
+  if(part) entry.part = part;
   if(opts.choice) entry.choice = opts.choice;
   // A new homunculus forms around the gem, at full hit points.
   if(known.name==="Homunculus Servant" && c.companions) delete c.companions.homunculus_servant;
@@ -236,11 +311,19 @@ export function infusionsOnLongRest(c, roll){
    if any did. Older free-text ones (no itemId) stay. */
 export function dropOrphanInfusions(c){
   var inf = c.infusions;
-  if(!inf || !(inf.active||[]).length) return false;
+  var active = (inf && inf.active) || [];
+  // An Arcane Armor part goes with its armor, and is only an item while infused.
+  var invBefore = (c.inventory||[]).length;
   var ids = (c.inventory||[]).map(function(i){ return i.id; });
-  var before = inf.active.length;
-  inf.active = inf.active.filter(function(a){ return !a.itemId || ids.indexOf(a.itemId)!==-1; });
-  return inf.active.length !== before;
+  c.inventory = (c.inventory||[]).filter(function(i){
+    return !i.armorPart || (ids.indexOf(i.partOf)!==-1 && active.some(function(a){ return a.itemId===i.id; }));
+  });
+  var changed = c.inventory.length !== invBefore;
+  if(!active.length) return changed;
+  ids = c.inventory.map(function(i){ return i.id; });
+  var before = active.length;
+  inf.active = active.filter(function(a){ return !a.itemId || ids.indexOf(a.itemId)!==-1; });
+  return changed || inf.active.length !== before;
 }
 /* After the artificer level changes (a level-up or its undo) or an
    infused item's attunement does: bonuses that scale move to +2 at level
@@ -255,6 +338,14 @@ export function syncInfusions(c){
     return true;
   }
   var changed = false;
+  // Below Armorer 9 the armor is one item again: its parts' infusions end.
+  if(!hasArmorModifications(c)){
+    inf.active.slice().forEach(function(a){
+      if(!a.part) return;
+      if(a.part==="chest") delete a.part; else endInfusion(c, a);
+      changed = true;
+    });
+  }
   inf.active.forEach(function(a){
     var known = (inf.known||[]).find(function(k){ return k.id===a.knownId; });
     var name = known ? known.name : String(a.name||"").replace(/:.*$/, "");

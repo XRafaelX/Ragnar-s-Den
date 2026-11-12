@@ -58,7 +58,8 @@ export function renderArmorModelCard(c){
   var head = ce("div", "art-weapon-head");
   head.innerHTML = "<strong></strong><span></span>";
   head.firstChild.textContent = w.name;
-  head.lastChild.textContent = w.diceText + " " + w.type + " · " + w.range + " · uses " + w.ability.toUpperCase();
+  head.lastChild.textContent = w.diceText + " " + w.type + " · " + w.range + " · uses " + w.ability.toUpperCase() +
+    (w.infusion ? " · " + w.infusion + (w.magic ? " " + fmtMod(w.magic) : "") : "");
   weapon.appendChild(head);
   var note = ce("p", "art-note");
   note.textContent = w.note;

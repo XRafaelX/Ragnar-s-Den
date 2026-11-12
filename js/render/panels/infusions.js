@@ -4,7 +4,7 @@ import { INFUSIONS, REPLICABLE_ITEMS, infusionsKnownAt, infusedItemsAt } from ".
 import { makeCard, renderAll } from "../sheet.js";
 import { sectionTitle, hint } from "../../ui/card-parts.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
-import { artificerLevel, endInfusion, infusionTargets, infuseItem, dropOrphanInfusions } from "../../core/artificer.js";
+import { artificerLevel, endInfusion, infusionTargets, infuseItem, dropOrphanInfusions, armorPartOptions, arcaneArmor, infusionLimits, infusionsToEnd } from "../../core/artificer.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -35,11 +35,10 @@ export function renderInfusionsCard(c){
   (c.inventory||[]).forEach(function(item){ if(!item.id) item.id = uid(); });
   dropOrphanInfusions(c);
   var inf = c.infusions;
-  var maxKnown = infusionsKnownAt(level), maxActive = infusedItemsAt(level);
   // Armor Modifications (Armorer 9): two more infused items, which must be
-  // parts of the Arcane Armor. The panel doesn't check which items they are.
-  var armorMods = level>=9 && (c.classes||[]).some(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer"; }) ? 2 : 0;
-  maxActive += armorMods;
+  // parts of the Arcane Armor (js/core/artificer.js keeps that rule).
+  var limits = infusionLimits(c);
+  var maxKnown = infusionsKnownAt(level), maxActive = limits.total, armorSlots = limits.parts;
   if(infusingId && !inf.known.some(function(k){ return k.id===infusingId; })) infusingId = "";
 
   var card = makeCard("Artifice infusions");
@@ -48,9 +47,9 @@ export function renderInfusionsCard(c){
 
   /* -- Infused items: a tile per slot -- */
   var slotsHead = countTitle("Infused items", inf.active.length, maxActive, "");
-  if(armorMods) slotsHead.title = "Includes 2 for Arcane Armor parts (Armor Modifications)";
+  if(armorSlots) slotsHead.title = "Includes 2 for Arcane Armor parts (Armor Modifications)";
   card.appendChild(slotsHead);
-  card.appendChild(slotTiles(c, maxActive));
+  card.appendChild(slotTiles(c, limits));
 
   /* -- Known infusions: a compact row each; the rules are in its sheet -- */
   card.appendChild(countTitle("Your infusions", inf.known.length, maxKnown, inf.known.length>maxKnown ? "more than your level allows" : ""));
@@ -89,8 +88,9 @@ function countTitle(text, count, max, warn){
 function displayName(k){ return k.note || k.name; }
 
 /* One tile per infused item (what it is, which infusion, +1 or "Not
-   attuned", End), then a dashed tile per free slot. */
-function slotTiles(c, maxActive){
+   attuned", End), then a dashed tile per free slot: an Armorer's two
+   extra slots say they're for armor parts. */
+function slotTiles(c, limits){
   var inf = c.infusions;
   var grid = document.createElement("div");
   grid.className = "inf-slots";
@@ -127,10 +127,21 @@ function slotTiles(c, maxActive){
     }
     grid.appendChild(tile);
   });
-  for(var i = inf.active.length; i < maxActive; i++){
+  // Parts fill the armor-only slots first, then shared ones.
+  var parts = inf.active.filter(function(a){ return a.part; }).length;
+  var partsFree = Math.max(0, limits.parts - parts);
+  var anyFree = Math.max(0, limits.total - inf.active.length - partsFree);
+  for(var i = 0; i < anyFree + partsFree; i++){
     var free = document.createElement("div");
     free.className = "inf-slot inf-slot-free";
     free.textContent = "Free slot";
+    if(i >= anyFree){
+      free.classList.add("inf-slot-part");
+      free.title = "Armor Modifications: only for a part of your Arcane Armor (chest piece, boots, helmet or weapon)";
+      var sub = document.createElement("span");
+      sub.textContent = "armor part only";
+      free.appendChild(sub);
+    }
     grid.appendChild(free);
   }
   return grid;
@@ -338,24 +349,30 @@ function infuseForm(c, known, data, maxActive){
   if(!replica){
     var targets = infusionTargets(c, data);
     var newItems = data.newItems || [];
+    var parts = armorPartOptions(c, data);
+    var armor = arcaneArmor(c);
     var open = targets.filter(function(t){ return !t.reason; });
-    var valid = open.map(function(t){ return t.item.id; }).concat(newItems.map(function(n){ return "new:"+n; }));
+    var valid = open.map(function(t){ return t.item.id; }).concat(newItems.map(function(n){ return "new:"+n; }))
+      .concat(parts.filter(function(o){ return !o.reason; }).map(function(o){ return "part:"+o.part; }));
     if(valid.indexOf(infuseTarget)===-1) infuseTarget = "";
-    if(!targets.length && !newItems.length){
+    if(!targets.length && !newItems.length && !parts.length){
       ready = false;
       wrap.appendChild(hint("No suitable item in your inventory ("+(data.item||"").toLowerCase()+"). Add one on the Inventory tab first."));
     } else {
       var reasons = {}, groups = {};
       targets.forEach(function(t){ reasons[t.item.id] = t.reason; });
+      parts.forEach(function(o){ reasons["part:"+o.part] = o.reason; });
+      if(parts.length) groups["Your Arcane Armor"] = parts.map(function(o){ return {value: "part:"+o.part, label: o.label}; });
       if(targets.length) groups["Your items"] = targets.map(function(t){
-        return {value: t.item.id, label: t.item.name + (t.item.magicBonus ? " (+"+t.item.magicBonus+")" : "")};
+        return {value: t.item.id, label: t.item.name + (armor && armor.id===t.item.id ? " (Arcane Armor)" : "") + (t.item.magicBonus ? " (+"+t.item.magicBonus+")" : "")};
       });
       if(newItems.length) groups["Add to your inventory"] = newItems.map(function(n){ return {value: "new:"+n, label: "+ "+n}; });
       wrap.appendChild(field(themedPicker({
         key: "inf:target", ariaLabel: "Item to infuse", placeholder: "Which item?",
         groups: groups, value: infuseTarget,
         reasonFor: function(v){ return reasons[v] || ""; },
-        onPick: function(v){ infuseTarget = v; }
+        // Redrawn so the note below names what this pick would end.
+        onPick: function(v){ infuseTarget = v; if(armorMods(c)) renderAll(); }
       })));
     }
     if(data.choice){
@@ -377,6 +394,7 @@ function infuseForm(c, known, data, maxActive){
       if(!infuseTarget){ showActionToast("Pick which item to infuse.", true); return; }
       if(data.choice && !infuseChoice){ showActionToast("Pick the "+data.choice.label.toLowerCase()+".", true); return; }
       if(infuseTarget.indexOf("new:")===0) opts.newItem = infuseTarget.slice(4);
+      else if(infuseTarget.indexOf("part:")===0) opts.part = infuseTarget.slice(5);
       else opts.itemId = infuseTarget;
       if(data.choice) opts.choice = infuseChoice;
     }
@@ -394,15 +412,21 @@ function infuseForm(c, known, data, maxActive){
   cancel.addEventListener("click", function(){ infusingId = ""; renderAll(); });
   wrap.appendChild(cancel);
 
-  if(inf.active.length >= maxActive && inf.active.length){
-    var oldest = inf.active[0];
-    var warn = hint("You're at your limit, so this ends "+oldest.name+" on "+oldest.itemName+
+  // What this would end: an Armorer's plain item can't take an armor-only
+  // slot, so it can end an older plain infusion while a slot is free.
+  var armorNow = arcaneArmor(c);
+  var isPart = infuseTarget.indexOf("part:")===0 || !!(armorNow && armorNow.id===infuseTarget);
+  var ends = replica || infuseTarget || !armorMods(c) ? infusionsToEnd(c, isPart, maxActive) : [];
+  if(ends.length){
+    var oldest = ends[0];
+    var warn = hint("You're at your limit"+(armorMods(c) && !isPart ? " for items that aren't armor parts" : "")+", so this ends "+oldest.name+" on "+oldest.itemName+
       (oldest.made ? ", and the "+oldest.itemName+" leaves your inventory." : "."));
     warn.classList.add("inf-note");
     wrap.appendChild(warn);
   }
   return wrap;
 }
+function armorMods(c){ return infusionLimits(c).parts > 0; }
 
 function field(el){
   var f = document.createElement("div");
