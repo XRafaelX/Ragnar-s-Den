@@ -13,7 +13,7 @@ import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.
 import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024, isPaladin2024, isRanger2024, isBarbarian2024, isRogue2024 } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
-import { holsterDamageBonus, coinAttackBonus, magicBonusOf } from "./magic-items.js";
+import { holsterDamageBonus, coinAttackBonus, magicBonusOf, unarmedItemBonus } from "./magic-items.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { conditionRolls } from "./conditions.js";
 import { effectRolls, effectOn, BEAST_FORMS, elementalCleaver, weaponAttackEffect, endRage } from "./effects.js";
@@ -219,7 +219,8 @@ export function unarmedStrike(c){
   var brawler = hasFeat(c, "Tavern Brawler") || hasFeat(c, "Tavern Brawler (2024)");
   var styled = hasFightingStyle(c, "Unarmed Fighting");
   var dancer = danceFootwork(c);
-  if(!nat && !monk && !brawler && !styled && !dancer) return null;
+  var wraps = unarmedItemBonus(c); // Wraps of Unarmed Power
+  if(!nat && !monk && !brawler && !styled && !dancer && !wraps) return null;
   var ab = abilityScores(c), str = mod(ab.str), dex = mod(ab.dex);
   var die = 0, name = "Unarmed strike", type = "Bludgeoning", parts = [];
   if(nat){ die = nat.die; name = nat.name + " (unarmed strike)"; type = nat.type; parts.push(c.race + " " + nat.name.toLowerCase()); }
@@ -257,13 +258,14 @@ export function unarmedStrike(c){
     if(types.length > 1) type = types.slice(0, -1).join(", ") + " or " + types[types.length - 1];
     if(effectOn(c, "elemental_attunement")) parts.push("Reach 15 ft (Elemental Attunement)");
   }
-  var bonus = abilityMod + holsterDamageBonus(c) + auraOfHate(c);
+  var bonus = abilityMod + holsterDamageBonus(c) + auraOfHate(c) + (wraps ? wraps.value : 0);
+  if(wraps){ parts.push(wraps.name + " (+" + wraps.value + ", magic, force or its own type)"); }
   // Rage: melee weapon attacks with STR, not in heavy armor.
   var barb = barbarianClassEntry(c);
   var heavy = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category==="heavy"; });
   if(c.rage && c.rage.active && barb && !heavy && ability==="STR") bonus += barbarianRageDamage(Number(barb.level)||1);
   bonus += songOfVictoryBonus(c, {name: "Unarmed strike"});
-  return {name: name, attack: abilityMod + profBonus(c), die: die, bonus: bonus, type: type, ability: ability,
+  return {name: name, attack: abilityMod + profBonus(c) + (wraps ? wraps.value : 0), die: die, bonus: bonus, type: type, ability: ability,
     roll: combineRolls([armorPenalty(c, ability.toLowerCase()), ability==="STR" && effectOn(c, "reckless_attack") ? {mode: "adv", reason: "Reckless Attack"} : null,
       effectOn(c, "shadow_step") ? {mode: "adv", reason: "Shadow Step"} : null, weaponAttackEffect(c)]
       .concat(conditionRolls(c, "attack"), effectRolls(c, "attack"))), parts: parts, grappleDie: styled ? 4 : 0};

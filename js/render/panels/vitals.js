@@ -8,6 +8,7 @@ import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { elixirsOnLongRest, infusionsOnLongRest, artificerLevel, tinkerItemsOnLongRest, makeTinkerItem } from "../../core/artificer.js";
 import { TINKER_ITEMS } from "../../data/artificer-2024.js";
+import { plansOnLongRest } from "../../core/replicate.js";
 import { restoreCompanions, wildCompanionHours, summonWildCompanion } from "../../core/companions.js";
 import { showActionToast } from "../../ui/toast.js";
 import { WILD_SURGES } from "../../data/effects.js";
@@ -965,6 +966,7 @@ export function renderVitalsPanel(c){
         restoreCompanions(c);
         var elixirs = elixirsOnLongRest(c);
         var tinkered = tinkerItemsOnLongRest(c);
+        plansOnLongRest(c); // Drain's slots go, Drain and Transmute are back
         logRoll("Long rest taken", "HP and spell slots restored. "+recovered+" hit dice recovered."+
           (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : "")+
           (tinkered.length ? " Tinker's Magic items vanished: "+tinkered.join(", ")+"." : "")+

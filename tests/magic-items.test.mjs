@@ -7,6 +7,7 @@ import * as H from "../js/core/helpers.js";
 import * as MI from "../js/core/magic-items.js";
 import { MAGIC_ITEM_GROUPS, MAGIC_ITEM_DATA } from "../js/data/magic-items.js";
 import { GEAR_DATA } from "../js/data/gear.js";
+import { ARTIFICER_ITEM_DATA } from "../js/data/magic-items-artificer.js";
 import { WEAPON_DATA } from "../js/data/weapons.js";
 import { ARMOR_DATA } from "../js/data/armor.js";
 import { addCatalogMagicItem } from "../js/render/armory.js";
@@ -18,21 +19,25 @@ const RARITIES = ["Common", "Uncommon", "Rare", "Very rare", "Legendary", "Artif
 test("magic item data: well formed, our DM's items first, then by rarity, one group each", () => {
   const listed = Object.values(MAGIC_ITEM_GROUPS).flat();
   assert.equal(new Set(listed).size, listed.length, "no item is listed twice");
-  assert.deepEqual(listed.slice().sort(), Object.keys(MAGIC_ITEM_DATA).sort(), "the groups and the data name the same items");
+  // (The 2024 artificer's plan items are in the data only: they're made
+  // through Replicate Magic Item, not added from the Armory.)
+  const planOnly = Object.keys(ARTIFICER_ITEM_DATA);
+  assert.deepEqual(listed.slice().sort(), Object.keys(MAGIC_ITEM_DATA).filter((n) => !planOnly.includes(n)).sort(), "the groups and the data name the same items");
   assert.deepEqual(Object.keys(MAGIC_ITEM_GROUPS), ["Panais Magic Items"].concat(RARITIES), "the DM's items, then each rarity");
   assert.deepEqual(MAGIC_ITEM_GROUPS["Panais Magic Items"], ["Duality", "Heavy Holster", "Trident of Returning"]);
   const FIELDS = ["kind", "rarity", "attunement", "attuneBy", "text", "holster", "weapon", "weaponAny", "armor", "armorAny", "bonus",
-    "ammunition", "acBonus", "acWhen", "saveBonus", "noPenalty", "setScore", "raiseScore", "heal", "charges", "returning", "coin", "ablaze"];
-  for(const [group, names] of Object.entries(MAGIC_ITEM_GROUPS)){
-    assert.deepEqual(names, names.slice().sort(), group + ": alphabetical");
+    "ammunition", "acBonus", "acWhen", "saveBonus", "noPenalty", "setScore", "raiseScore", "heal", "charges", "returning", "coin", "ablaze",
+    "spellAttack", "initiativeAdv", "skillBonus", "skillAdv", "unarmed", "refuel"];
+  for(const [group, names] of Object.entries(Object.assign({}, MAGIC_ITEM_GROUPS, {"Plan items": planOnly}))){
+    if(group !== "Plan items") assert.deepEqual(names, names.slice().sort(), group + ": alphabetical");
     for(const name of names){
       const d = MAGIC_ITEM_DATA[name];
       assert.ok(RARITIES.includes(d.rarity), name + ": rarity " + d.rarity);
-      if(group !== "Panais Magic Items") assert.equal(d.rarity, group, name + ": listed under its rarity");
+      if(group !== "Panais Magic Items" && group !== "Plan items") assert.equal(d.rarity, group, name + ": listed under its rarity");
       assert.ok(d.kind && d.text, name + ": kind and text");
       for(const k of Object.keys(d)) assert.ok(FIELDS.includes(k), name + ": unknown field " + k);
       if(d.armor) assert.ok(ARMOR_DATA[d.armor], name + ": a real armor");
-      if(d.weaponAny) assert.ok(["any", "sword", "slashingSword", "axe", "axeOrSword"].includes(d.weaponAny), name + ": weaponAny");
+      if(d.weaponAny) assert.ok(["any", "sword", "slashingSword", "axe", "axeOrSword", "ammo", "thrown"].includes(d.weaponAny), name + ": weaponAny");
       if(d.armorAny) assert.ok(["any", "mediumHeavy", "mediumHeavyNotHide"].includes(d.armorAny), name + ": armorAny");
       assert.ok(!/[–—]/.test(name + d.kind + d.text), name + ": long dash");
       assert.ok(!GEAR_DATA[name] && !WEAPON_DATA[name] && !ARMOR_DATA[name], name + ": already other gear");

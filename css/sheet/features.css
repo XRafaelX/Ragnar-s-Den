@@ -240,3 +240,6 @@
 /* Armor Modifications' two extra slots: only for Arcane Armor parts. */
 .inf-slot-free.inf-slot-part{flex-direction:column;gap:1px;border-color:color-mix(in srgb, var(--brass) 40%, transparent);}
 .inf-slot-free.inf-slot-part span{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--brass);}
+/* The 2024 artificer's made items: tiles that open the item's options. */
+.plan-slot{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;}
+.plan-slot:hover, .plan-slot:focus-visible{background:color-mix(in srgb, var(--brass) 14%, transparent);}

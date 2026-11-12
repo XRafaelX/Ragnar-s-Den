@@ -85,8 +85,12 @@ var AXES = ["Battleaxe","Greataxe","Handaxe"];
 export function magicItemBases(d){
   if(d.weaponAny){
     var all = Object.keys(WEAPON_DATA).filter(function(n){ var w = WEAPON_DATA[n]; return !w.custom && (w.category==="simple" || w.category==="martial"); });
+    var props = function(n){ return (WEAPON_DATA[n].properties || "").toLowerCase(); };
     var pick = {any: all, sword: SWORDS, axe: AXES, axeOrSword: AXES.concat(SWORDS),
-      slashingSword: SWORDS.filter(function(n){ return WEAPON_DATA[n].damageType==="Slashing"; })}[d.weaponAny] || [];
+      slashingSword: SWORDS.filter(function(n){ return WEAPON_DATA[n].damageType==="Slashing"; }),
+      // (The 2024 artificer's Repeating Shot and Returning Weapon.)
+      ammo: all.filter(function(n){ return /ammunition/.test(props(n)); }),
+      thrown: all.filter(function(n){ return /thrown/.test(props(n)); })}[d.weaponAny] || [];
     return pick.filter(function(n){ return WEAPON_DATA[n]; }).sort();
   }
   if(d.armorAny){
@@ -115,6 +119,16 @@ function magicRowName(name, base){
    and `baseWeapon` / `baseArmor` make the rules see the weapon or armor
    it is. Magic ammunition is gear, like arrows. */
 export function addCatalogMagicItem(c, name, d, base){
+  var item = makeCatalogMagicItem(c, name, d, base);
+  c.inventory.push(item);
+  if(item.type==="weapon") tryEquip(c, item);
+  save();
+  playAdd();
+  return item;
+}
+/* The inventory row for a magic item, not yet added (the 2024
+   artificer's Replicate Magic Item makes its items with it too). */
+export function makeCatalogMagicItem(c, name, d, base){
   var item = {name: name, type:"gear", magicItem: name, qty:1, equipped:false, notes: d.ammunition ? "ammunition" : ""};
   var wName = d.weapon || (d.weaponAny && base), w = wName && WEAPON_DATA[wName];
   var aName = d.armor || (d.armorAny && base), a = aName && ARMOR_DATA[aName];
@@ -132,10 +146,6 @@ export function addCatalogMagicItem(c, name, d, base){
   };
   if(d.attunement) item.attuned = false;
   if(d.holster) item.knives = d.holster.capacity;
-  c.inventory.push(item);
-  if(w) tryEquip(c, item);
-  save();
-  playAdd();
   return item;
 }
 

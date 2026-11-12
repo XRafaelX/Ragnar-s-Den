@@ -1,4 +1,5 @@
 import { hasToolExpertise, syncInfusions } from "../../core/artificer.js";
+import { syncPlans } from "../../core/replicate.js";
 import { applySpellSlots } from "../../levelup/apply.js";
 import { save } from "../../core/state.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -396,7 +397,7 @@ function optionalRulesCard(c){
       // Steady Aim and Primal Knowledge come and go with it (and the skill picked for that).
       if(k==="tasha"){ c.tashaOptional = !c.tashaOptional; if(syncTashaAdditions(c)) syncClassPicks(c); }
       // A 2024 class: the subclass follows, and Tasha's extras for the class.
-      else if(/^class2024:/.test(k)){ setClassEdition(c, k.slice(10), !onEdition(k.slice(10))); syncTashaAdditions(c); syncClassPicks(c); applySpellSlots(c); syncInfusions(c); }
+      else if(/^class2024:/.test(k)){ setClassEdition(c, k.slice(10), !onEdition(k.slice(10))); syncTashaAdditions(c); syncClassPicks(c); applySpellSlots(c); syncInfusions(c); syncPlans(c); }
       else if(k==="rules2024"){ if(c.rules2024) delete c.rules2024; else c.rules2024 = true; }
       else if(k==="gunMisfire"){ c.gunMisfire = !c.gunMisfire; if(!c.gunMisfire) (c.inventory||[]).forEach(function(i){ delete i.misfired; }); }
       else if(k==="artificerFirearms"){ if(c.artificerFirearms) delete c.artificerFirearms; else c.artificerFirearms = true; }

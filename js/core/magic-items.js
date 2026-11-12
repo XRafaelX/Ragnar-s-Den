@@ -18,6 +18,56 @@ export function magicItemActive(item){
   var d = magicItemDef(item);
   return !!d && (!d.attunement || !!item.attuned);
 }
+/* Working items with a field: [{item, def}]. A shield's magic needs it
+   in hand (equipped); other items work while carried (and attuned). */
+function workingWith(c, field){
+  return (c.inventory||[]).map(function(i){ return {item: i, def: magicItemDef(i)}; }).filter(function(x){
+    return x.def && x.def[field] && magicItemActive(x.item) && (x.item.type!=="armor" || x.item.equipped);
+  });
+}
+/* Advantage on initiative (Helm of Awareness, Sentinel Shield, Weapon of
+   Warning), as a roll mode, or null. */
+export function magicItemInitiative(c){
+  var w = workingWith(c, "initiativeAdv")[0];
+  return w ? {mode: "adv", reason: w.item.name || w.item.magicItem} : null;
+}
+/* Bonuses to a skill's checks (Gloves of Thievery): [{name, value}]. */
+export function magicItemSkillBonus(c, skill){
+  return workingWith(c, "skillBonus").filter(function(x){ return x.def.skillBonus[skill]; })
+    .map(function(x){ return {name: x.item.name || x.item.magicItem, value: x.def.skillBonus[skill]}; });
+}
+/* Advantage on a skill's checks (Sentinel Shield's Perception), or null. */
+export function magicItemSkillAdvantage(c, skill){
+  var w = workingWith(c, "skillAdv").find(function(x){ return x.def.skillAdv.indexOf(skill)!==-1; });
+  return w ? {mode: "adv", reason: w.item.name || w.item.magicItem} : null;
+}
+/* A bonus to spell attack rolls (Wand of the War Mage), the best one:
+   {value, name} or null. */
+export function magicItemSpellAttack(c){
+  var best = null;
+  workingWith(c, "spellAttack").forEach(function(x){ if(!best || x.def.spellAttack > best.value) best = {value: x.def.spellAttack, name: x.item.name || x.item.magicItem}; });
+  return best;
+}
+/* Wraps of Unarmed Power: the bonus to unarmed strikes, {value, name} or null. */
+export function unarmedItemBonus(c){
+  var best = null;
+  workingWith(c, "unarmed").forEach(function(x){ if(!best || x.def.unarmed > best.value) best = {value: x.def.unarmed, name: x.item.name || x.item.magicItem}; });
+  return best;
+}
+/* A Spell-Refueling Ring: the slot levels (1st to 3rd) it can give back
+   now, [] once used until dawn or with none spent. */
+export function ringRefuelLevels(c, item){
+  var d = magicItemDef(item);
+  if(!d || !d.refuel || item.refuelUsed || !magicItemActive(item)) return [];
+  var slots = (c.spellcasting && c.spellcasting.slots) || {};
+  return [1, 2, 3].filter(function(l){ return slots[l] && (Number(slots[l].used)||0) > 0; });
+}
+export function ringRefuel(c, item, level){
+  if(ringRefuelLevels(c, item).indexOf(level)===-1) return false;
+  c.spellcasting.slots[level].used = Number(c.spellcasting.slots[level].used) - 1;
+  item.refuelUsed = true;
+  return true;
+}
 /* A weapon's or armor's magic bonus in effect: none while a magic item
    that needs attunement isn't attuned (a Holy Avenger's +3), else the
    row's own number (which the player can change). */
@@ -285,6 +335,8 @@ export function magicItemsOnLongRest(c, roll){
   var ended = endBoons(c, function(){ return true; });
   var recharged = regainCharges(c, roll).map(function(r){ return r.name + " (+" + r.got + " charge" + (r.got===1 ? "" : "s") + ")"; });
   (c.inventory||[]).forEach(function(i){
+    // (A Spell-Refueling Ring works again from dawn.)
+    if(i.refuelUsed){ delete i.refuelUsed; recharged.push(i.name || i.magicItem); }
     var d = magicItemDef(i);
     if(!d || !d.coin || !i.coin) return;
     i.coin.flip = "";

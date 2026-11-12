@@ -11,7 +11,7 @@ import { MARK_SPELLS, GUILD_SPELLS } from "../data/origin-spells.js";
 import { mod, fmtMod, profBonus, totalLevel, ordinal } from "./basics.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { characterIsCaster, classCasterType, classSpellAbility, classFeatureList } from "./class-features.js";
-import { coinAttackBonus } from "./magic-items.js";
+import { coinAttackBonus, magicItemSpellAttack } from "./magic-items.js";
 import { infusionSpellAttack } from "./infusion-effects.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { conduitAbility } from "./gunslinger.js";
@@ -28,8 +28,8 @@ export function spellcastingAbilities(c){
     var entry = out.find(function(x){ return x.ability===ability; });
     if(!entry){
       var m = mod(abilityScore(c, ability));
-      var focus = infusionSpellAttack(c);
-      entry = {ability: ability, classes: [], dc: 8 + profBonus(c) + m, attack: profBonus(c) + m + coinAttackBonus(c) + (focus ? focus.value : 0)};
+      var focus = infusionSpellAttack(c), wand = magicItemSpellAttack(c);
+      entry = {ability: ability, classes: [], dc: 8 + profBonus(c) + m, attack: profBonus(c) + m + coinAttackBonus(c) + (focus ? focus.value : 0) + (wand ? wand.value : 0)};
       out.push(entry);
     }
     entry.classes.push(cl.name);

@@ -9,6 +9,7 @@ import { MAX_LEVEL, XP_THRESHOLDS, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from ".
 import { fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus, classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots, maxHp, fullMaxHp, syncHitDice, computeSpeed, ordinal } from "../core/helpers.js";
 import { save } from "../core/state.js";
 import { syncInfusions } from "../core/artificer.js";
+import { syncPlans } from "../core/replicate.js";
 import { endWildShape } from "../core/druid.js";
 import { applyLevelUpChoices, undoLevelUpChoices } from "../core/invocations.js";
 import { applyPlan, undoPlan, knownOptions } from "../core/class-options.js";
@@ -246,6 +247,7 @@ export function finish(){
 
   applySpellSlots(c);
   syncInfusions(c); // Enhanced Weapon / Defense become +2 at artificer 10
+  syncPlans(c);
   var ability = classSpellAbility(entry);
   if(ability && !hadAnyCasting(before.slots, before.pact) && classCasterType(entry)) c.spellcasting.ability = ability;
 
@@ -365,6 +367,7 @@ export function undoLastLevelUp(c){
     syncStyleWording(c); // a new style on a 2024 class reads as the 2024 feat
     syncHitDice(c);
     syncInfusions(c);
+    syncPlans(c);
     save(); renderAll(); playDelete();
     showActionToast("Level-up undone. Back to level "+totalLevel(c)+".");
   });

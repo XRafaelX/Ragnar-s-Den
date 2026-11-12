@@ -9,6 +9,7 @@ import { getCustomEntry } from "../../core/custom-features.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { renderInfusionsCard } from "./infusions.js";
+import { renderPlansCard } from "./plans.js";
 import { renderInvocationsCard } from "./invocations.js";
 import { renderOptionSetCards } from "./class-options.js";
 import { renderClassPicksCard } from "./class-picks.js";
@@ -461,6 +462,8 @@ export function renderFeaturesPanel(c){
   updateFeatureList();
   var infusionsCard = renderInfusionsCard(c);
   if(infusionsCard) panel.appendChild(infusionsCard);
+  var plansCard = renderPlansCard(c); // the 2024 artificer's Replicate Magic Item
+  if(plansCard) panel.appendChild(plansCard);
   var invocationsCard = renderInvocationsCard(c);
   if(invocationsCard) panel.appendChild(invocationsCard);
   renderOptionSetCards(c).forEach(function(card){ panel.appendChild(card); });

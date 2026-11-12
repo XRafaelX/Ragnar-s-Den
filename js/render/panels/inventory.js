@@ -27,7 +27,7 @@ import { renderBackgroundKitCard } from "./background-kit.js";
 import { propulsionGauntlets, infusionWornProblem } from "../../core/infusion-effects.js";
 import { infusionOn, infusionWorks, activeInfusionData, infusionCharges, useInfusionCharge, refuelLevels, refuelSlot, endInfusion, syncInfusions } from "../../core/artificer.js";
 import { itemCharges, spendCharges, potionHealing, drinkPotion } from "../../core/magic-items.js";
-import { magicItemDef, magicItemActive, needsAttunement, holsterKnives, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, closeEmptyFlip, endBoon, activeBoons, boonLabel, weaponFlames, flamesOn } from "../../core/magic-items.js";
+import { magicItemDef, magicItemActive, ringRefuelLevels, ringRefuel, needsAttunement, holsterKnives, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, closeEmptyFlip, endBoon, activeBoons, boonLabel, weaponFlames, flamesOn } from "../../core/magic-items.js";
 import { pipChanged, pipsRefilled, flash } from "../../ui/fx.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { weaponDataOf } from "../../data/weapons.js";
@@ -197,7 +197,7 @@ function magicItemTable(lines){
   wrap.appendChild(table);
   return wrap;
 }
-function magicItemText(text){
+export function magicItemText(text){
   var box = document.createElement("div");
   box.className = "inv-magic-text";
   String(text || "").split(/\n\s*\n/).forEach(function(block){
@@ -2075,6 +2075,7 @@ function renderMagicItemCard(c, item, idx, def){
   if(def.coin) card.appendChild(coinBlock(c, item, idx, def.coin));
   var charges = chargesBlock(c, item, idx);
   if(charges) card.appendChild(charges);
+  if(def.refuel) card.appendChild(ringRefuelBlock(c, item, idx));
   var drink = drinkButton(c, item);
   if(drink) card.appendChild(drink);
   return card;
@@ -2463,6 +2464,31 @@ function chargesBlock(c, item, idx){
   back.disabled = !ch.used;
   actions.appendChild(back);
   box.appendChild(actions);
+  return box;
+}
+/* A Spell-Refueling Ring (the magic item): once a day, a spent slot of
+   level 3 or lower back. Off until attuned. */
+function ringRefuelBlock(c, item, idx){
+  var box = document.createElement("div");
+  box.className = "inv-holster inv-infusion";
+  box.dataset.idx = idx;
+  var row = document.createElement("div");
+  row.className = "inv-roll-actions inv-refuel";
+  var levels = ringRefuelLevels(c, item);
+  var label = document.createElement("span");
+  label.className = "inv-holster-count";
+  label.textContent = item.refuelUsed ? "Used today · back at dawn" : !magicItemActive(item) ? "Attune to it (⋯ menu) to use its magic"
+    : levels.length ? "Recover a spell slot (bonus action):" : "Recover a spell slot: none of 3rd level or lower spent";
+  row.appendChild(label);
+  levels.forEach(function(l){
+    row.appendChild(smallButton(ORDINAL[l], "Get back one spent " + ORDINAL[l] + "-level slot", function(){
+      if(!ringRefuel(c, item, l)) return;
+      logRoll(item.name || item.magicItem, "Recovered a " + ORDINAL[l] + "-level spell slot");
+      showActionToast("A " + ORDINAL[l] + "-level spell slot is back.");
+      redrawKeeping(idx);
+    }));
+  });
+  box.appendChild(row);
   return box;
 }
 /* A Potion of Healing (any strength): Drink rolls its healing and adds it

@@ -19,7 +19,7 @@ import { weaponAbility, armorPenalty, isRangedWeapon, isHeavyWeapon } from "./eq
 import { raceSize } from "./class-picks.js";
 import { featDef, usesRules2024 } from "./feat-picks.js";
 import { hasFeat } from "./vitals.js";
-import { nextCheckAdvantage } from "./magic-items.js";
+import { nextCheckAdvantage, magicItemInitiative, magicItemSkillBonus, magicItemSkillAdvantage } from "./magic-items.js";
 import { infusionInitiative } from "./infusion-effects.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { conditionRolls, activeConditions } from "./conditions.js";
@@ -91,6 +91,8 @@ export function skillCheck(c, skill, passive){
     if(half){ value += half.value; breakdown += " + " + half.name + " (" + fmtMod(half.value) + ")"; }
   }
   if(effectBonus){ value += effectBonus.value; breakdown += " + " + effectBonus.name + " (" + fmtMod(effectBonus.value) + ")"; }
+  // Magic items (Gloves of Thievery: +5 to Sleight of Hand).
+  magicItemSkillBonus(c, skill).forEach(function(x){ value += x.value; breakdown += " + " + x.name + " (" + fmtMod(x.value) + ")"; });
   var glamour = key==="cha" ? otherworldlyGlamour(c) : 0;
   if(glamour){ value += glamour; breakdown += " + Otherworldly Glamour (" + fmtMod(glamour) + ")"; }
   // Features that add an ability modifier to this skill (Elegant Courtier: WIS to Persuasion).
@@ -164,6 +166,7 @@ export function skillRollMode(c, skill, passive){
   // A boon for the next roll (Duality) isn't part of a passive score.
   if(!passive) list.push(nextCheckAdvantage(c), tidesRoll(c));
   if(skill==="Stealth") list.push(stealthCheck(c));
+  list.push(magicItemSkillAdvantage(c, skill));
   if(skill==="Acrobatics" && effectOn(c, "bladesong")) list.push({mode: "adv", reason: "Bladesong"});
   if((skill==="Athletics" || skill==="Acrobatics") && effectOn(c, "peerless_athlete")) list.push({mode: "adv", reason: "Peerless Athlete"});
   if(skill==="Stealth" && effectOn(c, "blessing_of_the_trickster")) list.push({mode: "adv", reason: "Blessing of the Trickster"});
@@ -266,7 +269,7 @@ export function saveRollMode(c, key){ return combineRolls([armorPenalty(c, key)]
 /* Initiative is a DEX check: Feral Instinct's or a Helm of Awareness's
    advantage, Duality's next ability check, and armor worn without
    proficiency's and conditions' disadvantage. */
-export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex"), nextCheckAdvantage(c), tidesRoll(c), infusionInitiative(c), effectOn(c, "vigilant_blessing") ? {mode: "adv", reason: "Vigilant Blessing"} : null].concat(alwaysAdvantage(c, "initiative"), conditionRolls(c, "check"))); }
+export function initiativeRollMode(c){ return combineRolls([armorPenalty(c, "dex"), nextCheckAdvantage(c), tidesRoll(c), infusionInitiative(c), magicItemInitiative(c), effectOn(c, "vigilant_blessing") ? {mode: "adv", reason: "Vigilant Blessing"} : null].concat(alwaysAdvantage(c, "initiative"), conditionRolls(c, "check"))); }
 /* A weapon attack: disadvantage in armor you aren't proficient with when
    it uses STR or DEX (not INT from Battle Ready or CHA from Hex Warrior),
    and what conditions do to attack rolls. */

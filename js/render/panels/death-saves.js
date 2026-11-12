@@ -1,4 +1,5 @@
 import { soulOfArtificeReady, endInfusion } from "../../core/artificer.js";
+import { cheatDeathItems, cheatDeath, replicaItem } from "../../core/replicate.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { sheetTop, lead, sheetButton } from "./paladin.js";
 import { save } from "../../core/state.js";
@@ -165,6 +166,50 @@ export function renderDeathSaves(c){
       });
     });
     box.appendChild(soul);
+  }
+  // Soul of Artifice's Cheat Death (2024 artificer 20): disintegrate made
+  // uncommon or rare items for 20 hit points each.
+  if(cheatDeathItems(c).length && !dead){
+    var cheat = document.createElement("button");
+    cheat.type = "button"; cheat.className = "btn small primary ds-cheat";
+    cheat.textContent = "Cheat Death";
+    cheat.title = "Soul of Artifice: disintegrate uncommon or rare items you made, for 20 hit points each";
+    cheat.addEventListener("click", function(e){
+      e.stopPropagation();
+      var picked = [];
+      openBottomSheet(function(body, refresh, close){
+        sheetTop(body, "Cheat Death", close);
+        lead(body, "Disintegrate any number of uncommon or rare items you made with Replicate Magic Item. Your hit points become 20 for each one.");
+        var list = document.createElement("div");
+        list.className = "pal-sheet-list";
+        cheatDeathItems(c).forEach(function(m){
+          var item = replicaItem(c, m) || {};
+          var on = picked.indexOf(m.id)!==-1;
+          var b = sheetButton((on ? "✓ " : "") + (item.name || "Item"), function(){
+            if(on) picked = picked.filter(function(x){ return x!==m.id; }); else picked.push(m.id);
+            refresh();
+          });
+          b.setAttribute("aria-pressed", on ? "true" : "false");
+          list.appendChild(b);
+        });
+        body.appendChild(list);
+        var go = sheetButton(picked.length ? "Disintegrate " + picked.length + ": " + Math.min(maxHp(c), 20 * picked.length) + " hit points" : "Pick the items first", function(){
+          var names = picked.map(function(id){ var m = cheatDeathItems(c).find(function(x){ return x.id===id; }); return m ? (replicaItem(c, m) || {}).name : ""; }).filter(Boolean);
+          var hp = cheatDeath(c, picked, maxHp(c));
+          if(!hp) return;
+          c.deathSaves = {success: 0, fail: 0};
+          removeCondition(c, "unconscious");
+          logRoll("Cheat Death", "Disintegrated " + names.join(", ") + ". " + hp + " hit points.");
+          playRevive();
+          close();
+          save(); renderSidebar(); renderAll();
+        }, !picked.length);
+        go.classList.add("primary");
+        go.style.marginTop = "14px";
+        body.appendChild(go);
+      });
+    });
+    box.appendChild(cheat);
   }
   // Strength of the Grave (Shadow Magic 1): only a success spends it.
   if(strengthOfTheGrave(c) && !dead){

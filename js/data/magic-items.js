@@ -46,6 +46,7 @@
                  type chosen from `types`), resistance (to a damage type
                  chosen when it's picked) */
 import { SRD_MAGIC_ITEM_GROUPS, SRD_MAGIC_ITEM_DATA } from "./magic-items-srd.js";
+import { ARTIFICER_ITEM_DATA } from "./magic-items-artificer.js";
 
 export var PANAIS_GROUP = "Panais Magic Items";
 export var MAGIC_ITEM_GROUPS = Object.assign({
@@ -81,4 +82,7 @@ var PANAIS_ITEMS = {
     }}
   }
 };
-export var MAGIC_ITEM_DATA = Object.assign({}, PANAIS_ITEMS, SRD_MAGIC_ITEM_DATA);
+// (The 2024 artificer's plan items join the data, not the Armory's list.)
+export var MAGIC_ITEM_DATA = Object.assign({}, PANAIS_ITEMS, SRD_MAGIC_ITEM_DATA, ARTIFICER_ITEM_DATA);
+// What the generated SRD entries do on the sheet beyond their text.
+[1, 2, 3].forEach(function(n){ MAGIC_ITEM_DATA["Wand of the War Mage, +" + n] = Object.assign({}, MAGIC_ITEM_DATA["Wand of the War Mage, +" + n], {spellAttack: n}); });

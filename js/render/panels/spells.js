@@ -12,7 +12,7 @@ import { sheetHeader } from "./inventory.js";
 import { makeStatArrowSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
 import { pipChanged, pipsRefilled } from "../../ui/fx.js";
-import { coinAttackBonus } from "../../core/magic-items.js";
+import { coinAttackBonus, magicItemSpellAttack } from "../../core/magic-items.js";
 import { infusionSpellAttack } from "../../core/infusion-effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner, cantripFormulas, swapCantripFormula } from "../../core/spells-known.js";
@@ -276,10 +276,10 @@ function renderSpellcastingCard(c){
   grid.appendChild(dc.box);
 
   // A boon to attack rolls (Duality's demon side) counts for spells too,
-  // and so does an Enhanced Arcane Focus.
-  var coin = coinAttackBonus(c), focus = infusionSpellAttack(c);
-  var boon = coin + (focus ? focus.value : 0);
-  var extras = (coin ? ["Duality " + fmtMod(coin)] : []).concat(focus ? [focus.name + " " + fmtMod(focus.value)] : []);
+  // and so do an Enhanced Arcane Focus and a Wand of the War Mage.
+  var coin = coinAttackBonus(c), focus = infusionSpellAttack(c), wand = magicItemSpellAttack(c);
+  var boon = coin + (focus ? focus.value : 0) + (wand ? wand.value : 0);
+  var extras = (coin ? ["Duality " + fmtMod(coin)] : []).concat(focus ? [focus.name + " " + fmtMod(focus.value)] : [], wand ? [wand.name + " " + fmtMod(wand.value)] : []);
   // Conditions that change attack rolls (Poisoned, Invisible, exhaustion).
   var atkRoll = innate ? combineRolls([plainAttackRollMode(c), {mode: "adv", reason: "Innate Sorcery"}]) : plainAttackRollMode(c);
   var atk = statTile("Spell attack", ["Tap to roll"].concat(extras, rollModeTag(atkRoll)).join(" · "));

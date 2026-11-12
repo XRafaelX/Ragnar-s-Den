@@ -4,6 +4,7 @@ import { uid, featureSpells, syncTashaAdditions } from "./helpers.js";
 import { RACE_DATA } from "../data/race-data.js";
 import { currentSpellSummary, currentSpellRange } from "../data/spells.js";
 import { syncInfusions } from "./artificer.js";
+import { syncPlans } from "./replicate.js";
 import { syncClassPicks, migrateClassPicks, migrateRacePicks } from "./class-picks.js";
 import { characterCompanions } from "./companions.js";
 import { endWildShape } from "./druid.js";
@@ -179,6 +180,7 @@ export function ensureShape(c){
   if(!Array.isArray(c.rollLog)) c.rollLog = [];
   // Infusion bonuses saved before they followed the artificer's level.
   syncInfusions(c);
+  syncPlans(c); // the 2024 artificer's made items, if the class changed
   // The creation wizard used to copy a domain's spells and bonus cantrip
   // into the spell list, though the Spells tab already lists them from
   // the features. Once per character, copies still carrying the
