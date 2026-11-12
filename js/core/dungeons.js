@@ -1401,19 +1401,22 @@ export function placeMapImage(d, changes){
   return true;
 }
 
-/* The map size that holds the whole picture: [w, h] in squares. */
+/* The map size that holds the picture once fitted: [w, h] in squares. */
 export function imageFit(d){
   if(!d.image) return [d.w, d.h];
-  var w = Math.ceil(d.image.across - 0.001), h = Math.ceil(d.image.across * d.image.ratio - 0.001);
-  return [Math.max(MIN_SIDE, Math.min(MAX_SIDE, w)), Math.max(MIN_SIDE, Math.min(MAX_SIDE, h))];
+  var r = imageRect(d);
+  return [r.w, r.h];
 }
 
 /* The squares of the map the picture covers, once fitted: its top left
    square (the picture's corner, to the nearest square) and the size
    that holds it. */
 function imageRect(d){
-  var size = imageFit(d);
-  return { x: Math.round(d.image.ox), y: Math.round(d.image.oy), w: size[0], h: size[1] };
+  var im = d.image, x = Math.round(im.ox), y = Math.round(im.oy);
+  // From that square to the picture's far edge (a picture nudged half a
+  // square in ends half a square sooner).
+  var w = Math.ceil(im.ox - x + im.across - 0.001), h = Math.ceil(im.oy - y + im.across * im.ratio - 0.001);
+  return { x: x, y: y, w: Math.max(MIN_SIDE, Math.min(MAX_SIDE, w)), h: Math.max(MIN_SIDE, Math.min(MAX_SIDE, h)) };
 }
 
 /* True if fitting the map to the picture would cut off something drawn
