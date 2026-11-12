@@ -293,6 +293,56 @@ export var SUBCLASS_RESOURCES = {
         max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
         hint:"On a magic weapon or steel defender hit: +2d6 force damage, or heal a creature within 30 ft of the target 2d6 (4d6 from level 15)."}
     ],
+    // Eberron: Forge of the Artificer's Cartographer and Ravenloft: The
+    // Horrors Within's Reanimator (2024 artificer only).
+    "Cartographer": [
+      {id:"illuminated_cartography", name:"Illuminated Cartography (Faerie Fire)", level:3,
+        max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+        hint:"Cast Faerie Fire without a spell slot."},
+      {id:"unerring_path", name:"Unerring Path (Find the Path)", level:15, max:always(1), reset:always("long"),
+        hint:"While you hold one of your maps: cast Find the Path without a spell slot or components."}
+    ],
+    "Reanimator": [
+      {id:"reanimated_companion", name:"Reanimated Companion", level:3, max:always(1), reset:always("long"), slotMin:1,
+        hint:"Magic action: create your companion without spending a spell slot. After that, each one costs a spell slot."},
+      {id:"jolt_to_life", name:"Jolt to Life", level:3,
+        max:function(lv, m){ return Math.max(0, m.int); }, reset:always("long"),
+        roll:{die:4, qtyAt:function(lv){ return lv>=17 ? 4 : lv>=11 ? 3 : 2; }, button:"Lightning", label:"Jolt to Life (Lightning, DEX save, half on a success)"},
+        hint:function(lv){ return "Spare the Dying revives the target with " + lv + " hit points, and creatures you choose within 10 ft make a DEX save against lightning damage."; }},
+      {id:"facilitated_revival", name:"Facilitated Revival (Raise Dead)", level:15, max:always(1), reset:always("long"),
+        hint:"Cast Raise Dead without a spell slot or material components."}
+    ],
+    // The 2024 subclasses (Eberron: Forge of the Artificer).
+    "Alchemist (2024)": [
+      {id:"restorative_reagents", name:"Restorative Reagents (Lesser Restoration)", level:9,
+        max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+        hint:"Cast Lesser Restoration without a spell slot, using alchemist's supplies as your focus."},
+      {id:"conjured_cauldron", name:"Conjured Cauldron: Tasha's Bubbling Cauldron", level:15, max:always(1), reset:always("long"),
+        hint:"Cast Tasha's Bubbling Cauldron without a spell slot or material components."}
+    ],
+    "Artillerist (2024)": [
+      {id:"eldritch_cannon", name:"Eldritch Cannon", level:3, max:always(1), reset:always("long"), slotMin:1,
+        hint:"Magic action: create a cannon (two at once from level 15) without spending a spell slot. After that, each one costs a spell slot."}
+    ],
+    "Battle Smith (2024)": [
+      {id:"steel_defender_repair", name:"Steel Defender: Repair", level:3, max:always(3), reset:always("long"),
+        roll:{qty:2, die:8, bonusAbility:"int", button:"Repair", label:"Steel Defender: Repair (hit points)"},
+        hint:"Your steel defender's action: it or a construct or object within 5 ft regains 2d8 + your INT modifier hit points."},
+      {id:"arcane_jolt", name:"Arcane Jolt", level:9,
+        max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+        hint:"On a magic weapon or steel defender hit: +2d6 force damage, or heal a creature within 30 ft of the target 2d6 (4d6 from level 15)."}
+    ],
+    "Armorer (2024)": [
+      {id:"giant_stature", name:"Giant Stature (Dreadnaught)", level:3, armorModel:"Dreadnaught",
+        max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+        hint:function(lv){ return lv>=15 ? "Bonus action, 1 minute: reach +10 ft, Large or Huge, advantage on Strength checks and saves." : "Bonus action, 1 minute: reach +5 ft and you become Large."; }},
+      {id:"perfected_armor_pull", name:"Perfected Armor Pull (Guardian)", level:15, armorModel:"Guardian",
+        max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+        hint:"Reaction: pull a Huge or smaller creature ending its turn within 30 ft up to 25 ft toward you (STR save), then attack it if adjacent."},
+      {id:"infiltrator_flight", name:"Perfected Armor Flight (Infiltrator)", level:15, armorModel:"Infiltrator",
+        max:function(lv, m){ return atLeastOne(m.int); }, reset:always("long"),
+        hint:"Bonus action: a fly speed of twice your speed until the end of the turn."}
+    ],
     "Armorer": [
       {id:"defensive_field", name:"Defensive Field (Guardian)", level:3, armorModel:"Guardian",
         max:function(lv, m){ return m.pb; }, reset:always("long"),

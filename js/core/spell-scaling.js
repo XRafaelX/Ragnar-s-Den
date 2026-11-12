@@ -177,10 +177,26 @@ export function circleSpellNote(c, name){
   if(school("School of Enchantment") >= 10 && d.school==="Enchantment" && d.level >= 1) notes.push("Split Enchantment: if it targets only one creature, it can target a second.");
   // Artificer: what the focus adds to an artificer spell.
   if(d.classes.indexOf("Artificer")!==-1){
-    if(classLevelOf(c, "Artificer", "Alchemist") >= 5 && (HEALING_SPELLS.indexOf(spell)!==-1 || /\b(acid|fire|necrotic|poison)\b[^.]*damage/i.test(d.summary)))
+    // (The 2024 Alchemist's Savant leaves necrotic out, and its Chemical
+    // Mastery adds Alchemical Eruption's 2d8 force.)
+    var alch2024 = classLevelOf(c, "Artificer", "Alchemist (2024)");
+    if(classLevelOf(c, "Artificer", "Alchemist") >= 5 && (HEALING_SPELLS.indexOf(spell)!==-1 || (alch2024 ? /\b(acid|fire|poison)\b[^.]*damage/i : /\b(acid|fire|necrotic|poison)\b[^.]*damage/i).test(d.summary)))
       notes.push("Alchemical Savant: with alchemist's supplies as your focus, add " + Math.max(1, mod(abilityScore(c, "int"))) + " to one roll of it.");
+    if(alch2024 >= 15 && /\b(acid|fire|poison)\b[^.]*damage/i.test(d.summary)) notes.push("Alchemical Eruption: also deal 2d8 force damage to a target it hurts, once on each of your turns.");
+    // Reanimator: Arcane Conduit (a companion modification) on evocation and necromancy damage.
+    if(classLevelOf(c, "Artificer", "Reanimator") >= 5 && (d.school==="Evocation" || d.school==="Necromancy") && /\bdamage\b/i.test(d.summary) &&
+      String((c.companions && c.companions.reanimated_companion && c.companions.reanimated_companion.choice) || "").indexOf("Arcane Conduit")!==-1)
+      notes.push("Arcane Conduit: with your companion within 120 ft, add " + Math.max(0, mod(abilityScore(c, "int"))) + " to one damage roll, once per turn.");
     if(classLevelOf(c, "Artificer", "Artillerist") >= 5 && /\bdamage\b/i.test(d.summary)) notes.push("Arcane Firearm: cast through it, add a d8 to one damage roll.");
   }
+  // Cartographer (2024 artificer): Guided Precision on its own spells' damage.
+  var cartoSpells = ["Guiding Bolt", "Mind Spike", "Call Lightning", "Faerie Fire", "Healing Word", "Locate Object", "Clairvoyance", "Banishment", "Locate Creature", "Scrying", "Teleportation Circle"];
+  if(classLevelOf(c, "Artificer", "Cartographer") >= 5 && cartoSpells.indexOf(spell)!==-1 && /\bdamage\b/i.test(d.summary))
+    notes.push("Guided Precision: add " + Math.max(0, mod(abilityScore(c, "int"))) + " to one damage roll, once per turn.");
+  // Reanimator: Jolt to Life turns Spare the Dying into a revival.
+  var reanimator = classLevelOf(c, "Artificer", "Reanimator");
+  if(reanimator >= 3 && spell==="Spare the Dying")
+    notes.push("Jolt to Life: it can revive the target with " + reanimator + " hit points, and lightning (" + (reanimator >= 17 ? "4d4" : reanimator >= 11 ? "3d4" : "2d4") + ", DEX save) hits creatures you choose within 10 ft. Uses on Vitals.");
   // Radiant Soul (Celestial 6): radiant or fire damage.
   if(classLevelOf(c, "Warlock", "The Celestial") >= 6 && /\b(radiant|fire)\b[^.]*damage/i.test(d.summary)) notes.push("Radiant Soul: add " + mod(abilityScore(c, "cha")) + " to one radiant or fire damage roll against one target.");
   // Spiritual Focus (College of Spirits 6): a bard spell's damage or healing.

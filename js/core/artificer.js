@@ -1,4 +1,4 @@
-import { ARMOR_MODELS, ELIXIR_EFFECTS } from "../data/artificer-extras.js";
+import { ARMOR_MODELS, ELIXIR_EFFECTS, ARMOR_MODELS_2024, elixirEffects2024 } from "../data/artificer-extras.js";
 import { INFUSIONS, REPLICABLE_ITEMS, infusedItemsAt } from "../data/infusions.js";
 import { TINKER_ITEMS } from "../data/artificer-2024.js";
 import { attuneProblem } from "./magic-items.js";
@@ -18,8 +18,16 @@ import { abilityScore, abilityScores } from "./ability-scores.js";
 function subclassEntry(c, cls, sub, minLevel){
   return (c.classes||[]).find(function(cl){ return cl.name===cls && cl.subclass===sub && (Number(cl.level)||1) >= minLevel; }) || null;
 }
-export function armorerEntry(c){ return subclassEntry(c, "Artificer", "Armorer", 3); }
-export function alchemistEntry(c){ return subclassEntry(c, "Artificer", "Alchemist", 3); }
+/* An Armorer or Alchemist of either edition ("Armorer (2024)"). */
+export function armorerEntry(c){ return subclassEntry(c, "Artificer", "Armorer", 3) || subclassEntry(c, "Artificer", "Armorer (2024)", 3); }
+export function alchemistEntry(c){ return subclassEntry(c, "Artificer", "Alchemist", 3) || subclassEntry(c, "Artificer", "Alchemist (2024)", 3); }
+/* The armor models for an Armorer class entry: the 2024 three or the Tasha's two. */
+export function armorModelsFor(cl){ return cl && cl.subclass==="Armorer (2024)" ? ARMOR_MODELS_2024 : ARMOR_MODELS; }
+/* The Armorer's chosen model's data, or null. */
+export function armorModelDef(c){
+  var cl = armorerEntry(c);
+  return (cl && armorModelsFor(cl)[cl.armorModel]) || null;
+}
 
 /* ---- Armor model ---- */
 export function wearingBodyArmor(c){
@@ -27,36 +35,37 @@ export function wearingBodyArmor(c){
 }
 export function setArmorModel(c, model){
   var cl = armorerEntry(c);
-  if(cl && ARMOR_MODELS[model]) cl.armorModel = model;
+  if(cl && armorModelsFor(cl)[model]) cl.armorModel = model;
 }
 /* The model's special weapon as an attack: INT can replace STR (gauntlets)
    or DEX (launcher) when it's higher, and artificers are proficient with
    simple weapons. Null without an Armorer or a chosen model. */
 export function armorModelWeapon(c){
   var cl = armorerEntry(c);
-  var model = cl && ARMOR_MODELS[cl.armorModel];
+  var model = armorModelDef(c);
   if(!model) return null;
-  var w = model.weapon;
+  var w = model.weapon, lv = Number(cl.level)||1, is2024 = cl.subclass==="Armorer (2024)";
+  var dice = w.diceAt15 && lv >= 15 ? w.diceAt15 : w.dice;
   var ab = abilityScores(c);
   var useInt = mod(ab.int) > mod(ab[w.ability]);
   var abilityMod = useInt ? mod(ab.int) : mod(ab[w.ability]);
   // Armor Modifications: an infusion on the armor's weapon (Enhanced
   // Weapon's +1) counts while the armor is worn.
   var part = armorPartItem(c, "weapon");
-  var magic = part ? Number(part.magicBonus)||0 : 0;
+  var magic = (part ? Number(part.magicBonus)||0 : 0) + (is2024 && lv >= 9 ? 1 : 0); // Improved Arsenal (2024, 9)
   var partInf = part ? infusionOn(c, part) : null;
   return {
     name: w.name, model: cl.armorModel, ability: useInt ? "int" : w.ability,
     toHit: abilityMod + profBonus(c) + magic, damageBonus: abilityMod + magic,
-    magic: magic, infusion: partInf ? String(partInf.name||"").replace(/:.*$/, "") : "",
-    dice: parseDiceNotation(w.dice), diceText: w.dice, type: w.type, range: w.range,
+    magic: magic, infusion: partInf ? String(partInf.name||"").replace(/:.*$/, "") : (is2024 && lv >= 9 ? "Improved Arsenal" : ""),
+    dice: parseDiceNotation(dice), diceText: dice, type: w.type, range: w.range,
     extra: w.extraDice ? parseDiceNotation(w.extraDice) : null, extraText: w.extraDice || "", note: w.note
   };
 }
 /* The model's perks at the Armorer's current level. */
 export function armorModelPerks(c){
   var cl = armorerEntry(c);
-  var model = cl && ARMOR_MODELS[cl.armorModel];
+  var model = armorModelDef(c);
   if(!model) return [];
   var lv = Number(cl.level)||1;
   return model.perks.filter(function(p){ return lv >= p.level; }).map(function(p){ return p.text; });
@@ -396,31 +405,50 @@ export function syncInfusions(c){
 }
 
 /* ---- Experimental elixirs ---- */
-export function freeElixirCount(level){ return level>=15 ? 3 : level>=6 ? 2 : 1; }
+/* `edition` "2024": two, then three at 5, four at 9 and five at 15. */
+export function freeElixirCount(level, edition){
+  if(edition==="2024") return level>=15 ? 5 : level>=9 ? 4 : level>=5 ? 3 : 2;
+  return level>=15 ? 3 : level>=6 ? 2 : 1;
+}
+function alchemist2024(c){ var cl = alchemistEntry(c); return !!cl && cl.subclass==="Alchemist (2024)"; }
+/* The Experimental Elixir table for this Alchemist (the 2024 one grows with level). */
+export function elixirEffectsFor(c){
+  var cl = alchemistEntry(c);
+  return cl && alchemist2024(c) ? elixirEffects2024(Number(cl.level)||3) : ELIXIR_EFFECTS;
+}
 export function elixirState(c){
   if(!c.elixirs) c.elixirs = {list: [], freeMade: 0};
   return c.elixirs;
 }
-export function elixirEffect(name){
-  return ELIXIR_EFFECTS.find(function(e){ return e.name===name; }) || null;
+export function elixirEffect(name, c){
+  return (c ? elixirEffectsFor(c) : ELIXIR_EFFECTS).find(function(e){ return e.name===name; }) || null;
 }
 /* Free elixirs still to make since the last long rest. */
 export function freeElixirsLeft(c){
   var cl = alchemistEntry(c);
-  return cl ? Math.max(0, freeElixirCount(Number(cl.level)||3) - elixirState(c).freeMade) : 0;
+  return cl ? Math.max(0, freeElixirCount(Number(cl.level)||3, alchemist2024(c) ? "2024" : "") - elixirState(c).freeMade) : 0;
 }
 /* Roll a d6 for each free elixir left; returns the effects rolled.
-   `roll` is for tests (a function returning 1-6). */
+   `roll` is for tests (a function returning 1-6). The 2024 table's 6 is
+   "your choice": the elixir waits for one (`choose`, see chooseElixir). */
 export function rollFreeElixirs(c, roll){
-  var st = elixirState(c), made = [];
+  var st = elixirState(c), made = [], table = elixirEffectsFor(c);
   roll = roll || function(){ return Math.floor(Math.random()*6) + 1; };
   for(var n = freeElixirsLeft(c); n > 0; n--){
-    var effect = ELIXIR_EFFECTS[roll() - 1];
-    st.list.push({id: uid(), name: effect.name, free: true});
+    var effect = table[roll() - 1];
+    st.list.push(effect ? {id: uid(), name: effect.name, free: true} : {id: uid(), name: "Your choice", free: true, choose: true});
     st.freeMade++;
-    made.push(effect.name);
+    made.push(effect ? effect.name : "your choice");
   }
   return made;
+}
+/* A rolled 6 (2024): the effect chosen. */
+export function chooseElixir(c, id, name){
+  var e = elixirState(c).list.find(function(x){ return x.id===id; });
+  if(!e || !e.choose || !elixirEffect(name, c)) return false;
+  e.name = name;
+  delete e.choose;
+  return true;
 }
 /* One more elixir of a chosen effect, paid with the lowest spell slot
    left. Returns the slot level used, or 0 if there's none (nothing made). */
@@ -448,14 +476,15 @@ export function elixirsOnLongRest(c, roll){
   return rollFreeElixirs(c, roll);
 }
 /* What drinking one gives beyond its text: Healing's dice and INT bonus,
-   and from level 9 Restorative Reagents' temporary hit points. */
+   and from level 9 Restorative Reagents' temporary hit points (Tasha's
+   only: the 2024 Restorative Reagents has none). */
 export function elixirRolls(c, name){
   var cl = alchemistEntry(c);
   var intMod = mod(abilityScore(c, "int"));
   var out = [];
-  var effect = elixirEffect(name);
+  var effect = elixirEffect(name, c);
   if(effect && effect.heal) out.push({label: "Heal", dice: parseDiceNotation(effect.heal), diceText: effect.heal, bonus: intMod});
-  if(cl && (Number(cl.level)||1) >= 9) out.push({label: "Temp HP", dice: parseDiceNotation("2d6"), diceText: "2d6", bonus: Math.max(1, intMod)});
+  if(cl && !alchemist2024(c) && (Number(cl.level)||1) >= 9) out.push({label: "Temp HP", dice: parseDiceNotation("2d6"), diceText: "2d6", bonus: Math.max(1, intMod)});
   return out;
 }
 

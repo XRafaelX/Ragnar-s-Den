@@ -1,10 +1,10 @@
 import { save } from "../../core/state.js";
-import { fmtMod, ce } from "../../core/helpers.js";
-import { ARMOR_MODELS, ELIXIR_EFFECTS } from "../../data/artificer-extras.js";
+import { fmtMod, ce, maxHp } from "../../core/helpers.js";
 import {
-  armorerEntry, alchemistEntry, wearingBodyArmor, setArmorModel, armorModelWeapon, armorModelPerks,
-  elixirState, elixirEffect, freeElixirCount, freeElixirsLeft, rollFreeElixirs, brewElixirWithSlot, useElixir, elixirRolls
+  armorerEntry, alchemistEntry, wearingBodyArmor, setArmorModel, armorModelWeapon, armorModelPerks, armorModelsFor, armorModelDef, artificerLevel,
+  elixirState, elixirEffect, elixirEffectsFor, chooseElixir, freeElixirCount, freeElixirsLeft, rollFreeElixirs, brewElixirWithSlot, useElixir, elixirRolls
 } from "../../core/artificer.js";
+import { themedPicker } from "../../ui/themed-picker.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { makeDiceSvg } from "../../ui/svg-icons.js";
@@ -36,7 +36,7 @@ export function renderArmorModelCard(c){
   var switcher = ce("div", "art-switch");
   switcher.setAttribute("role", "group");
   switcher.setAttribute("aria-label", "Armor model");
-  Object.keys(ARMOR_MODELS).forEach(function(name){
+  Object.keys(armorModelsFor(cl)).forEach(function(name){
     var b = document.createElement("button");
     b.type = "button";
     b.className = "btn small" + (cl.armorModel===name ? " primary" : "");
@@ -71,6 +71,24 @@ export function renderArmorModelCard(c){
   weapon.appendChild(rolls);
   card.appendChild(weapon);
 
+  // The 2024 Guardian's Defensive Field: while bloodied, no limit.
+  var def = armorModelDef(c);
+  if(def && def.bloodiedField){
+    var lvl = artificerLevel(c), bloodied = (Number(c.hp.current)||0) <= Math.floor(maxHp(c) / 2);
+    var fieldRow = ce("div", "inv-roll-actions");
+    var fb = document.createElement("button");
+    fb.type = "button"; fb.className = "btn small inv-roll-btn";
+    fb.textContent = "Defensive Field: temp HP " + lvl;
+    fb.disabled = !bloodied || !wearingBodyArmor(c);
+    fb.title = !wearingBodyArmor(c) ? "Wear your Arcane Armor" : bloodied ? "Bonus action while bloodied" : "Only while bloodied (half your hit points or fewer)";
+    fb.addEventListener("click", function(){
+      if(lvl > (Number(c.hp.temp)||0)) c.hp.temp = lvl;
+      logRoll("Defensive Field", "Temporary hit points: " + c.hp.temp + ".");
+      save(); renderAll();
+    });
+    fieldRow.appendChild(fb);
+    card.appendChild(fieldRow);
+  }
   var perks = armorModelPerks(c);
   if(perks.length){
     var ul = ce("ul", "art-perks");
@@ -85,9 +103,11 @@ export function renderElixirCard(c){
   if(!cl) return null;
   var st = elixirState(c);
   var card = makeCard("Experimental elixirs");
-  var max = freeElixirCount(Number(cl.level)||3), left = freeElixirsLeft(c);
+  var is2024 = cl.subclass==="Alchemist (2024)";
+  var max = freeElixirCount(Number(cl.level)||3, is2024 ? "2024" : ""), left = freeElixirsLeft(c);
   var intro = ce("p", "art-intro");
-  intro.textContent = max + " free elixir" + (max > 1 ? "s" : "") + " per long rest, rolled on a d6. They last until drunk or your next long rest, when new ones are rolled.";
+  intro.textContent = max + " free elixir" + (max > 1 ? "s" : "") + " per long rest, rolled on a d6" + (is2024 ? " (a 6 lets you choose)" : "") + ". They last until drunk or your next long rest, when new ones are rolled." +
+    (is2024 ? " Drinking one, or giving it to a creature within 5 feet, is a bonus action." : "");
   card.appendChild(intro);
   if(left){
     var rollFree = rollButton("Roll " + left + " free elixir" + (left > 1 ? "s" : ""), function(){
@@ -105,7 +125,7 @@ export function renderElixirCard(c){
     card.appendChild(none);
   }
   st.list.forEach(function(e){
-    var effect = elixirEffect(e.name) || {text: ""};
+    var effect = elixirEffect(e.name, c) || {text: ""};
     var row = ce("div", "art-elixir");
     var head = ce("div", "art-weapon-head");
     head.innerHTML = "<strong></strong><span></span>";
@@ -113,8 +133,15 @@ export function renderElixirCard(c){
     head.lastChild.textContent = e.free ? "Free" : "Spell slot";
     row.appendChild(head);
     var text = ce("p", "art-note");
-    text.textContent = effect.text;
+    text.textContent = e.choose ? "You rolled a 6: choose its effect." : effect.text;
     row.appendChild(text);
+    if(e.choose){
+      var pick = ce("div", "field inf-field");
+      pick.appendChild(themedPicker({key: "elixir:" + e.id, ariaLabel: "Effect for this elixir", placeholder: "Choose its effect…",
+        groups: {"": elixirEffectsFor(c).map(function(x){ return x.name; })}, value: "",
+        onPick: function(v){ if(chooseElixir(c, e.id, v)){ save(); renderAll(); } }}));
+      row.appendChild(pick);
+    }
     var rolls = ce("div", "inv-roll-actions");
     elixirRolls(c, e.name).forEach(function(r){
       rolls.appendChild(rollButton(r.label + " " + diceLabel(r.dice, r.bonus), function(){ performRoll(r.dice.die, r.dice.qty, r.bonus, "none", e.name + " elixir: " + r.label); }));
@@ -134,7 +161,7 @@ export function renderElixirCard(c){
   brewLbl.textContent = "Brew another with a spell slot (you choose the effect, and it uses your lowest slot left):";
   brew.appendChild(brewLbl);
   var effects = ce("div", "art-switch");
-  ELIXIR_EFFECTS.forEach(function(ef){
+  elixirEffectsFor(c).forEach(function(ef){
     var b = document.createElement("button");
     b.type = "button"; b.className = "btn small";
     b.textContent = ef.name;

@@ -106,7 +106,8 @@ function showSubclass(className, sub, edition){
       ["Class", className],
       [prog.subclassLabel || "Subclass", prog.subclassLevel ? "Chosen at "+className+" level "+prog.subclassLevel : ""],
       ["Spellcasting", sub.casterType==="third" ? "One-third caster ("+ABILITY_NAME[sub.spellAbility]+")" : ""],
-      ["Rules", sub.edition==="2024" ? "Player's Handbook 2024, for a 2024 " + className.toLowerCase() + " only"
+      // (A subclass names its own book; the 2024 artificer's are from Eberron and Ravenloft.)
+      ["Rules", sub.edition==="2024" ? (sub.source || (prog.editions && prog.editions["2024"] && prog.editions["2024"].series) || "Player's Handbook 2024") + ", for a 2024 " + className.toLowerCase() + " only"
         : sub.edition==="2014" ? "For a 2014 " + className.toLowerCase() + " only"
         : classHasEdition(className, "2024") ? "For a 2014 or 2024 " + className.toLowerCase() : ""]
     ]));

@@ -747,7 +747,9 @@ export function renderVitalsPanel(c){
     // Focus as the other choice), or Perfect Focus at once when it's used up.
     var um = uncannyMetabolism(c), pf = perfectFocusGain(c), pfNow = !um && pf ? usePerfectFocus(c) : 0;
     var pr = persistentRageReady(c);
-    var follow = reflexes || um || pr ? function(r){
+    // Adventurer's Atlas (Cartographer 3): a map holder adds 1d4.
+    var atlas = classLevelOf(c, "Artificer", "Cartographer") >= 3;
+    var follow = reflexes || um || pr || atlas ? function(r){
       if(!r) return null;
       var lead = reflexes ? "Thief's Reflexes: a second turn in the first round at initiative " + (r.total - 10) + " (not when you're surprised)." : "";
       var options = !um ? [] : [{label: "Uncanny Metabolism: all Focus, heal 1d" + um.die + "+" + um.bonus, title: "Get all your Focus Points back and regain 1d" + um.die + " + " + um.bonus + " hit points. Once per long rest.",
@@ -770,6 +772,11 @@ export function renderVitalsPanel(c){
           save(); renderAll();
           return {silent: true};
         }}]);
+      if(atlas) options = [{label: "+1d4 (Adventurer's Atlas)", title: "While you carry one of your maps, add 1d4 to initiative",
+        use: function(){
+          var n = Math.floor(Math.random() * 4) + 1;
+          return {bonus: n, log: "Adventurer's Atlas (1d4: " + n + ")"};
+        }}].concat(options);
       return {lead: lead || "When you roll initiative:", options: options};
     } : null;
     performRoll(20,1,initTotal,initRoll.mode,"Initiative", follow);

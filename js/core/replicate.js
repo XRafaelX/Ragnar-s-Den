@@ -18,7 +18,7 @@
 import { MAGIC_ITEM_DATA } from "../data/magic-items.js";
 import { PLAN_TABLES, planByName, plansKnownAt, planItemsAt } from "../data/artificer-plans.js";
 import { attuneProblem, itemCharges, spendCharges } from "./magic-items.js";
-import { uid, spellSlotsLeft, spendSpellSlot } from "./helpers.js";
+import { uid, spellSlotsLeft, spendSpellSlot, classLevelOf } from "./helpers.js";
 
 export function artificer2024Level(c){
   var cl = (c.classes||[]).find(function(x){ return x.name==="Artificer" && x.edition==="2024"; });
@@ -30,6 +30,19 @@ export function planState(c){
   if(!c.plans.made) c.plans.made = [];
   return c.plans;
 }
+
+/* ---- Limits ----
+   Plans Known and Magic Items by level, and the 2024 Armorer's Improved
+   Armorer (9): one more plan and one more item, both armor. */
+export function armorExtra(c){ return classLevelOf(c, "Artificer", "Armorer (2024)") >= 9 ? 1 : 0; }
+export function planLimits(c){
+  var lv = artificer2024Level(c), extra = armorExtra(c);
+  return {plans: plansKnownAt(lv) + extra, items: planItemsAt(lv) + extra, basePlans: plansKnownAt(lv), baseItems: planItemsAt(lv), extra: extra};
+}
+/* Whether an item (by data name) is armor: what Improved Armorer's extra
+   plan and item must be. */
+export function isArmorItem(name){ var d = MAGIC_ITEM_DATA[name]; return !!(d && /^Armor/.test(d.kind || "")); }
+function isArmorPlan(p){ return !p.pick && isArmorItem(p.item || p.name); }
 
 /* ---- What can be learned ---- */
 function cursed(d){ return /\bcurse/i.test(d.text || ""); }
@@ -48,11 +61,14 @@ export function pickOptions(kind){
 /* Every plan with the reason it can't be learned now ("" when it can):
    [{name, level, label, pick, reason}]. */
 export function learnablePlans(c){
-  var lv = artificer2024Level(c), known = planState(c).known;
+  var lv = artificer2024Level(c), known = planState(c).known, lim = planLimits(c);
+  // (With Improved Armorer, once the plain plans are full only armor is left.)
+  var plainFull = lim.extra && known.filter(function(k){ return !isArmorItem(k.item); }).length >= lim.basePlans;
   var out = [];
   PLAN_TABLES.forEach(function(t){
     t.plans.forEach(function(p){
-      var reason = lv < t.level ? "artificer " + t.level : (!p.pick && known.some(function(k){ return k.name===p.name; })) ? "known" : "";
+      var reason = lv < t.level ? "artificer " + t.level : (!p.pick && known.some(function(k){ return k.name===p.name; })) ? "known"
+        : plainFull && !isArmorPlan(p) ? "your extra plan must be armor" : "";
       out.push({name: p.name, level: t.level, label: p.label || "", pick: p.pick || "", reason: reason});
     });
   });
@@ -88,10 +104,19 @@ export function forgetPlan(c, knownId){
 /* ---- Making items ---- */
 export function madeFrom(c, knownId){ return planState(c).made.find(function(m){ return m.knownId===knownId; }) || null; }
 export function replicaItem(c, made){ return (c.inventory||[]).find(function(i){ return i.id===made.itemId; }) || null; }
-/* The made items that vanish to make room for one more, oldest first. */
-export function replicasToVanish(c){
-  var st = planState(c), max = planItemsAt(artificer2024Level(c));
-  return st.made.slice(0, Math.max(0, st.made.length - max + 1));
+/* The made items that vanish to make room for one more (`armor`: it's
+   armor, so it can take Improved Armorer's extra place), oldest first. */
+export function replicasToVanish(c, armor){
+  var st = planState(c), lim = planLimits(c), out = [];
+  var left = st.made.slice();
+  var plain = function(){ return left.filter(function(m){ var i = replicaItem(c, m); return !(i && isArmorItem(i.magicItem)); }); };
+  while(left.length){
+    var victim = !armor && plain().length >= lim.baseItems ? plain()[0] : left.length >= lim.items ? left[0] : null;
+    if(!victim) break;
+    out.push(victim);
+    left.splice(left.indexOf(victim), 1);
+  }
+  return out;
 }
 /* Add an item made from a known plan (`item`: the inventory row, built
    by the panel). One item per plan at a time. Over the limit the oldest
@@ -101,7 +126,7 @@ export function makeReplica(c, knownId, item){
   var st = planState(c);
   var k = st.known.find(function(x){ return x.id===knownId; });
   if(!k || madeFrom(c, knownId) || !artificer2024Level(c)) return null;
-  replicasToVanish(c).forEach(function(m){ vanishReplica(c, m); });
+  replicasToVanish(c, isArmorItem(item.magicItem)).forEach(function(m){ vanishReplica(c, m); });
   if(!item.id) item.id = uid();
   item.replica = true;
   if(!c.inventory) c.inventory = [];

@@ -25,11 +25,14 @@ export function characterCompanions(c){
     var castCl = cl || (def.castClass && (c.classes||[]).find(function(x){ return x.name===def.castClass; }));
     var castMod = mods[(castCl && classSpellAbility(castCl)) || "int"] || 0;
     var saved = companionState(c, def.id);
-    var stats = def.stats({lv: cl ? Number(cl.level)||1 : totalLevel(c), pb: pb, mods: mods, spellAttack: pb + castMod, spellDC: 8 + pb + castMod,
+    var lvl = cl ? Number(cl.level)||1 : totalLevel(c);
+    var stats = def.stats({lv: lvl, pb: pb, mods: mods, spellAttack: pb + castMod, spellDC: 8 + pb + castMod,
       choice: saved.choice || "", beast: saved.beast || null, chain: !!(req && req.chain), wild: (req && req.wild) || 0, wildOnly: !!(req && req.wildOnly),
       invocations: req && req.chain ? warlockInvocationNames(c) : []});
     out.push({def: def, stats: stats, choice: saved.choice || "", hasBeast: !!saved.beast, hp: stats ? companionHp(c, def.id, stats) : [],
-      source: req ? req.source : "", options: companionOptions(def, req, c),
+      source: req ? req.source : "", options: companionOptions(def, req, c, lvl),
+      // A choice of several (a reanimated companion's modifications): how many now.
+      choiceMax: def.choice && def.choice.multi ? def.choice.multi(lvl) : 0,
       name: saved.name || "", title: saved.title || "", image: saved.image || ""});
   });
   return out;
@@ -71,8 +74,9 @@ export function summonWildCompanion(c){
 }
 /* The choice's options for this character: a familiar's chain-only forms
    need Pact of the Chain. */
-function companionOptions(def, req, c){
+function companionOptions(def, req, c, lv){
   if(!def.choice) return [];
+  if(def.choice.optionsAt) return def.choice.optionsAt(lv);
   var only = def.choice.chainOnly || [];
   // (A choice tied to a spell's level: only the levels you have slots for, at least its own.)
   var slots = (c.spellcasting && c.spellcasting.slots) || {}, top = 2;
@@ -104,6 +108,16 @@ export function setCompanionChoice(c, id, value){
   var st = companionState(c, id);
   if(st.choice!==value) st.hp = [];
   st.choice = value;
+}
+/* A choice of several (`max`): tap to add or take one away. Past the
+   limit the first one picked goes. Saved as "Ferocity, Gaunt". */
+export function companionPicks(choice){ return String(choice || "").split(", ").filter(Boolean); }
+export function toggleCompanionPick(c, id, value, max){
+  var st = companionState(c, id), list = companionPicks(st.choice);
+  var at = list.indexOf(value);
+  if(at!==-1) list.splice(at, 1);
+  else { list.push(value); while(list.length > max) list.shift(); }
+  st.choice = list.join(", ");
 }
 /* A Beast Master's beast, as entered (before the ranger's bonuses). A new
    beast starts at full HP. */
@@ -148,7 +162,7 @@ export function newCompanionsText(list){
   var one = list.length===1;
   var names = list.map(function(x){ return x.def.name; });
   var named = names.length > 1 ? names.slice(0, -1).join(", ")+" and "+names[names.length-1] : names[0];
-  var setup = list.some(function(x){ return x.def.choice && !x.choice; });
+  var setup = list.some(function(x){ return x.def.choice && !x.choice && !x.def.choice.multi; });
   return "New companion"+(one ? "" : "s")+": "+named+". "+(one ? "It's" : "They're")+" on the Companions tab"+
     (setup ? ", set "+(one ? "it up on its card" : "them up on their cards") : "")+".";
 }

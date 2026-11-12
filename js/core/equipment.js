@@ -858,6 +858,8 @@ export function isProficientWithWeapon(c, weaponName, category){
       // (The 2024 rogue's.)
       if(category==="martial" && wl==="martial weapons with the finesse or light property") return /\b(light|finesse)\b/i.test((WEAPON_DATA[weaponName] || {}).properties || "") || !!(WEAPON_DATA[weaponName] || {}).finesse;
       if(category==="firearm" && wl==="firearms") return true;
+      // (The 2024 Artillerist's.)
+      if(category==="martial" && wl==="martial ranged weapons") return !!(WEAPON_DATA[weaponName] || {}).ranged;
       return weaponName && wl.indexOf(weaponName.toLowerCase()) !== -1;
     });
   });

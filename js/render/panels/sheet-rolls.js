@@ -322,11 +322,13 @@ function saveFollowUp(c, ability, r){
 /* Flash of Genius (artificer 7): INT on a check or a save. */
 function flashOption(c){
   var bonus = flashOfGenius(c);
-  return {label: "+" + bonus + " (Flash of Genius)", title: "Your reaction, a use each",
+  // (Ingenious Movement, Cartographer 9: a 30-foot teleport with it.)
+  var move = classLevelOf(c, "Artificer", "Cartographer") >= 9;
+  return {label: "+" + bonus + " (Flash of Genius)", title: "Your reaction, a use each" + (move ? ". Ingenious Movement: you or a willing creature within 30 ft can also teleport up to 30 ft." : ""),
     use: function(){
       if(!spendResource(c, "Artificer:flash_of_genius", 1)) return null;
       save(); renderAll();
-      return {bonus: bonus, log: "Flash of Genius"};
+      return {bonus: bonus, log: "Flash of Genius" + (move ? " (and Ingenious Movement: a 30 ft teleport)" : "")};
     }};
 }
 /* Chronal Shift (Chronurgy 2): a reroll after seeing how it went. */

@@ -4,7 +4,7 @@ import { MAGIC_ITEM_DATA } from "../../data/magic-items.js";
 import { planByName, PLANS_SUGGESTED } from "../../data/artificer-plans.js";
 import { artificer2024Level, planState, learnablePlans, pickOptions, planItemDef, learnPlan, forgetPlan, madeFrom, replicaItem,
   replicasToVanish, makeReplica, vanishReplica, dropOrphanReplicas, hasItemTinker, chargeReplica, drainLevel, drainReplica,
-  tinkerProblem, transmuteReplica, plansKnownAt, planItemsAt } from "../../core/replicate.js";
+  tinkerProblem, transmuteReplica, planLimits, isArmorItem } from "../../core/replicate.js";
 import { itemCharges } from "../../core/magic-items.js";
 import { makeCatalogMagicItem, magicItemBases } from "../armory.js";
 import { magicItemText } from "./inventory.js";
@@ -58,21 +58,23 @@ export function renderPlansCard(c){
   if(lv < 2) return null;
   var st = planState(c);
   dropOrphanReplicas(c);
-  var card = makeCard("Magic item plans");
+  var card = makeCard("Magic item plans"), lim = planLimits(c);
   card.classList.add("inf-card", "plan-card");
   card.appendChild(hint("After a long rest, with tinker's tools in hand, make magic items from your plans."));
 
-  card.appendChild(countTitle("Magic items", st.made.length, planItemsAt(lv)));
-  card.appendChild(madeTiles(c, planItemsAt(lv)));
+  card.appendChild(countTitle("Magic items", st.made.length, lim.items));
+  card.appendChild(madeTiles(c, lim.items));
 
-  card.appendChild(countTitle("Your plans", st.known.length, plansKnownAt(lv)));
+  var plansTitle = countTitle("Your plans", st.known.length, lim.plans);
+  if(lim.extra) plansTitle.title = "Includes one more plan and one more item for armor (Improved Armorer)";
+  card.appendChild(plansTitle);
   if(!st.known.length) card.appendChild(hint("You don't know any plans yet. Learn one below. " + PLANS_SUGGESTED.join(", ").replace(/, ([^,]*)$/, " and $1") + " are the book's suggestions."));
   var rows = document.createElement("div");
   rows.className = "inf-rows";
   st.known.forEach(function(k){ rows.appendChild(planRow(c, k)); });
   if(st.known.length) card.appendChild(rows);
 
-  if(st.known.length < plansKnownAt(lv)){
+  if(st.known.length < lim.plans){
     card.appendChild(sectionTitle("Learn a plan"));
     card.appendChild(learnForm(c));
   } else {
@@ -150,7 +152,7 @@ function startMaking(c, k){
 }
 /* Make it: the oldest item vanishes first when at the limit. */
 function finishMaking(c, k, base){
-  var going = replicasToVanish(c).map(function(m){ var i = replicaItem(c, m); return i ? i.name : ""; }).filter(Boolean);
+  var going = replicasToVanish(c, isArmorItem(k.item)).map(function(m){ var i = replicaItem(c, m); return i ? i.name : ""; }).filter(Boolean);
   var m = makeReplica(c, k.id, buildItem(c, k, base));
   if(!m) return;
   makingId = ""; makeBase = "";
@@ -185,7 +187,7 @@ function makeForm(c, k){
   cancel.textContent = "Cancel";
   cancel.addEventListener("click", function(){ makingId = ""; renderAll(); });
   wrap.appendChild(cancel);
-  var going = replicasToVanish(c);
+  var going = replicasToVanish(c, isArmorItem(k.item));
   if(going.length){
     var oldest = replicaItem(c, going[0]);
     var note = hint("You're at your limit, so this makes " + (oldest ? oldest.name : "your oldest item") + " vanish.");

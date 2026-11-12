@@ -26,7 +26,7 @@ import { BARD_2024, BARD_2024_SUBCLASSES } from "./bard-2024.js";
 import { SORCERER_2024, SORCERER_2024_SUBCLASSES } from "./sorcerer-2024.js";
 import { WARLOCK_2024, WARLOCK_2024_SUBCLASSES } from "./warlock-2024.js";
 import { WIZARD_2024, WIZARD_2024_SUBCLASSES } from "./wizard-2024.js";
-import { ARTIFICER_2024 } from "./artificer-2024.js";
+import { ARTIFICER_2024, ARTIFICER_2024_SUBCLASSES } from "./artificer-2024.js";
 import { PALADIN_SUBCLASSES } from "./subclasses/paladin.js";
 import { RANGER_SUBCLASSES } from "./subclasses/ranger.js";
 import { ROGUE_SUBCLASSES } from "./subclasses/rogue.js";
@@ -495,7 +495,7 @@ export var CLASS_PROGRESSION = {
    casters. Homebrew subclasses are added to these arrays at runtime
    (custom-subclasses.js), so SUBCLASSES must stay one shared object. */
 export var SUBCLASSES = {
-  "Artificer": ARTIFICER_SUBCLASSES,
+  "Artificer": ARTIFICER_SUBCLASSES.map(function(s){ if(ARTIFICER_2024.swaps[s.name]) s.edition = "2014"; return s; }).concat(ARTIFICER_2024_SUBCLASSES),
   "Barbarian": BARBARIAN_SUBCLASSES.map(function(s){ if(BARBARIAN_2024.swaps[s.name]) s.edition = "2014"; return s; }).concat(BARBARIAN_2024_SUBCLASSES),
   "Bard": BARD_SUBCLASSES.map(function(s){ if(BARD_2024.swaps[s.name]) s.edition = "2014"; return s; }).concat(BARD_2024_SUBCLASSES),
   "Cleric": CLERIC_SUBCLASSES.map(function(s){ if(CLERIC_2024.swaps[s.name]) s.edition = "2014"; return s; }).concat(CLERIC_2024_SUBCLASSES),

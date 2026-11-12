@@ -5,7 +5,6 @@
 import { rageFlySource, wildAspect } from "./barbarian-2024.js";
 import { rovingAim } from "./rogue-2024.js";
 import { RACE_DATA } from "../data/race-data.js";
-import { ARMOR_MODELS } from "../data/artificer-extras.js";
 import { ARMOR_DATA, armorDataOf } from "../data/armor.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
 import { featDef, featProficiencies } from "./feat-picks.js";
@@ -20,7 +19,7 @@ import { effectOn, bladesongBonus, wildSurgeNow } from "./effects.js";
 import { twilightShroud } from "./cleric.js";
 import { defensiveFlourish } from "./bard.js";
 import { stoneBenefit, wardLeft } from "./wizard.js";
-import { soulOfArtificeBonus } from "./artificer.js";
+import { soulOfArtificeBonus, armorerEntry, armorModelDef } from "./artificer.js";
 import { danceFootwork } from "./bard.js";
 import { wildForm, wildShapeSpeeds, wildShapeArmorClass, wildShapeSenses, incarnationAc, moonConBonus } from "./druid.js";
 import { hasFightingStyle, isRangedWeapon } from "./equipment.js";
@@ -134,8 +133,7 @@ export function armorStrengthShortfall(c, item){
   if(!req || (Number(abilityScore(c, "str"))||10) >= req) return 0;
   var race = RACE_DATA[c.race];
   if(race && (race.traits||[]).some(function(t){ return t.name==="Unslowed"; })) return 0;
-  var armorer = (c.classes||[]).some(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer" && (Number(cl.level)||1) >= 3; });
-  return armorer ? 0 : req;
+  return armorerEntry(c) ? 0 : req;
 }
 /* Walking speed: the saved number plus Mobile's 10 ft, an Infiltrator
    Armorer's Powered Steps (while wearing armor) and Bladesong's 10 ft
@@ -155,8 +153,7 @@ export function computeSpeed(c){
     var fd = featDef(f.name);
     if(fd && fd.speed && speedFeats.indexOf(fd)===-1){ speedFeats.push(fd); parts.push({name: fd.name, value: fd.speed}); }
   });
-  var armorer = (c.classes||[]).find(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer" && (Number(cl.level)||1) >= 3; });
-  var model = armorer && ARMOR_MODELS[armorer.armorModel];
+  var model = armorModelDef(c);
   var inArmor = (c.inventory||[]).some(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
   if(model && model.speed && inArmor) parts.push({name: "Powered Steps", value: model.speed});
   if(effectOn(c, "bladesong")) parts.push({name: "Bladesong", value: 10});

@@ -189,6 +189,80 @@ export var COMPANIONS = [
           {name:"Mending", text:"It regains 2d6 hit points when the mending spell is cast on it. If you or it die, it vanishes and leaves its gem."}]
       };
     }},
+  // The 2024 steel defender (Eberron: Forge of the Artificer, checked on
+  // 5etools' bestiary-efa.json 2026-11-12): AC and damage from INT.
+  {id:"steel_defender_2024", name:"Steel Defender", cls:"Artificer", subclass:"Battle Smith (2024)", level:3,
+    stats:function(x){
+      var int = x.mods.int;
+      return {
+        type:"Medium construct", ac: 12 + int, hp: 5 + 5 * x.lv, speed:"40 ft",
+        abilities:{str:14, dex:12, con:14, int:4, wis:10, cha:6},
+        saves:"every save " + plus(x.pb) + " (Steel Bond)",
+        senses:"darkvision 60 ft, passive Perception " + (10 + x.pb),
+        languages:"understands the languages you know",
+        immunities:"poison damage · charmed, exhaustion, poisoned",
+        attacks:[{name:"Force-Empowered Rend", toHit: x.spellAttack, dice:"1d8", bonus: 2 + int, damageType:"force",
+          text:"Melee, reach 5 ft." + (x.lv >= 5 ? " You can give up one of your attacks to command it." : "") + (x.lv >= 9 ? " A hit can trigger your Arcane Jolt." : "")}],
+        actions:[{name:"Repair (3/day)", text:"It, or a construct or object it can see within 5 ft, regains hit points.", dice:"2d8", bonus: int}],
+        reactions:[{name:"Deflect Attack", text:"A creature it can see within 5 ft makes an attack roll against someone other than the defender: it has disadvantage." +
+          (x.lv >= 15 ? " The attacker takes 1d4 + " + Math.max(0, int) + " force damage." : "")}],
+        traits:[{name:"Steel Bond", text:"It adds your proficiency bonus (" + plus(x.pb) + ") to every ability check and saving throw it makes."},
+          {name:"Your turn", text:"It acts during your turn and takes the Dodge action unless you use a bonus action to command it. If you're incapacitated it acts freely."}]
+      };
+    }},
+  // The 2024 cannon: Firepower (9) adds 1d8 to its damage and Protector,
+  // Detonate is a reaction when it takes damage (3d10 force).
+  {id:"eldritch_cannon_2024", name:"Eldritch Cannon", cls:"Artificer", subclass:"Artillerist (2024)", level:3,
+    stats:function(x){
+      var boom = x.lv >= 9 ? "3d8" : "2d8", shield = x.lv >= 9 ? "2d8" : "1d8";
+      return {
+        type:"Small or Tiny object", ac:18, hp: 5 * x.lv, speed:"15 ft (if it has legs or wheels)", count: x.lv >= 15 ? 2 : 1,
+        immunities:"poison and psychic damage",
+        attacks:[{name:"Force Ballista", toHit: x.spellAttack, dice: boom, bonus:0, damageType:"force",
+          text:"Ranged spell attack, 120 ft, one creature or object. A creature is pushed 5 ft away."}],
+        actions:[
+          {name:"Flamethrower", text:"15-ft cone: fire damage on a failed save, half on a success. Unattended flammable objects start burning.", dice: boom, bonus:0, save:"DEX " + x.spellDC},
+          {name:"Protector", text:"It and each creature of your choice within 10 ft gain temporary hit points.", dice: shield, bonus: Math.max(1, x.mods.int)}
+        ],
+        reactions: x.lv >= 9 ? [{name:"Detonate (Explosive Cannon)", text:"Your reaction when it takes damage, within 60 ft: it's destroyed and each creature within 20 ft takes force damage (half on a success).", dice:"3d10", bonus:0, save:"DEX " + x.spellDC}] : [],
+        traits:[{name:"Activate", text:"Bonus action within 60 ft: it uses one of its options and can move 15 ft" + (x.lv >= 15 ? " (both cannons with one bonus action)" : "") + ". It lasts 1 hour, until 0 HP or until you dismiss it (Magic action)."}]
+          .concat(x.lv >= 15 ? [{name:"Shimmering Field Projection", text:"You and your allies have half cover within 10 ft of a cannon."}] : [])
+      };
+    }},
+  // The Reanimator's companion (Ravenloft: The Horrors Within, checked on
+  // 5etools' bestiary-rhw.json 2026-11-12), with its modifications (one at
+  // 5, two at 9, three at 15; Bloated, Gaunt and Moist open at 9).
+  {id:"reanimated_companion", name:"Reanimated Companion", cls:"Artificer", subclass:"Reanimator", level:3,
+    choice:{label:"Modifications", multi:function(lv){ return lv >= 15 ? 3 : lv >= 9 ? 2 : lv >= 5 ? 1 : 0; },
+      options:["Arcane Conduit", "Ferocity", "Bloated", "Gaunt", "Moist"],
+      optionsAt:function(lv){ return lv >= 9 ? ["Arcane Conduit", "Ferocity", "Bloated", "Gaunt", "Moist"] : ["Arcane Conduit", "Ferocity"]; },
+      tips:{"Arcane Conduit": "Cast spells from its space; +INT to one damage roll of an artificer evocation or necromancy spell, once per turn",
+        "Ferocity": "Dreadful Swipe's die becomes 1d6", "Bloated": "Large, its swipe pushes 10 ft, Death Burst adds your INT modifier",
+        "Gaunt": "Speed 45 ft and climb, a frightening aura", "Moist": "Swim speed, squeezes through 1 inch, acid on attackers within 10 ft"}},
+    stats:function(x){
+      var int = x.mods.int, mods = String(x.choice || "").split(", ").filter(Boolean), has = function(m){ return mods.indexOf(m)!==-1; };
+      var burst = (x.lv >= 9 ? "4d4" : "2d4"), burstBonus = has("Bloated") ? Math.max(0, int) : 0;
+      var traits = [
+        {name:"Lightning Absorption", text:"Lightning damage heals it by the damage dealt instead."},
+        {name:"Your turn", text:"It acts during your turn and takes the Dodge action unless you use a bonus action to command it. It lasts until your long rest, and dies if you die."}];
+      if(has("Arcane Conduit")) traits.push({name:"Arcane Conduit", text:"You can cast spells as if you were in its space (with your own senses). Once per turn, an artificer evocation or necromancy spell's damage gets +" + Math.max(0, int) + " on one roll while it's within 120 ft."});
+      if(has("Gaunt")) traits.push({name:"Gaunt", text:"It climbs any surface, even ceilings, with no check. A creature you choose that starts its turn within 10 ft makes a WIS save (DC " + x.spellDC + ") or is frightened until the start of its next turn."});
+      if(has("Moist")) traits.push({name:"Moist", text:"It fits through a 1-inch space. A creature within 10 ft that hits it with an attack takes " + Math.max(0, int) + " acid damage."});
+      return {
+        type:(has("Bloated") ? "Large" : "Medium") + " undead", ac: 10 + int, hp: 5 + 5 * x.lv,
+        speed: has("Gaunt") ? "45 ft, climb 45 ft" + (has("Moist") ? ", swim 45 ft" : "") : "30 ft" + (has("Moist") ? ", swim 30 ft" : ""),
+        abilities:{str:11, dex:10, con:16, int:4, wis:10, cha:6},
+        senses:"blindsight 60 ft, passive Perception 10",
+        languages:"understands the languages you know",
+        resistances:"necrotic, poison",
+        immunities:"lightning damage · charmed, exhaustion, poisoned",
+        attacks:[{name:"Dreadful Swipe", toHit: x.spellAttack, dice: has("Ferocity") ? "1d6" : "1d4", bonus: int, damageType:"necrotic",
+          text:"Melee, reach 5 ft. The target can't take opportunity attacks until the start of its next turn." + (has("Bloated") ? " A Large or smaller target is pushed up to 10 ft away." : "")}],
+        actions:[{name:"Death Burst (when it dies)", text:"It explodes: each creature within 10 ft takes necrotic damage, half on a success." + (x.lv >= 9 ? " Its necrotic damage ignores resistance." : ""), dice: burst, bonus: burstBonus, save:"DEX " + x.spellDC}],
+        reactions: x.lv >= 15 ? [{name:"Life Transfer (yours)", text:"When you or it takes damage, your reaction: you gain hit points equal to its current hit points, then it drops to 0 and dies (Death Burst)."}] : [],
+        traits: traits
+      };
+    }},
   {id:"eldritch_cannon", name:"Eldritch Cannon", cls:"Artificer", subclass:"Artillerist", level:3,
     stats:function(x){
       var boom = x.lv >= 9 ? "3d8" : "2d8";      // Explosive Cannon: +1d8 to its damage

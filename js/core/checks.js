@@ -147,7 +147,7 @@ export function checkAbility(c, key){
    {mode: "none"|"dis"|"adv", reason}. */
 export function stealthCheck(c){
   var armor = (c.inventory||[]).find(function(i){ return i.type==="armor" && i.equipped && i.category!=="shield"; });
-  var armorer = (c.classes||[]).find(function(cl){ return cl.name==="Artificer" && cl.subclass==="Armorer" && (Number(cl.level)||1) >= 3; });
+  var armorer = (c.classes||[]).find(function(cl){ return cl.name==="Artificer" && /^Armorer( \(2024\))?$/.test(cl.subclass||"") && (Number(cl.level)||1) >= 3; });
   if(armor && armorer && armorer.armorModel==="Infiltrator") return {mode: "adv", reason: "Dampening Field (Infiltrator)"};
   var d = armor && ARMOR_DATA[armor.name];
   var noisy = armor && (armor.stealthDisadvantage || (d && d.stealthDisadvantage));

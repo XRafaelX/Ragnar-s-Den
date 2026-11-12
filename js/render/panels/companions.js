@@ -1,6 +1,6 @@
 import { save } from "../../core/state.js";
 import { fmtMod, mod, ce, parseDiceNotation } from "../../core/helpers.js";
-import { characterCompanions, setCompanionHp, setCompanionChoice, setCompanionBeast, setCompanionLook, COMPANION_NAME_MAX, COMPANION_TITLE_MAX } from "../../core/companions.js";
+import { characterCompanions, setCompanionHp, setCompanionChoice, toggleCompanionPick, companionPicks, setCompanionBeast, setCompanionLook, COMPANION_NAME_MAX, COMPANION_TITLE_MAX } from "../../core/companions.js";
 import { BEAST_PRESETS } from "../../data/companions.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { openInfoModal } from "../../ui/info-modal.js";
@@ -203,6 +203,7 @@ function tag(text){
 function choiceRow(c, comp){
   var ch = comp.def.choice;
   var options = comp.options && comp.options.length ? comp.options : ch.options;
+  if(comp.choiceMax) return multiChoiceRow(c, comp, options);
   var box = ce("div", "comp-choice" + (comp.choice ? "" : " pending"));
   function pick(v){
     setCompanionChoice(c, comp.def.id, v);
@@ -229,6 +230,31 @@ function choiceRow(c, comp){
     b.setAttribute("aria-pressed", comp.choice===o ? "true" : "false");
     b.textContent = o;
     b.addEventListener("click", function(){ pick(o); });
+    seg.appendChild(b);
+  });
+  box.appendChild(seg);
+  return box;
+}
+
+/* A choice of several (a reanimated companion's modifications): toggle
+   buttons, with how many are picked of how many it can have. */
+function multiChoiceRow(c, comp, options){
+  var ch = comp.def.choice, picks = companionPicks(comp.choice);
+  var box = ce("div", "comp-choice" + (picks.length < comp.choiceMax ? " pending" : ""));
+  var label = ce("span", "comp-choice-label");
+  label.textContent = ch.label + " (" + picks.length + " of " + comp.choiceMax + ")";
+  box.appendChild(label);
+  var seg = ce("div", "comp-seg");
+  seg.setAttribute("role", "group");
+  seg.setAttribute("aria-label", ch.label);
+  options.forEach(function(o){
+    var on = picks.indexOf(o)!==-1;
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "comp-seg-btn" + (on ? " active" : "");
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.textContent = o;
+    if(ch.tips && ch.tips[o]) b.title = ch.tips[o];
+    b.addEventListener("click", function(){ toggleCompanionPick(c, comp.def.id, o, comp.choiceMax); save(); renderAll(); });
     seg.appendChild(b);
   });
   box.appendChild(seg);
@@ -319,7 +345,13 @@ export function renderStatBlock(card, s, name, opts){
     return actEntry(a.name, side, a.text);
   });
   if(actions) acts.appendChild(actions);
-  var reactions = entryBlock("Reactions", splitTraits(s.reactions), function(r){ return actEntry(r.name || "Reaction", [], r.text); });
+  // (A reaction can roll too: the 2024 cannon's Detonate.)
+  var reactions = entryBlock("Reactions", splitTraits(s.reactions), function(r){
+    var side = [];
+    if(r.save) side.push(tag(r.save + " save"));
+    if(r.dice) side.push(opts.rolls ? rollButton(diceText(r.dice, r.bonus), function(){ rollDice(r.dice, r.bonus, name + ": " + r.name); }) : tag(diceText(r.dice, r.bonus)));
+    return actEntry(r.name || "Reaction", side, r.text);
+  });
   if(reactions) acts.appendChild(reactions);
   if(acts.childNodes.length) body.appendChild(acts);
   if(body.childNodes.length < 2) body.classList.add("single");
@@ -342,7 +374,7 @@ function subLine(comp){
   var s = comp.stats, ch = comp.def.choice, bits = [];
   if(comp.name) bits.push(comp.def.name);
   bits.push(s.type);
-  if(ch && comp.choice && !isSetupMode(comp) && s.type.toLowerCase().indexOf(comp.choice.toLowerCase())===-1)
+  if(ch && comp.choice && !isSetupMode(comp) && (ch.multi || s.type.toLowerCase().indexOf(comp.choice.toLowerCase())===-1))
     bits.push(comp.choice + (ch.noun ? " " + ch.noun : ""));
   return bits.join(" · ") + " · from " + (comp.source || comp.def.source || comp.def.subclass);
 }
@@ -380,7 +412,7 @@ function companionHead(c, comp, card){
 function companionMenu(c, comp){
   var entries = [];
   var ch = comp.def.choice;
-  if(ch) entries.push({label: "Change " + ch.label.toLowerCase(), onClick: function(){ openChangeDialog(c, comp); }});
+  if(ch && !ch.multi) entries.push({label: "Change " + ch.label.toLowerCase(), onClick: function(){ openChangeDialog(c, comp); }});
   if(isSetupMode(comp)) entries.push({label: "Edit beast", onClick: function(){ openBeastForm(c, comp); }});
   entries.push({label: comp.name || comp.title ? "Edit name and title" : "Add name and title", onClick: function(){ openNameDialog(c, comp); }});
   entries.push({label: comp.image ? "Change image" : "Add image", onClick: function(){ pickImage(c, comp); }});
@@ -531,7 +563,7 @@ function renderCompanion(c, comp){
   card.dataset.comp = comp.def.id;
   companionHead(c, comp, card);
   // Once made, the choice moves to the ⋮ menu (Change ...).
-  if(comp.def.choice && !comp.choice) card.appendChild(choiceRow(c, comp));
+  if(comp.def.choice && (comp.def.choice.multi ? comp.choiceMax > 0 : !comp.choice)) card.appendChild(choiceRow(c, comp));
 
   renderStatBlock(card, s, name, {rolls: true, hpTile: function(){
     var tile = ce("div", "comp-tile comp-tile-hp");
