@@ -181,38 +181,103 @@
 .cmp-level-value{font-size:13px;min-width:150px;text-align:center;}
 .cmp-companion .comp-tiles{margin-top:4px;}
 
-/* ---- Tier list tab (secret, js/render/compendium/tier-list.js) ---- */
+/* ---- Tier list tab (secret, js/render/compendium/tier-list.js) ----
+   Motion (all off under prefers-reduced-motion): the switches' highlight
+   slides (.tier-seg-ind, placed by the script), chips fly to their new
+   tier when the band or edition changes and show a short-lived up or down
+   badge (.tier-move), rows and chips come in one after another, and the S
+   letter has a sheen that passes every few seconds. */
 .tier-view{max-width:1040px;margin:0 auto;padding-top:8px;}
 .tier-controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;}
 .tier-controls .cmp-edition{margin-bottom:0;flex-wrap:wrap;}
-.tier-lead{font-size:13px;color:var(--text-on-parch-dim);margin:12px 0 14px;}
-/* The letter stays one square whatever the row holds, beside the first line of chips. */
-.tier-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-top:1px solid var(--rule);}
-.tier-row:last-of-type{border-bottom:1px solid var(--rule);}
-.tier-letter{
-  flex:none;width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;
-  font-family:var(--serif);font-size:20px;font-weight:700;color:#14101c;background:var(--tier-c);
+/* The switches: the "on" look is the sliding highlight behind the buttons. */
+.tier-seg{position:relative;isolation:isolate;}
+.tier-seg button{position:relative;z-index:1;}
+.tier-seg button.on{background:transparent;box-shadow:none;}
+.tier-seg-ind{
+  position:absolute;left:0;top:0;width:0;height:0;border-radius:4px;z-index:0;pointer-events:none;
+  background:linear-gradient(180deg, var(--brass-bright) -60%, var(--brass) 70%);
+  box-shadow:0 2px 10px color-mix(in srgb, var(--brass) 45%, transparent);
 }
+.tier-lead{font-size:13px;color:var(--text-on-parch-dim);margin:12px 0 14px;}
+
+/* A row: its tier's colour washing out to the right. */
 .tier-S{--tier-c:#e8b04a;}
 .tier-A{--tier-c:#62b874;}
 .tier-B{--tier-c:#5b9be0;}
 .tier-C{--tier-c:#a988e0;}
 .tier-D{--tier-c:#8f879f;}
+.tier-row{
+  display:flex;align-items:flex-start;gap:12px;padding:8px;margin-bottom:6px;border-radius:10px;
+  background:linear-gradient(90deg, color-mix(in srgb, var(--tier-c) 14%, transparent) 0%, color-mix(in srgb, var(--tier-c) 4%, transparent) 45%, transparent 85%);
+  border:1px solid color-mix(in srgb, var(--tier-c) 16%, transparent);
+}
+/* The letter stays one square whatever the row holds, beside the first line of chips. */
+.tier-letter{
+  position:relative;overflow:hidden;flex:none;width:40px;height:40px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:21px;font-weight:700;color:#16111f;
+  text-shadow:0 1px 0 color-mix(in srgb, #fff 35%, transparent);
+  background:linear-gradient(150deg, color-mix(in srgb, var(--tier-c), #fff 32%) 0%, var(--tier-c) 48%, color-mix(in srgb, var(--tier-c), #000 22%) 100%);
+  box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 40%, transparent), 0 3px 12px color-mix(in srgb, var(--tier-c) 38%, transparent);
+}
+/* S: a sheen sweeps across now and then, and a stronger glow. */
+.tier-letter.tier-S{box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 45%, transparent), 0 0 18px color-mix(in srgb, var(--tier-c) 55%, transparent);}
+.tier-letter.tier-S::after{
+  content:"";position:absolute;top:-20%;bottom:-20%;left:-60%;width:40%;transform:skewX(-20deg);
+  background:linear-gradient(90deg, transparent, color-mix(in srgb, #fff 70%, transparent), transparent);
+  animation:tier-sheen 4.5s ease-in-out 1s infinite;
+}
+@keyframes tier-sheen{0%{left:-60%;}28%{left:130%;}100%{left:130%;}}
+
 .tier-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;align-content:flex-start;flex:1;min-width:0;min-height:40px;padding:3px 0;}
 .tier-chip{
-  border:1px solid var(--rule);background:var(--parchment-dim);color:var(--text-on-parch);
-  border-radius:6px;padding:7px 12px;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s ease, border-color .15s ease;
+  position:relative;border:1px solid color-mix(in srgb, var(--tier-c) 30%, var(--rule));
+  background:color-mix(in srgb, var(--tier-c) 7%, var(--parchment-dim));color:var(--text-on-parch);
+  border-radius:7px;padding:7px 12px;font-size:13px;font-weight:500;cursor:pointer;
+  transition:background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
-.tier-chip:hover{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 18%, var(--parchment-dim));}
+.tier-chip:hover{
+  border-color:var(--tier-c);background:color-mix(in srgb, var(--tier-c) 16%, var(--parchment-dim));
+  box-shadow:0 4px 14px color-mix(in srgb, var(--tier-c) 28%, transparent);transform:translateY(-1px);
+}
+.tier-chip:focus-visible{outline:2px solid var(--tier-c);outline-offset:2px;}
+.tier-S .tier-chip{box-shadow:0 0 10px color-mix(in srgb, var(--tier-c) 16%, transparent);}
+/* Moved to a higher or lower tier: a badge that pops in and fades. */
+.tier-move{
+  position:absolute;top:-7px;right:-7px;width:17px;height:17px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:8px;line-height:1;pointer-events:none;
+  animation:tier-move 1.9s ease forwards;
+}
+.tier-move.up{background:#62b874;color:#10210f;box-shadow:0 0 10px color-mix(in srgb, #62b874 60%, transparent);}
+.tier-move.down{background:var(--oxblood);color:#fff;box-shadow:0 0 10px color-mix(in srgb, #d9455f 55%, transparent);}
+@keyframes tier-move{0%{opacity:0;transform:scale(.3);}14%{opacity:1;transform:scale(1.15);}24%{transform:scale(1);}78%{opacity:1;}100%{opacity:0;}}
+.tier-empty{font-size:12px;font-style:italic;line-height:34px;color:var(--text-on-parch-dim);opacity:.7;}
+
 .tier-unrated{font-size:12px;color:var(--text-on-parch-dim);margin:12px 0 0;}
 .tier-class-pick{max-width:260px;margin-top:10px;}
 .tier-actions{display:flex;flex-wrap:wrap;gap:8px;}
-/* The rating of one class in every band (info modal). */
+/* The rating of one entry in every band (info modal): the letters pop in one by one. */
 .tier-strip{display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:14px;}
-.tier-strip-cell{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;border-radius:6px;border:1px solid transparent;}
-.tier-strip-cell.current{border-color:var(--rule);background:rgba(255,255,255,0.03);}
+.tier-strip-cell{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:8px;border:1px solid transparent;}
+.tier-strip-cell.current{
+  border-color:color-mix(in srgb, var(--tier-c) 45%, transparent);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--tier-c) 14%, transparent), transparent);
+}
+.tier-strip-cell .tier-letter{animation:tier-pop .45s cubic-bezier(.34,1.56,.64,1) backwards;}
+.tier-strip-cell:nth-child(2) .tier-letter{animation-delay:.07s;}
+.tier-strip-cell:nth-child(3) .tier-letter{animation-delay:.14s;}
+.tier-strip-cell:nth-child(4) .tier-letter{animation-delay:.21s;}
+@keyframes tier-pop{from{opacity:0;transform:scale(.4) rotate(-8deg);}to{opacity:1;transform:none;}}
 .tier-strip-band{font-size:11px;color:var(--text-on-parch-dim);text-align:center;}
-@media (prefers-reduced-motion: reduce){ .tier-chip{transition:none;} }
+.tier-strip-cell.current .tier-strip-band{color:var(--text-on-parch);font-weight:600;}
+@media (prefers-reduced-motion: reduce){
+  .tier-chip{transition:none;}
+  .tier-chip:hover{transform:none;}
+  .tier-letter.tier-S::after{animation:none;display:none;}
+  .tier-move{animation:none;}
+  .tier-strip-cell .tier-letter{animation:none;}
+}
 /* A phone: both switches full width in equal columns, the bands as "1-4" (the
    line under them names the band). */
 @media (max-width:480px){
@@ -220,5 +285,6 @@
   .tier-controls .cmp-edition{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;}
   .tier-controls .cmp-edition button{padding:6px 4px;}
   .tier-class-pick{max-width:none;}
+  .tier-row{gap:10px;padding:7px;}
   .tier-hide-narrow{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
 }

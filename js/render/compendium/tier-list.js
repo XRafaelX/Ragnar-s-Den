@@ -8,7 +8,12 @@
      the one the app offers for that edition (subclassesFor), so the
      private Shadow Stalker only shows while the private content is on.
    Tapping an entry shows its letter in every band, the reason, and its
-   Compendium details; a class's also jumps to its subclass tiers. */
+   Compendium details; a class's also jumps to its subclass tiers.
+   Motion (none under prefers-reduced-motion): each redraw is compared
+   with the one before it (snapshot). Chips still on the page fly from
+   where they were to their new spot (FLIP), and one that changed tier
+   gets a short ▲ or ▼ badge and a flash; new chips and rows come in one
+   after another; the switches' highlight slides to the new option. */
 import { openInfoModal } from "../../ui/info-modal.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { CLASS_LIST } from "../../data/abilities-skills.js";
@@ -22,13 +27,24 @@ var MODES = [["classes", "Classes"], ["subclasses", "Subclasses"]];
 var EDITIONS = [["2014", "2014 rules"], ["2024", "2024 rules"]];
 var view = {mode: "classes", edition: "2014", band: TIER_BANDS[0].key, cls: ""};
 var current = null;   // the element the tab is drawn in
+var observers = [];   // the switches' ResizeObservers, dropped on each redraw
 function redraw(){ if(current) draw(current); }
+function reducedMotion(){
+  try{ return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; }
+}
+function animate(el, frames, opts){ if(el.animate) el.animate(frames, opts); }
+var EASE = "cubic-bezier(.2,.8,.2,1)";
 
 function segmented(options, value, label, onPick){
   var bar = document.createElement("div");
-  bar.className = "cmp-edition";
+  bar.className = "cmp-edition tier-seg";
   bar.setAttribute("role", "group");
   bar.setAttribute("aria-label", label);
+  // The highlight behind the picked option (placed by placeHighlight).
+  var ind = document.createElement("span");
+  ind.className = "tier-seg-ind";
+  ind.setAttribute("aria-hidden", "true");
+  bar.appendChild(ind);
   options.forEach(function(o){
     var b = document.createElement("button");
     b.type = "button";
@@ -50,7 +66,7 @@ function showRating(title, entry, buttons){
     strip.className = "tier-strip";
     strip.innerHTML = TIER_BANDS.map(function(b, i){
       var t = entry.tiers[i];
-      return "<div class='tier-strip-cell" + (b.key === view.band ? " current" : "") + "'><span class='tier-letter tier-" + t + "'>" + t + "</span>" +
+      return "<div class='tier-strip-cell tier-" + t + (b.key === view.band ? " current" : "") + "'><span class='tier-letter tier-" + t + "'>" + t + "</span>" +
         "<span class='tier-strip-band'>" + escapeHtml(b.label) + "</span></div>";
     }).join("");
     body.appendChild(strip);
@@ -102,7 +118,88 @@ function entries(){
   return {items: items, unrated: unrated};
 }
 
+/* Where things were before a redraw: each chip's box and tier (by key),
+   each switch's highlight, and whether there was a page at all. */
+function snapshot(el){
+  var snap = {chips: {}, segs: {}, had: !!el.querySelector(".tier-view")};
+  el.querySelectorAll(".tier-chip").forEach(function(c){
+    snap.chips[c.dataset.key] = {rect: c.getBoundingClientRect(), tier: c.dataset.tier};
+  });
+  el.querySelectorAll(".tier-seg").forEach(function(bar){
+    var ind = bar.querySelector(".tier-seg-ind");
+    if(ind && ind.offsetWidth) snap.segs[bar.getAttribute("aria-label")] = boxOf(ind);
+  });
+  return snap;
+}
+function boxOf(n){ return {left: n.offsetLeft, top: n.offsetTop, width: n.offsetWidth, height: n.offsetHeight}; }
+
+/* Put a switch's highlight behind its picked option, sliding from `from`. */
+function placeHighlight(bar, from){
+  var on = bar.querySelector("button.on"), ind = bar.querySelector(".tier-seg-ind");
+  if(!on || !ind || !bar.offsetWidth) return;
+  var to = boxOf(on);
+  ["left", "top", "width", "height"].forEach(function(k){ ind.style[k] = to[k] + "px"; });
+  if(from && !reducedMotion() && (from.left !== to.left || from.top !== to.top || from.width !== to.width)){
+    animate(ind, [
+      {left: from.left + "px", top: from.top + "px", width: from.width + "px", height: from.height + "px"},
+      {left: to.left + "px", top: to.top + "px", width: to.width + "px", height: to.height + "px"}
+    ], {duration: 340, easing: EASE});
+  }
+}
+
+/* After a redraw: the switches' highlights, then the chips and rows. */
+function animateView(el, before){
+  observers.forEach(function(o){ o.disconnect(); });
+  observers = [];
+  el.querySelectorAll(".tier-seg").forEach(function(bar){
+    placeHighlight(bar, before.segs[bar.getAttribute("aria-label")]);
+    // Placed again whenever the bar's size changes (the page opening, a
+    // narrower window, the phone layout).
+    if(typeof ResizeObserver !== "undefined"){
+      var ro = new ResizeObserver(function(){ placeHighlight(bar); });
+      ro.observe(bar);
+      observers.push(ro);
+    }
+  });
+  if(reducedMotion()) return;
+  if(!before.had){
+    // A fresh page: the rows slide in and their letters pop, one after another.
+    el.querySelectorAll(".tier-row").forEach(function(row, i){
+      animate(row, [{opacity: 0, transform: "translateX(-14px)"}, {opacity: 1, transform: "none"}],
+        {duration: 380, delay: i * 70, easing: EASE, fill: "backwards"});
+      var letter = row.querySelector(".tier-letter");
+      if(letter) animate(letter, [{transform: "scale(.4) rotate(-10deg)"}, {transform: "none"}],
+        {duration: 460, delay: 80 + i * 70, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "backwards"});
+    });
+  }
+  var fresh = 0;
+  el.querySelectorAll(".tier-chip").forEach(function(chip){
+    var old = before.chips[chip.dataset.key];
+    if(!old){
+      animate(chip, [{opacity: 0, transform: "translateY(8px) scale(.95)"}, {opacity: 1, transform: "none"}],
+        {duration: 320, delay: (before.had ? 0 : 140) + Math.min(fresh++, 24) * 24, easing: "ease-out", fill: "backwards"});
+      return;
+    }
+    var now = chip.getBoundingClientRect();
+    var dx = old.rect.left - now.left, dy = old.rect.top - now.top;
+    if(dx || dy) animate(chip, [{transform: "translate(" + dx + "px," + dy + "px)"}, {transform: "none"}], {duration: 520, easing: EASE});
+    if(old.tier !== chip.dataset.tier){
+      var up = TIER_LETTERS.indexOf(chip.dataset.tier) < TIER_LETTERS.indexOf(old.tier);
+      var badge = document.createElement("span");
+      badge.className = "tier-move " + (up ? "up" : "down");
+      badge.textContent = up ? "\u25B2" : "\u25BC";
+      badge.setAttribute("aria-hidden", "true");
+      chip.appendChild(badge);
+      setTimeout(function(){ badge.remove(); }, 1900);
+      var c = getComputedStyle(chip).getPropertyValue("--tier-c").trim() || "#fff";
+      animate(chip, [{boxShadow: "0 0 0 2px " + c + ", 0 0 18px " + c}, {boxShadow: "0 0 0 0 transparent"}],
+        {duration: 1100, delay: 380, easing: "ease-out"});
+    }
+  });
+}
+
 function draw(el){
+  var before = snapshot(el);
   current = el;
   // A class hidden since (the private Gunslinger) falls back to the first.
   if(CLASS_LIST.indexOf(view.cls) === -1) view.cls = CLASS_LIST[0];
@@ -143,7 +240,7 @@ function draw(el){
     // show: an empty S says something too.
     if(letter === "D" && !here.length) return;
     var row = document.createElement("div");
-    row.className = "tier-row";
+    row.className = "tier-row tier-" + letter;
     row.innerHTML = "<span class='tier-letter tier-" + letter + "'>" + letter + "</span>";
     var chips = document.createElement("div");
     chips.className = "tier-chips";
@@ -152,9 +249,13 @@ function draw(el){
       chip.type = "button";
       chip.className = "tier-chip";
       chip.textContent = it.label;
+      // The same entry keeps its key across bands and editions, so it can fly to its new tier.
+      chip.dataset.key = view.mode + ":" + (view.mode === "subclasses" ? view.cls + ":" : "") + it.label;
+      chip.dataset.tier = letter;
       chip.addEventListener("click", it.open);
       chips.appendChild(chip);
     });
+    if(!here.length) chips.innerHTML = "<span class='tier-empty'>None at these levels</span>";
     row.appendChild(chips);
     wrap.appendChild(row);
   });
@@ -167,6 +268,7 @@ function draw(el){
     wrap.appendChild(note);
   }
   el.appendChild(wrap);
+  animateView(el, before);
 }
 
 export function tierListSection(){
