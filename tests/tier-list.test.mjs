@@ -45,3 +45,40 @@ test("the switch starts off and is remembered", () => {
   setTierList(false);
   assert.equal(tierListOn(), false);
 });
+
+/* Phase 2: subclasses, rated against the others of their class. */
+import { SUBCLASS_TIERS, subclassRating } from "../js/data/tier-list-subclasses.js";
+import { SUBCLASSES } from "../js/data/progression.js";
+import { SHADOW_STALKER } from "../js/data/shadow-stalker.js";
+
+test("every built-in subclass is rated, and every rating is a subclass", () => {
+  const missing = [], extra = [];
+  for(const [cls, list] of Object.entries(SUBCLASSES)){
+    for(const s of list) if(!s.custom && !subclassRating(cls, s.name)) missing.push(cls + ": " + s.name);
+  }
+  // Spikael's Shadow Stalker counts whether or not the private content has it in the table.
+  for(const [cls, rated] of Object.entries(SUBCLASS_TIERS)){
+    for(const name of Object.keys(rated)){
+      if(!(SUBCLASSES[cls] || []).some((s) => s.name === name) && name !== SHADOW_STALKER.name) extra.push(cls + ": " + name);
+    }
+  }
+  assert.deepEqual(missing, []);
+  assert.deepEqual(extra, []);
+  assert.ok(subclassRating("Rogue", SHADOW_STALKER.name));
+});
+
+test("each subclass rating has one letter per band and a plain reason", () => {
+  for(const [cls, rated] of Object.entries(SUBCLASS_TIERS)){
+    for(const [name, e] of Object.entries(rated)){
+      assert.equal(e.tiers.length, TIER_BANDS.length, cls + ": " + name);
+      assert.ok(e.tiers.every((t) => TIER_LETTERS.indexOf(t) !== -1), cls + ": " + name);
+      assert.ok(e.why && !/[;–—]/.test(e.why), cls + ": " + name + ": no semicolons or long dashes");
+    }
+  }
+});
+
+test("a 2014 and a 2024 version are rated apart, and custom ones not at all", () => {
+  assert.deepEqual(subclassRating("Druid", "Circle of the Moon").tiers, ["S","A","B","A"]);
+  assert.deepEqual(subclassRating("Druid", "Circle of the Moon (2024)").tiers, ["A","A","B","B"]);
+  assert.equal(subclassRating("Wizard", "School of Made-up Things"), null);
+});

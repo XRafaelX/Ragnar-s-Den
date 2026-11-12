@@ -86,7 +86,7 @@ export function showClass(name, edition){
   });
 }
 
-function showSubclass(className, sub, edition){
+export function showSubclass(className, sub, edition){
   var prog = CLASS_PROGRESSION[className] || {};
   openInfoModal(sub.name, function(body){
     if(sub.custom){
