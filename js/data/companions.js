@@ -192,7 +192,7 @@ export var COMPANIONS = [
       var boom = x.lv >= 9 ? "3d8" : "2d8";      // Explosive Cannon: +1d8 to its damage
       return {
         type:"Small or Tiny object", ac:18, hp: 5 * x.lv, speed:"15 ft (if it has legs)", count: x.lv >= 15 ? 2 : 1,
-        immunities:"poison and psychic damage · +0 to all checks and saves",
+        immunities:"poison and psychic damage · all conditions · +0 to all checks and saves",
         attacks:[{name:"Force Ballista", toHit: x.spellAttack, dice: boom, bonus:0, damageType:"force",
           text:"Ranged spell attack, 120 ft, one creature or object. It's pushed 5 ft away."}],
         actions:[

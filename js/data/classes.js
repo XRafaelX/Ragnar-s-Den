@@ -701,8 +701,8 @@ Object.assign(CLASSES_INFO["Artificer"], {
       ]}
     ],
     fixed:[
-      {name:"Light Hammer", qty:1, weight:2, notes:"simple weapon, light, thrown 20/60. Swap it on the sheet", type:"weapon", damageDice:"1d4", damageType:"Bludgeoning", ability:"str", proficient:true},
-      {name:"Dagger", qty:1, weight:1, notes:"simple weapon, finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true},
+      {name:"Light Hammer", qty:1, weight:2, notes:"light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Bludgeoning", ability:"str", proficient:true, pick:{category:"simple"}},
+      {name:"Dagger", qty:1, weight:1, notes:"finesse, light, thrown 20/60", type:"weapon", damageDice:"1d4", damageType:"Piercing", ability:"finesse", proficient:true, pick:{category:"simple"}},
       {name:"Light Crossbow", qty:1, weight:5, notes:"ammunition, loading, two-handed, range 80/320", type:"weapon", damageDice:"1d8", damageType:"Piercing", ability:"dex", proficient:true},
       {name:"Crossbow Bolts", qty:20, weight:0.075, notes:"ammunition"},
       {name:"Thieves' Tools", qty:1, weight:1, notes:"pick locks and disarm traps"},

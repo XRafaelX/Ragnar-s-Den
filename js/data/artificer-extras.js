@@ -15,7 +15,7 @@ export var ARMOR_MODELS = {
       note:"A creature you hit has disadvantage on attack rolls against targets other than you until the start of your next turn."},
     perks: [
       {level:3, text:"Defensive Field: bonus action, gain temporary hit points equal to your artificer level (proficiency bonus times per long rest)."},
-      {level:15, text:"Perfected Armor: reaction to pull a creature that ends its turn within 30 ft up to 30 ft toward you (STR save), then attack it if it's within 5 ft."}
+      {level:15, text:"Perfected Armor: reaction to pull a creature that ends its turn within 30 ft up to 25 ft toward you (STR save), then attack it if it's within 5 ft."}
     ]
   },
   "Infiltrator": {

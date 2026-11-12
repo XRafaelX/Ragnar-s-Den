@@ -14,7 +14,8 @@ import {
   setDungeonStyle, DUNGEON_STYLES, placeParty, walkParty, removeParty, sightFrom, SIGHT, setSight, SIGHT_OPTIONS, SIGHT_MAX,
   toggleDoor, isDoor, noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder,
   linkAt, stairsOf, linkStairs, arrivalSquare, isLit, setLit, toggleLitArea, isLocked, lockedAhead,
-  makeRng, generateMap, createRandomDungeon, randomDungeonName, cutAt, ovalCells, fillOval, diagonalCells, carveDiagonal
+  makeRng, generateMap, createRandomDungeon, randomDungeonName, cutAt, ovalCells, fillOval, diagonalCells, carveDiagonal,
+  setMapImage, placeMapImage, imageFit, fitMapToImage, removeMapImage, imagesInUse
 } from "../js/core/dungeons.js";
 
 function fresh(){
@@ -1164,4 +1165,67 @@ test("the players get the cuts of what they were shown, and cuts are saved, resi
   localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([{ id: "a", name: "A", maps: [{ id: "m", w: 8, h: 8, cells: "  .. ...", cuts: "0011x2" }] }]));
   loadDungeons();
   assert.equal(findMap("m").cuts.slice(0, 8), "00100000", "only on floor, only where its rock side is rock");
+});
+
+/* ---- map pictures ---- */
+
+test("a picture on a blank map makes the map its size; on a traced map it leaves the size alone", () => {
+  fresh();
+  const d = newMap("Module map", "small");
+  setMapImage(d, "img1", 30.5, 0.7);
+  assert.deepEqual(d.image, { id: "img1", ox: 0, oy: 0, across: 30.5, ratio: 0.7 });
+  assert.deepEqual([d.w, d.h], [31, 22], "31 by 22 squares holds a picture 30.5 squares wide");
+  const t = newMap("Traced", "small");
+  fillRect(t, 2, 2, 5, 5, FLOOR);
+  setMapImage(t, "img2", 40, 1);
+  assert.deepEqual([t.w, t.h], [24, 16]);
+  assert.deepEqual(imageFit(t), [40, 40]);
+});
+
+test("the picture is moved and sized, within limits, and moves with a resize", () => {
+  fresh();
+  const d = newMap("Module map", "small");
+  fillRect(d, 2, 2, 5, 5, FLOOR);
+  setMapImage(d, "img1", 20, 0.5);
+  assert.equal(placeMapImage(d, { ox: 0.25, oy: -0.5 }), true);
+  assert.equal(placeMapImage(d, { ox: 0.25 }), false, "no change");
+  placeMapImage(d, { across: 0 });
+  assert.equal(d.image.across, 1, "at least a square wide");
+  placeMapImage(d, { across: 22 });
+  resizeDungeon(d, 28, 20);
+  assert.deepEqual([d.image.ox, d.image.oy], [2.25, 1.5], "moved with the map");
+  assert.equal(cellAt(d, 4, 4), FLOOR, "and with the tracing");
+});
+
+test("on a picture fog clears on any square, traced or not, and erasing tracing doesn't hide it", () => {
+  fresh();
+  const d = newMap("Module map", "small");
+  setMapImage(d, "img1", 24, 16 / 24);
+  assert.equal(setRevealed(d, [[3, 3]], true), true, "untraced picture square");
+  assert.equal(revealAll(d, true), true);
+  assert.equal(d.revealed.includes("0"), false, "Show all shows the whole picture");
+  fillRect(d, 2, 2, 4, 4, FLOOR);
+  paintCells(d, [[3, 3]], ROCK);
+  assert.ok(isRevealed(d, 3, 3), "erasing tracing leaves it shown");
+  assert.equal(removeMapImage(d), true);
+  assert.ok(!isRevealed(d, 10, 10) && isRevealed(d, 2, 2), "without the picture, only ground stays shown");
+});
+
+test("the players' map carries the picture's placement; pictures in use are listed and saved", () => {
+  fresh();
+  const dg = createDungeon("Module", "small");
+  setMapImage(dg.maps[0], "img9", 24, 0.5);
+  assert.deepEqual(playerView(dg.maps[0]).image, dg.maps[0].image);
+  assert.notEqual(playerView(dg.maps[0]).image, dg.maps[0].image, "a copy, not the map's own");
+  saveDungeon(dg);
+  createDungeon("Plain", "small");
+  loadDungeons();
+  assert.deepEqual(imagesInUse(), ["img9"]);
+  assert.deepEqual(findMap(dg.maps[0].id).image.id, "img9");
+  localStorage.setItem("ragnarsDen.dungeons.v1", JSON.stringify([{ id: "a", name: "A", maps: [{ id: "m", w: 10, h: 10, image: { id: "x", across: "lots" }, revealed: "1" }, { id: "n", image: {} }] }]));
+  loadDungeons();
+  assert.equal(findMap("m").image.across, 20, "broken numbers get sensible ones");
+  assert.equal(findMap("m").revealed.charAt(0), "1", "fog on a picture's rock square is kept");
+  assert.equal(findMap("n").image, null, "no id, no picture");
+  assert.equal(fitMapToImage(findMap("n")), false);
 });

@@ -390,7 +390,10 @@
 .dg-side-input::-webkit-outer-spin-button,.dg-side-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .dg-side-input:focus{outline:none;border-color:var(--brass);}
 .dg-side-feet{font-size:12.5px;color:var(--text-on-parch-dim);font-variant-numeric:tabular-nums;}
-.dg-sheet-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+.dg-sheet-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.dg-wide-label{width:118px;flex:none;}
+.dg-fine{display:inline-flex;gap:4px;margin-left:6px;}
+.dg-step-small{width:auto;padding:0 8px;font-size:12px;font-weight:700;}
 
 @media (max-width:600px){
   .dg-header{padding:10px 10px;gap:4px;}

@@ -113,7 +113,9 @@ function hash(x, y, salt){
 }
 
 /* opts: { outside: color around the map, grid: show the grid on rock
-   too (for building), dm: show secret doors as the DM sees them } */
+   too (for building), dm: show secret doors as the DM sees them,
+   trace: on a map with a picture, "full" shows the DM's tracing (Build),
+   "marks" only its doors and stairs (Play), nothing for the players } */
 export function drawMap(ctx, d, view, opts){
   opts = opts || {};
   T = STYLES[d.style] || STYLES.stone;
@@ -128,6 +130,12 @@ export function drawMap(ctx, d, view, opts){
   var x0 = r.x0, y0 = r.y0, x1 = r.x1, y1 = r.y1;
   function ex(x){ return Math.round(view.ox + x * s); }
   function ey(y){ return Math.round(view.oy + y * s); }
+
+  if(d.image){
+    drawPictureMap(ctx, d, view, opts, r, ex, ey);
+    ctx.restore();
+    return;
+  }
 
   // Rock under the whole map.
   ctx.fillStyle = C.rock;
@@ -256,6 +264,102 @@ export function drawMap(ctx, d, view, opts){
   ctx.restore();
 }
 
+/* ---- Maps on a picture ----
+   The picture is drawn under the grid instead of the terrain. Pictures
+   come from the browser's database (js/core/map-images.js), handed over
+   by whoever draws (usePictures), and load in the background: until one
+   is ready its map shows plain, and onPictureReady's listeners redraw. */
+var pictures = {};          // id -> { img, ready }
+var pictureLoader = null;   // id -> Promise of a Blob
+var pictureListeners = [];
+
+export function usePictures(loader){ pictureLoader = loader; }
+export function onPictureReady(fn){ pictureListeners.push(fn); }
+
+/* The picture's image if it is loaded, else null (and it starts loading). */
+export function pictureFor(id){
+  var p = pictures[id];
+  if(p) return p.ready ? p.img : null;
+  pictures[id] = { ready: false };
+  if(!pictureLoader) return null;
+  pictureLoader(id).then(function(blob){
+    if(!blob) return;
+    var img = new Image();
+    img.onload = function(){
+      pictures[id] = { img: img, ready: true };
+      pictureListeners.forEach(function(fn){ fn(id); });
+    };
+    img.src = URL.createObjectURL(blob);
+  });
+  return null;
+}
+
+/* Forgets a picture so it is loaded again next time (it was replaced). */
+export function forgetPicture(id){ delete pictures[id]; }
+
+function drawPictureMap(ctx, d, view, opts, r, ex, ey){
+  var s = view.scale, im = d.image, x, y;
+  var mx = ex(0), my = ey(0), mw = ex(d.w) - mx, mh = ey(d.h) - my;
+  ctx.fillStyle = "#1a1720";
+  ctx.fillRect(mx, my, mw, mh);
+  var img = pictureFor(im.id);
+  if(img){
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(mx, my, mw, mh);
+    ctx.clip();
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, view.ox + im.ox * s, view.oy + im.oy * s, im.across * s, im.across * im.ratio * s);
+    ctx.restore();
+  }
+  // The map's grid, to line the picture up by.
+  if(opts.grid && s >= 6){
+    ctx.beginPath();
+    for(x = r.x0; x <= r.x1 + 1; x++){ ctx.moveTo(ex(x) + 0.5, ey(r.y0)); ctx.lineTo(ex(x) + 0.5, ey(r.y1 + 1)); }
+    for(y = r.y0; y <= r.y1 + 1; y++){ ctx.moveTo(ex(r.x0), ey(y) + 0.5); ctx.lineTo(ex(r.x1 + 1), ey(y) + 0.5); }
+    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  if(!opts.trace) return;
+  C = MAP_COLORS;
+  T = STYLES.stone;
+  // The DM's tracing: a light tint on the ground and thin blue walls.
+  if(opts.trace === "full"){
+    ctx.save();
+    ctx.fillStyle = "rgba(96,165,250,0.2)";
+    ctx.beginPath();
+    for(y = r.y0; y <= r.y1; y++) for(x = r.x0; x <= r.x1; x++) if(isOpen(d, x, y)) ctx.rect(ex(x), ey(y), ex(x + 1) - ex(x), ey(y + 1) - ey(y));
+    ctx.fill();
+    ctx.beginPath();
+    for(y = r.y0; y <= r.y1; y++) for(x = r.x0; x <= r.x1; x++){
+      if(!isOpen(d, x, y)) continue;
+      var k = cutAt(d, x, y);
+      if(!isOpen(d, x, y - 1) && k !== "1" && k !== "2"){ ctx.moveTo(ex(x), ey(y)); ctx.lineTo(ex(x + 1), ey(y)); }
+      if(!isOpen(d, x, y + 1) && k !== "3" && k !== "4"){ ctx.moveTo(ex(x), ey(y + 1)); ctx.lineTo(ex(x + 1), ey(y + 1)); }
+      if(!isOpen(d, x - 1, y) && k !== "1" && k !== "4"){ ctx.moveTo(ex(x), ey(y)); ctx.lineTo(ex(x), ey(y + 1)); }
+      if(!isOpen(d, x + 1, y) && k !== "2" && k !== "3"){ ctx.moveTo(ex(x + 1), ey(y)); ctx.lineTo(ex(x + 1), ey(y + 1)); }
+      if(k === "1" || k === "3"){ ctx.moveTo(ex(x + 1), ey(y)); ctx.lineTo(ex(x), ey(y + 1)); }
+      else if(k === "2" || k === "4"){ ctx.moveTo(ex(x), ey(y)); ctx.lineTo(ex(x + 1), ey(y + 1)); }
+    }
+    ctx.strokeStyle = "rgba(96,165,250,0.95)";
+    ctx.lineWidth = Math.max(1.5, s * 0.06);
+    ctx.lineCap = "round";
+    ctx.stroke();
+    ctx.restore();
+  }
+  // Doors, stairs and the rest, so the DM can find and tap them.
+  for(y = r.y0; y <= r.y1; y++) for(x = r.x0; x <= r.x1; x++){
+    var code = cellAt(d, x, y);
+    var box = { x: ex(x), y: ey(y), s: ex(x + 1) - ex(x) };
+    if(code === "+") drawDoor(ctx, box, passageAxis(d, x, y));
+    else if(code === "l"){ drawDoor(ctx, box, passageAxis(d, x, y)); drawLock(ctx, box); }
+    else if(code === "/") drawOpenDoor(ctx, box, passageAxis(d, x, y), x, y);
+    else if(code === "s") drawSecret(ctx, box, passageAxis(d, x, y));
+    else if(code === ">" && opts.trace === "full") drawStairs(ctx, box, passageAxis(d, x, y));
+  }
+}
+
 /* The rock half of a cut square, as three corners, from its edges in
    pixels: "1" top left, "2" top right, "3" bottom right, "4" bottom left. */
 function cutTriangle(cut, l, t, r, b){
@@ -305,9 +409,12 @@ export function drawFog(ctx, d, view, alpha){
 }
 
 /* True if the players can see square (x, y): it was shown to them, or it
-   is rock right beside a shown square. */
+   is rock right beside a shown square (not on a picture). */
 export function isSeen(d, x, y){
   if(isRevealed(d, x, y)) return true;
+  // On a picture there are no walls to see beside what is shown: the
+  // picture around it is still hidden.
+  if(d.image) return false;
   if(isOpen(d, x, y)) return false;
   for(var dy = -1; dy <= 1; dy++) for(var dx = -1; dx <= 1; dx++) if(isRevealed(d, x + dx, y + dy)) return true;
   return false;
@@ -755,6 +862,6 @@ export function drawSwatch(canvas, code, cssSize, outside, style){
 export function drawThumbnail(canvas, d, cssW, cssH, outside){
   var c = prepareCanvas(canvas, cssW, cssH);
   var b = contentBounds(d);
-  var box = b ? { x: b.x - 1, y: b.y - 1, w: b.w + 2, h: b.h + 2 } : { x: 0, y: 0, w: d.w, h: d.h };
+  var box = d.image ? { x: 0, y: 0, w: d.w, h: d.h } : b ? { x: b.x - 1, y: b.y - 1, w: b.w + 2, h: b.h + 2 } : { x: 0, y: 0, w: d.w, h: d.h };
   drawMap(c.ctx, d, fitView(box, c.width, c.height, 6 * c.dpr), { outside: outside, dm: true });
 }

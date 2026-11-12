@@ -8,7 +8,8 @@ import { getCustomItems } from "../core/custom-items.js";
 import { getCustomMonsters } from "../core/custom-monsters.js";
 import { getCustomSpells } from "../core/custom-spells.js";
 import { getEncounters } from "../core/encounters.js";
-import { getDungeons } from "../core/dungeons.js";
+import { getDungeons, imagesInUse } from "../core/dungeons.js";
+import { imagesAsDataUrls } from "../core/map-images.js";
 import { APP_VERSION } from "../version.js";
 
 /* ---------------- Backup files ----------------
@@ -39,7 +40,13 @@ function downloadJson(data, fileName){
 export function exportFullBackup(){
   var backup = Object.assign({version:2, appVersion:APP_VERSION, characters:allCharacters()}, homebrewLibrary(),
     {customMonsters:getCustomMonsters(), encounters:getEncounters(), dungeons:getDungeons()});
-  downloadJson(backup, backupFileName(new Date(), APP_VERSION));
+  // Map pictures live in the browser's database: they go in the file too.
+  var ids = imagesInUse();
+  if(!ids.length){ downloadJson(backup, backupFileName(new Date(), APP_VERSION)); return; }
+  imagesAsDataUrls(ids).then(function(images){
+    backup.dungeonImages = images;
+    downloadJson(backup, backupFileName(new Date(), APP_VERSION));
+  });
 }
 
 /* Just these characters and the homebrew they use. */

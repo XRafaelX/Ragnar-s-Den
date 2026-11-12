@@ -5,11 +5,12 @@ import {
   placeParty, walkParty, removeParty, addMap, removeMap, moveMap, placeMap, renameMap, setSight, toggleDoor, isDoor,
   noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder, cellAt, linkAt, linkStairs, arrivalSquare,
   revealedBounds, mapTitle, isLit, setLit, toggleLitArea, isLocked, lockedAhead, generateMap, createRandomDungeon,
-  fillOval, ovalCells, carveDiagonal, diagonalCells,
+  fillOval, ovalCells, carveDiagonal, diagonalCells, isOpen, setMapImage, placeMapImage, imageFit, fitMapToImage, removeMapImage, imagesInUse,
   SIGHT_OPTIONS, SIGHT_MAX,
   DUNGEON_SIZES, DUNGEON_STYLES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
 } from "../core/dungeons.js";
-import { drawMap, drawFog, drawSwatch, drawThumbnail, prepareCanvas, fitView, drawPlayersScreen, playersFit, drawParty, drawPing, PING_MS, MAP_COLORS, rockColor } from "./dungeon-canvas.js";
+import { drawMap, drawFog, drawSwatch, drawThumbnail, prepareCanvas, fitView, drawPlayersScreen, playersFit, drawParty, drawPing, PING_MS, MAP_COLORS, rockColor, usePictures, onPictureReady } from "./dungeon-canvas.js";
+import { loadMapImage, saveMapImage, newImageId, preparePicture, forgetUnusedImages } from "../core/map-images.js";
 import { presentDungeon, publishDungeon, presentedId, stopPresenting, pointAt, isPaused, setPaused } from "../core/dungeon-sync.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { showActionToast } from "../ui/toast.js";
@@ -131,6 +132,17 @@ var tool = "room";       // the Build tool picked, kept between maps
 var playTool = "reveal"; // the Play tool picked
 var mode = "build";      // "build" or "play", kept between maps
 var b = null;            // the open board, see renderBoard()
+
+// Map pictures come from the browser's database; a picture that finishes
+// loading redraws whatever shows it.
+usePictures(loadMapImage);
+onPictureReady(function(){
+  if(b){ b.previewKey = null; draw(); }
+  else if(overlay && overlay.classList.contains("open")) render();
+});
+
+/* Clears out pictures no map uses any more (after a delete). */
+function tidyPictures(){ forgetUnusedImages(imagesInUse()); }
 
 function ce(tag, cls, text){
   var el = document.createElement(tag);
@@ -360,6 +372,7 @@ function savedCard(d){
       confirmDialog("Delete " + d.name + "?", (d.maps.length > 1 ? "This dungeon and its " + d.maps.length + " maps will be removed." : "This dungeon and its map will be removed.") + " This cannot be undone.", function(){
         deleteDungeon(d.id);
         stopPresenting(d.maps.map(function(m){ return m.id; }));
+        tidyPictures();
         playDelete();
         render();
         showActionToast("Deleted " + d.name + ".");
@@ -460,6 +473,7 @@ function renderBoard(dungeon){
     { label: "Random map", onClick: openRandomSheet },
     { label: "Map size", onClick: openSizeSheet },
     { label: "Map style", onClick: openStyleSheet },
+    { label: "Map picture", onClick: openMapPictureSheet },
     { label: "Save as picture", onClick: openPictureSheet },
     { label: "Room notes", onClick: openNotesList },
     { label: "Party sight", onClick: openSightSheet },
@@ -682,7 +696,9 @@ function refreshChrome(){
   var dungeonShown = b.dungeon.maps.some(function(m){ return m.id === presentedId(); });
   var paused = dungeonShown && isPaused();
   if(paused) hint = "The players' screen is paused. Press Resume (or B) when you're ready.";
-  else if(isBlank(b.d)) hint = mode === "build" ? "Pick Room, then drag on the grid to draw your first room." : "Switch to Build and draw your map first.";
+  else if(b.d.image && isBlank(b.d) && mode === "build") hint = "Trace the rooms over the picture with Room and Floor. Players never see your tracing.";
+  else if(b.d.image && mode === "play" && !anyRevealed(b.d)) hint = "Drag over the picture to show it to your players. Rooms you traced show with one tap.";
+  else if(isBlank(b.d) && !b.d.image) hint = mode === "build" ? "Pick Room, then drag on the grid to draw your first room." : "Switch to Build and draw your map first.";
   else if(mode === "play" && playTool === "party" && !b.d.party) hint = "Tap a square to put the party there.";
   else if(mode === "play" && !anyRevealed(b.d)) hint = "Tap a room or corridor to show it to your players.";
   b.hint.textContent = hint;
@@ -832,6 +848,7 @@ function openMapsSheet(){
           if(!removeMap(dungeon, m.id)) return;
           saveDungeon(dungeon);
           stopPresenting(m.id);
+          tidyPictures();
           playDelete();
           if(b && b.dungeon === dungeon){
             if(b.d === m){ b.d = null; goToMap(dungeon.maps[Math.max(0, i0 - 1)]); }
@@ -1029,7 +1046,7 @@ function paint(){
   var c = prepareCanvas(b.canvas, size.w, size.h);
   var dpr = c.dpr, v = b.view;
   var view = { scale: v.scale * dpr, ox: v.ox * dpr, oy: v.oy * dpr, width: c.width, height: c.height };
-  drawMap(c.ctx, b.d, view, { outside: cssVar("--ink-deep", "#120f1a"), grid: mode === "build", dm: true });
+  drawMap(c.ctx, b.d, view, { outside: cssVar("--ink-deep", "#120f1a"), grid: mode === "build", dm: true, trace: mode === "build" ? "full" : "marks" });
   drawLitGlow(c.ctx, b.d, view);
   if(mode === "play") drawFog(c.ctx, b.d, view, FOG_DM);
   if(b.d.party) drawParty(c.ctx, view, b.d.party);
@@ -1591,8 +1608,14 @@ function onDown(e){
     // Puts the party there (on the marker itself: they look around
     // again), then a drag walks them.
     var to = squareAt(p), was = b.history.snapshot(b.d);
-    placeParty(b.d, to[0], to[1]);
-    b.gesture = { type: "party", last: to, before: was };
+    if(b.d.image && !isOpen(b.d, to[0], to[1]) && (!b.d.party || b.d.party.x !== to[0] || b.d.party.y !== to[1])){
+      // On a picture the party only stands on ground the DM has traced.
+      b.gesture = { type: "done" };
+      showActionToast("Trace the floor here first: in Build, use Room or Floor over the picture.");
+    } else {
+      placeParty(b.d, to[0], to[1]);
+      b.gesture = { type: "party", last: to, before: was };
+    }
   } else if(t.id === "reveal"){
     // A tap or a drag: which one is only known once it moves on.
     var at = squareAt(p);
@@ -1746,7 +1769,9 @@ function onUp(e){
   else if(g && g.type === "reveal" && up){
     var tap = g.start;
     b.gesture = null;
-    change(function(){ return toggleArea(b.d, tap[0], tap[1]); });
+    if(b.d.image && !areaAt(b.d, tap[0], tap[1]).length){
+      showActionToast("Drag to show this part of the picture, or trace the room in Build to show it with one tap.");
+    } else change(function(){ return toggleArea(b.d, tap[0], tap[1]); });
     b.hoverArea = b.hover ? areaAt(b.d, b.hover[0], b.hover[1]) : null;
   }
   else if(g && (g.type === "room" || g.type === "round" || g.type === "diagonal")){
@@ -1867,6 +1892,131 @@ function openRandomSheet(){
       showActionToast("Rolled a new layout. Undo brings back the old one.");
     }));
     body.appendChild(actions);
+  });
+}
+
+/* ---- Map picture ----
+   A picture of a map the DM already has, under this map's grid: choose
+   it, say how many squares wide it is, nudge it onto the grid, fit the
+   map to it, or take it away. Placing it is saved straight away (it isn't
+   an undo step); the tracing on top works like any drawing. */
+var NUDGE = 0.1;   // squares the picture moves per arrow press
+
+function openMapPictureSheet(){
+  var d = b.d;
+  // One hidden file picker at a time.
+  document.querySelectorAll(".dg-picture-input").forEach(function(el){ el.remove(); });
+  var file = ce("input", "dg-picture-input");
+  file.type = "file";
+  file.accept = "image/png,image/jpeg,image/webp,image/gif";
+  file.hidden = true;
+  file.addEventListener("change", function(){
+    var chosen = file.files && file.files[0];
+    if(!chosen) return;
+    showActionToast("Reading the picture...");
+    preparePicture(chosen).then(function(p){
+      var id = newImageId();
+      return saveMapImage(id, p.blob).then(function(){
+        if(!b || b.d !== d) return;
+        var across = Math.max(8, Math.min(80, Math.round(p.width / 70)));
+        var hadPicture = !!d.image;
+        setMapImage(d, id, across, p.height / p.width);
+        saveDungeon(d);
+        if(hadPicture) tidyPictures();
+        b.previewKey = null;
+        fit();
+        refreshChrome();
+        draw();
+        showActionToast("Picture added. Count its squares across and line it up with the grid.");
+        openMapPictureSheet();
+      });
+    }).catch(function(err){
+      showActionToast(err && err.message ? err.message : "Couldn't use that picture.", true);
+    });
+  });
+  document.body.appendChild(file);
+
+  openBottomSheet(function(body, refresh, closeSheet){
+    body.appendChild(ce("h3", "dg-sheet-title", "Map picture"));
+    if(!d.image){
+      body.appendChild(ce("p", "dg-sheet-help", "Use a picture of a map you already have: from an adventure book, a scan or your own drawing. Then trace its rooms in Build so fog, doors and the party work with it. Players never see your tracing."));
+      var actions0 = ce("div", "dg-sheet-actions");
+      actions0.appendChild(button("btn ghost", "Cancel", closeSheet));
+      actions0.appendChild(button("btn primary", "Choose a picture", function(){ file.click(); }));
+      body.appendChild(actions0);
+      return;
+    }
+    body.appendChild(ce("p", "dg-sheet-help", "Count the squares across your picture and type that number. Then move the picture until its grid sits on the map's grid."));
+
+    // How many squares across.
+    var row = ce("div", "dg-side-row");
+    row.appendChild(ce("span", "dg-side-label dg-wide-label", "Squares across"));
+    var minus = button("dg-step", "", function(){ place({ across: Math.round((d.image.across - 1) * 10) / 10 }); }, "One square fewer");
+    minus.appendChild(icon("minus"));
+    var input = ce("input", "dg-side-input");
+    input.type = "number";
+    input.step = "0.1";
+    input.min = "1";
+    input.value = String(d.image.across);
+    input.setAttribute("aria-label", "Squares across the picture");
+    input.addEventListener("change", function(){ var n = parseFloat(input.value); if(!isNaN(n)) place({ across: n }); });
+    var plus = button("dg-step", "", function(){ place({ across: Math.round((d.image.across + 1) * 10) / 10 }); }, "One square more");
+    plus.appendChild(icon("plus"));
+    row.appendChild(minus);
+    row.appendChild(input);
+    row.appendChild(plus);
+    var fine = ce("span", "dg-fine");
+    fine.appendChild(button("dg-step dg-step-small", "-0.1", function(){ place({ across: Math.round((d.image.across - 0.1) * 10) / 10 }); }, "A tenth of a square fewer"));
+    fine.appendChild(button("dg-step dg-step-small", "+0.1", function(){ place({ across: Math.round((d.image.across + 0.1) * 10) / 10 }); }, "A tenth of a square more"));
+    row.appendChild(fine);
+    body.appendChild(row);
+
+    // Nudging it.
+    var move = ce("div", "dg-side-row");
+    move.appendChild(ce("span", "dg-side-label dg-wide-label", "Move it"));
+    [["left", -1, 0, "m15 18-6-6 6-6"], ["up", 0, -1, "m18 15-6-6-6 6"], ["down", 0, 1, "m6 9 6 6 6-6"], ["right", 1, 0, "m9 18 6-6-6-6"]].forEach(function(a){
+      var btn = button("dg-step", "", function(){
+        place({ ox: Math.round((d.image.ox + a[1] * NUDGE) * 100) / 100, oy: Math.round((d.image.oy + a[2] * NUDGE) * 100) / 100 });
+      }, "Move the picture " + a[0]);
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + a[3] + '"/></svg>';
+      move.appendChild(btn);
+    });
+    body.appendChild(move);
+
+    var size = imageFit(d);
+    var actions = ce("div", "dg-sheet-actions");
+    actions.appendChild(button("btn ghost dg-danger-text", "Remove picture", function(){
+      closeSheet();
+      confirmDialog("Remove the picture?", "The map keeps your tracing, fog and notes. The picture itself is deleted from this browser unless another map uses it.", function(){
+        if(!b || b.d !== d) return;
+        removeMapImage(d);
+        saveDungeon(d);
+        tidyPictures();
+        refreshChrome();
+        draw();
+      });
+    }));
+    actions.appendChild(button("btn ghost", "Change picture", function(){ file.click(); }));
+    if(size[0] !== d.w || size[1] !== d.h){
+      actions.appendChild(button("btn ghost", "Fit the map to it", function(){
+        closeSheet();
+        if(!b || b.d !== d) return;
+        change(function(){ return fitMapToImage(d); });
+        fit();
+        draw();
+      }, "Make the map " + size[0] + " by " + size[1] + " squares, the picture's size"));
+    }
+    actions.appendChild(button("btn primary", "Done", closeSheet));
+    body.appendChild(actions);
+
+    function place(changes){
+      if(!b || b.d !== d || !placeMapImage(d, changes)) return;
+      saveDungeon(d);
+      b.previewKey = null;
+      publish();
+      draw();
+      refresh();
+    }
   });
 }
 

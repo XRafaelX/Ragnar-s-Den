@@ -10,7 +10,7 @@ import { uid } from "./basics.js";
    Dungeon shape:
      { id, name, maps: [map, ...], updated }
    Map shape:
-     { id, name, w, h, cells, revealed, style, party, sight, notes, links, lit, cuts }
+     { id, name, w, h, cells, revealed, style, party, sight, notes, links, lit, cuts, image }
 
    The map is a grid of 5 ft squares, `w` wide and `h` tall. `cells` is a
    string of w*h terrain codes (see TERRAIN), row by row from the top
@@ -33,6 +33,13 @@ import { uid } from "./basics.js";
    `notes` are the DM's numbered notes, [{ id, n, x, y, text }], one per
    square at most: what is in room 3, a trap in a corridor. They are the
    DM's only and never reach the players' screen.
+   `image` is a picture of a map the DM already has, under the grid, or
+   null: { id, ox, oy, across, ratio }. The picture itself is kept by
+   id in the browser's database (js/core/map-images.js). Its top left
+   corner sits at (ox, oy) in squares, it is `across` squares wide and
+   `ratio` times as tall as it is wide. On a map with a picture the
+   terrain is the DM's tracing of it, drawn only as a faint overlay, and
+   fog can be cleared on any square, traced or not.
    `cuts` makes curves and diagonals on the square grid: a floor square
    can be cut in half corner to corner, one half floor and the other
    rock, with the wall along the cut. One character a square: "0" whole,
@@ -145,12 +152,12 @@ function cleanMap(m){
   var h = side(m.h, DUNGEON_SIZES[1].h);
   var src = typeof m.cells === "string" ? m.cells : "";
   var seen = typeof m.revealed === "string" ? m.revealed : "";
-  var cells = "", revealed = "";
+  var cells = "", revealed = "", image = cleanImage(m.image);
   for(var i = 0; i < w * h; i++){
     var c = src.charAt(i);
     if(!TERRAIN[c]) c = ROCK;
     cells += c;
-    revealed += c !== ROCK && seen.charAt(i) === SHOWN ? SHOWN : FOGGED;
+    revealed += (c !== ROCK || image) && seen.charAt(i) === SHOWN ? SHOWN : FOGGED;
   }
   return {
     id: String(m.id || uid()),
@@ -165,7 +172,21 @@ function cleanMap(m){
     notes: cleanNotes(m.notes, w, h),
     links: cleanLinks(m.links, w, h, cells),
     lit: cleanLit(m.lit, cells),
-    cuts: cleanCuts(m.cuts, w, h, cells)
+    cuts: cleanCuts(m.cuts, w, h, cells),
+    image: image
+  };
+}
+
+/* A map picture's placement, or null. */
+function cleanImage(im){
+  if(!im || typeof im !== "object" || !im.id) return null;
+  var num = function(v, lo, hi, dflt){ var n = parseFloat(v); return isNaN(n) ? dflt : Math.max(lo, Math.min(hi, n)); };
+  return {
+    id: String(im.id),
+    ox: num(im.ox, -MAX_SIDE, MAX_SIDE, 0),
+    oy: num(im.oy, -MAX_SIDE, MAX_SIDE, 0),
+    across: num(im.across, 1, MAX_SIDE * 2, 20),
+    ratio: num(im.ratio, 0.05, 20, 1)
   };
 }
 
@@ -459,6 +480,7 @@ export function isBlank(d){ return !/[^ ]/.test(d.cells); }
 /* The smallest box around every open square, {x, y, w, h}, or null for
    a map that is all rock. */
 export function contentBounds(d){
+  if(d.image) return { x: 0, y: 0, w: d.w, h: d.h };   // a picture fills the map
   var x0 = d.w, y0 = d.h, x1 = -1, y1 = -1;
   for(var y = 0; y < d.h; y++){
     for(var x = 0; x < d.w; x++){
@@ -500,7 +522,9 @@ function editCells(d, fn){
     if(cells[i] === code && cuts[i] === "0") return;
     cells[i] = code;
     cuts[i] = "0";
-    if(code === ROCK){ seen[i] = FOGGED; lit[i] = FOGGED; }
+    // Erased ground goes back into fog, except on a picture, which is
+    // still there to see.
+    if(code === ROCK){ if(!d.image) seen[i] = FOGGED; lit[i] = FOGGED; }
     changed = true;
   });
   if(!changed) return false;
@@ -618,6 +642,7 @@ export function resizeDungeon(d, w, h){
     .filter(function(n){ return inMap(d, n.x, n.y); });
   d.links = d.links.map(function(l){ return { x: l.x + off.x, y: l.y + off.y, to: l.to }; })
     .filter(function(l){ return cellAt(d, l.x, l.y) === ">"; });
+  if(d.image) d.image = Object.assign({}, d.image, { ox: d.image.ox + off.x, oy: d.image.oy + off.y });
   return true;
 }
 
@@ -666,12 +691,12 @@ export function isRevealed(d, x, y){
 }
 
 /* Shows (`on` true) or hides every [x, y] in `points`. Rock is never
-   shown. */
+   shown, except on a map with a picture, where every square is. */
 export function setRevealed(d, points, on){
   var seen = d.revealed.split(""), changed = false;
   (points || []).forEach(function(p){
     var x = p[0], y = p[1];
-    if(!inMap(d, x, y) || (on && !isOpen(d, x, y))) return;
+    if(!inMap(d, x, y) || (on && !isOpen(d, x, y) && !d.image)) return;
     var i = y * d.w + x, v = on ? SHOWN : FOGGED;
     if(seen[i] === v) return;
     seen[i] = v;
@@ -682,10 +707,11 @@ export function setRevealed(d, points, on){
   return true;
 }
 
-/* Shows all open ground, or hides everything. */
+/* Shows all open ground (the whole map, on a picture), or hides
+   everything. */
 export function revealAll(d, on){
   var seen = "";
-  for(var i = 0; i < d.cells.length; i++) seen += on && d.cells.charAt(i) !== ROCK ? SHOWN : FOGGED;
+  for(var i = 0; i < d.cells.length; i++) seen += on && (d.cells.charAt(i) !== ROCK || d.image) ? SHOWN : FOGGED;
   if(seen === d.revealed) return false;
   d.revealed = seen;
   return true;
@@ -802,7 +828,7 @@ export function playerView(d, title){
     }
   }
   var party = d.party && isRevealed(d, d.party.x, d.party.y) ? { x: d.party.x, y: d.party.y } : null;
-  return { id: d.id, name: title || d.name, w: d.w, h: d.h, cells: cells, revealed: revealed, cuts: cuts, style: d.style, party: party };
+  return { id: d.id, name: title || d.name, w: d.w, h: d.h, cells: cells, revealed: revealed, cuts: cuts, style: d.style, party: party, image: d.image ? Object.assign({}, d.image) : null };
 }
 
 /* The box around every shown square, {x, y, w, h}, or null if nothing
@@ -1350,4 +1376,72 @@ export function carveDiagonal(d, ax, ay, bx, by){
   });
   smoothCells(d, c.slant.filter(function(p){ return inMap(d, p[0], p[1]); }));
   return d.cells + d.cuts !== before;
+}
+
+/* ---- map pictures ---- */
+
+/* Puts a picture (already stored under `id`) under map `d`: `across`
+   squares wide, its top left on the map's top left. A map with nothing
+   on it yet is resized to the picture. */
+export function setMapImage(d, id, across, ratio){
+  d.image = cleanImage({ id: id, ox: 0, oy: 0, across: across, ratio: ratio });
+  if(isBlank(d) && !d.notes.length) fitMapToImage(d);
+  return d.image;
+}
+
+/* Changes where the picture sits or how big it is: any of ox, oy,
+   across. Returns true if anything changed. */
+export function placeMapImage(d, changes){
+  if(!d.image) return false;
+  var next = cleanImage(Object.assign({}, d.image, changes));
+  if(next.ox === d.image.ox && next.oy === d.image.oy && next.across === d.image.across) return false;
+  d.image = next;
+  return true;
+}
+
+/* The map size that holds the whole picture: [w, h] in squares. */
+export function imageFit(d){
+  if(!d.image) return [d.w, d.h];
+  var w = Math.ceil(d.image.across - 0.001), h = Math.ceil(d.image.across * d.image.ratio - 0.001);
+  return [Math.max(MIN_SIDE, Math.min(MAX_SIDE, w)), Math.max(MIN_SIDE, Math.min(MAX_SIDE, h))];
+}
+
+/* Resizes the map to the picture's size. A map with nothing on it is
+   simply made that size, the picture's top left on its top left; a map
+   already traced grows or shrinks around the middle like any resize,
+   the picture and the tracing moving together. */
+export function fitMapToImage(d){
+  if(!d.image) return false;
+  var size = imageFit(d);
+  if(isBlank(d) && !d.notes.length){
+    var n = size[0] * size[1];
+    d.w = size[0];
+    d.h = size[1];
+    d.cells = new Array(n + 1).join(ROCK);
+    d.revealed = new Array(n + 1).join(FOGGED);
+    d.lit = new Array(n + 1).join(FOGGED);
+    d.cuts = new Array(n + 1).join("0");
+    d.party = null;
+    d.links = [];
+    d.image = Object.assign({}, d.image, { ox: 0, oy: 0 });
+    return true;
+  }
+  return resizeDungeon(d, size[0], size[1]);
+}
+
+export function removeMapImage(d){
+  if(!d.image) return false;
+  d.image = null;
+  // Fog on squares that are no ground goes, as on any other map.
+  var seen = "";
+  for(var i = 0; i < d.cells.length; i++) seen += d.cells.charAt(i) !== ROCK && d.revealed.charAt(i) === SHOWN ? SHOWN : FOGGED;
+  d.revealed = seen;
+  return true;
+}
+
+/* Every picture id the saved dungeons use. */
+export function imagesInUse(){
+  var ids = {};
+  list.forEach(function(dg){ dg.maps.forEach(function(m){ if(m.image) ids[m.image.id] = true; }); });
+  return Object.keys(ids);
 }

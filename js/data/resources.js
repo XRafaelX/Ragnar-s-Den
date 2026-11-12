@@ -289,7 +289,7 @@ export var SUBCLASS_RESOURCES = {
         hint:"Guardian model, bonus action: gain temporary HP equal to your artificer level."},
       {id:"perfected_armor_pull", name:"Perfected Armor Pull (Guardian)", level:15, armorModel:"Guardian",
         max:function(lv, m){ return m.pb; }, reset:always("long"),
-        hint:"Guardian model, reaction: pull a creature ending its turn within 30 ft up to 30 ft toward you (STR save), then attack it if adjacent."}
+        hint:"Guardian model, reaction: pull a creature ending its turn within 30 ft up to 25 ft toward you (STR save), then attack it if adjacent."}
     ]
   },
   "Bard": {

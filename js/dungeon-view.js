@@ -1,6 +1,7 @@
 import { revealedBounds } from "./core/dungeons.js";
 import { savedPlayerMap, watchAsPlayers, isPaused } from "./core/dungeon-sync.js";
-import { drawPlayersScreen, playersFit, isSeen, prepareCanvas, drawPing, PING_MS, MAP_COLORS } from "./render/dungeon-canvas.js";
+import { drawPlayersScreen, playersFit, isSeen, prepareCanvas, drawPing, PING_MS, MAP_COLORS, usePictures, onPictureReady } from "./render/dungeon-canvas.js";
+import { loadMapImage } from "./core/map-images.js";
 
 /* ---------------- The players' screen ----------------
    Shows the dungeon the DM presents (js/core/dungeon-sync.js) under
@@ -180,5 +181,9 @@ document.addEventListener("visibilitychange", keepAwake);
 keepAwake();
 
 show(savedPlayerMap());
+// A map on a picture: the picture comes from this browser's database.
+usePictures(loadMapImage);
+onPictureReady(function(){ draw(); });
+
 pause(isPaused());
 watchAsPlayers(show, point, pause);

@@ -24,6 +24,7 @@ import { loadCustomSpells, importCustomSpells } from "./core/custom-spells.js";
 import { loadEncounters, importEncounters } from "./core/encounters.js";
 import { loadDungeons, importDungeons } from "./core/dungeons.js";
 import { setupDungeonSync } from "./core/dungeon-sync.js";
+import { saveImagesFromDataUrls } from "./core/map-images.js";
 import { APP_VERSION } from "./version.js";
 import { setupUpdates } from "./ui/update-prompt.js";
 import { applyPrivateContent } from "./core/private-content.js";
@@ -162,6 +163,7 @@ export function setupTopLevel(){
         var spells = !Array.isArray(parsed) && parsed && Array.isArray(parsed.customSpells) ? parsed.customSpells : [];
         var encounters = !Array.isArray(parsed) && parsed && Array.isArray(parsed.encounters) ? parsed.encounters : [];
         var dungeons = !Array.isArray(parsed) && parsed && Array.isArray(parsed.dungeons) ? parsed.dungeons : [];
+        var dungeonImages = !Array.isArray(parsed) && parsed && parsed.dungeonImages && typeof parsed.dungeonImages === "object" ? parsed.dungeonImages : {};
         var extras = [];
         if(homebrew.length) extras.push(homebrew.length+" custom subclass(es)");
         if(races.length) extras.push(races.length+" custom race(s)");
@@ -197,6 +199,7 @@ export function setupTopLevel(){
             importCustomMonsters(monsters);
             var spellIds = importCustomSpells(spells);
             importEncounters(encounters);
+            saveImagesFromDataUrls(dungeonImages);
             importDungeons(dungeons);
             data.forEach(function(c){
               c.feats.forEach(function(f){ if(f.homebrewId) f.homebrewId = featIds[f.homebrewId] || null; });
