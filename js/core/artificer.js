@@ -5,7 +5,7 @@ import { activeInfusionData, infusionWorks } from "./infusion-effects.js";
 export { activeInfusionData, infusionWorks };
 import { WEAPON_DATA, weaponDataOf } from "../data/weapons.js";
 import { GEAR_DATA } from "../data/gear.js";
-import { mod, profBonus, parseDiceNotation, uid, resourceLeft, classLevelOf, isMagicWeapon } from "./helpers.js";
+import { mod, profBonus, parseDiceNotation, uid, resourceLeft, classLevelOf, isMagicWeapon, handsInUse } from "./helpers.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* ---------------- Artificer extras ----------------
@@ -223,13 +223,14 @@ export function infuseItem(c, known, opts, maxActive){
   if(!item.id) item.id = uid();
   if(c.inventory.indexOf(item)===-1) c.inventory.push(item);
   var entry = {id: uid(), knownId: known.id, name: known.name + (known.note ? ": "+known.note : ""),
-    itemId: item.id, itemName: item.name, bonus: 0, attunement: infusionNeedsAttunement(known.name, known.note)};
+    itemId: item.id, itemName: item.name, bonus: 0, attunement: infusionNeedsAttunement(known.name, known.note), wornSet: true};
   if(made) entry.made = true;
   if(part) entry.part = part;
   if(opts.choice) entry.choice = opts.choice;
   // A new homunculus forms around the gem, at full hit points.
   if(known.name==="Homunculus Servant" && c.companions) delete c.companions.homunculus_servant;
   inf.active.push(entry);
+  putOn(c, item, data);
   // The artificer can attune the instant they infuse it, if they have room.
   if(entry.attunement){
     item.attuned = false;
@@ -239,6 +240,16 @@ export function infuseItem(c, known, opts, maxActive){
   if(bonus) item.magicBonus = (Number(item.magicBonus)||0) + bonus;
   entry.bonus = bonus;
   return entry;
+}
+
+/* An infusion that works only worn or held (`worn`): plain gear that
+   bears it is put on, or picked up when a hand is free. Weapons, shields
+   and armor keep the Equip button they already have. */
+function putOn(c, item, data){
+  if(!data || !data.worn || item.armorPart || item.equipped || item.type==="weapon" || item.type==="armor") return false;
+  if(data.worn==="hold" && handsInUse(c, item).used >= 2) return false;
+  item.equipped = true;
+  return true;
 }
 
 /* Whether the infusion needs attunement: its item line says so, or for
@@ -350,6 +361,13 @@ export function syncInfusions(c){
     var known = (inf.known||[]).find(function(k){ return k.id===a.knownId; });
     var name = known ? known.name : String(a.name||"").replace(/:.*$/, "");
     var item = a.itemId && (c.inventory||[]).find(function(i){ return i.id===a.itemId; });
+    // Saved before worn-or-held mattered (2026-11-12): carried gear counted
+    // as in use, so it's put on once to keep working.
+    if(item && !a.wornSet){
+      putOn(c, item, INFUSIONS.find(function(i){ return i.name===name; }));
+      a.wornSet = true;
+      changed = true;
+    }
     // Saved before infusions knew about attunement: needs it if the rules
     // say so, and an item already infused counts as attuned.
     if(a.attunement===undefined){

@@ -179,3 +179,63 @@ test("Armor Modifications: a helmet part works only while its armor is worn", ()
   c.inventory[0].equipped = false;
   assert.equal(infusionInitiative(c), null, "armor off: no advantage");
 });
+
+/* Artificer fix Phase 2 (2026-11-12): worn or held infusions, Tasha's
+   firearm proficiency. */
+import { infusionSpellAttack, infusionWornProblem } from "../js/core/infusion-effects.js";
+function infuser(lv, inventory){
+  const c = art("Artillerist", lv, { inventory });
+  c.infusions = { known: [], active: [] };
+  const learn = (name) => { const k = { id: "k" + c.infusions.known.length, name, note: "" }; c.infusions.known.push(k); return k; };
+  return { c, learn };
+}
+
+test("Helm of Awareness: put on when infused, advantage only while worn", () => {
+  const { c, learn } = infuser(10, []);
+  const a = A.infuseItem(c, learn("Helm of Awareness"), { newItem: "Helmet" }, 4);
+  const helm = c.inventory.find((i) => i.id === a.itemId);
+  assert.equal(helm.equipped, true, "the new helmet is put on");
+  assert.equal(infusionInitiative(c).mode, "adv");
+  helm.equipped = false;
+  assert.equal(infusionInitiative(c), null, "taken off: no advantage");
+  assert.equal(infusionWornProblem(c, helm, a), "Wear it (Equip) to use its magic");
+});
+
+test("Enhanced Arcane Focus: held in a free hand, the bonus only while held", () => {
+  const { c, learn } = infuser(10, [{ id: "g", name: "Greatsword", type: "weapon", notes: "heavy, two-handed", equipped: true, qty: 1 }]);
+  const a = A.infuseItem(c, learn("Enhanced Arcane Focus"), { newItem: "Arcane Focus (wand)" }, 4);
+  const wand = c.inventory.find((i) => i.id === a.itemId);
+  assert.equal(wand.equipped, false, "both hands are full: not picked up");
+  assert.equal(infusionSpellAttack(c), null);
+  assert.equal(infusionWornProblem(c, wand, a), "Hold it (Equip) to use its magic");
+  c.inventory[0].equipped = false;
+  assert.equal(H.tryEquip(c, wand).ok, true);
+  assert.equal(H.itemHands(wand), 1, "a held wand takes a hand");
+  assert.deepEqual(infusionSpellAttack(c), { value: 2, name: "Enhanced Arcane Focus" });
+  assert.equal(H.tryEquip(c, c.inventory[0]).ok, false, "no room left for a two-handed sword");
+});
+
+test("worn or held: an older save's carried helmet is put on once", () => {
+  const { c } = infuser(10, [{ id: "h", name: "Helmet", type: "gear", qty: 1 }]);
+  c.infusions.known.push({ id: "k0", name: "Helm of Awareness", note: "" });
+  c.infusions.active.push({ id: "a", knownId: "k0", name: "Helm of Awareness", itemId: "h", itemName: "Helmet", bonus: 0, attunement: true });
+  c.inventory[0].attuned = true;
+  assert.equal(A.syncInfusions(c), true);
+  assert.equal(c.inventory[0].equipped, true);
+  assert.equal(c.infusions.active[0].wornSet, true);
+  c.inventory[0].equipped = false;
+  A.syncInfusions(c);
+  assert.equal(c.inventory[0].equipped, false, "only once: taking it off later sticks");
+});
+
+test("Tasha's firearm proficiency: artificers only, with the switch", () => {
+  const c = art("Artillerist", 3);
+  assert.equal(H.isProficientWithWeapon(c, "Pistol", "firearm"), false);
+  c.artificerFirearms = true;
+  assert.equal(H.isProficientWithWeapon(c, "Pistol", "firearm"), true);
+  assert.equal(H.isProficientWithWeapon(c, "Longsword", "martial"), false, "only firearms");
+  const f = newCharacter("F");
+  f.classes = [{ name: "Fighter", subclass: "", level: 3 }];
+  f.artificerFirearms = true;
+  assert.equal(H.isProficientWithWeapon(ensureShape(f), "Pistol", "firearm"), false, "not without artificer levels");
+});

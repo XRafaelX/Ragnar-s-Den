@@ -24,7 +24,7 @@ import { playAdd, playDelete } from "../../ui/sound.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
 import { renderCurrencyCard } from "./coin-purse.js";
 import { renderBackgroundKitCard } from "./background-kit.js";
-import { propulsionGauntlets } from "../../core/infusion-effects.js";
+import { propulsionGauntlets, infusionWornProblem } from "../../core/infusion-effects.js";
 import { infusionOn, infusionWorks, activeInfusionData, infusionCharges, useInfusionCharge, refuelLevels, refuelSlot, endInfusion, syncInfusions } from "../../core/artificer.js";
 import { itemCharges, spendCharges, potionHealing, drinkPotion } from "../../core/magic-items.js";
 import { magicItemDef, magicItemActive, needsAttunement, holsterKnives, attuneProblem, coinCharges, flipCoin, boonProblem, chooseBoon, closeEmptyFlip, endBoon, activeBoons, boonLabel, weaponFlames, flamesOn } from "../../core/magic-items.js";
@@ -244,6 +244,15 @@ function magicItemLine(item, def){
   return line;
 }
 
+/* Gear gets an Equip button only when an infusion on it works just while
+   it's worn or held (a Helm of Awareness, an Enhanced Arcane Focus); an
+   Arcane Armor part follows its armor instead. */
+function needsWearing(c, item){
+  var a = !item.armorPart && infusionOn(c, item);
+  var d = a && activeInfusionData(c, a);
+  return !!(d && d.worn);
+}
+
 /* The line under an infused item's name, like a magic item's: which
    infusion and its attunement ("Enhanced Defense infusion · attuned"). */
 function infusionLine(c, item){
@@ -273,7 +282,7 @@ function infusionBlock(c, item, idx){
   var d = a && activeInfusionData(c, a);
   var ch = d && infusionCharges(c, a);
   if(!ch && !(d && d.refuel)) return null;
-  var off = infusionWorks(item, a) ? "" : "Attune to it (⋯ menu) to use its magic";
+  var off = infusionWornProblem(c, item, a) || (infusionWorks(item, a) ? "" : "Attune to it (⋯ menu) to use its magic");
   var box = document.createElement("div");
   box.className = "inv-holster inv-infusion";
   box.dataset.idx = idx;
@@ -314,7 +323,7 @@ function infusionBlock(c, item, idx){
     ring.className = "inv-roll-actions inv-refuel";
     var label = document.createElement("span");
     label.className = "inv-holster-count";
-    label.textContent = a.used ? "Used today · back at dawn" : levels.length ? "Recover a spell slot (action):" : "Recover a spell slot: none of 3rd level or lower spent";
+    label.textContent = a.used ? "Used today · back at dawn" : off ? off : levels.length ? "Recover a spell slot (action):" : "Recover a spell slot: none of 3rd level or lower spent";
     ring.appendChild(label);
     levels.forEach(function(l){
       var btn = smallButton(ORDINAL[l], off || "Get back one spent " + ORDINAL[l] + "-level slot", function(){
@@ -2054,7 +2063,7 @@ function renderMagicItemCard(c, item, idx, def){
   var active = magicItemActive(item);
   card.className = "ff-item-card inv-item-card" + (def.attunement ? (active ? " is-equipped" : " is-stowed") : "");
   card.dataset.idx = idx;
-  card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }, true));
+  card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }, !needsWearing(c, item)));
   card.appendChild(magicItemLine(item, def));
   if(item.notes){
     var notesP = document.createElement("p");
@@ -2321,7 +2330,7 @@ function renderGearCard(c, item, idx){
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card";
   card.dataset.idx = idx;
-  card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }, true));
+  card.appendChild(itemHeader(c, item, idx, function(){ openGearSheet(c, item, idx); }, !needsWearing(c, item)));
   var infLine = infusionLine(c, item);
   if(infLine) card.appendChild(infLine);
 
@@ -2572,7 +2581,13 @@ export function renderInventoryPanel(c){
   var gauntlets = propulsionGauntlets(c);
   if(gauntlets){
     anyWeapon = true;
-    gauntlets.roll = combineRolls([armorPenalty(c, "str")].concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
+    // Magic weapons: Battle Ready lets a Battle Smith use INT instead.
+    var gAb = weaponAbility(c, {type: "weapon", ability: "str", magic: true, name: gauntlets.name});
+    var gKey = gAb.keys.indexOf("str")!==-1 ? "str" : gAb.keys[0];
+    gauntlets.attack = gAb.mod + profBonus(c);
+    gauntlets.bonus = gAb.mod;
+    gauntlets.ability = gKey.toUpperCase();
+    gauntlets.roll = combineRolls([armorPenalty(c, gKey)].concat(conditionRolls(c, "attack"), effectRolls(c, "attack")));
     weaponList.appendChild(renderUnarmedCard(c, gauntlets));
   }
   // A dragonborn's breath weapon.

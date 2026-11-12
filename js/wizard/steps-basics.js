@@ -10,7 +10,7 @@ import { ALIGNMENTS, ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../data/ali
 import { POINT_BUY_COSTS } from "../data/misc.js";
 import { mod, fmtMod, escapeHtml, ce , classHasEdition } from "../core/helpers.js";
 import { makeStatArrowSvg, makeDicesSvg, makePlusSvg } from "../ui/svg-icons.js";
-import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, classEditionCard, classEditionOutcome, RULES_2024_CARD, RULES_2024_OUTCOME, rules2024Lock } from "../ui/dlc-shelf.js";
+import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, ARTIFICER_FIREARMS_CARD, ARTIFICER_FIREARMS_OUTCOME, classEditionCard, classEditionOutcome, RULES_2024_CARD, RULES_2024_OUTCOME, rules2024Lock } from "../ui/dlc-shelf.js";
 import { getDieSvg } from "../dice/dice.js";
 import { playDiceRattle, playDiceLand, playAdd } from "../ui/sound.js";
 import { themedPicker } from "../ui/themed-picker.js";
@@ -338,7 +338,7 @@ export function wizardStepClass(container){
    add something they're hiding. */
 var rulesShelfOpen = false, rulesShelfTapped = "";
 function optionalRulesShelf(){
-  var books = Object.keys(CAMPAIGN_FEATS), gunslinger = wizardState.classId==="Gunslinger", edClass = classHasEdition(wizardState.classId, "2024") ? wizardState.classId : "";
+  var books = Object.keys(CAMPAIGN_FEATS), gunslinger = wizardState.classId==="Gunslinger", artificer = wizardState.classId==="Artificer", edClass = classHasEdition(wizardState.classId, "2024") ? wizardState.classId : "";
   var wrap = ce("div", "card opt-rules-card wiz-opt-rules");
   var tapped = rulesShelfTapped;
   rulesShelfTapped = "";
@@ -348,18 +348,19 @@ function optionalRulesShelf(){
     lead: "Extra rules from other books. Ask your DM whether your table uses them, then tap one to turn it on. You can change this later on the Information tab.",
     sub: function(){
       var on = (wizardState.tashaOptional ? ["Tasha's optional class features"] : []).concat(wizardRules2024() ? ["the 2024 character rules"] : []).concat(CAMPAIGN_FEATS[wizardState.campaign] ? [wizardState.campaign] : [])
-        .concat(gunslinger && wizardState.gunMisfire ? ["firearm misfires"] : []).concat(wizardEdition() ? ["the 2024 " + edClass.toLowerCase()] : []);
+        .concat(gunslinger && wizardState.gunMisfire ? ["firearm misfires"] : []).concat(artificer && wizardState.artificerFirearms ? ["artificer firearms"] : []).concat(wizardEdition() ? ["the 2024 " + edClass.toLowerCase()] : []);
       return on.length ? "Using " + on.join(" and ") : edClass ? "Tasha's Cauldron, the 2024 rules, the campaign books and the 2024 " + edClass.toLowerCase() + ". Ask your DM which ones your table uses."
         : "Tasha's Cauldron, the 2024 character rules and the campaign books. Most new players leave these off.";
     },
     cards: [{key: "tasha", series: "Tasha's Cauldron of Everything", title: "Optional class features", switchLabel: "Use Tasha's optional class features",
-      perks: ["More class options", "Additional spells", "Swaps at level-up"]}, RULES_2024_CARD].concat(gunslinger ? [GUN_MISFIRE_CARD] : []).concat(edClass ? [classEditionCard(edClass)] : []).concat(books.map(campaignBookCard)),
-    isOn: function(k){ return k==="tasha" ? !!wizardState.tashaOptional : k==="rules2024" ? !!wizardState.rules2024 : k==="gunMisfire" ? !!wizardState.gunMisfire : /^class2024:/.test(k) ? !!wizardState.class2024 : wizardState.campaign===k; },
+      perks: ["More class options", "Additional spells", "Swaps at level-up"]}, RULES_2024_CARD].concat(gunslinger ? [GUN_MISFIRE_CARD] : []).concat(artificer ? [ARTIFICER_FIREARMS_CARD] : []).concat(edClass ? [classEditionCard(edClass)] : []).concat(books.map(campaignBookCard)),
+    isOn: function(k){ return k==="tasha" ? !!wizardState.tashaOptional : k==="rules2024" ? !!wizardState.rules2024 : k==="gunMisfire" ? !!wizardState.gunMisfire : k==="artificerFirearms" ? !!wizardState.artificerFirearms : /^class2024:/.test(k) ? !!wizardState.class2024 : wizardState.campaign===k; },
     // (A 2024 species or background holds the 2024 rules on.)
     locked: function(k){ return k==="rules2024" ? rules2024Lock((RACE_DATA[wizardState.race] || {}).edition, (BACKGROUND_INFO[wizardState.background] || {}).edition) : ""; },
     onTap: function(k){
       if(k==="tasha") setWizardTasha(!wizardState.tashaOptional);
       else if(k==="gunMisfire") wizardState.gunMisfire = !wizardState.gunMisfire;
+      else if(k==="artificerFirearms") wizardState.artificerFirearms = !wizardState.artificerFirearms;
       else if(k==="rules2024") wizardState.rules2024 = !wizardState.rules2024;
       // (The two editions start with different gear and choices, so those picks start over.)
       else if(/^class2024:/.test(k)){ wizardState.class2024 = !wizardState.class2024; wizardState.equipment = {}; wizardState.classChoices = {}; wizardState.skillChoices = []; }
@@ -374,6 +375,7 @@ function optionalRulesShelf(){
       if(wizardState.tashaOptional) lines.push("<b>Tasha's:</b> " + escapeHtml(tashaAddsFor(wizardState.classId, wizardEdition())));
       if(wizardRules2024()) lines.push(RULES_2024_OUTCOME);
       if(gunslinger && wizardState.gunMisfire) lines.push(GUN_MISFIRE_OUTCOME);
+      if(artificer && wizardState.artificerFirearms) lines.push(ARTIFICER_FIREARMS_OUTCOME);
       if(wizardEdition()) lines.push(classEditionOutcome(edClass));
       if(CAMPAIGN_FEATS[wizardState.campaign]) lines.push("<b>" + escapeHtml(wizardState.campaign) + ":</b> a free feat if your background has none of its own (see the Background step)." +
         (CAMPAIGN_FEATS[wizardState.campaign].level4 ? " Another at level 4." : ""));

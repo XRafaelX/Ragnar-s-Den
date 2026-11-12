@@ -6,9 +6,9 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { RACE_TRAIT_FALLBACK } from "../../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, backgroundFeatures } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
-import { classFeatureList, classProficiencies, classVariants, variantFor, syncTashaAdditions, escapeHtml, raceTraitFeatures, characterToolProfs, classHasEdition, editionEntry, setClassEdition } from "../../core/helpers.js";
+import { classFeatureList, classProficiencies, classVariants, variantFor, syncTashaAdditions, escapeHtml, raceTraitFeatures, characterToolProfs, classHasEdition, editionEntry, setClassEdition, classLevelOf, artificerFirearms } from "../../core/helpers.js";
 import { featProficiencies, backgroundFeatGrant, backgroundFeatLabel, campaignFeatMissing, originFeatMissing } from "../../core/feat-picks.js";
-import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, classEditionCard, classEditionOutcome, RULES_2024_CARD, rules2024Lock } from "../../ui/dlc-shelf.js";
+import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, ARTIFICER_FIREARMS_CARD, ARTIFICER_FIREARMS_OUTCOME, classEditionCard, classEditionOutcome, RULES_2024_CARD, rules2024Lock } from "../../ui/dlc-shelf.js";
 import { hasGunslingerClass } from "../../data/weapons.js";
 import { characterPickedProfs, raceProficiencies, backgroundProficiencies, syncClassPicks } from "../../core/class-picks.js";
 import { ABILITIES } from "../../data/abilities-skills.js";
@@ -212,6 +212,7 @@ export function renderInformationPanel(c){
   var fromFeats = featProficiencies(c);
   fromFeats.armor.forEach(function(p){ if(armor.indexOf(p.name)===-1) armor.push(p.name); });
   fromFeats.weapons.forEach(function(p){ if(weapons.indexOf(p.name)===-1) weapons.push(p.name); });
+  if(artificerFirearms(c) && weapons.indexOf("Firearms")===-1) weapons.push("Firearms");
   fromFeats.saves.forEach(function(p){
     var label = ABILITY_NAME[p.ability] || p.ability;
     if(saves.indexOf(label)===-1) saves.push(label);
@@ -353,7 +354,7 @@ export function renderInformationPanel(c){
 var rulesOpen = {};   // character id -> the shelf is open
 var rulesTapped = ""; // the card tapped just before this redraw
 function optionalRulesCard(c){
-  var books = Object.keys(CAMPAIGN_FEATS), gunslinger = hasGunslingerClass(c), edClasses = (c.classes||[]).map(function(cl){ return cl.name; }).filter(function(n){ return classHasEdition(n, "2024"); });
+  var books = Object.keys(CAMPAIGN_FEATS), gunslinger = hasGunslingerClass(c), artificer = classLevelOf(c, "Artificer") > 0, edClasses = (c.classes||[]).map(function(cl){ return cl.name; }).filter(function(n){ return classHasEdition(n, "2024"); });
   var onEdition = function(n){ return !!editionEntry(c, n, "2024"); };
   // Swaps the class levels have reached, and the additions the switch gives.
   var variants = [], additions = [];
@@ -374,20 +375,21 @@ function optionalRulesCard(c){
     lead: "Extra rules from other books. Your DM decides whether your table uses them: tap one to turn it on, and tap it again to turn it off.",
     sub: function(){
       var on = (c.tashaOptional ? ["Tasha's optional class features"] : []).concat(usesRules2024(c) ? ["the 2024 character rules"] : []).concat(CAMPAIGN_FEATS[c.campaign] ? [c.campaign] : [])
-        .concat(gunslinger && c.gunMisfire ? ["firearm misfires"] : []).concat(edClasses.filter(onEdition).map(function(n){ return "the 2024 " + n.toLowerCase(); }));
+        .concat(gunslinger && c.gunMisfire ? ["firearm misfires"] : []).concat(artificer && c.artificerFirearms ? ["artificer firearms"] : []).concat(edClasses.filter(onEdition).map(function(n){ return "the 2024 " + n.toLowerCase(); }));
       return on.length ? "Using " + on.join(" and ") : "Tasha's Cauldron, the 2024 character rules" + (edClasses.length ? ", the campaign books and the 2024 " + edClasses.join(" and ").toLowerCase() : " and the campaign books") + " are in here. None are in use.";
     },
     cards: [{key: "tasha", series: "Tasha's Cauldron of Everything", title: "Optional class features", switchLabel: "Use Tasha's optional class features",
       perks: ["More class options", "Additional spells", "Swaps at level-up"],
       text: "The extra options Tasha's Cauldron adds to class features (fighting styles, Metamagic, maneuvers, eldritch invocations, Pact of the Talisman), the spells it adds to each class's spell list, and swapping a fighting style, Metamagic option or maneuver at Ability Score Improvement levels."}, RULES_2024_CARD]
       .concat(gunslinger ? [GUN_MISFIRE_CARD] : [])
+      .concat(artificer ? [ARTIFICER_FIREARMS_CARD] : [])
       .concat(edClasses.map(classEditionCard))
       .concat(books.map(function(k){
         var def = campaignBookCard(k);
         def.text = "A background with no feat of its own gets Skilled or Tough." + (CAMPAIGN_FEATS[k].level4 ? " You pick another feat from the book's list at level 4." : "");
         return def;
       })),
-    isOn: function(k){ return k==="tasha" ? !!c.tashaOptional : k==="rules2024" ? !!c.rules2024 : k==="gunMisfire" ? !!c.gunMisfire : /^class2024:/.test(k) ? onEdition(k.slice(10)) : c.campaign===k; },
+    isOn: function(k){ return k==="tasha" ? !!c.tashaOptional : k==="rules2024" ? !!c.rules2024 : k==="gunMisfire" ? !!c.gunMisfire : k==="artificerFirearms" ? !!c.artificerFirearms : /^class2024:/.test(k) ? onEdition(k.slice(10)) : c.campaign===k; },
     // (A 2024 species or background holds the 2024 rules on.)
     locked: function(k){ return k==="rules2024" ? rules2024Lock((RACE_DATA[c.race] || {}).edition, (BACKGROUND_INFO[c.background] || {}).edition) : ""; },
     onTap: function(k){
@@ -397,6 +399,7 @@ function optionalRulesCard(c){
       else if(/^class2024:/.test(k)){ setClassEdition(c, k.slice(10), !onEdition(k.slice(10))); syncTashaAdditions(c); syncClassPicks(c); applySpellSlots(c); }
       else if(k==="rules2024"){ if(c.rules2024) delete c.rules2024; else c.rules2024 = true; }
       else if(k==="gunMisfire"){ c.gunMisfire = !c.gunMisfire; if(!c.gunMisfire) (c.inventory||[]).forEach(function(i){ delete i.misfired; }); }
+      else if(k==="artificerFirearms"){ if(c.artificerFirearms) delete c.artificerFirearms; else c.artificerFirearms = true; }
       else if(c.campaign===k) delete c.campaign;
       else c.campaign = k;
       rulesOpen[c.id] = true;
@@ -418,6 +421,7 @@ function optionalRulesCard(c){
           : "your Origin feat is on the sheet.") + " Ability scores and languages were set when the character was made.");
       }
       if(gunslinger && c.gunMisfire) lines.push(GUN_MISFIRE_OUTCOME);
+      if(artificer && c.artificerFirearms) lines.push(ARTIFICER_FIREARMS_OUTCOME);
       edClasses.filter(onEdition).forEach(function(n){ lines.push(classEditionOutcome(n)); });
       var camp = CAMPAIGN_FEATS[c.campaign];
       if(camp){

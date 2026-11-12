@@ -5,9 +5,9 @@ import { abilityScore, abilityScores } from "./ability-scores.js";
 /* ---------------- What active infusions do on the sheet ----------------
    Worked out when shown, from c.infusions.active (see js/core/artificer.js
    for infusing). An infusion works while its item is in the inventory and
-   attuned, if it needs to be; armor ones also only while the armor is
-   worn (equipped). Carried gear has no "held" state, so a focus, helmet
-   or ring counts as in use while it's carried. Kept apart from
+   attuned, if it needs to be, and one marked `worn` only while its item
+   is worn or held (equipped; an Arcane Armor part while its armor is).
+   Kept apart from
    artificer.js so the spell, check and speed code can use it without an
    import loop through helpers.js. */
 
@@ -20,6 +20,15 @@ export function activeInfusionData(c, active){
 /* Its magic works: attuned, or it doesn't need to be. */
 export function infusionWorks(item, active){
   return !active.attunement || !!item.attuned;
+}
+/* Worn or held as its rules need (Helm of Awareness worn, Enhanced Arcane
+   Focus held): "" when it is, else what to do. Plain gear can only be
+   equipped once it bears such an infusion (see js/render/panels/inventory.js). */
+export function infusionWornProblem(c, item, active){
+  var d = activeInfusionData(c, active);
+  if(!d || !d.worn || !item) return "";
+  if(item.armorPart) return partWorn(c, item) ? "" : "Wear your Arcane Armor to use its magic";
+  return item.equipped ? "" : (d.worn==="hold" ? "Hold it (Equip) to use its magic" : "Wear it (Equip) to use its magic");
 }
 
 function artificerLevel(c){
@@ -39,7 +48,7 @@ function working(c, name, worn){
     var d = activeInfusionData(c, a);
     if(!d || d.name!==name) return;
     var item = a.itemId && (c.inventory||[]).find(function(i){ return i.id===a.itemId; });
-    if(!item || !infusionWorks(item, a) || (worn && !item.equipped) || !partWorn(c, item)) return;
+    if(!item || !infusionWorks(item, a) || (worn && !item.equipped) || !partWorn(c, item) || infusionWornProblem(c, item, a)) return;
     out.push({active: a, data: d, item: item});
   });
   return out;

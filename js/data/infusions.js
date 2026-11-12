@@ -23,9 +23,12 @@
      attack and damage update by themselves.
    scales: the bonus becomes +2 from artificer level 10 (Enhanced
      Defense, Enhanced Weapon); the others stay +1.
-   repeatable: can be learned more than once (Replicate Magic Item). */
+   repeatable: can be learned more than once (Replicate Magic Item).
+   worn: "wear" or "hold": its magic works only while the item is worn or
+     held (equipped). Gear with such an infusion gets an Equip button on
+     the Inventory tab; an Arcane Armor part follows its armor. */
 export var INFUSIONS = [
-  {name:"Enhanced Arcane Focus", level:2, item:"A rod, staff or wand (requires attunement)", target:"focus", newItems:["Arcane Focus (rod)", "Arcane Focus (staff)", "Arcane Focus (wand)"],
+  {name:"Enhanced Arcane Focus", level:2, item:"A rod, staff or wand (requires attunement)", target:"focus", worn:"hold", newItems:["Arcane Focus (rod)", "Arcane Focus (staff)", "Arcane Focus (wand)"],
     text:"While holding it, you gain +1 to spell attack rolls (+2 from artificer level 10), and your spell attacks ignore half cover."},
   {name:"Enhanced Defense", level:2, item:"A suit of armor or a shield", target:"armor", bonus:true, scales:true,
     text:"A creature gains +1 to AC while wearing (armor) or wielding (shield) the infused item. The bonus becomes +2 from artificer level 10."},
@@ -33,7 +36,7 @@ export var INFUSIONS = [
     text:"This magic weapon grants +1 to attack and damage rolls made with it. The bonus becomes +2 from artificer level 10."},
   {name:"Homunculus Servant", level:2, item:"A gem or crystal worth at least 100 gp", target:"gem", newItems:["Gemstone (100 gp)"],
     text:"You create a homunculus bound to the gem. It's friendly to you and your allies, acts on your initiative, and can deliver your touch spells. It uses your proficiency bonus for its stats."},
-  {name:"Mind Sharpener", level:2, item:"A suit of armor or robes", target:"armorOrRobes", newItems:["Robes"],
+  {name:"Mind Sharpener", level:2, item:"A suit of armor or robes", target:"armorOrRobes", newItems:["Robes"], worn:"wear",
     charges:{max:4, regain:"1d4"}, uses:[{label:"Pass a concentration save", title:"Reaction when you fail a Constitution save to keep concentration on a spell: you succeed instead"}],
     text:"The item has 4 charges. When the wearer fails a Constitution save to keep concentration, they can use their reaction and 1 charge to succeed instead. Regains 1d4 charges each dawn."},
   {name:"Repeating Shot", level:2, item:"A simple or martial weapon with the ammunition property (requires attunement)", target:"ammoWeapon", bonus:true,
@@ -42,23 +45,23 @@ export var INFUSIONS = [
     text:"Make a magic item from the Replicable Items tables (higher levels unlock more), or any common magic item that isn't a potion or scroll. You can learn this infusion more than once, picking a different item each time."},
   {name:"Returning Weapon", level:2, item:"A simple or martial weapon with the thrown property", target:"thrownWeapon", bonus:true,
     text:"+1 to attack and damage rolls with it, and it flies back to the wielder's hand right after it's used for a ranged attack."},
-  {name:"Armor of Magical Strength", level:2, item:"A suit of armor (requires attunement)", target:"bodyArmor",
+  {name:"Armor of Magical Strength", level:2, item:"A suit of armor (requires attunement)", target:"bodyArmor", worn:"wear",
     charges:{max:6, regain:"1d6"}, uses:[{label:"Add INT to a STR roll", title:"Add your Intelligence modifier to a Strength check or Strength saving throw"}, {label:"Don't fall prone", title:"Reaction when you would be knocked prone: you aren't"}],
     text:"The armor has 6 charges. The wearer can spend 1 to add its Intelligence modifier to a Strength check or Strength saving throw, or use its reaction and 1 charge to avoid being knocked prone. Regains 1d6 charges each dawn."},
-  {name:"Boots of the Winding Path", level:6, item:"A pair of boots (requires attunement)", target:"boots", newItems:["Boots"],
+  {name:"Boots of the Winding Path", level:6, item:"A pair of boots (requires attunement)", target:"boots", newItems:["Boots"], worn:"wear",
     text:"As a bonus action, teleport up to 15 feet to an unoccupied space you can see that you were in during this turn."},
-  {name:"Radiant Weapon", level:6, item:"A simple or martial weapon (requires attunement)", target:"weapon", bonus:true,
+  {name:"Radiant Weapon", level:6, item:"A simple or martial weapon (requires attunement)", target:"weapon", bonus:true, worn:"hold",
     charges:{max:4, regain:"1d4"}, uses:[{label:"Blind the attacker", title:"Reaction right after you're hit: the attacker is blinded until the end of its next turn unless it passes a Constitution save against your spell save DC"}],
     text:"+1 to attack and damage, sheds bright light on command, and has 4 charges: as a reaction when hit, blind the attacker (CON save). Regains 1d4 charges each dawn."},
-  {name:"Repulsion Shield", level:6, item:"A shield (requires attunement)", target:"shield", bonus:true,
+  {name:"Repulsion Shield", level:6, item:"A shield (requires attunement)", target:"shield", bonus:true, worn:"hold",
     charges:{max:4, regain:"1d4"}, uses:[{label:"Push the attacker", title:"Reaction right after a melee hit: push the attacker up to 15 feet away"}],
     text:"+1 AC while wielded, and 4 charges: as a reaction when hit by a melee attack, push the attacker up to 15 feet away. Regains 1d4 charges each dawn."},
   {name:"Resistant Armor", level:6, item:"A suit of armor (requires attunement)", target:"bodyArmor",
     choice:{label:"Damage type", options:["Acid","Cold","Fire","Force","Lightning","Necrotic","Poison","Psychic","Radiant","Thunder"]},
     text:"While wearing it, you have resistance to one damage type chosen when you infuse it: acid, cold, fire, force, lightning, necrotic, poison, psychic, radiant or thunder."},
-  {name:"Spell-Refueling Ring", level:6, item:"A ring (requires attunement)", target:"ring", newItems:["Ring"], refuel:true,
+  {name:"Spell-Refueling Ring", level:6, item:"A ring (requires attunement)", target:"ring", newItems:["Ring"], refuel:true, worn:"wear",
     text:"As an action, the wearer recovers one expended spell slot of 3rd level or lower. Once used, it can't be used again until the next dawn."},
-  {name:"Helm of Awareness", level:10, item:"A helmet (requires attunement)", target:"helmet", newItems:["Helmet"],
+  {name:"Helm of Awareness", level:10, item:"A helmet (requires attunement)", target:"helmet", newItems:["Helmet"], worn:"wear",
     text:"The wearer has advantage on initiative rolls and can't be surprised unless incapacitated."},
   {name:"Arcane Propulsion Armor", level:14, item:"A suit of armor (requires attunement)", target:"bodyArmor",
     text:"The wearer's walking speed increases by 5 feet. Its gauntlets are magic melee weapons usable only with an empty hand (proficient, 1d8 force, thrown 20/60 ft, they fly back after the attack). It can't be removed against the wearer's will, and it replaces any missing limbs."}

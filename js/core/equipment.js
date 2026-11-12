@@ -48,6 +48,9 @@ function isTwoHanded(item){
 }
 export function itemHands(item){
   if(isShield(item)) return 1;
+  // An infused rod, staff or wand held as Enhanced Arcane Focus (gear can
+  // only be equipped when an infusion needs it worn or held).
+  if(item.type!=="weapon" && item.type!=="armor" && item.equipped && !item.armorPart && /\b(rod|staff|wand)\b/i.test(item.name||"")) return 1;
   if(item.type==="weapon") return isTwoHanded(item) || stackInBothHands(item) ? 2 : 1;
   return 0;
 }
@@ -822,6 +825,11 @@ export function wieldsMeleeWeaponOrShield(c){
    true if any of the character's classes list the weapon's category
    ("Simple weapons"/"Martial weapons"/"Firearms") or name it specifically,
    or the race, the background or a feat gives it. */
+/* Tasha's optional Firearm Proficiency (c.artificerFirearms): when the DM
+   uses firearms, an artificer is proficient with them. */
+export function artificerFirearms(c){
+  return !!(c && c.artificerFirearms && classLevelOf(c, "Artificer") > 0);
+}
 export function isProficientWithWeapon(c, weaponName, category){
   // A khopesh is treated as a longsword (`treatAs`).
   var alike = (WEAPON_DATA[weaponName] || {}).treatAs;
@@ -834,6 +842,8 @@ export function isProficientWithWeapon(c, weaponName, category){
   var given = raceProficiencies(c).weapons.concat(backgroundProficiencies(c).weapons);
   if(weaponName && given.indexOf(weaponName)!==-1) return true;
   if(category==="firearm" && given.indexOf("Firearms")!==-1) return true;
+  // Tasha's optional rule: artificers are proficient with firearms.
+  if(category==="firearm" && artificerFirearms(c)) return true;
   return (c.classes||[]).some(function(cl, idx){
     var p = classProficiencies(c, idx);
     if(!p || !p.weapons) return false;

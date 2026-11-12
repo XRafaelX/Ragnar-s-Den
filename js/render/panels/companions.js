@@ -277,7 +277,7 @@ export function renderStatBlock(card, s, name, opts){
     });
     stats.appendChild(ab);
   }
-  var facts = [["Saves", s.saves], ["Skills", s.skills], ["Senses", s.senses], ["Vulnerable", s.vulnerabilities], ["Resist", s.resistances], ["Immune", s.immunities]]
+  var facts = [["Saves", s.saves], ["Skills", s.skills], ["Senses", s.senses], ["Languages", s.languages], ["Vulnerable", s.vulnerabilities], ["Resist", s.resistances], ["Immune", s.immunities]]
     .filter(function(f){ return f[1]; });
   if(facts.length){
     var dl = ce("dl", "comp-facts");

@@ -127,6 +127,14 @@ export var GUN_MISFIRE_CARD = {key: "gunMisfire", series: "Gunslinger class", ti
   text: "The Handcannon, Long Gun and Spread Shot jam on an attack roll of 1. Clearing a jam takes an action and always works. Master of Arms (gunslinger level 2) stops your guns from misfiring."};
 export var GUN_MISFIRE_OUTCOME = "<b>Misfires:</b> your Handcannon, Long Gun and Spread Shot jam on a roll of 1 until Master of Arms at gunslinger level 2. Clearing a jam takes an action.";
 
+/* Tasha's optional Firearm Proficiency for the artificer
+   (c.artificerFirearms), offered only to a character with that class.
+   See artificerFirearms in js/core/equipment.js. */
+export var ARTIFICER_FIREARMS_CARD = {key: "artificerFirearms", series: "Tasha's Cauldron of Everything", title: "Artificer firearms", switchLabel: "Use firearm proficiency for artificers",
+  perks: ["Proficient with firearms", "If your DM uses guns", "Pistols and muskets"],
+  text: "If your DM uses firearms and your artificer has seen them in use, your artificer is proficient with them. You add your proficiency bonus to attacks with pistols, muskets and other guns."};
+export var ARTIFICER_FIREARMS_OUTCOME = "<b>Firearms:</b> you're proficient with them. Add a pistol or musket from the Firearms tab under + Add Weapon on the Inventory tab.";
+
 /* The 2024 Player's Handbook's character rules (p. 38) for older races
    and backgrounds (wizardState.rules2024 / c.rules2024). The 2024
    backgrounds and species follow them whatever this says (the card is

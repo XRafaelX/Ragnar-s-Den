@@ -949,6 +949,7 @@ export function finishWizard(){
   if(w.tashaOptional) c.tashaOptional = true;
   if(w.rules2024) c.rules2024 = true;
   if(w.gunMisfire && w.classId==="Gunslinger") c.gunMisfire = true;
+  if(w.artificerFirearms && w.classId==="Artificer") c.artificerFirearms = true;
   var fa = finalAbilities({withoutFeat:true}); // applyRaceChoices adds the feat's +1
   c.abilities = {str:fa.str, dex:fa.dex, con:fa.con, int:fa.int, wis:fa.wis, cha:fa.cha};
   info.savingThrows.forEach(function(k){ c.saveProfs[k] = true; });
