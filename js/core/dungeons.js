@@ -186,7 +186,9 @@ function cleanImage(im){
     ox: num(im.ox, -MAX_SIDE, MAX_SIDE, 0),
     oy: num(im.oy, -MAX_SIDE, MAX_SIDE, 0),
     across: num(im.across, 1, MAX_SIDE * 2, 20),
-    ratio: num(im.ratio, 0.05, 20, 1)
+    ratio: num(im.ratio, 0.05, 20, 1),
+    // Dimmed behind the DM's tracing in Build, so the tracing stands out.
+    dim: im.dim !== false
   };
 }
 
@@ -1391,12 +1393,13 @@ export function setMapImage(d, id, across, ratio){
   return d.image;
 }
 
-/* Changes where the picture sits or how big it is: any of ox, oy,
-   across. Returns true if anything changed. */
+/* Changes where the picture sits, how big it is or whether it is dimmed
+   while tracing: any of ox, oy, across, dim. Returns true if anything
+   changed. */
 export function placeMapImage(d, changes){
   if(!d.image) return false;
   var next = cleanImage(Object.assign({}, d.image, changes));
-  if(next.ox === d.image.ox && next.oy === d.image.oy && next.across === d.image.across) return false;
+  if(next.ox === d.image.ox && next.oy === d.image.oy && next.across === d.image.across && next.dim === d.image.dim) return false;
   d.image = next;
   return true;
 }

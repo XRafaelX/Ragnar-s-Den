@@ -1979,6 +1979,23 @@ function openMapPictureSheet(){
     row.appendChild(fine);
     body.appendChild(row);
 
+    // Dimmed or bright while tracing.
+    var dimRow = ce("div", "dg-side-row");
+    dimRow.appendChild(ce("span", "dg-side-label dg-wide-label", "While you trace"));
+    var dims = ce("div", "dg-sizes");
+    dims.setAttribute("role", "radiogroup");
+    dims.setAttribute("aria-label", "The picture while you trace");
+    [[true, "Dimmed"], [false, "Bright"]].forEach(function(o){
+      var on = (d.image.dim !== false) === o[0];
+      var chip = button("dg-size" + (on ? " on" : ""), "", function(){ place({ dim: o[0] }); });
+      chip.setAttribute("role", "radio");
+      chip.setAttribute("aria-checked", on ? "true" : "false");
+      chip.title = o[0] ? "Dim the picture in Build so your tracing stands out" : "Show the picture at full brightness in Build";
+      chip.appendChild(ce("span", "dg-size-name", o[1]));
+      dims.appendChild(chip);
+    });
+    dimRow.appendChild(dims);
+
     // Nudging it.
     var move = ce("div", "dg-side-row");
     move.appendChild(ce("span", "dg-side-label dg-wide-label", "Move it"));
@@ -1990,6 +2007,7 @@ function openMapPictureSheet(){
       move.appendChild(btn);
     });
     body.appendChild(move);
+    body.appendChild(dimRow);
 
     var size = imageFit(d);
     var actions = ce("div", "dg-sheet-actions");

@@ -1173,7 +1173,9 @@ test("a picture on a blank map makes the map its size; on a traced map it leaves
   fresh();
   const d = newMap("Module map", "small");
   setMapImage(d, "img1", 30.5, 0.7);
-  assert.deepEqual(d.image, { id: "img1", ox: 0, oy: 0, across: 30.5, ratio: 0.7 });
+  assert.deepEqual(d.image, { id: "img1", ox: 0, oy: 0, across: 30.5, ratio: 0.7, dim: true });
+  assert.equal(placeMapImage(d, { dim: false }), true, "dimming can be turned off");
+  assert.equal(d.image.dim, false);
   assert.deepEqual([d.w, d.h], [31, 22], "31 by 22 squares holds a picture 30.5 squares wide");
   const t = newMap("Traced", "small");
   fillRect(t, 2, 2, 5, 5, FLOOR);

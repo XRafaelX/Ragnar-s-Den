@@ -312,6 +312,11 @@ function drawPictureMap(ctx, d, view, opts, r, ex, ey){
     ctx.drawImage(img, view.ox + im.ox * s, view.oy + im.oy * s, im.across * s, im.across * im.ratio * s);
     ctx.restore();
   }
+  // Dimmed while the DM traces, so the tracing stands out on any picture.
+  if(opts.trace === "full" && im.dim !== false){
+    ctx.fillStyle = "rgba(12,10,18,0.55)";
+    ctx.fillRect(mx, my, mw, mh);
+  }
   // The map's grid, to line the picture up by.
   if(opts.grid && s >= 6){
     ctx.beginPath();
@@ -324,10 +329,11 @@ function drawPictureMap(ctx, d, view, opts, r, ex, ey){
   if(!opts.trace) return;
   C = MAP_COLORS;
   T = STYLES.stone;
-  // The DM's tracing: a light tint on the ground and thin blue walls.
+  // The DM's tracing, in colours that read on any picture: a yellow tint
+  // on the ground and yellow walls with a dark edge.
   if(opts.trace === "full"){
     ctx.save();
-    ctx.fillStyle = "rgba(96,165,250,0.2)";
+    ctx.fillStyle = "rgba(255,196,0,0.26)";
     ctx.beginPath();
     for(y = r.y0; y <= r.y1; y++) for(x = r.x0; x <= r.x1; x++) if(isOpen(d, x, y)) ctx.rect(ex(x), ey(y), ex(x + 1) - ex(x), ey(y + 1) - ey(y));
     ctx.fill();
@@ -342,21 +348,37 @@ function drawPictureMap(ctx, d, view, opts, r, ex, ey){
       if(k === "1" || k === "3"){ ctx.moveTo(ex(x + 1), ey(y)); ctx.lineTo(ex(x), ey(y + 1)); }
       else if(k === "2" || k === "4"){ ctx.moveTo(ex(x), ey(y)); ctx.lineTo(ex(x + 1), ey(y + 1)); }
     }
-    ctx.strokeStyle = "rgba(96,165,250,0.95)";
-    ctx.lineWidth = Math.max(1.5, s * 0.06);
+    var lw = Math.max(2, s * 0.08);
     ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "rgba(10,8,14,0.85)";
+    ctx.lineWidth = lw + 3;
+    ctx.stroke();
+    ctx.strokeStyle = "#ffc400";
+    ctx.lineWidth = lw;
     ctx.stroke();
     ctx.restore();
   }
-  // Doors, stairs and the rest, so the DM can find and tap them.
+  // Doors, stairs and the rest, so the DM can find and tap them: each on
+  // a dark square, so it shows on any picture. Water, pits and rubble only
+  // while tracing.
   for(y = r.y0; y <= r.y1; y++) for(x = r.x0; x <= r.x1; x++){
     var code = cellAt(d, x, y);
+    if(code === ROCK || code === "." || code === "?") continue;
+    var full = opts.trace === "full";
+    if(!full && (code === ">" || code === "~" || code === "o" || code === ":")) continue;
     var box = { x: ex(x), y: ey(y), s: ex(x + 1) - ex(x) };
-    if(code === "+") drawDoor(ctx, box, passageAxis(d, x, y));
+    var inset = Math.max(1, box.s * 0.06);
+    ctx.fillStyle = "rgba(12,10,18,0.72)";
+    ctx.fillRect(box.x + inset, box.y + inset, box.s - inset * 2, box.s - inset * 2);
+    if(code === "~"){ ctx.fillStyle = C.water; ctx.fillRect(box.x + inset * 2, box.y + inset * 2, box.s - inset * 4, box.s - inset * 4); drawWater(ctx, box, x, y); }
+    else if(code === "o") drawPit(ctx, box);
+    else if(code === ":") drawRubble(ctx, box, x, y);
+    else if(code === "+") drawDoor(ctx, box, passageAxis(d, x, y));
     else if(code === "l"){ drawDoor(ctx, box, passageAxis(d, x, y)); drawLock(ctx, box); }
     else if(code === "/") drawOpenDoor(ctx, box, passageAxis(d, x, y), x, y);
     else if(code === "s") drawSecret(ctx, box, passageAxis(d, x, y));
-    else if(code === ">" && opts.trace === "full") drawStairs(ctx, box, passageAxis(d, x, y));
+    else if(code === ">"){ C = Object.assign({}, MAP_COLORS, { stairs: "#ffc400" }); drawStairs(ctx, box, passageAxis(d, x, y)); C = MAP_COLORS; }
   }
 }
 
