@@ -118,7 +118,7 @@ function toolById(id){
 var PLAY_TOOLS = [
   { id: "move", label: "Move", icon: "hand", help: "Drag to move around the map" },
   { id: "reveal", label: "Reveal", icon: "eye", help: "Tap a room or corridor to show it to the players, and tap again to hide it. Drag to show or hide square by square" },
-  { id: "party", label: "Party", icon: "users", help: "Tap a square to put the party there. Drag the marker to walk them, and the fog clears as far as they can see. Set how far in the menu, under Party sight" },
+  { id: "party", label: "Party", icon: "users", help: "Tap a square to put the party there. Drag the marker to walk them, and the fog clears as far as they can see. Tap Party again for how far they see, or to take the marker off" },
   { id: "doors", label: "Doors", icon: "door", help: "Tap a door to open or close it. The party sees through open doors, and opens a closed door they walk onto. A secret door opens as a found door" },
   { id: "point", label: "Point", icon: "point", help: "Tap a spot to point at it on the players' screen. Drag to point like a laser pointer" }
 ];
@@ -468,25 +468,12 @@ function renderBoard(dungeon){
   b.redoBtn.innerHTML = makeUndoSvg();
   head.appendChild(b.undoBtn);
   head.appendChild(b.redoBtn);
+  // Kept short: setting up the map is in Map settings, the party's
+  // options open from the Party tool, the maps list from the map's name.
   head.appendChild(menu([
-    { label: "Maps in this dungeon", onClick: openMapsSheet },
-    { label: "Random map", onClick: openRandomSheet },
-    { label: "Map size", onClick: openSizeSheet },
-    { label: "Map style", onClick: openStyleSheet },
-    { label: "Map picture", onClick: openMapPictureSheet },
-    { label: "Save as picture", onClick: openPictureSheet },
+    { label: "Map settings", onClick: openSettingsSheet },
     { label: "Room notes", onClick: openNotesList },
-    { label: "Party sight", onClick: openSightSheet },
-    { label: "Remove party marker", onClick: function(){
-      if(!change(function(){ return removeParty(b.d); })) showActionToast("There is no party marker on this map.");
-    } },
-    { label: "Clear map", danger: true, onClick: function(){
-      if(isBlank(b.d) && !b.d.notes.length){ showActionToast("The map is already empty."); return; }
-      var m = b.d;
-      confirmDialog("Clear the whole map?", "Every square of " + m.name + " goes back to solid rock. You can undo this.", function(){
-        if(b && b.d === m) change(function(){ return clearDungeon(m); });
-      });
-    } }
+    { label: "Save as picture", onClick: openPictureSheet }
   ], "Map options"));
 
   overlay.appendChild(toolBar());
@@ -650,7 +637,15 @@ function actionButton(label, iconName, help, onClick){
   return btn;
 }
 
+var partyTipShown = false;   // the "tap Party again" tip, once a session
+
 function pickTool(set, id){
+  // Party picked again: its own options (how far they see, the marker).
+  if(set === "play" && id === "party" && playTool === "party"){ openPartySheet(); return; }
+  if(set === "play" && id === "party" && !partyTipShown){
+    partyTipShown = true;
+    showActionToast("Tap Party again for how far the party sees, or to take the marker off.");
+  }
   if(set === "build") tool = id; else playTool = id;
   overlay.querySelectorAll('.dg-set[data-set="' + set + '"] .dg-tool[data-tool]').forEach(function(btn){
     var on = btn.dataset.tool === id;
@@ -1815,10 +1810,11 @@ function onKeyUp(e){
    be undone. */
 function feet(squares){ return squares === 0 ? "No limit" : squares * 5 + " ft"; }
 
-function openSightSheet(){
+function openPartySheet(){
   var d = b.d;
   openBottomSheet(function(body, refresh, closeSheet){
-    body.appendChild(ce("h3", "dg-sheet-title", "Party sight"));
+    body.appendChild(ce("h3", "dg-sheet-title", "Party"));
+    body.appendChild(ce("h4", "dg-sheet-sub", "How far they see"));
     body.appendChild(ce("p", "dg-sheet-help", "How far the party can see on " + d.name + " when you move them. Walls and closed doors always block the view."));
     var list = ce("div", "dg-sight-list");
     list.setAttribute("role", "radiogroup");
@@ -1849,6 +1845,13 @@ function openSightSheet(){
     body.appendChild(exact);
 
     var actions = ce("div", "dg-sheet-actions");
+    var remove = button("btn ghost dg-danger-text", "Take the marker off", function(){
+      closeSheet();
+      if(!b || b.d !== d) return;
+      if(!change(function(){ return removeParty(d); })) showActionToast("There is no party marker on this map.");
+    });
+    remove.disabled = !d.party;
+    actions.insertBefore(remove, actions.firstChild);
     actions.appendChild(button("btn primary", "Done", closeSheet));
     body.appendChild(actions);
 
@@ -2016,6 +2019,46 @@ function openMapPictureSheet(){
       publish();
       draw();
       refresh();
+    }
+  });
+}
+
+/* ---- Map settings ----
+   Setting up the map, one short list: each row says how it is now and
+   opens its own sheet. Starting over (a random layout, or clearing it)
+   comes last. */
+function openSettingsSheet(){
+  var d = b.d;
+  openBottomSheet(function(body, refresh, closeSheet){
+    body.appendChild(ce("h3", "dg-sheet-title", "Map settings"));
+    var list = ce("div", "dg-settings");
+    var style = DUNGEON_STYLES.find(function(st){ return st.id === d.style; });
+    list.appendChild(row("Size", d.w + " × " + d.h + " squares", openSizeSheet));
+    list.appendChild(row("Style", style ? style.label : "Stone", openStyleSheet));
+    list.appendChild(row("Picture", d.image ? Math.round(d.image.across * 10) / 10 + " squares across" : "None", openMapPictureSheet));
+    body.appendChild(list);
+
+    body.appendChild(ce("h4", "dg-sheet-sub", "Start over"));
+    var again = ce("div", "dg-settings");
+    again.appendChild(row("Random map", "Rooms, corridors and doors to start from", openRandomSheet));
+    var clear = row("Clear map", "Every square back to solid rock", function(){
+      if(isBlank(d) && !d.notes.length){ showActionToast("The map is already empty."); return; }
+      confirmDialog("Clear the whole map?", "Every square of " + d.name + " goes back to solid rock. You can undo this.", function(){
+        if(b && b.d === d) change(function(){ return clearDungeon(d); });
+      });
+    });
+    clear.classList.add("danger");
+    again.appendChild(clear);
+    body.appendChild(again);
+
+    function row(label, now, open){
+      var r = button("dg-setting", "", function(){ closeSheet(); open(); }, null);
+      var words = ce("span", "dg-sight-words");
+      words.appendChild(ce("span", "dg-sight-name", label));
+      words.appendChild(ce("span", "dg-sight-help", now));
+      r.appendChild(words);
+      r.appendChild(icon("chevron", "dg-setting-go"));
+      return r;
     }
   });
 }
