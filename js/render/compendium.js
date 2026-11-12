@@ -22,6 +22,8 @@ import { companionSection, alignmentSection } from "./compendium/companions-alig
 import { featSection } from "./compendium/feats.js";
 import { raceSection, backgroundSection } from "./compendium/races-backgrounds.js";
 import { session } from "./compendium/shared.js";
+import { tierListSection } from "./compendium/tier-list.js";
+import { tierListOn } from "../core/tier-list-switch.js";
 
 
 /* opts (all optional):
@@ -42,15 +44,19 @@ import { session } from "./compendium/shared.js";
                      pre-fill from; it's linked to the new entry.
    (newSubclassFor / onSubclassSaved are the older names for
     create:"subclass" + forClass / onSaved.) */
-var CREATE_TAB = {subclass:1, race:2, background:3, feat:4, feature:4, companion:5};
+var CREATE_TAB = {subclass:"subclasses", race:"races", background:"backgrounds", feat:"feats", feature:"feats", companion:"companions"};
 export function openCompendium(opts){
   opts = opts || {};
   var create = opts.create || (opts.newSubclassFor ? "subclass" : null) || (opts.edit ? opts.edit.kind : null);
   session.giveTarget = opts.forCharacter || null;
-  var sections = [classSection(), subclassSection(), raceSection(), backgroundSection(), featSection(), companionSection(), alignmentSection()];
+  var sections = [classSection(), subclassSection()]
+    // The secret Tier list (js/core/tier-list-switch.js): only once switched on.
+    .concat(tierListOn() ? [tierListSection()] : [])
+    .concat([raceSection(), backgroundSection(), featSection(), companionSection(), alignmentSection()]);
+  var wanted = CREATE_TAB[create || opts.tab];
   openCatalogPicker({
     sections:sections,
-    initialSection: CREATE_TAB[create || opts.tab] || 0,
+    initialSection: Math.max(0, sections.findIndex(function(s){ return s.key === wanted; })),
     onClose:function(){
       session.presetClass = null; session.savedHook = null; session.savedHookKind = null;
       session.giveTarget = null; session.formPreset = null;

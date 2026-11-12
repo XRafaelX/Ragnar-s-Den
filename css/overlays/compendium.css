@@ -180,3 +180,42 @@
 .cmp-level-stepper{display:flex;align-items:center;gap:10px;margin:4px 0 12px;}
 .cmp-level-value{font-size:13px;min-width:150px;text-align:center;}
 .cmp-companion .comp-tiles{margin-top:4px;}
+
+/* ---- Tier list tab (secret, js/render/compendium/tier-list.js) ---- */
+.tier-view{max-width:1040px;margin:0 auto;padding-top:8px;}
+.tier-controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;}
+.tier-controls .cmp-edition{margin-bottom:0;flex-wrap:wrap;}
+.tier-lead{font-size:13px;color:var(--text-on-parch-dim);margin:12px 0 14px;}
+/* The letter stays one square whatever the row holds, beside the first line of chips. */
+.tier-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-top:1px solid var(--rule);}
+.tier-row:last-of-type{border-bottom:1px solid var(--rule);}
+.tier-letter{
+  flex:none;width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:20px;font-weight:700;color:#14101c;background:var(--tier-c);
+}
+.tier-S{--tier-c:#e8b04a;}
+.tier-A{--tier-c:#62b874;}
+.tier-B{--tier-c:#5b9be0;}
+.tier-C{--tier-c:#a988e0;}
+.tier-D{--tier-c:#8f879f;}
+.tier-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;align-content:flex-start;flex:1;min-width:0;min-height:40px;padding:3px 0;}
+.tier-chip{
+  border:1px solid var(--rule);background:var(--parchment-dim);color:var(--text-on-parch);
+  border-radius:6px;padding:7px 12px;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s ease, border-color .15s ease;
+}
+.tier-chip:hover{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 18%, var(--parchment-dim));}
+.tier-unrated{font-size:12px;color:var(--text-on-parch-dim);margin:12px 0 0;}
+/* The rating of one class in every band (info modal). */
+.tier-strip{display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:14px;}
+.tier-strip-cell{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;border-radius:6px;border:1px solid transparent;}
+.tier-strip-cell.current{border-color:var(--rule);background:rgba(255,255,255,0.03);}
+.tier-strip-band{font-size:11px;color:var(--text-on-parch-dim);text-align:center;}
+@media (prefers-reduced-motion: reduce){ .tier-chip{transition:none;} }
+/* A phone: both switches full width in equal columns, the bands as "1-4" (the
+   line under them names the band). */
+@media (max-width:480px){
+  .tier-controls{flex-direction:column;align-items:stretch;}
+  .tier-controls .cmp-edition{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;}
+  .tier-controls .cmp-edition button{padding:6px 4px;}
+  .tier-hide-narrow{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+}

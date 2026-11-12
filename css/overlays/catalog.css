@@ -166,6 +166,9 @@
 #catalog-overlay.custom-mode #catalog-pills,
 #catalog-overlay.custom-mode #catalog-fab{display:none;}
 #catalog-overlay.custom-mode #catalog-custom-view{display:flex;}
+/* A tab that draws its own page (the Tier list): no search, no category pills. */
+#catalog-overlay.body-mode #catalog-search{visibility:hidden;}
+#catalog-overlay.body-mode #catalog-pills{display:none;}
 
 @media (max-width:640px){
   #catalog-header, #catalog-pills, #catalog-list, #catalog-custom-view{padding-left:14px;padding-right:14px;}

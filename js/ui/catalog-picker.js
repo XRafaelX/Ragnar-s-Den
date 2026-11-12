@@ -89,6 +89,7 @@ function revealActivePill(scroller){
 function renderPills(){
   var section = activeSection();
   var pillRow = document.getElementById("catalog-pills");
+  if(section.renderBody){ pillRow.innerHTML = ""; return; }   // a tab that draws itself has no categories
   var old = pillRow.querySelector(".catalog-pill-scroll");
   var keepScroll = old ? old.scrollLeft : 0;
   pillRow.innerHTML = "";
@@ -254,6 +255,15 @@ function renderList(){
   var section = activeSection();
   var listEl = document.getElementById("catalog-list");
   listEl.innerHTML = "";
+  // A tab can draw its own page instead of a list (section.renderBody(el),
+  // the Compendium's Tier list): no search box, no category pills.
+  document.getElementById("catalog-overlay").classList.toggle("body-mode", !!section.renderBody);
+  listEl.classList.toggle("custom-body", !!section.renderBody);
+  if(section.renderBody){
+    listEl.classList.remove("long-right");
+    section.renderBody(listEl);
+    return;
+  }
   // A list where some row's right column is too long to sit beside the
   // name on a phone (a feat's prerequisite, a race's bonuses and speed):
   // the stylesheet moves it under the name there, for every row of that

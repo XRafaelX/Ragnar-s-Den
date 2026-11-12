@@ -178,6 +178,7 @@
   animation:home-center-pop .5s .4s cubic-bezier(0.175,0.885,0.32,1.275) backwards,
             home-center-pulse 2.6s 1s ease-in-out infinite;
   z-index:2;
+  -webkit-touch-callout:none;   /* holding it is a secret switch, not a long-press menu */
 }
 #home-center:hover{transform:translate(-50%,-50%) scale(1.08);}
 #home-center:active{transform:translate(-50%,-50%) scale(.92);}

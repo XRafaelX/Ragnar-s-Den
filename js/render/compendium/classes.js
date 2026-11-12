@@ -32,7 +32,7 @@ function editionTag(sub){
 /* A class with a 2024 version (the monk) opens on the 2014 one with a
    switch at the top; the 2024 one swaps in its features, proficiencies and
    subclasses (the older ones it can take listed after its own). */
-function showClass(name, edition){
+export function showClass(name, edition){
   var info = CLASSES_INFO[name] || {};
   var prog = CLASS_PROGRESSION[name] || {};
   var ed = edition ? classEdition({name: name, edition: edition}) : null;
