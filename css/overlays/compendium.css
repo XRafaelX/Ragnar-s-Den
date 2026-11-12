@@ -256,10 +256,20 @@
 
 .tier-unrated{font-size:12px;color:var(--text-on-parch-dim);margin:12px 0 0;}
 .tier-class-pick{max-width:260px;margin-top:10px;}
+.tier-role-filter{display:inline-flex;margin-top:10px;}
+.tier-chip.tier-dim{opacity:.32;}
+.tier-chip.tier-dim:hover{opacity:.7;}
+.tier-chip.tier-match{border-color:var(--brass-bright);box-shadow:0 0 0 1px color-mix(in srgb, var(--brass-bright) 35%, transparent), 0 0 12px color-mix(in srgb, var(--brass) 30%, transparent);}
 .tier-actions{display:flex;flex-wrap:wrap;gap:8px;}
 /* The rating of one entry in every band (info modal): the letters pop in one by one. */
 .tier-strip{display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:14px;}
-.tier-strip-cell{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:8px;border:1px solid transparent;}
+.tier-strip-cell{
+  display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:8px;border:1px solid transparent;
+  background:transparent;color:inherit;font:inherit;cursor:pointer;transition:background .18s ease, border-color .18s ease;
+}
+.tier-strip-cell:hover{background:rgba(255,255,255,0.04);border-color:color-mix(in srgb, var(--tier-c) 25%, transparent);}
+.tier-strip-cell:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.tier-strip-cell.current:hover{background:linear-gradient(180deg, color-mix(in srgb, var(--tier-c) 14%, transparent), transparent);}
 .tier-strip-cell.current{
   border-color:color-mix(in srgb, var(--tier-c) 45%, transparent);
   background:linear-gradient(180deg, color-mix(in srgb, var(--tier-c) 14%, transparent), transparent);
@@ -270,6 +280,20 @@
 .tier-strip-cell:nth-child(4) .tier-letter{animation-delay:.21s;}
 @keyframes tier-pop{from{opacity:0;transform:scale(.4) rotate(-8deg);}to{opacity:1;transform:none;}}
 .tier-strip-band{font-size:11px;color:var(--text-on-parch-dim);text-align:center;}
+/* What a subclass adds: five roles with 0 to 3 dots, filling in one after another. */
+.tier-roles{margin:0 0 14px;padding:10px 12px;border-radius:8px;border:1px solid var(--rule);background:rgba(255,255,255,0.025);}
+.tier-roles-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--brass-bright);font-weight:600;margin-bottom:8px;}
+.tier-roles-grid{display:grid;grid-template-columns:repeat(5, 1fr);gap:6px;}
+.tier-role{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;}
+.tier-role-label{font-size:11.5px;color:var(--text-on-parch-dim);white-space:nowrap;}
+.tier-role-dots{display:flex;gap:4px;}
+.tier-dot{width:9px;height:9px;border-radius:50%;border:1px solid color-mix(in srgb, var(--brass) 45%, transparent);background:transparent;}
+.tier-dot.on{
+  background:var(--brass-bright);border-color:var(--brass-bright);
+  box-shadow:0 0 6px color-mix(in srgb, var(--brass) 70%, transparent);
+  animation:tier-dot .35s cubic-bezier(.34,1.56,.64,1) backwards;
+}
+@keyframes tier-dot{from{transform:scale(0);opacity:0;}to{transform:none;opacity:1;}}
 .tier-strip-cell.current .tier-strip-band{color:var(--text-on-parch);font-weight:600;}
 @media (prefers-reduced-motion: reduce){
   .tier-chip{transition:none;}
@@ -277,6 +301,8 @@
   .tier-letter.tier-S::after{animation:none;display:none;}
   .tier-move{animation:none;}
   .tier-strip-cell .tier-letter{animation:none;}
+  .tier-strip-cell{transition:none;}
+  .tier-dot.on{animation:none;}
 }
 /* A phone: both switches full width in equal columns, the bands as "1-4" (the
    line under them names the band). */
@@ -285,6 +311,8 @@
   .tier-controls .cmp-edition{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;}
   .tier-controls .cmp-edition button{padding:6px 4px;}
   .tier-class-pick{max-width:none;}
+  .tier-role-filter{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;}
+  .tier-role-filter button{padding:6px 2px;font-size:11.5px;}
   .tier-row{gap:10px;padding:7px;}
   .tier-hide-narrow{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
 }

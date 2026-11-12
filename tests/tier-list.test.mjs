@@ -82,3 +82,20 @@ test("a 2014 and a 2024 version are rated apart, and custom ones not at all", ()
   assert.deepEqual(subclassRating("Druid", "Circle of the Moon (2024)").tiers, ["A","A","B","B"]);
   assert.equal(subclassRating("Wizard", "School of Made-up Things"), null);
 });
+
+/* Role profiles (2026-11-12): what each subclass adds, 0 to 3 per role. */
+import { SUBCLASS_ROLES, SUBCLASS_ROLE_KEYS, subclassRoles } from "../js/data/tier-list-subclasses.js";
+
+test("every rated subclass has a role profile, five digits 0 to 3", () => {
+  assert.deepEqual(Object.keys(SUBCLASS_TIERS).filter((c) => !SUBCLASS_ROLES[c]), [], "every class profiled");
+  for(const [cls, roles] of Object.entries(SUBCLASS_ROLES)){
+    assert.deepEqual(Object.keys(SUBCLASS_TIERS[cls]).filter((n) => !roles[n]), [], cls + ": every subclass profiled");
+    assert.deepEqual(Object.keys(roles).filter((n) => !SUBCLASS_TIERS[cls][n]), [], cls + ": no profile without a rating");
+    for(const [name, digits] of Object.entries(roles)){
+      assert.match(digits, new RegExp("^[0-3]{" + SUBCLASS_ROLE_KEYS.length + "}$"), cls + ": " + name);
+      assert.ok(/[1-3]/.test(digits), cls + ": " + name + " adds something");
+    }
+  }
+  assert.deepEqual(subclassRoles("Barbarian", "Path of the Ancestral Guardian"), {damage: 1, defense: 1, control: 2, support: 3, utility: 1});
+  assert.equal(subclassRoles("Wizard", "School of Made-up Things"), null);
+});

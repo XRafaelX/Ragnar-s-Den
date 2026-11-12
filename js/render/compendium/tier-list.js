@@ -8,7 +8,9 @@
      the one the app offers for that edition (subclassesFor), so the
      private Shadow Stalker only shows while the private content is on.
    Tapping an entry shows its letter in every band, the reason, and its
-   Compendium details; a class's also jumps to its subclass tiers.
+   Compendium details; a class's also jumps to its subclass tiers. A
+   subclass's sheet shows what it adds (role dots), and the Subclasses
+   view's Role switch fades the subclasses that add little of that role.
    Motion (none under prefers-reduced-motion): each redraw is compared
    with the one before it (snapshot). Chips still on the page fly from
    where they were to their new spot (FLIP), and one that changed tier
@@ -18,14 +20,16 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { CLASS_LIST } from "../../data/abilities-skills.js";
 import { CLASS_TIERS, TIER_LETTERS, TIER_BANDS } from "../../data/tier-list.js";
-import { subclassRating } from "../../data/tier-list-subclasses.js";
+import { subclassRating, subclassRoles, SUBCLASS_ROLE_KEYS } from "../../data/tier-list-subclasses.js";
 import { escapeHtml, subclassesFor } from "../../core/helpers.js";
 import { showClass, showSubclass } from "./classes.js";
 import { closeInfo } from "./shared.js";
 
 var MODES = [["classes", "Classes"], ["subclasses", "Subclasses"]];
 var EDITIONS = [["2014", "2014 rules"], ["2024", "2024 rules"]];
-var view = {mode: "classes", edition: "2014", band: TIER_BANDS[0].key, cls: ""};
+var view = {mode: "classes", edition: "2014", band: TIER_BANDS[0].key, cls: "", role: ""};
+// The Subclasses view's role filter: "" (any) or a SUBCLASS_ROLE_KEYS key.
+var ROLES = [["", "Any role"]].concat(SUBCLASS_ROLE_KEYS.map(function(r){ return [r.key, r.label]; }));
 var current = null;   // the element the tab is drawn in
 var observers = [];   // the switches' ResizeObservers, dropped on each redraw
 function redraw(){ if(current) draw(current); }
@@ -58,18 +62,50 @@ function segmented(options, value, label, onPick){
   return bar;
 }
 
-/* The rating sheet: the letter in each band, the reason, and buttons
-   [{label, onClick}]. */
-function showRating(title, entry, buttons){
+/* What a subclass adds, as dots per role (0 to 3). */
+function rolesBlock(roles){
+  var wrap = document.createElement("div");
+  wrap.className = "tier-roles";
+  wrap.innerHTML = "<div class='tier-roles-title'>What it adds</div><div class='tier-roles-grid'>" + SUBCLASS_ROLE_KEYS.map(function(r, i){
+    var n = roles[r.key], dots = "";
+    for(var d = 0; d < 3; d++) dots += "<span class='tier-dot" + (d < n ? " on" : "") + "' style='animation-delay:" + (0.25 + i * 0.06 + d * 0.05).toFixed(2) + "s'></span>";
+    return "<div class='tier-role' title='" + escapeHtml(r.hint) + "' aria-label='" + escapeHtml(r.label + ": " + n + " of 3") + "'>" +
+      "<span class='tier-role-label'>" + escapeHtml(r.label) + "</span><span class='tier-role-dots' aria-hidden='true'>" + dots + "</span></div>";
+  }).join("") + "</div>";
+  return wrap;
+}
+
+/* The rating sheet: the letter in each band, what it adds (subclasses
+   with a role profile), the reason, and buttons [{label, onClick}]. */
+function showRating(title, entry, buttons, roles){
   openInfoModal(title + " (" + view.edition + " rules)", function(body){
+    // Each band is a button: picking one marks it here and moves the list
+    // behind the sheet to those levels (its chips fly to their new tiers).
     var strip = document.createElement("div");
     strip.className = "tier-strip";
-    strip.innerHTML = TIER_BANDS.map(function(b, i){
+    strip.setAttribute("role", "group");
+    strip.setAttribute("aria-label", "Character level");
+    TIER_BANDS.forEach(function(b, i){
       var t = entry.tiers[i];
-      return "<div class='tier-strip-cell tier-" + t + (b.key === view.band ? " current" : "") + "'><span class='tier-letter tier-" + t + "'>" + t + "</span>" +
-        "<span class='tier-strip-band'>" + escapeHtml(b.label) + "</span></div>";
-    }).join("");
+      var cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "tier-strip-cell tier-" + t + (b.key === view.band ? " current" : "");
+      cell.setAttribute("aria-pressed", b.key === view.band ? "true" : "false");
+      cell.innerHTML = "<span class='tier-letter tier-" + t + "'>" + t + "</span><span class='tier-strip-band'>" + escapeHtml(b.label) + "</span>";
+      cell.addEventListener("click", function(){
+        if(view.band === b.key) return;
+        view.band = b.key;
+        strip.querySelectorAll(".tier-strip-cell").forEach(function(c, j){
+          var on = TIER_BANDS[j].key === b.key;
+          c.classList.toggle("current", on);
+          c.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        redraw();
+      });
+      strip.appendChild(cell);
+    });
     body.appendChild(strip);
+    if(roles) body.appendChild(rolesBlock(roles));
     var why = document.createElement("p");
     why.className = "cmp-lead";
     why.textContent = entry.why;
@@ -111,8 +147,8 @@ function entries(){
     var label = sub.name.replace(/ \(2024\)$/, "");
     var entry = subclassRating(cls, sub.name);
     if(!entry){ unrated.push(label); return; }
-    items.push({label: label, entry: entry, open: function(){
-      showRating(label, entry, [{label: "Subclass details", onClick: function(){ showSubclass(cls, sub, edArg); }}]);
+    items.push({label: label, entry: entry, roles: subclassRoles(cls, sub.name), open: function(){
+      showRating(label, entry, [{label: "Subclass details", onClick: function(){ showSubclass(cls, sub, edArg); }}], subclassRoles(cls, sub.name));
     }});
   });
   return {items: items, unrated: unrated};
@@ -123,7 +159,7 @@ function entries(){
 function snapshot(el){
   var snap = {chips: {}, segs: {}, had: !!el.querySelector(".tier-view")};
   el.querySelectorAll(".tier-chip").forEach(function(c){
-    snap.chips[c.dataset.key] = {rect: c.getBoundingClientRect(), tier: c.dataset.tier};
+    snap.chips[c.dataset.key] = {rect: c.getBoundingClientRect(), tier: c.dataset.tier, dim: c.classList.contains("tier-dim")};
   });
   el.querySelectorAll(".tier-seg").forEach(function(bar){
     var ind = bar.querySelector(".tier-seg-ind");
@@ -180,6 +216,9 @@ function animateView(el, before){
         {duration: 320, delay: (before.had ? 0 : 140) + Math.min(fresh++, 24) * 24, easing: "ease-out", fill: "backwards"});
       return;
     }
+    // The role filter faded it in or out.
+    var dim = chip.classList.contains("tier-dim");
+    if(old.dim !== dim) animate(chip, [{opacity: old.dim ? 0.32 : 1}, {opacity: dim ? 0.32 : 1}], {duration: 260, easing: "ease-out"});
     var now = chip.getBoundingClientRect();
     var dx = old.rect.left - now.left, dy = old.rect.top - now.top;
     if(dx || dy) animate(chip, [{transform: "translate(" + dx + "px," + dy + "px)"}, {transform: "none"}], {duration: 520, easing: EASE});
@@ -223,6 +262,10 @@ function draw(el){
       onPick: function(v){ view.cls = v; redraw(); }
     }));
     wrap.appendChild(pick);
+    // Fades the subclasses that add little of the picked role.
+    var roleBar = segmented(ROLES, view.role, "Role", function(v){ view.role = v; redraw(); });
+    roleBar.classList.add("tier-role-filter");
+    wrap.appendChild(roleBar);
   }
 
   var lead = document.createElement("p");
@@ -252,6 +295,12 @@ function draw(el){
       // The same entry keeps its key across bands and editions, so it can fly to its new tier.
       chip.dataset.key = view.mode + ":" + (view.mode === "subclasses" ? view.cls + ":" : "") + it.label;
       chip.dataset.tier = letter;
+      // The role filter: below 2 dots in that role, faded (still tappable).
+      if(view.role && it.roles){
+        var strong = it.roles[view.role] >= 2;
+        chip.classList.add(strong ? "tier-match" : "tier-dim");
+        chip.title = (strong ? "Strong at " : "Adds little ") + ROLES.find(function(r){ return r[0] === view.role; })[1].toLowerCase();
+      }
       chip.addEventListener("click", it.open);
       chips.appendChild(chip);
     });

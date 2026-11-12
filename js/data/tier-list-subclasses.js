@@ -226,3 +226,238 @@ export var SUBCLASS_TIERS = {
 export function subclassRating(className, subclassName){
   return (SUBCLASS_TIERS[className] || {})[subclassName] || null;
 }
+
+/* ---- Role profiles ----
+   What each subclass ADDS on top of its class, 0 to 3 per role (0 nothing,
+   1 a little, 2 a real strength, 3 its main job), as five digits in
+   SUBCLASS_ROLE_KEYS order. Not power: a C subclass can still be a 3 at
+   what it does. Keyed like SUBCLASS_TIERS. Every rated subclass has one. */
+export var SUBCLASS_ROLE_KEYS = [
+  {key: "damage", label: "Damage", hint: "Hits harder or more often"},
+  {key: "defense", label: "Defense", hint: "Harder to hurt or bring down"},
+  {key: "control", label: "Control", hint: "Moves, holds or hinders foes"},
+  {key: "support", label: "Support", hint: "Protects, heals or boosts allies"},
+  {key: "utility", label: "Utility", hint: "Exploring, travel and talking"}
+];
+
+export var SUBCLASS_ROLES = {
+  "Artificer": {
+    "Alchemist": "10031",
+    "Artillerist": "31120",
+    "Battle Smith": "21020",
+    "Armorer": "23101",
+    "Alchemist (2024)": "10031",
+    "Armorer (2024)": "23201",
+    "Artillerist (2024)": "31120",
+    "Battle Smith (2024)": "21020",
+    "Cartographer": "10133",
+    "Reanimator": "21121"
+  },
+  "Barbarian": {
+    "Path of the Berserker": "21100",
+    "Path of the Totem Warrior": "03112",
+    "Path of the Zealot": "22011",
+    "Path of the Ancestral Guardian": "11231",
+    "Path of Wild Magic": "11121",
+    "Path of the Beast": "21212",
+    "Path of the Giant": "20201",
+    "Path of the Storm Herald": "11121",
+    "Path of the Battlerager": "11001",
+    "Path of the Berserker (2024)": "31200",
+    "Path of the Wild Heart": "02112",
+    "Path of the World Tree": "01322",
+    "Path of the Zealot (2024)": "22021"
+  },
+  "Bard": {
+    "College of Lore": "00123",
+    "College of Valor": "22010",
+    "College of Eloquence": "00322",
+    "College of Swords": "21100",
+    "College of Creation": "10023",
+    "College of Glamour": "01232",
+    "College of Spirits": "10122",
+    "College of Whispers": "20003",
+    "College of Dance": "12020",
+    "College of Glamour (2024)": "01231",
+    "College of Lore (2024)": "00123",
+    "College of Valor (2024)": "22010"
+  },
+  "Cleric": {
+    "Life Domain": "01030",
+    "Light Domain": "32110",
+    "War Domain": "21010",
+    "Knowledge Domain": "00103",
+    "Tempest Domain": "31101",
+    "Trickery Domain": "11112",
+    "Nature Domain": "11111",
+    "Twilight Domain": "02032",
+    "Forge Domain": "13001",
+    "Order Domain": "01221",
+    "Peace Domain": "01031",
+    "Death Domain": "30000",
+    "Arcana Domain": "10112",
+    "Grave Domain": "20031",
+    "Fate Domain": "10222",
+    "Life Domain (2024)": "00030",
+    "Light Domain (2024)": "32110",
+    "Trickery Domain (2024)": "01122",
+    "War Domain (2024)": "21020"
+  },
+  "Druid": {
+    "Circle of the Land": "11102",
+    "Circle of the Moon": "23001",
+    "Circle of Stars": "21121",
+    "Circle of Wildfire": "21021",
+    "Circle of Dreams": "00032",
+    "Circle of Spores": "22100",
+    "Circle of the Shepherd": "20131",
+    "Circle of the Blighted": "21201",
+    "Circle of the Land (2024)": "21121",
+    "Circle of the Moon (2024)": "22001",
+    "Circle of the Sea": "21211",
+    "Circle of the Stars (2024)": "21121"
+  },
+  "Fighter": {
+    "Champion": "21001",
+    "Battle Master": "21211",
+    "Eldritch Knight": "13101",
+    "Echo Knight": "31112",
+    "Rune Knight": "21221",
+    "Cavalier": "11321",
+    "Samurai": "32001",
+    "Arcane Archer": "10201",
+    "Psi Warrior": "11221",
+    "Banneret (Purple Dragon Knight)": "00021",
+    "Gunslinger": "20201",
+    "Battle Master (2024)": "21211",
+    "Champion (2024)": "22001",
+    "Eldritch Knight (2024)": "13101",
+    "Psi Warrior (2024)": "11221"
+  },
+  "Gunslinger": {
+    "Marksman": "30001",
+    "Outlaw": "20201",
+    "Marshal": "10212",
+    "Eldritch Gunman": "22111"
+  },
+  "Monk": {
+    "Way of the Open Hand": "21300",
+    "Way of Shadow": "11113",
+    "Way of the Four Elements": "10201",
+    "Way of Mercy": "20131",
+    "Way of the Kensei": "21001",
+    "Way of the Astral Self": "21001",
+    "Way of the Ascendant Dragon": "20111",
+    "Way of the Drunken Master": "22001",
+    "Way of the Sun Soul": "20000",
+    "Way of Long Death": "13200",
+    "Warrior of the Open Hand": "21301",
+    "Warrior of Shadow": "12102",
+    "Warrior of the Elements": "21202",
+    "Warrior of Mercy": "20131"
+  },
+  "Paladin": {
+    "Oath of Devotion": "22120",
+    "Oath of the Ancients": "02230",
+    "Oath of Vengeance": "30200",
+    "Oath of Conquest": "11300",
+    "Oathbreaker": "31201",
+    "Oath of Redemption": "12032",
+    "Oath of Glory": "11022",
+    "Oath of the Crown": "01220",
+    "Oath of the Watchers": "10131",
+    "Oath of Devotion (2024)": "22020",
+    "Oath of Glory (2024)": "11022",
+    "Oath of the Ancients (2024)": "02320",
+    "Oath of Vengeance (2024)": "30100"
+  },
+  "Ranger": {
+    "Hunter": "22000",
+    "Beast Master": "11011",
+    "Gloom Stalker": "22102",
+    "Fey Wanderer": "11113",
+    "Horizon Walker": "21112",
+    "Drakewarden": "20012",
+    "Monster Slayer": "21201",
+    "Swarmkeeper": "11301",
+    "Beast Master (2024)": "21111",
+    "Fey Wanderer (2024)": "11113",
+    "Gloom Stalker (2024)": "22102",
+    "Hunter (2024)": "22001"
+  },
+  "Rogue": {
+    "Thief": "10003",
+    "Assassin": "30002",
+    "Arcane Trickster": "12102",
+    "Swashbuckler": "21101",
+    "Soulknife": "21102",
+    "Phantom": "21002",
+    "Scout": "12012",
+    "Inquisitive": "10003",
+    "Mastermind": "01032",
+    "Misfortune Bringer": "21200",
+    "Shadow Stalker": "21002",
+    "Arcane Trickster (2024)": "12102",
+    "Assassin (2024)": "30002",
+    "Soulknife (2024)": "21102",
+    "Thief (2024)": "11003"
+  },
+  "Sorcerer": {
+    "Draconic Bloodline": "22101",
+    "Wild Magic": "10120",
+    "Clockwork Soul": "02131",
+    "Aberrant Mind": "11202",
+    "Divine Soul": "11031",
+    "Shadow Magic": "12202",
+    "Storm Sorcery": "11111",
+    "Lunar Sorcery": "11111",
+    "Aberrant Sorcery": "11202",
+    "Clockwork Sorcery": "02131",
+    "Draconic Sorcery": "22001",
+    "Wild Magic Sorcery": "10120"
+  },
+  "Warlock": {
+    "The Fiend": "22001",
+    "The Archfey": "02201",
+    "The Great Old One": "01202",
+    "The Hexblade": "32000",
+    "The Celestial": "21030",
+    "The Fathomless": "10222",
+    "The Genie": "21013",
+    "The Undead": "12201",
+    "The Undying": "02011",
+    "Archfey Patron": "12102",
+    "Celestial Patron": "21030",
+    "Fiend Patron": "22001",
+    "Great Old One Patron": "11202"
+  },
+  "Wizard": {
+    "School of Evocation": "30010",
+    "School of Abjuration": "03120",
+    "School of Divination": "00222",
+    "School of Illusion": "01203",
+    "School of Necromancy": "21101",
+    "Bladesinging": "23001",
+    "War Magic": "13000",
+    "Order of Scribes": "11003",
+    "School of Conjuration": "11012",
+    "School of Enchantment": "01301",
+    "School of Transmutation": "01013",
+    "Chronurgy Magic": "00321",
+    "Graviturgy Magic": "10311",
+    "Abjurer": "03220",
+    "Diviner": "00222",
+    "Evoker": "30010",
+    "Illusionist": "11203"
+  }
+};
+
+/* The subclass's role profile as {damage: 0-3, ...}, or null when its class
+   has none yet (or it's custom). */
+export function subclassRoles(className, subclassName){
+  var digits = (SUBCLASS_ROLES[className] || {})[subclassName];
+  if(!digits) return null;
+  var out = {};
+  SUBCLASS_ROLE_KEYS.forEach(function(r, i){ out[r.key] = Number(digits[i]); });
+  return out;
+}
