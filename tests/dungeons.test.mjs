@@ -15,7 +15,7 @@ import {
   toggleDoor, isDoor, noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder,
   linkAt, stairsOf, linkStairs, arrivalSquare, isLit, setLit, toggleLitArea, isLocked, lockedAhead,
   makeRng, generateMap, createRandomDungeon, randomDungeonName, cutAt, ovalCells, fillOval, diagonalCells, carveDiagonal,
-  setMapImage, placeMapImage, imageFit, fitMapToImage, removeMapImage, imagesInUse
+  setMapImage, placeMapImage, imageFit, fitMapToImage, removeMapImage, imagesInUse, fitLoses
 } from "../js/core/dungeons.js";
 
 function fresh(){
@@ -1228,4 +1228,28 @@ test("the players' map carries the picture's placement; pictures in use are list
   assert.equal(findMap("m").revealed.charAt(0), "1", "fog on a picture's rock square is kept");
   assert.equal(findMap("n").image, null, "no id, no picture");
   assert.equal(fitMapToImage(findMap("n")), false);
+});
+
+test("fitting a drawn map to a small picture crops to where the picture is, keeping the tracing on it, and says first if drawing is cut off", () => {
+  fresh();
+  const d = newMap("Big", "large");
+  fillRect(d, 21, 13, 23, 15, FLOOR);   // a room in the middle
+  fillRect(d, 2, 2, 3, 3, FLOOR);       // and one in the corner, under the picture
+  setMapImage(d, "img", 8, 1);          // a picture 8 squares wide in the top left corner
+  assert.deepEqual([d.w, d.h], [50, 34], "a drawn map keeps its size when a picture goes on");
+  assert.equal(fitLoses(d), true, "the middle room is outside the picture");
+  assert.equal(fitMapToImage(d), true);
+  assert.deepEqual([d.w, d.h], [8, 8]);
+  assert.deepEqual([d.image.ox, d.image.oy], [0, 0], "the picture is still on the map, at its corner");
+  assert.equal(cellAt(d, 2, 2), FLOOR, "the room under the picture stayed under it");
+  assert.equal(d.cells.replace(/ /g, "").length, 4, "the middle room was cut off");
+  const e = newMap("Moved", "large");
+  fillRect(e, 30, 20, 31, 21, FLOOR);
+  setMapImage(e, "img2", 10, 0.8);
+  placeMapImage(e, { ox: 28, oy: 18 });
+  assert.equal(fitLoses(e), false, "everything drawn is on the picture");
+  fitMapToImage(e);
+  assert.deepEqual([e.w, e.h], [10, 8]);
+  assert.equal(cellAt(e, 2, 2), FLOOR, "the room moved with the picture to the map's corner");
+  assert.deepEqual([e.image.ox, e.image.oy], [0, 0]);
 });

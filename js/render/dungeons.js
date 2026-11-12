@@ -5,7 +5,7 @@ import {
   placeParty, walkParty, removeParty, addMap, removeMap, moveMap, placeMap, renameMap, setSight, toggleDoor, isDoor,
   noteAt, addNote, setNoteText, moveNote, removeNote, notesInOrder, cellAt, linkAt, linkStairs, arrivalSquare,
   revealedBounds, mapTitle, isLit, setLit, toggleLitArea, isLocked, lockedAhead, generateMap, createRandomDungeon,
-  fillOval, ovalCells, carveDiagonal, diagonalCells, isOpen, setMapImage, placeMapImage, imageFit, fitMapToImage, removeMapImage, imagesInUse,
+  fillOval, ovalCells, carveDiagonal, diagonalCells, isOpen, setMapImage, placeMapImage, imageFit, fitMapToImage, fitLoses, removeMapImage, imagesInUse,
   SIGHT_OPTIONS, SIGHT_MAX,
   DUNGEON_SIZES, DUNGEON_STYLES, MIN_SIDE, MAX_SIDE, FLOOR, ROCK
 } from "../core/dungeons.js";
@@ -1921,8 +1921,13 @@ function openMapPictureSheet(){
       var id = newImageId();
       return saveMapImage(id, p.blob).then(function(){
         if(!b || b.d !== d) return;
-        var across = Math.max(8, Math.min(80, Math.round(p.width / 70)));
+        // How wide to start it: a picture swapped keeps the old one's
+        // scale, one under a drawn map spans the map, and one on a blank
+        // map is guessed from its pixels (70 a square is common).
         var hadPicture = !!d.image;
+        var across = hadPicture ? d.image.across
+          : !isBlank(d) || d.notes.length ? d.w
+          : Math.max(8, Math.min(80, Math.round(p.width / 70)));
         setMapImage(d, id, across, p.height / p.width);
         saveDungeon(d);
         if(hadPicture) tidyPictures();
@@ -2004,10 +2009,15 @@ function openMapPictureSheet(){
       actions.appendChild(button("btn ghost", "Fit the map to it", function(){
         closeSheet();
         if(!b || b.d !== d) return;
-        change(function(){ return fitMapToImage(d); });
-        fit();
-        draw();
-      }, "Make the map " + size[0] + " by " + size[1] + " squares, the picture's size"));
+        function go(){
+          if(!b || b.d !== d) return;
+          change(function(){ return fitMapToImage(d); });
+          fit();
+          draw();
+        }
+        if(fitLoses(d)) confirmDialog("Cut the map down to the picture?", "Part of what you drew is outside the picture and will be removed. You can undo this.", go);
+        else go();
+      }, "Make the map exactly the picture: " + size[0] + " by " + size[1] + " squares"));
     }
     actions.appendChild(button("btn primary", "Done", closeSheet));
     body.appendChild(actions);

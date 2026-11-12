@@ -616,11 +616,13 @@ export function resizeLoses(d, w, h){
   return false;
 }
 
-export function resizeDungeon(d, w, h){
+/* `at` (optional) says where the old map's top left lands on the new
+   one, {x, y} in squares; without it the map stays centred. */
+export function resizeDungeon(d, w, h, at){
   w = side(w, d.w);
   h = side(h, d.h);
-  if(w === d.w && h === d.h) return false;
-  var off = resizeOffset(d, w, h);
+  if(w === d.w && h === d.h && (!at || (at.x === 0 && at.y === 0))) return false;
+  var off = at || resizeOffset(d, w, h);
   var cells = "", revealed = "", lit = "", cuts = "";
   for(var y = 0; y < h; y++){
     for(var x = 0; x < w; x++){
@@ -1406,27 +1408,46 @@ export function imageFit(d){
   return [Math.max(MIN_SIDE, Math.min(MAX_SIDE, w)), Math.max(MIN_SIDE, Math.min(MAX_SIDE, h))];
 }
 
-/* Resizes the map to the picture's size. A map with nothing on it is
-   simply made that size, the picture's top left on its top left; a map
-   already traced grows or shrinks around the middle like any resize,
-   the picture and the tracing moving together. */
+/* The squares of the map the picture covers, once fitted: its top left
+   square (the picture's corner, to the nearest square) and the size
+   that holds it. */
+function imageRect(d){
+  var size = imageFit(d);
+  return { x: Math.round(d.image.ox), y: Math.round(d.image.oy), w: size[0], h: size[1] };
+}
+
+/* True if fitting the map to the picture would cut off something drawn
+   (ground or a note) outside it. */
+export function fitLoses(d){
+  if(!d.image) return false;
+  var r = imageRect(d);
+  function outside(x, y){ return x < r.x || y < r.y || x >= r.x + r.w || y >= r.y + r.h; }
+  for(var y = 0; y < d.h; y++) for(var x = 0; x < d.w; x++){
+    if(d.cells.charAt(y * d.w + x) !== ROCK && outside(x, y)) return true;
+  }
+  return d.notes.some(function(n){ return outside(n.x, n.y); });
+}
+
+/* Makes the map exactly the picture: the map's edges move to the
+   picture's, wherever it sits, and the tracing stays on the picture
+   (anything drawn outside it is cut off: ask first, see fitLoses). */
 export function fitMapToImage(d){
   if(!d.image) return false;
-  var size = imageFit(d);
+  var r = imageRect(d);
   if(isBlank(d) && !d.notes.length){
-    var n = size[0] * size[1];
-    d.w = size[0];
-    d.h = size[1];
+    var n = r.w * r.h;
+    d.w = r.w;
+    d.h = r.h;
     d.cells = new Array(n + 1).join(ROCK);
     d.revealed = new Array(n + 1).join(FOGGED);
     d.lit = new Array(n + 1).join(FOGGED);
     d.cuts = new Array(n + 1).join("0");
     d.party = null;
     d.links = [];
-    d.image = Object.assign({}, d.image, { ox: 0, oy: 0 });
+    d.image = Object.assign({}, d.image, { ox: d.image.ox - r.x, oy: d.image.oy - r.y });
     return true;
   }
-  return resizeDungeon(d, size[0], size[1]);
+  return resizeDungeon(d, r.w, r.h, { x: -r.x, y: -r.y });
 }
 
 export function removeMapImage(d){
