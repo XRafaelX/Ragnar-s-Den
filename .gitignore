@@ -3,6 +3,7 @@
 .vscode/
 .claude/
 .junie/
+CLAUDE.md
 
 # OS files
 .DS_Store
