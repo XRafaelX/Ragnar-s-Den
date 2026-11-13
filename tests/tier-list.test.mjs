@@ -79,7 +79,7 @@ test("each subclass rating has one letter per band and a plain reason", () => {
 
 test("a 2014 and a 2024 version are rated apart, and custom ones not at all", () => {
   assert.deepEqual(subclassRating("Druid", "Circle of the Moon").tiers, ["S","A","B","A"]);
-  assert.deepEqual(subclassRating("Druid", "Circle of the Moon (2024)").tiers, ["A","A","B","B"]);
+  assert.deepEqual(subclassRating("Druid", "Circle of the Moon (2024)").tiers, ["A","A","A","A"]);
   assert.equal(subclassRating("Wizard", "School of Made-up Things"), null);
 });
 
@@ -112,4 +112,24 @@ test("every shines-when line belongs to a rated subclass and reads plainly", () 
   }
   assert.match(subclassShines("Ranger", "Gloom Stalker"), /darkvision/);
   assert.equal(subclassShines("Wizard", "School of Divination"), "");
+});
+
+/* 2024 ratings for subclasses in both lists (2026-11-13, after the RPGBot
+   and Tabletop Joab cross-check). */
+import { SUBCLASS_TIERS_2024 } from "../js/data/tier-list-subclasses.js";
+
+test("a 2024 rating only exists for a subclass in both lists, and only the 2024 list uses it", () => {
+  for(const [cls, rated] of Object.entries(SUBCLASS_TIERS_2024)){
+    for(const [name, e] of Object.entries(rated)){
+      const sub = (SUBCLASSES[cls] || []).find((s) => s.name === name);
+      assert.ok(sub && !sub.edition && SUBCLASS_TIERS[cls][name], cls + ": " + name + " is in both lists and rated");
+      assert.equal(e.tiers.length, TIER_BANDS.length);
+      assert.ok(!/[;\u2013\u2014]/.test(e.why));
+    }
+  }
+  assert.deepEqual(subclassRating("Warlock", "The Hexblade").tiers, ["S","S","S","S"]);
+  assert.deepEqual(subclassRating("Warlock", "The Hexblade", "2014").tiers, ["S","S","S","S"]);
+  assert.deepEqual(subclassRating("Warlock", "The Hexblade", "2024").tiers, ["A","A","A","A"]);
+  assert.deepEqual(subclassRating("Cleric", "Death Domain", "2024").tiers, ["C","C","C","C"]);
+  assert.deepEqual(subclassRating("Fighter", "Cavalier", "2024").tiers, ["A","A","A","A"]);
 });

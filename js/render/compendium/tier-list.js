@@ -153,7 +153,7 @@ function entries(){
   subclassesFor(cls, ed).forEach(function(sub){
     // In the 2024 list the 2024 version is the plain name.
     var label = sub.name.replace(/ \(2024\)$/, "");
-    var entry = subclassRating(cls, sub.name);
+    var entry = subclassRating(cls, sub.name, ed);
     if(!entry){ unrated.push(label); return; }
     items.push({label: label, entry: entry, roles: subclassRoles(cls, sub.name), open: function(){
       showRating(label, entry, [{label: "Subclass details", onClick: function(){ showSubclass(cls, sub, edArg); }}], subclassRoles(cls, sub.name), subclassShines(cls, sub.name));
