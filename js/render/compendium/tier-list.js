@@ -20,7 +20,7 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { CLASS_LIST } from "../../data/abilities-skills.js";
 import { CLASS_TIERS, TIER_LETTERS, TIER_BANDS } from "../../data/tier-list.js";
-import { subclassRating, subclassRoles, SUBCLASS_ROLE_KEYS } from "../../data/tier-list-subclasses.js";
+import { subclassRating, subclassRoles, subclassShines, SUBCLASS_ROLE_KEYS } from "../../data/tier-list-subclasses.js";
 import { escapeHtml, subclassesFor } from "../../core/helpers.js";
 import { showClass, showSubclass } from "./classes.js";
 import { closeInfo } from "./shared.js";
@@ -77,7 +77,8 @@ function rolesBlock(roles){
 
 /* The rating sheet: the letter in each band, what it adds (subclasses
    with a role profile), the reason, and buttons [{label, onClick}]. */
-function showRating(title, entry, buttons, roles){
+/* shines: the subclass's "shines when" line (where the campaign matters), or "". */
+function showRating(title, entry, buttons, roles, shines){
   openInfoModal(title + " (" + view.edition + " rules)", function(body){
     // Each band is a button: picking one marks it here and moves the list
     // behind the sheet to those levels (its chips fly to their new tiers).
@@ -110,6 +111,13 @@ function showRating(title, entry, buttons, roles){
     why.className = "cmp-lead";
     why.textContent = entry.why;
     body.appendChild(why);
+    if(shines){
+      var tip = document.createElement("p");
+      tip.className = "tier-shines";
+      tip.innerHTML = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z'/></svg><span></span>";
+      tip.querySelector("span").textContent = shines;
+      body.appendChild(tip);
+    }
     var actions = document.createElement("div");
     actions.className = "tier-actions";
     buttons.forEach(function(btn){
@@ -148,7 +156,7 @@ function entries(){
     var entry = subclassRating(cls, sub.name);
     if(!entry){ unrated.push(label); return; }
     items.push({label: label, entry: entry, roles: subclassRoles(cls, sub.name), open: function(){
-      showRating(label, entry, [{label: "Subclass details", onClick: function(){ showSubclass(cls, sub, edArg); }}], subclassRoles(cls, sub.name));
+      showRating(label, entry, [{label: "Subclass details", onClick: function(){ showSubclass(cls, sub, edArg); }}], subclassRoles(cls, sub.name), subclassShines(cls, sub.name));
     }});
   });
   return {items: items, unrated: unrated};

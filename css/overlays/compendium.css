@@ -261,6 +261,12 @@
 .tier-chip.tier-dim:hover{opacity:.7;}
 .tier-chip.tier-match{border-color:var(--brass-bright);box-shadow:0 0 0 1px color-mix(in srgb, var(--brass-bright) 35%, transparent), 0 0 12px color-mix(in srgb, var(--brass) 30%, transparent);}
 .tier-actions{display:flex;flex-wrap:wrap;gap:8px;}
+/* "Shines when": where the campaign or table changes a subclass's value. */
+.tier-shines{
+  display:flex;gap:8px;align-items:flex-start;margin:-4px 0 14px;padding:8px 10px;border-radius:8px;font-size:13px;line-height:1.45;
+  color:var(--text-on-parch);background:color-mix(in srgb, #e8b04a 9%, transparent);border:1px solid color-mix(in srgb, #e8b04a 28%, transparent);
+}
+.tier-shines svg{flex:none;width:14px;height:14px;margin-top:2px;fill:#e8b04a;}
 /* The rating of one entry in every band (info modal): the letters pop in one by one. */
 .tier-strip{display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:14px;}
 .tier-strip-cell{

@@ -99,3 +99,17 @@ test("every rated subclass has a role profile, five digits 0 to 3", () => {
   assert.deepEqual(subclassRoles("Barbarian", "Path of the Ancestral Guardian"), {damage: 1, defense: 1, control: 2, support: 3, utility: 1});
   assert.equal(subclassRoles("Wizard", "School of Made-up Things"), null);
 });
+
+/* "Shines when" lines (2026-11-13): only for rated subclasses, plain text. */
+import { SUBCLASS_SHINES, subclassShines } from "../js/data/tier-list-subclasses.js";
+
+test("every shines-when line belongs to a rated subclass and reads plainly", () => {
+  for(const [cls, lines] of Object.entries(SUBCLASS_SHINES)){
+    for(const [name, text] of Object.entries(lines)){
+      assert.ok(SUBCLASS_TIERS[cls] && SUBCLASS_TIERS[cls][name], cls + ": " + name + " is rated");
+      assert.ok(text.length <= 115 && !/[;\u2013\u2014]/.test(text), cls + ": " + name + ": short, no semicolons or long dashes");
+    }
+  }
+  assert.match(subclassShines("Ranger", "Gloom Stalker"), /darkvision/);
+  assert.equal(subclassShines("Wizard", "School of Divination"), "");
+});

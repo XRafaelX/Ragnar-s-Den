@@ -461,3 +461,104 @@ export function subclassRoles(className, subclassName){
   SUBCLASS_ROLE_KEYS.forEach(function(r, i){ out[r.key] = Number(digits[i]); });
   return out;
 }
+
+/* ---- Shines when ----
+   One short line for a subclass whose value depends on the campaign or the
+   table more than on its own features (darkness, undead, mounts, short
+   rests, surprise, summons). Shown in its rating sheet under the reason.
+   Keyed like SUBCLASS_TIERS. Most subclasses have none. */
+export var SUBCLASS_SHINES = {
+  "Artificer": {
+    "Cartographer": "Shines in travel and exploration campaigns, where its maps and teleports get used every day."
+  },
+  "Bard": {
+    "College of Whispers": "Shines in intrigue campaigns with lots of private talks, disguises and secrets.",
+    "College of Creation": "Shines when the party often needs a ladder, a rope or a tool on the spot."
+  },
+  "Cleric": {
+    "Death Domain": "Shines when few foes are undead. Many resist necrotic damage until level 6, and some are immune to it.",
+    "Grave Domain": "Shines in deadly campaigns where allies often drop to 0 hit points.",
+    "Knowledge Domain": "Shines in mystery and research campaigns with lots of questions to answer.",
+    "Light Domain": "Shines against groups of weaker foes, where Fireball and Radiance of the Dawn hit many at once.",
+    "Light Domain (2024)": "Shines against groups of weaker foes, where Fireball and Radiance of the Dawn hit many at once.",
+    "Twilight Domain": "Shines underground and at night, where Steps of Night lets you fly."
+  },
+  "Druid": {
+    "Circle of the Moon": "Shines when you have seen many beasts. Wild Shape only takes the form of beasts you have seen.",
+    "Circle of the Shepherd": "Shines at tables happy to run many summoned creatures. They slow combat down.",
+    "Circle of Spores": "Shines against crowds of beasts and humanoids it can raise as zombies."
+  },
+  "Fighter": {
+    "Battle Master": "Shines in campaigns with many short rests, which bring its superiority dice back.",
+    "Battle Master (2024)": "Shines in campaigns with many short rests, which bring its superiority dice back.",
+    "Rune Knight": "Shines in campaigns with many short rests, which bring its runes and Giant's Might back.",
+    "Arcane Archer": "Shines in campaigns with many short rests. It only gets two Arcane Shots per rest.",
+    "Cavalier": "Shines when you fight mounted. At your table it uses the higher of STR or DEX and can ride the War Camel.",
+    "Gunslinger": "Only works if your DM allows firearms in the campaign."
+  },
+  "Monk": {
+    "Way of Shadow": "Shines in dark dungeons and on night missions, where Shadow Step works.",
+    "Warrior of Shadow": "Shines in the dark, where Shadow Step works, until level 11 frees it from needing darkness.",
+    "Way of Long Death": "Shines against crowds of weak foes that drop fast and feed Touch of Death."
+  },
+  "Paladin": {
+    "Oath of Vengeance": "Shines in boss fights against one big foe.",
+    "Oath of Vengeance (2024)": "Shines in boss fights against one big foe.",
+    "Oath of Conquest": "Shines against foes that can be frightened. Many undead and constructs can't be.",
+    "Oathbreaker": "Shines in evil or undead-heavy campaigns. It's a villain option, so ask your DM first.",
+    "Oath of the Ancients": "Shines against spellcasters, since Aura of Warding halves the damage of their spells.",
+    "Oath of the Ancients (2024)": "Shines against necrotic, psychic and radiant damage, like undead and mind flayers.",
+    "Oath of Devotion": "Shines against charmers like vampires and fey.",
+    "Oath of the Watchers": "Shines against creatures from other planes: aberrations, celestials, elementals, fey and fiends."
+  },
+  "Ranger": {
+    "Beast Master": "Shines only with Tasha's optional rules on, which swap in the stronger primal companion.",
+    "Gloom Stalker": "Shines underground and at night, where Umbral Sight hides you from darkvision.",
+    "Gloom Stalker (2024)": "Shines underground and at night, where Umbral Sight hides you from darkvision.",
+    "Horizon Walker": "Shines in planar campaigns, and against foes that resist weapon damage.",
+    "Monster Slayer": "Shines against spellcasters and single big monsters.",
+    "Drakewarden": "Shines on long outdoor journeys, where a flying mount from level 7 matters.",
+    "Fey Wanderer": "Shines in social campaigns, with your Wisdom added to every Charisma check.",
+    "Fey Wanderer (2024)": "Shines in social campaigns, with your Wisdom added to every Charisma check."
+  },
+  "Rogue": {
+    "Assassin": "Shines when the party can often surprise foes. It does little when fights start in the open.",
+    "Assassin (2024)": "Shines when you often act before your foes, in ambushes and the first round of a fight.",
+    "Inquisitive": "Shines in mystery and investigation campaigns.",
+    "Mastermind": "Shines in intrigue campaigns, next to allies who make big attacks.",
+    "Thief": "Shines with plenty of magic items, traps, locks and climbing.",
+    "Thief (2024)": "Shines with plenty of magic items, traps, locks and climbing.",
+    "Swashbuckler": "Shines in one-on-one fights, where Sneak Attack needs no help.",
+    "Scout": "Shines in wilderness campaigns.",
+    "Shadow Stalker": "Shines in dim light, at night and in dungeons, where Shadow Walk works."
+  },
+  "Sorcerer": {
+    "Draconic Bloodline": "Shines when many of your spells deal your dragon's damage type.",
+    "Draconic Sorcery": "Shines when many of your spells deal your chosen damage type.",
+    "Wild Magic": "Shines at tables that enjoy chaos. Your DM decides when you roll for a surge.",
+    "Shadow Magic": "Shines in dark dungeons, where Shadow Walk teleports you from shadow to shadow."
+  },
+  "Warlock": {
+    "The Fathomless": "Shines in sea, coastal and underwater campaigns.",
+    "The Undead": "Shines against foes that can be frightened.",
+    "The Undying": "Shines in undead-heavy campaigns, where undead struggle to attack you.",
+    "The Great Old One": "Shines in intrigue campaigns, where telepathy opens doors.",
+    "Great Old One Patron": "Shines in intrigue campaigns, where telepathy opens doors."
+  },
+  "Wizard": {
+    "School of Necromancy": "Shines at tables happy with a horde of undead servants. They slow combat, and some allies may object.",
+    "School of Conjuration": "Shines with summoning spells, at tables happy to run many summoned creatures.",
+    "School of Enchantment": "Shines against humanoids. Many monsters, like undead and constructs, can't be charmed.",
+    "School of Illusion": "Shines at creative tables where the DM rewards clever illusions.",
+    "Illusionist": "Shines at creative tables where the DM rewards clever illusions.",
+    "School of Evocation": "Shines when your allies fight up close, where Sculpt Spells keeps them out of your blasts.",
+    "Evoker": "Shines when your allies fight up close, where Sculpt Spells keeps them out of your blasts.",
+    "School of Abjuration": "Shines against enemy spellcasters, with better Counterspell and Dispel Magic.",
+    "Abjurer": "Shines against enemy spellcasters, with Counterspell and Dispel Magic always ready."
+  }
+};
+
+/* The subclass's "shines when" line, or "" when it has none. */
+export function subclassShines(className, subclassName){
+  return (SUBCLASS_SHINES[className] || {})[subclassName] || "";
+}
