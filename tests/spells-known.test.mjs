@@ -133,6 +133,63 @@ test("spells added by hand past the table never use up a level's new spells", ()
   assert.equal(section(planFor(cleric, "Cleric"), "cantrips").count, 1);
 });
 
+test("a preparing class's level-up fills its new daily count: Spells to prepare", () => {
+  const prep = (c, names) => names.forEach((n) => { const sp = spellFromCatalog(n, SPELL_DATA[n]); sp.prepared = true; sp.learnedBy = c.classes[0].name; c.spells.push(sp); });
+  // Cleric 1 with its 4 prepared: cleric 2 prepares 5, so one more.
+  const cleric = makeChar([{ name: "Cleric", subclass: "Knowledge Domain", level: 1 }], [["Guidance", "Cleric"], ["Light", "Cleric"], ["Thaumaturgy", "Cleric"]]);
+  prep(cleric, ["Bless", "Cure Wounds", "Guiding Bolt", "Healing Word"]);
+  let plan = planFor(cleric, "Cleric");
+  let s = section(plan, "prepare");
+  assert.equal(s.count, 1);
+  assert.equal(s.title, "Spells to prepare");
+  assert.ok(s.names.every((n) => levelOf(n) === 1) && !s.names.includes("Bless"), "1st level only, prepared ones left out");
+  assert.match(plan.summary, /2nd-level cleric prepares 5 spells a day and knows 3 cantrips\. You have 4 prepared now\./);
+  // An unprepared spell on the sheet is offered first, and picking it prepares it in place (undo unprepares it).
+  const extra = spellFromCatalog("Sanctuary", SPELL_DATA["Sanctuary"]);
+  extra.prepared = false;
+  cleric.spells.push(extra);
+  plan = planFor(cleric, "Cleric");
+  s = section(plan, "prepare");
+  assert.equal(s.names[0], "Sanctuary");
+  assert.deepEqual(s.tags["Sanctuary"], ["On your sheet"]);
+  const rec = SK.applyLearn(cleric, "Cleric", plan, plan.sections, { prepare: ["Sanctuary"] });
+  assert.deepEqual([rec.added, rec.prepared, rec.toPrepare], [[], ["Sanctuary"], ["Sanctuary"]]);
+  assert.equal(cleric.spells.filter((x) => x.name === "Sanctuary").length, 1, "no second copy");
+  assert.ok(cleric.spells.find((x) => x.name === "Sanctuary").prepared);
+  SK.undoLearn(cleric, rec);
+  assert.ok(!cleric.spells.find((x) => x.name === "Sanctuary").prepared);
+  // A new pick is added prepared.
+  const rec2 = SK.applyLearn(cleric, "Cleric", plan, plan.sections, { prepare: ["Command"] });
+  assert.deepEqual(rec2.added, ["Command"]);
+  assert.ok(cleric.spells.find((x) => x.name === "Command").prepared);
+
+  // Already at the new count (a full sheet): nothing to pick.
+  const full = makeChar([{ name: "Druid", subclass: "Circle of the Moon", level: 1 }], [["Druidcraft", "Druid"], ["Guidance", "Druid"]]);
+  prep(full, ["Entangle", "Faerie Fire", "Goodberry", "Thunderwave", "Healing Word"]);
+  assert.equal(section(planFor(full, "Druid"), "prepare"), undefined, "5 prepared at druid 2's 5");
+  // A paladin 1 prepares none; at 2 it prepares 3, all asked for.
+  const pal = makeChar([{ name: "Paladin", subclass: "", level: 1 }]);
+  s = section(planFor(pal, "Paladin"), "prepare");
+  assert.equal(s.count, 3);
+  assert.ok(s.names.includes("Bless") && s.names.every((n) => levelOf(n) === 1));
+  // A 2024 ranger (prepares) 1 to 2 with its 2: one more. A 2014 ranger learns instead.
+  const ranger = makeChar([{ name: "Ranger", subclass: "", level: 1, edition: "2024" }]);
+  prep(ranger, ["Ensnaring Strike", "Cure Wounds"]);
+  assert.equal(SK.learnPlan(ranger, { name: "Ranger", subclass: "", level: 2, edition: "2024" }, false).sections.find((x) => x.id === "prepare").count, 1);
+  assert.equal(section(planFor(makeChar([{ name: "Ranger", subclass: "", level: 1 }]), "Ranger"), "prepare"), undefined);
+  // An artificer 2 with 2 prepared: 4 at artificer 3 (2, 3, 4 by the table), so two more.
+  const art = makeChar([{ name: "Artificer", subclass: "", level: 2 }], [["Mending", "Artificer"], ["Guidance", "Artificer"]]);
+  prep(art,["Cure Wounds", "Faerie Fire"]);
+  assert.equal(section(planFor(art, "Artificer"), "prepare").count, 2);
+  // Multiclassing into a cleric: its 4.
+  const multi = makeChar([{ name: "Fighter", subclass: "Champion", level: 5 }], [], { wis: 14 });
+  assert.equal(SK.learnPlan(multi, { name: "Cleric", subclass: "Life Domain", level: 1 }, true).sections.find((x) => x.id === "prepare").count, 4);
+  // A wizard learns spellbook spells, never a "Spells to prepare" list.
+  const wiz = makeChar([{ name: "Wizard", subclass: "", level: 1 }]);
+  assert.equal(section(planFor(wiz, "Wizard"), "prepare"), undefined);
+  assert.equal(planFor(wiz, "Wizard").prepareRoom, 5, "but its new spellbook spells fill the 5 free places");
+});
+
 test("a player behind the table catches up; two casting classes fall back to the level's gain", () => {
   const behind = makeChar([{ name: "Sorcerer", subclass: "Draconic Bloodline", level: 4 }], ["Fire Bolt", "Shield"]);
   assert.equal(section(planFor(behind, "Sorcerer"), "spells").count, 5, "6 at level 5, knows 1");

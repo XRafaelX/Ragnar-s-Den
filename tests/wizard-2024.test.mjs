@@ -75,7 +75,15 @@ test("Savant: two school spells at 3, one more at each new slot level", () => {
   assert.ok(three.names.includes("Magic Missile") && three.names.includes("Scorching Ray"));
   const rec = applyLearn(c, "Wizard", plan(c, 3, "Evoker"), [three], { savant: ["Magic Missile", "Scorching Ray"] });
   assert.deepEqual(rec.added, ["Magic Missile", "Scorching Ray"]);
-  assert.ok(c.spells.filter((s) => s.name === "Magic Missile" || s.name === "Scorching Ray").every((s) => s.prepared === false && s.learnedBy === "Wizard"), "spellbook spells, not prepared");
+  assert.ok(c.spells.filter((s) => s.name === "Magic Missile" || s.name === "Scorching Ray").every((s) => s.prepared === true && s.learnedBy === "Wizard"),
+    "spellbook spells, prepared while the day's count has room (6 at wizard 3, none prepared before)");
+  // With the day's count already full, new spellbook spells wait unprepared.
+  const full = wiz(2);
+  ["Shield", "Sleep", "Burning Hands", "Find Familiar", "Thunderwave", "Mage Armor"].forEach((n) => full.spells.push({ name: n, level: 1, prepared: true, learnedBy: "Wizard" }));
+  const fullPlan = plan(full, 3, "Evoker");
+  assert.equal(fullPlan.prepareRoom, 0);
+  applyLearn(full, "Wizard", fullPlan, [fullPlan.sections.find((s) => s.id === "savant")], { savant: ["Magic Missile", "Scorching Ray"] });
+  assert.ok(full.spells.filter((s) => s.name === "Magic Missile" || s.name === "Scorching Ray").every((s) => s.prepared === false), "no room: not prepared");
   const four = wiz(4, "Diviner");
   assert.ok(!plan(four, 4).sections.some((s) => s.id === "savant"));
   const five = plan(wiz(5, "Diviner"), 5).sections.find((s) => s.id === "savant");

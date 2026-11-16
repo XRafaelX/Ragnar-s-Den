@@ -274,7 +274,10 @@ export function finish(){
     className: entry.name, isNewClass: record.isNewClass, newClassLevel: t.newLevel, subclass: subName, currentSubclass: entry.subclass,
     totalBefore: before.total, pbBefore: before.pb, hpGain: maxGain, speedGain: computeSpeed(c).value - before.speed,
     features: gained, feat: feat, bonusFeat: bonusFeat, asi: withFeatAbility(withFeatAbility(record.asi, feat), bonusFeat),
-    slotsBefore: before.slots, pactBefore: before.pact, learned: record.learn ? record.learn.added : [], profGained: profGained,
+    slotsBefore: before.slots, pactBefore: before.pact, profGained: profGained,
+    // A preparing class's "Spells to prepare" are told apart from spells learned.
+    learned: record.learn ? record.learn.added.filter(function(n){ return (record.learn.toPrepare||[]).indexOf(n)===-1; }) : [],
+    prepared: record.learn ? record.learn.toPrepare || [] : [],
     thirdCaster: classCasterType(entry)==="third",
     companions: characterCompanions(c).filter(function(x){ return before.companions.indexOf(x.def.id)===-1; })
   });
@@ -438,8 +441,9 @@ function showUnlocked(c, s){
 
     var tips = [];
     var spellTip = s.thirdCaster ? THIRD_CASTER_SPELL_TIPS[s.newClassLevel] : prepEd==="2024" ? "" : (SPELL_TIPS[s.className]||{})[s.newClassLevel];
-    if(s.learned.length){
-      tips.push("You learned "+s.learned.join(", ")+". "+(s.learned.length>1 ? "They're" : "It's")+" on the Spells tab.");
+    if(s.learned.length || s.prepared.length){
+      if(s.learned.length) tips.push("You learned "+s.learned.join(", ")+". "+(s.learned.length>1 ? "They're" : "It's")+" on the Spells tab.");
+      if(s.prepared.length) tips.push("You prepared "+s.prepared.join(", ")+". "+(s.prepared.length>1 ? "They're" : "It's")+" on the Spells tab, ready to cast.");
       // What's left of the tip once the picks it asks for are made
       // ("Your pact slots are now 2nd level.").
       spellTip = spellTip && learnedTipRest(spellTip);

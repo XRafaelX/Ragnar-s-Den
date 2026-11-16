@@ -28,7 +28,7 @@
    picks from the class list with Tasha's additions, tagged in the lists. */
 import { SPELL_DATA, spellDataForClass, spellOnClassList, tashaAddsSpell, tashaSpellCount, catalogSpellName } from "../data/spells.js";
 import { SAVANT_SCHOOLS, SAVANT_LEVELS } from "../data/wizard-2024.js";
-import { KNOWN_CASTERS, SUBCLASS_CASTERS, EDITION_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, PREPARED_CASTERS, preparedAt, preparingDef } from "../data/spells-known.js";
+import { KNOWN_CASTERS, SUBCLASS_CASTERS, EDITION_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, preparedAt, preparingDef } from "../data/spells-known.js";
 import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal, choiceEffectsOf } from "./helpers.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
@@ -283,6 +283,34 @@ export function learnPlan(c, entry, isNewClass){
       "Your college teaches you 2 spells from the Cleric, Druid or Wizard lists, cantrips or" + upToText(maxLevel) + " You always have them prepared.", 2,
       {names: found, tags: tagsFor(found, null, otherClassTag("Bard", tasha))});
   }
+  // A preparing class (cleric, druid, paladin, artificer, the 2024 ranger)
+  // prepares more spells a day as it levels: the level-up asks for enough
+  // to fill the new count, so a player never has to know to add them on
+  // the Spells tab. Unprepared spells of the class already on the sheet
+  // are offered first ("On your sheet"). A wizard's new spellbook spells
+  // fill its free places instead (prepareRoom, see applyLearn).
+  var prepareRoom = 0;
+  var prepDef = preparingDef(entry.name, entry.edition);
+  if(prepDef && !def.spells && maxLevel){
+    var prepNow = preparedAt(entry.name, lv, entry.edition);
+    var prepGain = Math.max(0, prepNow - (isNewClass ? 0 : preparedAt(entry.name, lv - 1, entry.edition)));
+    var prepHave = known.spells.filter(function(sp){ return sp.prepared; }).length;
+    prepareRoom = known.certain ? Math.max(0, prepNow - prepHave) : prepGain;
+  }
+  if(prepareRoom && !def.spellbook){
+    var prepList = classListNames(entry, def, range(1, maxLevel), tasha, c);
+    var prepTags = tagsFor(prepList.names, prepList.extra);
+    var waiting = isNewClass ? [] : known.spells.filter(function(sp){
+      var d = SPELL_DATA[catalogSpellName(sp.name)];
+      return !sp.prepared && d && d.level >= 1 && d.level <= maxLevel;
+    }).map(function(sp){ return catalogSpellName(sp.name); }).sort();
+    waiting.forEach(function(n){ prepTags[n] = ["On your sheet"].concat(prepTags[n] || []); });
+    var prepNames = waiting.concat(prepList.names.filter(offered));
+    var prepCount = Math.min(prepareRoom, prepNames.length);
+    if(prepCount > 0) sections.push({id: "prepare", kind: "spell", title: "Spells to prepare",
+      help: "Pick " + prepCount + " " + cls + " spell" + (prepCount===1 ? "" : "s") + " to prepare" + upToText(maxLevel) + " You can change them after any long rest on the Spells tab.",
+      count: prepCount, names: prepNames, tags: prepTags});
+  }
   if(def.spellbook && maxLevel){
     var book = lv===1 ? def.spellbook[1] : def.spellbook.else;
     var bookList = classListNames(entry, def, range(1, maxLevel), tasha, c);
@@ -332,8 +360,8 @@ export function learnPlan(c, entry, isNewClass){
     var more = tashaSpellCount(def.list, pickLevels);
     if(more) tashaNote = "Tasha's Cauldron adds " + more + " more " + cls + " spell" + (more===1 ? "" : "s") + " to choose from if your character uses Tasha's optional class features (Information tab).";
   }
-  return {sections: sections, swap: swap, cantripSwap: cantripSwap, auto: auto, maxLevel: maxLevel, def: def, known: known, note: note, tashaNote: tashaNote,
-    granted: granted.map(function(g){ return {name: g.name, source: g.source}; }), freed: freed, summary: summaryText(entry, def, known, lv)};
+  return {sections: sections, swap: swap, cantripSwap: cantripSwap, auto: auto, maxLevel: maxLevel, def: def, known: known, note: note, tashaNote: tashaNote, prepareRoom: prepareRoom,
+    granted: granted.map(function(g){ return {name: g.name, source: g.source}; }), freed: freed, summary: summaryText(entry, def, known, lv, prepDef && !def.spells && !isNewClass ? preparedAt(entry.name, lv, entry.edition) : 0)};
 }
 function firstCastingLevel(def){
   for(var i = 1; i <= 20; i++) if(def.cantrips[i] || (def.spells && def.spells[i]) || (def.spellbook && i===1)) return i;
@@ -351,16 +379,24 @@ function otherClassTag(own, tasha){
     return spellOnClassList(SPELL_DATA[n], own, tasha) ? "" : cls.slice(0, 2).join(" / ") + " spell";
   };
 }
-function summaryText(entry, def, known, lv){
+/* `prepares`: how many spells a preparing class prepares a day at `lv` (0 otherwise). */
+function summaryText(entry, def, known, lv, prepares){
   var parts = [];
   if(def.spells && def.spells[lv]) parts.push(def.spells[lv] + " spells");
   if(def.cantrips[lv]) parts.push(def.cantrips[lv] + " cantrips");
-  if(!parts.length) return "";
+  if(!parts.length && !prepares) return "";
   var article = /^[AEIOU]/.test(entry.name) ? "An " : "A ";
   var who = def.schools ? entry.subclass : entry.name.toLowerCase();
-  var text = article + ordinal(lv) + "-level " + who + " knows " + parts.join(" and ") + ".";
+  var plural = function(n, noun){ return n + " " + noun + (n===1 ? "" : "s"); };
+  var does = [];
+  if(prepares) does.push("prepares " + plural(prepares, "spell") + " a day");
+  if(parts.length) does.push("knows " + parts.join(" and "));
+  var text = article + ordinal(lv) + "-level " + who + " " + does.join(" and ") + ".";
   if(known.certain && def.spells){
-    text += " You know " + known.spells.length + " spell" + (known.spells.length===1 ? "" : "s") + " and " + known.cantrips.length + " cantrip" + (known.cantrips.length===1 ? "" : "s") + " now.";
+    text += " You know " + plural(known.spells.length, "spell") + " and " + plural(known.cantrips.length, "cantrip") + " now.";
+  } else if(known.certain && prepares){
+    var ready = known.spells.filter(function(sp){ return sp.prepared; }).length;
+    text += " You have " + ready + " prepared now.";
   }
   return text;
 }
@@ -423,12 +459,15 @@ export function learnProblem(sections, picks){
   return null;
 }
 
-/* Adds the picks to the sheet; returns {added: [names], swappedOut,
-   cantripOut} for undo (`cantripOut`: a cantrip or Mystic Arcanum spell
-   a Versatility feature replaces). Spells a known caster learns are always ready
-   (prepared); a wizard's new spellbook spells start unprepared. */
+/* Adds the picks to the sheet; returns {added: [names], prepared: [names
+   already on the sheet it prepared], swappedOut, cantripOut} for undo
+   (`cantripOut`: a cantrip or Mystic Arcanum spell a Versatility feature
+   replaces). Spells a known caster learns are always ready (prepared), as
+   are a preparing class's "Spells to prepare". A wizard's new spellbook
+   spells are prepared while the day's count has room (plan.prepareRoom). */
 export function applyLearn(c, className, plan, sections, picks, swapOut, cantripOut){
-  var rec = {className: className, added: [], swappedOut: null, cantripOut: null};
+  var rec = {className: className, added: [], prepared: [], swappedOut: null, cantripOut: null};
+  var bookRoom = plan.prepareRoom || 0;
   function takeOut(name){
     var at = (c.spells||[]).findIndex(function(sp){ return sp.name===name && (sp.learnedBy===className || !sp.learnedBy); });
     if(at===-1) return null;
@@ -441,9 +480,15 @@ export function applyLearn(c, className, plan, sections, picks, swapOut, cantrip
   function learn(name, kind, sectionId){
     var d = SPELL_DATA[name];
     if(!d) return;
+    // A spell to prepare that's already on the sheet is prepared in place.
+    if(sectionId==="prepare"){
+      var mine = (c.spells||[]).find(function(sp){ return !sp.prepared && spellKey(sp.name)===spellKey(name) && (sp.learnedBy===className || !sp.learnedBy); });
+      if(mine){ mine.prepared = true; rec.prepared.push(mine.name); return; }
+    }
     var sp = spellFromCatalog(name, d);
     sp.learnedBy = className;
-    sp.prepared = sectionId==="spellbook" || sectionId==="savant" ? false : true;
+    if(sectionId==="spellbook" || sectionId==="savant"){ sp.prepared = bookRoom > 0; if(sp.prepared) bookRoom--; }
+    else sp.prepared = true;
     if(kind==="arcanum"){ sp.arcanum = true; sp.notes = "Mystic Arcanum: cast it once per long rest without a spell slot."; }
     if(kind==="bonus"){ sp.bonusSecret = true; sp.notes = sectionId==="loreDiscoveries" ? "Magical Discoveries: always prepared, and doesn't count against your spells." : "Additional Magical Secrets: doesn't count against your spells known."; }
     c.spells.push(sp);
@@ -451,6 +496,9 @@ export function applyLearn(c, className, plan, sections, picks, swapOut, cantrip
   }
   (plan.auto||[]).forEach(function(n){ learn(n, "cantrip", "auto"); });
   sections.forEach(function(s){ (picks[s.id]||[]).slice(0, s.count).forEach(function(n){ if(n) learn(n, s.kind, s.id); }); });
+  // The "Spells to prepare" picks, new or already on the sheet (for the popup).
+  var prep = sections.find(function(s){ return s.id==="prepare"; });
+  rec.toPrepare = prep ? (picks.prepare||[]).slice(0, prep.count).filter(Boolean) : [];
   return rec;
 }
 
@@ -460,6 +508,10 @@ export function undoLearn(c, rec){
   rec.added.forEach(function(name){
     var at = c.spells.findIndex(function(sp){ return sp.name===name && sp.learnedBy===rec.className; });
     if(at!==-1) c.spells.splice(at, 1);
+  });
+  (rec.prepared||[]).forEach(function(name){
+    var sp = c.spells.find(function(x){ return x.name===name && x.prepared && (x.learnedBy===rec.className || !x.learnedBy); });
+    if(sp) sp.prepared = false;
   });
   // Back in reverse order, so each lands where it was.
   if(rec.cantripOut) c.spells.splice(Math.min(rec.cantripOut.index, c.spells.length), 0, rec.cantripOut.spell);

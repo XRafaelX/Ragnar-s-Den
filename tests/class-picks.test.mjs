@@ -747,7 +747,8 @@ test("spell picks: Reaper, Acolyte of Nature, Circle of the Land, Arcane Archer 
   pick(land, bonus, [["Produce Flame"]]);
   assert.equal(SK.classKnownSpells(land, "Druid").cantrips.length, 2);
   const at4 = SK.learnPlan(land, { name: "Druid", subclass: "Circle of the Land", level: 4 }, false);
-  assert.deepEqual(at4.sections.map((s) => [s.id, s.count]), [["cantrips", 1]]);
+  // (No spells prepared yet: druid 4 prepares 7 a day, so the level-up asks for all 7.)
+  assert.deepEqual(at4.sections.map((s) => [s.id, s.count]), [["cantrips", 1], ["prepare", 7]]);
   assert.ok(!at4.sections[0].names.includes("Produce Flame") && at4.sections[0].names.includes("Thorn Whip"));
 
   // Arcane Archer: a skill, and Prestidigitation or Druidcraft. A fighter gets a Spells tab for it.
