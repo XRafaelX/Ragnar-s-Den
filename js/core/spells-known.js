@@ -218,10 +218,13 @@ export function learnPlan(c, entry, isNewClass){
     count = Math.min(count, names.length);
     if(count > 0) sections.push({id: id, kind: kind, title: title, help: help, count: count, names: names, tags: list.tags || {}});
   }
+  // Spells added by hand on the Spells tab can take a character past the
+  // table, but they never use up what a level brings: the level's gain
+  // always comes, and a character short of the table catches up.
   function need(table, have){
-    var gain = table[lv] - (lv > 1 ? table[lv-1] : 0);
+    var gain = Math.max(0, table[lv] - (lv > 1 ? table[lv-1] : 0));
     if(isNewClass && lv===1) return table[1];
-    return known.certain ? Math.max(0, table[lv] - have) : Math.max(0, gain);
+    return known.certain ? Math.max(gain, table[lv] - have) : gain;
   }
 
   // Cantrips (every caster), less any learned for free.
@@ -306,11 +309,6 @@ export function learnPlan(c, entry, isNewClass){
   }
 
   var note = "";
-  if(def.spells && def.spells[lv] && known.certain && !isNewClass){
-    var have = known.spells.length;
-    if(have > def.spells[lv]) note = "You already know " + have + " " + cls + " spells, " + (have - def.spells[lv]) + " more than the table gives, so there's no new one to learn. You can remove extras on the Spells tab.";
-    else if(have === def.spells[lv] && def.spells[lv] > def.spells[lv-1]) note = "You already know all " + have + " " + cls + " spells for this level, so there's no new one to learn.";
-  }
   var swap = null;
   if(def.swap && !isNewClass && maxLevel && known.spells.length){
     swap = {known: known.spells.map(function(sp){ return sp.name; }).sort(), maxLevel: maxLevel};

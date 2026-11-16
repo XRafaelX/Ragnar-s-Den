@@ -114,15 +114,23 @@ test("Tasha's Additional Spells join the lists only for a character using Tasha'
   assert.equal(SK.learnPlan(wiz1, { name: "Wizard", subclass: "", level: 1 }, true).tashaNote, "", "no 1st-level wizard additions");
 });
 
-test("a warlock who already knows the table's spells learns none, with a note", () => {
+test("spells added by hand past the table never use up a level's new spells", () => {
   const known = ["Armor of Agathys", "Bane", "False Life", "Blindness/Deafness", "Phantasmal Force", "Phantom Steed", "Speak with Dead"];
+  // Warlock 5 knows 6 by the table and has 7: level 6 still brings its 1 new spell.
   const c = makeChar([{ name: "Warlock", subclass: "The Undead", level: 5 }], ["Eldritch Blast", "Blade Ward", "Mage Hand"].concat(known));
   const plan = planFor(c, "Warlock");
-  assert.equal(section(plan, "spells"), undefined);
-  assert.match(plan.note, /already know all 7 warlock spells/);
+  assert.equal(section(plan, "spells").count, 1);
+  assert.equal(plan.note, "");
   assert.ok(plan.swap, "the swap is still offered");
+  // Two over the table (5 at warlock 4): level 5 still brings its 1.
   const ahead = makeChar([{ name: "Warlock", subclass: "The Undead", level: 4 }], known);
-  assert.match(planFor(ahead, "Warlock").note, /1 more than the table gives/);
+  assert.equal(section(planFor(ahead, "Warlock"), "spells").count, 1);
+  // An extra cantrip doesn't use up warlock 4's new cantrip either.
+  const cantrips = makeChar([{ name: "Warlock", subclass: "The Undead", level: 3 }], ["Eldritch Blast", "Blade Ward", "Mage Hand", "Hex"]);
+  assert.equal(section(planFor(cantrips, "Warlock"), "cantrips").count, 1);
+  // A cleric (prepares, no spells known table) with an extra cantrip still gains its 4th-level one.
+  const cleric = makeChar([{ name: "Cleric", subclass: "Knowledge Domain", level: 3 }], ["Guidance", "Light", "Thaumaturgy", "Sacred Flame"]);
+  assert.equal(section(planFor(cleric, "Cleric"), "cantrips").count, 1);
 });
 
 test("a player behind the table catches up; two casting classes fall back to the level's gain", () => {
