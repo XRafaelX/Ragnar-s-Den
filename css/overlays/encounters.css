@@ -334,6 +334,62 @@
 /* Roll initiative: a full-width row above Back and Next turn. */
 .enc-init-roll{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin:0 0 8px;}
 .enc-init-roll svg{width:17px;height:17px;flex:none;}
+.enc-init-roll svg{transition:transform .25s ease;}
+.enc-init-roll:hover svg{transform:rotate(-24deg) scale(1.1);}
+.enc-turns.enc-rolling .enc-init-roll{pointer-events:none;color:var(--brass-bright);}
+.enc-turns.enc-rolling .enc-init-roll svg{animation:encD20Spin .5s linear infinite;}
+@keyframes encD20Spin{to{transform:rotate(360deg);}}
+
+/* The roll on the lines (showInitiativeRoll): each number square turns
+   into a tumbling d20 that lands, then pops back as the total with the
+   sum floating off it. Lines stand where they were until the dice are
+   down, then slide into their new places. */
+.enc-turn{position:relative;}
+.enc-turn.enc-sliding{transition:transform .5s cubic-bezier(.2,.8,.25,1), opacity .5s ease;}
+.enc-turn.enc-arriving{opacity:.55;}
+.enc-turn.enc-arriving.enc-sliding{opacity:1;}
+.enc-init.rolling{background:none;border-color:transparent;overflow:visible;position:relative;}
+.enc-init.rolling svg{
+  position:absolute;left:50%;top:50%;width:36px;height:36px;margin:-18px 0 0 -18px;overflow:visible;
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));animation:encDieTumble .42s linear infinite;
+}
+.enc-init.rolling .die-bg{fill:url(#dieGradPrimary);stroke:var(--brass);stroke-width:3;stroke-linejoin:round;}
+.enc-init.rolling .die-facet{fill:none;stroke:rgba(196,167,247,.4);stroke-width:2;stroke-linejoin:round;}
+.enc-init.rolling .die-text{font-family:var(--serif);font-size:36px;font-weight:700;fill:var(--text-on-ink);text-anchor:middle;dominant-baseline:central;}
+@keyframes encDieTumble{
+  0%{transform:rotate(0) translateY(0) scale(.92);}
+  25%{transform:rotate(95deg) translateY(-4px) scale(1.08);}
+  50%{transform:rotate(180deg) translateY(-1px) scale(.96);}
+  75%{transform:rotate(275deg) translateY(-4px) scale(1.08);}
+  100%{transform:rotate(360deg) translateY(0) scale(.92);}
+}
+.enc-init.rolling.landed svg{animation:encDieLand .4s cubic-bezier(.175,.885,.32,1.275) forwards;}
+@keyframes encDieLand{0%{transform:scale(1.35);}55%{transform:scale(.92);}100%{transform:scale(1.05);}}
+.enc-init.rolling.nat-20 .die-bg{fill:url(#dieGradGold);stroke:#ffd700;}
+.enc-init.rolling.nat-20 svg{filter:drop-shadow(0 0 7px rgba(255,215,0,.85)) drop-shadow(0 0 16px rgba(196,167,247,.6));}
+.enc-init.rolling.nat-1 .die-bg{fill:url(#dieGradCrimson);stroke:var(--oxblood);}
+.enc-init.rolling.nat-1 .die-text{fill:#fca5a5;}
+.enc-init.rolling.nat-1 svg{animation:encDieLand .4s ease forwards, encDieShake .45s ease-in-out .1s;}
+@keyframes encDieShake{20%{translate:-3px 0;rotate:-6deg;}40%{translate:3px 0;rotate:6deg;}60%{translate:-2px 0;rotate:-3deg;}80%{translate:2px 0;rotate:3deg;}}
+.enc-init.enc-init-pop{animation:encInitPop .45s cubic-bezier(.175,.885,.32,1.275);}
+.enc-init.enc-init-pop.nat-20{color:#ffd700;border-color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,.6);}
+.enc-init.enc-init-pop.nat-1{color:#fca5a5;border-color:var(--oxblood);}
+@keyframes encInitPop{0%{transform:scale(.4);box-shadow:0 0 0 0 color-mix(in srgb, var(--brass-bright) 70%, transparent);}60%{transform:scale(1.18);}100%{transform:scale(1);box-shadow:0 0 0 8px transparent;}}
+/* "15 + 2" rising off the number. */
+.enc-init-sum{
+  position:absolute;top:-2px;transform:translateX(-50%);pointer-events:none;white-space:nowrap;z-index:2;
+  font-size:11px;font-weight:700;color:var(--brass-bright);font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 3px rgba(0,0,0,.8);animation:encSumFloat 1.1s ease-out forwards;
+}
+@keyframes encSumFloat{0%{opacity:0;translate:0 4px;}20%{opacity:1;translate:0 -6px;}100%{opacity:0;translate:0 -20px;}}
+@media (prefers-reduced-motion:reduce){
+  .enc-turns.enc-rolling .enc-init-roll svg{animation:none;}
+}
+/* Whose turn it is lights up once the lines are in their new places. */
+.enc-turns.enc-rolling .enc-turn.current,
+.enc-turns.enc-rolling .enc-turn.current[data-color]{border-color:transparent;background:var(--parchment-dim);}
+.enc-turns.enc-rolling .enc-turn.current .enc-turn-name::before{animation:none;}
+
 /* A line's initiative number: a small square, dashed while a player's is unknown. */
 .enc-init, .enc-init-input{
   flex:none;width:32px;height:26px;padding:0;border-radius:6px;text-align:center;
@@ -361,7 +417,7 @@
 }
 .enc-turn.monster{cursor:pointer;}
 .enc-turn.current{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 22%, var(--parchment-dim));}
-.enc-turn-name{flex:1;min-width:0;font-size:14px;color:var(--text-on-parch);overflow-wrap:anywhere;}
+.enc-turn-name{flex:1;min-width:0;font-size:14px;color:var(--text-on-parch);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* Monsters get a dot, like the marks beside them on the paper list. */
 .enc-turn.monster .enc-turn-name::before{
   content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--oxblood);margin-right:7px;vertical-align:1px;
@@ -481,6 +537,7 @@
   position:fixed;top:0;left:0;z-index:2000;pointer-events:none;
   background:var(--brass);color:#fff;font-size:13px;font-weight:600;
   padding:6px 12px;border-radius:14px;box-shadow:0 8px 22px rgba(0,0,0,.5);white-space:nowrap;
+  max-width:240px;overflow:hidden;text-overflow:ellipsis;
 }
 .enc-drag-ghost[data-color]{background:var(--grp);color:#17121f;box-shadow:0 8px 22px rgba(0,0,0,.5), 0 0 18px -2px var(--grp);}
 #encounter-overlay.enc-dragging, #encounter-overlay.enc-dragging *{user-select:none;cursor:grabbing;}

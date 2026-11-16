@@ -3,7 +3,8 @@ import { MONSTER_DATA } from "../data/monsters.js";
 import { ENCOUNTER_QUIPS } from "../data/encounter-quips.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { showActionToast } from "../ui/toast.js";
-import { playAdd, playDelete, playDiceRattle, playMonsterHit, playMonsterSlain, playNewRound, playVictory } from "../ui/sound.js";
+import { playAdd, playDelete, playDiceRattle, playDiceLand, playCrit, playFail, playMonsterHit, playMonsterSlain, playNewRound, playVictory } from "../ui/sound.js";
+import { getDieSvg } from "../dice/dice.js";
 import { makeKebabSvg } from "../ui/svg-icons.js";
 import { conditionsButton, conditionChips, fitChips } from "./encounter-conditions.js";
 import {
@@ -38,6 +39,7 @@ var overlay = null;
 var openId = null;       // the encounter on the board, null = the list
 var dragging = null;     // the drag in progress, see startDrag()
 var filter = { id: null, color: null };  // the color chip picked, per encounter
+var rollShow = 0;        // the initiative roll being shown, see showInitiativeRoll()
 var fx = null;           // a one-off effect for the next render: { paint: monsterId } or { picked: color }
 var boxWatch = null;     // redoes fitChips when a chips row changes width
 var dragEnded = false;   // a drag just ended, so the click that follows is not a tap
@@ -783,12 +785,12 @@ function turnsPanel(enc){
     panel.appendChild(rollBtn);
   }
   function doRoll(){
+    var before = linePlaces();
     var rolls = rollInitiative(enc);
     playDiceRattle();
     commit(enc);
-    var missing = enc.order.filter(function(o){ return o.type === "player" && o.init === null; }).length;
-    showActionToast("Rolled initiative for " + (rolls.length === 1 ? "1 monster." : rolls.length + " monsters.") +
-      (missing ? " Tap the ? on a player's line to type their roll." : ""));
+    var message = "Rolled initiative for " + (rolls.length === 1 ? "1 monster." : rolls.length + " monsters.");
+    showInitiativeRoll(enc, rolls, before, function(){ showActionToast(message); });
   }
 
   var cur = currentEntry(enc);
@@ -830,7 +832,10 @@ function turnsPanel(enc){
     li.appendChild(grip);
     var label = o.type === "player" ? o.name : m.name;
     if(numbers) li.appendChild(initBadge(enc, o, label, m));
-    li.appendChild(ce("span", "enc-turn-name", label));
+    // One line, cut short with "…" when it doesn't fit; the whole name in its tooltip.
+    var nameEl = ce("span", "enc-turn-name", label);
+    nameEl.title = label;
+    li.appendChild(nameEl);
     li.appendChild(o.type === "player"
       ? ce("span", "enc-turn-tag", "Player")
       : ce("span", "enc-turn-hp" + (dead ? " down" : ""), m.hp + "/" + m.maxHp));
@@ -864,6 +869,116 @@ function turnsPanel(enc){
 
   panel.appendChild(playerForm(enc));
   return panel;
+}
+
+/* ---- The initiative roll, shown ----
+   The line is saved and drawn in its new order straight away; what the
+   DM sees is played over it. Each line first stands where it was before
+   the roll (new ones lined up under the rest), every monster's number
+   becomes a d20 tumbling through faces, and the dice land one after
+   another, top to bottom: the die shows the d20, then turns into the
+   total with the sum floating off it, and the monster's box flashes.
+   Once all have landed the lines slide into their new places. Tapping
+   anything that redraws the board simply ends the show. */
+
+/* Where each line of the turn order is on screen, by entry id. */
+function linePlaces(){
+  var places = { bottom: null };
+  if(!overlay) return places;
+  overlay.querySelectorAll(".enc-turn").forEach(function(li){
+    var r = li.getBoundingClientRect();
+    places[li.dataset.entryId] = r.top;
+    places.bottom = r.bottom + 4;
+  });
+  return places;
+}
+
+function showInitiativeRoll(enc, rolls, before, done){
+  var show = ++rollShow;
+  var panel = overlay.querySelector(".enc-turns");
+  var listEl = overlay.querySelector(".enc-turn-list");
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(!panel || !listEl || !rolls.length || reduce){ done(); return; }
+  function live(){ return show === rollShow && listEl.isConnected; }
+
+  // Every line back where it was; the ones just placed under the rest.
+  var rows = Array.prototype.slice.call(listEl.querySelectorAll(".enc-turn"));
+  var bottom = before.bottom === null ? listEl.getBoundingClientRect().top : before.bottom;
+  var startY = {};
+  rows.forEach(function(li){
+    var r = li.getBoundingClientRect();
+    var from = before[li.dataset.entryId];
+    if(from === undefined){ from = bottom; bottom += r.height + 4; li.classList.add("enc-arriving"); }
+    startY[li.dataset.entryId] = from;
+    if(from !== r.top) li.style.transform = "translateY(" + (from - r.top) + "px)";
+  });
+  panel.classList.add("enc-rolling");
+
+  // The dice in the order the DM sees the lines, top to bottom.
+  var dice = rolls.map(function(r){
+    var entry = orderEntryFor(enc, r.monster.id);
+    var li = entry && listEl.querySelector('.enc-turn[data-entry-id="' + entry.id + '"]');
+    return li ? { r: r, li: li, y: startY[entry.id] } : null;
+  }).filter(Boolean).sort(function(a, b){ return a.y - b.y; });
+
+  dice.forEach(function(d){
+    var badge = d.li.querySelector(".enc-init");
+    d.badge = badge;
+    badge.classList.add("rolling");
+    badge.innerHTML = getDieSvg(20, 1 + Math.floor(Math.random() * 20));
+    var face = badge.querySelector(".die-text");
+    d.spin = setInterval(function(){ face.textContent = String(1 + Math.floor(Math.random() * 20)); }, 70);
+  });
+
+  var first = 650;
+  var gap = dice.length > 1 ? Math.min(160, 1100 / (dice.length - 1)) : 0;
+  dice.forEach(function(d, i){
+    setTimeout(function(){ land(d); }, first + i * gap);
+  });
+  var landed = first + (dice.length - 1) * gap;
+  setTimeout(sortLines, landed + 900);
+
+  function land(d){
+    clearInterval(d.spin);
+    if(!live()) return;
+    var r = d.r, badge = d.badge;
+    badge.querySelector(".die-text").textContent = String(r.roll);
+    badge.classList.add("landed");
+    if(r.roll === 20){ badge.classList.add("nat-20"); playCrit(); }
+    else if(r.roll === 1){ badge.classList.add("nat-1"); playFail(); }
+    else playDiceLand(r.roll / 20);
+    var card = overlay.querySelector('.enc-card[data-monster-id="' + r.monster.id + '"]');
+    if(card){ card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash"); }
+    setTimeout(function(){
+      if(!live()) return;
+      badge.classList.remove("rolling", "landed");
+      badge.textContent = String(r.total);
+      badge.classList.add("enc-init-pop");
+      if(r.bonus){
+        var sum = ce("span", "enc-init-sum", r.roll + (r.bonus < 0 ? " - " + -r.bonus : " + " + r.bonus));
+        sum.style.left = badge.offsetLeft + badge.offsetWidth / 2 + "px";
+        d.li.appendChild(sum);
+      }
+    }, 420);
+  }
+
+  function sortLines(){
+    if(!live()) return;
+    rows.forEach(function(li){
+      li.classList.add("enc-sliding");
+      li.style.transform = "";
+    });
+    setTimeout(function(){
+      if(!live()) return;
+      rows.forEach(function(li){
+        li.classList.remove("enc-sliding", "enc-arriving");
+        li.querySelectorAll(".enc-init-sum").forEach(function(s){ s.remove(); });
+      });
+      dice.forEach(function(d){ d.badge.classList.remove("enc-init-pop", "nat-20", "nat-1"); });
+      panel.classList.remove("enc-rolling");
+      done();
+    }, 560);
+  }
 }
 
 /* The initiative number on a line, once anyone has one. A tap turns it
