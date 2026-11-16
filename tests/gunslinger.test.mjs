@@ -55,11 +55,11 @@ test("Gunslinger: trick shots, two at 3 and one more at 7, 10, 15 and 18, swappe
   assert.equal(optionMeta(set.options.find((o) => o.name === "Violent Shot"), set), "1 or more grit points");
   assert.equal(optionMeta(set.options.find((o) => o.name === "Deadeye Shot"), set), "1 grit point");
   const c = gunslinger(3);
-  const plans = (lv) => CO.levelUpOptionPlans(c, c.classes[0], "Fighter", "Gunslinger", lv).map((p) => [p.set.id, p.fresh, p.canSwap]);
-  assert.deepEqual(plans(3), [["trickShots", 2, false]]);
+  const plans = (lv) => CO.levelUpOptionPlans(c, c.classes[0], "Fighter", "Gunslinger", lv).map((p) => [p.set.id, p.fresh]);
+  assert.deepEqual(plans(3), [["trickShots", 2]]);
   c.classes[0].options = { trickShots: [{ id: "a", name: "Deadeye Shot" }, { id: "b", name: "Winging Shot" }] };
   assert.deepEqual(plans(4), [], "nothing new at 4");
-  assert.deepEqual(plans(7), [["trickShots", 1, true]], "a swap with the new one");
+  assert.deepEqual(plans(7), [["trickShots", 1]], "the new one (a swap is made on the card)");
 });
 
 test("Gunslinger: grit points equal the WIS modifier (minimum 1), back on a short rest", () => {

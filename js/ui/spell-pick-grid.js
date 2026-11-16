@@ -12,6 +12,8 @@
                    ("Patron spell", "Cleric spell")
      taken         optional function returning names picked in another
                    list on the same step; they're greyed out here
+     takenReason   optional function(name): the tooltip for a greyed one
+                   ("Already picked in another list" if absent)
      onChange      called after each pick or drop
    The returned element has refresh() to redraw after another list
    changes. Ticking the pick that fills a list scrolls on to the next list
@@ -169,7 +171,7 @@ export function spellPickGrid(opts){
       e.cb.disabled = !on && (full || taken);
       e.card.classList.toggle("selected", on);
       e.card.classList.toggle("disabled", !on && (full || taken));
-      e.card.title = taken ? "Already picked in another list" : "";
+      e.card.title = taken ? (opts.takenReason && opts.takenReason(e.name)) || "Already picked in another list" : "";
     });
     // One slot per pick: picked spells first, then empty slots.
     tray.innerHTML = "";

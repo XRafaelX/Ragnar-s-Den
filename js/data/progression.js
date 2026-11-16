@@ -228,6 +228,13 @@ export var CLASS_PROGRESSION = {
     fightingStyle: {level:1, options:["Archery","Defense","Dueling","Great Weapon Fighting","Protection","Two-Weapon Fighting",
       "Blind Fighting","Interception","Superior Technique","Thrown Weapon Fighting","Unarmed Fighting"]},
     prereq: [["str"], ["dex"]], casterType: null, asiLevels: [4, 6, 8, 12, 14, 16, 19],
+    // Tasha's Cauldron (p. 42), checked on 5etools' data 2026-11-16.
+    variants: [
+      {name:"Martial Versatility", adds:true, level:4, blurb:"Swap a fighting style or a maneuver at Ability Score Improvement levels.",
+        features:{
+          4: [{name:"Martial Versatility", text:"Whenever you reach a fighter level that gives an Ability Score Improvement (4, 6, 8, 12, 14, 16 and 19), you can do one of these: replace a fighting style you know with another one fighters can take, or, if you know Battle Master maneuvers, replace one maneuver you know with another. Change your style with the Change button on its Fighting Style feature here on the Features tab. Swap a maneuver on the Maneuvers card."}]
+        }}
+    ],
     multiclassProfs: {armor:["Light armor","Medium armor","Shields"], weapons:["Simple weapons","Martial weapons"], tools:[], note:""},
     features: {
       2: [{name:"Action Surge", text:"Once per short or long rest, take one additional action on your turn, e.g. to attack again or cast a second spell with an action."}],
@@ -328,8 +335,13 @@ export var CLASS_PROGRESSION = {
     subclassLevel: 3, subclassLabel: "Sacred Oath",
     fightingStyle: {level:2, options:["Defense","Dueling","Great Weapon Fighting","Protection","Blessed Warrior","Blind Fighting","Interception"]},
     prereq: [["str", "cha"]], casterType: "half", spellAbility: "cha", asiLevels: STANDARD_ASI,
-    // Tasha's Cauldron (p. 52), checked on 5etools' data 2026-10-29.
+    // Tasha's Cauldron (p. 52), checked on 5etools' data 2026-10-29
+    // (Martial Versatility 2026-11-16).
     variants: [
+      {name:"Martial Versatility", adds:true, level:4, blurb:"Swap a fighting style at Ability Score Improvement levels.",
+        features:{
+          4: [{name:"Martial Versatility", text:"Whenever you reach a paladin level that gives an Ability Score Improvement (4, 8, 12, 16 and 19), you can replace a fighting style you know with another one paladins can take. Change your style with the Change button on its Fighting Style feature here on the Features tab."}]
+        }},
       {name:"Harness Divine Power", adds:true, level:3, blurb:"Spend a Channel Divinity to get back a spent spell slot.",
         features:{
           3: [{name:"Harness Divine Power", text:"As a bonus action, you can spend a use of your Channel Divinity to regain one spent spell slot, of a level no higher than half your proficiency bonus (rounded up). You can do this once, twice from paladin level 7 and three times from paladin level 15, and you regain all uses when you finish a long rest. Use it from Harness Divine Power on the Vitals tab."}]
@@ -355,6 +367,11 @@ export var CLASS_PROGRESSION = {
     fightingStyle: {level:2, options:["Archery","Defense","Dueling","Two-Weapon Fighting","Blind Fighting","Druidic Warrior","Thrown Weapon Fighting"]},
     prereq: [["dex", "wis"]], casterType: "half", spellAbility: "wis", asiLevels: STANDARD_ASI,
     variants: [
+      // Martial Versatility: Tasha's Cauldron (p. 57), checked on 5etools' data 2026-11-16.
+      {name:"Martial Versatility", adds:true, level:4, blurb:"Swap a fighting style at Ability Score Improvement levels.",
+        features:{
+          4: [{name:"Martial Versatility", text:"Whenever you reach a ranger level that gives an Ability Score Improvement (4, 8, 12, 16 and 19), you can replace a fighting style you know with another one rangers can take. Change your style with the Change button on its Fighting Style feature here on the Features tab."}]
+        }},
       {name:"Favored Foe", replaces:"Favored Enemy", blurb:"Mark a creature you hit and deal extra damage to it each turn, instead of studying set kinds of enemies.",
         features:{
           1: [{name:"Favored Foe", text:"When you hit a creature with an attack roll, you can mark it as your favored enemy for 1 minute or until you lose concentration (as if concentrating on a spell). The first time on each of your turns that you hit it and deal damage, including when you mark it, you deal an extra 1d4 damage. You can mark a creature a number of times equal to your proficiency bonus, regained on a long rest. The extra damage is 1d4, 1d6 from ranger level 6 and 1d8 from level 14."}],
@@ -387,7 +404,7 @@ export var CLASS_PROGRESSION = {
     features: {
       2: [
         {name:"Fighting Style", text:"Adopt a fighting style: Archery (+2 to ranged weapon attacks), Defense (+1 AC in armor), Dueling (+2 damage one-handed) or Two-Weapon Fighting (add your modifier to the off-hand attack's damage)."},
-        {name:"Spellcasting", text:"You can now cast ranger spells using Wisdom. You know two 1st-level ranger spells and learn more as you level."}
+        {name:"Spellcasting", text:"You can now cast ranger spells using Wisdom. You know two 1st-level ranger spells and learn more as you level. Whenever you gain a ranger level, you can replace one ranger spell you know with another from the ranger spell list, of a level you have spell slots for. Make the swap on the Spells tab."}
       ],
       3: [{name:"Primeval Awareness", text:"Spend a spell slot to sense for 1 minute per slot level whether aberrations, celestials, dragons, elementals, fey, fiends or undead are within 1 mile (6 in your favored terrain)."}],
       5: [{name:"Extra Attack", text:"When you take the Attack action, you attack twice instead of once."}],
@@ -458,7 +475,7 @@ export var CLASS_PROGRESSION = {
     variants: [
       {name:"Sorcerous Versatility", adds:true, level:4, blurb:"Swap a Metamagic option or a cantrip at Ability Score Improvement levels.",
         features:{
-          4: [{name:"Sorcerous Versatility", text:"Whenever you reach a sorcerer level that gives an Ability Score Improvement (4, 8, 12, 16 and 19), you can do one of these: replace one of your Metamagic options with another one you can take, or replace one sorcerer cantrip you learned with another from the sorcerer spell list. The level-up offers the Metamagic swap. Swap the cantrip on the Spells tab."}]
+          4: [{name:"Sorcerous Versatility", text:"Whenever you reach a sorcerer level that gives an Ability Score Improvement (4, 8, 12, 16 and 19), you can do one of these: replace one of your Metamagic options with another one you can take, or replace one sorcerer cantrip you learned with another from the sorcerer spell list. Swap a Metamagic option on the Metamagic card of the Features tab, and the cantrip on the Spells tab."}]
         }},
       {name:"Magical Guidance", adds:true, level:5, blurb:"Spend 1 sorcery point to reroll a failed ability check.",
         features:{
@@ -481,20 +498,20 @@ export var CLASS_PROGRESSION = {
     variants: [
       {name:"Eldritch Versatility", adds:true, level:4, blurb:"Swap a cantrip, your Pact Boon or a Mystic Arcanum spell at Ability Score Improvement levels.",
         features:{
-          4: [{name:"Eldritch Versatility", text:"Whenever you reach a warlock level that gives an Ability Score Improvement (4, 8, 12, 16 and 19), you can do one of these: replace one warlock cantrip you learned with another from the warlock spell list, replace your Pact Boon with another one, or from level 12 replace one Mystic Arcanum spell with another warlock spell of the same level. If the change means you no longer qualify for an invocation, replace that invocation too. Swap a cantrip or a Mystic Arcanum spell on the Spells tab, and the Pact Boon or an invocation on the Eldritch Invocations card."}]
+          4: [{name:"Eldritch Versatility", text:"Whenever you reach a warlock level that gives an Ability Score Improvement (4, 8, 12, 16 and 19), you can do one of these: replace one warlock cantrip you learned with another from the warlock spell list, replace your Pact Boon with another one, or from level 12 replace one Mystic Arcanum spell with another warlock spell of the same level. If the change means you no longer qualify for an invocation, replace that invocation too. Swap a cantrip or a Mystic Arcanum spell on the Spells tab, and the Pact Boon or an invocation on the Eldritch invocations card."}]
         }}
     ],
     multiclassProfs: {armor:["Light armor"], weapons:["Simple weapons"], tools:[], note:""},
     features: {
       2: [{name:"Eldritch Invocations", text:"You learn two eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). The level-up asks you to pick them, and the Eldritch invocations card on the Features & Feats tab lists them and applies what they do."}],
       3: [{name:"Pact Boon", text:"Your patron grants a gift: Pact of the Chain (a special familiar), Pact of the Blade (summon a magic weapon you're proficient with), Pact of the Tome (a book with three extra cantrips from any class) or, from Tasha's, Pact of the Talisman (an amulet that adds a d4 to a failed ability check). You choose it in the level-up. It's shown in the Eldritch invocations card."}],
-      5: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know three eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level. The level-up asks you to pick them, and the Eldritch invocations card on the Features & Feats tab lists them and applies what they do."}],
-      7: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know four eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level. The level-up asks you to pick them, and the Eldritch invocations card on the Features & Feats tab lists them and applies what they do."}],
-      9: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know five eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level. The level-up asks you to pick them, and the Eldritch invocations card on the Features & Feats tab lists them and applies what they do."}],
+      5: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know three eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level: remove it on the Eldritch invocations card (Features & Feats tab), then learn another. The level-up asks you to pick new ones, and the card lists them and applies what they do."}],
+      7: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know four eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level: remove it on the Eldritch invocations card (Features & Feats tab), then learn another. The level-up asks you to pick new ones, and the card lists them and applies what they do."}],
+      9: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know five eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level: remove it on the Eldritch invocations card (Features & Feats tab), then learn another. The level-up asks you to pick new ones, and the card lists them and applies what they do."}],
       11: [{name:"Mystic Arcanum", text:"Choose one 6th-level warlock spell as an arcanum. You can cast it once per long rest without a spell slot. You gain a 7th-level arcanum at level 13, 8th at 15 and 9th at 17."}],
-      12: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know six eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level. The level-up asks you to pick them, and the Eldritch invocations card on the Features & Feats tab lists them and applies what they do."}],
-      15: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know seven eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level. The level-up asks you to pick them, and the Eldritch invocations card on the Features & Feats tab lists them and applies what they do."}],
-      18: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know eight eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level. The level-up asks you to pick them, and the Eldritch invocations card on the Features & Feats tab lists them and applies what they do."}],
+      12: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know six eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level: remove it on the Eldritch invocations card (Features & Feats tab), then learn another. The level-up asks you to pick new ones, and the card lists them and applies what they do."}],
+      15: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know seven eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level: remove it on the Eldritch invocations card (Features & Feats tab), then learn another. The level-up asks you to pick new ones, and the card lists them and applies what they do."}],
+      18: [{name:"Eldritch Invocations", replaces:"Eldritch Invocations", text:"You know eight eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). You can swap one each time you gain a warlock level: remove it on the Eldritch invocations card (Features & Feats tab), then learn another. The level-up asks you to pick new ones, and the card lists them and applies what they do."}],
       20: [{name:"Eldritch Master", text:"You can spend 1 minute entreating your patron to regain all your expended Pact Magic slots. Once per long rest."}]
     }
   },

@@ -20,6 +20,8 @@ import { themedPicker } from "../../ui/themed-picker.js";
 import { openFeatPicksModal } from "../../ui/feat-picks.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { makeChevronRightSvg } from "../../ui/svg-icons.js";
+import { openStyleChangeSheet } from "./style-change.js";
+import { openFeatSpellChangeSheet } from "./feat-spell-change.js";
 
 /* ---- Features & Feats panel ----
    One list for everything the character has: class, subclass, racial and
@@ -257,7 +259,22 @@ export function renderFeaturesPanel(c){
 
       // Edit and Remove live in the details sheet the card opens.
       var sheetActions = [];
-      if(item.isCustom && item.featureObj){
+      if(item.isCustom && item.featureObj && item.featureObj.fightingStyle){
+        // A fighting style: Change it here (the level-up doesn't offer the
+        // optional swaps), or Remove it to fix a mistake.
+        var styleObj = item.featureObj;
+        sheetActions.push({label: "Change", title: "Pick another fighting style, or change this one's picks",
+          run: function(){ openStyleChangeSheet(c, styleObj); }});
+        sheetActions.push({label: "Remove", danger: true, title: "Remove from " + (c.name || "this character"),
+          run: function(){
+            confirmDialog("Remove " + item.name + "?", "Use Change to swap it for another style. Remove it only to fix a mistake.", function(){
+              c.features = c.features.filter(function(f){ return f.id !== styleObj.id; });
+              save();
+              renderAll();
+              playDelete();
+            });
+          }});
+      } else if(item.isCustom && item.featureObj){
         var libEntry = item.featureObj.homebrewId ? getCustomEntry("feature", item.featureObj.homebrewId) : null;
         sheetActions.push({label: "Edit", title: libEntry ? "Edit in the Compendium (every character with it updates)" : "Edit and save it to the Compendium",
           run: function(){
@@ -279,6 +296,12 @@ export function renderFeaturesPanel(c){
           }});
       } else if(item.isFeat && item.featObj){
         var featEntry = item.featObj.homebrewId ? getCustomEntry("feat", item.featObj.homebrewId) : null;
+        // Magic Initiate (2024)'s Spell Change: made here, not in the level-up.
+        var changeDef = featDef(item.featObj.name), changeFeat = item.featObj;
+        if(changeDef && changeDef.spellChange && changeFeat.picks && (changeFeat.picks.spells||[]).some(Boolean)){
+          sheetActions.push({label: "Change spells", title: "Replace one of this feat's spells with another of the same level",
+            run: function(){ openFeatSpellChangeSheet(c, changeFeat); }});
+        }
         var customFeat = featEntry || item.featObj.source==="Custom";
         sheetActions.push({label: "Edit", title: featEntry ? "Edit in the Compendium (every character with it updates)"
             : customFeat ? "Edit and save it to the Compendium" : "Edit feat details",

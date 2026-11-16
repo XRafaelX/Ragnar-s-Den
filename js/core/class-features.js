@@ -674,6 +674,8 @@ export function getAllCharacterFeatures(c){
     if(picked) descText += "\n\nYour picks: " + picked + ".";
     var detail = featPickDetail(featDef(feat.name), feat.picks);
     if(detail) descText += "\n" + detail;
+    // Spell Change (Magic Initiate (2024)) is made on the sheet, not in the level-up.
+    if((featDef(feat.name) || {}).spellChange) descText += "\nTo swap one of its spells when you gain a level, use Change spells below.";
     list.push({
       id: "feat_"+(feat.id || feat.name),
       name: feat.name,

@@ -54,7 +54,7 @@ test("Tasha's Versatility features say when and where to make the change", () =>
     assert.equal(feats(cls, 4, false).length, 0, cls + " without Tasha's");
     assert.equal(feats(cls, 3, true).length, 0, cls + " before level 4");
   }
-  assert.match(feats("Warlock", 4, true)[0].text, /Pact Boon or an invocation on the Eldritch Invocations card/);
+  assert.match(feats("Warlock", 4, true)[0].text, /Pact Boon or an invocation on the Eldritch invocations card/);
   assert.match(feats("Bard", 4, true)[0].text, /Expertise on the Feature choices card/);
 });
 
@@ -65,33 +65,23 @@ test("a cantrip swapped by a level-up before the change still comes back on undo
   assert.deepEqual(names(c), ["Guidance", "Mending"]);
 });
 
-test("Blessed Warrior: a paladin level may swap one of its cantrips; undo swaps it back", (t) => {
+test("Blessed Warrior: no Style step just for its cantrips; its text points to Change", (t) => {
   const style = makeStyleFeature("Blessed Warrior", { spells: ["Guidance", "Sacred Flame"] });
   const c = char([{ name: "Paladin", subclass: "Oath of Devotion", level: 3 }], [], { features: [style], tashaOptional: true });
   withFakeDom(t, () => {
     LU.openLevelUp(c);
-    assert.ok(LU.stepApplicable("style"), "the Style step shows for it");
-    assert.equal(LU.styleCantripOffer().feature, style);
+    assert.equal(LU.stepApplicable("style"), false, "no Style step at paladin 4");
     LU.lu.asi.cha = 2; LU.lu.hpMethod = "avg";
-    LU.lu.styleCantripOut = "Guidance";
-    assert.equal(LU.validate("style"), "Pick the cleric cantrip that replaces Guidance.");
-    LU.lu.styleCantripIn = "Sacred Flame";
-    assert.match(LU.validate("style"), /You already have Sacred Flame/);
-    LU.lu.styleCantripIn = "Thaumaturgy";
     finish();
   });
-  assert.deepEqual(c.features.find((f) => f.id === style.id).picks.spells, ["Thaumaturgy", "Sacred Flame"]);
+  assert.match(style.text, /with Change on this feature/);
+  // A level-up before 2026-11-16 that swapped one still undoes it.
+  style.picks.spells = ["Thaumaturgy", "Sacred Flame"];
+  c.levelHistory[c.levelHistory.length - 1].styleCantrip = { featureId: style.id, out: "Guidance", in: "Thaumaturgy" };
   withFakeDom(t, (byId) => { undoLastLevelUp(c); byId["confirm-ok"].click(); });
   assert.deepEqual(c.features.find((f) => f.id === style.id).picks.spells, ["Guidance", "Sacred Flame"]);
-  // A ranger level doesn't change a paladin's Blessed Warrior.
-  const multi = char([{ name: "Paladin", subclass: "Oath of Devotion", level: 3 }, { name: "Ranger", level: 2 }], [], { features: [makeStyleFeature("Blessed Warrior", { spells: ["Guidance", "Light"] })] });
-  withFakeDom(t, () => { LU.openLevelUp(multi); LU.resetChoicesFor("Ranger"); assert.equal(LU.styleCantripOffer(), null); LU.close(); });
-  // Druidic Warrior on a ranger level.
-  const ranger = char([{ name: "Ranger", subclass: "Hunter", level: 4 }], [], { features: [makeStyleFeature("Druidic Warrior", { spells: ["Druidcraft", "Shillelagh"] })] });
-  withFakeDom(t, () => { LU.openLevelUp(ranger); assert.equal(LU.styleCantripOffer().feature.fightingStyle, "Druidic Warrior"); LU.close(); });
 });
 
-/* ---- Bardic and Eldritch Versatility: one thing a level ---- */
 test("Cantrip Formulas: a wizard 3 using Tasha's swaps one wizard cantrip after a long rest", async () => {
   const SK = await import("../js/core/spells-known.js");
   const c = char([{ name: "Wizard", subclass: "School of Evocation", level: 3 }], ["Fire Bolt", "Light", "Mage Hand"]);

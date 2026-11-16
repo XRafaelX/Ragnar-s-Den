@@ -108,8 +108,8 @@ export var FIGHTING_STYLES = {
   "Superior Technique":{optional:true, optionPick:{set:"maneuvers", count:1}, text:"You learn one maneuver of your choice from among those available to the Battle Master (save DC 8 + proficiency bonus + Strength or Dexterity modifier), and you gain one superiority die, a d6, regained on a short or long rest. It's added to any superiority dice you have from another source. (Shown on the Maneuvers card.)"},
   "Thrown Weapon Fighting":{optional:true, text:"You can draw a weapon that has the thrown property as part of the attack you make with it. In addition, when you hit with a ranged attack using a thrown weapon, you gain a +2 bonus to the damage roll."},
   "Unarmed Fighting":{optional:true, text:"Your unarmed strikes deal 1d6 + your Strength modifier bludgeoning damage on a hit, or 1d8 if you aren't wielding any weapons or a shield when you make the attack roll. At the start of each of your turns, you can deal 1d4 bludgeoning damage to one creature grappled by you."},
-  "Blessed Warrior":{optional:true, spellPick:{count:2, level:0, list:"Cleric", ability:"cha", swapClass:"Paladin"}, text:"You learn two cantrips of your choice from the cleric spell list. They count as paladin spells for you, and Charisma is your spellcasting ability for them. Whenever you gain a level in this class, you can replace one of them with another cleric cantrip. (Shown on the Spells tab.)"},
-  "Druidic Warrior":{optional:true, spellPick:{count:2, level:0, list:"Druid", ability:"wis", swapClass:"Ranger"}, text:"You learn two cantrips of your choice from the druid spell list. They count as ranger spells for you, and Wisdom is your spellcasting ability for them. Whenever you gain a level in this class, you can replace one of them with another druid cantrip. (Shown on the Spells tab.)"}
+  "Blessed Warrior":{optional:true, spellPick:{count:2, level:0, list:"Cleric", ability:"cha", swapClass:"Paladin"}, text:"You learn two cantrips of your choice from the cleric spell list. They count as paladin spells for you, and Charisma is your spellcasting ability for them. Whenever you gain a level in this class, you can replace one of them with another cleric cantrip (with Change on this feature). (Shown on the Spells tab.)"},
+  "Druidic Warrior":{optional:true, spellPick:{count:2, level:0, list:"Druid", ability:"wis", swapClass:"Ranger"}, text:"You learn two cantrips of your choice from the druid spell list. They count as ranger spells for you, and Wisdom is your spellcasting ability for them. Whenever you gain a level in this class, you can replace one of them with another druid cantrip (with Change on this feature). (Shown on the Spells tab.)"}
 };
 
 CLASSES_INFO["Fighter"].features = [
@@ -389,7 +389,7 @@ Object.assign(CLASSES_INFO["Paladin"], {
 });
 
 CLASSES_INFO["Bard"].features = [
-  {name:"Spellcasting", text:"Cast spells fueled by the music of creation using Charisma."},
+  {name:"Spellcasting", text:"Cast spells fueled by the music of creation using Charisma. Whenever you gain a bard level, you can replace one bard spell you know with another from the bard spell list, of a level you have spell slots for. Make the swap on the Spells tab."},
   {name:"Bardic Inspiration", text:"Bonus action to grant a d6 inspiration die to an ally within 60 feet for checks, attacks, or saves."}
 ];
 
@@ -488,13 +488,13 @@ CLASSES_INFO["Ranger"].features = [
 ];
 
 CLASSES_INFO["Sorcerer"].features = [
-  {name:"Spellcasting", text:"Cast innate magic using Charisma as your spellcasting ability."},
+  {name:"Spellcasting", text:"Cast innate magic using Charisma as your spellcasting ability. Whenever you gain a sorcerer level, you can replace one sorcerer spell you know with another from the sorcerer spell list, of a level you have spell slots for. Make the swap on the Spells tab."},
   {name:"Sorcerous Origin", text:"Innate magical bloodline or source that shapes your powers and grants origin traits."}
 ];
 
 CLASSES_INFO["Warlock"].features = [
   {name:"Otherworldly Patron", text:"Pact struck with an otherworldly entity granting unique patron spells and features."},
-  {name:"Pact Magic", text:"Cast warlock spells using Charisma. All spell slots are of the highest available level and recharge on a short rest."}
+  {name:"Pact Magic", text:"Cast warlock spells using Charisma. All spell slots are of the highest available level and recharge on a short rest. Whenever you gain a warlock level, you can replace one warlock spell you know with another from the warlock spell list, of a level you have spell slots for. Make the swap on the Spells tab."}
 ];
 
 var ARCANE_FOCUS_CHOICE = {options:[

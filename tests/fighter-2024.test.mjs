@@ -10,7 +10,7 @@ import { FIGHTER_2024, FIGHTER_2024_SUBCLASSES } from "../js/data/fighter-2024.j
 import { WEAPON_MASTERY } from "../js/data/weapon-mastery.js";
 import { optionSetDef, optionsKnownAt, OPTION_SETS } from "../js/data/class-options.js";
 import { setClassEdition } from "../js/core/class-edition.js";
-import { versatilityStyleSwap } from "../js/core/fighting-styles.js";
+import { styleSwapsEachLevel } from "../js/core/fighting-styles.js";
 import { masteryKinds, weaponMastery } from "../js/core/weapon-mastery.js";
 import { classEdition, classHasEdition, subclassesFor, computeSpellSlots } from "../js/core/class-features.js";
 import { initiativeRollMode } from "../js/core/checks.js";
@@ -91,10 +91,9 @@ test("the Fighting Style feats: the 2024 list, swapped at any level", () => {
   assert.deepEqual(FIGHTER_2024.fightingStyle.options.slice().sort(), ["Archery", "Blind Fighting", "Defense", "Dueling", "Great Weapon Fighting", "Interception", "Protection", "Thrown Weapon Fighting", "Two-Weapon Fighting", "Unarmed Fighting"]);
   const c = fighter(2);
   c.features = [{ id: "s", name: "Fighting Style: Defense", fightingStyle: "Defense", source: "Fighter 1", text: "" }];
-  assert.equal(versatilityStyleSwap(c, "Fighter", 3), true);
-  const old = fighter(2, "", "");
-  old.features = c.features;
-  assert.equal(versatilityStyleSwap(old, "Fighter", 3), false, "2014: only with Tasha's, at an ASI level");
+  // (The swap is made with Change on the style's feature, not in the level-up.)
+  assert.equal(styleSwapsEachLevel("Fighter", "2024"), true);
+  assert.equal(styleSwapsEachLevel("Fighter", ""), false, "2014: only Tasha's Martial Versatility");
 });
 
 test("skills and kit are the book's", () => {

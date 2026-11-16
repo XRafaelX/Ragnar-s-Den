@@ -72,14 +72,14 @@ test("what can be picked: known ones and, without the switch, Tasha's are out", 
   assert.equal(H.hasFightingStyle(c, "Defense"), true, "the sheet's own check agrees");
 });
 
-test("Martial Versatility: Tasha's on, an ASI level of a class with styles, a style to swap", () => {
-  const f = withStyle(makeChar([{ name: "Fighter", level: 3 }]), "Archery");
-  assert.equal(FS.versatilityStyleSwap(f, "Fighter", 4), false, "switch off");
-  f.tashaOptional = true;
-  assert.deepEqual([4, 5, 6, 8, 14, 19].map((l) => FS.versatilityStyleSwap(f, "Fighter", l)), [true, false, true, true, true, true]);
-  assert.equal(FS.versatilityStyleSwap(f, "Bard", 4), false, "no Fighting Style feature");
-  assert.equal(FS.versatilityStyleSwap(makeChar([{ name: "Paladin", level: 3 }], { tashaOptional: true }), "Paladin", 4), false, "no style to swap");
-  assert.equal(FS.versatilityStyleSwap(withStyle(makeChar([{ name: "Ranger", level: 7 }], { tashaOptional: true }), "Defense"), "Ranger", 8), true);
+test("Martial Versatility: a Tasha's feature at level 4 for fighters, paladins and rangers, pointing to Change", () => {
+  for(const [cls, asi] of [["Fighter", "4, 6, 8, 12, 14, 16 and 19"], ["Paladin", "4, 8, 12, 16 and 19"], ["Ranger", "4, 8, 12, 16 and 19"]]){
+    const v = H.classVariants(cls).find((x) => x.name === "Martial Versatility");
+    assert.ok(v && v.adds && v.level === 4, cls);
+    const text = v.features[4][0].text;
+    assert.ok(text.includes("(" + asi + ")") && /Change button on its Fighting Style feature/.test(text), cls);
+  }
+  assert.match(H.classVariants("Fighter").find((x) => x.name === "Martial Versatility").features[4][0].text, /Maneuvers card/);
 });
 
 test("a style's own picks: Superior Technique's maneuver, Blessed and Druidic Warrior's cantrips", () => {

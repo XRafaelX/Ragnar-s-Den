@@ -353,7 +353,7 @@ function optionalRulesShelf(){
         : "Tasha's Cauldron, the 2024 character rules and the campaign books. Most new players leave these off.";
     },
     cards: [{key: "tasha", series: "Tasha's Cauldron of Everything", title: "Optional class features", switchLabel: "Use Tasha's optional class features",
-      perks: ["More class options", "Additional spells", "Swaps at level-up"]}, RULES_2024_CARD].concat(gunslinger ? [GUN_MISFIRE_CARD] : []).concat(artificer ? [ARTIFICER_FIREARMS_CARD] : []).concat(edClass ? [classEditionCard(edClass)] : []).concat([SUPPLIES_CARD]).concat(books.map(campaignBookCard)),
+      perks: ["More class options", "Additional spells", "More swaps"]}, RULES_2024_CARD].concat(gunslinger ? [GUN_MISFIRE_CARD] : []).concat(artificer ? [ARTIFICER_FIREARMS_CARD] : []).concat(edClass ? [classEditionCard(edClass)] : []).concat([SUPPLIES_CARD]).concat(books.map(campaignBookCard)),
     isOn: function(k){ return k==="tasha" ? !!wizardState.tashaOptional : k==="rules2024" ? !!wizardState.rules2024 : k==="gunMisfire" ? !!wizardState.gunMisfire : k==="artificerFirearms" ? !!wizardState.artificerFirearms : k==="supplies" ? !!wizardState.trackSupplies : /^class2024:/.test(k) ? !!wizardState.class2024 : wizardState.campaign===k; },
     // (A 2024 species or background holds the 2024 rules on.)
     locked: function(k){ return k==="rules2024" ? rules2024Lock((RACE_DATA[wizardState.race] || {}).edition, (BACKGROUND_INFO[wizardState.background] || {}).edition) : ""; },
@@ -409,10 +409,7 @@ export function tashaAddsFor(className, edition){
   var sc = (CLASSES_INFO[className]||{}).spellcasting, list = sc ? sc.spellList : className; // (a ranger casts from level 2)
   var spells = tashaSpellCount(list);
   if(spells) bits.push(plural(spells, "more spell") + " on the " + list.toLowerCase() + " list");
-  // (The Versatility features are listed above with the other additions.)
-  if(prog.fightingStyle || OPTION_SETS.some(function(set){ return set.className===className && set.versatility; })){
-    bits.push("swaps at Ability Score Improvement levels");
-  }
+  // (The Versatility swaps are features now, listed above with the other additions.)
   if(className==="Wizard") bits.push("a cantrip swap after a long rest from level 3");
   var article = /^[AEIOU]/.test(className) ? "an " : "a ";
   if(!bits.length) return "nothing extra for " + article + className + " in this app yet.";

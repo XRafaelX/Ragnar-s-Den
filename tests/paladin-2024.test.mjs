@@ -13,7 +13,7 @@ import { subclassesFor, computeSpellSlots, characterIsCaster } from "../js/core/
 import { casterDef, preparedMax } from "../js/core/spells-known.js";
 import { preparedAt } from "../js/data/spells-known.js";
 import { computeSave } from "../js/core/vitals.js";
-import { versatilityStyleSwap } from "../js/core/fighting-styles.js";
+import { styleSwapsEachLevel } from "../js/core/fighting-styles.js";
 import { characterCompanions, setCompanionChoice } from "../js/core/companions.js";
 import { setSpellEdition } from "../js/core/spell-edition.js";
 import { advantagesFor } from "../js/core/checks.js";
@@ -242,17 +242,8 @@ test("Tasha's extras are the 2014 paladin's", () => {
 });
 
 test("a 2024 paladin keeps its Fighting Style, and a 2024 fighter can swap", () => {
-  const c = paladin(4);
-  c.features = [{ id: "f", name: "Fighting Style: Defense", fightingStyle: "Defense", source: "Class" }];
-  assert.equal(versatilityStyleSwap(c, "Paladin", 5), false);
-  c.tashaOptional = true;
-  assert.equal(versatilityStyleSwap(c, "Paladin", 4), false, "Tasha's swap isn't for a 2024 class");
-  const old = paladin(4, "", "", { tashaOptional: true, features: c.features });
-  assert.equal(versatilityStyleSwap(old, "Paladin", 4), true);
-  const f = newCharacter("F");
-  f.classes = [{ name: "Fighter", level: 4, subclass: "", edition: "2024" }];
-  f.features = c.features;
-  assert.equal(versatilityStyleSwap(ensureShape(f), "Fighter", 5), true);
+  assert.equal(styleSwapsEachLevel("Paladin", "2024"), false, "a 2024 paladin keeps its style");
+  assert.equal(styleSwapsEachLevel("Fighter", "2024"), true);
   assert.ok(PALADIN_2024.fightingStyle.options.includes("Blessed Warrior") && PALADIN_2024.fightingStyle.options.includes("Archery"));
 });
 

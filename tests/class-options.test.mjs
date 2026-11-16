@@ -27,7 +27,7 @@ const sorc = (level, extra) => makeChar([{ name: "Sorcerer", subclass: "Wild Mag
 const bm = (level, extra) => makeChar([{ name: "Fighter", subclass: "Battle Master", level }], extra);
 const names = (cl, set) => CO.knownOptions(cl, set).map((e) => e.name);
 const plansFor = (c, level, subclass) => CO.levelUpOptionPlans(c, c.classes[0], c.classes[0].name, subclass ?? c.classes[0].subclass, level)
-  .map((p) => ({ set: p.set.id, fresh: p.fresh, canSwap: p.canSwap, total: p.total, why: p.why }));
+  .map((p) => ({ set: p.set.id, fresh: p.fresh, total: p.total }));
 
 /* ================================================================
    Data
@@ -110,21 +110,18 @@ test("entrySets: by class, subclass and level", () => {
 /* ================================================================
    Level-up plans: new picks and swaps
    ================================================================ */
-test("Metamagic: new ones at 3, 10, 17; never a swap without Tasha's", () => {
+test("Metamagic: new ones at 3, 10, 17; no level-up swap, even with Tasha's", () => {
   const c = sorc(2);
   assert.deepEqual(plansFor(c, 2), [], "nothing before 3");
-  assert.deepEqual(plansFor(c, 3), [{ set: "metamagic", fresh: 2, canSwap: false, total: 2, why: "" }]);
+  assert.deepEqual(plansFor(c, 3), [{ set: "metamagic", fresh: 2, total: 2 }]);
   CO.learnOption(c.classes[0], "metamagic", "Quickened Spell");
   CO.learnOption(c.classes[0], "metamagic", "Twinned Spell");
-  assert.deepEqual(plansFor(c, 4), [], "level 4: nothing, no Tasha's");
-  assert.deepEqual(plansFor(c, 10), [{ set: "metamagic", fresh: 1, canSwap: false, total: 3, why: "" }], "new one, no swap");
+  assert.deepEqual(plansFor(c, 4), [], "level 4: nothing");
+  assert.deepEqual(plansFor(c, 10), [{ set: "metamagic", fresh: 1, total: 3 }], "new one");
+  // Sorcerous Versatility's swap is made on the Metamagic card (2026-11-16).
   c.tashaOptional = true;
-  // With 2 known, levels past 10 and 17 also bring the ones still to learn.
-  for(const lv of [4, 8, 12, 16, 19]){
-    const total = optionsKnownAt(optionSetDef("metamagic"), lv);
-    assert.deepEqual(plansFor(c, lv), [{ set: "metamagic", fresh: total - 2, canSwap: true, total, why: "versatility" }], "Sorcerous Versatility at " + lv);
-  }
-  assert.deepEqual(plansFor(c, 5), [], "not an ASI level");
+  assert.deepEqual(plansFor(c, 4), [], "no Versatility step at 4");
+  assert.deepEqual(plansFor(c, 12), [{ set: "metamagic", fresh: 1, total: 3 }], "only the one still to learn");
   assert.equal(CO.tashaOn(c), true);
   assert.equal(CO.tashaOn(null), false);
 });
@@ -132,43 +129,36 @@ test("Metamagic: new ones at 3, 10, 17; never a swap without Tasha's", () => {
 test("maneuvers: three at 3 (with the subclass picked on that level-up), swap only when learning", () => {
   const c = makeChar([{ name: "Fighter", subclass: "", level: 2 }]);
   assert.deepEqual(plansFor(c, 3, "Champion"), []);
-  assert.deepEqual(plansFor(c, 3, "Battle Master"), [{ set: "maneuvers", fresh: 3, canSwap: false, total: 3, why: "" }], "nothing known yet, so no swap");
+  assert.deepEqual(plansFor(c, 3, "Battle Master"), [{ set: "maneuvers", fresh: 3, total: 3 }]);
   const f = bm(3);
   ["Riposte", "Parry", "Trip Attack"].forEach((n) => CO.learnOption(f.classes[0], "maneuvers", n));
   for(const lv of [4, 5, 6]) assert.deepEqual(plansFor(f, lv), [], "no swap at " + lv);
-  assert.deepEqual(plansFor(f, 7), [{ set: "maneuvers", fresh: 2, canSwap: true, total: 5, why: "" }]);
-  // Fighters' extra ASI levels count for Martial Versatility.
+  assert.deepEqual(plansFor(f, 7), [{ set: "maneuvers", fresh: 2, total: 5 }]);
+  // Martial Versatility's swap is made on the Maneuvers card (2026-11-16).
   f.tashaOptional = true;
-  assert.deepEqual(plansFor(f, 6).map((p) => [p.fresh, p.canSwap, p.why]), [[0, true, "versatility"]]);
-  const f13 = bm(13, { tashaOptional: true });
-  ["Riposte", "Parry", "Trip Attack", "Brace", "Rally", "Ambush", "Quick Toss"].forEach((n) => CO.learnOption(f13.classes[0], "maneuvers", n));
-  assert.deepEqual(plansFor(f13, 14).map((p) => [p.fresh, p.canSwap, p.why]), [[0, true, "versatility"]], "fighter 14 is an ASI level");
+  assert.deepEqual(plansFor(f, 6), [], "no Versatility step");
   assert.deepEqual(plansFor(f, 5), []);
-  // An older sheet with none catches up, and may swap since it's learning.
+  // An older sheet with none catches up.
   const old = bm(8);
-  assert.deepEqual(plansFor(old, 9), [{ set: "maneuvers", fresh: 5, canSwap: false, total: 5, why: "" }]);
+  assert.deepEqual(plansFor(old, 9), [{ set: "maneuvers", fresh: 5, total: 5 }]);
 });
 
 test("slots, context and problems", () => {
   const f = bm(6, { tashaOptional: true, feats: [{ id: "ma", name: "Martial Adept", picks: { options: ["Rally", "Ambush"] } }] });
   const cl = f.classes[0];
-  const riposte = CO.learnOption(cl, "maneuvers", "Riposte");
+  CO.learnOption(cl, "maneuvers", "Riposte");
   CO.learnOption(cl, "maneuvers", "Parry");
   CO.learnOption(cl, "maneuvers", "Trip Attack");
   const plan = CO.levelUpOptionPlans(f, cl, "Fighter", "Battle Master", 7)[0];
   assert.equal(CO.planSlots(plan, cl, {}), 2);
-  assert.equal(CO.planSlots(plan, cl, { swapOut: riposte.id }), 3);
-  assert.equal(CO.planSlots(plan, cl, { swapOut: "zzz" }), 2, "an unknown id adds nothing");
-  const ctx = CO.planContext(f, cl, plan, { swapOut: riposte.id }, 7);
-  assert.deepEqual(ctx.known.sort(), ["Ambush", "Parry", "Rally", "Trip Attack"], "the swapped one is free again; Martial Adept's count");
+  const ctx = CO.planContext(f, cl, plan, {}, 7);
+  assert.deepEqual(ctx.known.sort(), ["Ambush", "Parry", "Rally", "Riposte", "Trip Attack"], "Martial Adept's count");
   const why = (choice) => CO.planProblem(f, cl, plan, choice, 7);
   assert.equal(why({ picks: [] }), "Choose 2 different maneuvers.");
   assert.equal(why({ picks: ["Brace", "Brace"] }), "Choose 2 different maneuvers.");
   assert.equal(why({ picks: ["Brace", "Rally"] }), "Rally can't be learned now (known). Pick another.", "Martial Adept already gave it");
   assert.equal(why({ picks: ["Brace", "Made Up"] }), "Made Up can't be learned now (unknown). Pick another.");
   assert.equal(why({ picks: ["Brace", "Quick Toss"] }), null);
-  assert.equal(why({ picks: ["Brace", "Quick Toss"], swapOut: riposte.id }), "Choose 3 different maneuvers.");
-  assert.equal(why({ picks: ["Brace", "Quick Toss", "Riposte"], swapOut: riposte.id }), null, "taking back the one given up is allowed");
   // Without Tasha's optional features, Tasha's maneuvers can't be learned.
   f.tashaOptional = false;
   assert.equal(why({ picks: ["Brace", "Precision Attack"] }), "Brace can't be learned now (Tasha's optional). Pick another.");
@@ -211,17 +201,17 @@ test("an option gated by level is left out until then", () => {
   assert.deepEqual(CO.availableOptions(set, { level: 5, known: [] }).map((o) => o.name), ["Early"]);
 });
 
-test("apply and undo: new picks and a swap come and go exactly", () => {
+test("apply and undo: new picks come and go exactly", () => {
   const f = bm(6);
   const cl = f.classes[0];
-  const riposte = CO.learnOption(cl, "maneuvers", "Riposte");
+  CO.learnOption(cl, "maneuvers", "Riposte");
   CO.learnOption(cl, "maneuvers", "Parry");
   CO.learnOption(cl, "maneuvers", "Trip Attack");
   const plan = CO.levelUpOptionPlans(f, cl, "Fighter", "Battle Master", 7)[0];
-  const rec = CO.applyPlan(f, cl, plan, { picks: ["Brace", "Quick Toss", "Precision Attack", "Extra"], swapOut: riposte.id });
-  assert.deepEqual(names(cl, "maneuvers"), ["Parry", "Trip Attack", "Brace", "Quick Toss", "Precision Attack"]);
-  assert.equal(rec.removed.name, "Riposte");
-  assert.equal(rec.added.length, 3, "only as many as the slots");
+  const rec = CO.applyPlan(f, cl, plan, { picks: ["Brace", "Quick Toss", "Precision Attack"] });
+  assert.deepEqual(names(cl, "maneuvers"), ["Riposte", "Parry", "Trip Attack", "Brace", "Quick Toss"]);
+  assert.equal(rec.removed, null);
+  assert.equal(rec.added.length, 2, "only as many as the slots");
   CO.undoPlan(cl, rec);
   assert.deepEqual(names(cl, "maneuvers").sort(), ["Parry", "Riposte", "Trip Attack"]);
   // Learning on an entry without options starts the list; forgetting an unknown id does nothing.
@@ -229,7 +219,7 @@ test("apply and undo: new picks and a swap come and go exactly", () => {
   CO.learnOption(fresh, "metamagic", "Subtle Spell");
   assert.deepEqual(names(fresh, "metamagic"), ["Subtle Spell"]);
   assert.equal(CO.forgetOption(fresh, "metamagic", "nope"), null);
-  // Undoing a swap on an entry whose list is gone puts it back.
+  // Undoing an older level-up's swap on an entry whose list is gone puts it back.
   const bare = { name: "Fighter" };
   CO.undoPlan(bare, { set: "maneuvers", added: [], removed: { id: "x", name: "Parry" } });
   assert.deepEqual(names(bare, "maneuvers"), ["Parry"]);
@@ -339,7 +329,7 @@ test("cards: one per set the character has, every state draws", (t) => {
 import { optionMeta } from "../js/ui/option-picks.js";
 const ent = (cls, sub, level, opts = {}) => ({ name: cls, subclass: sub, level, options: opts });
 const known = (set, names) => names.map((n, i) => ({ id: set + i, name: n }));
-const plan = (c, cl, lv) => CO.levelUpOptionPlans(c, cl, cl.name, cl.subclass, lv).map((p) => [p.set.id, p.fresh, p.canSwap]);
+const plan = (c, cl, lv) => CO.levelUpOptionPlans(c, cl, cl.name, cl.subclass, lv).map((p) => [p.set.id, p.fresh]);
 
 test("Phase 2a data: counts, gates and sources match the books", () => {
   const n = (id, lv) => optionsKnownAt(optionSetDef(id), lv);
@@ -360,23 +350,23 @@ test("Phase 2a data: counts, gates and sources match the books", () => {
   for(const id of ["runes", "arcaneShots", "disciplines", "huntersPrey", "totemSpirit", "stormEnvironment", "misfortunes"]) assert.ok(optionSetDef(id).options.every((o) => !o.optional), id);
 });
 
-test("runes: swap at every fighter level; Hill and Storm from 7", () => {
+test("runes: a new one at 7 (swaps on the card); Hill and Storm from 7", () => {
   const c = makeChar([ent("Fighter", "Rune Knight", 3, { runes: known("r", ["Cloud Rune", "Fire Rune"]) })]);
   const cl = c.classes[0];
-  assert.deepEqual(plan(c, cl, 4), [["runes", 0, true]], "a swap at 4 with nothing new");
-  assert.deepEqual(plan(c, cl, 7), [["runes", 1, true]]);
-  const ctx = (lv) => CO.planContext(c, cl, CO.levelUpOptionPlans(c, cl, "Fighter", "Rune Knight", lv)[0], {}, lv);
+  assert.deepEqual(plan(c, cl, 4), [], "no level-up swap at 4");
+  assert.deepEqual(plan(c, cl, 7), [["runes", 1]]);
+  const ctx = (lv) => CO.planContext(c, cl, CO.levelUpOptionPlans(c, cl, "Fighter", "Rune Knight", 7)[0], {}, lv);
   assert.deepEqual(CO.availableOptions(optionSetDef("runes"), ctx(4)).map((o) => o.name), ["Frost Rune", "Stone Rune"]);
   assert.deepEqual(CO.availableOptions(optionSetDef("runes"), ctx(7)).map((o) => o.name), ["Frost Rune", "Stone Rune", "Hill Rune", "Storm Rune"]);
 });
 
-test("Arcane Shots and disciplines: swap only when learning; disciplines gated by monk level", () => {
+test("Arcane Shots and disciplines: new ones when due; disciplines gated by monk level", () => {
   const a = makeChar([ent("Fighter", "Arcane Archer", 3, { arcaneShots: known("a", ["Bursting Arrow", "Seeking Arrow"]) })]);
   assert.deepEqual(plan(a, a.classes[0], 4), []);
-  assert.deepEqual(plan(a, a.classes[0], 18), [["arcaneShots", 4, true]], "an older sheet catching up at 18");
+  assert.deepEqual(plan(a, a.classes[0], 18), [["arcaneShots", 4]], "an older sheet catching up at 18");
   const m = makeChar([ent("Monk", "Way of the Four Elements", 5, { disciplines: known("d", ["Water Whip"]) })]);
   assert.deepEqual(plan(m, m.classes[0], 5), []);
-  assert.deepEqual(plan(m, m.classes[0], 6), [["disciplines", 1, true]]);
+  assert.deepEqual(plan(m, m.classes[0], 6), [["disciplines", 1]]);
   const avail = (lv) => CO.availableOptions(optionSetDef("disciplines"), { level: lv, known: ["Water Whip"], tasha: false }).map((o) => o.name);
   assert.ok(!avail(5).includes("Gong of the Summit") && avail(6).includes("Gong of the Summit") && !avail(10).includes("Fireball"));
   assert.ok(avail(11).includes("Flames of the Phoenix") && !avail(16).includes("Breath of Winter") && avail(17).includes("Breath of Winter"));
@@ -385,16 +375,16 @@ test("Arcane Shots and disciplines: swap only when learning; disciplines gated b
 
 test("Hunter and Totem: one choice per tier, never swapped; grouped on one card", (t) => {
   const h = makeChar([ent("Ranger", "Hunter", 2)]);
-  assert.deepEqual(plan(h, h.classes[0], 3), [["huntersPrey", 1, false]]);
+  assert.deepEqual(plan(h, h.classes[0], 3), [["huntersPrey", 1]]);
   h.classes[0].options = { huntersPrey: known("h", ["Colossus Slayer"]) };
   for(const lv of [4, 5, 6]) assert.deepEqual(plan(h, h.classes[0], lv), [], "nothing at " + lv);
-  assert.deepEqual(plan(h, h.classes[0], 8), [["defensiveTactics", 1, false]], "missed at 7: still due at 8");
-  assert.deepEqual(plan(h, h.classes[0], 7), [["defensiveTactics", 1, false]]);
+  assert.deepEqual(plan(h, h.classes[0], 8), [["defensiveTactics", 1]], "missed at 7: still due at 8");
+  assert.deepEqual(plan(h, h.classes[0], 7), [["defensiveTactics", 1]]);
   // An older Hunter 14 with nothing chosen catches up on all four at 15.
   const old = makeChar([ent("Ranger", "Hunter", 14)]);
   assert.deepEqual(plan(old, old.classes[0], 15).map((p) => p[0]), ["huntersPrey", "defensiveTactics", "hunterMultiattack", "superiorHuntersDefense"]);
   const tw = makeChar([ent("Barbarian", "Path of the Totem Warrior", 5, { totemSpirit: known("t", ["Bear"]) })]);
-  assert.deepEqual(plan(tw, tw.classes[0], 6), [["totemAspect", 1, false]]);
+  assert.deepEqual(plan(tw, tw.classes[0], 6), [["totemAspect", 1]]);
   // The same animal can be picked again at a later tier (separate sets).
   const ctx = CO.planContext(tw, tw.classes[0], CO.levelUpOptionPlans(tw, tw.classes[0], "Barbarian", "Path of the Totem Warrior", 6)[0], {}, 6);
   assert.ok(CO.availableOptions(optionSetDef("totemAspect"), ctx).some((o) => o.name === "Bear"));
@@ -407,14 +397,14 @@ test("Hunter and Totem: one choice per tier, never swapped; grouped on one card"
   });
 });
 
-test("Storm Herald: change the environment at every barbarian level; misfortunes swap on the sheet", () => {
+test("Storm Herald and misfortunes: changed on the sheet, not in the level-up", () => {
   const s = makeChar([ent("Barbarian", "Path of the Storm Herald", 2)]);
-  assert.deepEqual(plan(s, s.classes[0], 3), [["stormEnvironment", 1, false]]);
+  assert.deepEqual(plan(s, s.classes[0], 3), [["stormEnvironment", 1]]);
   s.classes[0].options = { stormEnvironment: known("s", ["Desert"]) };
-  for(const lv of [4, 5, 10, 20]) assert.deepEqual(plan(s, s.classes[0], lv), [["stormEnvironment", 0, true]], "change at " + lv);
+  for(const lv of [4, 5, 10, 20]) assert.deepEqual(plan(s, s.classes[0], lv), [], "changed on the card, not at " + lv);
   const r = makeChar([ent("Rogue", "Misfortune Bringer", 3, { misfortunes: known("m", ["Doomed", "Inept"]) })]);
   for(const lv of [4, 8]) assert.deepEqual(plan(r, r.classes[0], lv), [], "no level-up swap at " + lv);
-  assert.deepEqual(plan(r, r.classes[0], 9), [["misfortunes", 1, false]]);
+  assert.deepEqual(plan(r, r.classes[0], 9), [["misfortunes", 1]]);
 });
 
 test("costs name their points", () => {

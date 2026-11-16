@@ -69,6 +69,15 @@ export function featOptionChoices(def){
   var set = def && def.optionPicks && optionSetDef(def.optionPicks.set);
   return set ? set.options.map(function(o){ return o.name; }) : [];
 }
+/* A feat's Spell Change (Magic Initiate (2024), `spellChange`): the
+   spells its pick at `index` can become. Same group (level and list),
+   not one the feat already has. Made with "Change spells" on the feat
+   (Features tab), not in the level-up (2026-11-16). */
+export function spellChangeOptions(feat, index){
+  var def = featDef(feat.name), spells = (feat.picks && feat.picks.spells) || [];
+  var g = featSpellGroups(def, feat.picks).filter(function(x){ return index >= x.offset; }).pop();
+  return g ? g.options.filter(function(n){ return spells.indexOf(n)===-1; }) : [];
+}
 /* A feat's spell picks as groups, in the order their picks sit in
    picks.spells: [{count, level, label, plural, use, tags, offset,
    options}]. `options` are the spells a group can choose from (none

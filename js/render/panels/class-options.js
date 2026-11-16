@@ -211,7 +211,9 @@ function optionEntry(c, set, entry, k, fixed){
     rm.addEventListener("click", function(){
       confirmDialog("Remove " + o.name + "?", set.swap==="rest"
         ? "After a long rest you can swap one " + set.noun + " you know: remove it, then learn another below."
-        : "Normally you only swap " + set.noun + "s when the level-up offers it. Remove it to fix a mistake, then learn the right one below.", function(){
+        : set.swap==="never" && !set.versatility
+        ? "This " + set.noun + " is normally yours for good. Remove it to fix a mistake, then learn the right one below."
+        : "To swap it, remove it, then learn another below.", function(){
         forgetOption(entry, set.id, k.id);
         syncClassPicks(c); // a Tiger totem's skills go with it
         save(); renderAll(); playDelete();
@@ -268,12 +270,14 @@ function swapHint(c, set, entry){
   var more = Object.keys(set.known).map(Number).filter(function(l){ return l > (Number(entry.level)||1); });
   var bits = [];
   if(more.length) bits.push("You learn more at " + cls + " level" + (more.length>1 ? "s " : " ") + listText(more) + ".");
-  if(set.swap==="learn") bits.push("Each time you learn new ones, the level-up lets you swap one you know.");
-  else if(set.swap==="level") bits.push("Each time you gain " + article(entry.name) + " " + cls + " level, the level-up lets you " + (optionsKnownAt(set, 20) > 1 ? "swap one." : "change it."));
-  else if(set.swap==="rest") bits.push("After a long rest you can swap one: remove it here, then learn another.");
+  // (The level-up doesn't offer these swaps: they're made here, 2026-11-16.)
+  var how = optionsKnownAt(set, 20) > 1 ? "swap one: remove it here, then learn another." : "change it: remove it here, then choose another.";
+  if(set.swap==="learn") bits.push("Each time you learn new ones, you can also " + how);
+  else if(set.swap==="level") bits.push("Each time you gain " + article(entry.name) + " " + cls + " level, you can " + how);
+  else if(set.swap==="rest") bits.push("After a long rest you can " + how);
   if(set.versatility){
     var asi = ((CLASS_PROGRESSION[entry.name]||{}).asiLevels||[]);
-    bits.push(tashaOn(c) ? "With Tasha's optional features you can also swap one at " + cls + " levels " + listText(asi) + "."
+    bits.push(tashaOn(c) ? "With Tasha's optional features you can also swap one here at " + cls + " levels " + listText(asi) + "."
       : "Using Tasha's optional features (Information tab) also lets you swap one at Ability Score Improvement levels.");
   }
   return bits.join(" ");

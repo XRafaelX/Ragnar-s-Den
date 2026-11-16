@@ -32,16 +32,16 @@ export var SORCERER_2024 = {
   multiclassProfs: {armor:[], weapons:[], tools:[], note:""},
   spellcasting: {ability:"cha", spellList:"Sorcerer", cantrips:4, spells:2, prepares:false, slots:{1:2},
     spellsLabel:"Level 1 spells",
-    spellsHelp:"Choose two level 1 sorcerer spells. Burning Hands and Detect Magic are the book's suggestions. Each time you gain a sorcerer level you can swap one."},
+    spellsHelp:"Choose two level 1 sorcerer spells. Burning Hands and Detect Magic are the book's suggestions. Each time you gain a sorcerer level you can swap one on the Spells tab."},
   choices: [],
   level1: [
-    {name:"Spellcasting", text:"You cast sorcerer spells using Charisma. You know four cantrips (five at level 4, six at 10). Light, Prestidigitation, Shocking Grasp and Sorcerous Burst are recommended. You know two level 1 spells, more as you level, following the Prepared Spells column. Whenever you gain a sorcerer level, you can swap one cantrip and one spell. The level-up offers the spell swap. Swap the cantrip on the Spells tab. An arcane focus can be your spellcasting focus."},
+    {name:"Spellcasting", text:"You cast sorcerer spells using Charisma. You know four cantrips (five at level 4, six at 10). Light, Prestidigitation, Shocking Grasp and Sorcerous Burst are recommended. You know two level 1 spells, more as you level, following the Prepared Spells column. Whenever you gain a sorcerer level, you can swap one cantrip and one spell. Make the swaps on the Spells tab. An arcane focus can be your spellcasting focus."},
     {name:"Innate Sorcery", text:"As a bonus action, unleash your magic for 1 minute: the spell save DC of your sorcerer spells goes up by 1, and you have advantage on the attack rolls of sorcerer spells you cast (both on the Spellcasting card while it's on). You can do this twice, regained on a long rest. Start it from the Active effects card."}
   ],
   features: {
     2: [
       {name:"Font of Magic", text:"You have sorcery points equal to your sorcerer level, regained on a long rest. With no action, spend a spell slot to gain points equal to its level. As a bonus action, turn points into a spell slot: level 1 for 2 points, level 2 for 3 (from sorcerer level 3), level 3 for 5 (from 5), level 4 for 6 (from 7), level 5 for 7 (from 9). A slot you make is gone after a long rest. Both are on the Sorcery Points row on Vitals."},
-      {name:"Metamagic", text:"You know two Metamagic options (four at level 10, six at 17), paid for with sorcery points. You can use one per spell unless an option says otherwise. Whenever you gain a sorcerer level, you can swap one. The level-up asks, and the Metamagic card lists them with their costs."}
+      {name:"Metamagic", text:"You know two Metamagic options (four at level 10, six at 17), paid for with sorcery points. You can use one per spell unless an option says otherwise. Whenever you gain a sorcerer level, you can swap one: remove it on the Metamagic card, then learn another. The level-up asks for new ones, and the card lists them with their costs."}
     ],
     5: [{name:"Sorcerous Restoration", text:"When you finish a short rest, you regain spent sorcery points, up to half your sorcerer level (rounded down). Once per long rest. The short rest does this for you."}],
     7: [{name:"Sorcery Incarnate", text:"With no uses of Innate Sorcery left, you can start it by spending 2 sorcery points. While it's on, you can use up to two Metamagic options on each spell you cast."}],

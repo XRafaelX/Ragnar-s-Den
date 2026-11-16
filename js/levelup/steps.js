@@ -13,7 +13,7 @@ import { optionsKnownAt } from "../data/class-options.js";
 import { availableInvocations, resolveSpellPick } from "../core/invocations.js";
 import { renderPactBoonOptions, renderInvocationPicker, renderSpellPickPickers, renderHiddenNotes } from "../ui/invocation-picks.js";
 import { themedPicker } from "../ui/themed-picker.js";
-import { planSlots, planContext, knownOptions, availableOptions } from "../core/class-options.js";
+import { planSlots, planContext, availableOptions } from "../core/class-options.js";
 import { styleFeatures, styleNeedsPicks, stylePickChoices, styleSwapsEachLevel } from "../core/fighting-styles.js";
 import { renderStyleOptions, renderStylePicks } from "../ui/style-picks.js";
 import { renderOptionPicker, renderTashaNote } from "../ui/option-picks.js";
@@ -28,7 +28,7 @@ import { fillFeatList, featListLabel } from "../ui/feat-list.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { SPELL_DATA } from "../data/spells.js";
 function spellLevelOf(n){ return (SPELL_DATA[n] || {}).level; }
-import { lu, luEdition, styleOptions, featWho, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain, spellChangeFeats, spellChangeOptions, featSpellSwaps } from "./session.js";
+import { lu, luEdition, styleOptions, featWho, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
 
 /* A feat's picks redraw the step, except a spell card ticked (the cards keep their scroll and search). */
 function softRender(meta){ if(!(meta && meta.soft)) render(); }
@@ -95,63 +95,16 @@ export function stepStyle(container){
   }
   if(t.fightingStyle){
     card = stepCard(container, t.fightingStyle.from==="Fighting Style" ? "Choose a Fighting Style" : t.fightingStyle.from,
-      "<b>Your fighting style</b> is a combat specialty you " + (styleSwapsEachLevel(lu.className, luEdition()) ? "can change at any later level in this class" : "keep for good") + ". <b>Defense</b>, <b>Archery</b> and <b>Dueling</b> are added to your AC, attacks and damage automatically, and a few others add a sense, a maneuver or cantrips. The rest are reminders on your Features tab.");
+      "<b>Your fighting style</b> is a combat specialty you " + (styleSwapsEachLevel(lu.className, luEdition()) ? "can change at any later level in this class, with Change on its feature on the Features tab" : "keep for good") + ". <b>Defense</b>, <b>Archery</b> and <b>Dueling</b> are added to your AC, attacks and damage automatically, and a few others add a sense, a maneuver or cantrips. The rest are reminders on your Features tab.");
     card.appendChild(renderStyleOptions(lu.c, styleOptions(), lu.style, tasha, pick, !!luEdition()));
     if(!availableStyles().length){
       var p = ce("p","lu-note");
       p.textContent = "You already know every style this class can pick, so there's nothing to choose.";
       card.appendChild(p);
     }
-  } else if(styleSwapOffered()){
-    card = stepCard(container, "Fighting style",
-      styleSwapsEachLevel(lu.className, luEdition()) ? "Whenever you gain a "+escapeHtml(lu.className.toLowerCase())+" level, you can replace your fighting style with another. Most players keep theirs." :
-      "<b>Martial Versatility</b> (Tasha's optional features): at this level you may replace one fighting style you know with another from the "+escapeHtml(lu.className.toLowerCase())+"'s list. Most players keep theirs.");
-    var field = ce("div","field rt-field fp-field eli-field");
-    var options = [{value:"", label:"Keep my fighting style", muted:true}].concat(styleFeatures(lu.c).map(function(f){ return {value:f.id, label:"Replace "+f.fightingStyle}; }));
-    field.appendChild(themedPicker({
-      key: "lu:styleswap", ariaLabel: "Fighting style to replace", placeholder: "Keep my fighting style", search: false,
-      groups: {"": options}, value: lu.styleSwapOut,
-      onPick: function(v){ lu.styleSwapOut = v; lu.style = ""; lu.stylePicks = {options: [], spells: []}; render(); }
-    }));
-    card.appendChild(field);
-    if(lu.styleSwapOut) card.appendChild(renderStyleOptions(lu.c, styleOptions(), lu.style, tasha, pick, !!luEdition()));
   }
   if(lu.style && styleNeedsPicks(lu.style)) card.appendChild(renderStylePicks(lu.style, lu.stylePicks, tasha, knownManeuvers(), render, "lu:style",
     function(n){ return spellHeldBy(lu.c, n); }));
-  // Blessed / Druidic Warrior: one of its cantrips may change each level.
-  var offer = styleCantripOffer();
-  if(!offer){ lu.styleCantripOut = ""; lu.styleCantripIn = ""; return; }
-  var style = offer.feature.fightingStyle, list = offer.def.spellPick.list.toLowerCase();
-  var help = "<b>"+escapeHtml(style)+":</b> each time you gain a "+escapeHtml(lu.className.toLowerCase())+" level you may replace one of its cantrips with another "+escapeHtml(list)+" cantrip. Most players keep theirs.";
-  if(!card) card = stepCard(container, style+" cantrips", help);
-  else {
-    var title = ce("p","lu-choice-title"); title.textContent = style+" cantrips (optional)";
-    card.appendChild(title);
-    var p2 = ce("p","lu-note"); p2.innerHTML = help;
-    card.appendChild(p2);
-  }
-  var have = offer.feature.picks.spells.filter(Boolean);
-  if(have.indexOf(lu.styleCantripOut)===-1){ lu.styleCantripOut = ""; lu.styleCantripIn = ""; }
-  var outField = ce("div","field rt-field fp-field eli-field");
-  outField.appendChild(themedPicker({
-    key: "lu:stylecantripout", ariaLabel: style+" cantrip to replace", placeholder: "Keep them both", search: false,
-    groups: {"": [{value:"", label:"Keep them both", muted:true}].concat(have.map(function(n){ return {value:n, label:"Replace "+n}; }))},
-    value: lu.styleCantripOut,
-    onPick: function(v){ if(v!==lu.styleCantripOut) lu.styleCantripIn = ""; lu.styleCantripOut = v; render(); }
-  }));
-  card.appendChild(outField);
-  if(!lu.styleCantripOut) return;
-  var choices = stylePickChoices(style, tasha).map(function(n){ return {value: n, label: n}; });
-  var inField = ce("div","field rt-field fp-field eli-field");
-  var lbl = ce("p","lu-choice-title"); lbl.textContent = "Replacement for "+lu.styleCantripOut;
-  card.appendChild(lbl);
-  inField.appendChild(themedPicker({
-    key: "lu:stylecantripin", ariaLabel: "Replacement for "+lu.styleCantripOut, placeholder: "Pick a "+list+" cantrip…", search: true,
-    groups: {"": choices}, value: lu.styleCantripIn,
-    reasonFor: function(n){ var held = spellHeldBy(lu.c, n); return held ? "you have it: "+held : ""; },
-    onPick: function(v){ lu.styleCantripIn = v; render(); }
-  }));
-  card.appendChild(inField);
 }
 
 export function stepSubclass(container){
@@ -260,27 +213,6 @@ function renderLearn(container, cantripsStep){
   }
   var sections = learnSections(plan);
   mine.forEach(function(s){ card.appendChild(grid(s)); });
-  if(plan.swap && !cantripsStep) renderSpellSwap();
-
-  function renderSpellSwap(){
-  var swapTitle = ce("p","lu-choice-title");
-  swapTitle.textContent = "Swap one you know (optional)";
-  card.appendChild(swapTitle);
-  var swapHelp = ce("p","lu-note");
-  swapHelp.textContent = "Each time you gain a "+cls+" level you may replace one "+cls+" spell you know with another of up to "+ordinal(plan.swap.maxLevel)+" level. Most players keep theirs.";
-  card.appendChild(swapHelp);
-  if(plan.swap.known.indexOf(lu.learnSwap)===-1) lu.learnSwap = "";
-  var field = ce("div","field rt-field fp-field eli-field");
-  field.appendChild(themedPicker({
-    key: "lu:spellswap", ariaLabel: "Spell to replace", placeholder: "Keep them all", search: plan.swap.known.length > 8,
-    groups: {"": [{value:"", label:"Keep them all", muted:true}].concat(plan.swap.known.map(function(n){ return {value:n, label:"Replace "+n}; }))},
-    value: lu.learnSwap,
-    onPick: function(v){ if(v!==lu.learnSwap) lu.learnPicks.swapIn = []; lu.learnSwap = v; render(); }
-  }));
-  card.appendChild(field);
-  var swapIn = sections.find(function(s){ return s.id==="swapIn"; });
-  if(swapIn) card.appendChild(grid(swapIn));
-  }
 }
 
 export function stepInvocations(container){
@@ -302,7 +234,6 @@ export function stepInvocations(container){
     }
   }
 
-  var known = knownNow();
   var need = newInvocationCount();
   var total = invocationsKnownAt(t.newLevel, luEdition() || "");
   var ctx = luInvocationCtx();
@@ -345,42 +276,18 @@ export function stepInvocations(container){
   }
   for(var i=0;i<need;i++) picker(i, need>1 ? "New invocation "+(i+1) : "New invocation");
 
-  // The optional swap: give up one known invocation, then pick its
-  // replacement (the last pick) right under it.
-  if(known.length){
-    var swapTitle = ce("p","lu-choice-title");
-    swapTitle.textContent = "Swap one you know (optional)";
-    card.appendChild(swapTitle);
-    var swapHelp = ce("p","lu-note");
-    swapHelp.textContent = "Each warlock level you may replace one invocation you know with another you could learn now. Most players keep theirs.";
-    card.appendChild(swapHelp);
-    var field = ce("div","field rt-field fp-field eli-field");
-    var options = [{value:"", label:"Keep them all", muted:true}].concat(known.map(function(e){ return {value:e.id, label:"Replace "+invocationLabel(e.name)}; }));
-    field.appendChild(themedPicker({
-      key: "lu:swap", ariaLabel: "Invocation to replace", placeholder: "Keep them all", search: false,
-      groups: {"": options}, value: lu.swapOut,
-      onPick: function(v){
-        if(v!==lu.swapOut) lu.invPicks = lu.invPicks.slice(0, need);
-        lu.swapOut = v; render();
-      }
-    }));
-    card.appendChild(field);
-    var replacing = lu.swapOut && known.find(function(e){ return e.id===lu.swapOut; });
-    if(replacing) picker(n-1, "Replacement for "+invocationLabel(replacing.name));
-  }
   var hiddenNote = renderHiddenNotes(ctx);
   if(hiddenNote) card.appendChild(hiddenNote);
 }
 
 /* Options: for each set due this level (a Battle Master's maneuvers, a
-   sorcerer's Metamagic), pickers for the new ones and, when allowed, an
-   optional swap. Only options the character can learn are listed. */
+   sorcerer's Metamagic), pickers for the new ones. Only options the
+   character can learn are listed. A swap is made on the set's card on
+   the Features tab. */
 export function stepOptions(container){
   var t = target();
   optionPlans().forEach(function(plan){
     var set = plan.set, choice = optChoice(set.id);
-    var known = knownOptions(t.existing, set.id);
-    if(choice.swapOut && !known.some(function(e){ return e.id===choice.swapOut; })) choice.swapOut = "";
     var n = planSlots(plan, t.existing, choice);
     var ctx = planContext(lu.c, t.existing, plan, choice, t.newLevel);
     var names = availableOptions(set, ctx).map(function(o){ return o.name; });
@@ -404,30 +311,6 @@ export function stepOptions(container){
       }));
     }
     for(var i=0;i<plan.fresh;i++) picker(i, single ? "Your "+set.noun : plan.fresh>1 ? "New "+set.noun+" "+(i+1) : "New "+set.noun);
-    if(plan.canSwap){
-      var swapTitle = ce("p","lu-choice-title");
-      swapTitle.textContent = single ? "Change your "+set.noun+" (optional)" : "Swap one you know (optional)";
-      card.appendChild(swapTitle);
-      var help = ce("p","lu-note");
-      help.textContent = plan.why==="versatility"
-        ? "Tasha's optional features let you replace one "+set.noun+" at this level. Most players keep theirs."
-        : single ? "You may pick a different "+set.noun+" each time you gain a level in this class."
-        : "You may replace one "+set.noun+" you know with another you could learn now. Most players keep theirs.";
-      card.appendChild(help);
-      var field = ce("div","field rt-field fp-field eli-field");
-      var options = [{value:"", label:"Keep them all", muted:true}].concat(known.map(function(e){ return {value:e.id, label:"Replace "+e.name}; }));
-      field.appendChild(themedPicker({
-        key: "lu:optswap:"+set.id, ariaLabel: set.label+" to replace", placeholder: "Keep them all", search: false,
-        groups: {"": options}, value: choice.swapOut,
-        onPick: function(v){
-          if(v!==choice.swapOut) choice.picks = choice.picks.slice(0, plan.fresh);
-          choice.swapOut = v; render();
-        }
-      }));
-      card.appendChild(field);
-      var replacing = choice.swapOut && known.find(function(e){ return e.id===choice.swapOut; });
-      if(replacing) picker(n-1, "Replacement for "+replacing.name);
-    }
     var note = renderTashaNote(set, ctx);
     if(note) card.appendChild(note);
   });
@@ -601,41 +484,6 @@ export function stepBonusFeatPicks(container){
   if(!lu.bonusFeatPicks) lu.bonusFeatPicks = emptyPicks(def);
   card.appendChild(renderFeatPicks(def, lu.bonusFeatPicks, bonusFeatCtx(), softRender));
 }
-/* Feat spells: Magic Initiate (2024)'s Spell Change, one optional swap
-   per feat: which spell goes, then what replaces it (same level, same list). */
-export function stepFeatSpells(container){
-  var card = stepCard(container, "Feat spells",
-    "<b>Spell Change:</b> each time you gain a level, you can replace one spell you chose for Magic Initiate with another of the same level from its list. You don't have to.");
-  spellChangeFeats().forEach(function(f){
-    var sw = lu.featSwaps[f.id] = lu.featSwaps[f.id] || {index: "", to: ""};
-    var spells = f.picks.spells || [], list = f.picks.option || f.lockedOption || "";
-    var row = ce("div", "bgk-slot");
-    var title = ce("p", "lu-choice-title");
-    // "Magic Initiate (2024, Wizard list)".
-    title.textContent = list ? (/\)$/.test(f.name) ? f.name.replace(/\)$/, ", " + list + " list)") : f.name + " (" + list + " list)") : f.name;
-    row.appendChild(title);
-    var out = ce("div", "field fp-field");
-    out.appendChild(themedPicker({
-      key: "featswap:" + f.id, ariaLabel: "Spell to replace", search: false, value: sw.index==="" ? "keep" : sw.index,
-      groups: {"": [{value: "keep", label: "Keep my spells"}].concat(spells.map(function(n, i){
-        return n ? {value: String(i), label: "Replace " + n + ((spellLevelOf(n)===0) ? " (cantrip)" : " (level " + spellLevelOf(n) + ")")} : null;
-      }).filter(Boolean))},
-      onPick: function(v){ sw.index = v==="keep" ? "" : v; sw.to = ""; render(); }
-    }));
-    row.appendChild(out);
-    if(sw.index!==""){
-      var opts = spellChangeOptions(f, Number(sw.index));
-      var into = ce("div", "field fp-field");
-      into.appendChild(themedPicker({
-        key: "featswapto:" + f.id, ariaLabel: "New spell", placeholder: "Choose the new spell", search: opts.length > 12, sheet: opts.length > 12,
-        groups: {"": opts.map(function(n){ return {value: n, label: n}; })}, value: sw.to,
-        onPick: function(v){ sw.to = v; render(); }
-      }));
-      row.appendChild(into);
-    }
-    card.appendChild(row);
-  });
-}
 export function stepHp(container){
   var t = target();
   var conMod = conModAfterAsi();
@@ -712,38 +560,27 @@ export function stepReview(container){
     " (character level "+(totalLevel(c)+1)+")";
   if(t.needsSubclass) items.push(target().prog.subclassLabel+": "+chosenSubclass());
   if(stepApplicable("style") && lu.style){
-    var swappedStyle = lu.styleSwapOut && swapOutStyle();
     var stylePicked = (lu.stylePicks.options||[]).concat(lu.stylePicks.spells||[]).filter(Boolean);
-    items.push(swappedStyle ? "Fighting style swap: "+swappedStyle.fightingStyle+" → "+lu.style
-      : "Fighting style: "+lu.style+(stylePicked.length ? " ("+stylePicked.join(", ")+")" : ""));
+    items.push("Fighting style: "+lu.style+(stylePicked.length ? " ("+stylePicked.join(", ")+")" : ""));
   }
-  var cOffer = styleCantripOffer();
-  if(cOffer && lu.styleCantripOut && lu.styleCantripIn) items.push(cOffer.feature.fightingStyle+" cantrip swap: "+lu.styleCantripOut+" → "+lu.styleCantripIn);
   dueSpellChoices().forEach(function(x){ if(lu.spellChoices[x.choice.id]) items.push(x.choice.label+": "+lu.spellChoices[x.choice.id]); });
   if(learnActive()){
     var lp = currentLearnPlan();
     learnSections(lp).forEach(function(s){
       var got = (lu.learnPicks[s.id]||[]).slice(0, s.count).filter(Boolean);
       if(!got.length) return;
-      if(s.id==="swapIn") items.push("Spell swap: "+lu.learnSwap+" → "+got[0]);
-      else items.push(s.title+": "+got.join(", "));
+      items.push(s.title+": "+got.join(", "));
     });
     if(lp.auto.length) items.push("Free cantrip: "+lp.auto.join(", "));
   }
   if(stepApplicable("invocations")){
     if(pactDue() && lu.pactBoon) items.push("Pact Boon: "+lu.pactBoon+(lu.pactSpells.length ? " ("+lu.pactSpells.filter(Boolean).join(", ")+")" : ""));
-    var swapped = lu.swapOut && knownNow().find(function(e){ return e.id===lu.swapOut; });
-    var fresh = lu.invPicks.slice(0, invocationSlots()).filter(Boolean);
-    if(swapped && fresh.length) items.push("Invocation swap: "+invocationLabel(swapped.name)+" → "+invocationLabel(fresh[fresh.length-1]));
-    var added = swapped ? fresh.slice(0, -1) : fresh;
+    var added = lu.invPicks.slice(0, invocationSlots()).filter(Boolean);
     if(added.length) items.push("New invocation"+(added.length>1 ? "s" : "")+": "+added.map(invocationLabel).join(", "));
   }
   if(stepApplicable("options")) optionPlans().forEach(function(plan){
     var choice = optChoice(plan.set.id), n = planSlots(plan, t.existing, choice);
-    var fresh = choice.picks.slice(0, n).filter(Boolean);
-    var swapped = n > plan.fresh && knownOptions(t.existing, plan.set.id).find(function(e){ return e.id===choice.swapOut; });
-    if(swapped && fresh.length) items.push(plan.set.label+" swap: "+swapped.name+" → "+fresh[fresh.length-1]);
-    var added = swapped ? fresh.slice(0, -1) : fresh;
+    var added = choice.picks.slice(0, n).filter(Boolean);
     if(added.length) items.push("New "+(added.length>1 ? plan.set.noun+"s" : plan.set.noun)+": "+added.join(", "));
   });
   // What this level's features add: given outright, or picked.
@@ -764,7 +601,6 @@ export function stepReview(container){
     var bonusPicked = featPicksSummary(featDef(lu.bonusFeatName), lu.bonusFeatPicks);
     items.push("Campaign feat: "+lu.bonusFeatName+(bonusPicked ? " ("+bonusPicked+")" : ""));
   }
-  featSpellSwaps().forEach(function(x){ items.push(x.feat.name+" spell swap: "+x.from+" → "+x.to); });
   items.push("Max HP +"+(hpGain()+toughGain()));
   var newPb = Math.floor(totalLevel(c)/4)+2;
   if(newPb!==profBonus(c)) items.push("Proficiency bonus "+fmtMod(profBonus(c))+" → "+fmtMod(newPb));

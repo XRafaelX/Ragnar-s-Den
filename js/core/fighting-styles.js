@@ -13,10 +13,11 @@ import { classFeaturesGainedAt, uid, spellAbilityNote } from "./helpers.js";
    ({options:[names], spells:[names]}).
 
    Where styles come from: a class's Fighting Style level (Fighter 1,
-   Paladin 2, Ranger 2), a subclass feature flagged `styleChoice`
-   (Champion 10, College of Swords 3), and, with Tasha's optional features,
-   Martial Versatility: swapping one at an Ability Score Improvement level
-   of a class that has the Fighting Style feature. */
+   Paladin 2, Ranger 2) and a subclass feature flagged `styleChoice`
+   (Champion 10, College of Swords 3). Swaps (Tasha's Martial Versatility,
+   a 2024 fighter's at every level, a Blessed or Druidic Warrior's
+   cantrip) are made with Change on the style's feature, Features tab
+   (js/render/panels/style-change.js). */
 
 export function styleDef(name){ return FIGHTING_STYLES[name] || null; }
 export function styleFeatures(c){
@@ -63,17 +64,6 @@ export function styleSwapsEachLevel(className, edition){
   var ed = edition && ((CLASS_PROGRESSION[className]||{}).editions||{})[edition];
   return !!(ed && ed.fightingStyle && ed.fightingStyle.swap);
 }
-/* Martial Versatility: with Tasha's on, at an ASI level of a class that
-   has the Fighting Style feature, one style may be replaced. */
-export function versatilityStyleSwap(c, className, newLevel){
-  var prog = CLASS_PROGRESSION[className] || {};
-  // (A 2024 fighter can replace its style at every fighter level. The other
-  // 2024 classes keep theirs, and Tasha's swap isn't theirs either.)
-  var cl = (c.classes||[]).find(function(x){ return x.name===className && x.edition==="2024"; });
-  if(cl) return styleSwapsEachLevel(className, "2024") && styleFeatures(c).length > 0;
-  return !!c.tashaOptional && !!prog.fightingStyle && (prog.asiLevels||[]).indexOf(newLevel)!==-1 && styleFeatures(c).length > 0;
-}
-
 /* A style from a 2024 class reads as the book's Fighting Style feat
    (Great Weapon Fighting counts a 1 or 2 as a 3). Run after a class's
    edition changes or a style is added. */
@@ -127,18 +117,6 @@ export function stylePicksProblem(name, picks, tasha, knownOptions){
 export function styleNeedsPicks(name){
   var def = styleDef(name);
   return !!(def && (def.optionPick || def.spellPick));
-}
-/* Blessed / Druidic Warrior: "Whenever you gain a level in this class,
-   you can replace one of these cantrips with another" from its list. The
-   style feature whose cantrips a level in `className` may change
-   ({feature, def}), or null. */
-export function styleCantripSwap(c, className){
-  var out = null;
-  styleFeatures(c).forEach(function(f){
-    var def = styleDef(f.fightingStyle);
-    if(!out && def && def.spellPick && def.spellPick.swapClass===className && f.picks && (f.picks.spells||[]).length) out = {feature: f, def: def};
-  });
-  return out;
 }
 /* The sheet feature for a style (and its picks). */
 export function makeStyleFeature(name, picks){

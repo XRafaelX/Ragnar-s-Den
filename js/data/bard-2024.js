@@ -33,7 +33,7 @@ export var BARD_2024 = {
   choices: [],
   level1: [
     {name:"Bardic Inspiration", text:"As a bonus action, give a creature within 60 feet that can see or hear you a Bardic Inspiration die (a d6, d8 at level 5, d10 at 10, d12 at 15). Once within the next hour when it fails a d20 test, it can roll the die and add it, possibly turning the failure into a success. A creature can hold only one. You can do this a number of times equal to your Charisma modifier (minimum once), regained on a long rest."},
-    {name:"Spellcasting", text:"You cast bard spells using Charisma. You know two cantrips (three at level 4, four at 10) and four level 1 spells, more as you level, following the Prepared Spells column. Whenever you gain a bard level, you can swap one cantrip and one spell. The level-up offers the spell swap. Swap the cantrip on the Spells tab. A musical instrument can be your spellcasting focus."}
+    {name:"Spellcasting", text:"You cast bard spells using Charisma. You know two cantrips (three at level 4, four at 10) and four level 1 spells, more as you level, following the Prepared Spells column. Whenever you gain a bard level, you can swap one cantrip and one spell. Make the swaps on the Spells tab. A musical instrument can be your spellcasting focus."}
   ],
   features: {
     2: [

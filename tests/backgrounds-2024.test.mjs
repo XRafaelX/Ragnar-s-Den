@@ -231,32 +231,32 @@ test("wizard: under the 2024 rules a character knows at least three languages", 
   assert.equal(inWizard(t, { languageChoices: ["Elvish"] }, () => W.validateStep("languages")), null);
 });
 
-/* ---- Magic Initiate (2024)'s Spell Change at level-up ---- */
-test("level-up: Magic Initiate (2024) swaps one spell for another of the same level, undone with the level", (t) => {
+/* ---- Magic Initiate (2024)'s Spell Change: on the sheet, not in the level-up (2026-11-16) ---- */
+test("Magic Initiate (2024): no level-up step; its spells change on the sheet; an older swap still undoes", async (t) => {
+  const FP = await import("../js/core/feat-picks.js");
+  const H = await import("../js/core/helpers.js");
   const c = ensureShape(Object.assign(newCharacter("Sage"), { classes: [{ name: "Fighter", level: 2 }], xp: 355000,
     hp: { max: 20, current: 20, temp: 0 }, abilities: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 } }));
   c.feats = [{ id: "mi", name: "Magic Initiate (2024)", picks: { option: "Wizard", castAbility: "int", spells: ["Fire Bolt", "Light", "Shield"] } }];
-  let applicable, offered, blocked;
+  const offered = FP.spellChangeOptions(c.feats[0], 2);
+  assert.ok(offered.includes("Magic Missile") && !offered.includes("Shield") && !offered.includes("Fire Bolt"), "level 1 wizard spells, not ones it has");
+  assert.ok(FP.spellChangeOptions(c.feats[0], 0).every((n) => !["Fire Bolt", "Light"].includes(n)), "a cantrip for a cantrip");
+  const text = H.getAllCharacterFeatures(c).find((f) => f.name === "Magic Initiate (2024)").text;
+  assert.match(text, /use Change spells below/);
   withFakeDom(t, () => {
     LU.openLevelUp(c);
-    applicable = LU.stepApplicable("featSpells");
-    offered = LU.spellChangeOptions(c.feats[0], 2);
-    LU.lu.featSwaps = { mi: { index: "2", to: "" } };
-    blocked = LU.validate("featSpells");
-    LU.lu.featSwaps.mi.to = "Magic Missile";
     LU.lu.hpMethod = "avg";
     finishLevelUp();
   });
-  assert.equal(applicable, true);
-  assert.ok(offered.includes("Magic Missile") && !offered.includes("Shield") && !offered.includes("Fire Bolt"), "level 1 wizard spells, not ones it has");
-  assert.match(blocked, /replaces Shield/);
-  assert.deepEqual(c.feats[0].picks.spells, ["Fire Bolt", "Light", "Magic Missile"]);
+  assert.deepEqual(c.feats[0].picks.spells, ["Fire Bolt", "Light", "Shield"], "the level-up changes nothing");
+  // A level-up before the change that swapped Shield for Magic Missile.
+  c.feats[0].picks.spells[2] = "Magic Missile";
+  c.levelHistory[c.levelHistory.length - 1].featSpellSwaps = [{ featId: "mi", index: 2, from: "Shield", to: "Magic Missile" }];
   withFakeDom(t, (byId) => { undoLastLevelUp(c); byId["confirm-ok"].click(); });
   assert.deepEqual(c.feats[0].picks.spells, ["Fire Bolt", "Light", "Shield"]);
-  // No step for a 2014 Magic Initiate.
-  c.feats = [{ id: "mi14", name: "Magic Initiate", picks: { option: "Wizard", spells: ["Fire Bolt", "Light", "Shield"] } }];
-  withFakeDom(t, () => { LU.openLevelUp(c); applicable = LU.stepApplicable("featSpells"); LU.close(); });
-  assert.equal(applicable, false);
+  // The 2014 Magic Initiate has no Spell Change.
+  assert.ok(!/Change spells/.test(H.getAllCharacterFeatures(Object.assign({}, c, { feats: [{ id: "x", name: "Magic Initiate", picks: { option: "Wizard", spells: ["Fire Bolt", "Light", "Shield"] } }] }))
+    .find((f) => f.name === "Magic Initiate").text));
 });
 
 /* ---- Savage Attacker, Healer (2024), and who sees the Origin feats ---- */

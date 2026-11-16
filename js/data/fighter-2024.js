@@ -38,7 +38,7 @@ export var FIGHTER_2024 = {
       options:STYLES}
   ],
   level1: [
-    {name:"Fighting Style", text:"You gain a Fighting Style feat of your choice. Defense is recommended. Whenever you gain a fighter level, you can replace it with another."},
+    {name:"Fighting Style", text:"You gain a Fighting Style feat of your choice. Defense is recommended. Whenever you gain a fighter level, you can replace it with another, with the Change button on its Fighting Style feature."},
     {name:"Second Wind", text:"As a bonus action, regain hit points equal to 1d10 + your fighter level. You can use this twice (three times from level 4, four from level 10). You regain one use on a short rest and all of them on a long rest."},
     {name:"Weapon Mastery", text:"You can use the mastery properties of three kinds of simple or martial weapons of your choice (four from level 4, five from level 10, six from level 16). Whenever you finish a long rest, you can change one of them. Change them on the Feature choices card.",
       profs:{pick:[masteryPick(3)]}}
@@ -95,7 +95,7 @@ export var FIGHTER_2024 = {
 export var FIGHTER_2024_SUBCLASSES = [
   {name:"Battle Master (2024)", edition:"2024", blurb:"A tactician with special combat maneuvers.", features:{
     3:[
-      {name:"Combat Superiority", text:"You learn three maneuvers (two more at fighter levels 7, 10 and 15, and each time you learn new ones you can also swap one you know). You have four superiority dice, d8s (five at level 7, six at level 15), regained on a short or long rest. You can use one maneuver per attack. A maneuver's save DC is 8 + your proficiency bonus + your Strength or Dexterity modifier (your choice)."},
+      {name:"Combat Superiority", text:"You learn three maneuvers (two more at fighter levels 7, 10 and 15, and each time you learn new ones you can also swap one you know, on the Maneuvers card). You have four superiority dice, d8s (five at level 7, six at level 15), regained on a short or long rest. You can use one maneuver per attack. A maneuver's save DC is 8 + your proficiency bonus + your Strength or Dexterity modifier (your choice)."},
       {name:"Student of War", text:"You gain proficiency with one type of artisan's tools and in one skill from the fighter's list.",
         profs:{pick:[{kind:"tool", group:"Artisan's tools"}, {kind:"skill", options:["Acrobatics","Animal Handling","Athletics","History","Insight","Intimidation","Perception","Persuasion","Survival"]}]}}
     ],
@@ -117,7 +117,7 @@ export var FIGHTER_2024_SUBCLASSES = [
   }},
   {name:"Eldritch Knight (2024)", edition:"2024", blurb:"Blends martial skill with wizard magic.", casterType:"third", spellAbility:"int", features:{
     3:[
-      {name:"Spellcasting", text:"You cast wizard spells with Intelligence, using a third of your fighter level for spell slots. You know two wizard cantrips (a third at level 10). Ray of Frost and Shocking Grasp are recommended. You can swap one on the Spells tab when you gain a fighter level. You prepare three level 1 wizard spells, more as you level, from any school. Burning Hands, Jump and Shield are recommended. You can swap one when you gain a fighter level."},
+      {name:"Spellcasting", text:"You cast wizard spells with Intelligence, using a third of your fighter level for spell slots. You know two wizard cantrips (a third at level 10). Ray of Frost and Shocking Grasp are recommended. You can swap one on the Spells tab when you gain a fighter level. You prepare three level 1 wizard spells, more as you level, from any school. Burning Hands, Jump and Shield are recommended. You can swap one on the Spells tab when you gain a fighter level."},
       {name:"War Bond", text:"In a 1-hour ritual (it can be during a short rest), bond with a weapon within your reach. You can't be disarmed of it unless you are incapacitated, and if it's on the same plane you can summon it to your hand as a bonus action. You can have up to two bonded weapons, and bonding a third breaks one."}
     ],
     7:[{name:"War Magic", remind:{when:"always", line:"In the Attack action, replace one attack with a wizard cantrip that takes an action"}, text:"When you take the Attack action, you can replace one of the attacks with casting one of your wizard cantrips that has a casting time of an action."}],

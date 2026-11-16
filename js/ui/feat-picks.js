@@ -299,7 +299,14 @@ export function renderFeatPicks(def, picks, ctx, onChange){
             var summary = SPELL_DATA[v] ? SPELL_DATA[v].summary || "" : "";
             return sp.tags && sp.tags[v] ? sp.tags[v] + ". " + summary : summary;
           },
-          reasonFor: function(v){ return v!==picks.spells[p] && picks.spells.indexOf(v)!==-1 ? "picked" : (ctx.spellTaken && ctx.spellTaken(v)) || ""; },
+          reasonFor: function(v){
+            if(v!==picks.spells[p] && picks.spells.indexOf(v)!==-1) return "picked";
+            // A cantrip the character already has gives nothing twice (a level 1+
+            // spell stays open: the feat adds a free cast, see heldNote).
+            var has = sp.level===0 && v!==picks.spells[p] && ctx.spellHeld && ctx.spellHeld(v);
+            if(has && has!==ownSpell) return has;
+            return (ctx.spellTaken && ctx.spellTaken(v)) || "";
+          },
           onPick: function(v){ picks.spells[p] = v; onChange(); }
         })));
         if(picks.spells[p] && SPELL_DATA[picks.spells[p]]) box.appendChild(spellNote(picks.spells[p], sp.tags && sp.tags[picks.spells[p]] ? sp.tags[picks.spells[p]] + ", " : ""));
@@ -453,7 +460,17 @@ function renderSpellListFeat(def, picks, ctx, onChange, box){
       });
     }
     var grid = spellPickGrid({title: sp.level===0 ? "Cantrips" : "Spells", count: sp.count, names: sp.options, chosen: chosen, tags: tags,
-      taken: function(){ return ctx.spellTaken ? sp.options.filter(function(n){ return chosen.indexOf(n)===-1 && ctx.spellTaken(n); }) : []; },
+      // (Also a cantrip the character already has: it gives nothing twice.)
+      taken: function(){ return sp.options.filter(function(n){
+        if(chosen.indexOf(n)!==-1) return false;
+        if(ctx.spellTaken && ctx.spellTaken(n)) return true;
+        var has = sp.level===0 && ctx.spellHeld && ctx.spellHeld(n);
+        return !!has && has!==ownSpell;
+      }); },
+      takenReason: function(n){
+        var has = ctx.spellHeld && ctx.spellHeld(n);
+        return !has || has===ownSpell ? "" : has==="known" ? "You already know this cantrip" : "You already have this cantrip (" + has + ")";
+      },
       onChange: function(){
         for(var i = 0; i < sp.count; i++) picks.spells[sp.offset + i] = chosen[i] || "";
         head.mark(chosen.length===sp.count);

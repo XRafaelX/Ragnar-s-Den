@@ -67,7 +67,7 @@ test("warlock 4 to 5: one new spell up to 3rd level, patron spells tagged, known
   assert.ok(spells.names.includes("Speak with Dead") && spells.tags["Speak with Dead"].includes("Patron spell"));
   assert.ok(!spells.names.includes("Bane") && !spells.names.includes("Hex"), "spells already known aren't offered");
   assert.ok(!spells.names.includes("Fireball"), "not on the warlock or Undead list");
-  assert.deepEqual(plan.swap.known, ["Armor of Agathys", "Bane", "Hellish Rebuke", "Hex", "Misty Step"]);
+  assert.equal(plan.swap, undefined, "no swap: it's made on the Spells tab (2026-11-16)");
   assert.match(plan.summary, /5th-level warlock knows 6 spells and 3 cantrips/);
 });
 
@@ -80,7 +80,7 @@ test("Tasha's Additional Spells join the lists only for a character using Tasha'
   let spells = section(plan, "spells");
   assert.ok(["Aid", "Slow", "Command", "Mass Healing Word", "Mirror Image"].every((n) => !spells.names.includes(n)));
   assert.equal(plan.tashaNote, "Tasha's Cauldron adds 7 more bard spells to choose from if your character uses Tasha's optional class features (Information tab).");
-  // On: they're offered and tagged, the note is gone, and the swap's replacement list has them too.
+  // On: they're offered and tagged, and the note is gone.
   c = bard();
   c.tashaOptional = true;
   plan = planFor(c, "Bard");
@@ -90,11 +90,6 @@ test("Tasha's Additional Spells join the lists only for a character using Tasha'
   assert.equal(spells.tags["Fear"], undefined);
   assert.ok(!spells.names.includes("Phantasmal Killer"), "a 4th-level spell is out of reach at bard 5");
   assert.equal(plan.tashaNote, "");
-  const entry = { name: "Bard", subclass: "College of Lore", level: 5 };
-  const swapIn = SK.swapSection(c, entry, plan, "Sleep");
-  assert.ok(swapIn.names.includes("Aid") && swapIn.tags["Aid"].includes("Tasha's optional"));
-  c.tashaOptional = false;
-  assert.ok(!SK.swapSection(c, entry, planFor(c, "Bard"), "Sleep").names.includes("Aid"));
 
   // A warlock's Mystic Arcanum: Tasha's adds a 9th-level choice (Gate and Weird) at 17.
   const lock = makeChar([{ name: "Warlock", subclass: "The Fiend", level: 16 }], ["Eldritch Blast"]);
@@ -121,7 +116,6 @@ test("spells added by hand past the table never use up a level's new spells", ()
   const plan = planFor(c, "Warlock");
   assert.equal(section(plan, "spells").count, 1);
   assert.equal(plan.note, "");
-  assert.ok(plan.swap, "the swap is still offered");
   // Two over the table (5 at warlock 4): level 5 still brings its 1.
   const ahead = makeChar([{ name: "Warlock", subclass: "The Undead", level: 4 }], known);
   assert.equal(section(planFor(ahead, "Warlock"), "spells").count, 1);
@@ -207,7 +201,7 @@ test("multiclassing into a caster learns its level-1 spells and cantrips", () =>
   assert.equal(section(plan, "cantrips").count, 4);
   assert.equal(section(plan, "spells").count, 2);
   assert.ok(section(plan, "spells").names.every((n) => levelOf(n) === 1));
-  assert.equal(plan.swap, null);
+  assert.equal(plan.swap, undefined);
   const wiz = planFor(c, "Wizard");
   assert.equal(section(wiz, "spellbook").count, 6);
   assert.equal(section(wiz, "cantrips").count, 3);
@@ -246,11 +240,6 @@ test("third casters: Eldritch Knight's schools and any-school pick, Arcane Trick
   const p8 = planFor(ek7, "Fighter");
   assert.equal(section(p8, "anySchool").count, 1);
   assert.equal(section(p8, "spells"), undefined);
-  // Swapping out the any-school spell may take any school; others keep to the schools.
-  const free = SK.swapSection(ek7, { name: "Fighter", subclass: "Eldritch Knight", level: 8 }, p8, "Find Familiar");
-  assert.ok(free.names.includes("Invisibility"));
-  const kept = SK.swapSection(ek7, { name: "Fighter", subclass: "Eldritch Knight", level: 8 }, p8, "Shield");
-  assert.ok(!kept.names.includes("Invisibility") && kept.names.includes("Shatter"));
 });
 
 test("warlock 11: Mystic Arcanum offers 6th-level warlock spells", () => {
@@ -261,23 +250,25 @@ test("warlock 11: Mystic Arcanum offers 6th-level warlock spells", () => {
   assert.ok(arc.names.length && arc.names.every((n) => levelOf(n) === 6));
 });
 
-test("apply and undo: picks added with their class, a swap put back where it was", () => {
+test("apply and undo: picks added with their class; an older swap put back where it was", () => {
   const c = makeChar([{ name: "Warlock", subclass: "The Undead", level: 4 }],
     ["Eldritch Blast", "Chill Touch", "Mage Hand", "Armor of Agathys", "Hex", "Bane", "Misty Step", "Hellish Rebuke"]);
   const before = c.spells.map((s) => s.name);
   const plan = planFor(c, "Warlock");
-  const entry = { name: "Warlock", subclass: "The Undead", level: 5 };
-  const sections = plan.sections.concat([SK.swapSection(c, entry, plan, "Hex")]);
-  const picks = { spells: ["Speak with Dead"], swapIn: ["Counterspell"] };
+  const sections = plan.sections;
+  const picks = { spells: ["Speak with Dead"] };
   assert.equal(SK.learnProblem(sections, {}), "Pick 1 more for New warlock spells.");
-  assert.match(SK.learnProblem(sections, { spells: ["Counterspell"], swapIn: ["Counterspell"] }), /picked twice/);
   assert.equal(SK.learnProblem(sections, picks), null);
-  const rec = SK.applyLearn(c, "Warlock", plan, sections, picks, "Hex");
+  const rec = SK.applyLearn(c, "Warlock", plan, sections, picks);
   const names = c.spells.map((s) => s.name);
-  assert.ok(names.includes("Speak with Dead") && names.includes("Counterspell") && !names.includes("Hex"));
+  assert.ok(names.includes("Speak with Dead") && names.includes("Hex"));
   assert.equal(c.spells.find((s) => s.name === "Speak with Dead").learnedBy, "Warlock");
   assert.equal(c.spells.find((s) => s.name === "Speak with Dead").prepared, true);
   SK.undoLearn(c, rec);
+  assert.deepEqual(c.spells.map((s) => s.name), before);
+  // A level-up before 2026-11-16 that swapped Hex out puts it back in its place.
+  const hex = c.spells.splice(4, 1)[0];
+  SK.undoLearn(c, { className: "Warlock", added: [], prepared: [], swappedOut: { spell: hex, index: 4 } });
   assert.deepEqual(c.spells.map((s) => s.name), before);
 });
 
@@ -419,14 +410,6 @@ test("no class and level offers a spell that level grants", () => {
   }
 });
 
-test("a replacement spell can't be one the level grants either", () => {
-  const c = makeChar([{ name: "Sorcerer", subclass: "Aberrant Mind", level: 2 }], [["Magic Missile", "Sorcerer"], ["Shield", "Sorcerer"], ["Sleep", "Sorcerer"]]);
-  const entry = { name: "Sorcerer", subclass: "Aberrant Mind", level: 3 };
-  const plan = SK.learnPlan(c, entry, false);
-  const swap = SK.swapSection(c, entry, plan, "Sleep");
-  assert.ok(swap.names.includes("Hold Person") && !swap.names.includes("Detect Thoughts"));
-});
-
 test("spellHeldBy: on the sheet, from a feature, or neither", () => {
   const c = makeChar([{ name: "Cleric", subclass: "Life Domain", level: 1 }], ["Guidance"]);
   c.feats = [{ name: "Fey Touched", picks: { ability: "wis", spells: ["Hex"] } }];
@@ -451,7 +434,6 @@ test("a learned spell a feature now grants stops counting, and the level-up give
   const plan = SK.learnPlan(c, entry, false);
   assert.deepEqual(plan.freed, ["Sending"]);
   assert.equal(plan.sections.find((s) => s.id === "spells").count, 2, "level 5's new spell, and one in Sending's place");
-  assert.ok(!plan.swap.known.includes("Sending"), "the free copy isn't offered for swapping");
   // After the level, the sheet copy stays (one card) but isn't counted.
   c.classes[0].level = 5;
   assert.deepEqual(SK.classKnownSpells(c, "Sorcerer").spells.map((sp) => sp.name), ["Magic Missile", "Shield", "Sleep", "Hold Person"]);

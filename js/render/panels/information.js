@@ -380,7 +380,7 @@ function optionalRulesCard(c){
       return on.length ? "Using " + on.join(" and ") : "Tasha's Cauldron, the 2024 character rules" + (edClasses.length ? ", the campaign books and the 2024 " + edClasses.join(" and ").toLowerCase() : " and the campaign books") + " are in here. None are in use.";
     },
     cards: [{key: "tasha", series: "Tasha's Cauldron of Everything", title: "Optional class features", switchLabel: "Use Tasha's optional class features",
-      perks: ["More class options", "Additional spells", "Swaps at level-up"],
+      perks: ["More class options", "Additional spells", "More swaps"],
       text: "The extra options Tasha's Cauldron adds to class features (fighting styles, Metamagic, maneuvers, eldritch invocations, Pact of the Talisman), the spells it adds to each class's spell list, and swapping a fighting style, Metamagic option or maneuver at Ability Score Improvement levels."}, RULES_2024_CARD]
       .concat(gunslinger ? [GUN_MISFIRE_CARD] : [])
       .concat(artificer ? [ARTIFICER_FIREARMS_CARD] : [])

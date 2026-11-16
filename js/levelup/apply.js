@@ -24,7 +24,7 @@ import { showActionToast } from "../ui/toast.js";
 import { featDef, featHasPicks, applyFeatPicks, revertFeatPicks, featSpellEntries, campaignFeatCopy } from "../core/feat-picks.js";
 import { applyLearn, undoLearn } from "../core/spells-known.js";
 import { preparedAt } from "../data/spells-known.js";
-import { lu, luEdition, featSpellSwaps, learnActive, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, close, swapOutStyle, styleCantripOffer, featureAbilityBonus, hpGain } from "./session.js";
+import { lu, luEdition, learnActive, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, close, featureAbilityBonus, hpGain } from "./session.js";
 
 /* ---------------- Apply & undo ---------------- */
 function slotSnapshot(c){
@@ -68,7 +68,6 @@ export function finish(){
   var learnNow = learnActive() ? currentLearnPlan() : null;
   var learnLists = learnNow ? learnSections(learnNow) : [];
   var invNow = doInvocations ? invChoice() : null;
-  var cOffer = styleCantripOffer();
   var optPlans = stepApplicable("options") ? optionPlans() : [];
   var profPicks = profPicksToApply();
   var variants = variantsToApply();
@@ -83,11 +82,6 @@ export function finish(){
   };
 
   var bonusFeatDue = stepApplicable("bonusFeat"); // asked before the feats below change the answer
-  // Magic Initiate (2024)'s Spell Change: the swaps, recorded for undo.
-  record.featSpellSwaps = featSpellSwaps().map(function(x){
-    x.feat.picks.spells[x.index] = x.to;
-    return {featId: x.feat.id, index: x.index, from: x.from, to: x.to};
-  });
   var feat = null;
   if(t.asi && lu.asiMode==="feat"){
     var f = FEATS_CATALOG.find(function(x){ return x.name===lu.featName; });
@@ -138,7 +132,7 @@ export function finish(){
   });
 
   // New spells (and a swapped-out one); undo takes back exactly these.
-  if(learnNow) record.learn = applyLearn(c, lu.className, learnNow, learnLists, lu.learnPicks, lu.learnSwap);
+  if(learnNow) record.learn = applyLearn(c, lu.className, learnNow, learnLists, lu.learnPicks);
 
   // Pact Boon and invocations; undo takes back exactly these.
   var invGained = [];
@@ -176,28 +170,13 @@ export function finish(){
   });
 
   // The picked style becomes a tagged feature (like a starting Fighter's),
-  // so Defense/Archery/Dueling apply and undo can remove it.
-  // A Martial Versatility swap takes the old style off first (undo puts
-  // it back).
+  // so Defense/Archery/Dueling apply and undo can remove it. (A swap is
+  // made with Change on the style's feature, Features tab.)
   var styleFeature = null;
-  if(lu.style && (t.fightingStyle || lu.styleSwapOut)){
-    var outStyle = lu.styleSwapOut && swapOutStyle();
-    if(outStyle){
-      c.features = c.features.filter(function(f){ return f!==outStyle; });
-      record.styleSwappedOut = outStyle;
-    }
+  if(lu.style && t.fightingStyle){
     styleFeature = makeStyleFeature(lu.style, lu.stylePicks);
     c.features.push(styleFeature);
     record.featureId = styleFeature.id;
-  }
-
-  // Blessed / Druidic Warrior: one of the style's cantrips changed.
-  if(cOffer && lu.styleCantripOut && lu.styleCantripIn){
-    var cSpells = cOffer.feature.picks.spells, cAt = cSpells.indexOf(lu.styleCantripOut);
-    if(cAt!==-1){
-      cSpells[cAt] = lu.styleCantripIn;
-      record.styleCantrip = {featureId: cOffer.feature.id, out: lu.styleCantripOut, in: lu.styleCantripIn};
-    }
   }
 
   // New features: whatever this class level grants, plus every subclass
@@ -310,6 +289,7 @@ export function undoLastLevelUp(c){
       }
     }
     if(rec.asi) Object.keys(rec.asi).forEach(function(k){ c.abilities[k] = (Number(c.abilities[k])||10) - rec.asi[k]; });
+    // (Magic Initiate (2024) Spell Change swaps from a level-up before 2026-11-16.)
     (rec.featSpellSwaps||[]).forEach(function(r){
       var f = (c.feats||[]).find(function(x){ return x.id===r.featId; });
       if(f && f.picks && (f.picks.spells||[])[r.index]===r.to) f.picks.spells[r.index] = r.from;
@@ -325,6 +305,7 @@ export function undoLastLevelUp(c){
       c.feats = c.feats.filter(function(f){ return f.id!==rec.bonusFeatId; });
     }
     if(rec.featureId) c.features = c.features.filter(function(f){ return f.id!==rec.featureId; });
+    // (A style or style cantrip swapped by a level-up before 2026-11-16.)
     if(rec.styleSwappedOut) c.features.push(rec.styleSwappedOut);
     if(rec.styleCantrip){
       var sf = c.features.find(function(f){ return f.id===rec.styleCantrip.featureId; });

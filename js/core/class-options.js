@@ -69,32 +69,27 @@ export function tashaOnlyCount(set, ctx){
    cl: the class entry before the level-up (null for a new multiclass);
    subclass: its subclass after it (picked on this level-up, maybe);
    newLevel: the class level it reaches. For each set due, the plan says
-   how many new ones to learn and whether one may be swapped. */
+   how many new ones to learn. Swapping one is done on the set's card on
+   the Features tab, not in the level-up (2026-11-16). */
 export function levelUpOptionPlans(c, cl, className, subclass, newLevel, edition){
   // (The class's edition: the 2024 sorcerer's Metamagic list is its own.)
   var entry = {name: className, subclass: subclass, level: newLevel, edition: cl ? cl.edition : edition};
-  var asi = ((CLASS_PROGRESSION[className]||{}).asiLevels||[]).indexOf(newLevel)!==-1;
   return entrySets(entry, newLevel).map(function(set){
     var known = knownOptions(cl, set.id);
     var fresh = Math.max(0, optionsKnownAt(set, newLevel) - known.length);
-    var canSwap = known.length > 0 && (
-      (set.swap==="level") || (set.swap==="learn" && fresh > 0) ||
-      (!!set.versatility && tashaOn(c) && asi));
-    return {set: set, fresh: fresh, canSwap: canSwap, total: optionsKnownAt(set, newLevel),
-      why: canSwap && !(set.swap==="level" || (set.swap==="learn" && fresh > 0)) ? "versatility" : ""};
-  }).filter(function(p){ return p.fresh > 0 || p.canSwap; });
+    return {set: set, fresh: fresh, total: optionsKnownAt(set, newLevel)};
+  }).filter(function(p){ return p.fresh > 0; });
 }
-/* choice for one set: {picks: [names], swapOut: id of a known one}. */
-export function planSlots(plan, cl, choice){
-  var swapping = plan.canSwap && !!choice.swapOut && knownOptions(cl, plan.set.id).some(function(e){ return e.id===choice.swapOut; });
-  return plan.fresh + (swapping ? 1 : 0);
+/* choice for one set: {picks: [names]}. */
+export function planSlots(plan){
+  return plan.fresh;
 }
 export function planContext(c, cl, plan, choice, newLevel){
   // A feat's or style's picks (Martial Adept, Superior Technique) count as
   // known too: no learning one twice.
   var others = allKnownOptions({classes: [], feats: c.feats||[], features: c.features||[]}, plan.set.id).map(function(o){ return o.name; });
   return {level: newLevel, tasha: tashaOn(c),
-    known: knownOptions(cl, plan.set.id).filter(function(e){ return e.id!==choice.swapOut; }).map(function(e){ return e.name; }).concat(others)};
+    known: knownOptions(cl, plan.set.id).map(function(e){ return e.name; }).concat(others)};
 }
 /* What's missing or wrong for one set, or null. */
 export function planProblem(c, cl, plan, choice, newLevel){
@@ -115,7 +110,6 @@ export function planProblem(c, cl, plan, choice, newLevel){
 export function applyPlan(c, cl, plan, choice){
   var n = planSlots(plan, cl, choice);
   var rec = {set: plan.set.id, added: [], removed: null};
-  if(n > plan.fresh) rec.removed = forgetOption(cl, plan.set.id, choice.swapOut);
   (choice.picks||[]).slice(0, n).forEach(function(name){ rec.added.push(learnOption(cl, plan.set.id, name).id); });
   return rec;
 }

@@ -70,7 +70,7 @@ export function renderInvocationsCard(c){
     card.appendChild(sectionTitle("Learn an invocation"));
     card.appendChild(learnForm(c, cl));
   } else {
-    card.appendChild(hint("You know as many invocations as your level allows. Each time you gain a warlock level, the level-up lets you swap one for another."));
+    card.appendChild(hint("You know as many invocations as your level allows. Each time you gain a warlock level, you can swap one: remove it below, then learn another."));
   }
   return card;
 }
@@ -148,7 +148,7 @@ function invocationEntry(c, cl, e){
   var entry = document.createElement("div");
   entry.className = "inf-entry is-on eli-entry";
   entry.appendChild(entryHead(label, "Remove", function(){
-    confirmDialog("Remove " + label + "?", "Normally you only swap invocations when you level up. Remove it to fix a mistake, then learn the right one below.", function(){
+    confirmDialog("Remove " + label + "?", "Each time you gain a warlock level you can swap one invocation: remove it, then learn another below.", function(){
       forgetInvocation(c, cl, e.id);
       save(); renderAll(); playDelete();
     });
