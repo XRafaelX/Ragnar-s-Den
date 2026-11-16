@@ -11,7 +11,7 @@ import {
   encounterNameProblem, knownPlayerNames, addMonster, getMonster, moveMonster, renameMonster, removeMonster, changeHp,
   isDead, orderEntryFor, unplacedMonsters, addPlayer, hasPlayer, placeMonster, moveInOrder, removeFromOrder,
   currentEntry, nextTurn, previousTurn, resetEncounter, encounterStarted, monsterAc, monsterSpeed,
-  MONSTER_COLORS, setMonsterColor, groupName, renameGroup, colorGroups
+  MONSTER_COLORS, setMonsterColor, groupName, renameGroup, colorGroups, setFavourite, moveEncounter
 } from "../core/encounters.js";
 
 /* ---------------- Encounters ----------------
@@ -39,6 +39,7 @@ var dragging = null;     // the drag in progress, see startDrag()
 var filter = { id: null, color: null };  // the color chip picked, per encounter
 var fx = null;           // a one-off effect for the next render: { paint: monsterId } or { picked: color }
 var boxWatch = null;     // redoes fitChips when a chips row changes width
+var dragEnded = false;   // a drag just ended, so the click that follows is not a tap
 
 function ce(tag, cls, text){
   var el = document.createElement(tag);
@@ -56,6 +57,7 @@ function button(cls, text, onClick, title){
 }
 
 var GRIP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
+var STAR_SVG = '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8l2.83 5.73 6.32.92-4.57 4.46 1.08 6.3L12 17.24l-5.66 2.97 1.08-6.3-4.57-4.46 6.32-.92z"/></svg>';
 var SHIELD_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>';
 
 /* A ⋯ button with a small menu: items are [{label, danger, onClick}],
@@ -231,26 +233,47 @@ function renderList(){
     return;
   }
 
-  var label = ce("div", "enc-section-label");
-  label.appendChild(ce("span", "", "Your encounters"));
-  label.appendChild(ce("span", "enc-count", String(all.length)));
-  wrap.appendChild(label);
+  // The starred ones in a section of their own above the rest. A card is
+  // dragged around within its own section.
+  var favs = all.filter(function(enc){ return enc.fav; });
+  var rest = all.filter(function(enc){ return !enc.fav; });
+  if(favs.length) savedSection(wrap, "Favourites", favs);
+  if(rest.length) savedSection(wrap, favs.length ? "Other encounters" : "Your encounters", rest);
+}
 
+function savedSection(wrap, title, list){
+  var label = ce("div", "enc-section-label");
+  label.appendChild(ce("span", "", title));
+  label.appendChild(ce("span", "enc-count", String(list.length)));
+  wrap.appendChild(label);
   var grid = ce("div", "enc-saved-list");
-  all.forEach(function(enc){ grid.appendChild(savedCard(enc)); });
+  list.forEach(function(enc){ grid.appendChild(savedCard(enc, grid)); });
   wrap.appendChild(grid);
 }
 
-function savedCard(enc){
+function savedCard(enc, grid){
   var started = encounterStarted(enc);
   var card = ce("div", "enc-saved" + (started ? " live" : ""));
+  card.dataset.encId = enc.id;
   card.tabIndex = 0;
   card.setAttribute("role", "button");
   card.setAttribute("aria-label", "Open " + enc.name);
 
   var top = ce("div", "enc-saved-top");
+  var grip = ce("span", "enc-grip");
+  grip.innerHTML = GRIP_SVG;
+  grip.title = "Drag to change the order";
+  top.appendChild(grip);
   top.appendChild(ce("div", "enc-saved-name", enc.name));
   top.appendChild(ce("span", "enc-saved-status" + (started ? " live" : ""), started ? "Round " + enc.round : "Ready"));
+  var star = button("enc-star" + (enc.fav ? " on" : ""), "", function(e){
+    e.stopPropagation();
+    setFavourite(enc.id, !enc.fav);
+    render();
+  }, enc.fav ? "Remove " + enc.name + " from favourites" : "Add " + enc.name + " to favourites");
+  star.innerHTML = STAR_SVG;
+  star.setAttribute("aria-pressed", enc.fav ? "true" : "false");
+  top.appendChild(star);
   top.appendChild(menu([
     { label: "Duplicate", onClick: function(){
       var copy = duplicateEncounter(enc.id);
@@ -307,8 +330,13 @@ function savedCard(enc){
   foot.appendChild(icon("chevron", "enc-go"));
   card.appendChild(foot);
 
+  dragSource(card, grip, function(){
+    return { label: enc.name, grid: grid, item: ".enc-saved", key: "encId", selfId: enc.id,
+      moveBox: function(beforeId, afterId){ moveEncounter(enc.id, beforeId, afterId); render(); } };
+  });
+
   function open(){ openId = enc.id; render(); }
-  card.addEventListener("click", function(e){ if(!e.target.closest(".enc-menu")) open(); });
+  card.addEventListener("click", function(e){ if(!dragEnded && !e.target.closest(".enc-menu, .enc-star, .enc-grip")) open(); });
   card.addEventListener("keydown", function(e){ if((e.key === "Enter" || e.key === " ") && e.target === card){ e.preventDefault(); open(); } });
   return card;
 }
@@ -859,12 +887,14 @@ function playerForm(enc){
    that isn't a field or button. While dragging, a marker shows where it
    will land; letting go over the line calls drop(index), the place among
    the line's other entries. A box let go over the other boxes calls
-   moveBox(index) instead, so the DM can arrange them as they like. */
+   moveBox(index) instead, so the DM can arrange them as they like.
+   The saved list's cards use the same moveBox among the cards of their
+   own section (info.grid, info.item and info.key say which). */
 function dragSource(el, grip, describe){
   el.addEventListener("pointerdown", function(e){
     if(e.button !== 0 || dragging) return;
     var onGrip = grip.contains(e.target);
-    if(!onGrip && (e.pointerType !== "mouse" || e.target.closest("input, button, textarea, .enc-menu"))) return;
+    if(!onGrip && (e.pointerType !== "mouse" || e.target.closest("input, button, textarea, .enc-menu, .enc-star"))) return;
     if(onGrip) e.preventDefault();
     startDrag(e, el, describe());
   });
@@ -913,6 +943,9 @@ function startDrag(e, el, info){
     window.removeEventListener("pointerup", onUp);
     window.removeEventListener("pointercancel", onUp);
     if(!d.active) return;
+    // The click a mouse sends after letting go is not a tap on the card.
+    dragEnded = true;
+    setTimeout(function(){ dragEnded = false; }, 0);
     cancelAnimationFrame(d.raf);
     d.ghost.remove();
     d.marker.remove();
@@ -939,7 +972,7 @@ function track(){
   if(listEl) listEl.classList.toggle("drop-here", over);
   if(over) trackLine(listEl);
   else d.marker.remove();
-  var grid = d.info.moveBox && !over ? overlay.querySelector(".enc-cards") : null;
+  var grid = d.info.moveBox && !over ? d.info.grid || overlay.querySelector(".enc-cards") : null;
   if(grid && near(grid, 12)) trackBoxes(grid);
   else d.boxMarker.remove();
 }
@@ -977,8 +1010,11 @@ function trackLine(listEl){
    across the gap; otherwise it stands up between two boxes. */
 function trackBoxes(grid){
   var d = dragging;
-  var items = Array.prototype.filter.call(grid.querySelectorAll(".enc-card"), function(c){
-    return c.dataset.monsterId !== d.info.monsterId;
+  // Monster boxes on the board, or the saved encounters' cards in the list.
+  var key = d.info.key || "monsterId";
+  var self = d.info.selfId || d.info.monsterId;
+  var items = Array.prototype.filter.call(grid.querySelectorAll(d.info.item || ".enc-card"), function(c){
+    return c.dataset[key] !== self;
   });
   if(!items.length){ d.boxMarker.remove(); return; }
   var oneColumn = getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length === 1;
@@ -992,8 +1028,8 @@ function trackBoxes(grid){
   var before = items[index], after = items[index - 1];
   d.target = "boxes";
   d.index = index;
-  d.before = before ? before.dataset.monsterId : null;
-  d.after = after ? after.dataset.monsterId : null;
+  d.before = before ? before.dataset[key] : null;
+  d.after = after ? after.dataset[key] : null;
   var s = d.boxMarker.style;
   d.boxMarker.classList.toggle("upright", !oneColumn);
   if(oneColumn){

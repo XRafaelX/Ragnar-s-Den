@@ -7,7 +7,7 @@ import { CONDITIONS, SPELL_CONDITIONS } from "../data/conditions.js";
    one can be run again later (Reset puts every monster back to full).
 
    Encounter shape:
-     { id, name, round, current, updated,
+     { id, name, round, current, updated, fav,
        monsters: [{ id, name, kind, ac, speed, maxHp, hp, log, color, conditions }],
        order:    [{ id, type:"player", name } | { id, type:"monster", monsterId }],
        groupNames: { blue: "Archers", ... } }
@@ -26,7 +26,10 @@ import { CONDITIONS, SPELL_CONDITIONS } from "../data/conditions.js";
    renamed it in `groupNames`.
    `conditions` are what's on the monster: [{ id, pick }], ids from the
    book's conditions or the spells tracked like them (SPELL_CONDITIONS),
-   `pick` what the caster chose for Hex or Bestow Curse ("" if nothing). */
+   `pick` what the caster chose for Hex or Bestow Curse ("" if nothing).
+
+   The saved list keeps the DM's own order (they drag the cards around),
+   with the starred ones (`fav`) shown first. New encounters go on top. */
 
 export var MONSTER_COLORS = ["blue", "green", "yellow", "orange", "teal", "pink", "silver"];
 var COLOR_NAMES = { blue: "Blue", green: "Green", yellow: "Yellow", orange: "Orange", teal: "Teal", pink: "Pink", silver: "Silver" };
@@ -40,7 +43,14 @@ function read(){
   try{
     var raw = localStorage.getItem(STORAGE_KEY);
     var data = raw ? JSON.parse(raw) : [];
-    return Array.isArray(data) ? data.filter(function(e){ return e && typeof e==="object"; }).map(clean) : [];
+    if(!Array.isArray(data)) return [];
+    data = data.filter(function(e){ return e && typeof e==="object"; });
+    // Saves from before the list could be sorted by hand were shown newest
+    // first, so they start out in that order.
+    var oldSave = !data.some(function(e){ return typeof e.fav === "boolean"; });
+    var out = data.map(clean);
+    if(oldSave) out.sort(function(a, b){ return b.updated - a.updated; });
+    return out;
   }catch(e){ return []; }
 }
 function write(){
@@ -103,7 +113,8 @@ function clean(e){
     updated: int(e.updated, Date.now()),
     monsters: monsters,
     order: order,
-    groupNames: groupNames
+    groupNames: groupNames,
+    fav: e.fav === true
   };
 }
 
@@ -125,9 +136,9 @@ function cleanConditions(raw){
 /* ---- public API: the saved list ---- */
 export function loadEncounters(){ list = read(); }
 
-/* Newest first. */
+/* In the DM's order, the favourites first. */
 export function getEncounters(){
-  return list.slice().sort(function(a, b){ return b.updated - a.updated; });
+  return list.filter(function(e){ return e.fav; }).concat(list.filter(function(e){ return !e.fav; }));
 }
 
 export function getEncounter(id){
@@ -144,7 +155,7 @@ export function encounterNameProblem(name, ownId){
 
 export function createEncounter(name){
   var e = clean({ id: uid(), name: name, monsters: [], order: [] });
-  list.push(e);
+  list.unshift(e);
   write();
   return e;
 }
@@ -161,6 +172,26 @@ export function deleteEncounter(id){
   write();
 }
 
+/* Stars an encounter or takes the star off. It doesn't count as an edit. */
+export function setFavourite(id, on){
+  var e = getEncounter(id);
+  if(!e) return;
+  e.fav = !!on;
+  write();
+}
+
+/* Moves an encounter in the list to just before `beforeId`, or just after
+   `afterId` when it goes at the end of its group. */
+export function moveEncounter(id, beforeId, afterId){
+  var e = getEncounter(id);
+  if(!e || id === beforeId || id === afterId) return;
+  var anchor = getEncounter(beforeId) || getEncounter(afterId);
+  if(!anchor) return;
+  list.splice(list.indexOf(e), 1);
+  list.splice(list.indexOf(anchor) + (anchor.id === beforeId ? 0 : 1), 0, e);
+  write();
+}
+
 /* A copy under a free name ("Goblin ambush (copy)", "(copy 2)"). */
 export function duplicateEncounter(id){
   var src = getEncounter(id);
@@ -169,7 +200,8 @@ export function duplicateEncounter(id){
   copy.id = uid();
   copy.name = freeName(src.name + " (copy)");
   copy.updated = Date.now();
-  list.push(copy);
+  copy.fav = false;
+  list.splice(list.indexOf(src) + 1, 0, copy);
   write();
   return copy;
 }

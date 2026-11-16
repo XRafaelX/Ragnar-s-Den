@@ -82,7 +82,7 @@
   background:var(--parchment-dim);border:1px solid var(--rule);border-radius:10px;padding:1px 8px;
 }
 
-.enc-saved-list{display:grid;grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));gap:14px;}
+.enc-saved-list{position:relative;display:grid;grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));gap:14px;}
 .enc-saved{
   display:flex;flex-direction:column;gap:12px;padding:14px 14px 12px 16px;cursor:pointer;min-width:0;
   background:var(--parchment);border:1px solid var(--rule);border-radius:12px;
@@ -98,6 +98,20 @@
 .enc-saved.live{box-shadow:inset 3px 0 0 var(--brass);}
 
 .enc-saved-top{display:flex;align-items:flex-start;gap:8px;}
+.enc-saved-top .enc-grip{height:26px;margin-left:-6px;margin-right:-4px;}
+.enc-saved-list + .enc-section-label{margin-top:26px;}
+/* The favourite star: an outline, filled in brass once starred. */
+.enc-star{
+  flex:none;width:28px;height:28px;display:flex;align-items:center;justify-content:center;padding:0;
+  background:none;border:none;border-radius:6px;cursor:pointer;color:var(--text-on-parch-dim);
+  transition:color .15s ease, transform .15s ease;
+}
+.enc-star svg{width:18px;height:18px;fill:none;}
+.enc-star:hover{color:var(--brass-bright);background:color-mix(in srgb, var(--brass) 12%, transparent);}
+.enc-star.on{color:var(--brass-bright);}
+.enc-star.on svg{fill:currentColor;}
+.enc-star:active{transform:scale(.88);}
+.enc-star:focus-visible{outline:2px solid var(--brass);outline-offset:1px;}
 .enc-saved-name{flex:1;min-width:0;overflow-wrap:anywhere;font-family:var(--serif);font-size:18px;line-height:1.25;color:var(--text-on-parch);padding-top:2px;}
 .enc-saved-status{
   flex:none;display:inline-flex;align-items:center;gap:6px;margin-top:3px;

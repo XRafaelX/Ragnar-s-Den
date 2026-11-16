@@ -10,7 +10,8 @@ import {
   isDead, orderEntryFor, unplacedMonsters, addPlayer, placeMonster, moveInOrder, removeFromOrder, currentEntry,
   nextTurn, previousTurn, resetEncounter, encounterStarted,
   setMonsterColor, groupName, renameGroup, colorGroups,
-  addMonsterCondition, removeMonsterCondition, monsterConditions, hasMonsterCondition, monsterAc, monsterSpeed
+  addMonsterCondition, removeMonsterCondition, monsterConditions, hasMonsterCondition, monsterAc, monsterSpeed,
+  setFavourite, moveEncounter
 } from "../js/core/encounters.js";
 import { SPELL_CONDITIONS } from "../js/data/conditions.js";
 
@@ -328,4 +329,66 @@ test("going down, a reset and a broken save all clear conditions the right way",
   const odd = getEncounters().find((x) => x.name === "Odd");
   assert.deepEqual(odd.monsters[0].conditions, [{ id: "hexed", pick: "" }, { id: "prone", pick: "" }],
     "unknown ids and picks dropped, each condition once");
+});
+
+/* ---- The saved list: the DM's order and favourites ---- */
+const listNames = () => getEncounters().map((e) => e.name);
+
+test("new encounters go on top and the list keeps its order when one is edited", () => {
+  fresh();
+  createEncounter("Crypt");
+  createEncounter("Bridge");
+  const c = createEncounter("Tavern");
+  assert.deepEqual(listNames(), ["Tavern", "Bridge", "Crypt"]);
+  saveEncounter(getEncounter(getEncounters()[2].id));
+  assert.deepEqual(listNames(), ["Tavern", "Bridge", "Crypt"], "an edit does not move it to the top");
+  duplicateEncounter(c.id);
+  assert.deepEqual(listNames(), ["Tavern", "Tavern (copy)", "Bridge", "Crypt"], "a copy sits under its original");
+  loadEncounters();
+  assert.deepEqual(listNames(), ["Tavern", "Tavern (copy)", "Bridge", "Crypt"], "the order is saved");
+});
+
+test("dragging moves an encounter before another, or after the last one", () => {
+  fresh();
+  const a = createEncounter("A"), b = createEncounter("B"), c = createEncounter("C");
+  assert.deepEqual(listNames(), ["C", "B", "A"]);
+  moveEncounter(a.id, c.id, null);
+  assert.deepEqual(listNames(), ["A", "C", "B"]);
+  moveEncounter(a.id, null, b.id);
+  assert.deepEqual(listNames(), ["C", "B", "A"]);
+  moveEncounter(c.id, c.id, null);
+  moveEncounter(c.id, "gone", null);
+  assert.deepEqual(listNames(), ["C", "B", "A"], "a drop on itself or on nothing changes nothing");
+  loadEncounters();
+  assert.deepEqual(listNames(), ["C", "B", "A"]);
+});
+
+test("starred encounters come first, and a star is not an edit", () => {
+  fresh();
+  const a = createEncounter("A"), b = createEncounter("B");
+  createEncounter("C");
+  const before = getEncounter(a.id).updated;
+  setFavourite(a.id, true);
+  assert.deepEqual(listNames(), ["A", "C", "B"]);
+  assert.equal(getEncounter(a.id).updated, before);
+  setFavourite(b.id, true);
+  assert.deepEqual(listNames(), ["B", "A", "C"], "favourites keep their own order among themselves");
+  loadEncounters();
+  assert.equal(getEncounter(a.id).fav, true, "the star is saved");
+  setFavourite(b.id, false);
+  assert.deepEqual(listNames(), ["A", "C", "B"], "taking the star off puts it back in its place");
+  assert.equal(duplicateEncounter(a.id).fav, false, "a copy starts without a star");
+});
+
+test("older saves start out newest first, and backups keep their stars", () => {
+  localStorage.clear();
+  localStorage.setItem("ragnarsDen.encounters.v1", JSON.stringify([
+    { id: "1", name: "Old", updated: 1000, monsters: [], order: [] },
+    { id: "2", name: "Newest", updated: 3000, monsters: [], order: [] },
+    { id: "3", name: "Middle", updated: 2000, monsters: [], order: [] }
+  ]));
+  loadEncounters();
+  assert.deepEqual(listNames(), ["Newest", "Middle", "Old"]);
+  importEncounters([{ name: "Starred", fav: true }, { name: "Plain" }]);
+  assert.deepEqual(listNames(), ["Starred", "Newest", "Middle", "Old", "Plain"]);
 });
