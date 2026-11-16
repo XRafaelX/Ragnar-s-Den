@@ -5,6 +5,10 @@ export function makeStatArrowSvg(dir){
   return '<svg viewBox="0 0 24 24" class="stat-arrow-svg" aria-hidden="true"><path d="'+d+'" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
 
+/* Outline star (filled by CSS when on): the favourite switch on saved
+   encounters and on spell cards. */
+export var STAR_SVG = '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8l2.83 5.73 6.32.92-4.57 4.46 1.08 6.3L12 17.24l-5.66 2.97 1.08-6.3-4.57-4.46 6.32-.92z"/></svg>';
+
 /* Dice icons for buttons; replace the 🎲 emoji, which renders differently
    per OS and ignores the theme. Stroke is currentColor, so they follow the
    text color. makeDiceSvg is a single die (one roll or pick); makeDicesSvg

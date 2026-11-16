@@ -9,7 +9,7 @@ import { SPELL_LEVEL_LABELS, spellLevelLabel, SPELL_DATA, catalogSpellName } fro
 import { openSpellPicker, addCatalogSpell } from "./spell-picker.js";
 import { renderSpellChoiceOptions } from "../../ui/spell-choice.js";
 import { sheetHeader } from "./inventory.js";
-import { makeStatArrowSvg } from "../../ui/svg-icons.js";
+import { makeStatArrowSvg, STAR_SVG } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
 import { pipChanged, pipsRefilled } from "../../ui/fx.js";
 import { coinAttackBonus, magicItemSpellAttack } from "../../core/magic-items.js";
@@ -35,7 +35,7 @@ function spellSubtitle(sp, c){
    spells are always ready) or a patron spell's Learn button. Edit and
    Remove live in the details sheet, which a tap anywhere on the card
    opens. */
-function spellHeader(name, d){
+function spellHeader(c, name, d){
   var header = document.createElement("div");
   header.className = "inv-card-header";
   var titleGroup = document.createElement("div");
@@ -54,8 +54,33 @@ function spellHeader(name, d){
   header.appendChild(titleGroup);
   var actions = document.createElement("div");
   actions.className = "inv-card-header-actions";
+  actions.appendChild(favStar(c, name));
   header.appendChild(actions);
   return header;
+}
+
+/* ---- Favourites ----
+   A star on each card. Starred spells come first in their level (and on
+   the Cantrips card), and the "★" chip shows only them. Kept by name in
+   c.favSpells, so a feature's spell can be starred too. */
+function favKey(name){ return (name||"").trim().toLowerCase(); }
+function isFav(c, name){ return (c.favSpells||[]).indexOf(favKey(name)) >= 0; }
+function favStar(c, name){
+  var on = isFav(c, name);
+  var b = ce("button", "spell-star" + (on ? " on" : ""));
+  b.type = "button";
+  b.innerHTML = STAR_SVG;
+  b.title = on ? "Remove from favourites" : "Add to favourites";
+  b.setAttribute("aria-label", (on ? "Remove " : "Add ") + (name || "this spell") + (on ? " from favourites" : " to favourites"));
+  b.setAttribute("aria-pressed", on ? "true" : "false");
+  b.addEventListener("click", function(e){
+    e.stopPropagation();
+    if(!Array.isArray(c.favSpells)) c.favSpells = [];
+    var key = favKey(name), at = c.favSpells.indexOf(key);
+    if(at >= 0) c.favSpells.splice(at, 1); else c.favSpells.push(key);
+    save(); renderAll();
+  });
+  return b;
 }
 
 function preparedSwitch(c, sp){
@@ -123,7 +148,7 @@ function makeCardOpen(card, name, open){
    the summary (two lines, the rest is in the details sheet) and the
    at-your-level lines. Returns the header's actions box. */
 function fillSpellCard(card, c, name, d, src, isPatron, lines, note){
-  var header = spellHeader(name, d);
+  var header = spellHeader(c, name, d);
   card.appendChild(header);
   if(src) card.appendChild(sourceLine(src, isPatron));
   var sub = spellSubtitle(d, c);
@@ -935,17 +960,17 @@ export function openPrepareSheet(c, onlyWithChoices){
 }
 
 /* ---- Known spells list ----
-   Level chips (All, 1st, 2nd...) narrow the list to one level, and
+   Level chips (★ favourites, All, 1st, 2nd...) narrow the list, and
    a preparing class's unprepared spells fold away under "Not prepared
    today". Both are kept per character for this session only. */
 var levelFilter = {};
 var showUnprepared = {};
 
 function isUnprepared(c, entry){
-  return !!entry.sp && spellNeedsPreparing(c, entry.sp) && !entry.sp.prepared;
+  return !entry.granted && spellNeedsPreparing(c, entry.sp) && !entry.sp.prepared;
 }
 
-function renderLevelChips(c, entries, levels, filter){
+function renderLevelChips(c, entries, levels, filter, favCount){
   var row = ce("div", "spell-level-chips");
   row.setAttribute("role", "group");
   row.setAttribute("aria-label", "Show spells of one level");
@@ -959,6 +984,13 @@ function renderLevelChips(c, entries, levels, filter){
     b.appendChild(n);
     b.addEventListener("click", function(){ levelFilter[c.id] = value; renderAll(); });
     row.appendChild(b);
+  }
+  if(favCount){
+    chip("★", "fav", favCount);
+    var favChip = row.lastChild;
+    favChip.classList.add("spell-fav-chip");
+    favChip.title = "Favourites";
+    favChip.setAttribute("aria-label", "Favourites, " + favCount);
   }
   chip("All", null, entries.length);
   levels.forEach(function(l){
@@ -1027,7 +1059,12 @@ export function renderSpellsPanel(c){
   var extra = granted.filter(function(fs){ return !knowsSpell(c, fs); });
   var entries = spells.map(function(sp, idx){ return {sp:sp, idx:idx, level:sp.level||0, name:sp.name||""}; })
     .concat(extra.map(function(fs){ return {fs:fs, level:fs.level, name:fs.name}; }));
-  entries.sort(function(a, b){ return a.level - b.level || a.name.localeCompare(b.name); });
+  entries.forEach(function(e){
+    e.fav = isFav(c, e.name);
+    // A feature's spell can be cast whatever the Prepared switch says.
+    e.granted = !e.sp || !!featureSpellFor(granted, e.sp);
+  });
+  entries.sort(function(a, b){ return a.level - b.level || (b.fav - a.fav) || a.name.localeCompare(b.name); });
   function card(entry){
     return entry.fs ? renderFeatureSpellCard(c, entry.fs)
       : renderSpellCard(c, entry.sp, entry.idx, featureSpellFor(expanded, entry.sp), featureSpellFor(granted, entry.sp));
@@ -1080,10 +1117,12 @@ export function renderSpellsPanel(c){
   } else {
     var levels = [];
     leveled.forEach(function(e){ if(levels.indexOf(e.level) < 0) levels.push(e.level); });
+    var favCount = leveled.filter(function(e){ return e.fav; }).length;
     var filter = levelFilter[c.id];
-    if(levels.indexOf(filter) < 0) filter = null;
-    if(levels.length > 1) spellCard.appendChild(renderLevelChips(c, leveled, levels, filter));
-    var shown = filter==null ? leveled : leveled.filter(function(e){ return e.level===filter; });
+    if(filter==="fav" ? !favCount : levels.indexOf(filter) < 0) filter = null;
+    if(levels.length > 1 || favCount) spellCard.appendChild(renderLevelChips(c, leveled, levels, filter, favCount));
+    var shown = filter==null ? leveled
+      : leveled.filter(function(e){ return filter==="fav" ? e.fav : e.level===filter; });
     // A spell of a preparing class that isn't prepared today folds away
     // at the end: the list is what can be cast now.
     var ready = shown.filter(function(e){ return !isUnprepared(c, e); });
@@ -1091,7 +1130,9 @@ export function renderSpellsPanel(c){
     if(ready.length) appendLevelGroups(c, spellCard, ready, card, true);
     else {
       var none = ce("p", "spell-list-empty");
-      none.textContent = filter==null ? "No spells prepared today." : "None of your " + spellLevelLabel(filter).toLowerCase() + " spells are prepared today.";
+      none.textContent = filter==null ? "No spells prepared today."
+        : filter==="fav" ? "None of your favourites are prepared today."
+        : "None of your " + spellLevelLabel(filter).toLowerCase() + " spells are prepared today.";
       spellCard.appendChild(none);
     }
     if(later.length){

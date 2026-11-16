@@ -55,6 +55,7 @@ export function newCharacter(name){
     infusions: {known:[], active:[]},
     spellcasting: {ability:"int", slots: slots, pact: null},
     spells: [],
+    favSpells: [],
     feats: [],
     features: [],
     inventory: [],
@@ -128,6 +129,8 @@ export function ensureShape(c){
   if(c.spellcasting.pact===undefined) c.spellcasting.pact = null;
   for(var i=1;i<=9;i++){ if(!c.spellcasting.slots[i]) c.spellcasting.slots[i] = {max:0,used:0}; }
   if(!Array.isArray(c.spells)) c.spells = [];
+  // Starred spells (Spells tab), by lowercased name.
+  if(!Array.isArray(c.favSpells)) c.favSpells = [];
   if(!Array.isArray(c.feats)) c.feats = [];
   else {
     c.feats = c.feats.filter(Boolean).map(function(item){

@@ -539,3 +539,14 @@ test("Wildemount's dunamancy spells: a list of their own, opened by the Chronurg
     assert.deepEqual(o.tags["Wristpocket"], ["Dunamancy spell"], sub + ": tagged as a Dunamancy spell");
   }
 });
+
+test("favourite spells: a new character starts with none, an older save gets the list", () => {
+  assert.deepEqual(newCharacter("Fav").favSpells, []);
+  const old = newCharacter("Old");
+  delete old.favSpells;
+  ensureShape(old);
+  assert.deepEqual(old.favSpells, []);
+  const kept = Object.assign(newCharacter("Kept"), { favSpells: ["bless"] });
+  ensureShape(kept);
+  assert.deepEqual(kept.favSpells, ["bless"]);
+});

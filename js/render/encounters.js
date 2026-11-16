@@ -5,7 +5,7 @@ import { confirmDialog } from "../ui/confirm-modal.js";
 import { showActionToast } from "../ui/toast.js";
 import { playAdd, playDelete, playDiceRattle, playDiceLand, playCrit, playFail, playMonsterHit, playMonsterSlain, playNewRound, playVictory } from "../ui/sound.js";
 import { getDieSvg } from "../dice/dice.js";
-import { makeKebabSvg } from "../ui/svg-icons.js";
+import { makeKebabSvg, STAR_SVG } from "../ui/svg-icons.js";
 import { conditionsButton, conditionChips, fitChips } from "./encounter-conditions.js";
 import {
   getEncounters, getEncounter, createEncounter, saveEncounter, deleteEncounter, duplicateEncounter,
@@ -60,7 +60,6 @@ function button(cls, text, onClick, title){
 }
 
 var GRIP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
-var STAR_SVG = '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8l2.83 5.73 6.32.92-4.57 4.46 1.08 6.3L12 17.24l-5.66 2.97 1.08-6.3-4.57-4.46 6.32-.92z"/></svg>';
 var D20_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l8.5 4.9v9.2L12 21.5l-8.5-4.9V7.4z"/><path d="M12 2.5 7.6 9.8h8.8z"/><path d="M3.5 7.4l4.1 2.4L12 21.5l4.4-11.7 4.1-2.4M7.6 9.8 3.5 16.6M16.4 9.8l4.1 6.8M3.5 16.6 12 21.5l8.5-4.9"/></svg>';
 var SHIELD_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>';
 

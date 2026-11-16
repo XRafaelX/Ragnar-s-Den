@@ -177,3 +177,17 @@
 .spell-fold.open .spell-fold-chev{transform:rotate(90deg);}
 .spell-fold-body .spell-level-label:first-child{margin-top:10px;}
 .spell-fold-body .spell-card{opacity:.85;}
+
+/* Favourite star on spell cards (same look as the saved encounters' star). */
+.spell-star{
+  display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;flex:none;
+  border:none;border-radius:50%;background:transparent;color:var(--text-on-parch-dim);cursor:pointer;
+  transition:color .15s ease, background-color .15s ease, transform .12s ease;
+}
+.spell-star svg{width:18px;height:18px;fill:none;}
+@media (hover:hover){ .spell-star:hover{color:var(--brass-bright);background:color-mix(in srgb, var(--brass) 12%, transparent);} }
+.spell-star.on{color:var(--brass-bright);}
+.spell-star.on svg{fill:currentColor;}
+.spell-star:active{transform:scale(.88);}
+.spell-star:focus-visible{outline:2px solid var(--brass);outline-offset:1px;}
+.spell-fav-chip{font-size:13px;}
