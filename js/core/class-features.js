@@ -306,8 +306,13 @@ export function classFeatureList(cl, uptoLevel){
     // Divine Strike under the 2024 cleric's Blessed Strikes.)
     var edition = classEdition(cl);
     if(edition && edition.subclassDrops && !sub.edition) swapped = swapped.concat(edition.subclassDrops);
+    // (An older subclass on a 2024 class: what it gave before the 2024
+    // subclass level comes at that level, a Twilight cleric's Eyes of
+    // Night at 3.)
+    var from = edition && edition.subclassLevel && !sub.edition ? edition.subclassLevel : 1;
     for(var sl=1; sl<=level; sl++){
-      ((sub.features && sub.features[sl]) || []).forEach(function(f){ if(swapped.indexOf(f.name)===-1) addFeature(f, sl, true); });
+      if(Math.max(sl, from) > level) continue;
+      ((sub.features && sub.features[sl]) || []).forEach(function(f){ if(swapped.indexOf(f.name)===-1) addFeature(f, Math.max(sl, from), true); });
     }
   }
   function addFeature(f, atLevel, isSub){
@@ -321,7 +326,9 @@ export function classFeatureList(cl, uptoLevel){
     if(at!==-1){
       var was = list[at];
       if(item.remind && was.remind && was.remind.line===item.remind.line) item.remindLevel = was.remindLevel || was.level;
-      item.id = was.id; item.upgraded = true; list[at] = item;
+      // (Not "upgraded" when both come at one level: an older domain's
+      // spells on a 2024 cleric, all gained at 3.)
+      item.id = was.id; item.upgraded = was.level!==item.level; list[at] = item;
     }
     else list.push(item);
   }

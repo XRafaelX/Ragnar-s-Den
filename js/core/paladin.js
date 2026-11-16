@@ -7,7 +7,9 @@
    A Channel Divinity action: {id, name, group, detail, log, effect (an
    Active effect it starts), sacred (the weapon Sacred Weapon imbues), roll:
    {qty, die, bonus, label}, healSelf (the roll can heal you too), reason
-   (why it can't be used now)}. */
+   (why it can't be used now), when (the Channel Divinity card's tag when
+   the detail's first words don't say it: "Bonus action"), groupDetail and
+   groupPick (a group's text and picker label on that card)}. */
 import { mod, profBonus } from "./basics.js";
 import { classLevelOf, isPaladin2024 } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
@@ -141,7 +143,7 @@ function oathChannels(c, cl, lv){
       var carried = (c.inventory||[]).filter(function(i){ return i.type==="weapon" && i.equipped && !isRangedWeapon(i); });
       var imbue = function(){ return "When you take the Attack action: +" + cha + " to attack rolls with this weapon for 10 minutes, and its hits can deal radiant damage."; };
       return carried.length ? carried.map(function(i){
-        return {id: "sacred-" + i.id, group: "Sacred Weapon", name: i.name || "Weapon", effect: "sacred_weapon", sacred: i.id, detail: imbue()};
+        return {id: "sacred-" + i.id, group: "Sacred Weapon", groupPick: "Choose a weapon...", name: i.name || "Weapon", effect: "sacred_weapon", sacred: i.id, detail: imbue()};
       }) : [{id: "sacred", name: "Sacred Weapon", detail: imbue(), reason: "Hold a melee weapon first"}];
     case "Oath of Glory (2024)":
       return [{id: "Peerless Athlete", name: "Peerless Athlete", effect: "peerless_athlete", detail: "A bonus action: for 1 hour, advantage on Athletics and Acrobatics, and your long and high jumps go 10 feet farther."},
@@ -153,7 +155,7 @@ function oathChannels(c, cl, lv){
     case "Oath of Devotion":
       var held = (c.inventory||[]).filter(function(i){ return i.type==="weapon" && i.equipped; });
       var weapon = held.length ? held.map(function(i){
-        return {id: "sacred-" + i.id, group: "Sacred Weapon", name: i.name || "Weapon", effect: "sacred_weapon", sacred: i.id,
+        return {id: "sacred-" + i.id, group: "Sacred Weapon", groupPick: "Choose a weapon...", name: i.name || "Weapon", effect: "sacred_weapon", sacred: i.id,
           detail: "An action: +" + cha + " to attack rolls with this weapon for 1 minute, and it's magical."};
       }) : [{id: "sacred", name: "Sacred Weapon", detail: "An action: +" + cha + " to attack rolls with a weapon you hold for 1 minute, and it's magical.", reason: "Hold a weapon first"}];
       return [turn("Turn the Unholy", "fiend or undead", "see or hear")].concat(weapon);
@@ -174,7 +176,7 @@ function oathChannels(c, cl, lv){
         save("Rebuke the Violent", "Reaction, right after a creature within 30 feet damages someone else with an attack: WIS save (DC " + dc + "). It takes radiant damage equal to what it dealt on a failure, half on a success.", "WIS save DC " + dc + ".")];
     case "Oath of Glory":
       return [{id: "Peerless Athlete", name: "Peerless Athlete", effect: "peerless_athlete", detail: "A bonus action: for 10 minutes, advantage on Athletics and Acrobatics, carry twice as much, and +10 feet on long and high jumps."},
-        {id: "Inspiring Smite", name: "Inspiring Smite", detail: "Temporary hit points to share, right after a Divine Smite.", reason: "Offered after a Divine Smite"}];
+        {id: "Inspiring Smite", name: "Inspiring Smite", when: "Bonus action", detail: "Temporary hit points to share, right after a Divine Smite.", reason: "Offered after a Divine Smite"}];
     case "Oath of the Crown":
       return [save("Champion Challenge", "A bonus action: each creature you choose within 30 feet makes a WIS save (DC " + dc + ") or can't willingly move more than 30 feet away from you.", "WIS save DC " + dc + "."),
         {id: "Turn the Tide", name: "Turn the Tide", healSelf: true, detail: "A bonus action: each creature you choose within 30 feet that can hear you and has no more than half its hit points regains this.",

@@ -14,7 +14,8 @@ import { showActionToast } from "../../ui/toast.js";
 import { WILD_SURGES } from "../../data/effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { rollAttack } from "./sheet-rolls.js";
-import { channelPicker, layOnHandsRow } from "./paladin.js";
+import { layOnHandsRow } from "./paladin.js";
+import { renderChannelCard, channelResourceKey } from "./channel-divinity.js";
 import { interventionRow, forgePicker } from "./cleric.js";
 import { gunslingerResourceRow } from "./gunslinger.js";
 import { useNextCheck, magicItemsOnLongRest, endTimedBoons, coinResistances } from "../../core/magic-items.js";
@@ -1004,6 +1005,11 @@ export function renderVitalsPanel(c){
   restCard.appendChild(restRow);
   panel.appendChild(restCard);
 
+  // A cleric's or paladin's Channel Divinity, with every option on it.
+  var allResources = characterResources(c);
+  var channelCard = renderChannelCard(c, allResources, resourceRowEl);
+  if(channelCard) panel.appendChild(channelCard);
+
   var barbClass = barbarianClassEntry(c);
   if(barbClass) panel.appendChild(renderRageCard(c, barbClass));
 
@@ -1016,7 +1022,8 @@ export function renderVitalsPanel(c){
   if(remindCard) panel.appendChild(remindCard);
 
   // A use kept with its card elsewhere (a Breath Weapon on Inventory) isn't repeated here.
-  var resources = characterResources(c).filter(function(r){ return r.place!=="inventory"; });
+  // (Nor are Channel Divinity's, which have their own card.)
+  var resources = allResources.filter(function(r){ return r.place!=="inventory" && !channelResourceKey(r.key); });
   if(resources.length) panel.appendChild(renderResourcesCard(c, resources));
 
   return panel;
@@ -1448,423 +1455,425 @@ function renderResourcesCard(c, resources){
       divider.setAttribute("role", "separator");
       list.appendChild(divider);
     }
-    var remaining = r.max - r.used;
-    var row = document.createElement("div");
-    row.className = "res-row" + (remaining===0 ? " spent" : "");
-    row.setAttribute("data-res", r.key);
-
-    var info = document.createElement("div");
-    info.className = "res-info";
-    var name = document.createElement("div");
-    name.className = "res-name";
-    name.textContent = r.name;
-    var tag = document.createElement("span");
-    tag.className = "res-reset res-reset-"+r.reset;
-    tag.textContent = r.reset==="short" ? "Short rest" : r.reset==="manual" ? "Manual" : "Long rest";
-    // (No limit: an Unlimited pill in the rest pill's place, nothing on the right.)
-    if(r.max===Infinity){ tag.className = "res-reset res-reset-unlimited"; tag.textContent = "Unlimited"; }
-    name.appendChild(tag);
-    info.appendChild(name);
-    var hint = document.createElement("div");
-    hint.className = "res-hint";
-    hint.textContent = r.hint + (r.source ? " ("+r.source+")" : "");
-    info.appendChild(hint);
-    // A spell slot pays once the uses are gone (Drake's Breath), or sorcery points (Warping Implosion).
-    // (`pactSlot`: only a Pact Magic slot pays, as the 2024 patrons' features say.)
-    var slotPay = r.slotMin && remaining<=0 ? spellSlotsLeft(c).find(function(s){ return s.level >= r.slotMin && (!r.pactSlot || s.pact); }) : null;
-    var pointsPay = r.againPoints && remaining<=0 && resourceLeft(c, "Sorcerer:sorcery_points") >= r.againPoints ? r.againPoints : 0;
-    var slotWords = slotPay ? " (" + (slotPay.pact && r.pactSlot ? "pact slot" : ordinal(slotPay.level) + "-level slot") + ")" : pointsPay ? " (" + pointsPay + " points)" : "";
-    // A use that rolls a die (Warding Maneuver's d8): spends one and rolls.
-    if(r.roll && r.max!==Infinity){
-      var rolls = document.createElement("div");
-      rolls.className = "inv-roll-actions fx-rolls";
-      var rollBtn = document.createElement("button");
-      rollBtn.type = "button"; rollBtn.className = "btn small inv-roll-btn res-roll-btn";
-      rollBtn.innerHTML = makeDiceSvg();
-      rollBtn.appendChild(document.createTextNode((r.roll.button || "Use") + " · " + (r.roll.qty || 1) + "d" + r.roll.die + (r.roll.bonus ? fmtMod(r.roll.bonus) : "") + slotWords));
-      var unarmed = r.roll.needs==="meleeOrShield" && !wieldsMeleeWeaponOrShield(c);
-      rollBtn.disabled = (remaining<=0 && !slotPay && !pointsPay) || unarmed;
-      rollBtn.title = remaining<=0 && !slotPay && !pointsPay ? "None left" : unarmed ? "Needs a melee weapon or a shield in hand" : "Spend one and roll " + (r.roll.qty || 1) + "d" + r.roll.die;
-      rollBtn.addEventListener("click", function(){
-        if(slotPay){ spendSpellSlot(c, slotPay); save(); renderAll(); }
-        else if(pointsPay){ spendResource(c, "Sorcerer:sorcery_points", pointsPay); save(); renderAll(); }
-        else setUsed(r.used+1);
-        var least = r.roll.min || 0;
-        // Destructive Wrath: a Channel Divinity for the maximum.
-        var wrath = r.key==="Cleric:wrath_of_the_storm" && resourceLeft(c, "Cleric:channel_divinity") > 0;
-        performRoll(r.roll.die, r.roll.qty || 1, r.roll.bonus || 0, "none", r.roll.label, wrath ? function(x){
-          if(!x) return null;
-          var top = (r.roll.qty || 1) * r.roll.die;
-          return x.total >= top ? null : {lead: "Destructive Wrath:", options: [{label: "Maximum " + top + " (Channel Divinity)", title: "Spend your Channel Divinity to deal the maximum instead",
-            use: function(){
-              if(!spendChannel(c, "Cleric:channel_divinity")) return null;
-              save(); renderAll();
-              return {bonus: top - x.total, log: "Destructive Wrath"};
-            }}]};
-        } : r.roll.min || r.roll.temp || r.roll.heal ? {
-          adjust: least ? function(x){ return x.total < least ? {total: least, note: "at least " + least} : null; } : null,
-          // Temporary hit points don't stack: keep the higher.
-          onResult: r.roll.temp ? function(x){
-            var got = Math.max(x.total, least);
-            if(got > (Number(c.hp.temp)||0)){ c.hp.temp = got; save(); renderSidebar(); renderAll(); }
-          } : r.roll.heal ? function(x){
-            c.hp.current = clamp((Number(c.hp.current)||0) + Math.max(x.total, least), 0, maxHp(c));
-            save(); renderSidebar(); renderAll();
-          } : null
-        } : null);
-      });
-      rolls.appendChild(rollBtn);
-      info.appendChild(rolls);
-    }
-    // No roll: the slot or the points just pay (summoning the drake again).
-    if(pointsPay && !r.roll){
-      var againPts = document.createElement("div");
-      againPts.className = "inv-roll-actions fx-rolls";
-      var ptsBtn = document.createElement("button");
-      ptsBtn.type = "button"; ptsBtn.className = "btn small inv-roll-btn res-roll-btn";
-      ptsBtn.textContent = "Again" + slotWords;
-      ptsBtn.title = "Spend sorcery points to use it again";
-      ptsBtn.addEventListener("click", function(){
-        spendResource(c, "Sorcerer:sorcery_points", pointsPay);
-        logRoll(r.name, "Used again with " + pointsPay + " sorcery points.");
-        save(); renderAll();
-      });
-      againPts.appendChild(ptsBtn);
-      info.appendChild(againPts);
-    }
-    if(slotPay && !r.roll){
-      var again = document.createElement("div");
-      again.className = "inv-roll-actions fx-rolls";
-      var againBtn = document.createElement("button");
-      againBtn.type = "button"; againBtn.className = "btn small inv-roll-btn res-roll-btn";
-      againBtn.textContent = "Again" + slotWords;
-      againBtn.title = "Spend a spell slot to use it again";
-      againBtn.addEventListener("click", function(){
-        spendSpellSlot(c, slotPay);
-        logRoll(r.name, "Used again with a " + ordinal(slotPay.level) + "-level spell slot.");
-        save(); renderAll();
-      });
-      again.appendChild(againBtn);
-      info.appendChild(again);
-    }
-    // Second Wind (fighter 1): a use for 1d10 + fighter level, and
-    // Rallying Cry's healing for allies (Banneret 3).
-    var sw = r.key==="Fighter:second_wind" && secondWind(c);
-    if(sw){
-      var swRow = document.createElement("div");
-      swRow.className = "inv-roll-actions fx-rolls";
-      var swBtn = document.createElement("button");
-      swBtn.type = "button"; swBtn.className = "btn small inv-roll-btn res-roll-btn";
-      swBtn.innerHTML = makeDiceSvg();
-      swBtn.appendChild(document.createTextNode("Heal 1d10+" + sw.bonus));
-      var swFull = (Number(c.hp.current)||0) >= maxHp(c);
-      swBtn.disabled = remaining<=0 || (swFull && !sw.rally);
-      swBtn.title = remaining<=0 ? "Used until a short or long rest" : swFull && !sw.rally ? "You're at full hit points"
-        : "Bonus action: regain 1d10 + " + sw.bonus + " hit points." + (sw.rally ? " Rallying Cry: up to three allies within 60 feet who can see or hear you regain " + sw.rally + " hit points each." : "");
-      swBtn.addEventListener("click", function(){
-        var roll = Math.floor(Math.random()*10)+1, healed = roll + sw.bonus;
-        c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, maxHp(c));
-        c.resourcesUsed[r.key] = r.used + 1;
-        logRoll("Second Wind (1d10+" + sw.bonus + ")", roll + " +" + sw.bonus + " = " + healed + " HP healed" + (sw.rally ? ". Rallying Cry: up to three allies regain " + sw.rally + " HP each" : ""));
-        save(); renderAll();
-      });
-      swRow.appendChild(swBtn);
-      info.appendChild(swRow);
-    }
-    // Reclaim Potential (Echo Knight 15): 2d6 + CON temporary HP when the
-    // echo is destroyed by damage, if you have none.
-    if(r.key==="Fighter:reclaim_potential"){
-      var conM = mod(abilityScore(c, "con"));
-      var rpRow = document.createElement("div");
-      rpRow.className = "inv-roll-actions fx-rolls";
-      var rpBtn = document.createElement("button");
-      rpBtn.type = "button"; rpBtn.className = "btn small inv-roll-btn res-roll-btn";
-      rpBtn.innerHTML = makeDiceSvg();
-      rpBtn.appendChild(document.createTextNode("Temp HP 2d6" + fmtMod(conM)));
-      var hasTemp = (Number(c.hp.temp)||0) > 0;
-      rpBtn.disabled = remaining<=0 || hasTemp;
-      rpBtn.title = remaining<=0 ? "None left until a long rest" : hasTemp ? "Only when you have no temporary hit points" : "When your echo is destroyed by taking damage";
-      rpBtn.addEventListener("click", function(){
-        var a = Math.floor(Math.random()*6)+1, b2 = Math.floor(Math.random()*6)+1, got = Math.max(0, a + b2 + conM);
-        c.hp.temp = got;
-        c.resourcesUsed[r.key] = r.used + 1;
-        logRoll("Reclaim Potential (2d6" + fmtMod(conM) + ")", "[" + a + ", " + b2 + "] " + fmtMod(conM) + " = " + got + " temporary HP");
-        save(); renderAll();
-      });
-      rpRow.appendChild(rpBtn);
-      info.appendChild(rpRow);
-    }
-    // Survivor (Champion 18): regain 5 + CON at the start of a turn, at half HP or less.
-    var surv = r.key==="Fighter:survivor" && survivorHeal(c);
-    if(surv){
-      var svRow = document.createElement("div");
-      svRow.className = "inv-roll-actions fx-rolls";
-      var svBtn = document.createElement("button");
-      svBtn.type = "button"; svBtn.className = "btn small inv-roll-btn res-roll-btn";
-      svBtn.textContent = "Heal " + surv.heal;
-      svBtn.disabled = !surv.due;
-      svBtn.title = surv.due ? "Start of your turn: regain " + surv.heal + " hit points" : "Only while you have half your hit points or fewer (not at 0)";
-      svBtn.addEventListener("click", function(){
-        c.hp.current = clamp((Number(c.hp.current)||0) + surv.heal, 0, maxHp(c));
-        logRoll("Survivor", "Regained " + surv.heal + " HP at the start of the turn.");
-        save(); renderAll();
-      });
-      svRow.appendChild(svBtn);
-      info.appendChild(svRow);
-    }
-    // A use that restores a set number of hit points (Wholeness of Body).
-    // Psychic Veil, Rend Mind (2024): Psionic Energy Dice get it back.
-    if(r.diceRestore && r.used > 0){
-      var dr = r.diceRestore, pool = resourceLeft(c, dr.key);
-      var drRow = document.createElement("div");
-      drRow.className = "inv-roll-actions fx-rolls";
-      var drBtn = document.createElement("button");
-      drBtn.type = "button"; drBtn.className = "btn small inv-roll-btn";
-      var drNoun = dr.noun || ["Psionic Energy Die", "Psionic Energy Dice"], drWord = dr.noun ? (dr.count===1 ? "a " + drNoun[0] : dr.count + " " + drNoun[1]) : dr.count + (dr.count===1 ? " die" : " dice");
-      drBtn.textContent = "Spend " + drWord + " to use it again";
-      drBtn.disabled = pool < dr.count;
-      drBtn.title = drBtn.disabled ? "Not enough " + drNoun[1] + " left" : "No action needed: spend " + drNoun[1] + " to get this back";
-      drBtn.addEventListener("click", function(){
-        if(!spendResource(c, dr.key, dr.count)) return;
-        logRoll(r.name, "Spent " + dr.count + " " + (dr.count===1 ? drNoun[0] : drNoun[1]) + " to use it again.");
-        setUsed(r.used-1);
-      });
-      drRow.appendChild(drBtn);
-      info.appendChild(drRow);
-    }
-    // Intimidating Presence, Zealous Presence (2024): a use of Rage gets it back.
-    if(r.rageRestore && r.used > 0){
-      var rageRow = document.createElement("div");
-      rageRow.className = "inv-roll-actions fx-rolls";
-      var rageBack = document.createElement("button");
-      rageBack.type = "button"; rageBack.className = "btn small inv-roll-btn";
-      rageBack.textContent = "Spend a Rage to use it again";
-      rageBack.disabled = ragesLeft(c) <= 0;
-      rageBack.title = rageBack.disabled ? "No rages left" : "No action needed: spend a use of Rage to get this back";
-      rageBack.addEventListener("click", function(){
-        if(!spendRage(c)) return;
-        logRoll(r.name, "Spent a use of Rage to use it again.");
-        setUsed(r.used-1);
-      });
-      rageRow.appendChild(rageBack);
-      info.appendChild(rageRow);
-    }
-    if(r.heal && r.max!==Infinity){
-      var hr = document.createElement("div");
-      hr.className = "inv-roll-actions fx-rolls";
-      var hb = document.createElement("button");
-      hb.type = "button"; hb.className = "btn small inv-roll-btn res-roll-btn";
-      hb.textContent = "Heal " + r.heal;
-      var hbFull = (Number(c.hp.current)||0) >= maxHp(c);
-      hb.disabled = remaining<=0 || hbFull;
-      hb.title = remaining<=0 ? "None left" : hbFull ? "You're at full hit points" : "Spend one and regain " + r.heal + " hit points";
-      hb.addEventListener("click", function(){
-        c.hp.current = clamp((Number(c.hp.current)||0) + r.heal, 0, maxHp(c));
-        c.resourcesUsed[r.key] = r.used + 1;
-        logRoll(r.name, "Regained " + r.heal + " HP.");
-        save(); renderAll();
-      });
-      hr.appendChild(hb);
-      info.appendChild(hr);
-    }
-    // Everything ki can pay for, in one list.
-    if(r.key==="Monk:ki") info.appendChild(kiPicker(c));
-    if(r.key==="Paladin:channel_divinity") info.appendChild(channelPicker(c, "Paladin"));
-    if(r.key==="Cleric:channel_divinity") info.appendChild(channelPicker(c, "Cleric"));
-    if(r.key==="Cleric:divine_intervention") info.appendChild(interventionRow(c, r));
-    if(r.key==="Cleric:blessing_of_the_forge" && remaining > 0) info.appendChild(forgePicker(c, r));
-    if(r.key==="Paladin:lay_on_hands") info.appendChild(layOnHandsRow(c));
-    var gunRow = gunslingerResourceRow(c, r); // Quick Patch, Honed Instinct
-    if(gunRow) info.appendChild(gunRow);
-    var druidRow = druidResourceRow(c, r); // Wild Shape, Natural Recovery, Cosmic Omen, Balm
-    if(druidRow) info.appendChild(druidRow);
-    var bardRow = bardResourceRow(c, r); // Bardic Inspiration's list and tale, Spirit Session
-    if(bardRow) info.appendChild(bardRow);
-    var sorcRow = sorcererResourceRow(c, r); // Sorcery points' list, the surge table, the phases
-    if(sorcRow) info.appendChild(sorcRow);
-    var lockRow = warlockResourceRow(c, r); // Patron buttons and pickers
-    if(lockRow) info.appendChild(lockRow);
-    var wizRow = wizardResourceRow(c, r); // The schools' buttons and pickers
-    if(wizRow) info.appendChild(wizRow);
-    // Tinker's Magic (2024 artificer): pick an everyday item to make.
-    if(r.key==="Artificer:tinkers_magic" && remaining > 0){
-      var tinker = document.createElement("div");
-      tinker.className = "res-pick";
-      tinker.appendChild(themedPicker({key: "tinker", groups: {"": TINKER_ITEMS.map(function(t){ return t.name; })}, value: "", search: true,
-        placeholder: "Make an item...", ariaLabel: "Tinker's Magic: item to make",
-        onPick: function(v){
-          var made = makeTinkerItem(c, v);
-          if(!made) return;
-          logRoll("Tinker's Magic", "Made " + made.name + ". It vanishes on your next long rest.");
-          showActionToast(made.name + " added to your inventory until your next long rest.");
-          save(); renderAll();
-        }}));
-      info.appendChild(tinker);
-    }
-    // Defensive Field (Armorer, Guardian): temporary HP equal to the artificer level.
-    if(r.key==="Artificer:defensive_field"){
-      var field = artificerLevel(c);
-      var fieldRow = document.createElement("div");
-      fieldRow.className = "inv-roll-actions fx-rolls";
-      var fieldBtn = document.createElement("button");
-      fieldBtn.type = "button"; fieldBtn.className = "btn small inv-roll-btn res-roll-btn";
-      fieldBtn.textContent = "Temp HP " + field;
-      fieldBtn.disabled = remaining<=0;
-      fieldBtn.title = remaining<=0 ? "None left until a long rest" : "Bonus action, while you wear the armor";
-      fieldBtn.addEventListener("click", function(){
-        if(field > (Number(c.hp.temp)||0)) c.hp.temp = field;
-        logRoll("Defensive Field", "Temporary hit points: " + c.hp.temp + ".");
-        setUsed(r.used+1);
-      });
-      fieldRow.appendChild(fieldBtn);
-      info.appendChild(fieldRow);
-    }
-    // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
-    // plus the proficiency bonus of healing.
-    var qh = r.key==="Monk:ki" && quickenedHealing(c);
-    if(qh){
-      var heals = document.createElement("div");
-      heals.className = "inv-roll-actions fx-rolls";
-      var healBtn = document.createElement("button");
-      healBtn.type = "button"; healBtn.className = "btn small inv-roll-btn res-roll-btn";
-      healBtn.innerHTML = makeDiceSvg();
-      healBtn.appendChild(document.createTextNode("Quickened Healing · " + qh.cost + " ki"));
-      var atFull = (Number(c.hp.current)||0) >= maxHp(c);
-      healBtn.disabled = remaining < qh.cost || atFull;
-      healBtn.title = remaining < qh.cost ? "Not enough ki left" : atFull ? "You're at full hit points"
-        : "Action: spend " + qh.cost + " ki and heal 1d" + qh.die + " + " + qh.bonus;
-      healBtn.addEventListener("click", function(){
-        var roll = Math.floor(Math.random()*qh.die)+1, healed = roll + qh.bonus;
-        c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, maxHp(c));
-        c.resourcesUsed[r.key] = r.used + qh.cost;
-        logRoll("Quickened Healing (1d" + qh.die + fmtMod(qh.bonus) + ")", roll + " " + fmtMod(qh.bonus) + " = " + healed + " HP healed (" + qh.cost + " ki)");
-        save(); renderAll();
-      });
-      heals.appendChild(healBtn);
-      info.appendChild(heals);
-    }
-    // Harness Divine Power (Tasha's, cleric 2, paladin 3): a Channel
-    // Divinity for a spent spell slot. Buttons only while one is spent.
-    var hdpClass = /:harness_divine_power$/.test(r.key) && r.key.split(":")[0];
-    var hdp = hdpClass && harnessDivinePower(c, hdpClass);
-    if(hdp && hdp.levels.length){
-      var slotsRow = document.createElement("div");
-      slotsRow.className = "inv-roll-actions fx-rolls";
-      var why = !hdp.usesLeft ? "Used up until a long rest" : !hdp.channelLeft ? "No Channel Divinity left" : "";
-      hdp.levels.forEach(function(l){
-        var slotBtn = document.createElement("button");
-        slotBtn.type = "button"; slotBtn.className = "btn small inv-roll-btn res-roll-btn";
-        slotBtn.textContent = "Get back a " + ordinal(l) + "-level slot";
-        slotBtn.disabled = !!why;
-        slotBtn.title = why || "Bonus action: spend a Channel Divinity to get back one spent " + ordinal(l) + "-level spell slot";
-        slotBtn.addEventListener("click", function(){
-          if(!useHarnessDivinePower(c, hdpClass, l)) return;
-          logRoll("Harness Divine Power", "Got back a " + ordinal(l) + "-level spell slot (1 Channel Divinity)");
-          save(); renderAll();
-        });
-        slotsRow.appendChild(slotBtn);
-      });
-      info.appendChild(slotsRow);
-    }
-    // Wild Companion (Tasha's, druid 2): a use of Wild Shape casts Find
-    // Familiar, a fey that lasts half the druid level in hours.
-    var wildHours = r.key==="Druid:wild_shape" && wildCompanionHours(c);
-    if(wildHours){
-      var wildRow = document.createElement("div");
-      wildRow.className = "inv-roll-actions fx-rolls";
-      var wildBtn = document.createElement("button");
-      wildBtn.type = "button"; wildBtn.className = "btn small inv-roll-btn res-roll-btn";
-      wildBtn.textContent = "Wild Companion · 1 use";
-      var lasts = wildHours==="long" ? "until your next long rest" : wildHours + (wildHours===1 ? " hour" : " hours");
-      wildBtn.disabled = remaining<=0;
-      wildBtn.title = remaining<=0 ? "No Wild Shape uses left" : (wildHours==="long" ? "Magic action" : "Action") + ": spend a use of Wild Shape to cast Find Familiar. The familiar is a fey and lasts " + lasts + ".";
-      wildBtn.addEventListener("click", function(){
-        summonWildCompanion(c);
-        logRoll("Wild Companion", "Cast Find Familiar with a use of Wild Shape. The fey familiar lasts " + lasts + ".");
-        var form = c.companions && c.companions.familiar && c.companions.familiar.choice;
-        showActionToast(form ? "Your " + form.toLowerCase() + " appears. It lasts " + lasts + "." : "Your familiar appears. Choose its form on the Companions tab.");
-        if(r.max!==Infinity) setUsed(r.used+1); else { save(); renderAll(); }
-      });
-      wildRow.appendChild(wildBtn);
-      info.appendChild(wildRow);
-    }
-    row.appendChild(info);
-
-    // Unlimited (Archdruid's Wild Shape): nothing to count or spend, so no
-    // controls (the pill by the name says it).
-    if(r.max===Infinity){
-      list.appendChild(row);
-      return;
-    }
-    var ctrl = document.createElement("div");
-    ctrl.className = "res-ctrl";
-    row.appendChild(ctrl);
-    if(!resourceIsNumber(r)){
-      var pips = document.createElement("div");
-      pips.className = "res-pips";
-      pips.setAttribute("aria-label", remaining+" of "+r.max+" left");
-      for(var i=0;i<r.max;i++){
-        var pip = document.createElement("span");
-        pip.className = "res-pip" + (i < remaining ? " full" : "");
-        pips.appendChild(pip);
-      }
-      ctrl.appendChild(pips);
-    } else {
-      var count = document.createElement("div");
-      count.className = "res-count";
-      count.innerHTML = "<b>"+remaining+"</b> / "+r.max;
-      ctrl.appendChild(count);
-    }
-
-    var stepper = document.createElement("div");
-    stepper.className = "stat-stepper";
-    var useBtn = document.createElement("button");
-    useBtn.type = "button";
-    useBtn.className = "stat-arrow-btn";
-    useBtn.title = "Use one";
-    useBtn.setAttribute("aria-label", "Use one "+r.name);
-    useBtn.innerHTML = makeStatArrowSvg("down");
-    useBtn.disabled = remaining<=0;
-    useBtn.addEventListener("click", function(){ setUsed(r.used+1); });
-    var regainBtn = document.createElement("button");
-    regainBtn.type = "button";
-    regainBtn.className = "stat-arrow-btn";
-    regainBtn.title = "Regain one";
-    regainBtn.setAttribute("aria-label", "Regain one "+r.name);
-    regainBtn.innerHTML = makeStatArrowSvg("up");
-    regainBtn.disabled = r.used<=0;
-    regainBtn.addEventListener("click", function(){ setUsed(r.used-1); });
-    stepper.appendChild(useBtn);
-    stepper.appendChild(regainBtn);
-    ctrl.appendChild(stepper);
-
-    function setUsed(n){
-      n = clamp(n, 0, r.max);
-      var before = r.used;
-      // Using Wild Shape again ends Symbiotic Entity.
-      if(r.key==="Druid:wild_shape" && n > r.used) endEffect(c, "symbiotic_entity");
-      if(n) c.resourcesUsed[r.key] = n; else delete c.resourcesUsed[r.key];
-      save(); renderAll();
-      if(n === before) return;
-      var drawn = resourceRow(r.key);
-      if(!drawn) return;
-      var pips = drawn.querySelector(".res-pips");
-      // Spent: the last full pip empties. Got back: the first empty one fills.
-      if(pips) pipChanged(pips, n > before ? r.max - n : r.max - before, n > before);
-      else {
-        // A point pool: the number pops and the amount floats up from it.
-        var num = drawn.querySelector(".res-count b");
-        flash(num, "fx-bump");
-        floatDelta(num, before - n, r.key);
-      }
-    }
-    list.appendChild(row);
+    list.appendChild(resourceRowEl(c, r));
   });
   // A Phantom's soul trinkets (Tokens of the Departed): how many are held.
   var trinkets = soulTrinkets(c);
   if(trinkets) list.appendChild(soulTrinketRow(c, trinkets));
   card.appendChild(list);
   return card;
+}
+/* One resource's row: its name, rest pill and hint, what it can be spent
+   on, and its pips (or number) with use and regain arrows. */
+function resourceRowEl(c, r){
+  var remaining = r.max - r.used;
+  var row = document.createElement("div");
+  row.className = "res-row" + (remaining===0 ? " spent" : "");
+  row.setAttribute("data-res", r.key);
+
+  var info = document.createElement("div");
+  info.className = "res-info";
+  var name = document.createElement("div");
+  name.className = "res-name";
+  name.textContent = r.name;
+  var tag = document.createElement("span");
+  tag.className = "res-reset res-reset-"+r.reset;
+  tag.textContent = r.reset==="short" ? "Short rest" : r.reset==="manual" ? "Manual" : "Long rest";
+  // (No limit: an Unlimited pill in the rest pill's place, nothing on the right.)
+  if(r.max===Infinity){ tag.className = "res-reset res-reset-unlimited"; tag.textContent = "Unlimited"; }
+  name.appendChild(tag);
+  info.appendChild(name);
+  var hint = document.createElement("div");
+  hint.className = "res-hint";
+  hint.textContent = r.hint + (r.source ? " ("+r.source+")" : "");
+  info.appendChild(hint);
+  // A spell slot pays once the uses are gone (Drake's Breath), or sorcery points (Warping Implosion).
+  // (`pactSlot`: only a Pact Magic slot pays, as the 2024 patrons' features say.)
+  var slotPay = r.slotMin && remaining<=0 ? spellSlotsLeft(c).find(function(s){ return s.level >= r.slotMin && (!r.pactSlot || s.pact); }) : null;
+  var pointsPay = r.againPoints && remaining<=0 && resourceLeft(c, "Sorcerer:sorcery_points") >= r.againPoints ? r.againPoints : 0;
+  var slotWords = slotPay ? " (" + (slotPay.pact && r.pactSlot ? "pact slot" : ordinal(slotPay.level) + "-level slot") + ")" : pointsPay ? " (" + pointsPay + " points)" : "";
+  // A use that rolls a die (Warding Maneuver's d8): spends one and rolls.
+  if(r.roll && r.max!==Infinity){
+    var rolls = document.createElement("div");
+    rolls.className = "inv-roll-actions fx-rolls";
+    var rollBtn = document.createElement("button");
+    rollBtn.type = "button"; rollBtn.className = "btn small inv-roll-btn res-roll-btn";
+    rollBtn.innerHTML = makeDiceSvg();
+    rollBtn.appendChild(document.createTextNode((r.roll.button || "Use") + " · " + (r.roll.qty || 1) + "d" + r.roll.die + (r.roll.bonus ? fmtMod(r.roll.bonus) : "") + slotWords));
+    var unarmed = r.roll.needs==="meleeOrShield" && !wieldsMeleeWeaponOrShield(c);
+    rollBtn.disabled = (remaining<=0 && !slotPay && !pointsPay) || unarmed;
+    rollBtn.title = remaining<=0 && !slotPay && !pointsPay ? "None left" : unarmed ? "Needs a melee weapon or a shield in hand" : "Spend one and roll " + (r.roll.qty || 1) + "d" + r.roll.die;
+    rollBtn.addEventListener("click", function(){
+      if(slotPay){ spendSpellSlot(c, slotPay); save(); renderAll(); }
+      else if(pointsPay){ spendResource(c, "Sorcerer:sorcery_points", pointsPay); save(); renderAll(); }
+      else setUsed(r.used+1);
+      var least = r.roll.min || 0;
+      // Destructive Wrath: a Channel Divinity for the maximum.
+      var wrath = r.key==="Cleric:wrath_of_the_storm" && resourceLeft(c, "Cleric:channel_divinity") > 0;
+      performRoll(r.roll.die, r.roll.qty || 1, r.roll.bonus || 0, "none", r.roll.label, wrath ? function(x){
+        if(!x) return null;
+        var top = (r.roll.qty || 1) * r.roll.die;
+        return x.total >= top ? null : {lead: "Destructive Wrath:", options: [{label: "Maximum " + top + " (Channel Divinity)", title: "Spend your Channel Divinity to deal the maximum instead",
+          use: function(){
+            if(!spendChannel(c, "Cleric:channel_divinity")) return null;
+            save(); renderAll();
+            return {bonus: top - x.total, log: "Destructive Wrath"};
+          }}]};
+      } : r.roll.min || r.roll.temp || r.roll.heal ? {
+        adjust: least ? function(x){ return x.total < least ? {total: least, note: "at least " + least} : null; } : null,
+        // Temporary hit points don't stack: keep the higher.
+        onResult: r.roll.temp ? function(x){
+          var got = Math.max(x.total, least);
+          if(got > (Number(c.hp.temp)||0)){ c.hp.temp = got; save(); renderSidebar(); renderAll(); }
+        } : r.roll.heal ? function(x){
+          c.hp.current = clamp((Number(c.hp.current)||0) + Math.max(x.total, least), 0, maxHp(c));
+          save(); renderSidebar(); renderAll();
+        } : null
+      } : null);
+    });
+    rolls.appendChild(rollBtn);
+    info.appendChild(rolls);
+  }
+  // No roll: the slot or the points just pay (summoning the drake again).
+  if(pointsPay && !r.roll){
+    var againPts = document.createElement("div");
+    againPts.className = "inv-roll-actions fx-rolls";
+    var ptsBtn = document.createElement("button");
+    ptsBtn.type = "button"; ptsBtn.className = "btn small inv-roll-btn res-roll-btn";
+    ptsBtn.textContent = "Again" + slotWords;
+    ptsBtn.title = "Spend sorcery points to use it again";
+    ptsBtn.addEventListener("click", function(){
+      spendResource(c, "Sorcerer:sorcery_points", pointsPay);
+      logRoll(r.name, "Used again with " + pointsPay + " sorcery points.");
+      save(); renderAll();
+    });
+    againPts.appendChild(ptsBtn);
+    info.appendChild(againPts);
+  }
+  if(slotPay && !r.roll){
+    var again = document.createElement("div");
+    again.className = "inv-roll-actions fx-rolls";
+    var againBtn = document.createElement("button");
+    againBtn.type = "button"; againBtn.className = "btn small inv-roll-btn res-roll-btn";
+    againBtn.textContent = "Again" + slotWords;
+    againBtn.title = "Spend a spell slot to use it again";
+    againBtn.addEventListener("click", function(){
+      spendSpellSlot(c, slotPay);
+      logRoll(r.name, "Used again with a " + ordinal(slotPay.level) + "-level spell slot.");
+      save(); renderAll();
+    });
+    again.appendChild(againBtn);
+    info.appendChild(again);
+  }
+  // Second Wind (fighter 1): a use for 1d10 + fighter level, and
+  // Rallying Cry's healing for allies (Banneret 3).
+  var sw = r.key==="Fighter:second_wind" && secondWind(c);
+  if(sw){
+    var swRow = document.createElement("div");
+    swRow.className = "inv-roll-actions fx-rolls";
+    var swBtn = document.createElement("button");
+    swBtn.type = "button"; swBtn.className = "btn small inv-roll-btn res-roll-btn";
+    swBtn.innerHTML = makeDiceSvg();
+    swBtn.appendChild(document.createTextNode("Heal 1d10+" + sw.bonus));
+    var swFull = (Number(c.hp.current)||0) >= maxHp(c);
+    swBtn.disabled = remaining<=0 || (swFull && !sw.rally);
+    swBtn.title = remaining<=0 ? "Used until a short or long rest" : swFull && !sw.rally ? "You're at full hit points"
+      : "Bonus action: regain 1d10 + " + sw.bonus + " hit points." + (sw.rally ? " Rallying Cry: up to three allies within 60 feet who can see or hear you regain " + sw.rally + " hit points each." : "");
+    swBtn.addEventListener("click", function(){
+      var roll = Math.floor(Math.random()*10)+1, healed = roll + sw.bonus;
+      c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, maxHp(c));
+      c.resourcesUsed[r.key] = r.used + 1;
+      logRoll("Second Wind (1d10+" + sw.bonus + ")", roll + " +" + sw.bonus + " = " + healed + " HP healed" + (sw.rally ? ". Rallying Cry: up to three allies regain " + sw.rally + " HP each" : ""));
+      save(); renderAll();
+    });
+    swRow.appendChild(swBtn);
+    info.appendChild(swRow);
+  }
+  // Reclaim Potential (Echo Knight 15): 2d6 + CON temporary HP when the
+  // echo is destroyed by damage, if you have none.
+  if(r.key==="Fighter:reclaim_potential"){
+    var conM = mod(abilityScore(c, "con"));
+    var rpRow = document.createElement("div");
+    rpRow.className = "inv-roll-actions fx-rolls";
+    var rpBtn = document.createElement("button");
+    rpBtn.type = "button"; rpBtn.className = "btn small inv-roll-btn res-roll-btn";
+    rpBtn.innerHTML = makeDiceSvg();
+    rpBtn.appendChild(document.createTextNode("Temp HP 2d6" + fmtMod(conM)));
+    var hasTemp = (Number(c.hp.temp)||0) > 0;
+    rpBtn.disabled = remaining<=0 || hasTemp;
+    rpBtn.title = remaining<=0 ? "None left until a long rest" : hasTemp ? "Only when you have no temporary hit points" : "When your echo is destroyed by taking damage";
+    rpBtn.addEventListener("click", function(){
+      var a = Math.floor(Math.random()*6)+1, b2 = Math.floor(Math.random()*6)+1, got = Math.max(0, a + b2 + conM);
+      c.hp.temp = got;
+      c.resourcesUsed[r.key] = r.used + 1;
+      logRoll("Reclaim Potential (2d6" + fmtMod(conM) + ")", "[" + a + ", " + b2 + "] " + fmtMod(conM) + " = " + got + " temporary HP");
+      save(); renderAll();
+    });
+    rpRow.appendChild(rpBtn);
+    info.appendChild(rpRow);
+  }
+  // Survivor (Champion 18): regain 5 + CON at the start of a turn, at half HP or less.
+  var surv = r.key==="Fighter:survivor" && survivorHeal(c);
+  if(surv){
+    var svRow = document.createElement("div");
+    svRow.className = "inv-roll-actions fx-rolls";
+    var svBtn = document.createElement("button");
+    svBtn.type = "button"; svBtn.className = "btn small inv-roll-btn res-roll-btn";
+    svBtn.textContent = "Heal " + surv.heal;
+    svBtn.disabled = !surv.due;
+    svBtn.title = surv.due ? "Start of your turn: regain " + surv.heal + " hit points" : "Only while you have half your hit points or fewer (not at 0)";
+    svBtn.addEventListener("click", function(){
+      c.hp.current = clamp((Number(c.hp.current)||0) + surv.heal, 0, maxHp(c));
+      logRoll("Survivor", "Regained " + surv.heal + " HP at the start of the turn.");
+      save(); renderAll();
+    });
+    svRow.appendChild(svBtn);
+    info.appendChild(svRow);
+  }
+  // A use that restores a set number of hit points (Wholeness of Body).
+  // Psychic Veil, Rend Mind (2024): Psionic Energy Dice get it back.
+  if(r.diceRestore && r.used > 0){
+    var dr = r.diceRestore, pool = resourceLeft(c, dr.key);
+    var drRow = document.createElement("div");
+    drRow.className = "inv-roll-actions fx-rolls";
+    var drBtn = document.createElement("button");
+    drBtn.type = "button"; drBtn.className = "btn small inv-roll-btn";
+    var drNoun = dr.noun || ["Psionic Energy Die", "Psionic Energy Dice"], drWord = dr.noun ? (dr.count===1 ? "a " + drNoun[0] : dr.count + " " + drNoun[1]) : dr.count + (dr.count===1 ? " die" : " dice");
+    drBtn.textContent = "Spend " + drWord + " to use it again";
+    drBtn.disabled = pool < dr.count;
+    drBtn.title = drBtn.disabled ? "Not enough " + drNoun[1] + " left" : "No action needed: spend " + drNoun[1] + " to get this back";
+    drBtn.addEventListener("click", function(){
+      if(!spendResource(c, dr.key, dr.count)) return;
+      logRoll(r.name, "Spent " + dr.count + " " + (dr.count===1 ? drNoun[0] : drNoun[1]) + " to use it again.");
+      setUsed(r.used-1);
+    });
+    drRow.appendChild(drBtn);
+    info.appendChild(drRow);
+  }
+  // Intimidating Presence, Zealous Presence (2024): a use of Rage gets it back.
+  if(r.rageRestore && r.used > 0){
+    var rageRow = document.createElement("div");
+    rageRow.className = "inv-roll-actions fx-rolls";
+    var rageBack = document.createElement("button");
+    rageBack.type = "button"; rageBack.className = "btn small inv-roll-btn";
+    rageBack.textContent = "Spend a Rage to use it again";
+    rageBack.disabled = ragesLeft(c) <= 0;
+    rageBack.title = rageBack.disabled ? "No rages left" : "No action needed: spend a use of Rage to get this back";
+    rageBack.addEventListener("click", function(){
+      if(!spendRage(c)) return;
+      logRoll(r.name, "Spent a use of Rage to use it again.");
+      setUsed(r.used-1);
+    });
+    rageRow.appendChild(rageBack);
+    info.appendChild(rageRow);
+  }
+  if(r.heal && r.max!==Infinity){
+    var hr = document.createElement("div");
+    hr.className = "inv-roll-actions fx-rolls";
+    var hb = document.createElement("button");
+    hb.type = "button"; hb.className = "btn small inv-roll-btn res-roll-btn";
+    hb.textContent = "Heal " + r.heal;
+    var hbFull = (Number(c.hp.current)||0) >= maxHp(c);
+    hb.disabled = remaining<=0 || hbFull;
+    hb.title = remaining<=0 ? "None left" : hbFull ? "You're at full hit points" : "Spend one and regain " + r.heal + " hit points";
+    hb.addEventListener("click", function(){
+      c.hp.current = clamp((Number(c.hp.current)||0) + r.heal, 0, maxHp(c));
+      c.resourcesUsed[r.key] = r.used + 1;
+      logRoll(r.name, "Regained " + r.heal + " HP.");
+      save(); renderAll();
+    });
+    hr.appendChild(hb);
+    info.appendChild(hr);
+  }
+  // Everything ki can pay for, in one list.
+  if(r.key==="Monk:ki") info.appendChild(kiPicker(c));
+  if(r.key==="Cleric:divine_intervention") info.appendChild(interventionRow(c, r));
+  if(r.key==="Cleric:blessing_of_the_forge" && remaining > 0) info.appendChild(forgePicker(c, r));
+  if(r.key==="Paladin:lay_on_hands") info.appendChild(layOnHandsRow(c));
+  var gunRow = gunslingerResourceRow(c, r); // Quick Patch, Honed Instinct
+  if(gunRow) info.appendChild(gunRow);
+  var druidRow = druidResourceRow(c, r); // Wild Shape, Natural Recovery, Cosmic Omen, Balm
+  if(druidRow) info.appendChild(druidRow);
+  var bardRow = bardResourceRow(c, r); // Bardic Inspiration's list and tale, Spirit Session
+  if(bardRow) info.appendChild(bardRow);
+  var sorcRow = sorcererResourceRow(c, r); // Sorcery points' list, the surge table, the phases
+  if(sorcRow) info.appendChild(sorcRow);
+  var lockRow = warlockResourceRow(c, r); // Patron buttons and pickers
+  if(lockRow) info.appendChild(lockRow);
+  var wizRow = wizardResourceRow(c, r); // The schools' buttons and pickers
+  if(wizRow) info.appendChild(wizRow);
+  // Tinker's Magic (2024 artificer): pick an everyday item to make.
+  if(r.key==="Artificer:tinkers_magic" && remaining > 0){
+    var tinker = document.createElement("div");
+    tinker.className = "res-pick";
+    tinker.appendChild(themedPicker({key: "tinker", groups: {"": TINKER_ITEMS.map(function(t){ return t.name; })}, value: "", search: true,
+      placeholder: "Make an item...", ariaLabel: "Tinker's Magic: item to make",
+      onPick: function(v){
+        var made = makeTinkerItem(c, v);
+        if(!made) return;
+        logRoll("Tinker's Magic", "Made " + made.name + ". It vanishes on your next long rest.");
+        showActionToast(made.name + " added to your inventory until your next long rest.");
+        save(); renderAll();
+      }}));
+    info.appendChild(tinker);
+  }
+  // Defensive Field (Armorer, Guardian): temporary HP equal to the artificer level.
+  if(r.key==="Artificer:defensive_field"){
+    var field = artificerLevel(c);
+    var fieldRow = document.createElement("div");
+    fieldRow.className = "inv-roll-actions fx-rolls";
+    var fieldBtn = document.createElement("button");
+    fieldBtn.type = "button"; fieldBtn.className = "btn small inv-roll-btn res-roll-btn";
+    fieldBtn.textContent = "Temp HP " + field;
+    fieldBtn.disabled = remaining<=0;
+    fieldBtn.title = remaining<=0 ? "None left until a long rest" : "Bonus action, while you wear the armor";
+    fieldBtn.addEventListener("click", function(){
+      if(field > (Number(c.hp.temp)||0)) c.hp.temp = field;
+      logRoll("Defensive Field", "Temporary hit points: " + c.hp.temp + ".");
+      setUsed(r.used+1);
+    });
+    fieldRow.appendChild(fieldBtn);
+    info.appendChild(fieldRow);
+  }
+  // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
+  // plus the proficiency bonus of healing.
+  var qh = r.key==="Monk:ki" && quickenedHealing(c);
+  if(qh){
+    var heals = document.createElement("div");
+    heals.className = "inv-roll-actions fx-rolls";
+    var healBtn = document.createElement("button");
+    healBtn.type = "button"; healBtn.className = "btn small inv-roll-btn res-roll-btn";
+    healBtn.innerHTML = makeDiceSvg();
+    healBtn.appendChild(document.createTextNode("Quickened Healing · " + qh.cost + " ki"));
+    var atFull = (Number(c.hp.current)||0) >= maxHp(c);
+    healBtn.disabled = remaining < qh.cost || atFull;
+    healBtn.title = remaining < qh.cost ? "Not enough ki left" : atFull ? "You're at full hit points"
+      : "Action: spend " + qh.cost + " ki and heal 1d" + qh.die + " + " + qh.bonus;
+    healBtn.addEventListener("click", function(){
+      var roll = Math.floor(Math.random()*qh.die)+1, healed = roll + qh.bonus;
+      c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, maxHp(c));
+      c.resourcesUsed[r.key] = r.used + qh.cost;
+      logRoll("Quickened Healing (1d" + qh.die + fmtMod(qh.bonus) + ")", roll + " " + fmtMod(qh.bonus) + " = " + healed + " HP healed (" + qh.cost + " ki)");
+      save(); renderAll();
+    });
+    heals.appendChild(healBtn);
+    info.appendChild(heals);
+  }
+  // Harness Divine Power (Tasha's, cleric 2, paladin 3): a Channel
+  // Divinity for a spent spell slot. Buttons only while one is spent.
+  var hdpClass = /:harness_divine_power$/.test(r.key) && r.key.split(":")[0];
+  var hdp = hdpClass && harnessDivinePower(c, hdpClass);
+  if(hdp && hdp.levels.length){
+    var slotsRow = document.createElement("div");
+    slotsRow.className = "inv-roll-actions fx-rolls";
+    var why = !hdp.usesLeft ? "Used up until a long rest" : !hdp.channelLeft ? "No Channel Divinity left" : "";
+    hdp.levels.forEach(function(l){
+      var slotBtn = document.createElement("button");
+      slotBtn.type = "button"; slotBtn.className = "btn small inv-roll-btn res-roll-btn";
+      slotBtn.textContent = "Get back a " + ordinal(l) + "-level slot";
+      slotBtn.disabled = !!why;
+      slotBtn.title = why || "Bonus action: spend a Channel Divinity to get back one spent " + ordinal(l) + "-level spell slot";
+      slotBtn.addEventListener("click", function(){
+        if(!useHarnessDivinePower(c, hdpClass, l)) return;
+        logRoll("Harness Divine Power", "Got back a " + ordinal(l) + "-level spell slot (1 Channel Divinity)");
+        save(); renderAll();
+      });
+      slotsRow.appendChild(slotBtn);
+    });
+    info.appendChild(slotsRow);
+  }
+  // Wild Companion (Tasha's, druid 2): a use of Wild Shape casts Find
+  // Familiar, a fey that lasts half the druid level in hours.
+  var wildHours = r.key==="Druid:wild_shape" && wildCompanionHours(c);
+  if(wildHours){
+    var wildRow = document.createElement("div");
+    wildRow.className = "inv-roll-actions fx-rolls";
+    var wildBtn = document.createElement("button");
+    wildBtn.type = "button"; wildBtn.className = "btn small inv-roll-btn res-roll-btn";
+    wildBtn.textContent = "Wild Companion · 1 use";
+    var lasts = wildHours==="long" ? "until your next long rest" : wildHours + (wildHours===1 ? " hour" : " hours");
+    wildBtn.disabled = remaining<=0;
+    wildBtn.title = remaining<=0 ? "No Wild Shape uses left" : (wildHours==="long" ? "Magic action" : "Action") + ": spend a use of Wild Shape to cast Find Familiar. The familiar is a fey and lasts " + lasts + ".";
+    wildBtn.addEventListener("click", function(){
+      summonWildCompanion(c);
+      logRoll("Wild Companion", "Cast Find Familiar with a use of Wild Shape. The fey familiar lasts " + lasts + ".");
+      var form = c.companions && c.companions.familiar && c.companions.familiar.choice;
+      showActionToast(form ? "Your " + form.toLowerCase() + " appears. It lasts " + lasts + "." : "Your familiar appears. Choose its form on the Companions tab.");
+      if(r.max!==Infinity) setUsed(r.used+1); else { save(); renderAll(); }
+    });
+    wildRow.appendChild(wildBtn);
+    info.appendChild(wildRow);
+  }
+  row.appendChild(info);
+
+  // Unlimited (Archdruid's Wild Shape): nothing to count or spend, so no
+  // controls (the pill by the name says it).
+  if(r.max===Infinity){
+    return row;
+  }
+  var ctrl = document.createElement("div");
+  ctrl.className = "res-ctrl";
+  row.appendChild(ctrl);
+  if(!resourceIsNumber(r)){
+    var pips = document.createElement("div");
+    pips.className = "res-pips";
+    pips.setAttribute("aria-label", remaining+" of "+r.max+" left");
+    for(var i=0;i<r.max;i++){
+      var pip = document.createElement("span");
+      pip.className = "res-pip" + (i < remaining ? " full" : "");
+      pips.appendChild(pip);
+    }
+    ctrl.appendChild(pips);
+  } else {
+    var count = document.createElement("div");
+    count.className = "res-count";
+    count.innerHTML = "<b>"+remaining+"</b> / "+r.max;
+    ctrl.appendChild(count);
+  }
+
+  var stepper = document.createElement("div");
+  stepper.className = "stat-stepper";
+  var useBtn = document.createElement("button");
+  useBtn.type = "button";
+  useBtn.className = "stat-arrow-btn";
+  useBtn.title = "Use one";
+  useBtn.setAttribute("aria-label", "Use one "+r.name);
+  useBtn.innerHTML = makeStatArrowSvg("down");
+  useBtn.disabled = remaining<=0;
+  useBtn.addEventListener("click", function(){ setUsed(r.used+1); });
+  var regainBtn = document.createElement("button");
+  regainBtn.type = "button";
+  regainBtn.className = "stat-arrow-btn";
+  regainBtn.title = "Regain one";
+  regainBtn.setAttribute("aria-label", "Regain one "+r.name);
+  regainBtn.innerHTML = makeStatArrowSvg("up");
+  regainBtn.disabled = r.used<=0;
+  regainBtn.addEventListener("click", function(){ setUsed(r.used-1); });
+  stepper.appendChild(useBtn);
+  stepper.appendChild(regainBtn);
+  ctrl.appendChild(stepper);
+
+  function setUsed(n){
+    n = clamp(n, 0, r.max);
+    var before = r.used;
+    // Using Wild Shape again ends Symbiotic Entity.
+    if(r.key==="Druid:wild_shape" && n > r.used) endEffect(c, "symbiotic_entity");
+    if(n) c.resourcesUsed[r.key] = n; else delete c.resourcesUsed[r.key];
+    save(); renderAll();
+    if(n === before) return;
+    var drawn = resourceRow(r.key);
+    if(!drawn) return;
+    var pips = drawn.querySelector(".res-pips");
+    // Spent: the last full pip empties. Got back: the first empty one fills.
+    if(pips) pipChanged(pips, n > before ? r.max - n : r.max - before, n > before);
+    else {
+      // A point pool: the number pops and the amount floats up from it.
+      var num = drawn.querySelector(".res-count b");
+      flash(num, "fx-bump");
+      floatDelta(num, before - n, r.key);
+    }
+  }
+  return row;
 }
 /* Soul trinkets held, with a button for one gained (a creature dies
    within 30 feet, a reaction) and one used up. */

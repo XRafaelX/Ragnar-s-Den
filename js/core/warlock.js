@@ -130,10 +130,13 @@ export function vesselHitDieBonus(c){
 }
 
 /* ---- Limited Wish and Necrotic Husk: back after 1d4 long rests ---- */
-/* Spends it and rolls how many long rests it takes. The roll, or 0. */
-export function spendForRests(c, key){
+/* Spends it and rolls how many long rests it takes (`qty` d4s, one by
+   default: a cleric's Wish takes 2d4). The roll, or 0. While it waits, a
+   long rest doesn't bring it back (restoreResources). */
+export function spendForRests(c, key, qty){
   if(!spendResource(c, key, 1)) return 0;
-  var n = Math.floor(Math.random() * 4) + 1;
+  var n = 0;
+  for(var i = 0; i < (qty || 1); i++) n += Math.floor(Math.random() * 4) + 1;
   c.restWait = c.restWait || {};
   c.restWait[key] = n;
   return n;

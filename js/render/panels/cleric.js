@@ -1,5 +1,6 @@
 import { save } from "../../core/state.js";
-import { blessItem, forgeItems } from "../../core/helpers.js";
+import { blessItem, forgeItems, interventionSpells, interventionWish } from "../../core/helpers.js";
+import { SPELL_DATA, spellLevelLabel } from "../../data/spells.js";
 import { renderAll } from "../sheet.js";
 import { makeDiceSvg } from "../../ui/svg-icons.js";
 import { themedPicker } from "../../ui/themed-picker.js";
@@ -10,6 +11,8 @@ import { showActionToast } from "../../ui/toast.js";
    Divine Intervention's call and Blessing of the Forge's choice, on their
    rows on Vitals. */
 export function interventionRow(c, r){
+  var cl = (c.classes||[]).find(function(x){ return x.name==="Cleric"; });
+  if(cl && cl.edition==="2024") return interventionRow2024(c, r, Number(cl.level)||1);
   var row = document.createElement("div");
   row.className = "inv-roll-actions fx-rolls";
   var lv = (c.classes||[]).find(function(x){ return x.name==="Cleric"; }).level;
@@ -54,6 +57,44 @@ export function forgePicker(c, r){
       blessItem(c, item);
       c.resourcesUsed[r.key] = r.used + 1;
       logRoll("Blessing of the Forge", (item.name || "Item") + " is a +1 magic item until your next long rest ends.");
+      save(); renderAll();
+    }}));
+  return wrap;
+}
+
+/* The 2024 cleric's Divine Intervention (p. 71): it always works. Pick the
+   cleric spell to cast without a slot, or Wish from level 20 (Greater
+   Divine Intervention), which keeps it away for 2d4 long rests. */
+function interventionRow2024(c, r, lv){
+  var wait = (c.restWait||{})[r.key];
+  if(wait || r.used >= r.max){
+    var row = document.createElement("div");
+    row.className = "inv-roll-actions fx-rolls";
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn small inv-roll-btn res-roll-btn"; b.disabled = true;
+    b.textContent = wait ? "Back in " + wait + (wait===1 ? " long rest" : " long rests") : "Used until your next long rest";
+    row.appendChild(b);
+    return row;
+  }
+  var wrap = document.createElement("div");
+  wrap.className = "res-pick";
+  var groups = {};
+  if(lv >= 20) groups["Greater Divine Intervention"] = [{value: "Wish", label: "Wish (then 2d4 long rests before the next use)"}];
+  var spells = interventionSpells();
+  Object.keys(spells).forEach(function(k){ groups[spellLevelLabel(Number(k))] = spells[k]; });
+  wrap.appendChild(themedPicker({key: "cleric:intervention", groups: groups, value: "", placeholder: "Cast a spell...", ariaLabel: "Cast a cleric spell with Divine Intervention", search: true, sheet: true,
+    detailFor: function(n){ return n==="Wish" ? "Duplicate any spell of level 8 or lower, or one of Wish's other effects" : (SPELL_DATA[n] || {}).summary || ""; },
+    onPick: function(n){
+      if(n==="Wish"){
+        var rests = interventionWish(c);
+        if(!rests) return;
+        logRoll("Divine Intervention", "You cast Wish. Divine Intervention comes back after " + rests + (rests===1 ? " long rest." : " long rests."));
+        showActionToast("Wish cast. Divine Intervention comes back after " + rests + (rests===1 ? " long rest." : " long rests."));
+      } else {
+        c.resourcesUsed[r.key] = r.used + 1;
+        logRoll("Divine Intervention", "You cast " + n + " without a spell slot or material components.");
+        showActionToast("Divine Intervention: " + n + " cast without a spell slot.");
+      }
       save(); renderAll();
     }}));
   return wrap;

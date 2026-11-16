@@ -15,6 +15,8 @@ import { divineSparkDice } from "../data/cleric-2024.js";
 import { abilityScore } from "./ability-scores.js";
 import { resourceLeft, effectOn } from "./effects.js";
 import { SKILLS } from "../data/abilities-skills.js";
+import { SPELL_DATA } from "../data/spells.js";
+import { spendForRests } from "./warlock.js";
 
 var CHANNEL = "Cleric:channel_divinity";
 function cleric(c){
@@ -98,6 +100,25 @@ export function forgeOnLongRest(c){
   delete c.forgeBlessed;
 }
 
+/* ---- Divine Intervention (2024 cleric 10, p. 71) ----
+   Any cleric spell of level 5 or lower that doesn't take a reaction, cast
+   without a slot. The names, by level, from the spells the character sees
+   (useSpellsOf has run). */
+export function interventionSpells(){
+  var out = {};
+  Object.keys(SPELL_DATA).sort().forEach(function(n){
+    var sp = SPELL_DATA[n];
+    if(!(sp.level >= 1 && sp.level <= 5) || (sp.classes||[]).indexOf("Cleric")===-1 || /reaction/i.test(sp.castingTime||"")) return;
+    (out[sp.level] = out[sp.level] || []).push(n);
+  });
+  return out;
+}
+/* Greater Divine Intervention (2024 cleric 20): Wish, then Divine
+   Intervention waits 2d4 long rests. The roll, or 0. */
+export function interventionWish(c){
+  return spendForRests(c, "Cleric:divine_intervention", 2);
+}
+
 /* ---- Divine Intervention (cleric 10) ----
    A failed call can be tried again after a long rest, a success after 7
    days (the row's own counter, reset by hand). */
@@ -136,10 +157,11 @@ function clericChannels2024(c, cl, lv, act, dc){
   if(sub==="Trickery Domain (2024)") out.push(act("Invoke Duplicity", "A bonus action: an illusion of you within 30 feet for 1 minute. Cast spells from its space, and have advantage on attacks against a creature when you and it are both within 5 feet of it.", {effect: "invoke_duplicity"}));
   if(sub==="War Domain (2024)"){
     out.push(act("Guided Strike", "+10 to your own missed attack roll, or an ally's within 30 feet as a reaction.", {reason: "Offered after an attack roll"}));
-    if(lv >= 6) out.push(act("War God's Blessing", "Cast Shield of Faith or Spiritual Weapon without a spell slot. It needs no concentration and lasts 1 minute.", {log: "Shield of Faith or Spiritual Weapon, no slot or concentration, for 1 minute."}));
+    if(lv >= 6) out.push(act("War God's Blessing", "Cast Shield of Faith or Spiritual Weapon without a spell slot. It needs no concentration and lasts 1 minute.", {when: "Bonus action", log: "Shield of Faith or Spiritual Weapon, no slot or concentration, for 1 minute."}));
   }
   return out;
 }
+var AGES = "An action: choose one skill or tool you aren't proficient with. You're proficient with it for 10 minutes.";
 /* An older domain's own Channel Divinity options. */
 function domainChannels(c, cl, lv, act, dc, wis, turned, saveLog){
   var out = [];
@@ -155,9 +177,9 @@ function domainChannels(c, cl, lv, act, dc, wis, turned, saveLog){
   if(sub==="Knowledge Domain"){
     SKILLS.forEach(function(s){
       var known = c.skillProfs && c.skillProfs[s[0]] && c.skillProfs[s[0]].prof;
-      if(!known) out.push(act("ages-" + s[0], "An action: proficiency with " + s[0] + " for 10 minutes.", {name: s[0], group: "Knowledge of the Ages", effect: "knowledge_of_the_ages", ages: s[0]}));
+      if(!known) out.push(act("ages-" + s[0], "An action: proficiency with " + s[0] + " for 10 minutes.", {name: s[0], group: "Knowledge of the Ages", effect: "knowledge_of_the_ages", ages: s[0], groupDetail: AGES, groupPick: "Choose a skill or tool..."}));
     });
-    out.push(act("ages-tool", "An action: proficiency with one tool for 10 minutes.", {name: "A tool", group: "Knowledge of the Ages", log: "Proficient with that tool for 10 minutes."}));
+    out.push(act("ages-tool", "An action: proficiency with one tool for 10 minutes.", {name: "A tool", group: "Knowledge of the Ages", log: "Proficient with that tool for 10 minutes.", groupDetail: AGES, groupPick: "Choose a skill or tool..."}));
     if(at(6)) out.push(act("Read Thoughts", "An action: a creature you can see within 60 feet makes a WIS save (DC " + dc + "). On a failure you read its surface thoughts for 1 minute, and can end that to cast Suggestion on it, which it automatically fails.", {log: saveLog("WIS")}));
   }
   if(sub==="Tempest Domain") out.push(act("Destructive Wrath", "When you roll lightning or thunder damage: deal the maximum instead of rolling.", {log: "Use the maximum on that lightning or thunder damage."}));

@@ -243,6 +243,8 @@ export function restoreResources(c, restType){
   var restored = [];
   characterResources(c).forEach(function(r){
     if(r.reset==="manual") return;
+    // (Waiting out its long rests: a 2024 cleric's Divine Intervention after Wish.)
+    if(c.restWait && c.restWait[r.key]) return;
     if(restType==="short" && r.reset!=="short") return;
     if(r.used>0) restored.push(r.name);
     // Only some come back on a short rest (2024 Second Wind, Psionic Energy Dice).

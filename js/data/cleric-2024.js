@@ -60,11 +60,11 @@ export var CLERIC_2024 = {
     5: [{name:"Sear Undead", text:"When you use Turn Undead, you can roll a number of d8s equal to your Wisdom modifier (minimum 1). Each undead that fails the save takes that much radiant damage, which doesn't end the turn effect. The roll is offered with Turn Undead."}],
     7: [{name:"Blessed Strikes", text:"Choose one, on the Feature choices card.\nDivine Strike: " + STRIKES["Divine Strike"] + "\nPotent Spellcasting: " + STRIKES["Potent Spellcasting"],
       profs:{pick:[{kind:"choice", id:"blessedStrikes", noun:"option", count:1, options:Object.keys(STRIKES), details:STRIKES, label:"Choose your Blessed Strikes"}]}}],
-    10: [{name:"Divine Intervention", text:"As a Magic action, choose any cleric spell of level 5 or lower that doesn't need a reaction, and cast it without a spell slot or material components. Once per long rest (the row on Vitals)."}],
+    10: [{name:"Divine Intervention", text:"As a Magic action, choose any cleric spell of level 5 or lower that doesn't need a reaction, and cast it without a spell slot or material components. Once per long rest. Pick the spell on the Divine Intervention row on the Vitals tab."}],
     14: [{name:"Improved Blessed Strikes", remind:{choice:"blessedStrikes", by:{"Potent Spellcasting":{when:"always", line:"Damage with a cleric cantrip: give twice your WIS mod in temp HP within 60 ft"}}},
       text:"Your Blessed Strikes grow stronger. Divine Strike deals 2d8. Potent Spellcasting: when a cleric cantrip deals damage to a creature, you can give yourself or a creature within 60 feet temporary hit points equal to twice your Wisdom modifier."}],
     19: [{name:"Epic Boon", text:"You gain an Epic Boon feat or another feat you qualify for. Boon of Fate is recommended. Take it in place of raising your scores at this level-up."}],
-    20: [{name:"Greater Divine Intervention", text:"When you use Divine Intervention, you can choose Wish. If you do, you can't use Divine Intervention again until you finish 2d4 long rests."}]
+    20: [{name:"Greater Divine Intervention", text:"When you use Divine Intervention, you can choose Wish. If you do, you can't use Divine Intervention again until you finish 2d4 long rests. Wish is on the Divine Intervention row, which counts the long rests for you."}]
   },
   // The book's starting equipment: (A) or (B) 110 gp (p. 68).
   equipment: {

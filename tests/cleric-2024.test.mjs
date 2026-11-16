@@ -11,7 +11,7 @@ import { CLERIC_2024, CLERIC_2024_SUBCLASSES, divineSparkDice } from "../js/data
 import { SPELL_DATA_2024 } from "../js/data/spells-2024.js";
 import { setClassEdition } from "../js/core/class-edition.js";
 import { subclassesFor, computeSpellSlots, subclassLevelOf, choiceEffectsOf, classProficiencies } from "../js/core/class-features.js";
-import { casterDef, preparedMax, learnPlan } from "../js/core/spells-known.js";
+import { casterDef, preparedMax, learnPlan, spellCounts } from "../js/core/spells-known.js";
 import { skillCheck as computeSkill, skillRollMode } from "../js/core/checks.js";
 import { characterReminders } from "../js/core/reminders.js";
 import { clericHitDice, potentSpellcasting2024 } from "../js/core/cleric.js";
@@ -194,4 +194,49 @@ test("the kit and proficiencies are the book's (p. 68)", () => {
 test("the words stay friendly: no long dashes or semicolons", () => {
   const text = JSON.stringify([CLERIC_2024.level1, CLERIC_2024.features, CLERIC_2024.card, CLERIC_2024.which, CLERIC_2024_SUBCLASSES]);
   assert.ok(!/[–—;]/.test(text));
+});
+
+/* 2026-11-16: Thaumaturge's cantrip on the Spells tab's count, the 2024
+   Divine Intervention and Wish, and an older domain's early features at 3. */
+test("Thaumaturge raises the Spells tab's cantrip limit too", () => {
+  const count = (c) => spellCounts(c).find((r) => r.className === "Cleric").cantrips.max;
+  assert.equal(count(cleric(1, "", "2024", { [ORDER]: "Thaumaturge" })), 4);
+  assert.equal(count(cleric(1, "", "2024", { [ORDER]: "Protector" })), 3);
+  assert.equal(count(cleric(10, "", "2024", { [ORDER]: "Thaumaturge" })), 6);
+});
+
+test("Divine Intervention: cleric spells of level 5 or lower, no reactions", () => {
+  setSpellEdition("2024");
+  const all = Object.values(H.interventionSpells()).flat();
+  assert.ok(all.includes("Cure Wounds") && all.includes("Flame Strike") && all.includes("Raise Dead"));
+  assert.ok(!all.includes("Heal"), "level 6");
+  assert.ok(!all.includes("Sacred Flame"), "no cantrips");
+  assert.ok(all.every((n) => !/reaction/i.test(SPELL_DATA_2024[n] ? SPELL_DATA_2024[n].castingTime : "")));
+  setSpellEdition("2014");
+});
+
+test("Greater Divine Intervention: Wish keeps it away for 2d4 long rests", () => {
+  const c = cleric(20);
+  const key = "Cleric:divine_intervention";
+  const n = H.interventionWish(c);
+  assert.ok(n >= 2 && n <= 8);
+  assert.equal(c.restWait[key], n);
+  for(let i = 1; i < n; i++){
+    H.restoreResources(c, "long"); H.restWaitOnLongRest(c);
+    assert.equal(res(c, "Divine Intervention").used, 1, "still spent after " + i + " long rests");
+  }
+  H.restoreResources(c, "long"); H.restWaitOnLongRest(c);
+  assert.equal(res(c, "Divine Intervention").used, 0, "back after " + n);
+  // A plain use comes back on the next long rest.
+  c.resourcesUsed[key] = 1;
+  H.restoreResources(c, "long");
+  assert.equal(res(c, "Divine Intervention").used, 0);
+});
+
+test("an older domain's level 1 and 2 features come at level 3 on a 2024 cleric", () => {
+  const at3 = H.classFeaturesGainedAt(cleric(3, "Twilight Domain").classes[0], 3).map((f) => f.name);
+  ["Domain Spells", "Bonus Proficiencies", "Eyes of Night", "Vigilant Blessing", "Channel Divinity: Twilight Sanctuary"].forEach((n) => assert.ok(at3.includes(n), n));
+  const old = H.classFeatureList(cleric(3, "Twilight Domain", "").classes[0]).find((f) => f.name === "Eyes of Night");
+  assert.equal(old.level, 1, "the 2014 cleric still gets it at 1");
+  assert.ok(H.classFeatureList(cleric(17, "Twilight Domain").classes[0]).some((f) => f.name === "Twilight Shroud" && f.level === 17));
 });

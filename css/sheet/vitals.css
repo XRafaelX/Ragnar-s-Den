@@ -607,6 +607,52 @@
 }
 @media (prefers-reduced-motion: reduce){ .rm-row{transition:none;} }
 
+/* Channel Divinity's card (js/render/panels/channel-divinity.js): the uses,
+   then a tile per option with its colour as on the Remember card (amber
+   bonus actions, blue reactions, brass the rest), a tag saying when, two
+   lines of text and Use. A tap on the tile opens the whole text. */
+.cd-class{margin:14px 0 8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brass-bright);}
+.cd-card .cd-class:first-of-type{margin-top:0;}
+.cd-bonus{--cd-hue:#f2b544;}
+.cd-reaction{--cd-hue:#5fb4ee;}
+.cd-list{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.cd-tile{display:flex;align-items:center;gap:10px;padding:8px 6px 8px 12px;border-radius:8px;cursor:pointer;
+  background:var(--parchment-dim);border:1px solid transparent;box-shadow:inset 3px 0 0 var(--cd-hue, var(--brass));
+  transition:border-color .15s, background .15s;}
+.cd-tile:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.cd-tile.on{border-color:color-mix(in srgb, #6cc28a 45%, transparent);}
+.cd-text{flex:1;min-width:0;}
+.cd-name{display:flex;align-items:center;gap:8px;min-width:0;}
+.cd-label{font-size:13.5px;font-weight:600;line-height:1.35;color:var(--text-on-parch);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cd-when{flex:none;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:8px;white-space:nowrap;
+  color:color-mix(in srgb, var(--cd-hue, var(--brass)) 80%, white);background:color-mix(in srgb, var(--cd-hue, var(--brass)) 16%, transparent);}
+.cd-line{margin-top:2px;font-size:12.5px;line-height:1.45;color:var(--text-on-parch-dim);
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;}
+.cd-act{flex:none;display:flex;align-items:center;justify-content:flex-end;}
+.cd-act.res-pick{margin-top:0;}
+.cd-use{white-space:nowrap;}
+.cd-on{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 9px;border-radius:999px;
+  color:#8fd9a8;background:color-mix(in srgb, #6cc28a 18%, transparent);border:1px solid color-mix(in srgb, #6cc28a 45%, transparent);}
+.cd-reason{max-width:118px;font-size:11.5px;line-height:1.3;text-align:right;color:var(--text-on-parch-dim);}
+.cd-tile .ff-more{flex:none;}
+@media (hover:hover){
+  .cd-tile:hover{border-color:color-mix(in srgb, var(--cd-hue, var(--brass)) 45%, transparent);background:color-mix(in srgb, var(--cd-hue, var(--brass)) 7%, var(--parchment-dim));}
+  .cd-tile:hover .ff-more{color:var(--cd-hue, var(--brass-bright));transform:translateX(2px);}
+}
+@media (prefers-reduced-motion: reduce){ .cd-tile{transition:none;} }
+/* A group's picker (Knowledge of the Ages) goes under the text on a phone. */
+@media (max-width:560px){
+  .cd-tile.cd-wide{flex-wrap:wrap;}
+  .cd-tile.cd-wide .cd-text{flex-basis:calc(100% - 40px);}
+  .cd-tile.cd-wide .cd-act{order:3;flex-basis:100%;justify-content:flex-start;}
+}
+/* Its bottom sheet: the tag, the whole text, the cost and Use. */
+.cd-sheet-tags{margin:2px 0 10px;}
+.cd-sheet-text{margin:0 0 8px;font-size:14px;line-height:1.55;color:var(--text-on-parch);}
+.cd-sheet-cost{margin:0;font-size:12.5px;color:var(--text-on-parch-dim);}
+.cd-sheet-act{margin-top:14px;justify-content:flex-start;}
+.cd-sheet-act .cd-reason{max-width:none;text-align:left;}
+
 /* The 2024 druid's Known Forms on the Wild Shape row (js/render/panels/druid.js). */
 .ws-known{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
 .ws-known-head{font-size:12px;font-weight:600;color:var(--text-on-parch-dim);}

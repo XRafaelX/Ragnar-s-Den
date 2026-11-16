@@ -230,8 +230,7 @@ export function learnPlan(c, entry, isNewClass){
   // Cantrips (every caster), less any learned for free.
   var auto = (lv===firstCastingLevel(def) ? def.autoCantrips || [] : []).filter(fresh);
   autoKeys = auto.map(spellKey);
-  // (A choice can add a cantrip: the 2024 cleric's Thaumaturge.)
-  var bonusCantrips = choiceEffectsOf(entry).reduce(function(a, e){ return a + (e.cantrips || 0); }, 0);
+  var bonusCantrips = bonusCantripsOf(entry);
   var cantripTable = bonusCantrips ? def.cantrips.map(function(n, i){ return i ? n + bonusCantrips : 0; }) : def.cantrips;
   var cantripNeed = Math.max(0, need(cantripTable, known.cantrips.length) - auto.length);
   if(cantripNeed){
@@ -379,11 +378,16 @@ function otherClassTag(own, tasha){
     return spellOnClassList(SPELL_DATA[n], own, tasha) ? "" : cls.slice(0, 2).join(" / ") + " spell";
   };
 }
+/* Extra cantrips a class entry's choices give on top of its table (the
+   2024 cleric's Thaumaturge, the 2024 druid's Magician). */
+function bonusCantripsOf(entry){
+  return choiceEffectsOf(entry).reduce(function(a, e){ return a + (e.cantrips || 0); }, 0);
+}
 /* `prepares`: how many spells a preparing class prepares a day at `lv` (0 otherwise). */
 function summaryText(entry, def, known, lv, prepares){
   var parts = [];
   if(def.spells && def.spells[lv]) parts.push(def.spells[lv] + " spells");
-  if(def.cantrips[lv]) parts.push(def.cantrips[lv] + " cantrips");
+  if(def.cantrips[lv]) parts.push((def.cantrips[lv] + bonusCantripsOf(entry)) + " cantrips");
   if(!parts.length && !prepares) return "";
   var article = /^[AEIOU]/.test(entry.name) ? "An " : "A ";
   var who = def.schools ? entry.subclass : entry.name.toLowerCase();
@@ -565,7 +569,7 @@ export function spellCounts(c){
     var known = classKnownSpells(c, cl.name);
     var row = {className: cl.subclass && SUBCLASS_CASTERS[cl.name + ":" + cl.subclass] ? cl.subclass : cl.name, spells: null, cantrips: null, prepared: null};
     if(known.certain){
-      if(def.cantrips[lv]) row.cantrips = {have: known.cantrips.length, max: def.cantrips[lv]};
+      if(def.cantrips[lv]) row.cantrips = {have: known.cantrips.length, max: def.cantrips[lv] + bonusCantripsOf(cl)};
       if(def.spells && def.spells[lv]) row.spells = {have: known.spells.length, max: def.spells[lv]};
     }
     var max = preparedMax(c, cl);

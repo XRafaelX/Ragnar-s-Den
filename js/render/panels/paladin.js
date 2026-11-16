@@ -1,15 +1,15 @@
 import { save } from "../../core/state.js";
-import { isPaladin2024, smiteKnown, freeSmiteLeft, smiteReady, radiantStrikesName, smiteOfProtection, spendResource, classLevelOf, RESTORING_TOUCH, clamp, maxHp, ordinal, smiteDice, smiteSlots, spendSpellSlot, inspiringSmite, spendChannel, hasImprovedSmite, channelActions, clericChannels, channelProblem, useChannelAction, resourceLeft, spendLayOnHands, removeCondition, activeConditions } from "../../core/helpers.js";
+import { isPaladin2024, smiteKnown, freeSmiteLeft, smiteReady, radiantStrikesName, smiteOfProtection, spendResource, classLevelOf, RESTORING_TOUCH, clamp, maxHp, ordinal, smiteDice, smiteSlots, spendSpellSlot, inspiringSmite, spendChannel, hasImprovedSmite, resourceLeft, spendLayOnHands, removeCondition, activeConditions } from "../../core/helpers.js";
 import { renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeDicesSvg } from "../../ui/svg-icons.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
-import { themedPicker } from "../../ui/themed-picker.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 
 /* ---------------- Paladin ----------------
-   Divine Smite's sheet (from a melee weapon's card, or a natural 20), the
-   Channel Divinity list and Lay on Hands (Vitals). */
+   Divine Smite's sheet (from a melee weapon's card, or a natural 20) and
+   Lay on Hands (Vitals). Channel Divinity has its own card
+   (js/render/panels/channel-divinity.js). */
 export function sheetTop(body, title, close){
   var header = document.createElement("div");
   header.className = "bs-header";
@@ -134,41 +134,6 @@ export function smiteButtons(c, name, improved){
     out.push(i);
   }
   return out;
-}
-
-/* ---- Channel Divinity ---- */
-export function channelPicker(c, className){
-  var actions = className==="Cleric" ? clericChannels(c) : channelActions(c), groups = {"": []};
-  actions.forEach(function(a){
-    var g = a.group || "";
-    if(!groups[g]) groups[g] = [];
-    groups[g].push({value: a.id, label: a.name});
-  });
-  function find(id){ return actions.find(function(a){ return a.id===id; }); }
-  var wrap = document.createElement("div");
-  wrap.className = "res-pick";
-  wrap.appendChild(themedPicker({key: "channel:" + className, groups: groups, value: "", placeholder: "Use Channel Divinity on...", ariaLabel: "Use Channel Divinity on", sheet: true,
-    reasonFor: function(id){ return channelProblem(c, find(id)); },
-    detailFor: function(id){ return find(id).detail; },
-    onPick: function(id){
-      var a = find(id);
-      if(!useChannelAction(c, a)) return;
-      if(a.log!=="") logRoll("Channel Divinity: " + (a.group || a.name), a.log || "Used.");
-      save(); renderAll();
-      if(a.roll) performRoll(a.roll.die, a.roll.qty, a.roll.bonus, "none", a.roll.label, a.healSelf ? function(r){ return r ? healYourself(c, r.total) : null; } : null);
-    }}));
-  return wrap;
-}
-/* Turn the Tide can include you, at half your hit points or fewer. */
-function healYourself(c, n){
-  var hp = Number(c.hp.current)||0, top = maxHp(c);
-  if(hp <= 0 || 2 * hp > top) return null;
-  return {lead: "You're at half your hit points or fewer:", options: [{label: "Heal yourself " + n, title: "You can be one of the creatures it heals",
-    use: function(){
-      c.hp.current = clamp(hp + n, 0, top);
-      save(); renderSidebar(); renderAll();
-      return {silent: true};
-    }}]};
 }
 
 /* ---- Lay on Hands ---- */
