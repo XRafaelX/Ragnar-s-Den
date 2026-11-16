@@ -404,6 +404,11 @@ export function featPicksProblem(def, picks, ctx){
     // A spell being learned as a class spell in the same level-up.
     var clash = ctx && ctx.spellTaken && spells.find(function(x){ return ctx.spellTaken(x); });
     if(clash) return clash+" is already one of the spells you're learning this level. Pick another for "+def.name+", or go back and learn a different spell.";
+    // A cantrip the character already has gives nothing twice (a level 1+
+    // spell is allowed: the feat adds a free cast of it).
+    var heldWhy = function(x){ var h = ctx && ctx.spellHeld ? ctx.spellHeld(x) : ""; return h && h!=="from "+def.name ? h : ""; };
+    var twice = sp.level===0 && spells.find(heldWhy);
+    if(twice) return "You already have "+twice+" ("+heldWhy(twice)+"). Pick another cantrip for "+def.name+".";
   }
   if(def.optionPicks){
     var op = def.optionPicks, set = optionSetDef(op.set), choices = featOptionChoices(def);

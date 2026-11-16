@@ -286,6 +286,12 @@ export function spellSection(key, label, groups, data, onAdd, onCustomSaved, lis
 /* ---- Sheet spell picker (opened from a character's Spells tab) ---- */
 export function buildSpellSections(c){
   function onAdd(name, d){ return addCatalogSpell(c, name, d); }
+  // A spell the character has already, dimmed with where it's from.
+  function rowHeld(name){
+    if(hasSpell(c, name)) return "Known";
+    var held = spellHeldBy(c, name);
+    return held ? held.charAt(0).toUpperCase() + held.slice(1) : "";
+  }
   function onCustomSaved(saved){
     // saved is the registry entry; add a linked copy to this character
     if(!hasSpell(c, saved.name)){
@@ -329,6 +335,7 @@ export function buildSpellSections(c){
   });
   // "All spells" tab always includes the homebrew group
   sections.push(spellSection("all", "All spells", buildSpellGroups(), SPELL_DATA, onAdd, onCustomSaved));
+  sections.forEach(function(sec){ sec.rowHeld = rowHeld; });
   return sections;
 }
 

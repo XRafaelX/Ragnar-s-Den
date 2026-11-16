@@ -485,10 +485,17 @@ function renderSpellListFeat(def, picks, ctx, onChange, box){
   return box;
 }
 
-/* The line under a feat's spell the character already has. */
+/* The line under a feat's spell the character already has: what the feat
+   still adds (checked against the books on 5etools' data 2026-11-16).
+   Ritual Caster gives no free cast: the 2014 feat writes the spell in a
+   ritual book (use "ritual"), the 2024 one keeps it prepared with Quick
+   Ritual (use "prepared"). The others add one cast without a slot. */
 function heldNote(def, name, held, use){
   var n = ce("p", "fp-spell-note fp-spell-held");
-  n.textContent = "You already have " + name + " (" + held + "). " + def.name + " adds one free cast of it per " + (use==="short" ? "short or long" : "long") + " rest" +
+  var lead = "You already have " + name + " (" + held + "). ";
+  if(use==="ritual") n.textContent = lead + def.name + " writes it in your ritual book, so you can cast it as a ritual from the book even if your class can't.";
+  else if(use==="prepared") n.textContent = lead + def.name + " keeps it always prepared, and once per long rest Quick Ritual lets you cast it at its normal casting time without a spell slot.";
+  else n.textContent = lead + def.name + " adds one free cast of it per " + (use==="short" ? "short or long" : "long") + " rest" +
     (held==="known" ? ", and it stops counting against the spells you know, so you can learn another in its place at your next level-up." : ".");
   return n;
 }

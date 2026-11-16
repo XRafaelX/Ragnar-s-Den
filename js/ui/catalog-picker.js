@@ -143,6 +143,17 @@ function renderRow(section, name, d){
   nameEl.className = "catalog-row-name";
   nameEl.textContent = name;
   left.appendChild(nameEl);
+  // Something the character already has (a spell on the sheet, or from a
+  // feat): dimmed with a short tag. A tap still only explains, via onAdd.
+  function markHeld(){
+    var held = section.rowHeld ? section.rowHeld(name, d) : "";
+    var tag = nameEl.querySelector(".catalog-held-tag");
+    row.classList.toggle("is-held", !!held);
+    if(!held){ if(tag) tag.remove(); return; }
+    if(!tag){ tag = document.createElement("span"); tag.className = "catalog-held-tag"; nameEl.appendChild(tag); }
+    tag.textContent = held;
+  }
+  markHeld();
   var sub = section.renderSub ? section.renderSub(name, d) : "";
   if(sub){
     var subEl = document.createElement("div");
@@ -230,6 +241,7 @@ function renderRow(section, name, d){
   row.addEventListener("click", function(){
     var ok = section.onAdd(name, d);
     if(ok===false) return;
+    markHeld(); // (now on the sheet)
     // Brief "Added" badge after the name. A separate element (rather
     // than editing the name text) so quick repeat taps can't leave it
     // stuck on the name.

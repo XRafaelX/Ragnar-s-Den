@@ -7,7 +7,7 @@ import { FIGHTING_STYLES } from "../data/classes.js";
 import { escapeHtml, ce, autoEquipLoadout, isProficientWithWeapon } from "../core/helpers.js";
 import { WEAPON_DATA, WEAPON_GROUPS, GUNSLINGER_FIREARMS } from "../data/weapons.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
-import { wizardEdition, wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills, wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardKitContext, wizardTracksSupplies, wizardShowsPicks, wizardHiddenPickKinds, wizardKeptItems, wizardShowsGearGroup, wizardKitKeep } from "./wizard-core.js";
+import { wizardEdition, wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills, wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardKitContext, wizardFeatCantripOverlap, wizardTracksSupplies, wizardShowsPicks, wizardHiddenPickKinds, wizardKeptItems, wizardShowsGearGroup, wizardKitKeep } from "./wizard-core.js";
 import { labelWithout } from "../core/supplies.js";
 import { renderKitPicker, kitIntroHtml } from "../ui/background-gear.js";
 import { backgroundKit } from "../core/background-gear.js";
@@ -89,6 +89,12 @@ export function wizardStepChoices(container){
         renderWizard();
       }, wizardState.classId));
     });
+  });
+  // A cantrip a feat already took that the subclass gives too.
+  wizardFeatCantripOverlap().forEach(function(o){
+    var note = ce("p", "cf-feature-help wiz-feat-overlap");
+    note.textContent = o.from + " gives you " + o.name + ", which you already picked for " + o.feat + ". You can go back to the feat's step and pick another cantrip there.";
+    card.appendChild(note);
   });
   // What the level-1 features let you choose: a ranger's favored enemy
   // and terrain, Knowledge Domain's skills and languages, an Order or

@@ -348,6 +348,26 @@ export function wizardGrantedSpells(){
   return featureSpells(standIn).filter(function(fs){ return fs.kind!=="expanded"; })
     .map(function(fs){ return {name: catalogSpellName(fs.name), source: fs.source}; });
 }
+/* A cantrip a feat picked that the class or subclass, picked after the
+   feats, gives too (Magic Initiate's Light, then the Light Domain):
+   [{name, feat, from}]. The Class Features step says so; it isn't
+   blocked, since having it from two sources breaks no rule. */
+export function wizardFeatCantripOverlap(){
+  var w = wizardState;
+  if(!w || !w.classId) return [];
+  var raceFeat = isStepApplicable("feat") && wizardFeat(), bg = wizardBackgroundFeat(), picked = [];
+  if(raceFeat) ((w.raceChoices.featPicks||{}).spells||[]).forEach(function(n){ if(n) picked.push({name: n, feat: raceFeat.name}); });
+  if(bg && bg.def) ((wizardBackgroundFeatPicks()||{}).spells||[]).forEach(function(n){ if(n) picked.push({name: n, feat: bg.def.name}); });
+  var key = function(n){ return catalogSpellName((n||"").trim()).toLowerCase(); };
+  var granted = featureSpells({classes: [wizardClassEntry()], abilities: finalAbilities()}).filter(function(fs){ return fs.kind!=="expanded"; });
+  var out = [];
+  picked.forEach(function(p){
+    var d = SPELL_DATA[catalogSpellName(p.name)];
+    var g = d && d.level===0 && granted.find(function(fs){ return key(fs.name)===key(p.name); });
+    if(g) out.push({name: p.name, feat: p.feat, from: g.source});
+  });
+  return out;
+}
 /* Drops class picks the features now grant (the feat's spell was changed
    to one already picked). In place: the pick grids hold these arrays. */
 export function dropGrantedSpellPicks(){
@@ -707,10 +727,34 @@ export function wizardFeatContext(opts){
   var classStyle = styleCh && w.classChoices[styleCh.id];
   return {abilities: finalAbilities({withoutFeat:true}), skillProfs: profs, tasha: !!w.tashaOptional, pb: 2,
     languages: (RACE_LANGUAGES[w.race] || RACE_LANGUAGES_FALLBACK).fixed,
+    spellHeld: wizardFeatSpellHeld(!!(opts && opts.forBackgroundFeat)),
     styleReason: function(name){
       if(classStyle===name) return "known";
       return (FIGHTING_STYLES[name]||{}).optional && !w.tashaOptional && !wizardEdition() ? "Tasha's optional" : "";
     }};
+}
+/* For a creation feat's spell pickers: the spells the new character has
+   from somewhere else, its species' (a tiefling's Thaumaturgy, a High
+   Elf's picked cantrip) and its other feat's picks (a race's feat and a
+   background's or Origin feat). Returns held(name): "from <source>" or "".
+   (Class spells are picked after the feats, and leave the feats' out.)
+   forBackgroundFeat: the background's or Origin feat's pickers. */
+function wizardFeatSpellHeld(forBackgroundFeat){
+  var w = wizardState, raceFeat = isStepApplicable("feat") && wizardFeat(), bg = wizardBackgroundFeat();
+  var mine = forBackgroundFeat ? (bg && bg.def) : raceFeat;
+  var other = forBackgroundFeat ? (raceFeat ? {name: raceFeat.name, picks: w.raceChoices.featPicks || {}} : null)
+    : (bg && bg.def ? {name: bg.def.name, picks: wizardBackgroundFeatPicks() || {}} : null);
+  var held = {}, racePicks = w.raceChoices.profPicks || {};
+  Object.keys(racePicks).forEach(function(k){ held[k] = {slots: racePicks[k]}; });
+  var standIn = {classes: [], abilities: finalAbilities({withoutFeat:true}), race: w.race, racePicks: {profPicks: held}, feats: other ? [other] : []};
+  var list = featureSpells(standIn).filter(function(fs){ return fs.kind!=="expanded"; });
+  var key = function(n){ return catalogSpellName((n||"").trim()).toLowerCase(); };
+  return function(name){
+    var hit = list.find(function(fs){ return key(fs.name)===key(name); });
+    if(!hit) return "";
+    // (Two copies of a repeatable feat: the other one isn't this one.)
+    return other && mine && hit.source===other.name && other.name===mine.name ? "from your other " + hit.source : "from " + hit.source;
+  };
 }
 /* The feat the new character starts with besides a race's: the chosen
    background's, as {def, option} (with `choices` when the player picks
