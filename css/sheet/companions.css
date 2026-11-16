@@ -37,7 +37,7 @@
 .comp-tiles{display:grid;grid-template-columns:1fr 2fr 1.4fr;gap:10px;margin-bottom:14px;}
 .comp-tile{border:1px solid var(--rule);border-radius:8px;padding:10px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:rgba(255,255,255,.04);min-width:0;}
 .comp-tile .lbl,.comp-ability .lbl{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-on-parch-dim);}
-.comp-tile .val{font-family:var(--serif);font-size:24px;font-weight:700;line-height:1.1;}
+.comp-tile .val{font-family:var(--serif-num);font-size:24px;font-weight:700;line-height:1.1;}
 .comp-tile .val.long{font-family:inherit;font-size:13.5px;font-weight:600;line-height:1.35;}
 /* HP: the Vitals HP box's number and buttons (vitals.css), with its fill
    behind each tracker. */
@@ -75,7 +75,7 @@ button.comp-ability{cursor:pointer;transition:background .15s ease, border-color
 button.comp-ability:hover{background:color-mix(in srgb, var(--brass) 14%, transparent);border-color:color-mix(in srgb, var(--brass) 45%, transparent);}
 button.comp-ability:hover .mod{color:var(--brass-bright);}
 button.comp-ability:active{transform:scale(.96);}
-.comp-ability .mod{font-family:var(--serif);font-size:20px;line-height:1.1;}
+.comp-ability .mod{font-family:var(--serif-num);font-size:20px;line-height:1.1;}
 .comp-ability .score{font-size:11px;color:var(--text-on-parch-dim);}
 .comp-facts{display:grid;grid-template-columns:max-content 1fr;gap:5px 12px;margin:0 0 10px;font-size:12.5px;line-height:1.45;}
 .comp-facts dt{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-on-parch-dim);padding-top:2px;}

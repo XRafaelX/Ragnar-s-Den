@@ -141,7 +141,7 @@
 .catalog-dropdown-item.danger{color:var(--oxblood);}
 @media (hover:hover){ .catalog-dropdown-item.danger:hover{background:color-mix(in srgb, var(--oxblood) 12%, transparent);} }
 /* Armory homebrew preview: the damage dice / AC, big. */
-.arm-preview-damage{font-family:var(--serif);font-size:22px;margin:2px 0 12px;color:var(--text-on-parch);}
+.arm-preview-damage{font-family:var(--serif-num);font-size:22px;margin:2px 0 12px;color:var(--text-on-parch);}
 .arm-preview-damage span{font-size:14px;color:var(--text-on-parch-dim);font-family:var(--sans);}
 .catalog-empty{padding:24px;text-align:center;color:var(--text-on-parch-dim);font-size:13px;}
 

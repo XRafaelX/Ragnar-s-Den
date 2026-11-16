@@ -35,7 +35,7 @@
   padding:8px 12px;border:1px solid var(--rule);border-radius:8px;background:rgba(255,255,255,.04);
 }
 .slot-row-name{display:flex;flex-direction:column;line-height:1.15;}
-.slot-row-name b{font-family:var(--serif);font-weight:normal;font-size:16px;color:var(--text-on-parch);}
+.slot-row-name b{font-family:var(--serif-num);font-weight:normal;font-size:16px;color:var(--text-on-parch);}
 .slot-row-name span{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
 .pact-row{border-color:color-mix(in srgb, var(--brass) 55%, transparent);}
 .slot-pips{display:flex;flex-wrap:wrap;gap:8px;min-height:22px;align-items:center;}

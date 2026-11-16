@@ -188,7 +188,7 @@
 #home-center-icon{position:relative;z-index:1;display:flex;transition:transform .4s cubic-bezier(0.34,1.56,0.64,1);}
 #home-center:hover #home-center-icon{transform:rotate(-12deg) scale(1.06);}
 #home-center-icon svg{width:46px;height:46px;overflow:visible;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));animation:hc-float 4.2s ease-in-out infinite;}
-#home-center-num{font-family:var(--serif);font-size:17px;font-weight:700;fill:#4a2c05;}
+#home-center-num{font-family:var(--serif-num);font-size:17px;font-weight:700;fill:#4a2c05;}
 .hc-glint{animation:hc-glint 5.5s 1.6s ease-in-out infinite;}
 
 /* Rings around the die. The rotating parts are pseudo-elements, so the

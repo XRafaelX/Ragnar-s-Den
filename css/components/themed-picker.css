@@ -59,7 +59,7 @@
 
 /* Pill variant (ability-score pills): centered serif numbers. */
 .tp-pill .tp-trigger{width:100%;}
-.tp-pill .tp-option{text-align:center;font-family:var(--serif);font-size:14px;font-weight:700;padding:6px 4px;}
+.tp-pill .tp-option{text-align:center;font-family:var(--serif-num);font-size:14px;font-weight:700;padding:6px 4px;}
 
 /* A one-line description under an option (what a spell does). */
 .tp-option-detail{display:block;margin-top:2px;font-size:11.5px;line-height:1.35;color:var(--text-on-parch-dim);}

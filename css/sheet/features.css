@@ -11,7 +11,7 @@
   font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);margin-bottom:4px;
 }
 .passive-box .val{
-  font-family:var(--serif);font-size:22px;color:var(--brass-bright);font-weight:600;line-height:1.1;
+  font-family:var(--serif-num);font-size:22px;color:var(--brass-bright);font-weight:600;line-height:1.1;
 }
 .passive-box .sub{
   font-size:10.5px;color:var(--text-on-parch-dim);margin-top:3px;
@@ -100,7 +100,7 @@
 .inf-meter-top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 8px;}
 .inf-meter-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
 .inf-meter-val{font-size:12px;color:var(--text-on-parch-dim);white-space:nowrap;}
-.inf-meter-val b{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--brass-bright);}
+.inf-meter-val b{font-family:var(--serif-num);font-size:18px;font-weight:600;color:var(--brass-bright);}
 .inf-pips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px;}
 .inf-pip{width:12px;height:12px;border-radius:50%;border:1.5px solid color-mix(in srgb, var(--brass) 55%, transparent);}
 .inf-pip.full{background:var(--brass);border-color:var(--brass);box-shadow:0 0 6px color-mix(in srgb, var(--brass) 45%, transparent);}
@@ -137,7 +137,7 @@
    bottom sheet). */
 .inf-count-title{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
 .inf-count{text-transform:none;letter-spacing:0;font-size:12px;}
-.inf-count b{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--brass-bright);}
+.inf-count b{font-family:var(--serif-num);font-size:16px;font-weight:600;color:var(--brass-bright);}
 .inf-count.over, .inf-count.over b{color:var(--oxblood);}
 .inf-slots{display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:8px;}
 .inf-slot{
@@ -210,7 +210,7 @@
 .eli-blast{margin-top:12px;padding:10px 12px;border-radius:8px;border:1px solid color-mix(in srgb, var(--brass) 45%, transparent);
   background:color-mix(in srgb, var(--brass) 6%, transparent);}
 .eli-blast-name{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
-.eli-blast-line{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--brass-bright);margin-top:2px;}
+.eli-blast-line{font-family:var(--serif-num);font-size:16px;font-weight:600;color:var(--brass-bright);margin-top:2px;}
 .eli-blast-sub{font-size:11.5px;color:var(--text-on-parch-dim);margin-top:3px;line-height:1.45;}
 .eli-adopt{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:12px;padding:10px 12px;border-radius:8px;border:1px dashed var(--brass);}
 .eli-adopt .inf-hint{margin:0;}
@@ -234,7 +234,7 @@
 .cos-facts .inf-meter-sub,.cos-fact-sub{margin-top:auto;}
 @media (max-width:560px){ .cos-facts .inf-meter{grid-column:1 / -1;} }
 .cos-fact-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);}
-.cos-fact-val{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--brass-bright);}
+.cos-fact-val{font-family:var(--serif-num);font-size:18px;font-weight:600;color:var(--brass-bright);}
 .cos-fact-sub{font-size:11px;color:var(--text-on-parch-dim);}
 .cos-card .eli-entry .inf-goes{line-height:1.45;}
 /* Armor Modifications' two extra slots: only for Arcane Armor parts. */

@@ -264,7 +264,7 @@
 
 .enc-hp{padding:0 4px;}
 .enc-hp-now{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;}
-.enc-hp-cur{font-family:var(--serif);font-size:30px;line-height:1;color:var(--text-on-parch);}
+.enc-hp-cur{font-family:var(--serif-num);font-size:30px;line-height:1;color:var(--text-on-parch);}
 .enc-hp-max{font-size:13px;color:var(--text-on-parch-dim);}
 .enc-dead-tag{
   font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--oxblood);
@@ -355,7 +355,7 @@
 }
 .enc-init.rolling .die-bg{fill:url(#dieGradPrimary);stroke:var(--brass);stroke-width:3;stroke-linejoin:round;}
 .enc-init.rolling .die-facet{fill:none;stroke:rgba(196,167,247,.4);stroke-width:2;stroke-linejoin:round;}
-.enc-init.rolling .die-text{font-family:var(--serif);font-size:36px;font-weight:700;fill:var(--text-on-ink);text-anchor:middle;dominant-baseline:central;}
+.enc-init.rolling .die-text{font-family:var(--serif-num);font-size:36px;font-weight:700;fill:var(--text-on-ink);text-anchor:middle;dominant-baseline:central;}
 @keyframes encDieTumble{
   0%{transform:rotate(0) translateY(0) scale(.92);}
   25%{transform:rotate(95deg) translateY(-4px) scale(1.08);}

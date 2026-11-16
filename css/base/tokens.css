@@ -43,6 +43,10 @@
   --rule: color-mix(in srgb, var(--brass) 35%, transparent);
   --radius: 3px;
   --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, serif;
+  /* For numbers. Georgia's digits are old-style (3, 4, 5, 7 and 9 hang
+     below the line), which looks uneven in a score or a circle on iPhones
+     and Macs. Palatino has level digits and is on iOS, macOS and Windows. */
+  --serif-num: Palatino, 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   transition: --brass .45s ease, --brass-bright .45s ease, --brass-bright2 .45s ease,
               --brass-hover .45s ease, --brass-active .45s ease,

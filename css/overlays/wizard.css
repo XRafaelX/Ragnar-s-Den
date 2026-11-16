@@ -354,7 +354,7 @@ button.wiz-feat-group[aria-expanded="true"]::before{transform:rotate(90deg);}
 }
 .wiz-roll-total{
   margin-left:auto;min-width:44px;text-align:center;
-  font-family:var(--serif);font-size:24px;color:var(--text-on-parch-dim);opacity:.35;
+  font-family:var(--serif-num);font-size:24px;color:var(--text-on-parch-dim);opacity:.35;
 }
 .wiz-roll-total.show{opacity:1;color:var(--text-on-parch);animation:resultPop .45s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
 .wiz-roll-row.high{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 14%, transparent);box-shadow:0 0 12px color-mix(in srgb, var(--brass) 35%, transparent);}
@@ -396,7 +396,7 @@ button.wiz-feat-group[aria-expanded="true"]::before{transform:rotate(90deg);}
 .rt-ab:hover:not(:disabled){border-color:var(--brass);}
 .rt-ab:active:not(:disabled){transform:scale(.96);}
 .rt-ab-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-on-parch-dim);}
-.rt-ab-score{font-family:var(--serif);font-size:22px;line-height:1.2;}
+.rt-ab-score{font-family:var(--serif-num);font-size:22px;line-height:1.2;}
 .rt-ab-score s{font-size:14px;color:var(--text-on-parch-dim);text-decoration-thickness:1px;}
 .rt-ab-mod{font-size:11.5px;color:var(--text-on-parch-dim);}
 .rt-ab.on{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 22%, transparent);box-shadow:0 0 12px color-mix(in srgb, var(--brass) 30%, transparent);}
@@ -528,7 +528,7 @@ button.wiz-feat-group[aria-expanded="true"]::before{transform:rotate(90deg);}
 .bgi-tile.on .bgi-name{padding-right:30px;}
 .bgi-name em.bgi-star{border:0;padding:0;font-size:12px;letter-spacing:0;color:var(--brass-bright);}
 .bgi-name em{font-style:normal;font-size:9.5px;letter-spacing:.06em;padding:1px 6px;border-radius:999px;border:1px solid var(--brass);color:var(--brass-bright);}
-.bgi-score{display:flex;align-items:baseline;gap:6px;font-family:var(--serif);line-height:1.15;}
+.bgi-score{display:flex;align-items:baseline;gap:6px;font-family:var(--serif-num);line-height:1.15;}
 .bgi-score b{font-size:26px;font-weight:400;}
 .bgi-score s{font-size:15px;color:var(--text-on-parch-dim);text-decoration-thickness:1px;}
 .bgi-arrow{font-size:13px;color:var(--text-on-parch-dim);}

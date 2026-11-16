@@ -63,7 +63,7 @@
   background-position:right 6px center;
   background-size:11px;
   color:var(--text-on-parch);
-  font-family:var(--serif);
+  font-family:var(--serif-num);
   font-size:13px;
   font-weight:700;
   text-align:center;
@@ -88,7 +88,7 @@
   font-weight:400;
 }
 .ability-box .mod{
-  font-family:var(--serif);
+  font-family:var(--serif-num);
   font-size:24px;
   margin:2px 0;
   line-height:1.1;

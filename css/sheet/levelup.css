@@ -25,9 +25,18 @@ button.class-chip:hover{border-color:var(--brass);}
   width:48px;height:48px;border-radius:50%;box-sizing:border-box;
   border:2px solid var(--brass);background:color-mix(in srgb, var(--brass) 14%, transparent);
 }
-.lvl-circle b{font-family:var(--serif);font-size:26px;line-height:1;color:var(--brass-bright);}
+/* --serif-num keeps the digits level (see tokens.css). text-box trims
+   the line box to cap height and baseline so the digit is centred by its
+   own shape, not by the font's ascent and descent. */
+.lvl-circle b{
+  font-family:var(--serif-num);font-variant-numeric:lining-nums tabular-nums;
+  font-size:26px;line-height:1;color:var(--brass-bright);
+  text-box:trim-both cap alphabetic;
+}
+/* letter-spacing also follows the last letter, so the same space on the
+   left keeps "LEVEL" centred over the circle. */
 .lvl-caption{
-  font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;line-height:1;color:var(--text-on-parch-dim);
+  font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;padding-left:.1em;line-height:1;color:var(--text-on-parch-dim);
 }
 .xp-block{flex:1;min-width:160px;}
 .xp-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:5px;flex-wrap:wrap;}
@@ -124,7 +133,7 @@ button.class-chip:hover{border-color:var(--brass);}
 .lu-hp-die.dice-token{width:64px;height:64px;cursor:inherit;}
 .lu-hp-die.dice-token:hover{transform:none;}
 .lu-hp-die svg .die-text{font-size:30px;}
-.lu-hp-big{font-family:var(--serif);font-size:26px;line-height:1.1;color:var(--text-on-parch);}
+.lu-hp-big{font-family:var(--serif-num);font-size:26px;line-height:1.1;color:var(--text-on-parch);}
 .lu-hp-tap{font-size:17px;color:var(--brass-bright);}
 .lu-hp-math{font-size:12px;color:var(--text-on-parch-dim);}
 @media (max-width:420px){
@@ -163,7 +172,7 @@ button.class-chip:hover{border-color:var(--brass);}
 .lu-hero-level{
   flex:none;width:58px;height:58px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  font-family:var(--serif);font-size:28px;color:#fff;background:var(--brass);
+  font-family:var(--serif-num);font-size:28px;color:#fff;background:var(--brass);
   box-shadow:0 0 0 4px color-mix(in srgb, var(--brass) 30%, transparent);
   animation:lu-pop .5s ease-out;
 }

@@ -164,7 +164,7 @@
 }
 .dice-token svg .die-text,
 .toast-die-mini svg .die-text{
-  font-family:var(--serif);font-size:20px;font-weight:bold;
+  font-family:var(--serif-num);font-size:20px;font-weight:bold;
   fill:var(--text-on-ink);text-anchor:middle;dominant-baseline:central;
   user-select:none;
 }
@@ -239,7 +239,7 @@
   text-align:center;padding:4px 0 2px;display:flex;flex-direction:column;align-items:center;gap:3px;
 }
 #roll-result{
-  font-family:var(--serif);font-size:28px;font-weight:bold;
+  font-family:var(--serif-num);font-size:28px;font-weight:bold;
   color:var(--brass-bright);text-shadow:0 2px 10px color-mix(in srgb, var(--brass) 40%, transparent);
   line-height:1.1;min-height:32px;
 }
@@ -340,7 +340,7 @@
 #roll-log .rl-main{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:3px 8px;}
 #roll-log .rl-detail{color:var(--text-on-ink-dim);}
 #roll-log .rl-total{
-  flex:none;min-width:26px;text-align:right;font-family:var(--serif);font-size:15px;font-weight:bold;
+  flex:none;min-width:26px;text-align:right;font-family:var(--serif-num);font-size:15px;font-weight:bold;
   color:var(--brass-bright);line-height:1.2;font-variant-numeric:tabular-nums;
 }
 #roll-log .rd-dice{justify-content:flex-start;gap:3px;}
@@ -371,7 +371,7 @@
 /* A long title wraps beside the NAT badge, which stays whole on one line. */
 .floating-roll-toast .toast-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--text-on-ink-dim);font-weight:600;}
 .floating-roll-toast .crit-badge{flex:none;margin:0;padding:2px 6px;font-size:9.5px;line-height:1.2;white-space:nowrap;}
-.floating-roll-toast .toast-total{font-family:var(--serif);font-size:22px;color:var(--brass-bright);font-weight:bold;line-height:1.1;}
+.floating-roll-toast .toast-total{font-family:var(--serif-num);font-size:22px;color:var(--brass-bright);font-weight:bold;line-height:1.1;}
 .floating-roll-toast .toast-detail{font-size:10.5px;color:var(--text-on-ink-dim);max-width:300px;margin-top:2px;}
 .floating-roll-toast .rd-dice{justify-content:flex-start;gap:3px;}
 .floating-roll-toast .rd-die{min-width:19px;padding:0 5px;}

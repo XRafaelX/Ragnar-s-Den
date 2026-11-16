@@ -157,7 +157,7 @@
 .cmp-asi-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-on-parch-dim);}
 .cmp-asi.on .cmp-asi-lbl{color:var(--brass-bright);}
 .cmp-asi-ctl{display:flex;align-items:center;gap:4px;}
-.cmp-asi-val{min-width:24px;text-align:center;font-family:var(--serif);font-size:17px;}
+.cmp-asi-val{min-width:24px;text-align:center;font-family:var(--serif-num);font-size:17px;}
 .cmp-asi-btn{
   width:24px;height:24px;border-radius:50%;border:1px solid var(--rule);background:transparent;
   color:var(--text-on-parch);cursor:pointer;line-height:1;font-size:14px;
