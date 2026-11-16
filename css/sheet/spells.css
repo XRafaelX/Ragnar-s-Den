@@ -68,7 +68,6 @@
 .spell-level-slots{text-transform:none;letter-spacing:0;color:var(--brass-bright);}
 .spell-level-label:first-of-type{margin-top:4px;}
 .spell-scaling{font-size:12px;color:var(--brass-bright);margin:4px 0 0;}
-.spell-notes{font-size:12px;color:var(--text-on-parch);margin:0;white-space:pre-wrap;}
 .spell-field{flex:1 1 150px;}
 .spell-field-wide{flex:1 1 100%;}
 .spell-field input, .spell-field select, .spell-field-wide input{width:100%;}
@@ -78,17 +77,34 @@
 }
 .spell-textarea:focus{outline:none;border-color:var(--brass);}
 
-/* "From your features" card: spells granted by class and subclass features */
+/* Spell cards: the whole card opens the details sheet. The summary
+   shows two lines, the rest is in the sheet. */
 .feature-spells-intro{font-size:12px;color:var(--text-on-parch-dim);margin:0 0 6px;line-height:1.45;}
-.feature-spell-card .inv-card-header{cursor:default;}
-.feature-spell-card .inv-card-header-actions{gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.spell-card{cursor:pointer;transition:border-color .15s ease, background-color .15s ease;}
+@media (hover:hover){ .spell-card:hover{border-color:color-mix(in srgb, var(--brass) 60%, transparent);} }
+.spell-card:active{background:color-mix(in srgb, var(--brass) 6%, transparent);}
+.spell-card:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.spell-card .inv-card-header{cursor:inherit;}
+.spell-source{font-size:11.5px;color:var(--brass-bright);margin-top:-4px;}
+.spell-card-summary{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .feature-spell-note{font-style:normal;margin-top:4px;color:var(--text-on-parch);}
-/* On narrow screens the two tags would squeeze the spell name down to a
-   few letters, so they drop to their own line under it. */
-@media (max-width: 560px){
-  .feature-spell-card .inv-card-header{flex-wrap:wrap;row-gap:6px;}
-  .feature-spell-card .inv-card-header-actions{flex:1 1 100%;justify-content:flex-start;}
+
+/* Spell details sheet (read-only, Edit spell opens the editor). */
+.spell-detail-tags{display:flex;flex-wrap:wrap;gap:6px;margin:-6px 0 12px;}
+.spell-facts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px;}
+.spell-fact{padding:8px 10px;border:1px solid var(--rule);border-radius:8px;background:rgba(255,255,255,.04);min-width:0;}
+.spell-fact span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);margin-bottom:2px;}
+.spell-fact b{display:block;font-weight:normal;font-size:13.5px;color:var(--text-on-parch);overflow-wrap:anywhere;}
+.spell-explain{
+  display:flex;flex-direction:column;gap:6px;margin:0 0 12px;padding:8px 12px;
+  border-left:3px solid color-mix(in srgb, var(--brass) 60%, transparent);border-radius:4px;
+  background:color-mix(in srgb, var(--brass) 8%, transparent);
 }
+.spell-explain p{margin:0;font-size:12.5px;line-height:1.45;color:var(--text-on-parch);}
+.spell-detail-text{margin:0 0 8px;font-size:14px;line-height:1.55;color:var(--text-on-parch);}
+#bottom-sheet .spell-scaling{font-size:13px;margin:6px 0 0;}
+.spell-detail-note{margin:6px 0 0;font-size:12.5px;line-height:1.45;color:var(--text-on-parch-dim);}
+.spell-detail-actions{display:flex;justify-content:space-between;gap:8px;margin-top:16px;}
 
 /* "Spell choices" card: a subclass's land, genie kind or affinity */
 .spell-choice-row{padding:10px 0;border-top:1px dashed var(--rule);}
@@ -138,3 +154,26 @@
 .prep-level{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-on-parch-dim);white-space:nowrap;}
 .prep-later{font-size:10.5px;padding:1px 7px;border-radius:10px;border:1px solid var(--rule);color:var(--text-on-parch-dim);white-space:nowrap;}
 .prep-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+
+/* Known spells: level chips (one line that scrolls sideways on a phone)
+   and the "Not prepared today" fold at the end of the list. */
+.spell-level-chips{
+  display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:2px 0 0;padding:2px 0;
+}
+.spell-level-chips::-webkit-scrollbar{display:none;}
+.spell-level-chips.fade-end{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);}
+.spell-level-chips .ff-pill{flex:none;white-space:nowrap;font-size:12px;padding:4px 12px;}
+.spell-chip-count{opacity:.7;font-weight:normal;}
+.spell-list-empty{font-size:13px;color:var(--text-on-parch-dim);margin:14px 0 4px;}
+.spell-fold{
+  display:flex;align-items:center;gap:8px;width:100%;margin:16px 0 0;padding:10px 12px;
+  border:1px dashed var(--rule);border-radius:8px;background:transparent;
+  font:inherit;font-size:13px;color:var(--text-on-parch-dim);cursor:pointer;text-align:left;
+  transition:border-color .15s ease, color .15s ease;
+}
+@media (hover:hover){ .spell-fold:hover{border-color:var(--brass);color:var(--text-on-parch);} }
+.spell-fold:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px;}
+.spell-fold-chev{display:inline-block;font-size:16px;line-height:1;transition:transform .15s ease;}
+.spell-fold.open .spell-fold-chev{transform:rotate(90deg);}
+.spell-fold-body .spell-level-label:first-child{margin-top:10px;}
+.spell-fold-body .spell-card{opacity:.85;}

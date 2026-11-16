@@ -29,24 +29,22 @@ function spellSubtitle(sp, c){
   return [sp.school, sp.castingTime, c ? spellRangeText(c, sp.name, sp.range) : sp.range, sp.components, sp.duration].filter(Boolean).join(" · ");
 }
 
-/* Compact header: name + concentration/ritual tags, the patron's name
-   for a learned patron spell, the feature's tags for a spell a feature
-   also grants (Fey Touched's Hex on a warlock), a Prepared pill (only for spells of a class
-   that prepares: cantrips and a bard's, sorcerer's, warlock's or ranger's
-   spells are always ready), edit pencil, remove. Tapping the row opens
-   the spell sheet. */
-function spellHeader(c, sp, idx, patron, granted){
+/* Card header: name + concentration/ritual badges, then the one control
+   a card keeps: a Prepared switch (only for spells of a class that
+   prepares: cantrips and a bard's, sorcerer's, warlock's or ranger's
+   spells are always ready) or a patron spell's Learn button. Edit and
+   Remove live in the details sheet, which a tap anywhere on the card
+   opens. */
+function spellHeader(name, d){
   var header = document.createElement("div");
   header.className = "inv-card-header";
-  header.addEventListener("click", function(){ openSpellSheet(c, sp); });
-
   var titleGroup = document.createElement("div");
   titleGroup.className = "inv-card-title-group";
   var nameSpan = document.createElement("span");
   nameSpan.className = "inv-name-inline";
-  nameSpan.textContent = sp.name || "Unnamed spell";
+  nameSpan.textContent = name || "Unnamed spell";
   titleGroup.appendChild(nameSpan);
-  [[sp.concentration, "C", "Concentration"], [sp.ritual, "R", "Ritual"]].forEach(function(t){
+  [[d.concentration, "C", "Concentration"], [d.ritual, "R", "Ritual"]].forEach(function(t){
     if(!t[0]) return;
     var tag = document.createElement("span");
     tag.className = "inv-qty-badge";
@@ -54,59 +52,51 @@ function spellHeader(c, sp, idx, patron, granted){
     titleGroup.appendChild(tag);
   });
   header.appendChild(titleGroup);
-
   var actions = document.createElement("div");
   actions.className = "inv-card-header-actions";
-
-  // A spell a feature also grants: the feature's tags (a domain spell's
-  // Always prepared needs no Prepared switch).
-  if(granted) appendGrantTags(actions, granted);
-  if(patron){
-    var src = document.createElement("span");
-    src.className = "ff-tag source-class";
-    src.textContent = patron.source;
-    src.title = "Patron spell, from " + patron.feature;
-    actions.appendChild(src);
-  }
-
-  if(spellNeedsPreparing(c, sp)){
-    var prepLbl = document.createElement("label"); prepLbl.className = "inv-eq-pill";
-    var prepCb = document.createElement("input"); prepCb.type = "checkbox"; prepCb.className = "chk";
-    prepCb.checked = !!sp.prepared;
-    prepCb.addEventListener("click", function(e){ e.stopPropagation(); });
-    prepCb.addEventListener("change", function(){
-      // A preparing class can't go over its daily limit.
-      var why = prepCb.checked && prepareProblem(c, sp);
-      if(why){ prepCb.checked = false; showActionToast(why, true); return; }
-      sp.prepared = prepCb.checked; save(); renderAll();
-    });
-    prepLbl.appendChild(prepCb);
-    prepLbl.appendChild(document.createTextNode("Prepared"));
-    actions.appendChild(prepLbl);
-  }
-
-  var editBtn = document.createElement("button");
-  editBtn.type = "button"; editBtn.className = "inv-edit-btn";
-  editBtn.textContent = "✎"; editBtn.title = "Edit details";
-  editBtn.setAttribute("aria-label", "Edit details");
-  editBtn.addEventListener("click", function(e){ e.stopPropagation(); openSpellSheet(c, sp); });
-  actions.appendChild(editBtn);
-
-  var rmBtn = document.createElement("button");
-  rmBtn.className = "rm-btn"; rmBtn.textContent = "✕"; rmBtn.title = "Remove spell";
-  rmBtn.addEventListener("click", function(e){
-    e.stopPropagation();
-    confirmDialog("Remove "+(sp.name||"this spell")+"?", "This cannot be undone.", function(){
-      c.spells.splice(idx,1); save(); renderAll(); playDelete();
-    });
-  });
-  actions.appendChild(rmBtn);
-
   header.appendChild(actions);
   return header;
 }
 
-/* The "what it does at your level" line (spellScalingLine). */
+function preparedSwitch(c, sp){
+  var prepLbl = document.createElement("label"); prepLbl.className = "inv-eq-pill";
+  // The switch sits on a card that opens the details sheet when tapped.
+  prepLbl.addEventListener("click", function(e){ e.stopPropagation(); });
+  var prepCb = document.createElement("input"); prepCb.type = "checkbox"; prepCb.className = "chk";
+  prepCb.checked = !!sp.prepared;
+  prepCb.addEventListener("click", function(e){ e.stopPropagation(); });
+  prepCb.addEventListener("change", function(){
+    // A preparing class can't go over its daily limit.
+    var why = prepCb.checked && prepareProblem(c, sp);
+    if(why){ prepCb.checked = false; showActionToast(why, true); return; }
+    sp.prepared = prepCb.checked; save(); renderAll();
+  });
+  prepLbl.appendChild(prepCb);
+  prepLbl.appendChild(document.createTextNode("Prepared"));
+  return prepLbl;
+}
+
+/* One quiet line saying where a spell comes from ("Oath of Vengeance ·
+   Always prepared"), in place of the old header pills. */
+function grantKindLabel(fs){
+  return fs.level === 0 ? "Cantrip" : fs.kindLabel || KIND_LABELS[fs.kind] || KIND_LABELS.prepared;
+}
+function sourceLine(fs, patron){
+  var p = ce("div", "spell-source");
+  var name = ce("span", "spell-source-name");
+  name.textContent = fs.source;
+  name.title = "From " + fs.feature;
+  var kind = ce("span", "spell-source-kind");
+  kind.textContent = patron ? "Patron spell" : grantKindLabel(fs);
+  if(!patron && fs.tip) kind.title = fs.tip;
+  p.appendChild(name);
+  p.appendChild(document.createTextNode(" · "));
+  p.appendChild(kind);
+  return p;
+}
+
+/* The "what it does at your level" lines (spellScalingLine and friends),
+   shared by the card and the details sheet. */
 function appendScaling(card, text){
   if(!text) return;
   var p = document.createElement("p");
@@ -115,40 +105,169 @@ function appendScaling(card, text){
   card.appendChild(p);
 }
 
-function renderSpellCard(c, sp, idx, patron, granted){
-  var card = document.createElement("div");
-  card.className = "ff-item-card inv-item-card" + (granted ? " feature-spell-card" : "");
-  card.appendChild(spellHeader(c, sp, idx, patron, granted));
+/* The whole card is the tap target for the details sheet. Taps on its
+   own controls (Prepared, Learn) stop before they reach it. */
+function makeCardOpen(card, name, open){
+  card.classList.add("spell-card");
+  card.tabIndex = 0;
+  card.setAttribute("role", "button");
+  card.setAttribute("aria-label", (name || "Spell") + ", show details");
+  card.addEventListener("click", open);
+  card.addEventListener("keydown", function(e){
+    if(e.target !== card) return;
+    if(e.key==="Enter" || e.key===" "){ e.preventDefault(); open(); }
+  });
+}
 
-  var sub = spellSubtitle(sp, c);
+/* The parts every spell card shares: header, source line, meta line,
+   the summary (two lines, the rest is in the details sheet) and the
+   at-your-level lines. Returns the header's actions box. */
+function fillSpellCard(card, c, name, d, src, isPatron, lines, note){
+  var header = spellHeader(name, d);
+  card.appendChild(header);
+  if(src) card.appendChild(sourceLine(src, isPatron));
+  var sub = spellSubtitle(d, c);
   if(sub){
     var subEl = document.createElement("div");
     subEl.className = "inv-card-subtitle";
     subEl.textContent = sub;
     card.appendChild(subEl);
   }
-  if(sp.summary){
+  if(d.summary){
     var summaryP = document.createElement("p");
-    summaryP.className = "inv-armor-note";
-    summaryP.textContent = sp.summary;
+    summaryP.className = "inv-armor-note spell-card-summary";
+    summaryP.textContent = d.summary;
     card.appendChild(summaryP);
   }
-  appendScaling(card, spellScalingLine(c, sp.name, sp.level||0, {pact: spellOwner(c, sp)==="Warlock", owner: spellOwner(c, sp), fixed: !!sp.arcanum}));
-  appendScaling(card, healingNote(c, sp.name));
-  appendScaling(card, circleSpellNote(c, sp.name));
-  if(granted && granted.note){
-    var grantP = document.createElement("p");
-    grantP.className = "inv-armor-note feature-spell-note";
-    grantP.textContent = granted.note;
-    card.appendChild(grantP);
+  lines.forEach(function(t){ appendScaling(card, t); });
+  if(note){
+    var noteP = document.createElement("p");
+    noteP.className = "inv-armor-note feature-spell-note";
+    noteP.textContent = note;
+    card.appendChild(noteP);
   }
-  if(sp.notes){
-    var notesP = document.createElement("p");
-    notesP.className = "spell-notes";
-    notesP.textContent = sp.notes;
-    card.appendChild(notesP);
-  }
+  return header.querySelector(".inv-card-header-actions");
+}
+
+function renderSpellCard(c, sp, idx, patron, granted){
+  var card = document.createElement("div");
+  card.className = "ff-item-card inv-item-card" + (granted ? " feature-spell-card" : "");
+  var owner = spellOwner(c, sp);
+  var lines = [
+    spellScalingLine(c, sp.name, sp.level||0, {pact: owner==="Warlock", owner: owner, fixed: !!sp.arcanum}),
+    healingNote(c, sp.name),
+    circleSpellNote(c, sp.name)
+  ].filter(Boolean);
+  // A spell a feature also grants (a domain spell, Fey Touched's Hex on
+  // a warlock) says so, and a domain spell's Always prepared needs no
+  // Prepared switch.
+  var actions = fillSpellCard(card, c, sp.name, sp, granted || patron, !granted && !!patron, lines, granted && granted.note);
+  if(spellNeedsPreparing(c, sp)) actions.appendChild(preparedSwitch(c, sp));
+  makeCardOpen(card, sp.name, function(){
+    openSpellDetails(c, {sp: sp, fs: granted, patron: !granted && patron, lines: lines});
+  });
   return card;
+}
+
+/* Read-only details for a new player: the facts as tiles, what
+   Concentration and Ritual mean, the whole summary, the at-your-level
+   lines and where the spell comes from. A spell on the sheet adds the
+   Edit and Remove buttons. Personal notes belong in the Journal. */
+var CONCENTRATION_TEXT = "Concentration: the spell ends early if you cast another concentration spell, or if you take damage and fail a Constitution save (DC 10 or half the damage, whichever is higher).";
+var RITUAL_TEXT = "Ritual: if your class can cast rituals, you can cast it without a spell slot by taking 10 minutes longer.";
+
+function openSpellDetails(c, o){
+  var sp = o.sp, fs = o.fs || o.patron || null;
+  var d = sp || (fs && fs.data) || {};
+  var name = sp ? (sp.name || "Unnamed spell") : fs.name;
+  var level = sp ? (sp.level||0) : fs.level;
+  var catalog = SPELL_DATA[catalogSpellName(name)] || {};
+  openBottomSheet(function(body, refresh, close){
+    var head = ce("div", "bs-header");
+    var title = ce("div", "bs-title");
+    title.textContent = name;
+    head.appendChild(title);
+    var closeBtn = ce("button", "bs-close");
+    closeBtn.type = "button"; closeBtn.textContent = "✕"; closeBtn.title = "Close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.addEventListener("click", close);
+    head.appendChild(closeBtn);
+    body.appendChild(head);
+
+    var kind = level===0 ? (d.school ? d.school + " cantrip" : "Cantrip")
+      : ordinal(level) + "-level" + (d.school ? " " + d.school.toLowerCase() : " spell");
+    var subtitle = ce("p", "bs-subtitle");
+    subtitle.textContent = kind;
+    body.appendChild(subtitle);
+
+    if(fs){
+      var tags = ce("div", "spell-detail-tags");
+      if(o.patron){
+        var pt = ce("span", "ff-tag source-class");
+        pt.textContent = fs.source;
+        var pk = ce("span", "ff-tag source-feat");
+        pk.textContent = "Patron spell";
+        tags.appendChild(pk); tags.appendChild(pt);
+      } else appendGrantTags(tags, fs);
+      body.appendChild(tags);
+    }
+
+    var facts = ce("div", "spell-facts");
+    [["Casting time", d.castingTime], ["Range", spellRangeText(c, name, d.range)],
+     ["Components", d.components], ["Duration", d.duration]].forEach(function(f){
+      if(!f[1]) return;
+      var tile = ce("div", "spell-fact");
+      var l = ce("span"); l.textContent = f[0];
+      var v = ce("b"); v.textContent = f[1];
+      tile.appendChild(l); tile.appendChild(v);
+      facts.appendChild(tile);
+    });
+    body.appendChild(facts);
+
+    var material = d.material || catalog.material;
+    var explain = [];
+    if(material && /\bM\b/.test(d.components||"")) explain.push("Material: " + material + ".");
+    if(d.concentration) explain.push(CONCENTRATION_TEXT);
+    if(d.ritual) explain.push(RITUAL_TEXT);
+    if(explain.length){
+      var box = ce("div", "spell-explain");
+      explain.forEach(function(t){ var p = ce("p"); p.textContent = t; box.appendChild(p); });
+      body.appendChild(box);
+    }
+
+    if(d.summary){
+      var text = ce("p", "spell-detail-text");
+      text.textContent = d.summary;
+      body.appendChild(text);
+    }
+    (o.lines||[]).forEach(function(t){ appendScaling(body, t); });
+    var tip = fs && !o.patron && (fs.tip || (fs.kind==="prepared" && level > 0 ? "Always prepared: it doesn't count against your prepared spells." : ""));
+    [fs && !o.patron && fs.note, tip].forEach(function(t){
+      if(!t) return;
+      var p = ce("p", "spell-detail-note");
+      p.textContent = t;
+      body.appendChild(p);
+    });
+
+    if(!sp) return;
+    var btns = ce("div", "spell-detail-actions");
+    var editBtn = ce("button", "btn small");
+    editBtn.type = "button"; editBtn.textContent = "Edit spell";
+    editBtn.addEventListener("click", function(){ openSpellSheet(c, sp); });
+    var rmBtn = ce("button", "btn small danger");
+    rmBtn.type = "button"; rmBtn.textContent = "Remove";
+    // The sheet closes first: the confirm dialog sits under it.
+    rmBtn.addEventListener("click", function(){
+      close();
+      confirmDialog("Remove "+(sp.name||"this spell")+"?", "This cannot be undone.", function(){
+        var at = (c.spells||[]).indexOf(sp);
+        if(at >= 0) c.spells.splice(at, 1);
+        save(); renderAll(); playDelete();
+      });
+    });
+    btns.appendChild(editBtn); btns.appendChild(rmBtn);
+    body.appendChild(btns);
+  });
 }
 
 /* Editable spell details in a bottom sheet; same treatment as
@@ -219,16 +338,6 @@ function openSpellSheet(c, sp){
     desc.addEventListener("input", function(){ sp.summary = desc.value; save(); renderAll(); });
     descField.appendChild(desc);
     details.appendChild(descField);
-
-    var notesField = document.createElement("div");
-    notesField.className = "field-inline spell-field-wide";
-    notesField.innerHTML = "<label>My notes</label>";
-    var notes = document.createElement("textarea");
-    notes.rows = 2; notes.className = "spell-textarea"; notes.placeholder = "Reminders, how you use it…";
-    notes.value = sp.notes||"";
-    notes.addEventListener("input", function(){ sp.notes = notes.value; save(); renderAll(); });
-    notesField.appendChild(notes);
-    details.appendChild(notesField);
 
     body.appendChild(details);
   });
@@ -491,37 +600,30 @@ function renderFeatureSpellCard(c, fs, canLearn){
   var d = fs.data || {};
   var card = document.createElement("div");
   card.className = "ff-item-card inv-item-card feature-spell-card";
-  var header = document.createElement("div");
-  header.className = "inv-card-header";
-  var titleGroup = document.createElement("div");
-  titleGroup.className = "inv-card-title-group";
-  var nameSpan = document.createElement("span");
-  nameSpan.className = "inv-name-inline";
-  nameSpan.textContent = fs.name;
-  titleGroup.appendChild(nameSpan);
-  [[d.concentration, "C", "Concentration"], [d.ritual, "R", "Ritual"]].forEach(function(t){
-    if(!t[0]) return;
-    var tag = document.createElement("span");
-    tag.className = "inv-qty-badge";
-    tag.textContent = t[1]; tag.title = t[2];
-    titleGroup.appendChild(tag);
-  });
-  header.appendChild(titleGroup);
-  var actions = document.createElement("div");
-  actions.className = "inv-card-header-actions";
+  // At will and as a ritual it's cast at its own level, like an
+  // invocation's free cast; other warlock spells use the pact slots.
+  // A race's once-a-day spell is cast at its own level (or the one it names), never with a slot.
+  var fixed = fs.kind==="atwill" || fs.kind==="ritual" || (fs.kind==="free" && fs.className==="Warlock") || !!fs.limited;
+  var lines = [
+    spellScalingLine(c, fs.name, fs.level, {pact: fs.className==="Warlock" && !fixed, owner: fs.className, fixed: fixed, castAt: fs.castAt}),
+    healingNote(c, fs.name),
+    circleSpellNote(c, fs.name)
+  ].filter(Boolean);
   // The Patron spells card already says where these come from, so a
-  // patron spell only carries its Learn button.
-  if(fs.kind!=="expanded") appendGrantTags(actions, fs);
+  // patron spell has no source line, only its Learn button.
+  var patron = fs.kind==="expanded";
+  var actions = fillSpellCard(card, c, fs.name, d, patron ? null : fs, false, lines, fs.note);
   // A patron spell isn't free: "Learn" adds it to the spells you know,
   // offered while the warlock has spells left to learn this level.
   var catalogName = catalogSpellName(fs.name);
-  if(fs.kind==="expanded" && canLearn && SPELL_DATA[catalogName]){
+  if(patron && canLearn && SPELL_DATA[catalogName]){
     var learn = document.createElement("button");
     learn.type = "button";
     learn.className = "btn small";
     learn.textContent = "Learn";
     learn.title = "Add " + fs.name + " to your known spells";
-    learn.addEventListener("click", function(){
+    learn.addEventListener("click", function(e){
+      e.stopPropagation();
       if(addCatalogSpell(c, catalogName, SPELL_DATA[catalogName])){
         c.spells[c.spells.length-1].learnedBy = fs.className;
         save();
@@ -531,34 +633,9 @@ function renderFeatureSpellCard(c, fs, canLearn){
     });
     actions.appendChild(learn);
   }
-  header.appendChild(actions);
-  card.appendChild(header);
-  var sub = spellSubtitle(d, c);
-  if(sub){
-    var subEl = document.createElement("div");
-    subEl.className = "inv-card-subtitle";
-    subEl.textContent = sub;
-    card.appendChild(subEl);
-  }
-  if(d.summary){
-    var summaryP = document.createElement("p");
-    summaryP.className = "inv-armor-note";
-    summaryP.textContent = d.summary;
-    card.appendChild(summaryP);
-  }
-  // At will and as a ritual it's cast at its own level, like an
-  // invocation's free cast; other warlock spells use the pact slots.
-  // A race's once-a-day spell is cast at its own level (or the one it names), never with a slot.
-  var fixed = fs.kind==="atwill" || fs.kind==="ritual" || (fs.kind==="free" && fs.className==="Warlock") || !!fs.limited;
-  appendScaling(card, spellScalingLine(c, fs.name, fs.level, {pact: fs.className==="Warlock" && !fixed, owner: fs.className, fixed: fixed, castAt: fs.castAt}));
-  appendScaling(card, healingNote(c, fs.name));
-  appendScaling(card, circleSpellNote(c, fs.name));
-  if(fs.note){
-    var noteP = document.createElement("p");
-    noteP.className = "inv-armor-note feature-spell-note";
-    noteP.textContent = fs.note;
-    card.appendChild(noteP);
-  }
+  makeCardOpen(card, fs.name, function(){
+    openSpellDetails(c, patron ? {patron: fs, lines: lines} : {fs: fs, lines: lines});
+  });
   return card;
 }
 
@@ -567,7 +644,7 @@ function renderFeatureSpellCard(c, fs, canLearn){
 function appendGrantTags(actions, fs){
   var kind = document.createElement("span");
   kind.className = "ff-tag source-feat";
-  kind.textContent = fs.level === 0 ? "Cantrip" : fs.kindLabel || KIND_LABELS[fs.kind] || KIND_LABELS.prepared;
+  kind.textContent = grantKindLabel(fs);
   if(fs.tip) kind.title = fs.tip;
   else if(fs.kind==="prepared" && fs.level > 0) kind.title = "Doesn't count against your prepared spells";
   var source = document.createElement("span");
@@ -611,7 +688,7 @@ function renderPatronSpellsCard(c, list){
   var room = warlockSpellRoom(c);
   var intro = ce("p", "feature-spells-intro");
   intro.textContent = !toLearn.length
-    ? "You know every " + patron + " spell open to you at this level. They're under Known spells with the " + patron + " tag."
+    ? "You know every " + patron + " spell open to you at this level. They're under Known spells, marked " + patron + "."
     : patron + " adds these to the warlock spells you can learn. You pick them like any other warlock spell when you level up (the New spells step), and each one counts as one of your spells known." +
       (room > 0 ? " You still have " + room + " spell" + (room===1 ? "" : "s") + " to learn, so you can take " + (room===1 ? "one" : "them") + " here."
         : room===0 ? " You know all the warlock spells your level allows. Swap one for a patron spell on your next level-up." : "");
@@ -698,8 +775,10 @@ function renderSpellChoicesCard(c){
 /* "Warlock: Spells 6 of 6 · Cantrips 3 of 3" per spellcasting class, so
    a player can see what's left to learn (or prepare) and when they're
    over. */
-function renderSpellCounts(c){
-  var rows = spellCounts(c);
+/* The per-class counts: "cantrips" for the Cantrips card, "spells"
+   (Spells known, Prepared today) for the spells card. */
+function renderSpellCounts(c, which){
+  var rows = spellCounts(c).filter(function(r){ return which==="cantrips" ? r.cantrips : r.spells || r.prepared; });
   if(!rows.length) return null;
   var wrap = ce("div", "spell-counts");
   rows.forEach(function(r){
@@ -707,7 +786,7 @@ function renderSpellCounts(c){
     var name = ce("span", "spell-count-class");
     name.textContent = r.className;
     row.appendChild(name);
-    [["Spells known", r.spells], ["Cantrips", r.cantrips], ["Prepared today", r.prepared]].forEach(function(x){
+    (which==="cantrips" ? [["Cantrips", r.cantrips]] : [["Spells known", r.spells], ["Prepared today", r.prepared]]).forEach(function(x){
       if(!x[1]) return;
       var pill = ce("span", "spell-count" + (x[1].have > x[1].max ? " over" : x[1].have < x[1].max ? " under" : " full"));
       pill.textContent = x[0] + " " + x[1].have + " of " + x[1].max;
@@ -855,6 +934,70 @@ export function openPrepareSheet(c, onlyWithChoices){
   });
 }
 
+/* ---- Known spells list ----
+   Level chips (All, 1st, 2nd...) narrow the list to one level, and
+   a preparing class's unprepared spells fold away under "Not prepared
+   today". Both are kept per character for this session only. */
+var levelFilter = {};
+var showUnprepared = {};
+
+function isUnprepared(c, entry){
+  return !!entry.sp && spellNeedsPreparing(c, entry.sp) && !entry.sp.prepared;
+}
+
+function renderLevelChips(c, entries, levels, filter){
+  var row = ce("div", "spell-level-chips");
+  row.setAttribute("role", "group");
+  row.setAttribute("aria-label", "Show spells of one level");
+  function chip(label, value, count){
+    var b = ce("button", "ff-pill" + (value===filter ? " active" : ""));
+    b.type = "button";
+    b.setAttribute("aria-pressed", value===filter ? "true" : "false");
+    b.textContent = label + " ";
+    var n = ce("span", "spell-chip-count");
+    n.textContent = count;
+    b.appendChild(n);
+    b.addEventListener("click", function(){ levelFilter[c.id] = value; renderAll(); });
+    row.appendChild(b);
+  }
+  chip("All", null, entries.length);
+  levels.forEach(function(l){
+    chip(ordinal(l), l, entries.filter(function(e){ return e.level===l; }).length);
+  });
+  // A phone can't fit every chip: the row scrolls sideways, fading at the
+  // edge while more lie beyond it, with the picked chip brought into view.
+  function edge(){ row.classList.toggle("fade-end", row.scrollLeft + row.clientWidth < row.scrollWidth - 2); }
+  row.addEventListener("scroll", edge);
+  requestAnimationFrame(function(){
+    var on = row.querySelector(".active");
+    if(on && on.offsetLeft + on.offsetWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - 12;
+    edge();
+  });
+  return row;
+}
+
+/* Cards under a heading per level; slotsLeft adds "3 of 4 slots left". */
+function appendLevelGroups(c, parent, entries, card, slotsLeft){
+  var currentLevel = null, list = null;
+  entries.forEach(function(entry){
+    if(entry.level !== currentLevel){
+      currentLevel = entry.level;
+      var label = ce("div", "spell-level-label");
+      label.textContent = spellLevelLabel(currentLevel);
+      var leftTxt = slotsLeft && slotsLeftText(c, currentLevel);
+      if(leftTxt){
+        var leftEl = ce("span", "spell-level-slots");
+        leftEl.textContent = leftTxt;
+        label.appendChild(leftEl);
+      }
+      parent.appendChild(label);
+      list = ce("div", "ff-items-list inv-items-list");
+      parent.appendChild(list);
+    }
+    list.appendChild(card(entry));
+  });
+}
+
 /* ---- Spells panel ---- */
 export function renderSpellsPanel(c){
   var panel = document.createElement("div");
@@ -878,6 +1021,46 @@ export function renderSpellsPanel(c){
   var expanded = all.filter(function(fs){ return fs.kind==="expanded"; });
   if(expanded.length) panel.appendChild(renderPatronSpellsCard(c, expanded));
 
+  var spells = c.spells || [];
+  // Granted spells not on the sheet join the lists as read-only cards.
+  // idx stays the position in c.spells so removal hits the right entry.
+  var extra = granted.filter(function(fs){ return !knowsSpell(c, fs); });
+  var entries = spells.map(function(sp, idx){ return {sp:sp, idx:idx, level:sp.level||0, name:sp.name||""}; })
+    .concat(extra.map(function(fs){ return {fs:fs, level:fs.level, name:fs.name}; }));
+  entries.sort(function(a, b){ return a.level - b.level || a.name.localeCompare(b.name); });
+  function card(entry){
+    return entry.fs ? renderFeatureSpellCard(c, entry.fs)
+      : renderSpellCard(c, entry.sp, entry.idx, featureSpellFor(expanded, entry.sp), featureSpellFor(granted, entry.sp));
+  }
+  // Cantrips get their own card: cast at will, no slots, never prepared.
+  var cantrips = entries.filter(function(e){ return e.level===0; });
+  var leveled = entries.filter(function(e){ return e.level > 0; });
+  var cantripCounts = renderSpellCounts(c, "cantrips");
+  var levelCounts = renderSpellCounts(c, "spells");
+  var showSpells = characterIsCaster(c) || leveled.length || !cantrips.length;
+
+  var addSpellBtn = document.createElement("button");
+  addSpellBtn.className = "btn small primary"; addSpellBtn.style.marginTop = "12px";
+  addSpellBtn.textContent = "+ Add Spell";
+  addSpellBtn.addEventListener("click", function(){ openSpellPicker(c); });
+
+  if(cantrips.length || cantripCounts){
+    var cantripCard = makeCard("Cantrips");
+    if(cantripCounts) cantripCard.appendChild(cantripCounts);
+    if(cantrips.length){
+      var cList = ce("div", "ff-items-list inv-items-list spell-cantrip-list");
+      cantrips.forEach(function(e){ cList.appendChild(card(e)); });
+      cantripCard.appendChild(cList);
+    } else {
+      var noCantrips = ce("p", "spell-list-empty");
+      noCantrips.textContent = "No cantrips yet.";
+      cantripCard.appendChild(noCantrips);
+    }
+    if(!showSpells) cantripCard.appendChild(addSpellBtn);
+    panel.appendChild(cantripCard);
+  }
+  if(!showSpells) return panel;
+
   var prepares = (c.classes||[]).some(function(cl){ return classPrepares(c, cl.name); });
   var spellCard = makeCard(prepares ? "Known / prepared spells" : "Known spells");
   if(preparingClasses(c).length){
@@ -889,51 +1072,44 @@ export function renderSpellsPanel(c){
     tools.appendChild(prepBtn);
     spellCard.querySelector("h3").appendChild(tools);
   }
-  var counts = renderSpellCounts(c);
-  if(counts) spellCard.appendChild(counts);
-  var spells = c.spells || [];
-  // Granted spells not on the sheet join the list as read-only cards.
-  var extra = granted.filter(function(fs){ return !knowsSpell(c, fs); });
-  if(!spells.length && !extra.length){
-    var empty = document.createElement("p");
-    empty.style.cssText = "font-size:13px;color:var(--text-on-parch-dim);";
+  if(levelCounts) spellCard.appendChild(levelCounts);
+  if(!leveled.length){
+    var empty = ce("p", "spell-list-empty");
     empty.textContent = "No spells yet.";
     spellCard.appendChild(empty);
   } else {
-    // Grouped by spell level, alphabetical within each; idx stays the
-    // position in c.spells so removal hits the right entry.
-    var entries = spells.map(function(sp, idx){ return {sp:sp, idx:idx, level:sp.level||0, name:sp.name||""}; })
-      .concat(extra.map(function(fs){ return {fs:fs, level:fs.level, name:fs.name}; }));
-    entries.sort(function(a, b){ return a.level - b.level || a.name.localeCompare(b.name); });
-    var currentLevel = null;
-    var list = null;
-    entries.forEach(function(entry){
-      var lvl = entry.level;
-      if(lvl !== currentLevel){
-        currentLevel = lvl;
-        var label = document.createElement("div");
-        label.className = "spell-level-label";
-        label.textContent = spellLevelLabel(lvl);
-        var leftTxt = slotsLeftText(c, lvl);
-        if(leftTxt){
-          var leftEl = ce("span","spell-level-slots");
-          leftEl.textContent = leftTxt;
-          label.appendChild(leftEl);
-        }
-        spellCard.appendChild(label);
-        list = document.createElement("div");
-        list.className = "ff-items-list inv-items-list";
-        spellCard.appendChild(list);
+    var levels = [];
+    leveled.forEach(function(e){ if(levels.indexOf(e.level) < 0) levels.push(e.level); });
+    var filter = levelFilter[c.id];
+    if(levels.indexOf(filter) < 0) filter = null;
+    if(levels.length > 1) spellCard.appendChild(renderLevelChips(c, leveled, levels, filter));
+    var shown = filter==null ? leveled : leveled.filter(function(e){ return e.level===filter; });
+    // A spell of a preparing class that isn't prepared today folds away
+    // at the end: the list is what can be cast now.
+    var ready = shown.filter(function(e){ return !isUnprepared(c, e); });
+    var later = shown.filter(function(e){ return isUnprepared(c, e); });
+    if(ready.length) appendLevelGroups(c, spellCard, ready, card, true);
+    else {
+      var none = ce("p", "spell-list-empty");
+      none.textContent = filter==null ? "No spells prepared today." : "None of your " + spellLevelLabel(filter).toLowerCase() + " spells are prepared today.";
+      spellCard.appendChild(none);
+    }
+    if(later.length){
+      var open = !!showUnprepared[c.id];
+      var fold = ce("button", "spell-fold" + (open ? " open" : ""));
+      fold.type = "button";
+      fold.setAttribute("aria-expanded", open ? "true" : "false");
+      fold.innerHTML = "<span class='spell-fold-chev' aria-hidden='true'>›</span>";
+      fold.appendChild(document.createTextNode("Not prepared today (" + later.length + ")"));
+      fold.addEventListener("click", function(){ showUnprepared[c.id] = !open; renderAll(); });
+      spellCard.appendChild(fold);
+      if(open){
+        var box = ce("div", "spell-fold-body");
+        appendLevelGroups(c, box, later, card, false);
+        spellCard.appendChild(box);
       }
-      list.appendChild(entry.fs ? renderFeatureSpellCard(c, entry.fs)
-        : renderSpellCard(c, entry.sp, entry.idx, featureSpellFor(expanded, entry.sp), featureSpellFor(granted, entry.sp)));
-    });
+    }
   }
-
-  var addSpellBtn = document.createElement("button");
-  addSpellBtn.className = "btn small primary"; addSpellBtn.style.marginTop = "12px";
-  addSpellBtn.textContent = "+ Add Spell";
-  addSpellBtn.addEventListener("click", function(){ openSpellPicker(c); });
   spellCard.appendChild(addSpellBtn);
   panel.appendChild(spellCard);
 

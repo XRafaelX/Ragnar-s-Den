@@ -148,8 +148,9 @@ function tile(c, o){
   row.appendChild(more);
   function open(){ openOption(c, o); }
   row.addEventListener("click", function(e){
-    // (The Use button and a group's picker work on their own.)
-    if(e.target.closest(".cd-act")) return;
+    // (The Use button and a group's picker work on their own. The path as
+    // the click began: a pick closes the picker's list before it gets here.)
+    if(e.composedPath().some(function(n){ return n.classList && (n.classList.contains("cd-act") || n.classList.contains("tp-menu")); })) return;
     open();
   });
   row.addEventListener("keydown", function(e){
