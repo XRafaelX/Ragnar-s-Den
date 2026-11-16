@@ -12,7 +12,7 @@
    The options come from clericChannels and channelActions (js/core/cleric.js,
    js/core/paladin.js). */
 import { save } from "../../core/state.js";
-import { clericChannels, channelActions, channelProblem, useChannelAction, effectOn, resourceLeft, clamp, maxHp } from "../../core/helpers.js";
+import { clericChannels, channelActions, channelProblem, useChannelAction, effectOn, resourceLeft, clamp, maxHp, classFeatureList } from "../../core/helpers.js";
 import { renderAll, makeCard } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
@@ -71,13 +71,13 @@ function find(resources, key){
 
 /* The options for a class, a group (Knowledge of the Ages, Sacred Weapon)
    as one: {name, items, detail, pick (the group's picker label)}. */
-function optionsOf(c, cls){
+export function optionsOf(c, cls){
   var actions = cls==="Cleric" ? clericChannels(c) : channelActions(c), out = [];
   actions.forEach(function(a){
-    if(!a.group){ out.push({name: a.name, items: [a], detail: a.detail, when: a.when}); return; }
+    if(!a.group){ out.push({cls: cls, name: a.name, items: [a], detail: a.detail, when: a.when}); return; }
     var g = out.find(function(o){ return o.group===a.group; });
     if(g) g.items.push(a);
-    else out.push({name: a.group, group: a.group, items: [a], detail: a.groupDetail || a.detail, when: a.when, pick: a.groupPick || "Choose..."});
+    else out.push({cls: cls, name: a.group, group: a.group, items: [a], detail: a.groupDetail || a.detail, when: a.when, pick: a.groupPick || "Choose..."});
   });
   return out;
 }
@@ -91,7 +91,7 @@ var LEADS = [
   [/^When you take the Attack action[,:]\s*/, "Attack action"],
   [/^A 1-hour ritual[,:]\s*/, "1 hour"]
 ];
-function whenOf(o){
+export function whenOf(o){
   if(o.when) return o.when;
   var hit = LEADS.find(function(l){ return l[0].test(o.detail || ""); });
   return hit ? hit[1] : "No action";
@@ -223,6 +223,20 @@ function healYourself(c, n){
     }}]};
 }
 
+/* The class or subclass feature an option comes from: "Channel Divinity:
+   Twilight Sanctuary", a 2024 domain's "Preserve Life", or the "Channel
+   Divinity" feature that names it (Turn Undead, an oath's two options),
+   the subclass's first. Null when none says it. */
+export function featureFor(c, o){
+  var cl = (c.classes||[]).find(function(x){ return x.name===o.cls; });
+  if(!cl) return null;
+  var list = classFeatureList(cl);
+  return list.find(function(f){ return f.name==="Channel Divinity: " + o.name; }) ||
+    list.find(function(f){ return f.name===o.name; }) ||
+    list.filter(function(f){ return /^Channel Divinity/.test(f.name) && (f.text||"").indexOf(o.name)!==-1; })
+      .sort(function(a, b){ return (b.subclass ? 1 : 0) - (a.subclass ? 1 : 0); })[0] || null;
+}
+
 /* The whole text, with the same Use. */
 function openOption(c, o){
   openBottomSheet(function(body, refresh, close){
@@ -235,12 +249,23 @@ function openOption(c, o){
     tag.textContent = when;
     tags.appendChild(tag);
     body.appendChild(tags);
+    // The feature's whole text as the book gives it, then the short version
+    // with this character's numbers (DC, dice).
+    var feature = featureFor(c, o);
     var text = document.createElement("p");
     text.className = "cd-sheet-text";
-    text.textContent = o.detail || "";
+    text.textContent = feature ? feature.text : o.detail || "";
     body.appendChild(text);
-    var cls = o.items[0].pool ? o.items[0].pool.split(":")[0] : "Paladin";
-    var left = resourceLeft(c, cls + ":channel_divinity");
+    if(feature && o.detail){
+      var mine = document.createElement("p");
+      mine.className = "cd-sheet-mine";
+      var b = document.createElement("b");
+      b.textContent = "On your sheet: ";
+      mine.appendChild(b);
+      mine.appendChild(document.createTextNode(o.detail));
+      body.appendChild(mine);
+    }
+    var left = resourceLeft(c, o.cls + ":channel_divinity");
     var cost = document.createElement("p");
     cost.className = "cd-sheet-cost";
     cost.textContent = "Costs one use of Channel Divinity. " + (left===1 ? "You have 1 left." : "You have " + left + " left.");
