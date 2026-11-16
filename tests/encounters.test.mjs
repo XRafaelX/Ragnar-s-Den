@@ -6,12 +6,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   loadEncounters, getEncounters, getEncounter, createEncounter, saveEncounter, deleteEncounter, duplicateEncounter,
-  importEncounters, encounterNameProblem, knownPlayerNames, addMonster, getMonster, moveMonster, removeMonster, changeHp,
+  importEncounters, encounterNameProblem, knownPlayerNames, forgetPlayerName, addMonster, getMonster, moveMonster, removeMonster, changeHp,
   isDead, orderEntryFor, unplacedMonsters, addPlayer, placeMonster, moveInOrder, removeFromOrder, currentEntry,
   nextTurn, previousTurn, resetEncounter, encounterStarted,
   setMonsterColor, groupName, renameGroup, colorGroups,
   addMonsterCondition, removeMonsterCondition, monsterConditions, hasMonsterCondition, monsterAc, monsterSpeed,
-  setFavourite, moveEncounter
+  setFavourite, moveEncounter, rollInitiative, setInitiative, entryInit, hasInitiative, monsterInitBonus
 } from "../js/core/encounters.js";
 import { SPELL_CONDITIONS } from "../js/data/conditions.js";
 
@@ -391,4 +391,101 @@ test("older saves start out newest first, and backups keep their stars", () => {
   assert.deepEqual(listNames(), ["Newest", "Middle", "Old"]);
   importEncounters([{ name: "Starred", fav: true }, { name: "Plain" }]);
   assert.deepEqual(listNames(), ["Starred", "Newest", "Middle", "Old", "Plain"]);
+});
+
+/* ---- Initiative ---- */
+// An rng that hands out these d20 results in turn.
+const dice = (...faces) => { let i = 0; return () => (faces[i++ % faces.length] - 1) / 20 + 0.001; };
+const lineInit = (e) => e.order.map((o) => names(e)[e.order.indexOf(o)] + ":" + entryInit(e, o));
+
+test("rolling initiative gives every monster d20 + DEX, places the waiting ones and sorts the line", () => {
+  fresh();
+  const e = createEncounter("Ambush");
+  const g = addMonster(e, "Goblin", { hp: 7, ac: 15, speed: 30, dex: 14 });
+  const o = addMonster(e, "Ogre", { hp: 59, ac: 11, speed: 40, dex: 8 });
+  addPlayer(e, "Leonidas");
+  addPlayer(e, "Adonis");
+  placeMonster(e, o.id, 0);
+  assert.equal(monsterInitBonus(g), 2);
+  assert.equal(monsterInitBonus(o), -1);
+  const rolls = rollInitiative(e, dice(10, 15));
+  assert.deepEqual(rolls.map((r) => [r.monster.name, r.roll, r.bonus, r.total]), [["Goblin", 10, 2, 12], ["Ogre", 15, -1, 14]]);
+  assert.equal(unplacedMonsters(e).length, 0, "the goblin was put in the line");
+  assert.deepEqual(lineInit(e), ["Ogre:14", "Goblin:12", "Leonidas:null", "Adonis:null"], "high to low, players without a number below");
+  assert.equal(turnName(e), "Ogre", "before the fight, the top goes first");
+  assert.equal(hasInitiative(e), true);
+});
+
+test("a player's typed number slots them in, a tie keeps the order and a blank takes it away", () => {
+  fresh();
+  const e = createEncounter("Ambush");
+  addMonster(e, "Goblin", { hp: 7, dex: 14 });
+  addMonster(e, "Goblin", { hp: 7, dex: 14 });
+  const p = addPlayer(e, "Leonidas");
+  const q = addPlayer(e, "Adonis");
+  rollInitiative(e, dice(3, 18));
+  assert.deepEqual(lineInit(e), ["Goblin 2:20", "Goblin:5", "Leonidas:null", "Adonis:null"]);
+  setInitiative(e, q.id, "17");
+  setInitiative(e, p.id, "5");
+  assert.deepEqual(lineInit(e), ["Goblin 2:20", "Adonis:17", "Goblin:5", "Leonidas:5"], "a tie stays where it was");
+  setInitiative(e, e.order[0].id, "1");
+  assert.deepEqual(lineInit(e), ["Adonis:17", "Goblin:5", "Leonidas:5", "Goblin 2:1"], "a monster's number can be changed by hand");
+  setInitiative(e, q.id, "");
+  assert.deepEqual(lineInit(e), ["Goblin:5", "Leonidas:5", "Goblin 2:1", "Adonis:null"]);
+});
+
+test("mid-fight the turn stays with whoever had it; downed monsters don't roll; Reset clears the numbers", () => {
+  fresh();
+  const e = createEncounter("Ambush");
+  const a = addMonster(e, "Goblin", { hp: 7, dex: 14 });
+  const b = addMonster(e, "Goblin", { hp: 7, dex: 14 });
+  const p = addPlayer(e, "Leonidas");
+  rollInitiative(e, dice(10, 5));
+  setInitiative(e, p.id, 8);
+  nextTurn(e);
+  const had = turnName(e);
+  changeHp(e, a.id, -7);
+  const rolls = rollInitiative(e, dice(1));
+  assert.equal(rolls.length, 1, "the downed goblin doesn't roll");
+  assert.equal(getMonster(e, a.id).init, null);
+  assert.equal(turnName(e), had, "the turn didn't jump");
+  assert.equal(names(e).at(-1), "Goblin", "the downed one goes to the bottom");
+  saveEncounter(e);
+  loadEncounters();
+  const back = getEncounter(e.id);
+  assert.equal(entryInit(back, back.order.find((o) => o.type === "player")), 8, "numbers are saved");
+  resetEncounter(back);
+  assert.equal(hasInitiative(back), false, "Reset clears them");
+  assert.equal(getMonster(back, b.id).init, null);
+});
+
+test("older saves without DEX use the catalog's, and broken numbers are dropped", () => {
+  localStorage.clear();
+  localStorage.setItem("ragnarsDen.encounters.v1", JSON.stringify([{ id: "1", name: "Old", fav: false,
+    monsters: [{ id: "m1", name: "Goblin", kind: "Goblin", hp: 7, maxHp: 7, init: "x" }, { id: "m2", name: "Thing", kind: "Nope", hp: 5, maxHp: 5 }],
+    order: [{ id: "o1", type: "player", name: "Athos", init: "12" }] }]));
+  loadEncounters();
+  const e = getEncounter("1");
+  assert.equal(getMonster(e, "m1").dex, null);
+  assert.equal(monsterInitBonus(getMonster(e, "m1")), 2, "the Goblin's DEX 14 from the catalog");
+  assert.equal(monsterInitBonus(getMonster(e, "m2")), 0, "unknown: DEX 10");
+  assert.equal(getMonster(e, "m1").init, null);
+  assert.equal(e.order[0].init, 12);
+});
+
+test("a suggested player name can be taken off the list, and comes back when used again", () => {
+  fresh();
+  const a = createEncounter("Crypt");
+  addPlayer(a, "Leonidas");
+  addPlayer(a, "Adonis");
+  saveEncounter(a);
+  forgetPlayerName("leonidas");
+  assert.deepEqual(knownPlayerNames(), ["Adonis"]);
+  assert.equal(getEncounter(a.id).order.length, 2, "the player stays in the encounter");
+  loadEncounters();
+  assert.deepEqual(knownPlayerNames(), ["Adonis"], "remembered");
+  const b = createEncounter("Bridge");
+  addPlayer(b, "Leonidas");
+  saveEncounter(b);
+  assert.deepEqual(knownPlayerNames(), ["Leonidas", "Adonis"], "typing the name again brings it back");
 });

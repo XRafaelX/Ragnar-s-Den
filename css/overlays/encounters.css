@@ -331,6 +331,22 @@
   border:1px solid var(--brass);border-radius:10px;padding:2px 9px;
 }
 .enc-turn-ctrls{display:flex;gap:8px;margin:0 0 10px;}
+/* Roll initiative: a full-width row above Back and Next turn. */
+.enc-init-roll{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin:0 0 8px;}
+.enc-init-roll svg{width:17px;height:17px;flex:none;}
+/* A line's initiative number: a small square, dashed while a player's is unknown. */
+.enc-init, .enc-init-input{
+  flex:none;width:32px;height:26px;padding:0;border-radius:6px;text-align:center;
+  font-family:var(--sans);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.enc-init{
+  cursor:pointer;color:var(--brass-bright);background:color-mix(in srgb, var(--brass) 14%, transparent);
+  border:1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+}
+.enc-init:hover{border-color:var(--brass-bright);}
+.enc-init.empty{color:var(--text-on-parch-dim);background:none;border-style:dashed;border-color:var(--rule);}
+.enc-init:focus-visible{outline:2px solid var(--brass);outline-offset:1px;}
+.enc-init-input{color:var(--text-on-parch);background:var(--parchment);border:1px solid var(--brass);outline:none;}
 .enc-next{flex:1;}
 .enc-turn-list{position:relative;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;min-height:48px;border-radius:6px;transition:outline-color .15s ease;outline:2px dashed transparent;outline-offset:4px;}
 .enc-turn-list.drop-here{outline-color:var(--brass);}
@@ -345,8 +361,6 @@
 }
 .enc-turn.monster{cursor:pointer;}
 .enc-turn.current{border-color:var(--brass);background:color-mix(in srgb, var(--brass) 22%, var(--parchment-dim));}
-.enc-turn-num{flex:none;width:24px;text-align:right;font-size:12.5px;color:var(--text-on-parch-dim);font-variant-numeric:tabular-nums;}
-.enc-turn.current .enc-turn-num{color:var(--brass-bright);font-weight:700;}
 .enc-turn-name{flex:1;min-width:0;font-size:14px;color:var(--text-on-parch);overflow-wrap:anywhere;}
 /* Monsters get a dot, like the marks beside them on the paper list. */
 .enc-turn.monster .enc-turn-name::before{
@@ -374,11 +388,21 @@
 .enc-players .enc-new{margin:0;}
 .enc-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;}
 .enc-chips-label{font-size:11.5px;color:var(--text-on-parch-dim);width:100%;}
+/* A suggested name: "+ Name" adds the player, the × beside it takes the
+   name off the suggestions. One pill around both. */
+.enc-chip-wrap{display:inline-flex;align-items:center;border:1px solid var(--rule);border-radius:14px;transition:border-color .15s ease;}
+.enc-chip-wrap:hover{border-color:var(--brass);}
 .enc-chip{
-  background:none;border:1px solid var(--rule);border-radius:14px;color:var(--text-on-parch);
-  font-size:12.5px;padding:4px 10px;cursor:pointer;
+  background:none;border:none;border-radius:14px 0 0 14px;color:var(--text-on-parch);
+  font-size:12.5px;padding:4px 3px 4px 11px;cursor:pointer;
 }
-.enc-chip:hover{border-color:var(--brass);color:var(--brass-bright);}
+.enc-chip:hover{color:var(--brass-bright);}
+.enc-chip-x{
+  background:none;border:none;border-radius:0 14px 14px 0;color:var(--text-on-parch-dim);
+  font-size:14px;line-height:1;padding:4px 9px 4px 5px;cursor:pointer;
+}
+.enc-chip-x:hover{color:var(--oxblood);}
+.enc-chip:focus-visible, .enc-chip-x:focus-visible{outline:2px solid var(--brass);outline-offset:-2px;}
 
 /* ---- Group colors ----
    Picked to read on the dark parchment and to stay clear of the red

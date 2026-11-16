@@ -3,15 +3,16 @@ import { MONSTER_DATA } from "../data/monsters.js";
 import { ENCOUNTER_QUIPS } from "../data/encounter-quips.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
 import { showActionToast } from "../ui/toast.js";
-import { playAdd, playDelete, playMonsterHit, playMonsterSlain, playNewRound, playVictory } from "../ui/sound.js";
+import { playAdd, playDelete, playDiceRattle, playMonsterHit, playMonsterSlain, playNewRound, playVictory } from "../ui/sound.js";
 import { makeKebabSvg } from "../ui/svg-icons.js";
 import { conditionsButton, conditionChips, fitChips } from "./encounter-conditions.js";
 import {
   getEncounters, getEncounter, createEncounter, saveEncounter, deleteEncounter, duplicateEncounter,
-  encounterNameProblem, knownPlayerNames, addMonster, getMonster, moveMonster, renameMonster, removeMonster, changeHp,
+  encounterNameProblem, knownPlayerNames, forgetPlayerName, addMonster, getMonster, moveMonster, renameMonster, removeMonster, changeHp,
   isDead, orderEntryFor, unplacedMonsters, addPlayer, hasPlayer, placeMonster, moveInOrder, removeFromOrder,
   currentEntry, nextTurn, previousTurn, resetEncounter, encounterStarted, monsterAc, monsterSpeed,
-  MONSTER_COLORS, setMonsterColor, groupName, renameGroup, colorGroups, setFavourite, moveEncounter
+  MONSTER_COLORS, setMonsterColor, groupName, renameGroup, colorGroups, setFavourite, moveEncounter,
+  rollInitiative, setInitiative, entryInit, hasInitiative, monsterInitBonus
 } from "../core/encounters.js";
 
 /* ---------------- Encounters ----------------
@@ -58,6 +59,7 @@ function button(cls, text, onClick, title){
 
 var GRIP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
 var STAR_SVG = '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8l2.83 5.73 6.32.92-4.57 4.46 1.08 6.3L12 17.24l-5.66 2.97 1.08-6.3-4.57-4.46 6.32-.92z"/></svg>';
+var D20_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l8.5 4.9v9.2L12 21.5l-8.5-4.9V7.4z"/><path d="M12 2.5 7.6 9.8h8.8z"/><path d="M3.5 7.4l4.1 2.4L12 21.5l4.4-11.7 4.1-2.4M7.6 9.8 3.5 16.6M16.4 9.8l4.1 6.8M3.5 16.6 12 21.5l8.5-4.9"/></svg>';
 var SHIELD_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>';
 
 /* A ⋯ button with a small menu: items are [{label, danger, onClick}],
@@ -392,7 +394,7 @@ function renderBoard(enc){
   });
   head.appendChild(name);
   head.appendChild(button("btn small ghost enc-reset", "Reset", function(){
-    confirmDialog("Reset " + enc.name + "?", "Every monster goes back to full hit points with no conditions, and the fight starts again from round 1. The monsters, players and turn order stay.", function(){
+    confirmDialog("Reset " + enc.name + "?", "Every monster goes back to full hit points with no conditions, and the fight starts again from round 1. The initiative numbers are cleared so you can roll again. The monsters, players and turn order stay.", function(){
       resetEncounter(enc);
       commit(enc);
       showActionToast(quip("reset", { enc: enc.name }));
@@ -769,7 +771,28 @@ function turnsPanel(enc){
   head.appendChild(ce("span", "enc-round", "Round " + enc.round));
   panel.appendChild(head);
 
+  var standing = enc.monsters.filter(function(m){ return !isDead(m); });
+  if(standing.length){
+    var rollBtn = button("btn small ghost enc-init-roll", "", function(){
+      if(standing.some(function(m){ return m.init !== null; })){
+        confirmDialog("Roll initiative again?", "Every monster still standing rolls again and the turn order is sorted by the new numbers. The players keep theirs.", doRoll);
+      }else doRoll();
+    }, "Roll initiative for every monster");
+    rollBtn.innerHTML = D20_SVG;
+    rollBtn.appendChild(document.createTextNode("Roll initiative"));
+    panel.appendChild(rollBtn);
+  }
+  function doRoll(){
+    var rolls = rollInitiative(enc);
+    playDiceRattle();
+    commit(enc);
+    var missing = enc.order.filter(function(o){ return o.type === "player" && o.init === null; }).length;
+    showActionToast("Rolled initiative for " + (rolls.length === 1 ? "1 monster." : rolls.length + " monsters.") +
+      (missing ? " Tap the ? on a player's line to type their roll." : ""));
+  }
+
   var cur = currentEntry(enc);
+  var numbers = hasInitiative(enc);
   if(enc.order.length){
     var ctrls = ce("div", "enc-turn-ctrls");
     ctrls.appendChild(button("btn small ghost", "‹ Back", function(){
@@ -795,7 +818,7 @@ function turnsPanel(enc){
 
   var listEl = ce("ol", "enc-turn-list" + (enc.order.length ? "" : " empty"));
   listEl.dataset.empty = "Drag monster boxes here and add your players below. The top of the line goes first.";
-  enc.order.forEach(function(o, i){
+  enc.order.forEach(function(o){
     var m = o.type === "monster" ? getMonster(enc, o.monsterId) : null;
     var dead = m && isDead(m);
     var li = ce("li", "enc-turn " + o.type + (dead ? " dead" : "") + (cur && cur.id === o.id ? " current" : ""));
@@ -805,8 +828,8 @@ function turnsPanel(enc){
     grip.innerHTML = GRIP_SVG;
     grip.title = "Drag to change the order";
     li.appendChild(grip);
-    li.appendChild(ce("span", "enc-turn-num", (i + 1) + ")"));
     var label = o.type === "player" ? o.name : m.name;
+    if(numbers) li.appendChild(initBadge(enc, o, label, m));
     li.appendChild(ce("span", "enc-turn-name", label));
     li.appendChild(o.type === "player"
       ? ce("span", "enc-turn-tag", "Player")
@@ -820,7 +843,7 @@ function turnsPanel(enc){
     // Tapping a monster's line finds its box (handy on a phone, where
     // the boxes are below the line).
     if(m) li.addEventListener("click", function(e){
-      if(e.target.closest("button")) return;
+      if(e.target.closest("button, input")) return;
       if(filter.color && m.color !== filter.color){ filter.color = null; render(); }
       var card = overlay.querySelector('.enc-card[data-monster-id="' + m.id + '"]');
       if(!card) return;
@@ -841,6 +864,46 @@ function turnsPanel(enc){
 
   panel.appendChild(playerForm(enc));
   return panel;
+}
+
+/* The initiative number on a line, once anyone has one. A tap turns it
+   into a field to type a player's roll (or change a monster's); Enter or
+   leaving it sorts the line, Escape keeps what was there. */
+function initBadge(enc, o, label, m){
+  var value = entryInit(enc, o);
+  var bonus = m ? monsterInitBonus(m) : 0;
+  var title = value === null
+    ? "Type " + label + "'s initiative"
+    : "Initiative " + value + (m ? " (d20 " + (bonus < 0 ? "- " + -bonus : "+ " + bonus) + ")" : "") + ". Tap to change it.";
+  var badge = button("enc-init" + (value === null ? " empty" : ""), value === null ? "?" : String(value), function(e){
+    e.stopPropagation();
+    var input = ce("input", "enc-init-input");
+    input.type = "text";
+    input.inputMode = "numeric";
+    input.maxLength = 3;
+    input.value = value === null ? "" : String(value);
+    input.setAttribute("aria-label", label + "'s initiative");
+    var done = false;
+    function finish(save){
+      if(done) return;
+      done = true;
+      var v = input.value.trim();
+      if(save && v !== (value === null ? "" : String(value)) && (v === "" || /^-?\d+$/.test(v))){
+        setInitiative(enc, o.id, v);
+        commit(enc);
+      }else render();
+    }
+    input.addEventListener("keydown", function(ev){
+      if(ev.key === "Enter"){ ev.preventDefault(); finish(true); }
+      else if(ev.key === "Escape"){ ev.preventDefault(); finish(false); }
+    });
+    input.addEventListener("blur", function(){ finish(true); });
+    input.addEventListener("click", function(ev){ ev.stopPropagation(); });
+    badge.replaceWith(input);
+    input.focus();
+    input.select();
+  }, title);
+  return badge;
 }
 
 function playerForm(enc){
@@ -868,13 +931,21 @@ function playerForm(enc){
   });
   box.appendChild(form);
 
-  // The party from other encounters, a tap away.
+  // The party from other encounters, a tap away. The × takes a name off
+  // these suggestions (an old one-off name, a player who left).
   var known = knownPlayerNames().filter(function(n){ return !hasPlayer(enc, n); });
   if(known.length){
     var chips = ce("div", "enc-chips");
     chips.appendChild(ce("span", "enc-chips-label", "From other encounters:"));
     known.slice(0, 12).forEach(function(n){
-      chips.appendChild(button("enc-chip", "+ " + n, function(){ addPlayer(enc, n); playAdd(); commit(enc); }, "Add " + n));
+      var chip = ce("span", "enc-chip-wrap");
+      chip.appendChild(button("enc-chip", n, function(){ addPlayer(enc, n); playAdd(); commit(enc); }, "Add " + n));
+      chip.appendChild(button("enc-chip-x", "×", function(){
+        forgetPlayerName(n);
+        render();
+        showActionToast(n + " is no longer suggested. Type the name again to bring it back.");
+      }, "Stop suggesting " + n));
+      chips.appendChild(chip);
     });
     box.appendChild(chips);
   }

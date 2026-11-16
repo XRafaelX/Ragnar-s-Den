@@ -1,6 +1,7 @@
 import { uid } from "./basics.js";
 import { clampMonsterStat } from "./custom-monsters.js";
 import { CONDITIONS, SPELL_CONDITIONS } from "../data/conditions.js";
+import { MONSTER_DATA } from "../data/monsters.js";
 
 /* ---------------- Encounters ----------------
    A DM's named fights, saved in this browser apart from any character so
@@ -8,8 +9,8 @@ import { CONDITIONS, SPELL_CONDITIONS } from "../data/conditions.js";
 
    Encounter shape:
      { id, name, round, current, updated, fav,
-       monsters: [{ id, name, kind, ac, speed, maxHp, hp, log, color, conditions }],
-       order:    [{ id, type:"player", name } | { id, type:"monster", monsterId }],
+       monsters: [{ id, name, kind, ac, speed, dex, maxHp, hp, log, color, conditions, init }],
+       order:    [{ id, type:"player", name, init } | { id, type:"monster", monsterId }],
        groupNames: { blue: "Archers", ... } }
 
    A monster keeps its own copy of the stats it was added with, so the
@@ -27,6 +28,10 @@ import { CONDITIONS, SPELL_CONDITIONS } from "../data/conditions.js";
    `conditions` are what's on the monster: [{ id, pick }], ids from the
    book's conditions or the spells tracked like them (SPELL_CONDITIONS),
    `pick` what the caster chose for Hex or Bestow Curse ("" if nothing).
+   `init` is the initiative number, or null before it is rolled (a
+   monster's) or typed in (a player's, on its line). `dex` is the
+   monster's Dexterity for the roll, null in saves from before it was
+   kept (the catalog's is used then).
 
    The saved list keeps the DM's own order (they drag the cards around),
    with the starred ones (`fav`) shown first. New encounters go on top. */
@@ -35,6 +40,9 @@ export var MONSTER_COLORS = ["blue", "green", "yellow", "orange", "teal", "pink"
 var COLOR_NAMES = { blue: "Blue", green: "Green", yellow: "Yellow", orange: "Orange", teal: "Teal", pink: "Pink", silver: "Silver" };
 
 var STORAGE_KEY = "ragnarsDen.encounters.v1";
+// Player names the DM took off the "From other encounters" suggestions
+// (lower case). The players stay in their encounters.
+var HIDDEN_NAMES_KEY = "ragnarsDen.hiddenPlayerNames.v1";
 
 var list = [];
 
@@ -76,11 +84,13 @@ function clean(e){
       kind: String(m.kind || ""),
       ac: clampMonsterStat("ac", m.ac, 10),
       speed: clampMonsterStat("speed", m.speed, 30),
+      dex: m.dex == null ? null : Math.max(1, Math.min(30, int(m.dex, 10))),
       maxHp: maxHp,
       hp: hp,
       log: log.length ? log : [hp],
       color: MONSTER_COLORS.indexOf(m.color) === -1 ? "" : m.color,
-      conditions: hp > 0 ? cleanConditions(m.conditions) : []
+      conditions: hp > 0 ? cleanConditions(m.conditions) : [],
+      init: cleanInit(m.init)
     };
   });
   var ids = {};
@@ -95,7 +105,7 @@ function clean(e){
     return true;
   }).map(function(o){
     return o.type === "player"
-      ? { id: String(o.id), type: "player", name: String(o.name).trim() }
+      ? { id: String(o.id), type: "player", name: String(o.name).trim(), init: cleanInit(o.init) }
       : { id: String(o.id), type: "monster", monsterId: String(o.monsterId) };
   });
   var current = order.some(function(o){ return o.id === e.current; }) ? e.current : (order[0] ? order[0].id : null);
@@ -116,6 +126,13 @@ function clean(e){
     groupNames: groupNames,
     fav: e.fav === true
   };
+}
+
+/* An initiative number (a d20 plus at most +15 or so, or less than 1 with
+   a low Dexterity), or null. */
+function cleanInit(v){
+  var n = parseInt(v, 10);
+  return isNaN(n) ? null : Math.max(-10, Math.min(99, n));
 }
 
 /* Known ids once each, with a pick the condition offers or "". */
@@ -227,9 +244,28 @@ export function importEncounters(entries){
   return added;
 }
 
-/* Player names used in any saved encounter, for adding the party again. */
+function hiddenNames(){
+  try{
+    var data = JSON.parse(localStorage.getItem(HIDDEN_NAMES_KEY) || "[]");
+    return Array.isArray(data) ? data.map(function(n){ return String(n).toLowerCase(); }) : [];
+  }catch(e){ return []; }
+}
+function writeHiddenNames(names){
+  try{ localStorage.setItem(HIDDEN_NAMES_KEY, JSON.stringify(names)); }catch(e){}
+}
+
+/* Stops suggesting a player name; adding that name again brings it back. */
+export function forgetPlayerName(name){
+  var key = String(name || "").trim().toLowerCase();
+  var names = hiddenNames();
+  if(key && names.indexOf(key) === -1){ names.push(key); writeHiddenNames(names); }
+}
+
+/* Player names used in any saved encounter, for adding the party again,
+   less the ones the DM took off the list. */
 export function knownPlayerNames(){
   var seen = {}, names = [];
+  hiddenNames().forEach(function(n){ seen[n] = true; });
   getEncounters().forEach(function(e){
     e.order.forEach(function(o){
       if(o.type !== "player") return;
@@ -265,11 +301,13 @@ export function addMonster(e, kind, data){
     kind: kind,
     ac: clampMonsterStat("ac", data && data.ac, 10),
     speed: clampMonsterStat("speed", data && data.speed, 30),
+    dex: data && data.dex != null ? Math.max(1, Math.min(30, int(data.dex, 10))) : null,
     maxHp: maxHp,
     hp: maxHp,
     log: [maxHp],
     color: "",
-    conditions: []
+    conditions: [],
+    init: null
   };
   e.monsters.push(m);
   return m;
@@ -428,7 +466,10 @@ export function unplacedMonsters(e){
 export function addPlayer(e, name, index){
   var n = String(name || "").trim();
   if(!n) return null;
-  var entry = { id: uid(), type: "player", name: n };
+  var entry = { id: uid(), type: "player", name: n, init: null };
+  // A name taken off the suggestions comes back once it is used again.
+  var hidden = hiddenNames(), key = n.toLowerCase();
+  if(hidden.indexOf(key) !== -1) writeHiddenNames(hidden.filter(function(h){ return h !== key; }));
   insertAt(e, entry, index);
   return entry;
 }
@@ -534,15 +575,94 @@ function stepTurn(e, dir){
   }
 }
 
+/* ---- Initiative ----
+   The DM rolls for every monster at once (d20 + Dexterity modifier), the
+   players say what they rolled and the DM types it on their line. The
+   line is sorted high to low whenever a number comes in. A tie keeps the
+   order it had, so the DM can drag tied entries the way they like. */
+
+/* The Dexterity modifier the roll adds. */
+export function monsterInitBonus(m){
+  var dex = m.dex;
+  if(dex == null){
+    var d = MONSTER_DATA[m.kind];
+    dex = d && d.dex != null ? d.dex : 10;
+  }
+  return Math.floor((dex - 10) / 2);
+}
+
+/* The number an order entry goes by, or null. */
+export function entryInit(e, o){
+  if(o.type === "player") return o.init;
+  var m = getMonster(e, o.monsterId);
+  return m ? m.init : null;
+}
+
+/* Rolls for every monster still standing, puts the ones waiting into the
+   line and sorts it. `rng` returns 0 to 1 (Math.random unless a test
+   passes its own). Returns [{ monster, roll, bonus, total }]. */
+export function rollInitiative(e, rng){
+  rng = rng || Math.random;
+  var rolls = [];
+  e.monsters.forEach(function(m){
+    if(isDead(m)){ m.init = null; return; }
+    var roll = 1 + Math.floor(rng() * 20);
+    var bonus = monsterInitBonus(m);
+    m.init = roll + bonus;
+    rolls.push({ monster: m, roll: roll, bonus: bonus, total: m.init });
+    if(!orderEntryFor(e, m.id)) placeMonster(e, m.id);
+  });
+  sortByInitiative(e);
+  return rolls;
+}
+
+/* Sets an entry's number by hand ("" or null takes it away) and sorts. */
+export function setInitiative(e, entryId, value){
+  var o = e.order.find(function(x){ return x.id === entryId; });
+  if(!o) return;
+  var n = value === "" ? null : cleanInit(value);
+  if(o.type === "player") o.init = n;
+  else{
+    var m = getMonster(e, o.monsterId);
+    if(m) m.init = n;
+  }
+  sortByInitiative(e);
+}
+
+/* High to low; entries without a number go to the bottom. The sort is
+   stable, so ties and the unnumbered keep the order they had. */
+export function sortByInitiative(e){
+  var start = atFirstTurn(e);
+  var at = {};
+  e.order.forEach(function(o, i){ at[o.id] = i; });
+  e.order.sort(function(a, b){
+    var x = entryInit(e, a), y = entryInit(e, b);
+    if(x === null && y === null) return at[a.id] - at[b.id];
+    if(x === null) return 1;
+    if(y === null) return -1;
+    return y - x || at[a.id] - at[b.id];
+  });
+  if(start && e.order.length) e.current = e.order[0].id;
+}
+
+/* Has anyone got a number yet? */
+export function hasInitiative(e){
+  return e.monsters.some(function(m){ return m.init !== null; }) ||
+    e.order.some(function(o){ return o.type === "player" && o.init !== null; });
+}
+
 /* Ready to run again: every monster at full hit points with no
    conditions, round 1, the top of the turn line goes first. The
-   monsters, players and order stay. */
+   monsters, players and order stay; the initiative numbers go, ready
+   for the next roll. */
 export function resetEncounter(e){
   e.monsters.forEach(function(m){
     m.hp = m.maxHp;
     m.log = [m.maxHp];
     m.conditions = [];
+    m.init = null;
   });
+  e.order.forEach(function(o){ if(o.type === "player") o.init = null; });
   e.round = 1;
   e.current = e.order[0] ? e.order[0].id : null;
 }
