@@ -141,7 +141,7 @@ function classGunItem(item){
    fillKitPicks does): {items, coins: {gp, sp, pp}, notes: [text]}. A
    weapon is marked `picked` (its proficiency is worked out where it's
    added). */
-export function kitItems(background, picks, ctx, rng){
+export function kitItems(background, picks, ctx, rng, keep){
   var kit = backgroundKit(background);
   var out = {items: [], coins: {}, notes: []};
   if(!kit) return out;
@@ -179,6 +179,8 @@ export function kitItems(background, picks, ctx, rng){
   }
   addKit(background, "");
   if(kit.secondaryGuild) addKit(picks.guild, "guild/");
+  // Supplies left out (js/core/supplies.js): only what keep(item) passes.
+  if(keep) out.items = out.items.filter(keep);
   return out;
 }
 /* One line for the coins: "15 gp", "1 pp", "5 gp" (or "" for none). */
@@ -189,8 +191,8 @@ export function coinsText(coins){
 /* Add the kit to a character: items into the pack (gear stacks with
    gear of the same name), coins into the purse. Records it on
    c.backgroundGear so it's offered once only. Returns kitItems' result. */
-export function addBackgroundKit(c, background, picks, ctx, rng){
-  var res = kitItems(background, picks, ctx, rng);
+export function addBackgroundKit(c, background, picks, ctx, rng, keep){
+  var res = kitItems(background, picks, ctx, rng, keep);
   if(!Array.isArray(c.inventory)) c.inventory = [];
   if(hasGunslingerClass(c)) res.items = res.items.map(classGunItem);
   res.items.forEach(function(item){

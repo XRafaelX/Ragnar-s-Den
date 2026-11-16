@@ -589,7 +589,7 @@ Object.assign(CLASSES_INFO["Warlock"], {
 
 CLASSES_INFO["Artificer"].features = [
   {name:"Magical Tinkering", text:"Invest a spark of magic into mundane tiny objects (light, recorded sound, odor, or visual effect)."},
-  {name:"Spellcasting", text:"Cast spells by using tools as focuses, with Intelligence as your spellcasting ability."}
+  {name:"Spellcasting", text:"Cast spells by using tools as focuses, with Intelligence as your spellcasting ability. Whenever you gain an artificer level, you can replace one artificer cantrip you know with another from the artificer spell list. Make the swap on the Spells tab."}
 ];
 
 /* Bard: any three skills and three instruments; College comes at level 3.

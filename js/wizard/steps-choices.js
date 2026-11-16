@@ -7,7 +7,8 @@ import { FIGHTING_STYLES } from "../data/classes.js";
 import { escapeHtml, ce, autoEquipLoadout, isProficientWithWeapon } from "../core/helpers.js";
 import { WEAPON_DATA, WEAPON_GROUPS, GUNSLINGER_FIREARMS } from "../data/weapons.js";
 import { themedPicker, resetThemedPickers } from "../ui/themed-picker.js";
-import { wizardEdition, wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills, wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardKitContext } from "./wizard-core.js";
+import { wizardEdition, wizardVariantOffers, currentClassInfo, wizardState, renderWizard, subclassGrants, equipmentOptionAvailable, languagePlan, raceChoiceDef, wizardBackgroundFeatPicks, wizardSpellChoices, wizardExpandedSpells, wizardBackgroundSkills, wizardClassGrants, wizardPickSlots, wizardPickContext, wizardRaceSkills, wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardKitContext, wizardTracksSupplies, wizardShowsPicks, wizardHiddenPickKinds, wizardKeptItems, wizardShowsGearGroup, wizardKitKeep } from "./wizard-core.js";
+import { labelWithout } from "../core/supplies.js";
 import { renderKitPicker, kitIntroHtml } from "../ui/background-gear.js";
 import { backgroundKit } from "../core/background-gear.js";
 import { renderClassPicks, renderVariantOptions } from "../ui/class-picks.js";
@@ -93,9 +94,12 @@ export function wizardStepChoices(container){
   // and terrain, Knowledge Domain's skills and languages, an Order or
   // Peace cleric's skill, a Draconic sorcerer's dragon. Their picks sit
   // under a rule, side by side.
-  var grants = wizardClassGrants().filter(function(g){ return grantHasChoices(g.def); }), shown = [];
+  // (A feature that only asks for tools isn't asked while supplies aren't
+  // tracked: see wizardShowsPicks.)
+  var grants = wizardClassGrants().filter(function(g){ return grantHasChoices(g.def) && wizardShowsPicks(g); }), shown = [];
   function picks(into, grant, opts){
     shown.push(grant.key);
+    opts = Object.assign({hideKinds: wizardHiddenPickKinds()}, opts || {});
     into.appendChild(renderClassPicks(grant, wizardPickSlots(grant.key), wizardPickContext(grant), function(meta){
       var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
       if(!(meta && meta.typing)) renderWizard();
@@ -389,11 +393,13 @@ export function wizardStepEquipment(container){
   explain.innerHTML = "<b>Why this matters:</b> Your class gives you a choice of starting gear instead of buying everything piece by piece. Pick what fits how you want to fight.";
   card.appendChild(explain);
 
-  var info = currentClassInfo();
+  var info = currentClassInfo(), tracked = wizardTracksSupplies(), letter = 0;
   info.equipment.choiceGroups.forEach(function(group, gi){
+    // (A choice between packs only isn't asked while supplies aren't tracked.)
+    if(!wizardShowsGearGroup(group)) return;
     var groupTitle = document.createElement("p");
     groupTitle.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
-    groupTitle.textContent = "Choice "+String.fromCharCode(65+gi);
+    groupTitle.textContent = "Choice "+String.fromCharCode(65+letter++);
     card.appendChild(groupTitle);
     group.options.forEach(function(opt){
       var row = ce("div","wiz-equip-option");
@@ -402,7 +408,11 @@ export function wizardStepEquipment(container){
       if(!available && wizardState.equipment[gi]===opt.key) delete wizardState.equipment[gi];
       if(wizardState.equipment[gi]===opt.key) row.classList.add("selected");
       var lockNote = available ? "" : "<br><span style='font-size:11.5px;color:var(--oxblood)'>Needs "+escapeHtml(PROF_LABELS[opt.requires]||opt.requires)+" proficiency"+escapeHtml(requiresHint(opt.requires))+"</span>";
-      row.innerHTML = "<div><strong>"+escapeHtml(opt.label)+"</strong><br><span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(opt.detail||"")+"</span>"+lockNote+"</div>";
+      // Without supplies, the label leaves out what isn't given ("Explorer's Pack").
+      var dropped = tracked ? [] : opt.items.filter(function(it){ return wizardKeptItems([it]).length===0; }).map(function(it){ return it.name; })
+        .concat(opt.starterTool ? ["your tool"] : []);
+      var detail = !tracked && opt.starterTool ? "" : opt.detail||"";
+      row.innerHTML = "<div><strong>"+escapeHtml(labelWithout(opt.label, dropped))+"</strong><br><span style='font-size:11.5px;color:var(--text-on-parch-dim)'>"+escapeHtml(detail)+"</span>"+lockNote+"</div>";
       if(!available){ row.classList.add("disabled"); row.style.opacity = ".5"; row.style.cursor = "not-allowed"; card.appendChild(row); return; }
       row.addEventListener("click", function(){
         wizardState.equipment[gi] = opt.key;
@@ -416,19 +426,21 @@ export function wizardStepEquipment(container){
     });
   });
 
-  if(info.equipment.fixed.length){
+  var fixedShown = info.equipment.fixed.map(function(it, ii){ return {it: it, ii: ii}; })
+    .filter(function(x){ return wizardKeptItems([x.it]).length > 0; });
+  if(fixedShown.length){
     var fixedTitle = document.createElement("p");
     fixedTitle.style.cssText = "font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-on-parch-dim);margin:14px 0 6px;";
     fixedTitle.textContent = "Always included";
     card.appendChild(fixedTitle);
     var fixedP = document.createElement("p");
     fixedP.style.fontSize = "13px";
-    fixedP.textContent = info.equipment.fixed.map(function(i, ii){
-      var name = i.pick ? pickedWeaponName(i, "fixed:" + ii) : i.name;
-      return i.qty>1 ? i.qty+"× "+name : name;
+    fixedP.textContent = fixedShown.map(function(x){
+      var name = x.it.pick ? pickedWeaponName(x.it, "fixed:" + x.ii) : x.it.name;
+      return x.it.qty>1 ? x.it.qty+"× "+name : name;
     }).join(", ");
     card.appendChild(fixedP);
-    info.equipment.fixed.forEach(function(it, ii){ if(it.pick) card.appendChild(weaponPickField(it, "fixed:" + ii)); });
+    fixedShown.forEach(function(x){ if(x.it.pick) card.appendChild(weaponPickField(x.it, "fixed:" + x.ii)); });
   }
 
   container.appendChild(card);
@@ -438,10 +450,10 @@ export function wizardStepEquipment(container){
     var bgCard = ce("div","card bgk-card");
     bgCard.innerHTML = "<h3><span>Background Equipment</span></h3>";
     var bgExplain = ce("div","wiz-explain");
-    bgExplain.innerHTML = kitIntroHtml(wizardState.background);
+    bgExplain.innerHTML = kitIntroHtml(wizardState.background, !tracked);
     bgCard.appendChild(bgExplain);
     wizardState.bgGear = wizardState.bgGear || {};
-    bgCard.appendChild(renderKitPicker(wizardState.background, wizardState.bgGear, wizardKitContext(), "wizKit", renderWizard));
+    bgCard.appendChild(renderKitPicker(wizardState.background, wizardState.bgGear, wizardKitContext(), "wizKit", renderWizard, wizardKitKeep()));
     container.appendChild(bgCard);
   }
 }
@@ -528,12 +540,14 @@ export function buildEquipmentList(info, chosenKeys){
     var opt = group.options.find(function(o){ return o.key===chosenKeys[gi]; });
     if(opt){
       opt.items.forEach(function(it, ii){
+        if(!wizardKeptItems([it]).length) return; // (a pack, while supplies aren't tracked)
         var chosen = it.pick ? pickedItem(it, gi + ":" + ii) : it;
         items.push(equipmentItemToInventoryItem(chosen, chosen.type==="weapon" || chosen.type==="armor"));
       });
     }
   });
   info.equipment.fixed.forEach(function(it, ii){
+    if(!wizardKeptItems([it]).length) return;
     var chosen = it.pick ? pickedItem(it, "fixed:" + ii) : it;
     items.push(equipmentItemToInventoryItem(chosen, chosen.type==="weapon" || chosen.type==="armor"));
   });

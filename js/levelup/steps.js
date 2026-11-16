@@ -28,7 +28,7 @@ import { fillFeatList, featListLabel } from "../ui/feat-list.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { SPELL_DATA } from "../data/spells.js";
 function spellLevelOf(n){ return (SPELL_DATA[n] || {}).level; }
-import { lu, luEdition, styleOptions, featWho, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, cantripSwapOut, cantripSwapBlocked, versatilityChoices, versatilityPicked, expertiseSwap, expertiseTargets, pactChange, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain, spellChangeFeats, spellChangeOptions, featSpellSwaps } from "./session.js";
+import { lu, luEdition, styleOptions, featWho, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, knownNow, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, styleCantripOffer, styleSwapOffered, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, swapOutStyle, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain, spellChangeFeats, spellChangeOptions, featSpellSwaps } from "./session.js";
 
 /* A feat's picks redraw the step, except a spell card ticked (the cards keep their scroll and search). */
 function softRender(meta){ if(!(meta && meta.soft)) render(); }
@@ -261,77 +261,7 @@ function renderLearn(container, cantripsStep){
   var sections = learnSections(plan);
   mine.forEach(function(s){ card.appendChild(grid(s)); });
   if(plan.swap && !cantripsStep) renderSpellSwap();
-  if(plan.cantripSwap && cantripsStep) renderCantripSwap();
 
-  // A cantrip swap: the artificer's each level, or Tasha's Versatility
-  // (Bardic and Eldritch Versatility may change something else instead).
-  function renderCantripSwap(){
-    var v = versatilityChoices(plan);
-    var wide = v.expertise.length || v.arcanum.length || v.pact;
-    var title = ce("p","lu-choice-title");
-    title.textContent = wide ? v.from+" (optional)" : "Swap a cantrip (optional)";
-    card.appendChild(title);
-    var help = ce("p","lu-note");
-    var also = v.from==="Sorcerous Versatility" ? " (or a Metamagic option instead, on the Options step)"
-      : v.from==="Bardic Versatility" && v.expertise.length ? ", or move one of your Expertise skills to another skill you're proficient in"
-      : v.from==="Eldritch Versatility" ? ", or replace your Pact Boon"+(v.arcanum.length ? " or a Mystic Arcanum spell (another warlock spell of the same level)" : "") : "";
-    help.innerHTML = (v.from==="level"
-      ? "Each time you gain an "+escapeHtml(cls)+" level"
-      : "<b>"+escapeHtml(v.from)+"</b> (Tasha's optional features): at this level")+
-      " you may replace one "+escapeHtml(cls)+" cantrip you know with another from the "+escapeHtml(cls)+" spell list"+escapeHtml(also)+
-      (wide ? ". Only one of these. " : ". ")+"Most players keep theirs.";
-    card.appendChild(help);
-    var blocked = cantripSwapBlocked(plan);
-    if(blocked){
-      lu.versatilityPick = ""; lu.learnPicks.cantripIn = [];
-      var note = ce("p","lu-note lu-cantrip-blocked");
-      note.textContent = "You're using "+v.from+" on "+blocked+" this level, so no cantrip swap. Undo that on the Options step to swap a cantrip instead.";
-      card.appendChild(note);
-      return;
-    }
-    var picked = versatilityPicked(plan);
-    if(!picked) lu.versatilityPick = "";
-    var groups = {}, keep = [{value:"", label: wide ? "Keep everything" : "Keep them all", muted:true}];
-    var cantripItems = v.cantrips.map(function(n){ return {value:"cantrip:"+n, label:"Replace "+n}; });
-    if(!wide) groups[""] = keep.concat(cantripItems);
-    else {
-      groups[""] = keep;
-      groups["Cantrips"] = cantripItems;
-      if(v.expertise.length) groups["Expertise"] = v.expertise.map(function(n){ return {value:"expertise:"+n, label:"Move expertise from "+n}; });
-      if(v.pact) groups["Pact Boon"] = [{value:"pact", label:"Replace "+v.pact}];
-      if(v.arcanum.length) groups["Mystic Arcanum"] = v.arcanum.map(function(n){ return {value:"arcanum:"+n, label:"Replace "+n}; });
-    }
-    var vField = ce("div","field rt-field fp-field eli-field");
-    vField.appendChild(themedPicker({
-      key: "lu:cantripswap", ariaLabel: wide ? v.from+": what to change" : "Cantrip to replace", placeholder: keep[0].label, search: false,
-      groups: groups, value: lu.versatilityPick,
-      onPick: function(val){
-        if(val!==lu.versatilityPick){ lu.learnPicks.cantripIn = []; lu.learnPicks.arcanumIn = []; lu.versatilitySkill = ""; }
-        lu.versatilityPick = val; render();
-      }
-    }));
-    card.appendChild(vField);
-    var swapList = sections.find(function(s){ return s.id==="cantripIn" || s.id==="arcanumIn"; });
-    if(swapList) card.appendChild(grid(swapList));
-    var ex = expertiseSwap(plan);
-    if(ex){
-      var lbl = ce("p","lu-choice-title"); lbl.textContent = "Expertise moves to";
-      card.appendChild(lbl);
-      var targets = expertiseTargets();
-      var sField = ce("div","field rt-field fp-field eli-field");
-      sField.appendChild(themedPicker({
-        key: "lu:expertiseto", ariaLabel: "Expertise moves to", placeholder: targets.length ? "Pick a skill you're proficient in…" : "No other proficient skill",
-        search: false, groups: {"": targets.map(function(n){ return {value:n, label:n}; })}, value: lu.versatilitySkill,
-        onPick: function(val){ lu.versatilitySkill = val; render(); }
-      }));
-      card.appendChild(sField);
-    }
-    if(picked && picked.kind==="pact"){
-      var pn = ce("p","lu-note lu-pact-change-note");
-      pn.textContent = "You pick the Pact Boon that replaces your "+v.pact+" on the Invocations step.";
-      card.appendChild(pn);
-    }
-  }
   function renderSpellSwap(){
   var swapTitle = ce("p","lu-choice-title");
   swapTitle.textContent = "Swap one you know (optional)";
@@ -356,19 +286,13 @@ function renderLearn(container, cantripsStep){
 export function stepInvocations(container){
   var t = target();
   if(pactDue()){
-    var oldBoon = pactChange() ? t.existing.pactBoon : "";
-    var pc = oldBoon
-      ? stepCard(container, "Replace your Pact Boon",
-        "<b>Eldritch Versatility</b> (Tasha's optional features): you chose to replace your <b>"+escapeHtml(oldBoon)+"</b> with another Pact Boon. "+
-        "An invocation that needs your old pact has to go (swap it out below). You can still keep your pact: choose <i>Keep everything</i> on the Cantrips step.")
-      : stepCard(container, "Choose your Pact Boon",
+    var pc = stepCard(container, "Choose your Pact Boon",
       "<b>Your patron's gift:</b> at warlock level 3 you choose a Pact Boon. It's yours for good, and some invocations need a particular pact. "+
       "Blade suits a warlock who fights up close, Chain gives you a clever familiar, Tome gives you extra cantrips, and Talisman helps an ally.");
-    if(oldBoon && lu.pactBoon===oldBoon){ lu.pactBoon = ""; lu.pactSpells = []; }
     pc.appendChild(renderPactBoonOptions(lu.pactBoon, function(name){
       if(name!==lu.pactBoon) lu.pactSpells = [];
       lu.pactBoon = name; render();
-    }, !!lu.c.tashaOptional, oldBoon));
+    }, !!lu.c.tashaOptional));
     var boon = pactBoonDef(lu.pactBoon);
     if(boon && boon.spellPick){
       var title = ce("p","lu-choice-title");
@@ -480,16 +404,7 @@ export function stepOptions(container){
       }));
     }
     for(var i=0;i<plan.fresh;i++) picker(i, single ? "Your "+set.noun : plan.fresh>1 ? "New "+set.noun+" "+(i+1) : "New "+set.noun);
-    // Sorcerous Versatility changes one thing a level: a cantrip swapped
-    // on the Cantrips step uses it.
-    var cantripTaken = plan.canSwap && plan.why==="versatility" && set.id==="metamagic" && cantripSwapOut();
-    if(cantripTaken){
-      choice.swapOut = "";
-      var used = ce("p","lu-note lu-versatility-used");
-      used.textContent = "Sorcerous Versatility: you're replacing "+cantripTaken+" on the Cantrips step this level, so no Metamagic option changes. Keep that cantrip there to change one here instead.";
-      card.appendChild(used);
-    }
-    if(plan.canSwap && !cantripTaken){
+    if(plan.canSwap){
       var swapTitle = ce("p","lu-choice-title");
       swapTitle.textContent = single ? "Change your "+set.noun+" (optional)" : "Swap one you know (optional)";
       card.appendChild(swapTitle);
@@ -811,16 +726,12 @@ export function stepReview(container){
       var got = (lu.learnPicks[s.id]||[]).slice(0, s.count).filter(Boolean);
       if(!got.length) return;
       if(s.id==="swapIn") items.push("Spell swap: "+lu.learnSwap+" → "+got[0]);
-      else if(s.id==="cantripIn") items.push("Cantrip swap: "+cantripSwapOut(lp)+" → "+got[0]);
-      else if(s.id==="arcanumIn") items.push("Mystic Arcanum swap: "+cantripSwapOut(lp)+" → "+got[0]);
       else items.push(s.title+": "+got.join(", "));
     });
     if(lp.auto.length) items.push("Free cantrip: "+lp.auto.join(", "));
-    var exs = expertiseSwap(lp);
-    if(exs && exs.to) items.push("Expertise moved: "+exs.from+" → "+exs.to);
   }
   if(stepApplicable("invocations")){
-    if(pactDue() && lu.pactBoon) items.push("Pact Boon: "+(pactChange() ? t.existing.pactBoon+" → " : "")+lu.pactBoon+(lu.pactSpells.length ? " ("+lu.pactSpells.filter(Boolean).join(", ")+")" : ""));
+    if(pactDue() && lu.pactBoon) items.push("Pact Boon: "+lu.pactBoon+(lu.pactSpells.length ? " ("+lu.pactSpells.filter(Boolean).join(", ")+")" : ""));
     var swapped = lu.swapOut && knownNow().find(function(e){ return e.id===lu.swapOut; });
     var fresh = lu.invPicks.slice(0, invocationSlots()).filter(Boolean);
     if(swapped && fresh.length) items.push("Invocation swap: "+invocationLabel(swapped.name)+" → "+invocationLabel(fresh[fresh.length-1]));

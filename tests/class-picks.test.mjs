@@ -1151,7 +1151,7 @@ test("card: Tasha's replacement features are listed only with the switch on, or 
 test("starting tools: asked on Class Features, applied on the engine, listed in place of the placeholder", (t) => {
   let grants, err, monkOpts;
   withFakeDom(t, () => {
-    startWizard({ classId: "Bard", classChoices: {} });
+    startWizard({ classId: "Bard", classChoices: {}, trackSupplies: true });
     grants = W.wizardClassGrants().map((g) => [g.key, g.name]);
     err = W.validateStep("choices");
     startWizard({ classId: "Monk", classChoices: {} });

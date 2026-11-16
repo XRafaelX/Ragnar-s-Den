@@ -50,7 +50,7 @@ export var DRUID_2024 = {
   }},
   choices: [],
   level1: [
-    {name:"Spellcasting", text:"You cast druid spells using Wisdom. You know two cantrips (three at level 4, four at 10), and can replace one with another whenever you gain a druid level. You prepare four level 1 spells, more as you level, up to the Prepared count on the Spells tab, and can change them all after a long rest. A druidic focus can be your spellcasting focus."},
+    {name:"Spellcasting", text:"You cast druid spells using Wisdom. You know two cantrips (three at level 4, four at 10), and can replace one with another whenever you gain a druid level (make the swap on the Spells tab). You prepare four level 1 spells, more as you level, up to the Prepared count on the Spells tab, and can change them all after a long rest. A druidic focus can be your spellcasting focus."},
     {name:"Druidic", spells:["Speak with Animals"], spellKind:"prepared", text:"You know Druidic, the secret language of druids, and can leave hidden messages in it. Others spot one with a DC 15 Intelligence (Investigation) check but can't read it without magic. You always have Speak with Animals prepared."},
     {name:"Primal Order", text:"Choose a sacred role.\nMagician: " + ORDERS.Magician + "\nWarden: " + ORDERS.Warden + " (Already applied on the sheet.)",
       profs:{pick:[{kind:"choice", id:"primalOrder", noun:"role", count:1, options:Object.keys(ORDERS), details:ORDERS, label:"Choose your Primal Order"}]}}

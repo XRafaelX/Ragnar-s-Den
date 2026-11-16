@@ -11,6 +11,7 @@ import { mod, ce, uid, wizardScrollSave, wizardScrollRestore, wizardScrollReset,
 import { weaponDataOf } from "../data/weapons.js";
 import { armorProficiencies } from "../core/equipment.js";
 import { backgroundKit, addBackgroundKit, gearItem } from "../core/background-gear.js";
+import { loadTrackSupplies, keptWithoutSupplies, toolOnlyPicks, fillToolPicks } from "../core/supplies.js";
 import { catalogSpellName, spellDataForClass } from "../data/spells.js";
 import { newCharacter } from "../core/character.js";
 import { featPicksProblem, applyFeatPicks, featNeedsChoice, featRequiresReason, featHasPicks, featDef, emptyPicks, backgroundFeatGrant, backgroundFeatCopy, backgroundFeatPicks, campaignLevel1Feats, campaignFeatCopy, originFeatChoices, originFeatCopy } from "../core/feat-picks.js";
@@ -111,6 +112,33 @@ export function wizardLevel1Features(){
    Picks are kept in classChoices.profPicks[key], one list per slot. */
 export function wizardClassGrants(){
   return wizardState && wizardState.classId ? entryGrants(wizardClassEntry(), false) : [];
+}
+
+/* ---- Supplies and tools (js/core/supplies.js) ----
+   With "Track supplies and tools" off (the default), a feature whose
+   only picks are tools (a dwarf's Tool Proficiency, a Criminal's gaming
+   set, a bard's three instruments) isn't asked: its picks are filled
+   with the first options, and so are the tool picks of a feature that
+   also asks something else (a vedalken's skill is still asked). */
+export function wizardTracksSupplies(){ return !!(wizardState && wizardState.trackSupplies); }
+export function wizardShowsPicks(grant){ return wizardTracksSupplies() || !toolOnlyPicks(grant.def); }
+/* The pickers' kinds to leave off the screen: ["tool"], or []. */
+export function wizardHiddenPickKinds(){ return wizardTracksSupplies() ? [] : ["tool"]; }
+/* Fill every tool pick the wizard isn't asking for (the race's, the
+   background's, the class's and the ones for a tool given twice). */
+export function fillHiddenToolPicks(){
+  if(!wizardState || wizardTracksSupplies()) return;
+  function fill(grants, slotsOf, ctxOf){
+    grants.forEach(function(g){
+      if(!grantHasChoices(g.def) || !(g.def.pick||[]).some(function(p){ return p.kind==="tool"; })) return;
+      var ctx = ctxOf(g);
+      fillToolPicks(g.def, fillSlots(g.def, slotsOf(g.key), ctx), ctx);
+    });
+  }
+  if(wizardState.race) fill(wizardRacePickGrants(), wizardRaceSlots, wizardRacePickContext);
+  if(wizardState.background) fill(wizardBackgroundPickGrants(), wizardBgSlots, wizardBgPickContext);
+  if(wizardState.classId) fill(wizardClassGrants(), wizardPickSlots, wizardPickContext);
+  if(wizardState.classId) fill(wizardOverlapGrants(), wizardOverlapSlots, wizardOverlapContext);
 }
 export function wizardPickSlots(key){
   var all = wizardState.classChoices.profPicks = wizardState.classChoices.profPicks || {};
@@ -354,6 +382,27 @@ export function wizardExtraListName(){
    chain mail needs a heavy-armor domain), or the race or a feat (a
    gunslinger's scale mail needs medium armor: a Mountain Dwarf, or
    Moderately Armored). */
+/* The items a starting-gear option gives: all of them while supplies
+   are tracked, else what keptWithoutSupplies keeps (weapons, armor,
+   ammunition, a focus). */
+export function wizardKeptItems(items){
+  if(wizardTracksSupplies()) return items;
+  return items.filter(function(it){ return keptWithoutSupplies(it, wizardState.classId); });
+}
+/* A choice between packs only (a fighter's Dungeoneer's or Explorer's
+   Pack) isn't asked while supplies aren't tracked. */
+export function wizardShowsGearGroup(group){
+  return wizardTracksSupplies() || group.options.some(function(o){
+    return wizardKeptItems(o.items).length > 0 || Object.keys(o.coins || {}).length > 0;
+  });
+}
+/* A background kit's item kept while supplies aren't tracked, or null
+   while they are (everything is kept). */
+export function wizardKitKeep(){
+  if(wizardTracksSupplies()) return null;
+  var classId = wizardState.classId;
+  return function(item){ return keptWithoutSupplies(item, classId); };
+}
 export function equipmentOptionAvailable(opt){
   if(!opt.requires) return true;
   var grants = subclassGrants(currentClassInfo(), wizardState.classChoices);
@@ -630,12 +679,12 @@ export function isStepApplicable(id){
     // A class's own level-1 choices, a feature's proficiency or spell
     // picks (a ranger's favored enemy), or Tasha's replacement features.
     var ci = currentClassInfo();
-    return !!(ci && ci.choices && ci.choices.length) || wizardClassGrants().some(function(g){ return grantHasChoices(g.def); }) || wizardVariantOffers().length > 0;
+    return !!(ci && ci.choices && ci.choices.length) || wizardClassGrants().some(function(g){ return grantHasChoices(g.def) && wizardShowsPicks(g); }) || wizardVariantOffers().length > 0;
   }
   if(id==="languages") return languagePlan().slots.length > 0;
   // (Ability picks, a feat, or a trait's choice: a dwarf's tool, a kenku's skills.)
   // With a 2024 background the race's score picks are gone, its feat stays.
-  if(id==="raceChoices") return (!!raceChoiceDef() && (!wizardBgScoreRule() || !!raceChoiceDef().feat)) || wizardRacePickGrants().length > 0;
+  if(id==="raceChoices") return (!!raceChoiceDef() && (!wizardBgScoreRule() || !!raceChoiceDef().feat)) || wizardRacePickGrants().some(wizardShowsPicks);
   // A race's feat (Variant Human) gets its own step, and the feat's own
   // picks (Fey Touched's spell, Skilled's skills) one more, only when it has any.
   if(id==="feat") return !!(raceChoiceDef() && raceChoiceDef().feat);
@@ -730,6 +779,7 @@ export function goStep(delta){
 
 export function validateStep(id){
   var info = currentClassInfo();
+  fillHiddenToolPicks();
   if(id==="class") return (wizardState.classId && info && info.available) ? null : "Pick an available class to continue.";
   if(id==="race") return wizardState.race ? null : "Pick a race to continue.";
   if(id==="background") return wizardState.background ? null : "Pick a background to continue.";
@@ -855,7 +905,7 @@ export function validateStep(id){
     return null;
   }
   if(id==="equipment"){
-    var ok = info.equipment.choiceGroups.every(function(g,gi){ return wizardState.equipment[gi]!=null; });
+    var ok = info.equipment.choiceGroups.every(function(g,gi){ return wizardState.equipment[gi]!=null || !wizardShowsGearGroup(g); });
     if(!ok) return "Make a choice for each equipment option.";
     var locked = info.equipment.choiceGroups.some(function(g,gi){
       var opt = g.options.find(function(o){ return o.key===wizardState.equipment[gi]; });
@@ -900,6 +950,7 @@ export function openWizard(){
     bgFeat:null, bgFeatChoice:"", campaign:"", campaignFeat:"", rules2024:false, originFeat:"",
     languageChoices:[],
     equipment:{},
+    trackSupplies: loadTrackSupplies(),
     spellChoices:{cantrips:[], spells:[]}
   };
   closeSidebarMobile();
@@ -927,12 +978,13 @@ function addEquipmentExtras(c, info, chosenKeys){
     if(!opt) return;
     if(!c.currency) c.currency = {cp: 0, sp: 0, ep: 0, gp: 0, pp: 0};
     Object.keys(opt.coins || {}).forEach(function(k){ c.currency[k] = (Number(c.currency[k]) || 0) + opt.coins[k]; });
-    var start = opt.starterTool && c.classes[0].profPicks && c.classes[0].profPicks.starting;
+    var start = opt.starterTool && wizardTracksSupplies() && c.classes[0].profPicks && c.classes[0].profPicks.starting;
     var tool = start && start.slots && (start.slots[0] || [])[0];
     if(tool) c.inventory.push(gearItem(tool));
   });
 }
 export function finishWizard(){
+  fillHiddenToolPicks();
   var w = wizardState;
   var info = currentClassInfo();
   var c = newCharacter((w.name||"").trim());
@@ -1009,7 +1061,7 @@ export function finishWizard(){
   // The background's starting equipment and coins (its weapons checked
   // for proficiency once everything that gives it is on).
   if(backgroundKit(w.background)){
-    addBackgroundKit(c, w.background, w.bgGear || {}, wizardKitContext());
+    addBackgroundKit(c, w.background, w.bgGear || {}, wizardKitContext(), null, wizardKitKeep());
     c.inventory.forEach(function(item){
       if(!item.picked) return;
       item.proficient = isProficientWithWeapon(c, item.name, (weaponDataOf(item) || {}).category);
@@ -1166,6 +1218,7 @@ export function refreshWizardProgress(){
 }
 
 export function renderWizard(){
+  fillHiddenToolPicks();
   // The new character's spells: the 2024 versions under the 2024 rules or with a 2024 class.
   setSpellEdition(wizardRules2024() || wizardEdition()==="2024" ? "2024" : "2014");
   var overlay = document.getElementById("wizard-overlay");

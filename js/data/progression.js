@@ -134,6 +134,10 @@ export var CLASS_PROGRESSION = {
     prereq: [["cha"]], casterType: "full", spellAbility: "cha", asiLevels: STANDARD_ASI,
     // Tasha's Cauldron (p. 27), checked on 5etools' data 2026-10-29.
     variants: [
+      {name:"Bardic Versatility", adds:true, level:4, blurb:"Move an Expertise or swap a cantrip at Ability Score Improvement levels.",
+        features:{
+          4: [{name:"Bardic Versatility", text:"Whenever you reach a bard level that gives an Ability Score Improvement (4, 8, 12, 16 and 19), you can do one of these: replace one of your Expertise skills with another skill you're proficient in that doesn't have Expertise, or replace one bard cantrip you learned with another from the bard spell list. Move the Expertise on the Feature choices card and swap the cantrip on the Spells tab."}]
+        }},
       {name:"Magical Inspiration", adds:true, level:2, blurb:"Your Bardic Inspiration die can boost a spell's healing or damage.",
         features:{
           2: [{name:"Magical Inspiration", remind:{when:"always", line:"A creature you inspire can add the die to a spell's healing or damage"}, text:"If a creature has a Bardic Inspiration die from you and casts a spell that restores hit points or deals damage, it can roll that die and choose one target affected by the spell. Add the number rolled to the hit points that target regains or the damage it takes. The Bardic Inspiration die is then lost."}]
@@ -169,6 +173,10 @@ export var CLASS_PROGRESSION = {
     prereq: [["wis"]], casterType: "full", spellAbility: "wis", asiLevels: STANDARD_ASI,
     // Tasha's Cauldron (p. 30), checked on 5etools' data 2026-10-29.
     variants: [
+      {name:"Cantrip Versatility", adds:true, level:4, blurb:"Swap a cantrip at Ability Score Improvement levels.",
+        features:{
+          4: [{name:"Cantrip Versatility", text:"Whenever you reach a cleric level that gives an Ability Score Improvement (4, 8, 12, 16 and 19), you can replace one cleric cantrip you learned with another from the cleric spell list. Make the swap on the Spells tab."}]
+        }},
       {name:"Harness Divine Power", adds:true, level:2, blurb:"Spend a Channel Divinity to get back a spent spell slot.",
         features:{
           2: [{name:"Harness Divine Power", text:"As a bonus action, you can spend a use of your Channel Divinity to regain one spent spell slot, of a level no higher than half your proficiency bonus (rounded up). You can do this once, twice from cleric level 6 and three times from cleric level 18, and you regain all uses when you finish a long rest. Use it from Harness Divine Power on the Vitals tab."}]
@@ -193,6 +201,10 @@ export var CLASS_PROGRESSION = {
     prereq: [["wis"]], casterType: "full", spellAbility: "wis", asiLevels: STANDARD_ASI,
     // Tasha's Cauldron (p. 35), checked on 5etools' data 2026-10-29.
     variants: [
+      {name:"Cantrip Versatility", adds:true, level:4, blurb:"Swap a cantrip at Ability Score Improvement levels.",
+        features:{
+          4: [{name:"Cantrip Versatility", text:"Whenever you reach a druid level that gives an Ability Score Improvement (4, 8, 12, 16 and 19), you can replace one druid cantrip you learned with another from the druid spell list. Make the swap on the Spells tab."}]
+        }},
       {name:"Wild Companion", adds:true, level:2, blurb:"Spend a use of Wild Shape to cast Find Familiar, a fey that lasts a few hours.",
         features:{
           2: [{name:"Wild Companion", text:"As an action, you can spend a use of Wild Shape to cast Find Familiar without material components. The familiar is a fey instead of a beast, and it disappears after a number of hours equal to half your druid level. Summon it from Wild Shape on the Vitals tab. Its card is on the Companions tab.",
@@ -444,6 +456,10 @@ export var CLASS_PROGRESSION = {
     prereq: [["cha"]], casterType: "full", spellAbility: "cha", asiLevels: STANDARD_ASI,
     // Tasha's Cauldron (p. 65), checked on 5etools' data 2026-10-29.
     variants: [
+      {name:"Sorcerous Versatility", adds:true, level:4, blurb:"Swap a Metamagic option or a cantrip at Ability Score Improvement levels.",
+        features:{
+          4: [{name:"Sorcerous Versatility", text:"Whenever you reach a sorcerer level that gives an Ability Score Improvement (4, 8, 12, 16 and 19), you can do one of these: replace one of your Metamagic options with another one you can take, or replace one sorcerer cantrip you learned with another from the sorcerer spell list. The level-up offers the Metamagic swap. Swap the cantrip on the Spells tab."}]
+        }},
       {name:"Magical Guidance", adds:true, level:5, blurb:"Spend 1 sorcery point to reroll a failed ability check.",
         features:{
           5: [{name:"Magical Guidance", text:"When you make an ability check that fails, you can spend 1 sorcery point to reroll the d20, and you must use the new roll. After you roll a check, the dice tray offers it."}]
@@ -461,6 +477,13 @@ export var CLASS_PROGRESSION = {
   "Warlock": {
     subclassLevel: 1, subclassLabel: "Otherworldly Patron",
     prereq: [["cha"]], casterType: "pact", spellAbility: "cha", asiLevels: STANDARD_ASI,
+    // Tasha's Cauldron (p. 71), checked on 5etools' data 2026-11-16.
+    variants: [
+      {name:"Eldritch Versatility", adds:true, level:4, blurb:"Swap a cantrip, your Pact Boon or a Mystic Arcanum spell at Ability Score Improvement levels.",
+        features:{
+          4: [{name:"Eldritch Versatility", text:"Whenever you reach a warlock level that gives an Ability Score Improvement (4, 8, 12, 16 and 19), you can do one of these: replace one warlock cantrip you learned with another from the warlock spell list, replace your Pact Boon with another one, or from level 12 replace one Mystic Arcanum spell with another warlock spell of the same level. If the change means you no longer qualify for an invocation, replace that invocation too. Swap a cantrip or a Mystic Arcanum spell on the Spells tab, and the Pact Boon or an invocation on the Eldritch Invocations card."}]
+        }}
+    ],
     multiclassProfs: {armor:["Light armor"], weapons:["Simple weapons"], tools:[], note:""},
     features: {
       2: [{name:"Eldritch Invocations", text:"You learn two eldritch invocations: permanent magical upgrades such as Agonizing Blast (add CHA to Eldritch Blast damage) or Devil's Sight (see in magical darkness). The level-up asks you to pick them, and the Eldritch invocations card on the Features & Feats tab lists them and applies what they do."}],

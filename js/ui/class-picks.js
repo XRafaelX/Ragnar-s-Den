@@ -25,7 +25,11 @@ export function renderClassPicks(grant, slots, ctx, onChange, keyPrefix, opts){
   if(def.help && !(opts && opts.noHelp)) box.appendChild(note(def.help));
   fillSlots(def, slots, ctx);
   var shownCount = 0; // pickers numbered across the slots ("choice 2" is the second on screen)
+  // Kinds left off the screen (the wizard's tools while supplies aren't
+  // tracked: filled for the player instead).
+  var hideKinds = (opts && opts.hideKinds) || [];
   (def.pick||[]).forEach(function(slot, i){
+    if(hideKinds.indexOf(slot.kind)!==-1) return;
     var opts = slotOptions(def, slots, i, ctx), n = slot.count || 1;
     // A pick that depends on another one (a house's gaming set) shows only
     // when there is something to pick.

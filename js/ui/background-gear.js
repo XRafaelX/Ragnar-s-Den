@@ -8,19 +8,23 @@ import { themedPicker } from "./themed-picker.js";
 import { kitSlots, kitItems, fillKitPicks, coinsText, rollTrinket, trinketTable } from "../core/background-gear.js";
 
 /* picks: the object the choices are kept in (changed in place); ctx:
-   {toolPicks}; keyPrefix: themedPicker keys; onChange(): redraw. */
-export function renderKitPicker(background, picks, ctx, keyPrefix, onChange){
+   {toolPicks}; keyPrefix: themedPicker keys; onChange(): redraw.
+   keep(item) (optional): supplies aren't tracked, so only the items it
+   passes are listed and the only choice asked is a 2024 background's
+   equipment or gold (the others keep their first option). */
+export function renderKitPicker(background, picks, ctx, keyPrefix, onChange, keep){
   var box = ce("div", "bgk-box");
   fillKitPicks(background, picks, ctx);
-  var res = kitItems(background, picks, ctx);
+  var res = kitItems(background, picks, ctx, null, keep);
   var list = ce("p", "bgk-items");
   var names = res.items.map(function(i){ return (i.qty > 1 ? i.qty + " × " : "") + i.name; }).join(", ");
   // (Just coins for a 2024 background's gold in place of its kit.)
   var coins = coinsText(res.coins);
   list.textContent = (names && coins ? names + ", and " + coins : names || coins.charAt(0).toUpperCase() + coins.slice(1)) + ".";
   box.appendChild(list);
-  res.notes.forEach(function(t){ var p = ce("p", "bgk-note"); p.textContent = t; box.appendChild(p); });
+  if(!keep) res.notes.forEach(function(t){ var p = ce("p", "bgk-note"); p.textContent = t; box.appendChild(p); });
   kitSlots(background, picks).forEach(function(s){
+    if(keep && s.key !== "gold") return;
     var row = ce("div", "bgk-slot");
     var label = ce("p", "lu-choice-title");
     label.textContent = s.label;
@@ -45,7 +49,8 @@ export function renderKitPicker(background, picks, ctx, keyPrefix, onChange){
   });
   return box;
 }
-export function kitIntroHtml(background){
+export function kitIntroHtml(background, noSupplies){
   var article = /^[AEIOU]/.test(background) ? "an " : "a ";
+  if(noSupplies) return "<b>From your background:</b> the coins " + article + escapeHtml(background) + " starts with, and any weapon. Its clothes, tools and keepsakes are left out because you aren't tracking supplies.";
   return "<b>From your background:</b> what " + article + escapeHtml(background) + " starts with. It goes in your pack, and the coins in your purse.";
 }

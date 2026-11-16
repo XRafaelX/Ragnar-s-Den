@@ -41,7 +41,7 @@ export var WARLOCK_2024 = {
   ],
   level1: [
     {name:"Eldritch Invocations", text:"You know one eldritch invocation, such as Pact of the Tome, and more as you level (three at 2, five at 5, up to ten at 18). Whenever you gain a warlock level, you can swap one for another you qualify for, unless another invocation you have needs it. The level-up asks, and the Eldritch invocations card lists them."},
-    {name:"Pact Magic", text:"You cast warlock spells using Charisma. You know two cantrips (three at level 4, four at 10) and two level 1 spells, more as you level, following the Prepared Spells column. Your pact slots are all of the same level and come back on a short or long rest. Whenever you gain a warlock level, you can swap one cantrip and one spell. An arcane focus can be your spellcasting focus."}
+    {name:"Pact Magic", text:"You cast warlock spells using Charisma. You know two cantrips (three at level 4, four at 10) and two level 1 spells, more as you level, following the Prepared Spells column. Your pact slots are all of the same level and come back on a short or long rest. Whenever you gain a warlock level, you can swap one cantrip and one spell. The level-up offers the spell swap. Swap the cantrip on the Spells tab. An arcane focus can be your spellcasting focus."}
   ],
   features: {
     2: [{name:"Magical Cunning", text:"You can perform a 1 minute rite to regain spent pact slots, up to half your maximum (round up). Once per long rest. The button is on the Magical Cunning row on Vitals."}],

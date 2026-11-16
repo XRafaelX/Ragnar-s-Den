@@ -35,7 +35,7 @@ export var SORCERER_2024 = {
     spellsHelp:"Choose two level 1 sorcerer spells. Burning Hands and Detect Magic are the book's suggestions. Each time you gain a sorcerer level you can swap one."},
   choices: [],
   level1: [
-    {name:"Spellcasting", text:"You cast sorcerer spells using Charisma. You know four cantrips (five at level 4, six at 10). Light, Prestidigitation, Shocking Grasp and Sorcerous Burst are recommended. You know two level 1 spells, more as you level, following the Prepared Spells column. Whenever you gain a sorcerer level, you can swap one cantrip and one spell. An arcane focus can be your spellcasting focus."},
+    {name:"Spellcasting", text:"You cast sorcerer spells using Charisma. You know four cantrips (five at level 4, six at 10). Light, Prestidigitation, Shocking Grasp and Sorcerous Burst are recommended. You know two level 1 spells, more as you level, following the Prepared Spells column. Whenever you gain a sorcerer level, you can swap one cantrip and one spell. The level-up offers the spell swap. Swap the cantrip on the Spells tab. An arcane focus can be your spellcasting focus."},
     {name:"Innate Sorcery", text:"As a bonus action, unleash your magic for 1 minute: the spell save DC of your sorcerer spells goes up by 1, and you have advantage on the attack rolls of sorcerer spells you cast (both on the Spellcasting card while it's on). You can do this twice, regained on a long rest. Start it from the Active effects card."}
   ],
   features: {

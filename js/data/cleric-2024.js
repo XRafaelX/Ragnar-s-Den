@@ -51,7 +51,7 @@ export var CLERIC_2024 = {
   }},
   choices: [],
   level1: [
-    {name:"Spellcasting", text:"You cast cleric spells using Wisdom. You know three cantrips (four at level 4, five at 10), and can replace one with another whenever you gain a cleric level. You prepare four level 1 spells, more as you level, up to the Prepared count on the Spells tab, and can change them all after a long rest. A holy symbol can be your spellcasting focus."},
+    {name:"Spellcasting", text:"You cast cleric spells using Wisdom. You know three cantrips (four at level 4, five at 10), and can replace one with another whenever you gain a cleric level (make the swap on the Spells tab). You prepare four level 1 spells, more as you level, up to the Prepared count on the Spells tab, and can change them all after a long rest. A holy symbol can be your spellcasting focus."},
     {name:"Divine Order", text:"Choose a sacred role.\nProtector: " + ORDERS.Protector + "\nThaumaturge: " + ORDERS.Thaumaturge + " (Already applied on the sheet.)",
       profs:{pick:[{kind:"choice", id:"divineOrder", noun:"role", count:1, options:Object.keys(ORDERS), details:ORDERS, label:"Choose your Divine Order"}]}}
   ],

@@ -260,14 +260,15 @@ const inWizard = (t, choices, fn) => { let out; withFakeDom(t, () => { startWiza
 const create = (t, choices) => inWizard(t, choices, () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
 
 test("wizard: the Skills step asks for a Criminal's gaming set; the new sheet has both tools", (t) => {
-  assert.match(inWizard(t, {}, () => W.validateStep("skills")), /^Choose a gaming set for Criminal\.$/);
-  const choices = { bgPicks: { "bg:Criminal:pick": [["Three-Dragon Ante set"]] } };
+  // (With "Track supplies and tools" on: off, see supplies.test.mjs.)
+  assert.match(inWizard(t, { trackSupplies: true }, () => W.validateStep("skills")), /^Choose a gaming set for Criminal\.$/);
+  const choices = { trackSupplies: true, bgPicks: { "bg:Criminal:pick": [["Three-Dragon Ante set"]] } };
   assert.equal(inWizard(t, choices, () => W.validateStep("skills")), null);
   const c = create(t, choices);
   assert.deepEqual(CP.backgroundProficiencies(c).tools, ["Thieves' tools", "Three-Dragon Ante set"]);
   assert.ok(!CP.pendingClassPicks(c).length);
   // Skipping the pick (no validation) leaves it pending rather than empty.
-  const skipped = create(t, {});
+  const skipped = create(t, { trackSupplies: true });
   assert.ok(CP.pendingClassPicks(skipped).some((g) => g.name === "Criminal"));
 });
 

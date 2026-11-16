@@ -304,7 +304,7 @@ function startWizard(choices){
 const inWizard = (t, choices, fn) => { let out; withFakeDom(t, () => { startWizard(choices); out = fn(); }); return out; };
 
 test("wizard: Race Traits only for a race with something to choose", (t) => {
-  const has = (race) => inWizard(t, { race }, () => W.isStepApplicable("raceChoices"));
+  const has = (race) => inWizard(t, { race, trackSupplies: true }, () => W.isStepApplicable("raceChoices"));
   assert.equal(has("Kenku"), true);
   assert.equal(has("Hill Dwarf"), true, "the dwarf's tool");
   assert.equal(has("Wood Elf"), false, "a wood elf's traits are all given");

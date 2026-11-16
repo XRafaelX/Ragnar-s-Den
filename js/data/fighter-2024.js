@@ -117,7 +117,7 @@ export var FIGHTER_2024_SUBCLASSES = [
   }},
   {name:"Eldritch Knight (2024)", edition:"2024", blurb:"Blends martial skill with wizard magic.", casterType:"third", spellAbility:"int", features:{
     3:[
-      {name:"Spellcasting", text:"You cast wizard spells with Intelligence, using a third of your fighter level for spell slots. You know two wizard cantrips (a third at level 10). Ray of Frost and Shocking Grasp are recommended. You can swap one when you gain a fighter level. You prepare three level 1 wizard spells, more as you level, from any school. Burning Hands, Jump and Shield are recommended. You can swap one when you gain a fighter level."},
+      {name:"Spellcasting", text:"You cast wizard spells with Intelligence, using a third of your fighter level for spell slots. You know two wizard cantrips (a third at level 10). Ray of Frost and Shocking Grasp are recommended. You can swap one on the Spells tab when you gain a fighter level. You prepare three level 1 wizard spells, more as you level, from any school. Burning Hands, Jump and Shield are recommended. You can swap one when you gain a fighter level."},
       {name:"War Bond", text:"In a 1-hour ritual (it can be during a short rest), bond with a weapon within your reach. You can't be disarmed of it unless you are incapacitated, and if it's on the same plane you can summon it to your hand as a bonus action. You can have up to two bonded weapons, and bonding a third breaks one."}
     ],
     7:[{name:"War Magic", remind:{when:"always", line:"In the Attack action, replace one attack with a wizard cantrip that takes an action"}, text:"When you take the Attack action, you can replace one of the attacks with casting one of your wizard cantrips that has a casting time of an action."}],

@@ -119,6 +119,13 @@ export function dlcShelf(opts){
   return {el: wrap, refresh: refresh};
 }
 
+/* Supplies and tools in the creation wizard (wizardState.trackSupplies,
+   remembered for the next character; see js/core/supplies.js). */
+export var SUPPLIES_CARD = {key: "supplies", series: "Player's Handbook", title: "Supplies and tools", switchLabel: "Track supplies and tools",
+  perks: ["Equipment packs", "Background gear", "Tool choices"],
+  text: "Packs of rations, torches and rope, your background's clothes and keepsakes, and a pick for every tool you're proficient with. Most tables skip these. When this is off, you still get your weapons, armor, ammunition and spellcasting focus, and your tools are picked for you."};
+export var SUPPLIES_OUTCOME = "<b>Supplies:</b> you choose your pack, your background's gear and your tools.";
+
 /* The Gunslinger class's optional misfire rule (c.gunMisfire), offered
    only to a character with that class. See firearmStats in
    js/core/equipment.js. */

@@ -835,7 +835,7 @@ test("creation: Changeling skills come from its list, Warforged picks a skill an
   const changeling = (skills) => ({ race: "Changeling", raceChoices: { abilities: ["dex"], profPicks: { "race:Changeling Instincts:pick": [skills] } } });
   assert.match(raceTraitsError(t, changeling(["Stealth", "Insight"])), /^Choose 2 different skills for Changeling Instincts\.$/, "Stealth isn't on its list");
   assert.equal(raceTraitsError(t, changeling(["Deception", "Insight"])), null);
-  const warforged = (slots) => ({ race: "Warforged", raceChoices: { abilities: ["str"], profPicks: { "race:Specialized Design:pick": slots } } });
+  const warforged = (slots) => ({ race: "Warforged", trackSupplies: true, raceChoices: { abilities: ["str"], profPicks: { "race:Specialized Design:pick": slots } } });
   assert.match(raceTraitsError(t, warforged([["Stealth"]])), /^Choose a tool for Specialized Design\.$/);
   const c = createThroughWizard(t, warforged([["Stealth"], ["Smith's tools"]]));
   assert.equal(c.skillProfs.Stealth.prof, true);

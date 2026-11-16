@@ -11,7 +11,7 @@ import { featOffered } from "../core/feats-2024.js";
 import { currentClassInfo, wizardState, renderWizard, abilityFullName, subclassChoice, subclassesThatGive, raceChoiceDef, raceAbilityAmounts, raceAbilityIncreases, raceAbilityPicksNeeded, featPrereqReason, wizardFeatContext, wizardBackgroundFeat, wizardBackgroundFeatPicks, wizardBackgroundSkills, refreshWizardProgress,
   wizardRacePickGrants, wizardRaceSlots, wizardRacePickContext, wizardRaceSkills,
   wizardBackgroundGrants, wizardBackgroundPickGrants, wizardBgSlots, wizardBgPickContext,
-  wizardOverlapGrants, wizardOverlapSlots, wizardOverlapContext } from "./wizard-core.js";
+  wizardOverlapGrants, wizardOverlapSlots, wizardOverlapContext, wizardTracksSupplies, wizardShowsPicks, wizardHiddenPickKinds } from "./wizard-core.js";
 import { emptyPicks, featNeedsChoice, featHasPicks, featDef } from "../core/feat-picks.js";
 import { fillSlots, classPicksProblem, grantHasChoices } from "../core/class-picks.js";
 import { renderClassPicks } from "../ui/class-picks.js";
@@ -70,7 +70,10 @@ export function wizardStepSkills(container){
   // set, an instrument, a House Agent's house) with the shared pickers.
   var givenTools = wizardBackgroundGrants().filter(function(g){ return !grantHasChoices(g.def); })
     .reduce(function(a, g){ return a.concat(g.def.tools || []); }, []);
-  var toolPicks = wizardBackgroundPickGrants();
+  // (Left off while supplies aren't tracked: the picks take their first
+  // options, shown on the Review step.)
+  var toolPicks = wizardBackgroundPickGrants().filter(wizardShowsPicks);
+  if(!wizardTracksSupplies()) givenTools = [];
   if(givenTools.length || toolPicks.length){
     var toolHead = pickLabel("");
     toolHead.style.marginTop = "16px";
@@ -85,11 +88,11 @@ export function wizardStepSkills(container){
       if(meta && meta.typing) return;
       var e = document.getElementById("wizard-error"); if(e) e.classList.remove("show");
       renderWizard();
-    }, "bg:" + g.key));
+    }, "bg:" + g.key, {hideKinds: wizardHiddenPickKinds()}));
   });
 
   // Anything two sources give outright: a pick of another in its place.
-  wizardOverlapGrants().forEach(function(g){
+  wizardOverlapGrants().filter(wizardShowsPicks).forEach(function(g){
     var head = pickLabel("");
     head.style.marginTop = "16px";
     head.innerHTML = "<b>Given twice:</b> " + escapeHtml(g.dups.join(", "));
@@ -282,7 +285,7 @@ export function wizardStepRaceChoices(container){
 
   // A trait's choices: its text, then its pickers.
   var traits = (RACE_DATA[wizardState.race] || {}).traits || [];
-  wizardRacePickGrants().forEach(function(g){
+  wizardRacePickGrants().filter(wizardShowsPicks).forEach(function(g){
     var slots = wizardRaceSlots(g.key), ctx = wizardRacePickContext(g);
     fillSlots(g.def, slots, ctx);
     var trait = traits.find(function(t){ return t.name===g.name; });
@@ -290,7 +293,7 @@ export function wizardStepRaceChoices(container){
     // picker's line under it explains the option chosen.)
     var help = trait ? trait.text.split("\n\u2022 ")[0] : "";
     var sec = section(g.name, help, !classPicksProblem(g, slots, ctx));
-    sec.appendChild(renderClassPicks(g, slots, ctx, function(meta){ if(!(meta && meta.typing)) picked(); }, "race:" + g.key));
+    sec.appendChild(renderClassPicks(g, slots, ctx, function(meta){ if(!(meta && meta.typing)) picked(); }, "race:" + g.key, {hideKinds: wizardHiddenPickKinds()}));
   });
 
   container.appendChild(card);

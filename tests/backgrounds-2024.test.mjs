@@ -133,7 +133,7 @@ test("wizard: the Ability Scores step asks for the background's picks, not the r
 });
 
 test("wizard: a 2024 Farmer fighter ends with the background's scores, feat, skills, tool and kit", (t) => {
-  const c = inWizard(t, { background: "Farmer (2024)", bgPicks: {}, bgAbilities: { background: "Farmer (2024)", inc: { con: 2, str: 1 } } },
+  const c = inWizard(t, { background: "Farmer (2024)", trackSupplies: true, bgPicks: {}, bgAbilities: { background: "Farmer (2024)", inc: { con: 2, str: 1 } } },
     () => { W.finishWizard(); return state.characters[state.characters.length - 1]; });
   assert.deepEqual(c.abilities, { str: 16, dex: 14, con: 15, int: 8, wis: 12, cha: 10 }, "no dwarf +2 CON / +1 WIS");
   assert.ok(c.feats.some((f) => f.name === "Tough (2024)" && f.from === "Farmer (2024)"));

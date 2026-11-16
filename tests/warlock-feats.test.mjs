@@ -69,7 +69,7 @@ test("background skills: the Skills step needs them, and not the same as the cla
   assert.match(err({ bgSkillChoices: [] }), /Choose 2 skills from your Haunted One background/);
   assert.match(err({ bgSkillChoices: ["Arcana"] }), /Choose 2 skills/);
   assert.match(err({ background: "Inheritor", bgSkillChoices: [] }), /Choose a skill from your Inheritor background/);
-  assert.match(err({ background: "Inheritor", bgSkillChoices: ["Arcana"] }), /^Choose a tool for Inheritor\.$/, "then its gaming set or instrument");
+  assert.match(err({ background: "Inheritor", bgSkillChoices: ["Arcana"], trackSupplies: true }), /^Choose a tool for Inheritor\.$/, "then its gaming set or instrument");
   assert.equal(err({ background: "Inheritor", bgSkillChoices: ["Arcana"], bgPicks: { "bg:Inheritor:pick": [["Lute"]] } }), null);
   assert.match(err({ skillChoices: ["Arcana", "Deception"] }), /different skills for your class and your background/);
   assert.equal(err({ background: "Acolyte", bgSkillChoices: [] }), null, "a background without picks asks nothing");

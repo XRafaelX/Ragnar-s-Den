@@ -24,7 +24,7 @@ import { showActionToast } from "../ui/toast.js";
 import { featDef, featHasPicks, applyFeatPicks, revertFeatPicks, featSpellEntries, campaignFeatCopy } from "../core/feat-picks.js";
 import { applyLearn, undoLearn } from "../core/spells-known.js";
 import { preparedAt } from "../data/spells-known.js";
-import { lu, luEdition, featSpellSwaps, learnActive, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, cantripSwapOut, expertiseSwap, close, swapOutStyle, styleCantripOffer, featureAbilityBonus, hpGain } from "./session.js";
+import { lu, luEdition, featSpellSwaps, learnActive, abilityName, progFor, target, stepApplicable, optionPlans, optChoice, profPicksToApply, variantsToApply, invChoice, chosenSubclass, dueSpellChoices, currentLearnPlan, learnSections, close, swapOutStyle, styleCantripOffer, featureAbilityBonus, hpGain } from "./session.js";
 
 /* ---------------- Apply & undo ---------------- */
 function slotSnapshot(c){
@@ -68,8 +68,6 @@ export function finish(){
   var learnNow = learnActive() ? currentLearnPlan() : null;
   var learnLists = learnNow ? learnSections(learnNow) : [];
   var invNow = doInvocations ? invChoice() : null;
-  var versatilityOut = learnNow ? cantripSwapOut(learnNow) : "";
-  var exSwap = learnNow && expertiseSwap(learnNow);
   var cOffer = styleCantripOffer();
   var optPlans = stepApplicable("options") ? optionPlans() : [];
   var profPicks = profPicksToApply();
@@ -140,16 +138,7 @@ export function finish(){
   });
 
   // New spells (and a swapped-out one); undo takes back exactly these.
-  if(learnNow) record.learn = applyLearn(c, lu.className, learnNow, learnLists, lu.learnPicks, lu.learnSwap, versatilityOut);
-  // Bardic Versatility: one Expertise skill moves; undo moves it back.
-  if(exSwap && exSwap.to){
-    var exGrant = entryGrants(entry).find(function(g){ return g.key===exSwap.key; });
-    var exOld = ((entry.profPicks||{})[exSwap.key]||{}).slots;
-    if(exGrant && exOld){
-      applyClassPicks(c, entry, exGrant, exOld.map(function(slot){ return slot.map(function(v){ return v===exSwap.from ? exSwap.to : v; }); }));
-      record.expertiseSwap = {key: exSwap.key, slots: exOld, from: exSwap.from, to: exSwap.to};
-    }
-  }
+  if(learnNow) record.learn = applyLearn(c, lu.className, learnNow, learnLists, lu.learnPicks, lu.learnSwap);
 
   // Pact Boon and invocations; undo takes back exactly these.
   var invGained = [];
@@ -312,6 +301,7 @@ export function undoLastLevelUp(c){
         }
         (rec.spellChoiceIds||[]).forEach(function(id){ if(entry.spellChoices) delete entry.spellChoices[id]; });
         undoLevelUpChoices(c, entry, rec);
+        // (A Bardic Versatility Expertise move, from a level-up before 2026-11-16.)
         if(rec.expertiseSwap){
           var exG = entryGrants(entry).find(function(g){ return g.key===rec.expertiseSwap.key; });
           if(exG) applyClassPicks(c, entry, exG, rec.expertiseSwap.slots);
