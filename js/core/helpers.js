@@ -8,6 +8,8 @@
      character-resources.js limited uses, rage numbers, hit dice
      vitals.js              hit points, speed, Armor Class, initiative,
                             saving throws, senses
+     hit-points.js          taking damage, healing, spending hit dice
+     rest.js                short and long rests
      spell-grants.js        spells that features and feats give
      equipment.js           hands, equipping, weapons and armor
      checks.js              ability checks, skills, roll modes
@@ -17,6 +19,8 @@ export * from "./basics.js";
 export * from "./class-features.js";
 export * from "./character-resources.js";
 export * from "./vitals.js";
+export * from "./hit-points.js";
+export * from "./rest.js";
 export * from "./class-edition.js";
 export * from "./barbarian-2024.js";
 export * from "./rogue-2024.js";

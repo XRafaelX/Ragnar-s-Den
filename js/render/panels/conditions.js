@@ -103,8 +103,8 @@ export function renderConditionsStrip(c){
 /* For the long rest's confirm dialog: the conditions on now (the ones
    stored; Unconscious from 0 HP ends with the healing anyway), with "End
    these too" ticked, since most effects have run out after 8 hours.
-   {el, apply} where apply() ends them if still ticked and returns their
-   names, or null with nothing on. */
+   {el, chosen} where chosen() is their ids while still ticked (the long
+   rest ends them: js/core/rest.js), or null with nothing on. */
 export function longRestConditionsChoice(c){
   var list = activeConditions(c).filter(function(x){ return !x.auto; });
   if(!list.length) return null;
@@ -135,10 +135,8 @@ export function longRestConditionsChoice(c){
   hint.textContent = "Untick to keep them, as with a curse.";
   text.appendChild(hint);
   el.appendChild(text);
-  return {el: el, apply: function(){
-    if(!cb.checked) return [];
-    list.forEach(function(x){ removeCondition(c, x.def.id); });
-    return list.map(function(x){ return x.def.name; });
+  return {el: el, chosen: function(){
+    return cb.checked ? list.map(function(x){ return x.def.id; }) : [];
   }};
 }
 

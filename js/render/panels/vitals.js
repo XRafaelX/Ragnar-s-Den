@@ -1,15 +1,13 @@
-import { resourcefulOnLongRest } from "../../core/species-2024.js";
 import { save } from "../../core/state.js";
-import { WILDS_OPTIONS, POWER_OPTIONS, wildsChoiceDue, lifeGivingDice, branchesDc, longTravelReady, hasRageOfGods, divineFormOn, revivificationHp, spendRage, ragesLeft, rageOnShortRest, persistentRageReady, usePersistentRage, useTides, wardAbsorb, surgesOnRest, rollPortent, resilienceOnRest, restWaitOnLongRest, spendResource, sorcerousRestoration, fontOnLongRest, lunarOnLongRest, talesOnRest, wildShapeDamage, endWildShape, omenOnLongRest, clamp, mod, fmtMod, totalLevel, hitDicePools, spendHitDie, recoverHitDice, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, restoreResources, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, hitDieHealing, heavyArmorMasterActive, heavyArmorMasterAmount, hasFeat, endAllEffects, endEffect, hpMaxHalved, resistsAllDamage, raceWards, addCondition, longRestExhaustion, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, rageAtZero, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, tirelessRest, drakeResistance, saintResistance, resourceLeft, spendChannel, forgeOnLongRest, interventionOnLongRest, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, kiWord, uncannyMetabolism, useUncannyMetabolism, perfectFocusGain, usePerfectFocus } from "../../core/helpers.js";
+import { WILDS_OPTIONS, POWER_OPTIONS, wildsChoiceDue, lifeGivingDice, branchesDc, longTravelReady, hasRageOfGods, divineFormOn, revivificationHp, spendRage, ragesLeft, persistentRageReady, usePersistentRage, useTides, spendResource, clamp, mod, fmtMod, totalLevel, hitDicePools, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, heavyArmorMasterActive, heavyArmorMasterAmount, hasFeat, endEffect, hpMaxHalved, resistsAllDamage, raceWards, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, drakeResistance, saintResistance, resourceLeft, spendChannel, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, kiWord, uncannyMetabolism, useUncannyMetabolism, perfectFocusGain, usePerfectFocus, takeDamage, healHp, spendHitDieToHeal, shortRest, shortRestNote, longRest, longRestNote } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
-import { elixirsOnLongRest, infusionsOnLongRest, artificerLevel, tinkerItemsOnLongRest, makeTinkerItem } from "../../core/artificer.js";
+import { artificerLevel, makeTinkerItem } from "../../core/artificer.js";
 import { TINKER_ITEMS } from "../../data/artificer-2024.js";
-import { plansOnLongRest } from "../../core/replicate.js";
-import { restoreCompanions, wildCompanionHours, summonWildCompanion } from "../../core/companions.js";
+import { wildCompanionHours, summonWildCompanion } from "../../core/companions.js";
 import { showActionToast } from "../../ui/toast.js";
 import { WILD_SURGES } from "../../data/effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
@@ -18,7 +16,7 @@ import { layOnHandsRow } from "./paladin.js";
 import { renderChannelCard, channelResourceKey } from "./channel-divinity.js";
 import { interventionRow, forgePicker } from "./cleric.js";
 import { gunslingerResourceRow } from "./gunslinger.js";
-import { useNextCheck, magicItemsOnLongRest, endTimedBoons, coinResistances } from "../../core/magic-items.js";
+import { useNextCheck, coinResistances } from "../../core/magic-items.js";
 import { infusionResistances } from "../../core/infusion-effects.js";
 import { renderDeathSaves } from "./death-saves.js";
 import { renderEffectsCard } from "./effects.js";
@@ -146,44 +144,21 @@ export function renderVitalsPanel(c){
     tempBadge.textContent = "+" + c.hp.temp + " temp";
     heroDisplay.appendChild(tempBadge);
   }
-  // ---- Core damage/heal logic ----
+  // ---- Damage and healing (the rules: js/core/hit-points.js) ----
   function applyDamage(n){
     if(n <= 0) return;
-    // Arcane Ward: it takes the damage first.
-    n = wardAbsorb(c, n);
-    if(n <= 0){ save(); renderAll(); return; }
-    var temp = Number(c.hp.temp) || 0;
-    if(temp > 0){
-      var absorbed = Math.min(temp, n);
-      c.hp.temp = temp - absorbed;
-      n -= absorbed;
-    }
-    // Wild Shape: the form takes it. At 0 hit points you turn back, and
-    // what's left carries over.
-    if(c.wildShape && !c.wildShape.own){
-      n = wildShapeDamage(c, n);
-      if(n < 0){ save(); renderSidebar(); renderAll(); flashHpNum("hp-dmg"); return; }
-      showActionToast(n ? "You turn back, and " + n + " damage carries over." : "You turn back to your own shape.");
-    }
-    var wasUp = (Number(c.hp.current)||0) > 0;
-    c.hp.current = Math.max(0, (Number(c.hp.current)||0) - n);
-    var wentDown = wasUp && c.hp.current === 0;
-    // Dropping to 0 HP: unconscious (worked out from the HP) and prone.
-    // (Relentless Rage's save waiting, or Rage Beyond Death: the rage holds.)
-    if(wentDown){
-      c.deathSaves = {success:0, fail:0};
-      delete c.extraTurn; // a new fall: Strength Before Death can be used again (if a use is left)
-      if(!rageAtZero(c)){ endAllEffects(c, true); addCondition(c, "prone"); }
-    }
-    save(); renderSidebar(); renderAll();
-    flashHpNum("hp-dmg");
-    if(wentDown){ var ds = document.querySelector(".death-saves"); if(ds) ds.classList.add("ds-enter"); }
+    var hit = takeDamage(c, n);
+    if(hit.turnedBack) showActionToast(hit.carried ? "You turn back, and " + hit.carried + " damage carries over." : "You turn back to your own shape.");
+    save(); renderAll();
+    // (All of it on the Arcane Ward: your hit points didn't move.)
+    if(hit.reached !== "ward") flashHpNum("hp-dmg");
+    if(hit.wentDown){ var ds = document.querySelector(".death-saves"); if(ds) ds.classList.add("ds-enter"); }
   }
 
   function applyHeal(n){
     if(n <= 0) return;
-    c.hp.current = clamp((Number(c.hp.current)||0) + n, 0, hpMax);
-    save(); renderSidebar(); renderAll();
+    healHp(c, n);
+    save(); renderAll();
     flashHpNum("hp-heal");
   }
 
@@ -843,13 +818,9 @@ export function renderVitalsPanel(c){
   var hdRemaining = pools.reduce(function(n, p){ return n + p.total - p.used; }, 0);
   // Spends a die of that size and rolls it.
   function spendDie(size){
-    var die = spendHitDie(c, size);
-    if(!die) return;
-    var conMod = mod(abilityScore(c, "con"));
-    var roll = Math.floor(Math.random()*die)+1;
-    var healed = hitDieHealing(c, roll);
-    c.hp.current = clamp(c.hp.current+healed, 0, hpMax);
-    logRoll("Hit die (d"+die+fmtMod(conMod)+")", roll+" "+fmtMod(conMod)+" = "+healed+" HP healed"+(healed > Math.max(1, roll+conMod) ? " (Durable minimum)" : ""));
+    var h = spendHitDieToHeal(c, size);
+    if(!h) return;
+    logRoll("Hit die (d"+h.die+fmtMod(h.conMod)+")", h.roll+" "+fmtMod(h.conMod)+" = "+h.healed+" HP healed"+(h.durable ? " (Durable minimum)" : ""));
     save(); renderAll();
   }
   // The total only when there are several sizes: with one, its tile says the same.
@@ -887,26 +858,10 @@ export function renderVitalsPanel(c){
   var shortRestBtn = document.createElement("button");
   shortRestBtn.className = "btn small"; shortRestBtn.textContent = "Short rest";
   shortRestBtn.title = "Restores short-rest resources. Spend hit dice to heal.";
+  // (What a rest does: js/core/rest.js. Here: the log, the scene, the sound.)
   shortRestBtn.addEventListener("click", function(){
     var before = resourceUse(c);
-    var pactNote = "";
-    if(c.spellcasting.pact && c.spellcasting.pact.used){ c.spellcasting.pact.used = 0; pactNote = " Pact slots restored."; }
-    var restored = restoreResources(c, "short");
-    if(rageOnShortRest(c)) restored.push("one use of Rage");
-    talesOnRest(c);
-    delete c.relentlessUses; // Relentless Rage's DC is back to 10
-    var resNote = restored.length ? " Restored: "+restored.join(", ")+"." : "";
-    var ended = endAllEffects(c, "short").concat(endTimedBoons(c));
-    var surgeMax = characterResources(c).find(function(r){ return r.key==="Wizard:power_surges"; });
-    if(surgeMax) surgesOnRest(c, "short", surgeMax.max);
-    var lightRest = resilienceOnRest(c);
-    if(lightRest) resNote += " Celestial Resilience: " + lightRest.self + " temporary HP, " + lightRest.others + " for up to five creatures.";
-    var back = sorcerousRestoration(c);
-    if(back) resNote += " Sorcerous Restoration: " + back + " sorcery points.";
-    if(ended.length) resNote += " Ended: "+ended.join(", ")+".";
-    var rested = tirelessRest(c);
-    if(rested!==null) resNote += " Tireless: exhaustion down to level "+rested+".";
-    logRoll("Short rest taken", "Spend hit dice as needed to heal."+pactNote+resNote);
+    logRoll("Short rest taken", shortRestNote(shortRest(c)));
     save(); renderAll();
     restScene("short");
     playShortRest();
@@ -925,71 +880,15 @@ export function renderVitalsPanel(c){
         (exhaustionLevel(c) && exhaustionLevel(c) < 6 ? " One level of exhaustion goes too, if you've had food and drink." : "")+
         (preparesSpells(c) ? " Afterwards you can choose today's prepared spells." : ""),
       function(){
-        endWildShape(c); // Sleep ends a form: it ends if you fall unconscious.
         var before = resourceUse(c);
         var ragesBefore = c.rage.used || 0;
-        var hpBefore = Number(c.hp.current) || 0;
-        // A rage still going ended long before the rest (Frenzy's
-        // exhaustion is taken first, then the rest's level comes off).
-        endAllEffects(c); // also ends Rage
-        delete c.relentlessUses;
-        delete c.extraTurn;
-        // Death's Friend (Phantom 17): a soul trinket appears if you have none.
-        if(classLevelOf(c, "Rogue", "Phantom") >= 17 && !(Number(c.soulTrinkets)||0)) c.soulTrinkets = 1;
-        // One level of exhaustion goes first, so a maximum halved by
-        // level 4 is whole again when the hit points come back.
-        var exhaustionNow = longRestExhaustion(c);
-        var conditionsEnded = conditionChoice ? conditionChoice.apply() : [];
-        hpMax = maxHp(c);
-        c.hp.current = hpMax;
-        c.hp.temp = 0;
-        c.deathSaves = {success:0, fail:0};
-        var recovered = recoverHitDice(c);
-        Object.keys(c.spellcasting.slots).forEach(function(lvl){
-          c.spellcasting.slots[lvl].used = 0;
-        });
-        if(c.spellcasting.pact) c.spellcasting.pact.used = 0;
-        c.rage.used = 0;
-        delete c.rage.persistentUsed;
-        // Magic items: charges back at dawn, the day's boons over.
-        var items = magicItemsOnLongRest(c);
-        items.recharged = items.recharged.concat(infusionsOnLongRest(c));
-        restoreResources(c, "long");
-        forgeOnLongRest(c);
-        interventionOnLongRest(c);
-        var omen = omenOnLongRest(c);
-        var inspired = resourcefulOnLongRest(c);
-        var surgesMax = characterResources(c).find(function(r){ return r.key==="Wizard:power_surges"; });
-        if(surgesMax) surgesOnRest(c, "long", surgesMax.max);
-        delete c.overchannels;
-        delete c.arcaneWard;
-        delete c.stoneGone;
-        var foretold = rollPortent(c);
-        resilienceOnRest(c);
-        restWaitOnLongRest(c);
-        fontOnLongRest(c);
-        lunarOnLongRest(c);
-        talesOnRest(c);
-        delete c.sessionSpell; // Spirit Session's spell goes as a long rest starts.
-        restoreCompanions(c);
-        var elixirs = elixirsOnLongRest(c);
-        var tinkered = tinkerItemsOnLongRest(c);
-        plansOnLongRest(c); // Drain's slots go, Drain and Transmute are back
-        logRoll("Long rest taken", "HP and spell slots restored. "+recovered+" hit dice recovered."+
-          (elixirs.length ? " New elixirs: "+elixirs.join(", ")+"." : "")+
-          (tinkered.length ? " Tinker's Magic items vanished: "+tinkered.join(", ")+"." : "")+
-          (items.recharged.length ? " Recharged: "+items.recharged.join(", ")+"." : "")+
-          (items.ended.length ? " Ended: "+items.ended.join(", ")+"." : "")+
-          (omen ? " Cosmic Omen: " + omen + "." : "")+
-          (inspired ? " Resourceful: you have Heroic Inspiration." : "")+
-          (foretold ? " Portent: " + foretold.join(", ") + "." : "")+
-          (exhaustionNow!==null ? " Exhaustion down to level "+exhaustionNow+" (with food and drink)." : "")+
-          (conditionsEnded.length ? " Conditions ended: "+conditionsEnded.join(", ")+"." : ""));
+        var rested = longRest(c, {endConditions: conditionChoice ? conditionChoice.chosen() : []});
+        logRoll("Long rest taken", longRestNote(rested));
         save(); renderAll();
         // Night falls, then at dawn hit points and resources come back.
         restScene("long");
         playLongRest();
-        if(hpMax > hpBefore) setTimeout(function(){ flashHpNum("hp-heal"); }, 1300);
+        if(rested.healed > 0) setTimeout(function(){ flashHpNum("hp-heal"); }, 1300);
         showRefilled(c, before, 1300);
         var ragePips = document.querySelector(".rage-pips");
         if(ragePips) pipsRefilled(ragePips, ragePips.children.length - ragesBefore, ragePips.children.length, 1300);
