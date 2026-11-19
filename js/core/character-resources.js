@@ -8,7 +8,7 @@ import { invocationResources } from "./invocations.js";
 import { knownOptions as knownClassOptions } from "./class-options.js";
 import { mod, totalLevel, profBonus, clamp } from "./basics.js";
 import { hasFeat } from "./vitals.js";
-import { usesVariant, draconicBreath } from "./class-features.js";
+import { usesVariant, draconicBreath, classEntryOf } from "./class-features.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { raceSpellEntries } from "./spell-grants.js";
 import { raceChoiceValues } from "./class-picks.js";
@@ -254,7 +254,7 @@ export function restoreResources(c, restType){
   return restored;
 }
 export function barbarianClassEntry(c){
-  return (c.classes||[]).find(function(cl){ return cl.name==="Barbarian"; });
+  return classEntryOf(c, "Barbarian");
 }
 export function barbarianRageDamage(level){
   return level>=16 ? 4 : level>=9 ? 3 : 2;

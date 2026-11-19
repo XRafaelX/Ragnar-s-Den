@@ -10,6 +10,7 @@ import { rageAtZero, endAllEffects } from "./effects.js";
 import { addCondition } from "./conditions.js";
 import { spendHitDie, hitDieHealing } from "./character-resources.js";
 import { abilityScore } from "./ability-scores.js";
+import { vesselHitDieBonus, useVesselBonus } from "./warlock.js";
 
 /* Take n damage. What happened, for the HP card:
    {reached: "ward" (the Arcane Ward soaked all of it), "form" (a Wild
@@ -58,13 +59,16 @@ export function healHp(c, n){
 
 /* Spend a hit die of that size and heal what it rolls. `roll` is for
    tests (sides -> 1..sides). null when none of that size is left, or
-   {die, roll, conMod, healed, durable: Durable raised it to its minimum}. */
+   {die, roll, conMod, healed, vessel: Sanctuary Vessel's bonus in it
+    (the first die of a stay only), durable: Durable raised it to its minimum}. */
 export function spendHitDieToHeal(c, size, roll){
   var die = spendHitDie(c, size);
   if(!die) return null;
   var conMod = mod(abilityScore(c, "con"));
   var rolled = roll ? roll(die) : Math.floor(Math.random()*die)+1;
+  var vessel = vesselHitDieBonus(c);
   var healed = hitDieHealing(c, rolled);
+  useVesselBonus(c);
   c.hp.current = clamp(c.hp.current+healed, 0, maxHp(c));
-  return {die: die, roll: rolled, conMod: conMod, healed: healed, durable: healed > Math.max(1, rolled+conMod)};
+  return {die: die, roll: rolled, conMod: conMod, healed: healed, vessel: vessel, durable: healed - vessel > Math.max(1, rolled+conMod)};
 }

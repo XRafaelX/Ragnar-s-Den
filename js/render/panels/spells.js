@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { wildShapeSpellNote, conduitAbility, profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities, plainAttackRollMode } from "../../core/helpers.js";
+import { wildShapeSpellNote, conduitAbility, profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities, plainAttackRollMode, classEntryOf } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { playDelete } from "../../ui/sound.js";
@@ -735,7 +735,7 @@ function renderPatronSpellsCard(c, list){
 /* Warlock spells still to learn at this level: a number, or -1 when the
    sheet's spells can't be told apart by class. */
 function warlockSpellRoom(c){
-  var cl = (c.classes||[]).find(function(x){ return x.name==="Warlock"; });
+  var cl = classEntryOf(c, "Warlock");
   var def = cl && casterDef("Warlock");
   if(!def) return -1;
   var known = classKnownSpells(c, "Warlock");

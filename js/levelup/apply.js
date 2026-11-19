@@ -6,7 +6,7 @@ import { syncStyleWording } from "../core/fighting-styles.js";
 import { ABILITIES } from "../data/abilities-skills.js";
 import { FEATS_CATALOG } from "../data/feats.js";
 import { MAX_LEVEL, XP_THRESHOLDS, SPELL_TIPS, THIRD_CASTER_SPELL_TIPS } from "../data/progression.js";
-import { fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus, classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots, maxHp, fullMaxHp, syncHitDice, computeSpeed, ordinal } from "../core/helpers.js";
+import { fmtMod, ce, escapeHtml, uid, clamp, totalLevel, profBonus, classFeatureList, classFeaturesGainedAt, classCasterType, classSpellAbility, computeSpellSlots, maxHp, fullMaxHp, syncHitDice, computeSpeed, ordinal, classEntryOf } from "../core/helpers.js";
 import { save } from "../core/state.js";
 import { syncInfusions } from "../core/artificer.js";
 import { syncPlans } from "../core/replicate.js";
@@ -382,7 +382,7 @@ function showUnlocked(c, s){
     var pact = c.spellcasting.pact, pb = s.pactBefore;
     if(pact && (!pb || pb.max!==pact.max || pb.slotLevel!==pact.slotLevel)) stat("Pact slots", pact.max+" × "+ordinal(pact.slotLevel)+"-level");
     // A preparing class's daily count grows on set levels (2024 tables).
-    var prepEd = ((c.classes||[]).find(function(x){ return x.name===s.className; }) || {}).edition;
+    var prepEd = (classEntryOf(c, s.className) || {}).edition;
     var prepNow = preparedAt(s.className, s.newClassLevel, prepEd), prepWas = s.isNewClass ? 0 : preparedAt(s.className, s.newClassLevel - 1, prepEd);
     if(prepNow > prepWas) stat("Prepared spells", prepNow+" a day"+(prepWas ? " (was "+prepWas+")" : ""));
     body.appendChild(stats);

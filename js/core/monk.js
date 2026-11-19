@@ -9,7 +9,7 @@
    of ki while one is left), payKey (a resource it spends as well), sharpen
    (Sharpen the Blade's bonus), reason (why it can't be used now)}. */
 import { mod, profBonus, clamp } from "./basics.js";
-import { classLevelOf, isMonk2024, classVariants } from "./class-features.js";
+import { classLevelOf, isMonk2024, classVariants, classEntryOf } from "./class-features.js";
 import { MONK_2024_SWAPS } from "../data/monk-2024.js";
 import { abilityScore } from "./ability-scores.js";
 import { martialArtsDie, resourceLeft, spendResource, effectOn } from "./effects.js";
@@ -26,7 +26,7 @@ import { baseWeaponName } from "../data/weapons.js";
    switch (syncTashaAdditions, done by the caller), and a level 20 monk
    gains or loses Body and Mind's +4 DEX and WIS. True if anything changed. */
 export function setMonkEdition(c, on){
-  var cl = (c.classes||[]).find(function(x){ return x.name==="Monk"; });
+  var cl = classEntryOf(c, "Monk");
   if(!cl || !!on===(cl.edition==="2024")) return false;
   var back = {};
   Object.keys(MONK_2024_SWAPS).forEach(function(k){ back[MONK_2024_SWAPS[k]] = k; });

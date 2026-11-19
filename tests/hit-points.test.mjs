@@ -153,7 +153,7 @@ test("healHp: exhaustion 4's halved maximum is the cap", () => {
 test("spendHitDieToHeal: the roll plus CON, one die spent", () => {
   const c = fighter({ max: 44, current: 20 });
   const h = H.spendHitDieToHeal(c, 10, () => 6);
-  assert.deepEqual(h, { die: 10, roll: 6, conMod: 2, healed: 8, durable: false });
+  assert.deepEqual(h, { die: 10, roll: 6, conMod: 2, healed: 8, vessel: 0, durable: false });
   assert.equal(c.hp.current, 28);
   assert.equal(H.hitDicePools(c)[0].used, 1);
 });
@@ -168,8 +168,22 @@ test("spendHitDieToHeal: at least 1 hit point, and never past the maximum", () =
 
 test("spendHitDieToHeal: Durable raises a low roll to its minimum", () => {
   const c = fighter({ max: 44, current: 20 }, { feats: [{ name: "Durable" }] });
-  assert.deepEqual(H.spendHitDieToHeal(c, 10, () => 1), { die: 10, roll: 1, conMod: 2, healed: 4, durable: true }, "twice the CON modifier");
+  assert.deepEqual(H.spendHitDieToHeal(c, 10, () => 1), { die: 10, roll: 1, conMod: 2, healed: 4, vessel: 0, durable: true }, "twice the CON modifier");
   assert.equal(H.spendHitDieToHeal(c, 10, () => 9).durable, false, "a good roll needs no help");
+});
+
+test("spendHitDieToHeal: Sanctuary Vessel adds the proficiency bonus once a stay, not once a die", () => {
+  // Tasha's, Genie 10: "anyone can add your proficiency bonus to the number
+  // of hit points they regain ... if they spend any Hit Dice" there.
+  const c = char([{ name: "Warlock", subclass: "The Genie", level: 10 }], { max: 63, current: 10 });
+  assert.equal(H.spendHitDieToHeal(c, 8, () => 3).vessel, 0, "not in the vessel: nothing");
+  assert.ok(H.startEffect(c, "bottled_respite"));
+  assert.deepEqual(H.spendHitDieToHeal(c, 8, () => 3), { die: 8, roll: 3, conMod: 2, healed: 9, vessel: 4, durable: false }, "3 + 2 + 4");
+  assert.deepEqual(H.spendHitDieToHeal(c, 8, () => 3), { die: 8, roll: 3, conMod: 2, healed: 5, vessel: 0, durable: false }, "the next die: just 3 + 2");
+  assert.ok(H.effectOn(c, "bottled_respite"), "still in the vessel");
+  H.longRest(c);
+  assert.ok(H.startEffect(c, "bottled_respite"), "a new stay after a long rest");
+  assert.equal(H.spendHitDieToHeal(c, 8, () => 3).vessel, 4, "the bonus again");
 });
 
 test("spendHitDieToHeal: none of that size left, nothing happens", () => {

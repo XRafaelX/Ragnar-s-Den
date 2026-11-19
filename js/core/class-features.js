@@ -420,6 +420,11 @@ var SUBCLASS_ALIASES = {"Circle of Stars": "Circle of the Stars (2024)", "Aberra
   "Draconic Bloodline": "Draconic Sorcery", "Wild Magic": "Wild Magic Sorcery",
   "The Archfey": "Archfey Patron", "The Celestial": "Celestial Patron", "The Fiend": "Fiend Patron", "The Great Old One": "Great Old One Patron",
   "School of Abjuration": "Abjurer", "School of Divination": "Diviner", "School of Evocation": "Evoker", "School of Illusion": "Illusionist"};
+/* The character's entry for a class, by name (a class is listed once),
+   or undefined. */
+export function classEntryOf(c, name){
+  return (c.classes||[]).find(function(cl){ return cl.name===name; });
+}
 export function classLevelOf(c, name, subclass){
   // (A 2024 subclass counts for its 2014 name: what's the same is automated once.)
   var also = subclass && SUBCLASS_ALIASES[subclass];

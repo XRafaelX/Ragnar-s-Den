@@ -12,7 +12,7 @@
    The options come from clericChannels and channelActions (js/core/cleric.js,
    js/core/paladin.js). */
 import { save } from "../../core/state.js";
-import { clericChannels, channelActions, channelProblem, useChannelAction, effectOn, resourceLeft, clamp, maxHp, classFeatureList } from "../../core/helpers.js";
+import { clericChannels, channelActions, channelProblem, useChannelAction, effectOn, resourceLeft, clamp, maxHp, classFeatureList, classEntryOf } from "../../core/helpers.js";
 import { renderAll, makeCard } from "../sheet.js";
 import { renderSidebar } from "../sidebar.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
@@ -229,7 +229,7 @@ function healYourself(c, n){
    Divinity" feature that names it (Turn Undead, an oath's two options),
    the subclass's first. Null when none says it. */
 export function featureFor(c, o){
-  var cl = (c.classes||[]).find(function(x){ return x.name===o.cls; });
+  var cl = classEntryOf(c, o.cls);
   if(!cl) return null;
   var list = classFeatureList(cl);
   return list.find(function(f){ return f.name==="Channel Divinity: " + o.name; }) ||

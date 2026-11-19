@@ -124,9 +124,14 @@ export function genieDamage(c){
   var cl = (c.classes||[]).find(function(x){ return x.name==="Warlock" && x.subclass==="The Genie"; });
   return cl ? GENIE_DAMAGE[(cl.spellChoices||{}).genieKind] || "" : "";
 }
-/* Sanctuary Vessel (10): a rest in the vessel adds this to Hit Dice. */
+/* Sanctuary Vessel (10): spending Hit Dice in the vessel heals your
+   proficiency bonus more, once a stay (not once a die). The effect's
+   value turns "used" when it has been added. */
 export function vesselHitDieBonus(c){
-  return patron(c, "The Genie") >= 10 && effectOn(c, "bottled_respite") ? profBonus(c) : 0;
+  return patron(c, "The Genie") >= 10 && effectOn(c, "bottled_respite") && c.effects.bottled_respite!=="used" ? profBonus(c) : 0;
+}
+export function useVesselBonus(c){
+  if(vesselHitDieBonus(c)) c.effects.bottled_respite = "used";
 }
 
 /* ---- Limited Wish and Necrotic Husk: back after 1d4 long rests ---- */

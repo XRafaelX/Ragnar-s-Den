@@ -2,12 +2,12 @@
    What the 2024 class and its subclasses do beyond the rules shared with
    the 2014 rogue (Player's Handbook 2024, pp. 128 to 136). The features'
    words are in js/data/rogue-2024.js. */
-import { isRogue2024 } from "./class-features.js";
+import { isRogue2024, classEntryOf } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
 import { mod, profBonus } from "./basics.js";
 import { effectOn } from "./effects.js";
 
-function rogueEntry(c){ return (c.classes||[]).find(function(cl){ return cl.name==="Rogue"; }); }
+function rogueEntry(c){ return classEntryOf(c, "Rogue"); }
 function level2024(c, subclass){
   var cl = isRogue2024(c) && rogueEntry(c);
   return cl && (!subclass || cl.subclass===subclass) ? Number(cl.level)||1 : 0;

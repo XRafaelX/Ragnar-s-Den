@@ -4,7 +4,7 @@
    subclass with another edition's version becomes it, and so do the picks
    that carry over. The monk's own extras are in js/core/monk.js. */
 import { CLASS_PROGRESSION } from "../data/progression.js";
-import { classVariants, classHasEdition, subclassesFor } from "./class-features.js";
+import { classVariants, classHasEdition, subclassesFor, classEntryOf } from "./class-features.js";
 import { setMonkEdition } from "./monk.js";
 import { syncStyleWording } from "./fighting-styles.js";
 import { convertInvocationsEdition } from "./invocations.js";
@@ -13,7 +13,7 @@ import { convertInvocationsEdition } from "./invocations.js";
 var OPTION_SETS_SWAP = {"maneuvers": "maneuvers2024", "metamagic": "metamagic2024"};
 export function setClassEdition(c, className, on){
   if(className==="Monk") return setMonkEdition(c, on);
-  var cl = (c.classes||[]).find(function(x){ return x.name===className; });
+  var cl = classEntryOf(c, className);
   if(!cl || !classHasEdition(className, "2024") || !!on===(cl.edition==="2024")) return false;
   var swaps = CLASS_PROGRESSION[className].editions["2024"].swaps || {}, back = {};
   Object.keys(swaps).forEach(function(k){ back[swaps[k]] = k; });

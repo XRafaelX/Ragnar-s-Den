@@ -1,7 +1,7 @@
 import { INVOCATIONS, invocationsKnownAt, invocationDef, pactBoonDef, invocationLabel } from "../data/invocations.js";
 import { SPELL_DATA, catalogSpellName, spellsMatching } from "../data/spells.js";
 import { SPELL_DATA_2024 } from "../data/spells-2024.js";
-import { uid, mod, totalLevel, featureSpells } from "./helpers.js";
+import { uid, mod, totalLevel, featureSpells, classEntryOf } from "./helpers.js";
 import { featDef, originFeatNames, revertFeatPicks } from "./feat-picks.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 
@@ -19,7 +19,7 @@ import { abilityScore, abilityScores } from "./ability-scores.js";
    so they follow level-ups, undo and forgetting without being saved. */
 
 export function warlockEntry(c){
-  return (c.classes||[]).find(function(cl){ return cl.name==="Warlock"; }) || null;
+  return classEntryOf(c, "Warlock") || null;
 }
 export function knownInvocations(cl){
   return cl && Array.isArray(cl.invocations) ? cl.invocations : [];

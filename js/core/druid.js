@@ -10,7 +10,7 @@
    DEX and CON replace theirs in ability-scores.js; AC, speed, senses and
    skills ask here. */
 import { mod, profBonus } from "./basics.js";
-import { classLevelOf, isDruid2024 } from "./class-features.js";
+import { classLevelOf, isDruid2024, classEntryOf } from "./class-features.js";
 import { entryChoices } from "./class-picks.js";
 import { LAND_WARDS } from "../data/druid-2024.js";
 import { abilityScore } from "./ability-scores.js";
@@ -208,7 +208,7 @@ export function hasCombatWildShape(c){
 export function moonConBonus(c){
   return c.wildShape && isDruid2024(c) && circle(c, "Circle of the Moon") >= 6 ? wisMod(c) : 0;
 }
-function druidEntry(c){ return (c.classes||[]).find(function(cl){ return cl.name==="Druid"; }) || null; }
+function druidEntry(c){ return classEntryOf(c, "Druid") || null; }
 /* Elemental Fury (2024 druid 7): the option picked, or "". */
 export function elementalFury(c){
   var cl = druidEntry(c);

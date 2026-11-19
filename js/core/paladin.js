@@ -11,7 +11,7 @@
    the detail's first words don't say it: "Bonus action"), groupDetail and
    groupPick (a group's text and picker label on that card)}. */
 import { mod, profBonus } from "./basics.js";
-import { classLevelOf, isPaladin2024 } from "./class-features.js";
+import { classLevelOf, isPaladin2024, classEntryOf } from "./class-features.js";
 import { abilityScore } from "./ability-scores.js";
 import { effectOn, resourceLeft, spendResource, spellSlotsLeft, startEffect } from "./effects.js";
 import { isRangedWeapon } from "./equipment.js";
@@ -115,7 +115,7 @@ export function spendLayOnHands(c, n){
 export function channelActions(c){
   var lv = classLevelOf(c, "Paladin");
   if(lv < 3) return [];
-  var cl = (c.classes||[]).find(function(x){ return x.name==="Paladin"; });
+  var cl = classEntryOf(c, "Paladin");
   return (cl.edition==="2024" ? classChannels2024(c, lv) : []).concat(oathChannels(c, cl, lv));
 }
 /* What every 2024 paladin can spend it on (pp. 110 and 111). */

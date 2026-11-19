@@ -820,7 +820,7 @@ export function renderVitalsPanel(c){
   function spendDie(size){
     var h = spendHitDieToHeal(c, size);
     if(!h) return;
-    logRoll("Hit die (d"+h.die+fmtMod(h.conMod)+")", h.roll+" "+fmtMod(h.conMod)+" = "+h.healed+" HP healed"+(h.durable ? " (Durable minimum)" : ""));
+    logRoll("Hit die (d"+h.die+fmtMod(h.conMod)+")", h.roll+" "+fmtMod(h.conMod)+(h.vessel ? " +"+h.vessel+" (Sanctuary Vessel)" : "")+" = "+h.healed+" HP healed"+(h.durable ? " (Durable minimum)" : ""));
     save(); renderAll();
   }
   // The total only when there are several sizes: with one, its tile says the same.

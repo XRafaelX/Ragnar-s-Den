@@ -1,6 +1,7 @@
 import { INFUSIONS } from "../data/infusions.js";
 import { mod, profBonus } from "./basics.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
+import { classEntryOf } from "./class-features.js";
 
 /* ---------------- What active infusions do on the sheet ----------------
    Worked out when shown, from c.infusions.active (see js/core/artificer.js
@@ -32,7 +33,7 @@ export function infusionWornProblem(c, item, active){
 }
 
 function artificerLevel(c){
-  var cl = (c.classes||[]).find(function(x){ return x.name==="Artificer"; });
+  var cl = classEntryOf(c, "Artificer");
   return cl ? (Number(cl.level)||1) : 0;
 }
 /* An Arcane Armor part (Armor Modifications) works only while its armor

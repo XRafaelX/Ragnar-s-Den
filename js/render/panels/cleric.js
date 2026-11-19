@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { blessItem, forgeItems, interventionSpells, interventionWish } from "../../core/helpers.js";
+import { blessItem, forgeItems, interventionSpells, interventionWish, classEntryOf } from "../../core/helpers.js";
 import { SPELL_DATA, spellLevelLabel } from "../../data/spells.js";
 import { renderAll } from "../sheet.js";
 import { makeDiceSvg } from "../../ui/svg-icons.js";
@@ -11,11 +11,11 @@ import { showActionToast } from "../../ui/toast.js";
    Divine Intervention's call and Blessing of the Forge's choice, on their
    rows on Vitals. */
 export function interventionRow(c, r){
-  var cl = (c.classes||[]).find(function(x){ return x.name==="Cleric"; });
+  var cl = classEntryOf(c, "Cleric");
   if(cl && cl.edition==="2024") return interventionRow2024(c, r, Number(cl.level)||1);
   var row = document.createElement("div");
   row.className = "inv-roll-actions fx-rolls";
-  var lv = (c.classes||[]).find(function(x){ return x.name==="Cleric"; }).level;
+  var lv = classEntryOf(c, "Cleric").level;
   var sure = Number(lv) >= 20;
   var b = document.createElement("button");
   b.type = "button"; b.className = "btn small inv-roll-btn res-roll-btn";

@@ -10,7 +10,7 @@ import { mod, profBonus, parseDiceNotation, combineRolls, totalLevel } from "./b
 import { weaponMastery } from "./weapon-mastery.js";
 import { characterSpellEdition } from "./spell-edition.js";
 import { barbarianClassEntry, barbarianRageDamage } from "./character-resources.js";
-import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024, isPaladin2024, isRanger2024, isBarbarian2024, isRogue2024 } from "./class-features.js";
+import { classFeatureList, classProficiencies, classLevelOf, classSpellAbility, classCasterType, usesVariant, isMonk2024, isPaladin2024, isRanger2024, isBarbarian2024, isRogue2024, classEntryOf } from "./class-features.js";
 import { songOfVictoryBonus, martialArtsDie } from "./effects.js";
 import { hasFeat } from "./vitals.js";
 import { holsterDamageBonus, coinAttackBonus, magicBonusOf, unarmedItemBonus } from "./magic-items.js";
@@ -284,7 +284,7 @@ export function shillelaghAbilities(c){
   var sp = (c.spells||[]).find(function(x){ return (x.name||"").trim().toLowerCase()==="shillelagh"; });
   if(sp){
     var cls = null;
-    if(sp.learnedBy) cls = (c.classes||[]).find(function(x){ return x.name===sp.learnedBy; });
+    if(sp.learnedBy) cls = classEntryOf(c, sp.learnedBy);
     if(!cls){
       var casters = (c.classes||[]).filter(function(x){ return classCasterType(x); });
       cls = casters.find(function(x){ return x.name==="Druid"; }) || casters[0];
@@ -680,7 +680,7 @@ export function psionicStrike(c){
   var die = psionicDie(c);
   if(!die) return null;
   // (The 2024 Psi Warrior's count comes from its table.)
-  var entry = (c.classes||[]).find(function(x){ return x.name==="Fighter"; }), flv = Number(entry && entry.level)||1;
+  var entry = classEntryOf(c, "Fighter"), flv = Number(entry && entry.level)||1;
   var key = "Fighter:psionic_energy_dice", max = entry && entry.subclass==="Psi Warrior (2024)" ? (flv>=17 ? 12 : flv>=13 ? 10 : flv>=9 ? 8 : flv>=5 ? 6 : 4) : profBonus(c) * 2, used = Math.min(max, Number((c.resourcesUsed||{})[key])||0);
   var int = mod(abilityScore(c, "int"));
   return {die: die, bonus: int, key: key, used: used, left: max - used,
@@ -695,7 +695,7 @@ export function magicArrows(c, item){
 export function soulknifeDie(c){
   var lv = classLevelOf(c, "Rogue", "Soulknife");
   if(lv < 3) return null;
-  var entry = (c.classes||[]).find(function(x){ return x.name==="Rogue"; });
+  var entry = classEntryOf(c, "Rogue");
   // (The 2024 Soulknife's dice go by its table, p. 134.)
   var key = "Rogue:psionic_energy_dice", max = entry && entry.subclass==="Soulknife (2024)" ? (lv>=17 ? 12 : lv>=13 ? 10 : lv>=9 ? 8 : lv>=5 ? 6 : 4) : profBonus(c) * 2, used = Math.min(max, Number((c.resourcesUsed||{})[key])||0);
   return {die: lv >= 17 ? 12 : lv >= 11 ? 10 : lv >= 5 ? 8 : 6, key: key, used: used, left: max - used};

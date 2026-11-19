@@ -6,7 +6,7 @@ import { activeInfusionData, infusionWorks } from "./infusion-effects.js";
 export { activeInfusionData, infusionWorks };
 import { WEAPON_DATA, weaponDataOf } from "../data/weapons.js";
 import { GEAR_DATA } from "../data/gear.js";
-import { mod, profBonus, parseDiceNotation, uid, resourceLeft, classLevelOf, isMagicWeapon, handsInUse } from "./helpers.js";
+import { mod, profBonus, parseDiceNotation, uid, resourceLeft, classLevelOf, isMagicWeapon, handsInUse, classEntryOf } from "./helpers.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 
 /* ---------------- Artificer extras ----------------
@@ -78,7 +78,7 @@ export function armorModelPerks(c){
    needs attunement (active.attunement) gives its bonus only while the
    item is attuned. Charges spent are kept in active.used. */
 export function artificerLevel(c){
-  var cl = (c.classes||[]).find(function(x){ return x.name==="Artificer"; });
+  var cl = classEntryOf(c, "Artificer");
   return cl ? (Number(cl.level)||1) : 0;
 }
 /* A 2024 artificer (Eberron: Forge of the Artificer): plans, not infusions. */

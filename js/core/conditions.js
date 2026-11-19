@@ -7,6 +7,7 @@
    is unconscious without it being stored, so healing wakes them. */
 import { CONDITIONS } from "../data/conditions.js";
 import { endWildShape } from "./druid.js";
+import { classEntryOf } from "./class-features.js";
 
 export function conditionDef(id){
   return CONDITIONS.find(function(d){ return d.id===id; });
@@ -24,7 +25,7 @@ function downAtZero(c){
   return (Number(hp.current)||0) <= 0 && (Number(hp.max)||0) > 0 && !((Number(c.deathSaves && c.deathSaves.fail)||0) >= 3);
 }
 function rangerLevel(c){
-  var cl = (c.classes||[]).find(function(x){ return x.name==="Ranger"; });
+  var cl = classEntryOf(c, "Ranger");
   return cl ? Number(cl.level)||1 : 0;
 }
 function rageLevel(c, subclass){

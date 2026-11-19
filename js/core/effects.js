@@ -7,7 +7,7 @@ import { stoneBenefit } from "./wizard.js";
 import { TOGGLE_EFFECTS, WILD_SURGES } from "../data/effects.js";
 import { mod, profBonus, totalLevel } from "./basics.js";
 import { characterResources } from "./character-resources.js";
-import { classLevelOf, computeSpellSlots, usesVariant, classEdition, isBarbarian2024, isRanger2024, isSorcerer2024 } from "./class-features.js";
+import { classLevelOf, computeSpellSlots, usesVariant, classEdition, isBarbarian2024, isRanger2024, isSorcerer2024, classEntryOf } from "./class-features.js";
 import { vitalitySurge, fanaticalBonus, hasTreeTravel, divineFormOn } from "./barbarian-2024.js";
 import { barbarianClassEntry } from "./character-resources.js";
 import { removeCondition } from "./conditions.js";
@@ -274,7 +274,7 @@ export function martialArtsDie(c){
 /* The character's Martial Arts die at a given monk level (its table). */
 export function martialArtsDieAt(c, lv){
   // (The 2024 monk's runs d6 to d12.)
-  var ed = classEdition((c.classes||[]).find(function(cl){ return cl.name==="Monk"; }));
+  var ed = classEdition(classEntryOf(c, "Monk"));
   if(ed && ed.martialArtsDie) return ed.martialArtsDie(lv);
   return lv>=17 ? 10 : lv>=11 ? 8 : lv>=5 ? 6 : 4;
 }

@@ -18,7 +18,7 @@ import { featDef, featNeedsChoice, featPicksProblem, featRequiresReason, featSpe
 import { featPicksContext } from "../ui/feat-picks.js";
 import { armorProficiencies } from "../core/equipment.js";
 import { abilityScore } from "../core/ability-scores.js";
-import { classCasterType, subclassLevelOf } from "../core/class-features.js";
+import { classCasterType, subclassLevelOf, classEntryOf } from "../core/class-features.js";
 import { learnPlan, learnProblem } from "../core/spells-known.js";
 import { finish } from "./apply.js";
 import { stepClass, stepStyle, stepSubclass, stepSpells, stepCantrips, stepLearn, stepInvocations, stepOptions, stepProfs, stepAsi, stepFeatPicks, stepBonusFeat, stepBonusFeatPicks, stepHp, stepReview } from "./steps.js";
@@ -50,7 +50,7 @@ export function abilityName(key){
    this level-up (lu.edition). Undefined for the 2014 class. */
 export function luEdition(className){
   var name = className || lu.className;
-  var ex = (lu.c.classes||[]).find(function(cl){ return cl.name===name; });
+  var ex = classEntryOf(lu.c, name);
   if(ex) return ex.edition || undefined;
   return name===lu.className ? lu.edition || undefined : undefined;
 }
@@ -79,7 +79,7 @@ export function prereqText(className){
 /* ---- Derived view of the pending choice ---- */
 export function target(){
   var c = lu.c;
-  var existing = (c.classes||[]).find(function(cl){ return cl.name===lu.className; });
+  var existing = classEntryOf(c, lu.className);
   var prog = progFor(lu.className);
   var newLevel = existing ? (Number(existing.level)||1)+1 : 1;
   var hasSub = !!(existing && existing.subclass);
@@ -150,14 +150,14 @@ export function featWho(feats){
   // The Fighting Style feature: a class that gives one at its level (the
   // class being levelled counted at its new level).
   var hasStyleFeature = names.some(function(n){
-    var fs = (CLASS_PROGRESSION[n] || {}).fightingStyle, cl = (c.classes||[]).find(function(x){ return x.name===n; });
+    var fs = (CLASS_PROGRESSION[n] || {}).fightingStyle, cl = classEntryOf(c, n);
     var lv = (cl ? Number(cl.level)||1 : 0) + (n===lu.className || (!lu.className && cl===(c.classes||[])[0]) ? 1 : 0);
     return !!fs && lv >= fs.level;
   });
   return {race: c.race, size: raceSize(c), level: totalLevel(c) + 1, feats: feats || c.feats || [], classes: names,
     scores: scores, armor: training, hasStyleFeature: hasStyleFeature,
     styles: styleFeatures(c).map(function(f){ return f.fightingStyle; }),
-    spellcasting: names.some(function(n){ var cl = (c.classes||[]).find(function(x){ return x.name===n; }) || {name: n, level: 1}; return !!classCasterType(cl); })};
+    spellcasting: names.some(function(n){ var cl = classEntryOf(c, n) || {name: n, level: 1}; return !!classCasterType(cl); })};
 }
 export function bonusFeatChoices(){ return campaignFeatsAt(lu.c, totalLevel(lu.c) + 1); }
 function asiFeatNow(){
@@ -564,7 +564,7 @@ export function gainLabels(className, subclass, level){
   var prog = progFor(className);
   // (With the optional features the class entry uses: Favored Foe, not
   // Favored Enemy. For the class levelling now, as picked on this level-up.)
-  var entry = (lu.c.classes||[]).find(function(cl){ return cl.name===className; });
+  var entry = classEntryOf(lu.c, className);
   var variants = lu.className===className ? entryVariants() : entry ? entry.variants : null;
   var labels = classFeaturesGainedAt({name:className, edition:luEdition(className), subclass:subclass, level:level, variants:variants}, level).map(function(f){ return f.name; });
   var subLevel = subclassLevelOf({name: className, edition: luEdition(className)});

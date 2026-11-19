@@ -21,7 +21,7 @@
 import { SPELL_DATA, spellDataForClass, spellOnClassList, tashaAddsSpell, tashaSpellCount, catalogSpellName } from "../data/spells.js";
 import { SAVANT_SCHOOLS, SAVANT_LEVELS } from "../data/wizard-2024.js";
 import { KNOWN_CASTERS, SUBCLASS_CASTERS, EDITION_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, preparedAt, preparingDef } from "../data/spells-known.js";
-import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal, choiceEffectsOf } from "./helpers.js";
+import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal, choiceEffectsOf, classEntryOf } from "./helpers.js";
 import { spellFromCatalog } from "../render/panels/spell-picker.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
 import { originListSpells } from "./spell-grants.js";
@@ -101,7 +101,7 @@ export function classKnownSpells(c, className){
   // pick comes back at the next level-up), except the cantrips the
   // class's own table already includes (an Arcane Trickster's Mage Hand).
   var free = freeNames(c);
-  var entry = (c.classes||[]).find(function(cl){ return cl.name===className; });
+  var entry = classEntryOf(c, className);
   var def = entry && casterDef(className, entry.subclass, entry.edition);
   var own = ((def && def.autoCantrips) || []).map(spellKey);
   var mine = (c.spells||[]).filter(function(sp){
@@ -458,7 +458,7 @@ export function undoLearn(c, rec){
    from level 1, as a class feature.
    {className, known: [its cantrips], options: [ones to take instead]} or null. */
 function formulaClass(c){
-  var wiz = (c.classes||[]).find(function(cl){ return cl.name==="Wizard"; });
+  var wiz = classEntryOf(c, "Wizard");
   if(wiz && (wiz.edition==="2024" || (c.tashaOptional && (Number(wiz.level)||1) >= 3))) return wiz;
   return (c.classes||[]).find(function(cl){ return cl.name==="Artificer" && cl.edition==="2024"; }) || null;
 }
@@ -524,7 +524,7 @@ export function spellNeedsPreparing(c, sp){
 /* Whether the character's class of that name prepares its spells (the 2024
    ranger does, the 2014 one knows a set). */
 export function classPrepares(c, className){
-  var cl = (c.classes||[]).find(function(x){ return x.name===className; });
+  var cl = classEntryOf(c, className);
   return !!preparingDef(className, cl && cl.edition);
 }
 
@@ -540,7 +540,7 @@ export function preparingClassFor(c, sp){
 }
 /* {have, max} prepared today for a preparing class, or null. */
 export function preparedState(c, className){
-  var cl = (c.classes||[]).find(function(x){ return x.name===className; });
+  var cl = classEntryOf(c, className);
   var max = cl ? preparedMax(c, cl) : 0;
   if(!max) return null;
   var known = classKnownSpells(c, className);
@@ -558,7 +558,7 @@ export function alwaysPrepared(c, sp){
    cleric level 3."), or null. */
 export function prepareLevelProblem(c, sp){
   var cls = preparingClassFor(c, sp);
-  var cl = cls && (c.classes||[]).find(function(x){ return x.name===cls; });
+  var cl = cls && classEntryOf(c, cls);
   var def = cl && casterDef(cl.name, cl.subclass, cl.edition);
   if(!def || !def.maxLevel) return null;
   var lv = Number(cl.level)||1, sl = sp.level||0;

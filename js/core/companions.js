@@ -1,5 +1,5 @@
 import { COMPANIONS } from "../data/companions.js";
-import { mod, profBonus, classSpellAbility, clamp, totalLevel, featureSpells, usesVariant } from "./helpers.js";
+import { mod, profBonus, classSpellAbility, clamp, totalLevel, featureSpells, usesVariant, classEntryOf } from "./helpers.js";
 import { abilityScore, abilityScores } from "./ability-scores.js";
 import { knownInvocations } from "./invocations.js";
 import { characterSpellEdition } from "./spell-edition.js";
@@ -22,7 +22,7 @@ export function characterCompanions(c){
     var mods = {};
     ["str","dex","con","int","wis","cha"].forEach(function(k){ mods[k] = mod(abilityScore(c, k)); });
     var pb = profBonus(c);
-    var castCl = cl || (def.castClass && (c.classes||[]).find(function(x){ return x.name===def.castClass; }));
+    var castCl = cl || (def.castClass && classEntryOf(c, def.castClass));
     var castMod = mods[(castCl && classSpellAbility(castCl)) || "int"] || 0;
     var saved = companionState(c, def.id);
     var lvl = cl ? Number(cl.level)||1 : totalLevel(c);

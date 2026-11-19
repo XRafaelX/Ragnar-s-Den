@@ -3,7 +3,7 @@
    change (all checked against the Player's Handbook, Xanathar's Guide,
    Tasha's Cauldron and Fizban's Treasury on 5etools' data 2026-10-30). */
 import { mod } from "./basics.js";
-import { classLevelOf, usesVariant, isRanger2024 } from "./class-features.js";
+import { classLevelOf, usesVariant, isRanger2024, classEntryOf } from "./class-features.js";
 import { characterChoices } from "./class-picks.js";
 import { resourceLeft } from "./effects.js";
 import { abilityScore } from "./ability-scores.js";
@@ -13,7 +13,7 @@ import { longRestExhaustion } from "./conditions.js";
 import { characterCompanions } from "./companions.js";
 
 function ranger(c){
-  return (c.classes||[]).find(function(cl){ return cl.name==="Ranger"; }) || null;
+  return classEntryOf(c, "Ranger") || null;
 }
 function knows(c, setId, name){
   return allKnownOptions(c, setId).some(function(o){ return o.name===name; });

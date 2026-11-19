@@ -9,7 +9,7 @@
    A Channel Divinity action has the same shape as a paladin's
    (js/core/paladin.js), with `pool` naming the cleric's uses. */
 import { mod, profBonus } from "./basics.js";
-import { classFeatureList, classLevelOf, choiceEffectsOf } from "./class-features.js";
+import { classFeatureList, classLevelOf, choiceEffectsOf, classEntryOf } from "./class-features.js";
 import { entryChoices } from "./class-picks.js";
 import { divineSparkDice } from "../data/cleric-2024.js";
 import { abilityScore } from "./ability-scores.js";
@@ -20,7 +20,7 @@ import { spendForRests } from "./warlock.js";
 
 var CHANNEL = "Cleric:channel_divinity";
 function cleric(c){
-  return (c.classes||[]).find(function(cl){ return cl.name==="Cleric"; }) || null;
+  return classEntryOf(c, "Cleric") || null;
 }
 function wisAtLeastOne(c){
   return Math.max(1, mod(abilityScore(c, "wis")));
