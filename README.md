@@ -2,7 +2,9 @@
 
 [![Tests](https://github.com/XRafaelX/Ragnar-s-Den/actions/workflows/tests.yml/badge.svg)](https://github.com/XRafaelX/Ragnar-s-Den/actions/workflows/tests.yml)
 [![Latest release](https://img.shields.io/github/v/release/XRafaelX/Ragnar-s-Den)](https://github.com/XRafaelX/Ragnar-s-Den/releases/latest)
-[![Open the app](https://img.shields.io/badge/open-the%20app-b8860b)](https://xrafaelx.github.io/Ragnar-s-Den/)
+[![Open the app](https://img.shields.io/badge/open-the%20app-8b5cf6)](https://xrafaelx.github.io/Ragnar-s-Den/)
+
+[![Ragnar's Den: a character sheet on a computer and a phone](images/social-preview.jpg)](https://xrafaelx.github.io/Ragnar-s-Den/)
 
 An offline-first, browser-based D&D 5e character creator and interactive character sheet. No accounts, no ads, and no internet connection required after initial load.
 
@@ -282,7 +284,8 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   ├── icon-192.png                   # Application icon (192×192) for PWA
 │   ├── icon-192-maskable.png          # Maskable application icon (192×192)
 │   ├── icon-512.png                   # Application icon (512×512) for PWA
-│   └── icon-512-maskable.png          # Maskable application icon (512×512)
+│   ├── icon-512-maskable.png          # Maskable application icon (512×512)
+│   └── social-preview.jpg             # Link preview banner (1280×640), also shown at the top of this README
 ├── js/
 │   ├── app.js                         # Application entry point: event listeners, import/export, init()
 │   ├── bootstrap.bundle.min.js        # Bootstrap 5 JavaScript bundle
