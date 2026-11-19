@@ -303,13 +303,12 @@ export function profPicksToApply(){
 }
 
 export function invChoice(){
-  return {pactBoon: lu.pactBoon, pactSpells: lu.pactSpells, picks: lu.invPicks, pickSpells: lu.invSpells, swapOut: "", edition: luEdition() || ""};
+  return {pactBoon: lu.pactBoon, pactSpells: lu.pactSpells, picks: lu.invPicks, pickSpells: lu.invSpells, edition: luEdition() || ""};
 }
-function invPlan(){ var t = target(); return levelUpPlan(t.existing, t.newLevel, "", false, luEdition() || ""); }
+function invPlan(){ var t = target(); return levelUpPlan(t.existing, t.newLevel, luEdition() || ""); }
 export function pactDue(){ return invPlan().pactDue; }
 export function knownNow(){ return knownInvocations(target().existing); }
 export function newInvocationCount(){ return invPlan().fresh; }
-export function invocationSlots(){ return invPlan().slots; }
 export function luInvocationCtx(){ var t = target(); return levelUpContext(lu.c, t.existing, t.newLevel, invChoice()); }
 function invocationProblem(){
   var t = target();

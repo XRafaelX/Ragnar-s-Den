@@ -140,8 +140,6 @@ export function finish(){
     var invApplied = applyLevelUpChoices(c, entry, t.newLevel, invNow);
     record.pactBoonSet = invApplied.pactBoonSet;
     record.invAdded = invApplied.invAdded;
-    record.invSwappedOut = invApplied.invSwappedOut;
-    if(invApplied.pactBoonPrev) record.pactBoonPrev = invApplied.pactBoonPrev;
     invGained = invApplied.gained;
   }
   // Class options (Metamagic, maneuvers), recorded for undo.

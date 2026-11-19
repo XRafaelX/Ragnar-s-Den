@@ -693,29 +693,26 @@ test("Eldritch Blast summary: beams, CHA, range and riders", () => {
    Invocations in a level-up
    ================================================================ */
 test("level-up plan: what each warlock level asks for", () => {
-  const plan = (level, entry, swap) => INV.levelUpPlan(entry, level, swap);
-  assert.deepEqual(plan(1, null), { applies: false, pactDue: false, pactChange: false, fresh: 0, slots: 0 }, "a new multiclass warlock");
-  assert.deepEqual(plan(2, { level: 1 }), { applies: true, pactDue: false, pactChange: false, fresh: 2, slots: 2 });
-  assert.deepEqual(plan(3, { level: 2, invocations: [{ id: "a" }, { id: "b" }] }), { applies: true, pactDue: true, pactChange: false, fresh: 0, slots: 0 });
+  const plan = (level, entry) => INV.levelUpPlan(entry, level);
+  assert.deepEqual(plan(1, null), { applies: false, pactDue: false, fresh: 0 }, "a new multiclass warlock");
+  assert.deepEqual(plan(2, { level: 1 }), { applies: true, pactDue: false, fresh: 2 });
+  assert.deepEqual(plan(3, { level: 2, invocations: [{ id: "a" }, { id: "b" }] }), { applies: true, pactDue: true, fresh: 0 });
   assert.equal(plan(4, { level: 3, pactBoon: "Pact of the Blade" }).pactDue, false, "already chosen");
   assert.equal(plan(5, { level: 4, invocations: [{ id: "a" }, { id: "b" }] }).fresh, 1);
   assert.equal(plan(5, { level: 4 }).fresh, 3, "an older sheet with none catches up");
   assert.equal(plan(6, { level: 5, invocations: [1, 2, 3, 4].map((i) => ({ id: "x" + i })) }).fresh, 0, "more than due: nothing new");
-  const two = { level: 3, invocations: [{ id: "a" }, { id: "b" }] };
-  assert.equal(plan(4, two, "a").slots, 1, "a swap adds one pick");
-  assert.equal(plan(4, two, "zzz").slots, 0, "an unknown swap id adds nothing");
-  // Eldritch Versatility (Tasha's): the Pact Boon is picked again.
+  // Swaps (an invocation, or the Pact Boon through Eldritch Versatility)
+  // are made on the Eldritch invocations card, not in the level-up.
   const blade = { level: 7, pactBoon: "Pact of the Blade", invocations: [{ id: "a" }] };
-  assert.deepEqual([INV.levelUpPlan(blade, 8, "", true).pactDue, INV.levelUpPlan(blade, 8, "", true).pactChange], [true, true]);
-  assert.equal(INV.levelUpPlan({ level: 2 }, 3, "", true).pactChange, false, "a first boon isn't a change");
+  assert.equal(INV.levelUpPlan(blade, 8).pactDue, false, "a Pact Boon isn't asked again at an ASI level");
 });
 
-test("level-up context: the swapped-out one isn't known; the new pact counts", () => {
+test("level-up context: the new pact and its cantrips count", () => {
   const c = warlock(2, { spells: [] });
   const cl = c.classes[0];
-  const sign = INV.learnInvocation(c, cl, "Devil's Sight", []);
-  let ctx = INV.levelUpContext(c, cl, 3, { swapOut: sign.id, pactBoon: "Pact of the Tome", pactSpells: ["Eldritch Blast", ""] });
-  assert.deepEqual([ctx.level, ctx.pactBoon, ctx.known], [3, "Pact of the Tome", []]);
+  INV.learnInvocation(c, cl, "Devil's Sight", []);
+  let ctx = INV.levelUpContext(c, cl, 3, { pactBoon: "Pact of the Tome", pactSpells: ["Eldritch Blast", ""] });
+  assert.deepEqual([ctx.level, ctx.pactBoon, ctx.known], [3, "Pact of the Tome", ["Devil's Sight"]]);
   assert.equal(ctx.knowsSpell("Eldritch Blast"), true, "the Tome's new cantrips count");
   // Once a pact is chosen, the level-up's own pick is ignored.
   cl.pactBoon = "Pact of the Blade";
@@ -750,74 +747,86 @@ test("level-up problems, in the order the dialog shows them", () => {
   assert.equal(problem(3, { pactBoon: "Pact of the Tome", pactSpells: ["Guidance", "Guidance", "Light"] }), "Choose 3 cantrips from any class for your Pact of the Tome.");
   assert.equal(problem(3, { pactBoon: "Pact of the Tome", pactSpells: ["Guidance", "Light", "Bless"] }), "Choose 3 cantrips from any class for your Pact of the Tome.", "Bless isn't a cantrip");
   assert.equal(problem(3, { pactBoon: "Pact of the Tome", pactSpells: ["Guidance", "Light", "Mage Hand"] }), null);
-  // A swap needs its replacement, which may use the pact picked now.
-  const tome = { pactBoon: "Pact of the Tome", pactSpells: ["Guidance", "Light", "Mage Hand"] };
-  const swapOut = INV.knownInvocations(cl)[0].id;
-  assert.equal(problem(3, { ...tome, swapOut }), "Choose your new invocation.");
-  assert.equal(problem(3, { ...tome, swapOut, picks: ["Agonizing Blast"] }), "Agonizing Blast can't be learned now (known). Pick another.");
-  assert.equal(problem(3, { ...tome, swapOut, picks: ["Devil's Sight"] }), null, "taking back the one given up is allowed");
-  assert.equal(problem(3, { ...tome, swapOut, picks: ["Book of Ancient Secrets"] }), "Choose 2 1st-level ritual spells from any class for Book of Ancient Secrets.");
-  assert.equal(problem(3, { ...tome, swapOut, picks: ["Book of Ancient Secrets"], pickSpells: { "Book of Ancient Secrets": ["Alarm", "Hex"] } }),
+  // Warlock 5: a new one, which may use the pact picked at 3.
+  cl.level = 4; cl.pactBoon = "Pact of the Tome"; cl.pactSpells = ["Guidance", "Light", "Mage Hand"];
+  assert.equal(problem(5, {}), "Choose your new invocation.");
+  assert.equal(problem(5, { picks: ["Agonizing Blast"] }), "Agonizing Blast can't be learned now (known). Pick another.");
+  assert.equal(problem(5, { picks: ["Book of Ancient Secrets"] }), "Choose 2 1st-level ritual spells from any class for Book of Ancient Secrets.");
+  assert.equal(problem(5, { picks: ["Book of Ancient Secrets"], pickSpells: { "Book of Ancient Secrets": ["Alarm", "Hex"] } }),
     "Choose 2 1st-level ritual spells from any class for Book of Ancient Secrets.", "Hex isn't a ritual");
-  assert.equal(problem(3, { ...tome, swapOut, picks: ["Book of Ancient Secrets"], pickSpells: { "Book of Ancient Secrets": ["Alarm", "Find Familiar"] } }), null);
-  assert.equal(problem(3, { pactBoon: "Pact of the Blade", swapOut, picks: ["Book of Ancient Secrets"] }),
+  assert.equal(problem(5, { picks: ["Book of Ancient Secrets"], pickSpells: { "Book of Ancient Secrets": ["Alarm", "Find Familiar"] } }), null);
+  cl.pactBoon = "Pact of the Blade"; cl.pactSpells = [];
+  assert.equal(problem(5, { picks: ["Book of Ancient Secrets"] }),
     "Book of Ancient Secrets can't be learned now (needs Tome pact). Pick another.");
 });
 
-test("level-up apply and undo: pact, new invocations and a swap", () => {
+test("level-up apply and undo: pact and new invocations", () => {
   const c = warlock(2, { spells: [{ name: "Eldritch Blast" }], skillProfs: {} });
   const cl = c.classes[0];
-  const shadows = INV.learnInvocation(c, cl, "Armor of Shadows", []);
-  INV.learnInvocation(c, cl, "Agonizing Blast", []);
-  const choice = { pactBoon: "Pact of the Tome", pactSpells: ["Guidance", "", "Light", "Mage Hand"], picks: ["Beguiling Influence", "Ignored"], swapOut: shadows.id };
+  INV.learnInvocation(c, cl, "Armor of Shadows", []);
+  // (An older sheet with one invocation catches up by one at warlock 3.)
+  const choice = { pactBoon: "Pact of the Tome", pactSpells: ["Guidance", "", "Light", "Mage Hand"], picks: ["Beguiling Influence", "Ignored"] };
   assert.equal(INV.levelUpProblem(c, cl, 3, { ...choice, pactSpells: ["Guidance", "Light", "Mage Hand"] }), null);
   const rec = INV.applyLevelUpChoices(c, cl, 3, choice);
   assert.equal(cl.pactBoon, "Pact of the Tome");
   assert.deepEqual(cl.pactSpells, ["Guidance", "Light", "Mage Hand"], "blanks are dropped");
   assert.equal(rec.pactBoonSet, true);
-  assert.equal(rec.invSwappedOut.name, "Armor of Shadows");
-  assert.equal(rec.invAdded.length, 1, "only as many as the slots");
-  assert.deepEqual(names(cl), ["Agonizing Blast", "Beguiling Influence"]);
+  assert.equal(rec.invAdded.length, 1, "only as many as are due");
+  assert.deepEqual(names(cl), ["Armor of Shadows", "Beguiling Influence"]);
   assert.equal(c.skillProfs.Persuasion.prof, true);
   assert.deepEqual(rec.gained.map((g) => [g.name, g.tag]), [["Pact of the Tome", "Pact Boon"], ["Beguiling Influence", "Invocation"]]);
   assert.equal(rec.gained[0].text, pactBoonDef("Pact of the Tome").summary);
   // Undo puts everything back.
   INV.undoLevelUpChoices(c, cl, rec);
-  assert.deepEqual(names(cl).sort(), ["Agonizing Blast", "Armor of Shadows"]);
+  assert.deepEqual(names(cl), ["Armor of Shadows"]);
   assert.equal(c.skillProfs.Persuasion.prof, false);
   assert.equal(cl.pactBoon, undefined);
   assert.equal(cl.pactSpells, undefined);
   // An empty record (an old save, a non-warlock level) undoes nothing.
   INV.undoLevelUpChoices(c, cl, {});
-  assert.equal(INV.knownInvocations(cl).length, 2);
+  assert.equal(INV.knownInvocations(cl).length, 1);
   // Nothing happens at warlock 1, and an unknown pact isn't saved.
-  assert.deepEqual(INV.applyLevelUpChoices(c, cl, 1, { picks: ["Devil's Sight"] }), { pactBoonSet: false, invAdded: [], invSwappedOut: null, gained: [] });
+  assert.deepEqual(INV.applyLevelUpChoices(c, cl, 1, { picks: ["Devil's Sight"] }), { pactBoonSet: false, invAdded: [], gained: [] });
   const bad = INV.applyLevelUpChoices(c, { name: "Warlock", level: 2, invocations: [{ id: "a", name: "Devil's Sight" }, { id: "b", name: "Beast Speech" }] }, 3, { pactBoon: "Pact of Nothing" });
   assert.equal(bad.pactBoonSet, false);
   // A book picked on the level-up keeps its rituals.
-  const tomeLock = warlock(3, {}, { pactBoon: "Pact of the Tome", invocations: [{ id: "a", name: "Devil's Sight" }, { id: "b", name: "Beast Speech" }] });
-  const r2 = INV.applyLevelUpChoices(tomeLock, tomeLock.classes[0], 4, { swapOut: "b", picks: ["Book of Ancient Secrets"], pickSpells: { "Book of Ancient Secrets": ["Alarm", "Find Familiar"] } });
-  assert.deepEqual(INV.knownInvocations(tomeLock.classes[0]).map((e) => [e.name, e.spells]), [["Devil's Sight", undefined], ["Book of Ancient Secrets", ["Alarm", "Find Familiar"]]]);
+  const tomeLock = warlock(4, {}, { pactBoon: "Pact of the Tome", invocations: [{ id: "a", name: "Devil's Sight" }, { id: "b", name: "Beast Speech" }] });
+  const r2 = INV.applyLevelUpChoices(tomeLock, tomeLock.classes[0], 5, { picks: ["Book of Ancient Secrets"], pickSpells: { "Book of Ancient Secrets": ["Alarm", "Find Familiar"] } });
+  assert.deepEqual(INV.knownInvocations(tomeLock.classes[0]).map((e) => [e.name, e.spells]),
+    [["Devil's Sight", undefined], ["Beast Speech", undefined], ["Book of Ancient Secrets", ["Alarm", "Find Familiar"]]]);
   assert.equal(r2.pactBoonSet, false);
+});
+
+test("undo still restores what an older level-up swapped (before 2026-11-16)", () => {
+  const c = warlock(8, { skillProfs: {} }, { pactBoon: "Pact of the Chain", pactSpells: [] });
+  const cl = c.classes[0];
+  const added = INV.learnInvocation(c, cl, "Devil's Sight", []);
+  const old = { id: "old", name: "Beguiling Influence", spells: [] };
+  INV.undoLevelUpChoices(c, cl, { invAdded: [added.id], invSwappedOut: old,
+    pactBoonPrev: { pactBoon: "Pact of the Tome", pactSpells: ["Guidance", "Light", "Mage Hand"] } });
+  assert.deepEqual(names(cl), ["Beguiling Influence"]);
+  assert.equal(c.skillProfs.Persuasion.prof, true, "its skills come back");
+  assert.equal(cl.pactBoon, "Pact of the Tome");
+  assert.deepEqual(cl.pactSpells, ["Guidance", "Light", "Mage Hand"]);
 });
 
 test("Undo last level-up takes back the level's invocations and Pact Boon", (t) => {
   const c = warlock(2, { spells: [{ name: "Eldritch Blast" }], skillProfs: {}, hp: { max: 20, current: 20, temp: 0 } });
   const cl = c.classes[0];
-  const shadows = INV.learnInvocation(c, cl, "Armor of Shadows", []);
   INV.learnInvocation(c, cl, "Agonizing Blast", []);
-  // What the dialog's finish() does for warlock 3.
-  const applied = INV.applyLevelUpChoices(c, cl, 3, { pactBoon: "Pact of the Chain", picks: ["Beguiling Influence"], swapOut: shadows.id });
+  // What the dialog's finish() does for warlock 3 (an older sheet one short).
+  const applied = INV.applyLevelUpChoices(c, cl, 3, { pactBoon: "Pact of the Chain", picks: ["Beguiling Influence"] });
+  assert.equal(c.skillProfs.Persuasion.prof, true);
   cl.level = 3;
   c.hp.max += 7; c.hp.current += 7;
   c.levelHistory = [{ className: "Warlock", isNewClass: false, prevSubclass: "The Fiend", hpGain: 7, toughGain: 0, speedGain: 0,
     asi: null, featId: null, unlockIds: [], prevSpellcasting: { ability: "cha", slots: {}, pact: null },
-    pactBoonSet: applied.pactBoonSet, invAdded: applied.invAdded, invSwappedOut: applied.invSwappedOut }];
+    pactBoonSet: applied.pactBoonSet, invAdded: applied.invAdded }];
   assert.ok(H.featureSpells(c).some((s) => s.name === "Find Familiar"));
   withFakeDom(t, (byId) => { undoLastLevelUp(c); byId["confirm-ok"].click(); });
   assert.equal(cl.level, 2);
   assert.equal(cl.pactBoon, undefined);
-  assert.deepEqual(names(cl).sort(), ["Agonizing Blast", "Armor of Shadows"]);
+  assert.deepEqual(names(cl), ["Agonizing Blast"]);
   assert.equal(c.skillProfs.Persuasion.prof, false);
   assert.ok(!H.featureSpells(c).some((s) => s.name === "Find Familiar"));
   assert.equal(c.levelHistory.length, 0);

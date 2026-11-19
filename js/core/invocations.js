@@ -415,8 +415,11 @@ export function eldritchBlastSummary(c){
     if(inv.blast.rider) out.riders.push(inv.blast.rider);
     out.by.push(invocationLabel(inv.name));
   });
-  // Spell Sniper doubles the range of a spell that needs an attack roll.
-  if((c.feats||[]).some(function(f){ return f.name==="Spell Sniper"; })) out.range *= 2;
+  // Spell Sniper doubles the range of a spell that needs an attack roll;
+  // the 2024 feat adds 60 feet instead (as spellRangeText does).
+  var feats = (c.feats||[]).map(function(f){ return f.name; });
+  if(feats.indexOf("Spell Sniper")!==-1) out.range *= 2;
+  else if(feats.indexOf("Spell Sniper (2024)")!==-1) out.range += 60;
   return out;
 }
 
@@ -444,38 +447,28 @@ export function adoptCustomInvocations(c, cl){
 
 /* ---- A warlock level-up's choices ----
    The level-up dialog keeps `choice` = {pactBoon, pactSpells, picks,
-   pickSpells: {name: [spells]}, swapOut: id of a known invocation to
-   replace}. `cl` is the warlock's class entry before the level-up (null
-   for a new multiclass) and `newLevel` the warlock level it reaches. */
-/* `pactChange`: Eldritch Versatility (Tasha's) replaces the Pact Boon at
-   this level, so it's picked again. */
-/* `edition`: the class's edition for a new multiclass ("2024": an
-   invocation from level 1 and no Pact Boon). */
-export function levelUpPlan(cl, newLevel, swapOut, pactChange, edition){
-  var known = knownInvocations(cl);
+   pickSpells: {name: [spells]}, edition}. `cl` is the warlock's class
+   entry before the level-up (null for a new multiclass) and `newLevel`
+   the warlock level it reaches. `edition` is the class's edition for a
+   new multiclass ("2024": an invocation from level 1 and no Pact Boon).
+   Swapping an invocation or the Pact Boon isn't part of the level-up
+   (2026-11-16): the Eldritch invocations card does it. */
+export function levelUpPlan(cl, newLevel, edition){
   var ed = cl ? cl.edition || "" : edition || "";
-  var fresh = Math.max(0, invocationsKnownAt(newLevel, ed) - known.length);
-  var swapping = !!swapOut && known.some(function(e){ return e.id===swapOut; });
   return {
     applies: newLevel >= (ed==="2024" ? 1 : 2),
-    pactDue: ed!=="2024" && newLevel >= 3 && (!(cl && cl.pactBoon) || !!pactChange),
-    pactChange: !!(pactChange && cl && cl.pactBoon),
-    fresh: fresh,
-    slots: fresh + (swapping ? 1 : 0)
+    pactDue: ed!=="2024" && newLevel >= 3 && !(cl && cl.pactBoon),
+    fresh: Math.max(0, invocationsKnownAt(newLevel, ed) - knownInvocations(cl).length)
   };
 }
-/* Prerequisites as they'll stand after the level-up. The invocation being
-   swapped out no longer counts as known. */
+/* Prerequisites as they'll stand after the level-up. */
 export function levelUpContext(c, cl, newLevel, choice){
-  var plan = levelUpPlan(cl, newLevel, choice.swapOut, choice.pactChange, choice.edition);
-  var staying = knownInvocations(cl).filter(function(e){ return e.id!==choice.swapOut; });
+  var plan = levelUpPlan(cl, newLevel, choice.edition);
   return invocationContext(c, cl, {
     level: newLevel,
     pactBoon: plan.pactDue ? choice.pactBoon || "" : (cl && cl.pactBoon) || "",
     pactSpells: plan.pactDue ? (choice.pactSpells||[]).filter(Boolean) : null,
-    edition: cl ? cl.edition || "" : choice.edition || "",
-    targets: invocationTargets(staying),
-    known: staying.map(function(e){ return e.name; })
+    edition: cl ? cl.edition || "" : choice.edition || ""
   });
 }
 /* Every picker of a spellPick holds a different spell from its list. */
@@ -484,40 +477,16 @@ export function spellPickComplete(pick, values){
   return got.length===pick.count && new Set(got).size===pick.count;
 }
 var picksComplete = spellPickComplete;
-/* A known invocation another one needs (a 2024 pact, Thirsting Blade for
-   Devouring Blade): the name of the one that needs it, or "". */
-export function neededBy(cl, entry){
-  var other = knownInvocations(cl).find(function(e){
-    var d = e.id!==entry.id && invocationDef(e.name);
-    return d && d.edition && (d.pact===entry.name || d.requires===entry.name);
-  });
-  return other ? invocationLabel(other.name) : "";
-}
 /* What's still missing or wrong, in words, or null when the choices are complete. */
 export function levelUpProblem(c, cl, newLevel, choice){
-  var plan = levelUpPlan(cl, newLevel, choice.swapOut, choice.pactChange, choice.edition);
+  var plan = levelUpPlan(cl, newLevel, choice.edition);
   if(!plan.applies) return null;
-  // (You can't replace an invocation another one needs.)
-  var out = choice.swapOut && knownInvocations(cl).find(function(e){ return e.id===choice.swapOut; });
-  var needer = out && neededBy(cl, out);
-  if(needer) return invocationLabel(out.name) + " is needed by your " + needer + ". Keep it, or swap " + needer + " instead.";
   if(plan.pactDue){
     var boon = pactBoonDef(choice.pactBoon);
-    if(plan.pactChange && (!boon || boon.name===cl.pactBoon)) return "Choose the Pact Boon that replaces your "+cl.pactBoon+".";
     if(!boon || (boon.optional && !c.tashaOptional)) return "Choose your Pact Boon.";
     if(boon.spellPick && !picksComplete(boon.spellPick, choice.pactSpells)) return "Choose "+boon.spellPick.count+" "+boon.spellPick.label+" for your "+boon.name+".";
   }
-  // A new Pact Boon leaves invocations that need the old one stranded:
-  // the one swap this level can replace one of them.
-  if(plan.pactChange){
-    var stranded = knownInvocations(cl).filter(function(e){
-      var d = invocationDef(e.name);
-      return e.id!==choice.swapOut && d && d.pact && d.pact!==choice.pactBoon;
-    });
-    if(stranded.length) return stranded.map(function(e){ return e.name; }).join(" and ")+" need"+(stranded.length===1 ? "s" : "")+" your "+cl.pactBoon+
-      (stranded.length===1 ? ". Swap it out below, or keep your Pact Boon." : ". Keep your Pact Boon (you can swap only one invocation a level).");
-  }
-  var n = plan.slots, ctx = levelUpContext(c, cl, newLevel, choice);
+  var n = plan.fresh, ctx = levelUpContext(c, cl, newLevel, choice);
   var picks = (choice.picks||[]).slice(0, n);
   if(picks.filter(Boolean).length < n || new Set(picks).size < n) return n===1 ? "Choose your new invocation." : "Choose "+n+" different invocations.";
   for(var i=0;i<picks.length;i++){
@@ -530,24 +499,20 @@ export function levelUpProblem(c, cl, newLevel, choice){
   return null;
 }
 /* Apply the choices to the class entry. Returns what undoLevelUpChoices
-   needs ({pactBoonSet, invAdded, invSwappedOut}) and the unlock cards
-   for the popup ({gained}). Call with the entry's level not yet changed
-   or already changed: only `newLevel` is used. */
+   needs ({pactBoonSet, invAdded}) and the unlock cards for the popup
+   ({gained}). Call with the entry's level not yet changed or already
+   changed: only `newLevel` is used. */
 export function applyLevelUpChoices(c, cl, newLevel, choice){
-  var plan = levelUpPlan(cl, newLevel, choice.swapOut, choice.pactChange, choice.edition);
-  var out = {pactBoonSet: false, invAdded: [], invSwappedOut: null, gained: []};
+  var plan = levelUpPlan(cl, newLevel, choice.edition);
+  var out = {pactBoonSet: false, invAdded: [], gained: []};
   if(!plan.applies) return out;
   if(plan.pactDue && pactBoonDef(choice.pactBoon)){
-    // Eldritch Versatility: undo puts the old boon (and its Book of
-    // Shadows cantrips) back.
-    if(plan.pactChange) out.pactBoonPrev = {pactBoon: cl.pactBoon, pactSpells: (cl.pactSpells||[]).slice()};
     cl.pactBoon = choice.pactBoon;
     cl.pactSpells = (choice.pactSpells||[]).filter(Boolean);
     out.pactBoonSet = true;
     out.gained.push({id:"pact_"+choice.pactBoon, name:choice.pactBoon, text:pactBoonDef(choice.pactBoon).summary, subclass:false, tag:"Pact Boon"});
   }
-  if(plan.slots > plan.fresh) out.invSwappedOut = forgetInvocation(c, cl, choice.swapOut);
-  (choice.picks||[]).slice(0, plan.slots).forEach(function(name){
+  (choice.picks||[]).slice(0, plan.fresh).forEach(function(name){
     var learned = learnInvocation(c, cl, name, (choice.pickSpells||{})[name]);
     out.invAdded.push(learned.id);
     var def = invocationDef(name) || {};
@@ -556,7 +521,9 @@ export function applyLevelUpChoices(c, cl, newLevel, choice){
   return out;
 }
 /* Take back what applyLevelUpChoices did (rec: its result, as saved in
-   the level history). */
+   the level history). A level-up from before 2026-11-16 may also have
+   swapped out an invocation (invSwappedOut) or replaced the Pact Boon
+   through Eldritch Versatility (pactBoonPrev): those are put back too. */
 export function undoLevelUpChoices(c, cl, rec){
   (rec.invAdded||[]).forEach(function(id){ forgetInvocation(c, cl, id); });
   if(rec.invSwappedOut) restoreInvocation(c, cl, rec.invSwappedOut);

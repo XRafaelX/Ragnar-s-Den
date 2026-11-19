@@ -8,6 +8,7 @@ import {
   resolveSpellPick, lessonsFeatChoices, lessonsFeat, addLessonsFeat
 } from "../../core/invocations.js";
 import { featDef, featHasPicks, featNeedsChoice, applyFeatPicks, emptyPicks } from "../../core/feat-picks.js";
+import { usesVariant } from "../../core/class-features.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { meter, sectionTitle, hint } from "../../ui/card-parts.js";
@@ -97,8 +98,12 @@ function pactSection(c, cl){
   }
   var entry = document.createElement("div");
   entry.className = "inf-entry is-on eli-entry";
+  // Tasha's Eldritch Versatility lets the boon change at warlock 4, 8, 12, 16 and 19.
+  var why = usesVariant(cl, "Eldritch Versatility")
+    ? "With Eldritch Versatility you can change it when you reach warlock level 4, 8, 12, 16 or 19, instead of swapping a cantrip or a Mystic Arcanum spell. At other times, change it only to fix a mistake."
+    : "A Pact Boon is normally for good. Change it only to fix a mistake.";
   entry.appendChild(entryHead(boon.name, "Change", function(){
-    confirmDialog("Change your Pact Boon?", "A Pact Boon is normally for good. Change it only to fix a mistake. Invocations that need your current pact will show a warning.", function(){
+    confirmDialog("Change your Pact Boon?", why + " Invocations that need your current pact will show a warning.", function(){
       changingBoon = true; renderAll();
     });
   }));

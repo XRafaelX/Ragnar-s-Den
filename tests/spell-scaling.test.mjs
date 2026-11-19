@@ -4,6 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spellScalingLine } from "../js/core/spell-scaling.js";
+import { eldritchBlastSummary } from "../js/core/invocations.js";
 import { SPELL_SCALING } from "../js/data/spell-scaling.js";
 import { SPELL_DATA } from "../js/data/spells.js";
 import { newCharacter } from "../js/core/character.js";
@@ -222,4 +223,11 @@ test("an Evoker's Potent Cantrip and Empowered Evocation, and Spell Sniper's ran
   warlock.feats = [{ id: "ss", name: "Spell Sniper", picks: { option: "Warlock", spells: ["Eldritch Blast"] } }];
   warlock.spells = [{ name: "Eldritch Blast", level: 0 }];
   assert.match(line(warlock, "Eldritch Blast"), /, 600 ft\./, "Eldritch Spear's 300 ft doubles too");
+  // The 2024 feat adds 60 feet on the Eldritch Blast card too, as on the spell's range.
+  warlock.feats = [{ id: "ss", name: "Spell Sniper (2024)", picks: { ability: "cha" } }];
+  assert.equal(eldritchBlastSummary(warlock).range, 360);
+  assert.match(line(warlock, "Eldritch Blast"), /, 360 ft\./);
+  warlock.classes[0].invocations = [];
+  assert.equal(eldritchBlastSummary(warlock).range, 180);
+  assert.equal(spellRangeText(warlock, "Eldritch Blast", "120 feet"), "180 feet (60 more from Spell Sniper)", "both say the same");
 });

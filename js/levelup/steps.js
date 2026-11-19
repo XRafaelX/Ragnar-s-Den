@@ -28,7 +28,7 @@ import { fillFeatList, featListLabel } from "../ui/feat-list.js";
 import { spellPickGrid } from "../ui/spell-pick-grid.js";
 import { SPELL_DATA } from "../data/spells.js";
 function spellLevelOf(n){ return (SPELL_DATA[n] || {}).level; }
-import { lu, luEdition, styleOptions, featWho, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, newInvocationCount, invocationSlots, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
+import { lu, luEdition, styleOptions, featWho, levelUpClassNames, learnActive, onCantripStep, meetsPrereq, prereqText, target, stepApplicable, bonusFeatChoices, bonusFeatReason, optionPlans, optChoice, profGrants, profSlots, profCtx, profPicksToApply, profStepLabel, variantOffers, offerEntry, pactDue, newInvocationCount, luInvocationCtx, spellHeldNow, chosenSubclass, dueSpellChoices, learnEntry, currentLearnPlan, learnSections, asiPointsUsed, asiPointsAvailable, close, go, render, refreshProgress, stepCard, gainLabels, resetChoicesFor, availableStyles, knownManeuvers, featCtx, bonusFeatCtx, conModAfterAsi, hpGain, toughGain } from "./session.js";
 
 /* A feat's picks redraw the step, except a spell card ticked (the cards keep their scroll and search). */
 function softRender(meta){ if(!(meta && meta.soft)) render(); }
@@ -240,8 +240,7 @@ export function stepInvocations(container){
   // Only invocations the warlock can take are listed; a pick that no
   // longer qualifies (the Pact Boon changed above) is cleared.
   var availableNames = availableInvocations(ctx).map(function(i){ return i.name; });
-  var n = invocationSlots();
-  lu.invPicks = lu.invPicks.slice(0, n).map(function(v){ return availableNames.indexOf(v)!==-1 ? v : ""; });
+  lu.invPicks = lu.invPicks.slice(0, need).map(function(v){ return availableNames.indexOf(v)!==-1 ? v : ""; });
   var ed2024 = ctx.edition==="2024";
   var favourites = [["Agonizing Blast", "more Eldritch Blast damage"], ["Devil's Sight", "see in magical darkness"], ["Armor of Shadows", "free Mage Armor"]]
     .filter(function(f){ return availableNames.indexOf(ed2024 ? f[0] + " (2024)" : f[0])!==-1; }).slice(0, 2)
@@ -575,7 +574,7 @@ export function stepReview(container){
   }
   if(stepApplicable("invocations")){
     if(pactDue() && lu.pactBoon) items.push("Pact Boon: "+lu.pactBoon+(lu.pactSpells.length ? " ("+lu.pactSpells.filter(Boolean).join(", ")+")" : ""));
-    var added = lu.invPicks.slice(0, invocationSlots()).filter(Boolean);
+    var added = lu.invPicks.slice(0, newInvocationCount()).filter(Boolean);
     if(added.length) items.push("New invocation"+(added.length>1 ? "s" : "")+": "+added.map(invocationLabel).join(", "));
   }
   if(stepApplicable("options")) optionPlans().forEach(function(plan){

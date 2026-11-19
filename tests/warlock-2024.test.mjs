@@ -102,29 +102,25 @@ test("Agonizing Blast names a damage cantrip, and can be taken again for another
   assert.ok(!INV.invocationSpells(c).some((s) => s.name === "Mind Sliver"));
 });
 
-test("the level-up: one at level 1, no Pact Boon, swaps keep what another needs", () => {
-  const plan = INV.levelUpPlan(null, 1, "", false, "2024");
+test("the level-up: one at level 1, no Pact Boon, a cantrip pick made with it", () => {
+  const plan = INV.levelUpPlan(null, 1, "2024");
   assert.deepEqual([plan.applies, plan.pactDue, plan.fresh], [true, false, 1]);
   const c = wl(4);
   learn(c, "Pact of the Blade"); learn(c, "Armor of Shadows (2024)"); learn(c, "Eldritch Mind (2024)");
   const cl = c.classes[0];
   const five = INV.levelUpPlan(cl, 5);
   assert.deepEqual([five.applies, five.pactDue, five.fresh], [true, false, 2]);
-  const ok = { picks: ["Thirsting Blade (2024)", "Devil's Sight (2024)"], pickSpells: {}, swapOut: "" };
+  const ok = { picks: ["Thirsting Blade (2024)", "Devil's Sight (2024)"], pickSpells: {} };
   assert.equal(INV.levelUpProblem(c, cl, 5, ok), null);
   learn(c, "Thirsting Blade (2024)");
-  const pactOut = cl.invocations.find((e) => e.name === "Pact of the Blade").id;
-  assert.match(INV.levelUpProblem(c, cl, 6, { picks: ["Devil's Sight (2024)"], pickSpells: {}, swapOut: pactOut }), /Pact of the Blade is needed by your Thirsting Blade/);
   // A cantrip pick has to be made with it.
   c.spells = [blast];
-  // (Level 6: one new invocation, and the swap's replacement last.)
-  const agon = { picks: ["Devil's Sight (2024)", "Agonizing Blast (2024)"], pickSpells: {}, swapOut: cl.invocations[1].id };
-  assert.equal(INV.levelUpProblem(c, cl, 6, agon), "Choose the cantrip for Agonizing Blast.");
+  const agon = { picks: ["Agonizing Blast (2024)"], pickSpells: {} };
+  assert.equal(INV.levelUpProblem(c, cl, 5, agon), "Choose the cantrip for Agonizing Blast.");
   agon.pickSpells = { "Agonizing Blast (2024)": ["Eldritch Blast"] };
-  assert.equal(INV.levelUpProblem(c, cl, 6, agon), null);
-  const rec = INV.applyLevelUpChoices(c, cl, 6, agon);
-  assert.deepEqual(rec.gained.map((g) => g.name), ["Devil's Sight", "Agonizing Blast"]);
-  assert.equal(rec.invSwappedOut.name, "Armor of Shadows (2024)");
+  assert.equal(INV.levelUpProblem(c, cl, 5, agon), null);
+  const rec = INV.applyLevelUpChoices(c, cl, 5, agon);
+  assert.deepEqual(rec.gained.map((g) => g.name), ["Agonizing Blast"], "one left due after Thirsting Blade");
   assert.deepEqual(cl.invocations.find((e) => e.name === "Agonizing Blast (2024)").spells, ["Eldritch Blast"]);
 });
 
