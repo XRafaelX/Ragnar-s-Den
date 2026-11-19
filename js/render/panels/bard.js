@@ -3,7 +3,6 @@ import { spellSlotsLeft, spendSpellSlot, ordinal, clamp, maxHp, plainAttackRollM
 import { SPIRIT_TALES } from "../../data/spirit-tales.js";
 import { SPELL_DATA } from "../../data/spells.js";
 import { renderAll } from "../sheet.js";
-import { renderSidebar } from "../sidebar.js";
 import { makeDicesSvg } from "../../ui/svg-icons.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { themedPicker } from "../../ui/themed-picker.js";
@@ -40,7 +39,7 @@ function toYou(c, gain, label){
         if(gain==="heal") c.hp.current = clamp((Number(c.hp.current)||0) + x.total, 0, maxHp(c));
         else if(x.total > (Number(c.hp.temp)||0)) c.hp.temp = x.total;
         logRoll(label, gain==="heal" ? "Regained " + x.total + " HP." : "Temporary hit points: " + c.hp.temp + ".");
-        save(); renderSidebar(); renderAll();
+        save(); renderAll();
         return {silent: true};
       }}]};
   };

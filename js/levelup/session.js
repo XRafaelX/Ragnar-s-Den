@@ -27,15 +27,15 @@ import { stepClass, stepStyle, stepSubclass, stepSpells, stepCantrips, stepLearn
    A short guided flow in the same full-screen overlay as the creation
    wizard: pick which class gains the level (or multiclass into a new
    one), a subclass when one is due, a Fighting Style when one is due
-   (Fighter 1, Paladin 2, Ranger 2), a warlock's Pact Boon and eldritch
-   invocations (new ones when due, and an optional swap of one known
-   invocation every warlock level), the spells and cantrips the class
-   learns (New spells, with an optional swap for classes that know a
-   fixed set), the proficiencies a new feature lets you choose
+   (Fighter 1, Paladin 2, Ranger 2), a warlock's Pact Boon and new eldritch
+   invocations when due, the spells and cantrips the class learns, the
+   proficiencies a new feature lets you choose
    (Expertise, a subclass's skills, tools or languages), an Ability Score
    Improvement / feat
    at class level 4 (a feat's own picks, when it has any, on a Feat
-   picks step after it), then hit points. Applying it records what changed in
+   picks step after it), then hit points. It asks for no optional swap
+   (spells, cantrips, invocations, styles, options): the features say to
+   make it on the sheet (2026-11-16). Applying it records what changed in
    c.levelHistory so the last level-up can be undone. */
 var STEP_IDS = ["class","subclass","style","spells","cantrips","learn","invocations","options","profs","asi","featPicks","bonusFeat","bonusFeatPicks","hp","review"];
 var STEP_LABELS = {class:"Class", subclass:"Subclass", style:"Style", spells:"Subclass spells", cantrips:"Cantrips", learn:"New spells", invocations:"Invocations", options:"Options", profs:"Proficiencies", asi:"Abilities", featPicks:"Feat picks", bonusFeat:"Campaign feat", bonusFeatPicks:"Campaign feat picks", hp:"Hit points", review:"Review"};
@@ -98,9 +98,8 @@ export function target(){
   };
 }
 
-/* Cantrips and a cantrip swap (with Mystic Arcanum, which the same swap
-   may change) have a step of their own; every other list is on New spells. */
-export function onCantripStep(section){ return section.kind==="cantrip" || section.id==="arcanumIn"; }
+/* New cantrips have a step of their own; every other list is on New spells. */
+export function onCantripStep(section){ return section.kind==="cantrip"; }
 /* True when either spell step has something to do. */
 export function learnActive(){ return stepApplicable("cantrips") || stepApplicable("learn"); }
 export function stepApplicable(id){

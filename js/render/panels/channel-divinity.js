@@ -14,7 +14,6 @@
 import { save } from "../../core/state.js";
 import { clericChannels, channelActions, channelProblem, useChannelAction, effectOn, resourceLeft, clamp, maxHp, classFeatureList, classEntryOf } from "../../core/helpers.js";
 import { renderAll, makeCard } from "../sheet.js";
-import { renderSidebar } from "../sidebar.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -219,7 +218,7 @@ function healYourself(c, n){
   return {lead: "You're at half your hit points or fewer:", options: [{label: "Heal yourself " + n, title: "You can be one of the creatures it heals",
     use: function(){
       c.hp.current = clamp(hp + n, 0, top);
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
       return {silent: true};
     }}]};
 }

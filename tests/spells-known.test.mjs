@@ -10,7 +10,7 @@ import { KNOWN_CASTERS, SUBCLASS_CASTERS } from "../js/data/spells-known.js";
 import { SPELL_DATA } from "../js/data/spells.js";
 import { SUBCLASSES } from "../js/data/progression.js";
 import { newCharacter, ensureShape } from "../js/core/character.js";
-import { spellFromCatalog } from "../js/render/panels/spell-picker.js";
+import { spellFromCatalog } from "../js/core/spell-edition.js";
 import * as W from "../js/wizard/wizard-core.js";
 import * as H from "../js/core/helpers.js";
 import { state } from "../js/core/state.js";

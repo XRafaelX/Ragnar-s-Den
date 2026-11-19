@@ -156,10 +156,10 @@ export function stepSpells(container){
   });
 }
 
-/* The spell steps: Cantrips (the class's cantrips, the free ones and a
-   cantrip swap) and New spells (a pick list per other kind the class
-   learns this level: spells, a third caster's any-school spell, Magical
-   Secrets, a wizard's spellbook, Mystic Arcanum, then the optional swap).
+/* The spell steps: Cantrips (the class's new cantrips and the free ones)
+   and New spells (a pick list per other kind the class learns this
+   level: spells, a third caster's any-school spell, Magical Secrets, a
+   wizard's spellbook, Mystic Arcanum). Swaps are made on the sheet.
    Each is a pick list for the kind of spell, so a long cantrip list never
    buries the spells. */
 export function stepCantrips(container){ renderLearn(container, true); }

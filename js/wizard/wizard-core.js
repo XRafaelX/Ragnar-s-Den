@@ -25,7 +25,7 @@ import { confirmDialog } from "../ui/confirm-modal.js";
 import { playNewCharacter, playToukellienmeli } from "../ui/sound.js";
 import { characterBorn } from "../ui/fx.js";
 import { SPELL_DATA } from "../data/spells.js";
-import { spellFromCatalog } from "../render/panels/spell-picker.js";
+import { spellFromCatalog } from "../core/spell-edition.js";
 import { preparedAt } from "../data/spells-known.js";
 import { invocationDef, invocationLabel } from "../data/invocations.js";
 import { learnInvocation, spellPickComplete } from "../core/invocations.js";

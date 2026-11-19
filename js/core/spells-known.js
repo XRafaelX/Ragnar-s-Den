@@ -22,7 +22,7 @@ import { SPELL_DATA, spellDataForClass, spellOnClassList, tashaAddsSpell, tashaS
 import { SAVANT_SCHOOLS, SAVANT_LEVELS } from "../data/wizard-2024.js";
 import { KNOWN_CASTERS, SUBCLASS_CASTERS, EDITION_CASTERS, MAGICAL_SECRETS_LEVELS, LORE_SECRETS, MYSTIC_ARCANUM, preparedAt, preparingDef } from "../data/spells-known.js";
 import { featureSpells, classFeatureList, classExtraSpellLists, classCasterType, ordinal, choiceEffectsOf, classEntryOf } from "./helpers.js";
-import { spellFromCatalog } from "../render/panels/spell-picker.js";
+import { spellFromCatalog } from "./spell-edition.js";
 import { CLASS_PROGRESSION } from "../data/progression.js";
 import { originListSpells } from "./spell-grants.js";
 

@@ -2,7 +2,6 @@ import { save } from "../../core/state.js";
 import { clamp, maxHp, mod, darkOnesBlessing, DAMAGE_TYPES, spendResource, spendForRests, magicalCunningSlots, resilienceOnRest, classLevelOf, warlockDc, addCondition } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
 import { renderAll } from "../sheet.js";
-import { renderSidebar } from "../sidebar.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { showActionToast } from "../../ui/toast.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
@@ -31,7 +30,7 @@ function tempButton(c, label, n, title, onUse){
     if(onUse && !onUse()) return;
     if(n > (Number(c.hp.temp)||0)) c.hp.temp = n;
     logRoll(label, "Temporary hit points: " + c.hp.temp + ".");
-    save(); renderSidebar(); renderAll();
+    save(); renderAll();
   });
   row.appendChild(b);
   return row;
@@ -88,7 +87,7 @@ function healingLightPicker(c, r){
         return {lead: "For the creature you chose, or:", options: [{label: "Heal yourself " + x.total, title: "You regain these hit points",
           use: function(){
             c.hp.current = clamp((Number(c.hp.current)||0) + x.total, 0, maxHp(c));
-            save(); renderSidebar(); renderAll();
+            save(); renderAll();
             return {silent: true};
           }}]};
       });
@@ -117,7 +116,7 @@ function magicalCunningRow(c, r){
     c.spellcasting.pact.used = used - back;
     var temp = resilienceOnRest(c);
     logRoll("Magical Cunning", (back===1 ? "1 pact slot is back." : back + " pact slots are back.") + (temp ? " Celestial Resilience: " + temp.self + " temporary hit points." : ""));
-    save(); renderSidebar(); renderAll();
+    save(); renderAll();
   });
   b.disabled = r.used >= r.max || !back;
   row.appendChild(b);
@@ -133,7 +132,7 @@ function stepsOfTheFeyRow(c, r){
     var b = rowBtn(label, title, function(){
       if(!spendResource(c, r.key, 1)) return;
       onUse();
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
     });
     b.disabled = none;
     row.appendChild(b);

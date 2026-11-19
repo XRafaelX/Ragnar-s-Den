@@ -1,7 +1,6 @@
 import { save } from "../../core/state.js";
 import { clamp, maxHp, ordinal, arcaneRecoveryBudget, overchannelDice, wardUp, restoreWard, portentCount, rollPortent, usePortent, grimHarvest, powerSurgeDamage, STONE_BENEFITS, stoneBenefit, consumeStone, recoverableSlots, spendResource } from "../../core/helpers.js";
 import { renderAll } from "../sheet.js";
-import { renderSidebar } from "../sidebar.js";
 import { makeDiceSvg, makeDicesSvg } from "../../ui/svg-icons.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -126,7 +125,7 @@ function grimHarvestPicker(c){
       var heal = grimHarvest(Number(v.slice(1)), v.charAt(0)==="n");
       c.hp.current = clamp((Number(c.hp.current)||0) + heal, 0, maxHp(c));
       logRoll("Grim Harvest", "Regained " + heal + " HP.");
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
     }});
 }
 function surgeRow(c, r){
@@ -173,7 +172,7 @@ function convergentRow(c){
   row.appendChild(rowBtn("Use it · 1 exhaustion", "Reaction: the d20 becomes the lowest number that succeeds, or one less. Only a long rest removes this exhaustion.", function(){
     c.exhaustion = Math.min(6, (Number(c.exhaustion)||0) + 1);
     logRoll("Convergent Future", "A roll's result is decided. 1 level of exhaustion.");
-    save(); renderSidebar(); renderAll();
+    save(); renderAll();
   }));
   return row;
 }

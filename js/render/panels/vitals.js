@@ -1,7 +1,6 @@
 import { save } from "../../core/state.js";
 import { WILDS_OPTIONS, POWER_OPTIONS, wildsChoiceDue, lifeGivingDice, branchesDc, longTravelReady, hasRageOfGods, divineFormOn, revivificationHp, spendRage, ragesLeft, persistentRageReady, usePersistentRage, useTides, spendResource, clamp, mod, fmtMod, totalLevel, hitDicePools, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, heavyArmorMasterActive, heavyArmorMasterAmount, hasFeat, endEffect, hpMaxHalved, resistsAllDamage, raceWards, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, drakeResistance, saintResistance, resourceLeft, spendChannel, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, kiWord, uncannyMetabolism, useUncannyMetabolism, perfectFocusGain, usePerfectFocus, takeDamage, healHp, spendHitDieToHeal, shortRest, shortRestNote, longRest, longRestNote } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { renderSidebar } from "../sidebar.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
@@ -301,7 +300,7 @@ export function renderVitalsPanel(c){
   fullBtn.addEventListener("click", function(e){
     e.stopPropagation();
     c.hp.current = hpMax;
-    save(); renderSidebar(); renderAll();
+    save(); renderAll();
     flashHpNum("hp-heal");
   });
   hpActionsRow.appendChild(fullBtn);
@@ -332,7 +331,7 @@ export function renderVitalsPanel(c){
       var roll = Math.floor(Math.random()*6)+1, healed = roll + spirit.bonus;
       c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, hpMax);
       logRoll("Protective Spirit (1d6+" + spirit.bonus + ")", roll + " +" + spirit.bonus + " = " + healed + " HP healed");
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
       flashHpNum("hp-heal");
     });
     hpBox.appendChild(spiritBtn);
@@ -429,7 +428,7 @@ export function renderVitalsPanel(c){
     if(curMax > 1){
       c.hp.max = curMax - 1;
       c.hp.current = Math.min(Number(c.hp.current)||0, maxHp(c));
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
     }
   });
 
@@ -447,7 +446,7 @@ export function renderVitalsPanel(c){
   maxUp.addEventListener("click", function(e){
     e.stopPropagation();
     c.hp.max = (Number(c.hp.max)||1) + 1;
-    save(); renderSidebar(); renderAll();
+    save(); renderAll();
   });
 
   maxStepper.appendChild(maxDown);
@@ -1423,10 +1422,10 @@ function resourceRowEl(c, r){
         // Temporary hit points don't stack: keep the higher.
         onResult: r.roll.temp ? function(x){
           var got = Math.max(x.total, least);
-          if(got > (Number(c.hp.temp)||0)){ c.hp.temp = got; save(); renderSidebar(); renderAll(); }
+          if(got > (Number(c.hp.temp)||0)){ c.hp.temp = got; save(); renderAll(); }
         } : r.roll.heal ? function(x){
           c.hp.current = clamp((Number(c.hp.current)||0) + Math.max(x.total, least), 0, maxHp(c));
-          save(); renderSidebar(); renderAll();
+          save(); renderAll();
         } : null
       } : null);
     });

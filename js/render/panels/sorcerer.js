@@ -1,7 +1,6 @@
 import { save } from "../../core/state.js";
 import { surgeCheckNumber, clamp, maxHp, ordinal, sorceryActions, sorceryProblem, payForSorcery, surgeEntry, hasControlledChaos, regainTides, regainLowestSlot, regainAllPoints, unearthlyRecovery, PHASES, LUNAR_SPELLS, lunarFreeUsed, useLunarFree, setLunarPhase, phenomenonSpent, usePhenomenon, sorcererDc, resourceLeft, spendResource, bastionDice, startEffect } from "../../core/helpers.js";
 import { renderAll } from "../sheet.js";
-import { renderSidebar } from "../sidebar.js";
 import { makeDiceSvg, makeDicesSvg } from "../../ui/svg-icons.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { themedPicker } from "../../ui/themed-picker.js";
@@ -104,7 +103,7 @@ function applySurge(c, e){
   if(e.apply==="heal"){
     performRoll(10, 2, 0, "none", "Wild Magic Surge: hit points", {onResult: function(r){
       c.hp.current = clamp((Number(c.hp.current)||0) + r.total, 0, maxHp(c));
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
     }});
     return;
   }
@@ -118,7 +117,7 @@ function recoveryRow(c, r){
     if(!spendResource(c, r.key, 1)) return;
     c.hp.current = clamp((Number(c.hp.current)||0) + half, 0, hpMax);
     logRoll(r.name, "Regained " + half + " HP.");
-    save(); renderSidebar(); renderAll();
+    save(); renderAll();
   });
   b.disabled = r.used >= r.max || !heal;
   b.title = r.used >= r.max ? "Used until a long rest" : !heal ? "Only below half your hit points" : "Bonus action";

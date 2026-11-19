@@ -63,6 +63,19 @@ export function setSpellEdition(edition){
   }
   current = edition;
 }
+/* The catalog fields a character's spell keeps (so the sheet can show
+   casting time/range/etc. without looking anything up). `notes` stays the
+   player's own free text. */
+export function spellFromCatalog(name, d){
+  var entry = {
+    name: name, level: d.level, prepared: d.level === 0, notes: "",
+    school: d.school, castingTime: d.castingTime, range: d.range,
+    components: d.components, material: d.material || "", duration: d.duration,
+    concentration: !!d.concentration, ritual: !!d.ritual, summary: d.summary
+  };
+  if(d.custom && d.id) entry.homebrewId = d.id;
+  return entry;
+}
 /* A saved spell keeps its own copy of the catalog's words (spellFromCatalog),
    which the player can edit. A field still holding the other edition's
    words moves to this edition's, and one the player changed stays. */

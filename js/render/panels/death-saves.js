@@ -4,7 +4,6 @@ import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { sheetTop, lead, sheetButton } from "./paladin.js";
 import { save } from "../../core/state.js";
 import { renderAll } from "../sheet.js";
-import { renderSidebar } from "../sidebar.js";
 import { getDieSvg, logRoll, performRoll } from "../../dice/dice.js";
 import { relentlessHp, searingVengeanceReady, necroticHuskReady, spendForRests, mod, strengthOfTheGrave, blazingRevivalReady, useBlazingRevival, faithfulSummonsReady, maxHp, computeSave, saveRollMode, relentlessRageDc, resolveRelentlessRage, rageBeyondDeath, endAllEffects, addCondition, fmtMod, characterResources, soulTrinkets, classLevelOf, kiLeft, spendKi, removeCondition, resourceLeft, spendResource, kiWord } from "../../core/helpers.js";
 import { abilityScore } from "../../core/ability-scores.js";
@@ -111,7 +110,7 @@ export function renderDeathSaves(c){
         c.extraTurn = true;
         logRoll("Strength Before Death", "An extra turn right now, at 0 HP. Damage still causes death save failures.");
       }
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
     });
     box.appendChild(sbdBtn);
   }
@@ -133,7 +132,7 @@ export function renderDeathSaves(c){
       removeCondition(c, "prone");
       logRoll("Blazing Revival", "Your spirit fell. You rise with " + c.hp.current + " hit points.");
       playRevive();
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
     });
     box.appendChild(revive);
   }
@@ -159,7 +158,7 @@ export function renderDeathSaves(c){
             logRoll("Soul of Artifice", a.name + " ended. 1 hit point instead of 0.");
             playRevive();
             close();
-            save(); renderSidebar(); renderAll();
+            save(); renderAll();
           }));
         });
         body.appendChild(list);
@@ -202,7 +201,7 @@ export function renderDeathSaves(c){
           logRoll("Cheat Death", "Disintegrated " + names.join(", ") + ". " + hp + " hit points.");
           playRevive();
           close();
-          save(); renderSidebar(); renderAll();
+          save(); renderAll();
         }, !picked.length);
         go.classList.add("primary");
         go.style.marginTop = "14px";
@@ -229,7 +228,7 @@ export function renderDeathSaves(c){
             c.deathSaves = {success: 0, fail: 0};
             removeCondition(c, "prone");
             playRevive();
-            save(); renderSidebar(); renderAll();
+            save(); renderAll();
             return {silent: true};
           }}]};
       });
@@ -249,7 +248,7 @@ export function renderDeathSaves(c){
       c.deathSaves = {success: 0, fail: 0};
       removeCondition(c, "prone");
       playRevive();
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
       performRoll(8, 2, mod(abilityScore(c, "cha")), "none", "Searing Vengeance (Radiant)");
     });
     box.appendChild(searing);
@@ -270,7 +269,7 @@ export function renderDeathSaves(c){
       removeCondition(c, "prone");
       logRoll("Necrotic Husk", "1 hit point instead. It comes back after " + rests + (rests===1 ? " long rest." : " long rests."));
       playRevive();
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
       performRoll(10, 2, classLevelOf(c, "Warlock", "The Undead"), "none", "Necrotic Husk (Necrotic)");
     });
     box.appendChild(husk);
@@ -286,7 +285,7 @@ export function renderDeathSaves(c){
       if(!spendResource(c, "Druid:faithful_summons", 1)) return;
       logRoll("Faithful Summons", "Four beasts of CR 2 or lower appear within 20 feet and protect you for 1 hour.");
       showActionToast("Four beasts come to protect you.");
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
     });
     box.appendChild(summons);
   }
@@ -330,7 +329,7 @@ function backToOne(c, cls, label, ready, whyNot, pay, log, more){
     logRoll(name, log);
     showActionToast(name + ": you have " + c.hp.current + (c.hp.current===1 ? " hit point" : " hit points") + " instead.");
     playRevive();
-    save(); renderSidebar(); renderAll();
+    save(); renderAll();
   });
   return b;
 }
@@ -372,7 +371,7 @@ function renderRelentless(c){
         logRoll("Relentless Rage", "Failed (" + r.total + " vs DC " + dc + ")." + (holds ? " Rage Beyond Death keeps you conscious." : " You fall unconscious."));
         showActionToast(holds ? "Relentless Rage failed. Rage Beyond Death keeps you up." : "Relentless Rage failed. You fall unconscious.", !holds);
       }
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
     }});
   });
   box.appendChild(btn);
@@ -457,7 +456,7 @@ function applyRoll(c, value){
     c.hp.current = 1;
     c.deathSaves = {success:0, fail:0};
     logRoll("Death save", "[20] Natural 20: back up with 1 HP.");
-    save(); renderSidebar(); renderAll();
+    save(); renderAll();
     playRevive();
     var hp = document.querySelector(".hp-cur-num");
     if(hp && !reducedMotion()) hp.classList.add("hp-revived");

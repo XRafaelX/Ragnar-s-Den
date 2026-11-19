@@ -1,6 +1,6 @@
 import { SPELL_DATA, SPELL_LEVEL_LABELS, SPELL_SOURCES, buildSpellGroups, spellDataForClass, spellLevelLabel, catalogSpellName, tashaAddsSpell } from "../../data/spells.js";
 import { save } from "../../core/state.js";
-import { newerSpellOf } from "../../core/spell-edition.js";
+import { newerSpellOf, spellFromCatalog } from "../../core/spell-edition.js";
 import { renderAll } from "../sheet.js";
 import { openCatalogPicker, showCatalogCustomView, refreshCatalog } from "../../ui/catalog-picker.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
@@ -24,19 +24,6 @@ function hasSpell(c, name){
   return (c.spells || []).some(function(sp){ return (sp.name || "").trim().toLowerCase() === n; });
 }
 
-/* The catalog fields a character's spell keeps (so the sheet can show
-   casting time/range/etc. without looking anything up). `notes` stays the
-   player's own free text. */
-export function spellFromCatalog(name, d){
-  var entry = {
-    name: name, level: d.level, prepared: d.level === 0, notes: "",
-    school: d.school, castingTime: d.castingTime, range: d.range,
-    components: d.components, material: d.material || "", duration: d.duration,
-    concentration: !!d.concentration, ritual: !!d.ritual, summary: d.summary
-  };
-  if(d.custom && d.id) entry.homebrewId = d.id;
-  return entry;
-}
 
 /* Returns false (so the picker skips its "Added" badge) when the spell
    is already on the sheet. */

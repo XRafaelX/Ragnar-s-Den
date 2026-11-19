@@ -2,7 +2,6 @@ import { save } from "../../core/state.js";
 import { conditionEndsRage, endRage, isBarbarian2024, maxHp, activeConditions, exhaustionLevel, exhaustionSummary, addCondition, removeCondition, conditionDef, raceConditionImmunity, rageSuspends, classLevelOf, isMonk2024, endIncapacitatedEffects } from "../../core/helpers.js";
 import { CONDITIONS, EXHAUSTION_LEVELS, EXHAUSTION_RULES } from "../../data/conditions.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { renderSidebar } from "../sidebar.js";
 import { makeConditionSvg, makeInfoSvg } from "../../ui/svg-icons.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
@@ -232,7 +231,7 @@ function setExhaustion(c, next, sheet){
       c.hp.current = 0;
       c.deathSaves = {success: 0, fail: 3};
       logRoll("Exhaustion", "Level 6: " + (c.name || "the character") + " has died.");
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
       playDeath();
     });
     return;
@@ -241,7 +240,7 @@ function setExhaustion(c, next, sheet){
   // Level 4 halves the maximum: hit points above it are lost.
   if(next >= 4) c.hp.current = Math.min(Number(c.hp.current)||0, maxHp(c));
   logRoll("Exhaustion", next ? "Level " + next + ": " + exhaustionSummary(next) + "." : "No more exhaustion.");
-  save(); renderSidebar(); renderAll(); sheet.refresh();
+  save(); renderAll(); sheet.refresh();
   // The segment that changed, animated on the redrawn track.
   var track = document.querySelector("#bottom-sheet .cond-ex-track");
   var up = next > before;

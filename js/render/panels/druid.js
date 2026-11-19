@@ -3,7 +3,6 @@ import { moonConBonus, formHitDice, landsAidDice, druidDc, resourceLeft as chara
 import { WILD_SHAPE_ELEMENTALS, wildShapeForm } from "../../data/wild-shapes.js";
 import { knownForms, knownFormsMax, learnForm, forgetForm, wildShapeEligible, KNOWN_FORMS_SUGGESTED } from "../../core/druid.js";
 import { makeCard, renderAll } from "../sheet.js";
-import { renderSidebar } from "../sidebar.js";
 import { makeDiceSvg, makeDicesSvg } from "../../ui/svg-icons.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { themedPicker } from "../../ui/themed-picker.js";
@@ -54,7 +53,7 @@ function wildShapePicker(c, r){
       if(!startWildShape(c, v)) return;
       logRoll("Wild Shape", "Transformed into: " + v + " (" + wildShapeCost(v) + (wildShapeCost(v)===1 ? " use" : " uses") + ").");
       showActionToast("You are a " + v.toLowerCase() + ". Your form is on the Wild Shape card.");
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
     }}));
   return wrap;
 }
@@ -103,7 +102,7 @@ export function renderWildShapeCard(c){
   back.addEventListener("click", function(){
     endWildShape(c);
     logRoll("Wild Shape", "Back to your own shape.");
-    save(); renderSidebar(); renderAll();
+    save(); renderAll();
   });
   ctrl.appendChild(back);
   row.appendChild(ctrl);
@@ -144,7 +143,7 @@ function healPicker(c){
       save(); renderAll();
       performRoll(8, slot.level, 0, "none", "Combat Wild Shape (" + ordinal(slot.level) + "-level slot)", {onResult: function(r){
         c.hp.current = clamp((Number(c.hp.current)||0) + r.total, 0, maxHp(c));
-        save(); renderSidebar(); renderAll();
+        save(); renderAll();
       }});
     }}));
   return wrap;
@@ -399,7 +398,7 @@ function balmPicker(c, r){
           use: function(){
             c.hp.current = clamp((Number(c.hp.current)||0) + x.total, 0, maxHp(c));
             if(dice > (Number(c.hp.temp)||0)) c.hp.temp = dice;
-            save(); renderSidebar(); renderAll();
+            save(); renderAll();
             return {silent: true};
           }}]};
       });

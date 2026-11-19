@@ -1,7 +1,6 @@
 import { save } from "../../core/state.js";
 import { isPaladin2024, smiteKnown, freeSmiteLeft, smiteReady, radiantStrikesName, smiteOfProtection, spendResource, classLevelOf, RESTORING_TOUCH, clamp, maxHp, ordinal, smiteDice, smiteSlots, spendSpellSlot, inspiringSmite, spendChannel, hasImprovedSmite, resourceLeft, spendLayOnHands, removeCondition, activeConditions } from "../../core/helpers.js";
 import { renderAll } from "../sheet.js";
-import { renderSidebar } from "../sidebar.js";
 import { makeDicesSvg } from "../../ui/svg-icons.js";
 import { openBottomSheet } from "../../ui/bottom-sheet.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
@@ -103,7 +102,7 @@ function smiteFollowUp(c){
         return {lead: "Share them out, or:", options: [{label: "Take all " + r.total + " yourself", title: "Temporary hit points don't stack: you keep the higher",
           use: function(){
             if(r.total > (Number(c.hp.temp)||0)) c.hp.temp = r.total;
-            save(); renderSidebar(); renderAll();
+            save(); renderAll();
             return {silent: true};
           }}]};
       });
@@ -177,7 +176,7 @@ function openLayOnHands(c){
       if(then) then();
       logRoll("Lay on Hands", log);
       close();
-      save(); renderSidebar(); renderAll();
+      save(); renderAll();
     }
     list.appendChild(sheetButton("Heal yourself", function(){
       var n = Math.min(read(), missing);
