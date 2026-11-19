@@ -10,6 +10,7 @@ import { showActionToast } from "../../ui/toast.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { sheetTop, lead, sheetButton } from "./paladin.js";
+import { wildCompanionHours, summonWildCompanion } from "../../core/companions.js";
 
 /* ---------------- Druid ----------------
    The Wild Shape card and its picker (Vitals), and the rows Class resources
@@ -404,4 +405,29 @@ function balmPicker(c, r){
       });
     }}));
   return wrap;
+}
+
+/* Wild Companion (Tasha's, druid 2): a use of Wild Shape casts Find
+   Familiar, a fey that lasts half the druid level in hours. */
+export function wildCompanionButton(c, r, ctx){
+  var wildHours = r.key==="Druid:wild_shape" && wildCompanionHours(c);
+  if(!wildHours) return null;
+  var remaining = ctx.remaining, setUsed = ctx.setUsed;
+  var wildRow = document.createElement("div");
+  wildRow.className = "inv-roll-actions fx-rolls";
+  var wildBtn = document.createElement("button");
+  wildBtn.type = "button"; wildBtn.className = "btn small inv-roll-btn res-roll-btn";
+  wildBtn.textContent = "Wild Companion · 1 use";
+  var lasts = wildHours==="long" ? "until your next long rest" : wildHours + (wildHours===1 ? " hour" : " hours");
+  wildBtn.disabled = remaining<=0;
+  wildBtn.title = remaining<=0 ? "No Wild Shape uses left" : (wildHours==="long" ? "Magic action" : "Action") + ": spend a use of Wild Shape to cast Find Familiar. The familiar is a fey and lasts " + lasts + ".";
+  wildBtn.addEventListener("click", function(){
+    summonWildCompanion(c);
+    logRoll("Wild Companion", "Cast Find Familiar with a use of Wild Shape. The fey familiar lasts " + lasts + ".");
+    var form = c.companions && c.companions.familiar && c.companions.familiar.choice;
+    showActionToast(form ? "Your " + form.toLowerCase() + " appears. It lasts " + lasts + "." : "Your familiar appears. Choose its form on the Companions tab.");
+    if(r.max!==Infinity) setUsed(r.used+1); else { save(); renderAll(); }
+  });
+  wildRow.appendChild(wildBtn);
+  return wildRow;
 }

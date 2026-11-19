@@ -207,3 +207,8 @@ function openLayOnHands(c){
     body.appendChild(list);
   });
 }
+
+/* What the paladin's resource rows offer under their names. */
+export function paladinResourceRow(c, r){
+  return r.key==="Paladin:lay_on_hands" ? layOnHandsRow(c) : null;
+}

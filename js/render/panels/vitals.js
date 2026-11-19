@@ -1,26 +1,23 @@
 import { save } from "../../core/state.js";
-import { WILDS_OPTIONS, POWER_OPTIONS, wildsChoiceDue, lifeGivingDice, branchesDc, longTravelReady, hasRageOfGods, divineFormOn, revivificationHp, spendRage, ragesLeft, persistentRageReady, usePersistentRage, useTides, spendResource, clamp, mod, fmtMod, totalLevel, hitDicePools, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, heavyArmorMasterActive, heavyArmorMasterAmount, hasFeat, endEffect, hpMaxHalved, resistsAllDamage, raceWards, exhaustionLevel, wieldsMeleeWeaponOrShield, quickenedHealing, regainOnInitiative, secondWind, survivorHeal, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, harnessDivinePower, useHarnessDivinePower, ordinal, kiActions, kiActionProblem, payKiAction, protectiveSpirit, spellSlotsLeft, spendSpellSlot, drakeResistance, saintResistance, resourceLeft, spendChannel, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, kiWord, uncannyMetabolism, useUncannyMetabolism, perfectFocusGain, usePerfectFocus, takeDamage, healHp, spendHitDieToHeal, shortRest, shortRestNote, longRest, longRestNote } from "../../core/helpers.js";
+import { WILDS_OPTIONS, POWER_OPTIONS, wildsChoiceDue, lifeGivingDice, branchesDc, longTravelReady, hasRageOfGods, divineFormOn, revivificationHp, spendRage, ragesLeft, persistentRageReady, usePersistentRage, useTides, spendResource, clamp, mod, fmtMod, totalLevel, hitDicePools, barbarianClassEntry, barbarianRageMax, barbarianRageDamage, computeArmorClass, computeInitiative, initiativeRollMode, characterResources, resourceIsNumber, maxHp, fullMaxHp, hpBonuses, computeSpeed, usesVariant, heavyArmorMasterActive, heavyArmorMasterAmount, hasFeat, endEffect, hpMaxHalved, resistsAllDamage, raceWards, exhaustionLevel, wieldsMeleeWeaponOrShield, regainOnInitiative, soulTrinkets, startRage, endRage, canFrenzy, ragePerks, spiritShield, wildSurgeNow, wildSurgeDc, rollWildSurge, chooseWildSurge, classLevelOf, parseDiceNotation, beastFormDue, chooseBeastForm, BEAST_FORMS, callTheHuntMax, elementalCleaver, setElementalCleaver, CLEAVER_TYPES, stormAura, stormSoulResistances, effectResistances, featureResistances, ordinal, protectiveSpirit, spellSlotsLeft, spendSpellSlot, drakeResistance, saintResistance, resourceLeft, spendChannel, effectOn, hpAfterDamage, hpDragChange, hpChangeLimits, attacksPerAction, bonusActionAttacks, uncannyMetabolism, useUncannyMetabolism, perfectFocusGain, usePerfectFocus, takeDamage, healHp, spendHitDieToHeal, shortRest, shortRestNote, longRest, longRestNote } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { makeStatArrowSvg, makeInfoSvg, makeFlameSvg, makeDiceSvg } from "../../ui/svg-icons.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { confirmDialog } from "../../ui/confirm-modal.js";
-import { artificerLevel, makeTinkerItem } from "../../core/artificer.js";
-import { TINKER_ITEMS } from "../../data/artificer-2024.js";
-import { wildCompanionHours, summonWildCompanion } from "../../core/companions.js";
+import { stepper } from "../../ui/card-parts.js";
 import { showActionToast } from "../../ui/toast.js";
 import { WILD_SURGES } from "../../data/effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
-import { rollAttack } from "./sheet-rolls.js";
-import { layOnHandsRow } from "./paladin.js";
+import { paladinResourceRow } from "./paladin.js";
 import { renderChannelCard, channelResourceKey } from "./channel-divinity.js";
-import { interventionRow, forgePicker } from "./cleric.js";
+import { clericResourceRow, harnessDivinePowerRow } from "./cleric.js";
 import { gunslingerResourceRow } from "./gunslinger.js";
 import { useNextCheck, coinResistances } from "../../core/magic-items.js";
 import { infusionResistances } from "../../core/infusion-effects.js";
 import { renderDeathSaves } from "./death-saves.js";
 import { renderEffectsCard } from "./effects.js";
 import { renderRemindCard } from "./reminders.js";
-import { renderWildShapeCard, druidResourceRow } from "./druid.js";
+import { renderWildShapeCard, druidResourceRow, wildCompanionButton } from "./druid.js";
 import { druidResistances } from "../../core/druid.js";
 import { bardResourceRow, songOfRestButton } from "./bard.js";
 import { sorcererResourceRow } from "./sorcerer.js";
@@ -33,6 +30,9 @@ import { flash, pipChanged, pipsRefilled, restScene, floatDelta } from "../../ui
 import { playShortRest, playLongRest } from "../../ui/sound.js";
 import { abilityScore, abilityScores } from "../../core/ability-scores.js";
 import { classFeatureList } from "../../core/class-features.js";
+import { fighterResourceRow } from "./fighter.js";
+import { monkResourceRow } from "./monk.js";
+import { artificerResourceRow } from "./artificer.js";
 
 function preparesSpells(c){ return (c.classes||[]).some(function(cl){ return preparedState(c, cl.name); }); }
 
@@ -85,21 +85,81 @@ function attacksBox(c){
   return box;
 }
 
+/* The HP number flashes after damage or healing (on the next frame,
+   once the sheet is drawn again). */
+function flashHpNum(cls){
+  requestAnimationFrame(function(){
+    var el = document.querySelector(".hp-vital-box .hp-cur-num");
+    if(!el) return;
+    el.classList.remove("hp-dmg", "hp-heal");
+    void el.offsetWidth;
+    el.classList.add(cls);
+    el.addEventListener("animationend", function(){ el.classList.remove(cls); }, {once:true});
+  });
+}
+
 export function renderVitalsPanel(c){
   var panel = document.createElement("div");
+  panel.appendChild(renderHpDefenseCard(c));
+  panel.appendChild(renderRestCard(c));
+
+  // A cleric's or paladin's Channel Divinity, with every option on it.
+  var allResources = characterResources(c);
+  var channelCard = renderChannelCard(c, allResources, resourceRowEl);
+  if(channelCard) panel.appendChild(channelCard);
+
+  var barbClass = barbarianClassEntry(c);
+  if(barbClass) panel.appendChild(renderRageCard(c, barbClass));
+
+  if(c.wildShape) panel.appendChild(renderWildShapeCard(c));
+
+  var effectsCard = renderEffectsCard(c);
+  if(effectsCard) panel.appendChild(effectsCard);
+
+  var remindCard = renderRemindCard(c);
+  if(remindCard) panel.appendChild(remindCard);
+
+  // A use kept with its card elsewhere (a Breath Weapon on Inventory) isn't repeated here.
+  // (Nor are Channel Divinity's, which have their own card.)
+  var resources = allResources.filter(function(r){ return r.place!=="inventory" && !channelResourceKey(r.key); });
+  if(resources.length) panel.appendChild(renderResourcesCard(c, resources));
+
+  return panel;
+}
+
+/* ---- Hit points & defense ----
+   The HP box, then Armor Class, Initiative, Speed and Attacks on one
+   grid; other speeds and the conditions that are on under it. */
+function renderHpDefenseCard(c){
+  var card = makeCard("Hit points & defense");
+  // Conditions and exhaustion open from the header; what's on shows below the grid.
+  card.querySelector("h3").appendChild(renderConditionsButton(c));
+  var grid = document.createElement("div");
+  grid.className = "vitals-grid vitals-main";
+  grid.appendChild(renderHpBox(c));
+  grid.appendChild(renderAcBox(c));
+  grid.appendChild(renderInitiativeBox(c));
+  var speed = renderSpeedBox(c);
+  grid.appendChild(speed.box);
+  grid.appendChild(attacksBox(c));
+
+  card.appendChild(grid);
+  if(speed.others) card.appendChild(speed.others);
+  var conditionChips = renderConditionsStrip(c);
+  if(conditionChips) card.appendChild(conditionChips);
+  return card;
+}
+
+/* The HP box: the number and its bar (dragged sideways or stepped with
+   the arrows), the quick buttons, resistances, Max and Temp, and the
+   death saves at 0. */
+function renderHpBox(c){
   // Max HP with Tough's and Dwarven Toughness's bonus; c.hp.max is the
   // part the stepper edits.
   var hpMax = maxHp(c);
   var bonusTitle = hpBonuses(c).map(function(b){ return b.name+" (+"+b.value+")"; }).join(", ");
   if(bonusTitle) bonusTitle = "Includes "+bonusTitle;
 
-  var card = makeCard("Hit points & defense");
-  // Conditions and exhaustion open from the header; what's on shows below the grid.
-  card.querySelector("h3").appendChild(renderConditionsButton(c));
-  var grid = document.createElement("div");
-  grid.className = "vitals-grid vitals-main";
-
-  // HP box
   var hpBox = document.createElement("div");
   hpBox.className = "vital-box hp-vital-box";
   hpBox.innerHTML = '<div class="lbl">Hit Points</div>';
@@ -159,17 +219,6 @@ export function renderVitalsPanel(c){
     healHp(c, n);
     save(); renderAll();
     flashHpNum("hp-heal");
-  }
-
-  function flashHpNum(cls){
-    requestAnimationFrame(function(){
-      var el = document.querySelector(".hp-vital-box .hp-cur-num");
-      if(!el) return;
-      el.classList.remove("hp-dmg", "hp-heal");
-      void el.offsetWidth;
-      el.classList.add(cls);
-      el.addEventListener("animationend", function(){ el.classList.remove(cls); }, {once:true});
-    });
   }
 
   // ---- Dragging the bar, holding an arrow ----
@@ -317,30 +366,44 @@ export function renderVitalsPanel(c){
 
   hpBox.appendChild(hpActionsRow);
 
-  // Protective Spirit (Oath of Redemption 15): at the end of your turn,
-  // below half your hit points.
   var spirit = protectiveSpirit(c, hpMax);
-  if(spirit){
-    var spiritBtn = document.createElement("button");
-    spiritBtn.type = "button"; spiritBtn.className = "btn small inv-roll-btn hp-spirit-btn";
-    spiritBtn.innerHTML = makeDiceSvg();
-    spiritBtn.appendChild(document.createTextNode("Protective Spirit 1d6+" + spirit.bonus));
-    spiritBtn.title = "At the end of your turn in combat, below half your hit points and not incapacitated";
-    spiritBtn.addEventListener("click", function(e){
-      e.stopPropagation();
-      var roll = Math.floor(Math.random()*6)+1, healed = roll + spirit.bonus;
-      c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, hpMax);
-      logRoll("Protective Spirit (1d6+" + spirit.bonus + ")", roll + " +" + spirit.bonus + " = " + healed + " HP healed");
-      save(); renderAll();
-      flashHpNum("hp-heal");
-    });
-    hpBox.appendChild(spiritBtn);
-  }
+  if(spirit) hpBox.appendChild(protectiveSpiritButton(c, spirit, hpMax));
+  hpWardLines(c).forEach(function(line){ hpBox.appendChild(line); });
+  if(heavyArmorMasterActive(c)) hpBox.appendChild(heavyArmorMasterRow(c, applyDamage));
+  hpBox.appendChild(hpSubRow(c, bonusTitle));
 
-  // Damage resistances and immunities from the race (Mountain Born, Poison
-  // Immunity) and items (Resistant Armor, Duality), only when there are
-  // any; where each comes from is in the tooltip. A type the character is
-  // immune to isn't listed as resisted too.
+  if(c.hp.current<=0){
+    hpBox.classList.add("is-dying");
+    hpBox.appendChild(renderDeathSaves(c));
+  }
+  return hpBox;
+}
+
+/* Protective Spirit (Oath of Redemption 15): at the end of your turn,
+   below half your hit points. */
+function protectiveSpiritButton(c, spirit, hpMax){
+  var spiritBtn = document.createElement("button");
+  spiritBtn.type = "button"; spiritBtn.className = "btn small inv-roll-btn hp-spirit-btn";
+  spiritBtn.innerHTML = makeDiceSvg();
+  spiritBtn.appendChild(document.createTextNode("Protective Spirit 1d6+" + spirit.bonus));
+  spiritBtn.title = "At the end of your turn in combat, below half your hit points and not incapacitated";
+  spiritBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    var roll = Math.floor(Math.random()*6)+1, healed = roll + spirit.bonus;
+    c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, hpMax);
+    logRoll("Protective Spirit (1d6+" + spirit.bonus + ")", roll + " +" + spirit.bonus + " = " + healed + " HP healed");
+    save(); renderAll();
+    flashHpNum("hp-heal");
+  });
+  return spiritBtn;
+}
+
+/* Damage resistances and immunities from the race (Mountain Born, Poison
+   Immunity) and items (Resistant Armor, Duality), only when there are
+   any; where each comes from is in the tooltip. A type the character is
+   immune to isn't listed as resisted too. */
+function hpWardLines(c){
+  var lines = [];
   var wards = raceWards(c);
   var immuneTypes = wards.immune.map(function(r){ return r.type; });
   var resist = wards.resist.concat(druidResistances(c), infusionResistances(c), coinResistances(c).map(function(t){ return {type: t, source: "Duality"}; }), stormSoulResistances(c), featureResistances(c), effectResistances(c), drakeResistance(c), saintResistance(c))
@@ -360,7 +423,7 @@ export function renderVitalsPanel(c){
     resistLine.className = "hp-resist";
     resistLine.textContent = "Resistant to " + types.join(", ");
     resistLine.title = wardTip(resist);
-    hpBox.appendChild(resistLine);
+    lines.push(resistLine);
   }
   // "Immune to poison and the poisoned condition".
   var immuneConds = wards.conditionImmune.map(function(r){ return r.type; });
@@ -369,216 +432,117 @@ export function renderVitalsPanel(c){
     immuneLine.className = "hp-resist";
     immuneLine.textContent = "Immune to " + [immuneTypes.join(", "), immuneConds.length ? "the " + immuneConds.join(", ") + " condition" : ""].filter(Boolean).join(" and ");
     immuneLine.title = wardTip(wards.immune.concat(wards.conditionImmune.map(function(r){ return {type: r.type + " condition", source: r.source}; })));
-    hpBox.appendChild(immuneLine);
+    lines.push(immuneLine);
   }
+  return lines;
+}
 
-  // ---- Heavy Armor Master ----
-  if(heavyArmorMasterActive(c)){
-    var hamRow = document.createElement("div");
-    hamRow.className = "hp-amount-row";
-    var hamInput = document.createElement("input");
-    hamInput.type = "number"; hamInput.min = "0"; hamInput.inputMode = "numeric";
-    hamInput.className = "hp-amount-input";
-    hamInput.placeholder = "Damage";
-    hamInput.setAttribute("aria-label", "Damage amount");
-    hamRow.appendChild(hamInput);
-    var hamAmount = function(){ return Math.max(0, Math.floor(Number(hamInput.value)||0)); };
-    var makeHamBtn = function(text, title, fn){
-      var b = document.createElement("button");
-      b.type = "button"; b.className = "btn small danger"; b.textContent = text; b.title = title;
-      b.addEventListener("click", function(e){ e.stopPropagation(); var n = hamAmount(); if(n > 0) fn(n); });
-      hamRow.appendChild(b);
-    };
-    makeHamBtn("Take", "Take the full damage (temp HP first)", applyDamage);
-    // (The 2024 feat takes off the proficiency bonus, from any attack's bludgeoning, piercing or slashing.)
-    var hamCut = heavyArmorMasterAmount(c);
-    makeHamBtn("Take −" + hamCut, "Heavy Armor Master: " + (hamCut===3 && !hasFeat(c, "Heavy Armor Master (2024)") ? "nonmagical bludgeoning, piercing or slashing damage" : "bludgeoning, piercing or slashing damage from an attack") + " reduced by " + hamCut, function(n){
-      var taken = Math.max(0, n - hamCut);
-      logRoll("Heavy Armor Master", n + " damage reduced to " + taken + ".");
-      if(taken > 0) applyDamage(taken); else { save(); renderAll(); flashHpNum("hp-dmg"); }
-    });
-    hpBox.appendChild(hamRow);
-  }
+/* Heavy Armor Master: a damage field with Take and Take less. */
+function heavyArmorMasterRow(c, applyDamage){
+  var hamRow = document.createElement("div");
+  hamRow.className = "hp-amount-row";
+  var hamInput = document.createElement("input");
+  hamInput.type = "number"; hamInput.min = "0"; hamInput.inputMode = "numeric";
+  hamInput.className = "hp-amount-input";
+  hamInput.placeholder = "Damage";
+  hamInput.setAttribute("aria-label", "Damage amount");
+  hamRow.appendChild(hamInput);
+  var hamAmount = function(){ return Math.max(0, Math.floor(Number(hamInput.value)||0)); };
+  var makeHamBtn = function(text, title, fn){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn small danger"; b.textContent = text; b.title = title;
+    b.addEventListener("click", function(e){ e.stopPropagation(); var n = hamAmount(); if(n > 0) fn(n); });
+    hamRow.appendChild(b);
+  };
+  makeHamBtn("Take", "Take the full damage (temp HP first)", applyDamage);
+  // (The 2024 feat takes off the proficiency bonus, from any attack's bludgeoning, piercing or slashing.)
+  var hamCut = heavyArmorMasterAmount(c);
+  makeHamBtn("Take −" + hamCut, "Heavy Armor Master: " + (hamCut===3 && !hasFeat(c, "Heavy Armor Master (2024)") ? "nonmagical bludgeoning, piercing or slashing damage" : "bludgeoning, piercing or slashing damage from an attack") + " reduced by " + hamCut, function(n){
+    var taken = Math.max(0, n - hamCut);
+    logRoll("Heavy Armor Master", n + " damage reduced to " + taken + ".");
+    if(taken > 0) applyDamage(taken); else { save(); renderAll(); flashHpNum("hp-dmg"); }
+  });
+  return hamRow;
+}
 
-  // Sub row for Max & Temp HP
+/* Max and Temp HP, each with its stepper. */
+function hpSubRow(c, bonusTitle){
   var subRow = document.createElement("div");
   subRow.className = "hp-sub-row";
+  subRow.appendChild(hpSubGroup("Max:", stepper("max HP", {cls: "hp-sub-stepper", value: fullMaxHp(c), valueTitle: bonusTitle,
+    downDisabled: (Number(c.hp.max)||1) <= 1,
+    onDown: function(){
+      var curMax = Number(c.hp.max) || 1;
+      if(curMax > 1){
+        c.hp.max = curMax - 1;
+        c.hp.current = Math.min(Number(c.hp.current)||0, maxHp(c));
+        save(); renderAll();
+      }
+    },
+    onUp: function(){ c.hp.max = (Number(c.hp.max)||1) + 1; save(); renderAll(); }})));
+  subRow.appendChild(hpSubGroup("Temp:", stepper("temp HP", {cls: "hp-sub-stepper", value: c.hp.temp || 0,
+    downDisabled: (Number(c.hp.temp)||0) <= 0,
+    onDown: function(){
+      var t = Number(c.hp.temp) || 0;
+      if(t > 0){ c.hp.temp = t - 1; save(); renderAll(); }
+    },
+    onUp: function(){ c.hp.temp = (Number(c.hp.temp)||0) + 1; save(); renderAll(); }})));
+  return subRow;
+}
+function hpSubGroup(label, st){
+  var group = document.createElement("div");
+  group.className = "hp-sub-group";
+  var lbl = document.createElement("span");
+  lbl.className = "hp-sub-lbl";
+  lbl.textContent = label;
+  group.appendChild(lbl);
+  group.appendChild(st);
+  return group;
+}
 
-  // Max HP
-  var maxGroup = document.createElement("div");
-  maxGroup.className = "hp-sub-group";
-  var maxLbl = document.createElement("span");
-  maxLbl.className = "hp-sub-lbl";
-  maxLbl.textContent = "Max:";
-  maxGroup.appendChild(maxLbl);
+// Same four-row shape as AC / Initiative (label, hero value, hint, controls)
+// so the three boxes line up on the shared subgrid.
+function smallVital(c, label, key, isNested, hint, step, suffix, bonus){
+  step = step || 1;
+  suffix = suffix || "";
+  var box = document.createElement("div");
+  box.className = "vital-box vital-mini";
+  box.innerHTML = '<div class="lbl">'+label+'</div>';
 
-  var maxStepper = document.createElement("div");
-  maxStepper.className = "stat-stepper hp-sub-stepper";
+  var val = isNested ? c[isNested][key] : c[key];
+  val = Number(val) || 0;
 
-  var maxDown = document.createElement("button");
-  maxDown.type = "button";
-  maxDown.className = "stat-arrow-btn stat-arrow-down";
-  maxDown.title = "Decrease max HP";
-  maxDown.setAttribute("aria-label", "Decrease max HP");
-  maxDown.innerHTML = makeStatArrowSvg("down");
-  maxDown.disabled = (Number(c.hp.max)||1) <= 1;
-  maxDown.addEventListener("click", function(e){
-    e.stopPropagation();
-    var curMax = Number(c.hp.max) || 1;
-    if(curMax > 1){
-      c.hp.max = curMax - 1;
-      c.hp.current = Math.min(Number(c.hp.current)||0, maxHp(c));
-      save(); renderAll();
-    }
-  });
+  var valDiv = document.createElement("div");
+  valDiv.className = "init-hero-val vital-plain-val";
+  valDiv.textContent = (val + (bonus||0)) + suffix;
+  box.appendChild(valDiv);
 
-  var maxValSpan = document.createElement("span");
-  maxValSpan.className = "stat-score-val";
-  maxValSpan.textContent = fullMaxHp(c);
-  if(bonusTitle) maxValSpan.title = bonusTitle;
+  var hintEl = document.createElement("div");
+  hintEl.className = "vital-hint";
+  hintEl.textContent = hint || "";
+  box.appendChild(hintEl);
 
-  var maxUp = document.createElement("button");
-  maxUp.type = "button";
-  maxUp.className = "stat-arrow-btn stat-arrow-up";
-  maxUp.title = "Increase max HP";
-  maxUp.setAttribute("aria-label", "Increase max HP");
-  maxUp.innerHTML = makeStatArrowSvg("up");
-  maxUp.addEventListener("click", function(e){
-    e.stopPropagation();
-    c.hp.max = (Number(c.hp.max)||1) + 1;
-    save(); renderAll();
-  });
-
-  maxStepper.appendChild(maxDown);
-  maxStepper.appendChild(maxValSpan);
-  maxStepper.appendChild(maxUp);
-  maxGroup.appendChild(maxStepper);
-  subRow.appendChild(maxGroup);
-
-  // Temp HP
-  var tempGroup = document.createElement("div");
-  tempGroup.className = "hp-sub-group";
-  var tempLbl = document.createElement("span");
-  tempLbl.className = "hp-sub-lbl";
-  tempLbl.textContent = "Temp:";
-  tempGroup.appendChild(tempLbl);
-
-  var tempStepper = document.createElement("div");
-  tempStepper.className = "stat-stepper hp-sub-stepper";
-
-  var tempDown = document.createElement("button");
-  tempDown.type = "button";
-  tempDown.className = "stat-arrow-btn stat-arrow-down";
-  tempDown.title = "Decrease temp HP";
-  tempDown.setAttribute("aria-label", "Decrease temp HP");
-  tempDown.innerHTML = makeStatArrowSvg("down");
-  tempDown.disabled = (Number(c.hp.temp)||0) <= 0;
-  tempDown.addEventListener("click", function(e){
-    e.stopPropagation();
-    var t = Number(c.hp.temp) || 0;
-    if(t > 0){
-      c.hp.temp = t - 1;
-      save(); renderAll();
-    }
-  });
-
-  var tempValSpan = document.createElement("span");
-  tempValSpan.className = "stat-score-val";
-  tempValSpan.textContent = c.hp.temp || 0;
-
-  var tempUp = document.createElement("button");
-  tempUp.type = "button";
-  tempUp.className = "stat-arrow-btn stat-arrow-up";
-  tempUp.title = "Increase temp HP";
-  tempUp.setAttribute("aria-label", "Increase temp HP");
-  tempUp.innerHTML = makeStatArrowSvg("up");
-  tempUp.addEventListener("click", function(e){
-    e.stopPropagation();
-    c.hp.temp = (Number(c.hp.temp)||0) + 1;
-    save(); renderAll();
-  });
-
-  tempStepper.appendChild(tempDown);
-  tempStepper.appendChild(tempValSpan);
-  tempStepper.appendChild(tempUp);
-  tempGroup.appendChild(tempStepper);
-  subRow.appendChild(tempGroup);
-
-  hpBox.appendChild(subRow);
-
-  if(c.hp.current<=0){
-    hpBox.classList.add("is-dying");
-    hpBox.appendChild(renderDeathSaves(c));
-  }
-  grid.appendChild(hpBox);
-
-  // Same four-row shape as AC / Initiative (label, hero value, hint, controls)
-  // so the three boxes line up on the shared subgrid.
-  function smallVital(label, key, isNested, hint, step, suffix, bonus){
-    step = step || 1;
-    suffix = suffix || "";
-    var box = document.createElement("div");
-    box.className = "vital-box vital-mini";
-    box.innerHTML = '<div class="lbl">'+label+'</div>';
-
-    var val = isNested ? c[isNested][key] : c[key];
-    val = Number(val) || 0;
-
-    var valDiv = document.createElement("div");
-    valDiv.className = "init-hero-val vital-plain-val";
-    valDiv.textContent = (val + (bonus||0)) + suffix;
-    box.appendChild(valDiv);
-
-    var hintEl = document.createElement("div");
-    hintEl.className = "vital-hint";
-    hintEl.textContent = hint || "";
-    box.appendChild(hintEl);
-
-    var ctrlRow = document.createElement("div");
-    ctrlRow.className = "init-misc-row";
-    var stepper = document.createElement("div");
-    stepper.className = "stat-stepper vital-stepper";
-
-    var downBtn = document.createElement("button");
-    downBtn.type = "button";
-    downBtn.className = "stat-arrow-btn stat-arrow-down";
-    downBtn.title = "Decrease " + label;
-    downBtn.setAttribute("aria-label", "Decrease " + label);
-    downBtn.innerHTML = makeStatArrowSvg("down");
-    downBtn.disabled = val <= 0;
-    downBtn.addEventListener("click", function(e){
-      e.stopPropagation();
+  var ctrlRow = document.createElement("div");
+  ctrlRow.className = "init-misc-row";
+  ctrlRow.appendChild(stepper(label, {cls: "vital-stepper", value: "\u00b1" + step, valueCls: "vital-step-lbl", downDisabled: val <= 0,
+    onDown: function(){
       var cur = isNested ? c[isNested][key] : c[key];
       var nextVal = Math.max(0, (Number(cur) || 0) - step);
       if(isNested) c[isNested][key] = nextVal; else c[key] = nextVal;
       save(); renderAll();
-    });
-
-    var stepSpan = document.createElement("span");
-    stepSpan.className = "stat-score-val vital-step-lbl";
-    stepSpan.textContent = "\u00b1" + step;
-
-    var upBtn = document.createElement("button");
-    upBtn.type = "button";
-    upBtn.className = "stat-arrow-btn stat-arrow-up";
-    upBtn.title = "Increase " + label;
-    upBtn.setAttribute("aria-label", "Increase " + label);
-    upBtn.innerHTML = makeStatArrowSvg("up");
-    upBtn.addEventListener("click", function(e){
-      e.stopPropagation();
+    },
+    onUp: function(){
       var cur = isNested ? c[isNested][key] : c[key];
       var nextVal = (Number(cur) || 0) + step;
       if(isNested) c[isNested][key] = nextVal; else c[key] = nextVal;
       save(); renderAll();
-    });
+    }}));
+  box.appendChild(ctrlRow);
+  return box;
+}
 
-    stepper.appendChild(downBtn);
-    stepper.appendChild(stepSpan);
-    stepper.appendChild(upBtn);
-    ctrlRow.appendChild(stepper);
-    box.appendChild(ctrlRow);
-    return box;
-  }
+/* Armor Class, with its make-up and a misc modifier. */
+function renderAcBox(c){
   var acResult = computeArmorClass(c);
 
   var acBox = document.createElement("div");
@@ -607,45 +571,16 @@ export function renderVitalsPanel(c){
   acMiscLbl.textContent = "Misc:";
   acMiscRow.appendChild(acMiscLbl);
 
-  var acMiscStepper = document.createElement("div");
-  acMiscStepper.className = "stat-stepper";
-
-  var acMiscDown = document.createElement("button");
-  acMiscDown.type = "button";
-  acMiscDown.className = "stat-arrow-btn stat-arrow-down";
-  acMiscDown.title = "Decrease misc AC modifier";
-  acMiscDown.setAttribute("aria-label", "Decrease misc AC modifier");
-  acMiscDown.innerHTML = makeStatArrowSvg("down");
-  acMiscDown.addEventListener("click", function(e){
-    e.stopPropagation();
-    c.acMisc = (Number(c.acMisc)||0) - 1;
-    save(); renderAll();
-  });
-
-  var acMiscVal = document.createElement("span");
-  acMiscVal.className = "stat-score-val";
-  acMiscVal.textContent = fmtMod(c.acMisc||0);
-
-  var acMiscUp = document.createElement("button");
-  acMiscUp.type = "button";
-  acMiscUp.className = "stat-arrow-btn stat-arrow-up";
-  acMiscUp.title = "Increase misc AC modifier";
-  acMiscUp.setAttribute("aria-label", "Increase misc AC modifier");
-  acMiscUp.innerHTML = makeStatArrowSvg("up");
-  acMiscUp.addEventListener("click", function(e){
-    e.stopPropagation();
-    c.acMisc = (Number(c.acMisc)||0) + 1;
-    save(); renderAll();
-  });
-
-  acMiscStepper.appendChild(acMiscDown);
-  acMiscStepper.appendChild(acMiscVal);
-  acMiscStepper.appendChild(acMiscUp);
-  acMiscRow.appendChild(acMiscStepper);
+  acMiscRow.appendChild(stepper("misc AC modifier", {value: fmtMod(c.acMisc||0),
+    onDown: function(){ c.acMisc = (Number(c.acMisc)||0) - 1; save(); renderAll(); },
+    onUp: function(){ c.acMisc = (Number(c.acMisc)||0) + 1; save(); renderAll(); }}));
   acBox.appendChild(acMiscRow);
 
-  grid.appendChild(acBox);
+  return acBox;
+}
 
+/* Initiative: a tap rolls it (with what follows a roll), and a misc modifier. */
+function renderInitiativeBox(c){
   var initBox = document.createElement("div");
   initBox.className = "vital-box vital-mini init-vital-box";
   var initResult = computeInitiative(c);
@@ -675,41 +610,9 @@ export function renderVitalsPanel(c){
   miscLbl.textContent = "Misc:";
   miscStepperRow.appendChild(miscLbl);
 
-  var miscStepper = document.createElement("div");
-  miscStepper.className = "stat-stepper";
-
-  var miscDown = document.createElement("button");
-  miscDown.type = "button";
-  miscDown.className = "stat-arrow-btn stat-arrow-down";
-  miscDown.title = "Decrease misc modifier";
-  miscDown.setAttribute("aria-label", "Decrease misc modifier");
-  miscDown.innerHTML = makeStatArrowSvg("down");
-  miscDown.addEventListener("click", function(e){
-    e.stopPropagation();
-    c.initiativeMisc = (Number(c.initiativeMisc)||0) - 1;
-    save(); renderAll();
-  });
-
-  var miscVal = document.createElement("span");
-  miscVal.className = "stat-score-val";
-  miscVal.textContent = fmtMod(c.initiativeMisc||0);
-
-  var miscUp = document.createElement("button");
-  miscUp.type = "button";
-  miscUp.className = "stat-arrow-btn stat-arrow-up";
-  miscUp.title = "Increase misc modifier";
-  miscUp.setAttribute("aria-label", "Increase misc modifier");
-  miscUp.innerHTML = makeStatArrowSvg("up");
-  miscUp.addEventListener("click", function(e){
-    e.stopPropagation();
-    c.initiativeMisc = (Number(c.initiativeMisc)||0) + 1;
-    save(); renderAll();
-  });
-
-  miscStepper.appendChild(miscDown);
-  miscStepper.appendChild(miscVal);
-  miscStepper.appendChild(miscUp);
-  miscStepperRow.appendChild(miscStepper);
+  miscStepperRow.appendChild(stepper("misc modifier", {value: fmtMod(c.initiativeMisc||0),
+    onDown: function(){ c.initiativeMisc = (Number(c.initiativeMisc)||0) - 1; save(); renderAll(); },
+    onUp: function(){ c.initiativeMisc = (Number(c.initiativeMisc)||0) + 1; save(); renderAll(); }}));
   initBox.appendChild(miscStepperRow);
 
   initBox.style.cursor="pointer";
@@ -765,15 +668,18 @@ export function renderVitalsPanel(c){
     if(pfNow){ logRoll("Perfect Focus", pfNow + " Focus Point" + (pfNow===1 ? "" : "s") + " back (4 now)."); showActionToast("Perfect Focus: Focus Points back up to 4."); }
     if(used || back.length || pfNow){ save(); renderAll(); }
   });
-  grid.appendChild(initBox);
+  return initBox;
+}
 
+/* Speed, with the other speeds as their own line: {box, others}. */
+function renderSpeedBox(c){
   var speed = computeSpeed(c);
   var speedHint = speed.parts.length ? "per turn, incl. "+speed.parts.map(function(p){
     return p.name+" "+fmtMod(p.value)+(p.why ? " ("+p.why+")" : "");
   }).join(", ") : "per turn";
   // A condition's 0 (named) or exhaustion's half replaces the bonuses line.
   if(speed.hindered) speedHint = speed.hindered.zero || "Halved (exhaustion)";
-  var speedBox = smallVital("Speed","speed",null,speedHint,5," ft",speed.value - (Number(c.speed)||0));
+  var speedBox = smallVital(c, "Speed","speed",null,speedHint,5," ft",speed.value - (Number(c.speed)||0));
   if(speed.hindered) speedBox.classList.add("speed-hindered");
   // Fly, swim and climb speeds on their own line under the boxes (so a
   // long condition doesn't stretch the row); conditional ones say when.
@@ -798,16 +704,11 @@ export function renderVitalsPanel(c){
     });
   }
   speedBox.classList.add("speed-vital-box");
-  grid.appendChild(speedBox);
-  grid.appendChild(attacksBox(c));
+  return {box: speedBox, others: others};
+}
 
-  card.appendChild(grid);
-  if(others) card.appendChild(others);
-  var conditionChips = renderConditionsStrip(c);
-  if(conditionChips) card.appendChild(conditionChips);
-  panel.appendChild(card);
-
-  // Hit dice + rest
+/* ---- Hit dice & rest ---- */
+function renderRestCard(c){
   var restCard = makeCard("Hit dice & rest");
   var hd = totalLevel(c);
   // Hit dice are counted per size (a multiclass character has a mix, e.g.
@@ -901,30 +802,7 @@ export function renderVitalsPanel(c){
   restRow.appendChild(longRestBtn);
 
   restCard.appendChild(restRow);
-  panel.appendChild(restCard);
-
-  // A cleric's or paladin's Channel Divinity, with every option on it.
-  var allResources = characterResources(c);
-  var channelCard = renderChannelCard(c, allResources, resourceRowEl);
-  if(channelCard) panel.appendChild(channelCard);
-
-  var barbClass = barbarianClassEntry(c);
-  if(barbClass) panel.appendChild(renderRageCard(c, barbClass));
-
-  if(c.wildShape) panel.appendChild(renderWildShapeCard(c));
-
-  var effectsCard = renderEffectsCard(c);
-  if(effectsCard) panel.appendChild(effectsCard);
-
-  var remindCard = renderRemindCard(c);
-  if(remindCard) panel.appendChild(remindCard);
-
-  // A use kept with its card elsewhere (a Breath Weapon on Inventory) isn't repeated here.
-  // (Nor are Channel Divinity's, which have their own card.)
-  var resources = allResources.filter(function(r){ return r.place!=="inventory" && !channelResourceKey(r.key); });
-  if(resources.length) panel.appendChild(renderResourcesCard(c, resources));
-
-  return panel;
+  return restCard;
 }
 
 /* ---- Rage ----
@@ -1111,42 +989,6 @@ function wildSurgeBlock(c){
 /* The rage's buttons and pickers: Frenzy (Berserker), Form of the Beast
    and Call the Hunt (Beast), Elemental Cleaver (Giant), Storm Aura and
    Raging Storm (Storm Herald), Spirit Shield (Ancestral Guardian). */
-/* "Spend ki on...": what the monk's ki can pay for. Picking one pays for
-   it and rolls its dice, if it has any. */
-function kiPicker(c){
-  var actions = kiActions(c), groups = {"": []};
-  var word = kiWord(c);
-  function cost(a){ return a.useKey && a.freeUse ? "1 use" : a.cost ? a.cost + " " + word : "Free"; }
-  actions.forEach(function(a){
-    var g = a.group || "";
-    if(!groups[g]) groups[g] = [];
-    groups[g].push({value: a.id, label: a.name + " · " + cost(a)});
-  });
-  function find(id){ return actions.find(function(a){ return a.id===id; }); }
-  var wrap = document.createElement("div");
-  wrap.className = "res-pick";
-  wrap.appendChild(themedPicker({key: "ki:spend", groups: groups, value: "", placeholder: "Spend " + word + " on...", ariaLabel: "Spend " + word + " on", sheet: true,
-    reasonFor: function(id){ return kiActionProblem(c, find(id)); },
-    detailFor: function(id){ return find(id).detail; },
-    onPick: function(id){
-      var a = find(id), paid = cost(a);
-      if(!payKiAction(c, a)) return;
-      var name = (a.group ? a.group + ": " : "") + a.name;
-      if(a.log) logRoll(name, a.log + " (" + paid + ")");
-      save(); renderAll();
-      if(a.sharpen) showActionToast(a.sharpen.name + " sharpened: +" + a.sharpen.bonus + " to attack and damage for 1 minute.");
-      // A roll that gives temporary hit points (Heightened Focus): the
-      // higher of what you have and the roll, as they don't stack.
-      if(a.roll && a.roll.temp) performRoll(a.roll.die, a.roll.qty, a.roll.bonus, "none", a.roll.label, {onResult: function(r){
-        if(r.total > (Number(c.hp.temp)||0)){ c.hp.temp = r.total; save(); renderAll(); }
-      }});
-      else if(a.roll) performRoll(a.roll.die, a.roll.qty, a.roll.bonus, "none", a.roll.label);
-      // (A caught missile thrown back: an attack, its damage offered on a hit.)
-      else if(a.attack) rollAttack(c, a.attack.bonus, "none", a.attack.hit.label + ": Attack", Object.assign({}, a.attack.hit));
-    }}));
-  return wrap;
-}
-
 /* A small button for the Rage card. */
 function rageButton(text, title, onClick){
   var b = document.createElement("button");
@@ -1390,318 +1232,14 @@ function resourceRowEl(c, r){
   var slotPay = r.slotMin && remaining<=0 ? spellSlotsLeft(c).find(function(s){ return s.level >= r.slotMin && (!r.pactSlot || s.pact); }) : null;
   var pointsPay = r.againPoints && remaining<=0 && resourceLeft(c, "Sorcerer:sorcery_points") >= r.againPoints ? r.againPoints : 0;
   var slotWords = slotPay ? " (" + (slotPay.pact && r.pactSlot ? "pact slot" : ordinal(slotPay.level) + "-level slot") + ")" : pointsPay ? " (" + pointsPay + " points)" : "";
-  // A use that rolls a die (Warding Maneuver's d8): spends one and rolls.
-  if(r.roll && r.max!==Infinity){
-    var rolls = document.createElement("div");
-    rolls.className = "inv-roll-actions fx-rolls";
-    var rollBtn = document.createElement("button");
-    rollBtn.type = "button"; rollBtn.className = "btn small inv-roll-btn res-roll-btn";
-    rollBtn.innerHTML = makeDiceSvg();
-    rollBtn.appendChild(document.createTextNode((r.roll.button || "Use") + " · " + (r.roll.qty || 1) + "d" + r.roll.die + (r.roll.bonus ? fmtMod(r.roll.bonus) : "") + slotWords));
-    var unarmed = r.roll.needs==="meleeOrShield" && !wieldsMeleeWeaponOrShield(c);
-    rollBtn.disabled = (remaining<=0 && !slotPay && !pointsPay) || unarmed;
-    rollBtn.title = remaining<=0 && !slotPay && !pointsPay ? "None left" : unarmed ? "Needs a melee weapon or a shield in hand" : "Spend one and roll " + (r.roll.qty || 1) + "d" + r.roll.die;
-    rollBtn.addEventListener("click", function(){
-      if(slotPay){ spendSpellSlot(c, slotPay); save(); renderAll(); }
-      else if(pointsPay){ spendResource(c, "Sorcerer:sorcery_points", pointsPay); save(); renderAll(); }
-      else setUsed(r.used+1);
-      var least = r.roll.min || 0;
-      // Destructive Wrath: a Channel Divinity for the maximum.
-      var wrath = r.key==="Cleric:wrath_of_the_storm" && resourceLeft(c, "Cleric:channel_divinity") > 0;
-      performRoll(r.roll.die, r.roll.qty || 1, r.roll.bonus || 0, "none", r.roll.label, wrath ? function(x){
-        if(!x) return null;
-        var top = (r.roll.qty || 1) * r.roll.die;
-        return x.total >= top ? null : {lead: "Destructive Wrath:", options: [{label: "Maximum " + top + " (Channel Divinity)", title: "Spend your Channel Divinity to deal the maximum instead",
-          use: function(){
-            if(!spendChannel(c, "Cleric:channel_divinity")) return null;
-            save(); renderAll();
-            return {bonus: top - x.total, log: "Destructive Wrath"};
-          }}]};
-      } : r.roll.min || r.roll.temp || r.roll.heal ? {
-        adjust: least ? function(x){ return x.total < least ? {total: least, note: "at least " + least} : null; } : null,
-        // Temporary hit points don't stack: keep the higher.
-        onResult: r.roll.temp ? function(x){
-          var got = Math.max(x.total, least);
-          if(got > (Number(c.hp.temp)||0)){ c.hp.temp = got; save(); renderAll(); }
-        } : r.roll.heal ? function(x){
-          c.hp.current = clamp((Number(c.hp.current)||0) + Math.max(x.total, least), 0, maxHp(c));
-          save(); renderAll();
-        } : null
-      } : null);
-    });
-    rolls.appendChild(rollBtn);
-    info.appendChild(rolls);
-  }
-  // No roll: the slot or the points just pay (summoning the drake again).
-  if(pointsPay && !r.roll){
-    var againPts = document.createElement("div");
-    againPts.className = "inv-roll-actions fx-rolls";
-    var ptsBtn = document.createElement("button");
-    ptsBtn.type = "button"; ptsBtn.className = "btn small inv-roll-btn res-roll-btn";
-    ptsBtn.textContent = "Again" + slotWords;
-    ptsBtn.title = "Spend sorcery points to use it again";
-    ptsBtn.addEventListener("click", function(){
-      spendResource(c, "Sorcerer:sorcery_points", pointsPay);
-      logRoll(r.name, "Used again with " + pointsPay + " sorcery points.");
-      save(); renderAll();
-    });
-    againPts.appendChild(ptsBtn);
-    info.appendChild(againPts);
-  }
-  if(slotPay && !r.roll){
-    var again = document.createElement("div");
-    again.className = "inv-roll-actions fx-rolls";
-    var againBtn = document.createElement("button");
-    againBtn.type = "button"; againBtn.className = "btn small inv-roll-btn res-roll-btn";
-    againBtn.textContent = "Again" + slotWords;
-    againBtn.title = "Spend a spell slot to use it again";
-    againBtn.addEventListener("click", function(){
-      spendSpellSlot(c, slotPay);
-      logRoll(r.name, "Used again with a " + ordinal(slotPay.level) + "-level spell slot.");
-      save(); renderAll();
-    });
-    again.appendChild(againBtn);
-    info.appendChild(again);
-  }
-  // Second Wind (fighter 1): a use for 1d10 + fighter level, and
-  // Rallying Cry's healing for allies (Banneret 3).
-  var sw = r.key==="Fighter:second_wind" && secondWind(c);
-  if(sw){
-    var swRow = document.createElement("div");
-    swRow.className = "inv-roll-actions fx-rolls";
-    var swBtn = document.createElement("button");
-    swBtn.type = "button"; swBtn.className = "btn small inv-roll-btn res-roll-btn";
-    swBtn.innerHTML = makeDiceSvg();
-    swBtn.appendChild(document.createTextNode("Heal 1d10+" + sw.bonus));
-    var swFull = (Number(c.hp.current)||0) >= maxHp(c);
-    swBtn.disabled = remaining<=0 || (swFull && !sw.rally);
-    swBtn.title = remaining<=0 ? "Used until a short or long rest" : swFull && !sw.rally ? "You're at full hit points"
-      : "Bonus action: regain 1d10 + " + sw.bonus + " hit points." + (sw.rally ? " Rallying Cry: up to three allies within 60 feet who can see or hear you regain " + sw.rally + " hit points each." : "");
-    swBtn.addEventListener("click", function(){
-      var roll = Math.floor(Math.random()*10)+1, healed = roll + sw.bonus;
-      c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, maxHp(c));
-      c.resourcesUsed[r.key] = r.used + 1;
-      logRoll("Second Wind (1d10+" + sw.bonus + ")", roll + " +" + sw.bonus + " = " + healed + " HP healed" + (sw.rally ? ". Rallying Cry: up to three allies regain " + sw.rally + " HP each" : ""));
-      save(); renderAll();
-    });
-    swRow.appendChild(swBtn);
-    info.appendChild(swRow);
-  }
-  // Reclaim Potential (Echo Knight 15): 2d6 + CON temporary HP when the
-  // echo is destroyed by damage, if you have none.
-  if(r.key==="Fighter:reclaim_potential"){
-    var conM = mod(abilityScore(c, "con"));
-    var rpRow = document.createElement("div");
-    rpRow.className = "inv-roll-actions fx-rolls";
-    var rpBtn = document.createElement("button");
-    rpBtn.type = "button"; rpBtn.className = "btn small inv-roll-btn res-roll-btn";
-    rpBtn.innerHTML = makeDiceSvg();
-    rpBtn.appendChild(document.createTextNode("Temp HP 2d6" + fmtMod(conM)));
-    var hasTemp = (Number(c.hp.temp)||0) > 0;
-    rpBtn.disabled = remaining<=0 || hasTemp;
-    rpBtn.title = remaining<=0 ? "None left until a long rest" : hasTemp ? "Only when you have no temporary hit points" : "When your echo is destroyed by taking damage";
-    rpBtn.addEventListener("click", function(){
-      var a = Math.floor(Math.random()*6)+1, b2 = Math.floor(Math.random()*6)+1, got = Math.max(0, a + b2 + conM);
-      c.hp.temp = got;
-      c.resourcesUsed[r.key] = r.used + 1;
-      logRoll("Reclaim Potential (2d6" + fmtMod(conM) + ")", "[" + a + ", " + b2 + "] " + fmtMod(conM) + " = " + got + " temporary HP");
-      save(); renderAll();
-    });
-    rpRow.appendChild(rpBtn);
-    info.appendChild(rpRow);
-  }
-  // Survivor (Champion 18): regain 5 + CON at the start of a turn, at half HP or less.
-  var surv = r.key==="Fighter:survivor" && survivorHeal(c);
-  if(surv){
-    var svRow = document.createElement("div");
-    svRow.className = "inv-roll-actions fx-rolls";
-    var svBtn = document.createElement("button");
-    svBtn.type = "button"; svBtn.className = "btn small inv-roll-btn res-roll-btn";
-    svBtn.textContent = "Heal " + surv.heal;
-    svBtn.disabled = !surv.due;
-    svBtn.title = surv.due ? "Start of your turn: regain " + surv.heal + " hit points" : "Only while you have half your hit points or fewer (not at 0)";
-    svBtn.addEventListener("click", function(){
-      c.hp.current = clamp((Number(c.hp.current)||0) + surv.heal, 0, maxHp(c));
-      logRoll("Survivor", "Regained " + surv.heal + " HP at the start of the turn.");
-      save(); renderAll();
-    });
-    svRow.appendChild(svBtn);
-    info.appendChild(svRow);
-  }
-  // A use that restores a set number of hit points (Wholeness of Body).
-  // Psychic Veil, Rend Mind (2024): Psionic Energy Dice get it back.
-  if(r.diceRestore && r.used > 0){
-    var dr = r.diceRestore, pool = resourceLeft(c, dr.key);
-    var drRow = document.createElement("div");
-    drRow.className = "inv-roll-actions fx-rolls";
-    var drBtn = document.createElement("button");
-    drBtn.type = "button"; drBtn.className = "btn small inv-roll-btn";
-    var drNoun = dr.noun || ["Psionic Energy Die", "Psionic Energy Dice"], drWord = dr.noun ? (dr.count===1 ? "a " + drNoun[0] : dr.count + " " + drNoun[1]) : dr.count + (dr.count===1 ? " die" : " dice");
-    drBtn.textContent = "Spend " + drWord + " to use it again";
-    drBtn.disabled = pool < dr.count;
-    drBtn.title = drBtn.disabled ? "Not enough " + drNoun[1] + " left" : "No action needed: spend " + drNoun[1] + " to get this back";
-    drBtn.addEventListener("click", function(){
-      if(!spendResource(c, dr.key, dr.count)) return;
-      logRoll(r.name, "Spent " + dr.count + " " + (dr.count===1 ? drNoun[0] : drNoun[1]) + " to use it again.");
-      setUsed(r.used-1);
-    });
-    drRow.appendChild(drBtn);
-    info.appendChild(drRow);
-  }
-  // Intimidating Presence, Zealous Presence (2024): a use of Rage gets it back.
-  if(r.rageRestore && r.used > 0){
-    var rageRow = document.createElement("div");
-    rageRow.className = "inv-roll-actions fx-rolls";
-    var rageBack = document.createElement("button");
-    rageBack.type = "button"; rageBack.className = "btn small inv-roll-btn";
-    rageBack.textContent = "Spend a Rage to use it again";
-    rageBack.disabled = ragesLeft(c) <= 0;
-    rageBack.title = rageBack.disabled ? "No rages left" : "No action needed: spend a use of Rage to get this back";
-    rageBack.addEventListener("click", function(){
-      if(!spendRage(c)) return;
-      logRoll(r.name, "Spent a use of Rage to use it again.");
-      setUsed(r.used-1);
-    });
-    rageRow.appendChild(rageBack);
-    info.appendChild(rageRow);
-  }
-  if(r.heal && r.max!==Infinity){
-    var hr = document.createElement("div");
-    hr.className = "inv-roll-actions fx-rolls";
-    var hb = document.createElement("button");
-    hb.type = "button"; hb.className = "btn small inv-roll-btn res-roll-btn";
-    hb.textContent = "Heal " + r.heal;
-    var hbFull = (Number(c.hp.current)||0) >= maxHp(c);
-    hb.disabled = remaining<=0 || hbFull;
-    hb.title = remaining<=0 ? "None left" : hbFull ? "You're at full hit points" : "Spend one and regain " + r.heal + " hit points";
-    hb.addEventListener("click", function(){
-      c.hp.current = clamp((Number(c.hp.current)||0) + r.heal, 0, maxHp(c));
-      c.resourcesUsed[r.key] = r.used + 1;
-      logRoll(r.name, "Regained " + r.heal + " HP.");
-      save(); renderAll();
-    });
-    hr.appendChild(hb);
-    info.appendChild(hr);
-  }
-  // Everything ki can pay for, in one list.
-  if(r.key==="Monk:ki") info.appendChild(kiPicker(c));
-  if(r.key==="Cleric:divine_intervention") info.appendChild(interventionRow(c, r));
-  if(r.key==="Cleric:blessing_of_the_forge" && remaining > 0) info.appendChild(forgePicker(c, r));
-  if(r.key==="Paladin:lay_on_hands") info.appendChild(layOnHandsRow(c));
-  var gunRow = gunslingerResourceRow(c, r); // Quick Patch, Honed Instinct
-  if(gunRow) info.appendChild(gunRow);
-  var druidRow = druidResourceRow(c, r); // Wild Shape, Natural Recovery, Cosmic Omen, Balm
-  if(druidRow) info.appendChild(druidRow);
-  var bardRow = bardResourceRow(c, r); // Bardic Inspiration's list and tale, Spirit Session
-  if(bardRow) info.appendChild(bardRow);
-  var sorcRow = sorcererResourceRow(c, r); // Sorcery points' list, the surge table, the phases
-  if(sorcRow) info.appendChild(sorcRow);
-  var lockRow = warlockResourceRow(c, r); // Patron buttons and pickers
-  if(lockRow) info.appendChild(lockRow);
-  var wizRow = wizardResourceRow(c, r); // The schools' buttons and pickers
-  if(wizRow) info.appendChild(wizRow);
-  // Tinker's Magic (2024 artificer): pick an everyday item to make.
-  if(r.key==="Artificer:tinkers_magic" && remaining > 0){
-    var tinker = document.createElement("div");
-    tinker.className = "res-pick";
-    tinker.appendChild(themedPicker({key: "tinker", groups: {"": TINKER_ITEMS.map(function(t){ return t.name; })}, value: "", search: true,
-      placeholder: "Make an item...", ariaLabel: "Tinker's Magic: item to make",
-      onPick: function(v){
-        var made = makeTinkerItem(c, v);
-        if(!made) return;
-        logRoll("Tinker's Magic", "Made " + made.name + ". It vanishes on your next long rest.");
-        showActionToast(made.name + " added to your inventory until your next long rest.");
-        save(); renderAll();
-      }}));
-    info.appendChild(tinker);
-  }
-  // Defensive Field (Armorer, Guardian): temporary HP equal to the artificer level.
-  if(r.key==="Artificer:defensive_field"){
-    var field = artificerLevel(c);
-    var fieldRow = document.createElement("div");
-    fieldRow.className = "inv-roll-actions fx-rolls";
-    var fieldBtn = document.createElement("button");
-    fieldBtn.type = "button"; fieldBtn.className = "btn small inv-roll-btn res-roll-btn";
-    fieldBtn.textContent = "Temp HP " + field;
-    fieldBtn.disabled = remaining<=0;
-    fieldBtn.title = remaining<=0 ? "None left until a long rest" : "Bonus action, while you wear the armor";
-    fieldBtn.addEventListener("click", function(){
-      if(field > (Number(c.hp.temp)||0)) c.hp.temp = field;
-      logRoll("Defensive Field", "Temporary hit points: " + c.hp.temp + ".");
-      setUsed(r.used+1);
-    });
-    fieldRow.appendChild(fieldBtn);
-    info.appendChild(fieldRow);
-  }
-  // Quickened Healing (Tasha's, monk 4): 2 ki for a Martial Arts die
-  // plus the proficiency bonus of healing.
-  var qh = r.key==="Monk:ki" && quickenedHealing(c);
-  if(qh){
-    var heals = document.createElement("div");
-    heals.className = "inv-roll-actions fx-rolls";
-    var healBtn = document.createElement("button");
-    healBtn.type = "button"; healBtn.className = "btn small inv-roll-btn res-roll-btn";
-    healBtn.innerHTML = makeDiceSvg();
-    healBtn.appendChild(document.createTextNode("Quickened Healing · " + qh.cost + " ki"));
-    var atFull = (Number(c.hp.current)||0) >= maxHp(c);
-    healBtn.disabled = remaining < qh.cost || atFull;
-    healBtn.title = remaining < qh.cost ? "Not enough ki left" : atFull ? "You're at full hit points"
-      : "Action: spend " + qh.cost + " ki and heal 1d" + qh.die + " + " + qh.bonus;
-    healBtn.addEventListener("click", function(){
-      var roll = Math.floor(Math.random()*qh.die)+1, healed = roll + qh.bonus;
-      c.hp.current = clamp((Number(c.hp.current)||0) + healed, 0, maxHp(c));
-      c.resourcesUsed[r.key] = r.used + qh.cost;
-      logRoll("Quickened Healing (1d" + qh.die + fmtMod(qh.bonus) + ")", roll + " " + fmtMod(qh.bonus) + " = " + healed + " HP healed (" + qh.cost + " ki)");
-      save(); renderAll();
-    });
-    heals.appendChild(healBtn);
-    info.appendChild(heals);
-  }
-  // Harness Divine Power (Tasha's, cleric 2, paladin 3): a Channel
-  // Divinity for a spent spell slot. Buttons only while one is spent.
-  var hdpClass = /:harness_divine_power$/.test(r.key) && r.key.split(":")[0];
-  var hdp = hdpClass && harnessDivinePower(c, hdpClass);
-  if(hdp && hdp.levels.length){
-    var slotsRow = document.createElement("div");
-    slotsRow.className = "inv-roll-actions fx-rolls";
-    var why = !hdp.usesLeft ? "Used up until a long rest" : !hdp.channelLeft ? "No Channel Divinity left" : "";
-    hdp.levels.forEach(function(l){
-      var slotBtn = document.createElement("button");
-      slotBtn.type = "button"; slotBtn.className = "btn small inv-roll-btn res-roll-btn";
-      slotBtn.textContent = "Get back a " + ordinal(l) + "-level slot";
-      slotBtn.disabled = !!why;
-      slotBtn.title = why || "Bonus action: spend a Channel Divinity to get back one spent " + ordinal(l) + "-level spell slot";
-      slotBtn.addEventListener("click", function(){
-        if(!useHarnessDivinePower(c, hdpClass, l)) return;
-        logRoll("Harness Divine Power", "Got back a " + ordinal(l) + "-level spell slot (1 Channel Divinity)");
-        save(); renderAll();
-      });
-      slotsRow.appendChild(slotBtn);
-    });
-    info.appendChild(slotsRow);
-  }
-  // Wild Companion (Tasha's, druid 2): a use of Wild Shape casts Find
-  // Familiar, a fey that lasts half the druid level in hours.
-  var wildHours = r.key==="Druid:wild_shape" && wildCompanionHours(c);
-  if(wildHours){
-    var wildRow = document.createElement("div");
-    wildRow.className = "inv-roll-actions fx-rolls";
-    var wildBtn = document.createElement("button");
-    wildBtn.type = "button"; wildBtn.className = "btn small inv-roll-btn res-roll-btn";
-    wildBtn.textContent = "Wild Companion · 1 use";
-    var lasts = wildHours==="long" ? "until your next long rest" : wildHours + (wildHours===1 ? " hour" : " hours");
-    wildBtn.disabled = remaining<=0;
-    wildBtn.title = remaining<=0 ? "No Wild Shape uses left" : (wildHours==="long" ? "Magic action" : "Action") + ": spend a use of Wild Shape to cast Find Familiar. The familiar is a fey and lasts " + lasts + ".";
-    wildBtn.addEventListener("click", function(){
-      summonWildCompanion(c);
-      logRoll("Wild Companion", "Cast Find Familiar with a use of Wild Shape. The fey familiar lasts " + lasts + ".");
-      var form = c.companions && c.companions.familiar && c.companions.familiar.choice;
-      showActionToast(form ? "Your " + form.toLowerCase() + " appears. It lasts " + lasts + "." : "Your familiar appears. Choose its form on the Companions tab.");
-      if(r.max!==Infinity) setUsed(r.used+1); else { save(); renderAll(); }
-    });
-    wildRow.appendChild(wildBtn);
-    info.appendChild(wildRow);
-  }
+  var ctx = {remaining: remaining, slotPay: slotPay, pointsPay: pointsPay, slotWords: slotWords,
+    setUsed: function(n){ setResourceUsed(c, r, n); }};
+  var setUsed = ctx.setUsed;
+  // What it can be spent on, each block in its place (one gives an element,
+  // a list of them, or nothing).
+  resourceBlocks().forEach(function(block){
+    [].concat(block(c, r, ctx) || []).forEach(function(el){ info.appendChild(el); });
+  });
   row.appendChild(info);
 
   // Unlimited (Archdruid's Wild Shape): nothing to count or spend, so no
@@ -1750,28 +1288,181 @@ function resourceRowEl(c, r){
   stepper.appendChild(useBtn);
   stepper.appendChild(regainBtn);
   ctrl.appendChild(stepper);
-
-  function setUsed(n){
-    n = clamp(n, 0, r.max);
-    var before = r.used;
-    // Using Wild Shape again ends Symbiotic Entity.
-    if(r.key==="Druid:wild_shape" && n > r.used) endEffect(c, "symbiotic_entity");
-    if(n) c.resourcesUsed[r.key] = n; else delete c.resourcesUsed[r.key];
-    save(); renderAll();
-    if(n === before) return;
-    var drawn = resourceRow(r.key);
-    if(!drawn) return;
-    var pips = drawn.querySelector(".res-pips");
-    // Spent: the last full pip empties. Got back: the first empty one fills.
-    if(pips) pipChanged(pips, n > before ? r.max - n : r.max - before, n > before);
-    else {
-      // A point pool: the number pops and the amount floats up from it.
-      var num = drawn.querySelector(".res-count b");
-      flash(num, "fx-bump");
-      floatDelta(num, before - n, r.key);
-    }
-  }
   return row;
+}
+
+/* The blocks a resource row can show under its name, in this order. Each
+   takes (c, r, ctx), ctx being {remaining, slotPay, pointsPay, slotWords,
+   setUsed}, and draws only for the resources it knows. */
+function resourceBlocks(){
+  return [resourceRollButton, payAgainButtons, fighterResourceRow, diceRestoreButton, rageRestoreButton, resourceHealButton,
+    monkResourceRow, clericResourceRow, paladinResourceRow, gunslingerResourceRow, druidResourceRow, bardResourceRow,
+    sorcererResourceRow, warlockResourceRow, wizardResourceRow, artificerResourceRow, harnessDivinePowerRow, wildCompanionButton];
+}
+
+/* Set how much of a resource is used, then show the pip that changed. */
+function setResourceUsed(c, r, n){
+  n = clamp(n, 0, r.max);
+  var before = r.used;
+  // Using Wild Shape again ends Symbiotic Entity.
+  if(r.key==="Druid:wild_shape" && n > r.used) endEffect(c, "symbiotic_entity");
+  if(n) c.resourcesUsed[r.key] = n; else delete c.resourcesUsed[r.key];
+  save(); renderAll();
+  if(n === before) return;
+  var drawn = resourceRow(r.key);
+  if(!drawn) return;
+  var pips = drawn.querySelector(".res-pips");
+  // Spent: the last full pip empties. Got back: the first empty one fills.
+  if(pips) pipChanged(pips, n > before ? r.max - n : r.max - before, n > before);
+  else {
+    // A point pool: the number pops and the amount floats up from it.
+    var num = drawn.querySelector(".res-count b");
+    flash(num, "fx-bump");
+    floatDelta(num, before - n, r.key);
+  }
+}
+
+/* A use that rolls a die (Warding Maneuver's d8): spends one and rolls. */
+function resourceRollButton(c, r, ctx){
+  if(!(r.roll && r.max!==Infinity)) return null;
+  var remaining = ctx.remaining, slotPay = ctx.slotPay, pointsPay = ctx.pointsPay, slotWords = ctx.slotWords, setUsed = ctx.setUsed;
+  var rolls = document.createElement("div");
+  rolls.className = "inv-roll-actions fx-rolls";
+  var rollBtn = document.createElement("button");
+  rollBtn.type = "button"; rollBtn.className = "btn small inv-roll-btn res-roll-btn";
+  rollBtn.innerHTML = makeDiceSvg();
+  rollBtn.appendChild(document.createTextNode((r.roll.button || "Use") + " · " + (r.roll.qty || 1) + "d" + r.roll.die + (r.roll.bonus ? fmtMod(r.roll.bonus) : "") + slotWords));
+  var unarmed = r.roll.needs==="meleeOrShield" && !wieldsMeleeWeaponOrShield(c);
+  rollBtn.disabled = (remaining<=0 && !slotPay && !pointsPay) || unarmed;
+  rollBtn.title = remaining<=0 && !slotPay && !pointsPay ? "None left" : unarmed ? "Needs a melee weapon or a shield in hand" : "Spend one and roll " + (r.roll.qty || 1) + "d" + r.roll.die;
+  rollBtn.addEventListener("click", function(){
+    if(slotPay){ spendSpellSlot(c, slotPay); save(); renderAll(); }
+    else if(pointsPay){ spendResource(c, "Sorcerer:sorcery_points", pointsPay); save(); renderAll(); }
+    else setUsed(r.used+1);
+    var least = r.roll.min || 0;
+    // Destructive Wrath: a Channel Divinity for the maximum.
+    var wrath = r.key==="Cleric:wrath_of_the_storm" && resourceLeft(c, "Cleric:channel_divinity") > 0;
+    performRoll(r.roll.die, r.roll.qty || 1, r.roll.bonus || 0, "none", r.roll.label, wrath ? function(x){
+      if(!x) return null;
+      var top = (r.roll.qty || 1) * r.roll.die;
+      return x.total >= top ? null : {lead: "Destructive Wrath:", options: [{label: "Maximum " + top + " (Channel Divinity)", title: "Spend your Channel Divinity to deal the maximum instead",
+        use: function(){
+          if(!spendChannel(c, "Cleric:channel_divinity")) return null;
+          save(); renderAll();
+          return {bonus: top - x.total, log: "Destructive Wrath"};
+        }}]};
+    } : r.roll.min || r.roll.temp || r.roll.heal ? {
+      adjust: least ? function(x){ return x.total < least ? {total: least, note: "at least " + least} : null; } : null,
+      // Temporary hit points don't stack: keep the higher.
+      onResult: r.roll.temp ? function(x){
+        var got = Math.max(x.total, least);
+        if(got > (Number(c.hp.temp)||0)){ c.hp.temp = got; save(); renderAll(); }
+      } : r.roll.heal ? function(x){
+        c.hp.current = clamp((Number(c.hp.current)||0) + Math.max(x.total, least), 0, maxHp(c));
+        save(); renderAll();
+      } : null
+    } : null);
+  });
+  rolls.appendChild(rollBtn);
+  return rolls;
+}
+/* No roll: the slot or the points just pay (summoning the drake again). */
+function payAgainButtons(c, r, ctx){
+  if(r.roll) return null;
+  var out = [], slotPay = ctx.slotPay, pointsPay = ctx.pointsPay, slotWords = ctx.slotWords;
+  if(pointsPay){
+    var againPts = document.createElement("div");
+    againPts.className = "inv-roll-actions fx-rolls";
+    var ptsBtn = document.createElement("button");
+    ptsBtn.type = "button"; ptsBtn.className = "btn small inv-roll-btn res-roll-btn";
+    ptsBtn.textContent = "Again" + slotWords;
+    ptsBtn.title = "Spend sorcery points to use it again";
+    ptsBtn.addEventListener("click", function(){
+      spendResource(c, "Sorcerer:sorcery_points", pointsPay);
+      logRoll(r.name, "Used again with " + pointsPay + " sorcery points.");
+      save(); renderAll();
+    });
+    againPts.appendChild(ptsBtn);
+    out.push(againPts);
+  }
+  if(slotPay){
+    var again = document.createElement("div");
+    again.className = "inv-roll-actions fx-rolls";
+    var againBtn = document.createElement("button");
+    againBtn.type = "button"; againBtn.className = "btn small inv-roll-btn res-roll-btn";
+    againBtn.textContent = "Again" + slotWords;
+    againBtn.title = "Spend a spell slot to use it again";
+    againBtn.addEventListener("click", function(){
+      spendSpellSlot(c, slotPay);
+      logRoll(r.name, "Used again with a " + ordinal(slotPay.level) + "-level spell slot.");
+      save(); renderAll();
+    });
+    again.appendChild(againBtn);
+    out.push(again);
+  }
+  return out;
+}
+/* A use that restores a set number of hit points (Wholeness of Body).
+   Psychic Veil, Rend Mind (2024): Psionic Energy Dice get it back. */
+function diceRestoreButton(c, r, ctx){
+  if(!(r.diceRestore && r.used > 0)) return null;
+  var setUsed = ctx.setUsed;
+  var dr = r.diceRestore, pool = resourceLeft(c, dr.key);
+  var drRow = document.createElement("div");
+  drRow.className = "inv-roll-actions fx-rolls";
+  var drBtn = document.createElement("button");
+  drBtn.type = "button"; drBtn.className = "btn small inv-roll-btn";
+  var drNoun = dr.noun || ["Psionic Energy Die", "Psionic Energy Dice"], drWord = dr.noun ? (dr.count===1 ? "a " + drNoun[0] : dr.count + " " + drNoun[1]) : dr.count + (dr.count===1 ? " die" : " dice");
+  drBtn.textContent = "Spend " + drWord + " to use it again";
+  drBtn.disabled = pool < dr.count;
+  drBtn.title = drBtn.disabled ? "Not enough " + drNoun[1] + " left" : "No action needed: spend " + drNoun[1] + " to get this back";
+  drBtn.addEventListener("click", function(){
+    if(!spendResource(c, dr.key, dr.count)) return;
+    logRoll(r.name, "Spent " + dr.count + " " + (dr.count===1 ? drNoun[0] : drNoun[1]) + " to use it again.");
+    setUsed(r.used-1);
+  });
+  drRow.appendChild(drBtn);
+  return drRow;
+}
+/* Intimidating Presence, Zealous Presence (2024): a use of Rage gets it back. */
+function rageRestoreButton(c, r, ctx){
+  if(!(r.rageRestore && r.used > 0)) return null;
+  var setUsed = ctx.setUsed;
+  var rageRow = document.createElement("div");
+  rageRow.className = "inv-roll-actions fx-rolls";
+  var rageBack = document.createElement("button");
+  rageBack.type = "button"; rageBack.className = "btn small inv-roll-btn";
+  rageBack.textContent = "Spend a Rage to use it again";
+  rageBack.disabled = ragesLeft(c) <= 0;
+  rageBack.title = rageBack.disabled ? "No rages left" : "No action needed: spend a use of Rage to get this back";
+  rageBack.addEventListener("click", function(){
+    if(!spendRage(c)) return;
+    logRoll(r.name, "Spent a use of Rage to use it again.");
+    setUsed(r.used-1);
+  });
+  rageRow.appendChild(rageBack);
+  return rageRow;
+}
+/* A use that heals a set number of hit points. */
+function resourceHealButton(c, r, ctx){
+  if(!(r.heal && r.max!==Infinity)) return null;
+  var remaining = ctx.remaining;
+  var hr = document.createElement("div");
+  hr.className = "inv-roll-actions fx-rolls";
+  var hb = document.createElement("button");
+  hb.type = "button"; hb.className = "btn small inv-roll-btn res-roll-btn";
+  hb.textContent = "Heal " + r.heal;
+  var hbFull = (Number(c.hp.current)||0) >= maxHp(c);
+  hb.disabled = remaining<=0 || hbFull;
+  hb.title = remaining<=0 ? "None left" : hbFull ? "You're at full hit points" : "Spend one and regain " + r.heal + " hit points";
+  hb.addEventListener("click", function(){
+    c.hp.current = clamp((Number(c.hp.current)||0) + r.heal, 0, maxHp(c));
+    c.resourcesUsed[r.key] = r.used + 1;
+    logRoll(r.name, "Regained " + r.heal + " HP.");
+    save(); renderAll();
+  });
+  hr.appendChild(hb);
+  return hr;
 }
 /* Soul trinkets held, with a button for one gained (a creature dies
    within 30 feet, a reaction) and one used up. */

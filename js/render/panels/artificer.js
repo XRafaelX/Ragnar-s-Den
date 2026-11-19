@@ -9,6 +9,8 @@ import { makeCard, renderAll } from "../sheet.js";
 import { performRoll, logRoll } from "../../dice/dice.js";
 import { makeDiceSvg } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
+import { makeTinkerItem } from "../../core/artificer.js";
+import { TINKER_ITEMS } from "../../data/artificer-2024.js";
 
 /* ---- Artificer cards on the Inventory tab ----
    Armorer: pick the armor model; its special weapon gets roll buttons and
@@ -176,4 +178,45 @@ export function renderElixirCard(c){
   brew.appendChild(effects);
   card.appendChild(brew);
   return card;
+}
+
+/* What the artificer's resource rows offer under their names. */
+export function artificerResourceRow(c, r, ctx){
+  if(r.key==="Artificer:tinkers_magic") return ctx.remaining > 0 ? tinkerPicker(c) : null;
+  if(r.key==="Artificer:defensive_field") return defensiveFieldButton(c, r, ctx);
+  return null;
+}
+/* Tinker's Magic (2024 artificer): pick an everyday item to make. */
+function tinkerPicker(c){
+  var tinker = document.createElement("div");
+  tinker.className = "res-pick";
+  tinker.appendChild(themedPicker({key: "tinker", groups: {"": TINKER_ITEMS.map(function(t){ return t.name; })}, value: "", search: true,
+    placeholder: "Make an item...", ariaLabel: "Tinker's Magic: item to make",
+    onPick: function(v){
+      var made = makeTinkerItem(c, v);
+      if(!made) return;
+      logRoll("Tinker's Magic", "Made " + made.name + ". It vanishes on your next long rest.");
+      showActionToast(made.name + " added to your inventory until your next long rest.");
+      save(); renderAll();
+    }}));
+  return tinker;
+}
+/* Defensive Field (Armorer, Guardian): temporary HP equal to the artificer level. */
+function defensiveFieldButton(c, r, ctx){
+  var remaining = ctx.remaining, setUsed = ctx.setUsed;
+  var field = artificerLevel(c);
+  var fieldRow = document.createElement("div");
+  fieldRow.className = "inv-roll-actions fx-rolls";
+  var fieldBtn = document.createElement("button");
+  fieldBtn.type = "button"; fieldBtn.className = "btn small inv-roll-btn res-roll-btn";
+  fieldBtn.textContent = "Temp HP " + field;
+  fieldBtn.disabled = remaining<=0;
+  fieldBtn.title = remaining<=0 ? "None left until a long rest" : "Bonus action, while you wear the armor";
+  fieldBtn.addEventListener("click", function(){
+    if(field > (Number(c.hp.temp)||0)) c.hp.temp = field;
+    logRoll("Defensive Field", "Temporary hit points: " + c.hp.temp + ".");
+    setUsed(r.used+1);
+  });
+  fieldRow.appendChild(fieldBtn);
+  return fieldRow;
 }

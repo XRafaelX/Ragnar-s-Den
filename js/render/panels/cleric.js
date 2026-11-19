@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { blessItem, forgeItems, interventionSpells, interventionWish, classEntryOf } from "../../core/helpers.js";
+import { blessItem, forgeItems, interventionSpells, interventionWish, classEntryOf, harnessDivinePower, useHarnessDivinePower, ordinal } from "../../core/helpers.js";
 import { SPELL_DATA, spellLevelLabel } from "../../data/spells.js";
 import { renderAll } from "../sheet.js";
 import { makeDiceSvg } from "../../ui/svg-icons.js";
@@ -98,4 +98,35 @@ function interventionRow2024(c, r, lv){
       save(); renderAll();
     }}));
   return wrap;
+}
+
+/* What the cleric's resource rows offer under their names. */
+export function clericResourceRow(c, r, ctx){
+  if(r.key==="Cleric:divine_intervention") return interventionRow(c, r);
+  if(r.key==="Cleric:blessing_of_the_forge" && ctx.remaining > 0) return forgePicker(c, r);
+  return null;
+}
+/* Harness Divine Power (Tasha's, cleric 2, paladin 3): a Channel
+   Divinity for a spent spell slot. Buttons only while one is spent. */
+export function harnessDivinePowerRow(c, r){
+  var hdpClass = /:harness_divine_power$/.test(r.key) && r.key.split(":")[0];
+  var hdp = hdpClass && harnessDivinePower(c, hdpClass);
+  if(!(hdp && hdp.levels.length)) return null;
+  var slotsRow = document.createElement("div");
+  slotsRow.className = "inv-roll-actions fx-rolls";
+  var why = !hdp.usesLeft ? "Used up until a long rest" : !hdp.channelLeft ? "No Channel Divinity left" : "";
+  hdp.levels.forEach(function(l){
+    var slotBtn = document.createElement("button");
+    slotBtn.type = "button"; slotBtn.className = "btn small inv-roll-btn res-roll-btn";
+    slotBtn.textContent = "Get back a " + ordinal(l) + "-level slot";
+    slotBtn.disabled = !!why;
+    slotBtn.title = why || "Bonus action: spend a Channel Divinity to get back one spent " + ordinal(l) + "-level spell slot";
+    slotBtn.addEventListener("click", function(){
+      if(!useHarnessDivinePower(c, hdpClass, l)) return;
+      logRoll("Harness Divine Power", "Got back a " + ordinal(l) + "-level spell slot (1 Channel Divinity)");
+      save(); renderAll();
+    });
+    slotsRow.appendChild(slotBtn);
+  });
+  return slotsRow;
 }
