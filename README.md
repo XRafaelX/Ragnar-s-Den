@@ -1,4 +1,4 @@
-# Ragnar's Den · Character Creator v4.0.0
+# Ragnar's Den · Character Creator v5.0.0
 
 An offline-first, browser-based D&D 5e character creator and interactive character sheet. No accounts, no ads, and no internet connection required after initial load.
 
@@ -36,7 +36,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Vitals**: Real-time HP tracking (Current, Max, Temp): drag the HP bar sideways (left for damage, right for healing) or hold an arrow to count faster, hit dice tracker, death saving throws, armor class with full breakdown tooltip, initiative, and rests.
   - **Abilities & Skills**: Ability scores, modifiers, saving throws, and skill proficiencies with proficiency and expertise markers.
   - **Features & Traits**: Class features, racial traits, feats, and custom feature creation with "NEW" indicator badges on level-up.
-  - **Spellbook & Slots**: Track cantrips and prepared spells, filter by spell level, manage spell slot usage (including multiclassing and Warlock Pact Magic), and toggle prepared state on long rest.
+  - **Spellbook & Slots**: Track cantrips and prepared spells, filter by spell level, manage spell slot usage (including multiclassing and Warlock Pact Magic), and toggle prepared state on long rest. Cantrips have their own card, a star marks a favourite spell (the ★ chip shows only those), a preparing class's other spells fold under "Not prepared today", and a tap on a spell opens its full details.
   - **Spells known and prepared**: The level-up's New spells step teaches each class the spells its table allows (and offers the swap the class gets), with counts per class on the Spells tab. Preparing classes get the prepared limit and a Prepare today sheet after a long rest. Bard's Magical Secrets, Mystic Arcanum, a third caster's school limits, and the spells a dragonmark or Ravnica guild adds to a caster's list are all included.
   - **Spells that grow**: A spell's card shows what it does at the character's level: cantrip dice by character level, Eldritch Blast's beams with the warlock's invocations, a warlock's spells at its pact slot level, and the Higher slots rule for other casters.
   - **Inventory & Armory**: Currency tracker (cp/sp/ep/gp/pp) with smart coin breaking, equipment list with item weights, equipped weapon/armor management with hand-to-hand logic.
@@ -45,6 +45,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Firearms and new weapons**: The DMG's pistol and musket in their own category (proficiency from the Gunner feat), the double-bladed scimitar and Revenant Blade, and Plane Shift: Amonkhet's khopesh and two-handed khopesh (treated as a longsword and a greatsword, so proficiency with one covers the other).
   - **Conditions**: The fourteen conditions and six levels of exhaustion, behind a button on the Hit points card. What they do is applied by itself: disadvantage on attacks or checks, automatic STR and DEX save failures, speed 0, lower passive scores, and a long rest that takes off a level of exhaustion.
   - **Active Effects**: Toggle on/off effects like Bladesong, the Astral Self, and Symbiotic Entity, each paid with the right class resource.
+  - **Channel Divinity card**: Clerics and paladins get their own Vitals card with every Channel Divinity option as a short tile with a Use button. A tap opens the full text.
   - **Remember card**: A card on the Vitals tab for the features new players forget mid-fight, grouped as Bonus actions, Reactions and Always on: Cunning Action, Uncanny Dodge, a paladin's auras, Sentinel, Polearm Master, a halfling's Lucky and many more from every class, subclass, fighting style, invocation, feat and race. Only what the sheet doesn't already apply or show is listed, a tap opens the full text, and experienced players can fold the card away per character.
   - **Class features at work**: Every class's and subclass's features were checked against the books and put to work on the sheet wherever there's something to work out: buttons on weapon and spell cards, uses on the Vitals tab, Active effects, rerolls and follow-ups in the dice tray. That includes all 15 of Tasha's optional class features (Primal Awareness, Nature's Veil, Steady Aim, Focused Aim, Quickened Healing, Dedicated Weapon, Harness Divine Power, Blessed Strikes, Wild Companion, Magical Guidance and more).
   - **2014 or 2024 classes**: Each class picks the 2014 rules or the 2024 rules, on the Class step's Optional rules card ("2024 Fighter"), on the Information tab, or when multiclassing ("Which fighter?"). All 13 classes have their 2024 version, from the 2024 Player's Handbook (the artificer from Eberron: Forge of the Artificer), with their features at work on the sheet and the book's four subclasses each, plus the Cartographer and Ravenloft's Reanimator for the 2024 artificer. Older subclasses with no 2024 version stay available. A 2024 monk, for example, gets Focus Points, the d6 to d12 Martial Arts die, Uncanny Metabolism and Deflect Attacks. The Compendium's class pages switch between the two.
@@ -69,6 +70,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **Spells cast without a slot**: Features that cast a named spell for free, at will or for ki list it on the Spells tab with a short tag ("At will", "Free 1/long rest", "2 ki", "3 Jinx Points") and the rule in the tag's tooltip: Thousand Forms, Visions of the Future, Misty Wanderer, Shadow Arts, Searing Arc Strike, Empty Body, Consult the Spirits and more, with a save DC for classes that don't cast. Signature Spells get a counter per spell on Vitals.
   - **Feats**: All 180 feats: the 2014 rules' 106 (Player's Handbook, Tasha's Cauldron, Xanathar's racial feats, Mordenkainen's Tome of Foes, Eberron, Fizban's, Strixhaven, Dragonlance, Bigby's Glory of the Giants, Planescape and the Book of Many Things, plus the Gunslinger fan content's Sidearm Mastery) and the 2024 Player's Handbook's 74 (Origin, General, Fighting Style and Epic Boon feats). A feat's choices are made in the level-up or the creation wizard and applied to the sheet: ability increases, skills, tools, languages, spells (cantrips, free casts per rest, at will or ritual, with the right save DC), uses on the Vitals tab that follow the proficiency bonus, a fighting style (Fighting Initiate), an invocation (Eldritch Adept), Metamagic and its sorcery points (Metamagic Adept), runes (Rune Shaper), speed, AC and darkvision. Feats for another race, a higher level or after another feat are greyed out with the reason. The 13 backgrounds that give a feat grant it in character creation (a Wildspacer's Tough, a Lorehold Student's Strixhaven Initiate with the college already set, an Astral Drifter's Magic Initiate as a cleric), with a Background Feat step for its choices; an older sheet is offered the feat on the Features tab. A per-character Campaign setting (the wizard's Background step, or Optional rules on the Information tab) turns on a campaign book's bonus feats: in a Dragonlance or Glory of the Giants campaign a character whose background has no feat picks Skilled or Tough at level 1, and Dragonlance's level-up adds a Campaign feat step at character level 4.
   - **Optional rules**: Set once at the start of character creation, on the Class step's Optional rules card (Tasha's optional class features, the campaign books, the 2024 character rules and the 2024 class, with a line saying what Tasha's adds for the chosen class), and changed later on the Information tab's card. Later wizard steps only note what Tasha's would add while it's off; turning it off drops the picks only it allows. Tasha's optional class features: Tasha's extra fighting styles, Metamagic, maneuvers, invocations and Pact of the Talisman, the 65 spells Tasha's Additional Spells adds to the class lists (marked "Tasha's optional" in the spell pickers, the level-up and the wizard's Spells step, which has the switch too), plus swapping a style, Metamagic option or maneuver at Ability Score Improvement levels.
+  - **Supplies and tools**: A switch on the Class step's Optional rules card, off by default because most tables skip them. When it's off, character creation leaves out equipment packs, background gear and tool choices (the tools are picked for you), and still gives weapons, armor, ammunition and a spellcasting focus. The setting is remembered for the next character.
   - **Journal & Information**: Rich notes, backstory, physical characteristics, proficiencies (languages, weapons, armor, tools), and custom notes.
 - **Monsters Browser**:
   - Searchable monster compendium of 331 monsters in 13 categories, with full stat blocks, each checked against the Monster Manual.
@@ -76,7 +78,9 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
 - **Encounters** (for the DM):
   - Named encounters saved in this browser, ready to prepare before a session and run again later with Reset (or Duplicate).
   - Add monsters from the Monster Catalog (homebrew too); each gets a box with its AC, speed and hit points, and a trail of every HP value it went through, like on paper. Boxes can be renamed.
-  - Type in the players' names, then drag monster boxes into the numbered turn order (mouse or finger) and drag lines to reorder. Next turn moves down the line, skips downed monsters and counts rounds.
+  - Type in the players' names, then drag monster boxes into the numbered turn order (mouse or finger) and drag lines to reorder. Next turn moves down the line, skips downed monsters and counts rounds. Players from other encounters are a tap away.
+  - Roll initiative for every monster with one button: the dice roll on screen, the monsters join the turn order, and the line sorts itself high to low. Type the players' numbers on their lines.
+  - Star favourite encounters to keep them in their own section at the top, and drag saved encounters into any order.
   - Conditions on monsters: the fourteen conditions plus Hexed, Cursed, Slowed, Asleep and Blessed, shown as chips on each box (asking what the caster chose where a spell needs it).
   - Encounters are included in backup export and import.
 - **Dungeons** (for the DM):
@@ -111,7 +115,7 @@ An offline-first, browser-based D&D 5e character creator and interactive charact
   - **About**: Credits for every source and asset, the privacy policy and the license, in the About dialog.
 - **Offline & Local Storage**:
   - Stores character sheets and custom homebrew in browser `localStorage`.
-  - Export and import full vault backups as JSON files, named by date, time and app version (`ragnars-den-backup_2026-11-03_2145_v4.0.0.json`).
+  - Export and import full vault backups as JSON files, named by date, time and app version (`ragnars-den-backup_2026-11-19_2145_v5.0.0.json`).
   - PWA installable on desktop and mobile devices with Service Worker offline caching (`sw.js`).
 
 ---
@@ -187,7 +191,7 @@ The app needs no build step. `package.json` exists only to run the tests and has
 
 ## Testing
 
-Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/` and completes in a few seconds. **1184 tests, 0 failures.**
+Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/` and completes in a few seconds. **1217 tests, 0 failures.**
 
 - `coins.test.mjs`: coin parsing, spending, change-giving, and formatting.
 - `data.test.mjs`: class, subclass and resource data is complete and well-formed. Every subclass reaches its top level, `replaces` points at a real earlier feature, feature flags use known names and valid values, every Resources card entry belongs to a subclass that exists, counters stay sane at every level, the spell catalog is well formed (the size of the catalog, every class's count, artificer spells at every level, Tasha's Additional Spells kept off the class lists until the switch is on), and text has no long dashes.
@@ -279,7 +283,7 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   ├── app.js                         # Application entry point: event listeners, import/export, init()
 │   ├── bootstrap.bundle.min.js        # Bootstrap 5 JavaScript bundle
 │   ├── dungeon-view.js                # The dungeon Player view page (dungeon-view.html)
-│   ├── version.js                     # App release version (APP_VERSION = "4.0.0")
+│   ├── version.js                     # App release version (APP_VERSION = "5.0.0")
 │   ├── core/
 │   │   ├── artificer.js               # Armor model weapons, elixir brewing and rolling
 │   │   ├── backup.js                  # Full backups and character exports (with the homebrew they use)

@@ -63,7 +63,7 @@ body:
     attributes:
       label: App version
       description: Shown at the bottom of the sidebar, after "Made by Hunter & Kayn".
-      placeholder: v4.0.0
+      placeholder: v5.0.0
 
   - type: input
     id: device
