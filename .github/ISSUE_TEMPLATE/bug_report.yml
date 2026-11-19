@@ -1,0 +1,80 @@
+name: Bug report
+description: Something in the app is broken, or a rule doesn't match the book.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Please fill in as much as you can.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What went wrong?
+      description: What did you see, and what did you expect to see instead?
+      placeholder: My level 5 fighter only has one attack on the weapon card, but Extra Attack should give two.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you click or do, in order, before it happened?
+      placeholder: |
+        1. Create a fighter in the wizard
+        2. Level up to 5
+        3. Open the Inventory tab
+    validations:
+      required: true
+
+  - type: input
+    id: character
+    attributes:
+      label: Character
+      description: Race, class (and subclass) and level. Mention every class if the character multiclasses.
+      placeholder: Hill dwarf, Fighter (Battle Master) 5
+    validations:
+      required: true
+
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Rules edition
+      description: Which rules is the class using? You can see it on the Information tab.
+      options:
+        - "2014"
+        - "2024"
+        - Both (multiclass)
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: book
+    attributes:
+      label: Book and page (for rules problems)
+      description: If a rule doesn't match the book, which book and page does it come from?
+      placeholder: Player's Handbook (2014), page 72
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Shown at the bottom of the sidebar, after "Made by Hunter & Kayn".
+      placeholder: v4.0.0
+
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: Android phone, Chrome (installed as an app)
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or character file
+      description: |
+        Drag screenshots here. You can also attach the character: open **Import & Export**, choose **Export characters**, pick the character and attach the file.
+        Issues are public, so only attach a character you're happy for anyone to see.
