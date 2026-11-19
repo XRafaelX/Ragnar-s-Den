@@ -1,0 +1,9747 @@
+{
+ "damage: Arcane Ward": {
+  "id": "rest-ward",
+  "name": "ward",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Wizard",
+    "subclass": "School of Abjuration",
+    "level": 6
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 18,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 38,
+   "current": 36
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {
+   "Wizard:arcane_ward": 16
+  },
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [],
+  "arcaneWard": true,
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "damage: Relentless Rage": {
+  "id": "rest-relentless",
+  "name": "relentless",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "level": 11
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 121,
+   "current": 0
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": true,
+   "used": 0,
+   "relentless": true
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "damage: Wild Shape": {
+  "id": "rest-wolf",
+  "name": "wolf",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Druid",
+    "subclass": "Circle of the Moon",
+    "level": 4
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 30,
+   "current": 24
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {
+   "Druid:wild_shape": 1
+  },
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "damage: drop to 0": {
+  "id": "rest-fall",
+  "name": "fall",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "level": 5
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 55,
+   "current": 0
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [
+   "prone"
+  ],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [
+   {
+    "id": "club",
+    "name": "Club",
+    "type": "weapon",
+    "qty": 1,
+    "ability": "str",
+    "proficient": true,
+    "magicBonus": 0
+   }
+  ],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "damage: staysUp effect": {
+  "id": "rest-wildfire",
+  "name": "wildfire",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Druid",
+    "subclass": "Circle of Wildfire",
+    "level": 2
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 17,
+   "current": 0
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {
+   "wildfire_spirit": true
+  },
+  "conditions": [
+   "prone"
+  ],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 3,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "companions": {
+   "wildfire_spirit": {
+    "hp": [
+     15
+    ]
+   }
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "damage: temp HP first": {
+  "id": "rest-temp",
+  "name": "temp",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Fighter",
+    "level": 5
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 44,
+   "current": 35
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "healing: bar, arrows, Full": {
+  "id": "rest-heal",
+  "name": "heal",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Fighter",
+    "level": 5
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 44,
+   "current": 44
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "hit die": {
+  "id": "rest-hitdie",
+  "name": "hitdie",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Fighter",
+    "level": 5
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 44,
+   "current": 28
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 1,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Hit die (d10+2)",
+    "detail": "6 +2 = 8 HP healed"
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {
+   "10": 1
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: 2024 artificer": {
+  "id": "rest-long-tinker",
+  "name": "long-tinker",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Artificer",
+    "level": 5,
+    "edition": "2024"
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 38,
+   "current": 38
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0,
+     "extra": 0
+    },
+    "2": {
+     "max": 2,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered. Tinker's Magic items vanished: Rope."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered. New elixirs: Healing."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "plans": {
+   "known": [],
+   "made": []
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  },
+  "hitDiceSpent": {}
+ },
+ "long rest: Abjuration": {
+  "id": "rest-long-abj",
+  "name": "long-abj",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Wizard",
+    "subclass": "School of Abjuration",
+    "level": 6
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 18,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 38,
+   "current": 38
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 3 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: Alchemist": {
+  "id": "rest-long-alch",
+  "name": "long-alch",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Artificer",
+    "subclass": "Alchemist",
+    "level": 3
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 24,
+   "current": 24
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": [
+    {
+     "id": "inf",
+     "name": "Mind Sharpener",
+     "itemName": "Robes",
+     "used": 0
+    }
+   ]
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 3,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered. New elixirs: Swiftness. Recharged: Robes."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "elixirs": {
+   "list": [
+    {
+     "id": "mjuohs00tn2em1",
+     "name": "Healing",
+     "free": true
+    }
+   ],
+   "freeMade": 1
+  },
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: Battle Smith": {
+  "id": "rest-long-smith",
+  "name": "long-smith",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Artificer",
+    "subclass": "Battle Smith",
+    "level": 3
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 24,
+   "current": 24
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 3,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered. New elixirs: Transformation."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "companions": {
+   "steel_defender": {
+    "hp": []
+   }
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  },
+  "hitDiceSpent": {}
+ },
+ "long rest: Celestial warlock": {
+  "id": "rest-long-celestial",
+  "name": "long-celestial",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Warlock",
+    "subclass": "The Celestial",
+    "level": 10
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 18
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 14,
+   "max": 63,
+   "current": 63
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 5,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": {
+    "max": 2,
+    "slotLevel": 5,
+    "used": 0
+   }
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 5 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {
+   "8": 5
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: Circle of Stars": {
+  "id": "rest-long-stars",
+  "name": "long-stars",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Druid",
+    "subclass": "Circle of Stars",
+    "level": 6
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 45,
+   "current": 45
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered. Cosmic Omen: Woe."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  },
+  "hitDiceSpent": {},
+  "cosmicOmen": "Weal"
+ },
+ "long rest: Evocation": {
+  "id": "rest-long-evo",
+  "name": "long-evo",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Wizard",
+    "subclass": "School of Evocation",
+    "level": 14
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 86,
+   "current": 86
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 3,
+     "used": 0
+    },
+    "5": {
+     "max": 2,
+     "used": 0
+    },
+    "6": {
+     "max": 1,
+     "used": 0
+    },
+    "7": {
+     "max": 1,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 3 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  },
+  "hitDiceSpent": {}
+ },
+ "long rest: Forge cleric": {
+  "id": "rest-long-forge",
+  "name": "long-forge",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Cleric",
+    "subclass": "Forge Domain",
+    "level": 10
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 73,
+   "current": 73
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {
+   "Cleric:divine_intervention": 0
+  },
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 3,
+     "used": 0
+    },
+    "5": {
+     "max": 2,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [
+   {
+    "id": "mace",
+    "name": "Mace",
+    "type": "weapon",
+    "qty": 1,
+    "magicBonus": 0,
+    "ability": "str",
+    "proficient": true
+   }
+  ],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: Frenzy": {
+  "id": "rest-long-frenzy",
+  "name": "long-frenzy",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "level": 3
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 35,
+   "current": 35
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered. Exhaustion down to level 0 (with food and drink)."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: Lunar sorcerer": {
+  "id": "rest-long-lunar",
+  "name": "long-lunar",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Sorcerer",
+    "subclass": "Lunar Sorcery",
+    "level": 6
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 38,
+   "current": 38
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0,
+     "extra": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "lunarPhase": "Full Moon",
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {},
+  "lunarChoose": true,
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: Persistent Rage": {
+  "id": "rest-long-persist",
+  "name": "long-persist",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Barbarian",
+    "level": 15,
+    "edition": "2024"
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 165,
+   "current": 165
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: Phantom": {
+  "id": "rest-long-phantom",
+  "name": "long-phantom",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Rogue",
+    "subclass": "Phantom",
+    "level": 17
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 110,
+   "current": 110
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "soulTrinkets": 1,
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: Resourceful": {
+  "id": "rest-long-human",
+  "name": "long-human",
+  "title": "",
+  "avatar": null,
+  "inspiration": 1,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human (2024)",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Fighter",
+    "level": 1
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 12,
+   "current": 12
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered. Resourceful: you have Heroic Inspiration."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered. Cosmic Omen: Weal."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  },
+  "hitDiceSpent": {}
+ },
+ "long rest: Spirits bard": {
+  "id": "rest-long-spirits",
+  "name": "long-spirits",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Bard",
+    "subclass": "College of Spirits",
+    "level": 6
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 39,
+   "current": 39
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: Transmutation": {
+  "id": "rest-long-tra",
+  "name": "long-tra",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Wizard",
+    "subclass": "School of Transmutation",
+    "level": 6
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 38,
+   "current": 38
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  },
+  "hitDiceSpent": {}
+ },
+ "long rest: War Magic": {
+  "id": "rest-long-war",
+  "name": "long-war",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Wizard",
+    "subclass": "War Magic",
+    "level": 6
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 38,
+   "current": 38
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {
+   "Wizard:power_surges": 1
+  },
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  },
+  "hitDiceSpent": {}
+ },
+ "long rest: Wild Shape": {
+  "id": "rest-long-wolf",
+  "name": "long-wolf",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Druid",
+    "subclass": "Circle of the Moon",
+    "level": 4
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 30,
+   "current": 30
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: conditions kept": {
+  "id": "rest-long-cursed",
+  "name": "long-cursed",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Fighter",
+    "level": 5
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 44,
+   "current": 44
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [
+   "poisoned"
+  ],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: exhaustion and conditions": {
+  "id": "rest-long-tired",
+  "name": "long-tired",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Fighter",
+    "level": 5
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 44,
+   "current": 44
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 3,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered. Exhaustion down to level 3 (with food and drink). Conditions ended: Frightened, Poisoned."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: fighter": {
+  "id": "rest-long-fighter",
+  "name": "long-fighter",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Fighter",
+    "subclass": "Battle Master",
+    "level": 5
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 44,
+   "current": 44
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 3,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 2 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {
+   "10": 3
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: magic items": {
+  "id": "rest-long-items",
+  "name": "long-items",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Wizard",
+    "level": 5
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 32,
+   "current": 32
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 2,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [
+   {
+    "name": "Wand of Fireballs",
+    "type": "gear",
+    "magicItem": "Wand of Fireballs",
+    "qty": 1,
+    "equipped": false,
+    "notes": "",
+    "attuned": false,
+    "chargesUsed": 2
+   },
+   {
+    "id": "coin",
+    "name": "Duality",
+    "type": "gear",
+    "magicItem": "Duality",
+    "qty": 1,
+    "coin": {
+     "used": 0,
+     "flip": "",
+     "boons": []
+    }
+   },
+   {
+    "id": "ring",
+    "name": "Spell-Refueling Ring",
+    "type": "gear",
+    "qty": 1
+   }
+  ],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered. Recharged: Wand of Fireballs (+3 charges), Duality, Spell-Refueling Ring. Ended: Duality (next attack +2d8 radiant)."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: multiclass caster": {
+  "id": "rest-long-multi",
+  "name": "long-multi",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Wizard",
+    "subclass": "School of Divination",
+    "level": 3
+   },
+   {
+    "name": "Warlock",
+    "subclass": "The Fiend",
+    "level": 2
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 30,
+   "current": 30
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 3,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 2,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": {
+    "max": 2,
+    "slotLevel": 1,
+    "used": 0
+   }
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 2 hit dice recovered. Portent: 12, 6."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {
+   "6": 3
+  },
+  "portent": [
+   12,
+   6
+  ],
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "long rest: rest wait": {
+  "id": "rest-long-wait",
+  "name": "long-wait",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Cleric",
+    "subclass": "Life Domain",
+    "level": 10,
+    "edition": "2024"
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 73,
+   "current": 73
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 3,
+     "used": 0
+    },
+    "5": {
+     "max": 2,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   },
+   {
+    "label": "Long rest taken",
+    "detail": "HP and spell slots restored. 0 hit dice recovered."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "restWait": {},
+  "hitDiceSpent": {},
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "short rest: 2024 barbarian": {
+  "id": "rest-short-barb24",
+  "name": "short-barb24",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Barbarian",
+    "level": 5,
+    "edition": "2024"
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 55,
+   "current": 30
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 2
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Short rest taken",
+    "detail": "Spend hit dice as needed to heal. Restored: one use of Rage."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "short rest: Bastion of Law stays": {
+  "id": "rest-short-clock",
+  "name": "short-clock",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Sorcerer",
+    "subclass": "Clockwork Soul",
+    "level": 6
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 38,
+   "current": 38
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {
+   "bastion_of_law": true
+  },
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Short rest taken",
+    "detail": "Spend hit dice as needed to heal."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "short rest: Bladesong ends": {
+  "id": "rest-short-blade",
+  "name": "short-blade",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Wizard",
+    "subclass": "Bladesinging",
+    "level": 2
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 14,
+   "current": 14
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 3,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Short rest taken",
+    "detail": "Spend hit dice as needed to heal. Ended: Bladesong."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "short rest: Duality boons": {
+  "id": "rest-short-duality",
+  "name": "short-duality",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Fighter",
+    "level": 1
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 12,
+   "current": 12
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [
+   {
+    "id": "coin",
+    "name": "Duality",
+    "type": "gear",
+    "magicItem": "Duality",
+    "qty": 1,
+    "coin": {
+     "used": 2,
+     "flip": "",
+     "boons": [
+      {
+       "id": "angel_radiant",
+       "type": "Radiant"
+      }
+     ]
+    }
+   }
+  ],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Short rest taken",
+    "detail": "Spend hit dice as needed to heal. Ended: Duality (+1 AC)."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "short rest: Power Surge": {
+  "id": "rest-short-war",
+  "name": "short-war",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Wizard",
+    "subclass": "War Magic",
+    "level": 6
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 38,
+   "current": 38
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {
+   "Wizard:power_surges": 1
+  },
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Short rest taken",
+    "detail": "Spend hit dice as needed to heal."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "short rest: Spirits tale": {
+  "id": "rest-short-spirits",
+  "name": "short-spirits",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Bard",
+    "subclass": "College of Spirits",
+    "level": 3
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 24,
+   "current": 24
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 2,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Short rest taken",
+    "detail": "Spend hit dice as needed to heal."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "short rest: Tireless": {
+  "id": "rest-short-ranger",
+  "name": "short-ranger",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Ranger",
+    "subclass": "Hunter",
+    "level": 10,
+    "edition": "2024"
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 84,
+   "current": 60
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 1,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 2,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Short rest taken",
+    "detail": "Spend hit dice as needed to heal. Tireless: exhaustion down to level 1."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "short rest: celestial warlock": {
+  "id": "rest-short-celestial",
+  "name": "short-celestial",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Warlock",
+    "subclass": "The Celestial",
+    "level": 10
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 18
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 14,
+   "max": 63,
+   "current": 40
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 10,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {
+   "Warlock:healing_light": 11
+  },
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": {
+    "max": 2,
+    "slotLevel": 5,
+    "used": 0
+   }
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Short rest taken",
+    "detail": "Spend hit dice as needed to heal. Pact slots restored. Celestial Resilience: 14 temporary HP, 9 for up to five creatures."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {
+   "8": 10
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "short rest: fighter": {
+  "id": "rest-short-fighter",
+  "name": "short-fighter",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Fighter",
+    "subclass": "Battle Master",
+    "level": 5
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 44,
+   "current": 20
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 5,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {},
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 0,
+     "used": 0
+    },
+    "2": {
+     "max": 0,
+     "used": 0
+    },
+    "3": {
+     "max": 0,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Short rest taken",
+    "detail": "Spend hit dice as needed to heal. Restored: Second Wind, Action Surge, Superiority Dice."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "hitDiceSpent": {
+   "10": 5
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "short rest: sorcerer 2014": {
+  "id": "rest-short-sorc14",
+  "name": "short-sorc14",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Sorcerer",
+    "subclass": "Draconic Bloodline",
+    "level": 20
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 122,
+   "current": 100
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {
+   "Sorcerer:sorcery_points": 6
+  },
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 3,
+     "used": 0
+    },
+    "5": {
+     "max": 3,
+     "used": 0
+    },
+    "6": {
+     "max": 2,
+     "used": 0
+    },
+    "7": {
+     "max": 2,
+     "used": 0
+    },
+    "8": {
+     "max": 1,
+     "used": 0
+    },
+    "9": {
+     "max": 1,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Short rest taken",
+    "detail": "Spend hit dice as needed to heal. Sorcerous Restoration: 4 sorcery points."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ },
+ "short rest: sorcerer 2024": {
+  "id": "rest-short-sorc24",
+  "name": "short-sorc24",
+  "title": "",
+  "avatar": null,
+  "inspiration": 0,
+  "backdrop": null,
+  "backdropPalette": null,
+  "backdropTheme": true,
+  "race": "Human",
+  "background": "Acolyte",
+  "alignment": "Neutral Good",
+  "languages": [
+   "Common"
+  ],
+  "racePicks": {
+   "profPicks": {}
+  },
+  "classes": [
+   {
+    "name": "Sorcerer",
+    "subclass": "Draconic Sorcery",
+    "level": 6,
+    "edition": "2024"
+   }
+  ],
+  "xp": 0,
+  "levelHistory": [],
+  "newUnlocks": [],
+  "seenCompanions": [],
+  "abilities": {
+   "str": 14,
+   "dex": 14,
+   "con": 14,
+   "int": 14,
+   "wis": 14,
+   "cha": 14
+  },
+  "saveProfs": {
+   "str": false,
+   "dex": false,
+   "con": false,
+   "int": false,
+   "wis": false,
+   "cha": false
+  },
+  "skillProfs": {
+   "Acrobatics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Animal Handling": {
+    "prof": false,
+    "expertise": false
+   },
+   "Arcana": {
+    "prof": false,
+    "expertise": false
+   },
+   "Athletics": {
+    "prof": false,
+    "expertise": false
+   },
+   "Deception": {
+    "prof": false,
+    "expertise": false
+   },
+   "History": {
+    "prof": false,
+    "expertise": false
+   },
+   "Insight": {
+    "prof": false,
+    "expertise": false
+   },
+   "Intimidation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Investigation": {
+    "prof": false,
+    "expertise": false
+   },
+   "Medicine": {
+    "prof": false,
+    "expertise": false
+   },
+   "Nature": {
+    "prof": false,
+    "expertise": false
+   },
+   "Perception": {
+    "prof": false,
+    "expertise": false
+   },
+   "Performance": {
+    "prof": false,
+    "expertise": false
+   },
+   "Persuasion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Religion": {
+    "prof": false,
+    "expertise": false
+   },
+   "Sleight of Hand": {
+    "prof": false,
+    "expertise": false
+   },
+   "Stealth": {
+    "prof": false,
+    "expertise": false
+   },
+   "Survival": {
+    "prof": false,
+    "expertise": false
+   }
+  },
+  "hp": {
+   "temp": 0,
+   "max": 38,
+   "current": 30
+  },
+  "ac": 10,
+  "acMisc": 0,
+  "initiativeMisc": 0,
+  "speed": 30,
+  "hitDiceUsed": 0,
+  "deathSaves": {
+   "success": 0,
+   "fail": 0
+  },
+  "rage": {
+   "active": false,
+   "used": 0
+  },
+  "effects": {},
+  "conditions": [],
+  "exhaustion": 0,
+  "resourcesUsed": {
+   "Sorcerer:sorcery_points": 2,
+   "Sorcerer:sorcerous_restoration": 1
+  },
+  "infusions": {
+   "known": [],
+   "active": []
+  },
+  "spellcasting": {
+   "ability": "int",
+   "slots": {
+    "1": {
+     "max": 4,
+     "used": 0
+    },
+    "2": {
+     "max": 3,
+     "used": 0
+    },
+    "3": {
+     "max": 3,
+     "used": 0
+    },
+    "4": {
+     "max": 0,
+     "used": 0
+    },
+    "5": {
+     "max": 0,
+     "used": 0
+    },
+    "6": {
+     "max": 0,
+     "used": 0
+    },
+    "7": {
+     "max": 0,
+     "used": 0
+    },
+    "8": {
+     "max": 0,
+     "used": 0
+    },
+    "9": {
+     "max": 0,
+     "used": 0
+    }
+   },
+   "pact": null
+  },
+  "spells": [],
+  "favSpells": [],
+  "feats": [],
+  "features": [],
+  "inventory": [],
+  "currency": {
+   "cp": 0,
+   "sp": 0,
+   "ep": 0,
+   "gp": 0,
+   "pp": 0
+  },
+  "notes": [],
+  "rollLog": [
+   {
+    "label": "Short rest taken",
+    "detail": "Spend hit dice as needed to heal. Sorcerous Restoration: 3 sorcery points."
+   }
+  ],
+  "raceSpeedChecked": true,
+  "grantedSpellsChecked": true,
+  "overlapPicks": {
+   "profPicks": {}
+  },
+  "backgroundPicks": {
+   "profPicks": {}
+  },
+  "story": {
+   "traits": [
+    "",
+    ""
+   ],
+   "ideal": "",
+   "bond": "",
+   "flaw": "",
+   "faith": "",
+   "tables": {},
+   "customGods": []
+  }
+ }
+}

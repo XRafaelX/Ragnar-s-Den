@@ -24,15 +24,23 @@ export function sink(){
    a test can click the confirm dialog's buttons. Timers are mocked so the
    toast doesn't hold the test open. */
 export function clickable(){
-  const el = sink(); const handlers = {};
-  el.addEventListener = (type, f) => { handlers[type] = f; };
+  const el = sink(); const handlers = {}; const all = {};
+  el.addEventListener = (type, f) => { handlers[type] = f; (all[type] = all[type] || []).push(f); };
   el.click = () => handlers.click && handlers.click();
+  // Every handler of that type, with a stand-in event (`ev` adds to it):
+  // for code that reads the event (stopPropagation, pointer positions).
+  el.fire = (type, ev) => {
+    const e = Object.assign({ type, target: { closest: () => null }, stopPropagation(){}, preventDefault(){} }, ev);
+    (all[type] || []).slice().forEach((f) => f(e));
+  };
   return el;
 }
 const timersOn = new WeakSet();
 export function withFakeDom(t, fn){
   if(!timersOn.has(t)){ t.mock.timers.enable({ apis: ["setTimeout"] }); timersOn.add(t); }
-  const saved = { document: globalThis.document, raf: globalThis.requestAnimationFrame };
+  const saved = { document: globalThis.document, raf: globalThis.requestAnimationFrame, css: globalThis.CSS };
+  // (CSS.escape: a selector built from a name, as the rest's refill animation does.)
+  if(!globalThis.CSS) globalThis.CSS = { escape: (s) => String(s) };
   const byId = {}, made = [];
   const doc = sink();
   doc.getElementById = (id) => byId[id] || (byId[id] = clickable());
@@ -40,5 +48,5 @@ export function withFakeDom(t, fn){
   globalThis.document = doc;
   globalThis.requestAnimationFrame = () => 0;
   try { fn(byId, made); }
-  finally { globalThis.document = saved.document; globalThis.requestAnimationFrame = saved.raf; }
+  finally { globalThis.document = saved.document; globalThis.requestAnimationFrame = saved.raf; globalThis.CSS = saved.css; }
 }
