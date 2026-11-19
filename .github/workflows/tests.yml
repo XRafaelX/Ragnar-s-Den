@@ -1,0 +1,24 @@
+# Runs the test suite on GitHub for every push to main and every pull
+# request, so a commit made without the pre-commit hook still gets checked.
+# The app has no dependencies, so there is nothing to install.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm test

@@ -1,5 +1,9 @@
 # Ragnar's Den · Character Creator v5.0.0
 
+[![Tests](https://github.com/XRafaelX/Ragnar-s-Den/actions/workflows/tests.yml/badge.svg)](https://github.com/XRafaelX/Ragnar-s-Den/actions/workflows/tests.yml)
+[![Latest release](https://img.shields.io/github/v/release/XRafaelX/Ragnar-s-Den)](https://github.com/XRafaelX/Ragnar-s-Den/releases/latest)
+[![Open the app](https://img.shields.io/badge/open-the%20app-b8860b)](https://xrafaelx.github.io/Ragnar-s-Den/)
+
 An offline-first, browser-based D&D 5e character creator and interactive character sheet. No accounts, no ads, and no internet connection required after initial load.
 
 ---
