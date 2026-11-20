@@ -1,5 +1,6 @@
 import { state } from "../core/state.js";
 import { escapeHtml } from "../core/helpers.js";
+import { characterSpellEdition } from "../core/spell-edition.js";
 
 /* Lets the Armory / Spellbook ask "which character?" before adding
    something. `list` narrows the choices (e.g. only spellcasters). With
@@ -20,7 +21,7 @@ export function chooseCharacter(onChoose, list, opts){
     var clsText = (c.classes||[]).map(function(cl){ return (cl.name||"?")+" "+(cl.level||1); }).join(" / ");
     row.innerHTML =
       '<span class="cpr-name">'+escapeHtml(c.name||"Unnamed")+'</span>'+
-      '<span class="cpr-meta">'+escapeHtml([c.race, clsText].filter(Boolean).join(" · "))+'</span>';
+      '<span class="cpr-meta">'+escapeHtml([c.race, clsText, characterSpellEdition(c)==="2024" ? "2024 rules" : ""].filter(Boolean).join(" · "))+'</span>';
     row.addEventListener("click", function(){ cleanup(); onChoose(c); });
     body.appendChild(row);
   });

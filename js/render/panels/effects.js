@@ -415,6 +415,8 @@ function effectSummary(c, id){
   if(id==="luck_of_the_draw") return "An extra reaction until the start of your next turn";
   if(id==="duel") return "Neither of you can target anyone else. You both move at once, in a straight line";
   if(id==="assassinate_2024") return "Advantage on attacks against creatures that haven't had a turn. Sneak Attack hits deal +" + surprisingStrikes(c) + " damage";
+  if(id==="draconic_flight") return "Fly " + computeSpeed(c).value + " ft";
+  if(id==="large_form") return "Large: +10 ft speed and advantage on Strength checks";
   if(id==="steady_aim" && rovingAim(c)) return c.effects[id]==="used" ? "Advantage used" : "Advantage on your next attack roll";
   if(id==="steady_aim" || id==="take_aim") return c.effects[id]==="used" ? "Advantage used. Your speed is 0 until the end of your turn" : "Advantage on your next attack roll. Your speed is 0 until the end of your turn";
   return "";

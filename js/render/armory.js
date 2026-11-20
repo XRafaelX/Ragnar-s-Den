@@ -192,7 +192,7 @@ function onAddFor(kind){
           showActionToast('Added "' + item.name + '" to ' + (c.name||"Unnamed") + "’s inventory.");
         };
         if(target) add(target);
-        else if(state.characters.length) chooseCharacter(add);
+        else if(state.characters.length) chooseCharacter(add, null, {always: true});
       });
       return false;
     }
@@ -204,11 +204,12 @@ function onAddFor(kind){
       });
       return false;
     }
+    // Always asked, even with one character: the player sees who gets it.
     chooseCharacter(function(c){
       ADD[kind](c, name, d);
       renderAll();
       showActionToast('Added "' + name + '" to ' + (c.name||"Unnamed") + "’s inventory.");
-    });
+    }, null, {always: true});
     return false;
   };
 }
