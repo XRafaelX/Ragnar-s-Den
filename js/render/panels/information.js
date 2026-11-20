@@ -131,9 +131,19 @@ function linkRow(label, value, modalTitle, buildContent){
 
 export function renderInformationPanel(c){
   var panel = document.createElement("div");
-  var bg = BACKGROUND_INFO[c.background];
+  panel.appendChild(renderAboutCard(c));
+  // Personality traits, ideal, bond, flaw and the background's story tables.
+  panel.appendChild(renderPersonalityCard(c));
+  panel.appendChild(renderProficienciesCard(c));
+  panel.appendChild(renderLanguagesCard(c));
+  panel.appendChild(optionalRulesCard(c));
 
-  // 1. About; compact, tappable rows that open modals with the details
+  return panel;
+}
+
+/* About: compact, tappable rows that open modals with the details. */
+function renderAboutCard(c){
+  var bg = BACKGROUND_INFO[c.background];
   var aboutCard = makeCard("About");
 
   aboutCard.appendChild(linkRow("Background", c.background, "Background · " + (c.background || ""), function(body){
@@ -183,12 +193,11 @@ export function renderInformationPanel(c){
       }
     });
   }));
+  return aboutCard;
+}
 
-  panel.appendChild(aboutCard);
-  // Personality traits, ideal, bond, flaw and the background's story tables.
-  panel.appendChild(renderPersonalityCard(c));
-
-  // 2. Proficiencies (aggregated across all classes)
+/* Proficiencies, gathered across every class and source. */
+function renderProficienciesCard(c){
   var profCard = makeCard("Proficiencies");
   var armor = [], weapons = [], tools = [], saves = [];
   (c.classes||[]).forEach(function(cl, idx){
@@ -227,9 +236,11 @@ export function renderInformationPanel(c){
   tools = tools.map(function(t){ return allExpert || expertTools.indexOf(t.toLowerCase())!==-1 ? t + " (expertise)" : t; });
   profCard.appendChild(chipRow("Tools", tools));
   profCard.appendChild(chipRow("Saving Throws", saves));
-  panel.appendChild(profCard);
+  return profCard;
+}
 
-  // 3. Languages; every character starts with Common; add more as needed
+/* Languages: every character starts with Common; add more as needed. */
+function renderLanguagesCard(c){
   var langCard = makeCard("Languages");
   if(!c.languages || !c.languages.length) c.languages = ["Common"];
 
@@ -333,11 +344,7 @@ export function renderInformationPanel(c){
     addRow.appendChild(closeBtn);
     langCard.appendChild(addRow);
   }
-
-  panel.appendChild(langCard);
-  panel.appendChild(optionalRulesCard(c));
-
-  return panel;
+  return langCard;
 }
 
 /* Optional rules the table may use, kept behind a "DLC" tile that slides

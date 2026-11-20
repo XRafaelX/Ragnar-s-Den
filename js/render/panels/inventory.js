@@ -1,6 +1,7 @@
 import { weaponMastery, masteryKind, weaponMasterSwitch } from "../../core/weapon-mastery.js";
 import { WEAPON_MASTERY } from "../../data/weapon-mastery.js";
 import { save } from "../../core/state.js";
+import { weaponSummary } from "../../core/weapon-summary.js";
 import { openFlourishSheet } from "./bard.js";
 import { artificerHitDice } from "../../core/artificer.js";
 import { makeCard, renderAll } from "../sheet.js";
@@ -12,7 +13,7 @@ import { openCunningSheet } from "./rogue.js";
 import { smiteButtons, sheetTop, lead as sheetLead, sheetButton } from "./paladin.js";
 import { hitDicePools, spendHitDie } from "../../core/character-resources.js";
 import { totalLevel } from "../../core/basics.js";
-import { pactWeaponCha, cunningStrike, resourceLeft as resLeft, surprisingStrikes, isRogue2024, brutalStrike, frenzyDice, batteringRoots, weaponAbility, fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, martialArtsApplies, attackRollMode, rageDamageBonus, duelingBonus, gwm2024Bonus, sidearmMasteryBonus, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, outlawGritBonus, calibratedSights, marshalRange, canEnchant, enchantmentOf, arcaneInfusionBonus, giantsMightDie, psionicStrike, magicArrows, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor, martialArtsDieAt } from "../../core/helpers.js";
+import { cunningStrike, resourceLeft as resLeft, surprisingStrikes, isRogue2024, brutalStrike, frenzyDice, weaponAbility, fmtMod, escapeHtml, mod, profBonus, maxHp, weaponAttackBonus, weaponDamageBonus, weaponDamageDice, unarmedStrike, divineFury, parseDiceNotation, tryEquip, handsInUse, itemHands, equipProblems, chosenWeaponFeature, isMagicWeapon, isProficientWithArmor, armorStrengthShortfall, powerAttackFeat, powerAttackOn, canShillelagh, shillelaghOn, shillelaghAbilities, setShillelagh, effectOn, isRangedWeapon, attackRollMode, thrownAttack, offHandAttack, dualWieldHands, swapHands, otherBladeAttack, revenantBladeApplies, reaperDex, insideWound, canHoldStackInBothHands, stackInBothHands, setBothHands, draconicBreath, breathDcFormula, breathUsesText, characterResources, armorPenalty, hasFeat, combineRolls, conditionRolls, effectRolls, hasDedicatedWeapon, dedicateProblem, hasBlessedStrikes, critRange, firearmStats, firearmRepair, loadedRound, gunslingerHitDice, roundRigged, calibratedSights, canEnchant, enchantmentOf, giantsMightDie, psionicStrike, classLevelOf, sneakAttack, sneakAttackWeapon, psychicBlades, soulknifeDie, elementalCleaver, barbarianNaturalWeapons, BEAST_FORMS, setDedicatedWeapon, isMonkWeapon, unwaveringMark, ferociousChargerDc, sunBolts, isKenseiWeapon, sharpenBonus, kiLeft, spendKi, martialArtsDie, rangerHitDice, clericHitDice, druidHitDice, warlockHitDice, hasPactOfTheBlade, spendSpellSlot, bardHitDice, bladeFlourish, spendResource, isMonk2024, kiSaveDc, kiAction, kiWord, kiActionProblem, payKiAction, flurryStrikes, canStunWith, grappleShoveDc, isMonkWeaponFor, martialArtsDieAt } from "../../core/helpers.js";
 import { ARMOR_DATA, armorDataOf, armorAcText } from "../../data/armor.js";
 import { renderArmorModelCard, renderElixirCard } from "./artificer.js";
 import { showActionToast } from "../../ui/toast.js";
@@ -1573,64 +1574,8 @@ function renderWeaponCard(c, item, idx){
   var infLine = infusionLine(c, item);
   if(infLine) card.appendChild(infLine);
 
-  var abilityLabel = item.ability==="finesse" || revenantBladeApplies(c, item) ? "Finesse" : (item.ability==="dex" ? "DEX" : "STR");
-  // Martial Arts: a monk weapon uses the better of STR and DEX, and the
-  // Martial Arts die when it's bigger than the weapon's.
-  if(martialArtsApplies(c, item)) abilityLabel = "Martial Arts (STR or DEX)";
-  // Reaper: a scythe swung with Dexterity, for 1d6.
-  var reaper = reaperDex(c, item);
-  if(reaper) abilityLabel = "DEX (Reaper)";
-  var maDice = weaponDamageDice(c, item);
-  if(maDice && maDice.martialArts) abilityLabel += " · Martial Arts d" + maDice.die;
-  // Shillelagh: the spellcasting ability can replace Strength, and the die is a d8.
-  var shil = shillelaghOn(c, item);
-  if(shil) abilityLabel = "Shillelagh (STR or " + shillelaghAbilities(c).map(function(k){ return k.toUpperCase(); }).join(" or ") + ")";
-  // The 2024 Pact of the Blade: Charisma when it's the best.
-  if(pactWeaponCha(c, item) && weaponAbility(c, item).keys.indexOf("cha")!==-1) abilityLabel = "CHA (Pact of the Blade)";
-  var subtitleParts = [];
-  // Elemental Cleaver's weapon deals the chosen type while the rage lasts.
-  var cleave = elementalCleaver(c, item);
-  // A Gunslinger class gun deals its loaded round's damage type.
-  var round = loadedRound(c, item);
-  var dmgType = (round && round.damageType) || (cleave && cleave.type) || item.damageType;
-  if(item.damageDice) subtitleParts.push(((shil || reaper) && maDice ? maDice.qty + "d" + maDice.die : item.damageDice) + (dmgType ? " " + dmgType : ""));
-  subtitleParts.push(abilityLabel);
-  subtitleParts.push(item.proficient ? "Proficient" : "Not proficient");
-  if(item.magicBonus) subtitleParts.push(fmtMod(item.magicBonus) + " magic");
-  else if(isMagicWeapon(c, item) || (classLevelOf(c, "Monk", "Way of the Kensei") >= 6 && isKenseiWeapon(c, item))) subtitleParts.push("Magic");
-  // Magic Arrow (Arcane Archer 7): arrows from a shortbow or longbow count as magical.
-  else if(magicArrows(c, item)) subtitleParts.push("magic arrows");
-  if(item.bonded && classLevelOf(c, "Fighter", "Eldritch Knight") >= 3) subtitleParts.push("bonded");
-  var chosenFeat = item.chosenWeapon && chosenWeaponFeature(c);
-  if(chosenFeat) subtitleParts.push(chosenFeat.name);
-  var rage = rageDamageBonus(c, item);
-  if(rage) subtitleParts.push("Rage +" + rage + " damage");
-  if(batteringRoots(c, item)) subtitleParts.push("Reach +10 ft on your turn");
-  if(duelingBonus(c, item)) subtitleParts.push("Dueling +2 damage");
-  var gwm = gwm2024Bonus(c, item);
-  if(gwm) subtitleParts.push("Great Weapon Master +" + gwm + " damage");
-  if(sidearmMasteryBonus(c, item)) subtitleParts.push("Sidearm Mastery +2 damage");
-  if(outlawGritBonus(c, item)) subtitleParts.push("Outlaw's Grit +2 damage");
-  if(marshalRange(c, item)) subtitleParts.push(marshalRange(c, item));
-  var ench = enchantmentOf(c, item);
-  if(ench) subtitleParts.push(ench.name + (arcaneInfusionBonus(c, item) ? " " + fmtMod(arcaneInfusionBonus(c, item)) + " damage" : ""));
-  var subtitle = document.createElement("div");
-  subtitle.className = "inv-card-subtitle";
-  subtitle.textContent = subtitleParts.join(" · ");
-  linkMartialArts(subtitle, c);
-  // Its mastery property, when the character can use it: a tap explains it.
-  var mastery = weaponMastery(c, item);
-  if(mastery){
-    subtitle.appendChild(document.createTextNode(" · "));
-    var mb = document.createElement("button");
-    mb.type = "button"; mb.className = "inv-term-link inv-mastery-link";
-    mb.textContent = "Mastery: " + mastery.name;
-    mb.title = mastery.short;
-    mb.setAttribute("aria-haspopup", "dialog");
-    mb.addEventListener("click", function(e){ e.stopPropagation(); openMasterySheet(c, item, mastery); });
-    subtitle.appendChild(mb);
-  }
-  card.appendChild(subtitle);
+  var summary = weaponSummary(c, item);
+  card.appendChild(weaponSubtitle(c, item, summary.parts));
 
   if(item.notes){
     var notesP = document.createElement("p");
@@ -1651,7 +1596,57 @@ function renderWeaponCard(c, item, idx){
 
   var actions = document.createElement("div");
   actions.className = "inv-roll-actions";
+  var rolls = weaponRollButtons(c, item, summary.damageType);
+  rolls.buttons.concat(weaponExtraButtons(c, item, idx, rolls), weaponToggles(c, item, idx, rolls.parsed))
+    .forEach(function(b){ actions.appendChild(b); });
+  foldExtras(actions, "weapon:" + (item.id || idx));
+  card.appendChild(actions);
+  var gun = firearmStats(item, c);
+  // A firearm's panel: its shots or misfire, and a class gun's loaded round.
+  var gunRow = gun && firearmRow(c, item, gun, idx);
+  var roundRow = gunRoundRow(c, item, function(){ redrawKeeping(idx); });
+  if(gunRow || roundRow){
+    var gunPanel = document.createElement("div");
+    gunPanel.className = "gun-panel";
+    if(gunRow) gunPanel.appendChild(gunRow);
+    if(roundRow) gunPanel.appendChild(roundRow);
+    card.appendChild(gunPanel);
+  }
+  // A magic weapon with charges (Hammer of Thunderbolts, Mace of Terror).
+  var charges = chargesBlock(c, item, idx);
+  if(charges) card.appendChild(charges);
 
+  return card;
+}
+
+/* The line under the name (weaponSummary's words), with the weapon's
+   mastery as a link that explains it. */
+function weaponSubtitle(c, item, parts){
+  var subtitle = document.createElement("div");
+  subtitle.className = "inv-card-subtitle";
+  subtitle.textContent = parts.join(" · ");
+  linkMartialArts(subtitle, c);
+  // Its mastery property, when the character can use it: a tap explains it.
+  var mastery = weaponMastery(c, item);
+  if(mastery){
+    subtitle.appendChild(document.createTextNode(" · "));
+    var mb = document.createElement("button");
+    mb.type = "button"; mb.className = "inv-term-link inv-mastery-link";
+    mb.textContent = "Mastery: " + mastery.name;
+    mb.title = mastery.short;
+    mb.setAttribute("aria-haspopup", "dialog");
+    mb.addEventListener("click", function(e){ e.stopPropagation(); openMasterySheet(c, item, mastery); });
+    subtitle.appendChild(mb);
+  }
+  return subtitle;
+}
+
+/* Attack and Damage, the thrown and off-hand versions when they differ,
+   and a double-bladed scimitar's other blade. {buttons, atkBonus, atkRoll,
+   parsed, dmgBonus, off} for the buttons that build on them. */
+function weaponRollButtons(c, item, dmgType){
+  var buttons = [];
+  var round = loadedRound(c, item);
   var atkBonus = weaponAttackBonus(c, item);
   var atkRoll = attackRollMode(c, item);
   var atkBtn = document.createElement("button");
@@ -1674,7 +1669,7 @@ function renderWeaponCard(c, item, idx){
       parsed ? {qty: parsed.qty, die: parsed.die, bonus: off && !off.stack ? off.damage : dmgBonus, melee: !isRangedWeapon(item), label: item.name || "Weapon", critMin: critRange(c, item), item: item, sneak: sneakAttackWeapon(item, c)} : null);
   });
   atkBtn.classList.add("inv-main-btn");
-  actions.appendChild(atkBtn);
+  buttons.push(atkBtn);
 
   // (A monk weapon rolls the Martial Arts die when it's bigger.)
   var parsed = weaponDamageDice(c, item);
@@ -1702,7 +1697,7 @@ function renderWeaponCard(c, item, idx){
     dmgBtn.title = "Enter damage dice like \"1d8\" to roll";
   }
   dmgBtn.classList.add("inv-main-btn");
-  if(!off || off.stack) actions.appendChild(dmgBtn);
+  if(!off || off.stack) buttons.push(dmgBtn);
 
   // Thrown: a ranged attack, when its numbers differ (Archery, Thrown
   // Weapon Fighting, rage).
@@ -1715,7 +1710,7 @@ function renderWeaponCard(c, item, idx){
       tAtk.innerHTML = makeDiceSvg() + "Thrown attack " + fmtMod(thrown.attack) + (atkRoll.mode==="dis" ? " (Dis)" : atkRoll.mode==="adv" ? " (Adv)" : "");
       tAtk.title = "Thrown, a ranged attack: " + thrown.parts.join(", ");
       tAtk.addEventListener("click", function(){ rollAttack(c, thrown.attack, atkRoll.mode, (item.name||"Weapon") + ": Thrown attack", {qty: parsed.qty, die: parsed.die, bonus: thrown.damage, melee: false, label: item.name || "Weapon", critMin: critRange(c, item)}); });
-      actions.appendChild(tAtk);
+      buttons.push(tAtk);
     }
     if(thrown.damage!==dmgBonus){
       var tDmg = document.createElement("button");
@@ -1724,7 +1719,7 @@ function renderWeaponCard(c, item, idx){
       tDmg.title = "Thrown, a ranged attack: " + thrown.parts.join(", ");
       // (A throw is a ranged attack: only the 2024 Savage Attacker applies.)
       tDmg.addEventListener("click", function(){ performRoll(parsed.die, parsed.qty, thrown.damage, "none", dmgLabel, joinFollowUp(null, savageFollowUp(c, false, parsed.die, parsed.qty, thrown.damage))); });
-      actions.appendChild(tDmg);
+      buttons.push(tDmg);
     }
   }
 
@@ -1749,7 +1744,7 @@ function renderWeaponCard(c, item, idx){
     });
     // (On the off-hand weapon's card it stands in for Damage.)
     if(!off.stack) offBtn.classList.add("inv-main-btn");
-    actions.appendChild(offBtn);
+    buttons.push(offBtn);
   }
 
   // A double-bladed scimitar's other blade: its own bonus action attack.
@@ -1766,36 +1761,43 @@ function renderWeaponCard(c, item, idx){
     bladeBtn.addEventListener("click", function(){
       performRoll(bladeDice.die, bladeDice.qty, blade.damage, "none", (item.name||"Weapon") + ": Other blade damage (Slashing)");
     });
-    actions.appendChild(bladeBtn);
+    buttons.push(bladeBtn);
   }
+  return {buttons: buttons, atkBonus: atkBonus, atkRoll: atkRoll, parsed: parsed, dmgBonus: dmgBonus, off: off};
+}
 
+/* What features and items add to a hit (Brutal Strike, Divine Fury, smites,
+   Sneak Attack, Elemental Cleaver...), in their order on the card. */
+function weaponExtraButtons(c, item, idx, rolls){
+  var out = [], atkBonus = rolls.atkBonus, atkRoll = rolls.atkRoll, parsed = rolls.parsed, dmgBonus = rolls.dmgBonus, off = rolls.off;
+  var cleave = elementalCleaver(c, item);
   // Brutal Strike and Frenzy (2024) on an attack using Strength.
   if(parsed && weaponAbility(c, item).keys.indexOf("str")!==-1){
     var wBrutal = brutalStrikeButton(c, atkRoll.mode, function(){
       rollAttack(c, atkBonus, "none", (item.name||"Weapon") + ": Brutal Strike",
         {qty: parsed.qty, die: parsed.die, bonus: off && !off.stack ? off.damage : dmgBonus, melee: !isRangedWeapon(item), label: item.name || "Weapon", critMin: critRange(c, item), item: item, sneak: sneakAttackWeapon(item, c), brutal: brutalStrike(c)});
     });
-    if(wBrutal) actions.appendChild(wBrutal);
+    if(wBrutal) out.push(wBrutal);
     var wFrenzy = frenzyButton(c, item.name || "Weapon");
-    if(wFrenzy) actions.appendChild(wFrenzy);
+    if(wFrenzy) out.push(wFrenzy);
   }
   var furyBtn = divineFuryButton(c, item.name || "Weapon");
-  if(furyBtn) actions.appendChild(furyBtn);
+  if(furyBtn) out.push(furyBtn);
   var blessBtn = parsed && blessedStrikesButton(c, item.name || "Weapon");
-  if(blessBtn) actions.appendChild(blessBtn);
-  fighterWeaponButtons(c, item.name || "Weapon").forEach(function(b){ actions.appendChild(b); });
-  kenseiButtons(c, item).forEach(function(b){ actions.appendChild(b); });
+  if(blessBtn) out.push(blessBtn);
+  fighterWeaponButtons(c, item.name || "Weapon").forEach(function(b){ out.push(b); });
+  kenseiButtons(c, item).forEach(function(b){ out.push(b); });
   var wStun = stunButton(c, item);
-  if(wStun) actions.appendChild(wStun);
-  if(!isRangedWeapon(item)) smiteButtons(c, item.name || "Weapon", true).forEach(function(b){ actions.appendChild(b); });
-  rangerButtons(c, item.name || "Weapon", false).forEach(function(b){ actions.appendChild(b); });
-  gunslingerHitDice(c, item).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d)); });
+  if(wStun) out.push(wStun);
+  if(!isRangedWeapon(item)) smiteButtons(c, item.name || "Weapon", true).forEach(function(b){ out.push(b); });
+  rangerButtons(c, item.name || "Weapon", false).forEach(function(b){ out.push(b); });
+  gunslingerHitDice(c, item).forEach(function(d){ out.push(hitDieButton(item.name || "Weapon", d)); });
   var pressure = pressureButton(c, item);
-  if(pressure) actions.appendChild(pressure);
+  if(pressure) out.push(pressure);
   var sneakBtn = sneakAttackWeapon(item, c) && sneakButton(c, item.name || "Weapon");
-  if(sneakBtn) actions.appendChild(sneakBtn);
+  if(sneakBtn) out.push(sneakBtn);
   var cunningBtn = sneakBtn && cunningButton(c, item.name || "Weapon");
-  if(cunningBtn) actions.appendChild(cunningBtn);
+  if(cunningBtn) out.push(cunningBtn);
   // Weapon Bond: a bonded weapon not in hand can be summoned to it.
   if(item.bonded && !item.equipped && classLevelOf(c, "Fighter", "Eldritch Knight") >= 3){
     var sum = smallButton("Summon", "A bonus action: it teleports to your hand from anywhere on the same plane", function(){
@@ -1804,7 +1806,7 @@ function renderWeaponCard(c, item, idx){
       logRoll(item.name || "Weapon", "Summoned to your hand (Weapon Bond).");
       redrawKeeping(idx);
     });
-    actions.appendChild(sum);
+    out.push(sum);
   }
   // Elemental Cleaver: its extra die of the chosen type on a hit.
   if(cleave && cleave.type){
@@ -1813,14 +1815,14 @@ function renderWeaponCard(c, item, idx){
     cvBtn.innerHTML = makeDicesSvg() + "+" + cleave.dice + "d6 " + cleave.type.toLowerCase();
     cvBtn.title = "Elemental Cleaver: extra " + cleave.type.toLowerCase() + " damage when this weapon hits while you rage. It has the thrown property (20/60 feet) and comes back to your hand.";
     cvBtn.addEventListener("click", function(){ performRoll(6, cleave.dice, 0, "none", (item.name || "Weapon") + ": Elemental Cleaver (" + cleave.type + ")"); });
-    actions.appendChild(cvBtn);
+    out.push(cvBtn);
   }
 
-  if(parsed) cavalierButtons(c, item, atkBonus, atkRoll, parsed, dmgBonus).forEach(function(b){ actions.appendChild(b); });
+  if(parsed) cavalierButtons(c, item, atkBonus, atkRoll, parsed, dmgBonus).forEach(function(b){ out.push(b); });
 
   // Symbiotic Entity: melee weapon hits deal an extra 1d6 necrotic.
-  druidHitDice(c, !isRangedWeapon(item)).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d)); });
-  warlockHitDice(c, item).concat(artificerHitDice(c, item)).forEach(function(d){ actions.appendChild(hitDieButton(item.name || "Weapon", d, c)); });
+  druidHitDice(c, !isRangedWeapon(item)).forEach(function(d){ out.push(hitDieButton(item.name || "Weapon", d)); });
+  warlockHitDice(c, item).concat(artificerHitDice(c, item)).forEach(function(d){ out.push(hitDieButton(item.name || "Weapon", d, c)); });
   // Blade Flourish (College of Swords): on any weapon's hit.
   if(bladeFlourish(c)){
     var flourishBtn = document.createElement("button");
@@ -1828,9 +1830,16 @@ function renderWeaponCard(c, item, idx){
     flourishBtn.textContent = "Blade Flourish";
     flourishBtn.title = "One flourish a turn, on a hit";
     flourishBtn.addEventListener("click", function(){ openFlourishSheet(c, item.name || "Weapon"); });
-    actions.appendChild(flourishBtn);
+    out.push(flourishBtn);
   }
+  return out;
+}
 
+/* Switches and moves on the weapon itself: Flame Tongue, Great Weapon
+   Master or Sharpshooter, Shillelagh, a returning weapon's throw. */
+function weaponToggles(c, item, idx, parsed){
+  var out = [];
+  var def = magicItemDef(item), active = def && magicItemActive(item);
   // Flame Tongue: a bonus action lights it while it's in hand; while it
   // burns, every hit deals extra fire damage. (Asked even when it isn't
   // in hand, so sheathing it puts the flames out.)
@@ -1853,7 +1862,7 @@ function renderWeaponCard(c, item, idx){
       if(lit) delete item.ablaze; else item.ablaze = true;
       redrawKeeping(idx);
     });
-    actions.appendChild(igniteBtn);
+    out.push(igniteBtn);
     if(lit){
       var fireBtn = document.createElement("button");
       fireBtn.type = "button"; fireBtn.className = "btn small inv-roll-btn";
@@ -1862,7 +1871,7 @@ function renderWeaponCard(c, item, idx){
       fireBtn.addEventListener("click", function(){
         performRoll(flames.die, flames.qty, 0, "none", (item.name||"Weapon") + ": " + item.magicItem + " (" + flames.type + ")");
       });
-      actions.appendChild(fireBtn);
+      out.push(fireBtn);
     }
   }
 
@@ -1885,7 +1894,7 @@ function renderWeaponCard(c, item, idx){
       if(on) delete item.powerAttack; else item.powerAttack = true;
       redrawKeeping(idx);
     });
-    actions.appendChild(power);
+    out.push(power);
   }
 
   // Shillelagh: a club or quarterstaff in hand becomes magical, uses the
@@ -1908,7 +1917,7 @@ function renderWeaponCard(c, item, idx){
       setShillelagh(c, item, !shilOn);
       redrawKeeping(idx);
     });
-    actions.appendChild(shilBtn);
+    out.push(shilBtn);
   }
 
   // Returning weapon: Throw takes it out of your hand; Call it back (an
@@ -1920,7 +1929,7 @@ function renderWeaponCard(c, item, idx){
       throwBtn.textContent = "Throw";
       throwBtn.title = "Mark it thrown: out of your hand until you call it back";
       throwBtn.addEventListener("click", function(){ item.thrown = true; item.equipped = false; delete item.shillelagh; redrawKeeping(idx); });
-      actions.appendChild(throwBtn);
+      out.push(throwBtn);
     } else {
       var back = function(how){
         delete item.thrown;
@@ -1938,32 +1947,16 @@ function renderWeaponCard(c, item, idx){
       callBtn.disabled = !active;
       callBtn.title = active ? "It flies back to your hand" : "Attune to it to call it back";
       callBtn.addEventListener("click", function(){ back("call"); });
-      actions.appendChild(callBtn);
+      out.push(callBtn);
       var pickBtn = document.createElement("button");
       pickBtn.type = "button"; pickBtn.className = "btn small inv-roll-btn";
       pickBtn.textContent = "Pick it up";
       pickBtn.title = "You picked it up by hand";
       pickBtn.addEventListener("click", function(){ back("pick"); });
-      actions.appendChild(pickBtn);
+      out.push(pickBtn);
     }
   }
-  foldExtras(actions, "weapon:" + (item.id || idx));
-  card.appendChild(actions);
-  // A firearm's panel: its shots or misfire, and a class gun's loaded round.
-  var gunRow = gun && firearmRow(c, item, gun, idx);
-  var roundRow = gunRoundRow(c, item, function(){ redrawKeeping(idx); });
-  if(gunRow || roundRow){
-    var gunPanel = document.createElement("div");
-    gunPanel.className = "gun-panel";
-    if(gunRow) gunPanel.appendChild(gunRow);
-    if(roundRow) gunPanel.appendChild(roundRow);
-    card.appendChild(gunPanel);
-  }
-  // A magic weapon with charges (Hammer of Thunderbolts, Mace of Terror).
-  var charges = chargesBlock(c, item, idx);
-  if(charges) card.appendChild(charges);
-
-  return card;
+  return out;
 }
 
 /* Opens the armor's editable fields (Category, Base AC, Magic bonus) in a

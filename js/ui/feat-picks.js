@@ -42,6 +42,20 @@ export function renderFeatPicks(def, picks, ctx, onChange){
   // (Magic Initiate and the like: numbered steps, spells as cards.)
   if(spellListFeat(def)) return renderSpellListFeat(def, picks, ctx, onChange, box);
 
+  // The rest: each kind of pick the feat has, in this order.
+  featPickSections().forEach(function(section){ section(def, picks, ctx, onChange, box); });
+  return box;
+}
+
+/* The kinds of pick a feat can ask for, in the order they're asked. Each
+   adds its labels and pickers to `box` only when the feat has that kind. */
+function featPickSections(){
+  return [featOptionPicks, featStylePicks, featInvocationPicks, featAbilityPicks, featCastAbilityPicks,
+    featSkillPicks, featExpertisePicks, featDamagePicks, featAllSkillsNote, featToolPicks,
+    featLanguagePicks, featWeaponPicks, featGrantedSpellNotes, featSpellPicks, featClassOptionPicks];
+}
+/* The feat's own option (Elemental Adept's element), or the one a background set. */
+function featOptionPicks(def, picks, ctx, onChange, box){
   if(def.option && ctx.lockedOption){
     picks.option = ctx.lockedOption;
     box.appendChild(label(def.option.label));
@@ -69,7 +83,8 @@ export function renderFeatPicks(def, picks, ctx, onChange){
     })));
     if(picks.option && details) box.appendChild(textNote(featPickDetail(def, picks)));
   }
-
+}
+function featStylePicks(def, picks, ctx, onChange, box){
   // Fighting Initiate: a fighter's style, then the style's own picks
   // (Superior Technique's maneuver).
   if(def.stylePick){
@@ -91,7 +106,8 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       box.appendChild(renderStylePicks(picks.option, picks, !!ctx.tasha, ctx.optionsKnown ? ctx.optionsKnown("maneuvers") : [], onChange, "feat:" + def.name + ":style"));
     }
   }
-
+}
+function featInvocationPicks(def, picks, ctx, onChange, box){
   // Eldritch Adept: one invocation, with what it does.
   if(def.invocationPick){
     box.appendChild(label("Learn an eldritch invocation"));
@@ -103,7 +119,9 @@ export function renderFeatPicks(def, picks, ctx, onChange){
     })));
     if(picks.option) box.appendChild(textNote(featPickDetail(def, picks)));
   }
-
+}
+/* The ability it raises: one fixed, or tiles to choose from. */
+function featAbilityPicks(def, picks, ctx, onChange, box){
   if(def.ability && def.ability.length){
     var choose = def.ability.length > 1;
     box.appendChild(label(choose
@@ -130,7 +148,8 @@ export function renderFeatPicks(def, picks, ctx, onChange){
     });
     box.appendChild(grid);
   }
-
+}
+function featCastAbilityPicks(def, picks, ctx, onChange, box){
   // The ability its spells use, when that's a choice of its own
   // (Strixhaven Initiate, Gift of the Metallic Dragon).
   if(Array.isArray(def.castAbility)){
@@ -144,7 +163,9 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       onPick: function(v){ picks.castAbility = v; onChange(); }
     })));
   }
-
+}
+/* Skills (or tools) to gain proficiency in. */
+function featSkillPicks(def, picks, ctx, onChange, box){
   var n = def.skillsOrTools || def.skills || 0;
   if(n){
     box.appendChild(label(def.orExpertise ? "Gain proficiency in " + def.skillOptions.join(", ").replace(/, ([^,]+)$/, " or $1") + ", or expertise in one you know"
@@ -172,7 +193,9 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       })));
     })(i);
   }
-
+}
+/* Expertise in a skill already known. */
+function featExpertisePicks(def, picks, ctx, onChange, box){
   for(var j = 0; j < (def.expertise || 0); j++) (function(j){
     if(j===0) box.appendChild(label("Expertise: double your proficiency bonus in one skill you're proficient in"));
     box.appendChild(field(themedPicker({
@@ -185,7 +208,8 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       onPick: function(v){ picks.expertise[j] = v; onChange(); }
     })));
   })(j);
-
+}
+function featDamagePicks(def, picks, ctx, onChange, box){
   // Boon of Energy Resistance: two damage types (kept in picks.options).
   if(def.damagePicks){
     if(!picks.options) picks.options = [];
@@ -200,8 +224,12 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       })));
     })(d);
   }
+}
+/* Every skill (Boon of Skill). */
+function featAllSkillsNote(def, picks, ctx, onChange, box){
   if(def.allSkills) box.appendChild(textNote("You gain proficiency in every skill."));
-
+}
+function featToolPicks(def, picks, ctx, onChange, box){
   // Tools of its own (Prodigy; Artificer Initiate's artisan's tools).
   if(def.toolPicks){
     if(!picks.tools) picks.tools = [];
@@ -217,7 +245,8 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       })));
     })(t);
   }
-
+}
+function featLanguagePicks(def, picks, ctx, onChange, box){
   // Languages: the ones it teaches outright, then the ones to pick.
   if(def.languages && def.languages.length) box.appendChild(textNote("Also learned: " + def.languages.join(", ") + "."));
   if(def.languagePicks){
@@ -238,7 +267,9 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       })));
     })(l);
   }
-
+}
+/* Weapons to gain proficiency with (Weapon Master). */
+function featWeaponPicks(def, picks, ctx, onChange, box){
   if(def.weapons && !picks.weapons) picks.weapons = [];
   // Weapons the character already knows stay pickable (a Fighter can take
   // Weapon Master for its +1) but move to the end of the list.
@@ -265,7 +296,8 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       onPick: function(v){ picks.weapons[w] = v; onChange(); }
     })));
   })(w);
-
+}
+function featGrantedSpellNotes(def, picks, ctx, onChange, box){
   // Kept short for phones: the free spell is one line, and the pick opens
   // as a sheet listing what each spell does.
   // A feat already on the sheet (added from the Compendium, its picks made
@@ -279,6 +311,10 @@ export function renderFeatPicks(def, picks, ctx, onChange){
     var has = SPELL_DATA[name].level > 0 && (!g.use || g.use==="long" || g.use==="short") && ctx.spellHeld && ctx.spellHeld(name);
     if(has && has!==ownSpell) box.appendChild(heldNote(def, name, has, g.use));
   });
+}
+/* Spells to choose, list by list. */
+function featSpellPicks(def, picks, ctx, onChange, box){
+  var ownSpell = "from " + def.name;
   if(def.spellPick){
     if(!picks.spells) picks.spells = [];
     featSpellGroups(def, picks, ctx).forEach(function(sp){
@@ -315,6 +351,8 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       })(p);
     });
   }
+}
+function featClassOptionPicks(def, picks, ctx, onChange, box){
   // Options from a class list (Martial Adept's maneuvers): a sheet on
   // phones, each with what it does, and a line under each pick.
   if(def.optionPicks){
@@ -336,7 +374,6 @@ export function renderFeatPicks(def, picks, ctx, onChange){
       })));
     })(q);
   }
-  return box;
 }
 /* ---- Feats that pick a spell list, then spells from it ----
    Magic Initiate (both), Ritual Caster, Spell Sniper, Strixhaven

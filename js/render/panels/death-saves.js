@@ -92,210 +92,8 @@ export function renderDeathSaves(c){
   body.appendChild(track(c, "fail", n.fail));
   box.appendChild(body);
 
-  // Strength Before Death (Samurai 18): a reaction for an extra turn
-  // before falling unconscious, once per long rest.
-  var sbd = strengthBeforeDeath(c);
-  if(sbd && !dead){
-    var sbdBtn = document.createElement("button");
-    sbdBtn.type = "button";
-    sbdBtn.className = "btn small primary ds-extra-turn";
-    sbdBtn.textContent = c.extraTurn ? "End the extra turn" : "Strength Before Death";
-    sbdBtn.title = c.extraTurn ? "You fall unconscious if you're still at 0 HP" : "Reaction: delay falling unconscious and take an extra turn right now";
-    sbdBtn.disabled = !c.extraTurn && !sbd.left;
-    sbdBtn.addEventListener("click", function(e){
-      e.stopPropagation();
-      if(c.extraTurn){ delete c.extraTurn; logRoll("Strength Before Death", "The extra turn ends."); }
-      else {
-        c.resourcesUsed[sbd.key] = sbd.used + 1;
-        c.extraTurn = true;
-        logRoll("Strength Before Death", "An extra turn right now, at 0 HP. Damage still causes death save failures.");
-      }
-      save(); renderAll();
-    });
-    box.appendChild(sbdBtn);
-  }
-
-  // Mastery of Death (Way of Long Death 11): 1 ki for 1 hit point instead.
-  if(classLevelOf(c, "Monk", "Way of Long Death") >= 11 && !dead){
-    var kw = kiWord(c);
-    box.appendChild(backToOne(c, "ds-mastery", "Mastery of Death · 1 " + kw, kiLeft(c) >= 1, "No " + kw + " left", function(){ return spendKi(c, 1); }, "1 hit point instead of 0 (1 " + kw + ")."));
-  }
-  // Blazing Revival (Wildfire 14): the spirit drops to 0 and you rise with half your hit points.
-  if(blazingRevivalReady(c) && !dead){
-    var revive = document.createElement("button");
-    revive.type = "button"; revive.className = "btn small primary ds-revival";
-    revive.textContent = "Blazing Revival";
-    revive.title = "Your wildfire spirit drops to 0 hit points if it's within 120 feet: regain half your hit points and rise to your feet";
-    revive.addEventListener("click", function(e){
-      e.stopPropagation();
-      if(!useBlazingRevival(c, maxHp(c))) return;
-      removeCondition(c, "prone");
-      logRoll("Blazing Revival", "Your spirit fell. You rise with " + c.hp.current + " hit points.");
-      playRevive();
-      save(); renderAll();
-    });
-    box.appendChild(revive);
-  }
-  // Soul of Artifice (artificer 20): an infusion ends, and you have 1 hit point.
-  if(soulOfArtificeReady(c) && !dead){
-    var soul = document.createElement("button");
-    soul.type = "button"; soul.className = "btn small primary ds-soul";
-    soul.textContent = "Soul of Artifice";
-    soul.title = "Reaction: end one of your infusions to have 1 hit point instead of 0";
-    soul.addEventListener("click", function(e){
-      e.stopPropagation();
-      openBottomSheet(function(body, refresh, close){
-        sheetTop(body, "Soul of Artifice", close);
-        lead(body, "End which infusion?");
-        var list = document.createElement("div");
-        list.className = "pal-sheet-list";
-        (c.infusions.active||[]).forEach(function(a){
-          list.appendChild(sheetButton(a.name, function(){
-            endInfusion(c, a);
-            c.hp.current = 1;
-            c.deathSaves = {success: 0, fail: 0};
-            removeCondition(c, "prone");
-            logRoll("Soul of Artifice", a.name + " ended. 1 hit point instead of 0.");
-            playRevive();
-            close();
-            save(); renderAll();
-          }));
-        });
-        body.appendChild(list);
-      });
-    });
-    box.appendChild(soul);
-  }
-  // Soul of Artifice's Cheat Death (2024 artificer 20): disintegrate made
-  // uncommon or rare items for 20 hit points each.
-  if(cheatDeathItems(c).length && !dead){
-    var cheat = document.createElement("button");
-    cheat.type = "button"; cheat.className = "btn small primary ds-cheat";
-    cheat.textContent = "Cheat Death";
-    cheat.title = "Soul of Artifice: disintegrate uncommon or rare items you made, for 20 hit points each";
-    cheat.addEventListener("click", function(e){
-      e.stopPropagation();
-      var picked = [];
-      openBottomSheet(function(body, refresh, close){
-        sheetTop(body, "Cheat Death", close);
-        lead(body, "Disintegrate any number of uncommon or rare items you made with Replicate Magic Item. Your hit points become 20 for each one.");
-        var list = document.createElement("div");
-        list.className = "pal-sheet-list";
-        cheatDeathItems(c).forEach(function(m){
-          var item = replicaItem(c, m) || {};
-          var on = picked.indexOf(m.id)!==-1;
-          var b = sheetButton((on ? "✓ " : "") + (item.name || "Item"), function(){
-            if(on) picked = picked.filter(function(x){ return x!==m.id; }); else picked.push(m.id);
-            refresh();
-          });
-          b.setAttribute("aria-pressed", on ? "true" : "false");
-          list.appendChild(b);
-        });
-        body.appendChild(list);
-        var go = sheetButton(picked.length ? "Disintegrate " + picked.length + ": " + Math.min(maxHp(c), 20 * picked.length) + " hit points" : "Pick the items first", function(){
-          var names = picked.map(function(id){ var m = cheatDeathItems(c).find(function(x){ return x.id===id; }); return m ? (replicaItem(c, m) || {}).name : ""; }).filter(Boolean);
-          var hp = cheatDeath(c, picked, maxHp(c));
-          if(!hp) return;
-          c.deathSaves = {success: 0, fail: 0};
-          removeCondition(c, "unconscious");
-          logRoll("Cheat Death", "Disintegrated " + names.join(", ") + ". " + hp + " hit points.");
-          playRevive();
-          close();
-          save(); renderAll();
-        }, !picked.length);
-        go.classList.add("primary");
-        go.style.marginTop = "14px";
-        body.appendChild(go);
-      });
-    });
-    box.appendChild(cheat);
-  }
-  // Strength of the Grave (Shadow Magic 1): only a success spends it.
-  if(strengthOfTheGrave(c) && !dead){
-    var grave = document.createElement("button");
-    grave.type = "button"; grave.className = "btn small primary ds-grave";
-    grave.textContent = "Strength of the Grave";
-    grave.title = "CHA save, DC 5 + the damage you took. Not against radiant damage or a critical hit.";
-    grave.addEventListener("click", function(e){
-      e.stopPropagation();
-      var save2 = computeSave(c, "cha");
-      performRoll(20, 1, save2.value, saveRollMode(c, "cha").mode, "Strength of the Grave (DC 5 + the damage)", function(r){
-        if(!r) return null;
-        return {lead: "Saved?", options: [{label: "Back to 1 hit point", title: "Only a success spends it",
-          use: function(){
-            if(!spendResource(c, "Sorcerer:strength_of_the_grave", 1)) return null;
-            c.hp.current = 1;
-            c.deathSaves = {success: 0, fail: 0};
-            removeCondition(c, "prone");
-            playRevive();
-            save(); renderAll();
-            return {silent: true};
-          }}]};
-      });
-    });
-    box.appendChild(grave);
-  }
-  // Searing Vengeance (Celestial 14): instead of a death save.
-  if(searingVengeanceReady(c) && !dead){
-    var searing = document.createElement("button");
-    searing.type = "button"; searing.className = "btn small primary ds-searing";
-    searing.textContent = "Searing Vengeance";
-    searing.title = "Instead of the death save at the start of your turn: regain half your hit points and stand. Creatures you choose within 30 ft take radiant damage and are blinded until the end of the turn.";
-    searing.addEventListener("click", function(e){
-      e.stopPropagation();
-      if(!spendResource(c, "Warlock:searing_vengeance", 1)) return;
-      c.hp.current = Math.floor(maxHp(c) / 2);
-      c.deathSaves = {success: 0, fail: 0};
-      removeCondition(c, "prone");
-      playRevive();
-      save(); renderAll();
-      performRoll(8, 2, mod(abilityScore(c, "cha")), "none", "Searing Vengeance (Radiant)");
-    });
-    box.appendChild(searing);
-  }
-  // Necrotic Husk (Undead 10): 1 hit point instead, an eruption and a level of exhaustion.
-  if(necroticHuskReady(c) && !dead){
-    var husk = document.createElement("button");
-    husk.type = "button"; husk.className = "btn small primary ds-husk";
-    husk.textContent = "Necrotic Husk";
-    husk.title = "Reaction when you would drop to 0: 1 hit point instead. Creatures you choose within 30 ft take necrotic damage, and you gain a level of exhaustion. It comes back after 1d4 long rests.";
-    husk.addEventListener("click", function(e){
-      e.stopPropagation();
-      var rests = spendForRests(c, "Warlock:necrotic_husk");
-      if(!rests) return;
-      c.hp.current = 1;
-      c.deathSaves = {success: 0, fail: 0};
-      c.exhaustion = Math.min(6, (Number(c.exhaustion)||0) + 1);
-      removeCondition(c, "prone");
-      logRoll("Necrotic Husk", "1 hit point instead. It comes back after " + rests + (rests===1 ? " long rest." : " long rests."));
-      playRevive();
-      save(); renderAll();
-      performRoll(10, 2, classLevelOf(c, "Warlock", "The Undead"), "none", "Necrotic Husk (Necrotic)");
-    });
-    box.appendChild(husk);
-  }
-  // Faithful Summons (Shepherd 14): four beasts protect you.
-  if(faithfulSummonsReady(c) && !dead){
-    var summons = document.createElement("button");
-    summons.type = "button"; summons.className = "btn small primary ds-summons";
-    summons.textContent = "Faithful Summons";
-    summons.title = "Four beasts of challenge rating 2 or lower appear within 20 feet and protect you for 1 hour, with no concentration";
-    summons.addEventListener("click", function(e){
-      e.stopPropagation();
-      if(!spendResource(c, "Druid:faithful_summons", 1)) return;
-      logRoll("Faithful Summons", "Four beasts of CR 2 or lower appear within 20 feet and protect you for 1 hour.");
-      showActionToast("Four beasts come to protect you.");
-      save(); renderAll();
-    });
-    box.appendChild(summons);
-  }
-  // Undying Sentinel (Oath of the Ancients 15): 1 hit point instead, once per long rest.
-  if(classLevelOf(c, "Paladin", "Oath of the Ancients") >= 15 && !dead){
-    var sentinel = resourceLeft(c, "Paladin:undying_sentinel") > 0;
-    // (The 2024 feature heals three times the paladin level as well.)
-    var sentinelHeal = isPaladin2024(c) ? 3 * classLevelOf(c, "Paladin") : 0;
-    box.appendChild(backToOne(c, "ds-sentinel", "Undying Sentinel", sentinel, "Used until a long rest", function(){ return spendResource(c, "Paladin:undying_sentinel", 1); }, sentinelHeal ? "1 hit point instead of 0, and " + sentinelHeal + " more." : "1 hit point instead of 0.", sentinelHeal));
-  }
+  // What can keep you from dying, from features and items (none once dead).
+  if(!dead) deathSaveFeatures().forEach(function(make){ var b = make(c); if(b) box.appendChild(b); });
 
   var status = document.createElement("div");
   status.className = "ds-status";
@@ -309,6 +107,226 @@ export function renderDeathSaves(c){
   box.appendChild(status);
 
   return box;
+}
+
+/* The features that can step in at 0 hit points, in their order on the strip. */
+function deathSaveFeatures(){
+  return [strengthBeforeDeathButton, masteryOfDeathButton, blazingRevivalButton, soulOfArtificeButton, cheatDeathButton,
+    strengthOfTheGraveButton, searingVengeanceButton, necroticHuskButton, faithfulSummonsButton, undyingSentinelButton];
+}
+
+/* Strength Before Death (Samurai 18): a reaction for an extra turn
+   before falling unconscious, once per long rest. */
+function strengthBeforeDeathButton(c){
+  var sbd = strengthBeforeDeath(c);
+  if(!sbd) return null;
+  var sbdBtn = document.createElement("button");
+  sbdBtn.type = "button";
+  sbdBtn.className = "btn small primary ds-extra-turn";
+  sbdBtn.textContent = c.extraTurn ? "End the extra turn" : "Strength Before Death";
+  sbdBtn.title = c.extraTurn ? "You fall unconscious if you're still at 0 HP" : "Reaction: delay falling unconscious and take an extra turn right now";
+  sbdBtn.disabled = !c.extraTurn && !sbd.left;
+  sbdBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    if(c.extraTurn){ delete c.extraTurn; logRoll("Strength Before Death", "The extra turn ends."); }
+    else {
+      c.resourcesUsed[sbd.key] = sbd.used + 1;
+      c.extraTurn = true;
+      logRoll("Strength Before Death", "An extra turn right now, at 0 HP. Damage still causes death save failures.");
+    }
+    save(); renderAll();
+  });
+  return sbdBtn;
+}
+/* Mastery of Death (Way of Long Death 11): 1 ki for 1 hit point instead. */
+function masteryOfDeathButton(c){
+  if(classLevelOf(c, "Monk", "Way of Long Death") < 11) return null;
+  var kw = kiWord(c);
+  return backToOne(c, "ds-mastery", "Mastery of Death · 1 " + kw, kiLeft(c) >= 1, "No " + kw + " left", function(){ return spendKi(c, 1); }, "1 hit point instead of 0 (1 " + kw + ").");
+}
+/* Blazing Revival (Wildfire 14): the spirit drops to 0 and you rise with half your hit points. */
+function blazingRevivalButton(c){
+  if(!(blazingRevivalReady(c))) return null;
+  var revive = document.createElement("button");
+  revive.type = "button"; revive.className = "btn small primary ds-revival";
+  revive.textContent = "Blazing Revival";
+  revive.title = "Your wildfire spirit drops to 0 hit points if it's within 120 feet: regain half your hit points and rise to your feet";
+  revive.addEventListener("click", function(e){
+    e.stopPropagation();
+    if(!useBlazingRevival(c, maxHp(c))) return;
+    removeCondition(c, "prone");
+    logRoll("Blazing Revival", "Your spirit fell. You rise with " + c.hp.current + " hit points.");
+    playRevive();
+    save(); renderAll();
+  });
+  return revive;
+}
+/* Soul of Artifice (artificer 20): an infusion ends, and you have 1 hit point. */
+function soulOfArtificeButton(c){
+  if(!(soulOfArtificeReady(c))) return null;
+  var soul = document.createElement("button");
+  soul.type = "button"; soul.className = "btn small primary ds-soul";
+  soul.textContent = "Soul of Artifice";
+  soul.title = "Reaction: end one of your infusions to have 1 hit point instead of 0";
+  soul.addEventListener("click", function(e){
+    e.stopPropagation();
+    openBottomSheet(function(body, refresh, close){
+      sheetTop(body, "Soul of Artifice", close);
+      lead(body, "End which infusion?");
+      var list = document.createElement("div");
+      list.className = "pal-sheet-list";
+      (c.infusions.active||[]).forEach(function(a){
+        list.appendChild(sheetButton(a.name, function(){
+          endInfusion(c, a);
+          c.hp.current = 1;
+          c.deathSaves = {success: 0, fail: 0};
+          removeCondition(c, "prone");
+          logRoll("Soul of Artifice", a.name + " ended. 1 hit point instead of 0.");
+          playRevive();
+          close();
+          save(); renderAll();
+        }));
+      });
+      body.appendChild(list);
+    });
+  });
+  return soul;
+}
+/* Soul of Artifice's Cheat Death (2024 artificer 20): disintegrate made
+   uncommon or rare items for 20 hit points each. */
+function cheatDeathButton(c){
+  if(!(cheatDeathItems(c).length)) return null;
+  var cheat = document.createElement("button");
+  cheat.type = "button"; cheat.className = "btn small primary ds-cheat";
+  cheat.textContent = "Cheat Death";
+  cheat.title = "Soul of Artifice: disintegrate uncommon or rare items you made, for 20 hit points each";
+  cheat.addEventListener("click", function(e){
+    e.stopPropagation();
+    var picked = [];
+    openBottomSheet(function(body, refresh, close){
+      sheetTop(body, "Cheat Death", close);
+      lead(body, "Disintegrate any number of uncommon or rare items you made with Replicate Magic Item. Your hit points become 20 for each one.");
+      var list = document.createElement("div");
+      list.className = "pal-sheet-list";
+      cheatDeathItems(c).forEach(function(m){
+        var item = replicaItem(c, m) || {};
+        var on = picked.indexOf(m.id)!==-1;
+        var b = sheetButton((on ? "✓ " : "") + (item.name || "Item"), function(){
+          if(on) picked = picked.filter(function(x){ return x!==m.id; }); else picked.push(m.id);
+          refresh();
+        });
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+        list.appendChild(b);
+      });
+      body.appendChild(list);
+      var go = sheetButton(picked.length ? "Disintegrate " + picked.length + ": " + Math.min(maxHp(c), 20 * picked.length) + " hit points" : "Pick the items first", function(){
+        var names = picked.map(function(id){ var m = cheatDeathItems(c).find(function(x){ return x.id===id; }); return m ? (replicaItem(c, m) || {}).name : ""; }).filter(Boolean);
+        var hp = cheatDeath(c, picked, maxHp(c));
+        if(!hp) return;
+        c.deathSaves = {success: 0, fail: 0};
+        removeCondition(c, "unconscious");
+        logRoll("Cheat Death", "Disintegrated " + names.join(", ") + ". " + hp + " hit points.");
+        playRevive();
+        close();
+        save(); renderAll();
+      }, !picked.length);
+      go.classList.add("primary");
+      go.style.marginTop = "14px";
+      body.appendChild(go);
+    });
+  });
+  return cheat;
+}
+/* Strength of the Grave (Shadow Magic 1): only a success spends it. */
+function strengthOfTheGraveButton(c){
+  if(!(strengthOfTheGrave(c))) return null;
+  var grave = document.createElement("button");
+  grave.type = "button"; grave.className = "btn small primary ds-grave";
+  grave.textContent = "Strength of the Grave";
+  grave.title = "CHA save, DC 5 + the damage you took. Not against radiant damage or a critical hit.";
+  grave.addEventListener("click", function(e){
+    e.stopPropagation();
+    var save2 = computeSave(c, "cha");
+    performRoll(20, 1, save2.value, saveRollMode(c, "cha").mode, "Strength of the Grave (DC 5 + the damage)", function(r){
+      if(!r) return null;
+      return {lead: "Saved?", options: [{label: "Back to 1 hit point", title: "Only a success spends it",
+        use: function(){
+          if(!spendResource(c, "Sorcerer:strength_of_the_grave", 1)) return null;
+          c.hp.current = 1;
+          c.deathSaves = {success: 0, fail: 0};
+          removeCondition(c, "prone");
+          playRevive();
+          save(); renderAll();
+          return {silent: true};
+        }}]};
+    });
+  });
+  return grave;
+}
+/* Searing Vengeance (Celestial 14): instead of a death save. */
+function searingVengeanceButton(c){
+  if(!(searingVengeanceReady(c))) return null;
+  var searing = document.createElement("button");
+  searing.type = "button"; searing.className = "btn small primary ds-searing";
+  searing.textContent = "Searing Vengeance";
+  searing.title = "Instead of the death save at the start of your turn: regain half your hit points and stand. Creatures you choose within 30 ft take radiant damage and are blinded until the end of the turn.";
+  searing.addEventListener("click", function(e){
+    e.stopPropagation();
+    if(!spendResource(c, "Warlock:searing_vengeance", 1)) return;
+    c.hp.current = Math.floor(maxHp(c) / 2);
+    c.deathSaves = {success: 0, fail: 0};
+    removeCondition(c, "prone");
+    playRevive();
+    save(); renderAll();
+    performRoll(8, 2, mod(abilityScore(c, "cha")), "none", "Searing Vengeance (Radiant)");
+  });
+  return searing;
+}
+/* Necrotic Husk (Undead 10): 1 hit point instead, an eruption and a level of exhaustion. */
+function necroticHuskButton(c){
+  if(!(necroticHuskReady(c))) return null;
+  var husk = document.createElement("button");
+  husk.type = "button"; husk.className = "btn small primary ds-husk";
+  husk.textContent = "Necrotic Husk";
+  husk.title = "Reaction when you would drop to 0: 1 hit point instead. Creatures you choose within 30 ft take necrotic damage, and you gain a level of exhaustion. It comes back after 1d4 long rests.";
+  husk.addEventListener("click", function(e){
+    e.stopPropagation();
+    var rests = spendForRests(c, "Warlock:necrotic_husk");
+    if(!rests) return;
+    c.hp.current = 1;
+    c.deathSaves = {success: 0, fail: 0};
+    c.exhaustion = Math.min(6, (Number(c.exhaustion)||0) + 1);
+    removeCondition(c, "prone");
+    logRoll("Necrotic Husk", "1 hit point instead. It comes back after " + rests + (rests===1 ? " long rest." : " long rests."));
+    playRevive();
+    save(); renderAll();
+    performRoll(10, 2, classLevelOf(c, "Warlock", "The Undead"), "none", "Necrotic Husk (Necrotic)");
+  });
+  return husk;
+}
+/* Faithful Summons (Shepherd 14): four beasts protect you. */
+function faithfulSummonsButton(c){
+  if(!(faithfulSummonsReady(c))) return null;
+  var summons = document.createElement("button");
+  summons.type = "button"; summons.className = "btn small primary ds-summons";
+  summons.textContent = "Faithful Summons";
+  summons.title = "Four beasts of challenge rating 2 or lower appear within 20 feet and protect you for 1 hour, with no concentration";
+  summons.addEventListener("click", function(e){
+    e.stopPropagation();
+    if(!spendResource(c, "Druid:faithful_summons", 1)) return;
+    logRoll("Faithful Summons", "Four beasts of CR 2 or lower appear within 20 feet and protect you for 1 hour.");
+    showActionToast("Four beasts come to protect you.");
+    save(); renderAll();
+  });
+  return summons;
+}
+/* Undying Sentinel (Oath of the Ancients 15): 1 hit point instead, once per long rest. */
+function undyingSentinelButton(c){
+  if(classLevelOf(c, "Paladin", "Oath of the Ancients") < 15) return null;
+  var sentinel = resourceLeft(c, "Paladin:undying_sentinel") > 0;
+  // (The 2024 feature heals three times the paladin level as well.)
+  var sentinelHeal = isPaladin2024(c) ? 3 * classLevelOf(c, "Paladin") : 0;
+  return backToOne(c, "ds-sentinel", "Undying Sentinel", sentinel, "Used until a long rest", function(){ return spendResource(c, "Paladin:undying_sentinel", 1); }, sentinelHeal ? "1 hit point instead of 0, and " + sentinelHeal + " more." : "1 hit point instead of 0.", sentinelHeal);
 }
 
 /* A feature that leaves you on 1 hit point instead of 0. */

@@ -39,7 +39,15 @@ function onRowRoll(row, roll){
 /* ---- Abilities & Skills panel ---- */
 export function renderAbilitiesPanel(c){
   var panel = document.createElement("div");
+  panel.appendChild(renderAbilityScoresCard(c));
+  panel.appendChild(renderSavingThrowsCard(c));
+  panel.appendChild(renderSkillsCard(c));
+  panel.appendChild(renderPassiveSensesCard(c));
+  return panel;
+}
 
+/* The six scores: a tap rolls the check, the arrows change the score. */
+function renderAbilityScoresCard(c){
   var abCard = makeCard("Ability scores");
   var grid = document.createElement("div");
   grid.className = "abilities-grid";
@@ -132,8 +140,11 @@ export function renderAbilitiesPanel(c){
     grid.appendChild(box);
   });
   abCard.appendChild(grid);
-  panel.appendChild(abCard);
+  return abCard;
+}
 
+/* Saving throws, with situational advantage and rules to remember. */
+function renderSavingThrowsCard(c){
   var saveCard = makeCard("Saving throws");
   var saveRows = document.createElement("div");
   saveRows.className = "save-grid";
@@ -205,8 +216,11 @@ export function renderAbilitiesPanel(c){
   // Rules to remember on some saves (Evasion on DEX saves).
   var reminders = saveNotes(c);
   if(reminders.length) saveCard.appendChild(noteList("Remember:", reminders.map(function(n){ return {name: n.name, text: n.text + "."}; })));
-  panel.appendChild(saveCard);
+  return saveCard;
+}
 
+/* Skills, with proficiency and expertise pips. */
+function renderSkillsCard(c){
   var skillCard = makeCard("Skills");
   var legend = document.createElement("span");
   legend.className = "prof-legend";
@@ -264,8 +278,11 @@ export function renderAbilitiesPanel(c){
   var skillSits = situationalSkillAdvantages(c);
   if(skillSits.length) skillCard.appendChild(noteList("Situational advantage (roll with advantage yourself when it applies):",
     skillSits.map(function(s){ return {name: s.name, text: s.skills.join(" and ") + " " + s.when + "."}; })));
-  panel.appendChild(skillCard);
+  return skillCard;
+}
 
+/* Passive Perception, Investigation and Insight, and senses. */
+function renderPassiveSensesCard(c){
   var passCard = makeCard("Passive senses");
   var passGrid = document.createElement("div");
   passGrid.className = "passives-grid";
@@ -289,9 +306,7 @@ export function renderAbilitiesPanel(c){
     passGrid.appendChild(box);
   });
   passCard.appendChild(passGrid);
-  panel.appendChild(passCard);
-
-  return panel;
+  return passCard;
 }
 
 /* A small list of reminders under a card: a lead line, then "Name: text"

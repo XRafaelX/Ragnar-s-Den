@@ -191,77 +191,11 @@ export function openFaithSheet(c, onChange){
       f.appendChild(textField("Name", "name", "Sol", 60));
       f.appendChild(textField("Title or what they rule", "title", "goddess of the harvest", 80));
 
-      var alWrap = ce("div", "faith-field");
-      var alLabel = ce("span", "faith-field-label"); alLabel.textContent = "Alignment";
-      alWrap.appendChild(alLabel);
-      // The nine as the classic grid (lawful to chaotic across, good to
-      // evil down), each in its medallion colour. Tap the chosen one again
-      // for none. No dropdown: the form scrolls, and it would be cut off.
-      var alGrid = ce("div", "faith-align-grid");
-      alGrid.setAttribute("role", "radiogroup");
-      alGrid.setAttribute("aria-label", "Alignment");
-      ["LG", "NG", "CG", "LN", "N", "CN", "LE", "NE", "CE"].forEach(function(k){
-        var b = ce("button", "faith-align-pick is-" + (/G$/.test(k) ? "good" : /E$/.test(k) ? "evil" : "neutral") + (draft.alignment === k ? " selected" : ""));
-        b.type = "button";
-        b.setAttribute("role", "radio");
-        b.setAttribute("aria-checked", draft.alignment === k ? "true" : "false");
-        b.textContent = ALIGNMENT_NAMES[k];
-        b.addEventListener("click", function(){
-          draft.alignment = draft.alignment === k ? "" : k;
-          alGrid.querySelectorAll(".faith-align-pick").forEach(function(o){
-            var on = o === b && draft.alignment === k;
-            o.classList.toggle("selected", on);
-            o.setAttribute("aria-checked", on ? "true" : "false");
-          });
-        });
-        alGrid.appendChild(b);
-      });
-      alWrap.appendChild(alGrid);
-      f.appendChild(alWrap);
-
-      var domWrap = ce("div", "faith-field");
-      var domLabel = ce("span", "faith-field-label"); domLabel.textContent = "Domains";
-      domWrap.appendChild(domLabel);
-      var chips = ce("div", "faith-domains faith-domain-picks");
-      FAITH_DOMAINS.forEach(function(d){
-        var on = draft.domains.indexOf(d) !== -1;
-        var b = ce("button", "faith-domain" + (on ? " is-on" : "") + (mine.indexOf(d) !== -1 ? " is-mine-hint" : ""));
-        b.type = "button"; b.textContent = d;
-        b.setAttribute("aria-pressed", on ? "true" : "false");
-        b.addEventListener("click", function(){
-          var i = draft.domains.indexOf(d);
-          if(i === -1) draft.domains.push(d); else draft.domains.splice(i, 1);
-          b.classList.toggle("is-on", i === -1);
-          b.setAttribute("aria-pressed", i === -1 ? "true" : "false");
-        });
-        chips.appendChild(b);
-      });
-      domWrap.appendChild(chips);
-      f.appendChild(domWrap);
+      f.appendChild(alignmentField(draft));
+      f.appendChild(domainsField(draft, mine));
       f.appendChild(textField("Holy symbol", "symbol", "a golden sheaf of wheat", 120));
 
-      var icWrap = ce("div", "faith-field");
-      var icLabel = ce("span", "faith-field-label"); icLabel.textContent = "Icon";
-      icWrap.appendChild(icLabel);
-      var grid = ce("div", "faith-icon-grid");
-      grid.setAttribute("role", "radiogroup");
-      grid.setAttribute("aria-label", "Icon");
-      [""].concat(Object.keys(DEITY_ICONS)).forEach(function(k){
-        var b = ce("button", "faith-icon-pick" + (draft.icon === k ? " selected" : ""));
-        b.type = "button";
-        b.setAttribute("role", "radio");
-        b.setAttribute("aria-checked", draft.icon === k ? "true" : "false");
-        var label = k ? k.split("/")[1].replace(/-\d+$/, "").replace(/-/g, " ") : "star";
-        b.title = label; b.setAttribute("aria-label", label);
-        b.innerHTML = k ? iconSvg(k) : godIconSvg({custom: true});
-        b.addEventListener("click", function(){
-          draft.icon = k;
-          grid.querySelectorAll(".faith-icon-pick").forEach(function(o){ o.classList.toggle("selected", o === b); o.setAttribute("aria-checked", o === b ? "true" : "false"); });
-        });
-        grid.appendChild(b);
-      });
-      icWrap.appendChild(grid);
-      f.appendChild(icWrap);
+      f.appendChild(iconField(draft));
 
       var err = ce("p", "faith-error");
       err.setAttribute("role", "alert");
@@ -325,6 +259,83 @@ export function openFaithSheet(c, onChange){
       body.appendChild(actions);
     }
   });
+}
+
+/* The god form's alignment: the nine as the classic grid (lawful to
+   chaotic across, good to evil down), each in its medallion colour. Tap
+   the chosen one again for none. */
+function alignmentField(draft){
+  var alWrap = ce("div", "faith-field");
+  var alLabel = ce("span", "faith-field-label"); alLabel.textContent = "Alignment";
+  alWrap.appendChild(alLabel);
+  var alGrid = ce("div", "faith-align-grid");
+  alGrid.setAttribute("role", "radiogroup");
+  alGrid.setAttribute("aria-label", "Alignment");
+  ["LG", "NG", "CG", "LN", "N", "CN", "LE", "NE", "CE"].forEach(function(k){
+    var b = ce("button", "faith-align-pick is-" + (/G$/.test(k) ? "good" : /E$/.test(k) ? "evil" : "neutral") + (draft.alignment === k ? " selected" : ""));
+    b.type = "button";
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", draft.alignment === k ? "true" : "false");
+    b.textContent = ALIGNMENT_NAMES[k];
+    b.addEventListener("click", function(){
+      draft.alignment = draft.alignment === k ? "" : k;
+      alGrid.querySelectorAll(".faith-align-pick").forEach(function(o){
+        var on = o === b && draft.alignment === k;
+        o.classList.toggle("selected", on);
+        o.setAttribute("aria-checked", on ? "true" : "false");
+      });
+    });
+    alGrid.appendChild(b);
+  });
+  alWrap.appendChild(alGrid);
+  return alWrap;
+}
+/* The god form's domains, as chips (the cleric's own ones hinted). */
+function domainsField(draft, mine){
+  var domWrap = ce("div", "faith-field");
+  var domLabel = ce("span", "faith-field-label"); domLabel.textContent = "Domains";
+  domWrap.appendChild(domLabel);
+  var chips = ce("div", "faith-domains faith-domain-picks");
+  FAITH_DOMAINS.forEach(function(d){
+    var on = draft.domains.indexOf(d) !== -1;
+    var b = ce("button", "faith-domain" + (on ? " is-on" : "") + (mine.indexOf(d) !== -1 ? " is-mine-hint" : ""));
+    b.type = "button"; b.textContent = d;
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.addEventListener("click", function(){
+      var i = draft.domains.indexOf(d);
+      if(i === -1) draft.domains.push(d); else draft.domains.splice(i, 1);
+      b.classList.toggle("is-on", i === -1);
+      b.setAttribute("aria-pressed", i === -1 ? "true" : "false");
+    });
+    chips.appendChild(b);
+  });
+  domWrap.appendChild(chips);
+  return domWrap;
+}
+/* The god form's icon, from the gods' icons (or the plain star). */
+function iconField(draft){
+  var icWrap = ce("div", "faith-field");
+  var icLabel = ce("span", "faith-field-label"); icLabel.textContent = "Icon";
+  icWrap.appendChild(icLabel);
+  var grid = ce("div", "faith-icon-grid");
+  grid.setAttribute("role", "radiogroup");
+  grid.setAttribute("aria-label", "Icon");
+  [""].concat(Object.keys(DEITY_ICONS)).forEach(function(k){
+    var b = ce("button", "faith-icon-pick" + (draft.icon === k ? " selected" : ""));
+    b.type = "button";
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", draft.icon === k ? "true" : "false");
+    var label = k ? k.split("/")[1].replace(/-\d+$/, "").replace(/-/g, " ") : "star";
+    b.title = label; b.setAttribute("aria-label", label);
+    b.innerHTML = k ? iconSvg(k) : godIconSvg({custom: true});
+    b.addEventListener("click", function(){
+      draft.icon = k;
+      grid.querySelectorAll(".faith-icon-pick").forEach(function(o){ o.classList.toggle("selected", o === b); o.setAttribute("aria-checked", o === b ? "true" : "false"); });
+    });
+    grid.appendChild(b);
+  });
+  icWrap.appendChild(grid);
+  return icWrap;
 }
 
 function godCard(g, selected, mine, pick, edit){
