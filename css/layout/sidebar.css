@@ -136,8 +136,9 @@
   border-color:var(--brass);
 }
 /* Takes the New Character button's place at the same height. */
-#select-bar{display:flex;gap:6px;}
+/* Four buttons (stop, Export, Print, Delete) across the sidebar's width. */
+#select-bar{display:flex;gap:4px;}
 #select-bar[hidden]{display:none;}
-#select-bar .btn{flex:1;font-weight:600;}
-#select-bar #select-cancel{flex:none;width:40px;color:var(--text-on-ink-dim);border-color:var(--rule);}
+#select-bar .btn{flex:1;min-width:0;padding-left:4px;padding-right:4px;font-weight:600;font-size:12.5px;white-space:nowrap;}
+#select-bar #select-cancel{flex:none;width:34px;color:var(--text-on-ink-dim);border-color:var(--rule);}
 #new-char-btn[hidden]{display:none;}

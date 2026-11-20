@@ -6,6 +6,7 @@ import { confirmDialog } from "../ui/confirm-modal.js";
 import { exportCharacters } from "../ui/export-file.js";
 import { playDelete } from "../ui/sound.js";
 import { renderAll } from "./sheet.js";
+import { printCharacters } from "./print-sheet.js";
 
 /* ---------------- Rendering: sidebar ----------------
    Holding a character (and letting go) starts selecting: tap others to
@@ -269,6 +270,9 @@ export function setupSidebar(){
   }, {passive:false});
   list.addEventListener("contextmenu", function(e){ if(e.target.closest("li")) e.preventDefault(); });
   document.getElementById("select-export").addEventListener("click", function(){ exportCharacters(selectedChars()); });
+  // Each prints with its own choices from the Print sheet dialog (all
+  // pages but the journal if it never had any), one after another.
+  document.getElementById("select-print").addEventListener("click", function(){ printCharacters(selectedChars()); });
   document.getElementById("select-delete").addEventListener("click", deleteSelected);
   document.getElementById("select-cancel").addEventListener("click", function(){ stopSelecting(); renderSidebar(); });
   document.addEventListener("keydown", function(e){

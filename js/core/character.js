@@ -66,12 +66,19 @@ export function newCharacter(name){
   };
 }
 
+/* Appearance details (the Information tab's fold, the printed sheet's
+   page 2): key and label. Kept as text on c.appearance. */
+export var APPEARANCE_FIELDS = [["age", "Age"], ["height", "Height"], ["weight", "Weight"], ["eyes", "Eyes"], ["skin", "Skin"], ["hair", "Hair"]];
+
 /* ---------------- Migration safety (older saves) ---------------- */
 export function ensureShape(c){
   if(typeof c.title!=="string") c.title = "";
   if(c.avatar===undefined) c.avatar = null;
   // A picture marker that can't be read back (from a file): no picture.
   clearMarkers(c);
+  // Appearance details (2026-11-20) exist once the player fills one in;
+  // anything else in their place (a broken import) goes.
+  if(c.appearance !== undefined && (!c.appearance || typeof c.appearance !== "object" || Array.isArray(c.appearance))) delete c.appearance;
   if(c.inspiration===undefined) c.inspiration = c.inspired ? 1 : 0;
   if(!Array.isArray(c.conditions)) c.conditions = [];
   if(c.exhaustion==null) c.exhaustion = 0;

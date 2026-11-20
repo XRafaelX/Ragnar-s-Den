@@ -1,5 +1,5 @@
 import { save } from "../../core/state.js";
-import { wildShapeSpellNote, conduitAbility, profBonus, mod, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, spellcastingAbilities, plainAttackRollMode, classEntryOf } from "../../core/helpers.js";
+import { wildShapeSpellNote, fmtMod, clamp, ce, featureSpells, characterIsCaster, classSpellChoices, spellOptionText, ordinal, plainAttackRollMode, classEntryOf } from "../../core/helpers.js";
 import { makeCard, renderAll } from "../sheet.js";
 import { rollAttack } from "./sheet-rolls.js";
 import { playDelete } from "../../ui/sound.js";
@@ -12,15 +12,11 @@ import { sheetHeader } from "./inventory.js";
 import { makeStatArrowSvg, STAR_SVG } from "../../ui/svg-icons.js";
 import { showActionToast } from "../../ui/toast.js";
 import { pipChanged, pipsRefilled } from "../../ui/fx.js";
-import { coinAttackBonus, magicItemSpellAttack } from "../../core/magic-items.js";
-import { infusionSpellAttack } from "../../core/infusion-effects.js";
 import { themedPicker } from "../../ui/themed-picker.js";
 import { spellCounts, spellNeedsPreparing, classKnownSpells, casterDef, preparingClassFor, preparedState, prepareProblem, prepareLevelProblem, spellOwner, cantripFormulas, swapCantripFormula } from "../../core/spells-known.js";
 import { classPrepares } from "../../core/spells-known.js";
-import { innateSorceryOn } from "../../core/sorcerer.js";
-import { combineRolls } from "../../core/basics.js";
 import { spellScalingLine, spellRangeText, healingNote, circleSpellNote } from "../../core/spell-scaling.js";
-import { abilityScore, abilityScores } from "../../core/ability-scores.js";
+import { spellcastingStats } from "../../core/sheet-numbers.js";
 
 
 var SCHOOLS = ["Abjuration","Conjuration","Divination","Enchantment","Evocation","Illusion","Necromancy","Transmutation"];
@@ -382,16 +378,15 @@ function statTile(label, hint){
   return {box:box, val:val};
 }
 
+/* The numbers come from js/core/sheet-numbers.js (the printed sheet
+   uses the same). */
 function renderSpellcastingCard(c){
   // Classes casting with different abilities (a Cleric/Wizard) each get
   // their own save DC and spell attack.
-  var byAbility = spellcastingAbilities(c);
-  if(byAbility.length > 1) return renderMulticlassCasting(c, byAbility);
+  var st = spellcastingStats(c);
+  if(st.multi) return renderMulticlassCasting(c, st.rows);
   var card = makeCard("Spellcasting");
-  var pb = profBonus(c);
-  // (Arcane Conduit: Wisdom while the enchanted firearm is in hand.)
-  var scAbility = conduitAbility(c) || c.spellcasting.ability;
-  var scMod = mod(abilityScore(c, scAbility));
+  var scAbility = st.ability, scMod = st.mod;
   var grid = ce("div","vitals-grid");
 
   var ab = statTile("Ability", fmtMod(scMod)+" modifier");
@@ -403,25 +398,17 @@ function renderSpellcastingCard(c){
   }));
   grid.appendChild(ab.box);
 
-  // (Innate Sorcery, 2024: +1 and advantage for a sorcerer's spells.)
-  var innate = innateSorceryOn(c) && (c.classes||[]).some(function(cl){ return cl.name==="Sorcerer"; });
-  var dc = statTile("Save DC", "8 + prof + mod" + (innate ? " + 1 (Innate Sorcery)" : ""));
-  dc.val.textContent = 8+pb+scMod+(innate ? 1 : 0);
+  var dc = statTile("Save DC", st.dcHint);
+  dc.val.textContent = st.dc;
   grid.appendChild(dc.box);
 
-  // A boon to attack rolls (Duality's demon side) counts for spells too,
-  // and so do an Enhanced Arcane Focus and a Wand of the War Mage.
-  var coin = coinAttackBonus(c), focus = infusionSpellAttack(c), wand = magicItemSpellAttack(c);
-  var boon = coin + (focus ? focus.value : 0) + (wand ? wand.value : 0);
-  var extras = (coin ? ["Duality " + fmtMod(coin)] : []).concat(focus ? [focus.name + " " + fmtMod(focus.value)] : [], wand ? [wand.name + " " + fmtMod(wand.value)] : []);
-  // Conditions that change attack rolls (Poisoned, Invisible, exhaustion).
-  var atkRoll = innate ? combineRolls([plainAttackRollMode(c), {mode: "adv", reason: "Innate Sorcery"}]) : plainAttackRollMode(c);
-  var atk = statTile("Spell attack", ["Tap to roll"].concat(extras, rollModeTag(atkRoll)).join(" · "));
-  atk.val.textContent = fmtMod(pb+scMod+boon);
+  var atkRoll = st.attackRoll;
+  var atk = statTile("Spell attack", ["Tap to roll"].concat(st.extras, rollModeTag(atkRoll)).join(" · "));
+  atk.val.textContent = fmtMod(st.attack);
   atk.box.classList.add("sc-roll");
   atk.box.setAttribute("role","button"); atk.box.tabIndex = 0;
   atk.box.title = "Roll a spell attack" + (atkRoll.reason ? " (" + atkRoll.reason + ")" : "");
-  function roll(){ rollAttack(c, pb+scMod+boon, atkRoll.mode, "Spell attack"); }
+  function roll(){ rollAttack(c, st.attack, atkRoll.mode, "Spell attack"); }
   atk.box.addEventListener("click", roll);
   atk.box.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); roll(); } });
   grid.appendChild(atk.box);
@@ -435,19 +422,17 @@ function rollModeTag(roll){
   return roll.mode==="dis" ? ["Dis"] : roll.mode==="adv" ? ["Adv"] : [];
 }
 
-function renderMulticlassCasting(c, byAbility){
+function renderMulticlassCasting(c, rows){
   var card = makeCard("Spellcasting");
   var atkRoll = plainAttackRollMode(c);
-  byAbility.forEach(function(x){
-    var label = x.classes.join(" / ") + " · " + x.ability.toUpperCase();
-    var head = ce("p","sc-class-head"); head.textContent = label;
+  rows.forEach(function(x){
+    var head = ce("p","sc-class-head"); head.textContent = x.label;
     card.appendChild(head);
     var grid = ce("div","vitals-grid sc-class-grid");
-    var inn = innateSorceryOn(c) && x.classes.indexOf("Sorcerer")!==-1;
-    var dc = statTile("Save DC", "8 + prof + " + x.ability.toUpperCase() + (inn ? " + 1 (Innate Sorcery)" : ""));
-    dc.val.textContent = x.dc + (inn ? 1 : 0);
+    var dc = statTile("Save DC", x.dcHint);
+    dc.val.textContent = x.dc;
     grid.appendChild(dc.box);
-    var xRoll = inn ? combineRolls([atkRoll, {mode: "adv", reason: "Innate Sorcery"}]) : atkRoll;
+    var xRoll = x.attackRoll;
     var atk = statTile("Spell attack", ["Tap to roll"].concat(rollModeTag(xRoll)).join(" · "));
     atk.val.textContent = fmtMod(x.attack);
     atk.box.classList.add("sc-roll");

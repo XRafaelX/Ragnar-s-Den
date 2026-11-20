@@ -1,4 +1,4 @@
-import { hasToolExpertise, syncInfusions } from "../../core/artificer.js";
+import { syncInfusions } from "../../core/artificer.js";
 import { syncPlans } from "../../core/replicate.js";
 import { applySpellSlots } from "../../levelup/apply.js";
 import { save } from "../../core/state.js";
@@ -7,12 +7,11 @@ import { openInfoModal } from "../../ui/info-modal.js";
 import { RACE_TRAIT_FALLBACK } from "../../data/races.js";
 import { BACKGROUND_INFO, BACKGROUND_INFO_FALLBACK, backgroundFeatures } from "../../data/backgrounds.js";
 import { ALIGNMENT_INFO, ALIGNMENT_INFO_FALLBACK } from "../../data/alignments.js";
-import { classFeatureList, classProficiencies, classVariants, variantFor, syncTashaAdditions, escapeHtml, raceTraitFeatures, characterToolProfs, classHasEdition, editionEntry, setClassEdition, classLevelOf, artificerFirearms } from "../../core/helpers.js";
-import { featProficiencies, backgroundFeatGrant, backgroundFeatLabel, campaignFeatMissing, originFeatMissing } from "../../core/feat-picks.js";
+import { classFeatureList, classVariants, variantFor, syncTashaAdditions, escapeHtml, raceTraitFeatures, classHasEdition, editionEntry, setClassEdition, classLevelOf, artificerFirearms } from "../../core/helpers.js";
+import { backgroundFeatGrant, backgroundFeatLabel, campaignFeatMissing, originFeatMissing } from "../../core/feat-picks.js";
 import { dlcShelf, campaignBookCard, GUN_MISFIRE_CARD, GUN_MISFIRE_OUTCOME, ARTIFICER_FIREARMS_CARD, ARTIFICER_FIREARMS_OUTCOME, classEditionCard, classEditionOutcome, RULES_2024_CARD, rules2024Lock } from "../../ui/dlc-shelf.js";
 import { hasGunslingerClass } from "../../data/weapons.js";
-import { characterPickedProfs, raceProficiencies, backgroundProficiencies, syncClassPicks } from "../../core/class-picks.js";
-import { ABILITIES } from "../../data/abilities-skills.js";
+import { syncClassPicks } from "../../core/class-picks.js";
 import { LANGUAGES, LANGUAGE_GROUP_LABELS } from "../../data/languages.js";
 import { playAdd, playDelete } from "../../ui/sound.js";
 import { themedPicker } from "../../ui/themed-picker.js";
@@ -20,6 +19,9 @@ import { renderPersonalityCard } from "./personality.js";
 import { CAMPAIGN_FEATS } from "../../data/feats.js";
 import { RACE_DATA } from "../../data/race-data.js";
 import { usesRules2024 } from "../../core/feats-2024.js";
+import { characterProficiencies } from "../../core/sheet-numbers.js";
+import { APPEARANCE_FIELDS } from "../../core/character.js";
+import { makeChevronDownSvg } from "../../ui/svg-icons.js";
 
 /* ---- Information panel ----
    A calm "About the character" summary. Proficiencies & Languages are
@@ -27,11 +29,9 @@ import { usesRules2024 } from "../../core/feats-2024.js";
    lists, feature text) is one tap away in a modal instead of being
    dumped on screen, so the tab stays scannable for a new player. */
 
-var ABILITY_NAME = {};
 // Which character's Languages card has its add row open (null = closed).
 var langAddOpenFor = null;
 var langAddSeq = 0;   // a fresh picker key each time the add row opens
-ABILITIES.forEach(function(a){ ABILITY_NAME[a[0]] = a[1]; });
 
 function splitIntoTraits(text){
   return (text||"").split(/\.\s+/)
@@ -193,49 +193,95 @@ function renderAboutCard(c){
       }
     });
   }));
+  aboutCard.appendChild(appearanceFold(c));
   return aboutCard;
 }
 
-/* Proficiencies, gathered across every class and source. */
+/* Age, height, weight, eyes, skin and hair, for the printed sheet's
+   page 2. Most players skip them, so they fold away under one row that
+   says what's filled in, and open in place (the card around them
+   doesn't move). Closed on each visit; typing saves at once. */
+var appearanceOpen = {};   // character id -> open this visit (not saved)
+function appearanceSummary(c){
+  var a = c.appearance || {};
+  var filled = APPEARANCE_FIELDS.filter(function(f){ return (a[f[0]] || "").trim(); });
+  return filled.length ? filled.map(function(f){ return f[1] + " " + a[f[0]].trim(); }).join(" · ") : "Optional: age, height, eyes and more";
+}
+function appearanceFold(c){
+  var open = !!appearanceOpen[c.id];
+  var wrap = document.createElement("div");
+  wrap.className = "info-fold" + (open ? " open" : "");
+  var row = document.createElement("button");
+  row.type = "button";
+  row.className = "info-link-row info-fold-row";
+  row.setAttribute("aria-expanded", open ? "true" : "false");
+  row.setAttribute("aria-controls", "appearance-fold-" + c.id);
+  var left = document.createElement("span");
+  left.className = "info-link-left";
+  var l = document.createElement("span");
+  l.className = "info-label";
+  l.textContent = "Appearance details";
+  var v = document.createElement("span");
+  v.className = "info-link-value info-fold-summary";
+  v.textContent = appearanceSummary(c);
+  left.appendChild(l);
+  left.appendChild(v);
+  row.appendChild(left);
+  var chevron = document.createElement("span");
+  chevron.className = "info-fold-chevron";
+  chevron.innerHTML = makeChevronDownSvg();
+  row.appendChild(chevron);
+  row.addEventListener("click", function(){
+    var now = wrap.classList.toggle("open");
+    appearanceOpen[c.id] = now;
+    row.setAttribute("aria-expanded", now ? "true" : "false");
+  });
+  wrap.appendChild(row);
+
+  var panel = document.createElement("div");
+  panel.className = "info-fold-panel";
+  panel.id = "appearance-fold-" + c.id;
+  var inner = document.createElement("div");
+  inner.className = "info-fold-inner";
+  var grid = document.createElement("div");
+  grid.className = "info-appearance-grid";
+  APPEARANCE_FIELDS.forEach(function(f){
+    var field = document.createElement("label");
+    field.className = "field info-appearance-field";
+    var lab = document.createElement("span");
+    lab.textContent = f[1];
+    var input = document.createElement("input");
+    input.type = "text";
+    input.maxLength = 30;
+    input.value = (c.appearance && c.appearance[f[0]]) || "";
+    input.setAttribute("aria-label", f[1]);
+    input.addEventListener("input", function(){
+      if(!c.appearance || typeof c.appearance !== "object") c.appearance = {};
+      var val = input.value.trim();
+      if(val) c.appearance[f[0]] = input.value; else delete c.appearance[f[0]];
+      v.textContent = appearanceSummary(c);
+      save();
+    });
+    field.appendChild(lab);
+    field.appendChild(input);
+    grid.appendChild(field);
+  });
+  inner.appendChild(grid);
+  panel.appendChild(inner);
+  wrap.appendChild(panel);
+  return wrap;
+}
+
+/* Proficiencies, gathered across every class and source. The lists come
+   from js/core/sheet-numbers.js (the printed sheet uses the same): every
+   source, tools with expertise marked. */
 function renderProficienciesCard(c){
   var profCard = makeCard("Proficiencies");
-  var armor = [], weapons = [], tools = [], saves = [];
-  (c.classes||[]).forEach(function(cl, idx){
-    var p = classProficiencies(c, idx);
-    if(!p) return;
-    (p.armor||[]).forEach(function(v){ if(armor.indexOf(v)===-1) armor.push(v); });
-    (p.weapons||[]).forEach(function(v){ if(weapons.indexOf(v)===-1) weapons.push(v); });
-    (p.savingThrows||[]).forEach(function(v){
-      var label = ABILITY_NAME[v] || v;
-      if(saves.indexOf(label)===-1) saves.push(label);
-    });
-  });
-  // Plus what the race gives (an elf's weapons, a dwarf's armor and tool),
-  // the background's weapons (a Rifle Corps member's firearms) and what
-  // feats grant (Moderately Armored, Skilled, Weapon Master, Resilient).
-  var fromRace = raceProficiencies(c);
-  fromRace.armor.forEach(function(v){ if(armor.indexOf(v)===-1) armor.push(v); });
-  fromRace.weapons.concat(backgroundProficiencies(c).weapons).forEach(function(v){ if(weapons.indexOf(v)===-1) weapons.push(v); });
-  // Tools from every source (classes, race, background, a pick in place of
-  // one given twice, feats).
-  tools = characterToolProfs(c);
-  var fromFeats = featProficiencies(c);
-  fromFeats.armor.forEach(function(p){ if(armor.indexOf(p.name)===-1) armor.push(p.name); });
-  fromFeats.weapons.forEach(function(p){ if(weapons.indexOf(p.name)===-1) weapons.push(p.name); });
-  if(artificerFirearms(c) && weapons.indexOf("Firearms")===-1) weapons.push("Firearms");
-  fromFeats.saves.forEach(function(p){
-    var label = ABILITY_NAME[p.ability] || p.ability;
-    if(saves.indexOf(label)===-1) saves.push(label);
-  });
-  profCard.appendChild(chipRow("Armor", armor));
-  profCard.appendChild(chipRow("Weapons", weapons));
-  // Expertise picked for a tool (a rogue's thieves' tools).
-  // (An artificer's Tool Expertise covers every tool.)
-  var expertTools = characterPickedProfs(c).toolExpertise.map(function(t){ return t.toLowerCase(); });
-  var allExpert = hasToolExpertise(c);
-  tools = tools.map(function(t){ return allExpert || expertTools.indexOf(t.toLowerCase())!==-1 ? t + " (expertise)" : t; });
-  profCard.appendChild(chipRow("Tools", tools));
-  profCard.appendChild(chipRow("Saving Throws", saves));
+  var p = characterProficiencies(c);
+  profCard.appendChild(chipRow("Armor", p.armor));
+  profCard.appendChild(chipRow("Weapons", p.weapons));
+  profCard.appendChild(chipRow("Tools", p.tools));
+  profCard.appendChild(chipRow("Saving Throws", p.saves));
   return profCard;
 }
 

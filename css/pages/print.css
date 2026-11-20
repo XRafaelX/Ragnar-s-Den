@@ -1,0 +1,189 @@
+/* ---------------- The printed character sheet ----------------
+   js/render/print-sheet.js builds the pages into #print-root. On screen
+   it is laid out off to the side at its printed size (the fixed boxes
+   are filled by measuring); in print it is the only thing shown. Black
+   on white with set colours, never the theme's (a banner's palette or
+   the dark theme must not reach the paper). Pages are 190 x 257 mm: what
+   fits inside 10 mm margins on both A4 and US Letter. */
+#print-root{
+  position:absolute; left:-10000px; top:0; width:190mm;
+  visibility:hidden; pointer-events:none;
+}
+@media print{
+  @page{ margin:10mm; }
+  /* (The app's dark color-scheme would paint the paper's margins dark,
+     and its fixed-height, overflow-hidden body could cut pages off.) */
+  html, body{ background:#fff !important; color-scheme:light !important; height:auto !important; overflow:visible !important; }
+  body.ps-printing > *:not(#print-root){ display:none !important; }
+  body.ps-printing #print-root{ position:static; left:auto; width:auto; visibility:visible; }
+  body.ps-printing{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+
+.ps-doc{
+  color:#111; background:#fff;
+  font:8pt/1.25 "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+.ps-doc *{ box-sizing:border-box; }
+.ps-page{
+  width:190mm; height:257mm; display:flex; flex-direction:column;
+  overflow:hidden; break-after:page; page-break-after:always;
+}
+.ps-dim{ color:#666; font-weight:normal; }
+
+/* ---- boxes and fields ---- */
+.ps-box{
+  border:1pt solid #000; border-radius:2.5mm; background:#fff;
+  padding:1.2mm 1.8mm .8mm; display:flex; flex-direction:column; min-height:0;
+}
+.ps-body{ flex:1; min-height:0; overflow:hidden; }
+.ps-label{
+  flex:none; margin-top:.6mm; text-align:center;
+  font-size:5.8pt; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+}
+.ps-label-top{ margin:0 0 .6mm; }
+.ps-grow{ flex:1; min-height:0; }
+.ps-field{ min-width:0; }
+.ps-field-value{
+  min-height:4.4mm; border-bottom:.6pt solid #888;
+  font:bold 9pt Georgia, "Times New Roman", serif;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ps-field-value.ps-wrap{ white-space:normal; line-height:1.05; text-overflow:clip; }
+.ps-field-label{ font-size:5.5pt; letter-spacing:.04em; text-transform:uppercase; color:#333; }
+.ps-corner{ font-size:6pt; color:#555; }
+.ps-list{ list-style:none; margin:0; padding:0; font-size:7pt; }
+.ps-list li{ padding:.35mm 0; border-bottom:.4pt solid #ccc; }
+.ps-text{ margin:0; line-height:1.2; }
+.ps-ticks{ display:inline-flex; gap:.8mm; vertical-align:middle; flex-wrap:wrap; }
+.ps-tick{ display:inline-block; width:2.5mm; height:2.5mm; border:.8pt solid #000; }
+.ps-round .ps-tick{ border-radius:50%; }
+.ps-dot{ flex:none; width:2.3mm; height:2.3mm; border:.8pt solid #000; border-radius:50%; }
+.is-prof > .ps-dot, .is-prepared > .ps-dot{ background:#000; }
+.is-exp > .ps-dot{ background:#000; box-shadow:0 0 0 .7pt #fff, 0 0 0 1.5pt #000; }
+.ps-footer{ flex:none; margin-top:1mm; text-align:right; font-size:5.5pt; color:#888; }
+.ps-blank{ color:#555; }
+
+/* ---- the header strip ---- */
+.ps-head{
+  flex:none; height:21mm; margin-bottom:3mm;
+  display:grid; grid-template-columns:68mm 1fr; gap:3mm; align-items:end;
+}
+.ps-name{ padding-bottom:1mm; }
+.ps-name .ps-field-value{ font-size:15pt; border-bottom:1.2pt solid #000; min-height:8mm; }
+.ps-head-fields{
+  border:1.2pt solid #000; border-radius:3mm; height:100%;
+  padding:1mm 3mm; display:grid; grid-template-columns:repeat(3, 1fr); column-gap:3mm; align-content:space-around;
+}
+
+/* ---- page 1 ---- */
+.ps-cols{ flex:1; min-height:0; display:grid; grid-template-columns:repeat(3, 1fr); gap:3mm; }
+.ps-col{ display:flex; flex-direction:column; gap:2mm; min-height:0; }
+.ps-col1-top{ flex:none; display:grid; grid-template-columns:19mm 1fr; gap:2mm; }
+.ps-abilities{ background:#e4e4e4; border-radius:2.5mm; padding:1.5mm; display:flex; flex-direction:column; gap:1.6mm; }
+.ps-ability{
+  background:#fff; border:1pt solid #000; border-radius:2mm; height:21mm; text-align:center;
+  display:flex; flex-direction:column; justify-content:space-between; padding:1mm 0 .8mm;
+}
+.ps-ability-name{ font-size:5.3pt; font-weight:700; text-transform:uppercase; letter-spacing:.02em; }
+.ps-ability-mod{ font:bold 15pt Georgia, "Times New Roman", serif; line-height:1; }
+.ps-ability-score{ margin:0 auto; width:10mm; border:1pt solid #000; border-radius:50%; font-size:8pt; font-weight:700; }
+.ps-col1-mid{ display:flex; flex-direction:column; gap:1.6mm; }
+.ps-pill{ flex:none; display:flex; align-items:center; gap:2mm; height:7mm; border:1pt solid #000; border-radius:3.5mm; background:#fff; }
+.ps-pill-value{
+  flex:none; width:9mm; height:100%; border-right:1pt solid #000; border-radius:3.5mm 0 0 3.5mm;
+  display:flex; align-items:center; justify-content:center; font:bold 10pt Georgia, serif;
+}
+.ps-pill-label{ font-size:5.8pt; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+.ps-pill-wide{ margin-top:auto; }
+.ps-check{ display:flex; align-items:center; gap:1.2mm; height:3.65mm; font-size:7pt; white-space:nowrap; }
+.ps-check-value{ flex:none; width:5.5mm; border-bottom:.6pt solid #000; text-align:center; font-weight:700; }
+.ps-check-name{ overflow:hidden; text-overflow:ellipsis; }
+.ps-prof-line{ line-height:1.25; }
+
+.ps-combat, .ps-personality{ flex:none; background:#e4e4e4; border-radius:2.5mm; padding:1.5mm; display:flex; flex-direction:column; gap:1.5mm; }
+.ps-three{ display:grid; grid-template-columns:repeat(3, 1fr); gap:1.5mm; }
+.ps-big{
+  background:#fff; border:1pt solid #000; border-radius:2mm; height:15mm; text-align:center;
+  display:flex; flex-direction:column; justify-content:center; padding:0 1mm;
+}
+.ps-big .ps-field-value{ border:0; font-size:14pt; min-height:0; }
+.ps-ac{ border-radius:2mm 2mm 45% 45% / 2mm 2mm 30% 30%; }
+.ps-speed-others{ font-size:6.5pt; text-align:center; }
+.ps-hp{ height:21mm; }
+.ps-temp{ height:13mm; }
+.ps-pair{ display:grid; grid-template-columns:1fr 1fr; gap:1.5mm; height:16mm; }
+.ps-death-row{ display:flex; justify-content:space-between; align-items:center; margin-top:.6mm; }
+.ps-death-label{ font-size:5.3pt; text-transform:uppercase; }
+.ps-attacks{ flex:none; height:60mm; }
+.ps-attack-table{ display:flex; flex-direction:column; gap:.8mm; }
+.ps-attack-row{ display:grid; grid-template-columns:1.45fr .65fr 1.9fr; gap:1mm; font-size:7pt; align-items:center; }
+.ps-attack-row span{ min-height:4.2mm; line-height:4.2mm; background:#ececec; border-radius:1mm; padding:0 1mm; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ps-attack-head span{ background:none; min-height:0; line-height:1.2; font-size:5.3pt; text-transform:uppercase; color:#555; white-space:normal; overflow:visible; }
+.ps-equipment .ps-body{ display:flex; gap:1.5mm; }
+.ps-coins{ flex:none; width:10mm; display:flex; flex-direction:column; gap:1.2mm; }
+.ps-coin{ height:8.5mm; border:1pt solid #000; border-radius:1.5mm; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.ps-coin-label{ font-size:5pt; font-weight:700; }
+.ps-coin-value{ font-size:8pt; font-weight:700; }
+.ps-eq-list{ flex:1; min-width:0; }
+.ps-traits{ height:22mm; }
+.ps-ideals, .ps-bonds, .ps-flaws{ height:16.5mm; }
+.ps-use b, .ps-feature b{ font-weight:700; }
+
+/* ---- page 2 ---- */
+.ps-p2{
+  flex:1; min-height:0; display:grid; gap:3mm;
+  grid-template-columns:62mm 1fr; grid-template-rows:96mm 1fr 52mm;
+}
+.ps-appearance{ grid-column:1; grid-row:1; }
+.ps-allies{ grid-column:2; grid-row:1; }
+.ps-backstory{ grid-column:1; grid-row:2 / span 2; }
+.ps-more{ grid-column:2; grid-row:2; }
+.ps-treasure{ grid-column:2; grid-row:3; }
+.ps-photo{ display:block; width:100%; height:100%; object-fit:contain; }
+.ps-symbol{
+  float:right; width:46mm; height:84mm; margin-left:3mm;
+  border:1pt solid #000; border-radius:2mm; padding:1.2mm; background:#f2f2f2;
+  display:flex; flex-direction:column;
+}
+.ps-symbol-name{ background:#fff; border-radius:1mm; padding:.5mm 1mm; font-weight:700; font-size:7.5pt; min-height:4.5mm; }
+.ps-symbol-label{ font-size:5.3pt; text-transform:uppercase; color:#555; margin:.3mm 0 1mm; }
+.ps-symbol-art{ flex:1; background:#fff; border-radius:1mm; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.5mm; color:#000; padding:1.5mm; text-align:center; }
+.ps-symbol-art svg{ width:24mm; height:24mm; }
+.ps-symbol-text{ font-size:6.5pt; }
+.ps-story{ margin:0 0 1.2mm; font-size:7.5pt; line-height:1.25; }
+
+/* ---- page 3 ---- */
+.ps-spell-stats{ grid-template-columns:repeat(3, 1fr); align-content:center; }
+.ps-spell-stats .ps-big{ height:13mm; }
+.ps-spell-cols{ flex:1; min-height:0; display:grid; grid-template-columns:repeat(3, 1fr); gap:3mm; }
+.ps-spell-col{ display:flex; flex-direction:column; gap:2mm; min-height:0; }
+.ps-spell-level{ border:1pt solid #000; border-radius:2mm; padding:1mm 1.5mm; }
+.ps-spell-head{ display:flex; align-items:center; gap:1.5mm; border-bottom:1pt solid #000; padding-bottom:.8mm; margin-bottom:.4mm; }
+.ps-spell-num{ flex:none; width:6mm; height:6mm; border:1pt solid #000; border-radius:1mm; display:flex; align-items:center; justify-content:center; font:bold 10pt Georgia, serif; }
+.ps-spell-title{ flex:1; text-align:center; font-size:7pt; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+.ps-slot-total{ flex:none; width:13mm; text-align:center; }
+.ps-slot-total .ps-field-value{ text-align:center; }
+.ps-slot-exp{ flex:1; }
+.ps-slot-exp .ps-ticks{ min-height:4.4mm; align-items:center; }
+.ps-spell-lines{ list-style:none; margin:0; padding:0; }
+.ps-spell-line{ display:flex; align-items:center; gap:1.2mm; height:5mm; border-bottom:.5pt solid #999; font-size:7pt; white-space:nowrap; overflow:hidden; }
+
+/* ---- full text pages ---- */
+.ps-flow{ break-before:page; page-break-before:always; font-size:7.5pt; }
+.ps-flow-title{ font:bold 12pt Georgia, "Times New Roman", serif; border-bottom:1.2pt solid #000; margin:0 0 2.5mm; padding-bottom:1mm; }
+.ps-flow-cols{ column-count:2; column-gap:6mm; }
+.ps-entry{ break-inside:avoid-column; margin:0 0 2.5mm; }
+.ps-entry h3{ font:bold 8.5pt Georgia, "Times New Roman", serif; margin:0 0 .6mm; }
+.ps-entry p{ margin:0 0 1mm; line-height:1.3; white-space:pre-line; }
+.ps-statblock{ border-top:.8pt solid #000; padding-top:1mm; }
+
+/* ---- the print dialog (on screen) ---- */
+.ps-dialog-intro{ margin:0 0 10px; }
+.ps-dialog-list{ display:flex; flex-direction:column; gap:10px; margin:0 0 14px; }
+.ps-dialog-row{ display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin:0; }
+.ps-dialog-row .chk{ flex:none; margin-top:3px; accent-color:var(--brass); }
+.ps-dialog-row b{ display:block; }
+.ps-dialog-hint{ display:block; font-size:12px; line-height:1.4; color:var(--text-on-parch-dim); }
+.ps-dialog-player{ display:flex; flex-direction:column; gap:4px; margin:0 0 8px; }
+.ps-dialog-label{ font-size:12px; color:var(--text-on-parch-dim); }
+.ps-dialog .actions{ display:flex; justify-content:flex-end; margin-top:12px; }

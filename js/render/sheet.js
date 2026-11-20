@@ -14,6 +14,7 @@ import { characterCompanions, unseenCompanions, markCompanionsSeen, newCompanion
 import { showActionToast } from "../ui/toast.js";
 import { renderRollLog } from "../dice/dice.js";
 import { confirmDeleteCharacter, duplicateCharacter } from "../app.js";
+import { openPrintDialog } from "./print-sheet.js";
 import { makeKebabSvg, makeCheckSvg } from "../ui/svg-icons.js";
 import { buildLevelRow, subclassEligible, openSubclassPicker } from "../levelup/level-row.js";
 import { buildAvatar, refreshAvatarInitial } from "../ui/avatar.js";
@@ -202,8 +203,8 @@ function lockedField(labelTxt, value){
 }
 
 /* ⋮ overflow menu in the identity card's top-right corner. Holds the
-   rarely used actions (background image, Duplicate and Delete character) so they
-   don't take rows of their own. Closes on an outside tap or Escape. */
+   rarely used actions (background image, Print sheet, Duplicate and Delete
+   character) so they don't take rows of their own. Closes on an outside tap or Escape. */
 function buildIdentityMenu(c){
   var menu = document.createElement("div");
   menu.className = "identity-menu";
@@ -239,6 +240,7 @@ function buildIdentityMenu(c){
     pop.appendChild(item);
   }
   backdropMenuItems(c).forEach(function(it){ addItem(it.label, it.run, "", it.checked); });
+  addItem("Print sheet", function(){ openPrintDialog(c); });
   addItem("Duplicate character", function(){ duplicateCharacter(c); });
   var sep = document.createElement("div");
   sep.className = "identity-menu-sep";
