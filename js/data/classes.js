@@ -842,3 +842,14 @@ export var CLASS_PROFICIENCIES = {
     savingThrows:["int","wis"]
   }
 };
+
+/* Every tool, by kind, for tool picks (feats, races, backgrounds, class
+   features). In data/ so a module can read it while the modules load. */
+export var TOOL_GROUPS = {
+  "Artisan's tools": ARTISAN_TOOLS,
+  "Gaming sets": ["Dice set","Dragonchess set","Playing card set","Three-Dragon Ante set"],
+  "Musical instruments": MUSICAL_INSTRUMENTS,
+  // Air and space vehicles: a Lyrandar house agent's, a Wildspacer's.
+  "Vehicles": ["Vehicles (land)","Vehicles (water)","Vehicles (air)","Vehicles (space)"],
+  "Other tools": ["Disguise kit","Forgery kit","Herbalism kit","Navigator's tools","Poisoner's kit","Thieves' tools"]
+};

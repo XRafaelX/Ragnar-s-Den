@@ -357,6 +357,16 @@ export function openCatalogPicker(config){
   searchInput.value = "";
   searchInput.placeholder = activeSection().searchPlaceholder || "Search…";
 
+  // A control of the caller's beside the search (the Spellbook's edition
+  // switch), taken out again when the page closes.
+  var header = document.getElementById("catalog-header");
+  var stale = header.querySelector(".catalog-header-extra");
+  if(stale) stale.remove();
+  if(config.headerExtra){
+    config.headerExtra.classList.add("catalog-header-extra");
+    header.appendChild(config.headerExtra);
+  }
+
   renderSectionTabs();
   renderCustomForm();
   renderPills();
@@ -375,6 +385,7 @@ export function openCatalogPicker(config){
     backBtn.removeEventListener("click", onBack);
     fab.removeEventListener("click", onFab);
     customBackBtn.removeEventListener("click", onCustomBack);
+    if(config.headerExtra) config.headerExtra.remove();
     if(config.onClose) config.onClose();
   }
 

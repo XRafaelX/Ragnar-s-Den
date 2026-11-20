@@ -252,6 +252,8 @@ function effectSummary(c, id){
   if(id==="form_of_dread") return "You can't be frightened. Once per turn when you hit, the target makes a WIS save (DC " + warlockDc(c) + ") or is frightened of you until the end of your next turn" + (classLevelOf(c, "Warlock", "The Undead") >= 10 ? ". You're immune to necrotic damage" : "");
   if(id==="spirit_projection") return "Your body is unconscious, and damage to one affects the other. You resist bludgeoning, piercing and slashing damage and fly at your walking speed. Conjuration and necromancy spells need no verbal, somatic or costless material components";
   if(id==="elemental_affinity") return "Resistance to " + (dragonType(c) || "your ancestry's") + " damage";
+  // (The 2024 wings: a fly speed of 60 feet. The 2014 ones: your speed.)
+  if(id==="dragon_wings" && isSorcerer2024(c)) return "Fly 60 ft";
   if(id==="dragon_wings") return "Fly " + computeSpeed(c).value + " ft";
   if(id==="draconic_presence"){
     var dread = c.effects && c.effects.draconic_presence;
@@ -279,7 +281,6 @@ function effectSummary(c, id){
   if(id==="shadow_disguise") return "You look like the dead person and know what it would tell a casual acquaintance. +5 to Deception checks against Insight";
   if(id==="spreading_spores") return "A creature that enters the cube or starts its turn there makes a CON save (DC " + druidDc(c) + ") or takes your Halo of Spores damage, once per turn. You can't use the Halo of Spores reaction while it lasts";
   if(id==="innate_sorcery") return "+1 to your sorcerer spell save DC, and advantage on the attack rolls of sorcerer spells" + (classLevelOf(c, "Sorcerer") >= 7 ? ". Up to two Metamagic options on each spell" : "") + (classLevelOf(c, "Sorcerer") >= 20 ? ". One Metamagic option each turn costs no points" : "");
-  if(id==="dragon_wings" && isSorcerer2024(c)) return "Fly 60 ft";
   if(id==="wrath_of_the_sea"){
     var sea = classLevelOf(c, "Druid", "Circle of the Sea");
     return "A " + (sea >= 6 ? 10 : 5) + "-ft emanation. As a bonus action, a creature in it makes a CON save (DC " + druidDc(c) + ") or takes " + wrathDice(c) + "d6 cold and is pushed 15 ft" +

@@ -18,6 +18,8 @@
   flex:1;background:var(--field-bg);border:1px solid var(--rule);border-radius:20px;color:var(--text-on-parch);padding:8px 14px;font-size:14px;
 }
 #catalog-search:focus{outline:none;border-color:var(--brass);}
+/* The Spellbook's "2014 | 2024" switch, beside the search. */
+.catalog-edition{display:flex;gap:4px;flex:none;}
 #catalog-tabs{
   display:flex;gap:4px;padding:0 16px;border-bottom:1px solid var(--rule);overflow-x:auto;flex:none;
   scrollbar-width:none;-ms-overflow-style:none;

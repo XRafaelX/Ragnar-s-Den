@@ -2,12 +2,13 @@ import { state } from "../core/state.js";
 import { escapeHtml } from "../core/helpers.js";
 
 /* Lets the Armory / Spellbook ask "which character?" before adding
-   something. `list` narrows the choices (e.g. only spellcasters); the
-   modal is skipped entirely when there's only one to choose from. */
-export function chooseCharacter(onChoose, list){
+   something. `list` narrows the choices (e.g. only spellcasters). With
+   only one to choose from the modal is skipped, unless opts.always (the
+   Spellbook asks anyway, so the player sees who gets the spell). */
+export function chooseCharacter(onChoose, list, opts){
   var chars = list || state.characters;
   if(!chars.length) return;
-  if(chars.length === 1){ onChoose(chars[0]); return; }
+  if(chars.length === 1 && !(opts && opts.always)){ onChoose(chars[0]); return; }
 
   var modal = document.getElementById("char-picker-modal");
   var body = document.getElementById("char-picker-body");

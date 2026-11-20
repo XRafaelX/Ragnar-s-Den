@@ -1,6 +1,8 @@
 import { FEATS_CATALOG, CAMPAIGN_FEATS } from "../data/feats.js";
 import { ABILITIES, SKILLS } from "../data/abilities-skills.js";
-import { ARTISAN_TOOLS, MUSICAL_INSTRUMENTS } from "../data/classes.js";
+import { TOOL_GROUPS } from "../data/classes.js";
+// (A plain table kept in data/: class-picks.js reads it as it loads.)
+export { TOOL_GROUPS };
 import { WEAPON_GROUPS } from "../data/weapons.js";
 import { SPELL_DATA } from "../data/spells.js";
 import { optionSetDef } from "../data/class-options.js";
@@ -30,14 +32,6 @@ import { classStyleList, styleDef, stylePicksProblem, makeStyleFeature } from ".
    languages go onto the character's list, and Fighting Initiate's style
    becomes a style feature (both taken back with the feat). */
 
-export var TOOL_GROUPS = {
-  "Artisan's tools": ARTISAN_TOOLS,
-  "Gaming sets": ["Dice set","Dragonchess set","Playing card set","Three-Dragon Ante set"],
-  "Musical instruments": MUSICAL_INSTRUMENTS,
-  // Air and space vehicles: a Lyrandar house agent's, a Wildspacer's.
-  "Vehicles": ["Vehicles (land)","Vehicles (water)","Vehicles (air)","Vehicles (space)"],
-  "Other tools": ["Disguise kit","Forgery kit","Herbalism kit","Navigator's tools","Poisoner's kit","Thieves' tools"]
-};
 var SKILL_NAMES = SKILLS.map(function(s){ return s[0]; });
 function isSkill(name){ return SKILL_NAMES.indexOf(name)!==-1; }
 export function abilityName(k){ var a = ABILITIES.find(function(x){ return x[0]===k; }); return a ? a[1] : k; }
