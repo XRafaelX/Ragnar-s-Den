@@ -4,14 +4,16 @@
    (a table built at load time from another module's table), it only
    works in the load order the app and the tests happen to use, and
    breaks the day that order changes. This loads each module as the very
-   first one, in a fresh Node process, and fails on any that throws.
+   first one, in a fresh Node process, and lists any that throws.
 
-   Not part of npm test (it takes a minute or two):
+   Part of npm test (tests/load-order.test.mjs), so the pre-commit hook
+   runs it. On its own, with the failing lines printed:
      npm run check:load-order */
 import { spawn } from "node:child_process";
 import { readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { cpus } from "node:os";
+import { pathToFileURL } from "node:url";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 // (The players' screen needs a real window; the test stub doesn't give one.)
@@ -33,17 +35,26 @@ function loadFirst(file){
   });
 }
 
-const files = modules(join(ROOT, "js")).filter((f) => !SKIP.has(f)).sort();
-const results = [];
-let next = 0;
-await Promise.all(Array.from({ length: Math.max(2, cpus().length) }, async () => {
-  while(next < files.length) results.push(await loadFirst(files[next++]));
-}));
-const bad = results.filter((r) => !r.ok).sort((a, b) => a.file.localeCompare(b.file));
-for(const r of bad){
-  const where = (r.err.match(/js\/[\w/.-]+\.js:\d+/) || [""])[0];
-  const what = (r.err.match(/^\w*Error[^\n]*/m) || ["(no message)"])[0];
-  console.log("FAIL " + r.file + (where ? "  (" + where + ")" : "") + "  " + what);
+/* {checked: how many modules, failed: [{file, where, what}]}. */
+export async function checkLoadOrder(){
+  const files = modules(join(ROOT, "js")).filter((f) => !SKIP.has(f)).sort();
+  const results = [];
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.max(2, cpus().length) }, async () => {
+    while(next < files.length) results.push(await loadFirst(files[next++]));
+  }));
+  const failed = results.filter((r) => !r.ok).sort((a, b) => a.file.localeCompare(b.file)).map((r) => ({
+    file: r.file,
+    where: (r.err.match(/js\/[\w/.-]+\.js:\d+/) || [""])[0],
+    what: (r.err.match(/^\w*Error[^\n]*/m) || ["(no message)"])[0]
+  }));
+  return { checked: files.length, failed };
 }
-console.log(files.length + " modules loaded first, " + bad.length + " failed");
-process.exitCode = bad.length ? 1 : 0;
+
+// Run on its own: print each failure and the count.
+if(import.meta.url === pathToFileURL(process.argv[1]).href){
+  const { checked, failed } = await checkLoadOrder();
+  for(const f of failed) console.log("FAIL " + f.file + (f.where ? "  (" + f.where + ")" : "") + "  " + f.what);
+  console.log(checked + " modules loaded first, " + failed.length + " failed");
+  process.exitCode = failed.length ? 1 : 0;
+}
