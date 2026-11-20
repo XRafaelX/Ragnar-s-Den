@@ -1,5 +1,7 @@
 import { MONSTER_GROUPS, MONSTER_DATA } from "../data/monsters.js";
 import { uid } from "./helpers.js";
+import { noteChange } from "./backup-status.js";
+import { reportSaveError } from "./save-error.js";
 
 /* ---------------- Custom (homebrew) monsters ----------------
    Made in the Monster Catalog and saved in this browser, apart from any
@@ -39,8 +41,8 @@ function read(){
   }catch(e){ return []; }
 }
 function write(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
-  catch(e){ alert("Could not save. Your browser storage may be full or restricted."); }
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); noteChange(); }
+  catch(e){ reportSaveError(e); }
 }
 
 /* ---- merge into shared tables ---- */

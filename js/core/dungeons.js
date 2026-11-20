@@ -1,4 +1,6 @@
 import { uid } from "./basics.js";
+import { noteChange } from "./backup-status.js";
+import { reportSaveError } from "./save-error.js";
 
 /* ---------------- Dungeons ----------------
    A DM's dungeons, saved in this browser apart from any character. A
@@ -111,8 +113,8 @@ function read(){
   }catch(e){ return []; }
 }
 function write(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
-  catch(e){ alert("Could not save. Your browser storage may be full or restricted."); }
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); noteChange(); }
+  catch(e){ reportSaveError(e); }
 }
 
 function side(v, fallback){

@@ -29,6 +29,10 @@ import { APP_VERSION } from "./version.js";
 import { setupUpdates } from "./ui/update-prompt.js";
 import { applyPrivateContent } from "./core/private-content.js";
 import { setupPrivateEgg } from "./ui/private-egg.js";
+import { askToKeepData, isInstalled, keepDataNote } from "./core/keep-data.js";
+import { lastBackupText, storageUsed, storageNote } from "./core/backup-status.js";
+import { setupBackupReminder } from "./ui/backup-reminder.js";
+import { setupSaveErrors } from "./ui/save-error.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
@@ -68,9 +72,30 @@ export function setupTopLevel(){
     dataOptions.hidden = false;
     dataPick.hidden = true;
   }
+  /* Opening the window is a good moment to ask the browser to keep the
+     data (Firefox asks the player), and the line under the options says
+     how it answered. */
+  var keepNote = document.getElementById("data-keep-note");
+  function showKeepNote(){
+    askToKeepData().then(function(kept){
+      keepNote.textContent = keepDataNote(kept, isInstalled());
+      keepNote.classList.toggle("kept", kept === true);
+      keepNote.hidden = false;
+    });
+  }
+  /* When the last backup was saved and how much space the data takes. */
+  var spaceLine = document.getElementById("data-space-line");
+  function showStatusNote(){
+    var space = storageNote(storageUsed());
+    document.getElementById("data-backup-line").textContent = lastBackupText() + ".";
+    spaceLine.textContent = space.text;
+    spaceLine.classList.toggle("warn", space.warn);
+  }
   function openDataModal(){
     showDataOptions();
     document.getElementById("data-export-pick-btn").disabled = !state.characters.length;
+    showStatusNote();
+    showKeepNote();
     dataModal.classList.add("open");
   }
   function closeDataModal(){ dataModal.classList.remove("open"); }
@@ -213,6 +238,7 @@ export function setupTopLevel(){
             // An imported character using hidden private content is set aside.
             applyPrivateContent();
             save();
+            askToKeepData();
             renderAll();
             playAdd();
           }
@@ -258,6 +284,8 @@ export function confirmDeleteCharacter(c){
 
 /* ---------------- Init ---------------- */
 export function init(){
+  // First, so a save that fails while the app starts is told too.
+  setupSaveErrors();
   initTheme();
   load();
   loadCustomSubclasses();
@@ -283,6 +311,10 @@ export function init(){
   setupBackdropUpload();
   renderAll();
   maybeStartTutorial(allCharacters().length > 0);
+  // An installed app is kept without a question (Chrome, Safari), so it
+  // asks at once rather than waiting for the player to do something.
+  if(isInstalled() && allCharacters().length) askToKeepData();
+  setupBackupReminder();
 
   setupUpdates();
 }

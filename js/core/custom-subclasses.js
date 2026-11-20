@@ -1,6 +1,8 @@
 import { SUBCLASSES } from "../data/progression.js";
 import { state, save, allCharacters } from "./state.js";
 import { uid } from "./helpers.js";
+import { noteChange } from "./backup-status.js";
+import { reportSaveError } from "./save-error.js";
 
 /* ---------------- Custom (homebrew) subclasses ----------------
    Made in the Compendium and saved in this browser, apart from any one
@@ -23,8 +25,8 @@ function readStorage(){
   }catch(e){ return []; }
 }
 function writeStorage(){
-  try{ localStorage.setItem(CUSTOM_SUBCLASSES_KEY, JSON.stringify(list)); }
-  catch(e){ alert("Could not save. Your browser storage may be full or restricted."); }
+  try{ localStorage.setItem(CUSTOM_SUBCLASSES_KEY, JSON.stringify(list)); noteChange(); }
+  catch(e){ reportSaveError(e); }
 }
 
 function toSubclass(entry){

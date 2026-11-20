@@ -1,6 +1,8 @@
 import { FEATS_CATALOG } from "../data/feats.js";
 import { state, save, allCharacters } from "./state.js";
 import { uid } from "./helpers.js";
+import { noteChange } from "./backup-status.js";
+import { reportSaveError } from "./save-error.js";
 
 /* ---------------- Custom (homebrew) feats and features ----------------
    Made in the Compendium's Feats tab and saved in this browser, apart
@@ -59,8 +61,8 @@ function read(kind){
   }catch(e){ return []; }
 }
 function write(kind){
-  try{ localStorage.setItem(KINDS[kind].key, JSON.stringify(lists[kind])); }
-  catch(e){ alert("Could not save. Your browser storage may be full or restricted."); }
+  try{ localStorage.setItem(KINDS[kind].key, JSON.stringify(lists[kind])); noteChange(); }
+  catch(e){ reportSaveError(e); }
 }
 
 /* Rebuild the custom part of FEATS_CATALOG. */

@@ -19,6 +19,7 @@ import { stylePicksProblem, makeStyleFeature } from "../core/fighting-styles.js"
 import { entryGrants, grantHasChoices, classPickContext, classPicksProblem, fillSlots, applyClassPicks, raceGrantsFor, raceGrants, raceEntry,
   backgroundGrantsFor, backgroundGrants, backgroundEntry, overlapGrants, overlapEntry } from "../core/class-picks.js";
 import { state, save } from "../core/state.js";
+import { askToKeepData } from "../core/keep-data.js";
 import { renderAll } from "../render/sheet.js";
 import { closeSidebarMobile } from "../ui/mobile-nav.js";
 import { confirmDialog } from "../ui/confirm-modal.js";
@@ -1173,6 +1174,8 @@ export function finishWizard(){
   state.activeId = c.id;
   state.activeTab = "vitals";
   save();
+  // A new character is worth keeping: ask the browser not to clear it.
+  askToKeepData();
   document.getElementById("wizard-overlay").classList.remove("open");
   renderAll();
   characterBorn();

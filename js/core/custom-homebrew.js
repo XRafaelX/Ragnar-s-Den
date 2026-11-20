@@ -3,6 +3,8 @@ import { RACE_DATA } from "../data/race-data.js";
 import { BACKGROUNDS, BACKGROUND_INFO, BACKGROUND_LANGUAGES, BACKGROUND_TOOLS } from "../data/backgrounds.js";
 import { state, save, allCharacters } from "./state.js";
 import { uid } from "./helpers.js";
+import { noteChange } from "./backup-status.js";
+import { reportSaveError } from "./save-error.js";
 
 /* ---------------- Custom (homebrew) races and backgrounds ----------------
    Made in the Compendium and saved in this browser, apart from any one
@@ -68,8 +70,8 @@ function read(kind){
   }catch(e){ return []; }
 }
 function write(kind){
-  try{ localStorage.setItem(KINDS[kind].key, JSON.stringify(lists[kind])); }
-  catch(e){ alert("Could not save. Your browser storage may be full or restricted."); }
+  try{ localStorage.setItem(KINDS[kind].key, JSON.stringify(lists[kind])); noteChange(); }
+  catch(e){ reportSaveError(e); }
 }
 
 /* Rebuild the homebrew part of the tables for one kind. */

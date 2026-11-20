@@ -1,4 +1,7 @@
 /* ---------------- App state & persistence ---------------- */
+import { noteChange } from "./backup-status.js";
+import { reportSaveError } from "./save-error.js";
+
 export var STORAGE_KEY = "ragnarsDen.characters.v1";
 
 export var state = {
@@ -53,9 +56,9 @@ export function load(){
 export function save(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(allCharacters()));
+    noteChange();
   }catch(e){
-    alert("Could not save. Your browser storage may be full or restricted.");
-    console.error(e);
+    reportSaveError(e);
   }
 }
 

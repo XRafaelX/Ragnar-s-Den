@@ -378,6 +378,13 @@
     <button id="update-apply-btn" type="button" class="btn small primary">Update</button>
   </div>
 </div>
+<div id="backup-banner" class="update-banner backup-banner" role="status" aria-live="polite">
+  <span id="backup-banner-text"></span>
+  <div class="update-banner-actions">
+    <button id="backup-later-btn" type="button" class="btn small ghost">Later</button>
+    <button id="backup-now-btn" type="button" class="btn small primary">Back up</button>
+  </div>
+</div>
 
 <div id="bottom-sheet-scrim"></div>
 <div id="bottom-sheet" role="dialog" aria-modal="true">
@@ -435,6 +442,8 @@
         <span class="data-option-label">Import backup</span>
         <span class="data-option-desc">Restore from a backup file.</span>
       </button>
+      <p class="data-keep-note" id="data-status-note"><span id="data-backup-line"></span> <span id="data-space-line"></span></p>
+      <p class="data-keep-note" id="data-keep-note" hidden></p>
     </div>
     <div class="data-pick" id="data-pick" hidden>
       <label class="data-pick-all">

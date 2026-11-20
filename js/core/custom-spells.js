@@ -1,6 +1,8 @@
 import { SPELL_DATA, SPELL_GROUPS, spellLevelLabel } from "../data/spells.js";
 import { state, save, allCharacters } from "./state.js";
 import { uid } from "./helpers.js";
+import { noteChange } from "./backup-status.js";
+import { reportSaveError } from "./save-error.js";
 
 /* ---------------- Custom (homebrew) spells ----------------
    Made in the Spellbook or from a sheet's Add Spell and saved in this
@@ -32,8 +34,8 @@ function read(){
   }catch(e){ return []; }
 }
 function write(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
-  catch(e){ alert("Could not save. Your browser storage may be full or restricted."); }
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); noteChange(); }
+  catch(e){ reportSaveError(e); }
 }
 
 /* ---- merge into shared tables ---- */

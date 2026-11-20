@@ -152,6 +152,18 @@
   margin-top: 2px;
   white-space: normal;
 }
+/* Whether the browser keeps the saved data (js/core/keep-data.js). */
+.data-keep-note {
+  margin: 4px 4px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-on-parch-dim);
+}
+.data-keep-note.kept::before { content: "\2713  "; color: var(--brass); }
+#data-space-line.warn { color: var(--oxblood); }
+#data-status-note { margin-top: 8px; }
+#data-status-note + .data-keep-note { margin-top: 0; }
+.data-keep-note[hidden] { display: none; }
 /* Export characters: a tick list that replaces the option cards in place. */
 .data-pick[hidden], .data-modal-options[hidden] { display: none; }
 .data-pick-all {

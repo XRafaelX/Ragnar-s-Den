@@ -2,6 +2,8 @@ import { WEAPON_GROUPS, WEAPON_DATA } from "../data/weapons.js";
 import { ARMOR_GROUPS, ARMOR_DATA } from "../data/armor.js";
 import { state, save, allCharacters } from "./state.js";
 import { uid } from "./helpers.js";
+import { noteChange } from "./backup-status.js";
+import { reportSaveError } from "./save-error.js";
 
 /* ---------------- Custom (homebrew) weapons and armor ----------------
    Made in the Armory (or from a sheet's Add Weapon / Add Armor) and saved
@@ -75,8 +77,8 @@ function read(kind){
   }catch(e){ return []; }
 }
 function write(kind){
-  try{ localStorage.setItem(KINDS[kind].key, JSON.stringify(lists[kind])); }
-  catch(e){ alert("Could not save. Your browser storage may be full or restricted."); }
+  try{ localStorage.setItem(KINDS[kind].key, JSON.stringify(lists[kind])); noteChange(); }
+  catch(e){ reportSaveError(e); }
 }
 
 /* Rebuild the Homebrew part of the tables for one kind. */

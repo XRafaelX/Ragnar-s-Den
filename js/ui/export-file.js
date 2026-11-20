@@ -11,6 +11,7 @@ import { getEncounters } from "../core/encounters.js";
 import { getDungeons, imagesInUse } from "../core/dungeons.js";
 import { imagesAsDataUrls } from "../core/map-images.js";
 import { APP_VERSION } from "../version.js";
+import { markBackedUp } from "../core/backup-status.js";
 
 /* ---------------- Backup files ----------------
    Both kinds are read by Import backup. (Older backups were just the
@@ -42,6 +43,7 @@ export function exportFullBackup(){
     {customMonsters:getCustomMonsters(), encounters:getEncounters(), dungeons:getDungeons()});
   // Map pictures live in the browser's database: they go in the file too.
   var ids = imagesInUse();
+  markBackedUp();
   if(!ids.length){ downloadJson(backup, backupFileName(new Date(), APP_VERSION)); return; }
   imagesAsDataUrls(ids).then(function(images){
     backup.dungeonImages = images;
@@ -53,5 +55,7 @@ export function exportFullBackup(){
 export function exportCharacters(chars){
   if(!chars.length) return;
   var file = Object.assign({version:2, appVersion:APP_VERSION, characters:chars}, homebrewForCharacters(chars, homebrewLibrary()));
+  // Every character ticked (with the homebrew they use) counts as a backup.
+  if(chars.length === state.characters.length) markBackedUp();
   downloadJson(file, backupFileName(new Date(), APP_VERSION, "characters"));
 }
