@@ -38,6 +38,17 @@ function fakeIndexedDB({ failOpen = false, failWrites = false } = {}){
   };
 }
 const settle = () => new Promise((r) => setTimeout(r, 80));
+/* Waits until `ok()` holds (the stand-in works through timers, so a busy
+   machine can take longer than any fixed wait), then a little more so a
+   second, unwanted call would show. Fails after 3 s. */
+async function until(ok, what){
+  const end = Date.now() + 3000;
+  while(!ok()){
+    if(Date.now() > end) assert.fail("timed out waiting: " + what);
+    await new Promise((r) => setTimeout(r, 5));
+  }
+  await new Promise((r) => setTimeout(r, 60));
+}
 const PIC_A = "data:image/jpeg;base64," + "A".repeat(4000);
 const PIC_B = "data:image/jpeg;base64," + "B".repeat(4000);
 const PIC_C = "data:image/jpeg;base64," + "C".repeat(3000);
@@ -52,7 +63,7 @@ test("a picture stays in the entry until it is stored, then leaves it", async ()
   assert.equal(storedForm([c])[0], c, "nothing stored yet: the same object, pictures in the entry");
   let again = 0;
   syncPictures([c], () => again++);
-  await settle();
+  await until(() => again > 0, "the save after storing");
   assert.equal(db.data.get("c1/avatar"), PIC_A);
   assert.equal(db.data.get("c1/backdrop"), PIC_B);
   assert.equal(db.data.get("c1/companion/mount"), PIC_C);
@@ -69,7 +80,7 @@ test("a picture stays in the entry until it is stored, then leaves it", async ()
 
 test("load: STORED is empty until read back, then the picture returns", async () => {
   const c = char("c1", { avatar: PIC_A, companions: { mount: { image: PIC_C } } });
-  syncPictures([c]); await settle();
+  syncPictures([c]); await until(() => storedForm([c])[0].companions.mount.image === STORED && storedForm([c])[0].avatar === STORED, "both stored");
   const saved = JSON.parse(JSON.stringify(storedForm([c])));
   resetPictureStore();                      // a new session
   takeMarkers(saved);
@@ -85,20 +96,20 @@ test("load: STORED is empty until read back, then the picture returns", async ()
 
 test("a changed picture goes back in the entry until the new one is stored", async () => {
   const c = char("c1", { avatar: PIC_A });
-  syncPictures([c]); await settle();
+  syncPictures([c]); await until(() => storedForm([c])[0].avatar === STORED, "first picture stored");
   c.avatar = PIC_B;
   assert.equal(storedForm([c])[0].avatar, PIC_B, "the new picture is saved in the entry first");
-  syncPictures([c]); await settle();
+  syncPictures([c]); await until(() => storedForm([c])[0].avatar === STORED, "new picture stored");
   assert.equal(db.data.get("c1/avatar"), PIC_B);
   assert.equal(storedForm([c])[0].avatar, STORED);
 });
 
 test("a removed picture and a deleted character's pictures are deleted", async () => {
   const a = char("a", { avatar: PIC_A, backdrop: PIC_B }), b = char("b", { avatar: PIC_C });
-  syncPictures([a, b]); await settle();
+  syncPictures([a, b]); await until(() => db.data.size === 3, "three pictures stored");
   a.backdrop = null;
   assert.equal(storedForm([a])[0].backdrop, null, "removed: null in the entry");
-  syncPictures([a]); await settle();       // b deleted
+  syncPictures([a]); await until(() => db.data.size === 1, "two deleted");       // b deleted
   assert.deepEqual([...db.data.keys()].sort(), ["a/avatar"]);
 });
 
@@ -108,7 +119,7 @@ test("loading moves pictures still in the entry and clears pictures nobody uses"
   takeMarkers([c]);
   let again = 0;
   await loadPictures(() => [c], () => again++);
-  await settle();
+  await until(() => again > 0, "the save after moving it");
   assert.equal(db.data.get("c1/backdrop"), PIC_B, "moved into the database");
   assert.ok(!db.data.has("gone/avatar"), "the unused picture is cleared");
   assert.equal(again, 1, "then saved so the entry drops it");
@@ -142,4 +153,25 @@ test("an imported STORED that can't be read back shows no picture", () => {
   clearMarkers(c);
   assert.equal(c.avatar, null);
   assert.equal(c.companions.mount.image, null);
+});
+
+test("the app's save and load: the entry holds markers, memory keeps pictures", async () => {
+  const { state, save, load } = await import("../js/core/state.js");
+  const keep = state.characters;
+  const c = char("s1", { avatar: PIC_A, backdrop: PIC_B });
+  state.characters = [c];
+  save();
+  const entry = () => localStorage.getItem("ragnarsDen.characters.v1");
+  assert.ok(entry().includes(PIC_A), "first save: the picture is in the entry until stored");
+  await until(() => !entry().includes("data:image"), "the save that drops the pictures");
+  assert.equal(JSON.parse(entry())[0].avatar, STORED);
+  assert.ok(entry().length < 1000, "the entry is small: " + entry().length);
+  assert.equal(c.avatar, PIC_A, "memory keeps the picture");
+  load();
+  assert.equal(state.characters[0].avatar, null, "a load shows no marker");
+  const changed = await loadPictures(() => state.characters);
+  assert.equal(changed, true);
+  assert.equal(state.characters[0].backdrop, PIC_B, "and the picture comes back");
+  state.characters = keep;
+  localStorage.removeItem("ragnarsDen.characters.v1");
 });

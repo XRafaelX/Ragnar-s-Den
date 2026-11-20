@@ -1,6 +1,7 @@
 /* ---------------- App state & persistence ---------------- */
 import { noteChange } from "./backup-status.js";
 import { reportSaveError } from "./save-error.js";
+import { storedForm, syncPictures, takeMarkers } from "./picture-store.js";
 
 export var STORAGE_KEY = "ragnarsDen.characters.v1";
 
@@ -47,19 +48,29 @@ export function load(){
   try{
     var raw = localStorage.getItem(STORAGE_KEY);
     state.characters = raw ? JSON.parse(raw) : [];
+    // Pictures kept in the browser's database come back later
+    // (loadPictures in js/core/picture-store.js), never as a marker.
+    if(Array.isArray(state.characters)) takeMarkers(state.characters);
   }catch(e){
     console.error("Failed to load vault data", e);
     state.characters = [];
   }
   state.hiddenCharacters = []; hiddenAfter = {};
 }
+/* Pictures already safe in the browser's database are saved as a marker
+   (js/core/picture-store.js), so a save writes a few kilobytes. New
+   pictures are stored after the save, which then runs once more. That
+   also happens after a failed save: moving the pictures out may be what
+   makes room. */
 export function save(){
+  var all = allCharacters();
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allCharacters()));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(storedForm(all)));
     noteChange();
   }catch(e){
     reportSaveError(e);
   }
+  syncPictures(all, save);
 }
 
 export function getActive(){

@@ -33,6 +33,7 @@ import { askToKeepData, isInstalled, keepDataNote } from "./core/keep-data.js";
 import { lastBackupText, storageUsed, storageNote } from "./core/backup-status.js";
 import { setupBackupReminder } from "./ui/backup-reminder.js";
 import { setupSaveErrors } from "./ui/save-error.js";
+import { loadPictures } from "./core/picture-store.js";
 
 /* ---------------- Top-level actions ---------------- */
 export function setupTopLevel(){
@@ -310,6 +311,9 @@ export function init(){
   setupAvatarCropper();
   setupBackdropUpload();
   renderAll();
+  // Photos, banners and companion pictures come from the browser's
+  // database a moment later (older saves' pictures move there now).
+  loadPictures(allCharacters, save).then(function(changed){ if(changed) renderAll(); });
   maybeStartTutorial(allCharacters().length > 0);
   // An installed app is kept without a question (Chrome, Safari), so it
   // asks at once rather than waiting for the player to do something.

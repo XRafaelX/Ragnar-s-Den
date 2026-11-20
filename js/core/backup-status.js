@@ -97,7 +97,7 @@ export function storageNote(used){
   var mb = function(n){ return (Math.round(n / 100000) / 10).toFixed(1); };
   var warn = used >= STORAGE_LIMIT * 0.8;
   var text = "Space used: " + mb(used) + " MB of about " + mb(STORAGE_LIMIT) + " MB.";
-  if(warn) text += " Photos and banners take the most room. Export a backup before adding more.";
+  if(warn) text += " Export a backup now, then remove what you don't need to make room.";
   return {text: text, warn: warn};
 }
 

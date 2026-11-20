@@ -288,7 +288,6 @@ Run `npm test` (Node 22 or newer; no install needed). The suite lives in `tests/
 │   └── social-preview.jpg             # Link preview banner (1280×640), also shown at the top of this README
 ├── js/
 │   ├── app.js                         # Application entry point: event listeners, import/export, init()
-│   ├── bootstrap.bundle.min.js        # Bootstrap 5 JavaScript bundle
 │   ├── dungeon-view.js                # The dungeon Player view page (dungeon-view.html)
 │   ├── version.js                     # App release version (APP_VERSION = "5.0.0")
 │   ├── core/

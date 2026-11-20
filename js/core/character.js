@@ -9,6 +9,7 @@ import { syncClassPicks, migrateClassPicks, migrateRacePicks } from "./class-pic
 import { characterCompanions } from "./companions.js";
 import { endWildShape } from "./druid.js";
 import { wildShapeForm } from "../data/wild-shapes.js";
+import { clearMarkers } from "./picture-store.js";
 
 /* ---------------- Default character ---------------- */
 export function newCharacter(name){
@@ -69,6 +70,8 @@ export function newCharacter(name){
 export function ensureShape(c){
   if(typeof c.title!=="string") c.title = "";
   if(c.avatar===undefined) c.avatar = null;
+  // A picture marker that can't be read back (from a file): no picture.
+  clearMarkers(c);
   if(c.inspiration===undefined) c.inspiration = c.inspired ? 1 : 0;
   if(!Array.isArray(c.conditions)) c.conditions = [];
   if(c.exhaustion==null) c.exhaustion = 0;

@@ -17,7 +17,7 @@ import { pathToFileURL } from "node:url";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 // (The players' screen needs a real window; the test stub doesn't give one.)
-const SKIP = new Set(["js/dungeon-view.js", "js/bootstrap.bundle.min.js"]);
+const SKIP = new Set(["js/dungeon-view.js"]);
 
 function modules(dir){
   return readdirSync(dir).flatMap((n) => {

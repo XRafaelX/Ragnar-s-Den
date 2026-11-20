@@ -15,7 +15,7 @@ var lastDialog = 0;
 
 export function saveErrorText(full){
   return full
-    ? "The browser's space for this app is full, so your last change isn't saved yet. Export a backup now to keep it, then remove a photo or banner you don't need to make room."
+    ? "The browser's space for this app is full, so your last change isn't saved yet. Export a backup now to keep it, then remove what you don't need to make room."
     : "The browser didn't let the app save, so your last change isn't saved yet. This can happen in a private window or when site data is blocked. Export a backup now to keep your characters.";
 }
 

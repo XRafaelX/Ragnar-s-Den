@@ -80,7 +80,7 @@ test("space used, with a warning from 80%", () => {
   assert.deepEqual(storageNote(1234567), { text: "Space used: 1.2 MB of about 5.0 MB.", warn: false });
   const near = storageNote(STORAGE_LIMIT * 0.85);
   assert.equal(near.warn, true);
-  assert.match(near.text, /^Space used: 4\.3 MB of about 5\.0 MB\. Photos and banners take the most room\./);
+  assert.match(near.text, /^Space used: 4\.3 MB of about 5\.0 MB\. Export a backup now, then remove what you don't need/);
   for(const t of [near.text, backupReminderText(T0)]) assert.ok(!/[–—;]/.test(t), "plain text: " + t);
   assert.equal(typeof storageUsed(), "number");
 });
